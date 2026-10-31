@@ -34,7 +34,8 @@ These are alternatives, not phases to combine.
 | Production | Normal player only | Primary player only |
 
 Paired turns can end immediately when the primary player or partner reaches the victory target.
-The dice then advance one seat after both players finish.
+A victory ends the game at once. The dice never advance, and a pending partner activation never starts.
+Otherwise the dice advance one seat after both players finish.
 Legacy special builders wait for their normal turn to claim victory.
 Accepted: use paired turns for new five/six-seat games.
 The older special building phase is not used.
@@ -65,7 +66,7 @@ When the wayfarer is enabled, start it on one waste; the second waste starts unb
 When disabled, keep both wastes unblocked.
 The normal discard threshold remains seven cards.
 
-### Watchtowers
+### Watchtowers (existing strongholds)
 
 `makeJellyStronghold` in `src/lib/scene/pieces-jelly.ts` already draws the stronghold with a tower silhouette.
 The owner approved that silhouette in `docs/design/pieces-jelly-prompt.md`, under **The stronghold**.
@@ -97,11 +98,13 @@ These are proposed fields, not source symbols.
 During a partner activation, `current` holds the partner's id, not the primary player's.
 The new primary field keeps the primary player's id for the phase instruction and dice order.
 So `applyActionInternal` keeps its single `state.current !== actor` check for turn actions.
-`legalFor` already returns nothing for a seat that is not `current`.
+`legalFor` already returns nothing for a seat that is not `current`, except a seat that owes a discard.
+Partner activations never create discards, because partners never roll.
 
-For paired turns, primary seat index `i` acts first; partner index `(i + 3) % n` acts next.
-The partner's `endTurn` makes primary index `(i + 1) % n` the new `current`, whatever the partner's index.
-Increase `turn` only when the primary index wraps to zero.
+For paired turns, the primary player at `players` position `i` acts first.
+The partner at position `(i + 3) % n` acts next.
+The partner's `endTurn` makes the player at position `(i + 1) % n` the new primary player and `current`.
+Increase `turn` only when the primary position wraps to zero.
 Only primary activations roll or resolve production and sevens.
 Partners enter the action phase directly and can end it without taking an action.
 Reject player offers and acceptances during partner activations, including stale offers.
@@ -147,7 +150,8 @@ The game seed picks the starting corner and the spiral direction.
 The classic official layout in `createGame` already picks both from the seed this way.
 That classic branch runs only when `hexes.length === 19`, so expanded games need their own branch.
 Record both skipped wastes and the chosen starting corner in the generated board.
-The random token layout stays a setting (`numberTokens: "random"`, decision `q1141-default`).
+The random token layout stays a setting (`numberTokens: "random"`).
+Source: decision `q1141-default`, as cited in Jarrod's comment 6540477629 on #709.
 Do not describe the random layout as the official letter layout.
 Generate docks from a traced boundary, rather than interpolating nine evenly spaced selections.
 Assert eleven distinct edges, twenty-two distinct endpoint corners, and the exact dock-type multiset.
@@ -168,7 +172,7 @@ There is no separate phone-strip source file.
 
 Recommendation: keep one 44-pixel-high strip, with six equal cells and existing four-pixel gaps.
 Within 416 available pixels, each cell gets 66 pixels; no second row consumes the board hole.
-Each cell keeps its seat number, short name, points, and a marker on the `current` seat.
+Each cell keeps its seat identifier, short name, points, and a marker on the `current` seat.
 Keep full names and counts accessible through each existing player-menu trigger.
 Hide secondary counts before shrinking targets or wrapping the strip.
 Use `shortNames` collision handling for six names, including identical initials.
@@ -207,10 +211,12 @@ Candidate digital swatches are Emberisle choices, not official CATAN RGB values:
 Keep labels in `#1c1915` on `#efeae0`, measuring 14.61:1 contrast.
 Seat swatches remain indicators, never small coloured text.
 White measures 1.02:1 and orange 2.83:1 against `#efeae0`, below the 3:1 rule.
-Give white and orange rail swatches a 1-pixel `#1c1915` outline, which measures 14.61:1.
+Give white and orange rail swatches a 1-pixel `#1c1915` outline.
+The outline measures 14.61:1 against `#efeae0`, 14.85:1 against white and 5.17:1 against orange.
 Keep the dark outline on light pieces and the light rim on dark pieces.
-Give each seat a stable seat number, 1 to 6, beside its colour indicator and in accessible names.
-Repeat the seat number on piece bases and player-menu headings.
+Give each seat a stable seat identifier: a number from 1 to 6 that never changes during a game.
+Show the seat identifier beside its colour indicator and in accessible names.
+Repeat the seat identifier on piece bases and player-menu headings.
 Colour uniqueness alone does not distinguish red/green or orange/brown under colour-vision deficiencies.
 Reject duplicate palette slots on the host; do not accept arbitrary similar hex values.
 How profile favourite and backup colours map onto this palette is open question A.
@@ -253,7 +259,9 @@ Keep player hands private in `viewFor` and `watchView`.
 Public variant, role, and actor metadata may be shared; private fortunes and deck order may not.
 
 `waitedOn`, `armTurns`, and `turnOut` follow `current`, so they follow the partner during a partner activation.
-`waitedOn` reads `legalFor`, which offers nothing to a seat that is not `current`.
+`waitedOn` reads `legalFor`, which offers nothing to a seat that is not `current`, except a seat that owes a discard.
+A seat that owes a discard after a seven is waited on, and its timer runs.
+Partner activations never create discards, because partners never roll.
 When `current` moves to the partner, `armTurns` clears the primary player's window and arms the partner's.
 Each activation gets the configured `TURN_MS` window and `TURN_TOTAL_MS` budget.
 Persist the remaining deadline.
@@ -267,14 +275,18 @@ Current anchors: `chooseBotAction` and `chooseRecoveryAction` in `src/lib/game/a
 `runBots` in `server/host.mjs`; `startAi`, `startHotseat`, and `playAgain` in `src/lib/game/store.ts`.
 
 Let bots occupy any permitted seat without requiring six humans.
-Pass the persisted role to action selection; partner bots may bank trade but never offer player trades or roll.
+Pass the persisted role to action selection.
+Partner bots may bank trade.
+Partner bots never offer player trades or roll.
 Make an unaffordable or blocked bot pass so a partner activation cannot loop forever.
 Keep disconnected-human forced moves distinct from discretionary bot building.
-Exercise every seat index as primary, partner, discard victim, and reconnecting human.
+Exercise every seat identifier as primary, partner, discard victim, and reconnecting human.
 Accepted: expose five/six-seat selectors in hotseat ("Pass this device") and practice.
 Keep today's default practice game.
 Use the same variant descriptor and transition code locally and online.
-Extend `PLAYER_NAMES` with two unique defaults; never create an undefined bot name or reuse the fallback red colour.
+Extend `PLAYER_NAMES` with two unique defaults.
+Never create an undefined bot name.
+Never reuse the fallback red colour.
 
 ### Save, restart, and rejoin compatibility
 
@@ -294,7 +306,8 @@ Treat unknown future formats as unsupported; retain their files for recovery rat
 - Preserve game options such as `wayfarerMode` and `victoryTarget`.
 - Replace all three `recoveryPids` truncations to four with bounds appropriate to the actual room.
 - Rematches preserve the room variant; they never reinterpret an old game because six colours now exist.
-- An absent variant in legacy local state means classic; never infer an expanded game from the new global maximum.
+- An absent variant in legacy local state means classic.
+- Never infer an expanded game from the new global maximum.
 
 Validate before committing migration; a failed conversion must preserve the original file.
 Restart halfway through both primary and partner activations, with purchases and an outstanding discard.
@@ -310,18 +323,21 @@ Jarrod took all five recommendations ([comment 6540477629](https://github.com/ja
 1. Official paired turns. The older special building phase is not used.
 2. Online, hotseat and optional practice support five and six seats. Today's practice default stays.
 3. A watchtower is the existing stronghold, with the same cost and points.
-4. The official six colour families, with a stable seat number for each seat.
-5. The official extension token spiral by default. The random token layout stays a setting (`q1141-default`).
+4. The official six colour families, with stable seat identifiers.
+5. The official extension token spiral by default. The random token layout stays a setting.
+   Jarrod's comment cites decision `q1141-default` for that setting.
 
 Existing three and four seat games keep their saved state and colours.
 
 ## Owner decisions this design must respect
 
 - "The map is always random per game" (2026-10-22). Terrain stays seeded-random, and the seed picks the starting corner.
-- Beacon docks and New fortunes (2026-10-19) stay separate lobby toggles, off by default, in both variants.
-- Each toggle changes the expanded 11 docks and 34 fortunes as it changes the classic sets.
-- With Beacon docks on, one of the five generic 3:1 docks becomes the beacon.
-- With New fortunes on, the deck rule that [#853](https://github.com/jarrodjohnson-gif/emberisle/pull/853) settles applies to the 34-card deck.
+- "Beacon docks and New fortunes. Lobby toggles, off by default." (2026-10-19).
+- Builder assumption: both toggles stay available, and off by default, in both variants.
+- Builder assumption: each toggle changes the expanded 11 docks and 34 fortunes as it changes the classic sets.
+- Builder assumption: with Beacon docks on, one of the five generic 3:1 docks becomes the beacon.
+- Builder assumption: with New fortunes on, the deck rule from the open [#853](https://github.com/jarrodjohnson-gif/emberisle/pull/853) design applies.
+- No owner decision or merged design settles the beacon count or the deck rule yet.
 - "Big design work needs Opus 5.5 or stronger" (2026-10-20). Opus was unavailable, so Codex GPT-6 drafted this design.
 - Claude Opus 5.5 made the desk review edits on 2026-10-31.
 
@@ -336,6 +352,9 @@ B. Question: is the room and rematch flow right?
    Recommendation: the host fixes the variant when opening the room, as with wayfarer mode.
    An expanded rematch with fewer than five live seats is refused; the game and seats stay unchanged.
    Alternative: let that rematch fall back to a classic game when three or four seats remain.
+   Choosing the alternative would change two rules in this design.
+   **Lobby and network limits** says changing variants requires another room.
+   **Save, restart, and rejoin compatibility** says rematches preserve the room variant.
 
 ## Child implementation specifications, after decisions
 
@@ -350,7 +369,7 @@ Each child rechecks active file reservations before claiming work.
 | `lane:rules` | Expanded turn state | Implement the approved actor sequence; prove five/six-seat cycles, permissions, purchase cooldowns, and immediate win behavior. | S |
 | `lane:rules` | Expanded bot policy | Prove legal extra actions, pass when blocked, mixed human/bot completion, and termination across seeded five/six-seat games. | S |
 | `lane:board` | Expanded coast and camera | Derive shoreline, docks, and camera bounds from geometry; prove every extreme coast corner fits and remains pickable. | S |
-| `lane:hud` | Six-seat identity | Implement the approved palette, stable seat numbers, and six-cell strip; prove touch targets, collision-free names, and contrast. | S |
+| `lane:hud` | Six-seat identity | Implement the approved palette, stable seat identifiers, and six-cell strip; prove touch targets, collision-free names, and contrast. | S |
 | `lane:hud` | Extra-turn controls and local selectors | Show the actual actor and legal controls; prove hotseat/practice selection and primary/partner interaction where approved. | S |
 | `lane:net` | Compatible room persistence | Add validated shape-2 migration and expanded snapshots; prove unchanged classic restoration and fifth/sixth-seat recovery after restart. | S |
 | `lane:net` | Expanded lobby and admission | Enforce capacity, unique palettes, and client capabilities; prove joins, watchers, bots, start, rematch, and old-client behavior. | S |
