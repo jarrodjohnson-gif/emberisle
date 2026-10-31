@@ -338,7 +338,7 @@ async function bankMotion(page, rate, tag) {
     assert.equal(cue.text.replace(/−/g, "-").startsWith(loss ? `-${rate}` : "+1"), true, `${tag}: ${key} shows the actual signed delta`);
     assert.equal(cue.readable.visible, true, `${tag}: ${key} remains on screen while readable`);
     assert.equal(cue.readable.opacity, 1, `${tag}: ${key} remains fully readable through the middle of its lifetime`);
-    assert.equal(cue.hold.opacity, 1, `${tag}: ${key} preserves its readable hold through 2200ms`);
+    assert.equal(cue.hold.opacity, 1, `${tag}: ${key} preserves its readable hold through 2500ms`);
     if (actual.reduced) {
       assert.equal(cue.animations, 0, `${tag}: ${key} stays static with reduced motion`);
       assert.equal(cue.readable.y, 0, `${tag}: ${key} has no reduced-motion translation`);
