@@ -363,7 +363,7 @@ async function bankMotion(page, rate, tag) {
   assert.equal(gain.background, gain.palette.resource, `${tag}: gain fills with the actual good's full color`);
   assert.ok(gain.shadow.includes(gain.palette.deep), `${tag}: gain retains its dark ring and shadow`);
   assert.equal(loss.tabBackground, loss.palette.paper, `${tag}: loss tab remains hollow on paper`);
-  assert.equal(loss.tabColor, loss.palette.loss, `${tag}: loss tab uses the loss color`);
+  assert.equal(loss.tabColor, loss.palette.ink, `${tag}: loss tab uses the dark ink, as the gain tab does`);
   assert.ok(loss.tabShadow.includes(loss.palette.loss) && loss.shadow !== "none", `${tag}: loss retains its red tab outline and card ring`);
   await page.waitForFunction(() => Boolean(window.__tradeTabsBankMotion?.endedAt));
   const lifetime = await page.evaluate(() => window.__tradeTabsBankMotion.endedAt - window.__tradeTabsBankMotion.observedAt);
