@@ -61,7 +61,7 @@
    or dip is WAAPI (Hand.tsx). Under reduced motion every animation is off (styles.css), so the cue stands still. */
 @keyframes goods-cue {
   0% { opacity: 0; }
-  4%, 83.3% { opacity: 1; }
+  4%, 83.3334% { opacity: 1; }
   100% { opacity: 0; }
 }
 .goods-lit, .goods-lost, .goods-tab { position: absolute; pointer-events: none; animation: goods-cue 3000ms var(--ease-out) both; }
