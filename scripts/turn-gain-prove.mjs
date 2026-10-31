@@ -7,9 +7,9 @@
 //   aria-current); on a bot's turn the banner reads "Wait for {bot} …" and there is no Roll;
 // - a roll steered to pay the person shows its goods on the hand only (#773): one +N tab (data-testid="resource-flash") per
 //   good gained, with the right good and amount, on that good's card, which fills with the good's colour and lifts (a
-//   translateY keyframe); the cues of one roll start together; each readable for at least 1.2 s and gone within 2.6 s
-//   (2200 ms held, 300 ms fade); nothing ever shows over the island (no "gain-float", the island text that #773 removed);
-// - a bank trade shows the ore given ("−4", or the harbour's rate) as a hollow red tab on a dipped card and "+1" on the
+//   translateY keyframe); the cues of one roll start together; each readable for at least 1.2 s and gone within 3.1 s
+//   (2500 ms held, 500 ms fade); nothing ever shows over the island (no "gain-float", the island text that #773 removed);
+// - a bank trade shows the ore given ("−4", or the harbour's rate) as a light pill on a dipped card and "+1" on the
 //   lifted Wheat card; a state where only another seat gains shows nothing, and so does a watcher's; every cue shown in the
 //   whole game is one of the person's own hand changes;
 // - each tab sits centred on its own card, inside the safe area, with nothing covering or clipping it, and its text is at
@@ -28,7 +28,7 @@
 // page: software GL frames are too sparse to time it by sampling. For the placement and contrast measures only, the
 // moment being measured is held on screen (__hold), and "Your turn" is timed again on a later turn left untouched.
 // Expiry also reports measured main-thread stalls, as roll-moment-prove does: a software-GL screenshot may block timers.
-// The 2600 ms running-time limit remains, with a separate 3500 ms raw cap and an exact 2500 ms cue-duration check.
+// The 3100 ms running-time limit (2600 before #825), with a separate 4000 ms raw cap and an exact 3000 ms cue-duration check.
 // Run: npm run turn-gain-prove (ONLY=390x844, reduced or hotseat or reconnect runs one part). Port from VITE_PORT, default 8476.
 // Screenshots to test-results/turn-gain-*.png.
 import { existsSync, mkdirSync } from "node:fs";
@@ -44,7 +44,8 @@ const VIEWS = [
   { width: 844, height: 390, touch: true, insets: { top: 0, right: 47, bottom: 21, left: 47 } },
 ];
 const RED = "rgb(138, 34, 25)";
-const WHITE = "rgb(255, 255, 255)";
+const INK = "rgb(38, 61, 60)";
+const RAISED = "rgb(255, 255, 255)";
 // Each good's colour and side colour (styles.css :root): a gain fills the card with the first and its tab is the second.
 const PAINT = {
   timber: ["rgb(47, 106, 79)", "rgb(23, 61, 53)"],
@@ -53,8 +54,8 @@ const PAINT = {
   grain: ["rgb(227, 196, 98)", "rgb(140, 114, 45)"],
   ore: ["rgb(99, 116, 138)", "rgb(65, 77, 91)"],
 };
-// A cue's whole life on the card: FLASH_MS (2200) held, then a 300 ms fade (Hand.tsx CUE_MS).
-const CUE_MS = 2500;
+// A cue's whole life on the card: FLASH_MS (2500) held, then a 500 ms fade (Hand.tsx CUE_MS).
+const CUE_MS = 3000;
 const RESOURCE_LABEL = { timber: "Wood", clay: "Brick", wool: "Sheep", grain: "Wheat", ore: "Stone" };
 mkdirSync("test-results", { recursive: true });
 
@@ -370,8 +371,8 @@ async function tabs(page, tag, what, lay) {
     t.style.pointerEvents = "auto";
     const hit = document.elementFromPoint(a.left + a.width / 2, a.top + 1);
     t.style.pointerEvents = "";
-    // The +N tab stands 18 px above the edge, the hollow −N tab 19 px (its 1 px outline sits outside the card's edge).
-    return { r: t.dataset.resource, card: card.dataset.testid, box: a.toJSON(), off: a.left + a.width / 2 - (c.left + c.width / 2), above: c.top - a.top, want: t.dataset.sign === "+" ? 18 : 19, top: hit === t || t.contains(hit) };
+    // #825: both pills stand 20 px above the edge (24 px on the wide fine-pointer layout).
+    return { r: t.dataset.resource, card: card.dataset.testid, box: a.toJSON(), off: a.left + a.width / 2 - (c.left + c.width / 2), above: c.top - a.top, want: matchMedia("(min-width: 1280px) and (pointer: fine) and (min-height: 481px)").matches ? 24 : 20, top: hit === t || t.contains(hit) };
   }));
   check(got.length > 0 && got.every((t) => t.card === `resource-${t.r}`), `${tag}: ${what} sit on their own goods' cards`, got.map((t) => [t.r, t.card]));
   check(got.every((t) => Math.abs(t.off) <= 0.5 && Math.abs(t.above - t.want) <= 0.5), `${tag}: ${what} are centred on their cards and grow out of the top edge`, got.map((t) => [t.off.toFixed(2), t.above.toFixed(2)]));
@@ -382,7 +383,7 @@ async function tabs(page, tag, what, lay) {
 
 // WCAG contrast of the element's text colour against every pixel behind its text: the element is frozen at full opacity,
 // screenshotted with its text and icon transparent (the glass and the board under it stay), and the lowest ratio counts.
-async function contrast(page, testid, index = 0) {
+async function contrast(page, testid, index = 0, band = 0.65) {
   const loc = page.locator(`[data-testid="${testid}"]`).nth(index);
   const color = await loc.evaluate((el) => {
     for (const a of el.getAnimations()) {
@@ -399,7 +400,7 @@ async function contrast(page, testid, index = 0) {
     el.style.removeProperty("color");
     for (const k of el.children) k.style.visibility = "";
   });
-  const pixels = await page.evaluate(async (b64) => {
+  const pixels = await page.evaluate(async ({ b64, band }) => {
     const img = new Image();
     img.src = `data:image/png;base64,${b64}`;
     await img.decode();
@@ -407,11 +408,11 @@ async function contrast(page, testid, index = 0) {
     const x = c.getContext("2d");
     x.drawImage(img, 0, 0);
     // The middle band, where the glyphs are: inset from the rounded corners and the icon disc.
-    const d = x.getImageData(Math.floor(img.width * 0.3), Math.floor(img.height * 0.25), Math.max(1, Math.floor(img.width * 0.65)), Math.max(1, Math.floor(img.height * 0.5))).data;
+    const d = x.getImageData(Math.floor(img.width * 0.3), Math.floor(img.height * 0.25), Math.max(1, Math.floor(img.width * band)), Math.max(1, Math.floor(img.height * 0.5))).data;
     const out = [];
     for (let i = 0; i < d.length; i += 4) out.push([d[i], d[i + 1], d[i + 2]]);
     return out;
-  }, png.toString("base64"));
+  }, { b64: png.toString("base64"), band });
   const lin = (v) => ((v /= 255) <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
   const L = ([r, g, b]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
   const text = color.match(/\d+/g).slice(0, 3).map(Number);
@@ -491,15 +492,15 @@ async function practice(view) {
     const got = roll.lines.map((l) => `${l.r}+${l.d}`).sort();
     console.log(`${tag}: rolled ${pip}; own ${JSON.stringify(want)}; cues ${JSON.stringify(roll.lines.map((l) => `${RESOURCE_LABEL[l.r]} ${l.text}`))}`);
     check(got.length > 0 && got.join() === want.join(), `${tag}: one cue per good the roll paid, right good and amount`, { want, got });
-    check(roll.lines.every((l) => l.text === `+${l.d}` && l.color === WHITE && l.bg === PAINT[l.r][1]), `${tag}: each reads "+N" in white on its good's side colour`, roll.lines.map((l) => [l.r, l.text, l.color, l.bg]));
+    check(roll.lines.every((l) => l.text === `+${l.d}` && l.color === INK && l.bg === RAISED), `${tag}: each reads "+N" in dark ink on the white pill`, roll.lines.map((l) => [l.r, l.text, l.color, l.bg]));
     check(roll.lines.every((l) => l.lit?.fill === PAINT[l.r][0] && !l.lost), `${tag}: each gained card fills with its good's colour`, roll.lines.map((l) => [l.r, l.lit?.fill]));
     check(await page.evaluate(() => window.__floats) === 0, `${tag}: no "+N Good" text over the island`);
     const spans = roll.lines.map(readable);
     check(spans.every((s) => s >= 1200), `${tag}: each cue readable for at least 1.2 s`, spans.map((s) => s.toFixed(0)));
     const expiry = roll.lines.map(l => ({ raw: l.gone - l.at, stalled: l.stalled, running: l.gone - l.at - l.stalled }));
-    check(roll.lines.every(l => l.anim?.duration === CUE_MS && l.lit?.animations === 1 && l.move?.duration === CUE_MS), `${tag}: the tab, the fill and the lift each run exactly 2500 ms (2200 ms held, 300 ms fade)`, roll.lines.map((l) => [l.anim?.duration, l.move?.duration]));
-    check(expiry.every(t => t.running <= 2600), `${tag}: the batch has left within 2.6 s, excluding measured stalls`, expiry);
-    check(expiry.every(t => t.raw <= 3500), `${tag}: raw expiry stays below the 3.5 s guard`, expiry);
+    check(roll.lines.every(l => l.anim?.duration === CUE_MS && l.lit?.animations === 1 && l.move?.duration === CUE_MS), `${tag}: the tab, the fill and the lift each run exactly 3000 ms (2500 ms held, 500 ms fade)`, roll.lines.map((l) => [l.anim?.duration, l.move?.duration]));
+    check(expiry.every(t => t.running <= 3100), `${tag}: the batch has left within 3.1 s, excluding measured stalls`, expiry);
+    check(expiry.every(t => t.raw <= 4000), `${tag}: raw expiry stays below the 4 s guard`, expiry);
     if (roll.lines.length > 1) {
       const starts = roll.lines.map((l) => l.at);
       check(Math.max(...starts) - Math.min(...starts) <= 100, `${tag}: the cues of one roll start together`, starts.map((t) => (t - starts[0]).toFixed(0)));
@@ -526,14 +527,14 @@ async function practice(view) {
     await tabs(page, `${tag} trade`, "the trade's tabs", tradeLay);
     const trade = await page.evaluate((n) => window.__lines.slice(n).map((l) => ({ r: l.r, text: l.text, color: l.color, bg: l.bg, lit: l.lit?.fill ?? null, lost: !!l.lost, move: l.move?.keyframes })), n1);
     const gave = await page.evaluate((o) => -window.__own.slice(o).find((x) => x.r === "ore").d, o1);
-    const shades = [await contrast(page, "resource-flash", 0), await contrast(page, "resource-flash", 1)];
+    const shades = [await contrast(page, "resource-flash", 0, 0.5), await contrast(page, "resource-flash", 1, 0.5)];
     await page.evaluate(() => window.__release());
     const stone = trade.find((l) => l.r === "ore");
     const wheat = trade.find((l) => l.r === "grain");
-    check(traded && trade.length === 2 && stone?.text === `−${gave}` && stone.color === RED && stone.bg === "rgb(255, 249, 240)" && stone.lost && !stone.lit, `${tag}: a bank trade shows −${gave} on Stone as a hollow red tab, the card ringed red`, trade);
-    check(wheat?.text === "+1" && wheat.bg === PAINT.grain[1] && wheat.lit === PAINT.grain[0], `${tag}: and +1 on the filled Wheat card`, wheat);
+    check(traded && trade.length === 2 && stone?.text === `−${gave}` && stone.color === "rgb(255, 255, 255)" && stone.bg === RED && stone.lost && !stone.lit, `${tag}: a bank trade shows −${gave} on Stone as a red pill in white, the card ringed red`, trade);
+    check(wheat?.text === "+1" && wheat.bg === RAISED && wheat.lit === PAINT.grain[0], `${tag}: and +1 on the filled Wheat card`, wheat);
     check(stone?.move?.some((k) => /translateY\(2px\)/.test(k ?? "")) && wheat?.move?.some((k) => /translateY\(-/.test(k ?? "")), `${tag}: the given card dips and the received card lifts`, { stone: stone?.move, wheat: wheat?.move });
-    for (const c of shades) check(c.min >= 4.5, `${tag}: ${c.color === RED ? "loss" : "gain"} tab text ≥ 4.5:1 against the pixels behind it`, { color: c.color, min: c.min.toFixed(2), pixels: c.pixels });
+    for (const c of shades) check(c.min >= 4.5, `${tag}: ${c.color === INK ? "gain" : "loss"} tab text ≥ 4.5:1 against the pixels behind it`, { color: c.color, min: c.min.toFixed(2), pixels: c.pixels });
     await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
 
     // Another seat's goods are never shown.
@@ -618,7 +619,7 @@ async function practice(view) {
     // Over the whole game: every turn moment was the person's roll; every line was one of the person's own changes.
     const all = await page.evaluate(() => ({ turns: window.__turns.map((t) => ({ current: t.current, localId: t.localId, phase: t.phase })), lines: window.__lines.map((l) => ({ r: l.r, d: l.d, at: l.at })), own: window.__own }));
     check(all.turns.length >= 2 && all.turns.every((t) => t.current === t.localId && t.phase === "roll"), `${tag}: every turn moment was on the person's own roll`, all.turns.length);
-    const stray = all.lines.filter((l) => !all.own.some((o) => o.r === l.r && o.d === l.d && o.at <= l.at && l.at - o.at < 2500));
+    const stray = all.lines.filter((l) => !all.own.some((o) => o.r === l.r && o.d === l.d && o.at <= l.at && l.at - o.at < 3000));
     check(stray.length === 0, `${tag}: every cue shown was one of the person's own hand changes`, stray);
     // The turn moment no longer waits on gains (#773: useFloatsUp is gone), so a cue may be up with it; it never covers one.
     const clash = await page.evaluate(() => window.__turns.flatMap((t) => window.__lines.filter((l) => l.at < (t.gone ?? Infinity) && t.at < (l.gone ?? Infinity)).filter((l) => t.frames.some((a) => l.frames.some((b) => Math.abs(a.t - b.t) < 50 && a.box.left < b.box.right && b.box.left < a.box.right && a.box.top < b.box.bottom && b.box.top < a.box.bottom))).map((l) => l.text)));

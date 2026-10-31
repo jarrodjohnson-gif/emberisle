@@ -280,7 +280,7 @@ async function armBankMotion(page, rate) {
         background: firstStyle.backgroundColor, shadow: firstStyle.boxShadow,
         tabColor: tabStyle.color, tabBackground: tabStyle.backgroundColor, tabShadow: tabStyle.boxShadow,
         palette: { resource: color(cardStyle.getPropertyValue("--c")), deep: color(cardStyle.getPropertyValue("--deep")),
-          loss: color(cardStyle.getPropertyValue("--loss")), paper: color(cardStyle.getPropertyValue("--paper")) } };
+          loss: color(cardStyle.getPropertyValue("--loss")), ink: color(cardStyle.getPropertyValue("--ink")), paper: color(cardStyle.getPropertyValue("--paper")) } };
       const at = (time) => {
         if (animation) animation.currentTime = time;
         if (movement) movement.currentTime = time;
@@ -295,7 +295,7 @@ async function armBankMotion(page, rate) {
       const duration = Number(timing.duration), delay = Number(timing.delay);
       const sampled = { ...result, duration, delay, movementDuration: movement?.effect.getTiming().duration,
         start: at(delay), peak: at(delay + 120), readable: at(delay + duration / 2),
-        hold: at(delay + 2200), end: at(delay + duration) };
+        hold: at(delay + 2500), end: at(delay + duration) };
       animation.currentTime = delay + duration / 2;
       if (movement) movement.currentTime = delay + duration / 2;
       return sampled;
@@ -338,13 +338,13 @@ async function bankMotion(page, rate, tag) {
     assert.equal(cue.text.replace(/−/g, "-").startsWith(loss ? `-${rate}` : "+1"), true, `${tag}: ${key} shows the actual signed delta`);
     assert.equal(cue.readable.visible, true, `${tag}: ${key} remains on screen while readable`);
     assert.equal(cue.readable.opacity, 1, `${tag}: ${key} remains fully readable through the middle of its lifetime`);
-    assert.equal(cue.hold.opacity, 1, `${tag}: ${key} preserves its readable hold through 2200ms`);
+    assert.equal(cue.hold.opacity, 1, `${tag}: ${key} preserves its readable hold through 2500ms`);
     if (actual.reduced) {
       assert.equal(cue.animations, 0, `${tag}: ${key} stays static with reduced motion`);
       assert.equal(cue.readable.y, 0, `${tag}: ${key} has no reduced-motion translation`);
       assert.equal(cue.cardAnimations, 0, `${tag}: ${key} has no reduced-motion card movement`);
     } else {
-      assert.equal(cue.duration, 2500, `${tag}: ${key} holds 2200ms then fades for 300ms`);
+      assert.equal(cue.duration, 3000, `${tag}: ${key} holds 2500ms then fades for 500ms`);
       const expectedName = "goods-cue";
       assert.equal(cue.animationName, expectedName, `${tag}: the genuine cue uses its signed animation`);
       const [start, end] = [0, 0];
@@ -352,7 +352,7 @@ async function bankMotion(page, rate, tag) {
         `${tag}: ${key} starts and settles at rest ${JSON.stringify(cue)}`);
       assert.ok(Math.abs(cue.peak.y - trajectories[key]) < 0.1 && Math.abs(cue.hold.y - trajectories[key]) < 0.1,
         `${tag}: ${key} lifts for gain or dips for loss through the full hold ${JSON.stringify(cue)}`);
-      if (key.startsWith("card")) assert.equal(cue.movementDuration, 2500, `${tag}: ${key} card movement shares the fill clock`);
+      if (key.startsWith("card")) assert.equal(cue.movementDuration, 3000, `${tag}: ${key} card movement shares the fill clock`);
       assert.equal(cue.end.opacity, 0, `${tag}: ${key} fades after its reading window`);
     }
   }
@@ -362,12 +362,13 @@ async function bankMotion(page, rate, tag) {
   const gain = actual.cues.cardGain, loss = actual.cues.cardLoss;
   assert.equal(gain.background, gain.palette.resource, `${tag}: gain fills with the actual good's full color`);
   assert.ok(gain.shadow.includes(gain.palette.deep), `${tag}: gain retains its dark ring and shadow`);
-  assert.equal(loss.tabBackground, loss.palette.paper, `${tag}: loss tab remains hollow on paper`);
-  assert.equal(loss.tabColor, loss.palette.loss, `${tag}: loss tab uses the loss color`);
+  assert.equal(gain.tabColor, gain.palette.ink, `${tag}: gain tab text is the dark ink`);
+  assert.equal(loss.tabBackground, loss.palette.loss, `${tag}: loss tab is the loss red`);
+  assert.equal(loss.tabColor, "rgb(255, 255, 255)", `${tag}: loss tab text is white on the red`);
   assert.ok(loss.tabShadow.includes(loss.palette.loss) && loss.shadow !== "none", `${tag}: loss retains its red tab outline and card ring`);
   await page.waitForFunction(() => Boolean(window.__tradeTabsBankMotion?.endedAt));
   const lifetime = await page.evaluate(() => window.__tradeTabsBankMotion.endedAt - window.__tradeTabsBankMotion.observedAt);
-  assert.ok(lifetime >= 2200, `${tag}: actual DOM cues retain the full 2200ms hold, including reduced motion (${lifetime}ms)`);
+  assert.ok(lifetime >= 2500, `${tag}: actual DOM cues retain the full 2500ms hold, including reduced motion (${lifetime}ms)`);
 }
 
 async function tableAndRoutes(page, tag, motion) {
@@ -654,7 +655,7 @@ async function ratesAndRejections(page, tag) {
     assert.deepEqual(await sent(page), [{ kind: "dispatch", action: { type: "bankTrade", give: "timber", want: "ore" } }], `${tag}: ${rate}:1 sends one bank action`);
     await bankMotion(page, rate, `${tag} ${rate}:1`);
   }
-  console.log(`${tag}: live 4/3/2:1 quotes, invalid exchanges refused, real bank conservation, V1 signed tabs, gains lift/losses dip, 2200ms hold + 300ms fade, no island text (reduced motion static)`);
+  console.log(`${tag}: live 4/3/2:1 quotes, invalid exchanges refused, real bank conservation, V1 signed tabs, gains lift/losses dip, 2500ms hold + 500ms fade, no island text (reduced motion static)`);
 }
 
 async function modes(page, tag) {
