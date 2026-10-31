@@ -1,6 +1,6 @@
 // #830: placing a home or stronghold, the legal corners glow. In the browser, at 1280x720 and 390x844 (touch):
 // - armed (the setup home, then an armed Stronghold) every legal corner wears a ring at least 0.36 across in world units,
-//   a dark outline and a warm orange-white disc (the paying-piece glow), and the ring + outline show on screen with a light/dark contrast of at least 3:1 on every
+//   a dark outline and a white disc, and the ring + outline show on screen with a light/dark contrast of at least 3:1 on every
 //   terrain a legal corner sits on (median over that terrain's corners, read back from the drawn frame) and beat the same
 //   corners unarmed by a margin;
 // - the marks are seen: a pixel diff of the drawn frame with the marks shown and hidden changes at least MIN_CHANGED of the
@@ -259,6 +259,14 @@ for (const [w, h, touch] of [
   await drawn(page, 1);
   const g2 = await glowAt();
   check(`${tag}: reduced motion holds a static glow`, g1.length > 0 && g1.every((x, i) => x === g2[i] && x === 1), { first: g1[0], later: g2[0] });
+  // Owner q848-glow-v2 ("Keep it white"): every corner ring glows plain white and every disc is plain white.
+  const colours = await page.evaluate(() => {
+    const kids = window.__isle.marks.children;
+    const rings = kids.filter((m) => m.userData.baseGlow !== undefined).map((m) => m.material.emissive.getHex());
+    const discs = kids.filter((m) => m.userData.kind === "vertex-discs").map((m) => m.material.color.getHex());
+    return { rings, discs };
+  });
+  check(`${tag}: corner rings glow white and their discs are white`, colours.rings.length > 0 && colours.discs.length > 0 && [...colours.rings, ...colours.discs].every((c) => c === 0xffffff), { rings: [...new Set(colours.rings)].map((c) => c.toString(16)), discs: [...new Set(colours.discs)].map((c) => c.toString(16)) });
   await page.emulateMedia({ reducedMotion: "no-preference" });
 
   // Setup road: legal road paths glow with bars (#830)
