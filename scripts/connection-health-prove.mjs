@@ -39,7 +39,7 @@ if (process.argv.includes("--host-fixture")) {
   const dir = mkdtempSync(path.join(tmpdir(), "emberisle-health-"));
   const host = spawn(process.execPath, [fileURLToPath(import.meta.url), "--host-fixture"], {
     cwd: fileURLToPath(new URL("../", import.meta.url)),
-    env: { ...process.env, PORT: "0", ROOMS_DIR: dir, PROFILES_DIR: path.join(dir, "profiles"), SAVE_MS: "20", TURN_MS: "120000", PING_MS: "60000" },
+    env: { ...process.env, PORT: "0", ROOMS_DIR: dir, RESULTS_DIR: `${dir}/results`, PROFILES_DIR: path.join(dir, "profiles"), SAVE_MS: "20", TURN_MS: "120000", PING_MS: "60000" },
     stdio: ["ignore", "pipe", "pipe", "ipc"],
   });
   host.stderr.on("data", d => process.stderr.write(d));

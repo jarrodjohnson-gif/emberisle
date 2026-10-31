@@ -11,7 +11,7 @@ mkdirSync(out, { recursive: true });
 const rooms = mkdtempSync(path.join(tmpdir(), "emberisle-1103-rooms-"));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR: rooms },
+  env: { ...process.env, PORT: "0", ROOMS_DIR: rooms, RESULTS_DIR: `${rooms}/results` },
 });
 const hostPort = await new Promise((resolve, reject) => {
   host.on("error", reject);
