@@ -848,11 +848,12 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       const cl = new THREE.Vector3(corner.x, 0, corner.z).applyMatrix4(inverse);
       const x0 = Math.sign(cl.x) * (W / 2 + 0.02), z0 = v0 - 0.01;
       const dx = cl.x - x0, dz = cl.z - z0;
-      const a = Math.atan2(dx, dz);
-      for (let k = 0; k < 4; k++) {
-        const u = (k + 0.5) / 4;
-        P(K.part(box, "#a46e42", [x0 + dx * u, DECK + ramp * u, z0 + dz * u], [0, a, 0], [0.05, 0.008, 0.038]));
-      }
+      // One continuous walk from the pier deck's edge to the corner, rising from DECK to the hex surface: yaw to the corner, then
+      // pitch up along its own length.
+      const run = Math.hypot(dx, dz), len = Math.hypot(run, ramp);
+      const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.atan2(dx, dz), 0)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.atan2(ramp, run), 0, 0)));
+      const e = new THREE.Euler().setFromQuaternion(q);
+      P(K.part(box, "#a46e42", [x0 + dx / 2, DECK + ramp / 2, z0 + dz / 2], [e.x, e.y, e.z], [0.07, 0.01, len]));
     }
 
     // The ship, moored alongside the T-head's ship side, bow to the shore.

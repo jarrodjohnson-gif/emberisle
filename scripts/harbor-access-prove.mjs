@@ -1,4 +1,4 @@
-// #640: harbor corner access — boardwalk planks from each pier to its two corners, ramping up to the hex surface.
+// #640: harbor corner access — one continuous boardwalk from each pier to each of its two corners, ramping up to the hex surface.
 // Nothing tall (> 0.36) within 0.14 of a corner.
 // Run: npm run harbor-access-prove
 import { existsSync, mkdirSync } from "node:fs";
@@ -6,7 +6,7 @@ import { chromium } from "playwright";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;
-const LAND_TOL = 0.04;
+const LAND_TOL = 0.02;
 // The corners whose highest boardwalk vertex is more than `tol` from the hex surface `top`, or missing.
 function plankLandings(tops, top, tol) {
   return tops.filter((t) => typeof t.y !== "number" || !Number.isFinite(t.y) || Math.abs(t.y - top) > tol).map((t) => t.vid);
