@@ -111,6 +111,9 @@ const VERTEX_RING = { radius: 0.2, tube: 0.04, outline: 0.025, outlineColor: 0x1
 // high for the outpost, 0.086 for the keep (pieces-jelly.ts: (0.04 + 0.035) * 1.15). The ring (outer radius 0.265 with its
 // outline, 0.53 across, under HEX_SIZE / 2) cannot widen past it, so on those corners the mark lifts to rest on the base.
 const PIECE_BASE_TOP = 0.09;
+// The warm orange-white glow a paying piece takes on a roll. The legal-corner rings and discs use the same glow (#830, owner
+// direction q848-glow: "use our other glow we already use elsewhere"), so both read as one family.
+const WARM_GLOW = 0xffd27a;
 
 // The two views in play (docs/design/camera-light.md). Overhead: a frustum and a look-at point from the fit to the HUD hole,
 // and the eye on an orbit around that point, ORBIT_RADIUS out. Diorama (the default, #597): a perspective eye on an orbit
@@ -671,7 +674,7 @@ export class IsleRenderer {
         }
         if (mesh.userData.payerMaterial) {
           const mat = mesh.material as THREE.MeshStandardMaterial;
-          mat.emissive.set(0xffd27a);
+          mat.emissive.set(WARM_GLOW);
           mat.emissiveIntensity = calm && active ? 0.35 : 0;
         }
       });
@@ -1901,8 +1904,8 @@ export class IsleRenderer {
     const seat = new THREE.Color(state.players.find((p) => p.id === state.current)?.color ?? "#fff6e8");
     // The glow leans toward cream so a dark seat (Pine) still reads on forest at the pulse trough; the hue stays the seat's.
     const glow = seat.clone().lerp(new THREE.Color(0xfff6e8), 0.35);
-    // The corner rings lean further to cream (#830); the path bars keep the glow above.
-    const ringGlow = seat.clone().lerp(new THREE.Color(0xfff6e8), 0.5);
+    // The corner rings glow with the paying-piece warm glow (#830); the path bars keep the seat glow above.
+    const ringGlow = new THREE.Color(WARM_GLOW);
 
     const legalVertices = state.vertices.filter((v) => vset.has(v.id));
     if (legalVertices.length > 0) {
@@ -1914,7 +1917,7 @@ export class IsleRenderer {
       outlines.userData = { kind: "vertex-outlines" };
 
       const discGeo = new THREE.CircleGeometry(VERTEX_RING.radius, 32);
-      const discMat = new THREE.MeshBasicMaterial({ color: 0xfff6e8, transparent: true, opacity: 0.3, depthWrite: false, depthTest: false });
+      const discMat = new THREE.MeshBasicMaterial({ color: WARM_GLOW, transparent: true, opacity: 0.3, depthWrite: false, depthTest: false });
       const discs = new THREE.InstancedMesh(discGeo, discMat, legalVertices.length);
       discs.renderOrder = 99;
       discs.userData = { kind: "vertex-discs" };

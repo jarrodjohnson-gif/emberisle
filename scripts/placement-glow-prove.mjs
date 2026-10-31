@@ -1,6 +1,6 @@
 // #830: placing a home or stronghold, the legal corners glow. In the browser, at 1280x720 and 390x844 (touch):
 // - armed (the setup home, then an armed Stronghold) every legal corner wears a ring at least 0.36 across in world units,
-//   a dark outline and a cream disc, and the ring + outline show on screen with a light/dark contrast of at least 3:1 on every
+//   a dark outline and a warm orange-white disc (the paying-piece glow), and the ring + outline show on screen with a light/dark contrast of at least 3:1 on every
 //   terrain a legal corner sits on (median over that terrain's corners, read back from the drawn frame) and beat the same
 //   corners unarmed by a margin;
 // - the marks are seen: a pixel diff of the drawn frame with the marks shown and hidden changes at least MIN_CHANGED of the
