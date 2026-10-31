@@ -663,6 +663,9 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       });
     }
     const north = d.mz < -0.7;
+    // #1158: goods on every pier that faces north at all (d.mz < -0.4, about 4 piers a board) sit 0.14 up on a skid, above
+    // the crest shadow. Only the piers facing mostly north (d.mz < -0.7) also get the longer reach below.
+    const lift = d.mz < -0.4 ? 0.14 : 0;
     const v0 = 0.1;
     const v1 = wv + (north ? 0.74 : 0.5);
     const len = v1 - v0;
@@ -722,9 +725,9 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     P(K.part(K.cyl(1, 1, 8), "#3a3430", [lamp[0], DECK + 0.07, lamp[2]], [0, 0, 0], [0.006, 0.14, 0.006]));
     P(K.part(K.cyl(0.6, 1, 8), "#2a2622", [lamp[0], DECK + 0.158, lamp[2]], [0, 0, 0], [0.016, 0.012, 0.016]));
     add(glowParts, K.part(K.sphere(8), "#ffe1a0", [lamp[0], DECK + 0.142, lamp[2]], [0, 0, 0], [0.011, 0.014, 0.011]));
-    P(K.part(K.cyl(1, 1, 8), "#6a4a30", [-shipSide * 0.08, DECK + 0.04, v1 - 0.12], [0, 0, 0], [0.005, 0.08, 0.005]));
-    P(K.part(new THREE.TorusGeometry(1, 0.32, 6, 14), "#f07a3a", [-shipSide * 0.08 - 0.008 * -shipSide, DECK + 0.06, v1 - 0.12], [0, Math.PI / 2, 0], [0.022, 0.022, 0.022]));
-    for (let k = 0; k < 4; k++) P(K.part(K.sphere(6), "#f4efe4", [-shipSide * 0.08 + 0.002 * shipSide, DECK + 0.06 + Math.sin((k * Math.PI) / 2 + 0.78) * 0.022, v1 - 0.12 + Math.cos((k * Math.PI) / 2 + 0.78) * 0.022], [0, 0, 0], [0.006, 0.006, 0.006]));
+    P(K.part(K.cyl(1, 1, 8), "#6a4a30", [-shipSide * 0.08, DECK + lift + 0.04, v1 - 0.12], [0, 0, 0], [0.005, 0.08, 0.005]));
+    P(K.part(new THREE.TorusGeometry(1, 0.32, 6, 14), "#f07a3a", [-shipSide * 0.08 - 0.008 * -shipSide, DECK + lift + 0.06, v1 - 0.12], [0, Math.PI / 2, 0], [0.022, 0.022, 0.022]));
+    for (let k = 0; k < 4; k++) P(K.part(K.sphere(6), "#f4efe4", [-shipSide * 0.08 + 0.002 * shipSide, DECK + lift + 0.06 + Math.sin((k * Math.PI) / 2 + 0.78) * 0.022, v1 - 0.12 + Math.cos((k * Math.PI) / 2 + 0.78) * 0.022], [0, 0, 0], [0.006, 0.006, 0.006]));
     for (const v of [tv - 0.03, v1 - 0.1, v1 - 0.2]) P(K.part(new THREE.TorusGeometry(1, 0.42, 6, 12), "#2a2828", [shipSide * (W / 2 + 0.012), DECK - 0.02, v], [0, Math.PI / 2, 0], [0.016, 0.016, 0.016]));
 
     // The dockhouse at the pier's root, on the side away from the ship, on low piles: plank walls, a pitched roof, a door, a
@@ -752,12 +755,7 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     const S = 2.5;
     const stride = Math.min(0.65, (len - 0.2) / 0.64);
     const gv = Math.max(v0 + 0.22, v1 - 0.48 * stride);
-    // #1158: goods on every north-facing pier (north and the two north-corner piers) sit on a skid above the crest shadow.
-    const lift = d.mz < -0.4 ? 0.14 : 0;
     const gy = DECK + lift + 0.02 * (lift ? 0 : 1);
-    if (lift) {
-      P(K.part(box, "#8a6040", [0, DECK + lift / 2, gv + 0.24 * stride], [0, 0, 0], [0.18, lift, 0.48 * stride]));
-    }
     const goodsStart = pierParts.reduce((count, part) => count + part.attributes.position.count, 0);
     const goodsParts: THREE.BufferGeometry[] = [];
     const G = (geometry: THREE.BufferGeometry) => { goodsParts.push(geometry); P(geometry); };
@@ -842,7 +840,18 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       goodsBounds.union(local.boundingBox!);
       local.dispose();
     }
-    (group.userData.goodsPiles ??= []).push({ kind: good, start: goodsStart,
+    // The skid is sized from the packed goods (after the shift above) so nothing overhangs it, and it also carries the lifebuoy,
+    // which is raised by the same lift so the skid cannot hide it.
+    let skid: { from: number; to: number; halfWidth: number; top: number } | null = null;
+    if (lift) {
+      const buoyZ = v1 - 0.12;
+      const from = Math.max(v0, Math.min(goodsBounds.min.z, buoyZ - 0.03));
+      const to = Math.min(v1, Math.max(goodsBounds.max.z, buoyZ + 0.03));
+      const halfWidth = Math.min(W / 2, Math.max(0.09, goodsBounds.max.x + 0.01, -goodsBounds.min.x + 0.01));
+      P(K.part(box, "#8a6040", [0, DECK + lift / 2, (from + to) / 2], [0, 0, 0], [halfWidth * 2, lift, to - from]));
+      skid = { from, to, halfWidth, top: DECK + lift };
+    }
+    (group.userData.goodsPiles ??= []).push({ kind: good, start: goodsStart, skid, buoy: { z: v1 - 0.12, x: shipSide * -0.08, baseY: DECK + lift },
       count: goodsParts.reduce((count, part) => count + part.attributes.position.count, 0),
       min: goodsBounds.min.toArray(), max: goodsBounds.max.toArray(), frame: frame.toArray(),
       deck: { width: W, from: v0, to: v1 }, scale: S });

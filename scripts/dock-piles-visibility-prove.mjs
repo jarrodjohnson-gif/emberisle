@@ -24,7 +24,6 @@ try {
   });
 
   mkdirSync("test-results", { recursive: true });
-  mkdirSync("docs/proofs/1158", { recursive: true });
 
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
   const page = await context.newPage();
@@ -212,7 +211,6 @@ try {
   // Capture proof screenshot for Seed 14 official
   await testBoard(14, "official");
   await page.screenshot({ path: "test-results/dock-piles-seed-14.png" });
-  await page.screenshot({ path: "docs/proofs/1158/dock-piles-seed-14.png" });
 
   assert.deepEqual(errors, []);
   console.log("dock piles visibility prove ok");

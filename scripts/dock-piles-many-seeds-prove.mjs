@@ -19,8 +19,8 @@ try {
     const { createGame } = await import("/src/lib/game/board.ts");
     const { buildShore } = await import("/src/lib/scene/harbor-jelly.ts");
     const { hashStr } = await import("/src/lib/utils.ts");
-    const isle = window.__isle, failures = [], kinds = new Set();
-    let count = 0;
+    const isle = window.__isle, failures = [], overhang = [], buried = [], kinds = new Set();
+    let count = 0, lifted = 0;
     for (const mode of ["official", "random"]) for (let seed = 0; seed < 40; seed++) {
       const state = createGame({ seed, numberTokens: mode, humans: [{ name: "Ember" }, { name: "Tide" }, { name: "Dune" }], bots: 0 });
       const vbyId = new Map(state.vertices.map(v => [v.id, v]));
@@ -37,16 +37,27 @@ try {
       const shore = buildShore(isle.coast, docks, hashStr(`${hexes}|${ids}|shore`));
       for (const pile of shore.group.userData.goodsPiles) {
         kinds.add(pile.kind); count++;
+        // #1158: a lifted pier's skid must cover the packed goods end to end (no overhang) and the lifebuoy must stand on top of it
+        // (not inside it); an unlifted pier has no skid and the lifebuoy stays on the deck.
+        const e = 0.001, sk = pile.skid;
+        if (sk) {
+          lifted++;
+          if (!(pile.min[2] >= sk.from - e && pile.max[2] <= sk.to + e && pile.min[0] >= -sk.halfWidth - e && pile.max[0] <= sk.halfWidth + e)) overhang.push({ mode, seed, kind: pile.kind, min: pile.min, max: pile.max, skid: sk });
+          if (!(pile.buoy.baseY >= sk.top - 1e-6 && pile.buoy.z >= sk.from - e && pile.buoy.z <= sk.to + e && Math.abs(pile.buoy.x) <= sk.halfWidth)) buried.push({ mode, seed, kind: pile.kind, buoy: pile.buoy, skid: sk });
+        } else if (Math.abs(pile.buoy.baseY - 0.1) > 1e-6) buried.push({ mode, seed, kind: pile.kind, buoy: pile.buoy, skid: null });
         if (!(pile.min[0] >= -pile.deck.width / 2 - 0.001 && pile.max[0] <= pile.deck.width / 2 + 0.001 && pile.min[2] >= pile.deck.from - 0.001 && pile.max[2] <= pile.deck.to + 0.001)) failures.push({ mode, seed, kind: pile.kind, min: pile.min, max: pile.max, deck: pile.deck });
       }
       shore.dispose();
     }
-    return { failures, kinds: [...kinds].sort(), count };
+    return { failures, overhang, buried, lifted, kinds: [...kinds].sort(), count };
   });
   assert.deepEqual(result.failures, [], JSON.stringify(result.failures));
+  assert.deepEqual(result.overhang, [], `goods overhang their skid: ${JSON.stringify(result.overhang.slice(0, 3))}`);
+  assert.deepEqual(result.buried, [], `lifebuoy hidden in the skid or off the deck: ${JSON.stringify(result.buried.slice(0, 3))}`);
+  assert(result.lifted > 0, "no pier was lifted: the skid checks above proved nothing");
   assert.deepEqual(result.kinds, ["any", "clay", "grain", "ore", "timber", "wool"]);
   assert.equal(result.count, 720);
-  console.log(`dock-piles-many-seeds-prove: ${result.count} piles within piers across 40 seeds in each mode; all six kinds`);
+  console.log(`dock-piles-many-seeds-prove: ${result.count} piles within piers across 40 seeds in each mode; all six kinds; ${result.lifted} lifted piers have goods on their skid and a visible lifebuoy`);
 } finally {
   await browser?.close();
   await vite.close();
