@@ -4,7 +4,7 @@ import { useEffect, type RefObject } from "react";
 const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 export function focusableIn(root: HTMLElement | null): HTMLElement[] {
-  return [...(root?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])].filter((el) => !el.hasAttribute("disabled"));
+  return [...(root?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])].filter((el) => !el.hasAttribute("disabled") && el.tabIndex >= 0);
 }
 
 // `initial` is a selector for the element to focus on open; the first focusable one otherwise. `opener` is where focus

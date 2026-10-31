@@ -1,0 +1,48 @@
+$ node --import ./server/register.mjs --import /tmp/sol-audio/cpu2.mjs scripts/audio-recovery-prove.mjs
+CPU_STRESS 2
+ok Ember: native baseline plays and advances before failure
+ok Ember: every target first download actually aborted
+FAILED_MEDIA Ember [
+  { file: 'your_turn.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'confirmation_001.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'drop_001.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'bong_001.wav', error: 4, readyState: 0, time: 0 }
+]
+CPU_STRESS 2
+ok Tide: native baseline plays and advances before failure
+ok Tide: every target first download actually aborted
+FAILED_MEDIA Tide [
+  { file: 'your_turn.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'confirmation_001.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'drop_001.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'bong_001.wav', error: 4, readyState: 0, time: 0 }
+]
+CPU_STRESS 2
+ok Pine: native baseline plays and advances before failure
+ok Pine: every target first download actually aborted
+FAILED_MEDIA Pine [
+  { file: 'your_turn.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'confirmation_001.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'drop_001.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'bong_001.wav', error: 4, readyState: 0, time: 0 }
+]
+ok three distinct seats joined the real host (minimum legal table)
+ok each real host seat has a distinct player identity
+ok dropped socket rejoins the same player and seat
+ok the other host seats stay connected
+ok a real host trade transfers the offered resource after restoration
+ok host actions give all players a new turn and complete a trade
+ok host broadcasts the soundboard cue to all seats
+RECOVERY Ember {"identity":"0f84ee05-82d9-4011-ade8-2deab3f12a54","recovered":[{"file":"your_turn.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.42},{"file":"confirmation_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.294603},{"file":"drop_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.132063},{"file":"bong_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.132063}],"media":[{"file":"click_001.wav","error":null,"time":0.114649,"readyState":4},{"file":"your_turn.wav","error":4,"time":0,"readyState":0},{"file":"confirmation_001.wav","error":4,"time":0,"readyState":0},{"file":"drop_001.wav","error":4,"time":0,"readyState":0},{"file":"bong_001.wav","error":4,"time":0,"readyState":0},{"file":"game_start.mp3","error":null,"time":2.501059,"readyState":4},{"file":"your_turn.wav","error":4,"time":0,"readyState":0},{"file":"your_turn.wav","error":4,"time":0,"readyState":0},{"file":"your_turn.wav","error":null,"time":0.42,"readyState":4},{"file":"drop_003.wav","error":null,"time":0.198821,"readyState":4},{"file":"drop_002.wav","error":null,"time":0.132145,"readyState":4},{"file":"drop_001.wav","error":null,"time":0.132063,"readyState":4},{"file":"confirmation_001.wav","error":null,"time":0.294603,"readyState":4},{"file":"bong_001.wav","error":null,"time":0.132063,"readyState":4}]}
+ok Ember: actual host state and soundboard messages received
+ok Ember: same document throughout failure and reconnect
+RECOVERY Tide {"identity":"fffc4a02-f0b7-4efc-8665-a045ed87eb94","recovered":[{"file":"your_turn.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.116375},{"file":"confirmation_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.294603},{"file":"drop_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.132063},{"file":"bong_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.013148}],"media":[{"file":"click_001.wav","error":null,"time":0.114649,"readyState":4},{"file":"your_turn.wav","error":4,"time":0,"readyState":0},{"file":"confirmation_001.wav","error":4,"time":0,"readyState":0},{"file":"drop_001.wav","error":4,"time":0,"readyState":0},{"file":"bong_001.wav","error":4,"time":0,"readyState":0},{"file":"game_start.mp3","error":null,"time":2.454496,"readyState":4},{"file":"your_turn.wav","error":null,"time":0.116375,"readyState":4},{"file":"drop_002.wav","error":null,"time":0.201723,"readyState":4},{"file":"drop_003.wav","error":null,"time":0.198821,"readyState":4},{"file":"drop_001.wav","error":null,"time":0.132063,"readyState":4},{"file":"trade_offer.wav","error":null,"time":0.26,"readyState":4},{"file":"confirmation_001.wav","error":null,"time":0.294603,"readyState":4},{"file":"bong_001.wav","error":null,"time":0.013148,"readyState":4}]}
+ok Tide: actual host state and soundboard messages received
+ok Tide: same document throughout failure and reconnect
+RECOVERY Pine {"identity":"3eda371e-2dd0-40ad-9a8c-73970c0ee8e2","recovered":[{"file":"your_turn.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.42},{"file":"confirmation_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.294603},{"file":"drop_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.132063},{"file":"bong_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.132063}],"media":[{"file":"click_001.wav","error":null,"time":0.114649,"readyState":4},{"file":"your_turn.wav","error":4,"time":0,"readyState":0},{"file":"confirmation_001.wav","error":4,"time":0,"readyState":0},{"file":"drop_001.wav","error":4,"time":0,"readyState":0},{"file":"bong_001.wav","error":4,"time":0,"readyState":0},{"file":"game_start.mp3","error":null,"time":2.392884,"readyState":4},{"file":"your_turn.wav","error":null,"time":0.42,"readyState":4},{"file":"drop_003.wav","error":null,"time":0.198821,"readyState":4},{"file":"drop_002.wav","error":null,"time":0.066142,"readyState":4},{"file":"drop_001.wav","error":null,"time":0.132063,"readyState":4},{"file":"trade_offer.wav","error":null,"time":0.26,"readyState":4},{"file":"confirmation_001.wav","error":null,"time":0.294603,"readyState":4},{"file":"bong_001.wav","error":null,"time":0.132063,"readyState":4}]}
+ok Pine: actual host state and soundboard messages received
+ok Pine: same document throughout failure and reconnect
+ok native host-driven playback recovers for all seats: 
+audio-recovery-prove: 20 checks passed; native recovery in 2126ms
+
+EXIT 0

@@ -1,0 +1,11 @@
+
+> title-prove
+> node scripts/title-prove.mjs
+
+ok   1280x720: one primary (Play), filled Play / Host a table / Join, card 58 % tall, nothing clipped, Watch only at 4 characters
+ok   1280x500: one primary (Play), filled Play / Host a table / Join, card 83 % tall, nothing clipped, Watch only at 4 characters
+ok   640x360: one primary (Play), filled Play / Host a table / Join, card 78 % tall, nothing clipped, Watch only at 4 characters
+ok   390x844 touch: one primary (Play), filled Play / Host a table / Join, card 48 % tall, nothing clipped, Watch only at 4 characters
+ok   844x390 touch: one primary (Play), filled Play / Host a table / Join, card 61 % tall, nothing clipped, Watch only at 4 characters
+ok   667x375 touch: one primary (Play), filled Play / Host a table / Join, card 75 % tall, nothing clipped, Watch only at 4 characters
+title-prove: ok

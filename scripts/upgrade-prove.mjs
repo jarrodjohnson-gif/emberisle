@@ -18,6 +18,8 @@ import { createGame } from "../src/lib/game/board.ts";
 import { applyAction } from "../src/lib/game/rules.ts";
 
 const PORT = Number(process.env.VITE_PORT) || 8520;
+// A step waits this long for the page to show what it was asked for. These are readiness waits, not speed limits: the proof
+// asserts what the page does, so a slow runner takes longer to get there and still passes (#673); a hang still fails here.
 const STEP_MS = 30_000;
 const VIEWS = [
   { tag: "440x956", width: 440, height: 956, touch: true, insets: { top: 62, right: 0, bottom: 34, left: 0 } },
@@ -103,7 +105,7 @@ try {
     assert.equal(top, "CANVAS", `${tag}: the starter outpost at ${at.x.toFixed(0)},${at.y.toFixed(0)} is covered by ${top}`);
     if (v.touch) await page.touchscreen.tap(at.x, at.y);
     else await page.mouse.click(at.x, at.y);
-    await page.waitForFunction((id) => window.__emberisle.getState().state.vertices.find((x) => x.id === id).building.kind === "stronghold", target, { timeout: 5000 }).catch(async () => {
+    await page.waitForFunction((id) => window.__emberisle.getState().state.vertices.find((x) => x.id === id).building.kind === "stronghold", target, { timeout: STEP_MS }).catch(async () => {
       const s = await page.evaluate(() => ({ pp: window.__emberisle.getState().pendingPlace, chip: !!document.querySelector('[data-testid="place-chip"]') }));
       throw new Error(`${tag}: one tap on an armed starter outpost did not upgrade it (${JSON.stringify(s)})`);
     });
@@ -120,13 +122,13 @@ try {
         g.setState({ state: st });
       });
       await press(upgrade);
-      await page.waitForFunction(() => window.__emberisle.getState().buildMode === "stronghold", null, { timeout: 5000 }).catch(async () => {
+      await page.waitForFunction(() => window.__emberisle.getState().buildMode === "stronghold", null, { timeout: STEP_MS }).catch(async () => {
         throw new Error(`${tag}: Upgrade did not arm for the second outpost: ${JSON.stringify(await page.evaluate(() => { const s = window.__emberisle.getState(); return { error: s.error, bm: s.buildMode, cur: s.state.current, ph: s.state.phase, hand: s.state.players[0].resources }; }))}`);
       });
       const second = before[1].id;
       const p2 = await settled(second);
       await page.touchscreen.tap(p2.x, p2.y);
-      await page.waitForFunction((id) => window.__emberisle.getState().state.vertices.find((x) => x.id === id).building.kind === "stronghold", second, { timeout: 5000 });
+      await page.waitForFunction((id) => window.__emberisle.getState().state.vertices.find((x) => x.id === id).building.kind === "stronghold", second, { timeout: STEP_MS });
       console.log(`${tag}: the second starter outpost upgrades in one tap`);
     }
 
@@ -149,7 +151,7 @@ try {
       await page.getByTestId("place-chip").waitFor();
       assert.equal(await paths(), had, `${tag}: a path tap only selects`);
       await press(page.getByTestId("place-chip"));
-      await page.waitForFunction((n) => window.__emberisle.getState().state.edges.filter((e) => e.path).length === n + 1, had, { timeout: 5000 });
+      await page.waitForFunction((n) => window.__emberisle.getState().state.edges.filter((e) => e.path).length === n + 1, had, { timeout: STEP_MS });
       console.log(`${tag}: a path still selects, then places on the chip`);
     }
 
@@ -171,27 +173,27 @@ try {
       await page.waitForFunction(() => window.__emberisle.getState().buildMode === "stronghold");
       const online = await settled(ids[0]);
       await page.touchscreen.tap(online.x, online.y);
-      await page.waitForFunction(() => window.__sent.length > 0, null, { timeout: 5000 });
+      await page.waitForFunction(() => window.__sent.length > 0, null, { timeout: STEP_MS });
       const sent = await page.evaluate(() => window.__sent);
       assert.deepEqual(sent, [{ type: "buildStronghold", vertexId: ids[0] }], `${tag}: online, one tap sends the upgrade`);
       assert.equal(await page.getByTestId("place-chip").count(), 0, `${tag}: online, no Place chip`);
       console.log(`${tag}: online, one tap sends buildStronghold to the host`);
     }
 
-    // 4. Short of ore: Upgrade says so, on the button and to the screen reader (no HUD error line, #535), and arms nothing.
+    // 4. Short of stone: Upgrade says so, on the button and to the screen reader (no HUD error line, #535), and arms nothing.
     await load({ grain: 3, ore: 1 });
-    assert.match(await upgrade.getAttribute("aria-description"), /Need 1 more ore/, `${tag}: description`);
+    assert.match(await upgrade.getAttribute("aria-description"), /Need 1 more stone/, `${tag}: description`);
     await press(upgrade);
-    await page.waitForFunction(() => /Need 1 more ore/.test(window.__emberisle.getState().announcement ?? ""), null, { timeout: 5000 });
+    await page.waitForFunction(() => /Need 1 more stone/.test(window.__emberisle.getState().announcement ?? ""), null, { timeout: STEP_MS });
     assert.equal(await page.evaluate(() => window.__emberisle.getState().buildMode), "none", `${tag}: a short Upgrade arms nothing`);
     await load({});
-    assert.match(await upgrade.getAttribute("aria-description"), /Need 3 more grain and 2 more ore/, `${tag}: short of everything`);
+    assert.match(await upgrade.getAttribute("aria-description"), /Need 3 more wheat and 2 more stone/, `${tag}: short of everything`);
     await press(upgrade);
-    await page.waitForFunction(() => /Need 3 more grain and 2 more ore/.test(window.__emberisle.getState().announcement ?? ""), null, { timeout: 5000 });
-    assert.equal((await page.getByTestId("announce-error").textContent()).trim(), "Need 3 more grain and 2 more ore", `${tag}: the alert region says it`);
+    await page.waitForFunction(() => /Need 3 more wheat and 2 more stone/.test(window.__emberisle.getState().announcement ?? ""), null, { timeout: STEP_MS });
+    assert.equal((await page.getByTestId("announce-error").textContent()).trim(), "Need 3 more wheat and 2 more stone", `${tag}: the alert region says it`);
     assert.equal(await page.evaluate(() => window.__emberisle.getState().error), null, `${tag}: no HUD error line is set`);
-    assert.equal(await page.locator("span.text-orange-700", { hasText: "Need 3 more grain" }).count(), 0, `${tag}: no error line on screen`);
-    console.log(`${tag}: a short hand says "Need 1 more ore" / "Need 3 more grain and 2 more ore"`);
+    assert.equal(await page.locator("span.text-orange-700", { hasText: "Need 3 more wheat" }).count(), 0, `${tag}: no error line on screen`);
+    console.log(`${tag}: a short hand says "Need 1 more stone" / "Need 3 more wheat and 2 more stone"`);
     await page.screenshot({ path: `test-results/upgrade-${tag}.png` });
     await ctx.close();
   }

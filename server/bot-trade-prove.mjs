@@ -1,7 +1,8 @@
 // Bot seats and the ask-the-table trade (#363, #414), against host.mjs. Three hand-built rooms are saved to disk and the
 // host restores them, so every hand is known:
-//   A. A person asks with a bot seated: the bot declines an ask that does not help it and takes one that does, each
-//      after the bot's delay, never at once. Its No counts, so the offer closes when the last person declines too.
+//   A. A person asks with a bot seated: the bot declines an ask that does not help it after the bot's delay, never at
+//      once. Its No counts, so the offer closes when the last person declines too. With another person still to
+//      answer, the bot's Yes to an ask that helps it waits out the people-first window (#850).
 //   B. A bot asks on its own turn; the other bot (which cannot pay) declines, and a person takes it.
 //   C. A bot asks and nobody answers: no bot answers its own ask, the offer runs out, and the bot's turn plays on.
 //   D. An offer open when its asker wins (by a build that does not spend the offered goods) is gone at the win, and
@@ -10,7 +11,9 @@
 //   H. A seat that drops and rejoins inside an open ask gets the offer again with the seconds left and the No it
 //      missed, and its Yes goes through (#576); a watcher joining then gets no offer; a rejoin after the window closes
 //      gets none either.
-// Every wait is on a message; nothing sleeps a fixed time.
+//   I. The bot wants room A's helpful ask, but a person's Yes 5 s in takes it first (#850).
+//   J. The same ask, and the only other person says No 3 s in: the bot's held Yes lands at once (#850).
+// Every wait is on a message, except the 5 s and 3 s a person in I and J waits before answering.
 import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, watch, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -24,6 +27,8 @@ import { PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
 // host.mjs's default: a bot answers BOT_ANSWER_MS to twice that after the ask.
 const BOT_ANSWER_MS = 1000;
 const OFFER_MS = 20000;
+// A bot's Yes waits this long while a person asked has not answered (#850).
+const PEOPLE_FIRST_MS = 8000;
 
 let host;
 function fail(why, extra) {
@@ -126,10 +131,15 @@ const seatsE = saveRoom("BTEE", gE);
 const seatsF = saveRoom("BTFF", gF, { p2: askE });
 const seatsG = saveRoom("BTGG", gG, { p2: askE });
 const seatsH = saveRoom("BTHH", gH);
+// I: room A's hands, except Tide can pay the helpful ask too.
+const gI = game(["Ember", "Tide"], 1, "p0", { p0: { ore: 1, timber: 1, grain: 1 }, p1: { clay: 1, wool: 1 }, p2: { grain: 2, ore: 2, wool: 2 } }, 11);
+if (!shouldAcceptTrade(gI, "p2", helps)) fail("room I: the bot would not take the helpful ask");
+const seatsI = saveRoom("BTII", gI);
+const seatsJ = saveRoom("BTJJ", gA);
 
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", SAVE_MS: "5", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", SAVE_MS: "5", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -160,7 +170,7 @@ function rejoin(code, seat) {
     for (;;) {
       const i = c.inbox.findIndex((m) => m.type === type);
       if (i >= 0) return c.inbox.splice(i, 1)[0];
-      if (Date.now() > until) fail(`${c.name} waited ${ms} ms for ${type}`, c.seen.map((m) => (m.type === "log" ? m.text : m.type)));
+      if (Date.now() > until) fail(`${c.name} waited ${ms} ms for ${type}`, c.seen.map((m) => (m.type === "log" ? m.text : m.type === "error" ? `error: ${m.message}` : m.type)));
       await new Promise((res) => {
         c.waiters.push(res);
         setTimeout(res, until - Date.now() + 1);
@@ -177,6 +187,21 @@ function rejoin(code, seat) {
   ws.on("open", () => c.send(seat ? { type: "hello", code, secret: seat.secret } : { type: "hello", code, watch: true }));
   return c;
 }
+// Every seat is back, and each client holds a state: a stamped ask sent before its first state is refused. The wait
+// leaves the inbox alone, so a later `next("state")` still sees that first state.
+async function seated(cs, ms = 5000) {
+  await Promise.all(cs.map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+  await Promise.all(cs.map(async (c) => {
+    const until = Date.now() + ms;
+    while (!c.state) {
+      if (Date.now() > until) fail(`${c.name} waited ${ms} ms for its first state`, c.seen.map((m) => m.type));
+      await new Promise((res) => {
+        c.waiters.push(res);
+        setTimeout(res, until - Date.now() + 1);
+      });
+    }
+  }));
+}
 const hand = (c) => c.state.game.players.find((p) => p.id === c.pid).resources;
 // A bot answer must come after its delay, never at once, and well inside the offer.
 function delayed(offer, msg, what) {
@@ -184,12 +209,13 @@ function delayed(offer, msg, what) {
   if (ms < BOT_ANSWER_MS - 50 || ms > 2 * BOT_ANSWER_MS + 500) fail(`${what} came ${ms} ms after the ask, not ${BOT_ANSWER_MS}-${2 * BOT_ANSWER_MS} ms`);
   return ms;
 }
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
 // C runs alongside A and B, since its offer has to run out.
 const C = rejoin("BTCC", seatsC.find((s) => s.pid === "p0"));
 const CT = rejoin("BTCC", seatsC.find((s) => s.pid === "p1"));
 const roomC = (async () => {
-  await Promise.all([C, CT].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+  await seated([C, CT]);
   const offer = await C.next("tradeOffer");
   if (offer.from !== "p2") fail("C: the ask is not the bot's", offer);
   const closed = await C.next("tradeClosed", OFFER_MS + 5000);
@@ -207,7 +233,7 @@ const roomC = (async () => {
 const seatH = (pid) => seatsH.find((s) => s.pid === pid);
 const roomH = (async () => {
   const [EH, TH, PH] = ["p0", "p1", "p2"].map((pid) => rejoin("BTHH", seatH(pid)));
-  await Promise.all([EH, TH, PH].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+  await seated([EH, TH, PH]);
   EH.send({ type: "tradeAsk", give: { wool: 1 }, want: { timber: 1 } });
   const [first] = await Promise.all([EH, TH, PH].map((c) => c.next("tradeOffer")));
   PH.send({ type: "tradeAnswer", tradeId: first.tradeId, yes: false });
@@ -258,9 +284,40 @@ const roomH = (async () => {
   console.log("H: a rejoin after the offer ran out got no tradeOffer; a watcher got none while it was open");
 })();
 
+// I and J run alongside the rest: in each, a person waits seconds before answering.
+const tableOf = (code, seats) => ["p0", "p1"].map((pid) => rejoin(code, seats.find((s) => s.pid === pid)));
+const roomI = (async () => {
+  const [EI, TI] = tableOf("BTII", seatsI);
+  await seated([EI, TI]);
+  EI.send({ type: "tradeAsk", give: helps.give, want: helps.want });
+  const [o] = await Promise.all([EI, TI].map((c) => c.next("tradeOffer")));
+  await sleep(5000);
+  if (EI.inbox.some((m) => m.type === "tradeClosed")) fail("I: the offer closed before Tide's Yes at 5 s", EI.inbox);
+  TI.send({ type: "tradeAnswer", tradeId: o.tradeId, yes: true });
+  const closed = await EI.next("tradeClosed");
+  if (closed.tradeId !== o.tradeId || closed.taker !== "p1") fail("I: Tide's Yes at 5 s did not beat the bot", closed);
+  return closed.at - o.at;
+})();
+const roomJ = (async () => {
+  const [EJ, TJ] = tableOf("BTJJ", seatsJ);
+  await seated([EJ, TJ]);
+  EJ.send({ type: "tradeAsk", give: helps.give, want: helps.want });
+  const [o] = await Promise.all([EJ, TJ].map((c) => c.next("tradeOffer")));
+  // Past the bot's latest answer, so its Yes is held when Tide says No.
+  await sleep(2 * BOT_ANSWER_MS + 1000);
+  if (EJ.inbox.some((m) => m.type === "tradeClosed")) fail("J: the offer closed before Tide's No at 3 s", EJ.inbox);
+  TJ.send({ type: "tradeAnswer", tradeId: o.tradeId, yes: false });
+  const no = await EJ.next("tradeDeclined");
+  const closed = await EJ.next("tradeClosed");
+  if (no.by !== "p1" || closed.tradeId !== o.tradeId || closed.taker !== "p2") fail("J: the bot did not take it after Tide's No", { no, closed });
+  const ms = closed.at - no.at;
+  if (ms > 500) fail(`J: the bot's held Yes came ${ms} ms after the last person's No, not at once`);
+  return ms;
+})();
+
 // A. A person asks the table with a bot seated.
 const [EA, TA] = ["p0", "p1"].map((pid) => rejoin("BTAA", seatsA.find((s) => s.pid === pid)));
-await Promise.all([EA, TA].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+await seated([EA, TA]);
 const ask = async (give, want) => {
   EA.send({ type: "tradeAsk", give, want });
   const [o] = await Promise.all([EA, TA].map((c) => c.next("tradeOffer")));
@@ -282,14 +339,15 @@ console.log(`A: bot declined ${JSON.stringify(useless.give)} for ${JSON.stringif
 const before = { ...hand(EA) };
 const yesSeq = EA.state.game.seq;
 offer = await ask(helps.give, helps.want);
-const yes = await EA.next("tradeClosed");
-await TA.next("tradeClosed");
+const yes = await EA.next("tradeClosed", PEOPLE_FIRST_MS + 3000);
+await TA.next("tradeClosed", PEOPLE_FIRST_MS + 3000);
 if (yes.tradeId !== offer.tradeId || yes.taker !== "p2") fail("A: the helpful ask was not taken by the bot", yes);
-const yesMs = delayed(offer, yes, "A: the bot's Yes");
+const yesMs = yes.at - offer.at;
+if (yesMs < PEOPLE_FIRST_MS - 50 || yesMs > PEOPLE_FIRST_MS + 1000) fail(`A: the bot's Yes came ${yesMs} ms after the ask, not at the ${PEOPLE_FIRST_MS} ms window`);
 await EA.until("state", (m) => m.game.seq > yesSeq);
 const after = hand(EA);
 if (after.grain !== before.grain - 1 || after.wool !== before.wool + 1) fail("A: Ember's hand after the bot took the trade", [before, after]);
-console.log(`A: bot took ${JSON.stringify(helps.give)} for ${JSON.stringify(helps.want)} after ${yesMs} ms; Ember's hand moved`);
+console.log(`A: bot took ${JSON.stringify(helps.give)} for ${JSON.stringify(helps.want)} after ${yesMs} ms, once Tide's window ran out; Ember's hand moved`);
 
 // B. A bot asks on its turn; the other bot says No, and a person takes it.
 const EB = rejoin("BTBB", seatsB.find((s) => s.pid === "p0"));
@@ -343,7 +401,7 @@ console.log("D: the offer open at Ember's win closed at every seat; after the re
 // E. A person declines the bot's ask. Once the bot reaches another turn, the same ask remains closed.
 const E = rejoin("BTEE", seatsE.find((s) => s.pid === "p0"));
 const ET = rejoin("BTEE", seatsE.find((s) => s.pid === "p1"));
-await Promise.all([E, ET].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+await seated([E, ET]);
 offer = await E.next("tradeOffer");
 if (offer.from !== "p2" || JSON.stringify({ give: offer.give, want: offer.want }) !== JSON.stringify(askE)) fail("E: the first bot ask", offer);
 await Promise.all([E, ET].map((c) => c.until("state", (m) => m.game.current === "p2" && m.game.phase === "main")));
@@ -371,7 +429,7 @@ console.log("E: the person declined the bot's offer; its unchanged proposal stay
 // F: a fixture with the same stored decline and one more spare wool stays closed through the real host path.
 const F = rejoin("BTFF", seatsF.find((s) => s.pid === "p0"));
 const FT = rejoin("BTFF", seatsF.find((s) => s.pid === "p1"));
-await Promise.all([F, FT].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+await seated([F, FT]);
 await F.until("state", (m) => m.game.current === "p0" && m.game.phase === "roll");
 if (F.seen.some((m) => m.type === "tradeOffer" && m.from === "p2")) fail("F: same ask reopened after a hand-only change", F.seen.filter((m) => m.type === "tradeOffer"));
 console.log("F: the host kept the same ask closed after the bot gained wool");
@@ -382,7 +440,7 @@ console.log("F: the host kept the same ask closed after the bot gained wool");
 const G = rejoin("BTGG", seatsG.find((s) => s.pid === "p0"));
 await G.until("state", () => true);
 const GT = rejoin("BTGG", seatsG.find((s) => s.pid === "p1"));
-await Promise.all([G, GT].map((c) => c.until("seats", (m) => m.seats.every((s) => !s.away))));
+await seated([G, GT]);
 const offerG = await G.next("tradeOffer");
 if (offerG.from !== "p2" || JSON.stringify({ give: offerG.give, want: offerG.want }) !== JSON.stringify(askG)) fail("G: changed useful proposal did not open", offerG);
 console.log("G: a different useful proposal opened through the host");
@@ -416,6 +474,8 @@ const retry = await C.next("tradeOffer");
 if (retry.from !== "p2" || JSON.stringify({ give: retry.give, want: retry.want }) !== JSON.stringify(askC)) fail("C boundary: the expired offer was remembered or changed", retry);
 console.log("C boundary: a 20-second expiry does not suppress the same proposal on a later turn");
 await roomH;
+console.log(`I: Tide's Yes 5 s in took the ask the bot wanted, ${await roomI} ms after it`);
+console.log(`J: Tide said No 3 s in; the bot's held Yes took it ${await roomJ} ms later`);
 
 host.kill("SIGKILL");
 console.log("bot trade prove ok");

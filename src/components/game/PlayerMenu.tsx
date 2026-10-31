@@ -3,7 +3,6 @@
 // its trigger, or the same card again (the trigger toggles `openMenu`). Both trade rows open the trade panel (#163).
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { MessageSquare, Landmark, AtSign, Handshake } from "lucide-react";
-import { EMOTES } from "@/components/game/emotes";
 import { SeatDot } from "@/components/game/SeatDot";
 import type { PlayerState } from "@/lib/game/types";
 import { fortuneBreakdown } from "@/lib/game/fortunes";
@@ -35,7 +34,6 @@ export function PlayerMenu({ player: p, className, heading }: { player: PlayerSt
   const localId = useGame((s) => s.localId);
   const seats = useGame((s) => s.seats);
   const openMenu = useGame((s) => s.openMenu);
-  const sendReact = useGame((s) => s.sendReact);
   const setChatOpen = useGame((s) => s.setChatOpen);
   const setChatDraft = useGame((s) => s.setChatDraft);
   const setTradeOpen = useGame((s) => s.setTradeOpen);
@@ -105,24 +103,6 @@ export function PlayerMenu({ player: p, className, heading }: { player: PlayerSt
           <SeatDot color={p.color} className="size-3" />
           {p.name}
         </p>
-      ) : null}
-      {online ? (
-        <div className="grid grid-cols-3 gap-1 @min-[280px]:grid-cols-6" data-testid="menu-emotes">
-          {Object.entries(EMOTES).map(([id, url]) => (
-            <button
-              key={id}
-              type="button"
-              aria-label={`React ${id}`}
-              onClick={() => {
-                sendReact(id, own ? undefined : p.id);
-                close();
-              }}
-              className="flex size-11 cursor-pointer items-center justify-center rounded-[8px] hover:bg-white/70"
-            >
-              <img src={url} alt="" className="size-8 object-contain" />
-            </button>
-          ))}
-        </div>
       ) : null}
       <dl data-testid="menu-facts" className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 px-2 py-1 text-xs text-zinc-600">
         {facts.map(([label, n]) => (

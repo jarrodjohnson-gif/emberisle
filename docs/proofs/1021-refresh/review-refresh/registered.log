@@ -1,0 +1,16 @@
+
+> registered-prove
+> node scripts/registered-prove.mjs
+
+ok   self-test: the fixture as written passes
+ok   self-test: a removed step fails
+ok   self-test: a command only in a # comment line fails
+ok   self-test: a command only in a trailing # comment fails
+ok   self-test: a command outside any run: fails
+ok   self-test: `if: false` fails
+ok   self-test: `if: ${{ x && false }}` fails
+ok   self-test: `continue-on-error: true` fails
+ok   self-test: `|| true` in a run: | block fails, through npm test
+ok   self-test: a dropped server test chain fails
+ok   self-test: a new proof added to the real repo fails in both places
+registered-prove: all 139 proofs are in package.json and ci.yml

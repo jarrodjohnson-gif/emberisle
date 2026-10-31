@@ -1,4 +1,5 @@
-// #467: a phone tap sends a board reaction to every seat within 300 ms without opening chat or moving the board.
+// #467, #899: a phone sends a board reaction in two taps (Open chat, then the emoji in the Chat tab) to every seat within
+// 300 ms of the emoji tap, without moving the board; the panel stays open for the next one.
 // The receiving tab checks the actual seat float; every visible phone reaction control is at least 44 px.
 // Reads VITE_PORT so it can run beside another local Vite process. Zero console errors.
 import { spawn } from "node:child_process";
@@ -14,7 +15,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-react-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => host.kill());
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => process.exit(130));
@@ -87,7 +88,8 @@ try {
   await sender.page.getByRole("button", { name: "Start", exact: true }).tap();
 
   for (const player of [sender, receiver, third]) {
-    await player.page.getByRole("button", { name: "Quick reactions", exact: true }).waitFor({ timeout: 15_000 });
+    await player.page.getByRole("button", { name: /^Open chat/ }).waitFor({ timeout: 15_000 });
+    check(await player.page.getByRole("button", { name: "Quick reactions" }).count() === 0, `${player.name}: Open chat is the one chat button (no quick-reaction button)`);
   }
   await sender.page.waitForFunction(() => window.__isle?.insets);
   await receiver.page.evaluate(() => {
@@ -110,31 +112,30 @@ try {
     const rect = document.querySelector("canvas").getBoundingClientRect();
     return { rect: [rect.x, rect.y, rect.width, rect.height], insets: window.__isle.insets() };
   });
-  const trigger = sender.page.getByRole("button", { name: "Quick reactions", exact: true });
+  const trigger = sender.page.getByRole("button", { name: /^Open chat/ });
   await trigger.tap();
-  const picker = sender.page.getByRole("group", { name: "Choose a reaction" });
+  const picker = sender.page.getByTestId("emoji-row");
   await picker.waitFor();
-  const dimensions = await sender.page.evaluate(() => [...document.querySelectorAll('#quick-reaction-picker button')].map((button) => {
+  const dimensions = await sender.page.evaluate(() => [...document.querySelectorAll('[data-testid="emoji-row"] button')].map((button) => {
     const rect = button.getBoundingClientRect();
     return { width: rect.width, height: rect.height };
   }));
-  check(dimensions.length >= 6 && dimensions.every((size) => size.width >= 44 && size.height >= 44), `phone reaction picker: ${dimensions.length} buttons are all at least 44x44 px`);
+  check(dimensions.length === 6 && dimensions.every((size) => size.width >= 44 && size.height >= 44), `phone chat tab: its ${dimensions.length} emoji buttons are all at least 44x44 px`);
   await picker.getByRole("button", { name: "React happy", exact: true }).tap();
-  await picker.waitFor({ state: "detached" });
 
   const reaction = await receiver.page.waitForFunction(() => window.__reactionProof.find((item) => item.emote === "😊") ?? null, null, { timeout: 5000 });
   const received = await reaction.jsonValue();
   const sentAt = await sender.page.evaluate(() => window.__reactionSentAt);
   check(received && sentAt && received.receivedAt - sentAt < 300, `one phone tap reaches another seat in ${received && sentAt ? received.receivedAt - sentAt : "over 300"} ms`);
   await receiver.page.getByTestId(`rail-${received.player}`).getByTestId("reaction").waitFor({ timeout: 300 });
-  check(true, "the receiving tab renders the reaction over the sender's seat");
+  check(true, "the receiving tab renders the reaction as a bubble beside the sender's seat");
 
   const after = await sender.page.evaluate(() => {
     const rect = document.querySelector("canvas").getBoundingClientRect();
     return { rect: [rect.x, rect.y, rect.width, rect.height], insets: window.__isle.insets() };
   });
-  check(JSON.stringify(after) === JSON.stringify(before), "opening the picker and sending a reaction leaves the board bounds and camera insets unchanged");
-  check(await sender.page.evaluate(() => window.__emberisle.getState().chatOpen === false), "sending a board reaction leaves chat closed");
+  check(JSON.stringify(after) === JSON.stringify(before), "opening the chat sheet and sending a reaction leaves the board bounds and camera insets unchanged");
+  check(await sender.page.evaluate(() => window.__emberisle.getState().chatOpen === true) && (await picker.count()) === 1, "sending a reaction keeps the chat panel open on the Chat tab, one tap from the next");
   await receiver.page.evaluate(() => window.__unsubscribeReactionProof());
   check(errors.length === 0, `zero console errors${errors.length ? `\n${errors.join("\n")}` : ""}`);
   console.log("react prove ok");

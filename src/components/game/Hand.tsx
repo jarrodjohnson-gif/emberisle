@@ -1,17 +1,13 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type SVGProps } from "react";
-import { ClaySymbol, GrainSymbol, OreSymbol, TimberSymbol, WoolSymbol } from "@/components/game/ResourceSymbols";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { RESOURCE_ICON } from "@/components/game/ResourceSymbols";
 import { RESOURCES, RESOURCE_LABEL, type Phase, type PlayerState, type Resource } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 import { useGame } from "@/lib/game/store";
+import { chunk, LazyBoundary } from "@/lib/lazy";
+const HandRates = chunk(() => import("./HandRates")).pick((m) => m.default);
 import "./hand-motion.css";
 
-export const RESOURCE_ICON: Record<Resource, ComponentType<SVGProps<SVGSVGElement>>> = {
-  timber: TimberSymbol,
-  clay: ClaySymbol,
-  wool: WoolSymbol,
-  grain: GrainSymbol,
-  ore: OreSymbol,
-};
+export { RESOURCE_ICON } from "@/components/game/ResourceSymbols";
 
 // Each card is the terrain cap's colour (docs/design/polish.md, #436); full class names so Tailwind can see them.
 export const RESOURCE_PAINT: Record<Resource, string> = {
@@ -22,11 +18,15 @@ export const RESOURCE_PAINT: Record<Resource, string> = {
   ore: "bg-ore text-ore-on",
 };
 
+// A gain or loss cue holds for FLASH_MS, then fades over FADE_MS (#773, docs/design/goods-cards-v1). The CSS keyframes in
+// hand-motion.css run for the same CUE_MS.
 const FLASH_MS = 2200;
-const SETTLE_MS = 280;
+const FADE_MS = 300;
+const CUE_MS = FLASH_MS + FADE_MS;
+const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
 type ResourceFlash = { delta: number; id: number };
 
-// The hand's counts are diffed on every state, so a gain flashes +N green and a loss -N red whether it
+// The hand's counts are diffed on every state, so a gain fills its card with +N and a loss rings it with −N whether it
 // came from a roll, a trade, a build, a discard, or a steal, hotseat and online alike (#170). Only this
 // hand is read: online, the other players arrive as a `goods` count with no `resources`. A change of
 // seat (hotseat) or a reconnect's first synced state resets the baseline instead of flashing.
@@ -80,7 +80,7 @@ function useResourceFlashes(me: PlayerState) {
             delete next[r];
             return next;
           });
-        }, FLASH_MS),
+        }, CUE_MS),
       };
     }
   }, [visibleFlashes]);
@@ -94,24 +94,66 @@ function useResourceFlashes(me: PlayerState) {
   return visibleFlashes;
 }
 
-function ResourceCard({ resource, count, flash }: { resource: Resource; count: number; flash?: ResourceFlash }) {
-  const card = useRef<HTMLDivElement>(null);
+// While an offer is open for this seat, the goods it would move: negative for what the seat gives, positive for what it
+// gets (#820). The asker gives `give`; everyone else gives `want`. Answering it, or its closing, clears the lot.
+function useOfferDeltas(me: PlayerState) {
+  const offer = useGame((s) => s.offer);
+  const answered = useGame((s) => s.declined.includes(me.id));
+  const deltas: Partial<Record<Resource, number>> = {};
+  if (!offer || answered) return deltas;
+  const [gives, gets] = offer.from === me.id ? [offer.give, offer.want] : [offer.want, offer.give];
+  for (const r of RESOURCES) {
+    if (gives[r]) deltas[r] = -gives[r]!;
+    else if (gets[r]) deltas[r] = gets[r];
+  }
+  return deltas;
+}
+
+// The card's face: the symbol, the count and the name on one axis. The lit copy a gain lays over it has no test IDs.
+function Face({ resource, count, lit }: { resource: Resource; count: number; lit?: boolean }) {
   const Icon = RESOURCE_ICON[resource];
-  const label = flash ? (flash.delta > 0 ? `+${flash.delta}` : String(flash.delta)) : null;
+  return (
+    <>
+      <Icon className="goods-icon" aria-hidden />
+      <span data-testid={lit ? undefined : "hand-count"} className="goods-count">
+        {count}
+      </span>
+      <span data-testid={lit ? undefined : "hand-name"} className="goods-label">
+        {RESOURCE_LABEL[resource]}
+      </span>
+    </>
+  );
+}
+
+function ResourceCard({ resource, count, flash, offer, showRates, buildMode, owner }: { resource: Resource; count: number; flash?: ResourceFlash; offer?: number; buildMode: string; owner: string; showRates: (resource: Resource, card: HTMLElement) => void }) {
+  const card = useRef<HTMLDivElement>(null);
+  const hold = useRef<{ timer?: ReturnType<typeof setTimeout>; x: number; y: number }>({ x: 0, y: 0 });
+  const cancelHold = () => {
+    clearTimeout(hold.current.timer);
+  };
+  useEffect(() => cancelHold, [buildMode, owner]);
+  const gain = !!flash && flash.delta > 0;
+  const label = flash ? (gain ? `+${flash.delta}` : String(flash.delta)) : null;
   // Restart on the event ID, even for two gains in the same millisecond. The card itself stays mounted,
   // preserving its footprint and future focus/long-press state; only the decorative cues are keyed.
+  // A gain lifts the card by the tray's --goods-lift (hand-motion.css: 6 px, less where the tray has less room) and a
+  // loss dips it 2 px, for as long as the fill holds; both settle as it fades.
   useLayoutEffect(() => {
     if (!flash || !card.current) return;
     const preference = matchMedia("(prefers-reduced-motion: reduce)");
+    // 0 is a real value (a short wide window has no room to lift); only a missing property falls back to 6 px.
+    const lift = parseFloat(getComputedStyle(card.current).getPropertyValue("--goods-lift"));
+    const y = flash.delta > 0 ? -(Number.isNaN(lift) ? 6 : lift) : 2;
     const animation = preference.matches
       ? null
       : card.current.animate(
           [
-            { transform: "translateY(0)", offset: 0, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
-            { transform: `translateY(${flash.delta > 0 ? -3 : 2}px)`, offset: 0.25, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+            { transform: "translateY(0)", offset: 0, easing: EASE_OUT },
+            { transform: `translateY(${y}px)`, offset: 120 / CUE_MS },
+            { transform: `translateY(${y}px)`, offset: FLASH_MS / CUE_MS, easing: EASE_OUT },
             { transform: "translateY(0)", offset: 1 },
           ],
-          { duration: SETTLE_MS },
+          { duration: CUE_MS },
         );
     const stopMovement = () => {
       if (preference.matches) animation?.cancel();
@@ -123,47 +165,80 @@ function ResourceCard({ resource, count, flash }: { resource: Resource; count: n
     };
   }, [flash?.id]);
   return (
-    <div className="hand-resource-card-slot relative min-w-0 flex-1">
+    <div
+      data-testid={`offer-slot-${resource}`}
+      data-offer={offer ? (offer < 0 ? "give" : "get") : undefined}
+      className="hand-resource-card-slot relative min-w-0 flex-1"
+    >
       <div
         ref={card}
         data-testid={`resource-${resource}`}
         title={RESOURCE_LABEL[resource]}
+        role="button"
+        tabIndex={0}
+        aria-label={`${RESOURCE_LABEL[resource]}: ${count}. Show trade rates`}
+        onClick={(e) => {
+          // Assistive activation synthesizes a click; pointer taps keep the long-press gesture.
+          if (e.detail === 0) showRates(resource, e.currentTarget);
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          cancelHold();
+          showRates(resource, e.currentTarget);
+        }}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          e.preventDefault();
+          e.stopPropagation();
+          showRates(resource, e.currentTarget);
+        }}
+        onPointerDown={(e) => {
+          if (e.button !== 0) return;
+          cancelHold();
+          hold.current.x = e.clientX;
+          hold.current.y = e.clientY;
+          const target = e.currentTarget;
+          hold.current.timer = setTimeout(() => showRates(resource, target), 500);
+        }}
+        onPointerMove={(e) => {
+          if (Math.hypot(e.clientX - hold.current.x, e.clientY - hold.current.y) > 8) cancelHold();
+        }}
+        onPointerUp={cancelHold}
+        onPointerCancel={cancelHold}
+        onPointerLeave={cancelHold}
         className={cn(
-          "goods-card relative flex h-[62px] flex-col items-center justify-center rounded-control bg-surface text-fg",
-          "short:h-11 short:flex-row short:gap-2",
+          `goods-card goods-${resource} relative h-[62px] rounded-control focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg short:h-11`,
           count === 0 && "goods-empty",
         )}
       >
-        <div className="goods-value flex items-center justify-center gap-1.5">
-          <Icon className="goods-icon size-5" style={{ color: `var(--${resource === "wool" || resource === "grain" ? `${resource}-side` : resource})` }} aria-hidden />
-          <span data-testid="hand-count" className="text-number font-bold tabular-nums short:leading-7">
-            {count}
-          </span>
-        </div>
-        <span className="goods-label text-[11px] font-semibold leading-[14px] short:hidden">{RESOURCE_LABEL[resource]}</span>
+        <Face resource={resource} count={count} />
         {flash ? (
-          <span
-            key={`ring-${flash.id}`}
-            data-testid="hand-ring"
-            aria-hidden
-            className="pointer-events-none absolute inset-[2px] rounded-chip"
-            style={{ animation: `resource-ring ${FLASH_MS}ms ease-out forwards` }}
-          />
+          gain ? (
+            <span key={`lit-${flash.id}`} data-testid="goods-lit" aria-hidden className="goods-lit">
+              <Face resource={resource} count={count} lit />
+            </span>
+          ) : (
+            <span key={`lost-${flash.id}`} data-testid="goods-lost" aria-hidden className="goods-lost" />
+          )
+        ) : null}
+        {flash ? (
+          <span key={flash.id} data-testid="resource-flash" data-resource={resource} data-delta={label} data-sign={gain ? "+" : "-"} aria-hidden className="goods-tab">
+            {gain ? label : `−${-flash.delta}`}
+          </span>
         ) : null}
       </div>
-      {flash ? (
+      {offer ? (
         <span
-          key={flash.id}
-          data-testid="resource-flash"
-          data-resource={resource}
-          data-delta={label}
+          data-testid="offer-delta"
+          aria-hidden
           className={cn(
-            "hand-resource-flash pointer-events-none absolute right-0.5 top-0.5 rounded-control bg-surface px-1 text-caption font-semibold tabular-nums short:left-1 short:right-auto short:top-0 short:text-caption short:leading-3",
-            flash.delta > 0 ? "text-gain" : "text-loss",
+            "hand-offer-delta pointer-events-none absolute left-0.5 top-0.5 rounded-control bg-surface px-1 text-caption font-semibold tabular-nums short:left-auto short:right-1 short:top-0 short:leading-3",
+            offer > 0 ? "text-gain" : "text-loss",
+            // The compact card has room for one label: the edge and lift still show while a gain/loss flash holds it.
+            flash && "short:hidden",
           )}
-          style={{ animation: `resource-flash ${FLASH_MS}ms ease-out forwards` }}
         >
-          {label}
+          {offer > 0 ? `+${offer}` : String(offer)}
         </span>
       ) : null}
     </div>
@@ -171,12 +246,25 @@ function ResourceCard({ resource, count, flash }: { resource: Resource; count: n
 }
 
 function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<typeof useResourceFlashes> }) {
+  const offer = useOfferDeltas(me);
+  const buildMode = useGame((s) => s.buildMode);
+  const [hint, setHint] = useState<{ resource: Resource; top: number; key: number; owner: string } | null>(null);
+  const showRates = (resource: Resource, card: HTMLElement) => {
+    if (useGame.getState().buildMode === "none") setHint({ resource, owner: me.id, key: performance.now(), top: card.getBoundingClientRect().top });
+  };
+  useEffect(() => setHint(null), [buildMode, me.id]);
   return (
-    <div className="goods-tray flex shrink-0 gap-1 overflow-x-auto rounded-chip p-2 short:p-1">
-      {RESOURCES.map((r) => (
-        <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} />
-      ))}
-    </div>
+    <>
+      {/* Not a scroller: the five cards always fit, and a scroller would clip the +N tab and the lift at its edge. */}
+      <div className="goods-tray flex shrink-0 gap-1 rounded-chip p-2 short:p-1">
+        {RESOURCES.map((r) => (
+          <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} offer={offer[r]} showRates={showRates} buildMode={buildMode} owner={me.id} />
+        ))}
+      </div>
+      {hint && hint.owner === me.id && buildMode === "none" ? <LazyBoundary key={hint.key} failed={null}>
+        <HandRates owner={me.id} hint={hint} onClose={() => setHint(null)} />
+      </LazyBoundary> : null}
+    </>
   );
 }
 

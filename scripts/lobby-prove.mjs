@@ -16,7 +16,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR, RENAME_MS: "0" },
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, RENAME_MS: "0" },
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -55,7 +55,7 @@ async function tab(name) {
   await page.getByTestId("title-card").waitFor();
   return { name, page };
 }
-const seatNames = (t) => t.page.locator('[data-testid="lobby-card"] ul > li').evaluateAll((lis) => lis.map((li) => li.querySelector("span.flex-1")?.textContent?.replace(/ · host$/, "").trim()).filter((n) => n !== "Empty"));
+const seatNames = (t) => t.page.locator('[data-testid="lobby-card"] ul > li').evaluateAll((lis) => lis.map((li) => li.querySelector('[data-testid="lobby-name"]')?.textContent?.replace(/ · host$/, "").trim()).filter((n) => n !== "Empty"));
 const until = async (fn, what, ms = 8000) => {
   const end = Date.now() + ms;
   let last;
@@ -142,6 +142,7 @@ try {
   check((await hana.page.getByTestId("add-bot").count()) === 2, "lobby: the host has Add bot on each of the two Empty seats");
   await hana.page.getByTestId("add-bot").first().click();
   await until(async () => (await seatNames(gus)).includes("Bot"), "the bot appears on the guest");
+  await until(async () => (await seatNames(hana)).includes("Bot"), "the bot appears on the host");
   check((await gus.page.getByTestId("add-bot").count()) === 0 && (await gus.page.getByTestId("remove-bot").count()) === 0, "lobby: a guest still cannot add or remove");
   check((await hana.page.getByTestId("remove-bot").count()) === 1 && (await hana.page.getByTestId("add-bot").count()) === 1, "lobby: the host can remove the bot, and add one more");
   await hana.page.getByTestId("remove-bot").click();

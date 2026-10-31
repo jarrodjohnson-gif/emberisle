@@ -28,7 +28,7 @@ process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
   // The seats act as fast as the host answers, far past the per-seat rate meant for people.
-  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -339,11 +339,12 @@ try {
   if (wv.placeList !== 0) throw new Error("the watcher has a PlaceList (#376) of targets");
   const pressable = wv.buttons.filter((t) => GAME_CONTROLS.includes(t));
   if (pressable.length) throw new Error(`the watcher can press ${JSON.stringify(pressable)}`);
-  await w1.page.getByTestId("fortunes-button").click();
-  await w1.page.getByTestId("fortune-deck-count").waitFor();
-  if (await w1.page.locator('[data-testid^="fortune-row-"]').count()) throw new Error("watcher deck tray exposes held fortune kinds");
-  if (await w1.page.getByTestId("fortune-tray").getByRole("button").count() !== 1) throw new Error("watcher deck tray exposes play actions");
-  await w1.page.keyboard.press("Escape");
+  // #776: My fortunes shows only to a seat that holds a fortune, so a watcher has no tray at all.
+  if (await w1.page.getByTestId("fortunes-button").count()) throw new Error("watcher has a My fortunes button");
+  if (await w1.page.getByTestId("fortune-tray").count()) throw new Error("watcher has a fortune tray");
+  // #776: the draw deck is public, so the watcher still reads its count beside the log line.
+  const watcherDeck = await w1.page.evaluate(() => { const st = window.__emberisle.getState().state; return { want: `Deck ${st.deckLeft ?? st.deck.length}`, shown: document.querySelector('[data-testid="deck-count"]')?.textContent ?? null }; });
+  if (watcherDeck.shown !== watcherDeck.want || !/^Deck \d+$/.test(watcherDeck.shown)) throw new Error(`the watcher's public deck count: ${JSON.stringify(watcherDeck)}`);
   if (!wv.buttons.includes("Leave table")) throw new Error(`the watcher has no Leave table button: ${JSON.stringify(wv.buttons)}`);
   if (!wv.turnBanner || wv.turnBanner.startsWith("Your")) throw new Error(`the watcher's turn line: "${wv.turnBanner}"`);
   // The positive control: the seat whose roll it is has the Roll button and no badge. Its hand is empty in the roll-off, so no hand tiles are shown (#439).
@@ -359,7 +360,7 @@ try {
   await w1.page.getByTestId("chat-readonly").waitFor();
   const dock = await w1.page.evaluate(() => {
     const sec = document.querySelector('section[aria-label="Table chat"]');
-    return { inputs: sec.querySelectorAll("input").length, emotes: sec.querySelectorAll('[aria-label="Emotes"]').length, buttons: [...sec.querySelectorAll("button")].map((b) => b.textContent.trim() || b.getAttribute("aria-label")) };
+    return { inputs: sec.querySelectorAll("input").length, emotes: sec.querySelectorAll('[aria-label="Emotes"], [aria-label^="React "], [aria-label^="Play sound "], [role="tab"]').length, buttons: [...sec.querySelectorAll("button")].map((b) => b.textContent.trim() || b.getAttribute("aria-label")) };
   });
   if (dock.inputs !== 0 || dock.emotes !== 0 || dock.buttons.some((t) => t === "Send" || t === "gg")) throw new Error(`the watcher's dock can talk: ${JSON.stringify(dock)}`);
   await a.page.getByRole("button", { name: /Open chat/ }).click();

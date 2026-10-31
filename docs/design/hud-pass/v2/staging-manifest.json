@@ -1,0 +1,20 @@
+[
+  {
+    "operation": "copy",
+    "source": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/art/design-spec.md",
+    "destination": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/design-spec.md",
+    "sha256": "b0be3802be44dae9e7bc20445423e7ee41ae5e06c50fff711a1094962ece29b6"
+  },
+  {
+    "operation": "copy",
+    "source": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/source-audit-current.md",
+    "destination": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/source-audit.md",
+    "sha256": "38ecf7f5158932ee5ec14e51275bdc4ec82cdb3a3015c17b44836f06b909b3f8"
+  },
+  {
+    "operation": "copy",
+    "source": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/overlay-audit-current.md",
+    "destination": "/Users/jarrod.johnson/Documents/Codex/2026-10-20/resume-emberisle-903-from-the-paused/work/emberisle-current/docs/design/hud-pass/v2/overlay-audit.md",
+    "sha256": "87b7bc81bf8457dfab09a75ab185671c0e0a79ddf2acd90d3bdc7de8c2c512da"
+  }
+]

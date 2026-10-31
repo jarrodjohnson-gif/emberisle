@@ -746,56 +746,100 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     P(K.part(box, "#3a2a20", [hx + shipSide * 0.057, hy + 0.065, hv + 0.03], [0, 0, 0], [0.004, 0.004, 0.03]));
     P(K.part(box, goodOf(d.kind), [hx + shipSide * 0.058, hy + 0.05, hv + 0.035], [0, 0, 0], [0.002, 0.022, 0.034]));
 
-    // The goods, on the deck's land half by the house.
-    const gv = Math.max(v0 + 0.08, wv - 0.08);
+    // #846: keep the original goods, enlarged 2.5x and re-packed along the narrow pier.
+    // Turning pallets lengthwise and stacking bales avoids widening the deck or adding signs.
+    const goodsStart = pierParts.reduce((count, part) => count + part.attributes.position.count, 0);
+    const goodsParts: THREE.BufferGeometry[] = [];
+    const G = (geometry: THREE.BufferGeometry) => { goodsParts.push(geometry); P(geometry); };
+    const S = 2.5;
+    const gv = Math.max(v0 + 0.18, Math.min(wv - 0.04, v1 - 0.53));
     const gy = DECK + 0.008;
+    const stride = Math.min(1, (len - 0.2) / 0.64);
     const good = d.kind;
     if (good === "timber") {
-      for (const [x, y] of [[-0.03, 0], [0.0, 0], [0.03, 0], [-0.015, 0.024], [0.015, 0.024], [0, 0.046]] as const) {
-        P(K.part(K.cyl(1, 1, 10), "#8a5a34", [x, gy + 0.012 + y, gv], [Math.PI / 2, 0, 0], [0.012, 0.11, 0.012]));
-        P(K.part(K.cyl(1, 1, 10), "#ecca90", [x, gy + 0.012 + y, gv + 0.0555], [Math.PI / 2, 0, 0], [0.0105, 0.002, 0.0105]));
+      for (const [x, y] of [[-0.06, 0], [0, 0], [0.06, 0], [-0.03, 0.06], [0.03, 0.06], [0, 0.115]] as const) {
+        G(K.part(K.cyl(1, 1, 10), "#8a5a34", [x, gy + 0.03 + y, gv], [Math.PI / 2, 0, 0], [0.012 * S, 0.11 * S, 0.012 * S]));
+        G(K.part(K.cyl(1, 1, 10), "#ecca90", [x, gy + 0.03 + y, gv + 0.0555 * S], [Math.PI / 2, 0, 0], [0.0105 * S, 0.002 * S, 0.0105 * S]));
       }
-      for (let k = 0; k < 3; k++) P(K.part(box, "#d8a870", [0, gy + 0.004 + k * 0.006, gv - 0.1], [0, 0.1 * k, 0], [0.12, 0.005, 0.03]));
-    } else if (good === "clay") {
-      for (const pv of [gv, gv - 0.09]) {
-        P(K.part(box, "#9a7048", [0, gy + 0.004, pv], [0, 0, 0], [0.11, 0.008, 0.075]));
-        for (let l = 0; l < 3; l++)
-          for (let i = 0; i < 3; i++)
-            for (let j = 0; j < 2; j++)
-              P(K.part(box, (i + j + l) % 2 ? "#c8573a" : "#d86a46", [(i - 1) * 0.034 + (l % 2) * 0.006, gy + 0.016 + l * 0.018, pv + (j - 0.5) * 0.034], [0, 0, 0], [0.032, 0.016, 0.032]));
+      for (let k = 0; k < 3; k++) G(K.part(box, "#d8a870", [0, gy + 0.01 + k * 0.015, gv + 0.3 * stride], [0, Math.PI / 2, 0], [0.12 * S, 0.005 * S, 0.03 * S]));
+    } else if (good === "clay" || good === "ore") {
+      for (const pv of [gv, gv + 0.29 * stride]) {
+        // Each original pallet is rotated, then enlarged uniformly: 0.175–0.188 across the 0.2-wide pier.
+        const pallet = (geometry: THREE.BufferGeometry) => G(geometry.translate(0, -gy, -pv).scale(S, S, S).rotateY(Math.PI / 2).translate(0, gy, pv));
+        if (good === "clay") {
+          pallet(K.part(box, "#9a7048", [0, gy + 0.004, pv], [0, 0, 0], [0.11, 0.008, 0.075]));
+          for (let l = 0; l < 3; l++) for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++)
+            pallet(K.part(box, (i + j + l) % 2 ? "#c8573a" : "#d86a46", [(i - 1) * 0.034 + (l % 2) * 0.006, gy + 0.016 + l * 0.018, pv + (j - 0.5) * 0.034], [0, 0, 0], [0.032, 0.016, 0.032]));
+        } else {
+          pallet(K.part(box, "#8a6040", [0, gy + 0.02, pv], [0, 0, 0], [0.1, 0.04, 0.07]));
+          pallet(K.part(box, "#5e4028", [0, gy + 0.02, pv], [0, 0, 0], [0.104, 0.006, 0.074]));
+          for (let k = 0; k < 7; k++)
+            pallet(K.part(K.blobGeo(860 + k + di), k === 3 ? "#dfeaf2" : ["#7a8088", "#9aa0a6", "#5a6068"][k % 3]!, [(r() - 0.5) * 0.07, gy + 0.045 + r() * 0.01, pv + (r() - 0.5) * 0.045], [r(), r(), r()], [0.015, 0.012, 0.014]));
+        }
       }
-      P(K.part(K.sphere(10), "#c8744a", [0.07, gy + 0.024, gv - 0.04], [0, 0, 0], [0.018, 0.024, 0.018]));
+      if (good === "clay") G(K.part(K.sphere(10), "#c8744a", [0.05, gy + 0.06, gv + 0.48 * stride], [0, 0, 0], [0.018 * S, 0.024 * S, 0.018 * S]));
     } else if (good === "wool") {
-      for (const [x, y, v] of [[-0.03, 0, gv], [0.03, 0, gv], [0, 0.04, gv], [0, 0, gv - 0.08]] as const) {
-        P(K.part(K.blobGeo(800 + di * 4 + Math.round(x * 100)), "#f5efe2", [x, gy + 0.022 + y, v], [0, r(), 0], [0.03, 0.022, 0.028]));
-        P(K.part(new THREE.TorusGeometry(1, 0.1, 5, 14), "#a8845a", [x, gy + 0.022 + y, v], [0, Math.PI / 2, 0], [0.024, 0.024, 0.024]));
+      for (const [y, offset] of [[0, 0], [0, 0.16], [0.1, 0.08], [0, 0.33]] as const) {
+        const v = gv + offset * stride;
+        G(K.part(K.blobGeo(800 + di * 4 + Math.round(offset * 100)), "#f5efe2", [0, gy + 0.055 + y, v], [0, r(), 0], [0.03 * S, 0.022 * S, 0.028 * S]));
+        G(K.part(new THREE.TorusGeometry(1, 0.1, 5, 14), "#a8845a", [0, gy + 0.055 + y, v], [0, Math.PI / 2, 0], [0.024 * S, 0.024 * S, 0.024 * S]));
       }
     } else if (good === "grain") {
-      for (const [x, v] of [[-0.03, gv], [0.025, gv + 0.01], [0, gv - 0.035], [-0.02, gv - 0.08], [0.03, gv - 0.075]] as const) {
-        P(K.part(K.sphere(10), "#e8d2a0", [x, gy + 0.022, v], [0, 0, 0], [0.021, 0.025, 0.019]));
-        P(K.part(K.cyl(1, 1, 8), "#c9a86a", [x, gy + 0.048, v], [0, 0, 0], [0.007, 0.01, 0.007]));
+      for (const [x, offset] of [[-0.044, 0], [0.044, 0], [-0.044, 0.13], [0.044, 0.13], [0, 0.26]] as const) {
+        const v = gv + offset * stride;
+        G(K.part(K.sphere(10), "#e8d2a0", [x, gy + 0.0625, v], [0, 0, 0], [0.021 * S, 0.025 * S, 0.019 * S]));
+        G(K.part(K.cyl(1, 1, 8), "#c9a86a", [x, gy + 0.12, v], [0, 0, 0], [0.007 * S, 0.01 * S, 0.007 * S]));
       }
       for (let k = 0; k < 9; k++) {
         const a = (k / 9) * Math.PI * 2;
-        P(K.part(K.cyl(0.5, 1, 4), "#e6bc4e", [0.06 + Math.cos(a) * 0.006, gy + 0.034, gv - 0.13 + Math.sin(a) * 0.006], [Math.sin(a) * 0.25, 0, -Math.cos(a) * 0.25], [0.005, 0.07, 0.005]));
-      }
-    } else if (good === "ore") {
-      for (const pv of [gv, gv - 0.09]) {
-        P(K.part(box, "#8a6040", [0, gy + 0.02, pv], [0, 0, 0], [0.1, 0.04, 0.07]));
-        P(K.part(box, "#5e4028", [0, gy + 0.02, pv], [0, 0, 0], [0.104, 0.006, 0.074]));
-        for (let k = 0; k < 7; k++)
-          P(K.part(K.blobGeo(860 + k + di), k === 3 ? "#dfeaf2" : ["#7a8088", "#9aa0a6", "#5a6068"][k % 3]!, [(r() - 0.5) * 0.07, gy + 0.045 + r() * 0.01, pv + (r() - 0.5) * 0.045], [r(), r(), r()], [0.015, 0.012, 0.014]));
+        G(K.part(K.cyl(0.5, 1, 4), "#e6bc4e", [Math.cos(a) * 0.006 * S, gy + 0.034 * S, gv + 0.4 * stride + Math.sin(a) * 0.006 * S], [Math.sin(a) * 0.25, 0, -Math.cos(a) * 0.25], [0.005 * S, 0.07 * S, 0.005 * S]));
       }
     } else {
-      for (const [x, v] of [[-0.035, gv], [-0.035, gv - 0.06]] as const) {
-        P(K.part(K.cyl(0.88, 0.88, 12), "#9a6a40", [x, gy + 0.03, v], [0, 0, 0], [0.024, 0.06, 0.024]));
-        for (const y of [0.012, 0.048]) P(K.part(K.cyl(1, 1, 12), "#4a4440", [x, gy + y, v], [0, 0, 0], [0.0225, 0.005, 0.0225]));
+      for (const offset of [0, 0.16]) {
+        const v = gv + offset * stride;
+        G(K.part(K.cyl(0.88, 0.88, 12), "#9a6a40", [-0.03, gy + 0.03 * S, v], [0, 0, 0], [0.024 * S, 0.06 * S, 0.024 * S]));
+        for (const y of [0.012, 0.048]) G(K.part(K.cyl(1, 1, 12), "#4a4440", [-0.03, gy + y * S, v], [0, 0, 0], [0.0225 * S, 0.005 * S, 0.0225 * S]));
       }
-      P(K.part(box, "#b88a58", [0.03, gy + 0.024, gv - 0.01], [0, 0.3, 0], [0.05, 0.048, 0.05]));
-      P(K.part(box, "#8a6040", [0.03, gy + 0.024, gv - 0.01], [0, 0.3, 0], [0.052, 0.006, 0.052]));
-      P(K.part(K.sphere(10), "#e8d2a0", [0.03, gy + 0.016, gv - 0.08], [0, 0, 0], [0.02, 0.016, 0.018]));
-      P(K.part(box, "#6a7a5a", [0.0, gy + 0.002, gv - 0.12], [0, 0.4, 0], [0.08, 0.004, 0.05]));
+      G(K.part(box, "#b88a58", [0, gy + 0.024 * S, gv + 0.33 * stride], [0, 0.15, 0], [0.05 * S, 0.048 * S, 0.05 * S]));
+      G(K.part(box, "#8a6040", [0, gy + 0.024 * S, gv + 0.33 * stride], [0, 0.15, 0], [0.052 * S, 0.006 * S, 0.052 * S]));
+      G(K.part(K.sphere(10), "#e8d2a0", [0, gy + 0.016 * S, gv + 0.49 * stride], [0, 0, 0], [0.02 * S, 0.016 * S, 0.018 * S]));
+      G(K.part(box, "#6a7a5a", [0, gy + 0.002 * S, gv + 0.45 * stride], [0, Math.PI / 2, 0], [0.08 * S, 0.004 * S, 0.05 * S]));
     }
+    const packingBounds = new THREE.Box3();
+    const packingInverse = frame.clone().invert();
+    for (const geometry of goodsParts) {
+      const local = geometry.clone().applyMatrix4(packingInverse);
+      local.computeBoundingBox();
+      packingBounds.union(local.boundingBox!);
+      local.dispose();
+    }
+    const packingLength = packingBounds.max.z - packingBounds.min.z;
+    if (packingLength > len) {
+      const center = (packingBounds.min.z + packingBounds.max.z) / 2;
+      const fit = new THREE.Matrix4().makeTranslation(0, 0, center).multiply(new THREE.Matrix4().makeScale(1, 1, len / packingLength)).multiply(new THREE.Matrix4().makeTranslation(0, 0, -center));
+      const worldFit = frame.clone().multiply(fit).multiply(packingInverse);
+      for (const geometry of goodsParts) geometry.applyMatrix4(worldFit);
+      packingBounds.min.z = center - len / 2;
+      packingBounds.max.z = center + len / 2;
+    }
+    const shift = Math.max(0, v0 - packingBounds.min.z) - Math.max(0, packingBounds.max.z - v1);
+    if (shift) {
+      const delta = new THREE.Vector3(0, 0, shift).applyMatrix4(frame).sub(new THREE.Vector3().setFromMatrixPosition(frame));
+      for (const geometry of goodsParts) geometry.translate(delta.x, delta.y, delta.z);
+    }
+    // Semantic vertex ranges keep these merged goods inspectable without extra meshes or draw calls.
+    const goodsBounds = new THREE.Box3();
+    const inverse = frame.clone().invert();
+    for (const geometry of goodsParts) {
+      const local = geometry.clone().applyMatrix4(inverse);
+      local.computeBoundingBox();
+      goodsBounds.union(local.boundingBox!);
+      local.dispose();
+    }
+    (group.userData.goodsPiles ??= []).push({ kind: good, start: goodsStart,
+      count: goodsParts.reduce((count, part) => count + part.attributes.position.count, 0),
+      min: goodsBounds.min.toArray(), max: goodsBounds.max.toArray(), frame: frame.toArray(),
+      deck: { width: W, from: v0, to: v1 }, scale: S });
 
     // The ship, moored alongside the T-head's ship side, bow to the shore.
     const sv = tv - 0.04;

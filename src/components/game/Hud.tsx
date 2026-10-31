@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dices,
   Home,
@@ -7,7 +7,7 @@ import {
   ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ChatControls, ChatDock, ChromeLanded, CostCard, FortuneTray, GainFloats, HowTo, MyNumbers, sheets, TradePanel, TurnMoment, WinScreen } from "@/components/game/chunks";
+import { ChatControls, ChatDock, ChromeLanded, CostCard, FirstGameCoach, FortuneTray, HowTo, MyNumbers, sheets, TradePanel, TurnMoment, WinScreen } from "@/components/game/chunks";
 import { TradeToast } from "@/components/game/TradeToast";
 import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
@@ -26,7 +26,7 @@ import { TradeButton } from "@/components/game/TradeButton";
 import { CostChips, hintLine, needLine, priceLabel, shortfall, type Price } from "@/components/game/BuildCost";
 import { useEscapeDisarm } from "@/components/game/escape-disarm";
 import { COST, RESOURCES, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
-import { legalCities, legalRoads, legalSettle, totalVP } from "@/lib/game/rules";
+import { legalCities, legalRoads, legalSettle, playable, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
 import { useViewport } from "@/lib/viewport";
@@ -99,11 +99,11 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
       return ["Place an outpost", "Outpost"];
     case "stronghold":
       return ["Build a stronghold", "Stronghold"];
-    // #423: both fortunes are armed from the tray, and the Fortunes button stays pressed until the pick is made or cancelled.
+    // #423: both fortunes are armed from the tray, and the My fortunes button stays pressed until the pick is made or cancelled.
     case "knight":
-      return ["Move the wayfarer", "Fortunes"];
+      return ["Move the wayfarer", "Play fortune"];
     case "roadCard":
-      return [roadPicks ? "Place one more path" : "Place two paths", "Fortunes"];
+      return [roadPicks ? "Place one more path" : "Place two paths", "Play fortune"];
     default:
       return null;
   }
@@ -138,6 +138,7 @@ export function Hud() {
   const chatOpen = useGame((s) => s.chatOpen);
   const tradeOpen = useGame((s) => s.tradeOpen);
   const dispatch = useGame((s) => s.dispatch);
+  const choosing = useGame((s) => !!s.pendingSteal);
   const refuseQuietly = useGame((s) => s.refuseQuietly);
   const setBuildMode = useGame((s) => s.setBuildMode);
   const setHowTo = useGame((s) => s.setHowTo);
@@ -151,6 +152,7 @@ export function Hud() {
   // #492: the sheets chunk is asked for again on each open and at the win (the boundary's key). When the ask made at the
   // win fails, the win screen cannot show and the winner line gets the way out; a failure under an earlier key is not it.
   const sheetsKey = `${tradeOpen}|${howTo}|${costs}|${state?.winner ?? ""}`;
+  const [timerHeader, setTimerHeader] = useState<HTMLDivElement | null>(null);
   const [sheetsLost, setSheetsLost] = useState<string | null>(null);
   useEscapeDisarm();
   const [stackRef, moreBelow] = useMoreBelow();
@@ -161,8 +163,26 @@ export function Hud() {
   const fortunesButton = useRef<HTMLButtonElement>(null);
   const turnKey = state ? `${state.turn}|${state.current}|${state.phase}` : "";
   useEffect(() => setFortunesOpen(false), [turnKey]);
+  // #829: the cue glows once per turn. The button is rendered in more than one place (roll, main, robber), so a phase change
+  // remounts it; a ring that mounts for a turn whose glow already started is marked done and does not animate again.
+  const cueKey = state ? `${state.turn}|${state.current}` : "";
+  const glowed = useRef("");
+  const cueRing = useCallback((el: HTMLSpanElement | null) => {
+    if (!el) return;
+    if (glowed.current === cueKey) el.dataset.done = "1";
+  }, [cueKey]);
   const actor = mode === "hotseat" ? (state?.current ?? "") : localId;
   const me = state ? (state.players.find((p) => p.id === actor) ?? state.players[0]!) : null;
+  // #776: My fortunes leaves with the last held fortune; when that drops focus to the page, End turn takes it.
+  const heldNow = state && me && !spectator ? Object.values(me.hidden).reduce((n, c) => n + c, 0) : 0;
+  const fortuneArmed = buildMode === "knight" || buildMode === "roadCard";
+  const showFortunes = heldNow > 0 || fortuneArmed;
+  const hadFortunes = useRef(showFortunes);
+  useEffect(() => {
+    // Trade in the main phase, Roll in the roll phase: neither ends the turn on a stray Enter.
+    if (hadFortunes.current && !showFortunes && document.activeElement === document.body) document.querySelector<HTMLElement>("[data-after-fortune]")?.focus();
+    hadFortunes.current = showFortunes;
+  }, [showFortunes]);
   // A build that just became ready (a roll, a trade) pulses its button once; a change of seat is not that, and a build with
   // no spot or none left never is. The key is empty on another seat's turn (buildStatus does not look at the phase, so it is the same from a roll to main), and the hand's counts are in it, so any
   // other change (a steal, the row leaving) clears a pulse instead of leaving one to fire later. A watcher's `me` is seat 0 of
@@ -171,7 +191,7 @@ export function Hud() {
   const readyKey = rowShown ? `${me!.id}|${PRICES.map((k) => (buildStatus(state, me!, k).ready ? 1 : 0)).join("")}|${RESOURCES.map((r) => me!.resources[r]).join(",")}` : "";
   const wasReady = useRef(readyKey);
   const [pulse, setPulse] = useState<Price[]>([]);
-  // #535: a tap on a build the hand cannot pay for hangs "Need 1 clay" above that build for 1.6 s; the next tap restarts it.
+  // #535: a tap on a build the hand cannot pay for hangs "Need 1 brick" above that build for 1.6 s; the next tap restarts it.
   const [hint, setHint] = useState<{ kind: Price } | null>(null);
   useEffect(() => {
     if (!hint) return;
@@ -204,17 +224,22 @@ export function Hud() {
         : (state.discardNeeded[actor] ?? 0) > 0
           ? actor
           : null;
-  // The shared deck count is inspectable with an empty hand and off turn too.
-  const fortuneArmed = buildMode === "knight" || buildMode === "roadCard";
+  // #776: "Play fortune · N" or "Fortunes · N" opens the tray of held cards. It shows only while a fortune is held or armed, so a fresh hand has no
+  // such button; the deck count lives on the Fortune buy tile.
   const deckLeft = state.deckLeft ?? state.deck.length;
-  const fortunes = (
+  // #829: on my own turn, the fortunes I can play now (points are never played; ones bought this turn wait). The glow ring is keyed
+  // on the turn, so it runs once when the turn starts and no later state change restarts it.
+  const playableNow = mine && !spectator && !state.playedCard ? (["knight", "road", "plenty", "monopoly"] as const).reduce((n, k) => n + Math.max(0, playable(me, k)), 0) : 0;
+  // Owner decision (#829, provisional): the label itself says a fortune can be played now.
+  const fortunesLabel = playableNow > 0 ? "Play fortune" : "Fortunes";
+  const fortunes = showFortunes ? (
     <Button
       ref={fortunesButton}
       size="sm"
       data-testid="fortunes-button"
       data-deck-left={deckLeft}
-      aria-label={`Fortunes, ${deckLeft} left in deck`}
-      className="h-11 min-w-11 flex-col gap-0 px-2 text-xs leading-4 tabular-nums"
+      aria-label={`${fortunesLabel}, ${heldNow} held`}
+      className="relative h-11 min-w-11 px-3 text-sm tabular-nums"
       aria-pressed={fortunesOpen || fortuneArmed}
       aria-expanded={fortunesOpen}
       variant={fortunesOpen || fortuneArmed ? "primary" : "secondary"}
@@ -223,9 +248,10 @@ export function Hud() {
         setFortunesOpen((o) => !o);
       }}
     >
-      <span>Fortunes</span>{" "}<span>{deckLeft} left</span>
+      {playableNow > 0 && <span key={cueKey} ref={cueRing} onAnimationStart={() => (glowed.current = cueKey)} aria-hidden="true" data-testid="fortune-cue-glow" className="fortune-cue-glow" />}
+      {fortunesLabel} · {heldNow}
     </Button>
-  );
+  ) : null;
   // Hotseat has no "you": every seat is named. The turn banner sits out once the isle has a ruler (the pill says who).
   const subject = state.phase === "discard" && discarder ? discarder : state.current;
   const subjectPlayer = state.players.find((p) => p.id === subject) ?? state.players[0]!;
@@ -260,14 +286,14 @@ export function Hud() {
   const instruction = state.phase === "over" ? null : (
     <p key={`turn-${state.current}`} data-testid="turn-banner"
       style={{ borderLeftColor: yours ? undefined : subjectPlayer.color }}
-      className={cn("turn-instruction rounded-control px-3 py-1.5 text-[15px] font-medium leading-5", yours ? "turn-instruction-own" : "border-l-4")}
+      className={cn("turn-instruction rounded-control px-3 py-1.5 text-[15px] font-medium leading-5", yours ? "turn-instruction-own" : "border-l-4", !waiting && !choosing && (state.phase === "robber" || buildMode === "knight") && "turn-instruction-move")}
     >{turnText}</p>
   );
 
   const endRow = (
     <div className={cn("flex *:self-center", column ? "end-footer sticky z-10 justify-between gap-1 rounded-control bg-surface p-1" : "tray-end ml-auto gap-2")}>
-      {/* The 260 px column has room for Trade, End turn and the dice only with the faces shrunk (they are not targets). */}
-      {column ? <><TradeButton /><div className="[&>div]:gap-1 [&_[data-testid=die]]:size-6 [&_[data-testid=die]]:p-0.5 [&_[data-pip]]:size-1">{dice}</div></> : dice}
+      {/* The 260 px column has room for End turn and the dice only with the faces shrunk (they are not targets); Trade and My fortunes share the row above. */}
+      {column ? <>{fortunes ? null : <TradeButton />}<div className="[&>div]:gap-1 [&_[data-testid=die]]:size-6 [&_[data-testid=die]]:p-0.5 [&_[data-pip]]:size-1">{dice}</div></> : dice}
       <Button size="sm" variant={endPrimary ? "primary" : "secondary"} className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
         End turn
       </Button>
@@ -278,12 +304,13 @@ export function Hud() {
     <>
 
       {/* #442: one control up top. The turn number, watcher count, How to play, sound and Leave live in the menu, whose open
-          sheet rises over the z-20 chat dock (it reaches the header on a sideways phone). Online, Open chat and Quick reactions
-          sit in this row too, left of the menu, so they never move with the turn and never reach the board. A watcher's badge stays out here,
+          sheet rises over the z-20 chat dock (it reaches the header on a sideways phone). Online, Open chat (#899: the one chat button)
+          sits in this row too, left of the menu, so it never moves with the turn and never reaches the board. A watcher's badge stays out here,
           a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
-      <header className={cn("hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30 has-[#quick-reaction-picker]:z-[25]", phone ? "pb-0" : "pb-3")}>
+      <header className={cn("hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30", phone ? "pb-0" : "pb-3")}>
         <div className="pointer-events-auto flex items-center justify-end gap-1">
-          {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : <div className="mr-auto">{instruction}</div>}
+          {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : <div className="mr-auto shrink-0">{instruction}</div>}
+          {phone ? null : <div ref={setTimerHeader} className="mx-2 min-w-0 flex-1 empty:hidden" />}
           {spectator && !(phone && portrait) ? (
             <span data-testid="watching-badge" className="flex h-11 items-center rounded-chip bg-glass px-3 text-caption text-fg backdrop-blur-md">
               Watching
@@ -294,6 +321,7 @@ export function Hud() {
               <ChatControls />
             </LazyBoundary>
           ) : null}
+          <span data-coach-skip-slot className="shrink-0 empty:hidden" />
           <TableMenu />
         </div>
         {phone ? <HiddenPointHint /> : null}
@@ -329,10 +357,9 @@ export function Hud() {
       ) : null}
       <Announcer />
       <RollMoment />
-      {/* If the moments' chunk cannot load, the table stands without them; the hand still flashes every change. */}
+      {/* If the moments' chunk cannot load, the table stands without them. Gains and losses show on the hand's cards (#773). */}
       <LazyBoundary failed={null}>
         <TurnMoment />
-        {spectator ? null : <GainFloats me={me} rolls={state.rolls ?? 0} />}
       </LazyBoundary>
 
       <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 px-safe pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
@@ -351,6 +378,12 @@ export function Hud() {
               {banner}
             </p>
           ) : null}
+          <LazyBoundary failed={null}>
+            <FirstGameCoach
+              hidden={!!banner && !(tradeOutcome && banner.endsWith("'s trade"))}
+              className={cn("absolute inset-x-0", column ? "left-full top-0 ml-3 w-max max-w-[calc(100vw-21.5rem-max(0.75rem,env(safe-area-inset-left))-max(0.75rem,env(safe-area-inset-right)))]" : "bottom-full mb-2")}
+            />
+          </LazyBoundary>
           <div
             ref={stackRef}
             data-hud-stack
@@ -367,7 +400,7 @@ export function Hud() {
                 pointer-events-none: a porous child would make the stack's chrome only its parts, and the column no rail. */}
             <PlaceChip column />
             {phone ? instruction : null}
-            <TurnCountdown />
+            <TurnCountdown header={phone ? null : timerHeader} />
             {winner || error ? (
               <p className="rounded-[16px] border border-white/50 bg-glass px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
                 {winner ? <span id="hud-winner">{`${winner.name} wins with ${totalVP(state, winner.id)} points.`}</span> : null}
@@ -402,13 +435,13 @@ export function Hud() {
                       key={kind}
                       size="sm"
                       variant={buildMode === arm ? "primary" : "secondary"}
-                      aria-label={label}
+                      aria-label={kind === "card" ? `${label}, ${deckLeft} left in deck` : label}
                       data-testid={`build-${kind}`}
                       data-build={why ? "blocked" : ready ? "ready" : "short"}
                       data-build-state={why ? "nospot" : ready ? "ready" : "missing"}
                       // A 44 px two-line tile, the piece over its chips (docs/design/polish.md: actions as tiles with their amount),
                       // so the row keeps the lines it had before the chips: one at 1280x720, three builds a line on a phone.
-                      className={cn("build-tile relative h-[52px] min-w-11 flex-col gap-1 px-1 py-1", NOT_NOW, pulse.includes(kind) && "build-ready")}
+                      className={cn("build-tile relative h-[52px] min-w-11 flex-col px-1 py-1", kind === "card" && !why ? "gap-0" : "gap-1", NOT_NOW, pulse.includes(kind) && "build-ready")}
                       onAnimationEnd={(e) => e.animationName === "build-ready" && setPulse((p) => p.filter((k) => k !== kind))}
                       aria-pressed={arm ? buildMode === arm : undefined}
                       aria-disabled={blocked || undefined}
@@ -433,6 +466,7 @@ export function Hud() {
                       {/* The chips and the reason are aria-hidden: the name stays the piece, the description says the rest. Missing
                           goods ring what the hand lacks and say how many short. */}
                       {why ? <span aria-hidden className="text-caption text-muted">{why}</span> : <CostChips kind={kind} hand={missing ? me.resources : undefined} />}
+                      {kind === "card" && !why ? <span aria-hidden data-testid="deck-left" className="text-[10px] leading-[10px] tabular-nums text-muted">{deckLeft} left</span> : null}
                       {/* The ends of the row hang the chip inward, so it stays on a phone's screen. Last child: the tile's own
                           styles address its first span. */}
                       {hint?.kind === kind ? (
@@ -451,8 +485,8 @@ export function Hud() {
                   );
                 })}
                 </div>
-                {!column || fortunes ? <div className="action-utilities flex items-center gap-1">
-                  {column ? null : <TradeButton />}
+                {!column || fortunes ? <div data-fortunes={fortunes ? "" : undefined} className="action-utilities flex items-center gap-1">
+                  <TradeButton />
                   {fortunes}
                   {column ? null : endRow}
                 </div> : null}
@@ -464,7 +498,7 @@ export function Hud() {
                 <div className="flex flex-wrap gap-2 *:self-center">
                   {dice}
                   {fortunes}
-                  <Button size="lg" className="flex-1" onClick={() => dispatch({ type: "roll" })}>
+                  <Button size="lg" className="flex-1" data-after-fortune onClick={() => dispatch({ type: "roll" })}>
                     <Dices className="size-5" /> Roll
                   </Button>
                 </div>
@@ -472,7 +506,7 @@ export function Hud() {
             ) : null}
 
             {!mine || !["main", "roll", "rollOff"].includes(state.phase) ? (
-              <div className="flex flex-wrap items-center gap-2">{fortunes}{dice}</div>
+              fortunes || dice ? <div className="flex flex-wrap items-center gap-2">{fortunes}{dice}</div> : null
             ) : diceInBar ? null : dice}
 
             {/* #643: the seat's numbers share the log line's row, so the tray keeps its height (the declared hole holds). They
@@ -491,6 +525,8 @@ export function Hud() {
               >
                 {gameLog.at(-1)?.text}
               </p>
+              {/* #776: the shared draw deck is public to every seat and watcher, so its count sits here, off the build row. */}
+              <span data-testid="deck-count" data-deck-left={deckLeft} title={`${deckLeft} fortunes left in the deck`} className="shrink-0 px-2 text-xs leading-5 tabular-nums">Deck {deckLeft}</span>
             </div>
             {pinEnd ? endRow : null}
             <TradeToast />

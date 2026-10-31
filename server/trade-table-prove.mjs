@@ -11,7 +11,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -175,7 +175,7 @@ for (const c of all) {
   if (goods(c, A) !== total(a1) || goods(c, C) !== total(c1)) fail(`${c.name} goods counts`, [goods(c, A), goods(c, C)]);
 }
 if (goods(B, A) !== aGoods || goods(B, C) !== cGoods) fail("a 1-for-1 swap changed a hand size");
-const exchange = A.state.game.log.findLast((line) => line.endsWith("— table trade."));
+const exchange = A.state.game.log.findLast((line) => / traded .+ to .+ for .+\.$/.test(line));
 if (!exchange) fail("accepted trade has no canonical goods event", A.state.game.log.slice(-4));
 for (const c of all) {
   if (c.state.game.log.filter((line) => line === exchange).length !== 1) fail(`${c.name} accepted trade persists exactly once`);

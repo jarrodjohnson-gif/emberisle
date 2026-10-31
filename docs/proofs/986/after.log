@@ -1,0 +1,6 @@
+restart: open visibility persists through kill -9 and rejoin; private, missing and invalid visibility stay hidden
+recovery: authenticated rejoin finishes at turn start and releases discovery while the winner stays connected
+rematch free: authenticated seats, winner order, frozen roster and guarded HTTP/WS discovery pass
+rematch successor: authenticated seats, winner order, frozen roster and guarded HTTP/WS discovery pass
+rematch private: authenticated seats, winner order, frozen roster and guarded HTTP/WS discovery pass
+open-table-prove ok: list empty, private never listed, open listed, join via code, parallel private hidden, handoff, bots count, rate limit, cleanup on drop

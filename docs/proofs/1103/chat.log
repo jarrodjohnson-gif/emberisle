@@ -1,0 +1,15 @@
+
+> chat-prove
+> node scripts/chat-prove.mjs
+
+ok lobby status on Ember: "Need 2 more players" +1.4s
+ok lobby status on Ember: "Need 1 more player" +1.6s
+ok lobby status on Tide: "Need 1 more player" +1.6s
+ok lobby status on Ember: "0 of 3 ready" +1.8s
+ok lobby status on Tide: "0 of 3 ready" +1.8s
+ok host tag on Ember's row only, seen by Ember +1.8s
+ok host tag on Ember's row only, seen by Tide +1.8s
+ok host tag on Ember's row only, seen by Pine +1.8s
+ok phone title card is 402 px tall, at most 55% of 844 +1.9s
+ok phone title card is full width minus 12 px, at the bottom +1.9s
+FAIL phone lobby card is 358x812, inside the 390x844 screen and full width

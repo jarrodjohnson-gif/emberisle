@@ -26,7 +26,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", LOBBY_HOLD_MS: "200", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", LOBBY_HOLD_MS: "200", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -158,6 +158,19 @@ async function robSecond(p, type, hexId) {
 const twoTargetHexes = (p) =>
   p.state.hexes.filter((h) => h.id !== p.state.robberHex && stealTargets(p.state, h.id, p.you).length > 1).map((h) => h.id);
 
+// With two neighbours on a hex and only one holding goods, the engine lists exactly that one (#1110).
+{
+  const hexId = twoTargetHexes(a)[0];
+  if (hexId) {
+    const lone = structuredClone(a.state);
+    const [keep, empty] = stealTargets(lone, hexId, a.you);
+    const emptied = lone.players.find((x) => x.id === empty);
+    emptied.goods = 0;
+    const left = stealTargets(lone, hexId, a.you);
+    if (left.length !== 1 || left[0] !== keep) fail("a neighbour with no goods was still a steal target", { hexId, keep, empty, left });
+    console.log(`hex ${hexId}: ${empty} holds nothing, so the only target is ${left[0]}`);
+  }
+}
 let robbed = false;
 let knighted = false;
 for (let turn = 0; turn < 5000 && !(robbed && knighted); turn++) {

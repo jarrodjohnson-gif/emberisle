@@ -57,7 +57,7 @@ Every issue says its size in the body:
 - **Small limit left?** Take one `XS` or `S` step. If you run out mid-step, leave the pause
   comment (section 7). The next AI resumes from it. Half-done work is fine if the comment says exactly where it stopped.
 - **No limit (Cursor, a long session)?** Loop: finish a step, set the next one to Todo, take it, and repeat,
-  top to bottom through the earliest milestone. Stop only when nothing is Todo, or everything left is
+  highest priority first, then top to bottom through the earliest milestone. Stop only when nothing is Todo, or everything left is
   `needs: jarrod` or `needs: gaming-pc`.
 
 ## 4. How it maps onto GitHub
@@ -101,11 +101,13 @@ Size: XS | S
 ```
 
 An issue may carry a `model:opus` or `model:sonnet` label when it needs a particular model: opus for
-UI, visual or tricky multi-file work, sonnet for well-specified mechanical steps. A Builder uses that
-model, or a subagent on it. If it can do neither, it says in the PR which model it used. The Reviewer uses a different model from the one that built the PR.
+UI, visual or tricky multi-file work, sonnet for well-specified mechanical steps. A `model:` label pins the issue to that model, so a Builder on another model skips it (`docs/LANES.md`, "Tier and model labels"). A Builder uses that
+model, or a subagent on it. The Reviewer uses a different model from the one that built the PR.
+
+A mock-based design or `ux` issue is ready only when its mock covers 390x844, 844x390 and 1280x720. The mock gives pixel sizes for type, controls and footprints at each size. A mock for one size leaves the Builder guessing at the others (#909).
 
 Add `needs: jarrod` (his decision, account, or money) or `needs: gaming-pc` (Unreal, or the 3.6 GB art pack)
-on its own line when an AI cannot finish it. Those issues still get Research and Design done by any AI.
+on its own line when an AI cannot finish it. Those issues still get Research done by any AI. Design follows "Big design work" in `docs/LANES.md`.
 
 ## 6. Statuses
 
@@ -115,8 +117,10 @@ on its own line when an AI cannot finish it. Those issues still get Research and
 |---|---|
 | Backlog | Known, not scheduled. Research files new children here. |
 | Todo | Picked for now. Any AI may take it. |
-| In Progress | Claimed. Someone is on it. |
-| In Review | Built and tested. Waiting for Jarrod to accept. |
+| Claimed | An agent has posted `/claim`. The label bot sets `status:claimed`. |
+| In Progress | Someone is on it. |
+| Paused | Stopped on purpose, with the claim kept. The label bot sets `status:paused`. |
+| In Review | Reviewed by a different model and merged by the desk. Waiting for Jarrod to accept. |
 | Done | Accepted. The issue is closed. |
 | Canceled | Will not do. Close the issue as "not planned". Never delete it. |
 
@@ -130,8 +134,8 @@ Jarrod's board automation, or the next agent with `gh`, syncs the field from the
 **"What's next?" with no project named:** list Jarrod's projects as numbered options (In Progress
 first, then on hold), each with its next open issue, and ask which one. Do not start until he picks.
 
-**Next open issue** = the first eligible open `status:todo` issue in the **earliest milestone**,
-lowest step first (1 → 4). It must have a lane label, every `Depends on` closed, no active claim or
+**Next open issue** = the first eligible open `status:todo` issue with the **highest `prio:` label**
+(`docs/LANES.md`, "Tier and priority"), then in the **earliest milestone**, lowest step first (1 → 4). It must have a lane label, every `Depends on` closed, no active claim or
 open PR, and no file conflict with another active claim. Continue your own existing work first;
 do not adopt someone else's In Progress claim or treat a pause alone as Todo eligibility.
 
@@ -205,7 +209,15 @@ Not a bug, or a no? Close it with a one-line reason.
   hand them to a subagent, and keep working. Run proofs one at a time, never in parallel: they share
   ports. Before you push or open the PR, wait for every check to finish and read its result. A check
   you haven't read the result of counts as failed.
-- **Pick the model to fit the work.** Use the issue's `model:` label if it has one. Otherwise use a
+- **Choose proofs by what you changed.** CI runs every suite on GitHub's servers at no cost to your usage
+  limit, and your local browser runs spend it. Before the first push, run the proofs for your feature and
+  every proof that could break from the files you touched: search `scripts/` for proofs that load the
+  changed module or render the changed scene. A change to the renderer, the harbour, the board generator
+  or other shared board code needs the board-look and scene proofs. A text or HUD-only change needs
+  neither. Run the full presentation suites locally only when a reviewer asks, or when the change touches
+  the renderer or shared board code. After the first push, let CI run the rest. Record your usage before
+  and after each issue in the PR if you can see it, so the desk can compare builders.
+- **Pick the model to fit the work.** Use the issue's `model:` label if it has one, and skip the issue if you cannot run that model. Otherwise use a
   smaller model for mechanical or search subagents, and the strongest one for UI, visual or tricky
   multi-file work.
 - **Independent steps go out together.** Send unrelated tool calls in one batch, and launch independent
@@ -218,12 +230,17 @@ Not a bug, or a no? Close it with a one-line reason.
 **Every change goes through a pull request.** Push to a branch, open a PR, and CI (`.github/workflows/ci.yml`)
 runs the README "Run it" checks. A red PR is never merged.
 
+**Bundle size.** Do not edit `scripts/size-prove.mjs` for normal growth. In CI, `size-prove` builds the PR's base and fails a chunk
+only when it grows by more than its allowance (index 400 B gzip; others 0.33%, at least 200 B), or passes its absolute ceiling.
+If your change must grow a chunk past its allowance, say why in the PR body, with the measured numbers. The reviewer must OK it
+before the allowance is raised. Locally, `node scripts/size-prove.mjs --base <built base checkout>` runs the growth check.
+
 **Two roles: Builder and Reviewer.**
 
 | Role | Who | Does |
 |---|---|---|
 | Builder | the session doing the work | Steps 1-4, pushes, opens the PR, and fixes CI until it is green. **Never merges its own PR.** |
-| Reviewer | the **orchestrator**: the one session Jarrod names to review and merge | Reviews every open PR with a different model than its builder: reads the diff against the issue's completion test, checks CI and the framework rules (no to-do lists in files, issue comments present). If CI is green and nothing is wrong, it **merges**. If something is wrong, it comments exactly what, and the PR stays open for its Builder. **No other session merges.** |
+| Reviewer | the **orchestrator**: the one session Jarrod names to review and merge | Reviews every open PR with a different model than its builder: reads the diff against the issue's completion test, checks CI and the framework rules (no to-do lists in files, issue comments present). Its review subagents follow [REVIEWING.md](REVIEWING.md). If CI is green and nothing is wrong, it **merges**. If something is wrong, it comments exactly what, and the PR stays open for its Builder. **No other session merges.** |
 | Jarrod | the owner | Accepts results: moves In Review to Done. No code reading needed. |
 
 A new Builder chat therefore starts: take the next eligible issue with no file conflict
@@ -246,6 +263,15 @@ Ideas live in [IDEAS.md](IDEAS.md), never straight in the tracker. When Jarrod d
 
 If bugs live in an outside log, do not copy each one. Make one pointer issue per milestone:
 `Eng: <topic> — Log IMP-06, 13, 14`, listing the item ids and saying the details live in the log.
+
+## 10. Changing the rules
+
+Churn costs more than most rule fixes are worth. So:
+
+- **The rule documents** (`AGENTS.md`, `docs/FRAMEWORK.md`, `docs/LANES.md`, `docs/DESK.md`, `docs/REVIEWING.md`, `docs/HELPERS.md`) change only through an open issue titled `Decide: <the change>`. The desk batches the decisions and applies them **at most once a week**. Jarrod's dated words in that issue are the authority.
+- **These don't need a `Decide:` issue:** fixing a typo, a wrong number or a broken link; recording an owner decision in `docs/DECISIONS.md`; updating `#916`.
+- **GitHub settings** (the `main` ruleset, variables, secrets) change only on Jarrod's own say-so, and each change gets a row in `docs/DECISIONS.md`.
+- **CI suite names are fixed.** The four `browser-b` names, the three `browser-a` parts, `server`, `build` and `checks` live in three places: the `main` ruleset, the job names in `.github/workflows/ci.yml`, and `AGGREGATE_JOBS` in `scripts/flake-rerun.mjs`. Don't rename or add a suite without changing all three in one go and logging it.
 
 ## Writing
 

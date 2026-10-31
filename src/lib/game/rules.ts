@@ -1,4 +1,4 @@
-import { COST, LARGEST_ARMY_MIN, LONGEST_PATH_MIN, POINTS, RESOURCES, type Action, type DevKind, type GameState, type PlayerState, type Resource, type VictoryTarget, type WinTrigger } from "./types";
+import { COST, LARGEST_ARMY_MIN, LONGEST_PATH_MIN, POINTS, RESOURCES, RESOURCE_LABEL, type Action, type DevKind, type GameState, type PlayerState, type Resource, type VictoryTarget, type WinTrigger } from "./types";
 
 function clone<T>(s: T): T {
   return structuredClone(s);
@@ -99,16 +99,18 @@ function connectedToNetwork(state: GameState, pid: string, eid: string) {
   return touch(e.va) || touch(e.vb);
 }
 
-export function harborRate(state: GameState, pid: string, res: Resource): number {
+export function heldRates(state: GameState, pid: string, res: Resource): number[] {
   let any = false;
   let specific = false;
   for (const v of playerVertices(state, pid)) {
     if (v.harbor === res) specific = true;
     if (v.harbor === "any") any = true;
   }
-  if (specific) return 2;
-  if (any) return 3;
-  return 4;
+  return [4, ...(any ? [3] : []), ...(specific ? [2] : [])];
+}
+
+export function harborRate(state: GameState, pid: string, res: Resource): number {
+  return Math.min(...heldRates(state, pid, res));
 }
 
 export function legalSettle(state: GameState, pid: string, setup: boolean): string[] {
@@ -351,22 +353,35 @@ function produce(state: GameState, total: number) {
   for (const res of Object.keys(demand) as Resource[]) {
     if ((demand[res] ?? 0) > state.bank[res] && (owed[res]?.size ?? 0) > 1) short.add(res);
   }
-  if (short.size) log(state, `The bank is short of ${[...short].join(" and ")}; nobody gathers it.`);
+  if (short.size) log(state, `The bank is short of ${[...short].map((r) => RESOURCE_LABEL[r as Resource].toLowerCase()).join(" and ")}; nobody gathers it.`);
   for (const grant of grants) {
     if (short.has(grant.res)) continue;
     const got = give(state, grant.p, grant.res, grant.n);
     if (got) {
-      log(state, `${grant.p.name} gathers ${got} ${grant.res} from the ${grant.pip}.`);
+      log(state, `${grant.p.name} gathers ${got} ${RESOURCE_LABEL[grant.res].toLowerCase()} from the ${grant.pip}.`);
       (state.lastProduction ??= []).push({ hex: grant.hex, player: grant.p.id, res: grant.res, n: got, vertex: grant.vertex });
     }
   }
 }
 
+const LABEL_TO_RESOURCE: Record<string, Resource> = {
+  wood: "timber",
+  brick: "clay",
+  sheep: "wool",
+  wheat: "grain",
+  stone: "ore",
+  ore: "ore",
+  timber: "timber",
+  clay: "clay",
+  wool: "wool",
+  grain: "grain",
+};
+
 // The shortage travels with the canonical roll event, including after a rejoin.
 export function bankShort(state: GameState): Resource[] {
-  const i = state.log.findLastIndex((l) => / rolls \d\+\d = \d+\.| — .+'s roll[;.]/.test(l));
+  const i = state.log.findLastIndex((l) => / rolled \d+!| — .+'s roll[;.]/.test(l));
   const m = /[Tt]he bank is short of ([a-z and]+);/.exec(`${state.log[i] ?? ""} ${state.log[i + 1] ?? ""}`);
-  return m ? (m[1]!.split(" and ") as Resource[]) : [];
+  return m ? (m[1]!.split(" and ").map((w) => LABEL_TO_RESOURCE[w] ?? (w as Resource))) : [];
 }
 
 // The hexes the latest roll actually paid: each grant produce() made is recorded per hex, so a short bank, the wayfarer's hex
@@ -395,6 +410,7 @@ function stealOne(state: GameState, fromId: string, toId: string) {
   const pick = pool[Math.floor(nextRand(state) * pool.length)]!;
   from.resources[pick] -= 1;
   to.resources[pick] += 1;
+  from.goodsLost = (from.goodsLost ?? 0) + 1;
   // The table hears that a card moved, not which one: only the two hands change (#187).
   log(state, `${to.name} steals a card from ${from.name}.`);
 }
@@ -447,7 +463,7 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
   if (result.error) return result;
   const next = result.state;
   const me = next.players.find((p) => p.id === actor)!;
-  const goods = (bag: Partial<Record<Resource, number>>) => RESOURCES.filter((r) => bag[r]).map((r) => `${bag[r]} ${r}`).join(", ");
+  const goods = (bag: Partial<Record<Resource, number>>) => RESOURCES.filter((r) => bag[r]).map((r) => `${bag[r]} ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ");
   const changes = next.players.map((p) => {
     const was = prev.players.find((x) => x.id === p.id)!;
     const gain: Partial<Record<Resource, number>> = {}, loss: Partial<Record<Resource, number>> = {};
@@ -467,7 +483,7 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     case "roll": {
       if (prev.phase === "rollOff") break;
       const short = bankShort(next);
-      line = `${delta || "Nobody gains goods"} — ${me.name}'s roll${short.length ? `; the bank is short of ${short.join(" and ")}; nobody gains it` : ""}.`;
+      line = `${delta || "Nobody gains goods"} — ${me.name}'s roll${short.length ? `; the bank is short of ${short.map((r) => RESOURCE_LABEL[r].toLowerCase()).join(" and ")}; nobody gains it` : ""}.`;
       break;
     }
     case "setupSettle": if (delta) line = `${delta} — starting outpost.`; break;
@@ -487,9 +503,17 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     }
     case "playRoad": line = `${me.name} plays Path — places ${prev.players.find((p) => p.id === actor)!.pathsLeft - me.pathsLeft} ${prev.players.find((p) => p.id === actor)!.pathsLeft - me.pathsLeft === 1 ? "path" : "paths"}.`; break;
     case "playPlenty": line = `${me.name} plays Plenty — ${delta}.`; break;
-    case "playMonopoly": line = `${me.name} plays Monopoly — ${delta || `gains 0 ${action.resource}`}.`; break;
-    case "bankTrade": line = `${delta} — bank trade.`; break;
-    case "respondTrade": if (action.accept) line = `${delta} — table trade.`; break;
+    case "playMonopoly": line = `${me.name} plays Monopoly — ${delta || `gains 0 ${RESOURCE_LABEL[action.resource].toLowerCase()}`}.`; break;
+    case "bankTrade": {
+      const rate = harborRate(prev, actor, action.give);
+      line = `${me.name} traded ${rate} ${RESOURCE_LABEL[action.give].toLowerCase()} to ${rate < 4 ? "a dock" : "the bank"} for 1 ${RESOURCE_LABEL[action.want].toLowerCase()}.`;
+      break;
+    }
+    case "respondTrade": {
+      const t = prev.trade;
+      if (action.accept && t) line = `${prev.players.find((p) => p.id === t.from)!.name} traded ${goods(t.give) || "nothing"} to ${me.name} for ${goods(t.want) || "nothing"}.`;
+      break;
+    }
   }
   if (!line) return result;
   // Awards and victory remain separate public events; setup's transition also stays in order.
@@ -498,7 +522,9 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
   const added = next.log.slice(overlap);
   const awards = added.filter((v) => / (holds|loses) the (longest path|largest army)\./.test(v));
   const endings = added.filter((v) => / claims the isle |^The isle is settled/.test(v));
-  next.log = [...prev.log, ...awards, line, ...endings].slice(-200);
+  // The roll's own line ("<name> rolled <sum>!", #687) is part of the public log, ahead of what the roll paid.
+  const rolled = action.type === "roll" ? added.filter((v) => /^.+ rolled \d+!$/.test(v)) : [];
+  next.log = [...prev.log, ...rolled, ...awards, line, ...endings].slice(-200);
   return result;
 }
 
@@ -554,7 +580,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       state.rolls = (state.rolls ?? 0) + 1;
       state.lastProduction = [];
       const total = a + b;
-      log(state, `${me.name} rolls ${a}+${b} = ${total}.`);
+      log(state, `${me.name} rolled ${total}!`);
       if (total === 7) {
         const need: Record<string, number> = {};
         for (const p of state.players) {
@@ -599,7 +625,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
     case "buildPath": {
       if (state.phase !== "main") return { state: prev, error: "Cannot build now." };
       if (me.pathsLeft <= 0) return { state: prev, error: "No paths left." };
-      if (!hasCost(me, COST.path)) return { state: prev, error: "Need timber and clay." };
+      if (!hasCost(me, COST.path)) return { state: prev, error: "Need wood and brick." };
       if (!legalRoads(state, actor, false).includes(action.edgeId)) {
         return { state: prev, error: edge(state, action.edgeId)?.path ? EDGE_TAKEN : "Path must connect to you." };
       }
@@ -614,7 +640,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
     case "buildOutpost": {
       if (state.phase !== "main") return { state: prev, error: "Cannot build now." };
       if (me.outpostsLeft <= 0) return { state: prev, error: "No outposts left." };
-      if (!hasCost(me, COST.outpost)) return { state: prev, error: "Need timber, clay, wool, grain." };
+      if (!hasCost(me, COST.outpost)) return { state: prev, error: "Need wood, brick, sheep, wheat." };
       if (!legalSettle(state, actor, false).includes(action.vertexId)) {
         return { state: prev, error: settleError(state, actor, action.vertexId, false) ?? "Illegal outpost." };
       }
@@ -629,7 +655,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
     case "buildStronghold": {
       if (state.phase !== "main") return { state: prev, error: "Cannot build now." };
       if (me.strongholdsLeft <= 0) return { state: prev, error: "No strongholds left." };
-      if (!hasCost(me, COST.stronghold)) return { state: prev, error: "Need three grain and two ore." };
+      if (!hasCost(me, COST.stronghold)) return { state: prev, error: "Need three wheat and two stone." };
       if (!legalCities(state, actor).includes(action.vertexId)) {
         return { state: prev, error: "Upgrade one of your own outposts." };
       }
@@ -643,7 +669,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
     }
     case "buyCard": {
       if (state.phase !== "main") return { state: prev, error: "Cannot buy now." };
-      if (!hasCost(me, COST.card)) return { state: prev, error: "Need wool, grain, ore." };
+      if (!hasCost(me, COST.card)) return { state: prev, error: "Need sheep, wheat, stone." };
       const card = state.deck.shift();
       if (!card) return { state: prev, error: "The fortune deck is empty." };
       pay(state, me, COST.card);
@@ -714,7 +740,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       // The bank must pay every card named (#360); the HUD greys out what it lacks, this is the backstop.
       for (const r of action.resources) {
         const named = action.resources.filter((x) => x === r).length;
-        if (state.bank[r] < named) return { state: prev, error: state.bank[r] === 0 ? `The bank has no ${r}.` : `The bank has only ${state.bank[r]} ${r}.` };
+        if (state.bank[r] < named) return { state: prev, error: state.bank[r] === 0 ? `The bank has no ${RESOURCE_LABEL[r].toLowerCase()}.` : `The bank has only ${state.bank[r]} ${RESOURCE_LABEL[r].toLowerCase()}.` };
       }
       me.hidden.plenty -= 1;
       state.playedCard = true;
@@ -735,7 +761,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
         p.resources[action.resource] = 0;
       }
       me.resources[action.resource] += taken;
-      log(state, `${me.name} monopolizes ${action.resource} (${taken}).`);
+      log(state, `${me.name} monopolizes ${RESOURCE_LABEL[action.resource].toLowerCase()} (${taken}).`);
       return { state };
     }
     case "bankTrade": {
@@ -743,12 +769,12 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       if (!validRes(action.give) || !validRes(action.want)) return { state: prev, error: "Choose resources." };
       if (action.give === action.want) return { state: prev, error: "Trade for a different resource." };
       const rate = harborRate(state, actor, action.give);
-      if (me.resources[action.give] < rate) return { state: prev, error: `Need ${rate} ${action.give}.` };
+      if (me.resources[action.give] < rate) return { state: prev, error: `Need ${rate} ${RESOURCE_LABEL[action.give].toLowerCase()}.` };
       if (state.bank[action.want] <= 0) return { state: prev, error: "Bank is empty." };
       me.resources[action.give] -= rate;
       state.bank[action.give] += rate;
       give(state, me, action.want, 1);
-      log(state, `${me.name} trades ${rate} ${action.give} for ${action.want}.`);
+      log(state, `${me.name} trades ${rate} ${RESOURCE_LABEL[action.give].toLowerCase()} for ${RESOURCE_LABEL[action.want].toLowerCase()}.`);
       return { state };
     }
     case "offerTrade": {
