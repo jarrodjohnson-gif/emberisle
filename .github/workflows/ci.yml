@@ -483,6 +483,8 @@ jobs:
         run: npm run pieces-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run pieces-land-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'scene-water'
+        run: npm run classic-builder-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
         run: npm run idle-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
