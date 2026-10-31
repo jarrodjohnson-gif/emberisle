@@ -752,9 +752,11 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     const S = 2.5;
     const stride = Math.min(0.65, (len - 0.2) / 0.64);
     const gv = Math.max(v0 + 0.22, v1 - 0.48 * stride);
-    const gy = DECK + (north ? 0.14 : 0.02);
-    if (north) {
-      P(K.part(box, "#8a6040", [0, DECK + 0.07, gv + 0.24 * stride], [0, 0, 0], [0.18, 0.14, 0.48 * stride]));
+    // #1158: goods on every north-facing pier (north and the two north-corner piers) sit on a skid above the crest shadow.
+    const lift = d.mz < -0.4 ? 0.14 : 0;
+    const gy = DECK + lift + 0.02 * (lift ? 0 : 1);
+    if (lift) {
+      P(K.part(box, "#8a6040", [0, DECK + lift / 2, gv + 0.24 * stride], [0, 0, 0], [0.18, lift, 0.48 * stride]));
     }
     const goodsStart = pierParts.reduce((count, part) => count + part.attributes.position.count, 0);
     const goodsParts: THREE.BufferGeometry[] = [];
