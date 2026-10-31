@@ -1,5 +1,8 @@
 /* Shared goods scroll while the Table receipt and compact Bank box stay in view. */
 .trade-composer { display: flex; flex-direction: column; width: 100%; max-width: 640px; max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow: hidden; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--paper); color: var(--ink); box-shadow: var(--shadow-sheet); }
+/* Astra's laws: white window, no cream. Cards stay white (#fff) so the goods names keep 4.5:1; the lobby's values (lobby.css). */
+.trade-composer { --paper: #fff; --table-raised: #f3f6f5; --line: #cbd3d3; --color-bg: #fff; background: #f3f6f5; }
+.trade-composer-footer { background: #f3f6f5; }
 .trade-composer-header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; padding: 8px 16px; border-bottom: 1px solid var(--line); }
 .trade-title { font-size: 24px; line-height: 28px; font-weight: 750; }
 .trade-add:focus-visible, .trade-remove:focus-visible, .trade-composer-scroll:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
