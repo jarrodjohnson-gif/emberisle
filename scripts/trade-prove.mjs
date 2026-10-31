@@ -308,36 +308,49 @@ try {
   // #366 / #537: the offer is a region that leaves focus alone. A seat that can pay gets Yes/No; a short seat gets
   // the compact demand (#537) with Dismiss only.
   const answerable = async (t, v, line, r, n) => {
-    const short = n - v.mine[r];
-    const toast = t.page.getByTestId("trade-toast");
-    const got = await toast.evaluate((el) => {
+    const got = await t.page.getByTestId("trade-toast").evaluate((el) => {
       const yes = [...el.querySelectorAll("button")].find((b) => b.textContent.trim() === "Yes");
-      const dismiss = el.querySelector('[data-testid="trade-dismiss"]');
-      const demand = el.querySelector('[data-testid="trade-demand"]')?.textContent?.trim() ?? null;
-      return {
+      // #537: a short seat has no Yes; its Dismiss is the one control, and it must stay reachable by Tab just the same.
+      const control = yes ?? el.querySelector('[data-testid="trade-dismiss"]');
+      const text = (ids) => (ids ?? "").split(/\s+/).filter(Boolean).map((id) => document.getElementById(id)?.textContent ?? "").join(" ");
+      const focusInside = el.contains(document.activeElement);
+      control.focus();
+      const out = {
         role: el.getAttribute("role"),
-        focusInside: el.contains(document.activeElement),
+        focusInside,
         compact: el.getAttribute("data-compact") === "true",
         hasYes: Boolean(yes),
-        hasDismiss: Boolean(dismiss),
-        demand,
+        hasDismiss: Boolean(el.querySelector('[data-testid="trade-dismiss"]')),
+        demand: el.querySelector('[data-testid="trade-demand"]')?.textContent?.trim() ?? null,
+        ariaDisabled: control.getAttribute("aria-disabled"),
+        disabled: control.hasAttribute("disabled"),
+        describedBy: text(control.getAttribute("aria-describedby")),
+        focusable: document.activeElement === control && control.tabIndex >= 0,
         countdownHidden: el.querySelector('[data-testid="trade-countdown"]')?.getAttribute("aria-hidden"),
       };
+      control.blur();
+      return out;
     });
     const where = `${t.name} (${JSON.stringify(got)})`;
-    if (got.role !== "region") throw new Error(`${where}: the offer is not a region`);
+    if (got.role !== "region") throw new Error(`${where}: the offer is not an alertdialog`);
     if (got.focusInside) throw new Error(`${where}: the offer took focus`);
+    if (got.countdownHidden !== "true") throw new Error(`${where}: the ticking countdown is not aria-hidden`);
+    if (got.disabled) throw new Error(`${where}: Yes uses disabled, so Tab cannot reach it`);
+    if (!got.focusable) throw new Error(`${where}: Yes is not focusable`);
+    const short = n - v.mine[r];
     if (short <= 0) {
       if (got.compact || got.hasDismiss || !got.hasYes) throw new Error(`${where}: can pay but saw compact/Dismiss or no Yes`);
-      if ((await t.page.getByRole("region", { name: line, exact: true }).count()) !== 1) throw new Error(`${where}: region not named "${line}"`);
-      if (got.countdownHidden !== "true") throw new Error(`${where}: the ticking countdown is not aria-hidden`);
+      if ((await t.page.getByRole("region", { name: line, exact: true }).count()) !== 1) throw new Error(`${where}: alertdialog not named "${line}"`);
+      if (got.ariaDisabled !== null || got.describedBy) throw new Error(`${where}: Yes is marked disabled but can pay`);
       return false;
     }
-    // #537: cannot pay → compact demand, no Accept.
+    // #537: cannot pay -> compact demand with Dismiss and no Accept. Its reason is hidden text on Dismiss (owner decision, PR #824).
     const demand = `${A.name} is looking for ${n} ${RESOURCE_LABEL[r].toLowerCase()}`;
     if (!got.compact || !got.hasDismiss || got.hasYes) throw new Error(`${where}: short seat must be compact with Dismiss and no Yes`);
     if (got.demand !== demand) throw new Error(`${where}: demand was "${got.demand}", want "${demand}"`);
     if ((await t.page.getByRole("region", { name: demand, exact: true }).count()) !== 1) throw new Error(`${where}: region not named "${demand}"`);
+    if (got.ariaDisabled !== null) throw new Error(`${where}: Dismiss is marked disabled`);
+    if (got.describedBy !== `You need ${short} more ${RESOURCE_LABEL[r].toLowerCase()} to accept`) throw new Error(`${where}: Dismiss is not described by "You need ${short} more ${RESOURCE_LABEL[r].toLowerCase()} to accept"`);
     return true;
   };
   for (const t of [B, C]) await answerable(t, vs[tabs.indexOf(t)], line, want, 1);
