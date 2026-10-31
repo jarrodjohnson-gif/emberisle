@@ -614,7 +614,12 @@ async function practice(view) {
     await playUntil(page, () => window.__turns.length > window.__t1);
     await page.waitForFunction(() => !document.querySelector('[data-testid="turn-moment"]'), null, { timeout: STEP_MS });
     const t2 = await page.evaluate(() => window.__turns[window.__t1]);
-    check(t2.gone - t2.at >= 7500 && t2.gone - t2.at <= 8800 && /turn-pulse/.test(t2.animation) && readable(t2) >= 7000, `${tag}: untouched, "Your turn" stays up, pulsing, until its 8 s cap`, { up: (t2.gone - t2.at).toFixed(0), animation: t2.animation, readable: readable(t2).toFixed(0) });
+    // The existing readable() measures a single finite entry animation, not the infinite pulse.
+    // Check every sampled frame after the entry reaches 0.5 and the elapsed visible frame span instead.
+    const firstVisible = t2.frames.findIndex((frame) => frame.o >= 0.5);
+    const visibleFrames = firstVisible < 0 ? [] : t2.frames.slice(firstVisible);
+    const visibleMs = visibleFrames.length > 1 ? visibleFrames.at(-1).t - visibleFrames[0].t : 0;
+    check(t2.gone - t2.at >= 7500 && t2.gone - t2.at <= 8800 && /turn-pulse/.test(t2.animation) && visibleMs >= 7000 && visibleFrames.every((frame) => frame.o >= 0.5), `${tag}: untouched, "Your turn" stays up, pulsing, until its 8 s cap`, { up: (t2.gone - t2.at).toFixed(0), animation: t2.animation, visibleMs: visibleMs.toFixed(0) });
 
     // Over the whole game: every turn moment was the person's roll; every line was one of the person's own changes.
     const all = await page.evaluate(() => ({ turns: window.__turns.map((t) => ({ current: t.current, localId: t.localId, phase: t.phase })), lines: window.__lines.map((l) => ({ r: l.r, d: l.d, at: l.at })), own: window.__own }));
