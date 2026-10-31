@@ -46,6 +46,12 @@ const SIZE = {
 };
 // A gain lifts by the tray's --goods-lift: 6 px upright, 4 px short and where the hand heads a wide screen's stack.
 const LIFT = { desk: -4, port: -6, short: -4 };
+// The +N / −N pill (#825): 24 px tall with 14 px text, 20 px above the card; 28 px, 17.5 px and 24 px on the wide fine-pointer layout.
+const TAB = {
+  desk: { font: ["17.5px", "700"], h: 28, above: 24 },
+  port: { font: ["14px", "700"], h: 24, above: 20 },
+  short: { font: ["14px", "700"], h: 24, above: 20 },
+};
 
 // The symbol, the count and the name of every card centre on the card's vertical axis within 0.5 px, and so do the lit
 // copy's when a gain lays one over it. Read from getBoundingClientRect, so a glyph box that is off-centre cannot hide.
