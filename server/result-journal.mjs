@@ -40,7 +40,8 @@ export async function writeDurable(dir, name, text) {
 }
 
 const plain = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
-const isTime = (v) => Number.isSafeInteger(v) && v >= 0;
+// Milliseconds since the epoch, kept below the year 2100 so a corrupt value near Number.MAX_SAFE_INTEGER is refused.
+export const isTime = (v) => Number.isSafeInteger(v) && v >= 0 && v <= 4_102_444_800_000;
 
 // A frozen outcome as the host writes it: the game's id, start and end, policy and eligibility from the frozen roster, the
 // rules engine's winner, and one row per starting player with its final points.

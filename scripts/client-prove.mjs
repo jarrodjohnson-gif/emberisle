@@ -923,7 +923,7 @@ try {
   const roomsDir = mkdtempSync(`${tmpdir()}/emberisle-rooms-`);
   const rejoinHost = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL("../server/", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR: roomsDir },
+    env: { ...process.env, PORT: "0", ROOMS_DIR: roomsDir, RESULTS_DIR: `${roomsDir}/results` },
   });
   process.on("exit", () => rejoinHost.kill());
   for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));

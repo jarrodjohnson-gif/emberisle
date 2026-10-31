@@ -493,12 +493,13 @@ try {
     };
     const badWinner = finish("BADW", (r) => (r.game.winner = null));
     const badStart = finish("BADS", (r) => (r.roster.startedAt = -5));
+    const badHuge = finish("BADH", (r) => (r.roster.startedAt = Number.MAX_SAFE_INTEGER));
     const good = finish("GOOD", () => {});
     const h = start(d);
     const port = await h.port;
     assert(h.out.indexOf(`repaired the pending outcome of game ${good}`) < h.out.indexOf("listening"), "the good table is repaired before the host listens");
     checkOutcome(readJson(pendingFile(d, good)), good);
-    assert(!existsSync(pendingFile(d, badWinner)) && !existsSync(pendingFile(d, badStart)), "no outcome is invented for a malformed game");
+    assert(!existsSync(pendingFile(d, badWinner)) && !existsSync(pendingFile(d, badStart)) && !existsSync(pendingFile(d, badHuge)), "no outcome is invented for a malformed game");
     assert.match(h.err, /not tracked/, "the malformed games are reported");
     const c = await client(port, { type: "hello", code: "GOOD", watch: true });
     await c.until(() => c.state?.game.phase === "over", "the good table is restored");

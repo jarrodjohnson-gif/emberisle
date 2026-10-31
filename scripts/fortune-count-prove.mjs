@@ -19,7 +19,7 @@ g.players[0].resources={timber:0,clay:0,wool:25,grain:25,ore:25};g.players[1].hi
 const seats=g.players.map((p,i)=>({id:`s${i}`,name:p.name,color:p.color,ready:true,pid:p.id,secret:`FDAB-${p.id}`}));
 writeFileSync(path.join(dir,'FDAB.json'),JSON.stringify({code:'FDAB',host:'s0',next:4,chat:[],chatSeq:0,game:g,seats,recoveryPids:[],shape:2,savedAt:Date.now()}));
 async function start(){
- host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:dir,SAVE_MS:'20',GRACE_MS:'600000',HOLD_MS:'600000',TURN_MS:'600000',ACT_CAP:'1000',ACT_RATE:'1000'},stdio:['ignore','pipe','pipe']});
+ host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:dir, RESULTS_DIR: `${dir}/results`,SAVE_MS:'20',GRACE_MS:'600000',HOLD_MS:'600000',TURN_MS:'600000',ACT_CAP:'1000',ACT_RATE:'1000'},stdio:['ignore','pipe','pipe']});
  hostPort=await new Promise((resolve,reject)=>{host.stdout.on('data',d=>{const m=String(d).match(/listening (\d+)/);if(m)resolve(Number(m[1]));});host.on('exit',c=>reject(Error(`host ${c}`)));});
 }
 async function client(pid){

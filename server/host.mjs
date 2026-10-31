@@ -17,7 +17,7 @@ import { cue } from "./cue.mjs";
 import { PROFILE_TYPES, profileGate, profileHandler, seatCredential, seatProfile, tableCard, watchRefusal } from "./profile-protocol.mjs";
 import { openProfiles, UUID } from "./profiles.mjs";
 import { getOpenTables, maybeReleaseOpenSlot, registerOpenTable, unregisterOpenTable } from "./open-table.mjs";
-import { OUTCOME_V, openJournal, validOutcome, writeDurable } from "./result-journal.mjs";
+import { OUTCOME_V, isTime, openJournal, validOutcome, writeDurable } from "./result-journal.mjs";
 import { extensionBudget, turnExtensions } from "./turn-extension.mjs";
 
 // The running host's checkout, regardless of the shell's cwd. Archives and hosts without git report dev (#913).
@@ -277,7 +277,7 @@ function unsettled(room) {
 function loadRoster(r, game) {
   if (!game || r === undefined || r === null) return null;
   const row = (p, i) => p && typeof p === "object" && p.pid === game.players[i].id && typeof p.seat === "string" && (p.profileId === null || (typeof p.profileId === "string" && UUID.test(p.profileId))) && typeof p.name === "string" && typeof p.color === "string" && (p.kind === "human" || p.kind === "bot");
-  const ok = typeof r === "object" && r.v === ROSTER_V && typeof r.gameId === "string" && UUID.test(r.gameId) && Number.isSafeInteger(r.startedAt) && Number.isSafeInteger(r.policy) && typeof r.eligible === "boolean" && Array.isArray(r.players) && r.players.length === game.players.length && r.players.every(row);
+  const ok = typeof r === "object" && r.v === ROSTER_V && typeof r.gameId === "string" && UUID.test(r.gameId) && isTime(r.startedAt) && Number.isSafeInteger(r.policy) && typeof r.eligible === "boolean" && Array.isArray(r.players) && r.players.length === game.players.length && r.players.every(row);
   const ids = ok ? r.players.map((p) => p.profileId).filter(Boolean) : [];
   if (ok && new Set(ids).size === ids.length) return r;
   console.error("bad roster in room file; this game is not tracked");
@@ -511,7 +511,7 @@ async function load() {
         wayfarerMode: saved.wayfarerMode === "off" ? "off" : "on",
         // Legacy hosted snapshots had no practice-bot seats, so a bot linked to a held seat means takeover.
         recoveryPids: [...new Set([...(Array.isArray(saved.recoveryPids) ? saved.recoveryPids : []), ...legacyRecovery])].slice(-4),
-        roster: loadRoster(saved.roster, saved.game),
+        roster,
         assisted: Array.isArray(saved.assisted) ? saved.assisted.filter((pid) => typeof pid === "string") : [],
         seats: [],
         watchers: new Set(),

@@ -12,7 +12,7 @@ const dir=mkdtempSync(path.join(tmpdir(),'emberisle-wayfarer-setup-'));
 const port=Number(process.env.VITE_PORT||18545),sockets=[];const wait=ms=>new Promise(r=>setTimeout(r,ms));
 let host,hostPort,browser;
 async function start(){
- let stderr='';host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:dir,SAVE_MS:'20',GRACE_MS:'600000',HOLD_MS:'600000',LOBBY_HOLD_MS:'600000',TURN_MS:'600000',ACT_CAP:'1000',ACT_RATE:'1000'},stdio:['ignore','pipe','pipe']});
+ let stderr='';host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:dir, RESULTS_DIR: `${dir}/results`,SAVE_MS:'20',GRACE_MS:'600000',HOLD_MS:'600000',LOBBY_HOLD_MS:'600000',TURN_MS:'600000',ACT_CAP:'1000',ACT_RATE:'1000'},stdio:['ignore','pipe','pipe']});
  host.stderr.on('data',d=>stderr+=d);hostPort=await new Promise((resolve,reject)=>{host.stdout.on('data',d=>{const m=String(d).match(/listening (\d+)/);if(m)resolve(Number(m[1]));});host.on('exit',c=>reject(Error(`host ${c}: ${stderr}`)));});
 }
 async function client(hello){
