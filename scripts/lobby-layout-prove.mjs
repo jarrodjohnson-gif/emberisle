@@ -241,7 +241,7 @@ async function supportedCodeFits(page, label) {
   const code = await page.evaluate(() => window.__emberisle.getState().code);
   const viewport = page.viewportSize();
   try {
-    for (const value of [code, "WWWW", "MMMM"]) {
+    for (const value of [code, "APWG", "WWWW", "MMMM"]) {
       await page.getByRole("button", { name: "Copy", exact: true }).waitFor();
       await page.getByRole("button", { name: "Copy link", exact: true }).waitFor();
       await page.locator(".lobby-copy-controls button").first().focus();

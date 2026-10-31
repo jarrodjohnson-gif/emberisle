@@ -16,8 +16,10 @@ export function fitLobbyCode(el: HTMLParagraphElement, code: string) {
   if (el.textContent !== code) return;
   el.style.fontSize = "";
   const style = getComputedStyle(el);
-  const width = el.scrollWidth;
-  if (width <= el.clientWidth) return;
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const width = range.getBoundingClientRect().width, available = el.getBoundingClientRect().width;
+  if (width <= available) return;
   const tracking = (parseFloat(style.letterSpacing) || 0) * 4;
-  el.style.fontSize = `${parseFloat(style.fontSize) * (el.clientWidth - tracking - 1) / (width - tracking)}px`;
+  el.style.fontSize = `${parseFloat(style.fontSize) * (available - tracking) / (width - tracking)}px`;
 }
