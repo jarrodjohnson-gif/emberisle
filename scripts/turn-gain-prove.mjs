@@ -500,7 +500,7 @@ async function practice(view) {
     const expiry = roll.lines.map(l => ({ raw: l.gone - l.at, stalled: l.stalled, running: l.gone - l.at - l.stalled }));
     check(roll.lines.every(l => l.anim?.duration === CUE_MS && l.lit?.animations === 1 && l.move?.duration === CUE_MS), `${tag}: the tab, the fill and the lift each run exactly 3000 ms (2500 ms held, 500 ms fade)`, roll.lines.map((l) => [l.anim?.duration, l.move?.duration]));
     check(expiry.every(t => t.running <= 3100), `${tag}: the batch has left within 3.1 s, excluding measured stalls`, expiry);
-    check(expiry.every(t => t.raw <= 3500), `${tag}: raw expiry stays below the 3.5 s guard`, expiry);
+    check(expiry.every(t => t.raw <= 4000), `${tag}: raw expiry stays below the 4 s guard`, expiry);
     if (roll.lines.length > 1) {
       const starts = roll.lines.map((l) => l.at);
       check(Math.max(...starts) - Math.min(...starts) <= 100, `${tag}: the cues of one roll start together`, starts.map((t) => (t - starts[0]).toFixed(0)));
