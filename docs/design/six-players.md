@@ -5,7 +5,7 @@ Code anchors were refreshed against main at `a180cc8d796d730737e0ada570869dd715d
 This document proposes implementation contracts; it changes no game behavior.
 Names introduced under **Proposed state** do not exist in the source yet.
 Jarrod accepted seven decisions on 2026-10-31; see **Accepted decisions**.
-Four small questions remain open about the rematch prompt; see **Open questions for Jarrod**.
+Five small questions remain open about the rematch prompt; see **Open questions for Jarrod**.
 
 ## Scope and owner decisions
 
@@ -233,7 +233,7 @@ Do not claim new rendered colours pass before those checks exist.
 
 Current anchors in `server/host.mjs`: `openTable`, `sitDown`, `startGame`, `addBot`, `rematch`, and `seatColor`.
 Today's four-seat caps sit in `sitDown` and `addBot` (`room.seats.length >= 4`) and `startGame` (`n > 4`).
-`rematch` refuses fewer than three live seats.
+`rematch` today refuses fewer than three live seats.
 Client anchors: `LobbyView` in `src/components/game/LobbyView.tsx`, whose start check is at line 77;
 `Lobby` in `src/components/game/Lobby.tsx` is now a lazy-loading wrapper around it;
 `TableClient` in `src/lib/net/table.ts`; `PROTO` in `src/lib/net/proto.ts`.
@@ -251,16 +251,17 @@ An expanded rematch with five or six live seats keeps its expanded board.
 Count live seats before removing disconnected seats or replacing the finished game.
 `rematch` today answers "Need 3 or 4 at the table." when fewer than three seats are live.
 `again` carries no payload today, and the client has no rematch prompt.
-With fewer than five live seats, the host does not refuse the rematch.
-Instead the server asks the host to choose, and changes nothing until the host answers.
-Only the host sees the prompt, because only the host may start a rematch.
-The prompt offers two choices.
+With fewer than five live seats, the host does not refuse the rematch (accepted decision 7).
+Proposal: the server asks the host to choose, and changes nothing until the host answers.
+Proposal: only the host sees the prompt, because only the host may start a rematch.
+With three or four live seats, the prompt offers two choices.
 Fill the empty seats with bots up to five, and play the expanded map.
 Or play the smaller classic map with the people present.
 Both choices keep every seat identifier's number (accepted decision 7).
-New bots take the lowest free seat numbers.
-The prompt needs a new message pair between host and client; neither exists in `PROTO` yet.
-Both choices reuse the existing winner-first order and `durableStart` path.
+Open question C covers fewer than three live seats.
+Open question E covers which numbers new bots take.
+Proposal: the prompt needs a new message pair between host and client; neither exists in `PROTO` yet.
+Proposal: both choices reuse the existing winner-first order and `durableStart` path.
 No path back to the lobby exists today (`docs/design/rematch.md`); the host opens a new room.
 
 Advertise an expanded-rules capability during hello, join, watch, and rejoin.
@@ -319,7 +320,8 @@ Treat unknown future formats as unsupported; retain their files for recovery rat
 - Preserve game options such as `wayfarerMode` and `victoryTarget`.
 - Replace all three `recoveryPids` truncations to four with bounds appropriate to the actual room.
 - A rematch keeps the room variant, unless the host picks the classic map at the rematch prompt.
-- Persist that choice with the new game, so a restart does not reinterpret it.
+- That pick applies to that one rematch; open question D asks about later rematches.
+- Persist the new game's variant, so a restart does not reinterpret it.
 - A rematch never reinterprets an old game because six colours now exist.
 - An absent variant in legacy local state means classic.
 - Never infer an expanded game from the new global maximum.
@@ -346,7 +348,7 @@ Jarrod took all five recommendations in items 1 to 5 ([comment 6540477629](https
    A preferred colour missing from a classic room falls back to the first free slot, as `seatColor` does today.
    Source: Jarrod's decision `q666-profile-colours`, [comment 6546233327](https://github.com/jarrodjohnson-gif/emberisle/issues/666#issuecomment-6546233327).
 7. Rematch with fewer than five live seats. The rematch is not refused.
-   The host chooses one of two things.
+   With three or four live seats, the host chooses one of two things.
    Either fill empty seats with bots up to five, or play the smaller classic map with the people present.
    A seat identifier keeps its number across the rematch.
    Source: Jarrod's decision `q666-rematch`, same comment.
@@ -385,6 +387,9 @@ C. Question: with fewer than three live seats, does the prompt offer the classic
 D. Question: after the host picks the classic map, which colours and variant apply?
    Recommendation: the room becomes classic for later rematches.
    Each seat keeps its colour if the classic palette has it, else takes the first free slot.
+
+E. Question: which seat numbers do bots added by the fill take?
+   Recommendation: the lowest free numbers.
 
 ## Child implementation specifications, after decisions
 
