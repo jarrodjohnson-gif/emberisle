@@ -30,6 +30,19 @@ These are short on purpose. Follow all of them, every round.
 13. **A `Question:` is not a stop.** After you post one, carry on with any part of the issue that does not depend on the answer (other files, the proof, screenshots, docs). Stop only when nothing is left to do, and check the issue for the desk's answer before you finish. A test line that an owner-approved design makes obsolete may be replaced, never deleted: own commit, old/new table in the PR ([`docs/DECISIONS.md`](docs/DECISIONS.md), 2026-10-25). Size ceilings and allowances never move without the owner.
 14. **Need the desk? Start a conversation comment with `To desk:`**, for example `To desk: PR #N ready for re-review`. Use it when you're blocked or adopting a PR too. Nothing may come before it, not even an HTML comment. Only `To desk:` and `Question:` comments wake the desk. Put progress in your PR body, not on #854.
 
+## Never idle
+
+A `Question:` or a block never ends your round. Josh does not watch the desk chat, so nobody answers fast.
+
+- After you post `Question:` and `/paused`, claim the next eligible issue in the same turn.
+- No eligible issue? Take one from the [anytime queue](docs/LANES.md#anytime-queue).
+- The desk answers on the issue itself. Re-check the issue at the end of each task. Never wait for it.
+- A 403 on labels, comments or pushes blocks one step, not the round. Put your claim in the PR body and take other work.
+- Check every rung of the ladder and the anytime queue before you call the list empty. Name what you checked.
+- Never skip a stale PR as "waiting on the owner" unless #916 says so.
+- "Stop" means nothing eligible, the ladder empty and the anytime queue empty. Then post one `To desk: nothing eligible` line.
+- The only other reason to stop is the usage limit in [`docs/LANES.md`](docs/LANES.md#sub-agents-and-usage-limits).
+
 ## The full procedure
 
 **Told to "work on Emberisle", or something like it?** Then:
