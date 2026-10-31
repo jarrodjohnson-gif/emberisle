@@ -59,10 +59,10 @@ export function SeatNeeds({ scope }: { scope: 'rail' | 'seat' }) {
   });
 }
 
-export function MenuNeeds({ player }: { player: string }) {
+export function MenuNeeds({ player, name }: { player: string; name?: string }) {
   const kinds = useNeeds()[player] ?? [];
   if (!kinds.length) return null;
-  return <div data-testid="menu-needs" className="mx-1 mb-2 flex flex-wrap items-center gap-2 text-xs leading-4 text-zinc-700">
-    Needs{kinds.map(kind => <span key={kind} data-testid="need-chip" className="rounded-full bg-[#dce5ed] px-3 py-2">{RESOURCE_LABEL[kind]}</span>)}
+  return <div data-testid={name ? "trade-needs" : "menu-needs"} data-player={player} className="mx-1 mb-2 flex flex-wrap items-center gap-2 text-xs leading-4 text-zinc-700">
+    {name ? `${name} needs` : 'Needs'}{kinds.map(kind => <span key={kind} data-testid="need-chip" className="rounded-full bg-[#dce5ed] px-3 py-2">{RESOURCE_LABEL[kind]}</span>)}
   </div>;
 }

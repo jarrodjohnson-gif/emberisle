@@ -11,7 +11,7 @@ import { createServer } from 'vite';
 
 const rooms = mkdtempSync(path.join(tmpdir(), 'emberisle-audio-recovery-'));
 const host = spawn(process.execPath, ['--import', './register.mjs', 'host.mjs'], {
-  cwd: new URL('../server/', import.meta.url), env: { ...process.env, PORT: '0', ROOMS_DIR: rooms },
+  cwd: new URL('../server/', import.meta.url), env: { ...process.env, PORT: '0', ROOMS_DIR: rooms, RESULTS_DIR: `${rooms}/results` },
 });
 let browser, vite;
 const watchdog = setTimeout(() => { console.error('FAIL audio recovery exceeded 120 seconds'); process.exit(1); }, 120_000);
@@ -21,6 +21,27 @@ let checks = 0;
 const check = (value, why) => { assert.ok(value, why); checks++; console.log('ok', why); };
 const targets = { your_turn: 'your_turn.wav', trade_yes: 'confirmation_001.wav', dice_land: 'drop_001.wav', board_bong: 'bong_001.wav' };
 const files = Object.values(targets);
+let observedTabs = [];
+const observeFailure = async error => {
+  const snapshots = observedTabs.map(t => ({ name: t.name, status: 'timeout' }));
+  const attempts = observedTabs.map((t, index) => t.page.evaluate(files => {
+    const s = window.game?.getState();
+    return { documentIdentity: window.documentIdentity, restoreAt: window.mediaRestoreAt,
+      phase: s?.state?.phase, seq: s?.state?.seq, localId: s?.localId,
+      hostStates: window.hostFrames.filter(f => f.type === 'state').map(f => ({ seq: f.seq, you: f.you })),
+      bongReceived: s?.chat.some(l => l.sound === 'bong'),
+      sound: window.sound?.__audioRecoveryQueue?.(),
+      media: window.audios.map((a, id) => ({ id, file: new URL(a.src).pathname.split('/').at(-1),
+        currentTime: a.currentTime, baseline: window.mediaTimeBaseline?.[id] ?? 0,
+        duration: Number.isFinite(a.duration) ? a.duration : null, paused: a.paused, ended: a.ended,
+        readyState: a.readyState, networkState: a.networkState, error: a.error?.code ?? null,
+        muted: a.muted, volume: a.volume })).filter(a => files.includes(a.file)),
+      plays: window.audioPlayAttempts, events: window.mediaEvents.slice(-200) };
+  }, files).then(value => { snapshots[index] = { name: t.name, status: 'fulfilled', ...value }; },
+    e => { snapshots[index] = { name: t.name, status: 'rejected', error: e.message }; }));
+  await Promise.race([Promise.allSettled(attempts), sleep(1000)]);
+  console.log('AUDIO_FAILURE', JSON.stringify({ message: error.message, snapshots }));
+};
 try {
   const port = await new Promise((resolve, reject) => {
     host.once('error', reject); host.once('exit', code => reject(new Error(`host exited ${code}`)));
@@ -33,17 +54,39 @@ try {
         res.end('<!doctype html><button>Enable sound</button><script type="module">window.sound=await import("/src/lib/sound.ts");window.game=(await import("/src/lib/game/store.ts")).useGame;</script>');
       });
     },
+    enforce: 'pre',
+    transform(source, id) {
+      if (!/\/src\/lib\/sound\.ts(?:\?|$)/.test(id)) return;
+      const request = 'export function play(name: SoundName, volume = 1) {';
+      const gate = '  if ((!UI.has(name) && now - (asked.get(name) ?? -GAP_MS) < GAP_MS) || queue.length >= MAX_QUEUE) return;';
+      const start = '  const gain = volume * categoryGain(soundCategory(name));';
+      for (const anchor of [request, gate, start]) if (source.split(anchor).length !== 2) throw new Error('audio diagnostic source anchor changed');
+      // Observations only: the original guards, queue, timings and start calls stay intact.
+      const trace = `const __audioRecoveryTrace = [];
+function __audioRecoveryRecord(stage, name, facts = {}) {
+  __audioRecoveryTrace.push({stage, name, at: performance.now(), queue: queue.map(item => item[0]), pacing,
+    unlocked, muted, categoryGain: categoryGain(soundCategory(name)), ...facts});
+  if (__audioRecoveryTrace.length > 400) __audioRecoveryTrace.shift();
+}\n`;
+      return { code: trace + source
+        .replace(request, request + '\n  __audioRecoveryRecord("request", name, {volume, noAudio: typeof Audio === "undefined"});')
+        .replace(gate, '  __audioRecoveryRecord("gate", name, {now, asked: asked.get(name) ?? null, burst: !UI.has(name) && now - (asked.get(name) ?? -GAP_MS) < GAP_MS, full: queue.length >= MAX_QUEUE});\n' + gate)
+        .replace(start, start + '\n  __audioRecoveryRecord("start", name, {gain});')
+        + '\nexport const __audioRecoveryQueue = () => ({pacing, queue: queue.map(item => item[0]), trace: __audioRecoveryTrace.slice()});\n', map: null };
+    },
   }] });
   await vite.listen();
   browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined),
     // Desktop media fetch/decode recovery, deliberately independent of browser autoplay policy.
     args: ['--autoplay-policy=no-user-gesture-required'] });
   const tabs = [];
+  observedTabs = tabs;
   for (const name of ['Ember', 'Tide', 'Pine']) {
     const page = await browser.newPage();
     await page.addInitScript(name => {
       localStorage.setItem('emberisle-name', name);
       window.documentIdentity = crypto.randomUUID(); window.audios = []; window.mediaEvents = []; window.sockets = []; window.hostFrames = [];
+      window.audioPlayAttempts = [];
       const NativeSocket = window.WebSocket;
       window.WebSocket = class extends NativeSocket { constructor(...args) { super(...args); window.sockets.push(this); this.addEventListener('message', event => { const frame = JSON.parse(event.data); window.hostFrames.push({ type: frame.type, seq: frame.game?.seq, sound: frame.line?.sound, you: frame.you }); }); } };
       const NativeAudio = window.Audio;
@@ -52,6 +95,17 @@ try {
         for (const event of ['playing', 'timeupdate', 'error', 'ended']) audio.addEventListener(event, () => {
           window.mediaEvents.push({ event, id, file: new URL(audio.src).pathname.split('/').at(-1), time: audio.currentTime, error: audio.error?.code ?? null });
         });
+        const nativePlay = audio.play;
+        audio.play = function (...args) {
+          let attempt;
+          try {
+            attempt = { id, file: new URL(audio.src, location.href).pathname.split('/').at(-1), at: performance.now(), time: audio.currentTime };
+            window.audioPlayAttempts.push(attempt);
+          } catch { /* Observation must never prevent native playback. */ }
+          const result = nativePlay.apply(this, args);
+          if (attempt) result?.then(() => { attempt.resolvedAt = performance.now(); }, e => { attempt.rejectedAt = performance.now(); attempt.error = e?.name ?? 'rejected'; });
+          return result;
+        };
         return audio;
       };
     }, name);
@@ -112,6 +166,7 @@ try {
   for (const t of tabs) { t.restore(); await t.page.evaluate(() => {
     window.mediaEvents = []; window.hostFrames = [];
     window.mediaTimeBaseline = window.audios.map(audio => audio.currentTime);
+    window.mediaRestoreAt = performance.now();
   }); }
   await sleep(200); // Existing burst gap; no artificial media reset or reload.
   const recoveryStart = Date.now();
@@ -154,9 +209,26 @@ try {
     await step();
   }
   check(traded && rolled && expected.every(s => s.has('your_turn.wav')), 'host actions give all players a new turn and complete a trade');
+  // #1210: a full paced queue intentionally drops new cues; admit this host cue
+  // before measuring media recovery, rather than timing out on a dropped request.
+  const readyQueues = await wait(async () => {
+    const queues = await Promise.all(tabs.map(t => t.page.evaluate(() => {
+      const s = window.sound.__audioRecoveryQueue(); return { queue: s.queue, pacing: s.pacing };
+    })));
+    return queues.every(s => s.queue.length === 0 && !s.pacing) ? queues : null;
+  }, 'sound queues quiescent before the required host bong');
+  console.log('QUEUE_BEFORE_BONG', JSON.stringify(readyQueues));
   await call(tabs[0], 'sendSound', 'bong');
   for (const t of tabs) await t.page.waitForFunction(() => window.game.getState().chat.some(l => l.sound === 'bong'));
   check(true, 'host broadcasts the soundboard cue to all seats');
+  const admissions = await Promise.all(tabs.map(async t => ({ name: t.name, ...await t.page.evaluate(() => {
+    const events = window.sound.__audioRecoveryQueue().trace.filter(e => e.name === 'board_bong' && e.at >= window.mediaRestoreAt);
+    return { requests: events.filter(e => e.stage === 'request'), gates: events.filter(e => e.stage === 'gate') };
+  }) })));
+  console.log('BONG_ADMISSION', JSON.stringify(admissions));
+  check(admissions.every(a => a.requests.length === 1 && a.gates.length === 1 &&
+    !a.requests[0].noAudio && a.requests[0].volume > 0 && a.gates[0].unlocked && !a.gates[0].muted &&
+    a.gates[0].categoryGain > 0 && !a.gates[0].burst && !a.gates[0].full), 'one real host bong is admitted for every seat without burst/full-queue drops');
   // Wait on native playback progress itself, not delivery of a timeupdate event. CI can
   // delay/coalesce those events even while the real media element is already advancing.
   // Keep the timeout bounded and leave the playback assertions below in place.
@@ -203,6 +275,8 @@ try {
   }
   check(failures.length === 0, `native host-driven playback recovers for all seats: ${failures.join('; ')}`);
   console.log(`audio-recovery-prove: ${checks} checks passed; native recovery in ${Date.now() - recoveryStart}ms`);
+} catch (error) {
+  try { await observeFailure(error); } finally { throw error; }
 } finally {
   clearTimeout(watchdog); await browser?.close(); await vite?.close(); host.kill();
   if (host.exitCode === null && host.signalCode === null) await once(host, 'exit');

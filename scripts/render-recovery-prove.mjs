@@ -11,7 +11,7 @@ import { createServer } from "vite";
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-render-recovery-"));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR, GRACE_MS: "300000" },
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, GRACE_MS: "300000" },
 });
 process.on("exit", () => {
   host.kill("SIGKILL");
