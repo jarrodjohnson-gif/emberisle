@@ -60,7 +60,7 @@ try {
         const r = el.getBoundingClientRect();
         return r.top < 0 || r.left < 0 || r.bottom > innerHeight + 0.5 || r.right > innerWidth + 0.5;
       }).map((el) => (el.textContent.trim() || el.getAttribute("aria-label") || el.tagName).slice(0, 24));
-      return { out, subtitles: [...card.querySelectorAll("p")].map((p) => p.textContent).filter((s) => /^3 bots, no network$/.test(s)) };
+      return { out, subtitles: [...card.querySelectorAll("p")].map((p) => p.textContent).filter((s) => /^Just you and three bots\. No network needed\.$/.test(s)) };
     });
     check(fold.subtitles.length === 1, `${tag} title: Play's subtitle renders`, fold.subtitles);
     if (viewport.touch) check(fold.out.length === 0, `${tag} title: wordmark and buttons inside the viewport`, fold.out);

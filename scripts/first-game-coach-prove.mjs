@@ -20,7 +20,7 @@ try {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   await page.goto(`http://127.0.0.1:${port}/`);
   await page.waitForFunction(() => window.__emberisle);
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play against bots", exact: true }).click();
   await page.getByTestId("seat-strip").waitFor();
   const rollOffStrip = await page.evaluate(() => {
     const slot = document.querySelector("[data-coach-skip-slot]");

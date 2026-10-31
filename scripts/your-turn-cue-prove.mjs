@@ -53,7 +53,7 @@ try {
   });
 
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play against bots", exact: true }).click();
   await until(page, () => window.__emberisle?.getState().state, "practice table loads");
 
   await page.evaluate(() => {
@@ -177,7 +177,7 @@ try {
   ok("your_turn chime: once at vol 1, mute and hotseat silent");
 
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await page.getByRole("button", { name: "Pass this device" }).click();
   await until(page, () => window.__emberisle?.getState().state, "hotseat loads");
   await page.evaluate(() => {
     const g = window.__emberisle;

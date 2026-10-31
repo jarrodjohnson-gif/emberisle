@@ -1,0 +1,43 @@
+$ npm run title-chunks-prove
+
+> title-chunks-prove
+> node scripts/title-chunks-prove.mjs
+
+ok  held mode controls retain private Host
+ok  mode arrival preserves Join text and focus
+ok  loaded mode remains Private by default
+ok  OpenTables held: no unrelated browser errors []
+ok  Host node survives optional mode arrival
+ok  module arrival between pointer down/up preserves the first Host tap
+ok  OpenTables held: no unrelated browser errors []
+ok  practice starts while open-table module remains held
+ok  OpenTables held: no unrelated browser errors []
+ok  failed mode controls still host a real private table {"code":"682P","listed":[]}
+ok  OpenTables failed: no unrelated browser errors []
+ok  rules sheet entry stays eager
+ok  held settings body is isolated from core title controls
+ok  held settings retain Host
+ok  Play against bots keeps its existing default
+ok  Host a table online keeps its existing default
+ok  Pass this device keeps its existing default
+ok  loaded settings preserve their existing store action and summary
+ok  existing settings help text retained
+ok  WayfarerOptions held: no unrelated browser errors []
+ok  failed optional settings do not block hosting
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: WayfarerOptions failed: no unrelated browser errors ["Failed to load resource: net::ERR_FAILED"]
+    at check (file://<repo>/scripts/title-chunks-prove.mjs:35:10)
+    at controlled (file://<repo>/scripts/title-chunks-prove.mjs:75:7)
+    at async file://<repo>/scripts/title-chunks-prove.mjs:139:3 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.4

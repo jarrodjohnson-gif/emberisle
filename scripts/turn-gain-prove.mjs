@@ -467,7 +467,7 @@ async function steerPayingRoll(page) {
 async function practice(view) {
   const { ctx, page, tag } = await open(view);
   try {
-    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play against bots", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
     // Through the roll-off and setup to the person's first roll: no turn moment before the first roll phase.
     await playUntil(page, myRoll);
@@ -665,7 +665,7 @@ async function practice(view) {
 async function reduced() {
   const { ctx, page, tag } = await open({ width: 1280, height: 720 }, { reduced: true });
   try {
-    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play against bots", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
     await playUntil(page, myRoll);
     await quiet(page);
@@ -700,7 +700,7 @@ async function reduced() {
 async function hotseat() {
   const { ctx, page, tag } = await open({ width: 1280, height: 720 });
   try {
-    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.getByRole("button", { name: "Pass this device" }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
     await playUntil(page, myRoll);
     await page.evaluate(() => window.__emberisle.getState().dispatch({ type: "roll" }));

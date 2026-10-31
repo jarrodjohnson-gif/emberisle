@@ -1,0 +1,12 @@
+$ npm run title-prove
+
+> title-prove
+> node scripts/title-prove.mjs
+
+ok   1280x720: one primary (Play against bots), filled Play against bots / Join / Watch, card 67 % tall, nothing clipped, Watch visible throughout, available at 4 characters
+ok   1280x500: one primary (Play against bots), filled Play against bots / Join / Watch, card 67 % tall, nothing clipped, Watch visible throughout, available at 4 characters
+ok   640x360: one primary (Play against bots), filled Play against bots / Join / Watch, card 93 % tall, nothing clipped, Watch visible throughout, available at 4 characters
+ok   390x844 touch: one primary (Play against bots), filled Play against bots / Join / Watch, card 55 % tall, nothing clipped, Watch visible throughout, available at 4 characters
+ok   844x390 touch: one primary (Play against bots), filled Play against bots / Join / Watch, card 86 % tall, nothing clipped, Watch visible throughout, available at 4 characters
+ok   667x375 touch: one primary (Play against bots), filled Play against bots / Join / Watch, card 89 % tall, nothing clipped, Watch visible throughout, available at 4 characters
+title-prove: ok

@@ -13,7 +13,7 @@ try {
   await page.addInitScript(() => { localStorage.setItem("emberisle-jelly", "full"); localStorage.setItem("emberisle-water", "simple"); });
   await page.goto(`http://127.0.0.1:${port}`);
   await page.waitForFunction(() => window.__emberisle);
-  await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
+  await page.getByRole("button", { name: "Pass this device", exact: true }).click();
   await page.waitForFunction(() => window.__isle?.shore?.group.userData.goodsPiles?.length === 9, null, { timeout: 60000 });
   const result = await page.evaluate(async () => {
     const { createGame } = await import("/src/lib/game/board.ts");

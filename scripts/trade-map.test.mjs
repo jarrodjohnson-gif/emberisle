@@ -48,7 +48,7 @@ const change = (fn, arg) => page.evaluate(([f, a]) => {
 }, [fn, arg]);
 async function load(g = base) {
   await page.evaluate(() => window.__emberisle.getState().goTitle());
-  await page.getByRole("button", { name: "Play", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Play against bots", exact: true }).waitFor();
   await page.evaluate((g) => {
     window.__emberisle.getState().startAi();
     window.__emberisle.setState({ state: g });
@@ -71,7 +71,7 @@ async function settled() {
 }
 try {
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("button", { name: "Play", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Play against bots", exact: true }).waitFor();
   for (const [width, height] of [[440, 956], [956, 440], [1280, 720], [320, 568]]) {
     await page.setViewportSize({ width, height });
     await load();
@@ -210,7 +210,7 @@ try {
     window.addEventListener("error", (e) => window.__tradeErrors.push(e.message));
   });
   await phone.goto(`http://127.0.0.1:${PORT}/`);
-  await phone.getByRole("button", { name: "Play", exact: true }).waitFor();
+  await phone.getByRole("button", { name: "Play against bots", exact: true }).waitFor();
   await phone.evaluate(async ([g, offer]) => {
     const { online } = await import("/src/components/game/chunks.ts");
     await online.prefetch();

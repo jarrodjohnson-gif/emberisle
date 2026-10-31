@@ -189,7 +189,7 @@ try {
   // with no dock, 0.6 and 3.5 units out, inside the HUD hole.
   {
     const page = await open(1280, 720, false, "crystal", "overhead");
-    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.getByRole("button", { name: "Pass this device" }).click();
     await page.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && window.__emberisle.getState().state && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
     await page.waitForFunction((n) => window.__isle.renders > n, (await page.evaluate(() => window.__isle.renders)) + 2, { timeout: STEP_MS });
     const spots = await page.evaluate(() => {
@@ -264,7 +264,7 @@ try {
   ]) {
     const tag = `${w}x${h}${touch ? " touch" : ""}`;
     const page = await open(w, h, touch);
-    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.getByRole("button", { name: "Pass this device" }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
     await page.evaluate(() => {
       const g = window.__emberisle;
@@ -532,7 +532,7 @@ try {
       const overDrag = await drag([{ x: w / 2, y: h / 2 }, ...Array.from({ length: 6 }, (_, i) => ({ x: w / 2 + 20 * (i + 1), y: h / 2 + 5 * (i + 1) }))]);
       check(`${tag}: the overhead view still orbits on a drag`, Math.abs(overDrag.azimuth - overPose.azimuth) > 0.05 || Math.abs(overDrag.polar - overPose.polar) > 0.05, brief(overDrag));
       await page.reload();
-      await page.getByRole("button", { name: "Four seats, one table" }).click();
+      await page.getByRole("button", { name: "Pass this device" }).click();
       await page.waitForFunction(() => window.__isle?.lastState && window.__isle.fit && !window.__isle.refitDue, null, { timeout: STEP_MS });
       check(`${tag}: the overhead choice outlives a reload`, (await page.evaluate(() => window.__isle.view)) === "overhead");
       await choose("Diorama");
@@ -545,7 +545,7 @@ try {
   // PlaceList each become a right rail, the island glides clear of them, and closing or blurring glides it back.
   {
     const page = await open(1024, 768, false);
-    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.getByRole("button", { name: "Pass this device" }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
     await page.evaluate(() => {
       const g = window.__emberisle;
@@ -645,7 +645,7 @@ try {
   ]) {
     const tag = `${w}x${h} touch`;
     const page = await open(w, h, true);
-    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.getByRole("button", { name: "Pass this device" }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
     await page.evaluate(() => window.__toMain());
     await page.waitForFunction(() => window.__isle.lastSeq === window.__emberisle.getState().state.seq && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
@@ -777,7 +777,7 @@ try {
   // 390x844 phone, terrain-390.png.
   {
     const page = await open(1280, 720, false, "crystal", null, "full");
-    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.getByRole("button", { name: "Pass this device" }).click();
     await page.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && window.__emberisle.getState().state && window.__isle.landReady && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
     await drawn(page, 3, 30_000);
     const t = await page.evaluate(async () => {
@@ -840,7 +840,7 @@ try {
     await page.screenshot({ path: "test-results/terrain-1280.png" });
     await page.context().close();
     const phone = await open(390, 844, true, "crystal", null, "full");
-    await phone.getByRole("button", { name: "Four seats, one table" }).click();
+    await phone.getByRole("button", { name: "Pass this device" }).click();
     await phone.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && window.__emberisle.getState().state && window.__isle.landReady && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
     await drawn(phone, 3, 30_000);
     check("terrain: the 390x844 phone is overhead", (await phone.evaluate(() => window.__isle.view)) === "overhead");

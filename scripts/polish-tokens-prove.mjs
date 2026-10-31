@@ -69,7 +69,7 @@ try {
     page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
     page.on("pageerror", (e) => errors.push(String(e)));
     await page.goto(`http://127.0.0.1:${PORT}/`);
-    await page.getByRole("button", { name: "Play", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Play against bots", exact: true }).waitFor();
     await page.waitForFunction(() => window.__isle?.land.children.length > 30);
 
     const root = await page.evaluate(
@@ -82,11 +82,11 @@ try {
       assert.ok(c >= 4.5, `${v.tag}: ${r}-on on ${r} is ${c.toFixed(2)}:1`);
     }
 
-    const host = await buttonStyle(page, "Play");
+    const host = await buttonStyle(page, "Play against bots");
     assert.deepEqual(host, { radius: "8px", duration: "0.08s", easing: TOKENS["--ease-out"] }, `${v.tag}: Play`);
     await page.screenshot({ path: `test-results/polish-tokens-${v.tag}-title.png` });
 
-    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play against bots", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state?.phase === "rollOff");
     await page.getByRole("button", { name: /^Roll/ }).first().waitFor();
     const roll = await buttonStyle(page, "Roll");

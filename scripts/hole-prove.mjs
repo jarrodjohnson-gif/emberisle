@@ -34,7 +34,7 @@ try {
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.waitForFunction(() => window.__isle?.renders > 0, null, { timeout: STEP_MS });
-  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await page.getByRole("button", { name: "Pass this device" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
   await page.evaluate(() => { const g = window.__emberisle; while (g.getState().state.phase === "rollOff") g.getState().dispatch({ type: "roll" }); });
   await page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'), null, { timeout: STEP_MS });

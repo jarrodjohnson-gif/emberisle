@@ -14,7 +14,7 @@ try {
   const context=await browser.newContext({viewport:{width,height},reducedMotion:reduced?'reduce':'no-preference'});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto(`http://127.0.0.1:${port}`);
-  await page.getByRole('button',{name:'Four seats, one table',exact:true}).click();
+  await page.getByRole('button',{name:'Pass this device',exact:true}).click();
   const result=await page.evaluate(async()=>{
    const {createGame}=await import('/src/lib/game/board.ts');
    const R=await import('/src/lib/game/rules.ts');

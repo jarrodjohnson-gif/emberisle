@@ -1,0 +1,9 @@
+$ npm run polish-tokens-prove
+
+> polish-tokens-prove
+> node scripts/polish-tokens-prove.mjs
+
+desk 1280x720: tokens ok, Button radius 8px 0.08s cubic-bezier(0.22, 1, 0.36, 1), 0 console errors
+port 390x844: tokens ok, Button radius 8px 0.08s cubic-bezier(0.22, 1, 0.36, 1), 0 console errors
+land 844x390: tokens ok, Button radius 8px 0.08s cubic-bezier(0.22, 1, 0.36, 1), 0 console errors
+polish-tokens-prove: ok

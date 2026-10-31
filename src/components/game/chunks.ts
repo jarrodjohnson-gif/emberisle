@@ -20,7 +20,8 @@ const openTables = chunk(() => import("@/components/game/OpenTables"));
 export const OpenTables = openTables.pick((m) => m.OpenTables);
 export const OpenModeToggle = openTables.pick((m) => m.OpenModeToggle);
 export const SetupReference = chunk(() => import("@/components/game/SetupReference")).pick(m => m.SetupReference);
-export const WayfarerOptions = chunk(() => import("@/components/game/WayfarerOptions")).pick(m => m.WayfarerOptions);
+export const wayfarer = chunk(() => import("@/components/game/WayfarerOptions"));
+export const WayfarerOptions = wayfarer.pick(m => m.WayfarerOptions);
 
 export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);
