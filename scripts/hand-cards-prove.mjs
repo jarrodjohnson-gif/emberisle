@@ -623,7 +623,7 @@ try {
     assert.ok(ratio(parse(gain.count), parse(gain.fill)) >= 4.5, `${v.tag}: count on the fill ≥ 4.5:1 (${ratio(parse(gain.count), parse(gain.fill)).toFixed(2)})`);
     assert.equal(gain.litText, "5Wood", `${v.tag}: the lit face shows the new count`);
     assert.equal(gain.tab.text, "+2", `${v.tag}: gain tab reads +N`);
-    assert.deepEqual(parse(gain.tab.bg), rgb(PAINT.timber[1]), `${v.tag}: gain tab is the good's side colour`);
+    assert.deepEqual(parse(gain.tab.bg), rgb("#fff9f0"), `${v.tag}: gain tab is the light paper pill`);
     assert.deepEqual(parse(gain.tab.color), rgb("#ffffff"), `${v.tag}: gain tab text is white`);
     assert.ok(ratio(parse(gain.tab.color), parse(gain.tab.bg)) >= 4.5, `${v.tag}: gain tab ≥ 4.5:1`);
     assert.ok(Math.abs(gain.tab.off) <= 0.5, `${v.tag}: the tab is centred on its card (off by ${gain.tab.off.toFixed(3)} px)`);
