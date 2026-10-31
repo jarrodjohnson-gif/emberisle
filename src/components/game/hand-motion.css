@@ -25,10 +25,10 @@
 
 @media (min-width: 768px) and (pointer: fine) and (min-height: 481px) {
   /* 1.3x the upright card: 88x80, a 22 px symbol, a 30 px count and a 12 px name. The row centres under the board. The hand
-     is the first row of the HUD stack here, which scrolls and would clip the 18 px the tab stands above the card, so the
-     tray keeps 22 px at the top for the tab and the 4 px lift. The padding is fixed, so the box is the same size before,
+     is the first row of the HUD stack here, which scrolls and would clip the 24 px the tab stands above the card, so the
+     tray keeps 28 px at the top for the tab and the 4 px lift. The padding is fixed, so the box is the same size before,
      during and after a cue, and the map never refits for one. */
-  .hud-stack > [data-testid="hand-dock"]:first-child > .goods-tray { --goods-lift: 4px; padding-top: 22px; padding-bottom: 4px; }
+  .hud-stack > [data-testid="hand-dock"]:first-child > .goods-tray { --goods-lift: 4px; padding-top: 28px; padding-bottom: 4px; }
   .goods-tray { justify-content: center; }
   .hand-resource-card-slot { flex: 0 0 88px; }
   .goods-card { height: 80px; }
@@ -57,14 +57,14 @@
 }
 
 /* The cue: a gain fills the card with its colour (a copy of the face on top, so only opacity changes), a loss rings it in
-   red, and a tab carries +N or −N out of the top edge. Each holds 2200 ms (FLASH_MS) and fades over 300 ms. The card's lift
+   red, and a tab carries +N or −N out of the top edge. Each holds 2500 ms (FLASH_MS) and fades over 500 ms (#825). The card's lift
    or dip is WAAPI (Hand.tsx). Under reduced motion every animation is off (styles.css), so the cue stands still. */
 @keyframes goods-cue {
   0% { opacity: 0; }
-  4.8%, 88% { opacity: 1; }
+  4%, 83.3% { opacity: 1; }
   100% { opacity: 0; }
 }
-.goods-lit, .goods-lost, .goods-tab { position: absolute; pointer-events: none; animation: goods-cue 2500ms var(--ease-out) both; }
+.goods-lit, .goods-lost, .goods-tab { position: absolute; pointer-events: none; animation: goods-cue 3000ms var(--ease-out) both; }
 .goods-lit, .goods-lost { inset: 0; border-radius: inherit; }
 .goods-lit {
   justify-content: inherit;
@@ -76,13 +76,17 @@
 .goods-lit > .goods-label { color: var(--on); opacity: 0.9; }
 .goods-lost { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--loss) 55%, var(--paper)); }
 .goods-tab {
-  /* 22 px tall with 14 px bold text at every size: 18 px above the card's edge, 4 px over it. */
-  left: 0; right: 0; top: -18px; z-index: 1; width: max-content; min-width: 34px; height: 22px; margin: 0 auto; padding: 0 8px;
-  border-radius: 6px 6px 0 0; text-align: center; white-space: nowrap;
-  font: 700 14px/22px var(--font-numeral); font-variant-numeric: tabular-nums;
+  /* #825: a light pill with dark ink text and a thin outline in the good's side colour, for +N and -N alike. 24 px tall with
+     14 px bold text: 20 px above the card's edge, 4 px over it. */
+  left: 0; right: 0; top: -20px; z-index: 1; width: max-content; min-width: 40px; height: 24px; margin: 0 auto; padding: 0 8px;
+  border-radius: 999px; text-align: center; white-space: nowrap;
+  font: 700 14px/24px var(--font-numeral); font-variant-numeric: tabular-nums;
+  background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--deep), 0 2px 6px rgb(24 51 45 / 0.25);
 }
-.goods-tab[data-sign="+"] { background: var(--deep); color: #fff; }
-.goods-tab[data-sign="-"] { top: -19px; background: var(--paper); color: var(--loss); box-shadow: inset 0 0 0 1px var(--loss); }
+@media (min-width: 1280px) and (pointer: fine) and (min-height: 481px) {
+  /* 1.25x on a wide screen with a fine pointer: 28 px tall, 17.5 px text, 24 px above the card inside the tray's 28 px. */
+  .goods-tab { top: -24px; min-width: 50px; height: 28px; padding: 0 10px; font-size: 17.5px; line-height: 28px; }
+}
 
 /* #820: an open offer lifts the cards it changes and edges them, red for what this seat gives and green for what it gets.
    The -N / +N label carries the same meaning, so colour is not the only cue. The slot moves; the card keeps its own
