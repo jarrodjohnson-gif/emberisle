@@ -125,7 +125,7 @@ function Face({ resource, count, lit }: { resource: Resource; count: number; lit
   );
 }
 
-function ResourceCard({ resource, count, flash, offer, showRates, buildMode, owner }: { resource: Resource; count: number; flash?: ResourceFlash; offer?: number; buildMode: string; owner: string; showRates: (resource: Resource, card: HTMLElement) => void }) {
+function ResourceCard({ resource, count, flash, offer, showRates, buildMode, owner, rail }: { resource: Resource; count: number; flash?: ResourceFlash; offer?: number; buildMode: string; owner: string; rail?: boolean; showRates: (resource: Resource, card: HTMLElement) => void }) {
   const card = useRef<HTMLDivElement>(null);
   const hold = useRef<{ timer?: ReturnType<typeof setTimeout>; x: number; y: number }>({ x: 0, y: 0 });
   const cancelHold = () => {
@@ -138,23 +138,29 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
   // preserving its footprint and future focus/long-press state; only the decorative cues are keyed.
   // A gain lifts the card by the tray's --goods-lift (hand-motion.css: 6 px, less where the tray has less room) and a
   // loss dips it 2 px, for as long as the fill holds; both settle as it fades.
+  // #774: in side rail (sideways phone) gain slides toward map (-20px) and loss dips (3px).
   useLayoutEffect(() => {
     if (!flash || !card.current) return;
     const preference = matchMedia("(prefers-reduced-motion: reduce)");
     // 0 is a real value (a short wide window has no room to lift); only a missing property falls back to 6 px.
     const lift = parseFloat(getComputedStyle(card.current).getPropertyValue("--goods-lift"));
-    const y = flash.delta > 0 ? -(Number.isNaN(lift) ? 6 : lift) : 2;
+    const shift = flash.delta > 0 ? (rail ? -20 : -(Number.isNaN(lift) ? 6 : lift)) : (rail ? 3 : 2);
+    const keyframes = rail
+      ? [
+          { transform: "translateX(0)", offset: 0, easing: EASE_OUT },
+          { transform: `translateX(${shift}px)`, offset: 120 / CUE_MS },
+          { transform: `translateX(${shift}px)`, offset: FLASH_MS / CUE_MS, easing: EASE_OUT },
+          { transform: "translateX(0)", offset: 1 },
+        ]
+      : [
+          { transform: "translateY(0)", offset: 0, easing: EASE_OUT },
+          { transform: `translateY(${shift}px)`, offset: 120 / CUE_MS },
+          { transform: `translateY(${shift}px)`, offset: FLASH_MS / CUE_MS, easing: EASE_OUT },
+          { transform: "translateY(0)", offset: 1 },
+        ];
     const animation = preference.matches
       ? null
-      : card.current.animate(
-          [
-            { transform: "translateY(0)", offset: 0, easing: EASE_OUT },
-            { transform: `translateY(${y}px)`, offset: 120 / CUE_MS },
-            { transform: `translateY(${y}px)`, offset: FLASH_MS / CUE_MS, easing: EASE_OUT },
-            { transform: "translateY(0)", offset: 1 },
-          ],
-          { duration: CUE_MS },
-        );
+      : card.current.animate(keyframes, { duration: CUE_MS });
     const stopMovement = () => {
       if (preference.matches) animation?.cancel();
     };
@@ -163,12 +169,12 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
       animation?.cancel();
       preference.removeEventListener("change", stopMovement);
     };
-  }, [flash?.id]);
+  }, [flash?.id, rail]);
   return (
     <div
       data-testid={`offer-slot-${resource}`}
       data-offer={offer ? (offer < 0 ? "give" : "get") : undefined}
-      className="hand-resource-card-slot relative min-w-0 flex-1"
+      className={cn("hand-resource-card-slot relative", rail ? "w-[60px] shrink-0" : "min-w-0 flex-1")}
     >
       <div
         ref={card}
@@ -207,7 +213,8 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
         onPointerCancel={cancelHold}
         onPointerLeave={cancelHold}
         className={cn(
-          `goods-card goods-${resource} relative h-[62px] rounded-control focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg short:h-11`,
+          `goods-card goods-${resource} relative rounded-control focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg`,
+          rail ? "h-14 w-[60px] short:h-14" : "h-[62px] short:h-11",
           count === 0 && "goods-empty",
         )}
       >
@@ -245,7 +252,7 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
   );
 }
 
-function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<typeof useResourceFlashes> }) {
+function ResourceHand({ me, flashes, rail }: { me: PlayerState; flashes: ReturnType<typeof useResourceFlashes>; rail?: boolean }) {
   const offer = useOfferDeltas(me);
   const buildMode = useGame((s) => s.buildMode);
   const [hint, setHint] = useState<{ resource: Resource; top: number; key: number; owner: string } | null>(null);
@@ -256,9 +263,9 @@ function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<ty
   return (
     <>
       {/* Not a scroller: the five cards always fit, and a scroller would clip the +N tab and the lift at its edge. */}
-      <div className="goods-tray flex shrink-0 gap-1 rounded-chip p-2 short:p-1">
+      <div className={cn("goods-tray flex shrink-0 rounded-chip", rail ? "flex-col gap-1.5 p-0 bg-transparent shadow-none" : "gap-1 p-2 short:p-1")}>
         {RESOURCES.map((r) => (
-          <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} offer={offer[r]} showRates={showRates} buildMode={buildMode} owner={me.id} />
+          <ResourceCard key={r} resource={r} count={me.resources[r]} flash={flashes[r]} offer={offer[r]} showRates={showRates} buildMode={buildMode} owner={me.id} rail={rail} />
         ))}
       </div>
       {hint && hint.owner === me.id && buildMode === "none" ? <LazyBoundary key={hint.key} failed={null}>
@@ -277,7 +284,7 @@ function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<ty
 // refit measures the hole with the hand in it; the motion is opacity and translateY only (docs/design/polish.md: never
 // animate layout). A hand that goes away (a hotseat seat that has held nothing takes the turn) is removed at once for the
 // same reason: nothing refits when an animation ends.
-export function HandDock({ me, phase }: { me: PlayerState; phase: Phase }) {
+export function HandDock({ me, phase, rail }: { me: PlayerState; phase: Phase; rail?: boolean }) {
   // Read here, not in the hand, so the +N that brings the first good in is not lost to the hand mounting after the change.
   const flashes = useResourceFlashes(me);
   const hasGoods = RESOURCES.some((r) => me.resources[r] > 0);
@@ -297,6 +304,25 @@ export function HandDock({ me, phase }: { me: PlayerState; phase: Phase }) {
     return () => preference.removeEventListener("change", settle);
   }, [rising]);
   if (!show) return null;
+  if (rail) {
+    return (
+      <aside
+        aria-label="Goods"
+        data-testid="hand-dock"
+        data-hand-rail
+        data-rising={rising || undefined}
+        className={cn(
+          "hud-goods-rail pointer-events-auto fixed right-safe bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 flex flex-col gap-1.5",
+          rising && "hand-in",
+        )}
+        onAnimationEnd={(e) => {
+          if (e.target === e.currentTarget) setRising(false);
+        }}
+      >
+        <ResourceHand me={me} flashes={flashes} rail />
+      </aside>
+    );
+  }
   return (
     <div
       data-testid="hand-dock"

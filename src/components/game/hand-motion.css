@@ -96,3 +96,50 @@
   .hand-resource-card-slot { transition: none; }
   .hand-resource-card-slot[data-offer] { transform: none; }
 }
+
+/* #774: Side rail layout and motion for phone landscape */
+.hud-goods-rail .goods-card,
+.hud-goods-rail .goods-lit {
+  width: 60px;
+  height: 56px;
+  padding-top: 3px;
+  justify-content: flex-start;
+}
+.hud-goods-rail .goods-icon {
+  width: 16px;
+  height: 16px;
+}
+.hud-goods-rail .goods-count {
+  margin-top: 0px;
+  font-size: 22px;
+  line-height: 22px;
+}
+.hud-goods-rail .goods-label {
+  display: block;
+  margin-top: 0px;
+  font-size: 10px;
+  line-height: 12px;
+}
+
+/* Side rail positioning for flash tab badge beside card toward the map */
+.hud-goods-rail .goods-tab {
+  left: auto;
+  right: calc(100% + 4px);
+  top: 50%;
+  bottom: auto;
+  margin: 0;
+  transform: translateY(-50%);
+  border-radius: 6px;
+}
+.hud-goods-rail .goods-tab[data-sign="-"] {
+  top: 50%;
+}
+
+.hud-goods-rail .hand-resource-card-slot[data-offer] {
+  transform: translateX(-3px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hud-goods-rail .hand-resource-card-slot[data-offer] {
+    transform: none;
+  }
+}
