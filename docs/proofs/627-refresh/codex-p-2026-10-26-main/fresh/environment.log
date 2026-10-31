@@ -1,0 +1,7 @@
+$ bash -c "node --version; npm ls playwright --depth=0; \"$CHROMIUM_PATH\" --version; git rev-parse HEAD"
+v24.19.0
+emberisle@ /workspace/emberisle/work/p-review-verify905
+└── playwright@1.63.0
+
+Google Chrome for Testing 153.0.8010.12 
+96ad756ca4cb1d824e19070021c56457eb4cf260

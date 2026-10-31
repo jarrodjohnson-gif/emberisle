@@ -1,0 +1,9 @@
+$ npm run robber-prompt-prove
+
+> robber-prompt-prove
+> node scripts/robber-prompt-prove.mjs
+
+ok   390x844: mover prompt, others wait, Take-from replaces it, gone after the move, Knight
+ok   844x390: mover prompt, others wait, Take-from replaces it, gone after the move, Knight
+ok   1280x720: mover prompt, others wait, Take-from replaces it, gone after the move, Knight
+robber-prompt-prove: PASS

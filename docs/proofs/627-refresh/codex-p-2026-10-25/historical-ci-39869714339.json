@@ -1,0 +1,82 @@
+[
+  {
+    "name": "loosen",
+    "status": "completed",
+    "result": "success",
+    "failed_steps": []
+  },
+  {
+    "name": "changes",
+    "status": "completed",
+    "result": "success",
+    "failed_steps": []
+  },
+  {
+    "name": "server",
+    "status": "completed",
+    "result": "success",
+    "failed_steps": []
+  },
+  {
+    "name": "browser-a (a3)",
+    "status": "completed",
+    "result": "success",
+    "failed_steps": []
+  },
+  {
+    "name": "browser-a (a1)",
+    "status": "completed",
+    "result": "success",
+    "failed_steps": []
+  },
+  {
+    "name": "build",
+    "status": "completed",
+    "result": "success",
+    "failed_steps": []
+  },
+  {
+    "name": "browser-a (a2)",
+    "status": "completed",
+    "result": "success",
+    "failed_steps": []
+  },
+  {
+    "name": "browser-b (presentation)",
+    "status": "completed",
+    "result": "cancelled",
+    "failed_steps": []
+  },
+  {
+    "name": "browser-b (flows-b)",
+    "status": "completed",
+    "result": "cancelled",
+    "failed_steps": []
+  },
+  {
+    "name": "browser-b (presentation-2)",
+    "status": "completed",
+    "result": "success",
+    "failed_steps": []
+  },
+  {
+    "name": "browser-b (flows-a)",
+    "status": "completed",
+    "result": "cancelled",
+    "failed_steps": []
+  },
+  {
+    "name": "browser-a",
+    "status": "completed",
+    "result": "success",
+    "failed_steps": []
+  },
+  {
+    "name": "checks",
+    "status": "completed",
+    "result": "failure",
+    "failed_steps": [
+      "Run echo 'build=success server=success browser-a=success browser-b=cancelled'"
+    ]
+  }
+]

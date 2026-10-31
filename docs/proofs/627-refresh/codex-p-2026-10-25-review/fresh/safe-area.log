@@ -1,0 +1,275 @@
+$ npm run hud-safe-area-prove
+
+> hud-safe-area-prove
+> node scripts/hud-safe-area-prove.mjs
+
+ok   844x390 roll-off: the inset emulation reached env() [0,47,21,47]
+ok   844x390 roll-off: all 6 visible controls inside the safe area
+ok   844x390 roll-off: the HUD hole is inside the safe area {"l":331,"t":68,"r":785,"b":357}
+ok   844x390 roll-off: all 54 island corners and docks inside the hole
+ok   844x390 setup: the inset emulation reached env() [0,47,21,47]
+ok   844x390 setup: all 5 visible controls inside the safe area
+ok   844x390 setup: the HUD hole is inside the safe area {"l":331,"t":68,"r":785,"b":357}
+ok   844x390 setup: all 54 island corners and docks inside the hole
+ok   844x390 setup PlaceChip: the inset emulation reached env() [0,47,21,47]
+ok   844x390 setup PlaceChip: all 7 visible controls inside the safe area
+ok   844x390 setup PlaceChip: the HUD hole is inside the safe area {"l":331,"t":68,"r":785,"b":357}
+ok   844x390 setup PlaceChip: all 54 island corners and docks inside the hole
+ok   844x390 setup path: the inset emulation reached env() [0,47,21,47]
+ok   844x390 setup path: all 5 visible controls inside the safe area
+ok   844x390 setup path: the HUD hole is inside the safe area {"l":331,"t":68,"r":785,"b":357}
+ok   844x390 setup path: all 54 island corners and docks inside the hole
+ok   844x390 roll: the inset emulation reached env() [0,47,21,47]
+ok   844x390 roll: all 21 visible controls inside the safe area
+ok   844x390 roll: the HUD hole is inside the safe area {"l":331,"t":68,"r":785,"b":357}
+ok   844x390 roll: all 54 island corners and docks inside the hole
+ok   844x390 roll, full hand: Roll is inside the safe area, 44 px tall, uncovered, scrolled to the top [188,297,307,345]
+ok   844x390 main: the inset emulation reached env() [0,47,21,47]
+ok   844x390 main: all 27 visible controls inside the safe area
+ok   844x390 main: the HUD hole is inside the safe area {"l":331,"t":68,"r":785,"b":357}
+ok   844x390 main: all 54 island corners and docks inside the hole
+ok   844x390 main, full hand: the column scrolls (full hand, every fortune)
+ok   844x390 main, full hand: End turn is inside the safe area, 44 px tall, uncovered, scrolled to the top [220,321,303,365]
+ok   844x390 main, full hand: Tab through 7 column controls, none hidden behind the pinned row
+ok   844x390 main, full hand: the "more below" cue sits above the pinned row
+ok   844x390 main, full hand: the open fortune tray covers the pinned row and sits inside the safe area {"covers":true,"inside":true,"box":[47,68,307,369]}
+ok   844x390 main, full hand: Escape closes the tray and focus returns to Fortunes
+ok   844x390 player menu: the inset emulation reached env() [0,47,21,47]
+ok   844x390 player menu: all 28 visible controls inside the safe area
+ok   844x390 Table menu open: the inset emulation reached env() [0,47,21,47]
+ok   844x390 Table menu open: all 34 visible controls inside the safe area
+ok   844x390 How to play: the inset emulation reached env() [0,47,21,47]
+ok   844x390 How to play: all 29 visible controls inside the safe area
+ok   844x390 trade panel: the inset emulation reached env() [0,47,21,47]
+ok   844x390 trade panel: all 40 visible controls inside the safe area
+ok   844x390 win screen: the inset emulation reached env() [0,47,21,47]
+ok   844x390 win screen: all 22 visible controls inside the safe area
+ok   844x390 online, chat closed: the inset emulation reached env() [0,47,21,47]
+ok   844x390 online, chat closed: all 7 visible controls inside the safe area
+ok   844x390 online, chat closed: the HUD hole is inside the safe area {"l":331,"t":68,"r":785,"b":357}
+ok   844x390 online, chat closed: all 54 island corners and docks inside the hole
+ok   844x390 online, chat open: the inset emulation reached env() [0,47,21,47]
+ok   844x390 online, chat open: all 19 visible controls inside the safe area
+ok   390x844 roll-off: the inset emulation reached env() [47,0,34,0]
+ok   390x844 roll-off: all 6 visible controls inside the safe area
+ok   390x844 roll-off: the HUD hole is inside the safe area {"l":12,"t":103,"r":378,"b":484}
+ok   390x844 roll-off: all 54 island corners and docks inside the hole
+ok   390x844 setup: the inset emulation reached env() [47,0,34,0]
+ok   390x844 setup: all 5 visible controls inside the safe area
+ok   390x844 setup: the HUD hole is inside the safe area {"l":12,"t":103,"r":378,"b":484}
+ok   390x844 setup: all 54 island corners and docks inside the hole
+ok   390x844 setup PlaceChip: the inset emulation reached env() [47,0,34,0]
+ok   390x844 setup PlaceChip: all 7 visible controls inside the safe area
+ok   390x844 setup PlaceChip: the HUD hole is inside the safe area {"l":12,"t":103,"r":378,"b":484}
+ok   390x844 setup PlaceChip: all 54 island corners and docks inside the hole
+ok   390x844 setup path: the inset emulation reached env() [47,0,34,0]
+ok   390x844 setup path: all 5 visible controls inside the safe area
+ok   390x844 setup path: the HUD hole is inside the safe area {"l":12,"t":103,"r":378,"b":484}
+ok   390x844 setup path: all 54 island corners and docks inside the hole
+ok   390x844 roll: the inset emulation reached env() [47,0,34,0]
+ok   390x844 roll: all 21 visible controls inside the safe area
+ok   390x844 roll: the HUD hole is inside the safe area {"l":12,"t":103,"r":378,"b":484}
+ok   390x844 roll: all 54 island corners and docks inside the hole
+ok   390x844 main: the inset emulation reached env() [47,0,34,0]
+ok   390x844 main: all 26 visible controls inside the safe area
+ok   390x844 main: the HUD hole is inside the safe area {"l":12,"t":103,"r":378,"b":484}
+ok   390x844 main: all 54 island corners and docks inside the hole
+ok   390x844 player menu: the inset emulation reached env() [47,0,34,0]
+ok   390x844 player menu: all 27 visible controls inside the safe area
+ok   390x844 Table menu open: the inset emulation reached env() [47,0,34,0]
+ok   390x844 Table menu open: all 36 visible controls inside the safe area
+ok   390x844 How to play: the inset emulation reached env() [47,0,34,0]
+ok   390x844 How to play: all 28 visible controls inside the safe area
+ok   390x844 trade panel: the inset emulation reached env() [47,0,34,0]
+ok   390x844 trade panel: all 49 visible controls inside the safe area
+ok   390x844 win screen: the inset emulation reached env() [47,0,34,0]
+ok   390x844 win screen: all 21 visible controls inside the safe area
+ok   390x844 online, chat closed: the inset emulation reached env() [47,0,34,0]
+ok   390x844 online, chat closed: all 7 visible controls inside the safe area
+ok   390x844 online, chat closed: the HUD hole is inside the safe area {"l":12,"t":103,"r":378,"b":484}
+ok   390x844 online, chat closed: all 54 island corners and docks inside the hole
+ok   390x844 online, chat open: the inset emulation reached env() [47,0,34,0]
+ok   390x844 online, chat open: all 19 visible controls inside the safe area
+ok   667x375 roll-off: the inset emulation reached env() [0,44,21,44]
+ok   667x375 roll-off: all 6 visible controls inside the safe area
+ok   667x375 roll-off: the HUD hole is inside the safe area {"l":328,"t":68,"r":611,"b":342}
+ok   667x375 roll-off: all 54 island corners and docks inside the hole
+ok   667x375 setup: the inset emulation reached env() [0,44,21,44]
+ok   667x375 setup: all 6 visible controls inside the safe area
+ok   667x375 setup: the HUD hole is inside the safe area {"l":328,"t":68,"r":611,"b":342}
+ok   667x375 setup: all 54 island corners and docks inside the hole
+ok   667x375 setup PlaceChip: the inset emulation reached env() [0,44,21,44]
+ok   667x375 setup PlaceChip: all 8 visible controls inside the safe area
+ok   667x375 setup PlaceChip: the HUD hole is inside the safe area {"l":328,"t":68,"r":611,"b":342}
+ok   667x375 setup PlaceChip: all 54 island corners and docks inside the hole
+ok   667x375 setup path: the inset emulation reached env() [0,44,21,44]
+ok   667x375 setup path: all 6 visible controls inside the safe area
+ok   667x375 setup path: the HUD hole is inside the safe area {"l":328,"t":68,"r":611,"b":342}
+ok   667x375 setup path: all 54 island corners and docks inside the hole
+ok   667x375 roll: the inset emulation reached env() [0,44,21,44]
+ok   667x375 roll: all 21 visible controls inside the safe area
+ok   667x375 roll: the HUD hole is inside the safe area {"l":328,"t":68,"r":611,"b":342}
+ok   667x375 roll: all 54 island corners and docks inside the hole
+ok   667x375 roll, full hand: Roll is inside the safe area, 44 px tall, uncovered, scrolled to the top [185,282,304,330]
+ok   667x375 main: the inset emulation reached env() [0,44,21,44]
+ok   667x375 main: all 27 visible controls inside the safe area
+ok   667x375 main: the HUD hole is inside the safe area {"l":328,"t":68,"r":611,"b":342}
+ok   667x375 main: all 54 island corners and docks inside the hole
+ok   667x375 main, full hand: the column scrolls (full hand, every fortune)
+ok   667x375 main, full hand: End turn is inside the safe area, 44 px tall, uncovered, scrolled to the top [217,306,300,350]
+ok   667x375 main, full hand: Tab through 7 column controls, none hidden behind the pinned row
+ok   667x375 main, full hand: the "more below" cue sits above the pinned row
+ok   667x375 main, full hand: the open fortune tray covers the pinned row and sits inside the safe area {"covers":true,"inside":true,"box":[44,68,304,354]}
+ok   667x375 main, full hand: Escape closes the tray and focus returns to Fortunes
+ok   667x375 player menu: the inset emulation reached env() [0,44,21,44]
+ok   667x375 player menu: all 28 visible controls inside the safe area
+ok   667x375 Table menu open: the inset emulation reached env() [0,44,21,44]
+ok   667x375 Table menu open: all 34 visible controls inside the safe area
+ok   667x375 How to play: the inset emulation reached env() [0,44,21,44]
+ok   667x375 How to play: all 29 visible controls inside the safe area
+ok   667x375 trade panel: the inset emulation reached env() [0,44,21,44]
+ok   667x375 trade panel: all 40 visible controls inside the safe area
+ok   667x375 win screen: the inset emulation reached env() [0,44,21,44]
+ok   667x375 win screen: all 22 visible controls inside the safe area
+ok   667x375 online, chat closed: the inset emulation reached env() [0,44,21,44]
+ok   667x375 online, chat closed: all 7 visible controls inside the safe area
+ok   667x375 online, chat closed: the HUD hole is inside the safe area {"l":328,"t":68,"r":611,"b":342}
+ok   667x375 online, chat closed: all 54 island corners and docks inside the hole
+ok   667x375 online, chat open: the inset emulation reached env() [0,44,21,44]
+ok   667x375 online, chat open: all 19 visible controls inside the safe area
+ok   440x956 roll-off: the inset emulation reached env() [62,0,34,0]
+ok   440x956 roll-off: all 6 visible controls inside the safe area
+ok   440x956 roll-off: the HUD hole is inside the safe area {"l":12,"t":118,"r":428,"b":644}
+ok   440x956 roll-off: all 54 island corners and docks inside the hole
+ok   440x956 setup: the inset emulation reached env() [62,0,34,0]
+ok   440x956 setup: all 6 visible controls inside the safe area
+ok   440x956 setup: the HUD hole is inside the safe area {"l":12,"t":118,"r":428,"b":644}
+ok   440x956 setup: all 54 island corners and docks inside the hole
+ok   440x956 setup PlaceChip: the inset emulation reached env() [62,0,34,0]
+ok   440x956 setup PlaceChip: all 8 visible controls inside the safe area
+ok   440x956 setup PlaceChip: the HUD hole is inside the safe area {"l":12,"t":118,"r":428,"b":644}
+ok   440x956 setup PlaceChip: all 54 island corners and docks inside the hole
+ok   440x956 setup path: the inset emulation reached env() [62,0,34,0]
+ok   440x956 setup path: all 6 visible controls inside the safe area
+ok   440x956 setup path: the HUD hole is inside the safe area {"l":12,"t":118,"r":428,"b":644}
+ok   440x956 setup path: all 54 island corners and docks inside the hole
+ok   440x956 roll: the inset emulation reached env() [62,0,34,0]
+ok   440x956 roll: all 21 visible controls inside the safe area
+ok   440x956 roll: the HUD hole is inside the safe area {"l":12,"t":118,"r":428,"b":644}
+ok   440x956 roll: all 54 island corners and docks inside the hole
+ok   440x956 main: the inset emulation reached env() [62,0,34,0]
+ok   440x956 main: all 26 visible controls inside the safe area
+ok   440x956 main: the HUD hole is inside the safe area {"l":12,"t":118,"r":428,"b":644}
+ok   440x956 main: all 54 island corners and docks inside the hole
+ok   440x956 player menu: the inset emulation reached env() [62,0,34,0]
+ok   440x956 player menu: all 27 visible controls inside the safe area
+ok   440x956 Table menu open: the inset emulation reached env() [62,0,34,0]
+ok   440x956 Table menu open: all 36 visible controls inside the safe area
+ok   440x956 How to play: the inset emulation reached env() [62,0,34,0]
+ok   440x956 How to play: all 28 visible controls inside the safe area
+ok   440x956 trade panel: the inset emulation reached env() [62,0,34,0]
+ok   440x956 trade panel: all 49 visible controls inside the safe area
+ok   440x956 win screen: the inset emulation reached env() [62,0,34,0]
+ok   440x956 win screen: all 21 visible controls inside the safe area
+ok   440x956 online, chat closed: the inset emulation reached env() [62,0,34,0]
+ok   440x956 online, chat closed: all 7 visible controls inside the safe area
+ok   440x956 online, chat closed: the HUD hole is inside the safe area {"l":12,"t":118,"r":428,"b":644}
+ok   440x956 online, chat closed: all 54 island corners and docks inside the hole
+ok   440x956 online, chat open: the inset emulation reached env() [62,0,34,0]
+ok   440x956 online, chat open: all 19 visible controls inside the safe area
+ok   956x440 roll-off: the inset emulation reached env() [0,62,21,62]
+ok   956x440 roll-off: all 6 visible controls inside the safe area
+ok   956x440 roll-off: the HUD hole is inside the safe area {"l":346,"t":68,"r":882,"b":407}
+ok   956x440 roll-off: all 54 island corners and docks inside the hole
+ok   956x440 setup: the inset emulation reached env() [0,62,21,62]
+ok   956x440 setup: all 5 visible controls inside the safe area
+ok   956x440 setup: the HUD hole is inside the safe area {"l":346,"t":68,"r":882,"b":407}
+ok   956x440 setup: all 54 island corners and docks inside the hole
+ok   956x440 setup PlaceChip: the inset emulation reached env() [0,62,21,62]
+ok   956x440 setup PlaceChip: all 7 visible controls inside the safe area
+ok   956x440 setup PlaceChip: the HUD hole is inside the safe area {"l":346,"t":68,"r":882,"b":407}
+ok   956x440 setup PlaceChip: all 54 island corners and docks inside the hole
+ok   956x440 setup path: the inset emulation reached env() [0,62,21,62]
+ok   956x440 setup path: all 5 visible controls inside the safe area
+ok   956x440 setup path: the HUD hole is inside the safe area {"l":346,"t":68,"r":882,"b":407}
+ok   956x440 setup path: all 54 island corners and docks inside the hole
+ok   956x440 roll: the inset emulation reached env() [0,62,21,62]
+ok   956x440 roll: all 21 visible controls inside the safe area
+ok   956x440 roll: the HUD hole is inside the safe area {"l":346,"t":68,"r":882,"b":407}
+ok   956x440 roll: all 54 island corners and docks inside the hole
+ok   956x440 roll, full hand: Roll is inside the safe area, 44 px tall, uncovered, scrolled to the top [203,347,322,395]
+ok   956x440 main: the inset emulation reached env() [0,62,21,62]
+ok   956x440 main: all 27 visible controls inside the safe area
+ok   956x440 main: the HUD hole is inside the safe area {"l":346,"t":68,"r":882,"b":407}
+ok   956x440 main: all 54 island corners and docks inside the hole
+ok   956x440 main, full hand: the column scrolls (full hand, every fortune)
+ok   956x440 main, full hand: End turn is inside the safe area, 44 px tall, uncovered, scrolled to the top [235,371,318,415]
+ok   956x440 main, full hand: Tab through 7 column controls, none hidden behind the pinned row
+ok   956x440 main, full hand: the "more below" cue sits above the pinned row
+ok   956x440 main, full hand: the open fortune tray covers the pinned row and sits inside the safe area {"covers":true,"inside":true,"box":[62,68,322,419]}
+ok   956x440 main, full hand: Escape closes the tray and focus returns to Fortunes
+ok   956x440 player menu: the inset emulation reached env() [0,62,21,62]
+ok   956x440 player menu: all 28 visible controls inside the safe area
+ok   956x440 Table menu open: the inset emulation reached env() [0,62,21,62]
+ok   956x440 Table menu open: all 36 visible controls inside the safe area
+ok   956x440 How to play: the inset emulation reached env() [0,62,21,62]
+ok   956x440 How to play: all 29 visible controls inside the safe area
+ok   956x440 trade panel: the inset emulation reached env() [0,62,21,62]
+ok   956x440 trade panel: all 50 visible controls inside the safe area
+ok   956x440 win screen: the inset emulation reached env() [0,62,21,62]
+ok   956x440 win screen: all 22 visible controls inside the safe area
+ok   956x440 online, chat closed: the inset emulation reached env() [0,62,21,62]
+ok   956x440 online, chat closed: all 7 visible controls inside the safe area
+ok   956x440 online, chat closed: the HUD hole is inside the safe area {"l":346,"t":68,"r":882,"b":407}
+ok   956x440 online, chat closed: all 54 island corners and docks inside the hole
+ok   956x440 online, chat open: the inset emulation reached env() [0,62,21,62]
+ok   956x440 online, chat open: all 19 visible controls inside the safe area
+ok   956x410 roll-off: the inset emulation reached env() [0,62,21,62]
+ok   956x410 roll-off: all 6 visible controls inside the safe area
+ok   956x410 roll-off: the HUD hole is inside the safe area {"l":346,"t":68,"r":882,"b":377}
+ok   956x410 roll-off: all 54 island corners and docks inside the hole
+ok   956x410 setup: the inset emulation reached env() [0,62,21,62]
+ok   956x410 setup: all 5 visible controls inside the safe area
+ok   956x410 setup: the HUD hole is inside the safe area {"l":346,"t":68,"r":882,"b":377}
+ok   956x410 setup: all 54 island corners and docks inside the hole
+ok   956x410 setup PlaceChip: the inset emulation reached env() [0,62,21,62]
+ok   956x410 setup PlaceChip: all 7 visible controls inside the safe area
+ok   956x410 setup PlaceChip: the HUD hole is inside the safe area {"l":346,"t":68,"r":882,"b":377}
+ok   956x410 setup PlaceChip: all 54 island corners and docks inside the hole
+ok   956x410 setup path: the inset emulation reached env() [0,62,21,62]
+ok   956x410 setup path: all 5 visible controls inside the safe area
+ok   956x410 setup path: the HUD hole is inside the safe area {"l":346,"t":68,"r":882,"b":377}
+ok   956x410 setup path: all 54 island corners and docks inside the hole
+ok   956x410 roll: the inset emulation reached env() [0,62,21,62]
+ok   956x410 roll: all 21 visible controls inside the safe area
+ok   956x410 roll: the HUD hole is inside the safe area {"l":346,"t":68,"r":882,"b":377}
+ok   956x410 roll: all 54 island corners and docks inside the hole
+ok   956x410 roll, full hand: Roll is inside the safe area, 44 px tall, uncovered, scrolled to the top [203,317,322,365]
+ok   956x410 main: the inset emulation reached env() [0,62,21,62]
+ok   956x410 main: all 27 visible controls inside the safe area
+ok   956x410 main: the HUD hole is inside the safe area {"l":346,"t":68,"r":882,"b":377}
+ok   956x410 main: all 54 island corners and docks inside the hole
+ok   956x410 main, full hand: the column scrolls (full hand, every fortune)
+ok   956x410 main, full hand: End turn is inside the safe area, 44 px tall, uncovered, scrolled to the top [235,341,318,385]
+ok   956x410 main, full hand: Tab through 8 column controls, none hidden behind the pinned row
+ok   956x410 main, full hand: the "more below" cue sits above the pinned row
+ok   956x410 main, full hand: the open fortune tray covers the pinned row and sits inside the safe area {"covers":true,"inside":true,"box":[62,68,322,389]}
+ok   956x410 main, full hand: Escape closes the tray and focus returns to Fortunes
+ok   956x410 player menu: the inset emulation reached env() [0,62,21,62]
+ok   956x410 player menu: all 28 visible controls inside the safe area
+ok   956x410 Table menu open: the inset emulation reached env() [0,62,21,62]
+ok   956x410 Table menu open: all 36 visible controls inside the safe area
+ok   956x410 How to play: the inset emulation reached env() [0,62,21,62]
+ok   956x410 How to play: all 29 visible controls inside the safe area
+ok   956x410 trade panel: the inset emulation reached env() [0,62,21,62]
+ok   956x410 trade panel: all 50 visible controls inside the safe area
+ok   956x410 win screen: the inset emulation reached env() [0,62,21,62]
+ok   956x410 win screen: all 22 visible controls inside the safe area
+ok   956x410 online, chat closed: the inset emulation reached env() [0,62,21,62]
+ok   956x410 online, chat closed: all 7 visible controls inside the safe area
+ok   956x410 online, chat closed: the HUD hole is inside the safe area {"l":346,"t":68,"r":882,"b":377}
+ok   956x410 online, chat closed: all 54 island corners and docks inside the hole
+ok   956x410 online, chat open: the inset emulation reached env() [0,62,21,62]
+ok   956x410 online, chat open: all 19 visible controls inside the safe area
+ok   zero console errors
+hud-safe-area-prove: ok

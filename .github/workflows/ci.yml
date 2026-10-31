@@ -515,6 +515,8 @@ jobs:
         run: npm run board-touch-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
         run: npm run hole-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+        run: npm run keyboard-fit-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
         run: npm run banner-stable-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
