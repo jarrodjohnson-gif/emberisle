@@ -97,7 +97,7 @@ const serverDir = fileURLToPath(new URL(".", import.meta.url));
 async function start() {
   const proc = spawn(process.execPath, ["--import", preload, "--import", "./register.mjs", "host.mjs"], {
     cwd: serverDir,
-    env: { ...process.env, PORT: "0", ROOMS_DIR: path.join(root, "rooms"), PROFILES_DIR: profileDir, PROFILES_DEV: "" },
+    env: { ...process.env, PORT: "0", ROOMS_DIR: path.join(root, "rooms"), RESULTS_DIR: `${path.join(root, "rooms")}/results`, PROFILES_DIR: profileDir, PROFILES_DEV: "" },
     stdio: ["ignore", "pipe", "pipe"],
   });
   hosts.add(proc);
