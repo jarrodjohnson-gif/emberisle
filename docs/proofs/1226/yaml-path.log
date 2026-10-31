@@ -1,0 +1,4 @@
+PASS real YAML docs_only=true ['actions/checkout@v4', 'actions/setup-node@v4:22', 'npm run desk-gate-prove']
+PASS real YAML docs_only=false ['actions/checkout@v4', 'actions/setup-node@v4:22', 'npm run desk-gate-prove']
+PASS negative: original parsed YAML skips checkout/setup and real npm exits254 ENOENT
+PyYAML 6.0.3 full workflow parse; prerequisite action behavior is projected; local node=v24.19.0

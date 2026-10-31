@@ -1,0 +1,132 @@
+loosen — https://github.com/jarrodjohnson-gif/emberisle/actions/runs/40169301666/job/121096720922
+2026-10-25T06:30:16.8075968Z   git show "$BASE_SHA:scripts/loosen-prove.mjs" > "$RUNNER_TEMP/loosen-prove.mjs"
+2026-10-25T06:30:16.8076637Z   node "$RUNNER_TEMP/loosen-prove.mjs" --base "$BASE_SHA"
+2026-10-25T06:30:16.8077084Z else
+2026-10-25T06:30:16.8077652Z   echo "The base $BASE_SHA has no scripts/loosen-prove.mjs yet, so this runs the PR's copy."
+2026-10-25T06:30:16.8078273Z   node scripts/loosen-prove.mjs --base "$BASE_SHA"
+2026-10-25T06:30:16.8078901Z fi
+2026-10-25T06:30:16.8273429Z shell: /usr/bin/bash -e {0}
+2026-10-25T06:30:16.8274033Z ##[endgroup]
+2026-10-25T06:30:17.0927737Z From https://github.com/jarrodjohnson-gif/emberisle
+2026-10-25T06:30:17.0928691Z  * branch            425e0a46c3d179d85332fd589ced973143335ee6 -> FETCH_HEAD
+2026-10-25T06:30:17.0942349Z Running the base's loosen-prove from 425e0a46c3d179d85332fd589ced973143335ee6.
+2026-10-25T06:30:17.1252823Z ok   self-test: an unchanged proof passes
+2026-10-25T06:30:17.1254496Z ok   self-test: re-indenting passes
+2026-10-25T06:30:17.1256534Z ok   self-test: an added check passes
+2026-10-25T06:30:17.1257344Z ok   self-test: editing only the block comment passes
+2026-10-25T06:30:17.1258665Z ok   self-test: a removed assert fails
+2026-10-25T06:30:17.1259451Z ok   self-test: a removed assert lowers the count
+2026-10-25T06:30:17.1260232Z ok   self-test: a wider tolerance fails
+2026-10-25T06:30:17.1260829Z ok   self-test: a //-commented assert fails
+2026-10-25T06:30:17.1261850Z ok   self-test: a /* */-commented assert fails
+2026-10-25T06:30:17.1263866Z ok   self-test: a check wrapped in a multi-line /* */ fails
+2026-10-25T06:30:17.1264585Z ok   self-test: a removed throw fails
+2026-10-25T06:30:17.1265191Z ok   self-test: a removed expect fails
+2026-10-25T06:30:17.1265945Z ok   self-test: a fail() that no longer sets exitCode 1 fails
+2026-10-25T06:30:17.1266815Z ok   self-test: an added process.exit(0) fails
+2026-10-25T06:30:17.1268347Z ok   self-test: an added process.exit() fails
+2026-10-25T06:30:17.1268827Z ok   self-test: a new .skip fails
+2026-10-25T06:30:17.1415605Z FAIL scripts/chat-prove.mjs: removed or edited check line: check(r.top >= 11 && r.height <= r.vh - 23 && Math.abs(r.width - (r.vw - 24)) < 1, `phone lobby card is ${r.width.toFixed(0)}x${r.height.toFixed(0)}, inside the ${r.vw}x${r.vh} screen and full width`);
+2026-10-25T06:30:17.1417516Z FAIL scripts/chat-prove.mjs: removed or edited check line: check(m.gap <= 1 && m.below.length === 0 && m.leave, `phone lobby 390x${h}, 4 seats scrolled down: sticky row ends at the card's bottom edge (gap ${m.gap}), nothing below it, Leave inside it`);
+2026-10-25T06:30:17.1469395Z 1 proof(s) loosened against 425e0a46c3d1. Restore the checks, or keep them and add new ones (AGENTS.md rule 7).
+2026-10-25T06:30:17.1512335Z ##[error]Process completed with exit code 1.
+
+browser-a (a2) — https://github.com/jarrodjohnson-gif/emberisle/actions/runs/40169301666/job/121096751617
+2026-10-25T06:30:44.6175229Z Processing triggers for libc-bin (2.39-0ubuntu8.9) ...
+2026-10-25T06:30:44.7856090Z Processing triggers for man-db (2.12.0-4build2) ...
+2026-10-25T06:30:44.7874137Z Not building database; man-db/auto-update is not 'true'.
+2026-10-25T06:30:44.7882606Z Processing triggers for fontconfig (2.15.0-1.1ubuntu2) ...
+2026-10-25T06:30:45.2362922Z 
+2026-10-25T06:30:45.2363599Z Running kernel seems to be up-to-date.
+2026-10-25T06:30:45.2363801Z 
+2026-10-25T06:30:45.2363878Z Restarting services...
+2026-10-25T06:30:45.2696929Z  systemctl restart packagekit.service php8.3-fpm.service polkit.service udisks2.service
+2026-10-25T06:30:45.3728193Z 
+2026-10-25T06:30:45.3729008Z Service restarts being deferred:
+2026-10-25T06:30:45.3730296Z  systemctl restart ModemManager.service
+2026-10-25T06:30:45.3736327Z  systemctl restart networkd-dispatcher.service
+2026-10-25T06:30:45.3736966Z 
+2026-10-25T06:30:45.3737248Z No containers need to be restarted.
+2026-10-25T06:30:45.3737543Z 
+2026-10-25T06:30:45.3737825Z No user sessions are running outdated binaries.
+2026-10-25T06:30:45.3738137Z 
+2026-10-25T06:30:45.3738518Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+2026-10-25T06:30:46.0085482Z ##[group]Run npm run tabs-prove
+2026-10-25T06:30:46.0085679Z npm run tabs-prove
+2026-10-25T06:30:46.0138737Z shell: /usr/bin/bash -e {0}
+2026-10-25T06:30:46.0138891Z ##[endgroup]
+2026-10-25T06:30:46.0822586Z 
+2026-10-25T06:30:46.0822942Z > tabs-prove
+2026-10-25T06:30:46.0823171Z > node scripts/tabs-prove.mjs
+2026-10-25T06:30:46.0823461Z 
+2026-10-25T06:31:00.3834810Z tab B typed the code: Tide swatch disabled at opacity 0.35, aria-checked=false; Ember, Dune, Pine enabled
+2026-10-25T06:31:17.2417038Z join link: Pine joined from ?code=6VTY (link http://127.0.0.1:8093/?code=6VTY&host=ws%3A%2F%2F127.0.0.1%3A35949; URL after open: "?host=ws%3A%2F%2F127.0.0.1%3A35949")
+2026-10-25T06:31:25.6452547Z FAIL Ember: the chat dock missed the HUD's first frame
+2026-10-25T06:31:25.7542974Z ##[error]Process completed with exit code 1.
+
+browser-b (flows-c) — https://github.com/jarrodjohnson-gif/emberisle/actions/runs/40169301666/job/121096846911
+2026-10-25T06:31:29.2441136Z with:
+2026-10-25T06:31:29.2441344Z   name: dist
+2026-10-25T06:31:29.2441539Z   path: dist/
+2026-10-25T06:31:29.2441749Z   merge-multiple: false
+2026-10-25T06:31:29.2442009Z   repository: jarrodjohnson-gif/emberisle
+2026-10-25T06:31:29.2442287Z   run-id: 40169301666
+2026-10-25T06:31:29.2442504Z ##[endgroup]
+2026-10-25T06:31:29.4081767Z Downloading single artifact
+2026-10-25T06:31:29.4228390Z (node:3119) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-25T06:31:29.4229766Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-25T06:31:29.5771052Z Preparing to download the following artifacts:
+2026-10-25T06:31:29.5772612Z - dist (ID: 12589752566, Size: 2225116, Expected Digest: sha256:1d61310c426b9b7de91eb8d54b0ec35bca3714467972f90b8d2fbe019a921582)
+2026-10-25T06:31:29.7420008Z Redirecting to blob download url: https://productionresultssa13.blob.core.windows.net/actions-results/e8cf7216-1025-80e9-ac1d-b806c373e88d/workflow-job-run-2710e29c-6fec-512a-8684-eb46a4a7afae/artifacts/bcae0416621b3db43d8cba1e4454a792c7af9e4b7287e51056efc5a215d95839.zip
+2026-10-25T06:31:29.7422373Z Starting download of artifact to: /home/runner/work/emberisle/emberisle/dist
+2026-10-25T06:31:29.9217590Z (node:3119) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-10-25T06:31:31.1550371Z SHA256 digest of downloaded artifact is 1d61310c426b9b7de91eb8d54b0ec35bca3714467972f90b8d2fbe019a921582
+2026-10-25T06:31:31.1551331Z Artifact download completed successfully.
+2026-10-25T06:31:31.1552085Z Total of 1 artifact(s) downloaded
+2026-10-25T06:31:31.1555795Z Download artifact has finished successfully
+2026-10-25T06:31:31.1728550Z ##[group]Run npm run served-prove
+2026-10-25T06:31:31.1728904Z npm run served-prove
+2026-10-25T06:31:31.1791362Z shell: /usr/bin/bash -e {0}
+2026-10-25T06:31:31.1791668Z ##[endgroup]
+2026-10-25T06:31:31.2921976Z 
+2026-10-25T06:31:31.2922649Z > served-prove
+2026-10-25T06:31:31.2923155Z > node scripts/tabs-prove.mjs --served
+2026-10-25T06:31:31.2923464Z 
+2026-10-25T06:31:48.2272829Z tab B typed the code: Tide swatch disabled at opacity 0.35, aria-checked=false; Ember, Dune, Pine enabled
+2026-10-25T06:32:14.1569818Z join link: Pine joined from ?code=3MDD (link http://127.0.0.1:44983/?code=3MDD; URL after open: "/")
+2026-10-25T06:32:32.3810011Z FAIL Ember: the chat dock missed the HUD's first frame
+2026-10-25T06:32:32.4867382Z ##[error]Process completed with exit code 1.
+
+browser-b (presentation) — https://github.com/jarrodjohnson-gif/emberisle/actions/runs/40169301666/job/121096846962
+2026-10-25T06:32:40.1279796Z reduced motion roll: sum 8, gained [timber,wool,grain,ore], short [], expect 4 glow, saw 4, 43 frames, peak 0.35, in-between 0
+2026-10-25T06:32:40.3074868Z coalesced build/roll/build (reduced): four actions, only earlier building paid/pulsed, one tick
+2026-10-25T06:32:41.1835745Z payoff clock (reduced): 53 unique pieces / 108 grants; eight ticks at 0,0.09,0.18,0.27,0.36,0.45,0.54,0.63; hold 1.19
+2026-10-25T06:32:44.8903118Z flash-prove: ok
+2026-10-25T06:32:44.9273946Z ##[group]Run npm run lobby-overflow-prove
+2026-10-25T06:32:44.9274192Z npm run lobby-overflow-prove
+2026-10-25T06:32:44.9326691Z shell: /usr/bin/bash -e {0}
+2026-10-25T06:32:44.9326857Z ##[endgroup]
+2026-10-25T06:32:45.0014067Z 
+2026-10-25T06:32:45.0014625Z > lobby-overflow-prove
+2026-10-25T06:32:45.0014960Z > node scripts/lobby-overflow-prove.mjs
+2026-10-25T06:32:45.0015114Z 
+2026-10-25T06:32:47.6251321Z node:internal/modules/run_main:123
+2026-10-25T06:32:47.6251616Z     triggerUncaughtException(
+2026-10-25T06:32:47.6251783Z     ^
+2026-10-25T06:32:47.6251866Z 
+2026-10-25T06:32:47.6252095Z AssertionError [ERR_ASSERTION]: 320x568 portrait: horizontal overflow must be 0 px, got 7
+2026-10-25T06:32:47.6252302Z 
+2026-10-25T06:32:47.6252358Z 7 !== 0
+2026-10-25T06:32:47.6252429Z 
+2026-10-25T06:32:47.6252625Z     at file:///home/runner/work/emberisle/emberisle/scripts/lobby-overflow-prove.mjs:117:14 {
+2026-10-25T06:32:47.6252894Z   generatedMessage: false,
+2026-10-25T06:32:47.6253149Z   code: 'ERR_ASSERTION',
+2026-10-25T06:32:47.6253291Z   actual: 7,
+2026-10-25T06:32:47.6253600Z   expected: 0,
+2026-10-25T06:32:47.6253805Z   operator: 'strictEqual',
+2026-10-25T06:32:47.6254026Z   diff: 'simple'
+2026-10-25T06:32:47.6254192Z }
+2026-10-25T06:32:47.6254252Z 
+2026-10-25T06:32:47.6254309Z Node.js v22.23.3
+2026-10-25T06:32:47.6543280Z ##[error]Process completed with exit code 1.
+

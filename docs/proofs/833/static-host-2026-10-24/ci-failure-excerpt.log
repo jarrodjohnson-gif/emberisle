@@ -1,0 +1,24 @@
+2026-10-24T23:00:18.3666845Z cold production: held first tap, first legal land buzz 0 ms from knock, live menu toggle
+2026-10-24T23:00:20.2621465Z cold skip: coarse=false, missingAPI=false; no module, row or buzz
+2026-10-24T23:00:22.0501485Z cold skip: coarse=true, missingAPI=true; no module, row or buzz
+2026-10-24T23:00:23.4282088Z cold failure: rejected optional module leaves the game and table menu usable
+2026-10-24T23:00:24.8412306Z pointer change: loaded motor still enforces the current coarse-pointer guard
+2026-10-24T23:00:29.6263990Z land: own outpost buzzed 10 within 0 ms of the recorded knock
+2026-10-24T23:00:31.9449966Z land: opponent outpost stayed quiet
+2026-10-24T23:00:33.0152670Z land: own closing path buzzes; opponent path handing over the turn stays quiet
+2026-10-24T23:00:35.0208921Z pay: three pieces buzzed 8 each
+2026-10-24T23:00:35.0210265Z pay: opponent-only and watcher silent; mixed pays only local pieces; hotseat pays all seats
+2026-10-24T23:00:37.2815506Z toggle: off silent, on buzzes 15 for your-turn
+2026-10-24T23:00:39.4429492Z desktop: coarse=false stays quiet and has no Haptics row
+2026-10-24T23:00:41.8889870Z reduced motion: your-turn still buzzed 15
+2026-10-24T23:00:43.5766749Z events: own fortune and win buzz; watcher, mute and missing-vibrate guards pass
+2026-10-24T23:00:45.6893203Z trade: received frames buzz only seated recipients, never watchers or the sender
+2026-10-24T23:00:45.7022873Z Error: WebSocket connection to 'ws://127.0.0.1:8453/' failed: Error during WebSocket handshake: Unexpected response code: 200
+2026-10-24T23:00:45.7066889Z WebSocket connection to 'ws://127.0.0.1:8453/' failed: Error during WebSocket handshake: Unexpected response code: 200
+2026-10-24T23:00:45.7068970Z WebSocket connection to 'ws://127.0.0.1:8453/' failed: Error during WebSocket handshake: Unexpected response code: 200
+2026-10-24T23:00:45.7070300Z     at file:///home/runner/work/emberisle/emberisle/scripts/haptics-prove.mjs:607:28
+2026-10-24T23:00:46.1509724Z ##[error]Process completed with exit code 1.
+2026-10-24T23:00:46.1737789Z ##[group]Run actions/upload-artifact@v4
+2026-10-24T23:00:46.1738111Z with:
+2026-10-24T23:00:46.1738350Z   name: browser-b-flows-a-test-results
+2026-10-24T23:00:46.1738646Z   path: test-results/

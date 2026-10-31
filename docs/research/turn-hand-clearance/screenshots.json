@@ -1,0 +1,17 @@
+[
+  {
+    "file": "turn-gain-390x844-turn.png",
+    "sha256": "c8bda4767897265c745e82061a9f96ac40237fb7a19c710e722c00be664d4244",
+    "bytes": 176381
+  },
+  {
+    "file": "turn-gain-844x390-turn.png",
+    "sha256": "042c7edf22cdd7bf2841bfaea816cf32d7af343165522155f83f50df179d9024",
+    "bytes": 160996
+  },
+  {
+    "file": "turn-gain-1280x720-turn.png",
+    "sha256": "5dbcac13c1843b5cffcadc7b6cb9c349eda50a7e270a7c4d0f160ea952a1b2e3",
+    "bytes": 411609
+  }
+]

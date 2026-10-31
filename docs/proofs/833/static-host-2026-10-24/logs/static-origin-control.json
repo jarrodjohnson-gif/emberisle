@@ -1,0 +1,6 @@
+{
+  "oldGate": "f9270fc",
+  "expectedExit": 1,
+  "failedAssertion": "automatic discovery opens no WebSocket on a static root build",
+  "restoredSourceSha256": "7d6c1d71126eeba5e6784344813f2f4bce4612b22bac8e07212f45c2108271c0"
+}

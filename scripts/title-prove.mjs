@@ -63,7 +63,13 @@ try {
             r.bottom > Math.min(innerHeight, c.bottom) + 0.5 || r.right > Math.min(innerWidth, c.right) + 0.5;
         })
         .map((n) => (n.textContent.trim() || n.getAttribute("aria-label") || n.tagName).slice(0, 24));
+      const host = buttons.find((b) => b.textContent.trim() === "Host a table");
+      const hostBox = host.getBoundingClientRect();
+      const hostText = document.createRange();
+      hostText.selectNodeContents(host);
+      const textBox = hostText.getBoundingClientRect();
       return {
+        hostFits: host.scrollWidth <= host.clientWidth && textBox.left >= hostBox.left && textBox.right <= hostBox.right,
         primary: buttons.filter((b) => getComputedStyle(b).backgroundColor === fgRgb).map((b) => b.textContent.trim()),
         filled: filled.map((b) => b.textContent.trim()),
         uppercase: [...el.querySelectorAll("*")].filter((n) => getComputedStyle(n).textTransform === "uppercase").length,
@@ -75,6 +81,7 @@ try {
     });
     assert.deepEqual(card.primary, ["Play"], `${tag}: the one primary`);
     assert.deepEqual([...card.filled].sort(), ["Host a table", "Join", "Play"], `${tag}: filled buttons`);
+    assert.ok(card.hostFits, `${tag}: Host a table label is not clipped`);
     assert.equal(card.uppercase, 0, `${tag}: uppercase text on the card`);
     assert.ok(!card.texts.some((t) => /living island|Claim hexes/.test(t)), `${tag}: eyebrow or tagline still there: ${card.texts}`);
     assert.deepEqual(card.out, [], `${tag}: outside the viewport or the card's clip box`);

@@ -1,0 +1,113 @@
+
+> roll-moment-prove
+> node scripts/roll-moment-prove.mjs
+
+ok   practice 1280x720: through the roll-off and setup, one moment per bot roll and no other (1 for 1)
+practice 1280x720: guaranteed owned 6/8 overlap, rolled 3+3
+practice 1280x720 your roll: rolled 3+3=6; up 149 ms after the roll was applied (stalled 139), frame 0 after it; gone at 1269 ms (stalled 570); centre 640/1280, sum 56px rgb(38, 61, 60), animation roll-in; shown then ["roll-sum"], after ["dice-row"]; banner null
+ok   practice 1280x720 your roll: the moment mounts in the same frame the roll is applied (0 frames later)
+ok   practice 1280x720 your roll: up within 200 ms of the roll being applied (149 ms, 139 of them stalled)
+ok   practice 1280x720 your roll: the raw time up is within a loose 350 ms cap (149 ms), stall included
+ok   practice 1280x720 your roll: the moment shows the rolled faces 3,3 and sum 6
+ok   practice 1280x720 your roll: centred horizontally (640 of 1280, ±10 %)
+ok   practice 1280x720 your roll: centred vertically (360 of 720, ±10 %)
+ok   practice 1280x720 your roll: the sum is 56px (≥ 48)
+ok   practice 1280x720 your roll: the sum is ink (rgb(38, 61, 60))
+ok   practice 1280x720 your roll: while it is up the roll is on screen once (["roll-sum"])
+ok   practice 1280x720 your roll: gone by 1400 ms of the roll being applied (1269 ms, 570 of them stalled)
+ok   practice 1280x720 your roll: the resting row shows the same faces (3,3)
+ok   practice 1280x720 your roll: afterwards the sum is on screen once, in the row (["dice-row"])
+ok   practice 1280x720 your roll: one persistent roll event and no duplicate goods banner
+practice 1280x720 your roll: flight {"hold":"1047","stalledHold":"570","flight":"222","stalledFlight":"0","duration":220,"delay":0,"easing":"cubic-bezier(0.22, 1, 0.36, 1)","fill":"forwards","from":[239,96],"landed":["89.6","36.0"],"row":["96.0","36.0"],"off":"0.0"}
+ok   practice 1280x720 your roll: one flight: 220 ms, no delay, --ease-out, fill forwards
+ok   practice 1280x720 your roll: the flight starts after the 900 ms hold (1047 ms, 570 stalled)
+ok   practice 1280x720 your roll: the moment goes when its 220 ms flight ends (222 ms, 0 stalled)
+ok   practice 1280x720 your roll: the last keyframe lands on the resting row (centre off 0.0 px, size fits)
+ok   practice 1280x720 your roll: it starts large and shrinks into the row (239 → 96 px)
+practice 1280x720: 5 rolls, moments for rolls [1,2,3,4,5], read out ["Pine (bot) rolled 2 and 4: 6.","You rolled 3 and 3: 6.","Tide (bot) rolled 2 and 6: 8.","Dune (bot) rolled 2 and 1: 3.","Pine (bot) rolled 5 and 4: 9."]
+ok   practice 1280x720: exactly one moment per roll, the person's and the bots' (5 for 5)
+ok   practice 1280x720: each roll read out once, "You" for the person's, the name for a bot's
+practice 1280x720: key skip, gone 2 ms after the press, page heard it 1×
+ok   practice 1280x720: a key press skips the moment and still reaches the page
+ok   practice 1280x720: after a skip the resting row shows
+practice 1280x720: pushed states {"loaded":0,"one":1,"jump":0,"seven":7,"color":"rgb(179, 38, 30)","said":["Ember rolled 6 and 1: 7."],"roller":"Ember"}
+ok   practice 1280x720: a table loaded with dice already on it shows no moment
+ok   practice 1280x720: a pushed roll shows one moment, a jump of two rolls none
+ok   practice 1280x720: a 7 shows in danger
+ok   practice 1280x720: a watcher hears the roll once, by the roller's name
+ok   practice 390x844: through the roll-off and setup, one moment per bot roll and no other (0 for 0)
+practice 390x844: guaranteed owned 6/8 overlap, rolled 4+4
+practice 390x844 your roll: rolled 4+4=8; up 149 ms after the roll was applied (stalled 139), frame 0 after it; gone at 1265 ms (stalled 623); centre 195/390, sum 56px rgb(38, 61, 60), animation roll-in; shown then ["roll-sum"], after ["dice-row"]; banner null
+ok   practice 390x844 your roll: the moment mounts in the same frame the roll is applied (0 frames later)
+ok   practice 390x844 your roll: up within 200 ms of the roll being applied (149 ms, 139 of them stalled)
+ok   practice 390x844 your roll: the raw time up is within a loose 350 ms cap (149 ms), stall included
+ok   practice 390x844 your roll: the moment shows the rolled faces 4,4 and sum 8
+ok   practice 390x844 your roll: centred horizontally (195 of 390, ±10 %)
+ok   practice 390x844 your roll: centred vertically (422 of 844, ±10 %)
+ok   practice 390x844 your roll: the sum is 56px (≥ 48)
+ok   practice 390x844 your roll: the sum is ink (rgb(38, 61, 60))
+ok   practice 390x844 your roll: while it is up the roll is on screen once (["roll-sum"])
+ok   practice 390x844 your roll: gone by 1400 ms of the roll being applied (1265 ms, 623 of them stalled)
+ok   practice 390x844 your roll: the resting row shows the same faces (4,4)
+ok   practice 390x844 your roll: afterwards the sum is on screen once, in the row (["dice-row"])
+ok   practice 390x844 your roll: one persistent roll event and no duplicate goods banner
+practice 390x844 your roll: flight {"hold":"1044","stalledHold":"599","flight":"221","stalledFlight":"24","duration":220,"delay":0,"easing":"cubic-bezier(0.22, 1, 0.36, 1)","fill":"forwards","from":[239,96],"landed":["89.6","36.0"],"row":["96.0","36.0"],"off":"0.0"}
+ok   practice 390x844 your roll: one flight: 220 ms, no delay, --ease-out, fill forwards
+ok   practice 390x844 your roll: the flight starts after the 900 ms hold (1044 ms, 599 stalled)
+ok   practice 390x844 your roll: the moment goes when its 220 ms flight ends (221 ms, 24 stalled)
+ok   practice 390x844 your roll: the last keyframe lands on the resting row (centre off 0.0 px, size fits)
+ok   practice 390x844 your roll: it starts large and shrinks into the row (239 → 96 px)
+practice 390x844: 4 rolls, moments for rolls [1,2,3,4], read out ["You rolled 4 and 4: 8.","Pine (bot) rolled 3 and 6: 9.","Tide (bot) rolled 2 and 4: 6.","Dune (bot) rolled 4 and 4: 8."]
+ok   practice 390x844: exactly one moment per roll, the person's and the bots' (4 for 4)
+ok   practice 390x844: each roll read out once, "You" for the person's, the name for a bot's
+practice 390x844: tap skip, gone 2 ms after the press, page heard it 1×
+ok   practice 390x844: a touch pointerdown skips the moment and still reaches the page
+ok   practice 390x844: after a skip the resting row shows
+practice 390x844: pushed states {"loaded":0,"one":1,"jump":0,"seven":7,"color":"rgb(179, 38, 30)","said":["Ember rolled 6 and 1: 7."],"roller":"Ember"}
+ok   practice 390x844: a table loaded with dice already on it shows no moment
+ok   practice 390x844: a pushed roll shows one moment, a jump of two rolls none
+ok   practice 390x844: a 7 shows in danger
+ok   practice 390x844: a watcher hears the roll once, by the roller's name
+hotseat 1280x720: rolled 6+4=10; up 183 ms after the roll was applied (stalled 173), frame 0 after it; gone at 1286 ms (stalled 433); centre 640/1280, sum 56px rgb(38, 61, 60), animation roll-in; shown then ["roll-sum"], after ["dice-row"]; banner null
+ok   hotseat 1280x720: the moment mounts in the same frame the roll is applied (0 frames later)
+ok   hotseat 1280x720: up within 200 ms of the roll being applied (183 ms, 173 of them stalled)
+ok   hotseat 1280x720: the raw time up is within a loose 350 ms cap (183 ms), stall included
+ok   hotseat 1280x720: the moment shows the rolled faces 6,4 and sum 10
+ok   hotseat 1280x720: centred horizontally (640 of 1280, ±10 %)
+ok   hotseat 1280x720: centred vertically (360 of 720, ±10 %)
+ok   hotseat 1280x720: the sum is 56px (≥ 48)
+ok   hotseat 1280x720: the sum is ink (rgb(38, 61, 60))
+ok   hotseat 1280x720: while it is up the roll is on screen once (["roll-sum"])
+ok   hotseat 1280x720: gone by 1400 ms of the roll being applied (1286 ms, 433 of them stalled)
+ok   hotseat 1280x720: the resting row shows the same faces (6,4)
+ok   hotseat 1280x720: afterwards the sum is on screen once, in the row (["dice-row"])
+ok   hotseat 1280x720: one persistent roll event and no duplicate goods banner
+hotseat 1280x720: flight {"hold":"1065","stalledHold":"376","flight":"221","stalledFlight":"57","duration":220,"delay":0,"easing":"cubic-bezier(0.22, 1, 0.36, 1)","fill":"forwards","from":[270,96],"landed":["101.3","36.0"],"row":["104.0","36.0"],"off":"0.0"}
+ok   hotseat 1280x720: one flight: 220 ms, no delay, --ease-out, fill forwards
+ok   hotseat 1280x720: the flight starts after the 900 ms hold (1065 ms, 376 stalled)
+ok   hotseat 1280x720: the moment goes when its 220 ms flight ends (221 ms, 57 stalled)
+ok   hotseat 1280x720: the last keyframe lands on the resting row (centre off 0.0 px, size fits)
+ok   hotseat 1280x720: it starts large and shrinks into the row (270 → 104 px)
+ok   hotseat 1280x720: read out once by the seat's name (["Seat 4 rolled 6 and 4: 10."])
+animate throws 1280x720: gone at 1400 ms
+ok   animate throws 1280x720: animate was called and threw
+ok   animate throws 1280x720: the moment still goes when the flight cannot start (1400 ms)
+reduced motion 1280x720: rolled 4+1=5; up 233 ms after the roll was applied (stalled 223), frame 0 after it; gone at 1111 ms (stalled 473); centre 640/1280, sum 56px rgb(38, 61, 60), animation none; shown then ["roll-sum"], after ["dice-row"]; banner null
+ok   reduced motion 1280x720: the moment mounts in the same frame the roll is applied (0 frames later)
+ok   reduced motion 1280x720: up within 200 ms of the roll being applied (233 ms, 223 of them stalled)
+ok   reduced motion 1280x720: the raw time up is within a loose 350 ms cap (233 ms), stall included
+ok   reduced motion 1280x720: the moment shows the rolled faces 4,1 and sum 5
+ok   reduced motion 1280x720: centred horizontally (640 of 1280, ±10 %)
+ok   reduced motion 1280x720: centred vertically (360 of 720, ±10 %)
+ok   reduced motion 1280x720: the sum is 56px (≥ 48)
+ok   reduced motion 1280x720: the sum is ink (rgb(38, 61, 60))
+ok   reduced motion 1280x720: while it is up the roll is on screen once (["roll-sum"])
+ok   reduced motion 1280x720: gone by 1400 ms of the roll being applied (1111 ms, 473 of them stalled)
+ok   reduced motion 1280x720: the resting row shows the same faces (4,1)
+ok   reduced motion 1280x720: afterwards the sum is on screen once, in the row (["dice-row"])
+ok   reduced motion 1280x720: one persistent roll event and no duplicate goods banner
+ok   reduced motion 1280x720: reduced motion, no flight (0)
+ok   reduced motion 1280x720: reduced motion, no entry animation (none)
+ok   reduced motion 1280x720: reduced motion, it holds about 900 ms and goes (1111 ms)
+ok   zero console errors
+roll-moment-prove: all passed

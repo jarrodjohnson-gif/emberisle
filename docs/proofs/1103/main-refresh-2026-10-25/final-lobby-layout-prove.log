@@ -1,0 +1,5 @@
+$ npm run lobby-layout-prove
+390x844: chat 52.16%; two columns; 44px targets / 8px gaps; no card/people scroll; copy/invite/rules/target/chat/reaction/ready/start passed
+844x390: chat 40.79%; two columns; 44px targets / 8px gaps; no card/people scroll; copy/invite/rules/target/chat/reaction/ready/start passed
+1280x720: chat 40.53%; two columns; 44px targets / 8px gaps; no card/people scroll; copy/invite/rules/target/chat/reaction/ready/start passed
+lobby-layout-prove: ok; real host, two clients, three viewports; zero browser errors

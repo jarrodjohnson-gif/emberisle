@@ -327,6 +327,31 @@ try {
       return Date.now() - quiet.since > 2500;
     }, "the table's sheets requests going quiet");
   };
+  // A failed help retry at game over must restore the existing way out, without reloading the table.
+  const winAfterFailedHelp = async (t, mode) => {
+    const before = await shown(t.page);
+    const blocked = t.blocked;
+    const loads = t.loads;
+    await t.page.evaluate(() => {
+      window.__winHelpStates = [];
+      window.__winHelpUnsubscribe = window.__emberisle.subscribe((state) => window.__winHelpStates.push(state.howTo));
+    });
+    await t.page.getByRole("button", { name: "Table menu" }).click();
+    await t.page.getByRole("dialog", { name: "Table menu" }).getByRole("button", { name: "How to play" }).click();
+    await until(() => t.blocked > blocked, `${mode}: help retry asking for the refused sheets chunk`);
+    await t.page.waitForFunction(() => window.__winHelpStates.includes(true) && window.__emberisle.getState().howTo === false, null, { timeout: 15_000 });
+    const helpStates = await t.page.evaluate(async () => {
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      window.__winHelpUnsubscribe();
+      return window.__winHelpStates;
+    });
+    await t.page.getByTestId("win-failed").waitFor({ timeout: 15_000 });
+    const after = await shown(t.page);
+    check(`game over (${mode}): failed How to play restores the same visible win fallback without reloading`,
+      after.line === before.line && after.button === before.button && after.inView && after.dialogs === 0 &&
+      after.screen === "play" && after.header && t.loads === loads && t.blocked > blocked,
+      { before, after, helpStates, blockedBefore: blocked, blocked: t.blocked, loadsBefore: loads, loads: t.loads });
+  };
   // Practice, 1280x720: no seat to rejoin, so the way out is the menu.
   const h = await tab("Oak", "sheets");
   await title(h.page);
@@ -335,11 +360,14 @@ try {
   await settled(h);
   const hBefore = h.blocked;
   const hName = await over(h.page);
+  // Wait for the win-key remount to ask sheets again before reading blocked (CI raced the abort).
+  await until(() => h.blocked > hBefore, "game over asking for the sheets chunk again");
   const hButton = h.page.getByTestId("win-failed");
   await hButton.waitFor({ timeout: 15_000 });
   const hShown = await shown(h.page);
   check("game over (practice): the chunk is asked for again, refused, and the winner line gets a focused Back to menu", hShown.line.startsWith(`${hName} wins with`) && hShown.button === "Back to menu" && hShown.focused && hShown.inView && hShown.dialogs === 0 && hShown.screen === "play" && hShown.header && h.blocked > hBefore && h.loads === 2, { ...hShown, name: hName, blocked: h.blocked, before: hBefore, loads: h.loads });
   await h.page.screenshot({ path: "test-results/win-stale-1280x720.png" });
+  await winAfterFailedHelp(h, "practice");
   await hButton.click();
   await title(h.page);
   check("game over (practice): Back to menu reaches the title without a reload", h.loads === 2 && (await h.page.evaluate(() => window.__emberisle.getState().screen)) === "title", { loads: h.loads });
@@ -379,6 +407,7 @@ try {
   const iShown = await shown(i.page);
   check("game over (online): the rejoined seat finds the chunk refused, and the winner line gets a focused Reload inside the viewport", iShown.line.startsWith("Sage wins with") && iShown.button === "Reload for the results" && iShown.focused && iShown.inView && iShown.dialogs === 0 && iShown.screen === "play" && iShown.header && i.blocked >= 1 && i.loads === 1, { ...iShown, blocked: i.blocked, loads: i.loads });
   await i.page.screenshot({ path: "test-results/win-stale-390x844.png" });
+  await winAfterFailedHelp(i, "online");
   // The deploy is done (the route recovers): Reload rejoins the saved seat, and the win screen loads from the fresh chunk.
   i.broken = false;
   await iButton.click();
