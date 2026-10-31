@@ -520,8 +520,10 @@ async function load() {
       // Reconciled above: a terminal tracked room loads with its frozen outcome already journalled, so it is settled.
       room.outcome = loadOutcome(saved.outcome, room.roster);
       room.settled = room.outcome && journal.ready(room.outcome.gameId) ? room.outcome.gameId : null;
-      for (const s of saved.seats) {
-        if (typeof s?.id !== "string" || typeof s.secret !== "string") throw new Error(`bad seat ${JSON.stringify(s)}`);
+      for (const [i, s] of saved.seats.entries()) {
+        // #1236: name the seat and the field only. The message is logged, and the seat holds its secret.
+        if (typeof s?.id !== "string") throw new Error(`bad seat ${i}: id`);
+        if (typeof s.secret !== "string") throw new Error(`bad seat ${i}: secret`);
         // Avatars live in memory only, so a restored seat has none.
         // G9: the saved window rides in `resume` until the seat is back and waited on; older files have none.
         const at = (n) => (Number.isFinite(n) ? n : null);
