@@ -37,7 +37,7 @@ const PAINT = {
   ore: ["#63748a", "#414d5b", "#ffffff"],
 };
 // The cue's whole life: FLASH_MS (2200) held, then a 300 ms fade (Hand.tsx CUE_MS).
-const CUE_MS = 2500;
+const CUE_MS = 3000;
 // Each layout's fixed card: upright and short as today; the wide, fine-pointer layout at 1.3x the upright mock.
 const SIZE = {
   desk: { box: [88, 80], symbol: 22, count: 30, name: 12 },
