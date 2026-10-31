@@ -614,7 +614,7 @@ try {
       };
     });
     assert.deepEqual(gain.cues.map((q) => [q.what, q.on]), [["goods-lit", "resource-timber"], ["resource-flash", "resource-timber"]], `${v.tag}: one gain, one fill and one tab on timber, none after a cloned setState`);
-    assert.ok(gain.cues.every((q) => q.anim === "goods-cue" && q.duration === "2.5s"), `${v.tag}: the fill and the tab hold 2200 ms and fade over 300 ms (${JSON.stringify(gain.cues)})`);
+    assert.ok(gain.cues.every((q) => q.anim === "goods-cue" && q.duration === "3s"), `${v.tag}: the fill and the tab hold 2500 ms and fade over 500 ms (${JSON.stringify(gain.cues)})`);
     assert.deepEqual(parse(gain.fill), rgb(PAINT.timber[0]), `${v.tag}: gain fills the card with the good's colour`);
     assert.equal(gain.opacity, "1", `${v.tag}: the fill is at full strength while it holds`);
     assert.equal(gain.tab.opacity, "1", `${v.tag}: the tab is at full strength while it holds`);
