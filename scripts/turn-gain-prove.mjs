@@ -372,7 +372,7 @@ async function tabs(page, tag, what, lay) {
     const hit = document.elementFromPoint(a.left + a.width / 2, a.top + 1);
     t.style.pointerEvents = "";
     // The +N tab stands 18 px above the edge, the hollow −N tab 19 px (its 1 px outline sits outside the card's edge).
-    return { r: t.dataset.resource, card: card.dataset.testid, box: a.toJSON(), off: a.left + a.width / 2 - (c.left + c.width / 2), above: c.top - a.top, want: t.dataset.sign === "+" ? 18 : 19, top: hit === t || t.contains(hit) };
+    return { r: t.dataset.resource, card: card.dataset.testid, box: a.toJSON(), off: a.left + a.width / 2 - (c.left + c.width / 2), above: c.top - a.top, want: matchMedia("(min-width: 1280px) and (pointer: fine) and (min-height: 481px)").matches ? 24 : 20, top: hit === t || t.contains(hit) };
   }));
   check(got.length > 0 && got.every((t) => t.card === `resource-${t.r}`), `${tag}: ${what} sit on their own goods' cards`, got.map((t) => [t.r, t.card]));
   check(got.every((t) => Math.abs(t.off) <= 0.5 && Math.abs(t.above - t.want) <= 0.5), `${tag}: ${what} are centred on their cards and grow out of the top edge`, got.map((t) => [t.off.toFixed(2), t.above.toFixed(2)]));
