@@ -657,7 +657,7 @@ try {
     assert.ok(ratio(parse(loss.color), parse(loss.bg)) >= 4.5, `${v.tag}: loss tab ≥ 4.5:1`);
     assert.ok(Math.abs(loss.off) <= 0.5, `${v.tag}: the loss tab is centred on its card`);
     assert.deepEqual(loss.font, TAB[v.tag].font, `${v.tag}: the −N tab is ${TAB[v.tag].font[0]} bold`);
-    assert.ok(Math.abs(loss.h - 22) <= 0.5 && Math.abs(loss.above - 19) <= 0.5, `${v.tag}: the −N tab is 22 px tall and grows out of the top edge (${loss.h}, ${loss.above})`);
+    assert.ok(Math.abs(loss.h - TAB[v.tag].h) <= 0.5 && Math.abs(loss.above - TAB[v.tag].above) <= 0.5, `${v.tag}: the −N tab is ${TAB[v.tag].h} px tall and grows out of the top edge (${loss.h}, ${loss.above})`);
     assert.ok(!gain.cues.concat(loss.cues).some((q) => q.what === "hand-ring"), `${v.tag}: no ring is drawn`);
     assert.equal(await page.locator('[data-testid="hand-ring"]').count(), 0, `${v.tag}: no ring on the page`);
     assert.deepEqual(errors, [], `${v.tag}: console errors`);
