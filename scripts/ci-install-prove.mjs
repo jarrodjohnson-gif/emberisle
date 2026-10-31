@@ -112,3 +112,91 @@ try {
 } finally {
   rmSync(dir, { recursive: true, force: true });
 }
+
+// #1226: execute the real desk proof from the server job's checkout/setup/run scalars.
+// This narrow step parser rejects unsupported forms for the three relevant steps.
+// A checkout projection copies real tracked inputs; it does not simulate the proof.
+import { copyFileSync, mkdirSync } from 'node:fs';
+const serverSteps = (source) => {
+  const job = source.match(/^  server:\n([\s\S]*?)(?=^  [\w-]+:|$(?![\s\S]))/m)?.[1];
+  assert.ok(job, 'desk proof: server job exists');
+  return job.split(/(?=^      - )/m).slice(1).map(raw => {
+    const normalized = raw.replace(/^      - /, '        ');
+    const fields = Object.fromEntries([...normalized.matchAll(/^        ([\w-]+): (.+)$/gm)].map(m => [m[1], m[2]]));
+    return { ...fields, raw };
+  });
+};
+const executeDeskPath = (source, docs, failProof = false) => {
+  const steps = serverSteps(source);
+  const gate = steps.filter(s => s.run?.includes('desk-gate-prove'));
+  assert.equal(gate.length, 1, 'desk proof: exactly one command');
+  assert.equal(gate[0].run, 'npm run desk-gate-prove', 'desk proof: exact command, no swallowed failure');
+  assert.equal(gate[0]['continue-on-error'], undefined, 'desk proof: failure must fail the job');
+  const checkout = steps.find(s => s.uses === 'actions/checkout@v4');
+  const setup = steps.find(s => s.uses === 'actions/setup-node@v4');
+  assert.ok(checkout && setup, 'desk proof: pinned prerequisite actions exist');
+  const jobHeader = source.match(/^  server:\n([\s\S]*?)^    steps:/m)?.[1];
+  assert.doesNotMatch(jobHeader, /working-directory:/, 'desk proof: unsupported job working directory');
+  assert.doesNotMatch(checkout.raw, /^          path:/m, 'desk proof: unsupported checkout path');
+  assert.doesNotMatch(gate[0].raw, /^        working-directory:/m, 'desk proof: unsupported command working directory');
+  assert.match(setup.raw, /^          node-version: 22$/m, 'desk proof: declared Node 22');
+  const root = mkdtempSync(path.join(tmpdir(), 'emberisle-desk-path-'));
+  let nodeReady = false, calls = 0;
+  const selected = [];
+  try {
+    for (const step of steps) {
+      if (![checkout, setup, gate[0]].includes(step)) continue;
+      const expression = (step.if ?? 'true').replaceAll('needs.changes.outputs.docs_only', JSON.stringify(docs));
+      if (!vm.runInNewContext(expression)) continue;
+      if (step === checkout) {
+        mkdirSync(path.join(root, 'scripts'), { recursive: true });
+        for (const file of ['package.json', 'scripts/desk-gate.mjs', 'scripts/desk-gate-prove.mjs']) {
+          copyFileSync(new URL(`../${file}`, import.meta.url), path.join(root, file));
+        }
+        if (failProof) writeFileSync(path.join(root, 'scripts/desk-gate-prove.mjs'), "throw new Error('injected desk assertion failure');\n");
+        selected.push(step.uses);
+      } else if (step === setup) {
+        // Hosted setup-node installs 22; local execution uses this process's recorded Node version.
+        nodeReady = true;
+        selected.push(`${step.uses}:22`);
+      } else {
+        calls++;
+        const result = spawnSync('sh', ['-c', step.run], { cwd: root, env: process.env, encoding: 'utf8' });
+        assert.equal(result.error, undefined, 'desk proof: npm launches');
+        assert.equal(result.status, 0, `desk proof: real command failed\n${result.stdout}${result.stderr}`);
+        assert.ok(nodeReady, 'desk proof: declared Node setup precedes command');
+        assert.match(result.stdout, /desk-gate-prove: 38 checks passed/, 'desk proof: real assertion suite completed');
+        selected.push(step.run);
+      }
+    }
+    assert.equal(calls, 1, 'desk proof: docs and code paths must execute the command');
+    assert.deepEqual(selected, ['actions/checkout@v4', 'actions/setup-node@v4:22', 'npm run desk-gate-prove']);
+    return selected;
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+};
+for (const docs of ['true', 'false']) {
+  executeDeskPath(workflow, docs);
+  console.log(`ok desk proof: docs_only=${docs}, checkout + declared Node 22 + real 38-check npm suite (${process.version} locally)`);
+}
+const server = workflow.match(/^  server:\n[\s\S]*?(?=^  [\w-]+:|$(?![\s\S]))/m)[0];
+const mutateServer = change => workflow.replace(server, change(server));
+for (const [name, change, failure] of [
+  ['docs-gated checkout', s => s.replace('      - uses: actions/checkout@v4', "      - if: needs.changes.outputs.docs_only != 'true'\n        uses: actions/checkout@v4"), /ENOENT/],
+  ['docs-gated Node setup', s => s.replace('      - uses: actions/setup-node@v4', "      - if: needs.changes.outputs.docs_only != 'true'\n        uses: actions/setup-node@v4"), /declared Node setup precedes/],
+  ['checkout after command', s => s.replace('      - uses: actions/checkout@v4\n', '').replace('        run: npm run desk-gate-prove\n', '        run: npm run desk-gate-prove\n      - uses: actions/checkout@v4\n'), /ENOENT/],
+  ['docs-gated proof', s => s.replace('      - name: Desk gate proof', "      - if: needs.changes.outputs.docs_only != 'true'\n        name: Desk gate proof"), /must execute the command/],
+  ['unpinned Node', s => s.replace('          node-version: 22', '          node-version: 24'), /declared Node 22/],
+  ['checkout subdirectory', s => s.replace('      - uses: actions/checkout@v4\n', '      - uses: actions/checkout@v4\n        with:\n          path: nested\n'), /unsupported checkout path/],
+  ['command subdirectory', s => s.replace('        run: npm run desk-gate-prove\n', '        run: npm run desk-gate-prove\n        working-directory: nested\n'), /unsupported command working directory/],
+  ['default subdirectory', s => s.replace('    steps:\n', '    defaults:\n      run:\n        working-directory: nested\n    steps:\n'), /unsupported job working directory/],
+  ['swallowed proof failure', s => s.replace('      - name: Desk gate proof', '      - continue-on-error: true\n        name: Desk gate proof'), /failure must fail the job/],
+]) {
+  const broken = mutateServer(change);
+  assert.notEqual(broken, workflow, `${name}: mutation changes the real workflow`);
+  assert.throws(() => executeDeskPath(broken, 'true'), failure, `${name}: regression rejected`);
+  console.log(`ok desk proof negative control: ${name}`);
+}
+assert.throws(() => executeDeskPath(workflow, 'true', true), /injected desk assertion failure/, 'real proof failure propagates');
+console.log('ok desk proof: real child assertion failure remains fatal');
