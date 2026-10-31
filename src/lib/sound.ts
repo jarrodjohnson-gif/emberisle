@@ -190,8 +190,8 @@ function start(name: SoundName, volume: number, category: SoundCategory) {
       clips.set(key, clip);
       if (DUCKERS.has(name)) for (const e of ["play", "pause", "ended"]) clip.addEventListener(e, duckMusic);
     }
-    clip.currentTime = 0;
     gains.set(clip, [volume, category]);
+    clip.currentTime = 0;
     clip.volume = gain;
     clip.play()?.catch(() => {});
   } catch {
