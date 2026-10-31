@@ -364,7 +364,7 @@ async function bankMotion(page, rate, tag) {
   assert.ok(gain.shadow.includes(gain.palette.deep), `${tag}: gain retains its dark ring and shadow`);
   assert.equal(loss.tabBackground, loss.palette.loss, `${tag}: loss tab is the loss red`);
   assert.equal(loss.tabColor, "rgb(255, 255, 255)", `${tag}: loss tab text is white on the red`);
-  assert.ok(loss.tabShadow.includes(loss.palette.deep) && loss.shadow !== "none", `${tag}: loss has the pill outline in the good's colour and keeps its red card ring`);
+  assert.ok(loss.tabShadow.includes(loss.palette.loss) && loss.shadow !== "none", `${tag}: loss has the pill outline in the loss red and keeps its red card ring`);
   await page.waitForFunction(() => Boolean(window.__tradeTabsBankMotion?.endedAt));
   const lifetime = await page.evaluate(() => window.__tradeTabsBankMotion.endedAt - window.__tradeTabsBankMotion.observedAt);
   assert.ok(lifetime >= 2500, `${tag}: actual DOM cues retain the full 2500ms hold, including reduced motion (${lifetime}ms)`);
