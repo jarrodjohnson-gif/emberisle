@@ -652,7 +652,7 @@ async function ratesAndRejections(page, tag) {
     assert.deepEqual(await sent(page), [{ kind: "dispatch", action: { type: "bankTrade", give: "timber", want: "ore" } }], `${tag}: ${rate}:1 sends one bank action`);
     await bankMotion(page, rate, `${tag} ${rate}:1`);
   }
-  console.log(`${tag}: live 4/3/2:1 quotes, invalid exchanges refused, real bank conservation, V1 signed tabs, gains lift/losses dip, 2200ms hold + 300ms fade, no island text (reduced motion static)`);
+  console.log(`${tag}: live 4/3/2:1 quotes, invalid exchanges refused, real bank conservation, V1 signed tabs, gains lift/losses dip, 2500ms hold + 500ms fade, no island text (reduced motion static)`);
 }
 
 async function modes(page, tag) {
