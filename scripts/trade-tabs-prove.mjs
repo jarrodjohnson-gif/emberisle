@@ -367,7 +367,7 @@ async function bankMotion(page, rate, tag) {
   assert.ok(loss.tabShadow.includes(loss.palette.deep) && loss.shadow !== "none", `${tag}: loss has the pill outline in the good's colour and keeps its red card ring`);
   await page.waitForFunction(() => Boolean(window.__tradeTabsBankMotion?.endedAt));
   const lifetime = await page.evaluate(() => window.__tradeTabsBankMotion.endedAt - window.__tradeTabsBankMotion.observedAt);
-  assert.ok(lifetime >= 2200, `${tag}: actual DOM cues retain the full 2200ms hold, including reduced motion (${lifetime}ms)`);
+  assert.ok(lifetime >= 2500, `${tag}: actual DOM cues retain the full 2500ms hold, including reduced motion (${lifetime}ms)`);
 }
 
 async function tableAndRoutes(page, tag, motion) {
