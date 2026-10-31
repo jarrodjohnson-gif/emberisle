@@ -1,6 +1,6 @@
 // Jelly Ocean hand, V1 Column goods cards (#773, docs/design/goods-cards-v1): paper faces with the symbol, count and name
 // centred on one axis (within 0.5 px, from getBoundingClientRect), stable counts and footprints, a gain's full-colour fill
-// with a +N tab from the top edge and a loss's hollow red −N tab, held FLASH_MS (2200 ms) and faded over 300 ms, bounded
+// with a +N tab from the top edge and a loss's −N tab (both a light pill, dark ink, outlined in the good's colour, #825), held FLASH_MS (2500 ms) and faded over 500 ms, bounded
 // lift/dip movement on actual game actions, isolated/restarting deltas, clipping, quiet reconnect/hotseat baselines and
 // fully static reduced motion. The tests hold WAAPI timelines and wait for cue cleanup between samples.
 import assert from "node:assert/strict";
@@ -36,7 +36,7 @@ const PAINT = {
   grain: ["#e3c462", "#8c722d", "#263d3c"],
   ore: ["#63748a", "#414d5b", "#ffffff"],
 };
-// The cue's whole life: FLASH_MS (2200) held, then a 300 ms fade (Hand.tsx CUE_MS).
+// The cue's whole life: FLASH_MS (2500) held, then a 500 ms fade (Hand.tsx CUE_MS).
 const CUE_MS = 3000;
 // Each layout's fixed card: upright and short as today; the wide, fine-pointer layout at 1.3x the upright mock.
 const SIZE = {
@@ -464,8 +464,8 @@ async function open(v, reducedMotion) {
       }
       return animation;
     };
-    // A slow runner (software GL under CI load) can take longer than a cue's 2500 ms between finding a cue and reading it,
-    // and the cue is gone by then. While __holdCues is set, the hand's 2500 ms end-of-cue timer waits for __releaseCues(),
+    // A slow runner (software GL under CI load) can take longer than a cue's 3000 ms between finding a cue and reading it,
+    // and the cue is gone by then. While __holdCues is set, the hand's 3000 ms end-of-cue timer waits for __releaseCues(),
     // so a measured cue stays on the page until the proof has read it. clearTimeout still cancels a held timer.
     const later = window.setTimeout.bind(window);
     const clear = window.clearTimeout.bind(window);
@@ -594,7 +594,7 @@ try {
     await page.waitForFunction(() => window.__cues.length === 2, null, { timeout: STEP_MS });
     await page.evaluate(() => { const g = window.__emberisle; g.setState({ state: structuredClone(g.getState().state) }); });
     await page.waitForTimeout(300);
-    // Hold the cue at full strength (1200 ms into its 2500 ms) and read the lit face and the tab.
+    // Hold the cue at full strength (1200 ms into its 3000 ms) and read the lit face and the tab.
     const gain = await page.evaluate(() => {
       const card = document.querySelector('[data-testid="resource-timber"]');
       // The card's own lift is held too, so the tab is probed where it really goes.
