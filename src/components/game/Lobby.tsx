@@ -10,3 +10,14 @@ void lobby.prefetch();
 export function Lobby() {
   return <LobbyView ConnectionStatus={ConnectionStatus} ChatBox={ChatBox} SeatBubbles={SeatBubbles} HowTo={HowTo} prefetchRules={rules.prefetch} />;
 }
+
+// Fits host-issued code text; the view owns observation and cleanup.
+export function fitLobbyCode(el: HTMLParagraphElement, code: string) {
+  if (el.textContent !== code) return;
+  el.style.fontSize = "";
+  const style = getComputedStyle(el);
+  const width = el.scrollWidth;
+  if (width <= el.clientWidth) return;
+  const tracking = (parseFloat(style.letterSpacing) || 0) * 4;
+  el.style.fontSize = `${parseFloat(style.fontSize) * (el.clientWidth - tracking - 1) / (width - tracking)}px`;
+}
