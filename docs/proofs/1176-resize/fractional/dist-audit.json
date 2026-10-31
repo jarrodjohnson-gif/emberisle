@@ -1,0 +1,140 @@
+[
+  {
+    "name": "DockInspection-ClfA_kWq.js",
+    "sha256": "75021bf296be8ef08345c2776072bc2663b76a21836c9477a2609e853384f587",
+    "bytes": 2038,
+    "gzipBytes": 1031
+  },
+  {
+    "name": "HandRates-DlIV_e36.js",
+    "sha256": "f3d56d66aa19b88e1cf2a1b02606eb776038ff5b904c10cf83f791a1205e99f5",
+    "bytes": 1012,
+    "gzipBytes": 646
+  },
+  {
+    "name": "IslandCanvas-DLtAjdkV.js",
+    "sha256": "caaf5edc50dfe9e001d1c066409ccfd2add38fe876b29b8605f0f7391763f067",
+    "bytes": 761792,
+    "gzipBytes": 200938
+  },
+  {
+    "name": "LobbyView-CVpGqjGq.js",
+    "sha256": "6afc746cd5ac7cee2437c2a7f9eb14f0a001a34a6b302c10c22a262736b0d3bb",
+    "bytes": 5798,
+    "gzipBytes": 2366
+  },
+  {
+    "name": "OpenTables-DGZLQIEC.js",
+    "sha256": "20780ab2c336918993ad4c69ecbfa81298e0133f276f958bc1a9550748bdb2fa",
+    "bytes": 2714,
+    "gzipBytes": 1276
+  },
+  {
+    "name": "Reactions-BkYOo5JP.js",
+    "sha256": "5ca8ec8bc297e535563da7891218c2ef1ad1c87a699383bec721836b65dbb48d",
+    "bytes": 6024,
+    "gzipBytes": 2482
+  },
+  {
+    "name": "SetupReference-LR2OM6AE.js",
+    "sha256": "69d198b7e2206002c13302735bfbeab37dee45cf0ef6f3c430a05930e4fb4377",
+    "bytes": 4920,
+    "gzipBytes": 1858
+  },
+  {
+    "name": "TradeResource-iyLgO_pV.js",
+    "sha256": "7622f0172c7399cf4259877af5e1d5513b39c660293df1bc724b232a5474fbad",
+    "bytes": 1796,
+    "gzipBytes": 830
+  },
+  {
+    "name": "TurnExtensionVote-ul_TSobv.js",
+    "sha256": "de9e72bc9543a52f8909efa42c52b28565424f1e127e8bbefb4c45f1a962feaf",
+    "bytes": 2677,
+    "gzipBytes": 1205
+  },
+  {
+    "name": "VictoryTargetSelect-BgPkxFYy.js",
+    "sha256": "708496073016b966e68d1a9b3bee9a13e61f77e329be1e7985b251f9aae85399",
+    "bytes": 1028,
+    "gzipBytes": 617
+  },
+  {
+    "name": "WayfarerOptions-D2ZqrMrA.js",
+    "sha256": "078f8c88cb5eb441ea2c8d829b7734d68eba7684efab1891c34b8b61ab27c758",
+    "bytes": 806,
+    "gzipBytes": 489
+  },
+  {
+    "name": "emotes-Ijw0U75Z.js",
+    "sha256": "93f09986666b3b6f9066d07b9358a36e0b30d96f5ffcef2e77fc3607f71ad0b7",
+    "bytes": 1240,
+    "gzipBytes": 464
+  },
+  {
+    "name": "haptics-Dx1nwaOt.js",
+    "sha256": "a63560b579a96c754c30606402cb2144ab9fdfe595597cab772c7817cd28e61b",
+    "bytes": 1800,
+    "gzipBytes": 1066
+  },
+  {
+    "name": "harbor-jelly-BUyLx2wx.js",
+    "sha256": "418db095d35d15f8ed20568ec3628c7d156d7d065d7d0b1965bb289e3336b106",
+    "bytes": 26563,
+    "gzipBytes": 10419
+  },
+  {
+    "name": "hex-jelly-BJYG0XrI.js",
+    "sha256": "d1e821973bafdd0608783919afeb8f040d5992ac18ababc25fc24dd3e79c4ad7",
+    "bytes": 136961,
+    "gzipBytes": 46736
+  },
+  {
+    "name": "index-D5v4nNGd.js",
+    "sha256": "d97698b980ff8ab659fc29feaef0f1af49d78a1392c6a02292bd72bdfbe2a561",
+    "bytes": 396475,
+    "gzipBytes": 124610
+  },
+  {
+    "name": "jelly-board-D9fWvY22.js",
+    "sha256": "f941c45a0574c4940d1e8c2c350c3311d5a6f0c794e7c7b9ad63cd69d83f4209",
+    "bytes": 20840,
+    "gzipBytes": 7972
+  },
+  {
+    "name": "moments-vPD-Sr3K.js",
+    "sha256": "ff589873e8d66657add7f43cc5132a13b120ec84afb114d1d1c1b63c03233433",
+    "bytes": 9658,
+    "gzipBytes": 4125
+  },
+  {
+    "name": "online-BmdqvKpU.js",
+    "sha256": "f9c7e651d101b228df4e9f725e72477cb2b5a16a2af6eb64499292120a472ebf",
+    "bytes": 18190,
+    "gzipBytes": 6462
+  },
+  {
+    "name": "sheets-Befzl05Q.js",
+    "sha256": "306ea8db1255a6e06e04017dce16df7ca17991818f1aaa11586a420e50bc5ba2",
+    "bytes": 22425,
+    "gzipBytes": 7146
+  },
+  {
+    "name": "sound-extra-DafKjM_2.js",
+    "sha256": "afd3a44d377513e7dbe09f02aa13293c759f5e060d07585aeb2da6c31d6613a0",
+    "bytes": 481,
+    "gzipBytes": 225
+  },
+  {
+    "name": "table-DfM5ngr2.js",
+    "sha256": "f2f9f105c84401cc92311464a91cca23304c8c3da57bb23542b087e703ae308c",
+    "bytes": 5080,
+    "gzipBytes": 2091
+  },
+  {
+    "name": "trade-sound-DNOlwSF8.js",
+    "sha256": "e853d77989a284d29742e0d8da95201a4954bcdac6611871b563237fb90d48c9",
+    "bytes": 869,
+    "gzipBytes": 525
+  }
+]

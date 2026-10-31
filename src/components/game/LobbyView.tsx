@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
@@ -57,7 +57,7 @@ function OwnName({ seat, compact }: { seat: Seat; compact: boolean }) {
   );
 }
 
-export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefetchRules }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; prefetchRules: () => Promise<boolean> }) {
+export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefetchRules, fitCode }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; prefetchRules: () => Promise<boolean>; fitCode: (el: HTMLParagraphElement, code: string) => void }) {
   const rule = useGame(s => s.tableWayfarerMode);
   const code = useGame(s => s.code);
   const seats = useGame(s => s.seats);
@@ -79,6 +79,19 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
   const missing = 3 - seats.length;
   const status = missing > 0 ? `Need ${missing} more player${missing === 1 ? "" : "s"}` : readyCount === seats.length ? "Everyone is ready" : `${readyCount} of ${seats.length} ready`;
   const { state: copied, copy } = useCopy<"code" | "link">();
+  const codeElement = useRef<HTMLParagraphElement>(null);
+  useLayoutEffect(() => {
+    // The host issues four-character codes. Preserve longer display fixtures unchanged.
+    const el = codeElement.current;
+    if (!el) return;
+    el.style.fontSize = "";
+    if (code.length !== 4) return;
+    const observer = new ResizeObserver(() => {
+      fitCode(el, code);
+    });
+    observer.observe(el.parentElement!);
+    return () => observer.disconnect();
+  }, [code, copied, fitCode]);
   const joinLink = () => {
     const host = new URLSearchParams(location.search).get("host");
     return `${location.origin}${location.pathname}?code=${code}${host ? `&host=${encodeURIComponent(host)}` : ""}`;
@@ -97,7 +110,7 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
       <div data-testid="lobby-card" className="lobby-layout absolute z-10">
         <div className="lobby-cover lobby-layout-cover">
           <div className="lobby-header">
-            <p data-testid="table-code" className="font-display">{code}</p>
+            <p ref={codeElement} data-testid="table-code" className="font-display">{code}</p>
             <div className="lobby-copy-controls">
               <Button variant="outline" onClick={() => copy("code", code)}>{copied?.ok && copied.what === "code" ? "Copied" : "Copy"}</Button>
               <Button variant="outline" onClick={() => copy("link", joinLink())}>{copied?.ok && copied.what === "link" ? "Copied" : "Copy link"}</Button>

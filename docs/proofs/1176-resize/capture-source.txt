@@ -1,0 +1,42 @@
+import { createRequire } from 'node:module';
+import { spawn } from 'node:child_process';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+const root=process.env.RESIZE_ROOT || '/workspace/emberisle/work/p1181-sol';
+const require=createRequire(root+'/package.json');
+const { chromium }=require('playwright');
+const { createServer }=await import(require.resolve('vite'));
+const out=process.env.RESIZE_OUT;
+mkdirSync(out,{recursive:true});
+const host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:root+'/server',env:{...process.env,PORT:'0',ROOMS_DIR:mkdtempSync(path.join(tmpdir(),'emberisle1176-'))}});
+const port=await new Promise((resolve,reject)=>{host.on('error',reject);host.on('exit',code=>reject(Error('host exit'+code)));host.stdout.on('data',d=>{const m=String(d).match(/listening (\d+)/);if(m)resolve(Number(m[1]));});});
+const vite=await createServer({root,server:{host:'127.0.0.1',port:0},logLevel:'error'});await vite.listen();
+const url=`http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${port}`;
+let browser;const errors=[],results=[];
+try{
+ browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});console.log('Browser',browser.version());
+ const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,deviceScaleFactor:1,reducedMotion:'reduce'});
+ await context.addInitScript(()=>{localStorage.setItem('emberisle-name','Jarrod');localStorage.setItem('emberisle-jelly','lite');Object.defineProperty(navigator,'clipboard',{value:{writeText:async()=>{}}});});
+ const page=await context.newPage();await page.clock.install();page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto(url);await page.waitForFunction(()=>!!window.__emberisle);await page.evaluate(()=>window.__emberisle.getState().hostTable());await page.getByTestId('lobby-card').waitFor();
+ const room=await page.getByTestId('table-code').textContent();console.log('Actual hosted room',room);
+ await page.getByTestId('add-bot').first().click();await page.getByTestId('add-bot').first().click();await page.waitForFunction(()=>window.__emberisle.getState().seats.length===3);
+ for(const [width,height] of [[320,568],[375,667],[390,844]]){
+  await page.setViewportSize({width,height});
+  for(const [kind,code] of [['normal','ABCD'],['overflow','WWWWWWWWWWWWWWWW'],['copied-wide','WWWW']]){
+   await page.getByRole('button',{name:'Copy',exact:true}).waitFor();await page.getByRole('button',{name:'Copy link',exact:true}).waitFor();
+   await page.evaluate(code=>window.__emberisle.setState({code}),code);await page.evaluate(()=>document.fonts.ready);await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+   if(kind==='copied-wide'){await page.getByRole('button',{name:'Copy',exact:true}).click();await page.getByRole('button',{name:'Copied',exact:true}).waitFor();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));}
+   if(kind==='copied-wide')await page.clock.pauseAt(new Date(await page.evaluate(()=>Date.now())+10));
+   const geometry=await page.getByTestId('table-code').evaluate(el=>{
+    const b=el.getBoundingClientRect(),s=getComputedStyle(el),range=document.createRange();range.selectNodeContents(el);const text=range.getBoundingClientRect();
+    const clone=el.cloneNode(true);clone.removeAttribute('data-testid');Object.assign(clone.style,{position:'fixed',visibility:'hidden',width:'max-content',maxWidth:'none',font:s.font,letterSpacing:s.letterSpacing,whiteSpace:'nowrap',padding:'0',margin:'0'});document.body.append(clone);
+    const rg=document.createRange();rg.selectNodeContents(clone);const at=size=>{clone.style.fontSize=size+'px';return rg.getBoundingClientRect().width;};
+    const minimumWidth=at(12);let low=.1,high=parseFloat(s.fontSize);for(let i=0;i<20;i++){const mid=(low+high)/2;if(at(mid)<=b.width)low=mid;else high=mid;}clone.remove();
+    return {code:el.textContent,width:b.width,textWidth:text.width,font:s.font,fontSize:parseFloat(s.fontSize),letterSpacing:s.letterSpacing,textOverflow:s.textOverflow,minimum12pxWidth:minimumWidth,fontNeeded:low,buttons:[...document.querySelectorAll('.lobby-copy-controls button')].map(button=>{const r=document.createRange();r.selectNodeContents(button);const t=r.getBoundingClientRect(),b=button.getBoundingClientRect();return {text:button.textContent,width:b.width,height:b.height,padLeft:t.left-b.left,padRight:b.right-t.right};})};
+   });results.push({viewport:{width,height},kind,...geometry});console.log(JSON.stringify(results.at(-1)));await page.screenshot({path:`${out}/${width}x${height}-${kind}.png`});if(kind==='copied-wide')await page.clock.resume();
+  }
+ }
+ if(errors.length)throw Error(JSON.stringify(errors));writeFileSync(`${out}/measurements.json`,JSON.stringify({browser:browser.version(),hostedRoom:room,results,errors},null,2));
+}finally{await browser?.close();await vite.close();host.kill();}
