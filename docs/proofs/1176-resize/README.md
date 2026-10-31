@@ -4,17 +4,21 @@ Builder: Codex-p. Model: GPT-6.1 Sol. Parent: Codex-p.
 Tested source: `5ef0005a3af0599a3d426dee7dd040baaf49ba39`.
 Before runtime: normal main merge `11dc0fd4484ecd1faa9f36ff80f1c9fe9f18ad96`.
 
-**The complete owner direction remains unfinished.**
-[Question6536338660](https://github.com/jarrodjohnson-gif/emberisle/pull/1181#issuecomment-6536338660) asks about synthetic-length versus readable-font constraints.
-The 16-character synthetic display retains its previous ellipsis behavior.
-No minimum-font policy or wider lobby layout is approved here.
+**Owner option A accepted, 2026-10-31 00:44 UTC.**
+[Answer6536699964](https://github.com/jarrodjohnson-gif/emberisle/pull/1181#issuecomment-6536699964) resolves
+[Question6536338660](https://github.com/jarrodjohnson-gif/emberisle/pull/1181#issuecomment-6536338660).
+Real four-character codes must fit, including WWWW/MMMM and Copy→Copied.
+The 16-character display is an unsupported diagnostic that may truncate.
+No4–6px type or wider lobby layout is approved.
+The recorded source, runs and pictures already follow this answer.
+This evidence-only update adds no browser run or runtime change.
 
 ## Contract and result
 
 [Owner direction6533773802](https://github.com/jarrodjohnson-gif/emberisle/pull/1181#issuecomment-6533773802) requests resizing instead of ellipsis.
 The host issues exactly four-character room codes (`server/host.mjs:167–170`).
 Those supported codes now fit during Copy→Copied changes and viewport resizing.
-Longer display fixtures remain unchanged until the Question is answered.
+Longer display fixtures retain their original behavior under the accepted diagnostic scope.
 This does not establish the historical 7.3px Copy-padding failure's cause.
 The PR still uses Refs #1176.
 
@@ -55,7 +59,7 @@ Only Copied screenshots pause the browser clock to retain that transient feedbac
 The full browser proof uses its unchanged real clock.
 Rooms, latency and background frames can differ between captures.
 
-| Portrait | Normal before / after | Supported WWWW + Copied before / after | Unresolved16-W diagnostic before / after |
+| Portrait | Normal before / after | Supported WWWW + Copied before / after | Unsupported16-W diagnostic before / after |
 |---|---|---|---|
 | 320×568 | [Before](before-320x568-normal.png) / [After](after-320x568-normal.png) | [Before](before-320x568-copied-wide.png) / [After](after-320x568-copied-wide.png) | [Before](before-320x568-overflow.png) / [After](after-320x568-overflow.png) |
 | 375×667 | [Before](before-375x667-normal.png) / [After](after-375x667-normal.png) | [Before](before-375x667-copied-wide.png) / [After](after-375x667-copied-wide.png) | [Before](before-375x667-overflow.png) / [After](after-375x667-overflow.png) |
@@ -73,5 +77,5 @@ Build main d91388b separately, then run `node scripts/size-prove.mjs --base <bui
 The old-runtime control uses11dc runtime files with the exact final strengthened proof.
 The observer control adds only `observer.disconnect()` after its first delivered fit.
 
-The dependent owner policy and final owner picture acceptance remain outstanding.
+The policy is settled. Independent Claude review and final owner picture acceptance remain required.
 No CI retry, PR merge, main push, budget raise or old assertion replacement occurred.
