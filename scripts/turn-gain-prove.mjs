@@ -408,7 +408,7 @@ async function contrast(page, testid, index = 0, band = 0.65) {
     const x = c.getContext("2d");
     x.drawImage(img, 0, 0);
     // The middle band, where the glyphs are: inset from the rounded corners and the icon disc.
-    const d = x.getImageData(Math.floor(img.width * 0.3), Math.floor(img.height * 0.25), Math.max(1, Math.floor(img.width * 0.65)), Math.max(1, Math.floor(img.height * 0.5))).data;
+    const d = x.getImageData(Math.floor(img.width * 0.3), Math.floor(img.height * 0.25), Math.max(1, Math.floor(img.width * band)), Math.max(1, Math.floor(img.height * 0.5))).data;
     const out = [];
     for (let i = 0; i < d.length; i += 4) out.push([d[i], d[i + 1], d[i + 2]]);
     return out;
