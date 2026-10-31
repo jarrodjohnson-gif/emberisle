@@ -174,7 +174,7 @@ try {
       await page.keyboard.press("Escape");
       await page.evaluate(() => window.__emberisle.getState().goTitle());
       assert.equal(await page.evaluate(() => window.__emberisle.getState().serverSha), null, "leaving clears host metadata");
-      await page.getByRole("button", { name: "Play", exact: true }).click();
+      await page.getByRole("button", { name: "Play against bots", exact: true }).click();
       await page.getByRole("button", { name: "Table menu", exact: true }).click();
       assert.ok(!(await line.innerText()).includes("server"), "practice never shows stale host metadata");
     }

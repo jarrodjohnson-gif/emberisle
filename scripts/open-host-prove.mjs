@@ -63,7 +63,7 @@ try {
     const { context, page, sockets } = await visit(staticURL);
     assert.equal(await page.locator('meta[name="emberisle-host"]').count(), 0);
     assert.deepEqual(sockets, [], "automatic discovery opens no WebSocket on a static root build");
-    await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
+    await page.getByRole("button", { name: "Pass this device", exact: true }).click();
     await page.getByRole("button", { name: "Table menu", exact: true }).waitFor();
     assert.deepEqual(sockets, [], "static offline play also makes no host connection");
     assert.deepEqual(errors, []);

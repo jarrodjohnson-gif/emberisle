@@ -107,7 +107,7 @@ async function tab(name, chunk, query = "", { reloaded = [], seat, viewport = { 
   await page.goto(url + query);
   return t;
 }
-const title = (page) => page.getByRole("button", { name: "Play", exact: true }).waitFor({ timeout: 15_000 });
+const title = (page) => page.getByRole("button", { name: "Play against bots", exact: true }).waitFor({ timeout: 15_000 });
 
 try {
   // --- 1. The sheets chunk fails. Idle on the title prefetches it: one reload, then the flag holds.
@@ -121,7 +121,7 @@ try {
   const loads = a.loads;
   check("sheets: the title reloaded itself once on the failed prefetch and not again", loads === 2 && a.blocked >= 2, { loads, blocked: a.blocked });
 
-  await a.page.getByRole("button", { name: "Play", exact: true }).click();
+  await a.page.getByRole("button", { name: "Play against bots", exact: true }).click();
   await a.page.waitForFunction(() => window.__emberisle?.getState().screen === "play", null, { timeout: 15_000 });
   await a.page.waitForSelector("header", { timeout: 15_000 });
   await a.page.waitForSelector("canvas", { timeout: 15_000 });
@@ -253,18 +253,18 @@ try {
   await f.page.getByRole("button", { name: "Host a table" }).hover(); // the retry succeeds
   await sleep(1000);
   await fInput.fill("ZZZZ");
-  await f.page.getByRole("button", { name: "Play", exact: true }).click();
+  await f.page.getByRole("button", { name: "Play against bots", exact: true }).click();
   await f.page.waitForFunction(() => window.__emberisle.getState().screen === "play", null, { timeout: 15_000 });
   await f.page.evaluate(() => window.__emberisle.getState().goTitle());
   await title(f.page);
   const urlAfterPlay = await f.page.evaluate(() => location.search);
-  const back = { kept, value: await fInput.inputValue(), watch: await f.page.getByRole("button", { name: "Watch" }).count() };
-  check("watch link: the field survived the reload; a later title starts empty with Play primary", kept === "K7QP" && back.value === "" && back.watch === 0, back);
+  const back = { kept, value: await fInput.inputValue(), watch: await f.page.getByRole("button", { name: "Watch" }).count(), watchDisabled: await f.page.getByRole("button", { name: "Watch", exact: true }).isDisabled(), primary: await f.page.getByRole("button", { name: "Play against bots", exact: true }).evaluate(el => el.classList.contains("bg-fg")) };
+  check("watch link: the field survived the reload; a later title starts empty with bots primary and idle Watch", kept === "K7QP" && back.value === "" && back.watch === 1 && back.watchDisabled && back.primary, back);
   check("watch link: the URL has no watch/code once Play left the title", !/watch=|code=/.test(urlAfterPlay), { urlAfterPlay });
   await f.page.reload();
   await title(f.page);
   await sleep(500);
-  check("watch link: a reload at the title does not refill the stale code", (await fInput.inputValue()) === "" && (await f.page.getByRole("button", { name: "Watch" }).count()) === 0, { value: await fInput.inputValue() });
+  check("watch link: a reload at the title does not refill the stale code", (await fInput.inputValue()) === "" && (await f.page.getByRole("button", { name: "Watch" }).count()) === 1 && await f.page.getByRole("button", { name: "Watch", exact: true }).isDisabled(), { value: await fInput.inputValue() });
   await f.page.close();
 
   // --- 8. (#492) The online chunk always refused: a typed code survives the reload that the Join press releases.
@@ -317,7 +317,7 @@ try {
   // preloadOnIdle's 2 s) have been refused and nothing has asked for longer than that, so the next ask is game over's.
   const settled = async (t) => {
     const atPlay = t.blocked;
-    await t.page.getByRole("button", { name: "Play", exact: true }).click();
+    await t.page.getByRole("button", { name: "Play against bots", exact: true }).click();
     await t.page.waitForFunction(() => window.__emberisle?.getState().screen === "play", null, { timeout: 15_000 });
     await t.page.waitForSelector("header", { timeout: 15_000 });
     await until(() => t.blocked > atPlay, "the table's own sheets request being refused");

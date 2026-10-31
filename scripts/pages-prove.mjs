@@ -41,16 +41,20 @@ try {
   await page.routeWebSocket(/:8787\//, () => {});
   const origin = `http://127.0.0.1:${PORT}`;
   await page.goto(`${origin}${BASE}`);
-  await page.getByRole("button", { name: "Play", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Play against bots", exact: true }).waitFor();
   await page.waitForLoadState("networkidle");
 
   // #833: both optional title modules must resolve under the hosted prefix too.
   const mode = page.getByTestId("open-mode-toggle");
   await mode.waitFor();
   assert.equal(await mode.getAttribute("aria-pressed"), "false");
-  const wayfarer = page.locator('select[aria-label="Online wayfarer"]');
+  // Arm before the first sound-producing tap; later taps can reuse the cached click audio.
+  const audio = page.waitForRequest((r) => r.url().endsWith(".wav"), { timeout: 5000 });
+  await page.getByRole("button", { name: "Wayfarer rules", exact: true }).click();
+  const wayfarer = page.getByRole("combobox", { name: "Host a table online", exact: true });
   await wayfarer.waitFor({ state: "attached" });
   assert.equal(await wayfarer.inputValue(), "on");
+  await page.getByRole("dialog", { name: "Wayfarer rules", exact: true }).getByRole("button", { name: "Close", exact: true }).click();
 
   const hrefs = await page.evaluate(() => ({
     manifest: document.querySelector('link[rel="manifest"]').href,
@@ -65,8 +69,7 @@ try {
   }
 
   // The sound module builds its URL from BASE_URL; ask it to play, and see which URL the page asks for.
-  const audio = page.waitForRequest((r) => r.url().endsWith(".wav"), { timeout: 5000 });
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play against bots", exact: true }).click();
   const url = (await audio).url();
   assert.ok(url.startsWith(`${origin}${BASE}audio/`), `audio URL ${url}`);
   assert.equal((await page.request.get(url)).status(), 200);

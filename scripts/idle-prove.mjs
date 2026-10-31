@@ -66,7 +66,7 @@ try {
   const title = await count(2000);
   check("title 30 fps gate (31..75 in 2 s)", title.draws > 30 && title.draws <= 75, title);
 
-  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await page.getByRole("button", { name: "Pass this device" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState);
   // #232: roll off first, so the board is measured in setup as before (the roll-off's longer phase sentence
   // and Roll button cover the canvas centre at 640x400, where the drag below starts).

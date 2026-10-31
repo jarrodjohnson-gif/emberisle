@@ -1,0 +1,10 @@
+$ npm run title-layout-prove
+
+> title-layout-prove
+> node scripts/title-layout-prove.mjs
+
+ok 390x844: all choices visible, 44px targets, 8px gaps, neutral card, no scroll; rules, focus, sound, help, name, colours, bots and pass-device
+ok 844x390: all choices visible, 44px targets, 8px gaps, neutral card, no scroll; rules, focus, sound, help, name, colours, bots and pass-device
+ok 1280x720: all choices visible, 44px targets, 8px gaps, neutral card, no scroll; rules, focus, sound, help, name, colours, bots and pass-device
+ok real host/join/watch and taken-colour peek; existing network paths retained
+title-layout-prove: ok

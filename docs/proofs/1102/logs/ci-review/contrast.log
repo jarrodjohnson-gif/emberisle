@@ -1,0 +1,59 @@
+$ npm run contrast-prove
+
+> contrast-prove
+> node scripts/contrast-prove.mjs
+
+contrast-prove: tab-local CPU throttle x1
+8.38:1  Play (primary) on fill
+10.40:1  Join (secondary) on fill
+10.73:1  Host a table (secondary) on fill
+10.73:1  Pass this device (quiet) on surface
+9.80:1  Pass this device (quiet) on bg
+10.73:1  How to play (quiet) on surface
+9.80:1  How to play (quiet) on bg
+5.99:1  white on sea-ink (Start)
+5.99:1  white on accent-ink
+10.79:1  caption 12 px on surface
+9.85:1  caption 12 px on bg
+6.55:1  error line 14 px on surface
+5.98:1  error line 14 px on bg
+  1280x720 another seat's turn banner: "Place an outpost · tap a glowing corner" text rgb(85,94,88) over 7840 px
+  1280x720 log line: "Seat 4 places first, then Seat 3, Seat 2, and Ember." text rgb(85,94,88) over 10176 px
+  1280x720: 0 texts on glass chips, glass over black rgb(255,249,240)
+  1280x720 your turn banner: "Place an outpost · tap a glowing corner" text rgb(38,61,60) over 8232 px
+  390x844 another seat's turn banner: "Place an outpost · tap a glowing corner" text rgb(85,94,88) over 9688 px
+  390x844: 0 texts on glass chips, glass over black rgb(255,249,240)
+  390x844 your turn banner: "Place an outpost · tap a glowing corner" text rgb(38,61,60) over 9800 px
+  win headline, winner #e23d2e: "Ember wins" text rgb(38,61,60) over 4768 px
+  win headline, winner #2d6ee8: "Seat 2 wins" text rgb(38,61,60) over 4736 px
+  win headline, winner #f3ecd9: "Seat 3 wins" text rgb(38,61,60) over 4768 px
+  win headline, winner #8a4fd3: "Seat 4 wins" text rgb(38,61,60) over 4768 px
+  1280x720: red ring rgb(178,58,46) on paper rgb(242,238,229) 5.13:1 (needs 3:1)
+  390x844: red ring rgb(178,58,46) on paper rgb(242,238,229) 5.13:1 (needs 3:1)
+6.41:1  1280x720 another seat's turn banner: text on mean background
+6.41:1  1280x720 another seat's turn banner: text on darkest 5 % of background
+6.41:1  1280x720 log line: text on mean background
+6.41:1  1280x720 log line: text on darkest 5 % of background
+11.02:1  1280x720 your turn banner: text on mean background
+11.05:1  1280x720 your turn banner: text on darkest 5 % of background
+6.41:1  390x844 another seat's turn banner: text on mean background
+6.41:1  390x844 another seat's turn banner: text on darkest 5 % of background
+11.02:1  390x844 your turn banner: text on mean background
+11.05:1  390x844 your turn banner: text on darkest 5 % of background
+11.05:1  win headline, winner #e23d2e: text on mean background
+11.05:1  win headline, winner #e23d2e: text on darkest 5 % of background
+11.05:1  win headline, winner #2d6ee8: text on mean background
+11.05:1  win headline, winner #2d6ee8: text on darkest 5 % of background
+11.05:1  win headline, winner #f3ecd9: text on mean background
+11.05:1  win headline, winner #f3ecd9: text on darkest 5 % of background
+11.05:1  win headline, winner #8a4fd3: text on mean background
+11.05:1  win headline, winner #8a4fd3: text on darkest 5 % of background
+10.15:1  1280x720 Ready chip ink on green paper
+5.43:1  1280x720 Ready check badge white on green
+5.80:1  1280x720 Missing chip label on paper
+5.94:1  1280x720 shortfall badge white on red
+10.15:1  390x844 Ready chip ink on green paper
+5.43:1  390x844 Ready check badge white on green
+5.80:1  390x844 Missing chip label on paper
+5.94:1  390x844 shortfall badge white on red
+contrast-prove: ok

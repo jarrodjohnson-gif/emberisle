@@ -487,7 +487,7 @@ async function open(v, reducedMotion) {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("button", { name: "Four seats, one table" }).focus();
+  await page.getByRole("button", { name: "Pass this device" }).focus();
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
   const roll = page.getByRole("button", { name: "Roll", exact: true });

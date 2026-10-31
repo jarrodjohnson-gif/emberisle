@@ -83,7 +83,7 @@ try {
   await page.waitForFunction(() => window.__isle?.landReady && window.__isle.land.children.length > 30, null, { timeout: 120_000 });
 
   const demo = await page.evaluate(readScene, true);
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play against bots", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle.getState().screen === "play" && window.__emberisle.getState().state && window.__isle.landReady, null, { timeout: 120_000 });
   await page.waitForTimeout(500);
   const practice = await page.evaluate(readScene, false);
@@ -137,7 +137,7 @@ try {
     p.on("console", (m) => m.type() === "error" && errors.push(m.text()));
     p.on("pageerror", (e) => errors.push(String(e)));
     await p.goto(`http://127.0.0.1:${PORT}/`);
-    await p.getByRole("button", { name: "Play", exact: true }).click();
+    await p.getByRole("button", { name: "Play against bots", exact: true }).click();
     await p.waitForFunction(() => window.__emberisle.getState().screen === "play" && window.__isle?.lastState && window.__isle.landReady && window.__isle.fit && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: 120_000 });
     await p.waitForFunction((r) => window.__isle.renders > r + 2, await p.evaluate(() => window.__isle.renders));
     const m = await p.evaluate(() => {

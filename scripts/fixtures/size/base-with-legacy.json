@@ -22,5 +22,7 @@
   "sound-extra": 203,
   "trade-sound": 468,
   "emotes": 371,
-  "TradeResource": 1430
+  "TradeResource": 1430,
+  "Title": 2200,
+  "focus-trap": 450
 }

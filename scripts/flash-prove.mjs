@@ -40,7 +40,7 @@ async function openTable(reducedMotion) {
     Object.defineProperty(navigator, "vibrate", { value: (ms) => { if (ms === 8) window.__buzz.push(ms); return true; }, configurable: true });
   });
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("button", { name: "Four seats, one table" }).focus();
+  await page.getByRole("button", { name: "Pass this device" }).focus();
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
   const roll = page.getByRole("button", { name: "Roll", exact: true });

@@ -42,12 +42,12 @@ try {
     // socket and say nothing back.
     await page.routeWebSocket(/:8787\//, () => {});
     await page.goto(`http://127.0.0.1:${PORT}/`);
-    await page.getByRole("button", { name: "Play", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Play against bots", exact: true }).waitFor();
 
     const card = await page.evaluate(() => {
       const el = document.querySelector('[data-testid="title-card"]');
       const c = el.getBoundingClientRect();
-      const fg = getComputedStyle(document.documentElement).getPropertyValue("--color-fg").trim();
+      const fg = "#285550";
       const probe = document.createElement("div");
       probe.style.backgroundColor = fg;
       document.body.append(probe);
@@ -79,8 +79,8 @@ try {
         heightShare: c.height / innerHeight,
       };
     });
-    assert.deepEqual(card.primary, ["Play"], `${tag}: the one primary`);
-    assert.deepEqual([...card.filled].sort(), ["Host a table", "Join", "Play"], `${tag}: filled buttons`);
+    assert.deepEqual(card.primary, ["Play against bots"], `${tag}: the one primary`);
+    assert.deepEqual([...card.filled].sort(), ["Join", "Play against bots", "Watch"], `${tag}: filled buttons`);
     assert.ok(card.hostFits, `${tag}: Host a table label is not clipped`);
     assert.equal(card.uppercase, 0, `${tag}: uppercase text on the card`);
     assert.ok(!card.texts.some((t) => /living island|Claim hexes/.test(t)), `${tag}: eyebrow or tagline still there: ${card.texts}`);
@@ -89,21 +89,24 @@ try {
     if (v.touch && v.height > v.width) assert.ok(card.heightShare <= 0.6, `${tag}: portrait card is ${Math.round(card.heightShare * 100)} % tall`);
 
     const watch = page.getByRole("button", { name: "Watch", exact: true });
-    assert.equal(await watch.count(), 0, `${tag}: Watch before a code`);
+    assert.equal(await watch.isVisible(), true, `${tag}: Watch visible before a code`);
+    assert.equal(await watch.isDisabled(), true, `${tag}: Watch disabled before a code`);
     const live = page.getByTestId("watch-announce");
     assert.equal(await live.getAttribute("aria-live"), "polite", `${tag}: Watch live region`);
     assert.equal(await live.textContent(), "", `${tag}: live region speaks before a code`);
     await page.getByRole("textbox", { name: "Join code" }).fill("ABC");
-    assert.equal(await watch.count(), 0, `${tag}: Watch at 3 characters`);
+    assert.equal(await watch.isVisible(), true, `${tag}: Watch visible at 3 characters`);
+    assert.equal(await watch.isDisabled(), true, `${tag}: Watch disabled at 3 characters`);
     assert.equal(await live.textContent(), "", `${tag}: live region speaks at 3 characters`);
     await page.getByRole("textbox", { name: "Join code" }).fill("ABCD");
     await watch.waitFor();
+    assert.equal(await watch.isEnabled(), true, `${tag}: Watch enabled at 4 characters`);
     assert.equal(await live.textContent(), "Watch available", `${tag}: live region says Watch appeared`);
     await page.getByRole("textbox", { name: "Join code" }).fill("");
     await page.screenshot({ path: `test-results/title-prove-${v.width}x${v.height}.png` });
 
     assert.deepEqual(errors, [], `${tag}: console errors`);
-    console.log(`ok   ${tag}: one primary (Play), filled ${card.filled.join(" / ")}, card ${Math.round(card.heightShare * 100)} % tall, nothing clipped, Watch only at 4 characters`);
+    console.log(`ok   ${tag}: one primary (Play against bots), filled ${card.filled.join(" / ")}, card ${Math.round(card.heightShare * 100)} % tall, nothing clipped, Watch visible throughout, available at 4 characters`);
     await ctx.close();
   }
   console.log("title-prove: ok");

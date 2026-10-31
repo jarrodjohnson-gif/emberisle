@@ -348,7 +348,7 @@ try {
     await dialog.waitFor({ state: "detached" });
     assert.deepEqual((await plays(6)).slice(4), ["click_001.wav", "back_001.wav"], "Enter on How to play, Escape");
     // Muting is silent.
-    await page.getByRole("button", { name: "Table sounds on" }).click();
+    await page.getByRole("button", { name: "Sound on", exact: true }).click();
     assert.equal((await plays()).length, 6, "muting is silent");
     const before = (await plays()).length;
     await page.getByRole("button", { name: "How to play" }).click();
@@ -361,7 +361,7 @@ try {
     await dialog.waitFor({ state: "detached" });
     assert.equal((await plays()).length, before, "muted: nothing plays");
     // Unmuting clicks.
-    await page.getByRole("button", { name: "Table sounds off" }).click();
+    await page.getByRole("button", { name: "Sound off", exact: true }).click();
     assert.deepEqual((await plays(before + 1)).slice(before), ["click_001.wav"], "unmuting clicks once");
     console.log("sounds: open click_001, Close back_001, Escape back_001, Enter click_001, once each; muting and muted play nothing; unmuting clicks");
     await ctx.close();

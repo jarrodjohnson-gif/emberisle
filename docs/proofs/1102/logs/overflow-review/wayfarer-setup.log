@@ -1,0 +1,16 @@
+$ npm run wayfarer-setup-prove
+
+> wayfarer-setup-prove
+> node --import ./server/register.mjs scripts/wayfarer-setup-prove.mjs
+
+ok 390 ai on: visible pre-creation choice, correct default, fixed after creation
+ok 390 ai off: visible pre-creation choice, correct default, fixed after creation
+ok 390 hotseat on: visible pre-creation choice, correct default, fixed after creation
+ok 390 hotseat off: visible pre-creation choice, correct default, fixed after creation
+ok 390 online on: visible pre-creation choice, correct default, fixed after creation, public joiner rule
+ok 390 online off: visible pre-creation choice, correct default, fixed after creation, public joiner rule
+ok sticky choice: Off survives new/play-again games, menu resets to On
+ok 390x844: Off fortune adds army immediately; no picker, blocker or lost roll
+ok 1280x720: Off fortune adds army immediately; no picker, blocker or lost roll
+ok 844x390: Off fortune adds army immediately; no picker, blocker or lost roll
+wayfarer-setup-prove: all passed; setup defaults/overrides, sticky choice, no-target fortunes, host refusal, join/rejoin/reload/restart/rematch persistence

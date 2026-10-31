@@ -310,7 +310,7 @@ try {
       localStorage.setItem("emberisle-water", "simple");
     });
     await page.goto(`http://127.0.0.1:${PORT}/`);
-    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play against bots", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
     await fixture(page, { generic: false, timber: false });
     const initial = await targets(page, view.tag);

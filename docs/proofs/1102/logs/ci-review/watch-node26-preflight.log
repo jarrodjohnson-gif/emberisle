@@ -1,0 +1,12 @@
+
+> watch-ui-prove
+> node --import ./server/register.mjs scripts/watch-ui-prove.mjs
+
+(node:1230) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Warning: Detected unsettled top-level await at file://<repo>/scripts/watch-ui-prove.mjs:38
+const hostPort = await new Promise((resolve) =>
+                 ^
+
+
+

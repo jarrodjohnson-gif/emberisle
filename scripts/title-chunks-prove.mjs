@@ -58,7 +58,7 @@ try {
     }, target);
     page.on("pageerror", e => { if (!String(e).includes(target)) errors.push(String(e)); });
     page.on("console", m => {
-      if (m.type() === "error" && !m.text().includes(target) && m.location().url !== target) errors.push(m.text());
+      if (m.type() === "error" && !m.text().includes(target) && m.location().url !== target && !m.location().url.startsWith(target + "?retry=")) errors.push(m.text() + " " + m.location().url);
     });
     await page.route(target + "*", async route => {
       requested();
@@ -102,7 +102,7 @@ try {
     check(true, "module arrival between pointer down/up preserves the first Host tap");
   });
   await controlled("OpenTables", false, async page => {
-    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play against bots", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle.getState().screen === "play");
     check(true, "practice starts while open-table module remains held");
   });
@@ -120,22 +120,25 @@ try {
     check(!listed.includes(code), "failed mode controls still host a real private table", { code, listed });
   });
   await controlled("WayfarerOptions", false, async (page, release) => {
+    await page.getByRole("button", { name: "Wayfarer rules", exact: true }).click();
     const settings = page.getByTestId("wayfarer-setup");
-    check((await settings.locator("summary").textContent()).includes("Online: on"), "settings summary stays eager");
-    await settings.locator("summary").click();
+    await page.getByRole("dialog", { name: "Wayfarer rules", exact: true }).waitFor();
+    check(await page.getByRole("dialog", { name: "Wayfarer rules", exact: true }).isVisible() && await settings.getByRole("combobox").count() === 0, "rules dialog opens eagerly while the settings module is held");
     check(await settings.getByRole("combobox").count() === 0, "held settings body is isolated from core title controls");
     check(await page.getByRole("button", { name: "Host a table", exact: true }).isVisible(), "held settings retain Host");
     release();
-    for (const label of ["Practice", "Online", "Hotseat"]) {
-      const select = page.getByRole("combobox", { name: label + " wayfarer" });
+    for (const label of ["Play against bots", "Host a table online", "Pass this device"]) {
+      const select = page.getByRole("combobox", { name: label, exact: true });
       await select.waitFor(); check(await select.inputValue() === "on", label + " keeps its existing default");
     }
-    await page.getByRole("combobox", { name: "Online wayfarer" }).selectOption("off");
-    check((await settings.locator("summary").textContent()).includes("Online: off") &&
+    await page.getByRole("combobox", { name: "Host a table online", exact: true }).selectOption("off");
+    check(await page.getByRole("combobox", { name: "Host a table online", exact: true }).inputValue() === "off" &&
       await page.evaluate(() => window.__emberisle.getState().wayfarerChoices.online === "off"), "loaded settings preserve their existing store action and summary");
     check((await page.locator("#wayfarer-help").textContent()) === "Off never moves or blocks. Sevens still discard. Off fortunes add to the army.", "existing settings help text retained");
   });
   await controlled("WayfarerOptions", true, async page => {
+    await page.getByRole("button", { name: "Wayfarer rules", exact: true }).click();
+    await page.getByRole("dialog", { name: "Wayfarer rules", exact: true }).getByRole("button", { name: "Close", exact: true }).click();
     await page.getByRole("button", { name: "Host a table", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle.getState().screen === "lobby");
     check(true, "failed optional settings do not block hosting");

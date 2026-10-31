@@ -1,0 +1,66 @@
+$ npm run reflow-prove
+
+> reflow-prove
+> node scripts/reflow-prove.mjs
+
+ok   640x360 title: Play's subtitle renders ["Just you and three bots. No network needed."]
+ok   640x360 title: Join fully visible [261,183,426,227]
+ok   640x360 title: no button past the right edge []
+ok   640x360 title: no horizontal scroll {"scrollWidth":640}
+ok   640x360 hud: bottom stack starts below the header + 8 px {"headerBottom":56,"stripBottom":null,"stackTop":68,"stackBottom":348,"column":true,"uncovered":304,"hits":["CANVAS","CANVAS","CANVAS"],"scrollWidth":640}
+ok   640x360 hud: >= 120 px of island uncovered and pointer-reachable {"uncovered":304,"hits":["CANVAS","CANVAS","CANVAS"]}
+ok   640x360 hud: no horizontal scroll {"scrollWidth":640}
+ok   640x360 hud: stack overflows (End turn below the fold) {"overflow":true,"cue":true,"cuePointer":"none"}
+ok   640x360 hud: cue takes no pointer events {"overflow":true,"cue":true,"cuePointer":"none"}
+ok   640x360 hud: End turn reachable by scrolling the stack {"top":300,"bottom":344,"onTop":true}
+ok   640x360 hud: cue gone once scrolled to the bottom {"overflow":false,"cue":false,"cuePointer":null}
+ok   320x568 title: Play's subtitle renders ["Just you and three bots. No network needed."]
+ok   320x568 title: Join fully visible [32,358,156,402]
+ok   320x568 title: no button past the right edge []
+ok   320x568 title: no horizontal scroll {"scrollWidth":320}
+ok   320x568 hud: bottom stack starts below the header + 8 px {"headerBottom":56,"stripBottom":null,"stackTop":244,"stackBottom":556,"column":false,"uncovered":188,"hits":["CANVAS","CANVAS","CANVAS"],"scrollWidth":320}
+ok   320x568 hud: >= 120 px of island uncovered and pointer-reachable {"uncovered":188,"hits":["CANVAS","CANVAS","CANVAS"]}
+ok   320x568 hud: no horizontal scroll {"scrollWidth":320}
+ok   320x568 hud: stack overflows (End turn below the fold) {"overflow":true,"cue":true,"cuePointer":"none"}
+ok   320x568 hud: cue takes no pointer events {"overflow":true,"cue":true,"cuePointer":"none"}
+ok   320x568 hud: End turn reachable by scrolling the stack {"top":484,"bottom":528,"onTop":true}
+ok   320x568 hud: cue gone once scrolled to the bottom {"overflow":false,"cue":false,"cuePointer":null}
+ok   1280x720 title: Play's subtitle renders ["Just you and three bots. No network needed."]
+ok   1280x720 title: Join fully visible [57,483,228,527]
+ok   1280x720 title: no button past the right edge []
+ok   1280x720 title: no horizontal scroll {"scrollWidth":1280}
+ok   1280x720 hud: bottom stack starts below the header + 8 px {"headerBottom":56,"stripBottom":null,"stackTop":422,"stackBottom":708,"column":false,"uncovered":366,"hits":["CANVAS","CANVAS","CANVAS"],"scrollWidth":1280}
+ok   1280x720 hud: >= 120 px of island uncovered and pointer-reachable {"uncovered":366,"hits":["CANVAS","CANVAS","CANVAS"]}
+ok   1280x720 hud: no horizontal scroll {"scrollWidth":1280}
+ok   1280x720 hud: no overflow, no cue {"overflow":false,"cue":false,"cuePointer":null}
+ok   1280x720 hud: End turn reachable by scrolling the stack {"top":632,"bottom":676,"onTop":true}
+ok   844x390 title: Play's subtitle renders ["Just you and three bots. No network needed."]
+ok   844x390 title: wordmark and buttons inside the viewport []
+ok   844x390 title: Join fully visible [261,213,426,257]
+ok   844x390 title: no button past the right edge []
+ok   844x390 title: no horizontal scroll {"scrollWidth":844}
+ok   844x390 hud: bottom stack starts below the header + 8 px {"headerBottom":56,"stripBottom":null,"stackTop":68,"stackBottom":378,"column":true,"uncovered":334,"hits":["CANVAS","CANVAS","CANVAS"],"scrollWidth":844}
+ok   844x390 hud: >= 120 px of island uncovered and pointer-reachable {"uncovered":334,"hits":["CANVAS","CANVAS","CANVAS"]}
+ok   844x390 hud: no horizontal scroll {"scrollWidth":844}
+ok   844x390 hud: stack overflows (End turn below the fold) {"overflow":true,"cue":true,"cuePointer":"none"}
+ok   844x390 hud: cue takes no pointer events {"overflow":true,"cue":true,"cuePointer":"none"}
+ok   844x390 hud: End turn reachable by scrolling the stack {"top":330,"bottom":374,"onTop":true}
+ok   844x390 hud: cue gone once scrolled to the bottom {"overflow":false,"cue":false,"cuePointer":null}
+ok   390x844 title: Play's subtitle renders ["Just you and three bots. No network needed."]
+ok   390x844 title: wordmark and buttons inside the viewport []
+ok   390x844 title: Join fully visible [32,634,191,678]
+ok   390x844 title: no button past the right edge []
+ok   390x844 title: no horizontal scroll {"scrollWidth":390}
+ok   390x844 strip (rollOff): 44 px, four cells, no name cut off {"h":44,"cells":[{"w":77,"name":"Emb","cut":false,"die":true,"vp":false},{"w":77,"name":"S2","cut":false,"die":true,"vp":false},{"w":77,"name":"S3","cut":false,"die":true,"vp":false},{"w":77,"name":"S4","cut":false,"die":true,"vp":false}]}
+ok   390x844 strip (rollOff): under 100 px, die without points [{"w":77,"name":"Emb","cut":false,"die":true,"vp":false},{"w":77,"name":"S2","cut":false,"die":true,"vp":false},{"w":77,"name":"S3","cut":false,"die":true,"vp":false},{"w":77,"name":"S4","cut":false,"die":true,"vp":false}]
+ok   390x844 strip (main): 44 px, four cells, no name cut off {"h":44,"cells":[{"w":77,"name":"Emb","cut":false,"die":false,"vp":true},{"w":77,"name":"S2","cut":false,"die":false,"vp":true},{"w":77,"name":"S3","cut":false,"die":false,"vp":true},{"w":77,"name":"S4","cut":false,"die":false,"vp":true}]}
+ok   390x844 strip (main): under 100 px, points without die [{"w":77,"name":"Emb","cut":false,"die":false,"vp":true},{"w":77,"name":"S2","cut":false,"die":false,"vp":true},{"w":77,"name":"S3","cut":false,"die":false,"vp":true},{"w":77,"name":"S4","cut":false,"die":false,"vp":true}]
+ok   390x844 strip: "Ember" and "Emberly" read differently ["E1","E2","S3","S4"]
+ok   390x844 armed Path on touch: banner says what to pick and how to cancel "Place a path · tap Path again to cancel"
+ok   390x844 second tap: banner back to the main line "Build, trade, or end your turn"
+ok   390x844 hud: bottom stack starts below the header + 8 px {"headerBottom":56,"stripBottom":null,"stackTop":352,"stackBottom":832,"column":false,"uncovered":296,"hits":["CANVAS","CANVAS","CANVAS"],"scrollWidth":390}
+ok   390x844 hud: >= 120 px of island uncovered and pointer-reachable {"uncovered":296,"hits":["CANVAS","CANVAS","CANVAS"]}
+ok   390x844 hud: no horizontal scroll {"scrollWidth":390}
+ok   390x844 hud: End turn reachable by scrolling the stack {"top":760,"bottom":804,"onTop":true}
+ok   zero console errors []
+reflow-prove: ok

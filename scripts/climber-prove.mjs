@@ -150,7 +150,7 @@ try {
     page.on("pageerror", (e) => errors.push(String(e)));
     await page.goto(`http://127.0.0.1:${port}/`);
     await seedHotseat();
-    await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
+    await page.getByRole("button", { name: "Pass this device", exact: true }).click();
     await page.waitForFunction(
       () => window.__emberisle.getState().screen === "play" && window.__isle?.landReady && window.__isle.jellyBoard && !window.__isle.titleMode,
       null,
@@ -231,7 +231,7 @@ try {
     page = await ctx.newPage();
     await page.goto(`http://127.0.0.1:${port}/`);
     await seedHotseat();
-    await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
+    await page.getByRole("button", { name: "Pass this device", exact: true }).click();
     await page.waitForFunction(() => window.__isle?.landReady && window.__isle.jellyBoard && !window.__isle.titleMode, null, { timeout: 180_000 });
     await screenshotAge(4, "390x844");
     await screenshotAge(160, "390x844");
@@ -253,7 +253,7 @@ try {
     const lingered = await climberAt();
     check("lobby/title linger: still age 0 at the foot", lingered && lingered.age === 0 && !lingered.sit && lingered.dist > lingered.peakR, lingered);
     await seedHotseat();
-    const justPlay = await nextBoard(() => page.getByRole("button", { name: "Four seats, one table", exact: true }).click());
+    const justPlay = await nextBoard(() => page.getByRole("button", { name: "Pass this device", exact: true }).click());
     check("after lobby: a newly built board uses the fixed seed", justPlay.newBoard && justPlay.seed === 676, justPlay);
     check(
       "after lobby: natural play age below 2s, excluding the 4s title linger",
@@ -273,7 +273,7 @@ try {
     page = await ctx.newPage();
     await page.goto(`http://127.0.0.1:${port}/`);
     await seedHotseat();
-    await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
+    await page.getByRole("button", { name: "Pass this device", exact: true }).click();
     await page.waitForFunction(() => window.__isle?.landReady && window.__isle.jellyBoard && window.__isle.wasCalm, null, { timeout: 180_000 });
     const a = await climberAt();
     await page.waitForTimeout(2000);

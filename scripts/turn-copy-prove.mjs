@@ -16,7 +16,7 @@ try {
     page.on("pageerror", e => errors.push(e.message));
     page.on("console", m => m.type() === "error" && errors.push(m.text()));
     await page.goto(`http://127.0.0.1:${port}`);
-    await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
+    await page.getByRole("button", { name: "Pass this device", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state);
     const prompt = async (prefix) => {
       await page.waitForFunction(prefix => document.querySelector('[data-testid="turn-banner"]')?.textContent.startsWith(prefix), prefix);

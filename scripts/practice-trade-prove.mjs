@@ -52,13 +52,13 @@ try {
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play against bots", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state);
   // Each step starts a fresh practice game (as the Title's button does) and swaps in the hand-built state.
   const load = async (g) => {
     await page.evaluate(() => window.__emberisle.getState().goTitle());
     // Let the title mount between games, as a person's taps do. Equal fixture seq values must still wake the next bot.
-    await page.getByRole("button", { name: "Play", exact: true }).waitFor({ timeout: STEP_MS });
+    await page.getByRole("button", { name: "Play against bots", exact: true }).waitFor({ timeout: STEP_MS });
     await page.evaluate((g) => {
       window.__emberisle.getState().startAi();
       window.__emberisle.setState({ state: g });

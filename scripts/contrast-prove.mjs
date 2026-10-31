@@ -1,5 +1,5 @@
 // #381: UI text meets WCAG 1.4.3 (4.5:1). Reads computed colours of the title's Play (primary), Host a table and Join (secondary)
-// buttons, the quiet row (Four seats, one table, How to play; #454) and the 12 px "3 bots, no network" line, and checks white on the `sea-ink` and `accent-ink` fills that Start
+// buttons, the quiet row (Pass this device, How to play; #454) and the 12 px "3 bots, no network" line, and checks white on the `sea-ink` and `accent-ink` fills that Start
 // and the 7 use (#444 took them off the title; End turn is now the ink primary or a secondary).
 // #424: text chips over the island, sampled from screenshots. With the chip's text made transparent, its box (inside the
 // border and in from the rounded corners) is screenshotted; the computed text colour is measured against the mean and the darkest 5 % of those background pixels (both >= 4.5:1).
@@ -45,8 +45,12 @@ try {
   const errors = [];
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
+  await page.routeWebSocket(/:8787\//, () => {});
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.getByRole("button", { name: "Join", exact: true }).waitFor();
+  await page.getByRole("textbox", { name: "Join code", exact: true }).fill("ABCD");
+  await page.evaluate(() => window.__emberisle.setState({ error: "That table is unavailable." }));
+  await page.getByRole("alert").waitFor();
   // Computed colours can be oklch or color-mix, so resolve each to sRGB through a canvas pixel.
   const read = await page.evaluate(() => {
     const px = (css) => {
@@ -56,29 +60,39 @@ try {
       c.fillRect(0, 0, 1, 1);
       return [...c.getImageData(0, 0, 1, 1).data].slice(0, 3);
     };
+    const background = (el) => {
+      const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+      const layers = [];
+      for (let node = el; node; node = node.parentElement) layers.unshift(getComputedStyle(node).backgroundColor);
+      c.fillStyle = "white";
+      c.fillRect(0, 0, 1, 1);
+      for (const layer of layers) { c.fillStyle = layer; c.fillRect(0, 0, 1, 1); }
+      return [...c.getImageData(0, 0, 1, 1).data].slice(0, 3);
+    };
     const btn = (name) => {
       const el = [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === name);
       const s = getComputedStyle(el);
-      return { fg: px(s.color), bg: px(s.backgroundColor) };
+      return { fg: px(s.color), bg: background(el) };
     };
-    const caption = getComputedStyle([...document.querySelectorAll("p")].find((p) => p.textContent === "3 bots, no network"));
+    const caption = getComputedStyle([...document.querySelectorAll("p")].find((p) => p.textContent === "Just you and three bots. No network needed."));
     const root = getComputedStyle(document.documentElement);
     return {
-      play: btn("Play"),
+      play: btn("Play against bots"),
       join: btn("Join"),
       host: btn("Host a table"),
-      quietSeats: btn("Four seats, one table"),
+      quietSeats: btn("Pass this device"),
       quietHow: btn("How to play"),
       caption: px(caption.color),
       seaInk: px(root.getPropertyValue("--color-sea-ink").trim()),
-      surface: px(root.getPropertyValue("--color-surface").trim()),
+      surface: background(document.querySelector('[data-testid="title-card"]')),
+      errorInk: px(getComputedStyle(document.querySelector('[role="alert"]')).color),
       bg: px(root.getPropertyValue("--color-bg").trim()),
       accentInk: px(root.getPropertyValue("--color-accent-ink").trim()),
       accent: px(root.getPropertyValue("--color-accent").trim()),
     };
   });
   // The error line only appears after a failed join, so take its colour from the token the source names.
-  const errorInk = /text-accent-ink/.test(readFileSync("src/components/game/EmberisleApp.tsx", "utf8")) ? read.accentInk : read.accent;
+  const errorInk = read.errorInk;
   await page.screenshot({ path: "test-results/contrast-prove.png" });
   // Its colours and image are captured. Do not leave this title renderer competing with later fixtures.
   await page.close();
@@ -86,8 +100,8 @@ try {
     ["Play (primary) on fill", ratio(read.play.fg, read.play.bg)],
     ["Join (secondary) on fill", ratio(read.join.fg, read.join.bg)],
     ["Host a table (secondary) on fill", ratio(read.host.fg, read.host.bg)],
-    ["Four seats, one table (quiet) on surface", ratio(read.quietSeats.fg, read.surface)],
-    ["Four seats, one table (quiet) on bg", ratio(read.quietSeats.fg, read.bg)],
+    ["Pass this device (quiet) on surface", ratio(read.quietSeats.fg, read.surface)],
+    ["Pass this device (quiet) on bg", ratio(read.quietSeats.fg, read.bg)],
     ["How to play (quiet) on surface", ratio(read.quietHow.fg, read.surface)],
     ["How to play (quiet) on bg", ratio(read.quietHow.fg, read.bg)],
     ["white on sea-ink (Start)", ratio([255, 255, 255], read.seaInk)],
@@ -103,7 +117,7 @@ try {
     if (r < MIN) bad.push(`${name} is ${r.toFixed(2)}:1`);
   }
   // The source must use the ink tokens where the error line and eyebrows are drawn.
-  const app = readFileSync("src/components/game/EmberisleApp.tsx", "utf8");
+  const app = readFileSync("src/components/game/EmberisleApp.tsx", "utf8") + readFileSync("src/components/game/Title.tsx", "utf8");
   if (/text-accent"/.test(app)) bad.push("EmberisleApp.tsx still uses text-accent for text");
   if (/text-sea"/.test(app)) bad.push("EmberisleApp.tsx still uses text-sea for text");
 
@@ -235,7 +249,7 @@ try {
     console.log(`  ${tag}: ${worst.out.length} texts on glass chips, glass over black rgb(${worst.glass})`);
     // Versus the isle: the human rolls off when up, then waits on its own first corner (the bots act on the app's timer).
     await pg.evaluate(() => window.__emberisle.getState().goTitle());
-    await pg.getByRole("button", { name: "Play", exact: true }).click();
+    await pg.getByRole("button", { name: "Play against bots", exact: true }).click();
     await pg.waitForFunction(() => {
       const s = window.__emberisle.getState();
       if (s.state?.phase === "rollOff" && s.state.current === s.localId) s.dispatch({ type: "roll" });
