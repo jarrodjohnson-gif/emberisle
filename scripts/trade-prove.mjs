@@ -521,6 +521,20 @@ try {
   if (await answerable(C, afterPin[tabs.indexOf(C)], line3, need, 2)) throw new Error(`${C.name} should be able to pay 2 ${needLabel}`);
   if ((await fadeOf(B)) !== "150") throw new Error(`#537: the dismiss fade is ${await fadeOf(B)} ms, want 150`);
   console.log(`#537: ${B.name} sees compact "${demand}"; ${C.name} sees full offer "${line3}"`);
+  // #537 / owner decision on PR #824: the compact signal keeps its reason for keyboard and screen-reader users. B has 0 of
+  // the good and the ask wants 2, so the hidden reason names exactly that; C can pay and gets no reason at all.
+  const why = await B.page.evaluate(() => {
+    const el = document.querySelector('[data-testid="trade-why"]');
+    const dismiss = document.querySelector('[data-testid="trade-dismiss"]');
+    const toast = document.querySelector('[data-testid="trade-toast"]');
+    const box = el?.getBoundingClientRect();
+    return { text: el?.textContent ?? null, id: el?.id ?? null, dismissRef: dismiss?.getAttribute("aria-describedby") ?? null, toastRef: toast?.getAttribute("aria-describedby") ?? null, tiny: box ? box.width <= 1 && box.height <= 1 : null };
+  });
+  if (why.text !== `You need 2 more ${needLabel} to accept`) throw new Error(`#537: ${B.name}'s hidden reason reads ${JSON.stringify(why.text)}`);
+  if (!why.id || why.dismissRef !== why.id || why.toastRef !== why.id) throw new Error(`#537: the reason is not tied to Dismiss and the toast: ${JSON.stringify(why)}`);
+  if (!why.tiny) throw new Error(`#537: the reason is visible on screen: ${JSON.stringify(why)}`);
+  if (await C.page.getByTestId("trade-why").count()) throw new Error(`#537: ${C.name} can pay but has an unaffordable reason`);
+  console.log(`#537: ${B.name}'s Dismiss and toast are described by the hidden "${why.text}"; ${C.name} has none`);
 
   // Change B's hand: the compact signal flips to the normal Yes/No with no new offer, and back.
   await setLocal(B, 2);
@@ -529,6 +543,7 @@ try {
     return (await compactOf(B)) === null && yes === 1 ? true : null;
   }, `#537: B's toast upgrades when ${needLabel} arrives`);
   if ((await view(B)).offer?.tradeId !== tradeId3) throw new Error("#537: the upgrade needed another offer");
+  if (await B.page.getByTestId("trade-why").count()) throw new Error("#537: the reason stayed after B could pay");
   console.log(`#537: giving ${B.name} 2 ${needLabel} flips compact to full Yes/No without a new offer`);
   await setLocal(B, 0);
   await until(async () => ((await compactOf(B)) === "true" ? true : null), "#537: B compact again");
@@ -570,6 +585,8 @@ try {
   const calmMs = await lastDecline(() => C.page.getByTestId("trade-toast").getByRole("button", { name: "No", exact: true }).click(), "reduced motion");
   console.log(`#537: reduced motion: dismiss at once, both declined, the offer is gone on all 3 tabs in ${calmMs} ms`);
 
+  // Step 6's last decline plays corn_no on every seat a moment after the offer closes; let it land before #1107 listens.
+  await sleep(2000);
   const dakingId = vs[tabs.indexOf(A)].you;
   await Promise.all(tabs.map((t) => t.page.evaluate((id) => {
     const store = window.__emberisle;

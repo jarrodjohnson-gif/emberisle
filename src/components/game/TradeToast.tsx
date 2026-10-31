@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import { bagText } from "@/lib/game/trade";
 import { useGame } from "@/lib/game/store";
-import { RESOURCES } from "@/lib/game/types";
+import { RESOURCES, RESOURCE_LABEL } from "@/lib/game/types";
 import type { Bag } from "@/lib/net/table";
 import "./trade-panel.css";
 
@@ -48,6 +48,7 @@ export function TradeToast() {
   const [leaving, setLeaving] = useState(false);
   const fadeMs = calm() ? 0 : DISMISS_MS;
   const lineId = useId();
+  const whyId = useId();
   const dock = useRef<HTMLElement>(null);
   const hadOffer = useRef(false);
   // The last offer body, so the dismiss fade shows the card going away instead of an empty one.
@@ -103,6 +104,7 @@ export function TradeToast() {
   let body;
   let answering = false;
   let compact = false;
+  let why: string | null = null;
   if (!offer) {
     if (!leaving || outcome) {
       const taker = players?.find((p) => p.id === takerId);
@@ -120,6 +122,8 @@ export function TradeToast() {
     const short = me ? RESOURCES.filter((r) => (offer.want[r] ?? 0) > me.resources[r]) : [];
     answering = !asker && !spectator;
     compact = answering && short.length > 0;
+    // #537: the compact signal drops the visible "Need" line, so keyboard and screen-reader users still get the reason.
+    why = compact && me ? `You need ${short.map((r) => `${offer.want[r]! - me.resources[r]} more ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ")} to accept` : null;
     const fromColor = players?.find((p) => p.id === offer.from)?.color ?? "transparent";
     const line = compact
       ? `${offer.fromName} is looking for ${bagText(offer.want)}`
@@ -146,8 +150,9 @@ export function TradeToast() {
       body = (
         <>
           {tick}
+          <p id={whyId} className="sr-only" data-testid="trade-why">{why}</p>
           <div className="trade-answers flex items-center gap-1">
-            <Button variant="secondary" className="trade-no h-11 min-w-16 flex-1" data-testid="trade-dismiss" onClick={() => answerTrade(false)}>
+            <Button variant="secondary" className="trade-no h-11 min-w-16 flex-1" data-testid="trade-dismiss" aria-describedby={whyId} onClick={() => answerTrade(false)}>
               Dismiss
             </Button>
           </div>
@@ -214,6 +219,7 @@ export function TradeToast() {
       role="region"
       aria-label="Trade offer"
       aria-labelledby={offer ? lineId : undefined}
+      aria-describedby={why ? whyId : undefined}
       onKeyDown={(e) => { if (answering && e.key === "Escape") answerTrade(false); }}
     >
       {body ?? lastBody.current}

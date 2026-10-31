@@ -281,8 +281,12 @@ try {
   assert.equal(await page.getByTestId("trade-demand").count(), 1);
   assert.equal(await page.getByRole("button", { name: "Yes", exact: true }).count(), 0);
   assert((await settled()).offer, "compact demand must keep the offer open without Accept");
+  // #537: the visible "Need" line is gone, so the reason is kept for keyboard and screen-reader users.
+  assert.equal(await page.getByTestId("trade-why").textContent(), "You need 1 more stone to accept");
+  assert.equal(await toast.getByTestId("trade-dismiss").getAttribute("aria-describedby"), await page.getByTestId("trade-why").getAttribute("id"), "Dismiss must be described by the reason");
   await change('g.players[1].resources.ore = 2');
   await page.waitForFunction(() => document.querySelector('[data-testid="trade-toast"]')?.getAttribute("data-compact") !== "true");
+  assert.equal(await page.getByTestId("trade-why").count(), 0, "a seat that can pay has no unaffordable reason");
   await toast.getByRole("button", { name: "Yes", exact: true }).click();
   await page.getByTestId("trade-outcome").waitFor();
   assert.equal(await page.getByTestId("trade-outcome").getAttribute("data-taker"), "p1");
