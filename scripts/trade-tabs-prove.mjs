@@ -50,7 +50,7 @@ const sent = (page) => page.evaluate(() => window.__tradeTabsSent);
 
 async function load(page, game = base, mode = "ai") {
   await page.evaluate(() => window.__emberisle.getState().goTitle());
-  await page.getByRole("button", { name: "Play", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Play against bots", exact: true }).waitFor();
   await page.evaluate(([game, mode]) => {
     const api = window.__emberisle;
     api.getState().startAi();
