@@ -532,7 +532,7 @@ async function practice(view) {
     const stone = trade.find((l) => l.r === "ore");
     const wheat = trade.find((l) => l.r === "grain");
     check(traded && trade.length === 2 && stone?.text === `−${gave}` && stone.color === INK && stone.bg === PAPER && stone.lost && !stone.lit, `${tag}: a bank trade shows −${gave} on Stone as a light pill in dark ink, the card ringed red`, trade);
-    check(wheat?.text === "+1" && wheat.bg === PAINT.grain[1] && wheat.lit === PAINT.grain[0], `${tag}: and +1 on the filled Wheat card`, wheat);
+    check(wheat?.text === "+1" && wheat.bg === PAPER && wheat.lit === PAINT.grain[0], `${tag}: and +1 on the filled Wheat card`, wheat);
     check(stone?.move?.some((k) => /translateY\(2px\)/.test(k ?? "")) && wheat?.move?.some((k) => /translateY\(-/.test(k ?? "")), `${tag}: the given card dips and the received card lifts`, { stone: stone?.move, wheat: wheat?.move });
     for (const c of shades) check(c.min >= 4.5, `${tag}: ${c.color === RED ? "loss" : "gain"} tab text ≥ 4.5:1 against the pixels behind it`, { color: c.color, min: c.min.toFixed(2), pixels: c.pixels });
     await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
