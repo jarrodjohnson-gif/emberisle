@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { type Terrain } from "@/lib/game/types";
 import { setBoardDetail, tileSteps, type Tile } from "@/lib/scene/hex-jelly";
-import { BLOCK_H } from "@/lib/scene/jelly-dims";
+import { BLOCK_H, ROBBER_HEX_DIM, robberHexDim, setRobberHexDim as setDim } from "@/lib/scene/jelly-dims";
 
 // The jelly board (#599, docs/design/hex-jelly-prompt.md): the six Hex Jelly scenes on the game board.
 //
@@ -22,8 +22,13 @@ const RINGS = 12;
 const SAMPLES = [0.37, 1.91, 3.53, 5.2];
 const ROLL_S = 2.4;
 const TAP_S = 0.9;
-// #826: the owner chose plain black for a blocked hex (skip waste in robber()).
-const DULL = new THREE.Color(0, 0, 0);
+// #826: blocked-hex dimming amount (0.5 = 50% blend to black / half as dark).
+export { ROBBER_HEX_DIM, robberHexDim };
+const DULL = new THREE.Color(1 - ROBBER_HEX_DIM, 1 - ROBBER_HEX_DIM, 1 - ROBBER_HEX_DIM);
+export function setRobberHexDim(dim: number) {
+  setDim(dim);
+  DULL.setRGB(1 - dim, 1 - dim, 1 - dim);
+}
 
 export type JellyHex = { id: string; terrain: Terrain; x: number; z: number; y: number };
 export type JellyStats = { lite: boolean; drawCalls: number; triangles: number; kinds: number; batches: number; bakes: number; sprites: number };
@@ -289,9 +294,7 @@ function hexPatch(m: THREE.Material, u: HexU) {
         vHexTint = uHexT[ int( aHex + 0.5 ) ];`,
       );
     sh.fragmentShader = "varying vec3 vHexTint;\n" + sh.fragmentShader
-      .replace("#include <color_fragment>", "#include <color_fragment>\n\tdiffuseColor.rgb *= vHexTint;")
-      // Plain black also removes the lit/specular/emissive remainder; unblocked hexes are unchanged.
-      .replace("#include <fog_fragment>", "#include <fog_fragment>\ngl_FragColor.rgb *= min(1.0, max(vHexTint.r, max(vHexTint.g, vHexTint.b)));");
+      .replace("#include <color_fragment>", "#include <color_fragment>\n\tdiffuseColor.rgb *= vHexTint;");
   };
   m.customProgramCacheKey = () => `${key}|hex`;
 }
@@ -782,6 +785,11 @@ export class JellyBoard {
   // The wayfarer stands on this hex (or none): it dulls; waste stays plain (#826).
   robber(id: string | null) {
     for (const { k, h } of this.byHex.values()) h.dullTo = id && h.id === id && k.kind !== "waste" ? 1 : 0;
+  }
+
+  setRobberHexDim(dim: number) {
+    setRobberHexDim(dim);
+    this.update(this.t, true, true);
   }
 
   // Proofs: target / settled dull (0..1).
