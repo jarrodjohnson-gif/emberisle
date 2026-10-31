@@ -1,7 +1,8 @@
 # Lobby code fitting: independent checkpoint
 
 Builder: Codex-p. Model: GPT-6.1 Sol. Parent: Codex-p.
-Tested source: `5ef0005a3af0599a3d426dee7dd040baaf49ba39`.
+Product/full-local-proof checkpoint: `5ef0005a3af0599a3d426dee7dd040baaf49ba39`.
+Diagnostic-only proof source: `5a39dcbfa668dc08da777c173d14a2ec28023cc0`.
 Before runtime: normal main merge `11dc0fd4484ecd1faa9f36ff80f1c9fe9f18ad96`.
 
 **Owner option A accepted, 2026-10-31 00:44 UTC.**
@@ -12,6 +13,39 @@ The 16-character display is an unsupported diagnostic that may truncate.
 No4–6px type or wider lobby layout is approved.
 The recorded source, runs and pictures already follow this answer.
 This evidence-only update adds no browser run or runtime change.
+
+## Hosted failure: unresolved
+
+CI41151344387, source3ca207a, presentation job124388589073 fails the added readability assertion.
+CI41152094265, source99a1d91, job124391367418 repeats the same failure.
+Both report390×844 WWWW Copy→Copied: code font must remain at least as large as control labels.
+Full-text containment passed immediately before that check.
+Both original logs lack the failed numerical measurements.
+Local Noto Sans passes do not establish hosted readability.
+No runtime fix or manual CI retry is claimed.
+
+The new proof records coherent font, tracking, viewport, text and button geometry only when readability fails.
+It measures the text width at the control-label font size.
+A bounded1000ms CDP observer also records actual resolved platform fonts.
+Fulfilled, rejected and timed-out observer controls rethrow the exact original assertion object.
+All44 assertion conditions and messages remain unchanged.
+Syntax, registration161 and committed loosen1/none pass.
+No full six-viewport proof rerun is claimed for this diagnostic-only step.
+
+The bounded local real-host font matrix uses explicit controlled family overrides.
+Native Noto Sans passes at21.9355px; controlled DejaVu Sans reproduces14.4906px versus15px labels.
+Its code box is67.92px wide; the text needs70.19px at15px.
+Controlled DejaVu Serif also fails; Arial, Liberation Sans and monospace pass.
+This exercises the same failed condition and diagnostics, but does not identify the actual CI font yet.
+The exact observer wrapper's three error-identity controls use the committed diagnostic source.
+
+The second run also fails board-look-prove in presentation-3, job124391367295.
+Its crystal shallow-band assertion is retained in a separate raw log.
+That cause remains unproved; no scene fix or source change is included here.
+
+Raw logs, local controlled results and diagnostic sources are under `ci-readability/`.
+An initial optional TypeScript AST audit could not run because the installed shim has no createPrinter API.
+The retained balanced-call comparison and independent diff inspection verify all44 unchanged assertion calls instead.
 
 ## Contract and result
 
