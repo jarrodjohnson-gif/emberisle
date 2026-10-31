@@ -612,7 +612,7 @@ try {
         cues: window.__cues.slice(), fill: lc.backgroundColor, opacity: lc.opacity,
         count: getComputedStyle(lit.querySelector(".goods-count")).color, litText: lit.textContent,
         symbol: getComputedStyle(lit.querySelector("svg")).color,
-        tab: { font: [getComputedStyle(tab).fontSize, getComputedStyle(tab).fontWeight], h: t.height, text: tab.textContent, bg: getComputedStyle(tab).backgroundColor, color: getComputedStyle(tab).color, off: t.left + t.width / 2 - (c.left + c.width / 2), above: c.top - t.top, into: t.bottom - c.top, opacity: getComputedStyle(tab).opacity },
+        tab: { font: [getComputedStyle(tab).fontSize, getComputedStyle(tab).fontWeight], h: t.height, text: tab.textContent, bg: getComputedStyle(tab).backgroundColor, color: getComputedStyle(tab).color, edge: getComputedStyle(tab).boxShadow, off: t.left + t.width / 2 - (c.left + c.width / 2), above: c.top - t.top, into: t.bottom - c.top, opacity: getComputedStyle(tab).opacity },
         tabOnTop: hit === tab || tab.contains(hit), lift: c.top - card.parentElement.getBoundingClientRect().top,
         hit: hit && `${hit.tagName}.${String(hit.className).slice(0, 60)} ${hit.dataset?.testid ?? ""}`,
         tabBox: [t.top, t.bottom, t.left, t.right], stackTop: card.closest("[data-hud-stack]")?.getBoundingClientRect().top,
