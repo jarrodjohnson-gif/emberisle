@@ -632,6 +632,7 @@ try {
     assert.deepEqual(parse(gain.tab.bg), rgb("#fff9f0"), `${v.tag}: gain tab is the light paper pill`);
     assert.deepEqual(parse(gain.tab.color), rgb("#263d3c"), `${v.tag}: gain tab text is the dark ink`);
     assert.ok(ratio(parse(gain.tab.color), parse(gain.tab.bg)) >= 4.5, `${v.tag}: gain tab ≥ 4.5:1`);
+    assert.match(gain.tab.edge, /rgb\(23, 61, 53\) 0px 0px 0px 1.5px inset/, `${v.tag}: gain tab has a 1.5 px outline in the good's side colour`);
     assert.ok(Math.abs(gain.tab.off) <= 0.5, `${v.tag}: the tab is centred on its card (off by ${gain.tab.off.toFixed(3)} px)`);
     assert.deepEqual(gain.tab.font, TAB[v.tag].font, `${v.tag}: the +N tab is ${TAB[v.tag].font[0]} bold`);
     assert.ok(Math.abs(gain.tab.h - TAB[v.tag].h) <= 0.5, `${v.tag}: the +N tab is ${TAB[v.tag].h} px tall (${gain.tab.h})`);
