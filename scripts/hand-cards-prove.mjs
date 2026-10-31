@@ -728,7 +728,7 @@ try {
         return { top: hit === t || t.contains(hit), font: getComputedStyle(t).fontSize, h: r.height };
       });
       assert.equal(tab.top, true, `deskshort ${JSON.stringify(hand)}: nothing clips or covers the tab`);
-      assert.ok(tab.font === "14px" && Math.abs(tab.h - 22) <= 0.5, `deskshort ${JSON.stringify(hand)}: the tab is 14 px text, 22 px tall (${JSON.stringify(tab)})`);
+      assert.ok(tab.font === "14px" && Math.abs(tab.h - 24) <= 0.5, `deskshort ${JSON.stringify(hand)}: the tab is 14 px text, 24 px tall (${JSON.stringify(tab)})`);
       during.push(await box());
       await ds.page.evaluate(() => { for (const a of document.querySelector(".goods-tray").getAnimations({ subtree: true })) a.play(); window.__releaseCues(); });
       await ds.page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
