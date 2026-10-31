@@ -383,7 +383,7 @@ async function tabs(page, tag, what, lay) {
 
 // WCAG contrast of the element's text colour against every pixel behind its text: the element is frozen at full opacity,
 // screenshotted with its text and icon transparent (the glass and the board under it stay), and the lowest ratio counts.
-async function contrast(page, testid, index = 0) {
+async function contrast(page, testid, index = 0, band = 0.65) {
   const loc = page.locator(`[data-testid="${testid}"]`).nth(index);
   const color = await loc.evaluate((el) => {
     for (const a of el.getAnimations()) {
