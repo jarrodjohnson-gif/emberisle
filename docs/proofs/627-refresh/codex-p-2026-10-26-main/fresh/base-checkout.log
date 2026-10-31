@@ -1,0 +1,2 @@
+$ git checkout --detach 074faf0a2405484369b511655a78d768a964d28d
+HEAD is now at 074faf0 Turn the nightly soak off (redo of #1033) (#1127)

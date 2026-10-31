@@ -1,0 +1,11 @@
+
+> hole-prove
+> node scripts/hole-prove.mjs
+
+ok   styles.css breaks the action row at 400 px, as the fit declares
+page.evaluate: Execution context was destroyed, most likely because of a navigation.
+    at frames (/workspace/emberisle/work/p-refresh905/scripts/hole-prove.mjs:20:34)
+    at /workspace/emberisle/work/p-refresh905/scripts/hole-prove.mjs:63:13 {
+  log: [],
+  name: 'Error'
+}

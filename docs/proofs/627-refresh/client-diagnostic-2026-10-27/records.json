@@ -1,0 +1,68 @@
+[
+  {
+    "source": "/workspace/905-observer-resume/candidate-after.json",
+    "file": "raw/candidate-after.json.gz",
+    "bytes": 26369,
+    "sha256": "96b7e434f447bdd45809e3e0d673693b2740279e8030b0c985b59840b19cf5fd"
+  },
+  {
+    "source": "/workspace/905-observer-resume/candidate-before.json",
+    "file": "raw/candidate-before.json.gz",
+    "bytes": 26369,
+    "sha256": "96b7e434f447bdd45809e3e0d673693b2740279e8030b0c985b59840b19cf5fd"
+  },
+  {
+    "source": "/workspace/905-observer-resume/candidate-run.log",
+    "file": "raw/candidate-run.log.gz",
+    "bytes": 6604,
+    "sha256": "0c624b5ed76e5f4d65dccd0d09f90d0d41a6448f11c7d4f28d4febef6482cf89"
+  },
+  {
+    "source": "/workspace/905-observer-resume/candidate-trace.jsonl",
+    "file": "raw/candidate-trace.jsonl.gz",
+    "bytes": 377107,
+    "sha256": "2dddf6903f49a9deba47b6d505687ec12fd7a3859d8b0e272de9e6c63592f108"
+  },
+  {
+    "source": "/workspace/905-observer-resume/ci-lobby-failure.log",
+    "file": "raw/ci-lobby-failure.log.gz",
+    "bytes": 3579,
+    "sha256": "5f6162c0113e1d7dbf3f09a179662979004d2ebf34ac0526d079763eab9701be"
+  },
+  {
+    "source": "/workspace/905-observer-resume/client-observer.mjs",
+    "file": "raw/client-observer.mjs.gz",
+    "bytes": 7381,
+    "sha256": "b811382adf704ebd011c25d0fd87061c2bc8fa2187a06dd73618bf03c48ec023"
+  },
+  {
+    "source": "/workspace/905-observer-resume/main-after.json",
+    "file": "raw/main-after.json.gz",
+    "bytes": 26265,
+    "sha256": "fde341044c45b2e6de9d1ecf135522b1e85af2467d9afa5bbbf2c981c6bd8e9f"
+  },
+  {
+    "source": "/workspace/905-observer-resume/main-before.json",
+    "file": "raw/main-before.json.gz",
+    "bytes": 26265,
+    "sha256": "fde341044c45b2e6de9d1ecf135522b1e85af2467d9afa5bbbf2c981c6bd8e9f"
+  },
+  {
+    "source": "/workspace/905-observer-resume/main-run.log",
+    "file": "raw/main-run.log.gz",
+    "bytes": 6861,
+    "sha256": "fd715104b6ec229e301dc7145b9c9f2a29cb0eb8642732ecd740d7ffe5887d2f"
+  },
+  {
+    "source": "/workspace/905-observer-resume/main-trace.jsonl",
+    "file": "raw/main-trace.jsonl.gz",
+    "bytes": 465251,
+    "sha256": "78b1ed54eba0e1d83e493bad00d47719865de507224b82ea3a2a9ae8516ca60d"
+  },
+  {
+    "source": "/workspace/905-observer-resume/results.json",
+    "file": "raw/results.json.gz",
+    "bytes": 426,
+    "sha256": "d321feaa6891a94d92b9a53bf201dc635c12f5ae33876ed913dfbdacb1b841fe"
+  }
+]

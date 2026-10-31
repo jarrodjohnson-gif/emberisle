@@ -1,0 +1,220 @@
+{
+  "clone": {
+    "exit": 0,
+    "seconds": 7.57,
+    "command": [
+      "git",
+      "clone",
+      "--single-branch",
+      "--branch",
+      "gemini/627-board-fit-keyboard",
+      "https://github.com/jarrodjohnson-gif/emberisle.git",
+      "/workspace/emberisle/work/p-review-verify905"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "install": {
+    "exit": 0,
+    "seconds": 3.73,
+    "command": [
+      "npm",
+      "ci"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "server-install": {
+    "exit": 0,
+    "seconds": 0.24,
+    "command": [
+      "npm",
+      "--prefix",
+      "server",
+      "ci"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "environment": {
+    "exit": 0,
+    "seconds": 0.12,
+    "command": [
+      "bash",
+      "-c",
+      "node --version; /workspace/emberisle/work/browsers/chromium-1243/chrome-linux64/chrome --version; git rev-parse HEAD"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "keyboard": {
+    "exit": 0,
+    "seconds": 21.32,
+    "command": [
+      "npm",
+      "run",
+      "keyboard-fit-prove"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "types": {
+    "exit": 0,
+    "seconds": 1.52,
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "registered": {
+    "exit": 0,
+    "seconds": 0.14,
+    "command": [
+      "npm",
+      "run",
+      "registered-prove"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "loosen-initial-missing-base": {
+    "exit": 1,
+    "seconds": 0.14,
+    "command": [
+      "npm",
+      "run",
+      "loosen-prove",
+      "--",
+      "--base",
+      "b90290abf4a3cd8c63bddf1e7f939e75b71c2418"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "fetch-main": {
+    "exit": 0,
+    "seconds": 0.96,
+    "command": [
+      "git",
+      "fetch",
+      "origin",
+      "main"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "loosen-wrong-nonancestor-base": {
+    "exit": 1,
+    "seconds": 0.2,
+    "command": [
+      "npm",
+      "run",
+      "loosen-prove",
+      "--",
+      "--base",
+      "b90290abf4a3cd8c63bddf1e7f939e75b71c2418"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "loosen": {
+    "exit": 0,
+    "seconds": 0.18,
+    "command": [
+      "npm",
+      "run",
+      "loosen-prove",
+      "--",
+      "--base",
+      "3db641d6744617ebc55a3dbb6add1ce34855a72b"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "build": {
+    "exit": 0,
+    "seconds": 1.63,
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "size": {
+    "exit": 0,
+    "seconds": 0.1,
+    "command": [
+      "node",
+      "scripts/size-prove.mjs",
+      "--base",
+      "/workspace/emberisle/work/p-review-base905"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "pan": {
+    "exit": 0,
+    "seconds": 105.64,
+    "command": [
+      "npm",
+      "run",
+      "pan-prove"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "hole": {
+    "exit": 0,
+    "seconds": 196.31,
+    "command": [
+      "npm",
+      "run",
+      "hole-prove"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "rotate": {
+    "exit": 0,
+    "seconds": 107.83,
+    "command": [
+      "npm",
+      "run",
+      "rotate-prove"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "overlays": {
+    "exit": 0,
+    "seconds": 158.46,
+    "command": [
+      "npm",
+      "run",
+      "rotate-overlays-prove"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "safe-area": {
+    "exit": 0,
+    "seconds": 246.04,
+    "command": [
+      "npm",
+      "run",
+      "hud-safe-area-prove"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "client": {
+    "exit": 0,
+    "seconds": 71.43,
+    "command": [
+      "npm",
+      "run",
+      "client-prove"
+    ],
+    "tested_commit": "d332c2441b5801ae55cc5e9eeedcecade16523f9"
+  },
+  "keyboard-final": {
+    "exit": 0,
+    "tested_commit": "18c88aa5c94b33b48cb27ed5f30045a58e15bdb1",
+    "command": [
+      "npm",
+      "run",
+      "keyboard-fit-prove"
+    ],
+    "environment": {
+      "PLAYWRIGHT_BROWSERS_PATH": "/workspace/emberisle/work/browsers"
+    },
+    "note": "57 checks; frozen independent clone updated to proof-only commit"
+  }
+}

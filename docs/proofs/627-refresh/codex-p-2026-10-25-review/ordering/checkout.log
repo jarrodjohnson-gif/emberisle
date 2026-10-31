@@ -1,0 +1,3 @@
+$ git checkout --detach c89bfc1
+Previous HEAD position was 111cdff docs: record fresh keyboard review-fix validation
+HEAD is now at c89bfc1 test: prepare cropped home taps before blurring input
