@@ -59,3 +59,15 @@ Fresh independent Claude review and owner picture acceptance remain mandatory.
 
 Code-head CI41232056385 was running with no failed job observed when evidence was prepared; TradeUI41232056422 passed.
 Fresh exact evidence-head CI remains required.
+
+## Bounded navigation observation
+
+The unchanged hole proof also ran once with an external Playwright observer:
+`flock /tmp/emberisle-team-browser.lock node --import /workspace/work/531-context/hole-navigation-observer.mjs scripts/hole-prove.mjs`.
+That instrumented observation passed500 pairs. It observed normal Vite connection and same-URL navigation, but no full-reload/update/error/504.
+Same-URL frame navigation may represent history replacement; it does not prove a document reload.
+No stale dependency or other navigation cause is established. The two uninstrumented candidate failures remain unresolved.
+The log redacts only the ephemeral local Vite WebSocket token; observer source is included as a text artifact.
+The observer changes no application code, proof assertions or deadlines.
+Exact evidence-head CI41232882565 at fe2cc0f completed success before this diagnostic archive update.
+These passing observations do not erase the retained failures or establish their cause.
