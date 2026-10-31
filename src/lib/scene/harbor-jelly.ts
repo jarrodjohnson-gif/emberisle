@@ -6,6 +6,7 @@
 // swell (`floaters`, placed by their userData.rest) and paints a claimed harbor's sail.
 import * as THREE from "three";
 import type { HarborKind } from "@/lib/game/types";
+import { BLOCK_H, TILE_Y } from "@/lib/scene/jelly-dims";
 import { PAINT } from "@/lib/scene/palette";
 import { rng32, setBoardDetail, shoreKit } from "@/lib/scene/hex-jelly";
 
@@ -840,6 +841,20 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       count: goodsParts.reduce((count, part) => count + part.attributes.position.count, 0),
       min: goodsBounds.min.toArray(), max: goodsBounds.max.toArray(), frame: frame.toArray(),
       deck: { width: W, from: v0, to: v1 }, scale: S });
+
+    const cornerY = TILE_Y + BLOCK_H;
+    const ramp = cornerY - DECK;
+    for (const corner of d.vids.map((id) => coast.find((c) => c.id === id)!)) {
+      const cl = new THREE.Vector3(corner.x, 0, corner.z).applyMatrix4(inverse);
+      const x0 = Math.sign(cl.x) * (W / 2 + 0.02), z0 = v0 - 0.01;
+      const dx = cl.x - x0, dz = cl.z - z0;
+      // One continuous walk from the pier deck's edge to the corner, rising from DECK to the hex surface: yaw to the corner, then
+      // pitch up along its own length.
+      const run = Math.hypot(dx, dz), len = Math.hypot(run, ramp);
+      const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.atan2(dx, dz), 0)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.atan2(ramp, run), 0, 0)));
+      const e = new THREE.Euler().setFromQuaternion(q);
+      P(K.part(box, "#a46e42", [x0 + dx / 2, DECK + ramp / 2, z0 + dz / 2], [e.x, e.y, e.z], [0.07, 0.01, len]));
+    }
 
     // The ship, moored alongside the T-head's ship side, bow to the shore.
     const sv = tv - 0.04;

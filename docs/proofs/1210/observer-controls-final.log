@@ -1,0 +1,7 @@
+$ node /tmp/sol-audio/observer-controls.mjs
+PASS fulfilled/rejected/timedout snapshots; identical original error; bounded elapsed ms 1002.1619649999999
+PASS synchronous observer failure preserves original identity
+PASS diagnostic logger failure preserves original identity
+PASS empty/malformed URL observation preserves native calls, exact promises and original native exception
+
+EXIT 0

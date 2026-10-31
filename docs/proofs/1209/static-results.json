@@ -1,0 +1,22 @@
+[
+  {
+    "name": "typecheck",
+    "exit": 0
+  },
+  {
+    "name": "registered",
+    "exit": 0
+  },
+  {
+    "name": "loosen",
+    "exit": 0
+  },
+  {
+    "name": "build",
+    "exit": 0
+  },
+  {
+    "name": "scope",
+    "exit": 0
+  }
+]
