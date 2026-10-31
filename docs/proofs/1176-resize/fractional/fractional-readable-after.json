@@ -1,0 +1,23 @@
+{
+  "browser": "153.0.8010.12",
+  "source": "/workspace/emberisle/work/p1181-sol; current codeFits extracted verbatim; controlled font installed before ZZZZ→WWWW then realCopy→Copied state transition",
+  "results": [
+    {
+      "name": "DejaVu Sans",
+      "family": "\"DejaVu Sans\", sans-serif",
+      "error": {
+        "name": "AssertionError",
+        "message": "390x844 DejaVu Sans WWWW Copy → Copied: code remains at least as large as its control labels"
+      },
+      "fonts": [
+        {
+          "familyName": "DejaVu Sans",
+          "postScriptName": "DejaVuSans-Bold",
+          "isCustomFont": false,
+          "glyphCount": 4
+        }
+      ],
+      "measurement": null
+    }
+  ]
+}
