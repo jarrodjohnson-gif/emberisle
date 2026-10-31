@@ -726,9 +726,10 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     P(K.part(K.cyl(1, 1, 8), "#3a3430", [lamp[0], DECK + 0.07, lamp[2]], [0, 0, 0], [0.006, 0.14, 0.006]));
     P(K.part(K.cyl(0.6, 1, 8), "#2a2622", [lamp[0], DECK + 0.158, lamp[2]], [0, 0, 0], [0.016, 0.012, 0.016]));
     add(glowParts, K.part(K.sphere(8), "#ffe1a0", [lamp[0], DECK + 0.142, lamp[2]], [0, 0, 0], [0.011, 0.014, 0.011]));
-    P(K.part(K.cyl(1, 1, 8), "#6a4a30", [-shipSide * 0.08, DECK + lift + 0.04, v1 - 0.12], [0, 0, 0], [0.005, 0.08, 0.005]));
-    P(K.part(new THREE.TorusGeometry(1, 0.32, 6, 14), "#f07a3a", [-shipSide * 0.08 - 0.008 * -shipSide, DECK + lift + 0.06, v1 - 0.12], [0, Math.PI / 2, 0], [0.022, 0.022, 0.022]));
-    for (let k = 0; k < 4; k++) P(K.part(K.sphere(6), "#f4efe4", [-shipSide * 0.08 + 0.002 * shipSide, DECK + lift + 0.06 + Math.sin((k * Math.PI) / 2 + 0.78) * 0.022, v1 - 0.12 + Math.cos((k * Math.PI) / 2 + 0.78) * 0.022], [0, 0, 0], [0.006, 0.006, 0.006]));
+    const bz = v1 - 0.12, buoy: THREE.BufferGeometry[] = [], PB = (g: THREE.BufferGeometry) => { buoy.push(g); P(g); };
+    PB(K.part(K.cyl(1, 1, 8), "#6a4a30", [-shipSide * 0.08, DECK + lift + 0.04, bz], [0, 0, 0], [0.005, 0.08, 0.005]));
+    PB(K.part(new THREE.TorusGeometry(1, 0.32, 6, 14), "#f07a3a", [-shipSide * 0.08 - 0.008 * -shipSide, DECK + lift + 0.06, bz], [0, Math.PI / 2, 0], [0.022, 0.022, 0.022]));
+    for (let k = 0; k < 4; k++) PB(K.part(K.sphere(6), "#f4efe4", [-shipSide * 0.08 + 0.002 * shipSide, DECK + lift + 0.06 + Math.sin((k * Math.PI) / 2 + 0.78) * 0.022, bz + Math.cos((k * Math.PI) / 2 + 0.78) * 0.022], [0, 0, 0], [0.006, 0.006, 0.006]));
     for (const v of [tv - 0.03, v1 - 0.1, v1 - 0.2]) P(K.part(new THREE.TorusGeometry(1, 0.42, 6, 12), "#2a2828", [shipSide * (W / 2 + 0.012), DECK - 0.02, v], [0, Math.PI / 2, 0], [0.016, 0.016, 0.016]));
 
     // The dockhouse at the pier's root, on the side away from the ship, on low piles: plank walls, a pitched roof, a door, a
@@ -810,19 +811,24 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       G(K.part(K.sphere(10), "#e8d2a0", [0, gy + 0.016 * S, gv + 0.49 * stride], [0, 0, 0], [0.02 * S, 0.016 * S, 0.018 * S]));
       G(K.part(box, "#6a7a5a", [0, gy + 0.002 * S, gv + 0.45 * stride], [0, Math.PI / 2, 0], [0.08 * S, 0.004 * S, 0.05 * S]));
     }
-    const packingBounds = new THREE.Box3();
-    const packingInverse = frame.clone().invert();
-    for (const geometry of goodsParts) {
-      const local = geometry.clone().applyMatrix4(packingInverse);
-      local.computeBoundingBox();
-      packingBounds.union(local.boundingBox!);
-      local.dispose();
-    }
+    // Bounds of built geometry in the pier's own frame (x across, y up, z along).
+    const inverse = frame.clone().invert();
+    const boundsOf = (parts: THREE.BufferGeometry[]) => {
+      const box = new THREE.Box3();
+      for (const geometry of parts) {
+        const local = geometry.clone().applyMatrix4(inverse);
+        local.computeBoundingBox();
+        box.union(local.boundingBox!);
+        local.dispose();
+      }
+      return box;
+    };
+    const packingBounds = boundsOf(goodsParts);
     const packingLength = packingBounds.max.z - packingBounds.min.z;
     if (packingLength > len) {
       const center = (packingBounds.min.z + packingBounds.max.z) / 2;
       const fit = new THREE.Matrix4().makeTranslation(0, 0, center).multiply(new THREE.Matrix4().makeScale(1, 1, len / packingLength)).multiply(new THREE.Matrix4().makeTranslation(0, 0, -center));
-      const worldFit = frame.clone().multiply(fit).multiply(packingInverse);
+      const worldFit = frame.clone().multiply(fit).multiply(inverse);
       for (const geometry of goodsParts) geometry.applyMatrix4(worldFit);
       packingBounds.min.z = center - len / 2;
       packingBounds.max.z = center + len / 2;
@@ -833,26 +839,16 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       for (const geometry of goodsParts) geometry.translate(delta.x, delta.y, delta.z);
     }
     // Semantic vertex ranges keep these merged goods inspectable without extra meshes or draw calls.
-    const goodsBounds = new THREE.Box3();
-    const inverse = frame.clone().invert();
-    for (const geometry of goodsParts) {
-      const local = geometry.clone().applyMatrix4(inverse);
-      local.computeBoundingBox();
-      goodsBounds.union(local.boundingBox!);
-      local.dispose();
-    }
-    // The skid is sized from the packed goods (after the shift above) so nothing overhangs it, and it also carries the lifebuoy,
-    // which is raised by the same lift so the skid cannot hide it.
-    let skid: { from: number; to: number; halfWidth: number; top: number } | null = null;
+    const goodsBounds = boundsOf(goodsParts);
+    // The skid is sized from the packed goods (after the shift above) so nothing overhangs it, and it carries the lifebuoy,
+    // which is raised by the same lift. userData holds the bounds of the built boxes, not copies of the numbers.
+    const skid: THREE.BufferGeometry[] = [];
     if (lift) {
-      const buoyZ = v1 - 0.12;
-      const from = Math.max(v0, Math.min(goodsBounds.min.z, buoyZ - 0.03));
-      const to = Math.min(v1, Math.max(goodsBounds.max.z, buoyZ + 0.03));
-      const halfWidth = Math.min(W / 2, Math.max(0.09, goodsBounds.max.x + 0.01, -goodsBounds.min.x + 0.01));
-      P(K.part(box, "#8a6040", [0, DECK + lift / 2, (from + to) / 2], [0, 0, 0], [halfWidth * 2, lift, to - from]));
-      skid = { from, to, halfWidth, top: DECK + lift };
+      const from = Math.max(v0, Math.min(goodsBounds.min.z, bz - 0.03)), to = Math.min(v1, Math.max(goodsBounds.max.z, bz + 0.03));
+      skid.push(K.part(box, "#8a6040", [0, DECK + lift / 2, (from + to) / 2], [0, 0, 0], [W, lift, to - from]));
+      P(skid[0]!);
     }
-    (group.userData.goodsPiles ??= []).push({ kind: good, start: goodsStart, skid, buoy: { z: v1 - 0.12, x: shipSide * -0.08, baseY: DECK + lift },
+    (group.userData.goodsPiles ??= []).push({ kind: good, start: goodsStart, skid: lift ? boundsOf(skid) : null, buoy: boundsOf(buoy),
       count: goodsParts.reduce((count, part) => count + part.attributes.position.count, 0),
       min: goodsBounds.min.toArray(), max: goodsBounds.max.toArray(), frame: frame.toArray(),
       deck: { width: W, from: v0, to: v1 }, scale: S });

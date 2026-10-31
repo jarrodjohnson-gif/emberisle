@@ -37,14 +37,15 @@ try {
       const shore = buildShore(isle.coast, docks, hashStr(`${hexes}|${ids}|shore`));
       for (const pile of shore.group.userData.goodsPiles) {
         kinds.add(pile.kind); count++;
-        // #1158: a lifted pier's skid must cover the packed goods end to end (no overhang) and the lifebuoy must stand on top of it
-        // (not inside it); an unlifted pier has no skid and the lifebuoy stays on the deck.
-        const e = 0.001, sk = pile.skid;
+        // #1158: userData.skid and userData.buoy are the bounds of the built boxes (pier frame), so moving a shape moves what is
+        // checked. A lifted pier's skid must cover the packed goods end to end and carry them (no overhang, sunk at most 0.02 into it, none floating above it), and the lifebuoy must
+        // stand on top of it (not inside it); an unlifted pier has no skid and the lifebuoy stays on the deck.
+        const e = 0.001, sk = pile.skid, bu = pile.buoy;
         if (sk) {
           lifted++;
-          if (!(pile.min[2] >= sk.from - e && pile.max[2] <= sk.to + e && pile.min[0] >= -sk.halfWidth - e && pile.max[0] <= sk.halfWidth + e)) overhang.push({ mode, seed, kind: pile.kind, min: pile.min, max: pile.max, skid: sk });
-          if (!(pile.buoy.baseY >= sk.top - 1e-6 && pile.buoy.z >= sk.from - e && pile.buoy.z <= sk.to + e && Math.abs(pile.buoy.x) <= sk.halfWidth)) buried.push({ mode, seed, kind: pile.kind, buoy: pile.buoy, skid: sk });
-        } else if (Math.abs(pile.buoy.baseY - 0.1) > 1e-6) buried.push({ mode, seed, kind: pile.kind, buoy: pile.buoy, skid: null });
+          if (!(pile.min[2] >= sk.min.z - e && pile.max[2] <= sk.max.z + e && pile.min[0] >= sk.min.x - e && pile.max[0] <= sk.max.x + e && pile.min[1] >= sk.max.y - 0.02 && pile.min[1] <= sk.max.y + e)) overhang.push({ mode, seed, kind: pile.kind, min: pile.min, max: pile.max, skid: [sk.min, sk.max] });
+          if (!(bu.min.y >= sk.max.y - e && bu.min.z >= sk.min.z - e && bu.max.z <= sk.max.z + e && bu.min.x >= sk.min.x - e && bu.max.x <= sk.max.x + e)) buried.push({ mode, seed, kind: pile.kind, buoy: [bu.min, bu.max], skid: [sk.min, sk.max] });
+        } else if (Math.abs(bu.min.y - 0.1) > e) buried.push({ mode, seed, kind: pile.kind, buoy: [bu.min, bu.max], skid: null });
         if (!(pile.min[0] >= -pile.deck.width / 2 - 0.001 && pile.max[0] <= pile.deck.width / 2 + 0.001 && pile.min[2] >= pile.deck.from - 0.001 && pile.max[2] <= pile.deck.to + 0.001)) failures.push({ mode, seed, kind: pile.kind, min: pile.min, max: pile.max, deck: pile.deck });
       }
       shore.dispose();
@@ -57,7 +58,7 @@ try {
   assert(result.lifted > 0, "no pier was lifted: the skid checks above proved nothing");
   assert.deepEqual(result.kinds, ["any", "clay", "grain", "ore", "timber", "wool"]);
   assert.equal(result.count, 720);
-  console.log(`dock-piles-many-seeds-prove: ${result.count} piles within piers across 40 seeds in each mode; all six kinds; ${result.lifted} lifted piers have goods on their skid and a visible lifebuoy`);
+  console.log(`dock-piles-many-seeds-prove: ${result.count} piles within piers across 40 seeds in each mode; all six kinds; ${result.lifted} lifted piers carry their goods with no overhang and a lifebuoy standing on top of the skid`);
 } finally {
   await browser?.close();
   await vite.close();
