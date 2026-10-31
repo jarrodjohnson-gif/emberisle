@@ -54,7 +54,7 @@ const PAINT = {
   ore: ["rgb(99, 116, 138)", "rgb(65, 77, 91)"],
 };
 // A cue's whole life on the card: FLASH_MS (2200) held, then a 300 ms fade (Hand.tsx CUE_MS).
-const CUE_MS = 2500;
+const CUE_MS = 3000;
 const RESOURCE_LABEL = { timber: "Wood", clay: "Brick", wool: "Sheep", grain: "Wheat", ore: "Stone" };
 mkdirSync("test-results", { recursive: true });
 
