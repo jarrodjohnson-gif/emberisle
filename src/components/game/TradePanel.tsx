@@ -1,5 +1,5 @@
 // #831 B: shared quantity cards feed the table offer and the compact exact Bank quote.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFocusTrap } from "@/lib/focus-trap";
@@ -10,7 +10,11 @@ import { play } from "@/lib/sound";
 import { bagText } from "@/lib/game/trade";
 import { chunk, LazyBoundary } from "@/lib/lazy";
 import "./trade-panel.css";
-import { MenuNeeds, NeedPicker } from "./SeatNeeds";
+import { NeedFieldset, NeedRow, NeedsAtTable } from "./SeatNeeds";
+
+// #646: the same sideways-phone breakpoint the window's CSS uses; the Need button moves up beside Close there.
+const sideways = matchMedia("(max-height: 480px)");
+const watchSideways = (on: () => void) => { sideways.onchange = on; return () => { sideways.onchange = null; }; };
 
 const picker = chunk(() => import("./TradeResource"));
 picker.prefetch();
@@ -30,6 +34,7 @@ export function TradePanel() {
   const [draftGive, setGive] = useState(ZERO);
   const [want, setWant] = useState(ZERO);
   const panel = useRef<HTMLElement>(null);
+  const short = useSyncExternalStore(watchSideways, () => sideways.matches);
 
   const actor = mode === "hotseat" ? state?.current : localId;
   const me = state?.players.find((p) => p.id === actor);
@@ -49,7 +54,7 @@ export function TradePanel() {
   }, [me?.resources]);
 
   // #378: a modal dialog. Focus lands on Close (the first focusable), Tab cycles inside, and focus goes back to the opener on close.
-  useFocusTrap(panel, shown, undefined, opener);
+  useFocusTrap(panel, shown, '[aria-label="Close"]', opener);
 
   useEffect(() => {
     // The turn moved on (or the game ended) with the panel up: drop it rather than pop it on the next turn.
@@ -109,12 +114,14 @@ export function TradePanel() {
       >
         <header className="trade-composer-header">
           <h2 id="trade-title" className="trade-title">Trade</h2>
+          {short && <NeedRow player={me.id} />}
           <Button variant="ghost" size="icon" onClick={() => setTradeOpen(false)} aria-label="Close" back>
             <X className="size-4" />
           </Button>
         </header>
 
         <div className="trade-composer-scroll" id="trade-goods" role="region" aria-labelledby="trade-goods-title" tabIndex={0}>
+          {short && <NeedFieldset player={me.id} />}
           <h3 id="trade-goods-title" className="sr-only">Trade goods</h3>
           <LazyBoundary failed={<p role="alert">Trade choices could not load. Close and reopen to retry.</p>}>
           <p className="trade-instructions">{mode === "hotseat" ? "Choose one kind to give and one to get. Trade with the bank or your docks." : "Tap a good to add it. Mix goods for the table; one good each way for the bank."}</p>
@@ -134,14 +141,8 @@ export function TradePanel() {
               </section>
             );
           })}
-          <div className="trade-needs-block">
-            <NeedPicker player={me.id} />
-            <div className="trade-peer-needs flex flex-wrap items-center gap-x-3">
-              {state?.players.filter((p) => p.id !== me.id).map((p) => (
-                <div key={p.id} className="trade-peer-seat flex items-center gap-x-1 text-xs"><span className="trade-peer-name">{p.name}</span><MenuNeeds player={p.id} /></div>
-              ))}
-            </div>
-          </div>
+          {!short && <><NeedRow player={me.id} /><NeedFieldset player={me.id} /></>}
+          <NeedsAtTable me={me.id} />
           </LazyBoundary>
         </div>
 

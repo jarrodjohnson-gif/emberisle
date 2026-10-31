@@ -4,7 +4,8 @@
 .trade-composer { --paper: #fff; --table-raised: #f3f6f5; --line: #cbd3d3; --color-bg: #fff; background: #f3f6f5; }
 .trade-composer-footer { background: #f3f6f5; }
 .trade-composer-header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; padding: 8px 16px; border-bottom: 1px solid var(--line); }
-.trade-title { font-size: 24px; line-height: 28px; font-weight: 750; }
+.trade-composer-header { gap: 8px; }
+.trade-title { margin-right: auto; font-size: 24px; line-height: 28px; font-weight: 750; }
 .trade-add:focus-visible, .trade-remove:focus-visible, .trade-composer-scroll:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .trade-composer-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px 16px; }
 .trade-instructions { margin-bottom: 8px; color: var(--muted); font-size: 13px; }
@@ -100,7 +101,21 @@
 /* A seat's name shows only beside its published needs (MenuNeeds renders nothing when it has none). */
 .trade-peer-seat:not(:has([data-testid="menu-needs"])) { display: none; }
 
-/* The Need picker and the other seats' needs read first but come after the goods in the tab order (#646): the goods keep the
-   first stops of the Trade window. */
-.trade-composer-scroll { display: flex; flex-direction: column; }
-.trade-needs-block { order: -1; }
+/* #646: the Need row sits under the goods; on a sideways phone the button and your chips move into the title row (TradePanel). */
+.trade-need-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.trade-needs-table { margin-top: 8px; }
+.trade-needs-table h3 { margin-bottom: 8px; font-size: 12px; line-height: 14px; font-weight: 750; }
+.trade-peer-needs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.trade-peer-seat { display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 16px; }
+.trade-peer-name { max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trade-peer-seat [data-testid="menu-needs"] { margin: 0; }
+.trade-quiet { margin: 0; font-size: 12px; line-height: 16px; }
+.trade-composer .trade-peer-name, .trade-composer [data-testid="own-needs"], .trade-composer [data-testid="menu-needs"], .trade-quiet { color: var(--muted); }
+.trade-composer .need-chip { color: var(--ink); }
+.trade-composer-header [data-testid="own-needs"] { flex-wrap: nowrap; white-space: nowrap; }
+.trade-peer-needs:has([data-testid="menu-needs"]) .trade-quiet { display: none; }
+.trade-composer-header .trade-need-row { display: contents; }
+@media (max-height: 480px) {
+  .trade-need-row { margin-top: 8px; }
+  .trade-needs-table h3 { display: none; }
+}

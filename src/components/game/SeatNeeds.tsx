@@ -1,20 +1,39 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
+import { create } from 'zustand';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { ClaySymbol, GrainSymbol, OreSymbol, TimberSymbol, WoolSymbol } from '@/components/game/ResourceSymbols';
 import { setPlayerNeeds, useLocalNeeds } from '@/components/game/need-state';
+import './seat-needs.css';
 import { useGame } from '@/lib/game/store';
 import { RESOURCES, RESOURCE_LABEL } from '@/lib/game/types';
 
 const ICON = { timber: TimberSymbol, clay: ClaySymbol, wool: WoolSymbol, grain: GrainSymbol, ore: OreSymbol };
-function useNeeds() {
+export function useNeeds() {
   const mode = useGame(s => s.mode), seats = useGame(s => s.seats), local = useLocalNeeds();
   return mode === 'online'
     ? Object.fromEntries(seats.filter(s => s.player).map(s => [s.player!, s.needs ?? []]))
     : Object.fromEntries(Object.entries(local).map(([id, need]) => [id, need?.kinds ?? []]));
 }
-export function NeedPicker({ player }: { player: string }) {
-  const [open, setOpen] = useState(false), actual = useNeeds()[player] ?? [];
+const reveal = (el: HTMLElement | null) => el?.scrollIntoView({ block: "nearest" });
+const useOpen = create(() => false);
+export function NeedRow({ player }: { player: string }) {
+  const kinds = useNeeds()[player] ?? [], open = useOpen();
+  useEffect(() => () => useOpen.setState(false), []);
+  return <div className="trade-need-row">
+    <Button variant="secondary" className="need-trigger" aria-expanded={open} aria-controls={open ? "need-picker" : undefined} onClick={() => useOpen.setState(!open)}>
+      Need{kinds.length ? <span aria-hidden="true" className="need-dot" /> : null}
+    </Button>
+    <div data-testid="own-needs" className="need-line">
+      {kinds.length ? 'You' : 'You · nothing shared'}{kinds.map(kind => <span key={kind} data-testid="need-chip" className="need-chip">{RESOURCE_LABEL[kind]}</span>)}
+    </div>
+  </div>;
+}
+export function NeedFieldset({ player }: { player: string }) {
+  return useOpen() ? <Picker player={player} /> : null;
+}
+function Picker({ player }: { player: string }) {
+  const actual = useNeeds()[player] ?? [];
   const [draft, setDraft] = useState<typeof actual | null>(null);
   const error = useGame(state => state.needError);
   const needs = draft ?? actual;
@@ -25,23 +44,20 @@ export function NeedPicker({ player }: { player: string }) {
   useEffect(() => setDraft(null), [error]);
   useEffect(() => { const timer = setTimeout(() => setDraft(null), 3000); return () => clearTimeout(timer); }, [draft]);
   const choose = (kinds: typeof actual) => { setDraft(kinds); setPlayerNeeds(player, kinds); };
-  return <div className="mb-2 [@media(max-height:480px)_and_(min-width:540px)]:flex [@media(max-height:480px)_and_(min-width:540px)]:items-end [@media(max-height:480px)_and_(min-width:540px)]:gap-2">
-    <Button variant="secondary" className="h-11" aria-expanded={open} aria-controls={open ? "need-picker" : undefined} onClick={() => setOpen(value => !value)}>Need</Button>
-    {open ? <fieldset id="need-picker" className="mt-2 min-w-0 rounded-control border p-2 [@media(max-height:480px)_and_(min-width:540px)]:mt-0 [@media(max-height:480px)_and_(min-width:540px)]:flex [@media(max-height:480px)_and_(min-width:540px)]:flex-1 [@media(max-height:480px)_and_(min-width:540px)]:items-center [@media(max-height:480px)_and_(min-width:540px)]:gap-2">
-      <legend className="text-sm">Show the table up to two goods you need</legend>
-      <div className="grid grid-cols-5 gap-2 [@media(max-height:480px)_and_(min-width:540px)]:min-w-0 [@media(max-height:480px)_and_(min-width:540px)]:flex-1">
-        {RESOURCES.map(resource => {
-          const Icon = ICON[resource], selected = needs.includes(resource);
-          return <Button key={resource} variant={selected ? 'default' : 'secondary'} className="h-auto min-h-11 min-w-11 flex-col px-0.5 py-1 text-xs"
-            aria-label={`Need ${RESOURCE_LABEL[resource]}`} aria-pressed={selected} disabled={!selected && needs.length === 2}
-            onClick={() => choose(selected ? needs.filter(kind => kind !== resource) : [...needs, resource])}>
-            <Icon width={18} height={18} aria-hidden="true" />{RESOURCE_LABEL[resource]}
-          </Button>;
-        })}
-      </div>
-      <Button variant="ghost" className="mt-1 h-11 [@media(max-height:480px)_and_(min-width:540px)]:mt-0 [@media(max-height:480px)_and_(min-width:540px)]:shrink-0" disabled={!needs.length} onClick={() => choose([])}>Clear needs</Button>
-    </fieldset> : null}
-  </div>;
+  return <fieldset id="need-picker" ref={reveal}>
+    <legend>Show the table up to two goods you need</legend>
+    <div>
+      {RESOURCES.map(resource => {
+        const Icon = ICON[resource], selected = needs.includes(resource);
+        return <Button key={resource} variant="secondary" className="need-toggle"
+          aria-label={`Need ${RESOURCE_LABEL[resource]}`} aria-pressed={selected} disabled={!selected && needs.length === 2}
+          onClick={() => choose(selected ? needs.filter(kind => kind !== resource) : [...needs, resource])}>
+          <Icon width={18} height={18} aria-hidden="true" />{RESOURCE_LABEL[resource]}
+        </Button>;
+      })}
+      <Button variant="ghost" className="need-clear h-11" disabled={!needs.length} onClick={() => choose([])}>Clear needs</Button>
+    </div>
+  </fieldset>;
 }
 
 export function SeatNeeds({ scope }: { scope: 'rail' | 'seat' }) {
@@ -55,14 +71,25 @@ export function SeatNeeds({ scope }: { scope: 'rail' | 'seat' }) {
     const name = players?.find(p => p.id === player)?.name;
     return createPortal(<span data-testid="seat-needs" data-player={player} role="img"
       aria-label={`${name} needs ${kinds.map(kind => RESOURCE_LABEL[kind]).join(' and ')}`}
-      className="pointer-events-none absolute -left-[3px] -top-[3px] z-10 size-2 rounded-full bg-[#be5b39]" style={{ boxShadow: '0 0 0 1px #fff' }} />, anchor, `${scope}-${player}`);
+      className="need-dot" />, anchor, `${scope}-${player}`);
   });
 }
 
 export function MenuNeeds({ player }: { player: string }) {
   const kinds = useNeeds()[player] ?? [];
   if (!kinds.length) return null;
-  return <div data-testid="menu-needs" className="mx-1 mb-2 flex flex-wrap items-center gap-2 text-xs leading-4 text-zinc-700">
-    Needs{kinds.map(kind => <span key={kind} data-testid="need-chip" className="rounded-full bg-[#dce5ed] px-3 py-2">{RESOURCE_LABEL[kind]}</span>)}
+  return <div data-testid="menu-needs" className="need-line mx-1 mb-2">
+    Needs{kinds.map(kind => <span key={kind} data-testid="need-chip" className="need-chip">{RESOURCE_LABEL[kind]}</span>)}
   </div>;
+}
+
+export function NeedsAtTable({ me }: { me: string }) {
+  const players = useGame(s => s.state?.players);
+  return <section className="trade-needs-table" aria-labelledby="trade-needs-title">
+    <h3 id="trade-needs-title">Needs at the table</h3>
+    <div className="trade-peer-needs">
+      {players?.filter(p => p.id !== me).map(p => <div key={p.id} className="trade-peer-seat"><span className="trade-peer-name">{p.name}</span><MenuNeeds player={p.id} /></div>)}
+      <p className="trade-quiet">No one has shared a need yet.</p>
+    </div>
+  </section>;
 }

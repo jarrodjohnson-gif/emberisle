@@ -1,0 +1,19 @@
+/* #646: the Need dot, chips and picker. The Trade window (trade-panel.css) places them and sets their colours. */
+.need-dot { position: absolute; top: -3px; left: -3px; z-index: 10; width: 8px; height: 8px; border-radius: 9999px; background: #be5b39; box-shadow: 0 0 0 1px #fff; pointer-events: none; }
+button.need-trigger { position: relative; height: 44px; }
+.need-trigger .need-dot { top: 3px; left: 3px; }
+.need-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; line-height: 16px; color: #3f3f46; }
+.need-chip { padding: 8px 12px; border-radius: 9999px; background: #dce5ed; }
+.trade-need-row + #need-picker { margin-top: 8px; }
+.trade-composer-scroll > #need-picker:first-child { margin-bottom: 8px; }
+#need-picker { min-width: 0; padding: 8px; border: 1px solid var(--line); border-radius: var(--radius-control); background: #fff; }
+#need-picker legend { font-size: 15px; line-height: 20px; }
+#need-picker > div { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+#need-picker .need-toggle { height: auto; min-width: 44px; min-height: 44px; flex-direction: column; padding: 4px 2px; font-size: 12px; }
+/* Pressed is the lobby's selected look (white, ink edge, bold, underline), not a second filled button next to Ask. */
+#need-picker .need-toggle[aria-pressed="true"] { border-color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+#need-picker .need-clear { grid-column: 1 / -1; white-space: nowrap; padding-inline: 12px; }
+@media (min-width: 540px) {
+  #need-picker > div { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  #need-picker .need-clear { grid-column: auto; align-self: center; }
+}
