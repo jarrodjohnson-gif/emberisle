@@ -5,6 +5,7 @@
 // preserved, top-anchored crop keeps board top and seat strip inside the hole, and the keyboard crop clears on rotation or actual viewport restoration.
 // Run: npm run keyboard-fit-prove
 import { existsSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
@@ -31,6 +32,7 @@ const camera = (page) => page.evaluate(() => {
   const i = window.__isle, f = i.fit;
   const home = f && !("focal" in f) ? { x: f.x, z: f.z } : { x: 0, z: 0 };
   return { x: i.orbit.target.x, z: i.orbit.target.z, dx: i.orbit.target.x - home.x, dz: i.orbit.target.z - home.z,
+    sampleAt: performance.now(),
     aspect: i.frustumAspect(), scale: i.pxPerUnit(0, 0, 0), shrunk: i.isKeyboardShrunk };
 });
 const samePan = (a, b) => Math.hypot(a.dx - b.dx, a.dz - b.dz) < 1e-6;
@@ -89,6 +91,7 @@ const croppedHome = async (page, ctx, label) => {
   });
   const cdp = await ctx.newCDPSession(page);
   await page.evaluate(() => { window.__keyboardHomeCalls = 0; const i = window.__isle, home = i.goHome.bind(i); i.goHome = () => { window.__keyboardHomeCalls++; home(); }; });
+  await page.evaluate(() => { window.__keyboardHomeBlurAt = null; document.activeElement?.addEventListener("blur", () => { window.__keyboardHomeBlurAt = performance.now(); }, { once: true }); });
   await page.evaluate(() => document.activeElement?.blur());
   for (let tap = 0; tap < 2; tap++) {
     await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ ...point, id: 1 }] });
@@ -96,6 +99,10 @@ const croppedHome = async (page, ctx, label) => {
   }
   await frames(page, 6);
   const after = await camera(page);
+  const blurAt = await page.evaluate(() => window.__keyboardHomeBlurAt);
+  const sampleDelay = after.sampleAt - blurAt;
+  console.log(`${label}: cropped-home timing ${JSON.stringify({ blurAt, sampledAt: after.sampleAt, sampleDelay, settleMs: 600 })}`);
+  if (blurAt === null || sampleDelay >= 600) throw new Error(`${label}: timing inconclusive; cropped-home sample arrived outside the unchanged 600ms settle window (${sampleDelay}ms)`);
   check(await page.evaluate(() => window.__keyboardHomeCalls > 0), `${label}: real empty-board double tap invokes goHome`);
   check(after.shrunk && samePan(after, before) && Math.abs(after.aspect - before.aspect) < 1e-6 && Math.abs(after.scale - before.scale) < 0.05 && !await page.evaluate(() => Boolean(window.__isle.glide)), `${label}: home while cropped keeps pan and projection without starting a glide`, { before, after });
 };
@@ -390,6 +397,31 @@ try {
   check(dragRatio > 0.85 && dragRatio < 1.15, "tablet keyboard crop keeps touch movement about 1:1", { dragRatio });
 
   await croppedHome(tab, tabCtx, "tablet diorama");
+
+  // F1: grow the real canvas layout and blur in one task, before delivering the late resize event.
+  await tab.locator("#test-keyboard-input").focus();
+  await tab.setViewportSize({ width: 1024, height: 768 });
+  await frames(tab, 6);
+  await tab.setViewportSize({ width: 1024, height: 420 });
+  await frames(tab, 6);
+  const orderingPan = await camera(tab);
+  await tab.evaluate(() => {
+    const i = window.__isle, c = document.querySelector("canvas");
+    c.style.height = "768px";
+    window.__keyboardCloseOrder = { layoutH: c.clientHeight, savedH: i.sizeH, focused: document.activeElement?.id };
+    document.activeElement?.blur();
+    window.__keyboardCloseOrder.afterBlur = { aspect: i.frustumAspect(), savedH: i.sizeH, shrunk: i.isKeyboardShrunk };
+    window.dispatchEvent(new Event("resize"));
+  });
+  await tab.setViewportSize({ width: 1024, height: 768 });
+  await tab.evaluate(() => { document.querySelector("canvas").style.height = ""; });
+  await frames(tab, 30);
+  const closeOrder = await tab.evaluate(() => window.__keyboardCloseOrder);
+  const orderedClose = await camera(tab);
+  mkdirSync("test-results", { recursive: true });
+  await tab.screenshot({ path: "test-results/keyboard-fit-tablet-focusout-before-resize.png" });
+  check(closeOrder?.layoutH === 768 && closeOrder.savedH === 420 && closeOrder.focused === "test-keyboard-input", "tablet close exercises layout growth then focusout before renderer resize", closeOrder);
+  check(!orderedClose.shrunk && Math.abs(orderedClose.aspect - 1024 / 768) < 0.01 && samePan(orderedClose, orderingPan), "tablet focusout before resize restores full projection and pan after 30 frames", { closeOrder, orderingPan, orderedClose });
 
   await tabCtx.close();
 

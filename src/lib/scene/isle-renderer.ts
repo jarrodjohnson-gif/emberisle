@@ -842,8 +842,7 @@ export class IsleRenderer {
   private onFocusOut = (event: FocusEvent) => {
     const nextInput = event.relatedTarget instanceof Element && event.relatedTarget.matches("input, textarea");
     if (this.keyboardShrunk && !nextInput && (!this.play() || this.renderer.domElement.clientHeight >= this.unshrunkH)) {
-      this.keyboardShrunk = false;
-      this.refit(true, true);
+      this.resize();
     }
     this.settleKeyboard();
     this.remeasure();
