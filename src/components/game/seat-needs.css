@@ -10,8 +10,9 @@ button.need-trigger { position: relative; height: 44px; }
 #need-picker legend { font-size: 15px; line-height: 20px; }
 #need-picker > div { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 #need-picker .need-toggle { height: auto; min-width: 44px; min-height: 44px; flex-direction: column; padding: 4px 2px; font-size: 12px; }
-/* Pressed is the lobby's selected look (white, ink edge, bold, underline), not a second filled button next to Ask. */
-#need-picker .need-toggle[aria-pressed="true"] { border-color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+/* Pressed is a white toggle with a 2 px ink ring and bold label, not a second filled button next to Ask. A disabled toggle takes the sheet's fill. */
+#need-picker .need-toggle[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--ink); font-weight: 700; }
+#need-picker .need-toggle:disabled { background: #f3f6f5; }
 #need-picker .need-clear { grid-column: 1 / -1; white-space: nowrap; padding-inline: 12px; }
 @media (min-width: 540px) {
   #need-picker > div { grid-template-columns: repeat(6, minmax(0, 1fr)); }

@@ -67,7 +67,7 @@
 }
 @media (max-height: 480px) {
   .trade-composer { max-height: calc(100dvh - 12px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
-  .trade-composer-header { padding: 0 14px; }
+  .trade-composer-header { padding: 2px 14px; }
   .trade-instructions { display: none; }
   .trade-composer-scroll { padding: 4px 14px; }
   .trade-half + .trade-half { margin-top: 8px; }
@@ -117,5 +117,5 @@
 .trade-composer-header .trade-need-row { display: contents; }
 @media (max-height: 480px) {
   .trade-need-row { margin-top: 8px; }
-  .trade-needs-table h3 { display: none; }
+  .trade-needs-table h3, .trade-quiet { display: none; }
 }

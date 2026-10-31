@@ -14,7 +14,7 @@ import { NeedFieldset, NeedRow, NeedsAtTable } from "./SeatNeeds";
 
 // #646: the same sideways-phone breakpoint the window's CSS uses; the Need button moves up beside Close there.
 const sideways = matchMedia("(max-height: 480px)");
-const watchSideways = (on: () => void) => { sideways.onchange = on; return () => { sideways.onchange = null; }; };
+const watchSideways = (on: () => void) => { sideways.addEventListener("change", on); return () => sideways.removeEventListener("change", on); };
 
 const picker = chunk(() => import("./TradeResource"));
 picker.prefetch();
