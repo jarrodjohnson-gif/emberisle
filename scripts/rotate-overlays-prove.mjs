@@ -35,7 +35,7 @@ mkdirSync("test-results", { recursive: true });
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 // G5: stop the host before its rooms dir goes, or a SIGTERM flush recreates the dir.
 process.on("exit", () => {

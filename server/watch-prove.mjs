@@ -25,6 +25,8 @@ const HOLD = 5000;
 const DEV_KINDS = ["knight", "road", "plenty", "monopoly", "vp"];
 
 let host;
+let stage = "lobby";
+const stateTrace = [];
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
   host?.kill("SIGKILL");
@@ -37,7 +39,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", TURN_MS: String(TURN), GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), SPECTATOR_MAX: String(WATCH_MAX), ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", TURN_MS: String(TURN), GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), SPECTATOR_MAX: String(WATCH_MAX), ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -94,6 +96,7 @@ function attach(p) {
       p.legal = m.legal;
       p.you = m.you;
       p.seqs.push(m.game.seq);
+      stateTrace.push({ stage, source: p.name, seq: m.game.seq });
     }),
     log: on((text) => p.logs.push(text)),
     chat: on((line) => p.chats.push(line)),
@@ -110,7 +113,10 @@ async function watcher(name) {
     const msg = JSON.parse(text);
     w.raws.push(text);
     w.inbox.push(msg);
-    if (msg.type === "state") w.states.push(msg);
+    if (msg.type === "state") {
+      w.states.push(msg);
+      stateTrace.push({ stage, source: name, seq: msg.game.seq });
+    }
     if (msg.type === "error") w.errors.push(msg.message);
     if (msg.type === "log") w.logs.push(msg.text);
     if (msg.type === "chat") w.chats.push(msg);
@@ -179,6 +185,7 @@ if (a.state.phase !== "rollOff") fail("the game opens with the roll-off", a.stat
 
 // --- 2. After the start: welcome {spectator}, then seats, then the redacted state; the seats hear and count it.
 const logsAtJoin = all.map((p) => p.logs.length);
+stage = "watch join";
 const seatsAtJoin = a.seatsSeen.length;
 const w1 = await watcher("w1");
 w1.send({ type: "hello", code, watch: true });
@@ -212,6 +219,7 @@ console.log(`after the start: welcome {spectator:true}, seats {watching:1}, reda
 
 // --- 3. The turn timer: every seat idles on the roll-off with two watchers connected. It moves a seat, not a watcher.
 const opener = all.find((p) => p.you === a.state.current);
+stage = "idle timer";
 await until(() => w1.logs.some((t) => t.endsWith("took too long; the table moved on.")), "the idle roll-off being moved on", TURN + 3000);
 const moved = w1.logs.filter((t) => t.endsWith("took too long; the table moved on."));
 if (moved.length !== 1 || moved[0] !== `${opener.name} took too long; the table moved on.`) fail("the timer moved the idle seat", { moved, opener: opener.name });
@@ -247,7 +255,9 @@ async function playUntil(stop) {
 // --- 4b. Every seat drops mid-game with both watchers connected. After the grace the bot takes each seat, but with no
 // seat connected the bots wait, exactly as with nobody connected at all: a watcher never keeps the game moving. The
 // fence is the first "is back." line of the rejoin: a bot's push would have arrived before it on the same socket.
+stage = "play to first main";
 await playUntil((g) => g.phase === "main");
+stage = "drop";
 const seqAtDrop = a.state.seq;
 // The watchers' copy of the last push rides its own socket, so it can land after the seats' did.
 await until(() => [w1, w2].every((w) => w.state().game.seq === seqAtDrop), "the watchers catching up before the drop");
@@ -260,6 +270,7 @@ if (w1.closed || w2.closed) fail("the room closed under its watchers inside the 
 if (!w1.seatsSeen[w1.seatsSeen.length - 1].seats.every((s) => s.away)) fail("every seat is marked away", w1.seatsSeen[w1.seatsSeen.length - 1].seats);
 for (const p of all) {
   const seqs = p.seqs.length;
+  stage = `rejoin ${p.name}`;
   attach(p);
   p.t.rejoin(code, p.secret);
   await until(() => p.seqs.length > seqs, `${p.name}'s rejoin state`);
@@ -272,14 +283,58 @@ if (w1.inbox.slice(inboxAtDrop, backAt).some((m) => m.type === "error")) fail("a
 await until(() => all.every((p) => p.state.players.every((q) => q.kind === "human")), "every seat human again");
 console.log(`every seat dropped at seq ${seqAtDrop}: after GRACE_MS=${GRACE} the bot took all three and waited (0 states pushed to the watchers); all three rejoined, seq ${a.state.seq}, every seat human`);
 
+stage = "play to win";
 await playUntil((g) => g.phase === "over");
 if (a.state.phase !== "over") fail(`no winner after ${MAX_ACTIONS} actions`, { phase: a.state.phase, turn: a.state.turn });
 await until(() => all.every((x) => x.state.phase === "over") && [w1, w2].every((w) => w.state().game.phase === "over"), "the end reaching every socket");
+
+// A terminal phase is not an ordered fence: a later push can have the same seq and phase.
+// Let the grace timer finish before pausing watchers, so it cannot add an unexpected
+// snapshot during a slow rejoin. Drain through a marker before freezing either transport.
+stage = "terminal takeover baseline";
+b.t.close();
+await until(() => a.seats.find((s) => s.name === b.name)?.away, "the finished seat dropping");
+await until(() => [a.state, w1.state().game, w2.state().game].every((g) => g.players.find((p) => p.id === b.you)?.kind === "bot"), "the finished seat's takeover reaching the watchers");
+const terminalBaseline = `watch proof terminal baseline ${a.state.seq}`;
+a.t.say(terminalBaseline);
+await until(() => [a, c, w1, w2].every((p) => p.chats.some((line) => line.text === terminalBaseline)), "the terminal baseline reaching every connected socket");
+// Rejoin contributes exactly one additional snapshot. The old phase-only condition
+// is already true while that snapshot remains queued behind the paused transports.
+stage = "delayed terminal snapshot";
+for (const w of [w1, w2]) w.ws.pause();
+const terminalSeatCount = a.seqs.length;
+const terminalRejoinCount = b.seqs.length;
+attach(b);
+b.t.rejoin(code, b.secret);
+await until(() => a.seqs.length > terminalSeatCount && b.seqs.length > terminalRejoinCount, "the finished seat's rejoin snapshot");
+for (const w of [w1, w2]) {
+  const seatSeqs = a.seqs.filter((s) => s >= w.states[0].game.seq);
+  const got = w.states.map((m) => m.game.seq);
+  const firstDivergence = got.findIndex((s, i) => s !== seatSeqs[i]);
+  const index = firstDivergence < 0 ? got.length : firstDivergence;
+  if (!all.every((x) => x.state.phase === "over") || w.state().game.phase !== "over") fail("the terminal fixture lost its final phase");
+  if (got.length !== seatSeqs.length - 1 || index !== got.length || got.some((s, i) => s !== seatSeqs[i])) {
+    fail("the terminal fixture must hold exactly one final snapshot", JSON.stringify({ got, seatSeqs, index, stateTrace }));
+  }
+  console.log(`terminal fixture ${w.name}: phase-only readiness is true with one frame pending; first divergence ${index}, expected seq ${seatSeqs[index]}, received end-of-stream`);
+}
+
+// A seat's chat follows its rejoin state on every ordered socket. Drain through that marker
+// before comparing complete histories; never deduplicate or wait for equality itself.
+const finalFence = `watch proof final fence ${a.state.seq}`;
+a.t.say(finalFence);
+for (const w of [w1, w2]) w.ws.resume();
+await until(() => [...all, w1, w2].every((p) => p.chats.some((line) => line.text === finalFence)), "the final ordered fence reaching every socket");
+stage = "final sequence comparison";
 for (const w of [w1, w2]) {
   for (const m of w.states) if (m.game.phase !== "over") checkClosed(m, `${w.name} seq ${m.game.seq}`);
   // Every push the seats got from the watcher's first state on reached the watcher too, and nothing else did.
   const seatSeqs = a.seqs.filter((s) => s >= w.states[0].game.seq);
   const got = w.states.map((m) => m.game.seq);
+  if (JSON.stringify(got) !== JSON.stringify(seatSeqs)) {
+    const firstDivergence = Array.from({ length: Math.max(got.length, seatSeqs.length) }, (_, i) => i).find((i) => got[i] !== seatSeqs[i]);
+    console.error("sequence divergence", JSON.stringify({ got, seatSeqs, firstDivergence, stateTrace }));
+  }
   if (JSON.stringify(got) !== JSON.stringify(seatSeqs)) fail(`${w.name} missed or invented a state`, { got: got.length, seats: seatSeqs.length });
 }
 for (const w of [w1, w2]) if (!w.inbox.some((m) => m.type === "rolled" && Array.isArray(m.dice))) fail(`${w.name} never got a rolled message`);
@@ -315,8 +370,9 @@ const burst2 = [{ type: "place", kind: "outpost", id: "v:0,0,0" }, { type: "pass
 for (const m of burst2) w2.send(m);
 await until(() => w1.errors.length >= errs1 + burst.length && w2.errors.length >= errs2 + burst2.length, () => `refusals: w1 ${JSON.stringify(w1.errors.slice(errs1))}, w2 ${JSON.stringify(w2.errors.slice(errs2))}`);
 const chats0 = w1.chats.length;
+const chats2 = w2.chats.length;
 a.t.say("gg");
-await until(() => w1.chats.length > chats0 && w2.chats.length > 0, "a seat's chat reaching the watchers");
+await until(() => w1.chats.length > chats0 && w2.chats.length > chats2, "a seat's chat reaching the watchers");
 if (w1.chats[w1.chats.length - 1].text !== "gg") fail("the watcher hears the table", w1.chats[w1.chats.length - 1]);
 for (const [w, n, from] of [[w1, burst.length, errs1], [w2, burst2.length, errs2]]) {
   const refused = w.errors.slice(from);

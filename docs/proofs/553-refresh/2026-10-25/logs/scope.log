@@ -1,0 +1,9 @@
+PASS every original health assert/throw/exit line retained; new production cases added
+PASS transport protocol and backend exactly merged7e1; UI markup/styles exactly merged7e1
+PASS all store actions and protocol callbacks byte-identical; async loader shell/imports only
+PASS prior lazy cache/retry/pick/prefetch implementation unchanged; only public .load added
+PASS every original ceiling/allowance exact main; table2200 only new cap
+PASS original fixture sizes exact main; table2000 only new field in each JSON
+PASS package/CI exact merged7e1; old proof still runs once, no new flags or skipped cases
+PASS room shape/protocol constants unchanged
+SOURCE SHA256 {"scripts/connection-health-prove.mjs": "76f3171c325ce6ea116f54ea12721ee1df72a9cd07290ef9eaed991e2bcbefa9", "src/lib/game/store.ts": "69e865de8f241825d81703f013accd378d5924ba4eacc12e268d84299eb85f02", "src/lib/lazy.ts": "5f9646e75d2425abc0ea32505e59a70491a68fd3d0cf2bc657fc5e868198948e"}

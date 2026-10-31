@@ -1,0 +1,9 @@
+import { createRequire } from 'node:module';
+const require=createRequire(process.cwd()+'/package.json');
+const {chromium}=require('playwright');
+const launch=chromium.launch;
+chromium.launch=async function(...args){
+ const browser=await launch.apply(this,args),newPage=browser.newPage;
+ browser.newPage=async function(...args){const page=await newPage.apply(this,args);const cdp=await page.context().newCDPSession(page);await cdp.send('Emulation.setCPUThrottlingRate',{rate:2});console.log('CPU_STRESS',2);return page;};
+ return browser;
+};

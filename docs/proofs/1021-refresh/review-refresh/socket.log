@@ -1,0 +1,19 @@
+
+> profile-socket-rate-prove
+> node server/profile-socket-rate-prove.mjs
+
+ok initial burst completes before a refill token can accrue
+ok a profile socket accepts its first ten hello requests
+ok the eleventh hello receives slowDown
+ok profile replies preserve every request id
+ok independent burst completes within one refill interval
+ok another connection on the same address has ten independent tokens
+ok the independent connection exhausts at its eleventh hello
+ok native refill observation has a nonzero, bounded timing window
+ok an exhausted connection recovers at one token per native second
+ok refill does not reset the connection to a fresh burst
+ok remaining recovery requests are explicitly throttled
+ok recovery replies preserve all original request ids
+ok rate errors leave the original connection usable
+ok the host reports no request errors
+profile-socket-rate-prove: 14 checks passed
