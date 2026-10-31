@@ -117,7 +117,7 @@ async function headerWithChat(page, label) {
   await page.locator('section[aria-label="Table chat"]').waitFor({ state: "hidden" });
 }
 try {
-  host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], { cwd: new URL("../server/", import.meta.url), env: { ...process.env, PORT: "0", ROOMS_DIR: dir, TURN_MS: "25000", GRACE_MS: "120000", HOLD_MS: "180000", ACT_CAP: "1000", ACT_RATE: "1000" } });
+  host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], { cwd: new URL("../server/", import.meta.url), env: { ...process.env, PORT: "0", ROOMS_DIR: dir, RESULTS_DIR: `${dir}/results`, TURN_MS: "25000", GRACE_MS: "120000", HOLD_MS: "180000", ACT_CAP: "1000", ACT_RATE: "1000" } });
   host.stderr.on("data", (d) => { hostErrors += d; });
   const port = await new Promise((resolve, reject) => {
     host.stdout.on("data", (d) => { const m = String(d).match(/listening (\d+)/); if (m) resolve(Number(m[1])); });

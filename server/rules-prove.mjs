@@ -336,6 +336,29 @@ ok("there is no 7 token", true);
 }
 ok("a fortune bought this turn cannot be played this turn (check 6 above)", true);
 ok("a knight may be played before the roll (check 7 above)", true);
+{
+  // Every playable kind is held back the turn it is bought, not only the knight; an older copy of the same kind is not.
+  const land = fresh().hexes.find((h) => h.id !== fresh().robberHex).id;
+  const plays = {
+    knight: { type: "playKnight", hexId: land, stealFrom: null },
+    road: { type: "playRoad", edgeIds: [] },
+    plenty: { type: "playPlenty", resources: ["grain", "ore"] },
+    monopoly: { type: "playMonopoly", resource: "ore" },
+  };
+  const buy = (kind, held) => {
+    const g = fresh();
+    g.deck = [kind, ...g.deck];
+    g.players[0].hidden[kind] = held;
+    giveCards(g.players[0], { wool: 1, grain: 1, ore: 1 });
+    const r = applyAction(g, "p0", { type: "buyCard" });
+    if (r.error) fail(`buy ${kind}`, r.error);
+    return r.state;
+  };
+  const sameTurn = Object.keys(plays).map((k) => applyAction(buy(k, 0), "p0", plays[k]).error);
+  ok("every fortune kind bought this turn is refused this turn", sameTurn.every((e) => e === "A fortune cannot be played the turn it is bought."), sameTurn);
+  const older = applyAction(buy("monopoly", 1), "p0", plays.monopoly);
+  ok("an older fortune of the same kind can still be played the turn another is bought", !older.error && older.state.players[0].hidden.monopoly === 1, older.error);
+}
 
 // Points
 {

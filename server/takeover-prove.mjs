@@ -104,7 +104,7 @@ function startHost() {
   return new Promise((resolve, reject) => {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR: dir, GRACE_MS: String(GRACE), TURN_MS: String(TURN), HOLD_MS: String(HOLD), ACT_CAP: "1000", ACT_RATE: "1000", BOT_ANSWER_MS: "100" },
+    env: { ...process.env, PORT: "0", ROOMS_DIR: dir, RESULTS_DIR: `${dir}/results`, GRACE_MS: String(GRACE), TURN_MS: String(TURN), HOLD_MS: String(HOLD), ACT_CAP: "1000", ACT_RATE: "1000", BOT_ANSWER_MS: "100" },
     stdio: ["ignore", "pipe", "pipe"],
   });
   host.stdout.on("data", (d) => { const m = String(d).match(/listening (\d+)/); if (m) resolve(Number(m[1])); });

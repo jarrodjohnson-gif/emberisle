@@ -2,9 +2,13 @@
 // Tab 1 asks the table through the panel; tab 3 says No (the offer stays open), tab 2 says Yes, and every tab's state
 // shows the goods moved. A second ask gets a No and then runs out its 20 s: the goods stay put and the toast closes
 // everywhere. Zero console errors.
-// #366: every non-asker's toast is an alertdialog named by the offer line that does not take focus; a Yes it cannot pay
-// for stays focusable with aria-disabled and is described by the "Need …" line, and refuses Enter; Escape answers No; the
-// countdown is hidden from screen readers but a polite line says "5 seconds left".
+// #366 / #537: every non-asker's toast is a named region for the offer (or compact demand) that does not take focus.
+// A seat that can pay sees Yes/No; a seat that cannot (#537) sees only "X is looking for …" with Dismiss — no Accept.
+// Escape answers No / Dismiss; the countdown is hidden from screen readers but a polite line says "5 seconds left".
+// Step 4 keeps the normal timeout lifecycle: a second ask nobody takes runs out its 20 s (C answers with Escape, the asker
+// alone hears the No, hands unchanged). Steps 5 and 6 are #537: B has none of the goods asked for and sees the compact demand,
+// C can pay and sees the normal offer; changing B's hand flips its toast without a new offer; Dismiss from B and No from C
+// close the offer on all three tabs within 500 ms, at normal motion and again under reduced motion (no skip path).
 // #378: the asker's panel is a modal dialog named "Trade": focus moves in on open, 14 Tabs and 3 Shift+Tabs never leave
 // it, and Escape (or the ask itself) puts focus back on the Trade button.
 import { spawn } from "node:child_process";
@@ -25,7 +29,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -291,50 +295,65 @@ try {
   const afterAsk = await focusIs(A);
   if (afterAsk.label !== "Trade") throw new Error(`#378: the ask closed the panel but focus went to "${afterAsk.label}", not the Trade button`);
   const line = `${A.name} offers 1 ${RESOURCE_LABEL[give].toLowerCase()} for 1 ${RESOURCE_LABEL[want].toLowerCase()}`;
+  const demand1 = `${A.name} is looking for 1 ${RESOURCE_LABEL[want].toLowerCase()}`;
   for (const t of [B, C]) {
     const v = vs[tabs.indexOf(t)];
-    if (!v.toast.includes(line)) throw new Error(`${t.name} toast: "${v.toast}"`);
+    // #537: a seat short of the ask sees compact demand, not the full "offers" line.
+    const expect = (v.mine[want] ?? 0) < 1 ? demand1 : line;
+    if (!v.toast.includes(expect)) throw new Error(`${t.name} toast: "${v.toast}"`);
     const secs = Number((await t.page.getByTestId("trade-countdown").textContent()).replace(/\D/g, ""));
     if (secs < 1 || secs > 20) throw new Error(`${t.name} toast has no countdown: "${v.toast}"`);
   }
   if (!vs[i].toast.includes(`You offer 1 ${RESOURCE_LABEL[give].toLowerCase()} for 1 ${RESOURCE_LABEL[want].toLowerCase()}`) || !vs[i].toast.includes("Waiting")) throw new Error(`asker toast: "${vs[i].toast}"`);
   const tradeId = vs[0].offer.tradeId;
-  console.log(`toast on ${B.name} and ${C.name}: "${line}"; asker sees "Waiting…"`);
+  console.log(`toast on ${B.name} and ${C.name}: full or compact per hand; asker sees "Waiting…"`);
 
-  // #366: the offer is an alertdialog named by its line that leaves focus alone. A Yes that cannot be paid for is
-  // aria-disabled (not disabled), stays focusable, and is described by the "Need …" line.
+  // #366 / #537: the offer is a region that leaves focus alone. A seat that can pay gets Yes/No; a short seat gets
+  // the compact demand (#537) with Dismiss only.
   const answerable = async (t, v, line, r, n) => {
     const got = await t.page.getByTestId("trade-toast").evaluate((el) => {
       const yes = [...el.querySelectorAll("button")].find((b) => b.textContent.trim() === "Yes");
+      // #537: a short seat has no Yes; its Dismiss is the one control, and it must stay reachable by Tab just the same.
+      const control = yes ?? el.querySelector('[data-testid="trade-dismiss"]');
       const text = (ids) => (ids ?? "").split(/\s+/).filter(Boolean).map((id) => document.getElementById(id)?.textContent ?? "").join(" ");
       const focusInside = el.contains(document.activeElement);
-      yes.focus();
+      control.focus();
       const out = {
         role: el.getAttribute("role"),
         focusInside,
-        ariaDisabled: yes.getAttribute("aria-disabled"),
-        disabled: yes.hasAttribute("disabled"),
-        describedBy: text(yes.getAttribute("aria-describedby")),
-        focusable: document.activeElement === yes && yes.tabIndex >= 0,
+        compact: el.getAttribute("data-compact") === "true",
+        hasYes: Boolean(yes),
+        hasDismiss: Boolean(el.querySelector('[data-testid="trade-dismiss"]')),
+        demand: el.querySelector('[data-testid="trade-demand"]')?.textContent?.trim() ?? null,
+        ariaDisabled: control.getAttribute("aria-disabled"),
+        disabled: control.hasAttribute("disabled"),
+        describedBy: text(control.getAttribute("aria-describedby")),
+        focusable: document.activeElement === control && control.tabIndex >= 0,
         countdownHidden: el.querySelector('[data-testid="trade-countdown"]')?.getAttribute("aria-hidden"),
       };
-      yes.blur();
+      control.blur();
       return out;
     });
     const where = `${t.name} (${JSON.stringify(got)})`;
     if (got.role !== "region") throw new Error(`${where}: the offer is not an alertdialog`);
-    if ((await t.page.getByRole("region", { name: line, exact: true }).count()) !== 1) throw new Error(`${where}: alertdialog not named "${line}"`);
     if (got.focusInside) throw new Error(`${where}: the offer took focus`);
     if (got.countdownHidden !== "true") throw new Error(`${where}: the ticking countdown is not aria-hidden`);
     if (got.disabled) throw new Error(`${where}: Yes uses disabled, so Tab cannot reach it`);
     if (!got.focusable) throw new Error(`${where}: Yes is not focusable`);
     const short = n - v.mine[r];
     if (short <= 0) {
+      if (got.compact || got.hasDismiss || !got.hasYes) throw new Error(`${where}: can pay but saw compact/Dismiss or no Yes`);
+      if ((await t.page.getByRole("region", { name: line, exact: true }).count()) !== 1) throw new Error(`${where}: alertdialog not named "${line}"`);
       if (got.ariaDisabled !== null || got.describedBy) throw new Error(`${where}: Yes is marked disabled but can pay`);
       return false;
     }
-    if (got.ariaDisabled !== "true") throw new Error(`${where}: Yes is not aria-disabled though it cannot pay`);
-    if (got.describedBy !== `Need ${short} more ${RESOURCE_LABEL[r].toLowerCase()}`) throw new Error(`${where}: Yes is not described by "Need ${short} more ${RESOURCE_LABEL[r].toLowerCase()}"`);
+    // #537: cannot pay -> compact demand with Dismiss and no Accept. Its reason is hidden text on Dismiss (owner decision, PR #824).
+    const demand = `${A.name} is looking for ${n} ${RESOURCE_LABEL[r].toLowerCase()}`;
+    if (!got.compact || !got.hasDismiss || got.hasYes) throw new Error(`${where}: short seat must be compact with Dismiss and no Yes`);
+    if (got.demand !== demand) throw new Error(`${where}: demand was "${got.demand}", want "${demand}"`);
+    if ((await t.page.getByRole("region", { name: demand, exact: true }).count()) !== 1) throw new Error(`${where}: region not named "${demand}"`);
+    if (got.ariaDisabled !== null) throw new Error(`${where}: Dismiss is marked disabled`);
+    if (got.describedBy !== `You need ${short} more ${RESOURCE_LABEL[r].toLowerCase()} to accept`) throw new Error(`${where}: Dismiss is not described by "You need ${short} more ${RESOURCE_LABEL[r].toLowerCase()} to accept"`);
     return true;
   };
   for (const t of [B, C]) await answerable(t, vs[tabs.indexOf(t)], line, want, 1);
@@ -344,15 +363,20 @@ try {
     role: el.getAttribute("role"),
   }));
   if (askerView.live || askerView.hidden !== null || askerView.role !== "region") throw new Error(`asker's toast changed: ${JSON.stringify(askerView)}`);
-  console.log(`#366: ${B.name} and ${C.name} see an alertdialog named "${line}", focus untouched, countdown aria-hidden`);
+  console.log(`#366 / #537: ${B.name} and ${C.name} see a named offer region (full or compact), focus untouched`);
 
-  // 2. C says No: everyone sees it, C's toast goes, the offer stays open for B.
+  // 2. C declines (No, or Dismiss when short of the ask): everyone sees it, C's toast goes, the offer stays open for B.
   const before = vs;
-  await C.page.getByRole("button", { name: "No", exact: true }).click();
+  const cToast = C.page.getByTestId("trade-toast");
+  if ((await cToast.getAttribute("data-compact")) === "true") await cToast.getByTestId("trade-dismiss").click();
+  else await cToast.getByRole("button", { name: "No", exact: true }).click();
   vs = await until(async () => {
     const vs = await views(tabs);
     return vs.every((v) => v.declined.includes(before[k].you)) ? vs : null;
   }, "the decline reaches every tab");
+  // #537: the card fades for 150 ms before it leaves; the check below reads it once the fade is over.
+  await until(async () => ((await C.page.getByTestId("trade-toast").count()) === 0 ? true : null), `${C.name}'s card leaves after the fade`, 2_000);
+  vs = await views(tabs);
   if (vs[k].toast !== null) throw new Error(`${C.name} still has a toast after No: "${vs[k].toast}"`);
   if (!vs[i].toast.includes(`${C.name} declined`)) throw new Error(`asker toast after No: "${vs[i].toast}"`);
   if (!vs[j].toast || vs.some((v) => !v.offer || v.offer.tradeId !== tradeId)) throw new Error("the offer closed on a single No");
@@ -384,10 +408,10 @@ try {
   await until(async () => (await views(tabs)).every((v) => v.toast === null) || null, "toasts gone after the yes");
   console.log(`${B.name} took it: 1 ${give} -> ${B.name}, 1 ${want} -> ${A.name}, hands and goods counts agree on all 3 tabs`);
 
-  // 4. Ask again, the other way round (the asker now holds the card it got); C says No; nobody else answers, so the
-  // host's 20 s run out. Nothing moves, every toast closes.
+  // 4. #366: the timeout lifecycle, with #537's compact seats. Ask again, the other way round (the asker now holds the card
+  // it got), for one more than either other tab holds, so both are short and see compact demand: Dismiss, no Yes. C
+  // answers with Escape; nobody else does, so the host's 20 s run out. Nothing moves, every toast closes.
   if (vs[0].phase !== "main" || vs[0].current !== vs[i].you) throw new Error("the asker lost the turn");
-  // It asks for one more than either other tab holds, so both see an aria-disabled Yes with its reason (#366).
   const n2 = Math.max(vs[j].mine[give], vs[k].mine[give]) + 1;
   await forget(tabs);
   const again = await ask(want, give, n2);
@@ -397,29 +421,33 @@ try {
   for (const t of [B, C]) {
     if (!(await answerable(t, again[tabs.indexOf(t)], line2, give, n2))) throw new Error(`${t.name} can pay ${n2} ${RESOURCE_LABEL[give].toLowerCase()}`);
   }
-  console.log(`#366: "${line2}": Yes on ${B.name} and ${C.name} is aria-disabled, focusable, described by "Need … more ${RESOURCE_LABEL[give].toLowerCase()}"`);
-  // Enter on B's aria-disabled Yes sends nothing; Escape inside C's toast answers No.
+  // #537: a short seat has nothing to accept with, and the host would refuse it anyway.
+  for (const t of [B, C]) {
+    const accepts = await t.page.getByTestId("trade-toast").getByRole("button", { name: /^(yes|accept)/i }).count();
+    if (accepts) throw new Error(`${t.name} is short of ${n2} ${RESOURCE_LABEL[give].toLowerCase()} but its toast has an Accept`);
+  }
+  console.log(`#537: "${A.name} is looking for ${n2} ${RESOURCE_LABEL[give].toLowerCase()}" is compact on ${B.name} and ${C.name}: Dismiss, no Yes`);
+  // B sends nothing from here to the timeout; its polite line is watched for every text it takes, from ~20 s left until
+  // the toast closes (a MutationObserver misses no 1 s window).
   await spyAnswers(B);
-  // Every text B's polite line takes, from ~20 s left until the toast closes (a MutationObserver misses no 1 s window).
   await B.page.evaluate(() => {
     const live = document.querySelector('[data-testid="trade-countdown-live"]');
     window.__said = [live.textContent];
     new MutationObserver(() => window.__said.push(live.textContent)).observe(live, { childList: true, characterData: true, subtree: true });
   });
-  await B.page.getByTestId("trade-toast").getByRole("button", { name: "Yes", exact: true }).focus();
-  await B.page.keyboard.press("Enter");
-  const sent = await B.page.evaluate(() => window.__answers);
-  if (sent.length) throw new Error(`${B.name}'s aria-disabled Yes answered: ${JSON.stringify(sent)}`);
-  await C.page.getByTestId("trade-toast").getByRole("button", { name: "Yes", exact: true }).focus();
+  // Escape inside C's compact toast answers: the same decline as Dismiss.
+  await C.page.getByTestId("trade-dismiss").focus();
   await C.page.keyboard.press("Escape");
   await until(async () => (await views(tabs)).every((v) => v.declined.includes(again[k].you)) || null, "second decline (Escape)");
-  console.log(`#366: Enter on ${B.name}'s aria-disabled Yes sent nothing; Escape in ${C.name}'s toast answered No`);
+  console.log(`#366: Escape in ${C.name}'s compact toast answered No; ${B.name} has no Accept and answers nothing`);
   const left = Number((await A.page.getByTestId("trade-countdown").textContent()).replace(/\D/g, ""));
   if (left < 15 || left > 20) throw new Error(`countdown reads ${left} s right after the ask`);
   vs = await until(async () => {
     const vs = await views(tabs);
     return vs.every((v) => !v.offer && v.toast === null) ? vs : null;
   }, "the offer times out and every toast closes", 30_000);
+  const bSent = await B.page.evaluate(() => window.__answers);
+  if (bSent.length) throw new Error(`${B.name} answered ${JSON.stringify(bSent)} on the offer it let run out`);
   // #609: nobody took it, so only the asker hears the No.
   await sleep(500);
   if (!same(await trades(A), [...offerHeard(want, give, true), "error_002.wav@1"])) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for the expiry`);
@@ -433,6 +461,191 @@ try {
   for (const n of [0, 1, 2]) if (!same(vs[n].mine, again[n].mine)) throw new Error(`${tabs[n].name}'s hand changed on a timeout`);
   console.log(`second offer ran out after ${left} s left on the clock: hands unchanged, toast closed on all 3 tabs`);
 
+  // 5. #537: A asks for 2 of a good (and offers 1 of the card it holds). B has none, so B sees the compact demand with
+  // Dismiss and no Accept; C can pay and sees the normal offer. Affordance follows the seat's own hand, so changing a hand
+  // updates its toast without another offer. Declining from B's compact signal and C's normal offer closes the offer on
+  // A, B and C within 500 ms, not at the 20 s timeout.
+  const offerRes = want;
+  const need = want === "ore" ? "timber" : "ore";
+  const needLabel = RESOURCE_LABEL[need].toLowerCase();
+  const demand = `${A.name} is looking for 2 ${needLabel}`;
+  const line3 = `${A.name} offers 1 ${RESOURCE_LABEL[offerRes].toLowerCase()} for 2 ${needLabel}`;
+  // Sets this tab's own count of `need`, the way a state from the host would: the toast reads it from the store.
+  const setLocal = (t, count) =>
+    t.page.evaluate(({ res, n }) => {
+      const store = window.__emberisle;
+      const state = structuredClone(store.getState().state);
+      const me = state.players.find((p) => p.id === store.getState().localId);
+      me.resources = { ...me.resources, [res]: n };
+      me.goods = Object.values(me.resources).reduce((sum, x) => sum + x, 0);
+      store.setState({ state });
+    }, { res: need, n: count });
+  // The toast's data-compact, read without waiting for a toast to exist.
+  const compactOf = (t) => t.page.evaluate(() => document.querySelector('[data-testid="trade-toast"]')?.getAttribute("data-compact") ?? null);
+  const fadeOf = (t) => t.page.evaluate(() => document.querySelector('[data-testid="trade-toast"]')?.getAttribute("data-fade-ms") ?? null);
+  // The last decline closes the offer on every tab within 500 ms. Each page stamps (Date.now, one clock) when its store
+  // dropped the offer and its toast left the DOM, so the number reads the app, not this script's polling.
+  const watchClear = (t) =>
+    t.page.evaluate(() => {
+      if (!window.__watchClear) {
+        const store = window.__emberisle;
+        window.__watchClear = () => {
+          const clear = !store.getState().offer && !document.querySelector('[data-testid="trade-toast"]');
+          if (!clear) window.__clearedAt = null;
+          else window.__clearedAt ??= Date.now();
+        };
+        store.subscribe(window.__watchClear);
+        new MutationObserver(window.__watchClear).observe(document.body, { childList: true, subtree: true });
+      }
+      window.__clearedAt = null;
+      window.__watchClear();
+    });
+  const clearedAt = (t) => t.page.evaluate(() => window.__clearedAt ?? null);
+  const lastDecline = async (click, what) => {
+    await Promise.all(tabs.map(watchClear));
+    const t0 = Date.now();
+    await click();
+    const at = await until(async () => {
+      const all = await Promise.all(tabs.map(clearedAt));
+      return all.every((x) => x !== null) ? all : null;
+    }, `#537 (${what}): the fully declined offer closes on every tab, not at the timeout`, 5_000);
+    const ms = Math.max(...at) - t0;
+    if (ms > 500) throw new Error(`#537 (${what}): the fully declined offer took ${ms} ms to close on every tab (> 500)`);
+    const closed = await views(tabs);
+    if (closed.some((v) => v.offer)) throw new Error(`#537 (${what}): a tab still holds the offer`);
+    return ms;
+  };
+  // #537: when the outcome line clears (2.5 s on), no copy of the old offer card may come back for any seat. The watchers go in
+  // right after the last decline, while the outcome line is still showing, and report any trade-toast that is added.
+  const noGhostCard = async (what) => {
+    await Promise.all(tabs.map((t) => t.page.evaluate(() => {
+      window.__ghost = [];
+      window.__sawOutcome = Boolean(document.querySelector('[data-testid="trade-outcome"]'));
+      new MutationObserver((records) => {
+        if (document.querySelector('[data-testid="trade-outcome"]')) window.__sawOutcome = true;
+        for (const r of records) for (const n of r.addedNodes) if (n.nodeType === 1 && (n.matches?.('[data-testid="trade-toast"]') || n.querySelector?.('[data-testid="trade-toast"]'))) window.__ghost.push(performance.now());
+      }).observe(document.body, { childList: true, subtree: true });
+    })));
+    await until(async () => {
+      const gone = await Promise.all(tabs.map((t) => t.page.evaluate(() => !document.querySelector('[data-testid="trade-outcome"]'))));
+      return gone.every(Boolean) ? true : null;
+    }, `#537 (${what}): the outcome line clears on every tab`, 6_000);
+    await sleep(500);
+    const seen = await Promise.all(tabs.map((t) => t.page.evaluate(() => ({ ghost: window.__ghost.length, outcome: window.__sawOutcome }))));
+    if (!seen.some((x) => x.outcome)) throw new Error(`#537 (${what}): no seat showed an outcome line, so the ghost check proved nothing`);
+    if (seen.some((x) => x.ghost)) throw new Error(`#537 (${what}): an offer card came back after the outcome line cleared: ${JSON.stringify(seen)}`);
+    console.log(`#537 (${what}): no stale offer card appears when the outcome line clears`);
+  };
+  // A holds the card it is offering, and still has the turn, so it can ask again.
+  const canAskAgain = (what) => {
+    if (vs[0].phase !== "main" || vs[0].current !== vs[i].you || (vs[i].mine[offerRes] ?? 0) < 1) {
+      throw new Error(`#537 (${what}): the asker cannot ask again (phase ${vs[0].phase}, holds ${vs[i].mine[offerRes]} ${offerRes})`);
+    }
+  };
+  // B short, C able, then the ask: B must see the compact demand and C the normal offer within 2 s of it.
+  const askShortAndAble = async (what) => {
+    await forget(tabs);
+    await setLocal(B, 0);
+    await setLocal(C, 2);
+    const got = await ask(offerRes, need, 2);
+    await until(async () => ((await compactOf(B)) === "true" && (await compactOf(C)) === null ? true : null), `#537 (${what}): B sees the compact demand and C the normal offer`, 2_000);
+    return got;
+  };
+
+  canAskAgain("normal motion");
+  const third = await askShortAndAble("normal motion");
+  const tradeId3 = third[0].offer.tradeId;
+  if (tradeId3 === tradeId2) throw new Error("third ask reused the tradeId");
+  const afterPin = await views(tabs);
+  if (!(await answerable(B, afterPin[tabs.indexOf(B)], line3, need, 2))) throw new Error(`${B.name} should be short of ${needLabel}`);
+  if (await answerable(C, afterPin[tabs.indexOf(C)], line3, need, 2)) throw new Error(`${C.name} should be able to pay 2 ${needLabel}`);
+  if ((await fadeOf(B)) !== "150") throw new Error(`#537: the dismiss fade is ${await fadeOf(B)} ms, want 150`);
+  console.log(`#537: ${B.name} sees compact "${demand}"; ${C.name} sees full offer "${line3}"`);
+  // #537 / owner decision on PR #824: the compact signal keeps its reason for keyboard and screen-reader users. B has 0 of
+  // the good and the ask wants 2, so the hidden reason names exactly that; C can pay and gets no reason at all.
+  const why = await B.page.evaluate(() => {
+    const el = document.querySelector('[data-testid="trade-why"]');
+    const dismiss = document.querySelector('[data-testid="trade-dismiss"]');
+    const toast = document.querySelector('[data-testid="trade-toast"]');
+    const box = el?.getBoundingClientRect();
+    return { text: el?.textContent ?? null, id: el?.id ?? null, dismissRef: dismiss?.getAttribute("aria-describedby") ?? null, toastRef: toast?.getAttribute("aria-describedby") ?? null, tiny: box ? box.width <= 1 && box.height <= 1 : null };
+  });
+  if (why.text !== `You need 2 more ${needLabel} to accept`) throw new Error(`#537: ${B.name}'s hidden reason reads ${JSON.stringify(why.text)}`);
+  if (!why.id || why.dismissRef !== why.id || why.toastRef !== why.id) throw new Error(`#537: the reason is not tied to Dismiss and the toast: ${JSON.stringify(why)}`);
+  if (!why.tiny) throw new Error(`#537: the reason is visible on screen: ${JSON.stringify(why)}`);
+  if (await C.page.getByTestId("trade-why").count()) throw new Error(`#537: ${C.name} can pay but has an unaffordable reason`);
+  console.log(`#537: ${B.name}'s Dismiss and toast are described by the hidden "${why.text}"; ${C.name} has none`);
+
+  // Change B's hand: the compact signal flips to the normal Yes/No with no new offer, and back.
+  await setLocal(B, 2);
+  await until(async () => {
+    const yes = await B.page.getByTestId("trade-toast").getByRole("button", { name: "Yes", exact: true }).count();
+    return (await compactOf(B)) === null && yes === 1 ? true : null;
+  }, `#537: B's toast upgrades when ${needLabel} arrives`);
+  if ((await view(B)).offer?.tradeId !== tradeId3) throw new Error("#537: the upgrade needed another offer");
+  if (await B.page.getByTestId("trade-why").count()) throw new Error("#537: the reason stayed after B could pay");
+  console.log(`#537: giving ${B.name} 2 ${needLabel} flips compact to full Yes/No without a new offer`);
+  await setLocal(B, 0);
+  await until(async () => ((await compactOf(B)) === "true" ? true : null), "#537: B compact again");
+
+  // B dismisses from the compact signal (Enter on the focused Dismiss sends a No): the offer stays open for C.
+  await spyAnswers(B);
+  await B.page.getByTestId("trade-dismiss").focus();
+  // The card must stay mounted and fade: sample every frame from the Enter until it leaves the DOM.
+  await B.page.evaluate(() => {
+    window.__fade = [];
+    const sample = () => {
+      const el = document.querySelector('[data-testid="trade-toast"]');
+      if (el) window.__fade.push({ leaving: el.getAttribute("data-leaving") === "true", opacity: Number(getComputedStyle(el).opacity), inert: el.hasAttribute("inert") });
+      if (el || window.__fade.length < 2) requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
+  await B.page.keyboard.press("Enter");
+  await until(async () => ((await B.page.getByTestId("trade-toast").count()) === 0 ? true : null), "#537: B's card leaves after the fade", 2_000);
+  const fade = await B.page.evaluate(() => window.__fade);
+  const leavingFrames = fade.filter((f) => f.leaving);
+  if (leavingFrames.length < 2) throw new Error(`#537: the 150 ms dismiss fade never ran: ${JSON.stringify(fade)}`);
+  if (!leavingFrames.some((f) => f.opacity > 0 && f.opacity < 1)) throw new Error(`#537: opacity never took a value between 0 and 1 while fading: ${JSON.stringify(leavingFrames)}`);
+  if (!leavingFrames.every((f) => f.inert)) throw new Error(`#537: a fading card was still operable: ${JSON.stringify(leavingFrames)}`);
+  console.log(`#537: Dismiss fades the card over ${leavingFrames.length} frames (opacity ${leavingFrames[0].opacity.toFixed(2)} to ${leavingFrames.at(-1).opacity.toFixed(2)}), inert while it goes`);
+  const dismissSent = await B.page.evaluate(() => window.__answers);
+  if (!same(dismissSent, [[tradeId3, false]])) throw new Error(`#537: ${B.name}'s Enter on Dismiss sent ${JSON.stringify(dismissSent)}`);
+  vs = await until(async () => {
+    const next = await views(tabs);
+    return next.every((v) => v.declined.includes(third[j].you)) ? next : null;
+  }, "#537: B's dismiss reaches every tab");
+  if (vs.some((v) => !v.offer || v.offer.tradeId !== tradeId3)) throw new Error("#537: the offer closed on B's dismiss alone");
+  if (!(await C.page.getByTestId("trade-toast").count())) throw new Error(`#537: ${C.name}'s offer went when only ${B.name} declined`);
+  // C declines from the normal offer: A, B and C close it within 500 ms.
+  const normalMs = await lastDecline(() => C.page.getByTestId("trade-toast").getByRole("button", { name: "No", exact: true }).click(), "normal motion");
+  console.log(`#537: both declined, the offer is gone on all 3 tabs in ${normalMs} ms`);
+  await noGhostCard("normal motion");
+
+  // 6. #537 again under reduced motion: the dismiss does not fade (0 ms) and the fully declined offer is gone at once. The
+  // asker can always ask again here; if it cannot, this fails rather than skips.
+  for (const t of tabs) await t.page.emulateMedia({ reducedMotion: "reduce" });
+  vs = await views(tabs);
+  canAskAgain("reduced motion");
+  const fourth = await askShortAndAble("reduced motion");
+  const tradeId4 = fourth[0].offer.tradeId;
+  if (tradeId4 === tradeId3) throw new Error("fourth ask reused the tradeId");
+  for (const t of [B, C]) {
+    const fade = await fadeOf(t);
+    if (fade !== "0") throw new Error(`#537: reduced motion left ${t.name}'s toast with data-fade-ms ${fade}, want 0`);
+  }
+  const t0 = Date.now();
+  await B.page.getByTestId("trade-dismiss").click();
+  await until(async () => ((await B.page.getByTestId("trade-toast").count()) === 0 ? true : null), "#537: B's compact signal is gone after Dismiss", 2_000);
+  // The fade is 0 ms; the allowance covers a React unmount and the click's round trip on a slow runner.
+  if (Date.now() - t0 > 250) throw new Error(`#537: reduced motion dismiss took ${Date.now() - t0} ms`);
+  await until(async () => (await views(tabs)).every((v) => v.declined.includes(fourth[j].you)) || null, "#537: B's dismiss reaches every tab under reduced motion");
+  const calmMs = await lastDecline(() => C.page.getByTestId("trade-toast").getByRole("button", { name: "No", exact: true }).click(), "reduced motion");
+  console.log(`#537: reduced motion: dismiss at once, both declined, the offer is gone on all 3 tabs in ${calmMs} ms`);
+  await noGhostCard("reduced motion");
+
+  // Step 6's last decline plays corn_no on every seat a moment after the offer closes; let it land before #1107 listens.
+  await sleep(2000);
   const dakingId = vs[tabs.indexOf(A)].you;
   await Promise.all(tabs.map((t) => t.page.evaluate((id) => {
     const store = window.__emberisle;
