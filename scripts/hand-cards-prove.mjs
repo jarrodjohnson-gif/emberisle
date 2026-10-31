@@ -653,7 +653,7 @@ try {
     assert.equal(loss.text, "−1", `${v.tag}: loss tab reads −N`);
     assert.deepEqual(parse(loss.bg), rgb("#fff9f0"), `${v.tag}: loss tab is hollow (paper)`);
     assert.deepEqual(parse(loss.color), rgb("#263d3c"), `${v.tag}: loss tab text is the dark ink`);
-    assert.match(loss.edge, /rgb\(138, 34, 25\) 0px 0px 0px 1px inset/, `${v.tag}: loss tab has a 1 px red edge`);
+    assert.match(loss.edge, /rgb\(23, 61, 53\) 0px 0px 0px 1.5px inset/, `${v.tag}: loss tab has a 1.5 px outline in the good's side colour`);
     assert.ok(ratio(parse(loss.color), parse(loss.bg)) >= 4.5, `${v.tag}: loss tab ≥ 4.5:1`);
     assert.ok(Math.abs(loss.off) <= 0.5, `${v.tag}: the loss tab is centred on its card`);
     assert.deepEqual(loss.font, ["14px", "700"], `${v.tag}: the −N tab is 14 px bold`);
