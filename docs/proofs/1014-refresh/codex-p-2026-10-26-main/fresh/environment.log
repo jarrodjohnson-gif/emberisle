@@ -1,0 +1,11 @@
+$ bash -c "node --version; npm ls playwright @ffmpeg-installer/ffmpeg --depth=0; ffmpeg -version | head -1; ffprobe -version | head -1; /workspace/emberisle/work/browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell --version; git rev-parse HEAD; git merge-base origin/main HEAD"
+v24.19.0
+emberisle@ /workspace/emberisle/work/p-verify1015-main
+├── @ffmpeg-installer/ffmpeg@1.1.0
+└── playwright@1.63.0
+
+ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers
+ffprobe version 7.1.5-0+deb13u1 Copyright (c) 2007-2026 the FFmpeg developers
+Google Chrome for Testing 153.0.8010.12
+cf1f5082038d5b74de3fd475e2b2ea8047b023a2
+9bde9861490662ef3e95e90db5cfa2dc7874fd55

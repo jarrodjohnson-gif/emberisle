@@ -257,8 +257,8 @@ try {
   await page.getByRole("button", { name: "Trade", exact: true }).click();
   await page.getByTestId("trade-panel").waitFor();
   const askPractice = await page.getByRole("button", { name: "Ask the table" }).count();
-  await page.getByRole("button", { name: "More stone to give" }).click();
-  await page.getByRole("button", { name: "More sheep to want" }).click();
+  await page.getByRole("button", { name: "More Stone to give", exact: true }).click();
+  await page.getByRole("button", { name: "More Sheep to want", exact: true }).click();
   const rateButton = page.getByRole("button", { name: /^(Bank 4|Dock 3|Dock 2):1$/ });
   const rateLabel = await rateButton.textContent();
   await rateButton.click();
@@ -453,6 +453,24 @@ try {
   console.log("win tab order:", JSON.stringify({ tabs, back }));
   if (tabs.some((t) => !t.inDialog)) throw new Error(`win screen: Tab left the dialog: ${JSON.stringify(tabs)}`);
   if (back.id !== "win-menu") throw new Error(`win screen: Shift+Tab from Look around went to ${back.id}`);
+  const negativeTabStop = await page.getByTestId("win-look").evaluate((el) => {
+    const original = el.getAttribute("tabindex");
+    el.setAttribute("tabindex", "-1");
+    return original;
+  });
+  await page.getByTestId("win-menu").focus();
+  await page.keyboard.press("Tab");
+  const afterNegativeTab = await winFocus();
+  await page.keyboard.press("Shift+Tab");
+  const afterNegativeShiftTab = await winFocus();
+  await page.getByTestId("win-look").evaluate((el, original) => {
+    if (original === null) el.removeAttribute("tabindex");
+    else el.setAttribute("tabindex", original);
+  }, negativeTabStop);
+  console.log("win negative tabindex:", JSON.stringify({ afterTab: afterNegativeTab, afterShiftTab: afterNegativeShiftTab }));
+  if (afterNegativeTab.id !== "win-menu" || afterNegativeShiftTab.id !== "win-menu") {
+    throw new Error(`win screen: negative tabindex button entered the Tab sequence: ${JSON.stringify({ afterNegativeTab, afterNegativeShiftTab })}`);
+  }
   await page.getByTestId("win-look").click();
   await page.getByTestId("win-chip").waitFor({ timeout: 2000 });
   if (await page.getByTestId("win-screen").count()) throw new Error("win screen still shown after Look around");

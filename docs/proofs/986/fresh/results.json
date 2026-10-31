@@ -1,0 +1,79 @@
+[
+  {
+    "name": "base-build",
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "cwd": "/workspace/work/ambience-base",
+    "exit": 0,
+    "seconds": 3.88
+  },
+  {
+    "name": "typecheck",
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "cwd": "/workspace/work/rematch986-verify",
+    "exit": 0,
+    "seconds": 4.42
+  },
+  {
+    "name": "build",
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "cwd": "/workspace/work/rematch986-verify",
+    "exit": 0,
+    "seconds": 3.64
+  },
+  {
+    "name": "registered",
+    "command": [
+      "node",
+      "scripts/registered-prove.mjs"
+    ],
+    "cwd": "/workspace/work/rematch986-verify",
+    "exit": 0,
+    "seconds": 0.18
+  },
+  {
+    "name": "loosen",
+    "command": [
+      "node",
+      "scripts/loosen-prove.mjs",
+      "--base",
+      "0f5690d"
+    ],
+    "cwd": "/workspace/work/rematch986-verify",
+    "exit": 0,
+    "seconds": 0.12
+  },
+  {
+    "name": "size",
+    "command": [
+      "node",
+      "scripts/size-prove.mjs",
+      "--base",
+      "/workspace/work/ambience-base"
+    ],
+    "cwd": "/workspace/work/rematch986-verify",
+    "exit": 0,
+    "seconds": 0.23
+  },
+  {
+    "name": "server",
+    "command": [
+      "npm",
+      "test"
+    ],
+    "cwd": "/workspace/work/rematch986-verify",
+    "exit": 1,
+    "seconds": 136.52
+  }
+]
