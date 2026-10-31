@@ -64,7 +64,7 @@ This is far faster than a real game night, so CPU is an upper bound.
 | Disk: `rooms/` | 57,160 bytes, 2 files |
 | Disk: `profiles/` | 4 bytes, 1 file (no profiles made) |
 | Disk: `results/` | 689 bytes, 1 file (table B finished) |
-| Traffic to the 5 clients | 1,485 MB in 208,112 frames, about 7.3 KB a frame |
+| Traffic to the 5 clients | 1,485.44 MiB in 208,112 frames, about 7,484 bytes (7.3 KiB) a frame |
 
 Limits of this run:
 
@@ -94,18 +94,21 @@ Setup times are estimates, not measurements.
 - **Traffic:** 10 TB outbound per month. (same page)
 - **Card?** "Most users need a mobile phone number and a credit card." It "will not be charged unless you upgrade." ([Free Tier](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier.htm))
 - **Always on?** Yes, but idle VMs "may be reclaimed." (Always Free resources)
-- Idle means all three hold for 7 days: CPU p95 under 20%, network under 20%, A1 memory under 20%.
+- Idle means all three hold for 7 days: CPU p95, network and A1 memory each under 20%.
+- The measured host is far under all three on any shape. Expect the VM to count as idle.
 - **WebSocket and disk:** It is a normal VM, so both work. The tunnel carries WebSockets. ([Tunnel FAQ](https://developers.cloudflare.com/cloudflare-one/faq/cloudflare-tunnels-faq/))
 - **Capacity:** "Out of host capacity" can block creating an A1 VM; Oracle says retry or wait. (Always Free resources)
 - **Home region:** free VMs exist only in the home region chosen at signup. (Free Tier)
 - **Surprise bill risk:** low while the account stays Always Free. Upgrading to Pay As You Go removes that guard.
 - **Who does what:** Jarrod signs up and creates the VM. An agent writes the scripts that set it up.
 - **Setup time (estimate):** 1–2 hours for Jarrod, if A1 capacity is available.
-- **Failure modes:** idle reclaim; capacity errors at creation; no SLA (not verified today, see below).
+- **Failure modes:** likely idle reclaim; capacity errors at creation; no SLA (not verified today).
 - Trial-era A1 VMs over 2 OCPU and 12 GB are deleted 30 days after the trial. (Free Tier)
 
-Not verified today: the [Oracle FAQ](https://www.oracle.com/cloud/free/faq/) and [Free page](https://www.oracle.com/cloud/free/) returned HTTP 403.
-`docs/research/free-hosting.md` cited that FAQ on 2026-10-18 for card types, no SLA, and 30-day idle accounts.
+Not verified today: two Oracle pages returned HTTP 403.
+They are the [Oracle FAQ](https://www.oracle.com/cloud/free/faq/) and the [Free page](https://www.oracle.com/cloud/free/).
+`docs/research/free-hosting.md` cited that FAQ on 2026-10-18 for three points.
+They are card types, no SLA, and 30-day idle accounts.
 Treat those three points as unconfirmed until someone re-reads the FAQ.
 
 ### B. Google Cloud Free Tier e2-micro
@@ -117,12 +120,17 @@ Treat those three points as unconfirmed until someone re-reads the FAQ.
 - **Card?** "A Google Cloud billing account is required." The page does not say whether a card is required for the Free Tier alone.
 - **Always on?** Yes, with no idle reclaim rule on that page.
 - **WebSocket and disk:** a normal VM, so both work.
-- **Surprise bill risk:** real. It is a billing account. Alerts-only budgets "don't automatically cap" spending. ([Budgets](https://docs.cloud.google.com/billing/docs/how-to/budgets))
+- **Surprise bill risk:** real. It is a billing account.
+- Alerts-only budgets "don't automatically cap" spending. ([Budgets](https://docs.cloud.google.com/billing/docs/how-to/budgets))
+- A spend-cap budget pauses services "until you manually lift the cap." (same page)
+- Spend caps exist only "if supported for your service." Support for Compute Engine is not verified.
 - **External IPv4 price:** not verified. The [network pricing](https://cloud.google.com/vpc/network-pricing) page did not load in full.
 - **Who does what:** as A.
 - **Setup time (estimate):** 1–2 hours for Jarrod.
-- **Failure modes:** the host peaked at 143 MB; headroom beside the OS and `cloudflared` is not measured.
-- Outbound traffic over 1 GB a month is billed at a price not checked. That is about 1,500 four-player turns.
+- **Failure modes:** the host peaked at 143 MB.
+- Headroom beside the OS and `cloudflared` is not measured.
+- Outbound traffic over 1 GB a month is billed. The price was not checked.
+- 1 GB is about 1,500 four-player turns.
 
 ### C. Free app platforms
 
@@ -135,7 +143,9 @@ Treat those three points as unconfirmed until someone re-reads the FAQ.
 
 All three platforms also put a proxy on a non-loopback address in front of the host.
 That breaks profile sign-in and per-address limits, as section 1 explains.
-Card rules: Render's page names a payment method only for overage; Koyeb's pages did not say.
+Render's page does not say a card is needed to start.
+If Free services use up their bandwidth and no payment method is added, Render suspends them for the month.
+Koyeb's pages did not state a card rule.
 
 ### The fly-io, render and cursor checks on PRs
 
@@ -178,7 +188,7 @@ The only deployment environment in use is `github-pages`.
 
 | Option | Free forever | Card | Always on | Unchanged host | Bill risk |
 |---|---|---|---|---|---|
-| A. Oracle A1 VM | Yes | Most users | Yes, idle-reclaim risk | Yes | Low unless upgraded |
+| A. Oracle A1 VM | Yes | Most users | Yes, but idle reclaim likely | Yes | Low unless upgraded |
 | B. Google e2-micro | Yes | Billing account | Yes | Yes; 1 GB traffic cap | Real |
 | C. Render, Koyeb, Fly.io | Render, Koyeb yes; Fly.io trial | Varies | No: they sleep | No: no disk, proxy | Low |
 | D. Cloudflare DO | Yes | Not verified | Yes, within quota | No: full port | None |
@@ -189,7 +199,8 @@ The only deployment environment in use is `github-pages`.
 Move the unchanged host to one Oracle Always Free A1 VM.
 Run `cloudflared` on that VM with a named tunnel to the public link.
 Keep the account Always Free, never Pay As You Go, so it cannot bill.
-Keep the Mac setup as the fallback, on the same public link.
+Expect Oracle to treat the VM as idle; it may be reclaimed.
+Plan B is nightly backups plus the Mac, switched over by hand on the same public link.
 Leave #789–795 parked unless Oracle fails.
 
 Reasons:
@@ -198,6 +209,7 @@ Reasons:
 - The tunnel keeps the loopback rules, so profiles and per-address limits work as tested.
 - The tunnel is outbound only, so the VM opens no inbound port.
 - Measured memory is a small part of the free allowance.
+- Its weak point is idle reclaim. Plan B covers it at no cost.
 
 ### Runbook
 
@@ -207,14 +219,22 @@ Never paste a password, key, token or tunnel credential into chat, an issue or t
 
 1. Pick the domain for the public link (question 2).
 2. If it is `hightidewash.net`: copy the Webflow records into the Cloudflare zone first, then switch nameservers at Squarespace.
-3. Sign up at Oracle Cloud with phone and card. Choose a US home region near the players.
+3. Sign up at Oracle Cloud with a phone number and a card. Choose a US home region near the players.
 4. Do not upgrade to Pay As You Go.
 5. Create one VM: shape `VM.Standard.A1.Flex`, 1 OCPU, an Ubuntu ARM64 image (see question 4 for memory).
 6. Add his own SSH public key when creating it. Keep the private key on his Mac.
 7. Leave the VM's security list with no new inbound rules.
-8. On the VM, run `cloudflared tunnel login` and `cloudflared tunnel create emberisle`. The credentials stay on the VM.
-9. Run the `cloudflared tunnel route dns ...` line that the setup script prints.
-10. Turn on a boot volume backup policy in the Oracle console (it counts against the five free backups).
+8. Over SSH on the VM, run `cloudflared tunnel login`.
+   The VM has no browser. `cloudflared` then prints "Please open the following URL and log in".
+   Open that URL on the Mac and pick the domain. Leave `cloudflared` running until it finishes.
+   The account certificate, `cert.pem`, is saved on the VM and stays there.
+   Sources: [Cloudflare guide](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/create-local-tunnel/), [cloudflared source](https://github.com/cloudflare/cloudflared/blob/master/token/transfer.go).
+9. On the VM, run `cloudflared tunnel create emberisle`. Its credentials file stays on the VM.
+10. Run the `cloudflared tunnel route dns ...` line that the setup script prints.
+11. Turn on a boot volume backup policy in the Oracle console (it counts against the five free backups).
+12. Set an Oracle budget with an alert at $1 of actual spend. This is a tripwire, not a cap.
+13. For plan B, copy the tunnel credentials file to the Mac over SSH.
+    Keep it in `~/.cloudflared/` on the Mac. Never put it in the repo, chat or an issue.
 
 If A1 shows "out of host capacity", retry later or in another availability domain. Do not upgrade.
 
@@ -236,6 +256,26 @@ If A1 shows "out of host capacity", retry later or in another availability domai
    - Deleting the public hostname in the Cloudflare dashboard works from a phone.
    - Stopping the VM in the Oracle console stops everything.
 8. A restore guide. Run one host per profile store; never two (`docs/design/profiles.md`, #1029).
+9. A plan B guide for the manual switch, below.
+
+#### Plan B: switch to the Mac by hand
+
+Only one host and one tunnel connector may run at any time.
+Cloudflare sends each request to the "geographically closest replica" of a tunnel.
+It offers no traffic steering between replicas. ([Tunnel availability](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/configure-tunnels/tunnel-availability/))
+So two connectors would split players across two hosts with two profile stores.
+That breaks the "never two" rule above.
+
+Switch to the Mac:
+
+1. On the VM, stop `cloudflared`, then stop the host. The host flushes rooms on `SIGTERM`.
+2. Copy the three data folders from the VM to the Mac.
+3. If the VM is gone, restore last night's backup archive on the Mac instead.
+   Changes since that backup are lost.
+4. On the Mac, start the host on those folders, then run `node scripts/named-tunnel.mjs --run`.
+5. Open the public link and join a table.
+
+Switch back the same way: stop the Mac tunnel and host, copy the folders back, then start the VM services.
 
 Each script gets a proof registered in `package.json` and `ci.yml`, per AGENTS.md rule 6.
 Those proofs run against stubs in CI. Only the live checks below need the VM.
@@ -255,6 +295,9 @@ Those proofs run against stubs in CI. Only the live checks below need the VM.
 - Create only the one A1 VM, its boot volume, and backups within five.
 - Keep everything in the home region.
 - Never add a resource that the Always Free page does not list.
+- Set a budget alert at $1 of actual spend as a tripwire.
+  Budgets are "soft limits": they send email and stop nothing. Alerts are checked every 24 hours.
+  Whether Always Free accounts can create budgets, and any minimum amount, are not verified.
 
 #### How it is tested
 
@@ -268,16 +311,23 @@ Those proofs run against stubs in CI. Only the live checks below need the VM.
 
 #### Ongoing risks
 
-- **Idle reclaim:** a quiet game VM can meet all three idle thresholds.
-  Even the fast run used 2.57% of a core and 143 MB, well under 20% of a 6 GB VM.
-  Mitigation: the health timer watches; backups and the provision script rebuild in under an hour (estimate).
+- **Idle reclaim is likely.** Even the fast run used 2.57% of a core and 143 MB.
+  That is far under each 20% threshold on any A1 shape. Expect the VM to count as idle.
+  Oracle says idle VMs "may be reclaimed"; it does not say when.
+  A smaller memory shape is the only honest lever (question 4). It may still not be enough.
   Do not create fake load to avoid reclaim (`docs/research/free-hosting.md`).
-- **Capacity:** a rebuilt VM may face "out of host capacity". The Mac fallback covers that gap.
+- **Plan B:** nightly backups plus the Mac, switched by hand as above.
+  The health timer shows when the VM is gone. The provision script rebuilds a new VM.
+- **Capacity:** a rebuilt VM may face "out of host capacity". The Mac covers that gap.
 - **Personal data:** profiles and pictures would live on the VM. That needs Jarrod's OK (question 3).
 
 ## 4. Questions for Jarrod
 
 1. **Which home: Oracle Always Free VM, or keep the Mac only?**
+   Oracle needs a card and a phone number to sign up, for "most users".
+   Oracle says the card "will not be charged unless you upgrade."
+   So part of this choice is: are you willing to give Oracle a card?
+   Oracle may also reclaim the VM as idle, so the Mac stays plan B.
    Recommendation: Oracle. It is the only verified free option that stays on without the Mac.
 2. **Which domain for the public link?**
    Options: `play.hightidewash.net` after moving its Webflow records to Cloudflare, or a new domain.
@@ -286,9 +336,13 @@ Those proofs run against stubs in CI. Only the live checks below need the VM.
    The 2026-10-18 OK on #779 covered Cloudflare storage after #795's checks, not Oracle.
    Recommendation: yes, with backups only on the VM and your Mac, never in the repo.
 4. **How much memory for the VM?**
-   Options: 1 OCPU with 6 GB, as the 2026-10-18 research chose, or a smaller A1 shape.
-   A smaller shape raises memory use, which is one of the three idle tests. It is not fake load.
-   Recommendation: start at 1 OCPU and 6 GB. Watch for reclaim notices.
+   Options: 1 OCPU with 6 GB, as the 2026-10-18 research chose, or the smallest A1 memory for 1 OCPU.
+   The host needs about 143 MB. On 6 GB that is about 2%, so the VM is idle by Oracle's test.
+   A smaller shape raises the memory share, one of the three idle tests. It adds no fake load.
+   CPU and network will stay under 20% either way, so even this may not prevent reclaim.
+   Oracle's smallest A1 memory for 1 OCPU is not verified.
+   Recommendation: the smallest A1 memory Oracle allows for 1 OCPU.
+   The game loses nothing at 143 MB, and it is the only lever against reclaim. Plan B still stands.
 5. **How should new code reach the VM?**
    Options: the VM pulls `main` nightly; on every merge; or only when you say so.
    Recommendation: nightly, like the Pages publish, so a bad merge rarely hits a live game night.
@@ -300,5 +354,5 @@ Those proofs run against stubs in CI. Only the live checks below need the VM.
 - Render: [Free](https://render.com/docs/free), [WebSockets](https://render.com/docs/websocket). Pricing page: figures did not load.
 - Koyeb: [Instances](https://www.koyeb.com/docs/reference/instances), [Pricing](https://www.koyeb.com/pricing).
 - Fly.io: [Free trial](https://docs.fly.io/about/free-trial).
-- Cloudflare: [DO pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/), [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), [Tunnel](https://developers.cloudflare.com/tunnel/), [Tunnel FAQ](https://developers.cloudflare.com/cloudflare-one/faq/cloudflare-tunnels-faq/), [Quick tunnels](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/trycloudflare/).
+- Cloudflare: [DO pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/), [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), [Tunnel](https://developers.cloudflare.com/tunnel/), [Tunnel FAQ](https://developers.cloudflare.com/cloudflare-one/faq/cloudflare-tunnels-faq/), [Tunnel availability](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/configure-tunnels/tunnel-availability/), [Named tunnel guide](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/create-local-tunnel/), [cloudflared login source](https://github.com/cloudflare/cloudflared/blob/master/token/transfer.go), [Quick tunnels](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/trycloudflare/).
 - Repo: `server/host.mjs`, `server/profile-protocol.mjs`, `server/package.json`, `.github/workflows/pages.yml`, `docs/named-tunnel.md`, `docs/research/free-hosting.md`, #746, #779.
