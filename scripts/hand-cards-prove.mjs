@@ -627,7 +627,7 @@ try {
     assert.deepEqual(parse(gain.tab.color), rgb("#263d3c"), `${v.tag}: gain tab text is the dark ink`);
     assert.ok(ratio(parse(gain.tab.color), parse(gain.tab.bg)) >= 4.5, `${v.tag}: gain tab ≥ 4.5:1`);
     assert.ok(Math.abs(gain.tab.off) <= 0.5, `${v.tag}: the tab is centred on its card (off by ${gain.tab.off.toFixed(3)} px)`);
-    assert.deepEqual(gain.tab.font, ["14px", "700"], `${v.tag}: the +N tab is 14 px bold`);
+    assert.deepEqual(gain.tab.font, TAB[v.tag].font, `${v.tag}: the +N tab is ${TAB[v.tag].font[0]} bold`);
     assert.ok(Math.abs(gain.tab.h - 22) <= 0.5, `${v.tag}: the +N tab is 22 px tall (${gain.tab.h})`);
     assert.ok(Math.abs(gain.tab.above - 18) <= 0.5 && Math.abs(gain.tab.into - 4) <= 0.5, `${v.tag}: the tab grows out of the card's top edge (${gain.tab.above} px above, ${gain.tab.into} px into it)`);
     assert.ok(Math.abs(gain.lift - LIFT[v.tag]) <= 0.35, `${v.tag}: the gained card is lifted ${LIFT[v.tag]} px while the fill holds (${gain.lift})`);
