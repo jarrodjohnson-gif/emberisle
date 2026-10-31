@@ -25,7 +25,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -580,16 +580,16 @@ try {
   await sleep(3000);
   await mute(b, true);
   await clear(b);
-  await a.evaluate(() => window.__emberisle.getState().sendSound("plop"));
-  await until(() => b.evaluate(() => window.__emberisle.getState().chat.some((l) => l.sound === "plop")), "the plop line arrives");
+  await a.evaluate(() => window.__emberisle.getState().sendSound("bong"));
+  await until(() => b.evaluate(() => window.__emberisle.getState().chat.some((l) => l.sound === "bong")), "the bong line arrives");
   await sleep(400);
   assert.deepEqual(await names(b), [], "a muted listener hears nothing");
-  assert.ok((await b.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: "Plop" }).count()) >= 1, "but still sees the chip");
+  assert.ok((await b.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: "Bong" }).count()) >= 1, "but still sees the chip");
   await mute(b, false);
-  ok("soundboard: a muted listener sees the chip and hears nothing");
+  ok("soundboard: a muted listener sees a valid chip and hears nothing");
   // The in-game clips reach the other seat once each; a repeat of a long clip restarts it (one element per clip), never stacks.
   // #899: each is one tap on its chip in the Sounds & stickers tab (Fah above, GG! with the rest below: all fifteen).
-  for (const [id, file, label] of [["sb_airhorn", "sb_airhorn.mp3", "Airhorn"], ["sb_quit_touchin", "sb_quit_touchin.mp3", "Quit touchin' me"], ["sb_only_wood", "sb_only_wood.mp3", "Only wood?"], ["sb_perfect", "sb_perfect.mp3", "Perfect"], ["sb_plump_sheep", "sb_plump_sheep.mp3", "Plump sheep"], ["sb_nice_sheep", "sb_nice_sheep.mp3", "Nice sheep"], ["sb_sheep_please", "sb_sheep_please.mp3", "Sheep please"], ["sb_grain_please", "sb_grain_please.mp3", "Grain please"], ["sb_brick_please", "sb_brick_please.mp3", "Brick please"]]) {
+  for (const [id, file, label] of [["sb_airhorn", "sb_airhorn.mp3", "Airhorn"], ["sb_quit_touchin", "sb_quit_touchin.mp3", "Quit touchin' me"], ["sb_only_wood", "sb_only_wood.mp3", "Wood please"], ["sb_perfect", "sb_perfect.mp3", "Perfect"], ["sb_plump_sheep", "sb_plump_sheep.mp3", "Plump sheep"], ["sb_nice_sheep", "sb_nice_sheep.mp3", "Nice sheep"], ["sb_sheep_please", "sb_sheep_please.mp3", "Sheep please"], ["sb_grain_please", "sb_grain_please.mp3", "Grain please"], ["sb_brick_please", "sb_brick_please.mp3", "Brick please"], ["sb_real_badman", "sb_real_badman.mp3", "Real badman"], ["sb_gong", "sb_gong.mp3", "Gong"]]) {
     await sleep(3100);
     await clear(b);
     await a.getByRole("button", { name: `Play sound ${label}`, exact: true }).click();
@@ -599,7 +599,7 @@ try {
   }
   // #659 / #1073: every soundboard id plays at 1 (the files are leveled by type). The rest of the board, by id, one tap each.
   // The raw played file, not its clip name: the board_* sounds reuse files that table clips own, which `heard` names by the first.
-  for (const [id, file, label] of [["sb_wololo", "sb_wololo.mp3", "Wololo"], ["sb_win_reaction", "sb_win_reaction.mp3", "GG!"], ["bong", "bong_001", "Bong"], ["plop", "plop", "Plop"], ["pluck", "pluck_001", "Pluck"]]) {
+  for (const [id, file, label] of [["sb_wololo", "sb_wololo.mp3", "Wololo"], ["sb_win_reaction", "sb_win_reaction.mp3", "GG!"], ["bong", "bong_001", "Bong"]]) {
     await sleep(3100);
     await clear(b);
     await a.getByRole("button", { name: `Play sound ${label}`, exact: true }).click();
@@ -617,10 +617,10 @@ try {
     await new Promise((r) => setTimeout(r, 400));
     play("sb_airhorn");
     return (await import("/src/lib/sound.ts")).SOUNDBOARD.map((x) => x.label);
-  }).then((labels) => assert.ok(["Airhorn", "Quit touchin' me", "Only wood?"].every((l) => labels.includes(l)), "button labels"));
-  assert.ok(["Airhorn", "Quit touchin' me", "Only wood?"].every((label) => labels.includes(`Play sound ${label}`)), "visible button labels");
+  }).then((labels) => assert.ok(["Airhorn", "Quit touchin' me", "Wood please"].every((l) => labels.includes(l)), "button labels"));
+  assert.ok(["Airhorn", "Quit touchin' me", "Wood please"].every((label) => labels.includes(`Play sound ${label}`)), "visible button labels");
   await b.getByRole("tab", { name: "Chat", exact: true }).click();
-  ok("soundboard: Airhorn, Quit touchin' me and Only wood? each play once on the other seat, labelled; a repeat reuses the clip's element");
+  ok("soundboard: Airhorn, Quit touchin' me and Wood please each play once on the other seat, labelled; a repeat reuses the clip's element");
   await sleep(3100);
   // Muting a seat (the chat's Mute menu) silences that seat's soundboard taps for this listener only.
   await sleep(3000);

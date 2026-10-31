@@ -18,7 +18,7 @@ try{
   await page.getByRole('button',{name:'Pass this device',exact:true}).click();
   await page.evaluate(async()=>{
    const {createGame}=await import('/src/lib/game/board.ts');
-   const s=createGame({humans:[{name:'Ember'},{name:'Tide'},{name:'Dune'}],bots:0,seed:14});
+   const s=createGame({humans:[{name:'Ember'},{name:'Tide'},{name:'Dune'}],bots:0,seed:14,numberTokens:"random"});
    s.phase='main';s.rollOff=null;s.current='p0';s.seq=991;
    window.__emberisle.setState({state:s,mode:'hotseat',localId:'p0',banner:null,coachDismissed:true});
   });

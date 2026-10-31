@@ -12,7 +12,7 @@ const errors = [];
 const hostErrors = [];
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", DIST: path.resolve("dist"), ROOMS_DIR: path.join(temp, "rooms"), PROFILES_DIR: path.join(temp, "profiles") },
+  env: { ...process.env, PORT: "0", DIST: path.resolve("dist"), ROOMS_DIR: path.join(temp, "rooms"), RESULTS_DIR: `${path.join(temp, "rooms")}/results`, PROFILES_DIR: path.join(temp, "profiles") },
 });
 host.stderr.on("data", d => hostErrors.push(String(d)));
 let browser, served, fixture;

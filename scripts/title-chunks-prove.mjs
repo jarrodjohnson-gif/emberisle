@@ -17,7 +17,7 @@ const chunks = Object.fromEntries(["OpenTables", "WayfarerOptions"].map(name => 
 const rooms = mkdtempSync(path.join(tmpdir(), "emberisle-title-chunks-"));
 const profiles = mkdtempSync(path.join(tmpdir(), "emberisle-title-profiles-"));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
-  cwd: new URL("../server/", import.meta.url), env: { ...process.env, PORT: "0", ROOMS_DIR: rooms, PROFILES_DIR: profiles },
+  cwd: new URL("../server/", import.meta.url), env: { ...process.env, PORT: "0", ROOMS_DIR: rooms, RESULTS_DIR: `${rooms}/results`, PROFILES_DIR: profiles },
 });
 const exited = new Promise(resolve => host.once("exit", resolve));
 process.on("exit", () => { host.kill(); rmSync(rooms, { recursive: true, force: true }); rmSync(profiles, { recursive: true, force: true }); });

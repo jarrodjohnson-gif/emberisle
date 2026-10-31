@@ -43,7 +43,7 @@ for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 function boot(env = {}) {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR, SAVE_MS: "9999999", ...env },
+    env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, SAVE_MS: "9999999", ...env },
   });
   return new Promise((resolve, reject) => {
     host.stdout.on("data", (d) => {
@@ -298,6 +298,7 @@ let openCode;
     else saved.visibility = "OPEN";
     writeFileSync(file, JSON.stringify(saved));
   }
+  const preSavedAt = new Map(credentials.map((c) => [c.code, JSON.parse(readFileSync(path.join(ROOMS_DIR, `${c.code}.json`), "utf8")).savedAt]));
   restartPort = await boot({ SAVE_MS: "20", LOBBY_HOLD_MS: "10000" });
   const lister = client(restartPort, "restart-observer");
   await lister.open;
@@ -321,6 +322,26 @@ let openCode;
       assert.equal(tables[0].name, "Restart-open's table");
     } else assert.deepEqual(tables, [], `${c.name} remains private after restart and authenticated rejoin`);
     observer.ws.terminate();
+
+    // Inspect the actual rewritten room snapshot on disk after authenticated rejoin (#988).
+    const file = path.join(ROOMS_DIR, `${c.code}.json`);
+    let rewritten;
+    const saveDeadline = Date.now() + 3000;
+    while (Date.now() < saveDeadline) {
+      try { rewritten = JSON.parse(readFileSync(file, "utf8")); } catch {}
+      if (rewritten?.savedAt && rewritten.savedAt > (preSavedAt.get(c.code) ?? 0)) break;
+      await settle(20);
+    }
+    assert.ok(rewritten?.savedAt && rewritten.savedAt > (preSavedAt.get(c.code) ?? 0), `${c.name} snapshot was rewritten after rejoin`);
+    if (c.name === "Restart-invalid") {
+      assert.equal(rewritten.visibility, "private", "invalid visibility persists as private after restart and authenticated rejoin");
+    } else if (c.name === "Restart-legacy") {
+      assert.equal(rewritten.visibility, "private", "missing visibility persists as private after restart and authenticated rejoin");
+    } else if (c.visibility === "open") {
+      assert.equal(rewritten.visibility, "open", "valid open visibility stays open after restart and authenticated rejoin");
+    } else {
+      assert.equal(rewritten.visibility, "private", "valid private visibility stays private after restart and authenticated rejoin");
+    }
   }
   console.log("restart: open visibility persists through kill -9 and rejoin; private, missing and invalid visibility stay hidden");
 }
@@ -386,6 +407,79 @@ let openCode;
   assert.deepEqual((await observer.next("openTables")).tables, [], "terminal recovery releases the slot even with its winner connected");
   assert.deepEqual(await (await fetch(`http://127.0.0.1:${recoveryPort}/tables`)).json(), [], "HTTP discovery also omits the terminal recovery table");
   console.log("recovery: authenticated rejoin finishes at turn start and releases discovery while the winner stays connected");
+
+  // #986: restored completed rooms must reclaim only a free open slot when rematched.
+  for (const scenario of ["free", "successor", "private"]) {
+    await stop();
+    const visibility = scenario === "private" ? "private" : "open";
+    const file = path.join(ROOMS_DIR, "RCVR.json");
+    writeFileSync(file, JSON.stringify({
+      code: "RCVR", host: "s1", next: 3, visibility, recoveryPids: [],
+      chat: [], chatSeq: 0, game: terminal.state, seats, shape: 2, savedAt: Date.now(),
+    }));
+    const rematchPort = await boot({ SAVE_MS: "20" });
+    const players = [];
+    for (const seat of seats) {
+      const c = client(rematchPort, `${scenario}-${seat.name}`);
+      await c.open;
+      c.send({ type: "hello", code: "RCVR", secret: seat.secret });
+      assert.equal((await c.next("welcome")).code, "RCVR", "rematch seat authenticates into the restored room");
+      assert.equal((await c.next("state")).game.phase, "over", "fixture restores a genuinely completed game");
+      players.push(c);
+    }
+    const list = async () => {
+      const c = client(rematchPort, `${scenario}-observer`);
+      await c.open;
+      c.send({ type: "list" });
+      const tables = (await c.next("openTables")).tables;
+      c.ws.terminate();
+      return tables;
+    };
+    assert.deepEqual(await list(), [], "completed room stays unlisted before rematch");
+    let successorCode;
+    if (scenario === "successor") {
+      const successor = client(rematchPort, "Successor");
+      await successor.open;
+      successor.send({ type: "hello", name: "Successor", visibility: "open" });
+      successorCode = (await successor.next("welcome")).code;
+      assert.equal((await list())[0]?.code, successorCode, "another host claims the released slot");
+    }
+    for (const c of players) c.inbox = c.inbox.filter((m) => m.type !== "state");
+    players[1].send({ type: "again" });
+    const rematches = await Promise.all(players.map((c) => c.next("state")));
+    for (const state of rematches) {
+      assert.notEqual(state.game.phase, "over", "every authenticated player receives the new game");
+      assert.deepEqual(state.game.players.map((p) => ({ name: p.name, color: p.color })),
+        [seats[1], seats[0], seats[2]].map((p) => ({ name: p.name, color: p.color })),
+        "winner goes first; remaining seat order and colors survive rematch");
+    }
+    const tables = await list();
+    const expectedCode = scenario === "free" ? "RCVR" : successorCode;
+    if (expectedCode) {
+      assert.equal(tables.length, 1, "exactly one room retains the open slot");
+      assert.equal(tables[0].code, expectedCode, "rematch reclaims a free slot without replacing its successor");
+      assert.equal(tables[0].status, scenario === "free" ? "playing" : "lobby");
+      assert.equal(tables[0].seated, scenario === "free" ? 3 : 1, "listing counts exactly the rematch or successor seats");
+      assert.equal(tables[0].total, 4, "the listed capacity stays four");
+    } else assert.deepEqual(tables, [], "private rematch never becomes discoverable");
+    const http = await fetch(`http://127.0.0.1:${rematchPort}/tables`);
+    assert.equal(http.status, 200, "HTTP listing succeeds without masking the result with rate limiting");
+    assert.deepEqual(await http.json(), tables, "HTTP and WS discovery agree after rematch");
+    let saved;
+    const deadline = Date.now() + 3000;
+    while (Date.now() < deadline) {
+      saved = JSON.parse(readFileSync(file, "utf8"));
+      if (saved.game.phase !== "over" && saved.roster) break;
+      await settle(20);
+    }
+    assert.equal(saved.roster?.v, 1, "rematch saves a new frozen roster");
+    assert.match(saved.roster.gameId, /^[0-9a-f-]{36}$/i);
+    assert.deepEqual(saved.roster.players, [seats[1], seats[0], seats[2]].map((s, i) => ({
+      pid: `p${i}`, seat: s.id, profileId: null, name: s.name, color: s.color, kind: "human",
+    })), "new frozen roster preserves seat attribution, names, colors and guest identities");
+    console.log(`rematch ${scenario}: authenticated seats, winner order, frozen roster and guarded HTTP/WS discovery pass`);
+  }
+
 }
 
 console.log("open-table-prove ok: list empty, private never listed, open listed, join via code, parallel private hidden, handoff, bots count, rate limit, cleanup on drop");

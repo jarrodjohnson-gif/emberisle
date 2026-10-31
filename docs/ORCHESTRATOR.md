@@ -24,8 +24,7 @@ reviews and merges. Builders build: Codex (ChatGPT), Grok, Claude chats, and Jos
   - player-facing goods are Wood, Sheep, Brick, Stone, Wheat (#657);
   - the friends' media (icons, sounds, stickers) is curated by him; players never upload;
   - the turn timer has Off / 1 / 2 / 3 min presets (#548).
-- **Budget:** Claude usage is limited weekly. Use Sonnet for reviews, Opus only for security or infra
-  (workflows, server auth, rate limits). Keep subagents to one per PR review, and stop when he says
+- **Budget:** Claude usage is limited weekly. Review models follow `DESK.md`, "Who reviews". Keep subagents to one per PR review, and stop when he says
   usage is low.
 
 ## Reviewing, merging and check-ins

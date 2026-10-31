@@ -46,7 +46,7 @@ rmSync(emoteDir, { recursive: true, force: true });
 
 const realEmotes = loadEmotes(new URL("../src/assets/emotes/", import.meta.url));
 assert.ok(realEmotes.has("ben-10"), "real emote folder has ben-10");
-assert.deepEqual(new Set([...realEmotes].filter((name) => name !== "ben-10")), new Set(["daffy-shock", "goggles-guy", "leo-laugh", "memoji-scheme", "mike-sully", "old-grump", "shrek-smirk", "sponge-thumbs", "wide-eyes"]));
+assert.deepEqual(new Set([...realEmotes].filter((name) => name !== "ben-10")), new Set(["daffy-shock", "goggles-guy", "leo-laugh", "memoji-scheme", "mike-sully", "old-grump", "shrek-smirk", "sponge-thumbs", "wide-eyes", "monkey-pet", "side-eye", "banana-guy", "glasses-glance", "dark-smile"]));
 
 console.log("unit checks ok");
 
@@ -57,7 +57,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));

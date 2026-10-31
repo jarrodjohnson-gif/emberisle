@@ -70,7 +70,7 @@ jobs:
           done
           echo "docs_only=$DOCS_ONLY" >> "$GITHUB_OUTPUT"
 
-  build:
+  dependencies:
     needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -79,6 +79,7 @@ jobs:
         uses: actions/checkout@v4
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/setup-node@v4
+        id: node
         with:
           node-version: 22
           cache: npm
@@ -86,8 +87,45 @@ jobs:
             package-lock.json
             server/package-lock.json
       - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        id: dependencies
+        with:
+          path: |
+            node_modules
+            server/node_modules
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package.json', 'package-lock.json', 'server/package.json', 'server/package-lock.json') }}
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
+        run: npm ci --prefix server
+
+  build:
+    needs: [changes, dependencies]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
       - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/checkout@v4
+      - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/setup-node@v4
+        id: node
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        id: dependencies
+        with:
+          path: |
+            node_modules
+            server/node_modules
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package.json', 'package-lock.json', 'server/package.json', 'server/package-lock.json') }}
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
+        run: npm ci
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci --prefix server
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run typecheck
@@ -121,15 +159,15 @@ jobs:
         run: npm run size-delta-prove
 
   server:
-    needs: changes
+    needs: [changes, dependencies]
     runs-on: ubuntu-latest
     # dice-prove's sampling took 99 s on CI (#926, a349dbf); the whole job took under 6 minutes.
     timeout-minutes: 15
     steps:
-      - if: needs.changes.outputs.docs_only != 'true'
-        uses: actions/checkout@v4
-      - if: needs.changes.outputs.docs_only != 'true'
-        uses: actions/setup-node@v4
+      # desk-gate-prove uses Node built-ins and runs even for docs-only PRs.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        id: node
         with:
           node-version: 22
           cache: npm
@@ -137,16 +175,32 @@ jobs:
             package-lock.json
             server/package-lock.json
       - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        id: dependencies
+        with:
+          path: |
+            node_modules
+            server/node_modules
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package.json', 'package-lock.json', 'server/package.json', 'server/package-lock.json') }}
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
-      - if: needs.changes.outputs.docs_only != 'true'
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci --prefix server
       # Before the suites, so it still reports when a test fails.
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run ci-install-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run registered-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run readme-server-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run spiral-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run wayfarer-modes-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-harbor-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run bot-action-order-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm test
       - if: needs.changes.outputs.docs_only != 'true'
@@ -174,6 +228,12 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run stale-pr-sweeper-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run desk-board-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run review-desk-inbox-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run ffmpeg-install-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run flake-rerun-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run soak-evidence-prove
@@ -181,13 +241,27 @@ jobs:
         run: npm run auto-merge-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run label-commands-prove
+      - name: Desk gate proof
+        run: npm run desk-gate-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run dice-prove
       # #1073: measures every file in public/audio with ffmpeg.
+      # #1186: the apt mirror sometimes hangs; bound each attempt, retry, and fail loudly if ffmpeg is still missing.
       - if: needs.changes.outputs.docs_only != 'true'
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+        timeout-minutes: 6
+        run: |
+          command -v ffmpeg >/dev/null || for attempt in 1 2 3; do
+            sudo timeout 90 apt-get -o Acquire::Retries=3 update \
+              && sudo timeout 150 apt-get -o Acquire::Retries=3 install -y --no-install-recommends ffmpeg \
+              && break
+            echo "apt attempt $attempt failed"
+            sleep 5
+          done
+          command -v ffmpeg
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run audio-level-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run ambience-loop-prove
 
   # #924: advisory, so it is not in `checks.needs`. The desk reads it for REVIEWING.md item 4.
   # It diffs this PR's proofs against the commit it merges onto (the merge commit's first parent, as in build), using the
@@ -213,10 +287,14 @@ jobs:
             echo "The base $BASE_SHA has no scripts/loosen-prove.mjs yet, so this runs the PR's copy."
             node scripts/loosen-prove.mjs --base "$BASE_SHA"
           fi
+          # #947: exercise the proposed guard and its self-tests too; the base check above still judges this PR.
+          echo "Testing the PR's guard copy in the same advisory job."
+          node scripts/loosen-prove.mjs --base "$BASE_SHA"
+      - run: npm run proof-retirement-prove
 
   browser-a-suites:
     name: browser-a (${{ matrix.suite }})
-    needs: changes
+    needs: [changes, dependencies]
     runs-on: ubuntu-latest
     # The browser jobs run about 19-20 minutes on a busy runner; 20 cancelled them mid-proof.
     timeout-minutes: 30
@@ -229,6 +307,7 @@ jobs:
         uses: actions/checkout@v4
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/setup-node@v4
+        id: node
         with:
           node-version: 22
           cache: npm
@@ -236,8 +315,16 @@ jobs:
             package-lock.json
             server/package-lock.json
       - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        id: dependencies
+        with:
+          path: |
+            node_modules
+            server/node_modules
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package.json', 'package-lock.json', 'server/package.json', 'server/package-lock.json') }}
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
-      - if: needs.changes.outputs.docs_only != 'true'
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci --prefix server
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/cache@v4
@@ -265,6 +352,8 @@ jobs:
         run: npm run steal-picker-push-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run trade-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run trade-tabs-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run practice-trade-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
@@ -275,6 +364,8 @@ jobs:
         run: npm run first-game-coach-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run render-recovery-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
+        run: npm run webgl-recovery-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run rotate-overlays-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
@@ -321,6 +412,7 @@ jobs:
         uses: actions/checkout@v4
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/setup-node@v4
+        id: node
         with:
           node-version: 22
           cache: npm
@@ -328,8 +420,16 @@ jobs:
             package-lock.json
             server/package-lock.json
       - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        id: dependencies
+        with:
+          path: |
+            node_modules
+            server/node_modules
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package.json', 'package-lock.json', 'server/package.json', 'server/package-lock.json') }}
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
-      - if: needs.changes.outputs.docs_only != 'true'
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci --prefix server
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/cache@v4
@@ -357,12 +457,16 @@ jobs:
         run: npm run night-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run chat-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+        run: npm run chat-text-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run react-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
         run: npm run wayfarer-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
         run: npm run robber-hex-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
+        run: npm run robber-prompt-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run sounds-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
@@ -383,6 +487,8 @@ jobs:
         run: npm run pieces-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run pieces-land-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'scene-water'
+        run: npm run classic-builder-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
         run: npm run idle-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
@@ -395,6 +501,8 @@ jobs:
         run: npm run flash-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run haptics-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+        run: npm run haptics-startup-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run reflow-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
@@ -449,6 +557,8 @@ jobs:
         run: npm run win-action-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run lobby-overflow-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+        run: npm run lobby-layout-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run turn-copy-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
@@ -459,8 +569,12 @@ jobs:
         run: npm run build-ready-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
         run: npm run board-look-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+        run: npm run hex-variety-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
         run: npm run dock-piles-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
+        run: npm run dock-piles-many-seeds-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
         run: npm run seat-rail-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
@@ -484,13 +598,14 @@ jobs:
   # A draft skips it (grey): GitHub never merges a draft, and marking it ready starts a fresh run on the same head SHA,
   # whose checks must each pass. Every other run keeps always() and the explicit tests below.
   checks:
-    needs: [changes, build, server, browser-a, browser-b]
+    needs: [changes, dependencies, build, server, browser-a, browser-b]
     if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - run: |
-          echo 'build=${{ needs.build.result }} server=${{ needs.server.result }} browser-a=${{ needs.browser-a.result }} browser-b=${{ needs.browser-b.result }}'
+          echo 'dependencies=${{ needs.dependencies.result }} build=${{ needs.build.result }} server=${{ needs.server.result }} browser-a=${{ needs.browser-a.result }} browser-b=${{ needs.browser-b.result }}'
+          test '${{ needs.dependencies.result }}' = success
           test '${{ needs.build.result }}' = success
           test '${{ needs.server.result }}' = success
           test '${{ needs.browser-a.result }}' = success
