@@ -465,7 +465,7 @@ async function open(v, reducedMotion) {
     const clear = window.clearTimeout.bind(window);
     const held = new Map();
     window.setTimeout = function (fn, ms, ...args) {
-      if (window.__holdCues && ms === 2500 && typeof fn === "function") {
+      if (window.__holdCues && ms === 3000 && typeof fn === "function") {
         const id = later(() => {}, 2_147_000_000);
         held.set(id, () => fn(...args));
         return id;
