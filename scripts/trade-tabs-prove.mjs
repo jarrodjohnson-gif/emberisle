@@ -344,7 +344,7 @@ async function bankMotion(page, rate, tag) {
       assert.equal(cue.readable.y, 0, `${tag}: ${key} has no reduced-motion translation`);
       assert.equal(cue.cardAnimations, 0, `${tag}: ${key} has no reduced-motion card movement`);
     } else {
-      assert.equal(cue.duration, 2500, `${tag}: ${key} holds 2200ms then fades for 300ms`);
+      assert.equal(cue.duration, 3000, `${tag}: ${key} holds 2500ms then fades for 500ms`);
       const expectedName = "goods-cue";
       assert.equal(cue.animationName, expectedName, `${tag}: the genuine cue uses its signed animation`);
       const [start, end] = [0, 0];
