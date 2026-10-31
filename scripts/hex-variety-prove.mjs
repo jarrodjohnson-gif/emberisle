@@ -61,8 +61,50 @@ try {
       const unique = new Set(rotations.map(r => Math.round(r * 1000)));
       assert.ok(unique.size >= 2, `${kind}: ${data.hexes.length} hexes have at least 2 distinct rotations (got ${unique.size})`);
     }
+    // Dealt evenly (a seeded shuffle of a balanced deal, not coin flips): turn counts within a kind differ by at most 1.
+    const counts = {};
+    for (const r of rotations) { const k = Math.round(r / (Math.PI / 3)); counts[k] = (counts[k] ?? 0) + 1; }
+    const used = Object.values(counts);
+    assert.ok(Math.max(...used) - Math.min(...used) <= 1, `${kind}: turns dealt evenly ${JSON.stringify(counts)}`);
     console.log(`${kind}: ${data.hexes.length} hexes, ${new Set(rotations.map(r => Math.round(r / (Math.PI / 3)))).size} distinct turns`);
   }
+
+  // groundAt must match the rendered tile: the height of the tile's own ground at the point found by inverting the
+  // hex's actual rendering matrix T (a general 3x3 inverse here, not the implementation's shortcut).
+  const exact = await page.evaluate(() => {
+    const jb = window.__isle.jellyBoard;
+    const inv3 = (m) => {
+      const [a, b, c, d, e, f, g, h, i] = m;
+      const A = e * i - f * h, B = -(d * i - f * g), C = d * h - e * g;
+      const det = a * A + b * B + c * C;
+      return [A / det, -(b * i - c * h) / det, (b * f - c * e) / det, B / det, (a * i - c * g) / det, -(a * f - c * d) / det, C / det, -(a * h - b * g) / det, (a * e - b * d) / det];
+    };
+    const offsets = [[0.31, 0.17], [-0.22, 0.29], [0.12, -0.33], [-0.27, -0.14]];
+    let checked = 0, worst = 0, discriminating = 0;
+    for (const k of jb.kinds) {
+      for (const h of k.hexes) {
+        const t = h.T.elements;
+        // Row-major 3x3 rotation part of T (Three stores columns).
+        const R = [t[0], t[4], t[8], t[1], t[5], t[9], t[2], t[6], t[10]];
+        const Ri = inv3(R);
+        for (const [dx, dz] of offsets) {
+          const lx = Ri[0] * dx + Ri[2] * dz, lz = Ri[6] * dx + Ri[8] * dz;
+          const want = t[13] + k.tile.ground(lx, lz);
+          const got = jb.groundAt(h.id, dx, dz);
+          worst = Math.max(worst, Math.abs(got - want));
+          checked++;
+          // The opposite turn: if it lands on a different height, this sample would catch a wrong-way rotation.
+          const wrong = t[13] + k.tile.ground(R[0] * dx + R[2] * dz, R[6] * dx + R[8] * dz);
+          if (Math.abs(wrong - want) > 1e-3) discriminating++;
+        }
+      }
+    }
+    return { checked, worst, discriminating };
+  });
+  assert.ok(exact.checked > 0, "groundAt: samples taken");
+  assert.ok(exact.worst < 1e-6, `groundAt: matches the inverse of the rendering matrix (worst error ${exact.worst})`);
+  assert.ok(exact.discriminating > 0, `groundAt: at least one sample tells the two turn directions apart (${exact.discriminating})`);
+  console.log(`groundAt: ${exact.checked} samples match the rendered tile (worst ${exact.worst.toExponential(1)}), ${exact.discriminating} discriminating`);
 
   // groundAt: verify it returns sensible values and differs for rotated hexes of the same kind.
   const groundCheck = await page.evaluate(() => {

@@ -943,9 +943,9 @@ export class JellyBoard {
   groundAt(id: string, dx: number, dz: number) {
     const e = this.byHex.get(id);
     if (!e) return NaN;
-    const a = -e.h.rot;
-    const c = Math.cos(a), s = Math.sin(a);
-    return e.h.T.elements[13]! + e.k.tile.ground(c * dx - s * dz, s * dx + c * dz);
+    // (dx, dz) is a world offset; the tile's own frame is the inverse of the hex's turn (T's rotation, transposed).
+    const t = e.h.T.elements;
+    return t[13]! + e.k.tile.ground(t[0]! * dx + t[2]! * dz, t[8]! * dx + t[10]! * dz);
   }
 
   // For the proofs: per kind, how near to the hex's centre (horizontally) any corner of anything on it comes now, and what
@@ -987,9 +987,7 @@ export class JellyBoard {
           }
         }
       }
-      const prev = out[k.kind];
-      if (!prev || min < prev.min) out[k.kind] = { min, what, all: prev ? { ...prev.all, ...all } : all };
-      else if (prev) Object.assign(prev.all, all);
+      out[k.kind] = { min, what, all };
     }
     return out;
   }
@@ -1057,7 +1055,7 @@ export class JellyBoard {
     }
     for (const m of this.bakes) triangles += m.userData.tris as number;
     for (const sb of this.sprites) triangles += 2 * sb.count;
-    return { lite: this.lite, drawCalls: this.batches.size + this.bakes.length + this.sprites.length, triangles: Math.round(triangles), kinds: new Set(this.kinds.map((k) => k.kind)).size, batches: this.batches.size, bakes: this.bakes.length, sprites: this.sprites.length };
+    return { lite: this.lite, drawCalls: this.batches.size + this.bakes.length + this.sprites.length, triangles: Math.round(triangles), kinds: this.kinds.length, batches: this.batches.size, bakes: this.bakes.length, sprites: this.sprites.length };
   }
 
   dispose() {

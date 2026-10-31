@@ -59,7 +59,7 @@ const CEILINGS = [
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
-const ALLOWANCE = { index: 400, "jelly-board": 280 }; // 2026-10-23: per-hex rotation + safe-angle filter (#639)
+const ALLOWANCE = { index: 400 };
 const ALLOWANCE_RATE = 0.0033;
 const ALLOWANCE_MIN = 200;
 const allowanceFor = (name, baseBytes) => ALLOWANCE[name] ?? Math.max(ALLOWANCE_MIN, Math.round(baseBytes * ALLOWANCE_RATE));
