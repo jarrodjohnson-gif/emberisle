@@ -112,7 +112,12 @@ The desk recorded his Desk Decisions card `q608-bot-moments` answer in
 [comment 6533773479](https://github.com/jarrodjohnson-gif/emberisle/issues/608#issuecomment-6533773479), resolving
 [Question 6520148623](https://github.com/jarrodjohnson-gif/emberisle/issues/608#issuecomment-6520148623)'s expiry choice.
 
+Desk’s recorded wording of the answer:
+
 > Show every bot move, six at a time; moves beyond six collapse into one line ("Mira made 3 more moves").
+
+Only the quoted sentence is recorded as accepted here.
+Option A’s drain clause still needs acceptance.
 
 Preserve waiting lines and overflow summaries without silent age-based expiry.
 Children must not implement #721's proposed **2500 ms waiting/summary expiry** or any **2500 ms drop**.
@@ -121,7 +126,7 @@ Client-only option A remains settled.
 
 **Still unaccepted:** human-turn interruption or drain policy, including option C's proposed **2500 ms human-turn drain deadline**.
 The owner did not choose option C.
-Pending-summary treatment and interrupted-line handling still need explicit acceptance.
+Treatment of waiting summaries and interrupted lines still needs explicit acceptance.
 The answer does not settle active-versus-waiting counting or summary-slot counting within the cap of six.
 It also does not approve the contrast figures below.
 
@@ -152,9 +157,10 @@ Waiting lines and summaries cannot expire by age. Interruption behaviour still n
 The line reuses the existing stage/hole placement and chrome, with safe-area checks at desktop,
 portrait and landscape sizes. **Unaccepted recommendation for desk/owner approval:** text contrast
 at least 4.5:1 and decorative target contrast at least 3:1 against its immediate surroundings,
-including pale seats. These numbers are not an owner-approved #608 requirement; acceptance is
-still required after owner answer 6533773479 before they become this feature's completion criteria. The canonical game log
-remains the accessible history; do not create a second live announcement for the same event.
+including pale seats. These numbers are not an owner-approved #608 requirement.
+Acceptance is still needed after owner answer 6533773479.
+The canonical game log remains the accessible history; do not create a second live
+announcement for the same event.
 
 ## One sound owner and lifecycle (#723)
 
@@ -172,7 +178,7 @@ mix levels and reduced-motion behaviour without changing audio assets or gains.
 
 Visibility hide, leave/title, win, reconnect, rematch and baseline replacement clear the epoch's
 text, targets, counters, timers and deferred audio. Human input never changes game state merely
-to dismiss presentation; its effect on pending lines/summaries still needs explicit acceptance. A lazy
+to dismiss presentation; its effect on waiting lines/summaries still needs explicit acceptance. A lazy
 module/audio promise carries the epoch and accepted cancellation state; recheck them when it
 resolves so previous-game work cannot burst on return. Do not attach the rejected 2500 ms
 age expiry to these promises. Capture starts from
