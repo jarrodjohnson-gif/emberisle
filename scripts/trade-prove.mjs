@@ -121,12 +121,13 @@ async function synced(tabs, seq, what, ms) {
 
 // #609: the clips this tab started since `forget`, as "file@volume", without the UI clicks.
 const forget = (tabs) => Promise.all(tabs.map((t) => t.page.evaluate(() => (window.__heard = []))));
-const trades = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|confirmation_001|error_002|three_wood|daking_wood|sheep_for_wood|stone_for_wood|corn_no)/.test(h)));
+const trades = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|confirmation_001|error_002|three_wood|daking_wood|sheep_for_wood|stone_for_wood|sb_only_wood|sb_sheep_please|sb_grain_please|sb_brick_please|corn_no)/.test(h)));
 // #1107: what a seat hears when an offer of 1 `gives` for `wants` arrives, from fixed expectations (the precedence itself is proved
 // with explicit give/want bags in hearOffer below). Sheep or stone for wood plays its own clip on every seat, the asker included;
 // any other pair is the plain chime on the other seats and silent on the asker.
 const OFFER_CLIP = { "wool>timber": "sheep_for_wood.mp3@1", "ore>timber": "stone_for_wood.mp3@1" };
-const offerHeard = (gives, wants, asker) => (OFFER_CLIP[`${gives}>${wants}`] ? [OFFER_CLIP[`${gives}>${wants}`]] : asker ? [] : ["trade_offer.wav@1"]);
+const PLEASE_CLIP = { timber: "sb_only_wood.mp3@1", wool: "sb_sheep_please.mp3@1", grain: "sb_grain_please.mp3@1", clay: "sb_brick_please.mp3@1" };
+const offerHeard = (gives, wants, asker) => OFFER_CLIP[`${gives}>${wants}`] ? [OFFER_CLIP[`${gives}>${wants}`]] : PLEASE_CLIP[wants] ? [PLEASE_CLIP[wants]] : asker ? [] : ["trade_offer.wav@1"];
 const act = (t, fn, arg) => t.page.evaluate(([f, a]) => window.__emberisle.getState()[f](...[].concat(a)), [fn, arg]);
 const total = (hand) => RES.reduce((n, r) => n + hand[r], 0);
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -436,11 +437,11 @@ try {
     const state = store.getState().state;
     store.setState({ state: { ...state, players: state.players.map((p) => p.id === id ? { ...p, name: "Daking" } : p) } });
   }, dakingId)));
-  const issueTradeSounds = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|three_wood|daking_wood|sheep_for_wood|stone_for_wood|corn_no|error_002)\./.test(h)));
+  const issueTradeSounds = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|three_wood|daking_wood|sheep_for_wood|stone_for_wood|sb_only_wood|sb_sheep_please|sb_grain_please|sb_brick_please|corn_no|error_002)\./.test(h)));
   const sendTableEvent = async (event) => Promise.all(tabs.map((t) => t.page.evaluate((msg) => window.__sockets.at(-1).onmessage({ data: JSON.stringify(msg) }), event)));
-  const hearOffer = async (tradeId, give, want) => {
+  const hearOffer = async (tradeId, give, want, from = dakingId) => {
     await forget(tabs);
-    await sendTableEvent({ type: "tradeOffer", tradeId, from: dakingId, give, want, seconds: 20 });
+    await sendTableEvent({ type: "tradeOffer", tradeId, from, give, want, seconds: 20 });
     await sleep(300);
     return Promise.all(tabs.map(issueTradeSounds));
   };
@@ -463,7 +464,36 @@ try {
   for (const got of clip) assert.deepEqual(got, ["sheep_for_wood.mp3@1"], "sheep for timber reaches every seat, including the asker");
   clip = await hearOffer("new-stone-for-wood", { ore: 1 }, { timber: 1 });
   for (const got of clip) assert.deepEqual(got, ["stone_for_wood.mp3@1"], "stone for timber reaches every seat, including the asker");
-  clip = await hearOffer("new-plain-offer", { grain: 1 }, { wool: 1 });
+  const politeCases = [
+    ["please-sheep", { clay: 1 }, { wool: 1 }, "sb_sheep_please.mp3@1"],
+    ["please-grain", { clay: 1 }, { grain: 1 }, "sb_grain_please.mp3@1"],
+    ["please-brick", { wool: 1 }, { clay: 1 }, "sb_brick_please.mp3@1"],
+    ["please-wood", { clay: 1 }, { timber: 1 }, "sb_only_wood.mp3@1"],
+  ];
+  for (const [id, give, want, expected] of politeCases) {
+    clip = await hearOffer(id, give, want);
+    for (const got of clip) assert.deepEqual(got, [expected], `${id}: the same requested-good clip reaches every seat, including the asker`);
+  }
+  clip = await hearOffer("please-two-goods", { clay: 1 }, { wool: 1, grain: 1 });
+  assert.deepEqual(clip[tabs.indexOf(A)], [], "multi-resource request keeps the usual asker silence");
+  for (const t of [B, C]) assert.deepEqual(clip[tabs.indexOf(t)], ["trade_offer.wav@1"], "multi-resource request uses the plain trade chime");
+  const botId = vs[tabs.indexOf(C)].you;
+  await Promise.all(tabs.map((t) => t.page.evaluate((id) => {
+    const state = window.__emberisle.getState().state;
+    window.__emberisle.setState({ state: { ...state, players: state.players.map((p) => p.id === id ? { ...p, kind: "bot", name: "Tide bot" } : p) } });
+  }, botId)));
+  clip = await hearOffer("please-bot-ask", { timber: 1 }, { wool: 1 }, botId);
+  for (const got of clip) assert.deepEqual(got, ["sb_sheep_please.mp3@1"], "bot asks use the same resource clip on every seat");
+  clip = await hearOffer("please-repeat-first", { clay: 1 }, { wool: 1 }, vs[tabs.indexOf(B)].you);
+  for (const got of clip) assert.deepEqual(got, ["sb_sheep_please.mp3@1"], "first ask plays its please clip");
+  await forget(tabs);
+  await sendTableEvent({ type: "tradeOffer", tradeId: "please-repeat-within-three-seconds", from: vs[tabs.indexOf(B)].you, give: { clay: 1 }, want: { wool: 1 }, seconds: 20 });
+  await sleep(250);
+  assert.deepEqual(await Promise.all(tabs.map(issueTradeSounds)), [[], [], []], "a repeat ask for the same resource within 3 s does not replay the please clip");
+  await sleep(3100);
+  clip = await hearOffer("please-repeat-after-three-seconds", { clay: 1 }, { wool: 1 }, vs[tabs.indexOf(B)].you);
+  for (const got of clip) assert.deepEqual(got, ["sb_sheep_please.mp3@1"], "the same sender's ask plays again after 3 s");
+  clip = await hearOffer("new-plain-offer", { grain: 1 }, { ore: 1 });
   assert.deepEqual(clip[tabs.indexOf(A)], [], "the asker does not hear the plain offer chime");
   for (const t of [B, C]) assert.deepEqual(clip[tabs.indexOf(t)], ["trade_offer.wav@1"], "other seats hear the plain offer chime");
 

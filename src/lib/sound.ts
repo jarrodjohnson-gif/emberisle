@@ -209,6 +209,25 @@ export function play(name: SoundName, volume = 1) {
   if (!pacing) pump();
 }
 
+let lastTradePlease = "";
+let lastTradePleaseAt = 0;
+
+export function playTradePlease(cue: typeof play, from: string, want: { timber?: number; wool?: number; grain?: number; clay?: number }) {
+  const requested = Object.entries(want).filter(([, count]) => (count ?? 0) > 0);
+  if (requested.length !== 1) return false;
+  const resource = requested[0][0];
+  const clip: SoundName | undefined = resource === "timber" ? "sb_only_wood" : resource === "wool" ? "sb_sheep_please" : resource === "grain" ? "sb_grain_please" : resource === "clay" ? "sb_brick_please" : undefined;
+  if (!clip) return false;
+  const now = Date.now();
+  const key = `${from}:${clip}`;
+  if (key !== lastTradePlease || now - lastTradePleaseAt >= 3000) {
+    lastTradePlease = key;
+    lastTradePleaseAt = now;
+    cue(clip);
+  }
+  return true;
+}
+
 // Start a clip after `ms`; stop(name) cancels it before then. One pending start per clip.
 const later = new Map<SoundName, ReturnType<typeof setTimeout>>();
 export function playLater(name: SoundName, volume: number, ms: number) {
