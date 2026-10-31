@@ -1,0 +1,4 @@
+{"name": "missing-cancel", "code": 1, "expected": "late client load cannot pull practice back online", "matched": true, "seconds": 12.89}
+{"name": "cached-retry", "code": 1, "expected": "timed out: next explicit action retries the client", "matched": true, "seconds": 24.54}
+{"name": "widened-restore", "code": 1, "expected": "quiet fallback keeps the original 3000ms delay", "matched": true, "seconds": 17.59}
+PASS all three intended controls; source byte-exact; complete restored health proof passes

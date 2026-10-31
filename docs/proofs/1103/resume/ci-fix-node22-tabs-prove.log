@@ -1,0 +1,23 @@
+$ npm run tabs-prove
+
+> tabs-prove
+> node scripts/tabs-prove.mjs
+
+tab B typed the code: Tide swatch disabled at opacity 0.35, aria-checked=false; Ember, Dune, Pine enabled
+join link: Pine joined from ?code=22N3 (link http://127.0.0.1:8093/?code=22N3&host=ws%3A%2F%2F127.0.0.1%3A51301; URL after open: "?host=ws%3A%2F%2F127.0.0.1%3A51301")
+chat dock on every tab in the HUD's first frame (dev modules)
+table 22N3: 3 seats, 3 tabs in, phase rollOff
+host's chosen color round-tripped into the game: #2d6ee8
+roll-off: 3 rolls, each by the current tab, shared on all 3 tabs; order p0 6, p2 4, p1 3; no production banner
+tab B screens during the rejoin: play, turn banner still attached
+tab B dropped 3 s: saw reconnecting=true, back as p1 (was p1), host log on A: Tide is back=true
+tab C reloaded: back as p2 (was p2)
+setup done on all tabs, seq 15
+persistent roll event on all tabs: "Ember gains 1 brick; Tide gains 1 brick — Ember's roll."; no goods banner
+roll moment on all tabs: 2+2
+5 rolls, same on all 3 tabs: 2+2 5+6 1+1 4+3 2+4
+dice faces: 5/5 match the log (pips, aria-label, no settle on the reduced-motion tab)
+resource flash: green "Ember timber+1" and red "Ember timber-1" each showed and went away (longest label 2540 ms)
+table trade: Tide gave 1 clay for 1 timber from Ember; hands and goods counts agree on all 3 tabs
+boards match on 3 tabs
+tabs prove ok

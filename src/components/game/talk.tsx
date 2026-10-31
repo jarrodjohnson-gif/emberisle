@@ -4,7 +4,6 @@
 // a chunk of their own (Reactions.tsx), fetched as soon as this one loads.
 import { useEffect, useState } from "react";
 import { create } from "zustand";
-import { EMOTES, QUICK_REACTIONS } from "@/components/game/emotes";
 import { useGame } from "@/lib/game/store";
 import { chunk } from "@/lib/lazy";
 import type { Reaction } from "@/lib/net/table";
@@ -16,6 +15,19 @@ const reactions = chunk(() => import("@/components/game/Reactions"));
 export const SoundsTab = reactions.pick((m) => m.SoundsTab);
 export const SeatBubbles = reactions.pick((m) => m.SeatBubbles);
 void reactions.prefetch();
+
+// Keep this small set in sync with server/host.mjs talk(); chat-prove sends every entry through the host.
+export const QUICK_REACTIONS = [
+  { emoji: "😠", label: "angry" },
+  { emoji: "😊", label: "happy" },
+  { emoji: "👏", label: "clap" },
+  { emoji: "😂", label: "laugh" },
+  { emoji: "🔥", label: "fire" },
+  { emoji: "🐑", label: "sheep" },
+] as const;
+
+let emotes: Promise<Record<string, string>> | null = null;
+export const loadEmotes = () => (emotes ??= import("@/components/game/emotes").then((module) => module.EMOTES));
 
 const COOLDOWN = 1000;
 // The host takes one soundboard tap per seat every 3 s (server/host.mjs SOUND_MS); the chips rest for the same time.
@@ -187,15 +199,17 @@ export function EmojiRow({ keys, dense }: { keys?: boolean; dense?: boolean }) {
   );
 }
 
-// A reaction's face: the emoji or the sticker image, at the bubble's size.
 export function Emote({ emote, className }: { emote: string; className?: string }) {
   const emoji = QUICK_REACTIONS.find((item) => item.emoji === emote);
+  const [stickers, setStickers] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!emoji) void loadEmotes().then(setStickers);
+  }, [emoji]);
   if (emoji)
     return (
       <span role="img" aria-label={emoji.label} className={className}>
         {emoji.emoji}
       </span>
     );
-  return Object.hasOwn(EMOTES, emote) ? <img src={EMOTES[emote]} alt={emote} className={cn("object-contain", className)} /> : null;
+  return Object.hasOwn(stickers, emote) ? <img src={stickers[emote]} alt={emote} className={cn("object-contain", className)} /> : null;
 }
-

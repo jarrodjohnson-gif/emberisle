@@ -10,17 +10,25 @@ on:
         description: Log proposed actions without changing any PR
         type: boolean
         default: true
+      permission_probe:
+        description: Verify label permissions only on the PR matching this workflow branch and SHA
+        type: boolean
+        default: false
+      target_pr:
+        description: New implementation PR number for the permission probe
+        type: string
+        default: ''
   pull_request_target:
     types: [opened, synchronize, reopened]
 permissions:
   contents: read
   pull-requests: write
 concurrency:
-  group: stale-pr-sweeper
+  group: stale-pr-sweeper-${{ github.event.pull_request.number || 'sweep' }}
   cancel-in-progress: false
 jobs:
   sweep:
-    if: vars.STALE_PR_SWEEPER == 'on'
+    if: vars.STALE_PR_SWEEPER == 'on' && !inputs.permission_probe
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -39,3 +47,68 @@ jobs:
           STALE_PR_SWEEPER: ${{ vars.STALE_PR_SWEEPER }}
           STALE_PR_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
         run: node scripts/stale-pr-sweeper.mjs
+
+  permission-probe:
+    if: github.event_name == 'workflow_dispatch' && inputs.permission_probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # No checkout. This fixed probe only touches the PR that matches the dispatched branch and SHA.
+      - env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TARGET_PR: ${{ inputs.target_pr }}
+        run: |
+          node --input-type=module <<'JS'
+          const repo = process.env.GITHUB_REPOSITORY;
+          const number = process.env.TARGET_PR;
+          if (!/^[1-9][0-9]*$/.test(number)) throw new Error('Invalid target PR');
+          const base = `/repos/${repo}`;
+          const request = async (method, path, body) => {
+            const response = await fetch(`https://api.github.com${path}`, {
+              method, headers: { Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28',
+                'Content-Type': 'application/json' },
+              ...(body ? { body: JSON.stringify(body) } : {}),
+            });
+            if (!response.ok) {
+              const error = new Error(`${method} ${path}: HTTP ${response.status}`);
+              error.status = response.status; throw error;
+            }
+            return response.status === 204 ? null : response.json();
+          };
+          const checkTarget = async () => {
+            const pr = await request('GET', `${base}/pulls/${number}`);
+            if (pr.state !== 'open' || pr.head.repo.full_name !== repo
+              || pr.head.ref !== process.env.GITHUB_REF_NAME || pr.head.sha !== process.env.GITHUB_SHA)
+              throw new Error('Target must match this workflow branch, SHA and repository');
+            return pr;
+          };
+          const original = new Set((await checkTarget()).labels.map(label => label.name));
+          const names = ['stale', 'keep-open'];
+          try {
+            for (const name of names) {
+              try { await request('GET', `${base}/labels/${name}`); }
+              catch (error) {
+                if (error.status !== 404) throw error;
+                await request('POST', `${base}/labels`, { name, color: 'ededed' });
+              }
+              await checkTarget();
+              await request('POST', `${base}/issues/${number}/labels`, { labels: [name] });
+              if (!(await checkTarget()).labels.some(label => label.name === name))
+                throw new Error(`Label ${name} was not applied`);
+              console.log(`verified pull-requests:write applies ${name} on #${number}`);
+            }
+          } finally {
+            // Restore only labels this probe added; preserve unrelated concurrent label changes.
+            for (const name of names.filter(name => !original.has(name))) {
+              const current = await request('GET', `${base}/pulls/${number}`);
+              if (current.labels.some(label => label.name === name))
+                await request('DELETE', `${base}/issues/${number}/labels/${name}`);
+            }
+          }
+          const restored = new Set((await request('GET', `${base}/pulls/${number}`)).labels.map(label => label.name));
+          if (names.some(name => restored.has(name) !== original.has(name)))
+            throw new Error('Original probe-label membership was not restored');
+          if ([...original].some(name => !restored.has(name))) throw new Error('Original label disappeared');
+          console.log(`permission probe PASS #${number}; original labels restored`);
+          JS

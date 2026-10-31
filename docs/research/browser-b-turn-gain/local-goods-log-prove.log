@@ -1,0 +1,8 @@
+
+> goods-log-prove
+> node scripts/goods-log-prove.mjs
+
+ok 390x844: ten ordered events, one line each; all four public fortunes; private theft/discard/bought-kind protected; 200 rows; latest HUD line
+ok 1280x720: ten ordered events, one line each; all four public fortunes; private theft/discard/bought-kind protected; 200 rows; latest HUD line
+ok 390x844 reduced: ten ordered events, one line each; all four public fortunes; private theft/discard/bought-kind protected; 200 rows; latest HUD line
+goods-log-prove: all passed

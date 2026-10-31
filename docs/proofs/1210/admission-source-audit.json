@@ -1,0 +1,22 @@
+{
+  "base": "28628f39b0610deecc18d571454b01d086789275",
+  "firstFailingSource": "f75aa71",
+  "firstFailingSourceSha256": "8b8606675bf5aaa651edab3e173cbf19c50c7104c372f2ab645f1e73bc9e11c4",
+  "admissionSource": "341c27bd0dfa55fc9d728f42c262f12ff544e095",
+  "admissionSourceSha256": "59c1f4a811a6a23c33edb3bfed7d775793bba6cc8a57ddf71fcabe8a7047277b",
+  "allOriginalLinesRetainedInOrder": true,
+  "runtimeAndRegistrationDiffEmpty": true,
+  "nativeBaselineRuns": 5,
+  "firstCpu2Failure": 1,
+  "admissionRunsBeforeFailure": 4,
+  "admissionFailureSeat": "Ember/p0",
+  "admissionFailureFile": "bong_001.wav",
+  "admissionGuard": {
+    "unlocked": true,
+    "muted": false,
+    "categoryGain": 1,
+    "burst": false,
+    "full": true,
+    "queueLength": 8
+  }
+}
