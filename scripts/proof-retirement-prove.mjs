@@ -54,6 +54,8 @@ history("a listed proof still cannot lose checks", { action: "weaken", want: 1, 
 history("a listed proof still cannot rename away", { action: "rename", want: 1, message: "renamed away" });
 history("an owner changing the list needs a decision already on the base", {
   baseList: "empty", baseRow: false, headList: "valid", owner: true, action: "add", want: 1, message: "decision row" });
+history("an owner list change with a HEAD-only decision row fails", {
+  baseList: "empty", baseRow: false, headList: "valid", headRow: true, owner: true, action: "add", want: 1, message: "decision row" });
 history("a collaborator cannot create a populated seed", {
   baseList: null, headList: "valid", action: "add", want: 1, message: "owner-only" });
-console.log("proof-retirement-prove: all 12 real Git histories passed");
+console.log("proof-retirement-prove: all 13 real Git histories passed");
