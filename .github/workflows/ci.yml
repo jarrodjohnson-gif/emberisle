@@ -461,6 +461,8 @@ jobs:
         run: npm run chat-text-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run react-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+        run: npm run seat-gains-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
         run: npm run wayfarer-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
