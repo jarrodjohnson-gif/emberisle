@@ -357,7 +357,7 @@ async function bankMotion(page, rate, tag) {
     }
   }
   assert.notEqual(actual.cues.handLoss.color, actual.cues.handGain.color, `${tag}: hand signs retain distinct loss/gain colors`);
-  assert.notEqual(actual.cues.cardLoss.shadow, actual.cues.cardGain.shadow, `${tag}: V1 card cues keep a distinct red ring for a loss and a fill for a gain (tabs share the pill, #825)`);
+  assert.notEqual(actual.cues.cardLoss.tabColor, actual.cues.cardGain.tabColor, `${tag}: V1 card signs retain distinct loss/gain colors`);
   assert.equal(actual.islandText, 0, `${tag}: approved V1 replaces both island delta texts with card cues`);
   const gain = actual.cues.cardGain, loss = actual.cues.cardLoss;
   assert.equal(gain.background, gain.palette.resource, `${tag}: gain fills with the actual good's full color`);
