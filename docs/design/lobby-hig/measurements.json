@@ -1,0 +1,6218 @@
+{
+  "chromium": "153.0.8010.12",
+  "results": [
+    {
+      "before": {
+        "viewport": "320x568",
+        "code": "QQTN",
+        "codeFont": {
+          "size": 18,
+          "line": "32px",
+          "weight": "700",
+          "family": "ui-rounded"
+        },
+        "card": {
+          "x": 16,
+          "y": 8,
+          "w": 288,
+          "h": 552,
+          "right": 304,
+          "bottom": 560
+        },
+        "outerMargin": {
+          "left": 16,
+          "top": 8,
+          "right": 16,
+          "bottom": 8
+        },
+        "padding": "8px",
+        "radius": "24px",
+        "rows": "44px 44px 96px 222px 96px",
+        "cardScroll": [
+          0,
+          0
+        ],
+        "chatLog": 0,
+        "addBotLines": 2,
+        "leftEdges": {
+          "code": 9,
+          "rules": 9,
+          "seats": 9,
+          "chat": 9,
+          "status": 9,
+          "ready": 9
+        },
+        "fontSizes": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          18,
+          24
+        ],
+        "smallestText": 12,
+        "clipped": [],
+        "under44": [],
+        "textPaddingUnder8": [],
+        "minGap": 8,
+        "minGapPair": "Copy / Copy link",
+        "controls": [
+          {
+            "label": "Copy",
+            "x": 114.69,
+            "y": 17,
+            "w": 46.48,
+            "h": 44,
+            "right": 161.17,
+            "bottom": 61,
+            "size": 12
+          },
+          {
+            "label": "Copy link",
+            "x": 169.17,
+            "y": 17,
+            "w": 69.95,
+            "h": 44,
+            "right": 239.13,
+            "bottom": 61,
+            "size": 12
+          },
+          {
+            "label": "Invite",
+            "x": 247.13,
+            "y": 17,
+            "w": 47.88,
+            "h": 44,
+            "right": 295,
+            "bottom": 61,
+            "size": 12
+          },
+          {
+            "label": "Rules",
+            "x": 25,
+            "y": 69,
+            "w": 148,
+            "h": 44,
+            "right": 173,
+            "bottom": 113,
+            "size": 15
+          },
+          {
+            "label": "rename-seat",
+            "x": 57,
+            "y": 121,
+            "w": 48.09,
+            "h": 44,
+            "right": 105.09,
+            "bottom": 165,
+            "size": 15
+          },
+          {
+            "label": "remove-bot",
+            "x": 100,
+            "y": 173,
+            "w": 44,
+            "h": 44,
+            "right": 144,
+            "bottom": 217,
+            "size": 13
+          },
+          {
+            "label": "add-bot",
+            "x": 231.11,
+            "y": 173,
+            "w": 51.89,
+            "h": 44,
+            "right": 283,
+            "bottom": 217,
+            "size": 13
+          },
+          {
+            "label": "Chat",
+            "x": 34,
+            "y": 234,
+            "w": 70.16,
+            "h": 44,
+            "right": 104.16,
+            "bottom": 278,
+            "size": 15
+          },
+          {
+            "label": "Sounds & stickers",
+            "x": 112.16,
+            "y": 234,
+            "w": 165.83,
+            "h": 44,
+            "right": 277.98,
+            "bottom": 278,
+            "size": 15
+          },
+          {
+            "label": "React angry",
+            "x": 34,
+            "y": 294,
+            "w": 78.66,
+            "h": 44,
+            "right": 112.66,
+            "bottom": 338,
+            "size": 24
+          },
+          {
+            "label": "React happy",
+            "x": 120.66,
+            "y": 294,
+            "w": 78.67,
+            "h": 44,
+            "right": 199.33,
+            "bottom": 338,
+            "size": 24
+          },
+          {
+            "label": "React clap",
+            "x": 207.33,
+            "y": 294,
+            "w": 78.66,
+            "h": 44,
+            "right": 285.98,
+            "bottom": 338,
+            "size": 24
+          },
+          {
+            "label": "React laugh",
+            "x": 34,
+            "y": 346,
+            "w": 78.66,
+            "h": 44,
+            "right": 112.66,
+            "bottom": 390,
+            "size": 24
+          },
+          {
+            "label": "React fire",
+            "x": 120.66,
+            "y": 346,
+            "w": 78.67,
+            "h": 44,
+            "right": 199.33,
+            "bottom": 390,
+            "size": 24
+          },
+          {
+            "label": "React sheep",
+            "x": 207.33,
+            "y": 346,
+            "w": 78.66,
+            "h": 44,
+            "right": 285.98,
+            "bottom": 390,
+            "size": 24
+          },
+          {
+            "label": "Say something…",
+            "x": 34,
+            "y": 398,
+            "w": 182.83,
+            "h": 44,
+            "right": 216.83,
+            "bottom": 442,
+            "size": 16
+          },
+          {
+            "label": "Send",
+            "x": 224.83,
+            "y": 398,
+            "w": 61.17,
+            "h": 44,
+            "right": 286,
+            "bottom": 442,
+            "size": 15
+          },
+          {
+            "label": "7 points",
+            "x": 199,
+            "y": 455,
+            "w": 44,
+            "h": 44,
+            "right": 243,
+            "bottom": 499,
+            "size": 15
+          },
+          {
+            "label": "10 points",
+            "x": 251,
+            "y": 455,
+            "w": 44,
+            "h": 44,
+            "right": 295,
+            "bottom": 499,
+            "size": 15
+          },
+          {
+            "label": "Not ready",
+            "x": 25,
+            "y": 507,
+            "w": 129.66,
+            "h": 44,
+            "right": 154.66,
+            "bottom": 551,
+            "size": 15
+          },
+          {
+            "label": "Leave the table",
+            "x": 162.66,
+            "y": 507,
+            "w": 132.34,
+            "h": 44,
+            "right": 295,
+            "bottom": 551,
+            "size": 15
+          }
+        ],
+        "texts": [
+          {
+            "text": "QQTN",
+            "tag": "p",
+            "size": 18,
+            "line": "32px",
+            "weight": "700",
+            "family": "ui-rounded",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Copy",
+            "tag": "button",
+            "size": 12,
+            "line": "16px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 114.69
+          },
+          {
+            "text": "Copy link",
+            "tag": "button",
+            "size": 12,
+            "line": "16px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 169.17
+          },
+          {
+            "text": "Invite",
+            "tag": "button",
+            "size": 12,
+            "line": "16px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 247.13
+          },
+          {
+            "text": "Rules",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Wayfarer on",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 193.16
+          },
+          {
+            "text": "Reachable · 25 ms",
+            "tag": "p",
+            "size": 13,
+            "line": "17.3333px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 181
+          },
+          {
+            "text": "Jarrod",
+            "tag": "button",
+            "size": 15,
+            "line": "22px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Host · Ready",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 196
+          },
+          {
+            "text": "Waiting",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 196
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Empty",
+            "tag": "span",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 176
+          },
+          {
+            "text": "Add bot",
+            "tag": "button",
+            "size": 13,
+            "line": "16px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 231.11
+          },
+          {
+            "text": "Chat",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 62
+          },
+          {
+            "text": "Sounds & stickers",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 140.16
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 14,
+            "line": "19.25px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 46
+          },
+          {
+            "text": "Ready when you are!",
+            "tag": "span",
+            "size": 14,
+            "line": "19.25px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 82.48
+          },
+          {
+            "text": "😠",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 58.34
+          },
+          {
+            "text": "😊",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 145.02
+          },
+          {
+            "text": "👏",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 231.67
+          },
+          {
+            "text": "😂",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 58.34
+          },
+          {
+            "text": "🔥",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 145.02
+          },
+          {
+            "text": "🐑",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 231.67
+          },
+          {
+            "text": "Say something…",
+            "tag": "input",
+            "size": 16,
+            "line": "22.8571px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 34
+          },
+          {
+            "text": "Send",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 224.83
+          },
+          {
+            "text": "2 of 3 ready",
+            "tag": "p",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Win at",
+            "tag": "span",
+            "size": 13,
+            "line": "17.3333px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 151.59
+          },
+          {
+            "text": "7",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 199
+          },
+          {
+            "text": "10",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 251
+          },
+          {
+            "text": "Not ready",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Leave the table",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 162.66
+          }
+        ],
+        "widest": {
+          "normal": {
+            "codeSize": 18,
+            "textWidth": 75.91,
+            "clipped": false,
+            "gapToCopy": 13.78,
+            "buttonsCrampedOrWrapped": []
+          },
+          "copied": {
+            "codeSize": 18,
+            "textWidth": 75.91,
+            "clipped": true,
+            "gapToCopy": 6.55,
+            "buttonsCrampedOrWrapped": [
+              "Copied",
+              "Copy link"
+            ]
+          }
+        },
+        "textSize": {
+          "texts": 33,
+          "grew": 2
+        }
+      },
+      "after": {
+        "viewport": "320x568",
+        "code": "QQTN",
+        "codeFont": {
+          "size": 18,
+          "line": "28px",
+          "weight": "700",
+          "family": "ui-rounded"
+        },
+        "card": {
+          "x": 16,
+          "y": 8,
+          "w": 288,
+          "h": 552,
+          "right": 304,
+          "bottom": 560
+        },
+        "outerMargin": {
+          "left": 16,
+          "top": 8,
+          "right": 16,
+          "bottom": 8
+        },
+        "padding": "8px",
+        "radius": "24px",
+        "rows": "44px 44px 96px 222px 96px",
+        "cardScroll": [
+          0,
+          0
+        ],
+        "chatLog": 48,
+        "addBotLines": 2,
+        "leftEdges": {
+          "code": 9,
+          "rules": 9,
+          "seats": 9,
+          "chat": 9,
+          "status": 9,
+          "ready": 9
+        },
+        "fontSizes": [
+          12,
+          13,
+          15,
+          17,
+          18,
+          24
+        ],
+        "smallestText": 12,
+        "clipped": [],
+        "under44": [],
+        "textPaddingUnder8": [],
+        "minGap": 8,
+        "minGapPair": "Copy / Copy link",
+        "controls": [
+          {
+            "label": "Copy",
+            "x": 114.69,
+            "y": 17,
+            "w": 46.48,
+            "h": 44,
+            "right": 161.17,
+            "bottom": 61,
+            "size": 12
+          },
+          {
+            "label": "Copy link",
+            "x": 169.17,
+            "y": 17,
+            "w": 69.95,
+            "h": 44,
+            "right": 239.13,
+            "bottom": 61,
+            "size": 12
+          },
+          {
+            "label": "Invite",
+            "x": 247.13,
+            "y": 17,
+            "w": 47.88,
+            "h": 44,
+            "right": 295,
+            "bottom": 61,
+            "size": 12
+          },
+          {
+            "label": "Rules",
+            "x": 25,
+            "y": 69,
+            "w": 144.02,
+            "h": 44,
+            "right": 169.02,
+            "bottom": 113,
+            "size": 15
+          },
+          {
+            "label": "rename-seat",
+            "x": 57,
+            "y": 121,
+            "w": 53.88,
+            "h": 44,
+            "right": 110.88,
+            "bottom": 165,
+            "size": 17
+          },
+          {
+            "label": "remove-bot",
+            "x": 100,
+            "y": 173,
+            "w": 44,
+            "h": 44,
+            "right": 144,
+            "bottom": 217,
+            "size": 13
+          },
+          {
+            "label": "add-bot",
+            "x": 236.58,
+            "y": 173,
+            "w": 46.42,
+            "h": 44,
+            "right": 283,
+            "bottom": 217,
+            "size": 13
+          },
+          {
+            "label": "Chat",
+            "x": 34,
+            "y": 234,
+            "w": 70.16,
+            "h": 44,
+            "right": 104.16,
+            "bottom": 278,
+            "size": 15
+          },
+          {
+            "label": "Sounds & stickers",
+            "x": 112.16,
+            "y": 234,
+            "w": 165.83,
+            "h": 44,
+            "right": 277.98,
+            "bottom": 278,
+            "size": 15
+          },
+          {
+            "label": "React angry",
+            "x": 34,
+            "y": 342,
+            "w": 44,
+            "h": 44,
+            "right": 78,
+            "bottom": 386,
+            "size": 24
+          },
+          {
+            "label": "React happy",
+            "x": 90,
+            "y": 342,
+            "w": 44,
+            "h": 44,
+            "right": 134,
+            "bottom": 386,
+            "size": 24
+          },
+          {
+            "label": "React clap",
+            "x": 146,
+            "y": 342,
+            "w": 44,
+            "h": 44,
+            "right": 190,
+            "bottom": 386,
+            "size": 24
+          },
+          {
+            "label": "React laugh",
+            "x": 202,
+            "y": 342,
+            "w": 44,
+            "h": 44,
+            "right": 246,
+            "bottom": 386,
+            "size": 24
+          },
+          {
+            "label": "React fire",
+            "x": 258,
+            "y": 342,
+            "w": 44,
+            "h": 44,
+            "right": 302,
+            "bottom": 386,
+            "size": 24
+          },
+          {
+            "label": "React sheep",
+            "x": 314,
+            "y": 342,
+            "w": 44,
+            "h": 44,
+            "right": 358,
+            "bottom": 386,
+            "size": 24
+          },
+          {
+            "label": "Say something…",
+            "x": 34,
+            "y": 394,
+            "w": 182.83,
+            "h": 44,
+            "right": 216.83,
+            "bottom": 438,
+            "size": 17
+          },
+          {
+            "label": "Send",
+            "x": 224.83,
+            "y": 394,
+            "w": 61.17,
+            "h": 44,
+            "right": 286,
+            "bottom": 438,
+            "size": 15
+          },
+          {
+            "label": "7 points",
+            "x": 199,
+            "y": 455,
+            "w": 44,
+            "h": 44,
+            "right": 243,
+            "bottom": 499,
+            "size": 15
+          },
+          {
+            "label": "10 points",
+            "x": 251,
+            "y": 455,
+            "w": 44,
+            "h": 44,
+            "right": 295,
+            "bottom": 499,
+            "size": 15
+          },
+          {
+            "label": "Not ready",
+            "x": 25,
+            "y": 507,
+            "w": 129.66,
+            "h": 44,
+            "right": 154.66,
+            "bottom": 551,
+            "size": 17
+          },
+          {
+            "label": "Leave the table",
+            "x": 162.66,
+            "y": 507,
+            "w": 132.34,
+            "h": 44,
+            "right": 295,
+            "bottom": 551,
+            "size": 15
+          }
+        ],
+        "texts": [
+          {
+            "text": "QQTN",
+            "tag": "p",
+            "size": 18,
+            "line": "28px",
+            "weight": "700",
+            "family": "ui-rounded",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Copy",
+            "tag": "button",
+            "size": 12,
+            "line": "16px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 114.69
+          },
+          {
+            "text": "Copy link",
+            "tag": "button",
+            "size": 12,
+            "line": "16px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 169.17
+          },
+          {
+            "text": "Invite",
+            "tag": "button",
+            "size": 12,
+            "line": "16px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 247.13
+          },
+          {
+            "text": "Rules",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Wayfarer on",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 181.02
+          },
+          {
+            "text": "Reachable · 25 ms",
+            "tag": "p",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 181.02
+          },
+          {
+            "text": "Jarrod",
+            "tag": "button",
+            "size": 17,
+            "line": "22px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Host · Ready",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 17,
+            "line": "25.5px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 196
+          },
+          {
+            "text": "Waiting",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 196
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 17,
+            "line": "25.5px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Empty",
+            "tag": "span",
+            "size": 17,
+            "line": "25.5px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 176
+          },
+          {
+            "text": "Add bot",
+            "tag": "button",
+            "size": 13,
+            "line": "16px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 236.58
+          },
+          {
+            "text": "Chat",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 62
+          },
+          {
+            "text": "Sounds & stickers",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 140.16
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 17,
+            "line": "22px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 46
+          },
+          {
+            "text": "Ready when you are!",
+            "tag": "span",
+            "size": 17,
+            "line": "22px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 89.44
+          },
+          {
+            "text": "😠",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 41.02
+          },
+          {
+            "text": "😊",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 97.02
+          },
+          {
+            "text": "👏",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 153.02
+          },
+          {
+            "text": "😂",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 209.02
+          },
+          {
+            "text": "🔥",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 265.02
+          },
+          {
+            "text": "🐑",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 321.02
+          },
+          {
+            "text": "Say something…",
+            "tag": "input",
+            "size": 17,
+            "line": "24.2857px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 34
+          },
+          {
+            "text": "Send",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 224.83
+          },
+          {
+            "text": "2 of 3 ready",
+            "tag": "p",
+            "size": 17,
+            "line": "22px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Win at",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 151.59
+          },
+          {
+            "text": "7",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 199
+          },
+          {
+            "text": "10",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 251
+          },
+          {
+            "text": "Not ready",
+            "tag": "button",
+            "size": 17,
+            "line": "22px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Leave the table",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 162.66
+          }
+        ],
+        "widest": {
+          "normal": {
+            "codeSize": 18,
+            "textWidth": 75.91,
+            "clipped": false,
+            "gapToCopy": 13.78,
+            "buttonsCrampedOrWrapped": []
+          },
+          "copied": {
+            "codeSize": 18,
+            "textWidth": 75.91,
+            "clipped": true,
+            "gapToCopy": 6.55,
+            "buttonsCrampedOrWrapped": [
+              "Copied",
+              "Copy link"
+            ]
+          }
+        },
+        "textSize": {
+          "texts": 33,
+          "grew": 2
+        }
+      }
+    },
+    {
+      "before": {
+        "viewport": "375x667",
+        "code": "G8HC",
+        "codeFont": {
+          "size": 24,
+          "line": "32px",
+          "weight": "700",
+          "family": "ui-rounded"
+        },
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 343,
+          "h": 635,
+          "right": 359,
+          "bottom": 651
+        },
+        "outerMargin": {
+          "left": 16,
+          "top": 16,
+          "right": 16,
+          "bottom": 16
+        },
+        "padding": "8px",
+        "radius": "24px",
+        "rows": "44px 44px 96px 305px 96px",
+        "cardScroll": [
+          0,
+          0
+        ],
+        "chatLog": 131,
+        "addBotLines": 1,
+        "leftEdges": {
+          "code": 9,
+          "rules": 9,
+          "seats": 9,
+          "chat": 9,
+          "status": 9,
+          "ready": 9
+        },
+        "fontSizes": [
+          13,
+          14,
+          15,
+          16,
+          24
+        ],
+        "smallestText": 13,
+        "clipped": [],
+        "under44": [],
+        "textPaddingUnder8": [],
+        "minGap": 8,
+        "minGapPair": "Copy / Copy link",
+        "controls": [
+          {
+            "label": "Copy",
+            "x": 134.61,
+            "y": 25,
+            "w": 56.09,
+            "h": 44,
+            "right": 190.7,
+            "bottom": 69,
+            "size": 15
+          },
+          {
+            "label": "Copy link",
+            "x": 198.7,
+            "y": 25,
+            "w": 85.45,
+            "h": 44,
+            "right": 284.16,
+            "bottom": 69,
+            "size": 15
+          },
+          {
+            "label": "Invite",
+            "x": 292.16,
+            "y": 25,
+            "w": 57.84,
+            "h": 44,
+            "right": 350,
+            "bottom": 69,
+            "size": 15
+          },
+          {
+            "label": "Rules",
+            "x": 25,
+            "y": 77,
+            "w": 175.5,
+            "h": 44,
+            "right": 200.5,
+            "bottom": 121,
+            "size": 15
+          },
+          {
+            "label": "rename-seat",
+            "x": 57,
+            "y": 129,
+            "w": 48.09,
+            "h": 44,
+            "right": 105.09,
+            "bottom": 173,
+            "size": 15
+          },
+          {
+            "label": "remove-bot",
+            "x": 127.5,
+            "y": 181,
+            "w": 44,
+            "h": 44,
+            "right": 171.5,
+            "bottom": 225,
+            "size": 13
+          },
+          {
+            "label": "add-bot",
+            "x": 272.61,
+            "y": 181,
+            "w": 65.39,
+            "h": 44,
+            "right": 338,
+            "bottom": 225,
+            "size": 13
+          },
+          {
+            "label": "Chat",
+            "x": 34,
+            "y": 242,
+            "w": 70.16,
+            "h": 44,
+            "right": 104.16,
+            "bottom": 286,
+            "size": 15
+          },
+          {
+            "label": "Sounds & stickers",
+            "x": 112.16,
+            "y": 242,
+            "w": 165.83,
+            "h": 44,
+            "right": 277.98,
+            "bottom": 286,
+            "size": 15
+          },
+          {
+            "label": "React angry",
+            "x": 34,
+            "y": 433,
+            "w": 44.5,
+            "h": 44,
+            "right": 78.5,
+            "bottom": 477,
+            "size": 24
+          },
+          {
+            "label": "React happy",
+            "x": 86.5,
+            "y": 433,
+            "w": 44.5,
+            "h": 44,
+            "right": 131,
+            "bottom": 477,
+            "size": 24
+          },
+          {
+            "label": "React clap",
+            "x": 139,
+            "y": 433,
+            "w": 44.5,
+            "h": 44,
+            "right": 183.5,
+            "bottom": 477,
+            "size": 24
+          },
+          {
+            "label": "React laugh",
+            "x": 191.5,
+            "y": 433,
+            "w": 44.5,
+            "h": 44,
+            "right": 236,
+            "bottom": 477,
+            "size": 24
+          },
+          {
+            "label": "React fire",
+            "x": 244,
+            "y": 433,
+            "w": 44.5,
+            "h": 44,
+            "right": 288.5,
+            "bottom": 477,
+            "size": 24
+          },
+          {
+            "label": "React sheep",
+            "x": 296.5,
+            "y": 433,
+            "w": 44.5,
+            "h": 44,
+            "right": 341,
+            "bottom": 477,
+            "size": 24
+          },
+          {
+            "label": "Say something…",
+            "x": 34,
+            "y": 485,
+            "w": 237.83,
+            "h": 44,
+            "right": 271.83,
+            "bottom": 529,
+            "size": 16
+          },
+          {
+            "label": "Send",
+            "x": 279.83,
+            "y": 485,
+            "w": 61.17,
+            "h": 44,
+            "right": 341,
+            "bottom": 529,
+            "size": 15
+          },
+          {
+            "label": "7 points",
+            "x": 254,
+            "y": 546,
+            "w": 44,
+            "h": 44,
+            "right": 298,
+            "bottom": 590,
+            "size": 15
+          },
+          {
+            "label": "10 points",
+            "x": 306,
+            "y": 546,
+            "w": 44,
+            "h": 44,
+            "right": 350,
+            "bottom": 590,
+            "size": 15
+          },
+          {
+            "label": "Not ready",
+            "x": 25,
+            "y": 598,
+            "w": 184.66,
+            "h": 44,
+            "right": 209.66,
+            "bottom": 642,
+            "size": 15
+          },
+          {
+            "label": "Leave the table",
+            "x": 217.66,
+            "y": 598,
+            "w": 132.34,
+            "h": 44,
+            "right": 350,
+            "bottom": 642,
+            "size": 15
+          }
+        ],
+        "texts": [
+          {
+            "text": "G8HC",
+            "tag": "p",
+            "size": 24,
+            "line": "32px",
+            "weight": "700",
+            "family": "ui-rounded",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Copy",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 134.61
+          },
+          {
+            "text": "Copy link",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 198.7
+          },
+          {
+            "text": "Invite",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 292.16
+          },
+          {
+            "text": "Rules",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Wayfarer on",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 234.41
+          },
+          {
+            "text": "Reachable · 20 ms",
+            "tag": "p",
+            "size": 13,
+            "line": "17.3333px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 222.08
+          },
+          {
+            "text": "Jarrod",
+            "tag": "button",
+            "size": 15,
+            "line": "22px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Host · Ready",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 223.5
+          },
+          {
+            "text": "Waiting",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 223.5
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Empty",
+            "tag": "span",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 203.5
+          },
+          {
+            "text": "Add bot",
+            "tag": "button",
+            "size": 13,
+            "line": "16px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 272.61
+          },
+          {
+            "text": "Chat",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 62
+          },
+          {
+            "text": "Sounds & stickers",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 140.16
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 14,
+            "line": "19.25px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 46
+          },
+          {
+            "text": "Ready when you are!",
+            "tag": "span",
+            "size": 14,
+            "line": "19.25px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 82.48
+          },
+          {
+            "text": "😠",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 41.27
+          },
+          {
+            "text": "😊",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 93.77
+          },
+          {
+            "text": "👏",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 146.27
+          },
+          {
+            "text": "😂",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 198.77
+          },
+          {
+            "text": "🔥",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 251.27
+          },
+          {
+            "text": "🐑",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 303.77
+          },
+          {
+            "text": "Say something…",
+            "tag": "input",
+            "size": 16,
+            "line": "22.8571px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 34
+          },
+          {
+            "text": "Send",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 279.83
+          },
+          {
+            "text": "2 of 3 ready",
+            "tag": "p",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Win at",
+            "tag": "span",
+            "size": 13,
+            "line": "17.3333px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 206.59
+          },
+          {
+            "text": "7",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 254
+          },
+          {
+            "text": "10",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 306
+          },
+          {
+            "text": "Not ready",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Leave the table",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 217.66
+          }
+        ],
+        "widest": {
+          "normal": {
+            "codeSize": 24,
+            "textWidth": 105.2,
+            "clipped": false,
+            "gapToCopy": 8,
+            "buttonsCrampedOrWrapped": [
+              "Copy link"
+            ]
+          },
+          "copied": {
+            "codeSize": 24,
+            "textWidth": 105.2,
+            "clipped": false,
+            "gapToCopy": 8,
+            "buttonsCrampedOrWrapped": [
+              "Copied",
+              "Copy link",
+              "Invite"
+            ]
+          }
+        },
+        "textSize": {
+          "texts": 33,
+          "grew": 2
+        }
+      },
+      "after": {
+        "viewport": "375x667",
+        "code": "G8HC",
+        "codeFont": {
+          "size": 22,
+          "line": "28px",
+          "weight": "700",
+          "family": "ui-rounded"
+        },
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 343,
+          "h": 635,
+          "right": 359,
+          "bottom": 651
+        },
+        "outerMargin": {
+          "left": 16,
+          "top": 16,
+          "right": 16,
+          "bottom": 16
+        },
+        "padding": "8px",
+        "radius": "24px",
+        "rows": "44px 44px 96px 305px 96px",
+        "cardScroll": [
+          0,
+          0
+        ],
+        "chatLog": 131,
+        "addBotLines": 1,
+        "leftEdges": {
+          "code": 9,
+          "rules": 9,
+          "seats": 9,
+          "chat": 9,
+          "status": 9,
+          "ready": 9
+        },
+        "fontSizes": [
+          13,
+          15,
+          17,
+          22,
+          24
+        ],
+        "smallestText": 13,
+        "clipped": [],
+        "under44": [],
+        "textPaddingUnder8": [],
+        "minGap": 8,
+        "minGapPair": "Copy / Copy link",
+        "controls": [
+          {
+            "label": "Copy",
+            "x": 134.61,
+            "y": 25,
+            "w": 56.09,
+            "h": 44,
+            "right": 190.7,
+            "bottom": 69,
+            "size": 15
+          },
+          {
+            "label": "Copy link",
+            "x": 198.7,
+            "y": 25,
+            "w": 85.45,
+            "h": 44,
+            "right": 284.16,
+            "bottom": 69,
+            "size": 15
+          },
+          {
+            "label": "Invite",
+            "x": 292.16,
+            "y": 25,
+            "w": 57.84,
+            "h": 44,
+            "right": 350,
+            "bottom": 69,
+            "size": 15
+          },
+          {
+            "label": "Rules",
+            "x": 25,
+            "y": 77,
+            "w": 173.5,
+            "h": 44,
+            "right": 198.5,
+            "bottom": 121,
+            "size": 15
+          },
+          {
+            "label": "rename-seat",
+            "x": 57,
+            "y": 129,
+            "w": 53.88,
+            "h": 44,
+            "right": 110.88,
+            "bottom": 173,
+            "size": 17
+          },
+          {
+            "label": "remove-bot",
+            "x": 127.5,
+            "y": 181,
+            "w": 44,
+            "h": 44,
+            "right": 171.5,
+            "bottom": 225,
+            "size": 15
+          },
+          {
+            "label": "add-bot",
+            "x": 265.02,
+            "y": 181,
+            "w": 72.98,
+            "h": 44,
+            "right": 338,
+            "bottom": 225,
+            "size": 15
+          },
+          {
+            "label": "Chat",
+            "x": 34,
+            "y": 242,
+            "w": 70.16,
+            "h": 44,
+            "right": 104.16,
+            "bottom": 286,
+            "size": 15
+          },
+          {
+            "label": "Sounds & stickers",
+            "x": 112.16,
+            "y": 242,
+            "w": 165.83,
+            "h": 44,
+            "right": 277.98,
+            "bottom": 286,
+            "size": 15
+          },
+          {
+            "label": "React angry",
+            "x": 34,
+            "y": 433,
+            "w": 44.5,
+            "h": 44,
+            "right": 78.5,
+            "bottom": 477,
+            "size": 24
+          },
+          {
+            "label": "React happy",
+            "x": 86.5,
+            "y": 433,
+            "w": 44.5,
+            "h": 44,
+            "right": 131,
+            "bottom": 477,
+            "size": 24
+          },
+          {
+            "label": "React clap",
+            "x": 139,
+            "y": 433,
+            "w": 44.5,
+            "h": 44,
+            "right": 183.5,
+            "bottom": 477,
+            "size": 24
+          },
+          {
+            "label": "React laugh",
+            "x": 191.5,
+            "y": 433,
+            "w": 44.5,
+            "h": 44,
+            "right": 236,
+            "bottom": 477,
+            "size": 24
+          },
+          {
+            "label": "React fire",
+            "x": 244,
+            "y": 433,
+            "w": 44.5,
+            "h": 44,
+            "right": 288.5,
+            "bottom": 477,
+            "size": 24
+          },
+          {
+            "label": "React sheep",
+            "x": 296.5,
+            "y": 433,
+            "w": 44.5,
+            "h": 44,
+            "right": 341,
+            "bottom": 477,
+            "size": 24
+          },
+          {
+            "label": "Say something…",
+            "x": 34,
+            "y": 485,
+            "w": 237.83,
+            "h": 44,
+            "right": 271.83,
+            "bottom": 529,
+            "size": 17
+          },
+          {
+            "label": "Send",
+            "x": 279.83,
+            "y": 485,
+            "w": 61.17,
+            "h": 44,
+            "right": 341,
+            "bottom": 529,
+            "size": 15
+          },
+          {
+            "label": "7 points",
+            "x": 254,
+            "y": 546,
+            "w": 44,
+            "h": 44,
+            "right": 298,
+            "bottom": 590,
+            "size": 15
+          },
+          {
+            "label": "10 points",
+            "x": 306,
+            "y": 546,
+            "w": 44,
+            "h": 44,
+            "right": 350,
+            "bottom": 590,
+            "size": 15
+          },
+          {
+            "label": "Not ready",
+            "x": 25,
+            "y": 598,
+            "w": 184.66,
+            "h": 44,
+            "right": 209.66,
+            "bottom": 642,
+            "size": 17
+          },
+          {
+            "label": "Leave the table",
+            "x": 217.66,
+            "y": 598,
+            "w": 132.34,
+            "h": 44,
+            "right": 350,
+            "bottom": 642,
+            "size": 15
+          }
+        ],
+        "texts": [
+          {
+            "text": "G8HC",
+            "tag": "p",
+            "size": 22,
+            "line": "28px",
+            "weight": "700",
+            "family": "ui-rounded",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Copy",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 134.61
+          },
+          {
+            "text": "Copy link",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 198.7
+          },
+          {
+            "text": "Invite",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 292.16
+          },
+          {
+            "text": "Rules",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Wayfarer on",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 210.5
+          },
+          {
+            "text": "Reachable · 20 ms",
+            "tag": "p",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 210.5
+          },
+          {
+            "text": "Jarrod",
+            "tag": "button",
+            "size": 17,
+            "line": "22px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Host · Ready",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 17,
+            "line": "25.5px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 223.5
+          },
+          {
+            "text": "Waiting",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 223.5
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 17,
+            "line": "25.5px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Empty",
+            "tag": "span",
+            "size": 17,
+            "line": "25.5px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 203.5
+          },
+          {
+            "text": "Add bot",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 265.02
+          },
+          {
+            "text": "Chat",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 62
+          },
+          {
+            "text": "Sounds & stickers",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 140.16
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 17,
+            "line": "22px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 46
+          },
+          {
+            "text": "Ready when you are!",
+            "tag": "span",
+            "size": 17,
+            "line": "22px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 89.44
+          },
+          {
+            "text": "😠",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 41.27
+          },
+          {
+            "text": "😊",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 93.77
+          },
+          {
+            "text": "👏",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 146.27
+          },
+          {
+            "text": "😂",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 198.77
+          },
+          {
+            "text": "🔥",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 251.27
+          },
+          {
+            "text": "🐑",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 303.77
+          },
+          {
+            "text": "Say something…",
+            "tag": "input",
+            "size": 17,
+            "line": "24.2857px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 34
+          },
+          {
+            "text": "Send",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 279.83
+          },
+          {
+            "text": "2 of 3 ready",
+            "tag": "p",
+            "size": 17,
+            "line": "22px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Win at",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 206.59
+          },
+          {
+            "text": "7",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 254
+          },
+          {
+            "text": "10",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 306
+          },
+          {
+            "text": "Not ready",
+            "tag": "button",
+            "size": 17,
+            "line": "22px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Leave the table",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 217.66
+          }
+        ],
+        "widest": {
+          "normal": {
+            "codeSize": 22,
+            "textWidth": 96.77,
+            "clipped": false,
+            "gapToCopy": 12.84,
+            "buttonsCrampedOrWrapped": []
+          },
+          "copied": {
+            "codeSize": 22,
+            "textWidth": 96.77,
+            "clipped": false,
+            "gapToCopy": 8,
+            "buttonsCrampedOrWrapped": [
+              "Copy link"
+            ]
+          }
+        },
+        "textSize": {
+          "texts": 33,
+          "grew": 2
+        }
+      }
+    },
+    {
+      "before": {
+        "viewport": "390x844",
+        "code": "5QFZ",
+        "codeFont": {
+          "size": 24,
+          "line": "32px",
+          "weight": "700",
+          "family": "ui-rounded"
+        },
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 358,
+          "h": 812,
+          "right": 374,
+          "bottom": 828
+        },
+        "outerMargin": {
+          "left": 16,
+          "top": 16,
+          "right": 16,
+          "bottom": 16
+        },
+        "padding": "12px",
+        "radius": "24px",
+        "rows": "44px 44px 112px 458px 96px",
+        "cardScroll": [
+          0,
+          0
+        ],
+        "chatLog": 284,
+        "addBotLines": 1,
+        "leftEdges": {
+          "code": 13,
+          "rules": 13,
+          "seats": 13,
+          "chat": 13,
+          "status": 13,
+          "ready": 13
+        },
+        "fontSizes": [
+          13,
+          14,
+          15,
+          16,
+          24
+        ],
+        "smallestText": 13,
+        "clipped": [],
+        "under44": [],
+        "textPaddingUnder8": [],
+        "minGap": 8,
+        "minGapPair": "Copy / Copy link",
+        "controls": [
+          {
+            "label": "Copy",
+            "x": 145.61,
+            "y": 29,
+            "w": 56.09,
+            "h": 44,
+            "right": 201.7,
+            "bottom": 73,
+            "size": 15
+          },
+          {
+            "label": "Copy link",
+            "x": 209.7,
+            "y": 29,
+            "w": 85.45,
+            "h": 44,
+            "right": 295.16,
+            "bottom": 73,
+            "size": 15
+          },
+          {
+            "label": "Invite",
+            "x": 303.16,
+            "y": 29,
+            "w": 57.84,
+            "h": 44,
+            "right": 361,
+            "bottom": 73,
+            "size": 15
+          },
+          {
+            "label": "Rules",
+            "x": 29,
+            "y": 81,
+            "w": 179,
+            "h": 44,
+            "right": 208,
+            "bottom": 125,
+            "size": 15
+          },
+          {
+            "label": "rename-seat",
+            "x": 61,
+            "y": 133,
+            "w": 48.09,
+            "h": 44,
+            "right": 109.09,
+            "bottom": 177,
+            "size": 15
+          },
+          {
+            "label": "remove-bot",
+            "x": 135,
+            "y": 197,
+            "w": 44,
+            "h": 44,
+            "right": 179,
+            "bottom": 241,
+            "size": 13
+          },
+          {
+            "label": "add-bot",
+            "x": 283.61,
+            "y": 197,
+            "w": 65.39,
+            "h": 44,
+            "right": 349,
+            "bottom": 241,
+            "size": 13
+          },
+          {
+            "label": "Chat",
+            "x": 38,
+            "y": 262,
+            "w": 70.16,
+            "h": 44,
+            "right": 108.16,
+            "bottom": 306,
+            "size": 15
+          },
+          {
+            "label": "Sounds & stickers",
+            "x": 116.16,
+            "y": 262,
+            "w": 165.83,
+            "h": 44,
+            "right": 281.98,
+            "bottom": 306,
+            "size": 15
+          },
+          {
+            "label": "React angry",
+            "x": 38,
+            "y": 606,
+            "w": 45.66,
+            "h": 44,
+            "right": 83.66,
+            "bottom": 650,
+            "size": 24
+          },
+          {
+            "label": "React happy",
+            "x": 91.66,
+            "y": 606,
+            "w": 45.67,
+            "h": 44,
+            "right": 137.33,
+            "bottom": 650,
+            "size": 24
+          },
+          {
+            "label": "React clap",
+            "x": 145.33,
+            "y": 606,
+            "w": 45.67,
+            "h": 44,
+            "right": 191,
+            "bottom": 650,
+            "size": 24
+          },
+          {
+            "label": "React laugh",
+            "x": 199,
+            "y": 606,
+            "w": 45.66,
+            "h": 44,
+            "right": 244.66,
+            "bottom": 650,
+            "size": 24
+          },
+          {
+            "label": "React fire",
+            "x": 252.66,
+            "y": 606,
+            "w": 45.67,
+            "h": 44,
+            "right": 298.33,
+            "bottom": 650,
+            "size": 24
+          },
+          {
+            "label": "React sheep",
+            "x": 306.33,
+            "y": 606,
+            "w": 45.67,
+            "h": 44,
+            "right": 352,
+            "bottom": 650,
+            "size": 24
+          },
+          {
+            "label": "Say something…",
+            "x": 38,
+            "y": 658,
+            "w": 244.83,
+            "h": 44,
+            "right": 282.83,
+            "bottom": 702,
+            "size": 16
+          },
+          {
+            "label": "Send",
+            "x": 290.83,
+            "y": 658,
+            "w": 61.17,
+            "h": 44,
+            "right": 352,
+            "bottom": 702,
+            "size": 15
+          },
+          {
+            "label": "7 points",
+            "x": 265,
+            "y": 719,
+            "w": 44,
+            "h": 44,
+            "right": 309,
+            "bottom": 763,
+            "size": 15
+          },
+          {
+            "label": "10 points",
+            "x": 317,
+            "y": 719,
+            "w": 44,
+            "h": 44,
+            "right": 361,
+            "bottom": 763,
+            "size": 15
+          },
+          {
+            "label": "Not ready",
+            "x": 29,
+            "y": 771,
+            "w": 191.66,
+            "h": 44,
+            "right": 220.66,
+            "bottom": 815,
+            "size": 15
+          },
+          {
+            "label": "Leave the table",
+            "x": 228.66,
+            "y": 771,
+            "w": 132.34,
+            "h": 44,
+            "right": 361,
+            "bottom": 815,
+            "size": 15
+          }
+        ],
+        "texts": [
+          {
+            "text": "5QFZ",
+            "tag": "p",
+            "size": 24,
+            "line": "32px",
+            "weight": "700",
+            "family": "ui-rounded",
+            "clipped": false,
+            "x": 29
+          },
+          {
+            "text": "Copy",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 145.61
+          },
+          {
+            "text": "Copy link",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 209.7
+          },
+          {
+            "text": "Invite",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 303.16
+          },
+          {
+            "text": "Rules",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 29
+          },
+          {
+            "text": "Wayfarer on",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 243.66
+          },
+          {
+            "text": "Reachable · 4 ms",
+            "tag": "p",
+            "size": 13,
+            "line": "17.3333px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 235.27
+          },
+          {
+            "text": "Jarrod",
+            "tag": "button",
+            "size": 15,
+            "line": "26px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 61
+          },
+          {
+            "text": "Host · Ready",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 61
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 231
+          },
+          {
+            "text": "Waiting",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 231
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 61
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 61
+          },
+          {
+            "text": "Empty",
+            "tag": "span",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 211
+          },
+          {
+            "text": "Add bot",
+            "tag": "button",
+            "size": 13,
+            "line": "16px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 283.61
+          },
+          {
+            "text": "Chat",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 66
+          },
+          {
+            "text": "Sounds & stickers",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 144.16
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 14,
+            "line": "19.25px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 50
+          },
+          {
+            "text": "Ready when you are!",
+            "tag": "span",
+            "size": 14,
+            "line": "19.25px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 86.48
+          },
+          {
+            "text": "😠",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 45.84
+          },
+          {
+            "text": "😊",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 99.52
+          },
+          {
+            "text": "👏",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 153.19
+          },
+          {
+            "text": "😂",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 206.84
+          },
+          {
+            "text": "🔥",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 260.52
+          },
+          {
+            "text": "🐑",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 314.19
+          },
+          {
+            "text": "Say something…",
+            "tag": "input",
+            "size": 16,
+            "line": "22.8571px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 38
+          },
+          {
+            "text": "Send",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 290.83
+          },
+          {
+            "text": "2 of 3 ready",
+            "tag": "p",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 29
+          },
+          {
+            "text": "Win at",
+            "tag": "span",
+            "size": 13,
+            "line": "17.3333px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 217.59
+          },
+          {
+            "text": "7",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 265
+          },
+          {
+            "text": "10",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 317
+          },
+          {
+            "text": "Not ready",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 29
+          },
+          {
+            "text": "Leave the table",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 228.66
+          }
+        ],
+        "widest": {
+          "normal": {
+            "codeSize": 24,
+            "textWidth": 105.2,
+            "clipped": false,
+            "gapToCopy": 11.41,
+            "buttonsCrampedOrWrapped": []
+          },
+          "copied": {
+            "codeSize": 24,
+            "textWidth": 105.2,
+            "clipped": false,
+            "gapToCopy": 8,
+            "buttonsCrampedOrWrapped": [
+              "Copied",
+              "Copy link"
+            ]
+          }
+        },
+        "textSize": {
+          "texts": 33,
+          "grew": 2
+        }
+      },
+      "after": {
+        "viewport": "390x844",
+        "code": "5QFZ",
+        "codeFont": {
+          "size": 22,
+          "line": "28px",
+          "weight": "700",
+          "family": "ui-rounded"
+        },
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 358,
+          "h": 812,
+          "right": 374,
+          "bottom": 828
+        },
+        "outerMargin": {
+          "left": 16,
+          "top": 16,
+          "right": 16,
+          "bottom": 16
+        },
+        "padding": "12px",
+        "radius": "24px",
+        "rows": "44px 44px 112px 458px 96px",
+        "cardScroll": [
+          0,
+          0
+        ],
+        "chatLog": 284,
+        "addBotLines": 1,
+        "leftEdges": {
+          "code": 13,
+          "rules": 13,
+          "seats": 13,
+          "chat": 13,
+          "status": 13,
+          "ready": 13
+        },
+        "fontSizes": [
+          13,
+          15,
+          17,
+          22,
+          24
+        ],
+        "smallestText": 13,
+        "clipped": [],
+        "under44": [],
+        "textPaddingUnder8": [],
+        "minGap": 8,
+        "minGapPair": "Copy / Copy link",
+        "controls": [
+          {
+            "label": "Copy",
+            "x": 145.61,
+            "y": 29,
+            "w": 56.09,
+            "h": 44,
+            "right": 201.7,
+            "bottom": 73,
+            "size": 15
+          },
+          {
+            "label": "Copy link",
+            "x": 209.7,
+            "y": 29,
+            "w": 85.45,
+            "h": 44,
+            "right": 295.16,
+            "bottom": 73,
+            "size": 15
+          },
+          {
+            "label": "Invite",
+            "x": 303.16,
+            "y": 29,
+            "w": 57.84,
+            "h": 44,
+            "right": 361,
+            "bottom": 73,
+            "size": 15
+          },
+          {
+            "label": "Rules",
+            "x": 29,
+            "y": 81,
+            "w": 177,
+            "h": 44,
+            "right": 206,
+            "bottom": 125,
+            "size": 15
+          },
+          {
+            "label": "rename-seat",
+            "x": 61,
+            "y": 133,
+            "w": 53.88,
+            "h": 44,
+            "right": 114.88,
+            "bottom": 177,
+            "size": 17
+          },
+          {
+            "label": "remove-bot",
+            "x": 135,
+            "y": 197,
+            "w": 44,
+            "h": 44,
+            "right": 179,
+            "bottom": 241,
+            "size": 15
+          },
+          {
+            "label": "add-bot",
+            "x": 276.02,
+            "y": 197,
+            "w": 72.98,
+            "h": 44,
+            "right": 349,
+            "bottom": 241,
+            "size": 15
+          },
+          {
+            "label": "Chat",
+            "x": 38,
+            "y": 262,
+            "w": 70.16,
+            "h": 44,
+            "right": 108.16,
+            "bottom": 306,
+            "size": 15
+          },
+          {
+            "label": "Sounds & stickers",
+            "x": 116.16,
+            "y": 262,
+            "w": 165.83,
+            "h": 44,
+            "right": 281.98,
+            "bottom": 306,
+            "size": 15
+          },
+          {
+            "label": "React angry",
+            "x": 38,
+            "y": 606,
+            "w": 45.66,
+            "h": 44,
+            "right": 83.66,
+            "bottom": 650,
+            "size": 24
+          },
+          {
+            "label": "React happy",
+            "x": 91.66,
+            "y": 606,
+            "w": 45.67,
+            "h": 44,
+            "right": 137.33,
+            "bottom": 650,
+            "size": 24
+          },
+          {
+            "label": "React clap",
+            "x": 145.33,
+            "y": 606,
+            "w": 45.67,
+            "h": 44,
+            "right": 191,
+            "bottom": 650,
+            "size": 24
+          },
+          {
+            "label": "React laugh",
+            "x": 199,
+            "y": 606,
+            "w": 45.66,
+            "h": 44,
+            "right": 244.66,
+            "bottom": 650,
+            "size": 24
+          },
+          {
+            "label": "React fire",
+            "x": 252.66,
+            "y": 606,
+            "w": 45.67,
+            "h": 44,
+            "right": 298.33,
+            "bottom": 650,
+            "size": 24
+          },
+          {
+            "label": "React sheep",
+            "x": 306.33,
+            "y": 606,
+            "w": 45.67,
+            "h": 44,
+            "right": 352,
+            "bottom": 650,
+            "size": 24
+          },
+          {
+            "label": "Say something…",
+            "x": 38,
+            "y": 658,
+            "w": 244.83,
+            "h": 44,
+            "right": 282.83,
+            "bottom": 702,
+            "size": 17
+          },
+          {
+            "label": "Send",
+            "x": 290.83,
+            "y": 658,
+            "w": 61.17,
+            "h": 44,
+            "right": 352,
+            "bottom": 702,
+            "size": 15
+          },
+          {
+            "label": "7 points",
+            "x": 265,
+            "y": 719,
+            "w": 44,
+            "h": 44,
+            "right": 309,
+            "bottom": 763,
+            "size": 15
+          },
+          {
+            "label": "10 points",
+            "x": 317,
+            "y": 719,
+            "w": 44,
+            "h": 44,
+            "right": 361,
+            "bottom": 763,
+            "size": 15
+          },
+          {
+            "label": "Not ready",
+            "x": 29,
+            "y": 771,
+            "w": 191.66,
+            "h": 44,
+            "right": 220.66,
+            "bottom": 815,
+            "size": 17
+          },
+          {
+            "label": "Leave the table",
+            "x": 228.66,
+            "y": 771,
+            "w": 132.34,
+            "h": 44,
+            "right": 361,
+            "bottom": 815,
+            "size": 15
+          }
+        ],
+        "texts": [
+          {
+            "text": "5QFZ",
+            "tag": "p",
+            "size": 22,
+            "line": "28px",
+            "weight": "700",
+            "family": "ui-rounded",
+            "clipped": false,
+            "x": 29
+          },
+          {
+            "text": "Copy",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 145.61
+          },
+          {
+            "text": "Copy link",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 209.7
+          },
+          {
+            "text": "Invite",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 303.16
+          },
+          {
+            "text": "Rules",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 29
+          },
+          {
+            "text": "Wayfarer on",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 218
+          },
+          {
+            "text": "Reachable · 4 ms",
+            "tag": "p",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 218
+          },
+          {
+            "text": "Jarrod",
+            "tag": "button",
+            "size": 17,
+            "line": "26px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 61
+          },
+          {
+            "text": "Host · Ready",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 61
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 17,
+            "line": "25.5px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 231
+          },
+          {
+            "text": "Waiting",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 231
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 17,
+            "line": "25.5px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 61
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 61
+          },
+          {
+            "text": "Empty",
+            "tag": "span",
+            "size": 17,
+            "line": "25.5px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 211
+          },
+          {
+            "text": "Add bot",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 276.02
+          },
+          {
+            "text": "Chat",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 66
+          },
+          {
+            "text": "Sounds & stickers",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 144.16
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 17,
+            "line": "22px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 50
+          },
+          {
+            "text": "Ready when you are!",
+            "tag": "span",
+            "size": 17,
+            "line": "22px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 93.44
+          },
+          {
+            "text": "😠",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 45.84
+          },
+          {
+            "text": "😊",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 99.52
+          },
+          {
+            "text": "👏",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 153.19
+          },
+          {
+            "text": "😂",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 206.84
+          },
+          {
+            "text": "🔥",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 260.52
+          },
+          {
+            "text": "🐑",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 314.19
+          },
+          {
+            "text": "Say something…",
+            "tag": "input",
+            "size": 17,
+            "line": "24.2857px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 38
+          },
+          {
+            "text": "Send",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 290.83
+          },
+          {
+            "text": "2 of 3 ready",
+            "tag": "p",
+            "size": 17,
+            "line": "22px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 29
+          },
+          {
+            "text": "Win at",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 217.59
+          },
+          {
+            "text": "7",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 265
+          },
+          {
+            "text": "10",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 317
+          },
+          {
+            "text": "Not ready",
+            "tag": "button",
+            "size": 17,
+            "line": "22px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 29
+          },
+          {
+            "text": "Leave the table",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 228.66
+          }
+        ],
+        "widest": {
+          "normal": {
+            "codeSize": 22,
+            "textWidth": 96.77,
+            "clipped": false,
+            "gapToCopy": 19.84,
+            "buttonsCrampedOrWrapped": []
+          },
+          "copied": {
+            "codeSize": 22,
+            "textWidth": 96.77,
+            "clipped": false,
+            "gapToCopy": 8,
+            "buttonsCrampedOrWrapped": [
+              "Copy link"
+            ]
+          }
+        },
+        "textSize": {
+          "texts": 33,
+          "grew": 2
+        }
+      }
+    },
+    {
+      "before": {
+        "viewport": "844x390",
+        "code": "ZECJ",
+        "codeFont": {
+          "size": 28,
+          "line": "36px",
+          "weight": "700",
+          "family": "ui-rounded"
+        },
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 812,
+          "h": 358,
+          "right": 828,
+          "bottom": 374
+        },
+        "outerMargin": {
+          "left": 16,
+          "top": 16,
+          "right": 16,
+          "bottom": 16
+        },
+        "padding": "8px",
+        "radius": "24px",
+        "rows": "44px 44px 184px 44px",
+        "cardScroll": [
+          0,
+          0
+        ],
+        "chatLog": 62,
+        "addBotLines": 2,
+        "leftEdges": {
+          "code": 9,
+          "rules": 9,
+          "seats": 9,
+          "chat": 316.75,
+          "status": 9,
+          "ready": 316.75
+        },
+        "fontSizes": [
+          13,
+          14,
+          15,
+          16,
+          24,
+          28
+        ],
+        "smallestText": 13,
+        "clipped": [],
+        "under44": [],
+        "textPaddingUnder8": [],
+        "minGap": 8,
+        "minGapPair": "Copy / Copy link",
+        "controls": [
+          {
+            "label": "Copy",
+            "x": 585.61,
+            "y": 25,
+            "w": 62.09,
+            "h": 44,
+            "right": 647.7,
+            "bottom": 69,
+            "size": 15
+          },
+          {
+            "label": "Copy link",
+            "x": 655.7,
+            "y": 25,
+            "w": 91.45,
+            "h": 44,
+            "right": 747.16,
+            "bottom": 69,
+            "size": 15
+          },
+          {
+            "label": "Invite",
+            "x": 755.16,
+            "y": 25,
+            "w": 63.84,
+            "h": 44,
+            "right": 819,
+            "bottom": 69,
+            "size": 15
+          },
+          {
+            "label": "Rules",
+            "x": 25,
+            "y": 77,
+            "w": 158.88,
+            "h": 44,
+            "right": 183.88,
+            "bottom": 121,
+            "size": 15
+          },
+          {
+            "label": "rename-seat",
+            "x": 57,
+            "y": 129,
+            "w": 48.09,
+            "h": 44,
+            "right": 105.09,
+            "bottom": 173,
+            "size": 15
+          },
+          {
+            "label": "remove-bot",
+            "x": 110.88,
+            "y": 193,
+            "w": 44,
+            "h": 44,
+            "right": 154.88,
+            "bottom": 237,
+            "size": 13
+          },
+          {
+            "label": "add-bot",
+            "x": 241.98,
+            "y": 193,
+            "w": 62.77,
+            "h": 44,
+            "right": 304.75,
+            "bottom": 237,
+            "size": 13
+          },
+          {
+            "label": "Chat",
+            "x": 341.75,
+            "y": 86,
+            "w": 70.16,
+            "h": 44,
+            "right": 411.91,
+            "bottom": 130,
+            "size": 15
+          },
+          {
+            "label": "Sounds & stickers",
+            "x": 419.91,
+            "y": 86,
+            "w": 165.83,
+            "h": 44,
+            "right": 585.73,
+            "bottom": 130,
+            "size": 15
+          },
+          {
+            "label": "React angry",
+            "x": 341.75,
+            "y": 208,
+            "w": 71.38,
+            "h": 44,
+            "right": 413.13,
+            "bottom": 252,
+            "size": 24
+          },
+          {
+            "label": "React happy",
+            "x": 421.13,
+            "y": 208,
+            "w": 71.38,
+            "h": 44,
+            "right": 492.5,
+            "bottom": 252,
+            "size": 24
+          },
+          {
+            "label": "React clap",
+            "x": 500.5,
+            "y": 208,
+            "w": 71.38,
+            "h": 44,
+            "right": 571.88,
+            "bottom": 252,
+            "size": 24
+          },
+          {
+            "label": "React laugh",
+            "x": 579.88,
+            "y": 208,
+            "w": 71.38,
+            "h": 44,
+            "right": 651.25,
+            "bottom": 252,
+            "size": 24
+          },
+          {
+            "label": "React fire",
+            "x": 659.25,
+            "y": 208,
+            "w": 71.38,
+            "h": 44,
+            "right": 730.63,
+            "bottom": 252,
+            "size": 24
+          },
+          {
+            "label": "React sheep",
+            "x": 738.63,
+            "y": 208,
+            "w": 71.38,
+            "h": 44,
+            "right": 810,
+            "bottom": 252,
+            "size": 24
+          },
+          {
+            "label": "Say something…",
+            "x": 341.75,
+            "y": 260,
+            "w": 399.08,
+            "h": 44,
+            "right": 740.83,
+            "bottom": 304,
+            "size": 16
+          },
+          {
+            "label": "Send",
+            "x": 748.83,
+            "y": 260,
+            "w": 61.17,
+            "h": 44,
+            "right": 810,
+            "bottom": 304,
+            "size": 15
+          },
+          {
+            "label": "7 points",
+            "x": 220.75,
+            "y": 321,
+            "w": 44,
+            "h": 44,
+            "right": 264.75,
+            "bottom": 365,
+            "size": 15
+          },
+          {
+            "label": "10 points",
+            "x": 272.75,
+            "y": 321,
+            "w": 44,
+            "h": 44,
+            "right": 316.75,
+            "bottom": 365,
+            "size": 15
+          },
+          {
+            "label": "Not ready",
+            "x": 332.75,
+            "y": 321,
+            "w": 345.91,
+            "h": 44,
+            "right": 678.66,
+            "bottom": 365,
+            "size": 15
+          },
+          {
+            "label": "Leave the table",
+            "x": 686.66,
+            "y": 321,
+            "w": 132.34,
+            "h": 44,
+            "right": 819,
+            "bottom": 365,
+            "size": 15
+          }
+        ],
+        "texts": [
+          {
+            "text": "ZECJ",
+            "tag": "p",
+            "size": 28,
+            "line": "36px",
+            "weight": "700",
+            "family": "ui-rounded",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Copy",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 585.61
+          },
+          {
+            "text": "Copy link",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 655.7
+          },
+          {
+            "text": "Invite",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 755.16
+          },
+          {
+            "text": "Rules",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Wayfarer on",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 209.47
+          },
+          {
+            "text": "Reachable · 10 ms",
+            "tag": "p",
+            "size": 13,
+            "line": "17.3333px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 198.44
+          },
+          {
+            "text": "Jarrod",
+            "tag": "button",
+            "size": 15,
+            "line": "26px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Host · Ready",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 206.88
+          },
+          {
+            "text": "Waiting",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 206.88
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Empty",
+            "tag": "span",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 186.88
+          },
+          {
+            "text": "Add bot",
+            "tag": "button",
+            "size": 13,
+            "line": "16px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 241.98
+          },
+          {
+            "text": "Chat",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 369.75
+          },
+          {
+            "text": "Sounds & stickers",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 447.91
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 14,
+            "line": "19.25px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 353.75
+          },
+          {
+            "text": "Ready when you are!",
+            "tag": "span",
+            "size": 14,
+            "line": "19.25px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 390.23
+          },
+          {
+            "text": "😠",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 362.45
+          },
+          {
+            "text": "😊",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 441.83
+          },
+          {
+            "text": "👏",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 521.2
+          },
+          {
+            "text": "😂",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 600.58
+          },
+          {
+            "text": "🔥",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 679.95
+          },
+          {
+            "text": "🐑",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 759.33
+          },
+          {
+            "text": "Say something…",
+            "tag": "input",
+            "size": 16,
+            "line": "22.8571px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 341.75
+          },
+          {
+            "text": "Send",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 748.83
+          },
+          {
+            "text": "2 of 3 ready",
+            "tag": "p",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Win at",
+            "tag": "span",
+            "size": 13,
+            "line": "17.3333px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 173.34
+          },
+          {
+            "text": "7",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 220.75
+          },
+          {
+            "text": "10",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 272.75
+          },
+          {
+            "text": "Not ready",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 332.75
+          },
+          {
+            "text": "Leave the table",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 686.66
+          }
+        ],
+        "widest": {
+          "normal": {
+            "codeSize": 28,
+            "textWidth": 122.06,
+            "clipped": false,
+            "gapToCopy": 438.55,
+            "buttonsCrampedOrWrapped": []
+          },
+          "copied": {
+            "codeSize": 28,
+            "textWidth": 122.06,
+            "clipped": false,
+            "gapToCopy": 424.94,
+            "buttonsCrampedOrWrapped": []
+          }
+        },
+        "textSize": {
+          "texts": 33,
+          "grew": 2
+        }
+      },
+      "after": {
+        "viewport": "844x390",
+        "code": "ZECJ",
+        "codeFont": {
+          "size": 28,
+          "line": "34px",
+          "weight": "700",
+          "family": "ui-rounded"
+        },
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 812,
+          "h": 358,
+          "right": 828,
+          "bottom": 374
+        },
+        "outerMargin": {
+          "left": 16,
+          "top": 16,
+          "right": 16,
+          "bottom": 16
+        },
+        "padding": "8px",
+        "radius": "24px",
+        "rows": "44px 44px 184px 44px",
+        "cardScroll": [
+          0,
+          0
+        ],
+        "chatLog": 62,
+        "addBotLines": 2,
+        "leftEdges": {
+          "code": 9,
+          "rules": 9,
+          "seats": 9,
+          "chat": 316.75,
+          "status": 9,
+          "ready": 316.75
+        },
+        "fontSizes": [
+          13,
+          15,
+          17,
+          24,
+          28
+        ],
+        "smallestText": 13,
+        "clipped": [],
+        "under44": [],
+        "textPaddingUnder8": [],
+        "minGap": 8,
+        "minGapPair": "Rules / rename-seat",
+        "controls": [
+          {
+            "label": "Copy",
+            "x": 577.61,
+            "y": 25,
+            "w": 62.09,
+            "h": 44,
+            "right": 639.7,
+            "bottom": 69,
+            "size": 15
+          },
+          {
+            "label": "Copy link",
+            "x": 651.7,
+            "y": 25,
+            "w": 91.45,
+            "h": 44,
+            "right": 743.16,
+            "bottom": 69,
+            "size": 15
+          },
+          {
+            "label": "Invite",
+            "x": 755.16,
+            "y": 25,
+            "w": 63.84,
+            "h": 44,
+            "right": 819,
+            "bottom": 69,
+            "size": 15
+          },
+          {
+            "label": "Rules",
+            "x": 25,
+            "y": 77,
+            "w": 156.88,
+            "h": 44,
+            "right": 181.88,
+            "bottom": 121,
+            "size": 15
+          },
+          {
+            "label": "rename-seat",
+            "x": 57,
+            "y": 129,
+            "w": 53.88,
+            "h": 44,
+            "right": 110.88,
+            "bottom": 173,
+            "size": 17
+          },
+          {
+            "label": "remove-bot",
+            "x": 110.88,
+            "y": 193,
+            "w": 44,
+            "h": 44,
+            "right": 154.88,
+            "bottom": 237,
+            "size": 13
+          },
+          {
+            "label": "add-bot",
+            "x": 247.45,
+            "y": 193,
+            "w": 57.3,
+            "h": 44,
+            "right": 304.75,
+            "bottom": 237,
+            "size": 13
+          },
+          {
+            "label": "Chat",
+            "x": 341.75,
+            "y": 86,
+            "w": 70.16,
+            "h": 44,
+            "right": 411.91,
+            "bottom": 130,
+            "size": 15
+          },
+          {
+            "label": "Sounds & stickers",
+            "x": 419.91,
+            "y": 86,
+            "w": 165.83,
+            "h": 44,
+            "right": 585.73,
+            "bottom": 130,
+            "size": 15
+          },
+          {
+            "label": "React angry",
+            "x": 341.75,
+            "y": 208,
+            "w": 71.38,
+            "h": 44,
+            "right": 413.13,
+            "bottom": 252,
+            "size": 24
+          },
+          {
+            "label": "React happy",
+            "x": 421.13,
+            "y": 208,
+            "w": 71.38,
+            "h": 44,
+            "right": 492.5,
+            "bottom": 252,
+            "size": 24
+          },
+          {
+            "label": "React clap",
+            "x": 500.5,
+            "y": 208,
+            "w": 71.38,
+            "h": 44,
+            "right": 571.88,
+            "bottom": 252,
+            "size": 24
+          },
+          {
+            "label": "React laugh",
+            "x": 579.88,
+            "y": 208,
+            "w": 71.38,
+            "h": 44,
+            "right": 651.25,
+            "bottom": 252,
+            "size": 24
+          },
+          {
+            "label": "React fire",
+            "x": 659.25,
+            "y": 208,
+            "w": 71.38,
+            "h": 44,
+            "right": 730.63,
+            "bottom": 252,
+            "size": 24
+          },
+          {
+            "label": "React sheep",
+            "x": 738.63,
+            "y": 208,
+            "w": 71.38,
+            "h": 44,
+            "right": 810,
+            "bottom": 252,
+            "size": 24
+          },
+          {
+            "label": "Say something…",
+            "x": 341.75,
+            "y": 260,
+            "w": 399.08,
+            "h": 44,
+            "right": 740.83,
+            "bottom": 304,
+            "size": 17
+          },
+          {
+            "label": "Send",
+            "x": 748.83,
+            "y": 260,
+            "w": 61.17,
+            "h": 44,
+            "right": 810,
+            "bottom": 304,
+            "size": 15
+          },
+          {
+            "label": "7 points",
+            "x": 216.75,
+            "y": 321,
+            "w": 44,
+            "h": 44,
+            "right": 260.75,
+            "bottom": 365,
+            "size": 15
+          },
+          {
+            "label": "10 points",
+            "x": 272.75,
+            "y": 321,
+            "w": 44,
+            "h": 44,
+            "right": 316.75,
+            "bottom": 365,
+            "size": 15
+          },
+          {
+            "label": "Not ready",
+            "x": 332.75,
+            "y": 321,
+            "w": 341.91,
+            "h": 44,
+            "right": 674.66,
+            "bottom": 365,
+            "size": 17
+          },
+          {
+            "label": "Leave the table",
+            "x": 686.66,
+            "y": 321,
+            "w": 132.34,
+            "h": 44,
+            "right": 819,
+            "bottom": 365,
+            "size": 15
+          }
+        ],
+        "texts": [
+          {
+            "text": "ZECJ",
+            "tag": "p",
+            "size": 28,
+            "line": "34px",
+            "weight": "700",
+            "family": "ui-rounded",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Copy",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 577.61
+          },
+          {
+            "text": "Copy link",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 651.7
+          },
+          {
+            "text": "Invite",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 755.16
+          },
+          {
+            "text": "Rules",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Wayfarer on",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 193.88
+          },
+          {
+            "text": "Reachable · 10 ms",
+            "tag": "p",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 193.88
+          },
+          {
+            "text": "Jarrod",
+            "tag": "button",
+            "size": 17,
+            "line": "26px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Host · Ready",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 17,
+            "line": "25.5px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 206.88
+          },
+          {
+            "text": "Waiting",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 206.88
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 17,
+            "line": "25.5px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 57
+          },
+          {
+            "text": "Empty",
+            "tag": "span",
+            "size": 17,
+            "line": "25.5px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 186.88
+          },
+          {
+            "text": "Add bot",
+            "tag": "button",
+            "size": 13,
+            "line": "16px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 247.45
+          },
+          {
+            "text": "Chat",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 369.75
+          },
+          {
+            "text": "Sounds & stickers",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 447.91
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 17,
+            "line": "22px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 353.75
+          },
+          {
+            "text": "Ready when you are!",
+            "tag": "span",
+            "size": 17,
+            "line": "22px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 397.19
+          },
+          {
+            "text": "😠",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 362.45
+          },
+          {
+            "text": "😊",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 441.83
+          },
+          {
+            "text": "👏",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 521.2
+          },
+          {
+            "text": "😂",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 600.58
+          },
+          {
+            "text": "🔥",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 679.95
+          },
+          {
+            "text": "🐑",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 759.33
+          },
+          {
+            "text": "Say something…",
+            "tag": "input",
+            "size": 17,
+            "line": "24.2857px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 341.75
+          },
+          {
+            "text": "Send",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 748.83
+          },
+          {
+            "text": "2 of 3 ready",
+            "tag": "p",
+            "size": 17,
+            "line": "22px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 25
+          },
+          {
+            "text": "Win at",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 169.34
+          },
+          {
+            "text": "7",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 216.75
+          },
+          {
+            "text": "10",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 272.75
+          },
+          {
+            "text": "Not ready",
+            "tag": "button",
+            "size": 17,
+            "line": "22px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 332.75
+          },
+          {
+            "text": "Leave the table",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 686.66
+          }
+        ],
+        "widest": {
+          "normal": {
+            "codeSize": 28,
+            "textWidth": 122.06,
+            "clipped": false,
+            "gapToCopy": 430.55,
+            "buttonsCrampedOrWrapped": []
+          },
+          "copied": {
+            "codeSize": 28,
+            "textWidth": 122.06,
+            "clipped": false,
+            "gapToCopy": 416.94,
+            "buttonsCrampedOrWrapped": []
+          }
+        },
+        "textSize": {
+          "texts": 33,
+          "grew": 2
+        }
+      }
+    },
+    {
+      "before": {
+        "viewport": "1280x720",
+        "code": "RKXD",
+        "codeFont": {
+          "size": 28,
+          "line": "36px",
+          "weight": "700",
+          "family": "ui-rounded"
+        },
+        "card": {
+          "x": 40,
+          "y": 24,
+          "w": 560,
+          "h": 672,
+          "right": 600,
+          "bottom": 696
+        },
+        "outerMargin": {
+          "left": 40,
+          "top": 24,
+          "right": 680,
+          "bottom": 24
+        },
+        "padding": "20px",
+        "radius": "24px",
+        "rows": "44px 44px 112px 302px 96px",
+        "cardScroll": [
+          0,
+          0
+        ],
+        "chatLog": 128,
+        "addBotLines": 1,
+        "leftEdges": {
+          "code": 21,
+          "rules": 21,
+          "seats": 21,
+          "chat": 21,
+          "status": 21,
+          "ready": 21
+        },
+        "fontSizes": [
+          13,
+          14,
+          15,
+          24,
+          28
+        ],
+        "smallestText": 13,
+        "clipped": [],
+        "under44": [],
+        "textPaddingUnder8": [],
+        "minGap": 8,
+        "minGapPair": "Copy link / Invite",
+        "controls": [
+          {
+            "label": "Copy",
+            "x": 345.61,
+            "y": 45,
+            "w": 62.09,
+            "h": 44,
+            "right": 407.7,
+            "bottom": 89,
+            "size": 15
+          },
+          {
+            "label": "Copy link",
+            "x": 415.7,
+            "y": 45,
+            "w": 91.45,
+            "h": 44,
+            "right": 507.16,
+            "bottom": 89,
+            "size": 15
+          },
+          {
+            "label": "Invite",
+            "x": 515.16,
+            "y": 45,
+            "w": 63.84,
+            "h": 44,
+            "right": 579,
+            "bottom": 89,
+            "size": 15
+          },
+          {
+            "label": "Rules",
+            "x": 61,
+            "y": 97,
+            "w": 272,
+            "h": 44,
+            "right": 333,
+            "bottom": 141,
+            "size": 15
+          },
+          {
+            "label": "rename-seat",
+            "x": 93,
+            "y": 149,
+            "w": 48.09,
+            "h": 44,
+            "right": 141.09,
+            "bottom": 193,
+            "size": 15
+          },
+          {
+            "label": "remove-bot",
+            "x": 260,
+            "y": 213,
+            "w": 44,
+            "h": 44,
+            "right": 304,
+            "bottom": 257,
+            "size": 13
+          },
+          {
+            "label": "add-bot",
+            "x": 501.61,
+            "y": 213,
+            "w": 65.39,
+            "h": 44,
+            "right": 567,
+            "bottom": 257,
+            "size": 13
+          },
+          {
+            "label": "Chat",
+            "x": 70,
+            "y": 278,
+            "w": 70.16,
+            "h": 44,
+            "right": 140.16,
+            "bottom": 322,
+            "size": 15
+          },
+          {
+            "label": "Sounds & stickers",
+            "x": 148.16,
+            "y": 278,
+            "w": 165.83,
+            "h": 44,
+            "right": 313.98,
+            "bottom": 322,
+            "size": 15
+          },
+          {
+            "label": "React angry",
+            "x": 70,
+            "y": 466,
+            "w": 76.66,
+            "h": 44,
+            "right": 146.66,
+            "bottom": 510,
+            "size": 24
+          },
+          {
+            "label": "React happy",
+            "x": 154.66,
+            "y": 466,
+            "w": 76.67,
+            "h": 44,
+            "right": 231.33,
+            "bottom": 510,
+            "size": 24
+          },
+          {
+            "label": "React clap",
+            "x": 239.33,
+            "y": 466,
+            "w": 76.66,
+            "h": 44,
+            "right": 315.98,
+            "bottom": 510,
+            "size": 24
+          },
+          {
+            "label": "React laugh",
+            "x": 323.98,
+            "y": 466,
+            "w": 76.67,
+            "h": 44,
+            "right": 400.66,
+            "bottom": 510,
+            "size": 24
+          },
+          {
+            "label": "React fire",
+            "x": 408.66,
+            "y": 466,
+            "w": 76.67,
+            "h": 44,
+            "right": 485.33,
+            "bottom": 510,
+            "size": 24
+          },
+          {
+            "label": "React sheep",
+            "x": 493.33,
+            "y": 466,
+            "w": 76.66,
+            "h": 44,
+            "right": 569.98,
+            "bottom": 510,
+            "size": 24
+          },
+          {
+            "label": "Say something…",
+            "x": 70,
+            "y": 518,
+            "w": 430.83,
+            "h": 44,
+            "right": 500.83,
+            "bottom": 562,
+            "size": 15
+          },
+          {
+            "label": "Send",
+            "x": 508.83,
+            "y": 518,
+            "w": 61.17,
+            "h": 44,
+            "right": 570,
+            "bottom": 562,
+            "size": 15
+          },
+          {
+            "label": "7 points",
+            "x": 483,
+            "y": 579,
+            "w": 44,
+            "h": 44,
+            "right": 527,
+            "bottom": 623,
+            "size": 15
+          },
+          {
+            "label": "10 points",
+            "x": 535,
+            "y": 579,
+            "w": 44,
+            "h": 44,
+            "right": 579,
+            "bottom": 623,
+            "size": 15
+          },
+          {
+            "label": "Not ready",
+            "x": 61,
+            "y": 631,
+            "w": 377.66,
+            "h": 44,
+            "right": 438.66,
+            "bottom": 675,
+            "size": 15
+          },
+          {
+            "label": "Leave the table",
+            "x": 446.66,
+            "y": 631,
+            "w": 132.34,
+            "h": 44,
+            "right": 579,
+            "bottom": 675,
+            "size": 15
+          }
+        ],
+        "texts": [
+          {
+            "text": "RKXD",
+            "tag": "p",
+            "size": 28,
+            "line": "36px",
+            "weight": "700",
+            "family": "ui-rounded",
+            "clipped": false,
+            "x": 61
+          },
+          {
+            "text": "Copy",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 345.61
+          },
+          {
+            "text": "Copy link",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 415.7
+          },
+          {
+            "text": "Invite",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 515.16
+          },
+          {
+            "text": "Rules",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 61
+          },
+          {
+            "text": "Wayfarer on",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 415.16
+          },
+          {
+            "text": "Reachable · 8 ms",
+            "tag": "p",
+            "size": 13,
+            "line": "17.3333px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 406.94
+          },
+          {
+            "text": "Jarrod",
+            "tag": "button",
+            "size": 15,
+            "line": "26px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 93
+          },
+          {
+            "text": "Host · Ready",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 93
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 356
+          },
+          {
+            "text": "Waiting",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 356
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 93
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 93
+          },
+          {
+            "text": "Empty",
+            "tag": "span",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 336
+          },
+          {
+            "text": "Add bot",
+            "tag": "button",
+            "size": 13,
+            "line": "16px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 501.61
+          },
+          {
+            "text": "Chat",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 98
+          },
+          {
+            "text": "Sounds & stickers",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 176.16
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 14,
+            "line": "19.25px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 82
+          },
+          {
+            "text": "Ready when you are!",
+            "tag": "span",
+            "size": 14,
+            "line": "19.25px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 118.48
+          },
+          {
+            "text": "😠",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 93.34
+          },
+          {
+            "text": "😊",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 178.02
+          },
+          {
+            "text": "👏",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 262.67
+          },
+          {
+            "text": "😂",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 347.34
+          },
+          {
+            "text": "🔥",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 432.02
+          },
+          {
+            "text": "🐑",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 516.67
+          },
+          {
+            "text": "Say something…",
+            "tag": "input",
+            "size": 15,
+            "line": "21.4286px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 70
+          },
+          {
+            "text": "Send",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 508.83
+          },
+          {
+            "text": "2 of 3 ready",
+            "tag": "p",
+            "size": 15,
+            "line": "22.5px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 61
+          },
+          {
+            "text": "Win at",
+            "tag": "span",
+            "size": 13,
+            "line": "17.3333px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 435.59
+          },
+          {
+            "text": "7",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 483
+          },
+          {
+            "text": "10",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 535
+          },
+          {
+            "text": "Not ready",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 61
+          },
+          {
+            "text": "Leave the table",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 446.66
+          }
+        ],
+        "widest": {
+          "normal": {
+            "codeSize": 28,
+            "textWidth": 122.06,
+            "clipped": false,
+            "gapToCopy": 162.55,
+            "buttonsCrampedOrWrapped": []
+          },
+          "copied": {
+            "codeSize": 28,
+            "textWidth": 122.06,
+            "clipped": false,
+            "gapToCopy": 148.94,
+            "buttonsCrampedOrWrapped": []
+          }
+        },
+        "textSize": {
+          "texts": 33,
+          "grew": 2
+        }
+      },
+      "after": {
+        "viewport": "1280x720",
+        "code": "RKXD",
+        "codeFont": {
+          "size": 28,
+          "line": "34px",
+          "weight": "700",
+          "family": "ui-rounded"
+        },
+        "card": {
+          "x": 40,
+          "y": 24,
+          "w": 560,
+          "h": 672,
+          "right": 600,
+          "bottom": 696
+        },
+        "outerMargin": {
+          "left": 40,
+          "top": 24,
+          "right": 680,
+          "bottom": 24
+        },
+        "padding": "20px",
+        "radius": "24px",
+        "rows": "44px 44px 112px 302px 96px",
+        "cardScroll": [
+          0,
+          0
+        ],
+        "chatLog": 128,
+        "addBotLines": 1,
+        "leftEdges": {
+          "code": 21,
+          "rules": 21,
+          "seats": 21,
+          "chat": 21,
+          "status": 21,
+          "ready": 21
+        },
+        "fontSizes": [
+          13,
+          15,
+          17,
+          24,
+          28
+        ],
+        "smallestText": 13,
+        "clipped": [],
+        "under44": [],
+        "textPaddingUnder8": [],
+        "minGap": 8,
+        "minGapPair": "Copy / Rules",
+        "controls": [
+          {
+            "label": "Copy",
+            "x": 337.61,
+            "y": 45,
+            "w": 62.09,
+            "h": 44,
+            "right": 399.7,
+            "bottom": 89,
+            "size": 15
+          },
+          {
+            "label": "Copy link",
+            "x": 411.7,
+            "y": 45,
+            "w": 91.45,
+            "h": 44,
+            "right": 503.16,
+            "bottom": 89,
+            "size": 15
+          },
+          {
+            "label": "Invite",
+            "x": 515.16,
+            "y": 45,
+            "w": 63.84,
+            "h": 44,
+            "right": 579,
+            "bottom": 89,
+            "size": 15
+          },
+          {
+            "label": "Rules",
+            "x": 61,
+            "y": 97,
+            "w": 270,
+            "h": 44,
+            "right": 331,
+            "bottom": 141,
+            "size": 15
+          },
+          {
+            "label": "rename-seat",
+            "x": 93,
+            "y": 149,
+            "w": 53.88,
+            "h": 44,
+            "right": 146.88,
+            "bottom": 193,
+            "size": 17
+          },
+          {
+            "label": "remove-bot",
+            "x": 260,
+            "y": 213,
+            "w": 44,
+            "h": 44,
+            "right": 304,
+            "bottom": 257,
+            "size": 15
+          },
+          {
+            "label": "add-bot",
+            "x": 494.02,
+            "y": 213,
+            "w": 72.98,
+            "h": 44,
+            "right": 567,
+            "bottom": 257,
+            "size": 15
+          },
+          {
+            "label": "Chat",
+            "x": 70,
+            "y": 278,
+            "w": 70.16,
+            "h": 44,
+            "right": 140.16,
+            "bottom": 322,
+            "size": 15
+          },
+          {
+            "label": "Sounds & stickers",
+            "x": 148.16,
+            "y": 278,
+            "w": 165.83,
+            "h": 44,
+            "right": 313.98,
+            "bottom": 322,
+            "size": 15
+          },
+          {
+            "label": "React angry",
+            "x": 70,
+            "y": 466,
+            "w": 76.66,
+            "h": 44,
+            "right": 146.66,
+            "bottom": 510,
+            "size": 24
+          },
+          {
+            "label": "React happy",
+            "x": 154.66,
+            "y": 466,
+            "w": 76.67,
+            "h": 44,
+            "right": 231.33,
+            "bottom": 510,
+            "size": 24
+          },
+          {
+            "label": "React clap",
+            "x": 239.33,
+            "y": 466,
+            "w": 76.66,
+            "h": 44,
+            "right": 315.98,
+            "bottom": 510,
+            "size": 24
+          },
+          {
+            "label": "React laugh",
+            "x": 323.98,
+            "y": 466,
+            "w": 76.67,
+            "h": 44,
+            "right": 400.66,
+            "bottom": 510,
+            "size": 24
+          },
+          {
+            "label": "React fire",
+            "x": 408.66,
+            "y": 466,
+            "w": 76.67,
+            "h": 44,
+            "right": 485.33,
+            "bottom": 510,
+            "size": 24
+          },
+          {
+            "label": "React sheep",
+            "x": 493.33,
+            "y": 466,
+            "w": 76.66,
+            "h": 44,
+            "right": 569.98,
+            "bottom": 510,
+            "size": 24
+          },
+          {
+            "label": "Say something…",
+            "x": 70,
+            "y": 518,
+            "w": 430.83,
+            "h": 44,
+            "right": 500.83,
+            "bottom": 562,
+            "size": 17
+          },
+          {
+            "label": "Send",
+            "x": 508.83,
+            "y": 518,
+            "w": 61.17,
+            "h": 44,
+            "right": 570,
+            "bottom": 562,
+            "size": 15
+          },
+          {
+            "label": "7 points",
+            "x": 479,
+            "y": 579,
+            "w": 44,
+            "h": 44,
+            "right": 523,
+            "bottom": 623,
+            "size": 15
+          },
+          {
+            "label": "10 points",
+            "x": 535,
+            "y": 579,
+            "w": 44,
+            "h": 44,
+            "right": 579,
+            "bottom": 623,
+            "size": 15
+          },
+          {
+            "label": "Not ready",
+            "x": 61,
+            "y": 631,
+            "w": 373.66,
+            "h": 44,
+            "right": 434.66,
+            "bottom": 675,
+            "size": 17
+          },
+          {
+            "label": "Leave the table",
+            "x": 446.66,
+            "y": 631,
+            "w": 132.34,
+            "h": 44,
+            "right": 579,
+            "bottom": 675,
+            "size": 15
+          }
+        ],
+        "texts": [
+          {
+            "text": "RKXD",
+            "tag": "p",
+            "size": 28,
+            "line": "34px",
+            "weight": "700",
+            "family": "ui-rounded",
+            "clipped": false,
+            "x": 61
+          },
+          {
+            "text": "Copy",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 337.61
+          },
+          {
+            "text": "Copy link",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 411.7
+          },
+          {
+            "text": "Invite",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 515.16
+          },
+          {
+            "text": "Rules",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 61
+          },
+          {
+            "text": "Wayfarer on",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 343
+          },
+          {
+            "text": "Reachable · 8 ms",
+            "tag": "p",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 343
+          },
+          {
+            "text": "Jarrod",
+            "tag": "button",
+            "size": 17,
+            "line": "26px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 93
+          },
+          {
+            "text": "Host · Ready",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 93
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 17,
+            "line": "25.5px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 356
+          },
+          {
+            "text": "Waiting",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 356
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 17,
+            "line": "25.5px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 93
+          },
+          {
+            "text": "Bot",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 93
+          },
+          {
+            "text": "Empty",
+            "tag": "span",
+            "size": 17,
+            "line": "25.5px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 336
+          },
+          {
+            "text": "Add bot",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 494.02
+          },
+          {
+            "text": "Chat",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 98
+          },
+          {
+            "text": "Sounds & stickers",
+            "tag": "span",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 176.16
+          },
+          {
+            "text": "Josh",
+            "tag": "span",
+            "size": 17,
+            "line": "22px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 82
+          },
+          {
+            "text": "Ready when you are!",
+            "tag": "span",
+            "size": 17,
+            "line": "22px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 125.44
+          },
+          {
+            "text": "😠",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 93.34
+          },
+          {
+            "text": "😊",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 178.02
+          },
+          {
+            "text": "👏",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 262.67
+          },
+          {
+            "text": "😂",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 347.34
+          },
+          {
+            "text": "🔥",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 432.02
+          },
+          {
+            "text": "🐑",
+            "tag": "span",
+            "size": 24,
+            "line": "20px",
+            "weight": "400",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 516.67
+          },
+          {
+            "text": "Say something…",
+            "tag": "input",
+            "size": 17,
+            "line": "24.2857px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 70
+          },
+          {
+            "text": "Send",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 508.83
+          },
+          {
+            "text": "2 of 3 ready",
+            "tag": "p",
+            "size": 17,
+            "line": "22px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 61
+          },
+          {
+            "text": "Win at",
+            "tag": "span",
+            "size": 13,
+            "line": "18px",
+            "weight": "500",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 431.59
+          },
+          {
+            "text": "7",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 479
+          },
+          {
+            "text": "10",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 535
+          },
+          {
+            "text": "Not ready",
+            "tag": "button",
+            "size": 17,
+            "line": "22px",
+            "weight": "700",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 61
+          },
+          {
+            "text": "Leave the table",
+            "tag": "button",
+            "size": 15,
+            "line": "20px",
+            "weight": "600",
+            "family": "ui-sans-serif",
+            "clipped": false,
+            "x": 446.66
+          }
+        ],
+        "widest": {
+          "normal": {
+            "codeSize": 28,
+            "textWidth": 122.06,
+            "clipped": false,
+            "gapToCopy": 154.55,
+            "buttonsCrampedOrWrapped": []
+          },
+          "copied": {
+            "codeSize": 28,
+            "textWidth": 122.06,
+            "clipped": false,
+            "gapToCopy": 140.94,
+            "buttonsCrampedOrWrapped": []
+          }
+        },
+        "textSize": {
+          "texts": 33,
+          "grew": 2
+        }
+      }
+    }
+  ]
+}
