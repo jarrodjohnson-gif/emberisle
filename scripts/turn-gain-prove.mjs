@@ -7,9 +7,9 @@
 //   aria-current); on a bot's turn the banner reads "Wait for {bot} …" and there is no Roll;
 // - a roll steered to pay the person shows its goods on the hand only (#773): one +N tab (data-testid="resource-flash") per
 //   good gained, with the right good and amount, on that good's card, which fills with the good's colour and lifts (a
-//   translateY keyframe); the cues of one roll start together; each readable for at least 1.2 s and gone within 2.6 s
-//   (2200 ms held, 300 ms fade); nothing ever shows over the island (no "gain-float", the island text that #773 removed);
-// - a bank trade shows the ore given ("−4", or the harbour's rate) as a hollow red tab on a dipped card and "+1" on the
+//   translateY keyframe); the cues of one roll start together; each readable for at least 1.2 s and gone within 3.1 s
+//   (2500 ms held, 500 ms fade); nothing ever shows over the island (no "gain-float", the island text that #773 removed);
+// - a bank trade shows the ore given ("−4", or the harbour's rate) as a light pill on a dipped card and "+1" on the
 //   lifted Wheat card; a state where only another seat gains shows nothing, and so does a watcher's; every cue shown in the
 //   whole game is one of the person's own hand changes;
 // - each tab sits centred on its own card, inside the safe area, with nothing covering or clipping it, and its text is at
@@ -28,7 +28,7 @@
 // page: software GL frames are too sparse to time it by sampling. For the placement and contrast measures only, the
 // moment being measured is held on screen (__hold), and "Your turn" is timed again on a later turn left untouched.
 // Expiry also reports measured main-thread stalls, as roll-moment-prove does: a software-GL screenshot may block timers.
-// The 2600 ms running-time limit remains, with a separate 3500 ms raw cap and an exact 2500 ms cue-duration check.
+// The 3100 ms running-time limit (2600 before #825), with a separate 4000 ms raw cap and an exact 3000 ms cue-duration check.
 // Run: npm run turn-gain-prove (ONLY=390x844, reduced or hotseat or reconnect runs one part). Port from VITE_PORT, default 8476.
 // Screenshots to test-results/turn-gain-*.png.
 import { existsSync, mkdirSync } from "node:fs";
@@ -54,7 +54,7 @@ const PAINT = {
   grain: ["rgb(227, 196, 98)", "rgb(140, 114, 45)"],
   ore: ["rgb(99, 116, 138)", "rgb(65, 77, 91)"],
 };
-// A cue's whole life on the card: FLASH_MS (2200) held, then a 300 ms fade (Hand.tsx CUE_MS).
+// A cue's whole life on the card: FLASH_MS (2500) held, then a 500 ms fade (Hand.tsx CUE_MS).
 const CUE_MS = 3000;
 const RESOURCE_LABEL = { timber: "Wood", clay: "Brick", wool: "Sheep", grain: "Wheat", ore: "Stone" };
 mkdirSync("test-results", { recursive: true });
@@ -371,7 +371,7 @@ async function tabs(page, tag, what, lay) {
     t.style.pointerEvents = "auto";
     const hit = document.elementFromPoint(a.left + a.width / 2, a.top + 1);
     t.style.pointerEvents = "";
-    // The +N tab stands 18 px above the edge, the hollow −N tab 19 px (its 1 px outline sits outside the card's edge).
+    // #825: both pills stand 20 px above the edge (24 px on the wide fine-pointer layout).
     return { r: t.dataset.resource, card: card.dataset.testid, box: a.toJSON(), off: a.left + a.width / 2 - (c.left + c.width / 2), above: c.top - a.top, want: matchMedia("(min-width: 1280px) and (pointer: fine) and (min-height: 481px)").matches ? 24 : 20, top: hit === t || t.contains(hit) };
   }));
   check(got.length > 0 && got.every((t) => t.card === `resource-${t.r}`), `${tag}: ${what} sit on their own goods' cards`, got.map((t) => [t.r, t.card]));
