@@ -139,7 +139,7 @@ const seatsJ = saveRoom("BTJJ", gA);
 
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", SAVE_MS: "5", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", SAVE_MS: "5", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));

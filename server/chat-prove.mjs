@@ -57,7 +57,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));

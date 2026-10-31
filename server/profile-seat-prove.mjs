@@ -46,7 +46,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 async function startHost() {
   const proc = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR, PROFILES_DIR, PROFILES_DEV: "", GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), LOBBY_HOLD_MS: "30000", TURN_MS: "600000", SAVE_MS: "50", ACT_CAP: "1000", ACT_RATE: "1000", RENAME_MS: "0" },
+    env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, PROFILES_DIR, PROFILES_DEV: "", GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), LOBBY_HOLD_MS: "30000", TURN_MS: "600000", SAVE_MS: "50", ACT_CAP: "1000", ACT_RATE: "1000", RENAME_MS: "0" },
   });
   const h = { proc, log: "" };
   hosts.add(h);
