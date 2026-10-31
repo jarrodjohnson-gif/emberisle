@@ -53,7 +53,7 @@ export function TradeToast() {
   const hadOffer = useRef(false);
   // The last offer body, so the dismiss fade shows the card going away instead of an empty one.
   const lastBody = useRef<ReactNode>(null);
-  const shown =!!offer && !declined.includes(localId);
+  const shown = !!offer && !declined.includes(localId);
 
   useEffect(() => {
     if (shown) {
@@ -82,6 +82,7 @@ export function TradeToast() {
       if (h !== lastHeight) { lastHeight = h; useGame.getState().chromeLanded(); }
     };
     measure();
+    // Size writes can resize chat in turn. Leave the observer's delivery before writing them.
     const observer = new ResizeObserver(() => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(measure);
@@ -97,8 +98,10 @@ export function TradeToast() {
     return () => window.clearInterval(t);
   }, [offer]);
 
+  // True from the very render after this seat answers, so the card stays mounted and its opacity transition runs (#537).
+  const fading = leaving || (hadOffer.current && !shown && !outcome);
   const me = players?.find((p) => p.id === localId);
-  if ((!me && !spectator) || (!offer && !outcome && !leaving)) return null;
+  if ((!me && !spectator) || (!offer && !outcome && !fading)) return null;
   const name = (id: string) => players?.find((p) => p.id === id)?.name ?? "Someone";
 
   let body;
@@ -106,7 +109,7 @@ export function TradeToast() {
   let compact = false;
   let why: string | null = null;
   if (!offer) {
-    if (!leaving || outcome) {
+    if (!fading || outcome) {
       const taker = players?.find((p) => p.id === takerId);
       const ResultIcon = takerId ? Check : X;
       return (
@@ -135,7 +138,7 @@ export function TradeToast() {
             {!asker || compact ? <SeatDot color={fromColor} className="mr-1.5 size-3 align-[-1px]" /> : null}
             {line}
           </p>
-          <span aria-hidden={(!asker && !compact) || undefined} className="trade-clock shrink-0 tabular-nums text-xs" data-testid="trade-countdown" data-urgent={left <= 5 || undefined}>
+          <span aria-hidden={!asker || undefined} className="trade-clock shrink-0 tabular-nums text-xs" data-testid="trade-countdown" data-urgent={left <= 5 || undefined}>
             {left} s
           </span>
         </div>
@@ -198,24 +201,25 @@ export function TradeToast() {
         </>
       );
     }
-  } else {
+  } else if (!fading) {
+    // This seat answered; the offer stays open for the others. While `fading`, the last body fades out below (#537).
     return null;
   }
 
   if (body) lastBody.current = body;
-  if (!body && !leaving) return null;
+  if (!body && !fading) return null;
 
   const card = (
     <section
       ref={dock}
       data-testid="trade-toast"
       data-compact={compact || undefined}
-      data-leaving={leaving || undefined}
-      aria-hidden={leaving || undefined}
-      inert={leaving || undefined}
+      data-leaving={fading || undefined}
+      aria-hidden={fading || undefined}
+      inert={fading || undefined}
       data-fade-ms={fadeMs}
-      className={`trade-dock pointer-events-auto shrink-0 rounded-chip p-2${aboveChat ? " trade-above-chat" : ""}${leaving ? " opacity-0" : " opacity-100"}`}
-      style={{ transition: leaving ? `opacity ${fadeMs}ms linear` : undefined }}
+      className={`trade-dock pointer-events-auto shrink-0 rounded-chip p-2${aboveChat ? " trade-above-chat" : ""}${fading ? " opacity-0" : " opacity-100"}`}
+      style={{ transition: fading ? `opacity ${fadeMs}ms linear` : undefined }}
       role="region"
       aria-label="Trade offer"
       aria-labelledby={offer ? lineId : undefined}
