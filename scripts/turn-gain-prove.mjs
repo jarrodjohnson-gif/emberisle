@@ -44,7 +44,8 @@ const VIEWS = [
   { width: 844, height: 390, touch: true, insets: { top: 0, right: 47, bottom: 21, left: 47 } },
 ];
 const RED = "rgb(138, 34, 25)";
-const WHITE = "rgb(255, 255, 255)";
+const INK = "rgb(38, 61, 60)";
+const PAPER = "rgb(255, 249, 240)";
 // Each good's colour and side colour (styles.css :root): a gain fills the card with the first and its tab is the second.
 const PAINT = {
   timber: ["rgb(47, 106, 79)", "rgb(23, 61, 53)"],
