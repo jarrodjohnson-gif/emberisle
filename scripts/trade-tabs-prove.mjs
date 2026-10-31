@@ -362,6 +362,7 @@ async function bankMotion(page, rate, tag) {
   const gain = actual.cues.cardGain, loss = actual.cues.cardLoss;
   assert.equal(gain.background, gain.palette.resource, `${tag}: gain fills with the actual good's full color`);
   assert.ok(gain.shadow.includes(gain.palette.deep), `${tag}: gain retains its dark ring and shadow`);
+  assert.equal(gain.tabColor, gain.palette.ink, `${tag}: gain tab text is the dark ink`);
   assert.equal(loss.tabBackground, loss.palette.loss, `${tag}: loss tab is the loss red`);
   assert.equal(loss.tabColor, "rgb(255, 255, 255)", `${tag}: loss tab text is white on the red`);
   assert.ok(loss.tabShadow.includes(loss.palette.loss) && loss.shadow !== "none", `${tag}: loss retains its red tab outline and card ring`);
