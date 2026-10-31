@@ -1,5 +1,4 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { fitLobbyCode } from "./Lobby";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
@@ -58,7 +57,7 @@ function OwnName({ seat, compact }: { seat: Seat; compact: boolean }) {
   );
 }
 
-export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefetchRules }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; prefetchRules: () => Promise<boolean> }) {
+export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefetchRules, fitCode }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; prefetchRules: () => Promise<boolean>; fitCode: (el: HTMLParagraphElement, code: string) => void }) {
   const rule = useGame(s => s.tableWayfarerMode);
   const code = useGame(s => s.code);
   const seats = useGame(s => s.seats);
@@ -88,11 +87,11 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
     el.style.fontSize = "";
     if (code.length !== 4) return;
     const observer = new ResizeObserver(() => {
-      fitLobbyCode(el, code);
+      fitCode(el, code);
     });
     observer.observe(el.parentElement!);
     return () => observer.disconnect();
-  }, [code, copied]);
+  }, [code, copied, fitCode]);
   const joinLink = () => {
     const host = new URLSearchParams(location.search).get("host");
     return `${location.origin}${location.pathname}?code=${code}${host ? `&host=${encodeURIComponent(host)}` : ""}`;
