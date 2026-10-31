@@ -456,9 +456,20 @@ async function load() {
       console.error("unreadable room file:", name);
       continue;
     }
-    const roster = savedRoster(saved);
+    let roster = savedRoster(saved);
     if (roster && saved.game.phase === "over") {
-      saved.outcome = loadOutcome(saved.outcome, roster) ?? freezeOutcome(saved.game, roster, Array.isArray(saved.assisted) ? saved.assisted : [], Number.isSafeInteger(saved.savedAt) ? saved.savedAt : Date.now());
+      // An outcome that cannot be frozen or does not validate leaves the game untracked; only a failed write stops startup.
+      try {
+        saved.outcome = loadOutcome(saved.outcome, roster) ?? freezeOutcome(saved.game, roster, Array.isArray(saved.assisted) ? saved.assisted : [], Number.isSafeInteger(saved.savedAt) ? saved.savedAt : Date.now());
+        if (!validOutcome(saved.outcome)) throw new Error("bad outcome");
+      } catch (err) {
+        console.error(`results: room ${name} holds a finished game whose outcome is not valid (${err.message}); this game is not tracked`);
+        saved.roster = null;
+        saved.outcome = null;
+        roster = null;
+      }
+    }
+    if (roster && saved.game.phase === "over") {
       if (!journal.ready(roster.gameId)) {
         await journal.put(saved.outcome);
         repaired++;
@@ -806,8 +817,20 @@ function pushState(room) {
 // with bounded backoff, reusing the same frozen outcome. A second caller while this runs only waits for it to publish.
 async function settle(room) {
   const id = room.roster.gameId;
-  if (room.outcome?.gameId !== id) room.outcome = freezeOutcome(room.game, room.roster, room.assisted ?? [], Date.now());
   if (room.settling === id) return;
+  if (room.outcome?.gameId !== id) {
+    // A validation error never goes away by retrying: leave this game untracked and publish it, as for a legacy room.
+    try {
+      room.outcome = freezeOutcome(room.game, room.roster, room.assisted ?? [], Date.now());
+      if (!validOutcome(room.outcome)) throw new Error("bad outcome");
+    } catch (err) {
+      console.error(`results: game ${id} has an outcome that is not valid (${err.message}); it is not tracked`);
+      room.outcome = null;
+      room.roster = null;
+      if (rooms.get(room.code) === room && room.game) pushState(room);
+      return;
+    }
+  }
   room.settling = id;
   let told = false;
   for (let wait = 250; ; wait = Math.min(wait * 2, 10_000)) {

@@ -479,6 +479,34 @@ try {
     await h.stop();
   });
 
+  await scenario("a malformed finished room does not stop startup", async () => {
+    const d = folders();
+    const finish = (code, change) => {
+      const out = seedRoom(d, code);
+      const room = readJson(path.join(d.rooms, `${code}.json`));
+      room.game.phase = "over";
+      room.game.winner = "p1";
+      room.game.current = "p1";
+      change(room);
+      writeFileSync(path.join(d.rooms, `${code}.json`), JSON.stringify(room));
+      return out.gameId;
+    };
+    const badWinner = finish("BADW", (r) => (r.game.winner = null));
+    const badStart = finish("BADS", (r) => (r.roster.startedAt = -5));
+    const good = finish("GOOD", () => {});
+    const h = start(d);
+    const port = await h.port;
+    assert(h.out.indexOf(`repaired the pending outcome of game ${good}`) < h.out.indexOf("listening"), "the good table is repaired before the host listens");
+    checkOutcome(readJson(pendingFile(d, good)), good);
+    assert(!existsSync(pendingFile(d, badWinner)) && !existsSync(pendingFile(d, badStart)), "no outcome is invented for a malformed game");
+    assert.match(h.err, /not tracked/, "the malformed games are reported");
+    const c = await client(port, { type: "hello", code: "GOOD", watch: true });
+    await c.until(() => c.state?.game.phase === "over", "the good table is restored");
+    const w = await client(port, { type: "hello", code: "BADW", watch: true });
+    await w.until(() => w.state?.game.phase === "over", "the malformed table is restored too");
+    await h.stop();
+  });
+
   console.log(`result journal prove ok: ${results.length} scenarios`);
   process.exit(0);
 } catch (e) {
