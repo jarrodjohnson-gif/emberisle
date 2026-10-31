@@ -280,7 +280,13 @@ try {
   await page.waitForFunction(() => document.querySelector('[data-testid="trade-toast"]')?.getAttribute("data-compact") === "true");
   assert.equal(await page.getByTestId("trade-demand").count(), 1);
   assert.equal(await page.getByRole("button", { name: "Yes", exact: true }).count(), 0);
-  assert((await settled()).offer, "compact demand must keep the offer open without Accept");
+  // The old check pressed an aria-disabled Yes. There is no Yes now, so force the answer the store would get from one.
+  const handsBefore = JSON.stringify((await settled()).hands);
+  await page.evaluate(() => window.__emberisle.getState().answerTrade(true));
+  const afterYes = await settled();
+  assert(afterYes.offer, "an unaffordable Yes must not settle");
+  assert.equal(JSON.stringify(afterYes.hands), handsBefore, "an unaffordable Yes must not move goods");
+  assert.equal(await page.evaluate(() => window.__emberisle.getState().declined.includes("p1")), false, "an unaffordable Yes is not a decline");
   // #537: the visible "Need" line is gone, so the reason is kept for keyboard and screen-reader users.
   assert.equal(await page.getByTestId("trade-why").textContent(), "You need 1 more stone to accept");
   assert.equal(await toast.getByTestId("trade-dismiss").getAttribute("aria-describedby"), await page.getByTestId("trade-why").getAttribute("id"), "Dismiss must be described by the reason");

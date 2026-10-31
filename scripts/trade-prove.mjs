@@ -334,12 +334,12 @@ try {
     const where = `${t.name} (${JSON.stringify(got)})`;
     if (got.role !== "region") throw new Error(`${where}: the offer is not an alertdialog`);
     if (got.focusInside) throw new Error(`${where}: the offer took focus`);
+    if (got.countdownHidden !== "true") throw new Error(`${where}: the ticking countdown is not aria-hidden`);
     if (got.disabled) throw new Error(`${where}: Yes uses disabled, so Tab cannot reach it`);
     if (!got.focusable) throw new Error(`${where}: Yes is not focusable`);
     const short = n - v.mine[r];
     if (short <= 0) {
       if (got.compact || got.hasDismiss || !got.hasYes) throw new Error(`${where}: can pay but saw compact/Dismiss or no Yes`);
-      if (got.countdownHidden !== "true") throw new Error(`${where}: the ticking countdown is not aria-hidden`);
       if ((await t.page.getByRole("region", { name: line, exact: true }).count()) !== 1) throw new Error(`${where}: alertdialog not named "${line}"`);
       if (got.ariaDisabled !== null || got.describedBy) throw new Error(`${where}: Yes is marked disabled but can pay`);
       return false;
@@ -371,6 +371,9 @@ try {
     const vs = await views(tabs);
     return vs.every((v) => v.declined.includes(before[k].you)) ? vs : null;
   }, "the decline reaches every tab");
+  // #537: the card fades for 150 ms before it leaves; the check below reads it once the fade is over.
+  await until(async () => ((await C.page.getByTestId("trade-toast").count()) === 0 ? true : null), `${C.name}'s card leaves after the fade`, 2_000);
+  vs = await views(tabs);
   if (vs[k].toast !== null) throw new Error(`${C.name} still has a toast after No: "${vs[k].toast}"`);
   if (!vs[i].toast.includes(`${C.name} declined`)) throw new Error(`asker toast after No: "${vs[i].toast}"`);
   if (!vs[j].toast || vs.some((v) => !v.offer || v.offer.tradeId !== tradeId)) throw new Error("the offer closed on a single No");
@@ -564,7 +567,24 @@ try {
   // B dismisses from the compact signal (Enter on the focused Dismiss sends a No): the offer stays open for C.
   await spyAnswers(B);
   await B.page.getByTestId("trade-dismiss").focus();
+  // The card must stay mounted and fade: sample every frame from the Enter until it leaves the DOM.
+  await B.page.evaluate(() => {
+    window.__fade = [];
+    const sample = () => {
+      const el = document.querySelector('[data-testid="trade-toast"]');
+      if (el) window.__fade.push({ leaving: el.getAttribute("data-leaving") === "true", opacity: Number(getComputedStyle(el).opacity), inert: el.hasAttribute("inert") });
+      if (el || window.__fade.length < 2) requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
   await B.page.keyboard.press("Enter");
+  await until(async () => ((await B.page.getByTestId("trade-toast").count()) === 0 ? true : null), "#537: B's card leaves after the fade", 2_000);
+  const fade = await B.page.evaluate(() => window.__fade);
+  const leavingFrames = fade.filter((f) => f.leaving);
+  if (leavingFrames.length < 2) throw new Error(`#537: the 150 ms dismiss fade never ran: ${JSON.stringify(fade)}`);
+  if (!leavingFrames.some((f) => f.opacity > 0 && f.opacity < 1)) throw new Error(`#537: opacity never took a value between 0 and 1 while fading: ${JSON.stringify(leavingFrames)}`);
+  if (!leavingFrames.every((f) => f.inert)) throw new Error(`#537: a fading card was still operable: ${JSON.stringify(leavingFrames)}`);
+  console.log(`#537: Dismiss fades the card over ${leavingFrames.length} frames (opacity ${leavingFrames[0].opacity.toFixed(2)} to ${leavingFrames.at(-1).opacity.toFixed(2)}), inert while it goes`);
   const dismissSent = await B.page.evaluate(() => window.__answers);
   if (!same(dismissSent, [[tradeId3, false]])) throw new Error(`#537: ${B.name}'s Enter on Dismiss sent ${JSON.stringify(dismissSent)}`);
   vs = await until(async () => {
