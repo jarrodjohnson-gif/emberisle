@@ -39,7 +39,7 @@ if (process.argv.includes("--host-fixture")) {
   const dir = mkdtempSync(path.join(tmpdir(), "emberisle-health-"));
   const host = spawn(process.execPath, [fileURLToPath(import.meta.url), "--host-fixture"], {
     cwd: fileURLToPath(new URL("../", import.meta.url)),
-    env: { ...process.env, PORT: "0", ROOMS_DIR: dir, PROFILES_DIR: path.join(dir, "profiles"), SAVE_MS: "20", TURN_MS: "120000", PING_MS: "60000" },
+    env: { ...process.env, PORT: "0", ROOMS_DIR: dir, RESULTS_DIR: `${dir}/results`, PROFILES_DIR: path.join(dir, "profiles"), SAVE_MS: "20", TURN_MS: "120000", PING_MS: "60000" },
     stdio: ["ignore", "pipe", "pipe", "ipc"],
   });
   host.stderr.on("data", d => process.stderr.write(d));
@@ -88,7 +88,7 @@ if (process.argv.includes("--host-fixture")) {
           super(...args); h.sockets.push(this);
           this.addEventListener("message", e => {
             const m = JSON.parse(e.data); h.messages.push(m.type);
-            if (m.type === "healthPong") { h.pongs.push(m); return; }
+            if (m.type === "healthPong") { h.pongs.push({ socket: this, message: m }); return; }
             this.handler?.(e);
           });
         }
@@ -97,7 +97,7 @@ if (process.argv.includes("--host-fixture")) {
         send(raw) {
           const m = JSON.parse(raw);
           if (m.type === "healthPing") {
-            h.sent.push({ nonce: m.nonce, at: performance.now() });
+            h.sent.push({ socket: this, nonce: m.nonce, at: performance.now() });
             if (h.hold) { h.held.push([this, raw]); return; }
           }
           super.send(raw);
@@ -178,28 +178,40 @@ if (process.argv.includes("--host-fixture")) {
     assert.ok(before.seats.some(s => s.turn), "host has armed turn timers");
     const bytes = readFileSync(path.join(dir, `${code}.json`));
     const clientBefore = await page.evaluate(() => { const s = window.__emberisle.getState(); return { seq: s.state.seq, timer: s.turnTimer }; });
+    // A late discovery socket must not receive the seated socket's held pong.
+    await page.evaluate(async () => {
+      const { connectTable } = await import("/src/lib/net/table.ts");
+      const url = window.__health.sockets.at(-1).url;
+      window.__health.discovery = connectTable(url, {});
+      window.__health.discovery.list();
+      const ws = window.__health.sockets.at(-1);
+      await new Promise(resolve => ws.addEventListener("open", resolve, { once: true }));
+    });
     await page.evaluate(() => { const h = window.__health; for (const [ws, raw] of h.held.splice(0)) ws.forward(raw); });
     await until(() => page.evaluate(() => window.__health.pongs.length === 1), "real host pong");
+    assert.ok(await page.evaluate(() => window.__health.pongs[0].socket !== window.__health.sockets.at(-1)), "pong belongs to the seated socket, not late discovery");
     await page.clock.runFor(137);
     await page.evaluate(() => {
-      const h = window.__health; const ws = h.sockets.at(-1);
+      const h = window.__health; const ws = h.sent[0].socket;
       ws.handler({ data: JSON.stringify({ type: "healthPong", nonce: "f".repeat(32) }) });
     });
     assert.equal(await page.evaluate(() => window.__emberisle.getState().connectionHealth.rtt), null, "wrong nonce ignored");
     await page.evaluate(() => {
-      const h = window.__health, ws = h.sockets.at(-1);
+      const { socket: ws, message } = window.__health.pongs[0];
       const now = performance.now.bind(performance);
       // A stalled main thread can deliver a pong before the queued timeout callback.
       performance.now = () => now() + 3000;
-      ws.handler({ data: JSON.stringify(h.pongs[0]) });
+      ws.handler({ data: JSON.stringify(message) });
       performance.now = now;
     });
     assert.equal(await page.evaluate(() => window.__emberisle.getState().connectionHealth.rtt), null, "expired pong ignored before timeout callback");
     await page.evaluate(() => {
       Date.now = () => 1; // RTT must not depend on epoch time or serverNow.
-      const h = window.__health; h.sockets.at(-1).handler({ data: JSON.stringify(h.pongs.shift()) });
+      const { socket, message } = window.__health.pongs.shift();
+      socket.handler({ data: JSON.stringify(message) });
     });
     assert.equal(await page.evaluate(() => window.__emberisle.getState().connectionHealth.rtt), 137);
+    await page.evaluate(() => window.__health.discovery.close());
     await page.clock.fastForward(29_862);
     assert.equal(await page.evaluate(() => window.__health.sent.length), 1, "no early probe");
     await page.clock.fastForward(1);

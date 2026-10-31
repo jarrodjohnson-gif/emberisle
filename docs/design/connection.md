@@ -53,7 +53,9 @@ On the host, during a game:
 
 Host restarts: after each change the host writes the room to `server/rooms/<code>.json` (`ROOMS_DIR` overrides the folder). It saves seats with their secrets, the game, and the chat. Sockets, timers, avatars, and an open trade offer are not saved. On boot it reloads every file and drops any saved more than 24 hours ago. Every restored seat is held as if it had just dropped, so the grace and the hold start again, and players return through `hello {code, secret}`.
 
-In the lobby, closing the socket still frees the seat. The browser client does not use the secret yet: on a drop it still goes back to the main menu.
+In the lobby, a dropped socket holds the seat for `LOBBY_HOLD_MS` (90 s by default), clears Ready and marks the seat away. If the host drops while another seat is connected, the host role passes to a connected seat. A deliberate lobby Leave releases the seat immediately.
+
+The browser stores the table code and seat secret in `localStorage` when available, so it can attempt a rejoin after a reload. After a connection drop it retries with backoff using the saved seat credentials; retries stop before the hold announced by the host expires. If storage is blocked, play still works but a reload cannot restore the saved seat. See [rejoin research](../research/rejoin.md) for retry and error details.
 
 ## Test
 

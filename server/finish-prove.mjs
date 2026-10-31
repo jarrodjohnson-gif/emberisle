@@ -30,10 +30,15 @@ setTimeout(() => fail("the proof ran past 120 s"), 120_000);
 
 // Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
-process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
+// #889: each finished game's pending outcome, kept apart from the rooms.
+const RESULTS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-results-"));
+process.on("exit", () => {
+  rmSync(ROOMS_DIR, { recursive: true, force: true });
+  rmSync(RESULTS_DIR, { recursive: true, force: true });
+});
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR, RESULTS_DIR },
 });
 process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -185,6 +190,27 @@ function checkReveal(all, n) {
   const leaks = all.flatMap((x) => x.leaks.map((l) => ({ you: x.you, ...l })));
   if (leaks.length) fail(`${where}: a state before the end leaked`, leaks.slice(0, 5));
   return { name: final.players.find((q) => q.id === winner).name, vp };
+}
+
+// #889: by the time the final state reached the seats, the room on disk held the frozen outcome and the journal held the
+// same outcome under that game's UUID. Each game, the rematch included, has its own.
+const gameIds = [];
+function checkJournal(all, n) {
+  const where = `game ${n}`;
+  const final = all[0].state;
+  const room = JSON.parse(readFileSync(path.join(ROOMS_DIR, `${all[0].code}.json`), "utf8"));
+  const id = room.roster?.gameId;
+  if (!id || gameIds.includes(id)) fail(`${where}: no fresh game UUID on disk`, id);
+  gameIds.push(id);
+  let pending;
+  try {
+    pending = JSON.parse(readFileSync(path.join(RESULTS_DIR, `${id}.json`), "utf8"));
+  } catch (e) {
+    fail(`${where}: no pending outcome for ${id}`, e.message);
+  }
+  if (JSON.stringify(pending) !== JSON.stringify(room.outcome)) fail(`${where}: the room's outcome and the journal's differ`, { room: room.outcome, pending });
+  if (pending.winner !== final.winner || pending.players.find((p) => p.won)?.pid !== final.winner) fail(`${where}: the journalled winner`, pending.winner);
+  for (const p of pending.players) if (p.points !== totalVP(final, p.pid)) fail(`${where}: ${p.pid}'s journalled points`, { journal: p.points, final: totalVP(final, p.pid) });
 }
 
 async function checkRefused(all, n) {
@@ -340,6 +366,7 @@ for (let n = 1; n <= GAMES; n++) {
   }
   const actions = await playToTheEnd(all, n);
   const { name, vp } = checkReveal(all, n);
+  checkJournal(all, n);
   await checkRefused(all, n);
   console.log(`game ${n}: ${name} wins with ${vp} in ${actions} actions, reveal ok, post-win refused`);
 }
