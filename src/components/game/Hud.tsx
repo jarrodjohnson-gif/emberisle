@@ -91,14 +91,17 @@ function waitingCopy(phase: string, name: string) {
 }
 
 // What to pick, and the label of the button that armed it (a touch screen cancels by tapping that button again).
-function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null {
+function armedCopy(mode: BuildMode, roadPicks: number, eligibleCount = 1, phone = false): [string, string] | null {
   switch (mode) {
     case "path":
       return ["Place a path", "Path"];
     case "outpost":
       return ["Place an outpost", "Outpost"];
     case "stronghold":
-      return ["Build a stronghold", "Stronghold"];
+      return [
+        eligibleCount === 0 ? "No homes to upgrade" : "Pick a home to upgrade",
+        phone ? "Upgrade" : "Stronghold",
+      ];
     // #423: both fortunes are armed from the tray, and the My fortunes button stays pressed until the pick is made or cancelled.
     case "knight":
       return ["Move the wayfarer", "Play fortune"];
@@ -257,9 +260,11 @@ export function Hud() {
   const subjectPlayer = state.players.find((p) => p.id === subject) ?? state.players[0]!;
   const yours = mode !== "hotseat" && subject === actor && (state.phase !== "discard" || discarder !== null);
   // #419: an armed build says what to pick and how to cancel (a touch screen has no Esc key).
-  const armed = mine ? armedCopy(buildMode, roadPicks.length) : null;
+  const eligibleHomes = useGame((s) => (buildMode === "stronghold" ? s.highlights().vertices.length : 1));
+  const armed = mine ? armedCopy(buildMode, roadPicks.length, eligibleHomes, phone) : null;
+  const cancelNote = matchMedia("(pointer: coarse)").matches || phone ? `tap ${armed?.[1]} again to cancel` : "Esc cancels";
   const phaseText = armed
-    ? `${armed[0]} · ${matchMedia("(pointer: coarse)").matches ? `tap ${armed[1]} again to cancel` : "Esc cancels"}`
+    ? `${armed[0]} · ${cancelNote}`
     : state.phase === "discard"
       ? `Discard ${state.discardNeeded[subject] ?? 0} goods`
       : phaseCopy(state.phase);
@@ -450,6 +455,11 @@ export function Hud() {
                       onClick={() => {
                         // aria-disabled keeps the button focusable, so the click itself must refuse (but may still disarm).
                         // A tap the hand cannot pay for says what is missing (a spot waiting, goods short) instead of doing nothing.
+                        if (!spectator && why && kind === "stronghold" && buildMode !== arm) {
+                          setHint({ kind });
+                          const reason = why === "None left" ? "No strongholds left" : "No homes to upgrade";
+                          return void refuseQuietly(reason);
+                        }
                         if (!spectator && !why && missing && buildMode !== arm) {
                           setHint({ kind });
                           // The chip is the one line on screen; the error cue and the screen reader still get the full sentence.
@@ -465,7 +475,7 @@ export function Hud() {
                       </span>
                       {/* The chips and the reason are aria-hidden: the name stays the piece, the description says the rest. Missing
                           goods ring what the hand lacks and say how many short. */}
-                      {why ? <span aria-hidden className="text-caption text-muted">{why}</span> : <CostChips kind={kind} hand={missing ? me.resources : undefined} />}
+                      {why ? <span aria-hidden className="text-caption text-muted">{why === "No spot" && kind === "stronghold" ? "No homes" : why}</span> : <CostChips kind={kind} hand={missing ? me.resources : undefined} />}
                       {kind === "card" && !why ? <span aria-hidden data-testid="deck-left" className="text-[10px] leading-[10px] tabular-nums text-muted">{deckLeft} left</span> : null}
                       {/* The ends of the row hang the chip inward, so it stays on a phone's screen. Last child: the tile's own
                           styles address its first span. */}
@@ -478,7 +488,11 @@ export function Hud() {
                             at === 0 ? "left-0" : at === 3 ? "right-0" : "left-1/2 -translate-x-1/2",
                           )}
                         >
-                          {hintLine(short)}
+                          {why
+                            ? why === "None left"
+                              ? (kind === "stronghold" ? "No strongholds left" : "None left")
+                              : (kind === "stronghold" ? "No homes to upgrade" : "No spot")
+                            : hintLine(short)}
                         </span>
                       ) : null}
                     </Button>
