@@ -295,7 +295,7 @@ async function armBankMotion(page, rate) {
       const duration = Number(timing.duration), delay = Number(timing.delay);
       const sampled = { ...result, duration, delay, movementDuration: movement?.effect.getTiming().duration,
         start: at(delay), peak: at(delay + 120), readable: at(delay + duration / 2),
-        hold: at(delay + 2200), end: at(delay + duration) };
+        hold: at(delay + 2500), end: at(delay + duration) };
       animation.currentTime = delay + duration / 2;
       if (movement) movement.currentTime = delay + duration / 2;
       return sampled;
