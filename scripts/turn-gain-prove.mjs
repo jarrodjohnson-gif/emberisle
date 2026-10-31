@@ -400,7 +400,7 @@ async function contrast(page, testid, index = 0, band = 0.65) {
     el.style.removeProperty("color");
     for (const k of el.children) k.style.visibility = "";
   });
-  const pixels = await page.evaluate(async (b64) => {
+  const pixels = await page.evaluate(async ({ b64, band }) => {
     const img = new Image();
     img.src = `data:image/png;base64,${b64}`;
     await img.decode();
