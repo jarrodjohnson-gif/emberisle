@@ -260,6 +260,15 @@ try{
    return {targets,noOverflow:field.scrollWidth<=field.clientWidth&&scroll.scrollWidth<=scroll.clientWidth,gap:Number.parseFloat(style.columnGap),scrollHeight:scroll.scrollHeight,clientHeight:scroll.clientHeight,viewport:{top:viewport.top,bottom:viewport.bottom},giveControls:controls};
   });
   geometry.at(-1).picker=picker;if(!picker.noOverflow)geometryProblems.push(`${width}x${height}: picker horizontal overflow`);if(picker.targets.some(target=>target.width<44||target.height<44))geometryProblems.push(`${width}x${height}: picker target below44px`);if(width===844&&picker.giveControls.some(control=>!control.visible))geometryProblems.push(`${width}x${height}: open picker pushes give heading/steppers below scroll fold`);if(picker.gap<8)geometryProblems.push(`${width}x${height}: picker gap below8px`);
+  // C3 11.1: the window stays in the lobby's white set, and the Need button and chips read at 4.5:1.
+  const white=await page.getByTestId('trade-panel').evaluate(panel=>{
+   const rgb=c=>c.match(/[\d.]+/g).slice(0,3).map(Number),lum=c=>{const [r,g,b]=rgb(c).map(v=>{v/=255;return v<=0.03928?v/12.92:((v+0.055)/1.055)**2.4;});return 0.2126*r+0.7152*g+0.0722*b;};
+   const ratio=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);};
+   const button=[...panel.querySelectorAll('button')].find(b=>b.textContent.replace(/\s/g,'')==='Need'),chip=panel.querySelector('[data-testid="need-chip"]');
+   return {sheet:getComputedStyle(panel).backgroundColor,button:ratio(getComputedStyle(button).color,getComputedStyle(button).backgroundColor),chip:chip?ratio(getComputedStyle(chip).color,getComputedStyle(chip).backgroundColor):null};
+  });
+  geometry.at(-1).white=white;
+  if(white.sheet!=='rgb(243, 246, 245)'||white.button<4.5||white.chip===null||white.chip<4.5)geometryProblems.push(`${width}x${height}: Trade window colour or Need text contrast differs from C3 ${JSON.stringify(white)}`);
   await need.click();if(await need.getAttribute('aria-controls'))geometryProblems.push(`${width}x${height}: closed picker leaves dangling aria-controls`);
   await page.getByRole('button',{name:'Close',exact:true}).click();await context.close();
  }
