@@ -131,7 +131,7 @@ Until two of its PRs have merged, a provisional model takes no second issue. Lik
 |---|---|---|
 | Codex | GPT-6.1 Sol, GPT-6.1 Terra | Sol: server, net, rules and bots (`tier:1`). Terra: `tier:2` only, provisional. |
 | Cursor | Any model it picks, Opus included | Any lane, at the tier of the model it uses |
-| Josh's agent | Claude Opus 5.5, Sonnet 5.5 and Haiku 5.5, free to use any of them | Any lane, as a full builder. It follows AGENTS.md, not HELPERS.md, and works from Josh's fork. |
+| Josh's agent | Claude Opus 5.5, Sonnet 5.5 and Haiku 5.5, free to use any of them | Any lane, as a full builder. It follows AGENTS.md, not HELPERS.md, and pushes branches to this repo, never a fork. |
 | Jarrod's Claude | Opus and Sonnet subagents | UI builds from approved mocks, defined fixes and docs |
 | Fable and Astra | Fable 5.1, GPT-6 Astra | Design passes and research only (`tier:1-deep`) |
 | Gemini | Gemini 3.8 Flash | Audits and defined checks only |
@@ -155,12 +155,32 @@ the current step, post `/paused` saying where you stopped, and leave the rest.
 
 ## When nothing is eligible
 
-An empty ready list is not a reason to stop or to ask the desk. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Only if all five rungs are empty, post a `To desk:` line on #854.
+An empty ready list is not a reason to stop or to ask the desk. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Only if all five rungs and the [anytime queue](#anytime-queue) are empty, post a `To desk:` line on #854.
 
-1. **Adopt a finished-but-stuck PR.** Built PRs whose builders went quiet are listed under "Stale" in #916. Any PR with no push for 24 hours counts as stale. Comment `/claim adopt PR #N` on its issue, merge current main into its branch (a merge commit; never rebase or force-push), fix conflicts, get CI green, run the focused proof, then post `To desk: PR #N ready for review` on the PR. Don't widen its scope. It counts toward your open-PR limit (AGENTS.md rule 4).
+1. **Adopt a finished-but-stuck PR.** Built PRs whose builders went quiet are listed under "Stale" in #916. Any PR with no push for 24 hours counts as stale. A PR is not waiting on the owner unless the newest desk list on #854 or #916 says so. Comment `/claim adopt PR #N` on its issue, merge current main into its branch (a merge commit; never rebase or force-push), fix conflicts, get CI green, run the focused proof, then post `To desk: PR #N ready for review` on the PR. Don't widen its scope. It counts toward your open-PR limit (AGENTS.md rule 4).
 2. **Promote a backlog issue.** A `status:backlog` issue with every `Depends on` issue closed, a lane label and a clear scope is eligible. Not eligible: a design issue held for a spec or mock (layout, look or animation, see "Design issues start in backlog"), whatever its tier label says. Re-read it, `/claim`, and set it to `status:claimed`. No desk permission is needed.
 3. **Finish the head of a chain.** A chain is blocked by its first issue. If the head is claimed but its PR has been silent for 24 hours, post `Question: still working?`. With no reply in 2 hours it counts as free and you may adopt it.
 4. **Always-useful work.** Write the missing test for a recently merged feature. Split an oversized issue into small, fully labelled ones. Close duplicates with a one-line reason.
 5. **Research gaps.** Read `docs/research/` and the #903 review notes. File 1 to 3 well-scoped issues (all four labels, a completion test, `Depends on`) for work nobody has listed.
 
 Every issue carries a status, lane, tier and prio label. Never leave one unlabelled.
+
+## Anytime queue
+
+Issues labelled `anytime` are safe work. Take one when the ready list and rungs 1 to 5 give you nothing.
+
+- Only the desk adds `anytime`. A design issue held for a spec or mock is never `anytime`.
+- Find them with `gh issue list --label anytime --state open`. Take the highest `prio:` first.
+- An `anytime` issue still has a `tier:` label. Stay at or below your tier. The desk sets the tier by risk, as for any issue.
+- Claim it as usual. It is eligible with `status:todo` or `status:backlog` if nothing blocks it and no PR is open.
+- The desk keeps at least 5 open, unclaimed `anytime` issues. Each has a lane, a tier, a prio and a completion test.
+- If fewer than 5 remain, the desk files or labels more the same day. The rule is in [`DESK.md`](DESK.md#always).
+
+What belongs in the queue:
+
+- Proof hardening for a gap a review or a flake report flagged.
+- A missing test for a registered proof or a recently merged feature.
+- Docs and plain-language fixes under the [Writing rules](FRAMEWORK.md#writing). Never change a rule's meaning or a DECISIONS row.
+- Size-trim audits: find bytes to cut under an existing ceiling. Never move a ceiling.
+- Flaky-signature audits: match a flake to `.github/flaky.json`, then fix its cause. Never add or widen a `flaky.json` pattern. Remove an entry only after the fix is proven.
+
