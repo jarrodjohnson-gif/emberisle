@@ -4,6 +4,8 @@
 Owner request (Jarrod, 2026-10-30): "Refer to Apple standards for this whole page as far as designing font, spacing, etc".
 Author: Claude Opus 5.5 (desk subagent builder), 2026-10-31. Base: `main` at `55d0575`.
 
+Owner answer 2026-10-31: A, accepted as proposed (Desk Decisions card q1220-lobby-hig).
+
 [All pictures side by side](gallery.html) · [Proposed CSS](after.css) · [Measurements](measurements.json) · [Capture log](capture.log) · [Capture utility](capture.mjs) · [Verification](verification.md)
 
 GitHub shows HTML as source. Use the PNG links below to review there.
@@ -39,7 +41,7 @@ Line numbers are for `main` at `55d0575`.
 |---|---|---|---|---|---|---|
 | 1 | Smallest text | Whole lobby | 11 pt minimum | 12 px at 320 wide; 13 px elsewhere | No change. It already passes. | Strict, passes |
 | 2 | Room code size | `lobby.css:31`, `:111`, `:150` | Title styles | 28/36 bold on landscape and desktop; 24/32 portrait; 18/32 at 320 | Title 1 28/34 on landscape and desktop. Title 2 22/28 on portrait phones. 18/28 at 320. | Taste |
-| 3 | `WWWW` beside the copy buttons at 375 | `lobby.css:111`, `:32` | Avoid truncation; keep hierarchy | At 24 px, "Copy link" text padding drops under 8 px | At 22 px it fits, 12.84 px clear of Copy | Taste (fixes a measured squeeze) |
+| 3 | `WWWW` beside the copy buttons at 375 | `lobby.css:111`, `:32` | Paraphrase: avoid truncation; keep hierarchy | At 24 px, "Copy link" text padding drops under 8 px | At 22 px it fits, 12.84 px clear of Copy | Taste (fixes a measured squeeze) |
 | 4 | Copy, Copy link, Invite at 320 | `lobby.css:152` | 11 pt minimum; Subheadline 15 | 12/16 px | Keep 12/16. No 15 px label fits beside `WWWW` (see Question 1). | Strict, passes |
 | 5 | Seat names | `lobby.css:66` | Headline 17/22 semibold | 15 px bold | 17 px semibold. Seat row heights stay. | Taste |
 | 6 | Seat status, connection line, "Win at" | `lobby.css:44`, `:68`, `:167` | Footnote 13/18 | 13 px; lines mix 17.33 px and 18 px | 13/18 everywhere | Taste |
@@ -53,7 +55,7 @@ Line numbers are for `main` at `55d0575`.
 | 14 | Space between bezeled buttons in a row | `lobby.css:27` | About 12 pt around bezeled controls | 8 px | 12 px in the header, footer and 7/10 rows when wider than 700 px. 8 px on phones. | Taste |
 | 15 | Space between card rows | `lobby.css:10` | Group with space | 8 px | Keep 8 px. 12 px measured 50.5% chat at 390×844 (floor 52%) and 39.4% at 1280×720 (floor 40%). | Taste, keep |
 | 16 | Card padding | `lobby.css:12`, `:110`, `:119`, `:154`, `:172` | Consistent spacing | 20 desktop; 12 at 390; 8 at 375, 320 and landscape | Keep. At 375, 12 px squeezes the emoji gaps to 7.16 px, under the 8 px rule. | Taste, keep |
-| 17 | Side margins | `lobby.css:4`, `:109`, `:116` | Layout margins | 16 px on phones; 40 px on desktop | No change. 16 px matches UIKit's default iPhone side margin. The HIG pages give no number. | Taste, keep |
+| 17 | Side margins | `lobby.css:4`, `:109`, `:116` | Paraphrase: respect layout margins (the HIG gives no number) | 16 px on phones; 40 px on desktop | No change. 16 px matches UIKit's default iPhone side margin. The HIG pages give no number. | Taste, keep |
 | 18 | Top and bottom margins at 320×568 | `lobby.css:169` | Layout margins | 8 px | Keep. Height is the scarce space there. | Taste, keep |
 | 19 | Wayfarer and connection lines | `lobby.css:37` | Align to the leading edge | Centred in their half. Every other row starts at the left. | Left-aligned, 4 px in | Taste |
 | 20 | Safe area, landscape under 700 px wide | `lobby.css:136` | Respect the safe area | Fixed 8 px inset. It ignores `env(safe-area-inset-*)`. | `max(8px, env(safe-area-inset-*))` on all four sides | Strict |
@@ -62,7 +64,7 @@ Line numbers are for `main` at `55d0575`.
 | 23 | Text that follows the user's text size | Whole lobby | Be prepared for text-size changes | 2 of 33 texts follow the root size (the chat lines) | Still 2 of 33. Full support is a separate change (Question 3). | Strict guidance, not met |
 | 24 | `WWWW` with "Copied" showing | Header | Avoid truncation | Squeezed at 320, 375 and 390, before and after | Owned by PR #1181's fitting, not this audit | Out of scope |
 
-24 rows: 4 strict (1, 13, 20, 21), 1 strict guidance not met (23), 18 taste, 1 out of scope.
+24 rows: 5 strict (1, 4, 13, 20, 21), 1 strict guidance not met (23), 17 taste, 1 out of scope.
 Rows 1, 4 and 13 already pass. Rows 20 and 21 are the only strict gaps the proposed CSS closes.
 
 ## Pictures
