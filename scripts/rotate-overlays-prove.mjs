@@ -153,6 +153,12 @@ async function fixture(p, kind) {
     st.current = kind === "trade" ? others[0].id : s.localId;
     st.phase = kind === "trade" ? "main" : "robber";
     st.seq += 1;
+    // #537: unpaid asks use a compact demand (Dismiss only). This proof measures Yes/No hit targets, so the phone must cover the ask.
+    if (kind === "trade") {
+      const me = st.players.find((x) => x.id === s.localId);
+      me.resources = { ...me.resources, ore: Math.max(me.resources.ore ?? 0, 1) };
+      me.goods = Object.values(me.resources).reduce((n, x) => n + x, 0);
+    }
     const hexes = st.hexes.filter((h) => h.id !== st.robberHex).map((h) => h.id);
     g.setState(
       kind === "trade"
