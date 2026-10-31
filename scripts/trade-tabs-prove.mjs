@@ -280,7 +280,7 @@ async function armBankMotion(page, rate) {
         background: firstStyle.backgroundColor, shadow: firstStyle.boxShadow,
         tabColor: tabStyle.color, tabBackground: tabStyle.backgroundColor, tabShadow: tabStyle.boxShadow,
         palette: { resource: color(cardStyle.getPropertyValue("--c")), deep: color(cardStyle.getPropertyValue("--deep")),
-          loss: color(cardStyle.getPropertyValue("--loss")), paper: color(cardStyle.getPropertyValue("--paper")) } };
+          loss: color(cardStyle.getPropertyValue("--loss")), ink: color(cardStyle.getPropertyValue("--ink")), paper: color(cardStyle.getPropertyValue("--paper")) } };
       const at = (time) => {
         if (animation) animation.currentTime = time;
         if (movement) movement.currentTime = time;
