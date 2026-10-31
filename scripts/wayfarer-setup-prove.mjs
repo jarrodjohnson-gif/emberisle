@@ -30,9 +30,21 @@ const url=()=>`http://127.0.0.1:${port}/?host=${encodeURIComponent(`ws://127.0.0
 async function pageAt(width=390,height=844){const context=await browser.newContext({viewport:{width,height},hasTouch:width<900,reducedMotion:width<900?'reduce':'no-preference'});const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(url());await page.getByRole('button',{name:'Play',exact:true}).waitFor();return{context,page};}
 async function help(page,mode){await page.getByRole('button',{name:'Table menu',exact:true}).click();await page.getByRole('dialog',{name:'Table menu'}).getByRole('button',{name:'How to play',exact:true}).click();const dialog=page.getByRole('dialog',{name:'How to play'});await dialog.waitFor();assert.match(await dialog.innerText(),mode==='off'?/No movement, blocked land or taking cards/:/takes a card from an adjacent seat/);await dialog.getByRole('button',{name:'Close',exact:true}).click();}
 async function setup(page){await page.locator('[data-testid="wayfarer-setup"] > summary').click();}
-// #1059: diagnostics only. Runs when the Muster bounds predicate fails on the ORIGINAL box, before the unchanged
-// assertion below throws. It reports that original box and its four predicate parts; everything read from the page
-// afterwards is labelled as a later sample and is never used in place of the original box.
+// #1059: diagnostics only. watchMusterBox wraps boundingBox() for the Muster button on the watched page. When the
+// ORIGINAL box fails the same width/height>=44 and viewport predicate, it logs that box and its four predicate parts,
+// plus a separately labelled later sample, then returns the original box unchanged; the existing assertion decides.
+let musterWatch=null;
+function watchMusterBox(page,width,height){
+ musterWatch={page,width,height};
+ const proto=Object.getPrototypeOf(page.getByTestId('fortune-play-knight'));
+ if(proto.__musterWatched)return;proto.__musterWatched=true;
+ const real=proto.boundingBox;
+ proto.boundingBox=async function(...args){
+  const box=await real.apply(this,args);const w=musterWatch;
+  if(w&&this.page()===w.page&&String(this._selector).includes('fortune-play-knight')&&(!box||!(box.width>=44&&box.height>=44&&box.y>=0&&box.y+box.height<=w.height)))await musterBoundsDiagnostics(w.page,box,w.width,w.height);
+  return box;
+ };
+}
 async function musterBoundsDiagnostics(page,box,width,height){
  const parts=box?{width44:box.width>=44,height44:box.height>=44,top:box.y>=0,bottom:box.y+box.height<=height}:null;
  const later=await page.getByTestId('fortune-play-knight').evaluate(el=>{
@@ -84,7 +96,8 @@ try{
  for(const [width,height] of [[390,844],[1280,720],[844,390]]){
   const {context,page}=await pageAt(width,height);await setup(page);await page.getByLabel('Practice wayfarer',{exact:true}).selectOption('off');await page.getByRole('button',{name:'Play',exact:true}).click();
   // The tray's entrance transform can make a 44px button measure fractionally below 44px during animation.
-  await page.evaluate(()=>{const g=window.__emberisle,s=structuredClone(g.getState().state),p=s.players.find(p=>p.id===g.getState().localId);s.current=p.id;s.phase='roll';s.playedCard=false;p.hidden.knight=1;p.boughtThisTurn.knight=0;g.setState({state:s,banner:null});});await page.getByTestId('fortunes-button').click();await page.getByTestId('fortune-play-knight').waitFor();await page.getByTestId('fortune-tray').evaluate(el=>Promise.all(el.getAnimations().map(animation=>animation.finished)));assert.equal(await page.getByTestId('fortune-tray').evaluate(el=>el.getAnimations().some(animation=>animation.playState==='running')),false,'tray animation settled before geometry');assert.equal(await page.getByTestId('fortune-play-knight').innerText(),'Muster');assert.match(await page.getByTestId('fortune-row-knight').innerText(),/No target needed/);const b=await page.getByTestId('fortune-play-knight').boundingBox();if(!b||!(b.width>=44&&b.height>=44&&b.y>=0&&b.y+b.height<=height))await musterBoundsDiagnostics(page,b,width,height);assert.ok(b.width>=44&&b.height>=44&&b.y>=0&&b.y+b.height<=height);await page.screenshot({path:`test-results/wayfarer-muster-${width}.png`});await page.getByTestId('fortune-play-knight').click();const played=await page.evaluate(()=>{const g=window.__emberisle.getState();return{phase:g.state.phase,army:g.state.players.find(p=>p.id===g.localId).knightsPlayed,mode:g.buildMode,pending:g.pendingSteal,blocked:g.state.hexes.some(h=>h.blocked)};});assert.deepEqual(played,{phase:'roll',army:1,mode:'none',pending:null,blocked:false});await context.close();console.log(`ok ${width}x${height}: Off fortune adds army immediately; no picker, blocker or lost roll`);
+  watchMusterBox(page,width,height); // #1059: diagnostics only; see watchMusterBox.
+  await page.evaluate(()=>{const g=window.__emberisle,s=structuredClone(g.getState().state),p=s.players.find(p=>p.id===g.getState().localId);s.current=p.id;s.phase='roll';s.playedCard=false;p.hidden.knight=1;p.boughtThisTurn.knight=0;g.setState({state:s,banner:null});});await page.getByTestId('fortunes-button').click();await page.getByTestId('fortune-play-knight').waitFor();await page.getByTestId('fortune-tray').evaluate(el=>Promise.all(el.getAnimations().map(animation=>animation.finished)));assert.equal(await page.getByTestId('fortune-tray').evaluate(el=>el.getAnimations().some(animation=>animation.playState==='running')),false,'tray animation settled before geometry');assert.equal(await page.getByTestId('fortune-play-knight').innerText(),'Muster');assert.match(await page.getByTestId('fortune-row-knight').innerText(),/No target needed/);const b=await page.getByTestId('fortune-play-knight').boundingBox();assert.ok(b.width>=44&&b.height>=44&&b.y>=0&&b.y+b.height<=height);await page.screenshot({path:`test-results/wayfarer-muster-${width}.png`});await page.getByTestId('fortune-play-knight').click();const played=await page.evaluate(()=>{const g=window.__emberisle.getState();return{phase:g.state.phase,army:g.state.players.find(p=>p.id===g.localId).knightsPlayed,mode:g.buildMode,pending:g.pendingSteal,blocked:g.state.hexes.some(h=>h.blocked)};});assert.deepEqual(played,{phase:'roll',army:1,mode:'none',pending:null,blocked:false});await context.close();console.log(`ok ${width}x${height}: Off fortune adds army immediately; no picker, blocker or lost roll`);
  }
  // Invalid choices and attempts to smuggle settings into join/rejoin never allocate or alter a rule.
  const invalid=new WebSocket(`ws://127.0.0.1:${hostPort}`);sockets.push(invalid);await new Promise(r=>invalid.once('open',r));const refusal=new Promise(r=>invalid.once('message',d=>r(JSON.parse(String(d)))));invalid.send(JSON.stringify({type:'hello',name:'Invalid',wayfarerMode:'maybe'}));assert.match((await refusal).message,/Choose Wayfarer/);invalid.terminate();
