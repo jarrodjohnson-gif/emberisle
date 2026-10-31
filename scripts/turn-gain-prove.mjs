@@ -527,7 +527,7 @@ async function practice(view) {
     await tabs(page, `${tag} trade`, "the trade's tabs", tradeLay);
     const trade = await page.evaluate((n) => window.__lines.slice(n).map((l) => ({ r: l.r, text: l.text, color: l.color, bg: l.bg, lit: l.lit?.fill ?? null, lost: !!l.lost, move: l.move?.keyframes })), n1);
     const gave = await page.evaluate((o) => -window.__own.slice(o).find((x) => x.r === "ore").d, o1);
-    const shades = [await contrast(page, "resource-flash", 0), await contrast(page, "resource-flash", 1)];
+    const shades = [await contrast(page, "resource-flash", 0, 0.5), await contrast(page, "resource-flash", 1, 0.5)];
     await page.evaluate(() => window.__release());
     const stone = trade.find((l) => l.r === "ore");
     const wheat = trade.find((l) => l.r === "grain");
