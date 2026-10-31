@@ -1,0 +1,150 @@
+{
+  "proofHead": "085756116f36ced4e0abacbb3db5c33d37931355",
+  "failedCI": 40516415723,
+  "failedJob": 122231661182,
+  "ciMerge": "b3aed7d6a653c9e7d52e8a2b4b3772e4b573df15",
+  "main": "df5777beba6aa4b28be6741ff4822496c20f6833",
+  "originalLinesRetained": 189,
+  "addedLines": 21,
+  "proofSha256": "798f927eb1f12d684a65a6c8d2bf15ae67de2df254c87866b3ef36c5446862aa",
+  "files": [
+    {
+      "name": "audio-logging-negative-control.cjs",
+      "archive": "raw/audio-logging-negative-control.cjs.gz",
+      "sha256": "5f412196cc0d7d43c97134e3574fae156d761a096d6ad9b75fc75b1e49575e79",
+      "bytes": 2087
+    },
+    {
+      "name": "ci-failed-audio-step.log",
+      "archive": "raw/ci-failed-audio-step.log.gz",
+      "sha256": "6bd3f139c6cfe6bef4dd5bf592b7aad2453a232cb61a5dfe10effc17e86e15d4",
+      "bytes": 3659
+    },
+    {
+      "name": "failed-ci-merge-observed.jsonl",
+      "archive": "raw/failed-ci-merge-observed.jsonl.gz",
+      "sha256": "e010453a6c11481083ec4328803d9f0237dac98ee226fc8d07a0602fb68f74a9",
+      "bytes": 669
+    },
+    {
+      "name": "failed-ci-merge-observed.log",
+      "archive": "raw/failed-ci-merge-observed.log.gz",
+      "sha256": "84c7486df1d01b483aa112f40d5ea674147d05099aa1ad1fb780f026acccaa4b",
+      "bytes": 6066
+    },
+    {
+      "name": "loosen.log",
+      "archive": "raw/loosen.log.gz",
+      "sha256": "b14cae62165054e0e565176fde25ca126aff077bba4cc3b99a8098c20193b761",
+      "bytes": 844
+    },
+    {
+      "name": "main-observed.jsonl",
+      "archive": "raw/main-observed.jsonl.gz",
+      "sha256": "f4e444261f78a45648441075f5f19db52c367bbf5c69c874f149d0345aec6b88",
+      "bytes": 664
+    },
+    {
+      "name": "main-observed.log",
+      "archive": "raw/main-observed.log.gz",
+      "sha256": "38820186ade1e441aaf489a8a07843e817521fc14a1109b8bcbf453cdc52e541",
+      "bytes": 6070
+    },
+    {
+      "name": "negative-fulfilled.jsonl",
+      "archive": "raw/negative-fulfilled.jsonl.gz",
+      "sha256": "d3a615a1ac669a25cd2a1757cafecfff760a0b7ac861ba22cd48674b8cb5d83e",
+      "bytes": 183
+    },
+    {
+      "name": "negative-fulfilled.log",
+      "archive": "raw/negative-fulfilled.log.gz",
+      "sha256": "5b1191d5fd78755d22b3035af03d22a0ced2166c8a77a012a366fe57cbadddf3",
+      "bytes": 12099
+    },
+    {
+      "name": "negative-rejected.jsonl",
+      "archive": "raw/negative-rejected.jsonl.gz",
+      "sha256": "3a2b48fa590f96f88204d94727433f84bf0efabcc3706fb1977f8b08c294cafa",
+      "bytes": 181
+    },
+    {
+      "name": "negative-rejected.log",
+      "archive": "raw/negative-rejected.log.gz",
+      "sha256": "0b2c1eece5eae9a85970867d13ad403239ff01299ebed88b270fec7a9c8f2967",
+      "bytes": 2615
+    },
+    {
+      "name": "negative-results.json",
+      "archive": "raw/negative-results.json.gz",
+      "sha256": "c8d1c00a5b41732cf22d78d996a27fe476fefce6c228dd09d386124f55c4b7b3",
+      "bytes": 573
+    },
+    {
+      "name": "negative-timeout.jsonl",
+      "archive": "raw/negative-timeout.jsonl.gz",
+      "sha256": "ffdf80aef16d870f8ef034141ca5cf43c74840cb1b8b815d17f73a1add2d856b",
+      "bytes": 179
+    },
+    {
+      "name": "negative-timeout.log",
+      "archive": "raw/negative-timeout.log.gz",
+      "sha256": "7c3646d7a39512f1977aa934499ab08e0a87caba809b39d9b6431e2544a7eac9",
+      "bytes": 2612
+    },
+    {
+      "name": "p883-audio-ci-controls.py",
+      "archive": "raw/p883-audio-ci-controls.py.gz",
+      "sha256": "c37f75c9963ad904a24eb276c4010fa9e5c140fc4d1b86cb49b7b080765a077f",
+      "bytes": 1744
+    },
+    {
+      "name": "p883-audio-native-observer.cjs",
+      "archive": "raw/p883-audio-native-observer.cjs.gz",
+      "sha256": "0615aeab63450d951f94c0ec1adba7f5cdb5f9f683c835332d323f1e2563121e",
+      "bytes": 3847
+    },
+    {
+      "name": "p883-audio-negative-run.py",
+      "archive": "raw/p883-audio-negative-run.py.gz",
+      "sha256": "37c489575b04ff848bf45997d01f06e02a88a493b295cef62843103c715542e0",
+      "bytes": 1615
+    },
+    {
+      "name": "proof-fresh-native.log",
+      "archive": "raw/proof-fresh-native.log.gz",
+      "sha256": "8eb6b05c32f10faaf177002611921e32929560486ac2eeddbfe1b38a905381b6",
+      "bytes": 6072
+    },
+    {
+      "name": "proof-install.log",
+      "archive": "raw/proof-install.log.gz",
+      "sha256": "242fd2cb925e5d4625518541bb12eb3f164510acbdafe8f9c2e3ac1aa28cf3a2",
+      "bytes": 25
+    },
+    {
+      "name": "proof-server-install.log",
+      "archive": "raw/proof-server-install.log.gz",
+      "sha256": "7a37cf15423e687369006a7a53ef94d1e61a164eb20063a668b4f0fdd831a263",
+      "bytes": 26
+    },
+    {
+      "name": "registered.log",
+      "archive": "raw/registered.log.gz",
+      "sha256": "84a14d5228148399b2db8433bb0012a581f56579bb4cdff620d60d8334279a9f",
+      "bytes": 689
+    },
+    {
+      "name": "results.json",
+      "archive": "raw/results.json.gz",
+      "sha256": "3d2d10de1cb4c286690813c239c248f82a43881b0ac15b746adbb74722c045eb",
+      "bytes": 1119
+    },
+    {
+      "name": "same-ci-tree-new-diagnostic-native.log",
+      "archive": "raw/same-ci-tree-new-diagnostic-native.log.gz",
+      "sha256": "dad456bfd372ee05a9947f0265518dcc834e3bd23206117de5018fc5f46575c6",
+      "bytes": 6073
+    }
+  ]
+}

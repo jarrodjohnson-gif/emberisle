@@ -806,6 +806,28 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       G(K.part(K.sphere(10), "#e8d2a0", [0, gy + 0.016 * S, gv + 0.49 * stride], [0, 0, 0], [0.02 * S, 0.016 * S, 0.018 * S]));
       G(K.part(box, "#6a7a5a", [0, gy + 0.002 * S, gv + 0.45 * stride], [0, Math.PI / 2, 0], [0.08 * S, 0.004 * S, 0.05 * S]));
     }
+    const packingBounds = new THREE.Box3();
+    const packingInverse = frame.clone().invert();
+    for (const geometry of goodsParts) {
+      const local = geometry.clone().applyMatrix4(packingInverse);
+      local.computeBoundingBox();
+      packingBounds.union(local.boundingBox!);
+      local.dispose();
+    }
+    const packingLength = packingBounds.max.z - packingBounds.min.z;
+    if (packingLength > len) {
+      const center = (packingBounds.min.z + packingBounds.max.z) / 2;
+      const fit = new THREE.Matrix4().makeTranslation(0, 0, center).multiply(new THREE.Matrix4().makeScale(1, 1, len / packingLength)).multiply(new THREE.Matrix4().makeTranslation(0, 0, -center));
+      const worldFit = frame.clone().multiply(fit).multiply(packingInverse);
+      for (const geometry of goodsParts) geometry.applyMatrix4(worldFit);
+      packingBounds.min.z = center - len / 2;
+      packingBounds.max.z = center + len / 2;
+    }
+    const shift = Math.max(0, v0 - packingBounds.min.z) - Math.max(0, packingBounds.max.z - v1);
+    if (shift) {
+      const delta = new THREE.Vector3(0, 0, shift).applyMatrix4(frame).sub(new THREE.Vector3().setFromMatrixPosition(frame));
+      for (const geometry of goodsParts) geometry.translate(delta.x, delta.y, delta.z);
+    }
     // Semantic vertex ranges keep these merged goods inspectable without extra meshes or draw calls.
     const goodsBounds = new THREE.Box3();
     const inverse = frame.clone().invert();

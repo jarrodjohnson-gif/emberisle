@@ -1,0 +1,42 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
+const source = readFileSync('scripts/audio-recovery-prove.mjs','utf8');
+const from=source.indexOf('const observeFailure =');
+const observer=source.slice(from,source.indexOf('\ntry {\n',from));
+const original = new Error('original proof failure');
+async function control(tabs, logger) {
+  const records=[];
+  const ctx={observedTabs:tabs,files:['your_turn.wav'],sleep:ms=>new Promise(r=>setTimeout(r,ms)),console:{log:(...a)=>{records.push(a);logger?.();}}};
+  const {run}=vm.runInNewContext(`${observer}\n({run:async error=>{try{await observeFailure(error);}finally{throw error;}}})`,ctx);
+  const start=performance.now();await assert.rejects(run(original),e=>e===original);
+  return {records,elapsed:performance.now()-start};
+}
+const mixed=await control([
+ {name:'fulfilled',page:{evaluate:async()=>({marker:1})}},
+ {name:'rejected',page:{evaluate:async()=>{throw Error('page rejected');}}},
+ {name:'timeout',page:{evaluate:()=>new Promise(()=>{})}},
+]);
+const snapshots=JSON.parse(mixed.records[0][1]).snapshots;
+assert.deepEqual(snapshots.map(s=>s.status),['fulfilled','rejected','timeout']);
+assert.equal(snapshots[0].marker,1);assert.equal(snapshots[1].error,'page rejected');
+console.log('PASS fulfilled/rejected/timedout snapshots; identical original error; bounded elapsed ms',mixed.elapsed);
+await control([{name:'sync-throw',page:{evaluate:()=>{throw Error('sync observer failure');}}}]);
+console.log('PASS synchronous observer failure preserves original identity');
+await control([{name:'logging-throw',page:{evaluate:async()=>({})}}],()=>{throw Error('logger failure');});
+console.log('PASS diagnostic logger failure preserves original identity');
+const start=source.indexOf('        const nativePlay = audio.play;');
+const block=source.slice(start,source.indexOf('        return audio;',start));
+const install=new Function('audio','id','window','URL','location','performance',block);
+let calls=0;const promise=Promise.resolve('native');
+const audio={src:'',currentTime:0,play(){calls++;return promise;}};
+install(audio,1,{audioPlayAttempts:[]},URL,{href:'https://example.test/'},performance);
+assert.equal(audio.play(),promise);await promise;
+class BrokenURL { constructor(){throw Error('invalid URL');} }
+const bad={src:'malformed',currentTime:0,play(){calls++;return promise;}};
+install(bad,2,{audioPlayAttempts:[]},BrokenURL,{href:''},performance);
+assert.equal(bad.play(),promise);assert.equal(calls,2);
+const nativeError=Error('native play error');const throwing={src:'',currentTime:0,play(){throw nativeError;}};
+install(throwing,3,{audioPlayAttempts:[]},BrokenURL,{href:''},performance);
+assert.throws(()=>throwing.play(),e=>e===nativeError);
+console.log('PASS empty/malformed URL observation preserves native calls, exact promises and original native exception');

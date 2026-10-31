@@ -1,0 +1,65 @@
+{
+  "source_path": "scripts/trade-tabs-prove.mjs",
+  "source_revision": "c9eacc4a6fbbb8bee60f8c1f02beb8434cad1045",
+  "copy_path": "/workspace/p883-b-quote-copy.mjs",
+  "source_sha256": "011551f557cb9ce55efe68d58a8ec5b65f6a9b8c58d92460ca8950ea511c5837",
+  "copy_sha256": "4a7a2453a599b0d5e42d5daa3e688e5536b7f2c8d1bf55c1adacc764b98a7e2c",
+  "exact_changed_line_count": 9,
+  "all_other_lines_byte_identical_in_same_order": true,
+  "changes": [
+    {
+      "old_line_number": 350,
+      "old_line": "  await hint(page, \"You give 4 stone. You get 1 wheat.\");",
+      "new_line": "  await hint(page, \"Bank 4:1: give 4 stone, get 1 wheat now.\");",
+      "reason": "Approved valid 4:1 Bank quote wording; retain fixture resources and rate."
+    },
+    {
+      "old_line_number": 478,
+      "old_line": "  await describedAs(bankFor(page), `You give 4 wood. You get 1 stone. Bank stock: ${base.bank.ore} stone.`, `${tag} exact Bank receipt and live stock`);",
+      "new_line": "  await describedAs(bankFor(page), `Bank 4:1: give 4 wood, get 1 stone now. Bank stock: ${base.bank.ore} stone.`, `${tag} exact Bank receipt and live stock`);",
+      "reason": "Keep live stock in the accessible description while matching approved valid Bank quote wording; retain actual fixture goods."
+    },
+    {
+      "old_line_number": 514,
+      "old_line": "  await hint(page, \"You give 2 wood. You get 1 stone.\");",
+      "new_line": "  await hint(page, \"Dock 2:1: give 2 wood, get 1 stone now.\");",
+      "reason": "Approved valid 2:1 Dock quote wording; retain fixture resources and rate."
+    },
+    {
+      "old_line_number": 515,
+      "old_line": "  await describedAs(bankFor(page), `You give 2 wood. You get 1 stone. Bank stock: ${base.bank.ore} stone.`, `${tag} live dock and stock description`);",
+      "new_line": "  await describedAs(bankFor(page), `Dock 2:1: give 2 wood, get 1 stone now. Bank stock: ${base.bank.ore} stone.`, `${tag} live dock and stock description`);",
+      "reason": "Keep live stock in the accessible description while matching approved valid Dock quote wording; retain actual fixture goods."
+    },
+    {
+      "old_line_number": 529,
+      "old_line": "    await hint(page, `You give ${rate} wood. You get 1 stone.`);",
+      "new_line": "    await hint(page, `${rate === 4 ? \"Bank\" : \"Dock\"} ${rate}:1: give ${rate} wood, get 1 stone now.`);",
+      "reason": "Use the approved Bank/Dock label and valid quote format for the existing rates; retain actual wood-to-stone fixture."
+    },
+    {
+      "old_line_number": 545,
+      "old_line": "  await hint(page, \"You give 4 wood. You get 1 stone.\");",
+      "new_line": "  await hint(page, \"Bank 4:1: give 4 wood, get 1 stone now.\");",
+      "reason": "Approved valid 4:1 Bank quote wording; retain fixture goods."
+    },
+    {
+      "old_line_number": 558,
+      "old_line": "    await hint(page, `You give ${rate} wood. You get 1 stone.`);",
+      "new_line": "    await hint(page, `${rate === 4 ? \"Bank\" : \"Dock\"} ${rate}:1: give ${rate} wood, get 1 stone now.`);",
+      "reason": "Use the approved Bank/Dock label and valid quote format for existing settlement rates; retain actual wood-to-stone fixture."
+    },
+    {
+      "old_line_number": 596,
+      "old_line": "  await hint(page, \"You give 4 wood. You get 1 stone.\");",
+      "new_line": "  await hint(page, \"Bank 4:1: give 4 wood, get 1 stone now.\");",
+      "reason": "Approved valid 4:1 Bank quote wording; retain hotseat fixture goods."
+    },
+    {
+      "old_line_number": 646,
+      "old_line": "    await hint(page, \"You give 4 wood. You get 1 stone.\");",
+      "new_line": "    await hint(page, \"Bank 4:1: give 4 wood, get 1 stone now.\");",
+      "reason": "Approved valid 4:1 Bank quote wording; retain lazy-recovery fixture goods."
+    }
+  ]
+}

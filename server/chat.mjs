@@ -14,10 +14,16 @@ export const SOUNDBOARD = new Map([
   ["sb_win_reaction", "GG!"],
   ["sb_airhorn", "Airhorn"],
   ["sb_quit_touchin", "Quit touchin' me"],
-  ["sb_only_wood", "Only wood?"],
+  ["sb_only_wood", "Wood please"],
+  ["sb_plump_sheep", "Plump sheep"],
+  ["sb_nice_sheep", "Nice sheep"],
+  ["sb_sheep_please", "Sheep please"],
+  ["sb_grain_please", "Grain please"],
+  ["sb_brick_please", "Brick please"],
+  ["sb_perfect", "Perfect"],
+  ["sb_real_badman", "Real badman"],
+  ["sb_gong", "Gong"],
   ["bong", "Bong"],
-  ["plop", "Plop"],
-  ["pluck", "Pluck"],
 ]);
 
 export function cleanText(raw) {

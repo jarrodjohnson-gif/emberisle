@@ -1,0 +1,10 @@
+{
+  "command": [
+    "npm",
+    "test"
+  ],
+  "cwd": "/workspace/work/rematch986-verify",
+  "exit": 1,
+  "seconds": 329.85,
+  "reason": "one complete confirmation after the unchanged initial welcome timeout; focused rejoin passes on both main and head"
+}

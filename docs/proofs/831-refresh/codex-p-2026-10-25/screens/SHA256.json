@@ -1,0 +1,32 @@
+{
+  "trade-tabs-390x844-no-preference-table.png": {
+    "sha256": "163569aa5309474b420ce9ab9319f24a3a67386295183f164911eb0e1b3c0d64",
+    "source_commit": "fdac0aba3d09a9376eb2e6a6be8ad5d0b970af03",
+    "captured_by": "unmodified passing fresh trade-tabs-prove, before mutation controls"
+  },
+  "trade-tabs-390x844-no-preference-bank.png": {
+    "sha256": "2370c99eecab3c926b91e5eb61bf10dcd0f3f3d0e77108d8833605113785c93d",
+    "source_commit": "fdac0aba3d09a9376eb2e6a6be8ad5d0b970af03",
+    "captured_by": "unmodified passing fresh trade-tabs-prove, before mutation controls"
+  },
+  "trade-tabs-844x390-no-preference-table.png": {
+    "sha256": "2a76509fc6d7bd1c63017056323bd949bdb0614de2bcb85f0b409ff316c5b4b6",
+    "source_commit": "fdac0aba3d09a9376eb2e6a6be8ad5d0b970af03",
+    "captured_by": "unmodified passing fresh trade-tabs-prove, before mutation controls"
+  },
+  "trade-tabs-844x390-no-preference-bank.png": {
+    "sha256": "d79e723d95050e8d1af9804406d893cf3f9945154c2f15c10738df2a48f7ac7a",
+    "source_commit": "fdac0aba3d09a9376eb2e6a6be8ad5d0b970af03",
+    "captured_by": "unmodified passing fresh trade-tabs-prove, before mutation controls"
+  },
+  "trade-tabs-1280x720-no-preference-table.png": {
+    "sha256": "da1526a400b94143d0c97efe5ecd900b3d708290964b0897778ad4bcb4ffbd34",
+    "source_commit": "fdac0aba3d09a9376eb2e6a6be8ad5d0b970af03",
+    "captured_by": "unmodified passing fresh trade-tabs-prove, before mutation controls"
+  },
+  "trade-tabs-1280x720-no-preference-bank.png": {
+    "sha256": "b5541e340be4d92126efb4500d21c268e6af637ee687636ad7680cc4ccd84a54",
+    "source_commit": "fdac0aba3d09a9376eb2e6a6be8ad5d0b970af03",
+    "captured_by": "unmodified passing fresh trade-tabs-prove, before mutation controls"
+  }
+}

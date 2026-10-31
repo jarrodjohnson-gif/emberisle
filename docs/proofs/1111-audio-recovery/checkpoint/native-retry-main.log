@@ -1,0 +1,23 @@
+FIRST {
+  results: [ 'NotSupportedError' ],
+  audios: [
+    {
+      src: 'http://127.0.0.1:41101/audio/drop_001.wav',
+      error: 4,
+      paused: false,
+      readyState: 0
+    }
+  ]
+}
+RETRY {
+  results: [ 'NotSupportedError', 'NotSupportedError' ],
+  audios: [
+    {
+      src: 'http://127.0.0.1:41101/audio/drop_001.wav',
+      error: 4,
+      paused: false,
+      readyState: 0,
+      time: 0
+    }
+  ]
+}
