@@ -59,6 +59,7 @@ async function tab(name) {
   await page.addInitScript(() => {
     window.__plays = [];
     window.__heard = [];
+    window.__media = new Map();
     window.__sockets = [];
     const NativeWebSocket = window.WebSocket;
     window.WebSocket = new Proxy(NativeWebSocket, {
@@ -72,6 +73,7 @@ async function tab(name) {
     HTMLMediaElement.prototype.play = function () {
       // #814: the background music is music-prove's, not a table sound.
       if (this.src.endsWith("/old_tower_inn_loop.mp3")) return play.call(this);
+      window.__media.set(new URL(this.src).pathname.replace("/audio/", ""), this);
       window.__plays.push(new URL(this.src).pathname);
       window.__heard.push(`${new URL(this.src).pathname.replace("/audio/", "")}@${this.volume}`);
       return play.call(this);
@@ -125,12 +127,13 @@ async function synced(tabs, seq, what, ms) {
 
 // #609: the clips this tab started since `forget`, as "file@volume", without the UI clicks.
 const forget = (tabs) => Promise.all(tabs.map((t) => t.page.evaluate(() => (window.__heard = []))));
-const trades = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|confirmation_001|error_002|three_wood|daking_wood|sheep_for_wood|stone_for_wood|corn_no)/.test(h)));
+const trades = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|confirmation_001|error_002|three_wood|daking_wood|sheep_for_wood|stone_for_wood|sb_only_wood|sb_sheep_please|sb_grain_please|sb_brick_please|corn_no)/.test(h)));
 // #1107: what a seat hears when an offer of 1 `gives` for `wants` arrives, from fixed expectations (the precedence itself is proved
 // with explicit give/want bags in hearOffer below). Sheep or stone for wood plays its own clip on every seat, the asker included;
 // any other pair is the plain chime on the other seats and silent on the asker.
 const OFFER_CLIP = { "wool>timber": "sheep_for_wood.mp3@1", "ore>timber": "stone_for_wood.mp3@1" };
-const offerHeard = (gives, wants, asker) => (OFFER_CLIP[`${gives}>${wants}`] ? [OFFER_CLIP[`${gives}>${wants}`]] : asker ? [] : ["trade_offer.wav@1"]);
+const PLEASE_CLIP = { timber: "sb_only_wood.mp3@1", wool: "sb_sheep_please.mp3@1", grain: "sb_grain_please.mp3@1", clay: "sb_brick_please.mp3@1" };
+const offerHeard = (gives, wants, asker) => OFFER_CLIP[`${gives}>${wants}`] ? [OFFER_CLIP[`${gives}>${wants}`]] : PLEASE_CLIP[wants] ? [PLEASE_CLIP[wants]] : asker ? [] : ["trade_offer.wav@1"];
 const act = (t, fn, arg) => t.page.evaluate(([f, a]) => window.__emberisle.getState()[f](...[].concat(a)), [fn, arg]);
 const total = (hand) => RES.reduce((n, r) => n + hand[r], 0);
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -649,11 +652,11 @@ try {
     const state = store.getState().state;
     store.setState({ state: { ...state, players: state.players.map((p) => p.id === id ? { ...p, name: "Daking" } : p) } });
   }, dakingId)));
-  const issueTradeSounds = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|three_wood|daking_wood|sheep_for_wood|stone_for_wood|corn_no|error_002)\./.test(h)));
+  const issueTradeSounds = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|three_wood|daking_wood|sheep_for_wood|stone_for_wood|sb_only_wood|sb_sheep_please|sb_grain_please|sb_brick_please|corn_no|error_002)\./.test(h)));
   const sendTableEvent = async (event) => Promise.all(tabs.map((t) => t.page.evaluate((msg) => window.__sockets.at(-1).onmessage({ data: JSON.stringify(msg) }), event)));
-  const hearOffer = async (tradeId, give, want) => {
+  const hearOffer = async (tradeId, give, want, from = dakingId) => {
     await forget(tabs);
-    await sendTableEvent({ type: "tradeOffer", tradeId, from: dakingId, give, want, seconds: 20 });
+    await sendTableEvent({ type: "tradeOffer", tradeId, from, give, want, seconds: 20 });
     await sleep(300);
     return Promise.all(tabs.map(issueTradeSounds));
   };
@@ -676,7 +679,44 @@ try {
   for (const got of clip) assert.deepEqual(got, ["sheep_for_wood.mp3@1"], "sheep for timber reaches every seat, including the asker");
   clip = await hearOffer("new-stone-for-wood", { ore: 1 }, { timber: 1 });
   for (const got of clip) assert.deepEqual(got, ["stone_for_wood.mp3@1"], "stone for timber reaches every seat, including the asker");
-  clip = await hearOffer("new-plain-offer", { grain: 1 }, { wool: 1 });
+  const politeCases = [
+    ["please-sheep", { clay: 1 }, { wool: 1 }, "sb_sheep_please.mp3@1"],
+    ["please-grain", { clay: 1 }, { grain: 1 }, "sb_grain_please.mp3@1"],
+    ["please-brick", { wool: 1 }, { clay: 1 }, "sb_brick_please.mp3@1"],
+    ["please-wood", { clay: 1 }, { timber: 1 }, "sb_only_wood.mp3@1"],
+  ];
+  for (const [id, give, want, expected] of politeCases) {
+    clip = await hearOffer(id, give, want);
+    for (const got of clip) assert.deepEqual(got, [expected], `${id}: the same requested-good clip reaches every seat, including the asker`);
+  }
+  clip = await hearOffer("please-two-goods", { clay: 1 }, { wool: 1, grain: 1 });
+  assert.deepEqual(clip[tabs.indexOf(A)], [], "multi-resource request keeps the usual asker silence");
+  for (const t of [B, C]) assert.deepEqual(clip[tabs.indexOf(t)], ["trade_offer.wav@1"], "multi-resource request uses the plain trade chime");
+  const botId = vs[tabs.indexOf(C)].you;
+  await Promise.all(tabs.map((t) => t.page.evaluate((id) => {
+    const state = window.__emberisle.getState().state;
+    window.__emberisle.setState({ state: { ...state, players: state.players.map((p) => p.id === id ? { ...p, kind: "bot", name: "Tide bot" } : p) } });
+  }, botId)));
+  clip = await hearOffer("please-bot-ask", { timber: 1 }, { wool: 1 }, botId);
+  for (const got of clip) assert.deepEqual(got, ["sb_sheep_please.mp3@1"], "bot asks use the same resource clip on every seat");
+  clip = await hearOffer("please-repeat-first", { clay: 1 }, { wool: 1 }, vs[tabs.indexOf(B)].you);
+  for (const got of clip) assert.deepEqual(got, ["sb_sheep_please.mp3@1"], "first ask plays its please clip");
+  await forget(tabs);
+  await sendTableEvent({ type: "tradeOffer", tradeId: "please-repeat-within-three-seconds", from: vs[tabs.indexOf(B)].you, give: { clay: 1 }, want: { wool: 1 }, seconds: 20 });
+  await sleep(250);
+  assert.deepEqual(await Promise.all(tabs.map(issueTradeSounds)), [[], [], []], "a repeat ask for the same resource within 3 s does not replay the please clip");
+  await sleep(3100);
+  clip = await hearOffer("please-repeat-after-three-seconds", { clay: 1 }, { wool: 1 }, vs[tabs.indexOf(B)].you);
+  for (const got of clip) assert.deepEqual(got, ["sb_sheep_please.mp3@1"], "the same sender's ask plays again after 3 s");
+  clip = await hearOffer("please-alternate-sender", { clay: 1 }, { grain: 1 });
+  for (const got of clip) assert.deepEqual(got, ["sb_grain_please.mp3@1"], "another sender's different please clip plays independently");
+  clip = await hearOffer("please-repeat-after-other-sender", { clay: 1 }, { wool: 1 }, vs[tabs.indexOf(B)].you);
+  assert.deepEqual(clip, [[], [], []], "another sender/clip does not erase the first sender's repeat suppression");
+  clip = await hearOffer("please-alternate-resource", { clay: 1 }, { grain: 1 }, vs[tabs.indexOf(B)].you);
+  for (const got of clip) assert.deepEqual(got, ["sb_grain_please.mp3@1"], "the same sender's different resource has its own repeat key");
+  clip = await hearOffer("please-repeat-after-other-resource", { clay: 1 }, { wool: 1 }, vs[tabs.indexOf(B)].you);
+  assert.deepEqual(clip, [[], [], []], "alternating resources does not erase the sender's first repeat key");
+  clip = await hearOffer("new-plain-offer", { grain: 1 }, { ore: 1 });
   assert.deepEqual(clip[tabs.indexOf(A)], [], "the asker does not hear the plain offer chime");
   for (const t of [B, C]) assert.deepEqual(clip[tabs.indexOf(t)], ["trade_offer.wav@1"], "other seats hear the plain offer chime");
 
@@ -696,6 +736,75 @@ try {
   await sleep(300);
   for (const got of await Promise.all(tabs.map(issueTradeSounds))) assert.ok(!got.some((h) => h.startsWith("corn_no.")), "timeout without all explicit No answers does not play corn_no");
   console.log("#1107: trade clips follow precedence, reach all seats, plain chime excludes the asker, and corn_no needs every explicit No");
+
+  // Native playback through the real trade and host soundboard paths uses the context's group and gain.
+  const mix = async (settings) => Promise.all(tabs.map((t) => t.page.evaluate(async (values) => {
+    const mixer = await import("/src/lib/sound-settings.ts");
+    for (const [category, volume, muted] of values) {
+      if (category === "master") mixer.setMasterVolume(volume);
+      else { mixer.setCategoryVolume(category, volume); mixer.setCategoryMuted(category, muted); }
+    }
+  }, settings)));
+  const volumes = (file) => Promise.all(tabs.map((t) => t.page.evaluate((name) => window.__media.get(name)?.volume, file)));
+  for (const [id, give, want, expected] of politeCases) {
+    await sleep(3100); // Keep the real host's three-second soundboard pace and expire previous please keys.
+    const file = expected.split("@")[0];
+    await mix([["master", 0.5], ["game", 0.4, false], ["memes", 0.8, true]]);
+    clip = await hearOffer(`${id}-board-context`, give, want);
+    for (const got of clip) assert.deepEqual(got, [`${file}@0.2`], `${id}: automatic trade uses board gain even with Memes muted`);
+    await Promise.all(tabs.map((t) => t.page.evaluate((name) => { window.__tradeMedia = window.__media.get(name); }, file)));
+    await mix([["memes", 0.6, false]]);
+    assert.deepEqual(await volumes(file), [0.2, 0.2, 0.2], `${id}: changing Memes cannot reclassify an active trade clip`);
+    await mix([["game", 0.6, false]]);
+    for (const volume of await volumes(file)) assert.ok(Math.abs(volume - 0.3) < 1e-9, `${id}: active trade follows the board gain`);
+    await mix([["game", 0.4, false], ["memes", 0.8, true]]);
+    await forget(tabs);
+    await Promise.all(tabs.map((t) => t.page.evaluate(async (name) => (await import("/src/lib/sound.ts")).play(name), file.replace(".mp3", ""))));
+    await sleep(200);
+    assert.deepEqual(await Promise.all(tabs.map(issueTradeSounds)), [[], [], []], `${id}: ordinary soundboard playback is silent with Memes muted`);
+    await mix([["game", 0.4, true], ["memes", 0.8, false]]);
+    await forget(tabs);
+    await A.page.evaluate((name) => window.__emberisle.getState().sendSound(name), file.replace(".mp3", ""));
+    await sleep(400);
+    for (const got of await Promise.all(tabs.map(issueTradeSounds))) assert.deepEqual(got, [`${file}@0.4`], `${id}: the host soundboard tap plays once on every seat using Memes gain with board muted`);
+    for (const t of tabs) assert.equal(await t.page.evaluate((name) => window.__media.get(name) !== window.__tradeMedia, file), true, `${id}: trade and soundboard keep distinct audio instances for the same file`);
+    await mix([["game", 0.2, false]]);
+    assert.deepEqual(await volumes(file), [0.4, 0.4, 0.4], `${id}: changing board gain cannot reclassify an active soundboard clip`);
+    for (const t of tabs) assert.equal(await t.page.evaluate(() => window.__tradeMedia.volume), 0.1, `${id}: the earlier trade instance still follows board gain while the soundboard instance follows Memes`);
+    await mix([["game", 0.4, true]]);
+    clip = await hearOffer(`${id}-board-muted`, give, want, vs[tabs.indexOf(B)].you);
+    assert.deepEqual(clip, [[], [], []], `${id}: board mute silences automatic trade even with Memes on`);
+    console.log(`#1132 ${id}: native board@0.2 with Memes muted; active gain follows context; host soundboard@0.4 with board muted; board mute silences trade`);
+  }
+  await mix([["master", 1], ["game", 1, false], ["memes", 1, false]]);
+  const lifecycle = await A.page.evaluate(async () => {
+    const sound = await import("/src/lib/sound.ts");
+    const store = window.__emberisle;
+    let calls = 0;
+    const ask = () => sound.playTradePlease(() => calls++, "lifecycle-sender", { wool: 1 });
+    store.getState().goTitle(); ask(); ask();
+    const leave = calls;
+    store.getState().startAi(); ask();
+    const start = calls;
+    const current = store.getState();
+    store.getState().loadState(current.state, current.localId, true); ask();
+    const ordinaryPush = calls;
+    store.getState().startHotseat(3); ask();
+    const hotseat = calls;
+    store.setState({ state: { ...store.getState().state, phase: "over", winner: "p0" } });
+    store.getState().playAgain(); ask();
+    const rematch = calls;
+    const next = store.getState().state;
+    store.setState({ state: { ...next, phase: "over", winner: "p0" } });
+    store.getState().loadState(next, "p0", true, "NEXT"); ask();
+    const onlineRematch = calls;
+    store.getState().loadState(next, "p0", true, "NEXT"); ask();
+    return { leave, start, ordinaryPush, hotseat, rematch, onlineRematch, unchangedTable: calls };
+  });
+  assert.deepEqual(lifecycle, { leave: 1, start: 2, ordinaryPush: 2, hotseat: 3, rematch: 4, onlineRematch: 5, unchangedTable: 5 }, "actual leave/new-game/rematch lifecycle resets repeat keys while ordinary host pushes keep suppression");
+  console.log("#1132: native context instances stay independent; actual store lifecycle clears repeat keys, ordinary pushes keep them");
+
+
 
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   console.log("trade prove ok");

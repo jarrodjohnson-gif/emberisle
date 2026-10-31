@@ -1,0 +1,24 @@
+
+> trade-prove
+> node scripts/trade-prove.mjs
+
+#425: Host a table -> /audio/click_001.wav once
+table RLBD: setup done, seq 15
+Pine gives 1 timber, wants 1 clay; Tide says no, Ember says yes
+#425: Escape on the trade panel -> /audio/back_001.wav once
+#378: Enter on Trade -> dialog "Trade", focus on "Close"; 14 Tabs + 3 Shift+Tabs stayed inside (9 stops); Escape -> focus on Trade
+#609/#1107: offer of timber for clay heard as ["sb_brick_please.mp3@1"] on the other seats and ["sb_brick_please.mp3@1"] on the asker
+toast on Ember and Tide: "Pine offers 1 wood for 1 brick"; asker sees "Waiting…"
+#366: Ember and Tide see an alertdialog named "Pine offers 1 wood for 1 brick", focus untouched, countdown aria-hidden
+Tide declined: asker sees "Tide declined", offer still open for Ember
+#609: trade_yes plays in full for the asker and taker, at half volume for the bystander
+Ember took it: 1 timber -> Ember, 1 clay -> Pine, hands and goods counts agree on all 3 tabs
+#366: "Pine offers 1 brick for 2 wood": Yes on Ember and Tide is aria-disabled, focusable, described by "Need … more wood"
+#366: Enter on Ember's aria-disabled Yes sent nothing; Escape in Tide's toast answered No
+#609: trade_no plays for the asker only
+#366: Ember's polite line said only "5 seconds left"
+second offer ran out after 20 s left on the clock: hands unchanged, toast closed on all 3 tabs
+FAIL page.evaluate: TypeError: Cannot read properties of undefined (reading 'onmessage')
+    at eval (eval at evaluate (:311:30), <anonymous>:1:33)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
