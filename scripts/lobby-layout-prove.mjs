@@ -188,17 +188,48 @@ async function codeFits(page, label) {
   const m = await page.getByTestId("table-code").evaluate(el => {
     const range = document.createRange(); range.selectNodeContents(el);
     const text = range.getBoundingClientRect(), box = el.getBoundingClientRect();
-    return { code: el.textContent, font: parseFloat(getComputedStyle(el).fontSize), textLeft: text.left, textRight: text.right, left: box.left, right: box.right,
+    const style = getComputedStyle(el);
+    const m = { code: el.textContent, font: parseFloat(style.fontSize), fontStyle: style.font, letterSpacing: style.letterSpacing, clientWidth: el.clientWidth, scrollWidth: el.scrollWidth, viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio }, textLeft: text.left, textRight: text.right, left: box.left, right: box.right,
       focus: document.activeElement === window.__codeFocus,
       buttons: [...document.querySelectorAll(".lobby-copy-controls button")].map(button => {
         const r = document.createRange(); r.selectNodeContents(button);
         const t = r.getBoundingClientRect(), b = button.getBoundingClientRect();
         return { text: button.textContent, font: parseFloat(getComputedStyle(button).fontSize), width: b.width, height: b.height, left: t.left - b.left, right: b.right - t.right };
       }) };
+    if (m.font < Math.max(...m.buttons.map(button => button.font))) {
+      let clone;
+      try {
+        clone = el.cloneNode(true);
+        clone.removeAttribute("data-testid");
+        Object.assign(clone.style, { position: "fixed", visibility: "hidden", width: "max-content", maxWidth: "none", margin: "0", padding: "0", font: style.font, fontSize: `${Math.max(...m.buttons.map(button => button.font))}px`, letterSpacing: style.letterSpacing, whiteSpace: "nowrap" });
+        document.body.append(clone);
+        const r = document.createRange(); r.selectNodeContents(clone);
+        m.labelFontWidth = r.getBoundingClientRect().width;
+      } catch (error) { m.diagnosticError = String(error); }
+      finally { clone?.remove(); }
+    }
+    return m;
   });
   assert.ok(m.textLeft >= m.left - .1 && m.textRight <= m.right + .1,
     `${label}: complete code visible without ellipsis ${JSON.stringify(m)}`);
-  assert.ok(m.font >= Math.max(...m.buttons.map(button => button.font)), `${label}: code remains at least as large as its control labels`);
+  try {
+    assert.ok(m.font >= Math.max(...m.buttons.map(button => button.font)), `${label}: code remains at least as large as its control labels`);
+  } catch (error) {
+    console.error(`code readability diagnostic: ${JSON.stringify(m)}`);
+    let timer;
+    try {
+      await Promise.race([(async () => {
+        const session = await page.context().newCDPSession(page);
+        try {
+          await session.send("DOM.enable"); await session.send("CSS.enable");
+          const { root } = await session.send("DOM.getDocument");
+          const { nodeId } = await session.send("DOM.querySelector", { nodeId: root.nodeId, selector: '[data-testid="table-code"]' });
+          console.error(`code resolved fonts: ${JSON.stringify(await session.send("CSS.getPlatformFontsForNode", { nodeId }))}`);
+        } finally { await session.detach(); }
+      })(), new Promise(resolve => { timer = setTimeout(resolve, 1000); })]);
+    } catch (diagnosticError) { console.error(`code font diagnostic failed: ${String(diagnosticError)}`); }
+    finally { clearTimeout(timer); throw error; }
+  }
   assert.ok(m.focus, `${label}: resizing does not move focus`);
   for (const button of m.buttons) {
     assert.ok(button.width >= 44 && button.height >= 44, `${label}: ${button.text} retains its 44px target`);
