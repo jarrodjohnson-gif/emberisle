@@ -1,0 +1,47 @@
+import cp from 'node:child_process';
+import { syncBuiltinESMExports, createRequire } from 'node:module';
+import { writeFileSync } from 'node:fs';
+const mode = process.env.STEAL_CONTROL;
+const queue = [5, 3, 1, ...(mode === 'setup-seven' ? [2, 3] : [3, 3])];
+const native = crypto.getRandomValues;
+crypto.getRandomValues = function (values) {
+  if (!(values instanceof Uint32Array) || values.length !== 1) return native.call(crypto, values);
+  if (!queue.length) throw Error('control: unexpected parent die');
+  values[0] = queue.shift();
+  console.log('CONTROL_PARENT_DIE', values[0] + 1);
+  if (!queue.length) crypto.getRandomValues = native;
+  return values;
+};
+if (mode === 'host-seven') {
+  const fixture = '/tmp/sol-next/host-seven.mjs';
+  writeFileSync(fixture, `const native = crypto.getRandomValues; const queue = [2,3]; crypto.getRandomValues = function (values) { if (!(values instanceof Uint32Array) || values.length !== 1) return native.call(crypto, values); values[0] = queue.shift(); console.log('CONTROL_HOST_DIE',values[0]+1); if (!queue.length) crypto.getRandomValues = native; return values; };`);
+  const spawn = cp.spawn;
+  cp.spawn = function(command, args, options) {
+    return spawn.call(this, command, args.includes('host.mjs') ? ['--import', fixture, ...args] : args, options);
+  };
+  syncBuiltinESMExports();
+  const require = createRequire('/workspace/emberisle/package.json');
+  const { chromium } = require('playwright');
+  const launch = chromium.launch;
+  chromium.launch = async function (...args) {
+    const browser = await launch.apply(this, args);
+    const newPage = browser.newPage;
+    browser.newPage = async function (...args) {
+      const page = await newPage.apply(this, args);
+      const wait = page.waitForFunction;
+      page.waitForFunction = async function (...args) {
+        try { return await wait.apply(this, args); }
+        catch (error) {
+          console.log('CONTROL_WAIT_FAILURE_STATE', await page.evaluate(() => {
+            const s = window.__emberisle?.getState();
+            return { phase:s?.state?.phase, current:s?.state?.current, dice:s?.state?.dice,
+              picker:s?.pendingSteal, error:s?.error };
+          }));
+          throw error;
+        }
+      };
+      return page;
+    };
+    return browser;
+  };
+}

@@ -15,7 +15,7 @@ for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 function start(port) {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: String(port), ROOMS_DIR, SAVE_MS: "30" },
+    env: { ...process.env, PORT: String(port), ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, SAVE_MS: "30" },
   });
   let out = "";
   err = "";

@@ -27,7 +27,7 @@ for(const code of ['PSAA','PSAB']){
 }
 const vite=await createServer({server:{host:'127.0.0.1',port,strictPort:true},logLevel:'error'});
 try{
- host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:dir,GRACE_MS:'600000',HOLD_MS:'600000',TURN_MS:'600000'},stdio:['ignore','pipe','pipe']});
+ host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:dir, RESULTS_DIR: `${dir}/results`,GRACE_MS:'600000',HOLD_MS:'600000',TURN_MS:'600000'},stdio:['ignore','pipe','pipe']});
  const hostPort=await new Promise((resolve,reject)=>{host.stdout.on('data',d=>{const m=String(d).match(/listening (\d+)/);if(m)resolve(Number(m[1]));});host.on('exit',c=>reject(Error(`host ${c}`)));});
  async function client(code,pid){
   const ws=new WebSocket(`ws://127.0.0.1:${hostPort}`),messages=[];sockets.push(ws);ws.on('message',d=>messages.push(JSON.parse(String(d))));await new Promise(r=>ws.on('open',r));
