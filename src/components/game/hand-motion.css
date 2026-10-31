@@ -76,13 +76,14 @@
 .goods-lit > .goods-label { color: var(--on); opacity: 0.9; }
 .goods-lost { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--loss) 55%, var(--paper)); }
 .goods-tab {
-  /* #825: a light pill with dark ink text and a thin outline in the good's side colour, for +N and -N alike. 24 px tall with
+  /* #825: a pill, 24 px tall, for +N and -N alike: +N is light with dark ink text and a thin outline in the good's side colour; -N is the loss red with white text (owner, #1242). 24 px tall with
      14 px bold text: 20 px above the card's edge, 4 px over it. */
   left: 0; right: 0; top: -20px; z-index: 1; width: max-content; min-width: 40px; height: 24px; margin: 0 auto; padding: 0 8px;
   border-radius: 999px; text-align: center; white-space: nowrap;
   font: 700 14px/24px var(--font-numeral); font-variant-numeric: tabular-nums;
   background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--deep), 0 2px 6px rgb(24 51 45 / 0.25);
 }
+.goods-tab[data-sign="-"] { background: var(--loss); color: #fff; box-shadow: inset 0 0 0 1.5px var(--loss), 0 2px 6px rgb(24 51 45 / 0.25); }
 @media (min-width: 1280px) and (pointer: fine) and (min-height: 481px) {
   /* 1.25x on a wide screen with a fine pointer: 28 px tall, 17.5 px text, 24 px above the card inside the tray's 28 px. */
   .goods-tab { top: -24px; min-width: 50px; height: 28px; padding: 0 10px; font-size: 17.5px; line-height: 28px; }
