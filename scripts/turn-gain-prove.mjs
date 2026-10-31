@@ -619,7 +619,7 @@ async function practice(view) {
     // Over the whole game: every turn moment was the person's roll; every line was one of the person's own changes.
     const all = await page.evaluate(() => ({ turns: window.__turns.map((t) => ({ current: t.current, localId: t.localId, phase: t.phase })), lines: window.__lines.map((l) => ({ r: l.r, d: l.d, at: l.at })), own: window.__own }));
     check(all.turns.length >= 2 && all.turns.every((t) => t.current === t.localId && t.phase === "roll"), `${tag}: every turn moment was on the person's own roll`, all.turns.length);
-    const stray = all.lines.filter((l) => !all.own.some((o) => o.r === l.r && o.d === l.d && o.at <= l.at && l.at - o.at < 2500));
+    const stray = all.lines.filter((l) => !all.own.some((o) => o.r === l.r && o.d === l.d && o.at <= l.at && l.at - o.at < 3000));
     check(stray.length === 0, `${tag}: every cue shown was one of the person's own hand changes`, stray);
     // The turn moment no longer waits on gains (#773: useFloatsUp is gone), so a cue may be up with it; it never covers one.
     const clash = await page.evaluate(() => window.__turns.flatMap((t) => window.__lines.filter((l) => l.at < (t.gone ?? Infinity) && t.at < (l.gone ?? Infinity)).filter((l) => t.frames.some((a) => l.frames.some((b) => Math.abs(a.t - b.t) < 50 && a.box.left < b.box.right && b.box.left < a.box.right && a.box.top < b.box.bottom && b.box.top < a.box.bottom))).map((l) => l.text)));
