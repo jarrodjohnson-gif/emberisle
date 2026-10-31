@@ -76,7 +76,7 @@
 .goods-lit > .goods-label { color: var(--on); opacity: 0.9; }
 .goods-lost { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--loss) 55%, var(--paper)); }
 .goods-tab {
-  /* #825: a pill, 24 px tall, for +N and -N alike: +N is light with dark ink text and a thin outline in the good's side colour; -N is the loss red with white text (owner, #1242). 24 px tall with
+  /* #825: a pill for +N and -N alike: +N is light with dark ink text and a thin outline in the good's side colour; -N is the loss red with white text (owner, #1242). 24 px tall with
      14 px bold text: 20 px above the card's edge, 4 px over it. */
   left: 0; right: 0; top: -20px; z-index: 1; width: max-content; min-width: 40px; height: 24px; margin: 0 auto; padding: 0 8px;
   border-radius: 999px; text-align: center; white-space: nowrap;
