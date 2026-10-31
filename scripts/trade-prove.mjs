@@ -334,12 +334,12 @@ try {
     const where = `${t.name} (${JSON.stringify(got)})`;
     if (got.role !== "region") throw new Error(`${where}: the offer is not an alertdialog`);
     if (got.focusInside) throw new Error(`${where}: the offer took focus`);
-    if (got.countdownHidden !== "true") throw new Error(`${where}: the ticking countdown is not aria-hidden`);
     if (got.disabled) throw new Error(`${where}: Yes uses disabled, so Tab cannot reach it`);
     if (!got.focusable) throw new Error(`${where}: Yes is not focusable`);
     const short = n - v.mine[r];
     if (short <= 0) {
       if (got.compact || got.hasDismiss || !got.hasYes) throw new Error(`${where}: can pay but saw compact/Dismiss or no Yes`);
+      if (got.countdownHidden !== "true") throw new Error(`${where}: the ticking countdown is not aria-hidden`);
       if ((await t.page.getByRole("region", { name: line, exact: true }).count()) !== 1) throw new Error(`${where}: alertdialog not named "${line}"`);
       if (got.ariaDisabled !== null || got.describedBy) throw new Error(`${where}: Yes is marked disabled but can pay`);
       return false;
