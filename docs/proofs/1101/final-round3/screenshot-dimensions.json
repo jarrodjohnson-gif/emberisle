@@ -1,0 +1,62 @@
+[
+  {
+    "path": "docs/proofs/1101/final-round3/screenshots/390x844-your-turn.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "path": "docs/proofs/1101/final-round3/screenshots/844x390-your-turn.png",
+    "width": 844,
+    "height": 390
+  },
+  {
+    "path": "docs/proofs/1101/final-round3/screenshots/390x844-offer.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "path": "docs/proofs/1101/final-round3/screenshots/844x390-offer.png",
+    "width": 844,
+    "height": 390
+  },
+  {
+    "path": "docs/proofs/1101/final-round3/screenshots/390x844-other-s-turn.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "path": "docs/proofs/1101/final-round3/screenshots/844x390-other-s-turn.png",
+    "width": 844,
+    "height": 390
+  },
+  {
+    "path": "docs/proofs/1101/final-round3/screenshots/390x844-off-turn-gain.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "path": "docs/proofs/1101/final-round3/screenshots/844x390-off-turn-gain.png",
+    "width": 844,
+    "height": 390
+  },
+  {
+    "path": "docs/proofs/1101/final-round3/screenshots/390x844-off-turn-loss.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "path": "docs/proofs/1101/final-round3/screenshots/844x390-off-turn-loss.png",
+    "width": 844,
+    "height": 390
+  },
+  {
+    "path": "docs/proofs/1101/final-round3/screenshots/390x844-empty-hand.png",
+    "width": 390,
+    "height": 844
+  },
+  {
+    "path": "docs/proofs/1101/final-round3/screenshots/844x390-empty-hand.png",
+    "width": 844,
+    "height": 390
+  }
+]

@@ -277,11 +277,13 @@ function ResourceHand({ me, flashes }: { me: PlayerState; flashes: ReturnType<ty
 // refit measures the hole with the hand in it; the motion is opacity and translateY only (docs/design/polish.md: never
 // animate layout). A hand that goes away (a hotseat seat that has held nothing takes the turn) is removed at once for the
 // same reason: nothing refits when an animation ends.
-export function HandDock({ me, phase }: { me: PlayerState; phase: Phase }) {
+//
+// #1101: the phone dock passes `always`: its goods slot never empties, so an empty hand shows five zeros from the first roll.
+export function HandDock({ me, phase, always }: { me: PlayerState; phase: Phase; always?: boolean }) {
   // Read here, not in the hand, so the +N that brings the first good in is not lost to the hand mounting after the change.
   const flashes = useResourceFlashes(me);
   const hasGoods = RESOURCES.some((r) => me.resources[r] > 0);
-  const show = hasGoods || !["rollOff", "setupSettle", "setupRoad"].includes(phase);
+  const show = !!always || hasGoods || !["rollOff", "setupSettle", "setupRoad"].includes(phase);
   const [shown, setShown] = useState(show);
   const [rising, setRising] = useState(false);
   if (show !== shown) {

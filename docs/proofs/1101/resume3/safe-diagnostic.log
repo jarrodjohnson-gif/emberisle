@@ -1,0 +1,396 @@
+DIAGNOSTIC navigation 2026-10-26T05:03:58.750Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:03:59.135Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+ok   844x390 roll-off: the inset emulation reached env() [0,47,21,47]
+ok   844x390 roll-off: all 17 visible controls inside the safe area
+ok   844x390 roll-off: the HUD hole is inside the safe area {"l":391,"t":12,"r":785,"b":357}
+ok   844x390 roll-off: all 54 island corners and docks inside the hole
+ok   844x390 setup: the inset emulation reached env() [0,47,21,47]
+ok   844x390 setup: all 18 visible controls inside the safe area
+ok   844x390 setup: the HUD hole is inside the safe area {"l":391,"t":12,"r":785,"b":357}
+ok   844x390 setup: all 54 island corners and docks inside the hole
+ok   844x390 setup PlaceChip: the inset emulation reached env() [0,47,21,47]
+ok   844x390 setup PlaceChip: all 20 visible controls inside the safe area
+ok   844x390 setup PlaceChip: the HUD hole is inside the safe area {"l":391,"t":12,"r":785,"b":357}
+ok   844x390 setup PlaceChip: all 54 island corners and docks inside the hole
+ok   844x390 setup path: the inset emulation reached env() [0,47,21,47]
+ok   844x390 setup path: all 18 visible controls inside the safe area
+ok   844x390 setup path: the HUD hole is inside the safe area {"l":391,"t":12,"r":785,"b":357}
+ok   844x390 setup path: all 54 island corners and docks inside the hole
+ok   844x390 roll: the inset emulation reached env() [0,47,21,47]
+ok   844x390 roll: all 27 visible controls inside the safe area
+ok   844x390 roll: the HUD hole is inside the safe area {"l":391,"t":12,"r":785,"b":357}
+ok   844x390 roll: all 54 island corners and docks inside the hole
+ok   844x390 roll, full hand: Roll is inside the safe area, 44 px tall, uncovered, inside the dock [266,249,367,293]
+ok   844x390 main: the inset emulation reached env() [0,47,21,47]
+ok   844x390 main: all 27 visible controls inside the safe area
+ok   844x390 main: the HUD hole is inside the safe area {"l":391,"t":12,"r":785,"b":357}
+ok   844x390 main: all 54 island corners and docks inside the hole
+ok   844x390 main, full hand: the dock does not scroll (full hand, every fortune)
+ok   844x390 main, full hand: End turn is inside the safe area, 44 px tall, uncovered, inside the dock [266,249,367,293]
+ok   844x390 main, full hand: Tab through 8 dock controls, none hidden
+ok   844x390 main, full hand: no "more below" cue, and End turn in its slot, at every focus
+ok   844x390 main, full hand: the open fortune tray covers the pinned row and sits inside the safe area {"covers":true,"inside":true,"box":[47,68,367,369]}
+ok   844x390 main, full hand: Escape closes the tray and focus returns to Fortunes
+ok   844x390 player menu: the inset emulation reached env() [0,47,21,47]
+ok   844x390 player menu: all 28 visible controls inside the safe area
+ok   844x390 Table menu open: the inset emulation reached env() [0,47,21,47]
+ok   844x390 Table menu open: all 34 visible controls inside the safe area
+ok   844x390 How to play: the inset emulation reached env() [0,47,21,47]
+ok   844x390 How to play: all 29 visible controls inside the safe area
+ok   844x390 trade panel: the inset emulation reached env() [0,47,21,47]
+ok   844x390 trade panel: all 40 visible controls inside the safe area
+ok   844x390 win screen: the inset emulation reached env() [0,47,21,47]
+ok   844x390 win screen: all 28 visible controls inside the safe area
+DIAGNOSTIC navigation 2026-10-26T05:04:22.600Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:04:22.848Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:04:23.750Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036&code=76S4
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:04:24.076Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:04:24.993Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:04:27.225Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036&code=76S4
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:04:27.599Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:04:29.152Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:04:31.816Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:04:31.827Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+ok   844x390 online, chat closed: the inset emulation reached env() [0,47,21,47]
+ok   844x390 online, chat closed: all 18 visible controls inside the safe area
+ok   844x390 online, chat closed: the HUD hole is inside the safe area {"l":391,"t":12,"r":785,"b":357}
+ok   844x390 online, chat closed: all 54 island corners and docks inside the hole
+DIAGNOSTIC navigation 2026-10-26T05:04:33.740Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+ok   844x390 online, chat open: the inset emulation reached env() [0,47,21,47]
+ok   844x390 online, chat open: all 30 visible controls inside the safe area
+DIAGNOSTIC navigation 2026-10-26T05:04:38.531Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:04:38.747Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+ok   390x844 roll-off: the inset emulation reached env() [47,0,34,0]
+ok   390x844 roll-off: all 17 visible controls inside the safe area
+ok   390x844 roll-off: the HUD hole is inside the safe area {"l":12,"t":103,"r":378,"b":542}
+ok   390x844 roll-off: all 54 island corners and docks inside the hole
+ok   390x844 setup: the inset emulation reached env() [47,0,34,0]
+ok   390x844 setup: all 17 visible controls inside the safe area
+ok   390x844 setup: the HUD hole is inside the safe area {"l":12,"t":103,"r":378,"b":542}
+ok   390x844 setup: all 54 island corners and docks inside the hole
+ok   390x844 setup PlaceChip: the inset emulation reached env() [47,0,34,0]
+ok   390x844 setup PlaceChip: all 19 visible controls inside the safe area
+ok   390x844 setup PlaceChip: the HUD hole is inside the safe area {"l":12,"t":103,"r":378,"b":542}
+ok   390x844 setup PlaceChip: all 54 island corners and docks inside the hole
+ok   390x844 setup path: the inset emulation reached env() [47,0,34,0]
+ok   390x844 setup path: all 18 visible controls inside the safe area
+ok   390x844 setup path: the HUD hole is inside the safe area {"l":12,"t":103,"r":378,"b":542}
+ok   390x844 setup path: all 54 island corners and docks inside the hole
+ok   390x844 roll: the inset emulation reached env() [47,0,34,0]
+ok   390x844 roll: all 27 visible controls inside the safe area
+ok   390x844 roll: the HUD hole is inside the safe area {"l":12,"t":103,"r":378,"b":542}
+ok   390x844 roll: all 54 island corners and docks inside the hole
+ok   390x844 main: the inset emulation reached env() [47,0,34,0]
+ok   390x844 main: all 27 visible controls inside the safe area
+ok   390x844 main: the HUD hole is inside the safe area {"l":12,"t":103,"r":378,"b":542}
+ok   390x844 main: all 54 island corners and docks inside the hole
+ok   390x844 player menu: the inset emulation reached env() [47,0,34,0]
+ok   390x844 player menu: all 28 visible controls inside the safe area
+ok   390x844 Table menu open: the inset emulation reached env() [47,0,34,0]
+ok   390x844 Table menu open: all 37 visible controls inside the safe area
+ok   390x844 How to play: the inset emulation reached env() [47,0,34,0]
+ok   390x844 How to play: all 29 visible controls inside the safe area
+ok   390x844 trade panel: the inset emulation reached env() [47,0,34,0]
+ok   390x844 trade panel: all 50 visible controls inside the safe area
+ok   390x844 win screen: the inset emulation reached env() [47,0,34,0]
+ok   390x844 win screen: all 28 visible controls inside the safe area
+DIAGNOSTIC navigation 2026-10-26T05:04:59.096Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:04:59.331Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:05:00.529Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036&code=Z7BS
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:05:00.655Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:05:02.456Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:05:04.018Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036&code=Z7BS
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:05:04.147Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:05:05.240Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:05:08.558Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:05:08.585Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:05:10.050Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+ok   390x844 online, chat closed: the inset emulation reached env() [47,0,34,0]
+ok   390x844 online, chat closed: all 17 visible controls inside the safe area
+ok   390x844 online, chat closed: the HUD hole is inside the safe area {"l":12,"t":103,"r":378,"b":542}
+ok   390x844 online, chat closed: all 54 island corners and docks inside the hole
+ok   390x844 online, chat open: the inset emulation reached env() [47,0,34,0]
+ok   390x844 online, chat open: all 30 visible controls inside the safe area
+DIAGNOSTIC navigation 2026-10-26T05:05:14.892Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:05:15.066Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+ok   667x375 roll-off: the inset emulation reached env() [0,44,21,44]
+ok   667x375 roll-off: all 17 visible controls inside the safe area
+ok   667x375 roll-off: the HUD hole is inside the safe area {"l":388,"t":12,"r":611,"b":342}
+ok   667x375 roll-off: all 54 island corners and docks inside the hole
+ok   667x375 setup: the inset emulation reached env() [0,44,21,44]
+ok   667x375 setup: all 17 visible controls inside the safe area
+ok   667x375 setup: the HUD hole is inside the safe area {"l":388,"t":12,"r":611,"b":342}
+ok   667x375 setup: all 54 island corners and docks inside the hole
+ok   667x375 setup PlaceChip: the inset emulation reached env() [0,44,21,44]
+ok   667x375 setup PlaceChip: all 19 visible controls inside the safe area
+ok   667x375 setup PlaceChip: the HUD hole is inside the safe area {"l":388,"t":12,"r":611,"b":342}
+ok   667x375 setup PlaceChip: all 54 island corners and docks inside the hole
+ok   667x375 setup path: the inset emulation reached env() [0,44,21,44]
+ok   667x375 setup path: all 18 visible controls inside the safe area
+ok   667x375 setup path: the HUD hole is inside the safe area {"l":388,"t":12,"r":611,"b":342}
+ok   667x375 setup path: all 54 island corners and docks inside the hole
+ok   667x375 roll: the inset emulation reached env() [0,44,21,44]
+ok   667x375 roll: all 27 visible controls inside the safe area
+ok   667x375 roll: the HUD hole is inside the safe area {"l":388,"t":12,"r":611,"b":342}
+ok   667x375 roll: all 54 island corners and docks inside the hole
+ok   667x375 roll, full hand: Roll is inside the safe area, 44 px tall, uncovered, inside the dock [263,234,364,278]
+ok   667x375 main: the inset emulation reached env() [0,44,21,44]
+ok   667x375 main: all 27 visible controls inside the safe area
+ok   667x375 main: the HUD hole is inside the safe area {"l":388,"t":12,"r":611,"b":342}
+ok   667x375 main: all 54 island corners and docks inside the hole
+ok   667x375 main, full hand: the dock does not scroll (full hand, every fortune)
+ok   667x375 main, full hand: End turn is inside the safe area, 44 px tall, uncovered, inside the dock [263,234,364,278]
+ok   667x375 main, full hand: Tab through 9 dock controls, none hidden
+ok   667x375 main, full hand: no "more below" cue, and End turn in its slot, at every focus
+ok   667x375 main, full hand: the open fortune tray covers the pinned row and sits inside the safe area {"covers":true,"inside":true,"box":[44,68,364,354]}
+ok   667x375 main, full hand: Escape closes the tray and focus returns to Fortunes
+ok   667x375 player menu: the inset emulation reached env() [0,44,21,44]
+ok   667x375 player menu: all 28 visible controls inside the safe area
+ok   667x375 Table menu open: the inset emulation reached env() [0,44,21,44]
+ok   667x375 Table menu open: all 34 visible controls inside the safe area
+ok   667x375 How to play: the inset emulation reached env() [0,44,21,44]
+ok   667x375 How to play: all 29 visible controls inside the safe area
+ok   667x375 trade panel: the inset emulation reached env() [0,44,21,44]
+ok   667x375 trade panel: all 40 visible controls inside the safe area
+ok   667x375 win screen: the inset emulation reached env() [0,44,21,44]
+ok   667x375 win screen: all 28 visible controls inside the safe area
+DIAGNOSTIC navigation 2026-10-26T05:05:34.782Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:05:35.016Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:05:36.192Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036&code=K3HQ
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:05:36.367Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:05:38.322Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:05:39.380Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036&code=K3HQ
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:05:39.604Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:05:40.699Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:05:43.674Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:05:43.710Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:05:43.823Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+ok   667x375 online, chat closed: the inset emulation reached env() [0,44,21,44]
+ok   667x375 online, chat closed: all 17 visible controls inside the safe area
+ok   667x375 online, chat closed: the HUD hole is inside the safe area {"l":388,"t":12,"r":611,"b":342}
+ok   667x375 online, chat closed: all 54 island corners and docks inside the hole
+ok   667x375 online, chat open: the inset emulation reached env() [0,44,21,44]
+ok   667x375 online, chat open: all 30 visible controls inside the safe area
+DIAGNOSTIC navigation 2026-10-26T05:05:50.252Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:05:50.425Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+ok   440x956 roll-off: the inset emulation reached env() [62,0,34,0]
+ok   440x956 roll-off: all 17 visible controls inside the safe area
+ok   440x956 roll-off: the HUD hole is inside the safe area {"l":12,"t":118,"r":428,"b":654}
+ok   440x956 roll-off: all 54 island corners and docks inside the hole
+ok   440x956 setup: the inset emulation reached env() [62,0,34,0]
+ok   440x956 setup: all 18 visible controls inside the safe area
+ok   440x956 setup: the HUD hole is inside the safe area {"l":12,"t":118,"r":428,"b":654}
+ok   440x956 setup: all 54 island corners and docks inside the hole
+ok   440x956 setup PlaceChip: the inset emulation reached env() [62,0,34,0]
+ok   440x956 setup PlaceChip: all 20 visible controls inside the safe area
+ok   440x956 setup PlaceChip: the HUD hole is inside the safe area {"l":12,"t":118,"r":428,"b":654}
+ok   440x956 setup PlaceChip: all 54 island corners and docks inside the hole
+ok   440x956 setup path: the inset emulation reached env() [62,0,34,0]
+ok   440x956 setup path: all 18 visible controls inside the safe area
+ok   440x956 setup path: the HUD hole is inside the safe area {"l":12,"t":118,"r":428,"b":654}
+ok   440x956 setup path: all 54 island corners and docks inside the hole
+ok   440x956 roll: the inset emulation reached env() [62,0,34,0]
+ok   440x956 roll: all 27 visible controls inside the safe area
+ok   440x956 roll: the HUD hole is inside the safe area {"l":12,"t":118,"r":428,"b":654}
+ok   440x956 roll: all 54 island corners and docks inside the hole
+ok   440x956 main: the inset emulation reached env() [62,0,34,0]
+ok   440x956 main: all 27 visible controls inside the safe area
+ok   440x956 main: the HUD hole is inside the safe area {"l":12,"t":118,"r":428,"b":654}
+ok   440x956 main: all 54 island corners and docks inside the hole
+ok   440x956 player menu: the inset emulation reached env() [62,0,34,0]
+ok   440x956 player menu: all 28 visible controls inside the safe area
+ok   440x956 Table menu open: the inset emulation reached env() [62,0,34,0]
+ok   440x956 Table menu open: all 37 visible controls inside the safe area
+ok   440x956 How to play: the inset emulation reached env() [62,0,34,0]
+ok   440x956 How to play: all 29 visible controls inside the safe area
+ok   440x956 trade panel: the inset emulation reached env() [62,0,34,0]
+ok   440x956 trade panel: all 50 visible controls inside the safe area
+ok   440x956 win screen: the inset emulation reached env() [62,0,34,0]
+ok   440x956 win screen: all 28 visible controls inside the safe area
+DIAGNOSTIC navigation 2026-10-26T05:06:12.894Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:06:13.130Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:06:14.181Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036&code=ZZYH
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:06:14.433Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:06:16.495Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:06:17.601Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036&code=ZZYH
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:06:17.821Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:06:18.763Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:06:22.007Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:06:22.021Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:06:22.147Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+ok   440x956 online, chat closed: the inset emulation reached env() [62,0,34,0]
+ok   440x956 online, chat closed: all 17 visible controls inside the safe area
+ok   440x956 online, chat closed: the HUD hole is inside the safe area {"l":12,"t":118,"r":428,"b":654}
+ok   440x956 online, chat closed: all 54 island corners and docks inside the hole
+ok   440x956 online, chat open: the inset emulation reached env() [62,0,34,0]
+ok   440x956 online, chat open: all 30 visible controls inside the safe area
+DIAGNOSTIC navigation 2026-10-26T05:06:29.837Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:06:30.012Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+ok   956x440 roll-off: the inset emulation reached env() [0,62,21,62]
+ok   956x440 roll-off: all 17 visible controls inside the safe area
+ok   956x440 roll-off: the HUD hole is inside the safe area {"l":406,"t":12,"r":882,"b":407}
+ok   956x440 roll-off: all 54 island corners and docks inside the hole
+ok   956x440 setup: the inset emulation reached env() [0,62,21,62]
+ok   956x440 setup: all 17 visible controls inside the safe area
+ok   956x440 setup: the HUD hole is inside the safe area {"l":406,"t":12,"r":882,"b":407}
+ok   956x440 setup: all 54 island corners and docks inside the hole
+ok   956x440 setup PlaceChip: the inset emulation reached env() [0,62,21,62]
+ok   956x440 setup PlaceChip: all 19 visible controls inside the safe area
+ok   956x440 setup PlaceChip: the HUD hole is inside the safe area {"l":406,"t":12,"r":882,"b":407}
+ok   956x440 setup PlaceChip: all 54 island corners and docks inside the hole
+ok   956x440 setup path: the inset emulation reached env() [0,62,21,62]
+ok   956x440 setup path: all 18 visible controls inside the safe area
+ok   956x440 setup path: the HUD hole is inside the safe area {"l":406,"t":12,"r":882,"b":407}
+ok   956x440 setup path: all 54 island corners and docks inside the hole
+ok   956x440 roll: the inset emulation reached env() [0,62,21,62]
+ok   956x440 roll: all 27 visible controls inside the safe area
+ok   956x440 roll: the HUD hole is inside the safe area {"l":406,"t":12,"r":882,"b":407}
+ok   956x440 roll: all 54 island corners and docks inside the hole
+ok   956x440 roll, full hand: Roll is inside the safe area, 44 px tall, uncovered, inside the dock [281,299,382,343]
+ok   956x440 main: the inset emulation reached env() [0,62,21,62]
+ok   956x440 main: all 27 visible controls inside the safe area
+ok   956x440 main: the HUD hole is inside the safe area {"l":406,"t":12,"r":882,"b":407}
+ok   956x440 main: all 54 island corners and docks inside the hole
+ok   956x440 main, full hand: the dock does not scroll (full hand, every fortune)
+ok   956x440 main, full hand: End turn is inside the safe area, 44 px tall, uncovered, inside the dock [281,299,382,343]
+ok   956x440 main, full hand: Tab through 9 dock controls, none hidden
+ok   956x440 main, full hand: no "more below" cue, and End turn in its slot, at every focus
+ok   956x440 main, full hand: the open fortune tray covers the pinned row and sits inside the safe area {"covers":true,"inside":true,"box":[62,68,382,419]}
+ok   956x440 main, full hand: Escape closes the tray and focus returns to Fortunes
+ok   956x440 player menu: the inset emulation reached env() [0,62,21,62]
+ok   956x440 player menu: all 28 visible controls inside the safe area
+ok   956x440 Table menu open: the inset emulation reached env() [0,62,21,62]
+ok   956x440 Table menu open: all 36 visible controls inside the safe area
+ok   956x440 How to play: the inset emulation reached env() [0,62,21,62]
+ok   956x440 How to play: all 29 visible controls inside the safe area
+ok   956x440 trade panel: the inset emulation reached env() [0,62,21,62]
+ok   956x440 trade panel: all 50 visible controls inside the safe area
+ok   956x440 win screen: the inset emulation reached env() [0,62,21,62]
+ok   956x440 win screen: all 28 visible controls inside the safe area
+DIAGNOSTIC navigation 2026-10-26T05:06:50.261Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:06:50.500Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:06:51.690Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036&code=L6KP
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:06:51.874Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:06:53.828Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:06:54.808Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036&code=L6KP
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:06:55.107Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:06:56.341Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:06:59.154Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:06:59.202Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:07:00.664Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+ok   956x440 online, chat closed: the inset emulation reached env() [0,62,21,62]
+ok   956x440 online, chat closed: all 17 visible controls inside the safe area
+ok   956x440 online, chat closed: the HUD hole is inside the safe area {"l":406,"t":12,"r":882,"b":407}
+ok   956x440 online, chat closed: all 54 island corners and docks inside the hole
+ok   956x440 online, chat open: the inset emulation reached env() [0,62,21,62]
+ok   956x440 online, chat open: all 30 visible controls inside the safe area
+DIAGNOSTIC navigation 2026-10-26T05:07:05.684Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:07:05.858Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+ok   956x410 roll-off: the inset emulation reached env() [0,62,21,62]
+ok   956x410 roll-off: all 17 visible controls inside the safe area
+ok   956x410 roll-off: the HUD hole is inside the safe area {"l":406,"t":12,"r":882,"b":377}
+ok   956x410 roll-off: all 54 island corners and docks inside the hole
+ok   956x410 setup: the inset emulation reached env() [0,62,21,62]
+ok   956x410 setup: all 17 visible controls inside the safe area
+ok   956x410 setup: the HUD hole is inside the safe area {"l":406,"t":12,"r":882,"b":377}
+ok   956x410 setup: all 54 island corners and docks inside the hole
+ok   956x410 setup PlaceChip: the inset emulation reached env() [0,62,21,62]
+ok   956x410 setup PlaceChip: all 19 visible controls inside the safe area
+ok   956x410 setup PlaceChip: the HUD hole is inside the safe area {"l":406,"t":12,"r":882,"b":377}
+ok   956x410 setup PlaceChip: all 54 island corners and docks inside the hole
+ok   956x410 setup path: the inset emulation reached env() [0,62,21,62]
+ok   956x410 setup path: all 17 visible controls inside the safe area
+ok   956x410 setup path: the HUD hole is inside the safe area {"l":406,"t":12,"r":882,"b":377}
+ok   956x410 setup path: all 54 island corners and docks inside the hole
+ok   956x410 roll: the inset emulation reached env() [0,62,21,62]
+ok   956x410 roll: all 27 visible controls inside the safe area
+ok   956x410 roll: the HUD hole is inside the safe area {"l":406,"t":12,"r":882,"b":377}
+ok   956x410 roll: all 54 island corners and docks inside the hole
+ok   956x410 roll, full hand: Roll is inside the safe area, 44 px tall, uncovered, inside the dock [281,269,382,313]
+ok   956x410 main: the inset emulation reached env() [0,62,21,62]
+ok   956x410 main: all 27 visible controls inside the safe area
+ok   956x410 main: the HUD hole is inside the safe area {"l":406,"t":12,"r":882,"b":377}
+ok   956x410 main: all 54 island corners and docks inside the hole
+ok   956x410 main, full hand: the dock does not scroll (full hand, every fortune)
+ok   956x410 main, full hand: End turn is inside the safe area, 44 px tall, uncovered, inside the dock [281,269,382,313]
+ok   956x410 main, full hand: Tab through 8 dock controls, none hidden
+ok   956x410 main, full hand: no "more below" cue, and End turn in its slot, at every focus
+ok   956x410 main, full hand: the open fortune tray covers the pinned row and sits inside the safe area {"covers":true,"inside":true,"box":[62,68,382,389]}
+ok   956x410 main, full hand: Escape closes the tray and focus returns to Fortunes
+ok   956x410 player menu: the inset emulation reached env() [0,62,21,62]
+ok   956x410 player menu: all 28 visible controls inside the safe area
+ok   956x410 Table menu open: the inset emulation reached env() [0,62,21,62]
+ok   956x410 Table menu open: all 36 visible controls inside the safe area
+ok   956x410 How to play: the inset emulation reached env() [0,62,21,62]
+ok   956x410 How to play: all 29 visible controls inside the safe area
+ok   956x410 trade panel: the inset emulation reached env() [0,62,21,62]
+ok   956x410 trade panel: all 50 visible controls inside the safe area
+ok   956x410 win screen: the inset emulation reached env() [0,62,21,62]
+ok   956x410 win screen: all 28 visible controls inside the safe area
+DIAGNOSTIC navigation 2026-10-26T05:07:24.481Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:07:24.706Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:07:25.916Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036&code=UF8C
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:07:26.087Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:07:28.048Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:07:29.121Z http://127.0.0.1:8475/?host=ws://127.0.0.1:65036&code=UF8C
+DIAGNOSTIC console [vite] connecting...
+DIAGNOSTIC console [vite] connected.
+DIAGNOSTIC navigation 2026-10-26T05:07:29.331Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:07:30.207Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:07:33.461Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:07:33.494Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+DIAGNOSTIC navigation 2026-10-26T05:07:35.014Z http://127.0.0.1:8475/?host=ws%3A%2F%2F127.0.0.1%3A65036
+ok   956x410 online, chat closed: the inset emulation reached env() [0,62,21,62]
+ok   956x410 online, chat closed: all 18 visible controls inside the safe area
+ok   956x410 online, chat closed: the HUD hole is inside the safe area {"l":406,"t":12,"r":882,"b":377}
+ok   956x410 online, chat closed: all 54 island corners and docks inside the hole
+ok   956x410 online, chat open: the inset emulation reached env() [0,62,21,62]
+ok   956x410 online, chat open: all 30 visible controls inside the safe area
+ok   zero console errors
+hud-safe-area-prove: ok
