@@ -8,5 +8,6 @@
   "matchedControl": "old: caught actual AssertionError; candidate: all same codeFits assertions pass",
   "knownReadability": "controlled DejaVuSans WWWW/Copied still fails14.8136<15; not actual hosted font attribution",
   "firstCandidateFailure": "fractional-after did not trigger fitting after font override and still failed; retained separately; paired triggered helper is the valid old/fixed comparison",
-  "sandboxFailure": "first loosen invocation EPERM spawning git; escalated exact committed-source audit passes"
+  "sandboxFailure": "first loosen invocation EPERM spawning git; escalated exact committed-source audit passes",
+  "legacyRawLabelCorrection": "The untouched fractional-before/after JSON source string runtime unchanged99a was copied from the older helper. Before used6e runtime (byte-equal99a); after used the pending ff0728 Range candidate. Neither is the matched triggered comparison; use fractional-triggered-{before,after} and the explicit sourceCommit above."
 }

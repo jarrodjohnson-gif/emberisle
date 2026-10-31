@@ -1,5 +1,5 @@
 {
-  "README.md": "b9108f70ad985f53b3813198bef6588c5eefb6d465c0bc8c095e7ee0acb37f9c",
+  "README.md": "552b1432c38f1fc0a52137811f1f83149186bb9a6426946379b0f7bef5135f7e",
   "after-320x568-copied-wide.png": "d6cdd2ad0d16ba342ec430f05a30ac3b8ec9bb57651f20273c1df16424b3c1e1",
   "after-320x568-normal.png": "fa1214601743e92c1f498f7695ffb5cd51766c7bbac09bec3ae4feaf34ea03cb",
   "after-320x568-overflow.png": "34d21758276455d5ee11efe01dba0603d9b4e3bf3b0e4bc4c6f865e9b37b576d",
@@ -70,7 +70,7 @@
   "fractional/fractional-typecheck.log": "8fa1cf5506304e8abac55868e7f1a136c9b1dde57a3981a382da4c21ea129a6f",
   "fractional/native-code-fit.json": "92d98deef6d68b4abd30526f962e65e29cf10569db0a68696a2fcb85d1be016b",
   "fractional/native-measurements.json": "192335a02662a7e02720bd899fe506ea322444b10301c661e4e7c9a4c0a81663",
-  "fractional/source.json": "3c0d126bd5d29f96796e7b65a46c2eb0274f7b784896610a5bfa6e1364c451de",
+  "fractional/source.json": "2acc3a276777f1e8c5f1424770e5957d40233a4c8463ef01fd6739048de3b26f",
   "loosen.log": "a31887d5f9112153ed9f484d516acef39b585c4364b2b8341bbd70fe1a9ed20e",
   "old-runtime-control.log": "28cff1634263f38269634bfb4a3ea7b64dd7a9a3c611f8fe0c6d753cf8a9d034",
   "one-shot-control-source.json": "4b6e8a28d7cd02060941e00475f1fe3606cbc959ada5f2aeff60118fb0fb4b3c",

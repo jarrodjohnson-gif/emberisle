@@ -29,6 +29,7 @@ The matched controlled DejaVu Sans fixture installs the family before a ZZZZ→A
 Old6e then reproduces the exact hosted geometry; ff0728 passes the same assertions:
 23.7905px code,15px controls, text and box both ending at114.59375px.
 The first candidate run changed fonts after fitting and still failed; that invalid-trigger result is retained separately.
+The legacy untriggered JSON label says unchanged99a even for the candidate; `fractional/source.json` corrects that stale helper label without editing raw output.
 These helpers catch and record the real proof AssertionError; their process exit0 is not a proof pass.
 
 The native full real-host/two-client proof passes all six viewports, with zero browser errors and45 code-fit records.
