@@ -1,0 +1,16 @@
+2026-10-23T10:35:01.9480461Z     ^
+2026-10-23T10:35:01.9481014Z 
+2026-10-23T10:35:01.9481764Z AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+2026-10-23T10:35:01.9482487Z 
+2026-10-23T10:35:01.9482992Z   assert.ok(b.width>=44&&b.height>=44&&b.y>=0&&b.y+b.height<=height)
+2026-10-23T10:35:01.9483554Z 
+2026-10-23T10:35:01.9484234Z     at file:///home/runner/work/emberisle/emberisle/scripts/wayfarer-setup-prove.mjs:73:624 {
+2026-10-23T10:35:01.9485180Z   generatedMessage: true,
+2026-10-23T10:35:01.9485717Z   code: 'ERR_ASSERTION',
+2026-10-23T10:35:01.9486172Z   actual: false,
+2026-10-23T10:35:01.9486562Z   expected: true,
+2026-10-23T10:35:01.9486994Z   operator: '==',
+2026-10-23T10:35:01.9487421Z   diff: 'simple'
+2026-10-23T10:35:01.9487803Z }
+2026-10-23T10:35:01.9487920Z 
+2026-10-23T10:35:01.9488034Z Node.js v22.23.3

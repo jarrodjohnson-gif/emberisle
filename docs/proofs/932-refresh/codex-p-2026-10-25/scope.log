@@ -1,0 +1,10 @@
+PASS all three original feature files byte-identical b9b0ca4 and ac67f84
+{
+  ".github/workflows/stale-pr-sweeper.yml": "c3f1faa3d60d61e4cd0c4b01e30412cc23429e923234623a38c7eb8f1018d8de",
+  "scripts/stale-pr-sweeper.mjs": "a9a254d941016f3efef768dcbca78a2b1944b6d6a18502f0b33e489b10851dea",
+  "scripts/stale-pr-sweeper-prove.mjs": "c620d30255a58e3a6a6769c2e58d87b5068ddbb25668e1a011058556f3c61b76"
+}
+PASS runtime, other proofs, registrations, lockfiles and budgets byte-identical main 3db641d6744617ebc55a3dbb6add1ce34855a72b
+PASS owner activation/probe exclusion guards unchanged; live variable value unverified (read403), no settings changed
+Tested merge 78368dff354593b5c011d29a675098c9df2456ae
+Parents ac67f848c86e03e4d3708ca2e376a2980c9fdb27 3db641d6744617ebc55a3dbb6add1ce34855a72b

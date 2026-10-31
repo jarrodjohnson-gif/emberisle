@@ -124,7 +124,7 @@ try {
     await page.waitForTimeout(350);
     assert.equal(await snapshot(),hidden,`${width}: a hidden page freezes ambient activity`);
     await page.evaluate(()=>{delete document.hidden;document.dispatchEvent(new Event("visibilitychange"));});
-    await page.screenshot({path:`test-results/jelly/${width}-living-ocean.png`});
+    await page.screenshot({path:`test-results/jelly/${width}-living-ocean.png`,timeout:60_000});
     console.log(`${width}×${height}: game state preserved, clear water lanes, ≤4 animal meshes, random visits, island scenes, hidden/reduced pause`,JSON.stringify(geometry.routes));
     await context.close();
   }

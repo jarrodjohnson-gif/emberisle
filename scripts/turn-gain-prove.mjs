@@ -193,13 +193,25 @@ function recorders() {
     if (!m && window.__rollUp.at(-1)?.open) Object.assign(window.__rollUp.at(-1), { to: performance.now(), open: false });
   };
   new MutationObserver(watch).observe(document, { subtree: true, childList: true, attributes: true });
+  let frameId = 0;
   const frame = () => {
+    frameId++;
     for (const [el, rec] of live) {
       if (!el.isConnected) continue;
       const cs = getComputedStyle(el);
       // A tab's own transform is none; the card carries the lift, so its transform is the one that moves the cue.
       const tf = el.dataset.testid === "turn-moment" ? cs.transform : getComputedStyle(el.closest(".goods-card")).transform;
       rec.frames.push({ t: performance.now(), o: Number(cs.opacity), tf, box: box(el) });
+      // #1085: same-callback identity and placement at this read, not the moment's final stage.
+      const sample = rec.frames.at(-1);
+      sample.frameId = frameId;
+      if (el.dataset.testid === "turn-moment") {
+        const shell = getComputedStyle(el.parentElement.parentElement);
+        sample.placement = {
+          stage: el.dataset.stage, shift: Number(el.dataset.shift), area: box(el.parentElement),
+          hole: Object.fromEntries(["top", "right", "bottom", "left"].map(k => [k, shell.getPropertyValue(`--hole-${k}`)])),
+        };
+      }
     }
     requestAnimationFrame(frame);
   };
@@ -611,6 +623,23 @@ async function practice(view) {
     // The turn moment no longer waits on gains (#773: useFloatsUp is gone), so a cue may be up with it; it never covers one.
     const clash = await page.evaluate(() => window.__turns.flatMap((t) => window.__lines.filter((l) => l.at < (t.gone ?? Infinity) && t.at < (l.gone ?? Infinity)).filter((l) => t.frames.some((a) => l.frames.some((b) => Math.abs(a.t - b.t) < 50 && a.box.left < b.box.right && b.box.left < a.box.right && a.box.top < b.box.bottom && b.box.top < a.box.bottom))).map((l) => l.text)));
     check(clash.length === 0, `${tag}: "Your turn" never covers a hand tab`, clash);
+    if (clash.length) {
+      const diagnostic = await page.evaluate(() => window.__turns.flatMap(t => window.__lines
+        .filter(l => l.at < (t.gone ?? Infinity) && t.at < (l.gone ?? Infinity))
+        .flatMap(l => {
+          let pairCount = 0, firstPair = null, sameFramePair = null;
+          for (const a of t.frames) for (const b of l.frames) {
+            if (Math.abs(a.t - b.t) < 50 && a.box.left < b.box.right && b.box.left < a.box.right && a.box.top < b.box.bottom && b.box.top < a.box.bottom) {
+              const pair = { turn: a, tab: b, deltaMs: a.t - b.t, sameFrame: a.frameId === b.frameId };
+              pairCount++;
+              firstPair ??= pair;
+              if (pair.sameFrame) sameFramePair ??= pair;
+            }
+          }
+          return pairCount ? [{ turn: { text: t.text, at: t.at, gone: t.gone }, tab: { text: l.text, resource: l.r, delta: l.d, at: l.at, gone: l.gone }, pairCount, firstPair, sameFramePair }] : [];
+        })));
+      console.error("turn-gain-overlap-diagnostic " + JSON.stringify({ tag, matches: diagnostic }));
+    }
     check(await page.evaluate(() => window.__floats) === 0, `${tag}: over the whole game, no gain text ever mounted over the island`);
 
     // A watcher sees no lines.
