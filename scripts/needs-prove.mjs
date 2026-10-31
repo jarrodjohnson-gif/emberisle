@@ -18,7 +18,7 @@ game.players[0].resources.timber=4;game.players[1].resources.ore=2;
 game.bank={timber:15,clay:19,wool:19,grain:19,ore:17};
 const seats=game.players.map((p,i)=>({id:`s${i}`,name:p.name,color:p.color,ready:true,pid:p.id,secret:`fixture-${p.id}`}));
 writeFileSync(path.join(directory,`${code}.json`),JSON.stringify({code,host:'s0',next:3,chat:[],chatSeq:0,game,seats,shape:2,savedAt:Date.now(),wayfarerMode:'off'}));
-const host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:directory,PROFILES_DIR:path.join(directory,'profiles'),TURN_MS:'600000',GRACE_MS:'600000',HOLD_MS:'600000'},stdio:['ignore','pipe','pipe']});
+const host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:directory,PROFILES_DIR:path.join(directory,'profiles'),RESULTS_DIR:path.join(directory,'results'),TURN_MS:'600000',GRACE_MS:'600000',HOLD_MS:'600000'},stdio:['ignore','pipe','pipe']});
 let stderr='';host.stderr.on('data',data=>stderr+=data);
 process.on('exit',()=>{host.kill();rmSync(directory,{recursive:true,force:true});});
 for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>process.exit(130));
@@ -62,6 +62,23 @@ try{
  await b.waitForFunction(()=>document.querySelector('[data-testid="rail-p0"] [data-testid="seat-needs"]')?.getAttribute('aria-label')==='Jarrod needs Stone and Wheat');
  await b.waitForFunction(()=>[...document.querySelectorAll('[data-testid="player-menu"] [data-testid="need-chip"]')].map(e=>e.textContent).join(',')==='Stone,Wheat');
  assert.deepEqual(await peerNeeds.getByTestId('need-chip').allTextContents(),['Stone','Wheat']);
+ // The approved single Trade window (open on the seat whose turn it is) lists the other seats' published needs, quietly, from
+ // the host projection (owner B, #873). Only the actor can open it, so the peer publishes through its own socket.
+ const tradeNeeds=a.getByTestId('trade-panel').getByTestId('menu-needs');
+ assert.equal(await tradeNeeds.count(),0,'no needs published by the other seat yet: nothing is listed');
+ await b.evaluate(()=>window.__emberisle.getState().net.need(['ore']));await tradeNeeds.waitFor();
+ assert.equal(await tradeNeeds.count(),1,'only the other seat with needs is listed, never the viewer');
+ assert.equal((await a.locator('.trade-peer-seat:has([data-testid="menu-needs"])').textContent()).startsWith(await a.evaluate(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p1').name)+'Needs'),true);
+ assert.deepEqual(await tradeNeeds.getByTestId('need-chip').allTextContents(),['Stone']);
+ await b.evaluate(()=>window.__emberisle.getState().net.need(['ore','grain']));
+ await a.waitForFunction(()=>[...document.querySelectorAll('[data-testid="trade-panel"] [data-testid="menu-needs"] [data-testid="need-chip"]')].map(e=>e.textContent).join(',')==='Stone,Wheat');
+ assert.equal(await tradeNeeds.evaluate(row=>row.hasAttribute('aria-live')||row.getAttribute('role')==='status'||row.querySelector('[aria-live],[role=status]')!==null),false,'Trade-window needs are not a live region');
+ assert.equal(/\d/.test(await tradeNeeds.textContent()),false,'the needs row carries no counts or hand information');
+ // BAD input: a clear leaves the window; three goods are refused by the host, so the row keeps its last valid value.
+ await b.evaluate(()=>window.__emberisle.getState().net.need(['ore','grain','wool']));
+ await a.waitForTimeout(600);
+ assert.deepEqual(await tradeNeeds.getByTestId('need-chip').allTextContents(),['Stone','Wheat']);
+ await b.evaluate(()=>window.__emberisle.getState().net.need([]));await tradeNeeds.waitFor({state:'detached'});
  assert(await a.getByRole('button',{name:'Need Wood',exact:true}).isDisabled());
  const dimensions=await a.getByRole('button',{name:/^Need (Wood|Brick|Sheep|Wheat|Stone)$/}).evaluateAll(buttons=>buttons.map(button=>{const box=button.getBoundingClientRect();return {w:box.width,h:box.height};}));
  assert(dimensions.every(d=>d.w>=44&&d.h>=44));

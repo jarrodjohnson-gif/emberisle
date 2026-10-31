@@ -52,17 +52,17 @@ export function SeatNeeds({ scope }: { scope: 'rail' | 'seat' }) {
   return Object.entries(needs).filter(([, kinds]) => kinds.length).map(([player, kinds]) => {
     const anchor = [...document.querySelectorAll<HTMLElement>('.seat-card')].find(card => card.dataset.testid === `${scope}-${player}`);
     if (!anchor) return null;
-    const name = players?.find(p => p.id === player)?.name ?? '';
+    const name = players?.find(p => p.id === player)?.name;
     return createPortal(<span data-testid="seat-needs" data-player={player} role="img"
       aria-label={`${name} needs ${kinds.map(kind => RESOURCE_LABEL[kind]).join(' and ')}`}
       className="pointer-events-none absolute -left-[3px] -top-[3px] z-10 size-2 rounded-full bg-[#be5b39]" style={{ boxShadow: '0 0 0 1px #fff' }} />, anchor, `${scope}-${player}`);
   });
 }
 
-export function MenuNeeds({ player, name }: { player: string; name?: string }) {
+export function MenuNeeds({ player }: { player: string }) {
   const kinds = useNeeds()[player] ?? [];
   if (!kinds.length) return null;
-  return <div data-testid={name ? "trade-needs" : "menu-needs"} data-player={player} className="mx-1 mb-2 flex flex-wrap items-center gap-2 text-xs leading-4 text-zinc-700">
-    {name ? `${name} needs` : 'Needs'}{kinds.map(kind => <span key={kind} data-testid="need-chip" className="rounded-full bg-[#dce5ed] px-3 py-2">{RESOURCE_LABEL[kind]}</span>)}
+  return <div data-testid="menu-needs" className="mx-1 mb-2 flex flex-wrap items-center gap-2 text-xs leading-4 text-zinc-700">
+    Needs{kinds.map(kind => <span key={kind} data-testid="need-chip" className="rounded-full bg-[#dce5ed] px-3 py-2">{RESOURCE_LABEL[kind]}</span>)}
   </div>;
 }

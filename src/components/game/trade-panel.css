@@ -93,3 +93,11 @@
 @media (prefers-reduced-motion: reduce) {
   .trade-selection-motion { display: none; animation: none; }
 }
+
+/* A seat's name shows only beside its published needs (MenuNeeds renders nothing when it has none). */
+.trade-peer-seat:not(:has([data-testid="menu-needs"])) { display: none; }
+
+/* The Need picker and the other seats' needs read first but come after the goods in the tab order (#646): the goods keep the
+   first stops of the Trade window. */
+.trade-composer-scroll { display: flex; flex-direction: column; }
+.trade-needs-block { order: -1; }

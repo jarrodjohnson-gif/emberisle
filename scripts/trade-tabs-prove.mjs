@@ -566,6 +566,8 @@ async function accessibility(page, tag) {
     ["More Wheat want", more(page, "grain", "want")],
     ["More Stone want", more(page, "ore", "want")],
     ["Fewer Stone want", fewer(page, "ore", "want")],
+    // #646: the Need control reads first but sits after the goods in the tab order, so the goods keep the first stops.
+    ["Need", panelFor(page).getByRole("button", { name: "Need", exact: true })],
     ["Ask", askFor(page)],
     ["Bank", bankFor(page)],
     ["Close", panelFor(page).getByRole("button", { name: "Close", exact: true })],
