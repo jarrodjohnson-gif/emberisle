@@ -492,7 +492,7 @@ async function practice(view) {
     const got = roll.lines.map((l) => `${l.r}+${l.d}`).sort();
     console.log(`${tag}: rolled ${pip}; own ${JSON.stringify(want)}; cues ${JSON.stringify(roll.lines.map((l) => `${RESOURCE_LABEL[l.r]} ${l.text}`))}`);
     check(got.length > 0 && got.join() === want.join(), `${tag}: one cue per good the roll paid, right good and amount`, { want, got });
-    check(roll.lines.every((l) => l.text === `+${l.d}` && l.color === INK && l.bg === PAPER), `${tag}: each reads "+N" in dark ink on the light pill`, roll.lines.map((l) => [l.r, l.text, l.color, l.bg]));
+    check(roll.lines.every((l) => l.text === `+${l.d}` && l.color === INK && l.bg === RAISED), `${tag}: each reads "+N" in dark ink on the white pill`, roll.lines.map((l) => [l.r, l.text, l.color, l.bg]));
     check(roll.lines.every((l) => l.lit?.fill === PAINT[l.r][0] && !l.lost), `${tag}: each gained card fills with its good's colour`, roll.lines.map((l) => [l.r, l.lit?.fill]));
     check(await page.evaluate(() => window.__floats) === 0, `${tag}: no "+N Good" text over the island`);
     const spans = roll.lines.map(readable);
