@@ -201,7 +201,7 @@ body {
    safe area and the next row are never touched) and a hovered button cannot paint over it. Its turn mark (TurnMark, SeatRail.tsx) is
    the non-colour cue. */
 .seat-card.seat-turn::before, .turn-chip[data-turn-ring='true']::before, .trade-dock[data-turn-ring='true']::before {
-  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1;
   box-shadow: inset 0 0 0 3px var(--seat-color, var(--accent)), inset 0 0 0 4px var(--ink), inset 0 0 0 var(--ring-band, 11px) color-mix(in srgb, var(--seat-color, var(--accent)) 20%, transparent);
 }
 /* A win row's name chip: padding and the matching negative margin, so the row is the same size with and without the ring. */

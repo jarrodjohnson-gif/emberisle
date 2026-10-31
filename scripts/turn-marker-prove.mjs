@@ -201,6 +201,37 @@ try {
       assert.deepEqual([moving.card, moving.button, ...new Set(moving.kids)], ["none", "none", "none"], `${v.tag}: nothing rises on the rail ${JSON.stringify(moving)}`);
       assert.equal(moving.cardToButton, 0, `${v.tag}: the rail card and its button share a top ${JSON.stringify(moving)}`);
     }
+    // Tap opens the real menu; native pointer hover then reproduces sticky :hover in this touch context.
+    // Pinned Chromium does not persist hover from tap alone. Inspect painted pixels, not just the declared shadow.
+    if (v.strip) {
+      const trigger = page.locator('[data-current-turn="true"] > button');
+      await trigger.tap();
+      await page.waitForFunction(() => document.querySelector('[data-current-turn="true"] > button')?.getAttribute("aria-expanded") === "true");
+      await trigger.hover();
+      await settle();
+      const touch = await page.evaluate(() => {
+        const card = document.querySelector('[data-current-turn="true"]');
+        const b = card.getBoundingClientRect();
+        return { hovered: card.querySelector(":scope > button").matches(":hover"), color: getComputedStyle(card).getPropertyValue("--seat-color").trim(), points: [[Math.floor(b.left + 1), Math.floor(b.top + b.height / 2)], [Math.ceil(b.right - 2), Math.floor(b.top + b.height / 2)], [Math.floor(b.left + b.width / 2), Math.ceil(b.bottom - 2)]] };
+      });
+      assert.equal(touch.hovered, true, `${v.tag}: tapped current seat button is hovered`);
+      const png = await page.screenshot({ path: `test-results/turn-marker-${v.tag}-touch-menu.png` });
+      const pixels = await page.evaluate(async ({ data, points }) => {
+        const img = new Image();
+        img.src = `data:image/png;base64,${data}`;
+        await img.decode();
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width; canvas.height = img.height;
+        const ctx = canvas.getContext("2d"); ctx.drawImage(img, 0, 0);
+        return points.map(([x, y]) => [...ctx.getImageData(x, y, 1, 1).data]);
+      }, { data: png.toString("base64"), points: touch.points });
+      const expected = [1, 3, 5].map((i) => parseInt(touch.color.slice(i, i + 2), 16));
+      for (const pixel of pixels) assert.deepEqual(pixel, [...expected, 255], `${v.tag}: tapped strip ring remains painted above the hovered button: ${JSON.stringify({ touch, pixels })}`);
+      await check("current seat menu opened by touch");
+      console.log(`${v.tag}: real-touch hovered strip ring pixels ${JSON.stringify(pixels)}`);
+      await trigger.tap();
+      await page.waitForFunction(() => document.querySelector('[data-current-turn="true"] > button')?.getAttribute("aria-expanded") === "false");
+    }
     await page.screenshot({ path: `test-results/turn-marker-${v.tag}.png` });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.waitForTimeout(100);
