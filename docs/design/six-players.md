@@ -4,15 +4,15 @@ Design for [#666](https://github.com/jarrodjohnson-gif/emberisle/issues/666), re
 Code anchors were refreshed against main at `a180cc8d796d730737e0ada570869dd715db60fe` on 2026-10-31.
 This document proposes implementation contracts; it changes no game behavior.
 Names introduced under **Proposed state** do not exist in the source yet.
-Jarrod accepted five decisions on 2026-10-31; see **Accepted decisions**.
-Two questions remain open; answer them before filing the children they affect.
+Jarrod accepted seven decisions on 2026-10-31; see **Accepted decisions**.
+Four small questions remain open about the rematch prompt; see **Open questions for Jarrod**.
 
 ## Scope and owner decisions
 
 - Support three through six seats. Never offer seven or more.
 - Include extra cards and distinct seat colours.
 - Include watchtowers. Accepted: a watchtower is the existing stronghold.
-- Use the official six CATAN colour families. Profile colour preferences are open question A.
+- Use the official six CATAN colour families. Profile colour preferences pick from the room's palette (accepted decision 6).
 
 Sources: Jarrod's [seat-limit comment](https://github.com/jarrodjohnson-gif/emberisle/issues/666#issuecomment-6225521294)
 and [cards-and-colours comment](https://github.com/jarrodjohnson-gif/emberisle/issues/666#issuecomment-6225549530).
@@ -214,12 +214,14 @@ White measures 1.02:1 and orange 2.83:1 against `#efeae0`, below the 3:1 rule.
 Give white and orange rail swatches a 1-pixel `#1c1915` outline.
 The outline measures 14.61:1 against `#efeae0`, 14.85:1 against white and 5.17:1 against orange.
 Keep the dark outline on light pieces and the light rim on dark pieces.
-Give each seat a stable seat identifier: a number from 1 to 6 that never changes during a game.
+Give each seat a stable seat identifier: a number from 1 to 6.
+It never changes during a game or across a rematch.
 Show the seat identifier beside its colour indicator and in accessible names.
 Repeat the seat identifier on piece bases and player-menu headings.
 Colour uniqueness alone does not distinguish red/green or orange/brown under colour-vision deficiencies.
 Reject duplicate palette slots on the host; do not accept arbitrary similar hex values.
-How profile favourite and backup colours map onto this palette is open question A.
+Favourite and backup profile colours pick from the room's own palette (accepted decision 6).
+A preferred colour missing from a classic room falls back to the first free slot, as `seatColor` does today.
 
 `scripts/contrast-prove.mjs` currently exercises four colours and cannot certify this proposed palette.
 Extend its winner, rail, menu, and chip cases to all six.
@@ -236,18 +238,29 @@ Client anchors: `LobbyView` in `src/components/game/LobbyView.tsx`, whose start 
 `Lobby` in `src/components/game/Lobby.tsx` is now a lazy-loading wrapper around it;
 `TableClient` in `src/lib/net/table.ts`; `PROTO` in `src/lib/net/proto.ts`.
 
-The room and rematch flow below is the builder's assumption; open question B asks Jarrod to confirm it.
 Send the selected classic or expanded variant with the host's room-opening request.
-Freeze it before `openTable` assigns the first seat, including the host's colour.
+Fix it before `openTable` assigns the first seat, including the host's colour.
+Only the rematch prompt below may change it (accepted decision 7).
 Expanded rooms start with five or six seats; classic rooms retain three/four limits.
-Changing variants requires creating another room; never evict seats or recolour an existing room.
-This matches wayfarer mode, which the host also fixes when the table is created.
+Outside the rematch prompt, changing variants requires creating another room.
+Never evict seats or recolour an existing room.
 Enforce the room's capacity in joins, bot additions, game start, and rematch.
 Use the room's palette for peek responses and taken-colour validation.
 Never auto-fill a five-human game to six.
-An expanded rematch requires five or six participating seats and retains its expanded board.
-Validate that count before removing disconnected seats or replacing the finished game.
-If fewer than five remain, refuse without changing the finished game or its seats.
+An expanded rematch with five or six live seats keeps its expanded board.
+Count live seats before removing disconnected seats or replacing the finished game.
+`rematch` today answers "Need 3 or 4 at the table." when fewer than three seats are live.
+`again` carries no payload today, and the client has no rematch prompt.
+With fewer than five live seats, the host does not refuse the rematch.
+Instead the server asks the host to choose, and changes nothing until the host answers.
+Only the host sees the prompt, because only the host may start a rematch.
+The prompt offers two choices.
+Fill the empty seats with bots up to five, and play the expanded map.
+Or play the smaller classic map with the people present.
+Both choices keep every seat identifier's number (accepted decision 7).
+New bots take the lowest free seat numbers.
+The prompt needs a new message pair between host and client; neither exists in `PROTO` yet.
+Both choices reuse the existing winner-first order and `durableStart` path.
 No path back to the lobby exists today (`docs/design/rematch.md`); the host opens a new room.
 
 Advertise an expanded-rules capability during hello, join, watch, and rejoin.
@@ -305,7 +318,9 @@ Treat unknown future formats as unsupported; retain their files for recovery rat
 - Persist expanded geometry, inventories, turn role, primary owner, activation counter, and fortune purchase eligibility.
 - Preserve game options such as `wayfarerMode` and `victoryTarget`.
 - Replace all three `recoveryPids` truncations to four with bounds appropriate to the actual room.
-- Rematches preserve the room variant; they never reinterpret an old game because six colours now exist.
+- A rematch keeps the room variant, unless the host picks the classic map at the rematch prompt.
+- Persist that choice with the new game, so a restart does not reinterpret it.
+- A rematch never reinterprets an old game because six colours now exist.
 - An absent variant in legacy local state means classic.
 - Never infer an expanded game from the new global maximum.
 
@@ -318,7 +333,7 @@ The current client stores seat recovery credentials; that is not a durable local
 
 ## Accepted decisions (Jarrod, 2026-10-31)
 
-Jarrod took all five recommendations ([comment 6540477629](https://github.com/jarrodjohnson-gif/emberisle/pull/709#issuecomment-6540477629)).
+Jarrod took all five recommendations in items 1 to 5 ([comment 6540477629](https://github.com/jarrodjohnson-gif/emberisle/pull/709#issuecomment-6540477629)).
 
 1. Official paired turns. The older special building phase is not used.
 2. Online, hotseat and optional practice support five and six seats. Today's practice default stays.
@@ -326,6 +341,15 @@ Jarrod took all five recommendations ([comment 6540477629](https://github.com/ja
 4. The official six colour families, with stable seat identifiers.
 5. The official extension token spiral by default. The random token layout stays a setting.
    Jarrod's comment cites decision `q1141-default` for that setting.
+
+6. Profile colours. Favourite and backup colours pick from the room's own palette.
+   A preferred colour missing from a classic room falls back to the first free slot, as `seatColor` does today.
+   Source: Jarrod's decision `q666-profile-colours`, [comment 6546233327](https://github.com/jarrodjohnson-gif/emberisle/issues/666#issuecomment-6546233327).
+7. Rematch with fewer than five live seats. The rematch is not refused.
+   The host chooses one of two things.
+   Either fill empty seats with bots up to five, or play the smaller classic map with the people present.
+   A seat identifier keeps its number across the rematch.
+   Source: Jarrod's decision `q666-rematch`, same comment.
 
 Existing three and four seat games keep their saved state and colours.
 
@@ -343,18 +367,24 @@ Existing three and four seat games keep their saved state and colours.
 
 ## Open questions for Jarrod
 
-A. Question: how do profile colours fit the six-family palette?
-   Recommendation: favourite and backup colours pick from the room's palette, as `docs/design/profiles.md` says.
-   A preferred colour missing from a classic room falls back to the host's first free slot.
-   Alternative: a separate profile palette, mapped onto seat colours per room.
+These details of the rematch prompt are not decided.
+Each carries a recommendation.
 
-B. Question: is the room and rematch flow right?
-   Recommendation: the host fixes the variant when opening the room, as with wayfarer mode.
-   An expanded rematch with fewer than five live seats is refused; the game and seats stay unchanged.
-   Alternative: let that rematch fall back to a classic game when three or four seats remain.
-   Choosing the alternative would change two rules in this design.
-   **Lobby and network limits** says changing variants requires another room.
-   **Save, restart, and rejoin compatibility** says rematches preserve the room variant.
+A. Question: what do the other players see while the host chooses?
+   Recommendation: a single status line, "The host is choosing how to rematch."
+   Other seats and watchers get no controls, and the finished game stays on screen.
+
+B. Question: does the prompt time out?
+   Recommendation: no timeout.
+   The host can dismiss the prompt, which leaves the finished game and its seats unchanged.
+
+C. Question: with fewer than three live seats, does the prompt offer the classic map?
+   Recommendation: no, because a classic game needs three seats.
+   The prompt then offers only the bot fill.
+
+D. Question: after the host picks the classic map, which colours and variant apply?
+   Recommendation: the room becomes classic for later rematches.
+   Each seat keeps its colour if the classic palette has it, else takes the first free slot.
 
 ## Child implementation specifications, after decisions
 
@@ -372,7 +402,7 @@ Each child rechecks active file reservations before claiming work.
 | `lane:hud` | Six-seat identity | Implement the approved palette, stable seat identifiers, and six-cell strip; prove touch targets, collision-free names, and contrast. | S |
 | `lane:hud` | Extra-turn controls and local selectors | Show the actual actor and legal controls; prove hotseat/practice selection and primary/partner interaction where approved. | S |
 | `lane:net` | Compatible room persistence | Add validated shape-2 migration and expanded snapshots; prove unchanged classic restoration and fifth/sixth-seat recovery after restart. | S |
-| `lane:net` | Expanded lobby and admission | Enforce capacity, unique palettes, and client capabilities; prove joins, watchers, bots, start, rematch, and old-client behavior. | S |
+| `lane:net` | Expanded lobby and admission | Enforce capacity, unique palettes, and client capabilities; prove joins, watchers, bots, start, both rematch choices, and old-client behavior. | S |
 | `lane:net` | Actor timers and end-to-end play | Prove six-tab setup, both activation roles, discard privacy, countdown continuity, finish, and rematch against the host. | S |
 
 Ship rules and save compatibility before enabling expanded lobbies.
