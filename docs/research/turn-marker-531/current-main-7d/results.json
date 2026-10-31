@@ -1,0 +1,42 @@
+[
+  {
+    "check": "types",
+    "code": 0
+  },
+  {
+    "check": "build",
+    "code": 0
+  },
+  {
+    "check": "registered",
+    "code": 0
+  },
+  {
+    "check": "loosen",
+    "code": 0
+  },
+  {
+    "check": "size",
+    "code": 0
+  },
+  {
+    "check": "marker",
+    "code": 0
+  },
+  {
+    "check": "safe",
+    "code": 0
+  },
+  {
+    "check": "hole",
+    "code": 0
+  },
+  {
+    "check": "rail",
+    "code": 0
+  },
+  {
+    "check": "army",
+    "code": 0
+  }
+]

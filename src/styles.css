@@ -194,12 +194,41 @@ body {
 }
 .seat-card { background: var(--table); color: var(--table-ink); box-shadow: inset 0 0 0 1px var(--table-line); }
 .seat-card [class*='text-zinc-700'] { color: var(--table-muted); }
-.seat-card.seat-turn { background: var(--paper); color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent), inset 0 0 0 1px var(--table-line); }
+.seat-card.seat-turn { background: var(--paper); color: var(--ink); }
+/* #531: the current-turn ring on every chip of the seat on turn (the rail and strip cards, the trade toast, a win row): 3 px solid in
+   the seat's colour (--seat-color, set inline), a 1 px ink edge inside it so the palest seat still reads on paper, then an 8 px band
+   of the same colour at 20 %. It is an inset shadow on an overlay (::before), so it stays inside the box (the strip's 4 px gaps, the
+   safe area and the next row are never touched) and a hovered button cannot paint over it. Its turn mark (TurnMark, SeatRail.tsx) is
+   the non-colour cue. */
+.seat-card.seat-turn::before, .turn-chip[data-turn-ring='true']::before, .trade-dock[data-turn-ring='true']::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 0 0 3px var(--seat-color, var(--accent)), inset 0 0 0 4px var(--ink), inset 0 0 0 var(--ring-band, 11px) color-mix(in srgb, var(--seat-color, var(--accent)) 20%, transparent);
+}
+/* A win row's name chip: padding and the matching negative margin, so the row is the same size with and without the ring. */
+.turn-chip { position: relative; display: inline-block; border-radius: 6px; padding: 2px 8px; margin: -2px -8px; }
+:where(.trade-dock[data-turn-ring='true']) { position: relative; }
+/* The offer card's text sits 8 px in (p-2) and its countdown and shortfall are accent text, 4.4:1 on the tint: its band stops at the padding. */
+.trade-dock[data-turn-ring='true'] { --ring-band: 8px; }
+.turn-mark { position: absolute; top: 0; left: 50%; width: 10px; height: 5px; transform: translateX(-50%); background: var(--ink); clip-path: polygon(0 0, 100% 0, 50% 100%); pointer-events: none; }
 .seat-card.seat-turn [class*='text-zinc-700'] { color: var(--muted); }
 .seat-card button:hover { background: var(--table-raised); color: var(--table-ink); }
 .seat-card.seat-turn button:hover { background: var(--ground); color: var(--ink); }
 .seat-card button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .seat-turn .seat-dot { animation: none; outline: 2px solid var(--ink); outline-offset: 2px; }
+/* #531: on the phone strip the seat on turn rises 2 px (150 ms, --ease-out). The card rises and its button stays put: the button is the
+   seat's control and the strip sits on the safe-area edge, so a risen button would leave the safe area (hud-safe-area-prove). The button
+   takes the card's -2 px back (+2 px) and its content takes it again (-2 px), so the card, its ring, mark and content all rise and the
+   hit area does not move. Reduced motion keeps the ring and mark and drops the rise. This replaces the card's transition-colors, so it
+   lists the colour changes too (the 200 ms brightening, #443). */
+.seat-strip-cell { transition: color 200ms, background-color 200ms, transform 150ms var(--ease-out); }
+.seat-strip-cell > button, .seat-strip-cell > button > * { transition: transform 150ms var(--ease-out); }
+.seat-strip-cell.seat-turn { transform: translateY(-2px); }
+.seat-strip-cell.seat-turn > button { transform: translateY(2px); }
+.seat-strip-cell.seat-turn > button > * { transform: translateY(-2px); }
+@media (prefers-reduced-motion: reduce) {
+  .seat-strip-cell, .seat-strip-cell > button, .seat-strip-cell > button > * { transition: none; }
+  .seat-strip-cell.seat-turn, .seat-strip-cell.seat-turn > button, .seat-strip-cell.seat-turn > button > * { transform: none; }
+}
 .seat-card [data-testid='seat-vp'] { font-weight: 750; }
 .hud-header > div > div > button[aria-label='Table menu'] { background: var(--table); color: var(--table-ink); border: 1px solid var(--table-line); }
 .hud-stack { scrollbar-width: thin; scrollbar-color: var(--table-line) var(--table); }
