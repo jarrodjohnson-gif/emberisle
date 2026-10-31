@@ -512,6 +512,27 @@ try {
     if (closed.some((v) => v.offer)) throw new Error(`#537 (${what}): a tab still holds the offer`);
     return ms;
   };
+  // #537: when the outcome line clears (2.5 s on), no copy of the old offer card may come back for any seat. The watchers go in
+  // right after the last decline, while the outcome line is still showing, and report any trade-toast that is added.
+  const noGhostCard = async (what) => {
+    await Promise.all(tabs.map((t) => t.page.evaluate(() => {
+      window.__ghost = [];
+      window.__sawOutcome = Boolean(document.querySelector('[data-testid="trade-outcome"]'));
+      new MutationObserver((records) => {
+        if (document.querySelector('[data-testid="trade-outcome"]')) window.__sawOutcome = true;
+        for (const r of records) for (const n of r.addedNodes) if (n.nodeType === 1 && (n.matches?.('[data-testid="trade-toast"]') || n.querySelector?.('[data-testid="trade-toast"]'))) window.__ghost.push(performance.now());
+      }).observe(document.body, { childList: true, subtree: true });
+    })));
+    await until(async () => {
+      const gone = await Promise.all(tabs.map((t) => t.page.evaluate(() => !document.querySelector('[data-testid="trade-outcome"]'))));
+      return gone.every(Boolean) ? true : null;
+    }, `#537 (${what}): the outcome line clears on every tab`, 6_000);
+    await sleep(500);
+    const seen = await Promise.all(tabs.map((t) => t.page.evaluate(() => ({ ghost: window.__ghost.length, outcome: window.__sawOutcome }))));
+    if (!seen.some((x) => x.outcome)) throw new Error(`#537 (${what}): no seat showed an outcome line, so the ghost check proved nothing`);
+    if (seen.some((x) => x.ghost)) throw new Error(`#537 (${what}): an offer card came back after the outcome line cleared: ${JSON.stringify(seen)}`);
+    console.log(`#537 (${what}): no stale offer card appears when the outcome line clears`);
+  };
   // A holds the card it is offering, and still has the turn, so it can ask again.
   const canAskAgain = (what) => {
     if (vs[0].phase !== "main" || vs[0].current !== vs[i].you || (vs[i].mine[offerRes] ?? 0) < 1) {
@@ -596,6 +617,7 @@ try {
   // C declines from the normal offer: A, B and C close it within 500 ms.
   const normalMs = await lastDecline(() => C.page.getByTestId("trade-toast").getByRole("button", { name: "No", exact: true }).click(), "normal motion");
   console.log(`#537: both declined, the offer is gone on all 3 tabs in ${normalMs} ms`);
+  await noGhostCard("normal motion");
 
   // 6. #537 again under reduced motion: the dismiss does not fade (0 ms) and the fully declined offer is gone at once. The
   // asker can always ask again here; if it cannot, this fails rather than skips.
@@ -617,6 +639,7 @@ try {
   await until(async () => (await views(tabs)).every((v) => v.declined.includes(fourth[j].you)) || null, "#537: B's dismiss reaches every tab under reduced motion");
   const calmMs = await lastDecline(() => C.page.getByTestId("trade-toast").getByRole("button", { name: "No", exact: true }).click(), "reduced motion");
   console.log(`#537: reduced motion: dismiss at once, both declined, the offer is gone on all 3 tabs in ${calmMs} ms`);
+  await noGhostCard("reduced motion");
 
   // Step 6's last decline plays corn_no on every seat a moment after the offer closes; let it land before #1107 listens.
   await sleep(2000);

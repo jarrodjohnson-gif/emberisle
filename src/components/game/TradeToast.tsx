@@ -61,7 +61,13 @@ export function TradeToast() {
       setLeaving(false);
       return;
     }
-    if (!hadOffer.current || outcome) return;
+    // The offer is over and its outcome line shows: nothing is left to fade, and the old card must not come back when the line clears.
+    if (outcome) {
+      hadOffer.current = false;
+      setLeaving(false);
+      return;
+    }
+    if (!hadOffer.current) return;
     // #537: 150 ms dismiss fade; reduced motion clears at once.
     setLeaving(true);
     const t = window.setTimeout(() => { setLeaving(false); hadOffer.current = false; }, fadeMs);
