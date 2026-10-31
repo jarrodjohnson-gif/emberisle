@@ -460,6 +460,25 @@ try {
     await h.stop();
   });
 
+  await scenario("a corrupt pending outcome is repaired from the terminal room", async () => {
+    const d = folders();
+    const { gameId } = seedRoom(d, "CORR");
+    const room = readJson(path.join(d.rooms, "CORR.json"));
+    room.game.phase = "over";
+    room.game.winner = "p1";
+    room.game.current = "p1";
+    writeFileSync(path.join(d.rooms, "CORR.json"), JSON.stringify(room));
+    mkdirSync(d.results, { recursive: true });
+    writeFileSync(pendingFile(d, gameId), "{ not json");
+    const h = start(d);
+    await h.port;
+    assert(h.out.indexOf(`repaired the pending outcome of game ${gameId}`) < h.out.indexOf("listening"), "it is repaired before the host listens");
+    const o = readJson(pendingFile(d, gameId));
+    checkOutcome(o, gameId);
+    assert.equal(o.players[1].points, totalVP(room.game, "p1"));
+    await h.stop();
+  });
+
   console.log(`result journal prove ok: ${results.length} scenarios`);
   process.exit(0);
 } catch (e) {

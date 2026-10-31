@@ -67,16 +67,23 @@ export function validOutcome(o) {
 export function openJournal(dir, { fault = () => {} } = {}) {
   mkdirSync(dir, { recursive: true, mode: 0o700 });
   const ids = new Set();
+  // Files that exist but are not a valid outcome: they fence their game, and a repair from the terminal room overwrites them.
+  const corrupt = new Set();
   const outcomes = new Map();
   for (const name of readdirSync(dir)) {
     const m = name.match(NAME);
     if (!m) continue;
-    ids.add(m[1]);
     try {
       const o = JSON.parse(readFileSync(path.join(dir, name), "utf8"));
-      if (validOutcome(o) && o.gameId === m[1]) outcomes.set(m[1], o);
-      else console.error(`results: pending outcome ${name} is not one this host wrote; kept for repair`);
+      if (validOutcome(o) && o.gameId === m[1]) {
+        ids.add(m[1]);
+        outcomes.set(m[1], o);
+      } else {
+        corrupt.add(m[1]);
+        console.error(`results: pending outcome ${name} is not one this host wrote; kept for repair`);
+      }
     } catch (e) {
+      corrupt.add(m[1]);
       console.error(`results: pending outcome ${name} is unreadable (${e.message}); kept for repair`);
     }
   }
@@ -91,6 +98,7 @@ export function openJournal(dir, { fault = () => {} } = {}) {
       fault("journal-before");
       await writeDurable(dir, `${id}.json`, JSON.stringify(outcome));
       ids.add(id);
+      corrupt.delete(id);
       outcomes.set(id, outcome);
       fault("journal-after");
       return true;
@@ -105,12 +113,14 @@ export function openJournal(dir, { fault = () => {} } = {}) {
   return {
     dir,
     // A game id that is pending (or, once #890 lands, was pending): it must never resume from a nonterminal snapshot.
-    has: (id) => ids.has(id),
+    has: (id) => ids.has(id) || corrupt.has(id),
+    // A readable pending outcome is on disk for this game; a corrupt file is not one and is repaired from the room.
+    ready: (id) => ids.has(id),
     put,
     // The readable pending outcomes, oldest end first, for result recording to consume.
     pending: () => [...outcomes.values()].sort((a, b) => a.endedAt - b.endedAt || a.gameId.localeCompare(b.gameId)),
     get size() {
-      return ids.size;
+      return ids.size + corrupt.size;
     },
   };
 }

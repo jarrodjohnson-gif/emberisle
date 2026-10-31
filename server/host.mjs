@@ -144,9 +144,9 @@ const RENAME_MS = envMs("RENAME_MS", 2000);
 // over plain ws:// for local development; every other plaintext link stays guest-only (docs/design/profiles.md).
 const PROFILES = path.resolve(process.env.PROFILES_DIR ?? fileURLToPath(new URL("./profiles/", import.meta.url)));
 const PROFILES_DEV = process.env.PROFILES_DEV === "1";
-// Pending outcomes of finished games (#889): one durable file per game id, beside the profile store and apart from the rooms,
-// so no room cleanup ever removes one. Result recording (#890) consumes them.
-const RESULTS = path.resolve(process.env.RESULTS_DIR ?? path.join(PROFILES, "pending"));
+// Pending outcomes of finished games (#889): one durable file per game id, in a folder of their own, apart from the rooms and
+// outside the profile store's directory, so no room cleanup ever removes one. Result recording (#890) consumes them.
+const RESULTS = path.resolve(process.env.RESULTS_DIR ?? fileURLToPath(new URL("./results/", import.meta.url)));
 // Proof-only fault points (#889). RESULT_FAULT="room-before:fail:2,journal-after:exit" fails that commit point N times
 // (default once), or kills the host there with no exit flush, as a crash or power cut would. The points are start-, room-
 // and journal-, each -before or -after its durable write.
@@ -459,7 +459,7 @@ async function load() {
     const roster = savedRoster(saved);
     if (roster && saved.game.phase === "over") {
       saved.outcome = loadOutcome(saved.outcome, roster) ?? freezeOutcome(saved.game, roster, Array.isArray(saved.assisted) ? saved.assisted : [], Number.isSafeInteger(saved.savedAt) ? saved.savedAt : Date.now());
-      if (!journal.has(roster.gameId)) {
+      if (!journal.ready(roster.gameId)) {
         await journal.put(saved.outcome);
         repaired++;
         console.log(`results: repaired the pending outcome of game ${roster.gameId} from room ${name}`);
@@ -508,7 +508,7 @@ async function load() {
       delete room.savedAt;
       // Reconciled above: a terminal tracked room loads with its frozen outcome already journalled, so it is settled.
       room.outcome = loadOutcome(saved.outcome, room.roster);
-      room.settled = room.outcome && journal.has(room.outcome.gameId) ? room.outcome.gameId : null;
+      room.settled = room.outcome && journal.ready(room.outcome.gameId) ? room.outcome.gameId : null;
       for (const s of saved.seats) {
         if (typeof s?.id !== "string" || typeof s.secret !== "string") throw new Error(`bad seat ${JSON.stringify(s)}`);
         // Avatars live in memory only, so a restored seat has none.
