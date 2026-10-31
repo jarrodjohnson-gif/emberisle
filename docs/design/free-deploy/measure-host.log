@@ -1,0 +1,14 @@
+node v22.22.0, linux x64, Intel(R) Xeon(R) Processor
+host RSS idle at boot: 107.8 MB; idle after 1 s: 107.8 MB
+tables: JUN2 (4 humans, auto-play, TURN_MS 400) and EX74 (1 human + 3 bots); chat line every 3 s
+ran 900.4 s; table A over: false; table B over: true; turn A 1723, turn B 13
+host RSS during play: median 140.4 MB, peak sampled 143.2 MB, kernel high-water 143.2 MB
+host CPU: 23150 ms over 900.4 s wall = 2.57% of one core
+errors from host: 482; first: Ember: Slow down. | Ember: Slow down. | Pine: Slow down.
+frames to clients: 208112, 1485.44 MB; chats sent 300
+disk rooms/: 57160 bytes, 2 files
+disk profiles/: 4 bytes, 1 files
+disk results/: 689 bytes, 1 files
+after SIGTERM rooms/: 57441 bytes, 2 files
+after SIGTERM profiles/: 4 bytes, 1 files
+after SIGTERM results/: 689 bytes, 1 files
