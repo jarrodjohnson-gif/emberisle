@@ -1,0 +1,18 @@
+{
+  "source_commit": "5ef0005a3af0599a3d426dee7dd040baaf49ba39",
+  "before_runtime": "11dc0fd4484ecd1faa9f36ff80f1c9fe9f18ad96",
+  "source_sha256": {
+    "src/components/game/LobbyView.tsx": "1ad42018cbf47b58b4d108249efa4307ae241d4f1ca4c3b1b9c20c99323b02c0",
+    "src/components/game/Lobby.tsx": "3e6f67f4a31b9ea9bae16c619e35c8c974743e8867b71b8875d02823e73b6516",
+    "scripts/lobby-layout-prove.mjs": "ed578706cc5b2c2440a4eb245797f81063cdb7cdb738812dd778bb4fc49618f3"
+  },
+  "original_assertion_lines_retained": 37,
+  "unchanged_files": [
+    "src/components/game/lobby.css",
+    "scripts/size-prove.mjs",
+    "package.json",
+    ".github/workflows/ci.yml",
+    "package-lock.json"
+  ],
+  "question": "https://github.com/jarrodjohnson-gif/emberisle/pull/1181#issuecomment-6536338660"
+}
