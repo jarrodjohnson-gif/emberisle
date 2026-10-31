@@ -412,7 +412,7 @@ async function contrast(page, testid, index = 0, band = 0.65) {
     const out = [];
     for (let i = 0; i < d.length; i += 4) out.push([d[i], d[i + 1], d[i + 2]]);
     return out;
-  }, png.toString("base64"));
+  }, { b64: png.toString("base64"), band });
   const lin = (v) => ((v /= 255) <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
   const L = ([r, g, b]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
   const text = color.match(/\d+/g).slice(0, 3).map(Number);
