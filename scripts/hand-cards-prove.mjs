@@ -658,7 +658,7 @@ try {
     assert.deepEqual(loss.cues.map((q) => [q.what, q.on]), [["goods-lost", "resource-timber"], ["resource-flash", "resource-timber"]], `${v.tag}: one loss, one red ring and one tab on timber`);
     assert.equal(loss.lit, false, `${v.tag}: a loss does not fill the card`);
     assert.equal(loss.text, "−1", `${v.tag}: loss tab reads −N`);
-    assert.deepEqual(parse(loss.bg), rgb("#fff9f0"), `${v.tag}: loss tab is hollow (paper)`);
+    assert.deepEqual(parse(loss.bg), rgb("#8a2219"), `${v.tag}: loss tab is the loss red`);
     assert.deepEqual(parse(loss.color), rgb("#263d3c"), `${v.tag}: loss tab text is the dark ink`);
     assert.match(loss.edge, /rgb\(23, 61, 53\) 0px 0px 0px 1.5px inset/, `${v.tag}: loss tab has a 1.5 px outline in the good's side colour`);
     assert.ok(ratio(parse(loss.color), parse(loss.bg)) >= 4.5, `${v.tag}: loss tab ≥ 4.5:1`);
