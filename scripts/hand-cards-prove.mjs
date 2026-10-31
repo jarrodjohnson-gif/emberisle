@@ -629,7 +629,7 @@ try {
     assert.ok(Math.abs(gain.tab.off) <= 0.5, `${v.tag}: the tab is centred on its card (off by ${gain.tab.off.toFixed(3)} px)`);
     assert.deepEqual(gain.tab.font, TAB[v.tag].font, `${v.tag}: the +N tab is ${TAB[v.tag].font[0]} bold`);
     assert.ok(Math.abs(gain.tab.h - TAB[v.tag].h) <= 0.5, `${v.tag}: the +N tab is ${TAB[v.tag].h} px tall (${gain.tab.h})`);
-    assert.ok(Math.abs(gain.tab.above - 18) <= 0.5 && Math.abs(gain.tab.into - 4) <= 0.5, `${v.tag}: the tab grows out of the card's top edge (${gain.tab.above} px above, ${gain.tab.into} px into it)`);
+    assert.ok(Math.abs(gain.tab.above - TAB[v.tag].above) <= 0.5 && Math.abs(gain.tab.into - 4) <= 0.5, `${v.tag}: the tab grows out of the card's top edge (${gain.tab.above} px above, ${gain.tab.into} px into it)`);
     assert.ok(Math.abs(gain.lift - LIFT[v.tag]) <= 0.35, `${v.tag}: the gained card is lifted ${LIFT[v.tag]} px while the fill holds (${gain.lift})`);
     assert.equal(gain.tabOnTop, true, `${v.tag}: nothing covers or clips the tab (${JSON.stringify([gain.hit, gain.tabBox, gain.stackTop, gain.tray])})`);
     const lit = await centring(page, `${v.tag} gain`, { lit: true });
