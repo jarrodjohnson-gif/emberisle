@@ -49,7 +49,6 @@ import { haptics, play, touchHex } from "@/lib/sound";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
 
-
 // The y of a hex's top surface: the jelly block's flat pad (the token) and its rim (the pieces) are exactly here, the same on
 // every kind (docs/design/hex-jelly-prompt.md "THE BLOCK").
 export function topOf(_terrain: Terrain) {
@@ -1760,7 +1759,7 @@ export class IsleRenderer {
       pier.castShadow = true;
       this.land.add(pier);
       this.piers.push(pier);
-      this.docks.push({ cx, cz, mx, mz, kind: va.harbor, vids: [va.id, vb.id], corners: [{ x: va.x, z: va.z }, { x: vb.x, z: vb.z }] });
+      this.docks.push({ cx, cz, mx, mz, kind: va.harbor, vids: [va.id, vb.id] });
 
       const boat = makeBoat(va.harbor);
       boat.position.set(cx + mx * (jettyStart + jettyLen + 0.16), 0.08, cz + mz * (jettyStart + jettyLen + 0.16));

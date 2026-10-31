@@ -6,6 +6,20 @@ import { chromium } from "playwright";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;
+const LAND_TOL = 0.04;
+// The corners whose highest boardwalk vertex is more than `tol` from the hex surface `top`, or missing.
+function plankLandings(tops, top, tol) {
+  return tops.filter((t) => typeof t.y !== "number" || !Number.isFinite(t.y) || Math.abs(t.y - top) > tol).map((t) => t.vid);
+}
+{
+  // BAD input: planks sunk under water, floating above the surface, missing, or NaN must all be caught.
+  const good = { vid: "good", y: 0.34 };
+  const bad = [{ vid: "sunk", y: 0.1 }, { vid: "high", y: 0.45 }, { vid: "none", y: null }, { vid: "nan", y: NaN }, { vid: "undef" }];
+  const off = plankLandings([good, ...bad], 0.34, LAND_TOL);
+  if (off.join() !== "sunk,high,none,nan,undef" || plankLandings([good], 0.34, LAND_TOL).length) {
+    throw new Error(`plank-landing self-test: ${JSON.stringify(off)}`);
+  }
+}
 const PORT = Number(process.env.VITE_PORT) || 8119;
 const fails = [];
 const errors = [];
@@ -35,7 +49,10 @@ try {
   await page.waitForFunction(() => { let found = false; window.__isle.scene.traverse((o) => { if (o.name === "harbors") found = true; }); return found; }, null, { timeout: STEP_MS });
   await page.waitForFunction((r0) => window.__isle.renders > r0 + 2, await page.evaluate(() => window.__isle.renders), { timeout: STEP_MS });
 
-  const result = await page.evaluate(() => {
+  const result = await page.evaluate(async () => {
+    // The renderer's own hex-surface height, not a copy of it: the boardwalk must land here.
+    const { topOf } = await import("/src/lib/scene/isle-renderer.ts");
+    const top = topOf("forest");
     const isle = window.__isle;
     const st = window.__emberisle.getState().state;
     let group = null;
@@ -65,10 +82,13 @@ try {
 
     const cornersWithNearbyGeom = [];
     const cornersWithoutGeom = [];
+    // The highest boardwalk vertex within 0.12 of each corner: it must reach the hex surface, topOf().
+    const plankTops = [];
     for (const hv of harborVertices) {
-      const near = harborVerts.some((p) => Math.hypot(p.x - hv.x, p.z - hv.z) < 0.12);
-      if (near) cornersWithNearbyGeom.push(hv.id);
+      const near = harborVerts.filter((p) => Math.hypot(p.x - hv.x, p.z - hv.z) < 0.12);
+      if (near.length) cornersWithNearbyGeom.push(hv.id);
       else cornersWithoutGeom.push(hv.id);
+      plankTops.push({ vid: hv.id, y: near.length ? Math.max(...near.map((p) => p.y)) : null });
     }
 
     // Nothing tall (> 0.36) within 0.14 of any harbor corner.
@@ -131,6 +151,8 @@ try {
       harborCorners: harborVertices.length,
       cornersWithGeom: cornersWithNearbyGeom.length,
       cornersWithoutGeom,
+      top,
+      plankTops,
       tallNearCorner: tallNearCorner.slice(0, 5),
       tallCount: tallNearCorner.length,
       hasPlates,
@@ -146,6 +168,8 @@ try {
     check("nine docks on a standard board", result.dockCount === 9, { docks: result.dockCount });
     check("18 harbor corners (two per dock)", result.harborCorners === 18, { corners: result.harborCorners });
     check("every harbor corner has boardwalk geometry nearby (within 0.12)", result.cornersWithGeom === 18 && result.cornersWithoutGeom.length === 0, { withGeom: result.cornersWithGeom, missing: result.cornersWithoutGeom });
+    const landed = plankLandings(result.plankTops, result.top, LAND_TOL);
+    check(`the boardwalk reaches topOf() = ${result.top} at every corner (within ${LAND_TOL})`, landed.length === 0 && result.plankTops.length === 18, { top: result.top, off: landed });
     check("nothing tall (y > 0.36) within 0.14 of any harbor corner", result.tallCount === 0, { tallNearCorner: result.tallNearCorner });
     check("rate plates are present", result.hasPlates, { hasPlates: result.hasPlates });
     check("goods piles on each dock", result.piles === 9, { piles: result.piles });
