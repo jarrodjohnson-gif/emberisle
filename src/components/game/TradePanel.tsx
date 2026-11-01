@@ -1,5 +1,5 @@
 // #831 B: shared quantity cards feed the table offer and the compact exact Bank quote.
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFocusTrap } from "@/lib/focus-trap";
@@ -11,10 +11,6 @@ import { bagText } from "@/lib/game/trade";
 import { chunk, LazyBoundary } from "@/lib/lazy";
 import "./trade-panel.css";
 import { NeedRow, NeedsAtTable } from "./SeatNeeds";
-
-// #646: the same sideways-phone breakpoint the window's CSS uses; the Need button moves up beside Close there.
-const sideways = matchMedia("(max-height: 480px)");
-const watchSideways = (on: () => void) => { sideways.addEventListener("change", on); return () => sideways.removeEventListener("change", on); };
 
 const picker = chunk(() => import("./TradeResource"));
 picker.prefetch();
@@ -34,7 +30,6 @@ export function TradePanel() {
   const [draftGive, setGive] = useState(ZERO);
   const [want, setWant] = useState(ZERO);
   const panel = useRef<HTMLElement>(null);
-  const short = useSyncExternalStore(watchSideways, () => sideways.matches);
 
   const actor = mode === "hotseat" ? state?.current : localId;
   const me = state?.players.find((p) => p.id === actor);
@@ -114,7 +109,6 @@ export function TradePanel() {
       >
         <header className="trade-composer-header">
           <h2 id="trade-title" className="trade-title">Trade</h2>
-          {short && <NeedRow player={me.id} />}
           <Button variant="ghost" size="icon" onClick={() => setTradeOpen(false)} aria-label="Close" back>
             <X className="size-4" />
           </Button>
@@ -140,7 +134,7 @@ export function TradePanel() {
               </section>
             );
           })}
-          {!short && <NeedRow player={me.id} />}
+          <NeedRow player={me.id} />
           <NeedsAtTable me={me.id} />
           </LazyBoundary>
         </div>

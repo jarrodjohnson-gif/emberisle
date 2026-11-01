@@ -102,20 +102,13 @@
 /* A seat's name shows only beside its published needs (MenuNeeds renders nothing when it has none). */
 .trade-peer-seat:not(:has([data-testid="menu-needs"])) { display: none; }
 
-/* #646: the Need row sits under the goods; on a sideways phone the button and your chips move into the title row (TradePanel). */
-.trade-need-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+/* #646: "You need" is a third section under "You get"; your own picks show as lit pills, others' as chips below. */
+.need-hint { margin-bottom: 8px; color: var(--muted); font-size: 12px; line-height: 16px; }
+.trade-need + .trade-peer-needs { margin-top: 16px; }
 .trade-peer-needs { margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .trade-peer-seat { display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 16px; }
 .trade-peer-name { max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .trade-peer-seat [data-testid="menu-needs"] { margin: 0; }
-.trade-composer .trade-peer-name, .trade-composer [data-testid="own-needs"], .trade-composer [data-testid="menu-needs"] { color: var(--muted); }
+.trade-composer .trade-peer-name, .trade-composer [data-testid="menu-needs"] { color: var(--muted); }
 .trade-composer .need-chip { color: var(--ink); }
-.trade-composer-header [data-testid="own-needs"] { flex-wrap: nowrap; white-space: nowrap; }
 .trade-peer-needs:not(:has([data-testid="menu-needs"])) { display: none; }
-.trade-composer-header .trade-need-row { display: contents; }
-.trade-composer-header #need-picker { flex: 0 0 auto; }
-.trade-composer-header #need-picker > div { grid-template-columns: repeat(5, 60px); }
-@media (max-width: 359px) { .trade-need-row > #need-picker { flex-basis: 100%; } }
-@media (max-height: 480px) {
-  .trade-need-row { margin-top: 8px; }
-}

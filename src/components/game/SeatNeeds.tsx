@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { create } from 'zustand';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { setPlayerNeeds, useLocalNeeds } from '@/components/game/need-state';
@@ -13,17 +12,12 @@ export function useNeeds() {
     ? Object.fromEntries(seats.filter(s => s.player).map(s => [s.player!, s.needs ?? []]))
     : Object.fromEntries(Object.entries(local).map(([id, need]) => [id, need?.kinds ?? []]));
 }
-const reveal = (el: HTMLElement | null) => el?.scrollIntoView({ block: "nearest" });
-const useOpen = create(() => false);
 export function NeedRow({ player }: { player: string }) {
-  const kinds = useNeeds()[player] ?? [], open = useOpen();
-  useEffect(() => () => useOpen.setState(false), []);
-  return <div className="trade-need-row">
-    <Button variant="secondary" className="need-trigger" aria-expanded={open} aria-controls={open ? "need-picker" : undefined} onClick={() => useOpen.setState(!open)}>Need</Button>
-    {open ? <Picker player={player} /> : <div data-testid="own-needs" className="need-line">
-      {kinds.length ? kinds.map(kind => <span key={kind} data-testid="need-chip" className="need-chip">{RESOURCE_LABEL[kind]}</span>) : 'Share up to two goods'}
-    </div>}
-  </div>;
+  return <section className="trade-half trade-need">
+    <h3>You need</h3>
+    <p className="need-hint">Tap up to two. Not part of the offer; other players see it.</p>
+    <Picker player={player} />
+  </section>;
 }
 function Picker({ player }: { player: string }) {
   const actual = useNeeds()[player] ?? [];
@@ -37,7 +31,7 @@ function Picker({ player }: { player: string }) {
   useEffect(() => setDraft(null), [error]);
   useEffect(() => { const timer = setTimeout(() => setDraft(null), 3000); return () => clearTimeout(timer); }, [draft]);
   const choose = (kinds: typeof actual) => { setDraft(kinds); setPlayerNeeds(player, kinds); };
-  return <fieldset id="need-picker" ref={reveal}>
+  return <fieldset id="need-picker">
     <legend className="sr-only">Up to two goods you need</legend>
     <div>
       {RESOURCES.map(resource => {
