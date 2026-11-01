@@ -30,7 +30,6 @@ const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 mkdirSync("test-results", { recursive: true });
-mkdirSync("docs/proofs/830", { recursive: true });
 
 const drawn = (page, n, ms = 30_000) =>
   page.evaluate(
@@ -220,7 +219,6 @@ for (const [w, h, touch] of [
   const armed = await ratioAt(page, at, r);
   await patches(page, "__shown", true, at, r);
   await page.screenshot({ path: `test-results/placement-glow-${tag}.png` });
-  await page.screenshot({ path: `docs/proofs/830/placement-glow-${tag}.png` });
   await page.evaluate(() => {
     window.__isle.marks.visible = false;
   });
@@ -244,6 +242,10 @@ for (const [w, h, touch] of [
   for (const [t, v] of by) {
     const a = median(v.contrast);
     check(`${tag}: ${t} corners read at 3:1 or better against the hex beneath`, a >= 3, { median: +a.toFixed(2), n: v.contrast.length });
+    // Some terrains already read 4.5-4.9 unarmed, so 3:1 alone cannot fail there: the ring must also beat the bare corners by 1.5x
+    // (restored from 0c27670; see the PR body).
+    const u = median(v.unarmed);
+    check(`${tag}: ${t} corners read 1.5x the unarmed read`, a >= u * 1.5, { median: +a.toFixed(2), unarmed: +u.toFixed(2), n: v.contrast.length });
   }
   const seen = changed.filter((_, i) => onScreen[i]);
   check(`${tag}: every legal corner is seen (marks shown vs hidden)`, seen.length > 0 && Math.min(...seen) >= MIN_CHANGED, { corners: seen.length, least: +Math.min(...seen).toFixed(3), median: +median(seen).toFixed(3) });
@@ -323,7 +325,6 @@ for (const [w, h, touch] of [
   const hr = await reachOf(own[0]);
   await patches(page, "__homeShown", true, hp, hr);
   await page.screenshot({ path: `test-results/placement-glow-stronghold-${tag}.png` });
-  await page.screenshot({ path: `docs/proofs/830/placement-glow-stronghold-${tag}.png` });
   await page.evaluate(() => {
     window.__isle.marks.visible = false;
   });
