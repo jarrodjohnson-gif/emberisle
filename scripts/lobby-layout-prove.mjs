@@ -226,9 +226,14 @@ try {
     await page.getByRole("button", { name: "Send", exact: true }).click();
     await guest.getByTestId("chat-log").getByText("One more and we're ready.", { exact: false }).waitFor();
     assert.equal(await page.locator("#chat-input").inputValue(), "");
-    await page.getByTestId("emoji-row").locator("button").first().click();
-    await guest.getByTestId("react-line").waitFor();
-    await clearOfName(page, "reaction");
+    // A reaction lasts two seconds; start measuring it before waiting for the guest's chat echo.
+    await Promise.all([
+      clearOfName(page, "reaction"),
+      (async () => {
+        await page.getByTestId("emoji-row").locator("button").first().click();
+        await guest.getByTestId("react-line").waitFor();
+      })(),
+    ]);
     await page.getByRole("tab", { name: "Sounds & stickers" }).click();
     await page.getByTestId("sounds-tab").waitFor();
     assert.ok(await page.getByTestId("soundboard").locator("button").count() > 0);
@@ -268,9 +273,13 @@ try {
     const data = await geometry(page, 0);
     results.push({ viewport: `${width}x${height}`, ...data });
     if (width === 375) await centred(page, `${width}x${height}`);
-    await page.getByTestId("emoji-row").locator("button").first().click();
-    await guest.getByTestId("react-line").waitFor();
-    await clearOfName(page, "reaction");
+    await Promise.all([
+      clearOfName(page, "reaction"),
+      (async () => {
+        await page.getByTestId("emoji-row").locator("button").first().click();
+        await guest.getByTestId("react-line").waitFor();
+      })(),
+    ]);
     await page.getByRole("tab", { name: "Sounds & stickers" }).click();
     await guest.getByRole("tab", { name: "Sounds & stickers" }).click();
     await guest.getByRole("button", { name: "Play sound Wololo", exact: true }).click();
