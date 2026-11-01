@@ -86,6 +86,8 @@ try{
  assert.equal(await b.evaluate(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p0').resources),undefined);
  for(const good of ['Stone','Wheat'])await a.getByRole('button',{name:`Need ${good}`,exact:true}).click();await chip.waitFor({state:'detached'});
  await peerNeeds.waitFor({state:'detached'});await b.keyboard.press('Escape');
+ // Empty row: closing the picker shows the one sentence of the feature, then reopen for the next step.
+ await a.getByRole('button',{name:'Need',exact:true}).click();await a.getByTestId('own-needs').filter({hasText:'Share up to two goods'}).waitFor();await a.getByRole('button',{name:'Need',exact:true}).click();
  await a.getByRole('button',{name:'Need Stone',exact:true}).click();await chip.waitFor();
  mkdirSync('test-results',{recursive:true});await a.screenshot({path:'test-results/needs-picker-phone.png'});
  await a.getByRole('button',{name:'Close',exact:true}).click();
