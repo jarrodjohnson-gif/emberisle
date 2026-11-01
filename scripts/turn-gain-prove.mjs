@@ -25,8 +25,8 @@
 //   frame, the gain's fill a still highlight) for at least 1.5 s, each cue still readable for 1.2 s.
 // Hotseat at 1280x720: the moment names the seat taking the device ("Seat 2's turn"). A reconnect at 390x844 replays nothing
 // (reconnect(): a real connectTable over a controlled socket) and a live change after it still shows. Zero console errors.
-// Readable times come from each element's own animation (keyframes, duration, delay) capped by how long it stayed on the
-// page: software GL frames are too sparse to time it by sampling. For the placement and contrast measures only, the
+// Gain readability uses its animation's keyframes and duration; the sustained turn cue is also checked by sampled frames.
+// For the placement and contrast measures only, the
 // moment being measured is held on screen (__hold), and "Your turn" is timed again on a later turn left untouched.
 // Expiry also reports measured main-thread stalls, as roll-moment-prove does: a software-GL screenshot may block timers.
 // The 3100 ms running-time limit (2600 before #825), with a separate 4000 ms raw cap and an exact 3000 ms cue-duration check.
@@ -203,7 +203,7 @@ function recorders() {
       const cs = getComputedStyle(el);
       // A tab's own transform is none; the card carries the lift, so its transform is the one that moves the cue.
       const tf = el.dataset.testid === "turn-moment" ? cs.transform : getComputedStyle(el.closest(".goods-card")).transform;
-      rec.frames.push({ t: performance.now(), o: Number(cs.opacity), tf, box: box(el) });
+      rec.frames.push({ t: performance.now(), o: Number(cs.opacity), tf, box: box(el), leaving: el.hasAttribute("data-leaving") });
       // #1085: same-callback identity and placement at this read, not the moment's final stage.
       const sample = rec.frames.at(-1);
       sample.frameId = frameId;
@@ -426,8 +426,7 @@ async function contrast(page, testid, index = 0, band = 0.65) {
   return { color, min, pixels: pixels.length };
 }
 
-// How long a line or a moment reads (opacity at least 0.5): from its own animation (linear, keyframe opacities), and no
-// longer than it stayed on the page after its delay. Frames under software GL are too sparse to time it by sampling.
+// How long a finite animation reads (opacity at least 0.5), capped by its time on the page after its delay.
 const readable = (rec) => {
   const k = rec.anim?.keyframes.filter((f) => f.o !== null);
   if (!rec.gone) return 0;
@@ -618,7 +617,7 @@ async function practice(view) {
     // The existing readable() measures a single finite entry animation, not the infinite pulse.
     // Check every sampled frame after the entry reaches 0.5 and the elapsed visible frame span instead.
     const firstVisible = t2.frames.findIndex((frame) => frame.o >= 0.5);
-    const visibleFrames = firstVisible < 0 ? [] : t2.frames.slice(firstVisible);
+    const visibleFrames = firstVisible < 0 ? [] : t2.frames.slice(firstVisible).filter((frame) => !frame.leaving);
     const visibleMs = visibleFrames.length > 1 ? visibleFrames.at(-1).t - visibleFrames[0].t : 0;
     check(t2.gone - t2.at >= 7500 && t2.gone - t2.at <= 8800 && /turn-pulse/.test(t2.animation) && visibleMs >= 7000 && visibleFrames.every((frame) => frame.o >= 0.5), `${tag}: untouched, "Your turn" stays up, pulsing, until its 8 s cap`, { up: (t2.gone - t2.at).toFixed(0), animation: t2.animation, visibleMs: visibleMs.toFixed(0) });
 

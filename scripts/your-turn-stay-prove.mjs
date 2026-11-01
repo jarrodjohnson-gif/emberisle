@@ -66,6 +66,21 @@ const contrast = (a, b) => {
 // clear of are measured with the animation paused at its steady part (no transform), the way a player sees it held.
 function recorders() {
   window.__yt = [];
+  window.__exits = [];
+  const exiting = new Map();
+  new MutationObserver((records) => {
+    for (const record of records) {
+      const el = record.target;
+      if (record.type !== "attributes" || !el.matches?.('[data-testid="turn-moment"][data-leaving]') || exiting.has(el)) continue;
+      const css = getComputedStyle(el);
+      const entry = { at: performance.now(), pointer: css.pointerEvents, hidden: el.parentElement?.getAttribute("aria-hidden"),
+        animation: css.animationName, duration: css.transitionDuration, easing: css.transitionTimingFunction };
+      exiting.set(el, entry);
+      window.__exits.push(entry);
+      setTimeout(() => { if (el.isConnected) { const mid = getComputedStyle(el); entry.mid = { opacity: Number(mid.opacity), transform: mid.transform }; } }, 80);
+    }
+    for (const [el, entry] of exiting) if (!el.isConnected) { entry.gone = performance.now(); exiting.delete(el); }
+  }).observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-leaving"] });
   const OBSTACLES = 'header > div, [data-testid="seat-strip"] > *, [data-testid^="rail-"], [data-hud-stack], [data-testid="banner"], [data-testid="turn-banner"], .hud-utilities, [data-testid="resource-flash"]';
   const box = (el) => {
     const r = el.getBoundingClientRect();
@@ -84,6 +99,11 @@ function recorders() {
       const cs = getComputedStyle(el);
       rec.bg = cs.backgroundColor;
       rec.dot = getComputedStyle(el.firstElementChild).backgroundColor;
+      rec.paint = { border: cs.borderWidth, borderColor: cs.borderColor, radius: cs.borderRadius, shadow: cs.boxShadow,
+        padding: [cs.paddingTop, cs.paddingRight, cs.paddingBottom, cs.paddingLeft], lineHeight: cs.lineHeight,
+        weight: cs.fontWeight, letterSpacing: cs.letterSpacing, backdrop: cs.backdropFilter,
+        dotWidth: getComputedStyle(el.firstElementChild).width, dotBorder: getComputedStyle(el.firstElementChild).borderWidth,
+        dotBorderColor: getComputedStyle(el.firstElementChild).borderColor };
       rec.color = cs.color;
       rec.font = parseFloat(cs.fontSize);
       rec.pe = cs.pointerEvents;
@@ -175,6 +195,10 @@ function readable(tag, label, rec, seatHex) {
   check((rec.text === "Your turn" || /\'s turn$/.test(rec.text)), `${tag} ${label}: reads "Your turn"`, rec.text);
   if (seatHex) check(rgbHex(rec.dot) === seatHex, `${tag} ${label}: the dot is the seat's colour`, [rec.dot, seatHex]);
   check(rec.font >= 15, `${tag} ${label}: text is 15 px or larger`, rec.font);
+  check(rec.bg === "rgb(255, 255, 255)" && rec.paint.border === "1px" && rec.paint.borderColor === "rgb(203, 211, 211)" && rec.paint.radius === "20px", `${tag} ${label}: white pill has the approved edge and radius`, rec.paint);
+  check(rec.paint.weight === "700" && rec.paint.letterSpacing === "-0.8px" && rec.paint.backdrop === "none" && rec.paint.dotBorder === "2px" && rec.paint.dotBorderColor === "rgb(38, 61, 60)", `${tag} ${label}: approved text and ink-ringed seat dot`, rec.paint);
+  const narrow = rec.vp.w < 360;
+  check(rec.font === (narrow ? 20 : 28) && rec.paint.lineHeight === "32px" && rec.paint.dotWidth === (narrow ? "16px" : "20px") && rec.paint.padding.join(",") === (narrow ? "12px,20px,12px,20px" : "16px,24px,16px,24px") && rec.paint.shadow.includes("0px 10px 28px"), `${tag} ${label}: approved sizing, padding and sheet shadow`, rec.paint);
   const c = contrast(rgbHex(rec.color), rgbHex(rec.bg));
   check(c >= 4.5, `${tag} ${label}: ink on the pill reads at 4.5:1 or better`, c.toFixed(2));
   check(rec.pe === "none" && rec.top === "other", `${tag} ${label}: takes no pointer events and nothing is blocked at its centre`, [rec.pe, rec.top]);
@@ -285,9 +309,13 @@ async function online(me, { cap = false } = {}) {
       const p = await pulse(page);
       check(p.names.includes("turn-pulse") && p.duration === 1600 && p.iterations === Infinity, `${tg} it pulses slowly, 1.6 s, for as long as it is up`, p);
       check(p.trough.o >= 0.9 && p.trough.o <= 0.95 && p.peak.o === 1 && scale(p.trough.tf) >= 0.95 && scale(p.trough.tf) < 1 && scale(p.peak.tf) === 1, `${tg} the pulse runs opacity 1 to 0.92 and scale 1 to 0.96`, p);
+      const exitCount = await page.evaluate(() => window.__exits.length);
       await tap(page);
+      await tap(page); // A second tap during the exit must not restart it.
       await gone();
-      check(true, `${tg} a tap ends it at once`);
+      const exits = await page.evaluate((n) => window.__exits.slice(n), exitCount);
+      const exit = exits[0];
+      check(exits.length === 1 && exit?.gone - exit?.at >= 140 && exit?.gone - exit?.at < 1000 && exit?.pointer === "none" && exit?.hidden === "true" && exit?.animation === "none" && exit?.duration.split(", ").every(v => v === "0.16s") && exit?.mid?.opacity > 0 && exit?.mid?.opacity < 1, `${tg} two taps produce one pointer-transparent 160 ms fade`, exits);
       await stays("after the tap", 1);
       push(at({ turn: 4, phase: "roll", current: me }));
       await shows(2);
@@ -403,8 +431,27 @@ async function practice(view, [colorName, hex]) {
     await page.evaluate(() => document.querySelectorAll('[data-testid="turn-moment"]').forEach((e) => e.getAnimations().forEach((a) => { a.pause(); a.currentTime = a.animationName === "turn-pulse" ? 220 + 800 : 220; })));
     await page.waitForTimeout(150);
     await page.screenshot({ path: `${dir}/your-turn-${view.width}x${view.height}-${colorName}-mid-pulse.png` });
+    if (SHOTS) await page.evaluate(() => {
+      // Hold only the exit's 160 ms removal timer while taking a controlled mid-transition picture.
+      const original = window.setTimeout;
+      window.__restoreExitClock = () => { window.setTimeout = original; window.__finishExit?.(); };
+      window.setTimeout = (fn, ms, ...args) => {
+        if (ms === 160 && document.querySelector('[data-testid="turn-moment"]')?.style.transition.includes("160ms")) {
+          window.__finishExit = () => fn(...args);
+          return 0;
+        }
+        return original(fn, ms, ...args);
+      };
+    });
     await page.getByRole("button", { name: "Roll", exact: true }).click({ timeout: 5000 });
     await page.waitForFunction(() => window.__emberisle.getState().state.phase !== "roll", null, { timeout: STEP_MS });
+    if (SHOTS) {
+      await page.waitForFunction(() => document.querySelector('[data-testid="turn-moment"]')?.getAnimations().some(a => a.transitionProperty === "opacity"), null, { timeout: STEP_MS });
+      await page.evaluate(() => document.querySelector('[data-testid="turn-moment"]').getAnimations().forEach((a) => { a.pause(); a.currentTime = 80; }));
+      await page.screenshot({ path: `${dir}/your-turn-${view.width}x${view.height}-${colorName}-mid-fade.png` });
+      await page.evaluate(() => window.__restoreExitClock());
+    }
+    await page.waitForFunction(() => !document.querySelector('[data-testid="turn-moment"]'), null, { timeout: STEP_MS });
     check((await up(page)) === 0, `${tag}: a real click on Roll was not blocked, rolled, and ended the moment`);
     await page.waitForTimeout(150);
     await page.screenshot({ path: `${dir}/your-turn-${view.width}x${view.height}-${colorName}-after-tap.png` });
