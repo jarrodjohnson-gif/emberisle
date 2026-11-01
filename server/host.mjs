@@ -122,6 +122,8 @@ const TURN_EXTENSION_MS = envMs("TURN_EXTENSION_MS", 60_000);
 const BOT_ANSWER_MS = Number(process.env.BOT_ANSWER_MS ?? 1000);
 // People first (#850): a bot's Yes waits this long, or until every person asked has said No. A bot's No does not wait.
 const PEOPLE_FIRST_MS = Number(process.env.PEOPLE_FIRST_MS ?? 8000);
+// A bot's table offer closes after this if nobody takes it (#1245: a person's offer has no run-out).
+const OFFER_MS = 20000;
 // Every socket is pinged this often; one that has not answered the last ping is cut, so a phone that
 // locked or changed Wi-Fi frees its seat for the rejoin instead of holding it half-open (#202, #113).
 const PING_MS = Number(process.env.PING_MS ?? 30 * 1000);
@@ -1418,13 +1420,18 @@ function openOffer(room, from, give, want) {
   if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
   closeOffer(room);
   const tradeId = `t${room.game.seq}-${(room.offerSeq = (room.offerSeq ?? 0) + 1)}`;
-  const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), botTimers: [], until: Date.now() + 20000 });
-  room.offerTimer = setTimeout(() => {
-    closeOffer(room);
-    broadcast(room, { type: "tradeClosed", tradeId });
-    botsOn(room, offer);
-  }, 20000);
-  broadcast(room, { type: "tradeOffer", tradeId, from, give, want, seconds: 20 });
+  // #1245 (owner q-trade-hold B): a person's offer holds until it is answered, declined by all, cancelled, or their turn
+  // ends; it has no run-out (until and seconds are null). A bot's offer keeps the run-out, so a bot never stalls the table.
+  const runOut = room.game.players.find((p) => p.id === from)?.kind === "bot";
+  const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), botTimers: [], until: runOut ? Date.now() + OFFER_MS : null });
+  if (runOut) {
+    room.offerTimer = setTimeout(() => {
+      closeOffer(room);
+      broadcast(room, { type: "tradeClosed", tradeId });
+      botsOn(room, offer);
+    }, OFFER_MS);
+  }
+  broadcast(room, { type: "tradeOffer", tradeId, from, give, want, seconds: runOut ? OFFER_MS / 1000 : null });
   offer.peopleUntil = Date.now() + PEOPLE_FIRST_MS;
   offer.heldYes = [];
   offer.botTimers.push(setTimeout(() => releaseHeld(room, offer), PEOPLE_FIRST_MS));
@@ -1466,6 +1473,17 @@ function ask(ws, room, msg) {
   if (RESOURCES.some((r) => (msg.give[r] ?? 0) > asker.resources[r])) return send(ws, { type: "error", message: "You lack those goods." });
   if (RESOURCES.every((r) => !msg.give[r] && !msg.want[r])) return send(ws, { type: "error", message: "Offer something." });
   openOffer(room, actor, msg.give, msg.want);
+}
+
+// The asker takes back its own open offer (#1245): with no run-out on a person's offer, this is the way out of one nobody
+// answers. Closes it for the whole table with no taker.
+function cancelOffer(ws, room, msg) {
+  const offer = room.offer;
+  if (!offer || offer.from !== ws.seat.pid || (msg.tradeId && msg.tradeId !== offer.tradeId)) {
+    return send(ws, { type: "error", message: "Offer is gone." });
+  }
+  closeOffer(room);
+  broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId });
 }
 
 function answer(ws, room, msg) {
@@ -1742,6 +1760,7 @@ function handle(ws, raw) {
   }
   if (msg.type === "tradeAsk") return ask(ws, room, msg);
   if (msg.type === "tradeAnswer") return answer(ws, room, msg);
+  if (msg.type === "tradeCancel") return cancelOffer(ws, room, msg);
   return play(ws, room, msg);
 }
 
@@ -1793,11 +1812,11 @@ function rejoin(ws, msg) {
   if (open && room.offer === open) resendOffer(ws, room, seat, open);
 }
 
-// A seat back inside an open ask it did not make sees the offer again with what is left of its window, then every No
-// it missed, so its panel matches the table (#576). After the state, so the client has the names.
+// A seat back inside an open ask sees the offer again with what is left of its window, then every No it missed, so its
+// panel matches the table (#576). After the state, so the client has the names. The asker gets it back too (#1245): a
+// person's offer holds, so the asker needs its card and Cancel again after a reload.
 function resendOffer(ws, room, seat, offer) {
-  if (offer.from === seat.pid) return;
-  const seconds = Math.max(0, Math.floor((offer.until - Date.now()) / 1000));
+  const seconds = offer.until === null ? null : Math.max(0, Math.floor((offer.until - Date.now()) / 1000));
   send(ws, { type: "tradeOffer", tradeId: offer.tradeId, from: offer.from, give: offer.give, want: offer.want, seconds });
   for (const by of offer.declined) {
     send(ws, { type: "tradeDeclined", tradeId: offer.tradeId, by, name: room.game.players.find((p) => p.id === by).name });
