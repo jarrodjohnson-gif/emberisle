@@ -37,7 +37,7 @@ import { LAND_MS } from "@/lib/scene/landing";
 import { hashStr } from "@/lib/utils";
 import { chunkUrl } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
-import { BLOCK_H } from "@/lib/scene/jelly-dims";
+import { BLOCK_H, TILE_Y } from "@/lib/scene/jelly-dims";
 import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
 import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
 import { OceanLife } from "@/lib/scene/ocean-life";
@@ -48,8 +48,6 @@ import { Wobble } from "@/lib/scene/wobble";
 import { haptics, play, touchHex } from "@/lib/sound";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
-
-const TILE_Y = 0.04;
 
 // The y of a hex's top surface: the jelly block's flat pad (the token) and its rim (the pieces) are exactly here, the same on
 // every kind (docs/design/hex-jelly-prompt.md "THE BLOCK").
