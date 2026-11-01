@@ -262,7 +262,7 @@ try{
    return {targets,gaps,noOverflow:field.scrollWidth<=field.clientWidth&&scroll.scrollWidth<=scroll.clientWidth,gap:Number.parseFloat(style.columnGap),scrollHeight:scroll.scrollHeight,clientHeight:scroll.clientHeight,viewport:{top:viewport.top,bottom:viewport.bottom},giveControls:controls};
   });
   geometry.at(-1).picker=picker;if(!picker.noOverflow)geometryProblems.push(`${width}x${height}: picker horizontal overflow`);if(picker.targets.some(target=>target.width<44||target.height<44))geometryProblems.push(`${width}x${height}: picker target below44px`);if(width===844&&picker.giveControls.some(control=>!control.visible))geometryProblems.push(`${width}x${height}: open picker pushes give heading/steppers below scroll fold`);if(picker.gap<8)geometryProblems.push(`${width}x${height}: picker gap below8px`);if(picker.targets.length!==5||picker.targets.some(t=>t.height!==44)||picker.gaps.some(g=>g<8))geometryProblems.push(`${width}x${height}: five 44px pills with 8px gaps differ ${JSON.stringify(picker.targets)}`);if(picker.targets.some(t=>t.fill!==(t.pressed==='true'?'rgb(255, 255, 255)':'rgb(243, 246, 245)')))geometryProblems.push(`${width}x${height}: lit pill must be white and unlit the sheet fill ${JSON.stringify(picker.targets)}`);
-  // C3 11.1: the window stays in the lobby's white set, and the Need button and chips read at 4.5:1.
+  // C3 11.1: the window stays in the lobby's white set, and the Need pills and chips read at 4.5:1.
   const white=await page.getByTestId('trade-panel').evaluate(panel=>{
    const rgb=c=>c.match(/[\d.]+/g).slice(0,3).map(Number),lum=c=>{const [r,g,b]=rgb(c).map(v=>{v/=255;return v<=0.03928?v/12.92:((v+0.055)/1.055)**2.4;});return 0.2126*r+0.7152*g+0.0722*b;};
    const ratio=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);};
@@ -271,6 +271,7 @@ try{
   });
   geometry.at(-1).white=white;
   if(white.sheet!=='rgb(243, 246, 245)'||white.button<4.5||white.chip===null||white.chip<4.5)geometryProblems.push(`${width}x${height}: Trade window colour or Need text contrast differs from C3 ${JSON.stringify(white)}`);
+  {const dangling=await page.getByTestId('trade-panel').evaluate(panel=>[...panel.querySelectorAll('[aria-controls]')].filter(e=>!e.getAttribute('aria-controls').split(/\s+/).every(id=>document.getElementById(id))).length+panel.querySelectorAll('#need-picker[aria-controls],#need-picker[aria-expanded],.trade-need[aria-controls],.trade-need[aria-expanded]').length);if(dangling)geometryProblems.push(`${width}x${height}: Trade window has a dangling aria-controls or the always-open picker carries aria-controls/aria-expanded`);}
   await page.getByRole('button',{name:'Close',exact:true}).click();await context.close();
  }
  writeFileSync(path.join(captureDirectory,'needs-geometry.json'),JSON.stringify(geometry,null,2));
