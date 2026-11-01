@@ -61,6 +61,7 @@
     "idle-prove": "node scripts/idle-prove.mjs",
     "upgrade-prove": "node --import ./server/register.mjs scripts/upgrade-prove.mjs",
     "keyboard-place-prove": "node scripts/keyboard-place-prove.mjs",
+    "placement-glow-prove": "node scripts/placement-glow-prove.mjs",
     "flash-prove": "node scripts/flash-prove.mjs",
     "haptics-prove": "node scripts/haptics-prove.mjs",
     "haptics-startup-prove": "node scripts/haptics-startup-prove.mjs",
