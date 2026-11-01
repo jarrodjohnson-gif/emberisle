@@ -6,7 +6,7 @@
 // 1.2 s and fades out). It takes no pointer events, so it never blocks a tap, and reduced motion gets a steady pill, no pulse.
 // It waits for the roll moment to leave the centre (gains show on the hand, #773). The your-turn chime is the store's
 // (sound.ts yourTurn), on the same change. A first load or a rejoin replays nothing, and a watcher never has a turn.
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useMomentUp } from "@/components/game/Dice";
 import { useStage } from "@/components/game/stage";
@@ -39,10 +39,7 @@ export function TurnMoment() {
   const [seen, setSeen] = useState(key);
   const [due, setDue] = useState<string | null>(null);
   const [up, setUp] = useState<string | null>(null);
-  const [leaving, setLeaving] = useState(false);
   const [baseline, setBaseline] = useState(synced);
-  const exiting = useRef(false);
-  const frame = useRef(0);
   const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   if (baseline !== synced) {
@@ -51,7 +48,6 @@ export function TurnMoment() {
     setSeen(key);
     setDue(null);
     setUp(null);
-    if (leaving) setLeaving(false);
   } else {
     if (key && key !== seen) {
       setSeen(key);
@@ -66,30 +62,27 @@ export function TurnMoment() {
   }
 
   const stage = useStage<HTMLParagraphElement>(up);
-  const end = useCallback(() => {
-    if (!up || exiting.current) return;
-    exiting.current = true;
+  const end = () => {
     const el = stage.current;
+    if (!up || el?.dataset.leaving) return;
     if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setUp(null);
-      setLeaving(false);
       return;
     }
     // Freeze the current entry or pulse frame before replacing the animation with the exit transition.
     const style = getComputedStyle(el);
     const opacity = style.opacity, transform = style.transform;
-    el.style.animation = "none";
     el.style.opacity = opacity;
     el.style.transform = transform;
-    el.style.transition = "opacity 160ms var(--ease-in), transform 160ms var(--ease-in)";
+    el.dataset.leaving = "true";
     void el.offsetWidth;
-    setLeaving(true);
-    frame.current = requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (!el.isConnected) return;
       el.style.opacity = "0";
       el.style.transform = "scale(0.97)";
-      exitTimer.current = setTimeout(() => { setUp(null); setLeaving(false); }, 160);
+      exitTimer.current = setTimeout(() => setUp(null), 160);
     });
-  }, [up, stage]);
+  };
   useEffect(() => {
     if (!up) return;
     const t = setTimeout(end, mode === "hotseat" ? MOMENT_MS : STAY_MS);
@@ -97,16 +90,14 @@ export function TurnMoment() {
     window.addEventListener("keydown", end, true);
     return () => {
       clearTimeout(t);
-      cancelAnimationFrame(frame.current);
       if (exitTimer.current) clearTimeout(exitTimer.current);
-      exiting.current = false;
       window.removeEventListener("pointerdown", end, true);
       window.removeEventListener("keydown", end, true);
     };
-  }, [up, mode, end]);
-  useEffect(() => { if (up && up !== key) end(); }, [up, key, end]);
+  }, [up, mode]);
+  useEffect(() => { if (up && up !== key) end(); }, [up, key]);
 
-  const player = state?.players.find((p) => p.id === up?.slice(up.lastIndexOf("|") + 1));
+  const player = state?.players.find((p) => p.id === up?.split("|").at(-1));
   if (!up || !player) return null;
   return (
     <div
@@ -118,7 +109,6 @@ export function TurnMoment() {
         key={up}
         ref={stage}
         data-testid="turn-moment"
-        data-leaving={leaving || undefined}
         className={cn(
           "flex items-center gap-3 turn-stamp",
           mode === "hotseat" ? "motion-safe:animate-[turn-moment_1800ms_both]" : "turn-stay",

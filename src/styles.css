@@ -249,6 +249,7 @@ body {
 .trade-short { color: var(--accent); }
 .trade-dock button:focus-visible { outline-color: var(--ink); }
 .turn-stamp { background: #fff; border: 1px solid #cbd3d3; border-radius: 20px; box-shadow: var(--shadow-sheet); padding: 16px 24px; color: var(--ink); font-size: 28px; line-height: 32px; font-weight: 700; letter-spacing: -0.8px; }
+.turn-stamp[data-leaving] { animation: none !important; transition: opacity 160ms var(--ease-in), transform 160ms var(--ease-in); }
 .turn-stamp-dot { width: 20px; height: 20px; border: 2px solid var(--ink); }
 @media (max-width: 359px) { .turn-stamp { padding: 12px 20px; font-size: 20px; } .turn-stamp-dot { width: 16px; height: 16px; } }
 .title-cover { box-shadow: var(--shadow-sheet); }
