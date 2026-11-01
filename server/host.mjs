@@ -1812,10 +1812,10 @@ function rejoin(ws, msg) {
   if (open && room.offer === open) resendOffer(ws, room, seat, open);
 }
 
-// A seat back inside an open ask it did not make sees the offer again with what is left of its window, then every No
-// it missed, so its panel matches the table (#576). After the state, so the client has the names.
+// A seat back inside an open ask sees the offer again with what is left of its window, then every No it missed, so its
+// panel matches the table (#576). After the state, so the client has the names. The asker gets it back too (#1245): a
+// person's offer holds, so the asker needs its card and Cancel again after a reload.
 function resendOffer(ws, room, seat, offer) {
-  if (offer.from === seat.pid) return;
   const seconds = offer.until === null ? null : Math.max(0, Math.floor((offer.until - Date.now()) / 1000));
   send(ws, { type: "tradeOffer", tradeId: offer.tradeId, from: offer.from, give: offer.give, want: offer.want, seconds });
   for (const by of offer.declined) {

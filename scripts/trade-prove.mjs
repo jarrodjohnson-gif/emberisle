@@ -457,6 +457,10 @@ try {
   const botId = again[i].you;
   await B.page.evaluate(([from]) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "tradeOffer", tradeId: "bot-clock", from, give: { grain: 1 }, want: { wool: 1 }, seconds: 6 }) }), [botId]);
   await B.page.getByTestId("trade-countdown-live").waitFor({ state: "attached" });
+  // The ticking countdown on a bot's offer is hidden from screen readers and reads what is left of its window.
+  const botClock = await B.page.getByTestId("trade-countdown").evaluate((el) => ({ hidden: el.getAttribute("aria-hidden"), secs: Number(el.textContent.replace(/\D/g, "")) }));
+  if (botClock.hidden !== "true") throw new Error(`${B.name}: the ticking countdown on a bot's offer is not aria-hidden (${JSON.stringify(botClock)})`);
+  if (botClock.secs < 1 || botClock.secs > 6) throw new Error(`${B.name}: a 6 s bot offer's countdown reads ${botClock.secs} s`);
   await B.page.evaluate(() => {
     const live = document.querySelector('[data-testid="trade-countdown-live"]');
     window.__said = [live.textContent];

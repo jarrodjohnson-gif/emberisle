@@ -4,6 +4,8 @@
 //   B. Ember asks; the bot and Tide both say No, and the offer ends at once with no taker.
 //   C. Ember asks; Tide cannot cancel it (not the asker), Ember's Cancel ends it with no taker for every seat, and a
 //      late answer is refused.
+//   D. Ember asks, drops and comes back: the rejoin re-sends her own held offer (seconds null), and her Cancel then ends
+//      it for both seats.
 // A bot's offer keeps its 20 s run-out: that is bot-trade-prove C and practice-trade-prove D.
 import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -63,6 +65,7 @@ const ask = { give: { timber: 1 }, want: { wool: 1 } };
 const seatsA = saveRoom("THAA", game(hands, 21));
 const seatsB = saveRoom("THBB", game(hands, 22));
 const seatsC = saveRoom("THCC", game(hands, 23));
+const seatsD = saveRoom("THDD", game(hands, 24));
 
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
@@ -190,7 +193,29 @@ const roomC = (async () => {
   T.ws.close();
 })();
 
-await Promise.all([roomA, roomB, roomC]);
+const roomD = (async () => {
+  const [E, T] = table("THDD", seatsD);
+  await seated([E, T]);
+  E.send({ type: "tradeAsk", ...ask });
+  const [offer] = await Promise.all([E, T].map((c) => c.next("tradeOffer")));
+  E.ws.close();
+  await T.until("seats", (m) => m.seats.some((s) => s.away));
+  const E2 = rejoin("THDD", seatsD[0]);
+  await E2.next("state");
+  const again = await E2.next("tradeOffer");
+  if (again.tradeId !== offer.tradeId || again.from !== "p0" || again.seconds !== null) fail("D: the rejoined asker did not get her own held offer back", again);
+  if (T.seen.some((m) => m.type === "tradeClosed")) fail("D: the asker's drop closed her offer");
+  E2.send({ type: "tradeCancel", tradeId: offer.tradeId });
+  for (const c of [E2, T]) {
+    const closed = await c.next("tradeClosed");
+    if (closed.tradeId !== offer.tradeId || closed.taker) fail(`D: ${c.name}'s tradeClosed after the rejoined asker's Cancel`, closed);
+  }
+  console.log("D ok: a rejoined asker gets her held offer back (seconds null), and her Cancel ends it for both seats");
+  E2.ws.close();
+  T.ws.close();
+})();
+
+await Promise.all([roomA, roomB, roomC, roomD]);
 host.kill("SIGKILL");
 console.log("trade hold prove ok");
 process.exit(0);
