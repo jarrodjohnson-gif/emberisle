@@ -248,7 +248,9 @@ body {
 .trade-wait, .trade-short { grid-column: 1 / -1; color: var(--table-muted); }
 .trade-short { color: var(--accent); }
 .trade-dock button:focus-visible { outline-color: var(--ink); }
-.turn-stamp { box-shadow: var(--shadow-control); font-weight: 750; letter-spacing: -0.8px; border-bottom: 3px solid var(--table); }
+.turn-stamp { background: #fff; border: 1px solid #cbd3d3; border-radius: 20px; box-shadow: var(--shadow-sheet); padding: 16px 24px; color: var(--ink); font-size: 28px; line-height: 32px; font-weight: 700; letter-spacing: -0.8px; }
+.turn-stamp-dot { width: 20px; height: 20px; border: 2px solid var(--ink); }
+@media (max-width: 359px) { .turn-stamp { padding: 12px 20px; font-size: 20px; } .turn-stamp-dot { width: 16px; height: 16px; } }
 .title-cover { box-shadow: var(--shadow-sheet); }
 .title-wordmark { font-weight: 800; font-size: 64px; line-height: 64px; letter-spacing: -2px; }
 .seat-settings { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 4px; }
