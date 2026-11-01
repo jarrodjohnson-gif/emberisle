@@ -77,7 +77,7 @@ function recorders() {
         animation: css.animationName, duration: css.transitionDuration, easing: css.transitionTimingFunction };
       exiting.set(el, entry);
       window.__exits.push(entry);
-      setTimeout(() => { if (el.isConnected) { const mid = getComputedStyle(el); entry.mid = { opacity: Number(mid.opacity), transform: mid.transform }; } }, 80);
+      setTimeout(() => { if (el.isConnected) { const mid = getComputedStyle(el); entry.mid = { opacity: Number(mid.opacity), transform: mid.transform, target: el.style.transform }; } }, 80);
     }
     for (const [el, entry] of exiting) if (!el.isConnected) { entry.gone = performance.now(); exiting.delete(el); }
   }).observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-leaving"] });
@@ -273,7 +273,7 @@ async function online(me, { cap = false } = {}) {
     const shows = (n) => page.waitForFunction((n) => window.__yt.length === n && document.querySelector('[data-testid="turn-moment"]'), n, { timeout: STEP_MS });
     const faded = async (label) => {
       const exit = await page.evaluate(() => window.__exits.at(-1));
-      check(exit?.gone - exit?.at >= 140 && exit?.gone - exit?.at < 1000 && exit?.pointer === "none" && exit?.hidden === "true" && exit?.animation === "none" && exit?.duration.split(", ").every(v => v === "0.16s") && exit?.mid?.opacity > 0 && exit?.mid?.opacity < 1, `${tg} ${label}: pointer-transparent 160 ms fade`, exit);
+      check(exit?.gone - exit?.at >= 140 && exit?.gone - exit?.at < 1000 && exit?.pointer === "none" && exit?.hidden === "true" && exit?.animation === "none" && exit?.duration.split(", ").every(v => v === "0.16s") && exit?.easing === "cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)" && exit?.mid?.target === "scale(0.97)" && exit?.mid?.opacity > 0 && exit?.mid?.opacity < 1, `${tg} ${label}: pointer-transparent 160 ms fade`, exit);
     };
     const notMe = base.players.find((p) => p.id !== me).id;
 
@@ -320,7 +320,7 @@ async function online(me, { cap = false } = {}) {
       await gone();
       const exits = await page.evaluate((n) => window.__exits.slice(n), exitCount);
       const exit = exits[0];
-      check(exits.length === 1 && exit?.gone - exit?.at >= 140 && exit?.gone - exit?.at < 1000 && exit?.pointer === "none" && exit?.hidden === "true" && exit?.animation === "none" && exit?.duration.split(", ").every(v => v === "0.16s") && exit?.mid?.opacity > 0 && exit?.mid?.opacity < 1, `${tg} two taps produce one pointer-transparent 160 ms fade`, exits);
+      check(exits.length === 1 && exit?.gone - exit?.at >= 140 && exit?.gone - exit?.at < 1000 && exit?.pointer === "none" && exit?.hidden === "true" && exit?.animation === "none" && exit?.duration.split(", ").every(v => v === "0.16s") && exit?.easing === "cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)" && exit?.mid?.target === "scale(0.97)" && exit?.mid?.opacity > 0 && exit?.mid?.opacity < 1, `${tg} two taps produce one pointer-transparent 160 ms fade`, exits);
       await stays("after the tap", 1);
       push(at({ turn: 4, phase: "roll", current: me }));
       await shows(2);
