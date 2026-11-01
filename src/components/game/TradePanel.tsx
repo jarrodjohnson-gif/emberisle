@@ -10,7 +10,7 @@ import { play } from "@/lib/sound";
 import { bagText } from "@/lib/game/trade";
 import { chunk, LazyBoundary } from "@/lib/lazy";
 import "./trade-panel.css";
-import { NeedFieldset, NeedRow, NeedsAtTable } from "./SeatNeeds";
+import { NeedRow, NeedsAtTable } from "./SeatNeeds";
 
 // #646: the same sideways-phone breakpoint the window's CSS uses; the Need button moves up beside Close there.
 const sideways = matchMedia("(max-height: 480px)");
@@ -121,7 +121,6 @@ export function TradePanel() {
         </header>
 
         <div className="trade-composer-scroll" id="trade-goods" role="region" aria-labelledby="trade-goods-title" tabIndex={0}>
-          {short && <NeedFieldset player={me.id} />}
           <h3 id="trade-goods-title" className="sr-only">Trade goods</h3>
           <LazyBoundary failed={<p role="alert">Trade choices could not load. Close and reopen to retry.</p>}>
           <p className="trade-instructions">{mode === "hotseat" ? "Choose one kind to give and one to get. Trade with the bank or your docks." : "Tap a good to add it. Mix goods for the table; one good each way for the bank."}</p>
@@ -141,7 +140,7 @@ export function TradePanel() {
               </section>
             );
           })}
-          {!short && <><NeedRow player={me.id} /><NeedFieldset player={me.id} /></>}
+          {!short && <NeedRow player={me.id} />}
           <NeedsAtTable me={me.id} />
           </LazyBoundary>
         </div>
