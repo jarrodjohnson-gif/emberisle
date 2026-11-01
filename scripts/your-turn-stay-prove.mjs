@@ -386,7 +386,10 @@ async function online(me, { cap = false } = {}) {
           if (!el) return;
           observer.disconnect();
           requestAnimationFrame(() => requestAnimationFrame(() => {
-            const entry = el.getAnimations().find(a => a.animationName === "turn-stay-in");
+            const animations = el.getAnimations();
+            const pulse = animations.find(a => a.animationName === "turn-pulse");
+            if (pulse) { pulse.pause(); pulse.currentTime = 0; }
+            const entry = animations.find(a => a.animationName === "turn-stay-in");
             if (!entry) { window.__earlyFade = { missing: true }; return; }
             entry.pause(); entry.currentTime = 40;
             const before = Number(getComputedStyle(el).opacity);
