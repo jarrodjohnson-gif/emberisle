@@ -10,6 +10,7 @@ import { play } from "@/lib/sound";
 import { bagText } from "@/lib/game/trade";
 import { chunk, LazyBoundary } from "@/lib/lazy";
 import "./trade-panel.css";
+import { NeedRow, NeedsAtTable } from "./SeatNeeds";
 
 const picker = chunk(() => import("./TradeResource"));
 picker.prefetch();
@@ -48,7 +49,7 @@ export function TradePanel() {
   }, [me?.resources]);
 
   // #378: a modal dialog. Focus lands on Close (the first focusable), Tab cycles inside, and focus goes back to the opener on close.
-  useFocusTrap(panel, shown, undefined, opener);
+  useFocusTrap(panel, shown, '[aria-label="Close"]', opener);
 
   useEffect(() => {
     // The turn moved on (or the game ended) with the panel up: drop it rather than pop it on the next turn.
@@ -133,6 +134,8 @@ export function TradePanel() {
               </section>
             );
           })}
+          <NeedRow player={me.id} />
+          <NeedsAtTable me={me.id} />
           </LazyBoundary>
         </div>
 

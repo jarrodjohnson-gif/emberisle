@@ -1,0 +1,24 @@
+Auto-merging .github/workflows/ci.yml
+CONFLICT (content): Merge conflict in .github/workflows/ci.yml
+Auto-merging package.json
+Auto-merging scripts/fixtures/size/base-old.json
+CONFLICT (content): Merge conflict in scripts/fixtures/size/base-old.json
+Auto-merging scripts/fixtures/size/base-with-legacy.json
+CONFLICT (content): Merge conflict in scripts/fixtures/size/base-with-legacy.json
+Auto-merging scripts/fixtures/size/base.json
+CONFLICT (content): Merge conflict in scripts/fixtures/size/base.json
+Auto-merging scripts/fixtures/size/fail.json
+CONFLICT (content): Merge conflict in scripts/fixtures/size/fail.json
+Auto-merging scripts/fixtures/size/new-chunk.json
+CONFLICT (content): Merge conflict in scripts/fixtures/size/new-chunk.json
+Auto-merging scripts/fixtures/size/over-ceiling.json
+CONFLICT (content): Merge conflict in scripts/fixtures/size/over-ceiling.json
+Auto-merging scripts/fixtures/size/pass.json
+CONFLICT (content): Merge conflict in scripts/fixtures/size/pass.json
+Auto-merging scripts/size-prove.mjs
+CONFLICT (content): Merge conflict in scripts/size-prove.mjs
+Auto-merging server/host.mjs
+CONFLICT (content): Merge conflict in server/host.mjs
+Auto-merging server/package.json
+Auto-merging src/lib/net/table.ts
+Automatic merge failed; fix conflicts and then commit the result.

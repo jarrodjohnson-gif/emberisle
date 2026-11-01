@@ -4,6 +4,8 @@
 .trade-composer { --paper: #fff; --table-raised: #f3f6f5; --line: #cbd3d3; --color-bg: #fff; background: #f3f6f5; }
 .trade-composer-footer { background: #f3f6f5; }
 .trade-composer-header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; padding: 8px 16px; border-bottom: 1px solid var(--line); }
+.trade-composer-header { gap: 8px; }
+.trade-composer-header > button[aria-label="Close"] { margin-left: auto; }
 .trade-title { font-size: 24px; line-height: 28px; font-weight: 750; }
 .trade-add:focus-visible, .trade-remove:focus-visible, .trade-composer-scroll:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .trade-composer-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px 16px; }
@@ -66,7 +68,7 @@
 }
 @media (max-height: 480px) {
   .trade-composer { max-height: calc(100dvh - 12px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
-  .trade-composer-header { padding: 0 14px; }
+  .trade-composer-header { padding: 2px 14px; }
   .trade-instructions { display: none; }
   .trade-composer-scroll { padding: 4px 14px; }
   .trade-half + .trade-half { margin-top: 8px; }
@@ -96,3 +98,17 @@
 @media (prefers-reduced-motion: reduce) {
   .trade-selection-motion { display: none; animation: none; }
 }
+
+/* A seat's name shows only beside its published needs (MenuNeeds renders nothing when it has none). */
+.trade-peer-seat:not(:has([data-testid="menu-needs"])) { display: none; }
+
+/* #646: "You need" is a third section under "You get"; your own picks show as lit pills, others' as chips below. */
+.need-hint { margin-bottom: 8px; color: var(--muted); font-size: 12px; line-height: 16px; }
+.trade-need + .trade-peer-needs { margin-top: 16px; }
+.trade-peer-needs { margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.trade-peer-seat { display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 16px; }
+.trade-peer-name { max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trade-peer-seat [data-testid="menu-needs"] { margin: 0; }
+.trade-composer .trade-peer-name, .trade-composer [data-testid="menu-needs"] { color: var(--muted); }
+.trade-composer .need-chip { color: var(--ink); }
+.trade-peer-needs:not(:has([data-testid="menu-needs"])) { display: none; }

@@ -1,0 +1,14 @@
+
+> needs-prove
+> node --import ./register.mjs needs-prove.mjs
+
+ok needs validation and shared local/host expiry rules
+ok real need frames: public seat projection, malformed/duplicate/oversized rejection; game and clocks unchanged
+ok restart/rejoin keeps one remaining own turn; second own turn clears; watchers cannot change needs
+ok bank and player trades clear only needs satisfied by received goods, for both participants
+ok need updates share the ACT rate limit
+ok real start transition clears restored needs from every public seat
+ok finished-game need ACT is refused with public state and existing need preserved
+ok real rematch transition clears prior needs from every public seat
+ok runBots decrements only the acting bot’s need; it survives one own turn and expires on the second
+needs server prove ok

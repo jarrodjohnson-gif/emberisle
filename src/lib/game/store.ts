@@ -277,6 +277,10 @@ interface GameStore {
   error: string | null;
   // Bumped on every refused move, so the same error twice is announced twice (#380).
   errorSeq: number;
+  // Need refusals only; monotonic for this store lifetime, so unrelated errors never discard an in-flight selection.
+  needError: number;
+  // Nonpersisted settlement identity for local Need clearing; narration and ordinary gains never advance it.
+  localTrade: number;
   // Said to a screen reader (and sounded) without a line on screen: a short build's tap is answered by its chip (#535).
   announcement: string | null;
   buildMode: BuildMode;
@@ -505,6 +509,8 @@ export const useGame = create<GameStore>((set, get) => ({
   error: null,
   announcement: null,
   errorSeq: 0,
+  needError: 0,
+  localTrade: 0,
   buildMode: "none",
   roadPicks: [],
   howTo: false,
@@ -719,7 +725,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const nextState = automated
       ? logBotAction(state, res.state, action, actor, state.players.find((p) => p.id === actor)?.name.replace(/ \(bot\)$/i, "") ?? actor)
       : res.state;
-    set({ state: nextState, gameLog: appendLog(get().gameLog, newLog(state.log, nextState.log)), error: null, announcement: null, toast: null, buildMode: "none", roadPicks: [] });
+    set({ state: nextState, localTrade: get().localTrade + Number(action.type === "bankTrade" || (action.type === "respondTrade" && action.accept)), gameLog: appendLog(get().gameLog, newLog(state.log, nextState.log)), error: null, announcement: null, toast: null, buildMode: "none", roadPicks: [] });
     hear(state, nextState, localId, mode);
     // An offer lives only while its asker still has the turn in `main` and still holds the offered goods (as host.mjs play).
     const open = get().offer;
@@ -1115,7 +1121,7 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
   const accepted = applyAction(offered.state, actor, { type: "respondTrade", accept: true });
   if (accepted.error) return accepted.error;
   const tradeLines = newLog(state.log, accepted.state.log).filter((line) => !line.includes(" offers a trade to "));
-  set({ state: { ...accepted.state, log: [...state.log, ...tradeLines].slice(-200) }, gameLog: appendLog(gameLog, tradeLines) });
+  set({ state: { ...accepted.state, log: [...state.log, ...tradeLines].slice(-200) }, localTrade: get().localTrade + 1, gameLog: appendLog(gameLog, tradeLines) });
   endOffer(set, get, actor);
   return null;
 }
@@ -1277,9 +1283,9 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     tradeClosed: ({ tradeId, taker }) => {
       if (get().offer?.tradeId === tradeId) endOffer(set, get, taker ?? null);
     },
-    error: (message) => {
+    error: (message, request) => {
       if (!pending && kind !== "peek") {
-        set({ announcement: null, error: message, toast: message, errorSeq: get().errorSeq + 1 });
+        set({ announcement: null, error: message, toast: message, errorSeq: get().errorSeq + 1, needError: get().needError + Number(request === "need") });
         play("ui_error");
       }
       // A refused join leaves an unseated socket the host never closes; drop it so the next peek can open its own.
