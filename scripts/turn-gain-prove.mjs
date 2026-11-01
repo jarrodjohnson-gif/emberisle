@@ -1,8 +1,9 @@
 // Jarrod's playtest: "not intuitive on when it's your turn", and gains "too quick". In practice against the isle at 1280x720
 // and, with safe-area insets emulated over CDP, 390x844 (47 top, 34 bottom), 360x640 (24 top, 16 bottom) and 844x390 (47
 // left, 47 right, 21 bottom; the HUD is a left column), played through the real roll-off and setup:
-// - "Your turn" (data-testid="turn-moment") shows when a bot's turn passes to the person and, untouched, is gone within
-//   2 s and readable (opacity ≥ 0.5) for at least 1.2 s; it never shows on a bot's turn, nor in the roll-off or setup; while
+// - "Your turn" (data-testid="turn-moment") shows when a roll turn passes to the person (#1140),
+//   not in roll-off or setup, and, untouched, stays up, pulsing, until its 8 s cap (a press or the move passing ends it
+//   sooner: your-turn-stay-prove); it never shows on a bot's turn; while
 //   it is the person's roll, Roll is the one filled primary and their seat card wears the turn ring (seat-turn,
 //   aria-current); on a bot's turn the banner reads "Wait for {bot} …" and there is no Roll;
 // - a roll steered to pay the person shows its goods on the hand only (#773): one +N tab (data-testid="resource-flash") per
@@ -24,8 +25,8 @@
 //   frame, the gain's fill a still highlight) for at least 1.5 s, each cue still readable for 1.2 s.
 // Hotseat at 1280x720: the moment names the seat taking the device ("Seat 2's turn"). A reconnect at 390x844 replays nothing
 // (reconnect(): a real connectTable over a controlled socket) and a live change after it still shows. Zero console errors.
-// Readable times come from each element's own animation (keyframes, duration, delay) capped by how long it stayed on the
-// page: software GL frames are too sparse to time it by sampling. For the placement and contrast measures only, the
+// Gain readability uses its animation's keyframes and duration; the sustained turn cue is also checked by sampled frames.
+// For the placement and contrast measures only, the
 // moment being measured is held on screen (__hold), and "Your turn" is timed again on a later turn left untouched.
 // Expiry also reports measured main-thread stalls, as roll-moment-prove does: a software-GL screenshot may block timers.
 // The 3100 ms running-time limit (2600 before #825), with a separate 4000 ms raw cap and an exact 3000 ms cue-duration check.
@@ -202,7 +203,7 @@ function recorders() {
       const cs = getComputedStyle(el);
       // A tab's own transform is none; the card carries the lift, so its transform is the one that moves the cue.
       const tf = el.dataset.testid === "turn-moment" ? cs.transform : getComputedStyle(el.closest(".goods-card")).transform;
-      rec.frames.push({ t: performance.now(), o: Number(cs.opacity), tf, box: box(el) });
+      rec.frames.push({ t: performance.now(), o: Number(cs.opacity), tf, box: box(el), leaving: el.hasAttribute("data-leaving") });
       // #1085: same-callback identity and placement at this read, not the moment's final stage.
       const sample = rec.frames.at(-1);
       sample.frameId = frameId;
@@ -425,8 +426,7 @@ async function contrast(page, testid, index = 0, band = 0.65) {
   return { color, min, pixels: pixels.length };
 }
 
-// How long a line or a moment reads (opacity at least 0.5): from its own animation (linear, keyframe opacities), and no
-// longer than it stayed on the page after its delay. Frames under software GL are too sparse to time it by sampling.
+// How long a finite animation reads (opacity at least 0.5), capped by its time on the page after its delay.
 const readable = (rec) => {
   const k = rec.anim?.keyframes.filter((f) => f.o !== null);
   if (!rec.gone) return 0;
@@ -470,7 +470,7 @@ async function practice(view) {
   try {
     await page.getByRole("button", { name: "Play", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
-    // Through the roll-off and setup to the person's first roll: no turn moment before the first roll phase.
+    // Through the roll-off and setup to the person's first roll: no turn moment appears (#1140).
     await playUntil(page, myRoll);
     const early = await page.evaluate(() => window.__turns.filter((t) => t.phase !== "roll").length);
     check(early === 0, `${tag}: no turn moment in the roll-off or setup`, early);
@@ -614,7 +614,12 @@ async function practice(view) {
     await playUntil(page, () => window.__turns.length > window.__t1);
     await page.waitForFunction(() => !document.querySelector('[data-testid="turn-moment"]'), null, { timeout: STEP_MS });
     const t2 = await page.evaluate(() => window.__turns[window.__t1]);
-    check(t2.gone - t2.at <= 2000 && readable(t2) >= 1200, `${tag}: untouched, "Your turn" is up about 1.6 s and gone within 2 s`, { up: (t2.gone - t2.at).toFixed(0), readable: readable(t2).toFixed(0) });
+    // The existing readable() measures a single finite entry animation, not the infinite pulse.
+    // Check every sampled frame after the entry reaches 0.5 and the elapsed visible frame span instead.
+    const firstVisible = t2.frames.findIndex((frame) => frame.o >= 0.5);
+    const visibleFrames = firstVisible < 0 ? [] : t2.frames.slice(firstVisible).filter((frame) => !frame.leaving);
+    const visibleMs = visibleFrames.length > 1 ? visibleFrames.at(-1).t - visibleFrames[0].t : 0;
+    check(t2.gone - t2.at >= 7500 && t2.gone - t2.at <= 8800 && /turn-pulse/.test(t2.animation) && visibleMs >= 7000 && visibleFrames.every((frame) => frame.o >= 0.5), `${tag}: untouched, "Your turn" stays up, pulsing, until its 8 s cap`, { up: (t2.gone - t2.at).toFixed(0), animation: t2.animation, visibleMs: visibleMs.toFixed(0) });
 
     // Over the whole game: every turn moment was the person's roll; every line was one of the person's own changes.
     const all = await page.evaluate(() => ({ turns: window.__turns.map((t) => ({ current: t.current, localId: t.localId, phase: t.phase })), lines: window.__lines.map((l) => ({ r: l.r, d: l.d, at: l.at })), own: window.__own }));

@@ -553,6 +553,8 @@ jobs:
         run: npm run stage-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
         run: npm run turn-gain-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
+        run: npm run your-turn-stay-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run win-action-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
