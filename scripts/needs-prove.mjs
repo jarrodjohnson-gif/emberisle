@@ -84,7 +84,7 @@ try{
  assert(dimensions.every(d=>d.w>=44&&d.h>=44));
  assert.deepEqual(await a.evaluate(()=>window.__isle.insets()),before);
  assert.equal(await b.evaluate(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p0').resources),undefined);
- await a.getByRole('button',{name:'Clear needs',exact:true}).click();await chip.waitFor({state:'detached'});
+ for(const good of ['Stone','Wheat'])await a.getByRole('button',{name:`Need ${good}`,exact:true}).click();await chip.waitFor({state:'detached'});
  await peerNeeds.waitFor({state:'detached'});await b.keyboard.press('Escape');
  await a.getByRole('button',{name:'Need Stone',exact:true}).click();await chip.waitFor();
  mkdirSync('test-results',{recursive:true});await a.screenshot({path:'test-results/needs-picker-phone.png'});
@@ -253,7 +253,7 @@ try{
   const need=page.getByRole('button',{name:'Need',exact:true});await need.click();
   await page.screenshot({path:path.join(captureDirectory,`needs-${width}x${height}-picker.png`)});
   const picker=await page.locator('#need-picker').evaluate(field=>{
-   const grid=field.querySelector('div'),style=getComputedStyle(grid),scroll=field.closest('.trade-composer-scroll');
+   const grid=field.querySelector('div'),style=getComputedStyle(grid),scroll=document.querySelector('.trade-composer-scroll');
    const viewport=scroll.getBoundingClientRect(),give=scroll.querySelector('[data-testid="trade-give-row"]');
    const controls=[give.querySelector('h3'),...give.querySelectorAll('button')].map(control=>{const box=control.getBoundingClientRect();return {label:control.getAttribute('aria-label')||control.textContent,top:box.top,bottom:box.bottom,visible:box.top>=viewport.top&&box.bottom<=viewport.bottom};});
    const targets=[field.parentElement.querySelector('button'),...field.querySelectorAll('button')].map(button=>{const box=button.getBoundingClientRect();return {label:button.getAttribute('aria-label')||button.textContent,width:box.width,height:box.height};});
