@@ -378,6 +378,32 @@ async function online(me, { cap = false } = {}) {
       ["tied rethrow", { turn: 0, phase: "rollOff", current: me, rollOff: { rolls: {}, pending: [me, notMe] } }],
     ]) { push(at(patch)); await stays(label, 5); }
 
+    if (me === "p1") {
+      await page.evaluate(() => {
+        window.__earlyFade = null;
+        const observer = new MutationObserver(() => {
+          const el = document.querySelector('[data-testid="turn-moment"]');
+          if (!el) return;
+          observer.disconnect();
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            const entry = el.getAnimations().find(a => a.animationName === "turn-stay-in");
+            if (!entry) { window.__earlyFade = { missing: true }; return; }
+            entry.pause(); entry.currentTime = 40;
+            const before = Number(getComputedStyle(el).opacity);
+            window.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+            window.__earlyFade = { before, frozen: Number(getComputedStyle(el).opacity), leaving: el.hasAttribute("data-leaving") };
+          }));
+        });
+        observer.observe(document, { childList: true, subtree: true });
+      });
+      push(at({ turn: 10, phase: "roll", current: me }));
+      await page.waitForFunction(() => window.__earlyFade, null, { timeout: STEP_MS });
+      const earlyFade = await page.evaluate(() => window.__earlyFade);
+      check(earlyFade.leaving && earlyFade.before > 0 && earlyFade.before < 0.95 && Math.abs(earlyFade.before - earlyFade.frozen) < 0.02, `${tg} a tap during entry fades from its current opacity`, earlyFade);
+      await gone();
+      await faded("entry tap");
+    }
+
   } catch (e) {
     console.error(`${tg}:`, e);
     failures++;
