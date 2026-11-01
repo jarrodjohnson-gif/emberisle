@@ -480,6 +480,8 @@ async function practice(view, [colorName, hex]) {
       };
     });
     await page.getByRole("button", { name: "Roll", exact: true }).click({ timeout: 5000 });
+    // Check dismissal before waiting for the roll: the eight-second cap must not mask a missed tap.
+    if (!SHOTS) await page.waitForFunction(() => !document.querySelector('[data-testid="turn-moment"]'), null, { timeout: 1000 });
     await page.waitForFunction(() => window.__emberisle.getState().state.phase !== "roll", null, { timeout: STEP_MS });
     if (SHOTS) {
       await page.waitForFunction(() => document.querySelector('[data-testid="turn-moment"]')?.getAnimations().some(a => a.transitionProperty === "opacity"), null, { timeout: STEP_MS });
