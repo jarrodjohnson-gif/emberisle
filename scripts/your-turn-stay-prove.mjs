@@ -271,6 +271,10 @@ async function online(me, { cap = false } = {}) {
     };
     const gone = (ms = 1000) => page.waitForFunction(() => !document.querySelector('[data-testid="turn-moment"]'), null, { timeout: ms });
     const shows = (n) => page.waitForFunction((n) => window.__yt.length === n && document.querySelector('[data-testid="turn-moment"]'), n, { timeout: STEP_MS });
+    const faded = async (label) => {
+      const exit = await page.evaluate(() => window.__exits.at(-1));
+      check(exit?.gone - exit?.at >= 140 && exit?.gone - exit?.at < 1000 && exit?.pointer === "none" && exit?.hidden === "true" && exit?.animation === "none" && exit?.duration.split(", ").every(v => v === "0.16s") && exit?.mid?.opacity > 0 && exit?.mid?.opacity < 1, `${tg} ${label}: pointer-transparent 160 ms fade`, exit);
+    };
     const notMe = base.players.find((p) => p.id !== me).id;
 
     // A first load onto a move under way (the baseline) shows nothing, not even on the person's own roll.
@@ -299,6 +303,7 @@ async function online(me, { cap = false } = {}) {
       await gone(9000);
       const held = Date.now() - t0;
       check(held >= 7500 && held <= 8800, `${tg} untouched, it leaves at its 8 s cap (timed from just after it mounted)`, held);
+      await faded("8 s cap");
       push(at({ turn: 3, phase: "roll", current: me }));
       await stays("a repeat push after the cap", 1);
       push(at({ turn: 4, phase: "roll", current: me }));
@@ -332,11 +337,13 @@ async function online(me, { cap = false } = {}) {
     push(at({ turn: 5, phase: "main", current: me }));
     await gone();
     check(true, `${tg} the person rolling ends it`);
+    await faded("roll");
     push(at({ turn: 6, phase: "roll", current: me }));
     await shows(4);
     push(at({ turn: 6, phase: "main", current: notMe }));
     await gone();
     check(true, `${tg} the turn passing on ends it`);
+    await faded("turn passing on");
 
     // Spectators never get one: a watcher is no seat.
     await page.evaluate(() => window.__emberisle.setState({ spectator: true }));
@@ -436,7 +443,7 @@ async function practice(view, [colorName, hex]) {
       const original = window.setTimeout;
       window.__restoreExitClock = () => { window.setTimeout = original; window.__finishExit?.(); };
       window.setTimeout = (fn, ms, ...args) => {
-        if (ms === 160 && document.querySelector('[data-testid="turn-moment"]')?.style.transition.includes("160ms")) {
+        if (ms === 160 && document.querySelector('[data-testid="turn-moment"][data-leaving]')) {
           window.__finishExit = () => fn(...args);
           return 0;
         }
