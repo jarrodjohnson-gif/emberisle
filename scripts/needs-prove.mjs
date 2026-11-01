@@ -50,7 +50,7 @@ try{
  const a=await tab('p0',true),b=await tab('p1',false);
  const before=await a.evaluate(()=>window.__isle.insets());
  await a.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
- await a.getByRole('button',{name:'Need',exact:true}).click();
+ await a.getByRole('heading',{name:'You need',exact:true}).waitFor();
  assert.equal(await a.getByRole('button',{name:/^Need (Wood|Brick|Sheep|Wheat|Stone)$/}).count(),5);
  const started=Date.now();await a.getByRole('button',{name:'Need Stone',exact:true}).click();
  const chip=b.getByTestId('rail-p0').getByTestId('seat-needs');await chip.waitFor({timeout:1000});
@@ -87,7 +87,8 @@ try{
  for(const good of ['Stone','Wheat'])await a.getByRole('button',{name:`Need ${good}`,exact:true}).click();await chip.waitFor({state:'detached'});
  await peerNeeds.waitFor({state:'detached'});await b.keyboard.press('Escape');
  // Empty row: closing the picker shows the one sentence of the feature, then reopen for the next step.
- await a.getByRole('button',{name:'Need',exact:true}).click();await a.getByTestId('own-needs').filter({hasText:'Share up to two goods'}).waitFor();await a.getByRole('button',{name:'Need',exact:true}).click();
+ // The picker is always in the window: the heading and its one hint line replace the old closed-row sentence.
+ await a.getByRole('heading',{name:'You need',exact:true}).waitFor();assert.equal(await a.locator('.need-hint').textContent(),'Tap up to two. Not part of the offer; other players see it.');assert.equal(await a.getByTestId('own-needs').count(),0,'no separate own chips line');assert.equal(await a.getByRole('button',{name:'Need',exact:true}).count(),0,'no Need toggle button');
  await a.getByRole('button',{name:'Need Stone',exact:true}).click();await chip.waitFor();
  mkdirSync('test-results',{recursive:true});await a.screenshot({path:'test-results/needs-picker-phone.png'});
  await a.getByRole('button',{name:'Close',exact:true}).click();
@@ -102,7 +103,7 @@ try{
  console.log('ok real table trade: received requested Stone clears the public need on the other client');
  await a.waitForFunction(()=>window.__emberisle.getState().seats.find(s=>s.player==='p0')?.needs?.length===0);
  await a.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
- await a.getByRole('button',{name:'Need',exact:true}).click();
+ await a.getByRole('heading',{name:'You need',exact:true}).waitFor();
  // Hold real host seat echoes so unrelated messages cannot hide an optimistic-draft reset.
  await a.evaluate(()=>{window.__holdNeedSeats=true;});
  await a.getByRole('button',{name:'Need Stone',exact:true}).click();
@@ -252,26 +253,24 @@ try{
   await page.screenshot({path:path.join(captureDirectory,`needs-${width}x${height}-menu.png`)});
   await page.keyboard.press('Escape');
   await page.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
-  const need=page.getByRole('button',{name:'Need',exact:true});await need.click();
   await page.screenshot({path:path.join(captureDirectory,`needs-${width}x${height}-picker.png`)});
   const picker=await page.locator('#need-picker').evaluate(field=>{
    const grid=field.querySelector('div'),style=getComputedStyle(grid),scroll=document.querySelector('.trade-composer-scroll');
    const viewport=scroll.getBoundingClientRect(),give=scroll.querySelector('[data-testid="trade-give-row"]');
    const controls=[give.querySelector('h3'),...give.querySelectorAll('button')].map(control=>{const box=control.getBoundingClientRect();return {label:control.getAttribute('aria-label')||control.textContent,top:box.top,bottom:box.bottom,visible:box.top>=viewport.top&&box.bottom<=viewport.bottom};});
-   const targets=[field.parentElement.querySelector('button'),...field.querySelectorAll('button')].map(button=>{const box=button.getBoundingClientRect();return {label:button.getAttribute('aria-label')||button.textContent,width:box.width,height:box.height};});
-   return {targets,noOverflow:field.scrollWidth<=field.clientWidth&&scroll.scrollWidth<=scroll.clientWidth,gap:Number.parseFloat(style.columnGap),scrollHeight:scroll.scrollHeight,clientHeight:scroll.clientHeight,viewport:{top:viewport.top,bottom:viewport.bottom},giveControls:controls};
+   const targets=[...field.querySelectorAll('button')].map(button=>{const box=button.getBoundingClientRect();return {label:button.getAttribute('aria-label')||button.textContent,width:box.width,height:box.height,fill:getComputedStyle(button).backgroundColor,pressed:button.getAttribute('aria-pressed')};}),gaps=[...field.querySelectorAll('button')].slice(1).map((button,i)=>button.getBoundingClientRect().left-field.querySelectorAll('button')[i].getBoundingClientRect().right);
+   return {targets,gaps,noOverflow:field.scrollWidth<=field.clientWidth&&scroll.scrollWidth<=scroll.clientWidth,gap:Number.parseFloat(style.columnGap),scrollHeight:scroll.scrollHeight,clientHeight:scroll.clientHeight,viewport:{top:viewport.top,bottom:viewport.bottom},giveControls:controls};
   });
-  geometry.at(-1).picker=picker;if(!picker.noOverflow)geometryProblems.push(`${width}x${height}: picker horizontal overflow`);if(picker.targets.some(target=>target.width<44||target.height<44))geometryProblems.push(`${width}x${height}: picker target below44px`);if(width===844&&picker.giveControls.some(control=>!control.visible))geometryProblems.push(`${width}x${height}: open picker pushes give heading/steppers below scroll fold`);if(picker.gap<8)geometryProblems.push(`${width}x${height}: picker gap below8px`);
+  geometry.at(-1).picker=picker;if(!picker.noOverflow)geometryProblems.push(`${width}x${height}: picker horizontal overflow`);if(picker.targets.some(target=>target.width<44||target.height<44))geometryProblems.push(`${width}x${height}: picker target below44px`);if(width===844&&picker.giveControls.some(control=>!control.visible))geometryProblems.push(`${width}x${height}: open picker pushes give heading/steppers below scroll fold`);if(picker.gap<8)geometryProblems.push(`${width}x${height}: picker gap below8px`);if(picker.targets.length!==5||picker.targets.some(t=>t.height!==44)||picker.gaps.some(g=>g<8))geometryProblems.push(`${width}x${height}: five 44px pills with 8px gaps differ ${JSON.stringify(picker.targets)}`);if(picker.targets.some(t=>t.fill!==(t.pressed==='true'?'rgb(255, 255, 255)':'rgb(243, 246, 245)')))geometryProblems.push(`${width}x${height}: lit pill must be white and unlit the sheet fill ${JSON.stringify(picker.targets)}`);
   // C3 11.1: the window stays in the lobby's white set, and the Need button and chips read at 4.5:1.
   const white=await page.getByTestId('trade-panel').evaluate(panel=>{
    const rgb=c=>c.match(/[\d.]+/g).slice(0,3).map(Number),lum=c=>{const [r,g,b]=rgb(c).map(v=>{v/=255;return v<=0.03928?v/12.92:((v+0.055)/1.055)**2.4;});return 0.2126*r+0.7152*g+0.0722*b;};
    const ratio=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);};
-   const button=[...panel.querySelectorAll('button')].find(b=>b.textContent.replace(/\s/g,'')==='Need'),chip=panel.querySelector('[data-testid="need-chip"]');
+   const button=panel.querySelector('#need-picker button'),chip=panel.querySelector('[data-testid="need-chip"]');
    return {sheet:getComputedStyle(panel).backgroundColor,button:ratio(getComputedStyle(button).color,getComputedStyle(button).backgroundColor),chip:chip?ratio(getComputedStyle(chip).color,getComputedStyle(chip).backgroundColor):null};
   });
   geometry.at(-1).white=white;
   if(white.sheet!=='rgb(243, 246, 245)'||white.button<4.5||white.chip===null||white.chip<4.5)geometryProblems.push(`${width}x${height}: Trade window colour or Need text contrast differs from C3 ${JSON.stringify(white)}`);
-  await need.click();if(await need.getAttribute('aria-controls'))geometryProblems.push(`${width}x${height}: closed picker leaves dangling aria-controls`);
   await page.getByRole('button',{name:'Close',exact:true}).click();await context.close();
  }
  writeFileSync(path.join(captureDirectory,'needs-geometry.json'),JSON.stringify(geometry,null,2));
