@@ -171,8 +171,10 @@ for (const [w, h, touch] of [
       const kids = window.__isle.marks.children;
       const rings = kids.filter((m) => m.userData.kind === "vertex" && m.geometry?.type === "TorusGeometry");
       const outlinesMesh = kids.find((m) => m.userData.kind === "vertex-outlines");
+      // A home's halo has its own instanced outline (#830, Stronghold halo spec); both count.
+      const haloOutlines = kids.find((m) => m.userData.kind === "home-halo-outlines")?.count ?? 0;
       const discsMesh = kids.find((m) => m.userData.kind === "vertex-discs");
-      const outlines = outlinesMesh ? outlinesMesh.count : kids.filter((m) => m.userData.kind === "vertex-outline").length;
+      const outlines = (outlinesMesh ? outlinesMesh.count : kids.filter((m) => m.userData.kind === "vertex-outline").length) + haloOutlines;
       const discs = discsMesh ? discsMesh.count : kids.filter((m) => m.userData.kind === "vertex-disc").length;
       const visibleDraws = kids.filter((m) => m.visible !== false).length;
       return {
@@ -180,7 +182,8 @@ for (const [w, h, touch] of [
         outlines,
         discs,
         visibleDraws,
-        diameter: rings[0] ? 2 * (rings[0].geometry.parameters.radius + rings[0].geometry.parameters.tube) : 0,
+        // Every ring, not just the first: an empty corner's ring and a home's halo are different sizes.
+        diameter: rings.length ? Math.min(...rings.map((m) => 2 * (m.geometry.parameters.radius + m.geometry.parameters.tube))) : 0,
         total: kids.length,
       };
     });
@@ -205,14 +208,15 @@ for (const [w, h, touch] of [
   const onScreen = legal.map((_, i) => pts[i] && pts[i].x > 8 && pts[i].x < w - 8 && pts[i].y > 8 && pts[i].y < h - 8);
   const terrains = await terrainOf(legal);
   // The ring's reach on screen: 0.2 world units along x, a little over.
-  const reachOf = (id) =>
-    page.evaluate((id) => {
+  // The sampled patch's half-width in pixels: `out` world units from the corner (an empty corner's ring is 0.2 out), times 1.3.
+  const reachOf = (id, out = 0.2) =>
+    page.evaluate(([id, out]) => {
       const i = window.__isle;
       const v = i.lastState.vertices.find((x) => x.id === id);
       const a = i.screenAt(v.x, 0.3, v.z);
-      const b = i.screenAt(v.x + 0.2, 0.3, v.z);
+      const b = i.screenAt(v.x + out, 0.3, v.z);
       return Math.max(4, Math.hypot(a.x - b.x, a.y - b.y) * 1.3);
-    }, id);
+    }, [id, out]);
   const r = await reachOf(legal[0]);
   await drawn(page, 2);
   const at = pts.map((p) => p ?? { x: 0, y: 0 });
@@ -318,11 +322,14 @@ for (const [w, h, touch] of [
   const own = await legalNow();
   const sh = await marksInfo();
   check(`${tag}: armed Stronghold rings exactly the legal homes`, own.length > 0 && sh.rings === own.length && sh.outlines === own.length, { legal: own.length, ...sh });
-  // The ring must show over the home's own base disc: a pixel diff with the marks shown and hidden, at each legal home.
+  // A home's halo must show round the piece: a pixel diff with the marks shown and hidden, at each legal home. The patch
+  // reaches 0.42 world units out, past the halo's outline (0.415).
+  // The roll moment (the dice banner) clears on its own timer; wait for it so it covers no home in the check or the picture.
+  await page.waitForFunction(() => !document.querySelector('[data-testid="roll-moment"]'), null, { timeout: STEP_MS });
   const homeAt = await page.evaluate((ids) => ids.map((id) => window.__isle.screenOf(id)), own);
   const homeOn = homeAt.map((p) => p && p.x > 8 && p.x < w - 8 && p.y > 8 && p.y < h - 8);
   const hp = homeAt.map((p) => p ?? { x: 0, y: 0 });
-  const hr = await reachOf(own[0]);
+  const hr = await reachOf(own[0], 0.42 / 1.3);
   await patches(page, "__homeShown", true, hp, hr);
   await page.screenshot({ path: `test-results/placement-glow-stronghold-${tag}.png` });
   await page.evaluate(() => {
