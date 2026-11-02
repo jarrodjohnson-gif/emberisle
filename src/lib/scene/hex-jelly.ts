@@ -1603,42 +1603,44 @@ function sheep(m: THREE.Material, o: { lying?: boolean; shorn?: boolean; lamb?: 
 }
 
 // A person 0.11 tall facing +x: boots, trousers, a smock, arms, a head and a straw hat; `bend` tips the body forward from the hips.
-function person(m: THREE.Material, smock: string, bend = 0, hat = "#e8c56a") {
+// With `limbs`, each leg and arm hangs on its own pivot (hip, shoulder) so it can swing; at rotation 0 they rest as drawn.
+function person(m: THREE.Material, smock: string, bend = 0, hat = "#e8c56a", limbs = false) {
   const g = new THREE.Group();
-  g.add(
-    mesh(
-      merge([
-        part(cyl(0.006, 0.006, 8), "#3d3530", [0, 0.004, 0.007], [0, 0, 0], [1, 0.008, 1.1]),
-        part(cyl(0.006, 0.006, 8), "#3d3530", [0, 0.004, -0.007], [0, 0, 0], [1, 0.008, 1.1]),
-        part(cyl(0.0055, 0.0055, 8), "#5a4a3c", [0, 0.026, 0.007], [0, 0, 0], [1, 0.042, 1]),
-        part(cyl(0.0055, 0.0055, 8), "#5a4a3c", [0, 0.026, -0.007], [0, 0, 0], [1, 0.042, 1]),
-      ]),
-      m,
-    ),
-  );
+  const shoe = (z: number) => part(cyl(0.006, 0.006, 8), "#3d3530", [0, 0.004, z], [0, 0, 0], [1, 0.008, 1.1]);
+  const leg = (z: number) => part(cyl(0.0055, 0.0055, 8), "#5a4a3c", [0, 0.026, z], [0, 0, 0], [1, 0.042, 1]);
+  const arm = (z: number) => part(cyl(0.004, 0.004, 6), smock, [0.006, 0.02, z], [0, 0, 0.9], [1, 0.03, 1]);
+  const hand = (z: number) => part(sphere(8), "#f0c49c", [0.018, 0.012, z], [0, 0, 0], [0.004, 0.004, 0.004]);
+  const hips = [0.007, -0.007];
+  const shoulders = [0.016, -0.016];
   const top = new THREE.Group();
   top.position.y = 0.046;
   top.rotation.z = -bend;
-  top.add(
-    mesh(
-      merge([
-        part(cyl(0.011, 0.015, 10), smock, [0, 0.019, 0], [0, 0, 0], [1, 0.04, 1]),
-        part(cyl(0.004, 0.004, 6), smock, [0.006, 0.02, 0.016], [0, 0, 0.9], [1, 0.03, 1]),
-        part(cyl(0.004, 0.004, 6), smock, [0.006, 0.02, -0.016], [0, 0, 0.9], [1, 0.03, 1]),
-        part(sphere(8), "#f0c49c", [0.018, 0.012, 0.016], [0, 0, 0], [0.004, 0.004, 0.004]),
-        part(sphere(8), "#f0c49c", [0.018, 0.012, -0.016], [0, 0, 0], [0.004, 0.004, 0.004]),
-        part(sphere(), "#f0c49c", [0, 0.05, 0], [0, 0, 0], [0.011, 0.012, 0.011]),
-        part(cyl(1, 1, 16), hat, [0, 0.058, 0], [0, 0, 0], [0.019, 0.002, 0.019]),
-        part(cyl(0.8, 1, 12), hat, [0, 0.064, 0], [0, 0, 0], [0.01, 0.01, 0.01]),
-        part(cyl(1, 1, 12), "#b8463a", [0, 0.061, 0], [0, 0, 0], [0.0102, 0.002, 0.0102]),
-      ]),
-      m,
-    ),
-  );
+  const body = [
+    part(cyl(0.011, 0.015, 10), smock, [0, 0.019, 0], [0, 0, 0], [1, 0.04, 1]),
+    part(sphere(), "#f0c49c", [0, 0.05, 0], [0, 0, 0], [0.011, 0.012, 0.011]),
+    part(cyl(1, 1, 16), hat, [0, 0.058, 0], [0, 0, 0], [0.019, 0.002, 0.019]),
+    part(cyl(0.8, 1, 12), hat, [0, 0.064, 0], [0, 0, 0], [0.01, 0.01, 0.01]),
+    part(cyl(1, 1, 12), "#b8463a", [0, 0.061, 0], [0, 0, 0], [0.0102, 0.002, 0.0102]),
+  ];
+  const joint = (to: THREE.Object3D, y: number, z: number, ps: THREE.BufferGeometry[]) => {
+    const j = new THREE.Group();
+    j.position.set(0, y, z);
+    const o = mesh(merge(ps), m);
+    o.position.set(0, -y, -z);
+    j.add(o);
+    to.add(j);
+    return j;
+  };
+  if (!limbs) {
+    g.add(mesh(merge([...hips.map(shoe), ...hips.map(leg)]), m));
+    top.add(mesh(merge([body[0]!, ...shoulders.map(arm), ...shoulders.map(hand), ...body.slice(1)]), m));
+  } else top.add(mesh(merge(body), m));
+  const legs = limbs ? hips.map((z) => joint(g, 0.047, z, [shoe(z), leg(z)])) : [];
+  const arms = limbs ? shoulders.map((z) => joint(top, 0.03, z, [arm(z), hand(z)])) : [];
   g.add(top);
   g.scale.setScalar(SIZE.person);
   g.userData.ref = "person";
-  return { g, top };
+  return { g, top, legs, arms };
 }
 
 // A black-and-white collie facing +x, legs on their own meshes so it can trot.
@@ -4347,8 +4349,14 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
       if (!falls) break;
       at0 += GEAR + CLIMB * tries[k]!.fallAt + 2 + REST;
     }
-    const climber = person(cm, "#d0482e", 0, "#e8c56a");
+    // His figure (#976): the shared person with arms and legs on pivots, so a climb reads as hands and feet in turn.
+    const climber = person(cm, "#d0482e", 0, "#e8c56a", true);
     climber.g.userData.ref = "climber";
+    climber.arms.forEach((o) => (o.userData.ref = "climber-arm"));
+    // Swing from rest (0: as drawn): arms a and b, legs c and d.
+    const pose = (a: number, b: number, c: number, d: number) => {
+      [a, b, c, d].forEach((v, i) => ((i < 2 ? climber.arms : climber.legs)[i % 2]!.rotation.z = v));
+    };
     // His gear: a rope coil over the shoulder, a red helmet over the hat, and the flag he plants at the top.
     const rope = mesh(merge([part(new THREE.TorusGeometry(1, 0.28, 6, 14), "#e8d080", [-0.004, 0.026, 0], [0, 0, 0.5], [0.012, 0.012, 0.012])]), cm);
     const helmet = mesh(merge([part(sphere(10), "#e83a2a", [0, 0.06, 0], [0, 0, 0], [0.013, 0.01, 0.013])]), cm);
@@ -4361,6 +4369,16 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
     const pack = mesh(merge([part(sphere(8), "#7a5a3a", [start.x, Y(start.x, start.z) + 0.01, start.z], [0, 0, 0], [0.014, 0.012, 0.011])]), cm);
     g.add(pack);
     stands.push({ x: start.x, z: start.z, r: 0.05 });
+    // His fixed line (#976): a stake driven in beside the foot of the face, the rope from it up to his harness while he
+    // climbs, so he reads as roped on. The stake stays; the rope shows from when he walks to the foot.
+    const knot = V3({ x: foot.x - dir.z * 0.03, z: foot.z + dir.x * 0.03 }, 0.016);
+    const stake = mesh(merge([part(cyl(0.0022, 0.0016, 6), "#8a8a90", [knot.x, knot.y - 0.007, knot.z], [0, 0, 0.2], [1, 0.02, 1])]), cm);
+    stake.userData.ref = "climber-stake";
+    const line = mesh(merge([part(cyl(0.0016, 0.0016, 6), "#e8d080", [0, 0.5, 0])]), cm);
+    line.userData.ref = "climber-rope";
+    g.add(stake, line);
+    const UPV = new THREE.Vector3(0, 1, 0);
+    const him = new THREE.Vector3();
     // The skeletons: a skull, ribs, limbs, lying flat (facing +x), one per fall; hidden ones ride along with the climber.
     const bones = () =>
       mesh(
@@ -4380,14 +4398,22 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
         ]),
         cm,
       );
+    const landed: Pt[] = [];
     const skels = tries.filter((q) => q.fallAt >= 0).map((q, k) => {
       const o = bones();
       o.scale.setScalar(SIZE.person * 1.6);
       o.userData.ref = "skeleton";
       g.add(o);
-      // Where he lands: in the scree by the pack, where the eye can see him, a little apart from the last.
+      // Where he lands (#976): at the base of the peak he fell from, on open scree as near the face as there is, each
+      // fall a little apart from the last; inside the hex. Only if the whole base is taken, the scree by the pack as before.
       const ka = k * 2.1 + 0.6;
-      const land = { x: start.x + Math.cos(ka) * 0.06, z: start.z + Math.sin(ka) * 0.06 };
+      let land = { x: start.x + Math.cos(ka) * 0.06, z: start.z + Math.sin(ka) * 0.06 };
+      for (let i = 131; i >= 0; i--) {
+        const a = fl.a + (i % 2 ? -1 : 1) * ((i >> 1) % 11) * 0.16 + k * 0.1, d = p0.r * (1.15 + 0.15 * Math.floor(i / 22));
+        const pt = { x: p0.x + Math.cos(a) * d, z: p0.z + Math.sin(a) * d };
+        if (ok(pt.x, pt.z, 0.01) && Math.abs(ground(pt.x, pt.z)) < 0.12 && landed.every((q) => Math.hypot(q.x - pt.x, q.z - pt.z) > 0.04)) land = pt;
+      }
+      landed.push(land);
       return { o, land, yaw: k * 1.7 + 0.4 };
     });
     const look = -Math.atan2(-dir.z, -dir.x);
@@ -4404,9 +4430,12 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
       let x = start.x, y = Y(start.x, start.z), z = start.z;
       let yaw = look, lean = 0, roll = 0, sit = false;
       let shown = true;
-      rope.visible = a > 2;
+      // The coil rides on his shoulder until he pays it out from the stake.
+      rope.visible = a > 2 && a <= 4.6;
       helmet.visible = a > 4;
       flag.visible = false;
+      let roped = a > 4.6;
+      pose(0, 0, 0, 0);
       if (a < GEAR) {
         // Walks in, kneels at the pack, coils the rope, puts the helmet on, stands and walks to the foot.
         const w = Math.min(1, a / 1.2);
@@ -4416,6 +4445,9 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
         y = Y(x, z);
         lean = a > 1.2 && a < 4.6 ? 0.6 * Math.sin(((a - 1.2) / 3.4) * Math.PI) : 0;
         yaw = a < 1.2 ? look + Math.PI / 2 : a < 4.6 ? look - Math.PI / 4 : -Math.atan2(foot.z - start.z, foot.x - start.x);
+        // Walking, arms and legs swing.
+        const sw = Math.sin(a * 9) * 0.45;
+        pose(sw, -sw, -sw, sw);
       } else {
         const c = a - GEAR;
         const up = Math.min(1, c / CLIMB);
@@ -4426,6 +4458,9 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
           yaw = -Math.atan2(EYE.z, EYE.x);
           sit = true;
           flag.visible = true;
+          // He has hauled the line up after him; the stake stays at the foot.
+          roped = false;
+          pose(0, 1.8, 1.4, 1.4);
         } else if (!fell) {
           // A step at a time: a pull up, a pause.
           const steps = c / 1.4;
@@ -4434,22 +4469,34 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
           x = f.x; y = f.y; z = f.z;
           lean = 0.5;
           roll = 0.08 * Math.sin(steps * Math.PI);
+          // Hands and feet in turn: each step one hand reaches up the face while the other foot pushes, then they swap.
+          const r0 = 0.6 * ease(Math.min(1, (steps % 1) * 1.6)) * (Math.floor(steps) % 2 ? -1 : 1);
+          pose(1.6 + r0, 1.6 - r0, 0.6 - r0, 0.6 + r0);
         } else {
-          // The slip: out and down to the scree, tumbling; then he is bones.
+          // The slip (#976): he slides and tumbles down the face he was on, then rolls out to the foot of it and is
+          // bones. He stays on the mountain's flank, not out across the hex.
           const ft = c - q.fallAt * CLIMB;
-          const f = face(q.fallAt);
           const s0 = skels[fallsDone]!;
           const v = Math.min(1, ft / 1.1);
-          x = f.x + (s0.land.x - f.x) * v;
-          z = f.z + (s0.land.z - f.z) * v;
-          const gy = Y(s0.land.x, s0.land.z);
-          y = f.y + (gy - f.y) * v * v + 0.06 * Math.sin(v * Math.PI) * (1 - v);
+          const f = face(q.fallAt * (1 - ease(Math.min(1, v / 0.75))));
+          const w = Math.max(0, v * 4 - 3);
+          x = f.x + (s0.land.x - f.x) * w;
+          z = f.z + (s0.land.z - f.z) * w;
+          y = f.y + (Y(s0.land.x, s0.land.z) - f.y) * w + 0.012 * Math.sin(w * Math.PI);
           roll = ft * 8;
           lean = 0.4 + ft * 6;
+          pose(1.8, 1.4, 0.9, -0.4);
           shown = ft < 1.3;
+          roped = shown;
         }
       }
       climber.g.visible = shown;
+      line.visible = roped;
+      // The rope from the stake to his harness.
+      him.set(x, y + 0.03 * SIZE.person, z).sub(knot);
+      line.position.copy(knot);
+      line.scale.y = him.length();
+      line.quaternion.setFromUnitVectors(UPV, him.normalize());
       climber.g.position.set(x, y, z);
       climber.g.rotation.set(0, yaw, roll);
       climber.top.rotation.z = -lean;
