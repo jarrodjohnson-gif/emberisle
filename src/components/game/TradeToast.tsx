@@ -44,6 +44,7 @@ export function TradeToast() {
   // A watcher (docs/design/spectator.md) reads the offer and the clock, with no Yes or No.
   const spectator = useGame((s) => s.spectator);
   const answerTrade = useGame((s) => s.answerTrade);
+  const cancelTrade = useGame((s) => s.cancelTrade);
   const [now, setNow] = useState(() => Date.now());
   const [leaving, setLeaving] = useState(false);
   const fadeMs = calm() ? 0 : DISMISS_MS;
@@ -126,7 +127,8 @@ export function TradeToast() {
       );
     }
   } else if (!declined.includes(localId)) {
-    const left = Math.max(0, Math.ceil((offer.until - now) / 1000));
+    // #1245: a person's offer holds until answered (until is null): no countdown and no "5 seconds left".
+    const left = offer.until === null ? null : Math.max(0, Math.ceil((offer.until - now) / 1000));
     const asker = offer.from === localId;
     const short = me ? RESOURCES.filter((r) => (offer.want[r] ?? 0) > me.resources[r]) : [];
     answering = !asker && !spectator;
@@ -144,11 +146,13 @@ export function TradeToast() {
             {!asker || compact ? <SeatDot color={fromColor} className="mr-1.5 size-3 align-[-1px]" /> : null}
             {line}
           </p>
-          <span aria-hidden={!asker || undefined} className="trade-clock shrink-0 tabular-nums text-xs" data-testid="trade-countdown" data-urgent={left <= 5 || undefined}>
-            {left} s
-          </span>
+          {left === null ? null : (
+            <span aria-hidden={!asker || undefined} className="trade-clock shrink-0 tabular-nums text-xs" data-testid="trade-countdown" data-urgent={left <= 5 || undefined}>
+              {left} s
+            </span>
+          )}
         </div>
-        {answering ? (
+        {answering && left !== null ? (
           <p aria-live="polite" className="sr-only" data-testid="trade-countdown-live">
             {left === 5 ? "5 seconds left" : ""}
           </p>
@@ -202,6 +206,12 @@ export function TradeToast() {
             <div className="trade-answers flex items-center gap-1">
               <Button className="trade-yes h-11 min-w-16 flex-1" onClick={() => answerTrade(true)}>Yes</Button>
               <Button variant="secondary" className="trade-no h-11 min-w-16 flex-1" onClick={() => answerTrade(false)}>No</Button>
+            </div>
+          ) : null}
+          {asker && !spectator ? (
+            // #1245: a person's offer holds until answered, so the asker can always take it back.
+            <div className="trade-answers flex items-center gap-1">
+              <Button variant="secondary" className="trade-no h-11 min-w-16 flex-1" data-testid="trade-cancel" onClick={cancelTrade}>Cancel</Button>
             </div>
           ) : null}
         </>

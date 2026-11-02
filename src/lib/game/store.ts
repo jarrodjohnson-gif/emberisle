@@ -219,14 +219,15 @@ import type { PlayView } from "@/lib/scene/mobile-fit";
 
 const tradeSounds = import("../trade-sound");
 
-// The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when the host's 20 s run out.
+// The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when a bot's offer runs out
+// (20 s); it is null for a person's offer, which holds until it is answered (#1245).
 export interface OpenOffer {
   tradeId: string;
   from: string;
   fromName: string;
   give: Bag;
   want: Bag;
-  until: number;
+  until: number | null;
 }
 
 // The client is needed only for discovery or an explicit online journey.
@@ -241,7 +242,8 @@ function clearWake() {
 let outcomeTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Practice runs the ask-the-table offer here, as host.mjs does online (#363): a bot answers BOT_ANSWER_MS to twice that
-// after the ask, and an offer nobody takes closes after OFFER_MS. The timers belong to the open offer.
+// after the ask. A bot's offer nobody takes closes after OFFER_MS; a person's holds until answered (#1245). The timers
+// belong to the open offer.
 const BOT_ANSWER_MS = 1000;
 const OFFER_MS = 20000;
 // People first (#850), as host.mjs: a bot's Yes waits this long, or until every person asked has said No.
@@ -411,6 +413,8 @@ interface GameStore {
   chromeLanded: () => void;
   askTable: (give: Bag, want: Bag) => void;
   answerTrade: (yes: boolean) => void;
+  // The asker takes back its own open offer (#1245).
+  cancelTrade: () => void;
   // The player whose action menu is open in the HUD rail or seat strip (docs/design/chat.md "The player action menu").
   menuFor: string | null;
   openMenu: (id: string | null) => void;
@@ -1025,6 +1029,12 @@ export const useGame = create<GameStore>((set, get) => ({
       play("ui_error");
     }
   },
+  cancelTrade: () => {
+    const { offer, net, spectator, mode, localId } = get();
+    if (!offer || spectator || offer.from !== localId) return;
+    if (mode === "online") return net?.cancel(offer.tradeId);
+    endOffer(set, get, null);
+  },
   openMenu: (id) => {
     set({ menuFor: id });
   },
@@ -1057,10 +1067,12 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const state = get().state!;
   const tradeId = `t${state.seq}-${++offerSeq}`;
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
-  set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null, tradeTaker: null });
+  // #1245 (owner q-trade-hold B): only a bot's offer runs out; a person's holds until answered (host.mjs openOffer).
+  const runOut = state.players.find((p) => p.id === from)?.kind === "bot";
+  set({ offer: { tradeId, from, fromName, give, want, until: runOut ? Date.now() + OFFER_MS : null }, declined: [], tradeOutcome: null, tradeTaker: null });
   const me = get().localId;
   void tradeSounds.then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
-  offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
+  if (runOut) offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
     const answer = () => {
@@ -1266,7 +1278,8 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     log: (text) => set({ lobbyLog: text, gameLog: appendLog(get().gameLog, [text]) }),
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
-      set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
+      // #1245: a null `seconds` is an offer that holds until answered (no run-out).
+      set({ offer: { tradeId, from, fromName, give, want, until: seconds === null ? null : Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
       const me = get().localId;
       void tradeSounds.then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
     },

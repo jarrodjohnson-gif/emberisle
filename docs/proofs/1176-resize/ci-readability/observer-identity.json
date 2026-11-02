@@ -1,0 +1,14 @@
+[
+  {
+    "mode": "fulfilled",
+    "originalErrorIdentity": true
+  },
+  {
+    "mode": "rejected",
+    "originalErrorIdentity": true
+  },
+  {
+    "mode": "timed-out",
+    "originalErrorIdentity": true
+  }
+]
