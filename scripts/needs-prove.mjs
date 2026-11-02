@@ -284,6 +284,78 @@ try{
  console.log('four-seat needs geometry',JSON.stringify(geometry));
  assert.deepEqual(geometryProblems,[],'four-seat dots match approved geometry, clear public information and menu chips meet approved type/spacing');
  console.log('ok four-seat needs table and own picker:320x568,390x844,844x390,1280x720');
+ // #646 Others need: one fixed row per other seat. The window, its Close button and every row sit in the same place whatever the seats share.
+ const fixedProblems=[],fixedSummary=[];
+ const configs={none:{},oneSeatOne:{p1:['timber']},twoSeatsBoth:{p1:['timber','ore'],p2:['grain','clay']},sharedFirst:{p1:['timber','ore'],p2:['timber'],p3:['timber']}};
+ for(const [width,height] of [[320,568],[390,844],[844,390],[1280,720]]){
+  const context=await browser.newContext({viewport:{width,height},hasTouch:width!==1280,isMobile:width!==1280});
+  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+  await page.addInitScript(()=>{localStorage.setItem('emberisle-chat-open','0');for(const method of ['drawElements','drawArrays','drawElementsInstanced','drawArraysInstanced'])WebGL2RenderingContext.prototype[method]=()=>{};});
+  await page.goto(`http://127.0.0.1:${port}/`);await page.waitForFunction(()=>window.__emberisle);
+  for(const names of [['Jarrod','Ashfield Wandere','Dune','Ember'],['Jarrod','WWWWWWWWWWWWWWWW','Ashfield Wandere','Dune']]){
+   await page.evaluate(async names=>{
+    const {createGame}=await import('/src/lib/game/board.ts');
+    const {useLocalNeeds}=await import('/src/components/game/need-state.ts');
+    const g=window.__emberisle,state=createGame({humans:names.map(name=>({name})),bots:0,seed:14,wayfarerMode:'off'});
+    state.phase='main';state.rollOff=null;state.current='p0';state.log=[];
+    for(const v of state.vertices)v.building=null;
+    for(const player of state.players)for(const r of ['timber','clay','wool','grain','ore'])player.resources[r]=0;
+    state.players[0].resources.timber=4;state.players[0].resources.ore=1;
+    useLocalNeeds.setState({},true);g.setState({mode:'ai',screen:'play',state,localId:'p0',spectator:false,tradeOpen:false,offer:null,declined:[]});g.getState().setTradeOpen(true);
+   },names);
+   await page.getByTestId('trade-panel').waitFor();
+   const frames={};
+   for(const [label,needs] of Object.entries(configs)){
+    await page.evaluate(async needs=>{const {useLocalNeeds}=await import('/src/components/game/need-state.ts');useLocalNeeds.setState(Object.fromEntries(Object.entries(needs).map(([id,kinds])=>[id,{kinds,turnsLeft:2}])),true);},needs);
+    await page.waitForFunction(count=>document.querySelectorAll('[data-testid="trade-panel"] .trade-other-chip').length===count,Object.values(needs).reduce((n,k)=>n+k.length,0));
+    await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+    frames[label]=await page.evaluate(()=>{
+     const panel=document.querySelector('[data-testid="trade-panel"]'),box=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};},num=n=>Math.round(n*100)/100;
+     const lum=c=>{const [r,g,b]=c.match(/[\d.]+/g).slice(0,3).map(Number).map(v=>{v/=255;return v<=0.03928?v/12.92:((v+0.055)/1.055)**2.4;});return 0.2126*r+0.7152*g+0.0722*b;};
+     const ratio=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);};
+     const sheet=getComputedStyle(panel).backgroundColor,rows=[...panel.querySelectorAll('[data-testid="other-need-row"]')];
+     const close=panel.querySelector('[aria-label="Close"]')||document.querySelector('[aria-label="Close"]');
+     return {top:num(panel.getBoundingClientRect().y),close:{x:num(close.getBoundingClientRect().x),y:num(close.getBoundingClientRect().y)},heading:panel.querySelector('#trade-others-title').textContent,
+      rows:rows.map(row=>({box:box(row),dot:box(row.firstElementChild),name:getComputedStyle(row.querySelector('.trade-other-name')),label:row.getAttribute('aria-label'),
+       chips:[...row.querySelectorAll('.trade-other-chip')].map(c=>({...box(c),text:c.textContent,bg:getComputedStyle(c).backgroundColor,border:getComputedStyle(c).borderTopWidth,contrast:ratio(getComputedStyle(c).color,getComputedStyle(c).backgroundColor)})),
+       none:row.querySelector('.trade-other-none')?{...box(row.querySelector('.trade-other-none')),contrast:ratio(getComputedStyle(row.querySelector('.trade-other-none')).color,sheet)}:null,
+       nameClip:(n=>({overflow:getComputedStyle(n).textOverflow,nowrap:getComputedStyle(n).whiteSpace,w:n.clientWidth,font:getComputedStyle(n).fontSize,lh:getComputedStyle(n).lineHeight,contrast:ratio(getComputedStyle(n).color,sheet),lines:n.getClientRects().length}))(row.querySelector('.trade-other-name')),
+       cols:getComputedStyle(row).gridTemplateColumns,gap:getComputedStyle(row).columnGap,animation:getComputedStyle(row).animationName+'/'+getComputedStyle(row).transitionDuration})).map(r=>({...r,name:undefined})),
+      focus:[...panel.querySelectorAll('button,a,input,[tabindex]')].map(e=>(e.getAttribute('aria-label')||`${e.tagName}.${e.className}`)+(e.closest('[data-testid="other-need-row"]')?'#IN-ROW':'')),
+      hscroll:document.documentElement.scrollWidth>innerWidth||panel.scrollWidth>panel.clientWidth,rowGaps:rows.slice(1).map((r,i)=>num(r.getBoundingClientRect().y-rows[i].getBoundingClientRect().bottom))};
+    });
+   }
+   const tag=`${width}x${height} ${names[1]}`,base=frames.none;
+   for(const [label,f] of Object.entries(frames)){
+    const at=`${tag} ${label}`;
+    if(f.heading!=='Others need')fixedProblems.push(`${at}: heading ${f.heading}`);
+    if(f.rows.length!==3)fixedProblems.push(`${at}: ${f.rows.length} rows, expected one per other seat`);
+    if(f.top!==base.top||f.close.x!==base.close.x||f.close.y!==base.close.y)fixedProblems.push(`${at}: Trade window top/Close moved ${JSON.stringify([f.top,f.close])} vs ${JSON.stringify([base.top,base.close])}`);
+    if(JSON.stringify(f.rows.map(r=>[r.box.x,r.box.y,r.box.w]))!==JSON.stringify(base.rows.map(r=>[r.box.x,r.box.y,r.box.w])))fixedProblems.push(`${at}: a row moved or resized`);
+    if(f.rows.some(r=>r.box.h!==32))fixedProblems.push(`${at}: a row is not 32px`);
+    if(f.rowGaps.some(g=>g!==8))fixedProblems.push(`${at}: row gap not 8px ${f.rowGaps}`);
+    if(f.rows.some(r=>r.box.w>324))fixedProblems.push(`${at}: row wider than 324`);
+    if(f.rows.some(r=>r.dot.w!==12||r.dot.h!==12))fixedProblems.push(`${at}: seat dot not 12px`);
+    if(f.rows.some(r=>r.nameClip.overflow!=='ellipsis'||r.nameClip.nowrap!=='nowrap'||r.nameClip.w>160||r.nameClip.font!=='12px'||r.nameClip.lh!=='16px'||r.nameClip.lines!==1||r.nameClip.contrast<4.5))fixedProblems.push(`${at}: name not one 12/16 ellipsised readable line ${JSON.stringify(f.rows.map(r=>r.nameClip))}`);
+    const slotX=f.rows[0].box.x+f.rows[0].box.w-136;
+    for(const r of f.rows){
+     if(r.chips.length>2)fixedProblems.push(`${at}: more than two chips`);
+     r.chips.forEach((c,i)=>{if(c.w!==64||c.h!==32||c.x!==slotX+i*72||c.bg!=='rgb(255, 255, 255)'||c.border!=='1px'||c.contrast<4.5)fixedProblems.push(`${at}: chip ${c.text} off its slot ${JSON.stringify(c)}`);});
+     if(!r.chips.length&&(!r.none||r.none.x!==slotX||r.none.contrast<4.5))fixedProblems.push(`${at}: None yet missing or off slot 1`);
+     if(r.chips.length&&r.none)fixedProblems.push(`${at}: None yet beside chips`);
+    }
+    if(f.hscroll)fixedProblems.push(`${at}: horizontal overflow`);
+    if(JSON.stringify(f.focus)!==JSON.stringify(base.focus)||f.focus.some(x=>x.endsWith('#IN-ROW')))fixedProblems.push(`${at}: tab order changed or a row is focusable ${JSON.stringify([f.focus,base.focus]).slice(0,300)}`);
+   }
+   if(frames.sharedFirst.rows.map(r=>r.chips.map(c=>c.text).join('+')).join('|')!=='Wood+Stone|Wood|Wood')fixedProblems.push(`${tag}: shared first need not shown on every seat`);
+   if(!frames.twoSeatsBoth.rows[0].label.includes(' needs Wood and Stone')||!frames.none.rows[0].label.endsWith('has not shared a need'))fixedProblems.push(`${tag}: row labels`);
+   fixedSummary.push({tag,top:base.top,close:base.close,rowYs:base.rows.map(r=>r.box.y)});
+  }
+  await context.close();
+ }
+ console.log('fixed Others need rows',JSON.stringify(fixedSummary));
+ assert.deepEqual(fixedProblems,[],'Others need rows keep the Trade window, Close and every row still across 0/1/2 needs and shared firsts, with 16-letter names');
+ console.log('ok Others need: fixed 32px rows, 64px chip slots, window and Close identical across needs, no overflow, contrast, tab order:320x568,390x844,844x390,1280x720');
  assert.deepEqual(errors,[]);console.log('needs browser prove ok');
 }finally{
  await browser?.close();await vite?.close();
