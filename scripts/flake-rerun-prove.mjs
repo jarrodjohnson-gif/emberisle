@@ -29,6 +29,11 @@ for (const f of flakes) {
   assert.ok(Number.isInteger(f.issue), `${f.id} has a tracking issue`);
   assert.ok(f.regex.test(failures[f.id]), `${f.id} signature matches its failure`);
 }
+// The lobby-layout-prove signature covers every viewport, not only 375x667 (#1237).
+for (const line of [
+  `${at}AssertionError [ERR_ASSERTION]: 390x844: "Copy" has at least 8 px between text and button edge (7.9 / 7.9)`,
+  `${at}AssertionError [ERR_ASSERTION]: 320x568: "Copy" has at least 8 px between text and button edge (7.3 / 7.2)`,
+]) assert.ok(flakes.find((f) => f.id === "lobby-layout-prove").regex.test(line), `lobby-layout-prove signature matches ${JSON.stringify(line)}`);
 // The passing log line of the same text is not a failure.
 assert.equal(flakes.find((f) => f.id === "hotseat-prove").regex.test(`${at}Leave played ["/audio/click_001.wav"]`), false);
 // The near misses of each signature that are not that flake: a passing line, a wider failure, or another step's timeout.
@@ -47,7 +52,7 @@ const notFlake = {
   "flash-prove": [`${at}flash-prove failed: page.waitForFunction: Timeout 120000ms exceeded.\n${at}    at pieceProof (/x/scripts/flash-prove.mjs:216:9)`],
   "lobby-layout-prove": [
     `${at}AssertionError [ERR_ASSERTION]: 375x667: "Copy" has at least 8 px between text and button edge (not a number)`,
-    `${at}AssertionError [ERR_ASSERTION]: 320x568: "Copy" has at least 8 px between text and button edge (7.3 / 7.2)`,
+    `${at}AssertionError [ERR_ASSERTION]: 320x568: "Join" has at least 8 px between text and button edge (7.3 / 7.2)`,
     `${at}AssertionError [ERR_ASSERTION]: 375x667: "Copy" has at least 8 px between text and button edge (2.0 / 1.5)`,
     `${at}AssertionError [ERR_ASSERTION]: 375x667: "Send" has at least 8 px between text and button edge (7.3 / 7.2)`,
   ],

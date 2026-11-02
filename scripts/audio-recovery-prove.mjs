@@ -11,7 +11,7 @@ import { createServer } from 'vite';
 
 const rooms = mkdtempSync(path.join(tmpdir(), 'emberisle-audio-recovery-'));
 const host = spawn(process.execPath, ['--import', './register.mjs', 'host.mjs'], {
-  cwd: new URL('../server/', import.meta.url), env: { ...process.env, PORT: '0', ROOMS_DIR: rooms },
+  cwd: new URL('../server/', import.meta.url), env: { ...process.env, PORT: '0', ROOMS_DIR: rooms, RESULTS_DIR: `${rooms}/results` },
 });
 let browser, vite;
 const watchdog = setTimeout(() => { console.error('FAIL audio recovery exceeded 120 seconds'); process.exit(1); }, 120_000);

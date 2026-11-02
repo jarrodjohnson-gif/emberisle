@@ -56,7 +56,7 @@ fixture("SGFF", "main");
 async function startHost(requestedPort = 0) {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: String(requestedPort), ROOMS_DIR: dir, ACT_CAP: "1000", ACT_RATE: "1000", GRACE_MS: "1000", HOLD_MS: "60000", TURN_MS: "60000" },
+    env: { ...process.env, PORT: String(requestedPort), ROOMS_DIR: dir, RESULTS_DIR: `${dir}/results`, ACT_CAP: "1000", ACT_RATE: "1000", GRACE_MS: "1000", HOLD_MS: "60000", TURN_MS: "60000" },
     stdio: ["ignore", "pipe", "pipe"],
   });
   stderr = "";

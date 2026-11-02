@@ -11,7 +11,7 @@ mkdirSync(out, { recursive: true });
 const rooms = mkdtempSync(path.join(tmpdir(), "emberisle-1103-rooms-"));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR: rooms },
+  env: { ...process.env, PORT: "0", ROOMS_DIR: rooms, RESULTS_DIR: `${rooms}/results` },
 });
 const hostPort = await new Promise((resolve, reject) => {
   host.on("error", reject);
@@ -325,9 +325,14 @@ try {
     await page.getByRole("button", { name: "Send", exact: true }).click();
     await guest.getByTestId("chat-log").getByText("One more and we're ready.", { exact: false }).waitFor();
     assert.equal(await page.locator("#chat-input").inputValue(), "");
-    await page.getByTestId("emoji-row").locator("button").first().click();
-    await guest.getByTestId("react-line").waitFor();
-    await clearOfName(page, "reaction");
+    // A reaction lasts two seconds; start measuring it before waiting for the guest's chat echo.
+    await Promise.all([
+      clearOfName(page, "reaction"),
+      (async () => {
+        await page.getByTestId("emoji-row").locator("button").first().click();
+        await guest.getByTestId("react-line").waitFor();
+      })(),
+    ]);
     await page.getByRole("tab", { name: "Sounds & stickers" }).click();
     await page.getByTestId("sounds-tab").waitFor();
     assert.ok(await page.getByTestId("soundboard").locator("button").count() > 0);
@@ -383,9 +388,13 @@ try {
     } finally {
       await page.getByTestId("table-code").evaluate((el, value) => { el.textContent = value; el.style.fontSize = ""; }, code);
     }
-    await page.getByTestId("emoji-row").locator("button").first().click();
-    await guest.getByTestId("react-line").waitFor();
-    await clearOfName(page, "reaction");
+    await Promise.all([
+      clearOfName(page, "reaction"),
+      (async () => {
+        await page.getByTestId("emoji-row").locator("button").first().click();
+        await guest.getByTestId("react-line").waitFor();
+      })(),
+    ]);
     await page.getByRole("tab", { name: "Sounds & stickers" }).click();
     await guest.getByRole("tab", { name: "Sounds & stickers" }).click();
     await guest.getByRole("button", { name: "Play sound Wololo", exact: true }).click();

@@ -49,7 +49,7 @@ const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"],
   cwd: new URL("../server/", import.meta.url),
   // The finished seat below is held from host start and botted after GRACE_MS; that grace is not what this proof tests,
   // and on a slow runner the online game-over step can land past the 90 s default, so the host gets a wide one.
-  env: { ...process.env, PORT: "0", ROOMS_DIR, GRACE_MS: "300000" },
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, GRACE_MS: "300000" },
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));

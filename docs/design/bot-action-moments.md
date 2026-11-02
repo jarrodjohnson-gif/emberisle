@@ -107,21 +107,28 @@ do not use a guessed sequence delta or silently lose them. The existing #721 pro
 active plus waiting entries within six and gives a summary a slot; those counting details still
 need design acceptance and must preserve the owner's overflow behaviour.
 
-**Unresolved expiry/drain choice — do not implement:** #721 proposed **2500 ms waiting/summary
-expiry** and a **nonextendable 2500 ms human-turn drain deadline**. These were not approved by
-the owner's client-only decision. Silent age-based dropping can violate the every-action and
-cap-six summary contract: with 700 ms arrivals and 1250 ms line lifetimes, waiting grows by
-about 550 ms per action and reaches 2500 ms before the intended overflow is exercised.
-The earlier version of this document incorrectly made that child proposal binding.
+**Accepted preservation policy — owner answer, 2026-10-30:** Jarrod chose option A at **21:23 UTC**.
+The desk recorded his Desk Decisions card `q608-bot-moments` answer in
+[comment 6533773479](https://github.com/jarrodjohnson-gif/emberisle/issues/608#issuecomment-6533773479), resolving
+[Question 6520148623](https://github.com/jarrodjohnson-gif/emberisle/issues/608#issuecomment-6520148623)'s expiry choice.
 
-[Question 6520148623](https://github.com/jarrodjohnson-gif/emberisle/issues/608#issuecomment-6520148623)
-asks the owner to choose preservation/draining, explicit expiry, or a bounded drain followed by
-summary. **Recommendation, not approval:** preserve admitted lines and overflow summaries with
-no silent waiting-age expiry; drain when the centre is available. The question also leaves
-human-turn interruption and pending-summary treatment for explicit acceptance. Children must
-not implement the 2500 ms deadlines, silent-drop rules or a substitute policy until that answer
-is recorded and the affected contract/completion tests are reconciled with #608. The owner-written
-spec remains authoritative in the meantime; the question does not reopen client-only option A.
+Desk’s recorded wording of the answer:
+
+> Show every bot move, six at a time; moves beyond six collapse into one line ("Mira made 3 more moves").
+
+Only the quoted sentence is recorded as accepted here.
+Option A’s drain clause still needs acceptance.
+
+Preserve waiting lines and overflow summaries without silent age-based expiry.
+Children must not implement #721's proposed **2500 ms waiting/summary expiry** or any **2500 ms drop**.
+Keep the original non-overlapping line timing above.
+Client-only option A remains settled.
+
+**Still unaccepted:** human-turn interruption or drain policy, including option C's proposed **2500 ms human-turn drain deadline**.
+The owner did not choose option C.
+Treatment of waiting summaries and interrupted lines still needs explicit acceptance.
+The answer does not settle active-versus-waiting counting or summary-slot counting within the cap of six.
+It also does not approve the contrast figures below.
 
 Use monotonic timing for the accepted line animation. Any accepted queue/summary policy must
 bound storage without retaining full overflow payloads; an age deadline cannot be assumed as
@@ -145,14 +152,15 @@ brightened wayfarer hex rim, for exactly the line lifetime. Reduced motion uses 
 Keep this in a dedicated decorative layer, separate from legal placement highlights, hover and
 pickables. It must not change raycasts, camera fit/matrices, board state or production squash.
 End of a displayed line, epoch reset and renderer disposal remove cues and release resources.
-Queue expiry and interruption behaviour remain dependent on the unresolved #608 policy.
+Waiting lines and summaries cannot expire by age. Interruption behaviour still needs explicit acceptance.
 
 The line reuses the existing stage/hole placement and chrome, with safe-area checks at desktop,
 portrait and landscape sizes. **Unaccepted recommendation for desk/owner approval:** text contrast
 at least 4.5:1 and decorative target contrast at least 3:1 against its immediate surroundings,
-including pale seats. These numbers are not an owner-approved #608 requirement; acceptance is
-requested in Question 6520148623 before they become this feature's completion criteria. The canonical game log
-remains the accessible history; do not create a second live announcement for the same event.
+including pale seats. These numbers are not an owner-approved #608 requirement.
+Acceptance is still needed after owner answer 6533773479.
+The canonical game log remains the accessible history; do not create a second live
+announcement for the same event.
 
 ## One sound owner and lifecycle (#723)
 
@@ -170,10 +178,10 @@ mix levels and reduced-motion behaviour without changing audio assets or gains.
 
 Visibility hide, leave/title, win, reconnect, rematch and baseline replacement clear the epoch's
 text, targets, counters, timers and deferred audio. Human input never changes game state merely
-to dismiss presentation; its effect on pending lines/summaries awaits the decision above. A lazy
+to dismiss presentation; its effect on waiting lines/summaries still needs explicit acceptance. A lazy
 module/audio promise carries the epoch and accepted cancellation state; recheck them when it
-resolves so previous-game work cannot burst on return. Do not attach the unaccepted 2500 ms
-expiry to these promises. Capture starts from
+resolves so previous-game work cannot burst on return. Do not attach the rejected 2500 ms
+age expiry to these promises. Capture starts from
 the live baseline even if the visual chunk arrives late; failed lazy loading never blocks play.
 
 ## Delivery and acceptance
@@ -181,8 +189,8 @@ the live baseline even if the visual chunk arrives late; failed lazy loading nev
 | Existing child | Deliverable and completion evidence |
 |---|---|
 | [#720](https://github.com/jarrodjohnson-gif/emberisle/issues/720) | Pure event model and commit/offer observer. Prove actual automation vs human actions, rejects/no-ops, multi-target Path, private projection, duplicate/truncated logs and reconnect/rematch deduplication. Keep the production ordering counterexample passing. |
-| [#721](https://github.com/jarrodjohnson-gif/emberisle/issues/721) | Scheduler and presenter. Virtual-clock checks for 150/900/200 timing and the owner's six-entry overflow contract. Expiry, summary-slot counting, interruption and human-turn drain tests wait for Question 6520148623; do not encode the child's unaccepted 2500 ms rules. Browser checks for exclusive centre ownership, input pass-through, no focus movement and no duplicate announcement. |
-| [#722](https://github.com/jarrodjohnson-gif/emberisle/issues/722) | Dedicated target adapter. Prove stable IDs through rebuilds, both Path edges, missing targets, unchanged legal/pick IDs and camera matrices, contrast, reduced motion and cleanup without leaks. |
+| [#721](https://github.com/jarrodjohnson-gif/emberisle/issues/721) | Scheduler and presenter. Virtual-clock checks for 150/900/200 timing and the owner's six-entry overflow contract. Prove waiting lines and summaries survive age without silent drops, per owner answer 6533773479. Active/waiting and summary-slot counting, interruption and human-turn drain tests still need acceptance. Do not encode the child's 2500 ms expiry. Browser checks for exclusive centre ownership, input pass-through, no focus movement and no duplicate announcement. |
+| [#722](https://github.com/jarrodjohnson-gif/emberisle/issues/722) | Dedicated target adapter. Prove stable IDs through rebuilds, both Path edges, missing targets, unchanged legal/pick IDs and camera matrices, reduced motion and cleanup without leaks. Contrast checks await accepted criteria; the numeric recommendations remain unaccepted. |
 | [#723](https://github.com/jarrodjohnson-gif/emberisle/issues/723) | Integration and `bot-moments-prove`: full practice round at 1280×720 and 390×844, landscape regression, ordered non-overlapping text (±80 ms), synchronized cues, exact approved sound counts, bounded summaries and lifecycle cases. Re-run `hud-safe-area-prove`, server turn proof, `sounds-prove`, affected placement proofs, typecheck, build and unchanged size budgets. |
 
 **Register each new proof in `package.json` and `.github/workflows/ci.yml` in the PR that adds it.**
