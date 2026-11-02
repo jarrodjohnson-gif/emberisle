@@ -220,7 +220,7 @@ body {
 :where(.trade-dock[data-turn-ring='true']) { position: relative; }
 /* The offer card's text sits 8 px in (p-2) and its countdown and shortfall are accent text, 4.4:1 on the tint: its band stops at the padding. */
 .trade-dock[data-turn-ring='true'] { --ring-band: 8px; }
-.turn-mark { position: absolute; top: 0; left: 50%; width: 10px; height: 5px; transform: translateX(-50%); background: var(--ink); clip-path: polygon(0 0, 100% 0, 50% 100%); pointer-events: none; }
+.turn-mark { position: absolute; z-index: 2; top: 0; left: 50%; width: 10px; height: 5px; transform: translateX(-50%); background: var(--ink); clip-path: polygon(0 0, 100% 0, 50% 100%); pointer-events: none; }
 .seat-card.seat-turn [class*='text-zinc-700'] { color: var(--muted); }
 .seat-card button:hover { background: var(--table-raised); color: var(--table-ink); }
 .seat-card.seat-turn button:hover { background: var(--ground); color: var(--ink); }

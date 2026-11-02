@@ -109,6 +109,25 @@ try {
       return r;
     };
 
+    // Read actual painted ink at the triangle centre, clear of its antialiased edges.
+    const pointerInk = async (selector, label) => {
+      const point = await page.locator(selector).evaluate((el) => {
+        const mark = el.querySelector('[data-testid="turn-mark"]');
+        const b = mark.getBoundingClientRect();
+        return { x: Math.floor(b.left + b.width / 2), y: Math.floor(b.top + b.height / 2), ink: getComputedStyle(mark).backgroundColor };
+      });
+      const png = await page.screenshot();
+      const pixel = await page.evaluate(async ({ data, point }) => {
+        const img = new Image(); img.src = `data:image/png;base64,${data}`; await img.decode();
+        const canvas = document.createElement("canvas"); canvas.width = img.width; canvas.height = img.height;
+        const ctx = canvas.getContext("2d"); ctx.drawImage(img, 0, 0);
+        return [...ctx.getImageData(point.x, point.y, 1, 1).data];
+      }, { data: png.toString("base64"), point });
+      const expected = [...point.ink.match(/\d+/g).slice(0, 3).map(Number), 255];
+      assert.deepEqual(pixel, expected, `${v.tag}: ${label} pointer centre paints ink ${JSON.stringify({ point, pixel, expected })}`);
+      console.log(`${v.tag}: ${label} pointer ink ${JSON.stringify(pixel)}`);
+    };
+
     // Play the game: a legal move at a time, the marker checked after each. A pass is an endTurn in the main phase.
     const step = () =>
       page.evaluate(() => {
@@ -227,11 +246,13 @@ try {
       }, { data: png.toString("base64"), points: touch.points });
       const expected = [1, 3, 5].map((i) => parseInt(touch.color.slice(i, i + 2), 16));
       for (const pixel of pixels) assert.deepEqual(pixel, [...expected, 255], `${v.tag}: tapped strip ring remains painted above the hovered button: ${JSON.stringify({ touch, pixels })}`);
+      await pointerInk('[data-current-turn="true"]', "touch menu seat");
       await check("current seat menu opened by touch");
       console.log(`${v.tag}: real-touch hovered strip ring pixels ${JSON.stringify(pixels)}`);
       await trigger.tap();
       await page.waitForFunction(() => document.querySelector('[data-current-turn="true"] > button')?.getAttribute("aria-expanded") === "false");
     }
+    await pointerInk('[data-current-turn="true"]', "seat");
     await page.screenshot({ path: `test-results/turn-marker-${v.tag}.png` });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.waitForTimeout(100);
@@ -261,6 +282,7 @@ try {
     const cur = await check("trade toast open");
     assert.equal(toast.ring, "true", `${v.tag}: the offer from the seat on turn wears the ring`);
     assert.ok(toast.shadow.startsWith(`${rgb(cur.color)} 0px 0px 0px 3px inset`) && toast.markW > 0 && toast.markH > 0, `${v.tag}: the offer's ring is the seat's colour and has a turn mark ${JSON.stringify(toast)}`);
+    await pointerInk('[data-testid="trade-toast"]', "trade offer");
     await page.screenshot({ path: `test-results/turn-marker-${v.tag}-trade.png` });
     await offerFrom("other");
     await settle();
