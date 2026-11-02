@@ -99,16 +99,15 @@
   .trade-selection-motion { display: none; animation: none; }
 }
 
-/* A seat's name shows only beside its published needs (MenuNeeds renders nothing when it has none). */
-.trade-peer-seat:not(:has([data-testid="menu-needs"])) { display: none; }
-
 /* #646: "You need" is a third section under "You get"; your own picks show as lit pills, others' as chips below. */
 .need-hint { margin-bottom: 8px; color: var(--muted); font-size: 12px; line-height: 16px; }
-.trade-need + .trade-peer-needs { margin-top: 16px; }
-.trade-peer-needs { margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
-.trade-peer-seat { display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 16px; }
-.trade-peer-name { max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.trade-peer-seat [data-testid="menu-needs"] { margin: 0; }
-.trade-composer .trade-peer-name, .trade-composer [data-testid="menu-needs"] { color: var(--muted); }
 .trade-composer .need-chip { color: var(--ink); }
-.trade-peer-needs:not(:has([data-testid="menu-needs"])) { display: none; }
+.trade-composer .trade-others { margin-top: 16px; }
+.trade-composer .trade-others h3 { font-size: 15px; line-height: 20px; font-weight: 700; margin-bottom: 8px; }
+.trade-composer .trade-other-row { display: grid; grid-template-columns: 12px minmax(0, 160px) 136px; gap: 8px; align-items: center; height: 32px; max-width: 324px; font-size: 12px; line-height: 16px; color: var(--muted); }
+.trade-composer .trade-other-row + .trade-other-row { margin-top: 8px; }
+.trade-composer .trade-other-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trade-composer .trade-other-slots { display: grid; grid-template-columns: 64px 64px; gap: 8px; }
+.trade-composer .trade-other-chip { box-sizing: border-box; width: 64px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 9999px; background: #fff; color: var(--ink); font-size: 12px; line-height: 16px; }
+.trade-composer .trade-other-none { grid-column: 1 / -1; align-self: center; color: var(--muted); }
+.trade-composer .trade-other-dot { width: 12px; height: 12px; }

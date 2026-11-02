@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { setPlayerNeeds, useLocalNeeds } from '@/components/game/need-state';
 import './seat-needs.css';
+import { SeatDot } from '@/components/game/SeatDot';
 import { useGame } from '@/lib/game/store';
 import { RESOURCES, RESOURCE_LABEL } from '@/lib/game/types';
 
@@ -70,8 +71,20 @@ export function MenuNeeds({ player }: { player: string }) {
 }
 
 export function NeedsAtTable({ me }: { me: string }) {
-  const players = useGame(s => s.state?.players);
-  return <div className="trade-peer-needs">
-    {players?.filter(p => p.id !== me).map(p => <div key={p.id} className="trade-peer-seat"><span className="trade-peer-name">{p.name}</span><MenuNeeds player={p.id} /></div>)}
-  </div>;
+  const players = useGame(s => s.state?.players), needs = useNeeds();
+  return <section className="trade-others" aria-labelledby="trade-others-title">
+    <h3 id="trade-others-title">Others need</h3>
+    {players?.filter(p => p.id !== me).map(p => {
+      const kinds = (needs[p.id] ?? []).slice(0, 2);
+      return <div key={p.id} className="trade-other-row" data-testid="other-need-row" role="img"
+        aria-label={kinds.length ? `${p.name} needs ${kinds.map(kind => RESOURCE_LABEL[kind]).join(' and ')}` : `${p.name} has not shared a need`}>
+        <SeatDot color={p.color} className="trade-other-dot" />
+        <span className="trade-other-name">{p.name}</span>
+        <span className="trade-other-slots">
+          {kinds.length ? kinds.map(kind => <span key={kind} className="trade-other-chip">{RESOURCE_LABEL[kind]}</span>)
+            : <span className="trade-other-none">None yet</span>}
+        </span>
+      </div>;
+    })}
+  </section>;
 }
