@@ -19,6 +19,10 @@ try {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
+  // #1166: a diagnostic record of failed requests, kept apart from `errors` so it changes no pass/fail result.
+  // Printed only when the host-down title wait fails, to name the failed module fetches (e.g. ERR_INSUFFICIENT_RESOURCES).
+  const failedRequests = [];
+  page.on("requestfailed", (r) => failedRequests.push(`${r.failure()?.errorText ?? "?"} ${r.resourceType()} ${r.url().split(/[?#]/)[0]}`));
   // #303: record which /audio/<file> each play() came from instead of playing it; headless has no speaker to hear.
   await page.addInitScript(() => {
     window.__plays = [];
@@ -971,9 +975,18 @@ try {
       localStorage.setItem("emberisle-seat", JSON.stringify({ code: "ZZZZ", secret: "x" }));
       localStorage.setItem("emberisle-seat-live", "ZZZZ");
     });
+    failedRequests.length = 0;
     await page.reload();
     const downAt = Date.now();
-    await page.getByTestId("title-card").waitFor({ timeout: 6000 });
+    try {
+      await page.getByTestId("title-card").waitFor({ timeout: 6000 });
+    } catch (e) {
+      // #1166: diagnostics only. The original wait, timeout and error are unchanged; the error is rethrown as is.
+      const booted = await page.evaluate(() => !!window.__emberisle).catch(() => "page unavailable");
+      console.log("host-down title wait failed; app booted:", booted, "; failed requests since the reload:", failedRequests.length);
+      for (const f of failedRequests.slice(0, 40)) console.log("  failed request:", f);
+      throw e;
+    }
     const downMs = Date.now() - downAt;
     console.log("live seat, host down: title card after", downMs, "ms");
     if (downMs > 4500) throw new Error(`host-down restore took ${downMs} ms to show the title`);

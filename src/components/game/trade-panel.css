@@ -1,5 +1,8 @@
 /* Shared goods scroll while the Table receipt and compact Bank box stay in view. */
 .trade-composer { display: flex; flex-direction: column; width: 100%; max-width: 640px; max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow: hidden; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--paper); color: var(--ink); box-shadow: var(--shadow-sheet); }
+/* Astra's laws: white window, no cream. Cards stay white (#fff) so the goods names keep 4.5:1; the lobby's values (lobby.css). */
+.trade-composer { --paper: #fff; --table-raised: #f3f6f5; --line: #cbd3d3; --color-bg: #fff; background: #f3f6f5; }
+.trade-composer-footer { background: #f3f6f5; }
 .trade-composer-header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; padding: 8px 16px; border-bottom: 1px solid var(--line); }
 .trade-title { font-size: 24px; line-height: 28px; font-weight: 750; }
 .trade-add:focus-visible, .trade-remove:focus-visible, .trade-composer-scroll:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
@@ -18,7 +21,7 @@
 .trade-add:disabled > svg, .trade-add:disabled .trade-resource-name { color: var(--muted); }
 .trade-remove { display: flex; width: 100%; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; border-top: 1px solid var(--line); border-radius: 0 0 var(--radius-control) var(--radius-control); }
 .trade-quantity { font-size: 20px; line-height: 20px; font-weight: 750; font-variant-numeric: tabular-nums; }
-.trade-composer-footer { display: grid; flex-shrink: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; border-top: 1px solid var(--line); padding: 12px 16px; background: var(--paper); }
+.trade-composer-footer { display: grid; flex-shrink: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; border-top: 1px solid var(--line); padding: 12px 16px; }
 .trade-route { display: flex; min-width: 0; flex-direction: column; gap: 8px; }
 .trade-route:only-child { grid-column: 1 / -1; }
 .trade-bank-box { padding: 8px; border: 1px solid var(--line); border-radius: var(--radius-control); }
