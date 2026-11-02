@@ -1,0 +1,42 @@
+/* #929: the lobby type and target scale Jarrod accepted on 2026-10-31 (docs/design/lobby-hig, card q1220-lobby-hig, A),
+   applied on top of the mini-games mock (docs/design/mini-games-hub/mock.html) without changing its layout or content.
+   Footnote 13/18, Subheadline 15/20, Headline 17/22 semibold, room code 22/28 (portrait) and 28/34 (wide), and every
+   control at least 44 x 44 on phone and desktop. Mock-only: nothing here is game code. */
+
+/* Footnote 13/18: captions, roster, hints, tile sub-lines. */
+.cap, .roster, .status, .shelf .hint, .tile .t span, .tile .pick, .keys, .closes, .ph small, .tag {
+  font-size: 13px !important;
+  line-height: 18px !important;
+}
+
+/* Subheadline 15/20: tabs, ordinary buttons, the tic-tac-toe names and the "table is starting" line. */
+.tab, .btn, .ttt-who, .interrupt {
+  font-size: 15px !important;
+  line-height: 20px !important;
+}
+
+/* Headline 17/22 semibold: the shelf heading, game names, the open game's title, whose turn, and the primary actions. */
+.shelf h3, .tile .t b, .box .head b, .ttt-turn, .btn.lg {
+  font-size: 17px !important;
+  line-height: 22px !important;
+  font-weight: 600 !important;
+}
+
+/* Room code as in the accepted lobby: Title 2 on portrait phones, Title 1 on wide screens. */
+.code {
+  font-size: 22px !important;
+  line-height: 28px !important;
+}
+.desk .code {
+  font-size: 28px !important;
+  line-height: 34px !important;
+}
+
+/* 44 x 44 targets everywhere, desktop included (the accepted lobby already meets this at every size). */
+.btn.sm, .desk .btn.auto, .desk .tab, .tile .pick .btn, .desk .box .head .btn, .desk .box .row .btn {
+  min-height: 44px !important;
+}
+.desk .win span {
+  width: 44px !important;
+  height: 44px !important;
+}
