@@ -1,5 +1,7 @@
 # Mini games hub: draft mock
 
+> The spec for Jarrod to accept is [`docs/design/mini-games-shelf`](../mini-games-shelf/README.md) (#929): this mock at the accepted lobby type and target scale, with pictures.
+
 A clickable draft of the lobby "Play games" tab and the "While you wait" shelf. It is an input for Astra's whole-app review ([#903](https://github.com/jarrodjohnson-gif/emberisle/issues/903)) and the mini-games spec issue ([#929](https://github.com/jarrodjohnson-gif/emberisle/issues/929)). It is not the spec, and nothing should be built from it until Jarrod approves a direction.
 
 Open `mock.html` in a browser. It is one self-contained file with a Phone 390x844 and Desktop 1280x720 toggle.
