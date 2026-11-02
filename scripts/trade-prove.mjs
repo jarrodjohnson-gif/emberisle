@@ -1,12 +1,13 @@
 // #163: three headless tabs on the rules host trade through the browser's trade panel and toast.
 // Tab 1 asks the table through the panel; tab 3 says No (the offer stays open), tab 2 says Yes, and every tab's state
-// shows the goods moved. A second ask gets a No and then runs out its 20 s: the goods stay put and the toast closes
-// everywhere. Zero console errors.
+// shows the goods moved. A second ask gets a No and holds past the old 20 s run-out until the asker's Cancel: the goods
+// stay put and the toast closes everywhere (#1245: a person's offer holds until answered). Zero console errors.
 // #366 / #537: every non-asker's toast is a named region for the offer (or compact demand) that does not take focus.
 // A seat that can pay sees Yes/No; a seat that cannot (#537) sees only "X is looking for …" with Dismiss — no Accept.
-// Escape answers No / Dismiss; the countdown is hidden from screen readers but a polite line says "5 seconds left".
-// Step 4 keeps the normal timeout lifecycle: a second ask nobody takes runs out its 20 s (C answers with Escape, the asker
-// alone hears the No, hands unchanged). Steps 5 and 6 are #537: B has none of the goods asked for and sees the compact demand,
+// Escape answers No / Dismiss. A person's offer shows no countdown (#1245); a bot's still does, hidden from screen
+// readers, with a polite line that says "5 seconds left".
+// Step 4 is the hold lifecycle: a second ask nobody takes is still open past the old 20 s and ends at the asker's Cancel
+// (C answers with Escape, the asker alone hears the No, hands unchanged). Steps 5 and 6 are #537: B has none of the goods asked for and sees the compact demand,
 // C can pay and sees the normal offer; changing B's hand flips its toast without a new offer; Dismiss from B and No from C
 // close the offer on all three tabs within 500 ms, at normal motion and again under reduced motion (no skip path).
 // #378: the asker's panel is a modal dialog named "Trade": focus moves in on open, 14 Tabs and 3 Shift+Tabs never leave
@@ -298,8 +299,7 @@ try {
     // #537: a seat short of the ask sees compact demand, not the full "offers" line.
     const expect = (v.mine[want] ?? 0) < 1 ? demand1 : line;
     if (!v.toast.includes(expect)) throw new Error(`${t.name} toast: "${v.toast}"`);
-    const secs = Number((await t.page.getByTestId("trade-countdown").textContent()).replace(/\D/g, ""));
-    if (secs < 1 || secs > 20) throw new Error(`${t.name} toast has no countdown: "${v.toast}"`);
+    if (await t.page.getByTestId("trade-countdown").count()) throw new Error(`${t.name} toast shows a countdown on a person's offer (#1245): "${v.toast}"`);
   }
   if (!vs[i].toast.includes(`You offer 1 ${RESOURCE_LABEL[give].toLowerCase()} for 1 ${RESOURCE_LABEL[want].toLowerCase()}`) || !vs[i].toast.includes("Waiting")) throw new Error(`asker toast: "${vs[i].toast}"`);
   const tradeId = vs[0].offer.tradeId;
@@ -334,7 +334,7 @@ try {
     const where = `${t.name} (${JSON.stringify(got)})`;
     if (got.role !== "region") throw new Error(`${where}: the offer is not an alertdialog`);
     if (got.focusInside) throw new Error(`${where}: the offer took focus`);
-    if (got.countdownHidden !== "true") throw new Error(`${where}: the ticking countdown is not aria-hidden`);
+    if (got.countdownHidden !== undefined) throw new Error(`${where}: a person's offer shows a countdown (#1245)`);
     if (got.disabled) throw new Error(`${where}: Yes uses disabled, so Tab cannot reach it`);
     if (!got.focusable) throw new Error(`${where}: Yes is not focusable`);
     const short = n - v.mine[r];
@@ -405,9 +405,10 @@ try {
   await until(async () => (await views(tabs)).every((v) => v.toast === null) || null, "toasts gone after the yes");
   console.log(`${B.name} took it: 1 ${give} -> ${B.name}, 1 ${want} -> ${A.name}, hands and goods counts agree on all 3 tabs`);
 
-  // 4. #366: the timeout lifecycle, with #537's compact seats. Ask again, the other way round (the asker now holds the card
+  // 4. #1245: the hold lifecycle, with #537's compact seats. Ask again, the other way round (the asker now holds the card
   // it got), for one more than either other tab holds, so both are short and see compact demand: Dismiss, no Yes. C
-  // answers with Escape; nobody else does, so the host's 20 s run out. Nothing moves, every toast closes.
+  // answers with Escape; nobody else does, so the offer holds past the old 20 s until the asker's Cancel. Nothing moves,
+  // every toast closes.
   if (vs[0].phase !== "main" || vs[0].current !== vs[i].you) throw new Error("the asker lost the turn");
   const n2 = Math.max(vs[j].mine[give], vs[k].mine[give]) + 1;
   await forget(tabs);
@@ -424,25 +425,25 @@ try {
     if (accepts) throw new Error(`${t.name} is short of ${n2} ${RESOURCE_LABEL[give].toLowerCase()} but its toast has an Accept`);
   }
   console.log(`#537: "${A.name} is looking for ${n2} ${RESOURCE_LABEL[give].toLowerCase()}" is compact on ${B.name} and ${C.name}: Dismiss, no Yes`);
-  // B sends nothing from here to the timeout; its polite line is watched for every text it takes, from ~20 s left until
-  // the toast closes (a MutationObserver misses no 1 s window).
+  // B sends nothing from here to the Cancel. A person's offer has no clock, so B has no polite countdown line (#1245).
   await spyAnswers(B);
-  await B.page.evaluate(() => {
-    const live = document.querySelector('[data-testid="trade-countdown-live"]');
-    window.__said = [live.textContent];
-    new MutationObserver(() => window.__said.push(live.textContent)).observe(live, { childList: true, characterData: true, subtree: true });
-  });
+  if (await B.page.getByTestId("trade-countdown-live").count()) throw new Error(`${B.name} has a polite countdown line on a person's offer`);
   // Escape inside C's compact toast answers: the same decline as Dismiss.
   await C.page.getByTestId("trade-dismiss").focus();
   await C.page.keyboard.press("Escape");
   await until(async () => (await views(tabs)).every((v) => v.declined.includes(again[k].you)) || null, "second decline (Escape)");
   console.log(`#366: Escape in ${C.name}'s compact toast answered No; ${B.name} has no Accept and answers nothing`);
-  const left = Number((await A.page.getByTestId("trade-countdown").textContent()).replace(/\D/g, ""));
-  if (left < 15 || left > 20) throw new Error(`countdown reads ${left} s right after the ask`);
+  if (await A.page.getByTestId("trade-countdown").count()) throw new Error("the asker's toast shows a countdown on a person's offer");
+  // Past the old 20 s run-out the offer is still open on every tab.
+  await sleep(25_000);
+  const held = await views(tabs);
+  if (!held.every((v) => v.offer?.tradeId === tradeId2)) throw new Error(`the offer did not hold past 20 s: ${JSON.stringify(held.map((v) => v.offer?.tradeId ?? null))}`);
+  console.log("#1245: the second offer is still open on all 3 tabs 25 s after the ask");
+  await A.page.getByTestId("trade-toast").getByTestId("trade-cancel").click();
   vs = await until(async () => {
     const vs = await views(tabs);
     return vs.every((v) => !v.offer && v.toast === null) ? vs : null;
-  }, "the offer times out and every toast closes", 30_000);
+  }, "the asker's Cancel closes the offer and every toast", 30_000);
   const bSent = await B.page.evaluate(() => window.__answers);
   if (bSent.length) throw new Error(`${B.name} answered ${JSON.stringify(bSent)} on the offer it let run out`);
   // #609: nobody took it, so only the asker hears the No.
@@ -450,13 +451,29 @@ try {
   if (!same(await trades(A), [...offerHeard(want, give, true), "error_002.wav@1"])) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for the expiry`);
   for (const t of [B, C]) if (!same(await trades(t), offerHeard(want, give, false))) throw new Error(`${t.name} heard ${JSON.stringify(await trades(t))} for the expiry`);
   console.log("#609: trade_no plays for the asker only");
-  // The polite line stays silent while the clock ticks and says "5 seconds left" once, at 5 s.
+  // #366 on a bot's offer, which keeps its run-out: the host sends it with seconds. Injected into B's socket as the host
+  // would send it (6 s here), the polite line stays silent while the clock ticks and says "5 seconds left" once, at 5 s.
+  // The client reads only `seconds`, so the asker's id stands in for a bot's; these three tabs are all people.
+  const botId = again[i].you;
+  await B.page.evaluate(([from]) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "tradeOffer", tradeId: "bot-clock", from, give: { grain: 1 }, want: { wool: 1 }, seconds: 6 }) }), [botId]);
+  await B.page.getByTestId("trade-countdown-live").waitFor({ state: "attached" });
+  // The ticking countdown on a bot's offer is hidden from screen readers and reads what is left of its window.
+  const botClock = await B.page.getByTestId("trade-countdown").evaluate((el) => ({ hidden: el.getAttribute("aria-hidden"), secs: Number(el.textContent.replace(/\D/g, "")) }));
+  if (botClock.hidden !== "true") throw new Error(`${B.name}: the ticking countdown on a bot's offer is not aria-hidden (${JSON.stringify(botClock)})`);
+  if (botClock.secs < 1 || botClock.secs > 6) throw new Error(`${B.name}: a 6 s bot offer's countdown reads ${botClock.secs} s`);
+  await B.page.evaluate(() => {
+    const live = document.querySelector('[data-testid="trade-countdown-live"]');
+    window.__said = [live.textContent];
+    new MutationObserver(() => window.__said.push(live.textContent)).observe(live, { childList: true, characterData: true, subtree: true });
+  });
+  await sleep(6_500);
+  await B.page.evaluate(() => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "tradeClosed", tradeId: "bot-clock" }) }));
   const heard = [...new Set((await B.page.evaluate(() => window.__said)).filter(Boolean))];
   if (!same(heard, ["5 seconds left"])) throw new Error(`${B.name}'s polite countdown line said ${JSON.stringify(heard)}`);
-  console.log(`#366: ${B.name}'s polite line said only "5 seconds left"`);
+  console.log(`#366: on a bot's offer, ${B.name}'s polite line said only "5 seconds left"`);
   if (vs[0].seq !== again[0].seq) throw new Error("the timeout changed the game");
   for (const n of [0, 1, 2]) if (!same(vs[n].mine, again[n].mine)) throw new Error(`${tabs[n].name}'s hand changed on a timeout`);
-  console.log(`second offer ran out after ${left} s left on the clock: hands unchanged, toast closed on all 3 tabs`);
+  console.log("second offer ended at the asker's Cancel: hands unchanged, toast closed on all 3 tabs");
 
   // 5. #537: A asks for 2 of a good (and offers 1 of the card it holds). B has none, so B sees the compact demand with
   // Dismiss and no Accept; C can pay and sees the normal offer. Affordance follows the seat's own hand, so changing a hand
