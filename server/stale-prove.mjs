@@ -269,6 +269,12 @@ try {
   const oldStamp = a.state.actionStamp;
   await a.drop();
   a = await client("SGAA", "p0");
+  // #1245: a person's offer holds until answered, so the asker's rejoin replays it (with no countdown) and its
+  // decline. Wait for that replay here, so it cannot land inside the refusal check below.
+  const replayed = await a.next("tradeOffer");
+  assert.equal(replayed.tradeId, freshOffer.tradeId);
+  assert.equal(replayed.seconds, null);
+  await a.next("tradeDeclined", (m) => m.tradeId === freshOffer.tradeId && m.by === "p1");
   assert.equal(a.state.game.seq, oldStamp.baseSeq);
   assert.equal(a.state.game.turn, oldStamp.turn);
   assert.notEqual(a.state.actionStamp.connection, oldStamp.connection);
