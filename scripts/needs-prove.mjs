@@ -64,21 +64,27 @@ try{
  assert.deepEqual(await peerNeeds.getByTestId('need-chip').allTextContents(),['Stone','Wheat']);
  // The approved single Trade window (open on the seat whose turn it is) lists the other seats' published needs, quietly, from
  // the host projection (owner B, #873). Only the actor can open it, so the peer publishes through its own socket.
- const tradeNeeds=a.getByTestId('trade-panel').getByTestId('menu-needs');
- assert.equal(await tradeNeeds.count(),0,'no needs published by the other seat yet: nothing is listed');
- await b.evaluate(()=>window.__emberisle.getState().net.need(['ore']));await tradeNeeds.waitFor();
- assert.equal(await tradeNeeds.count(),1,'only the other seat with needs is listed, never the viewer');
- assert.equal((await a.locator('.trade-peer-seat:has([data-testid="menu-needs"])').textContent()).startsWith(await a.evaluate(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p1').name)+'Needs'),true);
- assert.deepEqual(await tradeNeeds.getByTestId('need-chip').allTextContents(),['Stone']);
+ const rows=a.getByTestId('trade-panel').getByTestId('other-need-row'),p1Name=await a.evaluate(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p1').name);
+ const chipsOf=row=>row.locator('.trade-other-chip').allTextContents();
+ await a.getByRole('heading',{name:'Others need',exact:true}).waitFor();
+ assert.equal(await rows.count(),2,'one fixed row per other seat, always shown, even when nobody has shared a need');
+ assert.equal(await rows.first().getAttribute('aria-label'),`${p1Name} has not shared a need`);assert.equal((await rows.first().textContent()).endsWith('None yet'),true);
+ await b.evaluate(()=>window.__emberisle.getState().net.need(['ore']));
+ await a.waitForFunction(()=>document.querySelector('[data-testid="trade-panel"] [data-testid="other-need-row"]')?.getAttribute('aria-label')?.endsWith('needs Stone'));
+ assert.equal(await rows.count(),2,'the row count never changes when a need arrives');
+ assert.equal(await rows.first().getAttribute('aria-label'),`${p1Name} needs Stone`);assert.equal((await rows.first().textContent()).startsWith(p1Name),true);
+ assert.deepEqual(await chipsOf(rows.first()),['Stone']);assert.equal(await rows.nth(1).locator('.trade-other-chip').count(),0,'the seat with no need shows no chips');
  await b.evaluate(()=>window.__emberisle.getState().net.need(['ore','grain']));
- await a.waitForFunction(()=>[...document.querySelectorAll('[data-testid="trade-panel"] [data-testid="menu-needs"] [data-testid="need-chip"]')].map(e=>e.textContent).join(',')==='Stone,Wheat');
- assert.equal(await tradeNeeds.evaluate(row=>row.hasAttribute('aria-live')||row.getAttribute('role')==='status'||row.querySelector('[aria-live],[role=status]')!==null),false,'Trade-window needs are not a live region');
- assert.equal(/\d/.test(await tradeNeeds.textContent()),false,'the needs row carries no counts or hand information');
+ await a.waitForFunction(()=>[...document.querySelectorAll('[data-testid="trade-panel"] .trade-other-chip')].map(e=>e.textContent).join(',')==='Stone,Wheat');
+ assert.equal(await rows.first().getAttribute('aria-label'),`${p1Name} needs Stone and Wheat`);
+ assert.equal(await rows.evaluateAll(list=>list.some(row=>row.hasAttribute('aria-live')||row.getAttribute('role')==='status'||row.querySelector('[aria-live],[role=status],button,a,input,[tabindex]')!==null)),false,'Trade-window needs are not a live region and not tappable');
+ assert.equal(/\d/.test((await rows.allTextContents()).join('')),false,'the needs rows carry no counts or hand information');
  // BAD input: a clear leaves the window; three goods are refused by the host, so the row keeps its last valid value.
  await b.evaluate(()=>window.__emberisle.getState().net.need(['ore','grain','wool']));
  await a.waitForTimeout(600);
- assert.deepEqual(await tradeNeeds.getByTestId('need-chip').allTextContents(),['Stone','Wheat']);
- await b.evaluate(()=>window.__emberisle.getState().net.need([]));await tradeNeeds.waitFor({state:'detached'});
+ assert.deepEqual(await chipsOf(rows.first()),['Stone','Wheat']);
+ await b.evaluate(()=>window.__emberisle.getState().net.need([]));await a.waitForFunction(()=>document.querySelector('[data-testid="trade-panel"] [data-testid="other-need-row"]')?.getAttribute('aria-label')?.endsWith('has not shared a need'));
+ assert.equal(await rows.count(),2,'clearing a need never removes the row');
  assert(await a.getByRole('button',{name:'Need Wood',exact:true}).isDisabled());
  const dimensions=await a.getByRole('button',{name:/^Need (Wood|Brick|Sheep|Wheat|Stone)$/}).evaluateAll(buttons=>buttons.map(button=>{const box=button.getBoundingClientRect();return {w:box.width,h:box.height};}));
  assert(dimensions.every(d=>d.w>=44&&d.h>=44));
@@ -266,7 +272,7 @@ try{
   const white=await page.getByTestId('trade-panel').evaluate(panel=>{
    const rgb=c=>c.match(/[\d.]+/g).slice(0,3).map(Number),lum=c=>{const [r,g,b]=rgb(c).map(v=>{v/=255;return v<=0.03928?v/12.92:((v+0.055)/1.055)**2.4;});return 0.2126*r+0.7152*g+0.0722*b;};
    const ratio=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);};
-   const button=panel.querySelector('#need-picker button'),chip=panel.querySelector('[data-testid="need-chip"]');
+   const button=panel.querySelector('#need-picker button'),chip=panel.querySelector('.trade-other-chip');
    return {sheet:getComputedStyle(panel).backgroundColor,button:ratio(getComputedStyle(button).color,getComputedStyle(button).backgroundColor),chip:chip?ratio(getComputedStyle(chip).color,getComputedStyle(chip).backgroundColor):null};
   });
   geometry.at(-1).white=white;
