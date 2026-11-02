@@ -4354,8 +4354,13 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
     climber.g.userData.ref = "climber";
     climber.arms.forEach((o) => (o.userData.ref = "climber-arm"));
     // Swing from rest (0: as drawn): arms a and b, legs c and d.
+    const [armA, armB] = climber.arms as [THREE.Group, THREE.Group];
+    const [legA, legB] = climber.legs as [THREE.Group, THREE.Group];
     const pose = (a: number, b: number, c: number, d: number) => {
-      [a, b, c, d].forEach((v, i) => ((i < 2 ? climber.arms : climber.legs)[i % 2]!.rotation.z = v));
+      armA.rotation.z = a;
+      armB.rotation.z = b;
+      legA.rotation.z = c;
+      legB.rotation.z = d;
     };
     // His gear: a rope coil over the shoulder, a red helmet over the hat, and the flag he plants at the top.
     const rope = mesh(merge([part(new THREE.TorusGeometry(1, 0.28, 6, 14), "#e8d080", [-0.004, 0.026, 0], [0, 0, 0.5], [0.012, 0.012, 0.012])]), cm);
