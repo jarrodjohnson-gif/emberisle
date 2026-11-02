@@ -1,0 +1,124 @@
+{
+  "browser": "153.0.8010.12",
+  "hostedRoom": "S3Y2",
+  "results": [
+    {
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "kind": "copied-wide",
+      "code": "WWWW",
+      "width": 73.15625,
+      "textWidth": 73.15625,
+      "font": "700 16.5941px / 32px \"DejaVu Sans\", sans-serif",
+      "fontSize": 16.5941,
+      "letterSpacing": "normal",
+      "textOverflow": "ellipsis",
+      "minimum12pxWidth": 52.953125,
+      "fontNeeded": 16.594084270000458,
+      "buttons": [
+        {
+          "text": "Copied",
+          "width": 64.484375,
+          "height": 44,
+          "padLeft": 9,
+          "padRight": 9
+        },
+        {
+          "text": "Copy link",
+          "width": 51.46875,
+          "height": 44,
+          "padLeft": 9,
+          "padRight": 9
+        },
+        {
+          "text": "Invite",
+          "width": 56.828125,
+          "height": 44,
+          "padLeft": 9,
+          "padRight": 9
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 667
+      },
+      "kind": "copied-wide",
+      "code": "WWWW",
+      "width": 98.453125,
+      "textWidth": 98.453125,
+      "font": "700 21.4219px / 32px \"DejaVu Sans\", sans-serif",
+      "fontSize": 21.4219,
+      "letterSpacing": "1px",
+      "textOverflow": "ellipsis",
+      "minimum12pxWidth": 56.953125,
+      "fontNeeded": 21.421879665851595,
+      "buttons": [
+        {
+          "text": "Copied",
+          "width": 76.109375,
+          "height": 44,
+          "padLeft": 9,
+          "padRight": 9
+        },
+        {
+          "text": "Copy link",
+          "width": 59.84375,
+          "height": 44,
+          "padLeft": 9,
+          "padRight": 9
+        },
+        {
+          "text": "Invite",
+          "width": 66.53125,
+          "height": 44,
+          "padLeft": 9,
+          "padRight": 9
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "copied-wide",
+      "code": "WWWW",
+      "width": 105.484375,
+      "textWidth": 105.484375,
+      "font": "700 23.0084px / 32px \"DejaVu Sans\", sans-serif",
+      "fontSize": 23.0084,
+      "letterSpacing": "1px",
+      "textOverflow": "ellipsis",
+      "minimum12pxWidth": 56.953125,
+      "fontNeeded": 23.008378152847293,
+      "buttons": [
+        {
+          "text": "Copied",
+          "width": 76.109375,
+          "height": 44,
+          "padLeft": 9,
+          "padRight": 9
+        },
+        {
+          "text": "Copy link",
+          "width": 59.84375,
+          "height": 44,
+          "padLeft": 9,
+          "padRight": 9
+        },
+        {
+          "text": "Invite",
+          "width": 66.53125,
+          "height": 44,
+          "padLeft": 9,
+          "padRight": 9
+        }
+      ]
+    }
+  ],
+  "errors": []
+}
