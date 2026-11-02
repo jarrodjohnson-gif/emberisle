@@ -1,0 +1,24 @@
+
+> desk-board-prove
+> node scripts/desk-board-prove.mjs
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+
+false !== true
+
+    at eq (file:///workspace/emberisle/work/p1215-sol/scripts/desk-board-prove.mjs:14:43)
+    at file:///workspace/emberisle/work/p1215-sol/scripts/desk-board-prove.mjs:144:1 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0
+EXIT 1

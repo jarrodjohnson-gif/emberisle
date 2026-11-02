@@ -1,0 +1,110 @@
+[
+  {
+    "name": "base-build",
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "cwd": "/workspace/work/ambience-base",
+    "exit": 0,
+    "seconds": 6.1
+  },
+  {
+    "name": "typecheck",
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "cwd": "/workspace/work/ambience-verify",
+    "exit": 0,
+    "seconds": 5.27
+  },
+  {
+    "name": "build",
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "cwd": "/workspace/work/ambience-verify",
+    "exit": 0,
+    "seconds": 3.75
+  },
+  {
+    "name": "registered",
+    "command": [
+      "node",
+      "scripts/registered-prove.mjs"
+    ],
+    "cwd": "/workspace/work/ambience-verify",
+    "exit": 0,
+    "seconds": 0.19
+  },
+  {
+    "name": "loosen",
+    "command": [
+      "node",
+      "scripts/loosen-prove.mjs",
+      "--base",
+      "origin/main"
+    ],
+    "cwd": "/workspace/work/ambience-verify",
+    "exit": 1,
+    "seconds": 0.11
+  },
+  {
+    "name": "size",
+    "command": [
+      "node",
+      "scripts/size-prove.mjs",
+      "--base",
+      "/workspace/work/ambience-base"
+    ],
+    "cwd": "/workspace/work/ambience-verify",
+    "exit": 0,
+    "seconds": 0.25
+  },
+  {
+    "name": "mixer",
+    "command": [
+      "node",
+      "scripts/sound-mixer-prove.mjs"
+    ],
+    "cwd": "/workspace/work/ambience-verify",
+    "exit": 0,
+    "seconds": 21.77
+  },
+  {
+    "name": "loop",
+    "command": [
+      "node",
+      "scripts/ambience-loop-prove.mjs"
+    ],
+    "cwd": "/workspace/work/ambience-verify",
+    "exit": 0,
+    "seconds": 10.86
+  },
+  {
+    "name": "levels",
+    "command": [
+      "node",
+      "scripts/audio-level-prove.mjs"
+    ],
+    "cwd": "/workspace/work/ambience-verify",
+    "exit": 0,
+    "seconds": 34.3
+  },
+  {
+    "name": "loosen-exact-base",
+    "command": [
+      "node",
+      "scripts/loosen-prove.mjs",
+      "--base",
+      "beafd405"
+    ],
+    "cwd": "/workspace/work/ambience-verify",
+    "exit": 0
+  }
+]

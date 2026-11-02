@@ -1,0 +1,37 @@
+ok   LobbyView: 2.10 kB gzip, ceiling 2.50 kB
+ok   haptics: 1.09 kB gzip, ceiling 1.20 kB
+ok   index: 125.17 kB gzip, ceiling 125.20 kB
+ok   IslandCanvas: 200.56 kB gzip, ceiling 202.50 kB
+ok   jelly-board: 7.97 kB gzip, ceiling 9.00 kB
+ok   hex-jelly: 46.74 kB gzip, ceiling 50.00 kB
+ok   harbor-jelly: 10.24 kB gzip, ceiling 11.50 kB
+ok   online: 6.14 kB gzip, ceiling 9.00 kB
+ok   Reactions: 2.31 kB gzip, ceiling 2.60 kB
+ok   sheets: 7.14 kB gzip, ceiling 7.80 kB
+ok   SetupReference: 1.86 kB gzip, ceiling 2.20 kB
+ok   moments: 4.13 kB gzip, ceiling 5.70 kB
+ok   VictoryTargetSelect: 0.62 kB gzip, ceiling 1.00 kB
+ok   DockInspection: 1.03 kB gzip, ceiling 1.20 kB
+ok   HandRates: 0.65 kB gzip, ceiling 0.80 kB
+ok   OpenTables: 1.25 kB gzip, ceiling 1.30 kB
+ok   WayfarerOptions: 0.49 kB gzip, ceiling 0.50 kB
+ok   TurnExtensionVote: 1.21 kB gzip, ceiling 1.40 kB
+new  LobbyView: 2.10 kB gzip, not in the base; the ceiling is its only limit
+ok   haptics growth: base 1091 B, PR 1091 B, +0 B, allowance 200 B
+ok   index growth: base 125162 B, PR 125173 B, +11 B, allowance 400 B
+ok   IslandCanvas growth: base 200566 B, PR 200562 B, -4 B, allowance 662 B
+ok   jelly-board growth: base 7972 B, PR 7970 B, -2 B, allowance 200 B
+ok   hex-jelly growth: base 46737 B, PR 46736 B, -1 B, allowance 200 B
+ok   harbor-jelly growth: base 10238 B, PR 10237 B, -1 B, allowance 200 B
+ok   online growth: base 7794 B, PR 6142 B, -1652 B, allowance 200 B
+ok   Reactions growth: base 2314 B, PR 2314 B, +0 B, allowance 200 B
+ok   sheets growth: base 7119 B, PR 7142 B, +23 B, allowance 200 B
+ok   SetupReference growth: base 1858 B, PR 1857 B, -1 B, allowance 200 B
+ok   moments growth: base 4125 B, PR 4125 B, +0 B, allowance 200 B
+ok   VictoryTargetSelect growth: base 684 B, PR 617 B, -67 B, allowance 200 B
+ok   DockInspection growth: base 1030 B, PR 1030 B, +0 B, allowance 200 B
+ok   HandRates growth: base 646 B, PR 646 B, +0 B, allowance 200 B
+ok   OpenTables growth: base 1253 B, PR 1253 B, +0 B, allowance 200 B
+ok   WayfarerOptions growth: base 488 B, PR 489 B, +1 B, allowance 200 B
+ok   TurnExtensionVote growth: base 1205 B, PR 1205 B, +0 B, allowance 200 B
+size-prove: all chunks inside ceiling and growth allowance

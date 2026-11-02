@@ -1,0 +1,65 @@
+
+> sound-mixer-prove
+> node scripts/sound-mixer-prove.mjs
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: every physical audio asset has exactly one mastering type
++ actual - expected
+
+  [
+    'amb_sea',
++   'amb_sea',
+    'back_001',
+    'bong_001',
+    'chat_recv',
+    'chat_send',
+    'click_001',
+
+    at file:///workspace/emberisle/work/verify1015-type-oct24/scripts/sound-mixer-prove.mjs:12:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:643:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    'amb_sea',          'amb_sea',        'back_001',
+    'bong_001',         'chat_recv',      'chat_send',
+    'click_001',        'click_002',      'click_005',
+    'confirmation_001', 'drop_001',       'drop_002',
+    'drop_003',         'drop_004',       'end_music',
+    'error_001',        'error_002',      'game_lose',
+    'game_start',       'match_point',    'old_tower_inn_loop',
+    'open_001',         'plop',           'pluck_001',
+    'robbed_fah',       'sb_airhorn',     'sb_only_wood',
+    'sb_perfect',       'sb_plump_sheep', 'sb_quit_touchin',
+    'sb_win_reaction',  'sb_wololo',      'scratch_001',
+    'tap_fields',       'tap_forest',     'tap_hills',
+    'tap_mountains',    'tap_waste',      'timer_final',
+    'timer_tick',       'trade_offer',    'wayfarer_move',
+    'your_turn'
+  ],
+  expected: [
+    'amb_sea',        'back_001',           'bong_001',
+    'chat_recv',      'chat_send',          'click_001',
+    'click_002',      'click_005',          'confirmation_001',
+    'drop_001',       'drop_002',           'drop_003',
+    'drop_004',       'end_music',          'error_001',
+    'error_002',      'game_lose',          'game_start',
+    'match_point',    'old_tower_inn_loop', 'open_001',
+    'plop',           'pluck_001',          'robbed_fah',
+    'sb_airhorn',     'sb_only_wood',       'sb_perfect',
+    'sb_plump_sheep', 'sb_quit_touchin',    'sb_win_reaction',
+    'sb_wololo',      'scratch_001',        'tap_fields',
+    'tap_forest',     'tap_hills',          'tap_mountains',
+    'tap_waste',      'timer_final',        'timer_tick',
+    'trade_offer',    'wayfarer_move',      'your_turn'
+  ],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

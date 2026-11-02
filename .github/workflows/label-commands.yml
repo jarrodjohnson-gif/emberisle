@@ -30,7 +30,22 @@ concurrency:
 
 jobs:
   label:
-    if: contains(github.event.comment.body, '/')
+    if: >-
+      contains(github.event.comment.body, '/todo') ||
+      contains(github.event.comment.body, '/backlog') ||
+      contains(github.event.comment.body, '/claim') ||
+      contains(github.event.comment.body, '/claimed') ||
+      contains(github.event.comment.body, '/in-progress') ||
+      contains(github.event.comment.body, '/in-review') ||
+      contains(github.event.comment.body, '/paused') ||
+      contains(github.event.comment.body, '/done') ||
+      contains(github.event.comment.body, '/failed') ||
+      contains(github.event.comment.body, '/canceled') ||
+      contains(github.event.comment.body, '/unclaim') ||
+      contains(github.event.comment.body, '/changed') ||
+      contains(github.event.comment.body, '/unchanged') ||
+      contains(github.event.comment.body, '/label') ||
+      contains(github.event.comment.body, '/unlabel')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v7

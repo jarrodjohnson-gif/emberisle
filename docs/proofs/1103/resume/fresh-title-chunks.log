@@ -1,0 +1,42 @@
+
+> title-chunks-prove
+> node scripts/title-chunks-prove.mjs
+
+ok  held mode controls retain private Host
+ok  mode arrival preserves Join text and focus
+ok  loaded mode remains Private by default
+ok  OpenTables held: no unrelated browser errors []
+ok  Host node survives optional mode arrival
+ok  module arrival between pointer down/up preserves the first Host tap
+ok  OpenTables held: no unrelated browser errors []
+ok  practice starts while open-table module remains held
+ok  OpenTables held: no unrelated browser errors []
+ok  failed mode controls still host a real private table {"code":"3JY9","listed":[]}
+ok  OpenTables failed: no unrelated browser errors []
+ok  settings summary stays eager
+ok  held settings body is isolated from core title controls
+ok  held settings retain Host
+ok  Practice keeps its existing default
+ok  Online keeps its existing default
+ok  Hotseat keeps its existing default
+ok  loaded settings preserve their existing store action and summary
+ok  existing settings help text retained
+ok  WayfarerOptions held: no unrelated browser errors []
+ok  failed optional settings do not block hosting
+ok  WayfarerOptions failed: no unrelated browser errors []
+node:internal/modules/run_main:111
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: no host errors ["(node:78724) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.\n(Use `node --trace-deprecation ...` to show where the warning was created)\n"]
+    at check (file:///private/var/folders/s0/rzccgvvx3f9dqsz2gdl6vfnm0000gp/T/emberisle-1103-fresh-ff04bskc/checkout/scripts/title-chunks-prove.mjs:35:10)
+    at file:///private/var/folders/s0/rzccgvvx3f9dqsz2gdl6vfnm0000gp/T/emberisle-1103-fresh-ff04bskc/checkout/scripts/title-chunks-prove.mjs:143:3 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v26.12.0

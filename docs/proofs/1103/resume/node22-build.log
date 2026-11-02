@@ -1,0 +1,38 @@
+
+> build
+> vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 1998 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                2.61 kB │ gzip:   1.30 kB
+dist/assets/ben-10-BZkFZeMq.webp               6.80 kB
+dist/assets/LobbyView-D2Fd81Oi.css             5.07 kB │ gzip:   1.37 kB
+dist/assets/index-DtrSlrKq.css                72.52 kB │ gzip:  15.07 kB
+dist/assets/WayfarerOptions-Cask3Z6n.js        0.80 kB │ gzip:   0.49 kB
+dist/assets/HandRates-5MZYF0Li.js              1.01 kB │ gzip:   0.64 kB
+dist/assets/VictoryTargetSelect-D43OkT4S.js    1.02 kB │ gzip:   0.61 kB
+dist/assets/haptics-CMrEzay2.js                1.85 kB │ gzip:   1.09 kB
+dist/assets/DockInspection-CIPTkEOK.js         2.03 kB │ gzip:   1.03 kB
+dist/assets/OpenTables-DWzTr4gO.js             2.66 kB │ gzip:   1.25 kB
+dist/assets/TurnExtensionVote-BVSB4EOb.js      2.67 kB │ gzip:   1.20 kB
+dist/assets/SetupReference-CWNXHiQO.js         4.92 kB │ gzip:   1.86 kB
+dist/assets/LobbyView-Cmr2762Y.js              5.21 kB │ gzip:   2.11 kB
+dist/assets/Reactions-D-fmtwZz.js              5.47 kB │ gzip:   2.31 kB
+dist/assets/moments-DleRNapG.js                9.65 kB │ gzip:   4.13 kB
+dist/assets/online-BBoXsawi.js                17.33 kB │ gzip:   6.16 kB
+dist/assets/jelly-board-BBlcUNqm.js           20.84 kB │ gzip:   8.02 kB
+dist/assets/sheets-CPG0xrr8.js                22.63 kB │ gzip:   7.16 kB
+dist/assets/harbor-jelly-FGmO9Ewz.js          25.97 kB │ gzip:  10.32 kB
+dist/assets/hex-jelly-Bzznxrs2.js            136.96 kB │ gzip:  47.25 kB
+dist/assets/index-DR1qzXce.js                398.80 kB │ gzip: 126.39 kB
+dist/assets/IslandCanvas-CiBB4BOi.js         760.81 kB │ gzip: 202.01 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 250ms

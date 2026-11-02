@@ -1,0 +1,27 @@
+
+> ambience-loop-prove
+> node scripts/ambience-loop-prove.mjs --file /workspace/emberisle/work/1015-type-validation/bad-seam.mp3
+
+ok the specified recipe remains 20 s, 2 s crossfade and 0.1 Hz swell
+ok decoded duration is exactly 20 seconds
+ok the candidate is non-silent
+ok the decoded clip never clips
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: first/last 10 ms differ by less than 2% of full scale
+    at check (file:///workspace/emberisle/work/verify1015-type-oct24/scripts/ambience-loop-prove.mjs:16:37)
+    at file:///workspace/emberisle/work/verify1015-type-oct24/scripts/ambience-loop-prove.mjs:41:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at async node:internal/modules/esm/loader:643:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

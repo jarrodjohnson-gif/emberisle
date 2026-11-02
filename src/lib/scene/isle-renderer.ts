@@ -37,7 +37,7 @@ import { LAND_MS } from "@/lib/scene/landing";
 import { hashStr } from "@/lib/utils";
 import { chunkUrl } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
-import { BLOCK_H } from "@/lib/scene/jelly-dims";
+import { BLOCK_H, TILE_Y } from "@/lib/scene/jelly-dims";
 import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
 import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
 import { OceanLife } from "@/lib/scene/ocean-life";
@@ -48,8 +48,6 @@ import { Wobble } from "@/lib/scene/wobble";
 import { haptics, play, touchHex } from "@/lib/sound";
 import { payingHexes } from "@/lib/game/rules";
 import { type GameState, type HarborKind, type HexCell, type Terrain, type Vertex } from "@/lib/game/types";
-
-const TILE_Y = 0.04;
 
 // The y of a hex's top surface: the jelly block's flat pad (the token) and its rim (the pieces) are exactly here, the same on
 // every kind (docs/design/hex-jelly-prompt.md "THE BLOCK").
@@ -316,7 +314,17 @@ export class IsleRenderer {
     this.safeProbe.style.cssText =
       "position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)";
     document.body.appendChild(this.safeProbe);
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
+    try {
+      this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
+    } catch (err) {
+      this.safeProbe.remove();
+      if (err && typeof err === "object") {
+        (err as { isWebGL?: boolean }).isWebGL = true;
+      }
+      throw err;
+    }
+
+    try {
     // Frame cost tracks pixels (#310). The crystal sea runs at up to 2 everywhere (every player's phone is an iPhone Pro class
     // GPU); `applyWater` keeps 1.5 on a phone for the simple sea (2.25x the pixels of 1, against 4x at 2).
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.coarse() ? 1.5 : 2));
@@ -464,6 +472,15 @@ export class IsleRenderer {
     this.composer.addPass(this.ssao);
     this.composer.addPass(new OutputPass());
     this.renderer.setAnimationLoop(this.tick);
+    } catch (err) {
+      this.dispose();
+      // In dev, forceContextLoss followed by a new WebGLRenderer on the same canvas throws
+      // TypeError ... 'precision' (StrictMode's second mount hits it, which is why a second,
+      // misleading error may appear). Production is unaffected because remounts get a new canvas.
+      // It also means a transient constructor failure cannot recover on that canvas without a fresh element.
+      this.renderer?.forceContextLoss?.();
+      throw err;
+    }
   }
 
   // Off the table (title and lobby) the island is a backdrop under a card: the slow orbit, no SSAO, 30 frames a second.
@@ -800,32 +817,33 @@ export class IsleRenderer {
   dispose() {
     this.clearPayers();
     this.stopped = true;
-    this.renderer.domElement.removeEventListener("webglcontextlost", this.onContextLost);
+    this.renderer?.domElement?.removeEventListener("webglcontextlost", this.onContextLost);
     this.dropFence();
-    this.fps?.el.remove();
+    this.fps?.el?.remove();
     this.jelly?.dispose();
     this.jelly = null;
     this.shore?.dispose();
     this.shore = null;
-    this.renderer.setAnimationLoop(null);
-    this.controls.dispose();
-    this.orbit.dispose();
+    this.renderer?.setAnimationLoop(null);
+    this.controls?.dispose?.();
+    this.orbit?.dispose?.();
     this.calmMq?.removeEventListener("change", this.onCalm);
+    this.clock.dispose();
     window.removeEventListener("resize", this.resize);
     window.visualViewport?.removeEventListener("resize", this.onViewport);
     window.removeEventListener("keydown", this.onKey);
-    this.renderer.domElement.parentElement?.removeEventListener("focusin", this.remeasure);
-    this.renderer.domElement.parentElement?.removeEventListener("focusout", this.remeasure);
-    for (const t of GATE_EVENTS) this.renderer.domElement.parentElement?.removeEventListener(t, this.gate, true);
-    this.renderer.domElement.removeEventListener("pointerdown", this.onDown);
-    this.renderer.domElement.removeEventListener("pointerup", this.onUp);
-    this.renderer.domElement.removeEventListener("pointermove", this.onMove);
-    this.renderer.domElement.removeEventListener("pointercancel", this.onCancel);
-    this.safeProbe.remove();
-    this.oceanLife.dispose();
-    this.bruno.dispose();
-    this.under?.dispose();
-    this.renderer.dispose();
+    this.renderer?.domElement?.parentElement?.removeEventListener("focusin", this.remeasure);
+    this.renderer?.domElement?.parentElement?.removeEventListener("focusout", this.remeasure);
+    for (const t of GATE_EVENTS) this.renderer?.domElement?.parentElement?.removeEventListener(t, this.gate, true);
+    this.renderer?.domElement?.removeEventListener("pointerdown", this.onDown);
+    this.renderer?.domElement?.removeEventListener("pointerup", this.onUp);
+    this.renderer?.domElement?.removeEventListener("pointermove", this.onMove);
+    this.renderer?.domElement?.removeEventListener("pointercancel", this.onCancel);
+    this.safeProbe?.remove();
+    this.oceanLife?.dispose?.();
+    this.bruno?.dispose?.();
+    this.under?.dispose?.();
+    this.renderer?.dispose?.();
   }
 
   private wake = () => {
