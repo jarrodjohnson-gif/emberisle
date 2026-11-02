@@ -10,6 +10,7 @@
 //   H. A bot asks and another bot wants it: with the person silent, that bot's Yes waits until 8 s (#850).
 //   I. The same ask, and the person's Yes at 5 s takes it before the bot that wanted it (#850).
 //   J. The same ask, and the person's No at 3 s lets the waiting bot take it at once (#850).
+//   K. The person cancels their own ask before any bot answers: it ends with no taker, and no bot answer lands (#1245).
 import { mock } from "node:test";
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
@@ -231,6 +232,18 @@ if (!s().offer) fail("J: the offer closed before the person answered");
 s().answerTrade(false);
 if (s().offer || s().tradeTaker !== "p3" || hand("p3").ore !== 2) fail("J: the bot's held Yes did not land at once after the person's No", { taker: s().tradeTaker });
 console.log(`J ok: the person's No at 3 s lets ${p3} take it at once`);
+
+// K: the person asks the helpful ask and takes it back before any bot answers (#1245).
+practice(structuredClone(gA));
+s().askTable(helps.give, helps.want);
+if (!s().offer || s().offer.until !== null) fail("K: the person's offer is not held (until should be null)", s().offer);
+const handsK = JSON.stringify(s().state.players.map((p) => p.resources));
+s().cancelTrade();
+if (s().offer) fail("K: cancelTrade left the offer open");
+if (s().tradeTaker) fail("K: a cancelled offer has a taker", s().tradeTaker);
+mock.timers.tick(20_000);
+if (s().offer || s().declined.length || JSON.stringify(s().state.players.map((p) => p.resources)) !== handsK) fail("K: a bot answered a cancelled offer, or goods moved");
+console.log("K ok: the person's Cancel ends the held offer with no taker, and no bot answers it");
 
 mock.timers.reset();
 console.log("practice trade prove ok");

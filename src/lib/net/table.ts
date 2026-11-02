@@ -93,7 +93,7 @@ export interface TableEvents {
   react(r: Reaction): void;
   log(text: string): void;
   error(message: string, request?: "need"): void;
-  tradeOffer(msg: { tradeId: string; from: string; give: Bag; want: Bag; seconds: number }): void;
+  tradeOffer(msg: { tradeId: string; from: string; give: Bag; want: Bag; seconds: number | null }): void;
   tradeDeclined(msg: { tradeId: string; by: string; name: string }): void;
   tradeClosed(msg: { tradeId: string; taker?: string }): void;
   // The socket dropped and the client is dialing again (attempt 1, 2, ...); `closed` follows only if it gives up.
@@ -147,6 +147,7 @@ export interface TableClient {
   ask(give: Bag, want: Bag): void;
   answer(tradeId: string, yes: boolean): void;
   need(kinds: Resource[]): void;
+  cancel(tradeId: string): void;
   requestTurnExtension(target: string, key: string): boolean;
   answerTurnExtension(voteId: string, yes: boolean): boolean;
   getTurnExtension(): TurnExtensionState | null;
@@ -480,6 +481,9 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       act({ type: "tradeAnswer", tradeId, yes });
     },
     need: (kinds) => send({ type: "need", kinds }),
+    cancel: (tradeId) => {
+      act({ type: "tradeCancel", tradeId });
+    },
     requestTurnExtension: (target, key) => act({ type: "turnExtensionAsk", target, key }),
     answerTurnExtension: (voteId, yes) => act({ type: "turnExtensionAnswer", voteId, yes }),
     getTurnExtension: () => extension,
