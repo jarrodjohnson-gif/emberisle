@@ -307,6 +307,16 @@ try {
     await renameTappable(page, `${width}x${height}`);
     await centred(page, `${width}x${height}`);
     if (width === 390) await supportedCodeFits(page, `${width}x${height}`);
+    if (width === 390) {
+      // Actual hosted fallback font; retain the native cases and run the same assertions.
+      const font = await page.addStyleTag({ content: '.lobby-header p, .lobby-copy-controls button { font-family: "DejaVu Sans", sans-serif !important; }' });
+      try {
+        await page.evaluate(() => document.fonts.ready);
+        await supportedCodeFits(page, `${width}x${height} DejaVu Sans`);
+      } finally {
+        await font.evaluate(el => el.remove());
+      }
+    }
     await page.getByRole("button", { name: "Copy", exact: true }).click();
     await page.waitForFunction(code => window.__copies.includes(code), code);
     await page.getByRole("button", { name: "Copy link", exact: true }).click();

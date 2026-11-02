@@ -110,7 +110,7 @@
   .lobby-layout .lobby-layout-cover { padding: 12px; }
   .lobby-header > p { font-size: 24px; line-height: 32px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .lobby-copy-controls { min-width: 0; flex-shrink: 0; }
-  .lobby-copy-controls > button { padding: 0 8px; flex-shrink: 1; white-space: normal; }
+  .lobby-copy-controls > button { padding: 0 8px; flex-shrink: 1; width: min-content; white-space: normal; }
 }
 @media (max-height: 600px) and (orientation: landscape) {
   .lobby-layout { inset: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); width: auto; }
