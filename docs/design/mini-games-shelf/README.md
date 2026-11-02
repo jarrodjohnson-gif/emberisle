@@ -3,7 +3,11 @@
 Issue [#929](https://github.com/jarrodjohnson-gif/emberisle/issues/929). Design only: no game code changes.
 Author: Claude Opus 5.5 (builder 2), 2026-11-02. Base: `main` at `39592f6`.
 
-**Why now.** Jarrod on card `q970-waitbox` (2026-10-31): "C, wait for the mini-games shelf design … Get this finished asap we alr had mocks." So this spec builds on the mock that already exists ([`docs/design/mini-games-hub`](../mini-games-hub/README.md)) and adds nothing new. It fixes the mock to the lobby type and target scale Jarrod accepted on 2026-10-31 ([`docs/design/lobby-hig`](../lobby-hig/README.md), card `q1220-lobby-hig`, answer A). Once he accepts this, PR #970's "Play while you wait" box moves into the shelf.
+**Why now.** Jarrod on card `q970-waitbox` (2026-10-31): "C, wait for the mini-games shelf design … Get this finished asap we alr had mocks."
+- **The starting point** is the mock that already exists ([`docs/design/mini-games-hub`](../mini-games-hub/README.md)). Its structure, screens and wording are kept.
+- **What changes:** the mock's look and spacing. They now follow what Jarrod accepted for the lobby on 2026-10-31 ([`docs/design/lobby-hig`](../lobby-hig/README.md), card `q1220-lobby-hig`, answer A): the lobby's **white colours, not the mock's cream**, the lobby text sizes, and 44 px targets.
+- **Fit:** a few layout changes so each open game fits above the footer. Every change from the mock is listed below.
+- **After Jarrod accepts it,** PR #970's "Play while you wait" box moves into the shelf.
 
 ## The design in one paragraph
 
@@ -19,45 +23,92 @@ The lobby card gets two tabs under the room code: **Table** (today's seats and c
 
 | # | Question | Recommendation | Why |
 |---|---|---|---|
-| 1 | One shelf with a tile per game, or one game at a time? | One shelf; one game open at a time | One box keeps the lobby card one scroll; a second open game would push Ready off a phone screen. |
+| 1 | One shelf with a tile per game, or one game at a time? | One shelf; one game open at a time | One box keeps the open game above the footer (measured below); a second open game would not fit. |
 | 2 | Where does it sit on a phone versus desktop? | A **Play games** tab in the lobby card, on both | A side panel would cover the island. A third chat tab would break Chat C's two-tab rule (DECISIONS 2026-10-20). |
 | 3 | Which native game first? | Tic-tac-toe | Small rules, two players, nothing to write. Trivia needs question content and someone to write it. |
 | 4 | Does it open by itself? | Only on tap; closed and muted by default | Matches #970 and #937 ("no key capture when closed"). Nothing loads until tapped. |
 | 5 | Scores or leaderboards? | None to start | Each needs storage and profile work (#889 series). It is easy to add later. |
 
-## Fixed to the accepted lobby scale
+## What changed from the mock
 
-The mock was drawn before the lobby HIG audit was accepted. [`hig-layer.css`](hig-layer.css) applies the accepted scale on top of the unchanged mock. Layout, content and wording stay the same.
+All changes are in [`hig-layer.css`](hig-layer.css), applied over the unchanged mock. Nothing is game code.
 
-| Item | Mock as drawn (measured) | Proposed (the accepted lobby scale) |
-|---|---|---|
-| Captions, roster, tile sub-lines | 12 px | Footnote 13/18 |
-| Tabs and ordinary buttons | 14 px | Subheadline 15/20 |
-| "While you wait", game names, the open game's title, Ready and Start | 14 to 16 px | Headline 17/22 semibold |
-| Room code | 36 px on a phone, 56 px on desktop | 22/28 on a phone, 28/34 on desktop, as in the real lobby |
-| Controls under 44 px | Phone: Copy and Copy link (32 px). Desktop: both tabs, Copy, Copy link, Close, Quit game, Sound and Leave the table (32 to 36 px) | **None**, on phone or desktop |
+| Change | Mock as drawn | Proposed | Why |
+|---|---|---|---|
+| **Colour** | Cream card `#fff9f0`, cream ground `#eeece7`, line `#cbcfc6` | The lobby's white: card `#ffffff`, ground `#f3f6f5`, line `#cbd3d3` (the island's number discs are white too) | Owner: no cream (DECISIONS 2026-10-20); Jarrod on #929: the mock "uses today's cream tokens". |
+| Text | 12, 14, 16, 36 and 56 px | Footnote 13/18, Subheadline 15/20, Headline 17/22 semibold; room code 22/28 on a phone and 28/34 on desktop | The accepted lobby scale. |
+| Targets | Phone: Copy and Copy link 32 px. Desktop: both tabs, Copy, Copy link, Close, Quit game, Sound and Leave the table at 32 to 36 px | **None under 44 px** at any size drawn | The accepted lobby meets 44 at every size. |
+| Gaps | 4 px between the tabs, between Copy and Copy link, and between the Win-at targets; 6 px between board cells | 8 px or more between every pair of neighbouring controls | Spacing scale (law 4). |
+| Copy and Copy link | Stacked beside the code | One row beside the code, as in the real lobby (`lobby-copy-controls`) | Frees about 50 px so the open game fits. |
+| Tic-tac-toe | Names row, then a separate "Moss's turn" line; 96 px cells; a "Moves go through the host. Nothing is saved." line | Whose turn sits on the names row, between You and Moss; 68 px cells on a phone and 48 px on desktop; the host line is dropped (it describes the build, not something a player needs) | The whole board now ends above the footer at 390×844 and 1280×720. |
+| Trivia tile | A locked "Trivia, Soon" tile | Hidden (choice F, as recommended) | The pictures now show the recommendation. |
+| "Starting…" stamp | Centred on the screen, covering the card's "Game closed." line on a phone | Over the island: near the top on a phone, to the right of the card on desktop | "Game closed." stays readable. |
 
-Measured by [`measure.mjs`](measure.mjs) on all six screens at both sizes: [as drawn](measure-as-drawn.txt), [proposed](measure-proposed.txt). The only sizes left off the scale are mock placeholders and game art: board numbers, the X and O marks, the 580:320 stage label and the "Loads here when you tap" placeholder.
+## Fit, measured
+
+[`measure.mjs`](measure.mjs) checks every screen at each size. The full output is in [`measure-proposed.txt`](measure-proposed.txt) and [`measure-as-drawn.txt`](measure-as-drawn.txt). For each screen it records:
+- the card's top edge and height;
+- whether the open game (or the shelf) ends above the sticky footer;
+- whether anything covers "Game closed.";
+- controls under 44 px, and neighbouring controls closer than 8 px;
+- every font size in use.
+
+| Size | Open game or shelf above the footer | Under 44 px | Closer than 8 px | "Game closed." |
+|---|---|---|---|---|
+| Phone 390×844 | **All six screens fit** (12 px to spare; tic-tac-toe 12 px) | None | None | Visible |
+| Desktop 1280×720 | **All six screens fit** (Sandwich Stacker 12 px, tic-tac-toe 7 px to spare) | None | None | Visible |
+| Small phone 320×568 | **Does not fit: the card scrolls under its fixed footer.** The shelf scrolls 51 px, Sandwich Stacker 157 px and tic-tac-toe 229 px. | None | Only board cells scrolled under the footer | Visible |
+| Sideways phone 844×390 | **Not drawn.** The card is 342 px tall; the shelf needs 225 px more and tic-tac-toe 323 px more. It needs its own layout (for example the game as a sheet over the island), which is a separate owner choice. | None | Measured only | Visible |
+
+At 320×568 the card already fills the screen on the Table tab, so the Play games tab scrolls like the rest of the lobby there. The footer stays put and the game scrolls under it.
 
 ## Pictures (proposed)
 
-All pictures are rendered from the mock by [`capture.mjs`](capture.mjs) with [`hig-layer.css`](hig-layer.css) on top. The mock's own review callouts are hidden.
+The pictures are rendered 1:1 from the mock with [`hig-layer.css`](hig-layer.css) on top, by [`capture.mjs`](capture.mjs) (shared setup in [`views.mjs`](views.mjs)). The mock's review callouts and notes column are hidden.
 
-The mock had a bug, fixed for both picture sets. The host's Start button has the class `sea`, which the mock also uses for the full-screen ocean (`position: absolute; inset: 0`), so on host screens Start filled the whole card. The fix is one scoped style in `capture.mjs`.
+The mock had a bug, fixed for both picture sets: the host's Start button has the class `sea`, which the mock also uses for the full-screen ocean (`position: absolute; inset: 0`), so on host screens Start filled the whole card. The fix is one scoped style in `views.mjs`.
 
-| Screen | Phone 390×844 | Desktop 1280×720 |
-|---|---|---|
-| A. Lobby, Table tab (Play games closed) | ![](pictures/proposed/phone-390x844-a-lobby-closed.png) | ![](pictures/proposed/desktop-1280x720-a-lobby-closed.png) |
-| B. The shelf | ![](pictures/proposed/phone-390x844-b-shelf.png) | ![](pictures/proposed/desktop-1280x720-b-shelf.png) |
-| B. Shelf, alone at the table (tic-tac-toe needs a table-mate) | ![](pictures/proposed/phone-390x844-b-shelf-alone.png) | ![](pictures/proposed/desktop-1280x720-b-shelf-alone.png) |
-| B. Shelf, a table-mate invited you (badge on the tab) | ![](pictures/proposed/phone-390x844-b-shelf-invited.png) | ![](pictures/proposed/desktop-1280x720-b-shelf-invited.png) |
-| C. Sandwich Stacker open (580:320 stage, muted, Close) | ![](pictures/proposed/phone-390x844-c-solo-stacker.png) | ![](pictures/proposed/desktop-1280x720-c-solo-stacker.png) |
-| D. Tic-tac-toe with a table-mate | ![](pictures/proposed/phone-390x844-d-tictactoe.png) | ![](pictures/proposed/desktop-1280x720-d-tictactoe.png) |
-| E. Host presses Start: the game closes itself | ![](pictures/proposed/phone-390x844-e-start-closes.png) | ![](pictures/proposed/desktop-1280x720-e-start-closes.png) |
+| Screen | Phone 390×844 | Desktop 1280×720 | Small phone 320×568 |
+|---|---|---|---|
+| A. Lobby, Table tab (Play games closed) | ![](pictures/proposed/phone-390x844-a-lobby-closed.png) | ![](pictures/proposed/desktop-1280x720-a-lobby-closed.png) | ![](pictures/proposed/phone-320x568-a-lobby-closed.png) |
+| B. The shelf | ![](pictures/proposed/phone-390x844-b-shelf.png) | ![](pictures/proposed/desktop-1280x720-b-shelf.png) | ![](pictures/proposed/phone-320x568-b-shelf.png) |
+| B. Shelf, alone at the table (tic-tac-toe needs a table-mate) | ![](pictures/proposed/phone-390x844-b-shelf-alone.png) | ![](pictures/proposed/desktop-1280x720-b-shelf-alone.png) | ![](pictures/proposed/phone-320x568-b-shelf-alone.png) |
+| B. Shelf, a table-mate invited you (badge on the tab) | ![](pictures/proposed/phone-390x844-b-shelf-invited.png) | ![](pictures/proposed/desktop-1280x720-b-shelf-invited.png) | ![](pictures/proposed/phone-320x568-b-shelf-invited.png) |
+| C. Sandwich Stacker open (580:320 stage, muted, Close) | ![](pictures/proposed/phone-390x844-c-solo-stacker.png) | ![](pictures/proposed/desktop-1280x720-c-solo-stacker.png) | ![](pictures/proposed/phone-320x568-c-solo-stacker.png) |
+| D. Tic-tac-toe with a table-mate | ![](pictures/proposed/phone-390x844-d-tictactoe.png) | ![](pictures/proposed/desktop-1280x720-d-tictactoe.png) | ![](pictures/proposed/phone-320x568-d-tictactoe.png) |
+| E. Host presses Start: the game closes itself | ![](pictures/proposed/phone-390x844-e-start-closes.png) | ![](pictures/proposed/desktop-1280x720-e-start-closes.png) | ![](pictures/proposed/phone-320x568-e-start-closes.png) |
 
-The same screens as the mock drew them are in [`pictures/as-drawn/`](pictures/as-drawn/), for comparison.
+Choice D, as recommended:
+- **Desktop (screen C):** no Left and Right buttons; the line under the stage reads "Arrow keys move. Keys stay in the game while it has focus."
+- **Phone:** the held Left and Right buttons show under the stage.
+
+The same screens as the mock drew them (cream, mock sizes, the Trivia tile) are in [`pictures/as-drawn/`](pictures/as-drawn/), for comparison.
 
 Known small issue: at 17 px, the desktop "Sandwich Stacker" title in screen C wraps to two lines beside Sound and Close. The build can shorten the title or let the buttons wrap; the shelf itself is not affected.
+
+## Text sizes that are not on the lobby scale
+
+| Size | Where | Real chrome or mock? |
+|---|---|---|
+| 11 px | The "1" badge on the Play games tab | **Real chrome.** The build sets it to Footnote 13 (Caption sizes are not in the accepted scale). |
+| 11 px, 10 px, 22 px | "Loads here when you tap", "580 : 320" and the title inside the game stage | Game art: the stage is Ruffle's, not ours. |
+| 18, 24 and 28 px | The X and O marks (names row and board) | Game marks, not text styles. |
+| 28 px | "Starting…" | Today's turn stamp (`.turn-stamp`, 28/32), unchanged. |
+| 14 px | "Seats and chat, as today" | A mock placeholder for the real lobby. |
+| 7.68 to 25.3 px | Island numbers | The mock's stand-in island, scaled to the screen. |
+
+## The laws for adding something new (design laws, "Adding something new")
+
+- **Home:** the lobby card, as a second tab beside Table.
+- **Card size (laws 1 and 2):** the card does change size, as measured.
+  - **Phone 390×844:** the card is 567 px tall on the Table tab (top at 265 px), 571 px on the shelf (top at 261), and grows to 752 px for Sandwich Stacker (top at 80) and 785 px for tic-tac-toe (top at 47).
+  - **Desktop:** the card is a fixed 672 px column at every state.
+  - The phone card's change in size is choice H below.
+- **Island share (law 3):** law 3 is written for the table, not the lobby. In the lobby on a phone, the island above the card is 31% of the screen on the Table tab and the shelf, 9% with Sandwich Stacker open and 6% with tic-tac-toe open. On desktop the island keeps the whole space beside the card at every state.
+- **Optional:** never needed for practice, hosting or joining.
+- **Quiet state:** the shelf with nothing open, at a fixed place (screen B). The tile line says "Needs a table-mate" when no one is free, and the shelf never shows a gap.
+- **Exit:** Close, or Start (the game closes itself). Nothing else moves.
+- **Proof:** the shelf build issue carries one registered proof. It checks the tab, the shelf, each open game above the footer at 390×844 and 1280×720, 44 px targets, 8 px gaps and contrast.
 
 ## Open choices for Jarrod (one card)
 
@@ -66,17 +117,19 @@ Each has a recommendation; any of them can change without touching the rest.
 | # | Choice | Recommendation | Why |
 |---|---|---|---|
 | A | Names: tab "Play games", heading "While you wait" | Keep both | Plain words; "While you wait" says the table comes first. |
-| B | Do seats and chat hide while Play games is open? | Yes, the tab swaps them; the one-line roster and Ready stay | Keeps the card one scroll on a phone. |
+| B | Do seats and chat hide while Play games is open? | Yes, the tab swaps them; the one-line roster and Ready stay | Leaves room for the open game above the footer (measured above). |
 | C | Tic-tac-toe: invite a named seat, or "anyone free"? | Named seat (as the mock draws it) | No surprise games; the invite badge goes to one person. |
 | D | Left and Right buttons for Sandwich Stacker on desktop | Hide on desktop (arrow keys); show on touch | The buttons exist for phones; desktop has a keyboard. |
 | E | Does pressing Ready close an open game? | No; only Start closes games | Ready is "I'm here"; a game can keep running until the table starts. |
 | F | Show a locked "Trivia, Soon" tile? | Hide it until trivia exists | Fewer things on the screen (Jarrod's 10-31 note on the title: "too busy"). |
 | G | What do spectators get? | Sandwich Stacker only, with no invites | They have no seat to play from; solo play stays harmless. |
+| H | Phone: may the card grow upward when a game is open (island 31% → 6%), or stay one fixed height on both tabs? | Let it grow while a game is open, and drop back on Close | A fixed height would be the tic-tac-toe height (785 px) on the Table tab too, which covers the island in today's lobby. At the shelf's 571 px, the board does not fit above the footer even with 44 px cells: the card would need 214 px more, and 44 px cells save only 72. |
+| I | Colour: the lobby's white tokens instead of the mock's cream | Yes, white, as drawn here | No cream (DECISIONS 2026-10-20); it matches the accepted lobby. |
 
-## After acceptance: the build, split by risk
+## After acceptance
 
-1. **Shelf and tab (tier 2, `lane:hud`):** the two tabs, the shelf, and #970's box moved into it, at the accepted scale, with a lobby proof at 390×844 and 1280×720. PR #970 is reworked or replaced so its box lands here, not above the chat.
+The build issues are filed only after Jarrod's OK on the Decisions page. Nothing in this folder is game code. The planned split, by risk:
+1. **Shelf and tab (tier 2, `lane:hud`):** the two tabs, the shelf, and #970's box moved into it, at the accepted scale and colours, with the one registered proof above. PR #970 is reworked or replaced so its box lands here, not above the chat.
 2. **Tic-tac-toe (tier 1, `lane:net`):** host messages, invites, seat-id relay, and closing on Start and Leave. It must never block or slow the table. Opus builds; a different model reviews.
 3. **Trivia:** later. It needs content and an owner decision on who writes it.
-
-Nothing in this folder is game code; the build starts only after Jarrod's OK on the Decisions page.
+4. **Sideways phone layout:** to be drawn after Jarrod answers H, since it depends on how much of the screen an open game may take.
