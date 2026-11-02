@@ -1,0 +1,10 @@
+--- registered-proof
++++ external-delayed-copy
+@@ -93,6 +93,7 @@
+   await page.evaluate(() => { window.__keyboardHomeCalls = 0; const i = window.__isle, home = i.goHome.bind(i); i.goHome = () => { window.__keyboardHomeCalls++; home(); }; });
+   await page.evaluate(() => { window.__keyboardHomeBlurAt = null; document.activeElement?.addEventListener("blur", () => { window.__keyboardHomeBlurAt = performance.now(); }, { once: true }); });
+   await page.evaluate(() => document.activeElement?.blur());
++  await page.waitForTimeout(650); // external timing-control delay; not in registered proof
+   for (let tap = 0; tap < 2; tap++) {
+     await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ ...point, id: 1 }] });
+     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
