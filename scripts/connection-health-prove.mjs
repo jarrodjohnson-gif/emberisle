@@ -232,7 +232,7 @@ if (process.argv.includes("--host-fixture")) {
         menu: onScreen(menu) && menu.height === 44 && slot.width > 44 && Math.abs(menu.width - slot.width) < 0.5,
         scores: scores.length === 4 && scores.every(r => r.width > 0 && r.left >= 0 && r.right <= innerWidth && r.bottom <= menu.bottom) };
     });
-    assert.deepEqual(fits, { clear: true, status: true, menu: true, scores: true }, "390px dock Menu fills its slot and the status stays on screen above it");
+    assert.deepEqual(fits, { clear: true, status: true, menu: true, scores: true }, "390px four-seat header fits with RTT visible");
     await page.screenshot({ path: path.join(resultsDir, "connection-health-phone.png") });
     for (const width of [700, 900]) {
       await page.setViewportSize({ width, height: 1100 });
@@ -244,7 +244,7 @@ if (process.argv.includes("--host-fixture")) {
           const r = el.getBoundingClientRect();
           return s.right <= r.left || s.left >= r.right || s.bottom <= r.top || s.top >= r.bottom;
         });
-      }), `${width}px coarse portrait status stays on screen and clears utility controls`);
+      }), `${width}px coarse portrait status clears utility controls`);
     }
     await page.setViewportSize({ width: 390, height: 844 });
     assert.deepEqual(await snapshot(code), before, "all host timer identities, deadlines, seq and save state unchanged");
