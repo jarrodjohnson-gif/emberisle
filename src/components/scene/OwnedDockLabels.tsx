@@ -2,8 +2,8 @@ import { useGame } from "@/lib/game/store";
 import { RESOURCE_LABEL } from "@/lib/game/types";
 import type { OwnedDockPosition } from "@/lib/scene/isle-renderer";
 
-// #560, owner 2026-10-19: no sentence on the board. A rate chip sits on the building.
-// The full words stay here as the accessible name, and in the dock inspection.
+// #560. Owner 2026-11-03: the rate sits on the dock, not on the controlling building.
+// Owner 2026-10-16: the sails carry no rate. The full words stay as the accessible name.
 const phrase = (d: OwnedDockPosition) =>
   d.kind === "any" ? "Your 3:1 dock" : `Your 2:1 ${RESOURCE_LABEL[d.kind].toLowerCase()} dock`;
 
@@ -26,7 +26,7 @@ export default function OwnedDockLabels({ docks }: { docks: readonly OwnedDockPo
         style={{
           left: d.x,
           top: d.y,
-          // Keep the chip on the building, and 8 px inside the screen edges.
+          // Keep the chip on the dock, and 8 px inside the screen edges.
           translate: `clamp(calc(8px - ${d.x}px), -50%, calc(100vw - 8px - ${d.x}px - 100%)) -50%`,
           ...(good ? { background: `var(--${good})`, color: `var(--${good}-on)` } : {}),
         }}

@@ -282,6 +282,8 @@ export class IsleRenderer {
   private docksDirty = true;
   onOwnedDocks: (docks: readonly OwnedDockPosition[]) => void = () => {};
   private ownedDockPositions: OwnedDockPosition[] = [];
+  // Rate plates on the jelly piers, keyed by either corner of the dock. Empty until the shore swaps in.
+  private dockPlates = new Map<string, { x: number; y: number; z: number }>();
   private ownedDocksDirty = true;
   private choice: WaterPath | null = null;
   private waterSet = false;
@@ -1537,18 +1539,58 @@ export class IsleRenderer {
     }
   }
 
-  // Project the controlling buildings independently of land geometry and placement marks (#560).
+  // Where the owned rate sits: the pier plate once the shore is in, otherwise the plain pier's sea end.
+  // Owner 2026-11-03: not on the controlling building. Owner 2026-10-16: not on the sails.
+  private dockSpot(id: string): { x: number; y: number; z: number } | null {
+    const plate = this.dockPlates.get(id);
+    if (plate) return plate;
+    const dock = this.docks.find((d) => d.vids.includes(id));
+    if (!dock) return null;
+    return { x: dock.cx + dock.mx * 0.46, y: 0.14, z: dock.cz + dock.mz * 0.46 };
+  }
+
+  // The chip's page point: the pier plate, pushed further to sea when that plate would cover the building.
+  private labelPoint(id: string, vertex: { x: number; z: number }, top: number): { x: number; y: number } | null {
+    const spot = this.dockSpot(id);
+    if (!spot || !this.lastState) return null;
+    const plate = this.screenAt(spot.x, spot.y, spot.z);
+    const house = this.screenAt(vertex.x, top, vertex.z);
+    let dx = plate.x - house.x;
+    let dy = plate.y - house.y;
+    let dist = Math.hypot(dx, dy);
+    if (dist < 1) {
+      const dock = this.docks.find((d) => d.vids.includes(id));
+      if (!dock) return plate;
+      const out = this.screenAt(dock.cx + dock.mx, 0.14, dock.cz + dock.mz);
+      const mid = this.screenAt(dock.cx, 0.14, dock.cz);
+      dx = out.x - mid.x;
+      dy = out.y - mid.y;
+      dist = Math.hypot(dx, dy) || 1;
+    }
+    // The chip is about 28 by 18. Keep its centre at least 28 px from the building point.
+    const clear = 28;
+    if (dist >= clear) return plate;
+    return { x: house.x + (dx / dist) * clear, y: house.y + (dy / dist) * clear };
+  }
+
+  // Where the owned-rate chip sits, in page pixels. The owned-dock proof reads it.
+  pierScreen(id: string): { x: number; y: number } | null {
+    const st = this.lastState;
+    const vertex = st?.vertices.find((v) => v.id === id);
+    if (!st || !vertex) return null;
+    return this.labelPoint(id, vertex, vertexTop(hexTops(st), vertex));
+  }
+
+  // Project owned rates onto their docks, not the buildings (#560).
   private updateOwnedDockPositions() {
     if (this.titleMode || !this.ownedDocksDirty || !this.lastState) return;
     this.ownedDocksDirty = false;
-    const rect = this.renderer.domElement.getBoundingClientRect();
     const tops = hexTops(this.lastState);
     const docks = this.lastState.vertices.flatMap((v) => {
       if (!v.harbor || !v.building) return [];
-      const p = _p.set(v.x, vertexTop(tops, v), v.z).project(this.cam());
-      return [{ id: v.id, owner: v.building.playerId, kind: v.harbor,
-        x: rect.left + (p.x + 1) * rect.width / 2,
-        y: rect.top + (1 - p.y) * rect.height / 2 }];
+      const point = this.labelPoint(v.id, v, vertexTop(tops, v));
+      if (!point) return [];
+      return [{ id: v.id, owner: v.building.playerId, kind: v.harbor, x: point.x, y: point.y }];
     });
     if (docks.length === this.ownedDockPositions.length && docks.every((d, i) => {
       const previous = this.ownedDockPositions[i]!;
@@ -1742,6 +1784,7 @@ export class IsleRenderer {
     this.boats = [];
     this.docks = [];
     this.piers = [];
+    this.dockPlates.clear();
     this.living.add(this.wayfarer);
     this.pickables = [];
     this.tokens = [];
@@ -1912,6 +1955,9 @@ export class IsleRenderer {
       this.crystal.wash = wash;
     }
     this.shore = shore;
+    this.dockPlates.clear();
+    for (const plate of shore.plates) for (const id of plate.vids) this.dockPlates.set(id, plate);
+    this.ownedDocksDirty = true;
     this.living.add(shore.group);
     if (this.lastState) this.paintSails(this.lastState);
     this.wake();

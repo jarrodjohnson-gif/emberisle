@@ -1,7 +1,7 @@
 // #560: DOM geometry and real pointer proof; uses the real renderer, camera and game store.
-// Owner decision 2026-10-19 (docs/DECISIONS.md, PR #881): no sentence on the board.
-// Old check: the visible text was "Your 3:1 dock" or "Your 2:1 wood dock", and the box sat 12 px above the building.
-// New check: the visible text is "3:1" or "2:1", the chip is centered on the building, and the full sentence is the accessible name.
+// Owner 2026-11-03: the chip sits on the dock plate, not the controlling building.
+// Owner 2026-10-16 (docs/design/harbor-jelly-prompt.md): the sails carry no rate.
+// The visible text is "3:1" or "2:1", and the full sentence is the accessible name.
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync } from 'node:fs';
 import { chromium } from 'playwright';
@@ -46,6 +46,7 @@ async function fixture(page) {
   });
 }
 async function labels(page, expected, tag) {
+  if (expected.length) await page.waitForFunction(() => window.__isle.dockPlates?.size > 0, null, { timeout: 120_000 });
   await page.waitForFunction(expected => {
     const els = [...document.querySelectorAll('[data-testid="owned-dock-label"]')];
     return els.length === expected.length && expected.every(want => els.some(el =>
@@ -53,22 +54,24 @@ async function labels(page, expected, tag) {
   }, expected, { timeout: TIMEOUT });
   // Independently project actual state vertices, rather than trusting the callback's coordinates.
   await page.waitForFunction(() => [...document.querySelectorAll('[data-testid="owned-dock-label"]')].every(el => {
-    const p = window.__isle.screenOf(el.dataset.vertexId);
+    const p = window.__isle.pierScreen(el.dataset.vertexId);
     return p && Math.hypot(parseFloat(el.style.left) - p.x, parseFloat(el.style.top) - p.y) < 1.5;
   }), null, { timeout: TIMEOUT });
   const handle = await page.waitForFunction(expected => {
     const nodes = [...document.querySelectorAll('[data-testid="owned-dock-label"]')];
     if (nodes.length !== expected.length || !expected.every(want => nodes.some(el => el.dataset.vertexId === want.id && el.textContent.replace(/\s+/g, ' ').trim() === want.text))) return false;
+    if (nodes.some(el => !window.__isle.pierScreen(el.dataset.vertexId) || !window.__isle.screenOf(el.dataset.vertexId))) return false;
     return nodes.map(el => {
     const r = el.getBoundingClientRect();
     const css = getComputedStyle(el);
     const state = window.__emberisle.getState().state;
     const vertex = state.vertices.find(v => v.id === el.dataset.vertexId);
-    const p = window.__isle.screenOf(vertex.id);
+    const p = window.__isle.pierScreen(vertex.id);
+    const b = window.__isle.screenOf(vertex.id);
     return { id: vertex.id, text: el.textContent.replace(/\s+/g, ' ').trim(), aria: el.getAttribute('aria-label'), role: el.getAttribute('role'),
       owner: el.dataset.ownerId,
       actualOwner: vertex.building?.playerId, kind: el.dataset.harbor, actualKind: vertex.harbor,
-      x: parseFloat(el.style.left), y: parseFloat(el.style.top), px: p.x, py: p.y,
+      x: parseFloat(el.style.left), y: parseFloat(el.style.top), px: p.x, py: p.y, bx: b.x, by: b.y,
       left: r.left, right: r.right, top: r.top, bottom: r.bottom,
       width: r.width, height: r.height, font: parseFloat(css.fontSize), pointer: css.pointerEvents,
       bg: css.backgroundColor,
@@ -88,13 +91,14 @@ async function labels(page, expected, tag) {
     assert.equal(row.owner, want.owner, `${tag}: only viewing seat owns label`);
     assert.equal(row.kind, row.actualKind, `${tag}: dock kind matches controlling vertex`);
     assert.equal(row.bg, want.bg, `${tag}: chip color is the good, or the surface for a 3:1`);
-    assert.ok(Math.hypot(row.x - row.px, row.y - row.py) < 1.5, `${tag}: independent real-camera building anchor: ${JSON.stringify(row)}`);
+    assert.ok(Math.hypot(row.x - row.px, row.y - row.py) < 1.5, `${tag}: independent real-camera dock plate anchor: ${JSON.stringify(row)}`);
+    assert.ok(row.bx < row.left || row.bx > row.right || row.by < row.top || row.by > row.bottom, `${tag}: chip does not cover the controlling building: ${JSON.stringify(row)}`);
     assert.ok(row.inside && !row.clipped && row.width > 0 && row.width <= 48 && row.height > 0 && row.height <= 24 && row.font === 12,
       `${tag}: 12 px chip fits the viewport: ${JSON.stringify(row)}`);
     const named = await page.getByRole('img', { name: want.name }).count();
     assert.equal(named, expected.filter(x => x.name === want.name).length, `${tag}: accessibility tree exposes ${want.name}`);
     assert.equal(row.pointer, 'none', `${tag}: label never intercepts input`);
-    assert.ok(row.top - 1 <= row.py && row.py <= row.bottom + 1, `${tag}: chip sits on its building: ${JSON.stringify(row)}`);
+    assert.ok(row.top - 1 <= row.py && row.py <= row.bottom + 1, `${tag}: chip sits on its dock: ${JSON.stringify(row)}`);
   }
   return result;
 }
@@ -138,6 +142,8 @@ try {
     await page.addInitScript(() => {
       localStorage.setItem('emberisle-name', 'Owned docks proof');
       localStorage.setItem('emberisle-water', 'simple');
+      // The rate plate is on the full shore. Software GPUs would otherwise keep the plain pier.
+      localStorage.setItem('emberisle-jelly', 'full');
     });
     await page.goto(`http://127.0.0.1:${PORT}/`);
     await page.getByRole('button', { name: 'Play', exact: true }).click();
@@ -193,7 +199,7 @@ try {
     assert.ok(afterRotate.some(p => {
       const old = beforeRotate.find(x => x.id === p.id);
       return Math.hypot(p.x - old.x, p.y - old.y) > 2;
-    }), `${tag}: real camera rotation moves building anchors`);
+    }), `${tag}: real camera rotation moves dock anchors`);
     assert.equal(await snapshot(page), initialState, `${tag}: viewing, resizing and real drag preserve every game field`);
     await page.evaluate(() => window.__isle.goHome());
     await page.evaluate(other => window.__emberisle.setState({ mode: 'online', localId: other }), f.other);
@@ -230,6 +236,7 @@ try {
       const s = window.__emberisle?.getState();
       return { screen: s?.screen, mode: s?.mode, localId: s?.localId, current: s?.state?.current,
         spectator: s?.spectator, projections: window.__isle?.ownedDockPositions, rendererBuildings: window.__isle?.lastState?.vertices.filter(v => v.harbor && v.building), buildings: s?.state?.vertices.filter(v => v.harbor && v.building),
+        plates: window.__isle?.dockPlates?.size ?? null, shore: !!window.__isle?.shore,
         labels: [...document.querySelectorAll('[data-testid="owned-dock-label"]')].map(el => ({ text: el.textContent, vertex: el.dataset.vertexId })) };
     }).catch(String));
     mkdirSync('test-results', { recursive: true });
