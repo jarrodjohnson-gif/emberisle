@@ -498,8 +498,12 @@ export function Hud() {
               <div className="pointer-events-auto empty:hidden">
                 <PlaceChip column />
               </div>
-              <TurnCountdown header={null} />
-              {winnerLine}
+              <div className="pointer-events-auto empty:hidden">
+                <TurnCountdown header={null} />
+              </div>
+              <div className="pointer-events-auto empty:hidden">
+                {winnerLine}
+              </div>
               {discarder ? <div className="pointer-events-auto"><DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} /></div> : null}
               <div className="pointer-events-auto empty:hidden">
                 <TakeFromBar />
