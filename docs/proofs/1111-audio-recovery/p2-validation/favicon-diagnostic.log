@@ -1,0 +1,8 @@
+HTTP_FAILURE /favicon.ico 404
+CONSOLE_ERROR Failed to load resource: the server responded with a status of 404 (Not Found) {
+  url: 'http://127.0.0.1:32925/favicon.ico',
+  line: 0,
+  column: 0,
+  lineNumber: 0,
+  columnNumber: 0
+}

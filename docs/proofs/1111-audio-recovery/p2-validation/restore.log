@@ -1,0 +1,44 @@
+
+> restore-prove
+> node scripts/restore-prove.mjs
+
+ok   setup: the seated browser holds a hand in a started game {"code":"J7MP","phase":"roll"}
+run 1: html 190ms, dom 1277ms | chunks index 1238-1238 (cache), IslandCanvas 1240-1240 (cache), online 1247-1247 (cache), haptics 1276-1276 (cache), VictoryTargetSelect 1284-1284 (cache), table 1286-1286 (cache), Reactions 1298-1298 (cache), sheets 1634-1634 (cache), moments 2058-2058 (cache), TurnExtensionVote 2062-2062 (cache), jelly-board 2515-2515 (cache), hex-jelly 2515-2515 (cache), DockInspection 2522-2522 (cache)
+run 1: first paint 1268 fcp 1268 | socket dial 1289 open 1451 welcome 1477 state 1593 | marks {"firstContent":1259,"loading":1259,"island":2080,"state":2080,"hand":2080,"hud":2080,"firstFrame":2527,"canvas":2527,"board":2527}
+run 1: long tasks 1591+475 2079+439
+ok   run 1: board + own hand on screen at 2527 ms (outlier cap 6000) {"firstContent":1259,"loading":1259,"island":2080,"state":2080,"hand":2080,"hud":2080,"firstFrame":2527,"canvas":2527,"board":2527}
+ok   run 1: the branded loading state painted (1268 ms) before any table content {"paints":{"first-paint":1268,"first-contentful-paint":1268},"loading":1259}
+ok   run 1: no flash of the title {"firstContent":1259,"loading":1259,"island":2080,"state":2080,"hand":2080,"hud":2080,"firstFrame":2527,"canvas":2527,"board":2527}
+ok   run 1: still seated at the table
+run 2: html 228ms, dom 410ms | chunks index 376-376 (cache), IslandCanvas 376-376 (cache), online 387-387 (cache), haptics 410-410 (cache), VictoryTargetSelect 418-418 (cache), table 419-419 (cache), Reactions 429-429 (cache), sheets 765-765 (cache), moments 1128-1128 (cache), TurnExtensionVote 1129-1129 (cache), jelly-board 1495-1495 (cache), hex-jelly 1495-1495 (cache), DockInspection 1513-1513 (cache)
+run 2: first paint 404 fcp 404 | socket dial 422 open 576 welcome 600 state 713 | marks {"firstContent":395,"loading":395,"island":1147,"state":1147,"hand":1147,"hud":1147,"firstFrame":1517,"canvas":1517,"board":1517}
+run 2: long tasks 713+420 1146+360
+ok   run 2: board + own hand on screen at 1517 ms (outlier cap 6000) {"firstContent":395,"loading":395,"island":1147,"state":1147,"hand":1147,"hud":1147,"firstFrame":1517,"canvas":1517,"board":1517}
+ok   run 2: the branded loading state painted (404 ms) before any table content {"paints":{"first-paint":404,"first-contentful-paint":404},"loading":395}
+ok   run 2: no flash of the title {"firstContent":395,"loading":395,"island":1147,"state":1147,"hand":1147,"hud":1147,"firstFrame":1517,"canvas":1517,"board":1517}
+ok   run 2: still seated at the table
+run 3: html 191ms, dom 371ms | chunks index 345-345 (cache), IslandCanvas 346-346 (cache), online 357-357 (cache), haptics 370-370 (cache), VictoryTargetSelect 386-386 (cache), table 388-388 (cache), Reactions 399-399 (cache), sheets 728-728 (cache), moments 1166-1166 (cache), TurnExtensionVote 1167-1167 (cache), jelly-board 1646-1646 (cache), hex-jelly 1648-1648 (cache), DockInspection 1660-1660 (cache)
+run 3: first paint 384 fcp 384 | socket dial 391 open 550 welcome 563 state 687 | marks {"firstContent":378,"loading":378,"island":1185,"state":1185,"hand":1186,"hud":1186,"firstFrame":1661,"canvas":1661,"board":1661}
+run 3: long tasks 685+487 1183+475
+ok   run 3: board + own hand on screen at 1661 ms (outlier cap 6000) {"firstContent":378,"loading":378,"island":1185,"state":1185,"hand":1186,"hud":1186,"firstFrame":1661,"canvas":1661,"board":1661}
+ok   run 3: the branded loading state painted (384 ms) before any table content {"paints":{"first-paint":384,"first-contentful-paint":384},"loading":378}
+ok   run 3: no flash of the title {"firstContent":378,"loading":378,"island":1185,"state":1185,"hand":1186,"hud":1186,"firstFrame":1661,"canvas":1661,"board":1661}
+ok   run 3: still seated at the table
+run 4: html 186ms, dom 397ms | chunks index 349-349 (cache), IslandCanvas 349-349 (cache), online 377-377 (cache), haptics 397-397 (cache), VictoryTargetSelect 407-407 (cache), table 409-409 (cache), Reactions 419-419 (cache), sheets 755-755 (cache), moments 1161-1161 (cache), TurnExtensionVote 1162-1162 (cache), jelly-board 1594-1594 (cache), hex-jelly 1595-1595 (cache), DockInspection 1607-1607 (cache)
+run 4: first paint 392 fcp 408 | socket dial 413 open 571 welcome 585 state 702 | marks {"firstContent":401,"loading":401,"island":1184,"state":1184,"hand":1184,"hud":1184,"firstFrame":1610,"canvas":1610,"board":1610}
+run 4: long tasks 700+467 1167+434
+ok   run 4: board + own hand on screen at 1610 ms (outlier cap 6000) {"firstContent":401,"loading":401,"island":1184,"state":1184,"hand":1184,"hud":1184,"firstFrame":1610,"canvas":1610,"board":1610}
+ok   run 4: the branded loading state painted (408 ms) before any table content {"paints":{"first-paint":392,"first-contentful-paint":408},"loading":401}
+ok   run 4: no flash of the title {"firstContent":401,"loading":401,"island":1184,"state":1184,"hand":1184,"hud":1184,"firstFrame":1610,"canvas":1610,"board":1610}
+ok   run 4: still seated at the table
+run 5: html 162ms, dom 353ms | chunks index 316-316 (cache), IslandCanvas 317-317 (cache), online 328-328 (cache), haptics 353-353 (cache), VictoryTargetSelect 360-360 (cache), table 362-362 (cache), Reactions 377-377 (cache), sheets 716-716 (cache), moments 1117-1117 (cache), TurnExtensionVote 1118-1118 (cache), jelly-board 1587-1587 (cache), hex-jelly 1588-1588 (cache), DockInspection 1607-1607 (cache)
+run 5: first paint 344 fcp 344 | socket dial 366 open 519 welcome 535 state 657 | marks {"firstContent":337,"loading":337,"island":1129,"state":1129,"hand":1129,"hud":1129,"firstFrame":1612,"canvas":1612,"board":1612}
+run 5: long tasks 654+467 1128+470
+ok   run 5: board + own hand on screen at 1612 ms (outlier cap 6000) {"firstContent":337,"loading":337,"island":1129,"state":1129,"hand":1129,"hud":1129,"firstFrame":1612,"canvas":1612,"board":1612}
+ok   run 5: the branded loading state painted (344 ms) before any table content {"paints":{"first-paint":344,"first-contentful-paint":344},"loading":337}
+ok   run 5: no flash of the title {"firstContent":337,"loading":337,"island":1129,"state":1129,"hand":1129,"hud":1129,"firstFrame":1612,"canvas":1612,"board":1612}
+ok   run 5: still seated at the table
+board on screen, ms from navigationStart: 2527, 1517, 1661, 1610, 1612 (median 1612, max 2527)
+ok   median 1612 ms inside 3000 ms
+ok   no page errors []
+restore prove ok (5 reloads, median inside 3000 ms, every run under the 6000 ms outlier cap)

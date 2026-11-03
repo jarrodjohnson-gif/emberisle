@@ -1,10 +1,9 @@
 name: Soak
 
-# Nightly 5x soak of the full browser proof lists on main, to catch flakes.
-# Also runnable via workflow_dispatch.
+# 5x soak of the full browser proof lists on main, to catch flakes. Run by hand (workflow_dispatch).
+# The nightly schedule is off: it cost about 300 billed Actions minutes a night; see docs/DECISIONS.md, 2026-10-25.
+# Put `schedule: - cron: '17 9 * * *'` (09:17 UTC) back under `on:` to restore it.
 on:
-  schedule:
-    - cron: '17 9 * * *'  # 09:17 UTC
   workflow_dispatch:
 
 permissions:

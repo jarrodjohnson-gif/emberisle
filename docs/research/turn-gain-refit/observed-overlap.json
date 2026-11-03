@@ -1,0 +1,52 @@
+{
+  "runtime_commit": "0e816528a7dc461b107c82af4a8a32520c54d4d9",
+  "case": "Controlled local wool +2 before the existing held refit",
+  "original_clash": [
+    "+2"
+  ],
+  "matching_pairs": 7,
+  "same_raf_pairs": 1,
+  "visible_same_raf_pairs": 1,
+  "sample": {
+    "turn": 1,
+    "line": 11,
+    "resource": "wool",
+    "delta": 2,
+    "timeDelta": 0.09999999403953552,
+    "turnFrame": 1806,
+    "lineFrame": 1806,
+    "turnHeld": "turn-moment",
+    "turnOpacity": 1,
+    "lineOpacity": 0.804104,
+    "turnBox": {
+      "x": 488.875,
+      "y": 516.5,
+      "width": 206.25,
+      "height": 67,
+      "top": 516.5,
+      "right": 695.125,
+      "bottom": 583.5,
+      "left": 488.875
+    },
+    "lineBox": {
+      "x": 623,
+      "y": 526.7835693359375,
+      "width": 34,
+      "height": 22,
+      "top": 526.7835693359375,
+      "right": 657,
+      "bottom": 548.7835693359375,
+      "left": 623
+    },
+    "aTime": 38952.60000002384,
+    "bTime": 38952.70000001788,
+    "lineBorn": 38915.10000002384,
+    "turnGone": 39254.70000001788,
+    "callbackInterval": {
+      "start": 38950.10000002384,
+      "end": 38952.70000001788,
+      "timestamp": 38947,
+      "held": "turn-moment"
+    }
+  }
+}

@@ -46,7 +46,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 async function startHost() {
   const proc = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR, PROFILES_DIR, PROFILES_DEV: "", GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), LOBBY_HOLD_MS: "30000", TURN_MS: "600000", SAVE_MS: "50", ACT_CAP: "1000", ACT_RATE: "1000", RENAME_MS: "0" },
+    env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, PROFILES_DIR, PROFILES_DEV: "", GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), LOBBY_HOLD_MS: "30000", TURN_MS: "600000", SAVE_MS: "50", ACT_CAP: "1000", ACT_RATE: "1000", RENAME_MS: "0" },
   });
   const h = { proc, log: "" };
   hosts.add(h);
@@ -202,6 +202,47 @@ check("a guest game freezes a roster with no profiles, all human and eligible", 
 check("guest room files carry no profile binding", readRoom(gw.code).seats.every((s) => !("profileId" in s)));
 const guestFrames = [...tableFrames];
 check("guest table frames carry no profile fields", !guestFrames.some((f) => /profile/i.test(f) && !f.includes('"code":"https"')));
+
+// --- Explicit seat aliases and Origin refusal (#1047, #965 review item 3) ---------------------------------------------------
+const aliasHost = await client(h, tunnel());
+aliasHost.send({ type: "create", name: "Alias host", credential: A.credential });
+const aliasWelcome = await aliasHost.reply();
+check("explicit create binds the authenticated host", aliasWelcome.type === "welcome" && aliasWelcome.host === true, aliasWelcome);
+await aliasHost.until(() => seatOf(aliasHost, aliasWelcome.you)?.profile, 3000, "create alias profile");
+const aliasJoin = await client(h, tunnel());
+aliasJoin.send({ type: "join", code: aliasWelcome.code, name: "Alias join", credential: B.credential });
+const aliasJoined = await aliasJoin.reply();
+check("explicit join binds a non-host seat", aliasJoined.type === "welcome" && aliasJoined.host === false && aliasJoined.code === aliasWelcome.code, aliasJoined);
+await aliasHost.until(() => seatOf(aliasHost, aliasJoined.you)?.profile, 3000, "join alias profile");
+for (const [label, id, profile, name] of [["create", aliasWelcome.you, A, "Ember"], ["join", aliasJoined.you, B, "Tide"]]) {
+  const projected = seatOf(aliasHost, id).profile;
+  check(`${label} alias uses the public profile allowlist`, Object.keys(projected).sort().join() === "displayName,profileId" && projected.profileId === profile.id && projected.displayName === name, projected);
+}
+const aliasSaved = await roomWhere(aliasWelcome.code, (r) => r.seats.length === 2, "alias bindings saved");
+check("both explicit aliases persist their authenticated profile IDs", aliasSaved.seats.map((s) => s.profileId).join() === [A.id, B.id].join(), aliasSaved.seats);
+
+for (const type of ["create", "join"]) {
+  const headers = { ...tunnel(), origin: "https://another-origin.example" };
+  const refused = await client(h, headers);
+  const target = type === "join" ? { code: aliasWelcome.code } : {};
+  const beforeSeats = JSON.stringify(aliasHost.seats.seats);
+  let first;
+  for (const credential of [A.credential, "A".repeat(43)]) {
+    refused.send({ type, ...target, name: "Origin refusal", credential });
+    const reply = await refused.reply();
+    check(`${type} refuses a mismatched HTTPS Origin before credential validity`, isErr(reply, "origin") && refused.welcome === null, reply);
+    if (first) check(`${type} origin refusal exposes no credential-validity distinction`, JSON.stringify(reply) === JSON.stringify(first), reply);
+    first = reply;
+  }
+  check(`${type} origin refusal leaves existing seats unchanged`, JSON.stringify(aliasHost.seats.seats) === beforeSeats);
+  refused.send({ type, ...target, name: "Origin guest" });
+  const guest = await refused.reply();
+  check(`${type} refused socket can retry as a guest`, guest.type === "welcome" && guest.host === (type === "create"), guest);
+  await refused.until(() => seatOf(refused, guest.you), 3000, `${type} guest seat`);
+  check(`${type} guest retry attaches no profile`, !("profile" in seatOf(refused, guest.you)), seatOf(refused, guest.you));
+  const guestSaved = await roomWhere(guest.code, (r) => r.seats.some((s) => s.id === guest.you), `${type} guest saved`);
+  check(`${type} guest retry persists no profile binding`, !("profileId" in guestSaved.seats.find((s) => s.id === guest.you)));
+}
 
 // A one-human bot game is frozen as not eligible.
 const solo = await client(h);
@@ -537,6 +578,51 @@ for (const until = Date.now() + 5000; Date.now() < until; await wait(50)) {
 }
 check("the exhausted watcher ingress bucket refills and returns only a public card", publicCard(recoveredCard ?? {}));
 check("card bursts and chat leave the canonical game sequence unchanged", readRoom(T1).game.seq === game1.seq);
+
+// --- Logout keeps live seat ownership and frozen attribution (#1054) --------------------------------------------------------
+const logoutLogin = "bound-logout";
+LOGINS.push(logoutLogin);
+const logoutAuth = await client(h, tunnel(), false);
+const logoutSession = await logoutAuth.req({
+  type: "profileCreate", login: logoutLogin, displayName: "Reed", pin: "4821", pinConfirm: "4821",
+  color: PLAYER_COLORS[0], backupColor: PLAYER_COLORS[1], catchphrase: "Still seated",
+});
+check("bound-logout fixture creates a real authenticated profile", logoutSession.type === "profileSession" && !!logoutSession.credential, logoutSession.type);
+const logoutProfile = logoutSession.profile.profileId;
+const logoutSeat = await client(h, tunnel());
+logoutSeat.send({ type: "hello", name: "Reed", credential: logoutSession.credential });
+const logoutWelcome = await logoutSeat.reply();
+check("the logout fixture hosts a profile-bound seat", logoutWelcome.type === "welcome" && logoutWelcome.host === true);
+const logoutGuests = await Promise.all([client(h), client(h)]);
+for (const [i, guest] of logoutGuests.entries()) {
+  guest.send({ type: "hello", code: logoutWelcome.code, name: `Logout guest ${i + 1}` });
+  check("a guest joins the bound-logout fixture", (await guest.reply()).type === "welcome");
+}
+for (const c of [logoutSeat, ...logoutGuests]) c.send({ type: "ready", value: true });
+await logoutSeat.until(() => logoutSeat.seats?.seats.length === 3 && logoutSeat.seats.seats.every((s) => s.ready), 3000, "logout fixture ready");
+logoutSeat.send({ type: "start" });
+await logoutSeat.next((m) => m.type === "state", 5000, "logout fixture started");
+const logoutBefore = await roomWhere(logoutWelcome.code, (r) => r.roster?.players.some((p) => p.profileId === logoutProfile), "logout roster saved");
+check("the started game freezes the authenticated profile", logoutBefore.roster.players.find((p) => p.seat === logoutWelcome.you)?.profileId === logoutProfile);
+check("logout acknowledges the bound device", (await logoutAuth.req({ type: "profileLogout", credential: logoutSession.credential })).type === "profileLoggedOut");
+check("the logged-out bound credential cannot resume", cardErr(await logoutAuth.req({ type: "profileResume", credential: logoutSession.credential }), "signedOut"));
+const revokedSeat = await client(h, tunnel());
+revokedSeat.send({ type: "hello", name: "Revoked device", credential: logoutSession.credential });
+check("the logged-out bound credential cannot open another seat", isErr(await revokedSeat.reply(), "signedOut") && revokedSeat.welcome === null);
+check("logout keeps the original live public binding", seatOf(logoutSeat, logoutWelcome.you)?.profile?.profileId === logoutProfile && !seatOf(logoutSeat, logoutWelcome.you).away);
+check("the live bound socket still reads its profile card", (await logoutSeat.req({ type: "tableProfileCard", profileId: logoutProfile })).card?.profileId === logoutProfile);
+check("another participant still reads the bound profile card", (await logoutGuests[0].req({ type: "tableProfileCard", profileId: logoutProfile })).card?.catchphrase === "Still seated");
+check("logout leaves frozen attribution unchanged", JSON.stringify(readRoom(logoutWelcome.code).roster) === JSON.stringify(logoutBefore.roster));
+await logoutSeat.close();
+await logoutGuests[0].until(() => seatOf(logoutGuests[0], logoutWelcome.you)?.away, 3000, "logged-out seat held");
+const logoutRejoin = await client(h);
+logoutRejoin.send({ type: "hello", code: logoutWelcome.code, secret: logoutWelcome.secret });
+const logoutRecovered = await logoutRejoin.reply();
+check("the seat secret alone recovers the logged-out profile seat", logoutRecovered.type === "welcome" && logoutRecovered.you === logoutWelcome.you && logoutRecovered.code === logoutWelcome.code);
+await logoutRejoin.until(() => seatOf(logoutRejoin, logoutWelcome.you)?.profile?.profileId === logoutProfile && !seatOf(logoutRejoin, logoutWelcome.you).away, 3000, "logged-out binding recovered");
+check("recovery preserves the profile without adding a seat", logoutRejoin.seats.seats.length === 3 && logoutRejoin.seats.seats.filter((s) => s.profile?.profileId === logoutProfile).length === 1);
+const logoutAfter = await roomWhere(logoutWelcome.code, (r) => r.savedAt > logoutBefore.savedAt && r.seats.some((s) => s.id === logoutWelcome.you && s.profileId === logoutProfile), "logout recovery saved");
+check("recovery durably preserves the same frozen game attribution", JSON.stringify(logoutAfter.roster) === JSON.stringify(logoutBefore.roster));
 
 // --- Nothing private reached a table socket ----------------------------------------------------------------------------------
 const frames = tableFrames.join("\n");

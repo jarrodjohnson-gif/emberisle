@@ -1,0 +1,35 @@
+seats then shows /avatars/be9b6f217a160db6.jpg on the uploader 
+GET /avatars/be9b6f217a160db6.jpg -> 200 image/jpeg, nosniff 
+POST /avatars with bytes that are not a JPEG -> 400      
+second seat's 600 B over a 1000 B store -> 503           
+second seat's 300 B -> 200                               
+third seat's 50 B over AVATAR_MAX=2 -> 503               
+uploader replaces its picture -> 200; old url -> 404     
+stranger peeks -> sees ["id","color","ready"], no picture 
+stranger hellos with that avatarId -> seat shows null    
+stranger's table DSGT dropped after the lobby hold       
+GET /avatars/97296c4199472181.jpg after that -> 200      
+seat let go: GET /avatars/f71a281fd88c57f4.jpg -> 404    
+table 62F9 dropped with an upload half sent              
+the rest of that upload arrives -> 410                   
+third seat's 50 B into the freed slot -> 200             
+watcher welcome has no secret; its upload -> 403         
+upload burst: 18 accepted, then 429                      
+host with DIST=<empty dir>: GET / -> 503                 
+hostUrl https://abc.trycloudflare.com/ -> wss://abc.trycloudflare.com 
+hostUrl http://192.168.1.20:8787/ -> ws://192.168.1.20:8787 
+hostUrl http://localhost:8080/ (dev) -> ws://localhost:8787 
+hostUrl http://localhost:8080/?host=ws://x:1 -> ws://x:1 
+hostUrl default dev under node -> ws://h:9               
+serve prove ok
+chat: no emote folder at /tmp/emotes-ZYAnPn/missing
+unit checks ok
+lobby chat: host fills in the sender
+empty chat and unknown emote are dropped silently
+rate limit: 5 through, the 6th slowed down, other seats unaffected
+reactions: aimed and unaimed
+late joiner gets the chat history
+chat after start carries the seat's player id: p0
+an over-limit frame closes only that socket; the table carries on
+chat prove ok
+FAIL Ember waited for welcome 

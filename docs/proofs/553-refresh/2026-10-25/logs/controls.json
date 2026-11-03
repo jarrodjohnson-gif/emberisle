@@ -1,0 +1,38 @@
+{
+  "head": "e9568ec64599e92d990b45858b71b6c6c41d15d8",
+  "cases": [
+    {
+      "name": "missing-cancel",
+      "code": 1,
+      "expected": "late client load cannot pull practice back online",
+      "matched": true,
+      "seconds": 11.83
+    },
+    {
+      "name": "cached-retry",
+      "code": 1,
+      "expected": "timed out: next explicit action retries the client",
+      "matched": true,
+      "seconds": 25.51
+    },
+    {
+      "name": "widened-restore",
+      "code": 1,
+      "expected": "quiet fallback keeps the original 3000ms delay",
+      "matched": true,
+      "seconds": 17.85
+    },
+    {
+      "name": "pending-peek",
+      "code": 1,
+      "expected": "background peeks cannot replace a pending saved-seat dial",
+      "matched": true,
+      "seconds": 14.51
+    }
+  ],
+  "restored": {
+    "src/lib/game/store.ts": "e67d16d6ab346413d4ff67574d803459ee337a115113fe3882274027c2a9c3c5",
+    "src/lib/lazy.ts": "5f9646e75d2425abc0ea32505e59a70491a68fd3d0cf2bc657fc5e868198948e"
+  },
+  "restored_positive_exit_code": 0
+}

@@ -1,0 +1,5 @@
+PASS exact original41-line alias/Origin block unchanged SHA256 9b14cc5251688267646aaaf899b1092ee72099c987e82922625ba2aa1a26431d
+PASS entire main proof byte-preserved after removing that added block
+PASS runtime, all other proofs, registrations, lockfiles and budgets byte-identical main bf2f1f6dc2aef702faec36441c533859e95dafee
+Tested merge 039f3035414e1fede380ee32d324a2a62476a6c6
+Parents 79ba06b45cb0f02c36df6e8e4b88229828b6dbd9 bf2f1f6dc2aef702faec36441c533859e95dafee

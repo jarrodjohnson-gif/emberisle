@@ -42,7 +42,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 async function startHost(env = {}, dir = PROFILES_DIR, observeHashes = false) {
   const proc = spawn(process.execPath, ["--import", "./register.mjs", ...(observeHashes ? ["--import", "./profile-auth-observer.mjs"] : []), "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR, PROFILES_DIR: dir, PROFILES_DEV: "", ...env },
+    env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, PROFILES_DIR: dir, PROFILES_DEV: "", ...env },
     stdio: observeHashes ? ["ignore", "pipe", "pipe", "ipc"] : undefined,
   });
   const h = { proc, log: "", hashEvents: [] };
@@ -435,7 +435,11 @@ check("restart and repeated resumes preserve every PIN budget", budgetState() ==
 
 // --- Nothing secret on disk or in game frames -----------------------------------------------------------------------------
 const files = readdirSync(PROFILES_DIR);
-const text = files.map((f) => readFileSync(path.join(PROFILES_DIR, f), "utf8")).join("\n");
+const privateText = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+  const file = path.join(dir, entry.name);
+  return entry.isDirectory() ? privateText(file) : [readFileSync(file, "utf8")];
+});
+const text = privateText(PROFILES_DIR).join("\n");
 const values = [];
 (function walk(v) {
   if (typeof v === "string") values.push(v);

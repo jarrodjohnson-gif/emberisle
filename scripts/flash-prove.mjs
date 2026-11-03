@@ -34,7 +34,10 @@ async function openTable(reducedMotion) {
       if (this.src.endsWith("/click_002.wav")) window.__ticks.push({ volume: this.volume, t: performance.now() });
       return Promise.resolve();
     };
-    Object.defineProperty(navigator, "vibrate", { value: (ms) => { if (ms === 8) window.__buzz.push(ms); return true; } });
+    // #542: paying-piece buzz is phones-only (pointer: coarse). Force coarse so the existing 8 ms checks still run.
+    const realMatch = window.matchMedia.bind(window);
+    window.matchMedia = (q) => (q === "(pointer: coarse)" ? { matches: true, media: q, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent() { return false; } } : realMatch(q));
+    Object.defineProperty(navigator, "vibrate", { value: (ms) => { if (ms === 8) window.__buzz.push(ms); return true; }, configurable: true });
   });
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.getByRole("button", { name: "Four seats, one table" }).focus();

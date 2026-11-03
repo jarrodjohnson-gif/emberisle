@@ -1,0 +1,33 @@
+
+> size-prove
+> node scripts/size-prove.mjs --base /workspace/emberisle/work/base1037-main137
+
+ok   index: 125.14 kB gzip, ceiling 125.20 kB
+ok   IslandCanvas: 200.15 kB gzip, ceiling 202.50 kB
+ok   jelly-board: 7.90 kB gzip, ceiling 9.00 kB
+ok   hex-jelly: 46.74 kB gzip, ceiling 50.00 kB
+ok   harbor-jelly: 10.24 kB gzip, ceiling 11.50 kB
+ok   online: 7.79 kB gzip, ceiling 9.00 kB
+ok   Reactions: 2.31 kB gzip, ceiling 2.60 kB
+ok   sheets: 7.12 kB gzip, ceiling 7.80 kB
+ok   SetupReference: 1.86 kB gzip, ceiling 2.20 kB
+ok   moments: 4.10 kB gzip, ceiling 5.70 kB
+ok   VictoryTargetSelect: 0.68 kB gzip, ceiling 1.00 kB
+ok   DockInspection: 1.03 kB gzip, ceiling 1.20 kB
+ok   HandRates: 0.65 kB gzip, ceiling 0.80 kB
+ok   TurnExtensionVote: 1.21 kB gzip, ceiling 1.40 kB
+ok   index growth: base 125137 B, PR 125139 B, +2 B, allowance 400 B
+ok   IslandCanvas growth: base 200154 B, PR 200152 B, -2 B, allowance 661 B
+ok   jelly-board growth: base 7903 B, PR 7903 B, +0 B, allowance 200 B
+ok   hex-jelly growth: base 46735 B, PR 46736 B, +1 B, allowance 200 B
+ok   harbor-jelly growth: base 10238 B, PR 10238 B, +0 B, allowance 200 B
+ok   online growth: base 7790 B, PR 7789 B, -1 B, allowance 200 B
+ok   Reactions growth: base 2313 B, PR 2314 B, +1 B, allowance 200 B
+ok   sheets growth: base 7120 B, PR 7118 B, -2 B, allowance 200 B
+ok   SetupReference growth: base 1856 B, PR 1858 B, +2 B, allowance 200 B
+ok   moments growth: base 4100 B, PR 4101 B, +1 B, allowance 200 B
+ok   VictoryTargetSelect growth: base 685 B, PR 684 B, -1 B, allowance 200 B
+ok   DockInspection growth: base 1031 B, PR 1031 B, +0 B, allowance 200 B
+ok   HandRates growth: base 647 B, PR 647 B, +0 B, allowance 200 B
+ok   TurnExtensionVote growth: base 1205 B, PR 1206 B, +1 B, allowance 200 B
+size-prove: all chunks inside ceiling and growth allowance

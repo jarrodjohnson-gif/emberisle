@@ -1,0 +1,107 @@
+// #1014 / #662 candidate 3: original procedural sea-and-wind noise, released under CC0 1.0.
+// No recording or third-party sample. Regenerate: node scripts/make-ambience.mjs [--output file.mp3].
+// --raw emits the original for level-audio.mjs --new; default output applies the same shared mastering once.
+import { mkdirSync, statSync, mkdtempSync, rmSync } from "node:fs";
+import path from "node:path";
+import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import ffmpeg from "@ffmpeg-installer/ffmpeg";
+import { levelFile, measure } from "./audio-level-lib.mjs";
+
+export const RATE = 44100;
+export const SECONDS = 20;
+export const CROSSFADE_SECONDS = 2;
+export const SWELL_HZ = 0.1;
+
+export function makePcm() {
+  const n = RATE * SECONDS;
+  const fade = RATE * CROSSFADE_SECONDS;
+  const source = new Float64Array(n + fade);
+  let seed = 662;
+  let brown = 0;
+  let low = 0;
+  let mean = 0;
+  const pole = 1 - Math.exp(-2 * Math.PI * 800 / RATE);
+  for (let i = 0; i < source.length; i++) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    brown = 0.997 * brown + 0.02 * (seed / 2147483648 - 1);
+    low += pole * (brown - low);
+    source[i] = low;
+    mean += low / source.length;
+  }
+  const samples = new Float64Array(n);
+  let peak = 0;
+  for (let i = 0; i < n; i++) {
+    let value = source[i + fade] - mean;
+    if (i >= n - fade) {
+      const at = i - (n - fade);
+      const blend = 0.5 - 0.5 * Math.cos(Math.PI * at / (fade - 1));
+      value = value * (1 - blend) + (source[at] - mean) * blend;
+    }
+    value *= 0.65 + 0.35 * Math.cos(2 * Math.PI * SWELL_HZ * i / RATE);
+    samples[i] = value;
+    peak = Math.max(peak, Math.abs(value));
+  }
+  // Rotate the completed loop to a natural zero crossing. Keep every sample: no edge envelope or silence.
+  // Among crossings, choose the closest first/last 10 ms waveforms for the decoded seam contract.
+  const window = Math.ceil(0.01 * RATE);
+  let start = 0;
+  let best = Infinity;
+  for (let i = 1; i < n; i++) {
+    if (samples[i - 1] * samples[i] > 0) continue;
+    let difference = 0;
+    for (let j = 0; j < window && difference < best; j++) {
+      difference = Math.max(difference, Math.abs(samples[(i + j) % n] - samples[(i - window + j + n) % n]));
+    }
+    if (difference < best) { best = difference; start = i; }
+  }
+  const wave = Buffer.alloc(44 + n * 2);
+  wave.write("RIFF", 0);
+  wave.writeUInt32LE(wave.length - 8, 4);
+  wave.write("WAVEfmt ", 8);
+  wave.writeUInt32LE(16, 16);
+  wave.writeUInt16LE(1, 20);
+  wave.writeUInt16LE(1, 22);
+  wave.writeUInt32LE(RATE, 24);
+  wave.writeUInt32LE(RATE * 2, 28);
+  wave.writeUInt16LE(2, 32);
+  wave.writeUInt16LE(16, 34);
+  wave.write("data", 36);
+  wave.writeUInt32LE(n * 2, 40);
+  for (let i = 0; i < n; i++) wave.writeInt16LE(Math.round(samples[(start + i) % n] / peak * 0.4 * 32767), 44 + i * 2);
+  return wave;
+}
+
+function encodeRaw(output) {
+  mkdirSync(path.dirname(output), { recursive: true });
+  const wave = makePcm();
+  const result = spawnSync(ffmpeg.path, ["-hide_banner", "-loglevel", "error", "-i", "pipe:0", "-map_metadata", "-1", "-fflags", "+bitexact", "-c:a", "libmp3lame", "-b:a", "96k", "-flags:a", "+bitexact", "-id3v2_version", "0", "-write_id3v1", "0", "-write_xing", "1", "-y", output], { input: wave, encoding: "utf8" });
+  if (result.error || result.status !== 0) throw new Error(`ffmpeg failed: ${result.error?.message ?? result.stderr}`);
+  return createHash("sha256").update(wave).digest("hex");
+}
+
+// Always master the original generated candidate once, through the shared levelling tool.
+export function encode(output, { raw = false } = {}) {
+  let pcmSha256, mastering = null;
+  if (raw) pcmSha256 = encodeRaw(output);
+  else {
+    const temp = mkdtempSync(path.join(tmpdir(), "emberisle-ambience-master-"));
+    try {
+      const original = path.join(temp, "amb_sea.mp3");
+      pcmSha256 = encodeRaw(original);
+      mkdirSync(path.dirname(output), { recursive: true });
+      const result = levelFile(original, output, "ambience");
+      mastering = { how: result.how, before: result.before.level, after: measure(output, "ambience") };
+    } finally {
+      rmSync(temp, { recursive: true, force: true });
+    }
+  }
+  console.log(JSON.stringify({ output, bytes: statSync(output).size, seconds: SECONDS, rate: RATE, crossfadeSeconds: CROSSFADE_SECONDS, swellHz: SWELL_HZ, pcmSha256, mastering }));
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const flag = process.argv.indexOf("--output");
+  encode(flag < 0 ? fileURLToPath(new URL("../public/audio/amb_sea.mp3", import.meta.url)) : path.resolve(process.argv[flag + 1]), { raw: process.argv.includes("--raw") });
+}

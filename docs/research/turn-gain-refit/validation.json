@@ -1,0 +1,13 @@
+{
+  "tested_report_commit": "5f2c6ea",
+  "application_and_turn_gain_proof_baseline": "0e816528a7dc461b107c82af4a8a32520c54d4d9",
+  "fresh_clone": "work/verify1082-current",
+  "frozen_root_install": "pass",
+  "documented_reproduction_expected_exit": 1,
+  "documented_reproduction_observed_exit": 1,
+  "unexpected_failures": 0,
+  "console_errors": 0,
+  "registered_proofs": 129,
+  "changed_existing_proofs": 0,
+  "runtime_or_registered_proof_edits": 0
+}

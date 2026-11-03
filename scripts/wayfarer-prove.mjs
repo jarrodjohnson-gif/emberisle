@@ -105,20 +105,39 @@ try {
     const stood = isle.wayfarer.position.clone();
     const tw = window.__spot(to);
     const ys = [];
-    for (let ms = 0; ms < 700; ms += 50) {
-      vt += 0.05;
+    // Virtual frames must complete real GPU work and yield so WebGL can expose its fence status. Pause the automatic
+    // callback while we supply frames, as the old synchronous fixture implicitly did; keep the native fence check.
+    const frame = async () => {
+      isle.renderer.getContext().finish();
+      const until = performance.now() + 3000;
+      while (isle.gpuBehind()) {
+        if (performance.now() > until) throw new Error("virtual wayfarer GPU fence did not complete");
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      }
+      isle.wake();
+      const before = isle.renders;
       isle.tick();
-      const p = isle.wayfarer.position;
-      const e = Math.hypot(p.x - stood.x, p.z - stood.z) / Math.hypot(tw.x - stood.x, tw.z - stood.z);
-      ys.push(p.y - (stood.y + (face - stood.y) * e));
-    }
+      if (isle.renders !== before + 1) throw new Error("virtual wayfarer frame did not draw after real GPU completion");
+    };
+    isle.renderer.setAnimationLoop(null);
     let rises = 0;
-    for (let i = 1; i < ys.length; i++) if (ys[i - 1] <= 0.2 && ys[i] > 0.2) rises++;
-    for (let ms = 700; ms < 1000; ms += 50) {
-      vt += 0.05;
-      isle.tick();
+    try {
+      for (let ms = 0; ms < 700; ms += 50) {
+        vt += 0.05;
+        await frame();
+        const p = isle.wayfarer.position;
+        const e = Math.hypot(p.x - stood.x, p.z - stood.z) / Math.hypot(tw.x - stood.x, tw.z - stood.z);
+        ys.push(p.y - (stood.y + (face - stood.y) * e));
+      }
+      for (let i = 1; i < ys.length; i++) if (ys[i - 1] <= 0.2 && ys[i] > 0.2) rises++;
+      for (let ms = 700; ms < 1000; ms += 50) {
+        vt += 0.05;
+        await frame();
+      }
+    } finally {
+      delete isle.clock.getElapsed;
+      isle.renderer.setAnimationLoop(isle.tick);
     }
-    delete isle.clock.getElapsed;
     const w = window.__spot(to);
     const p = isle.wayfarer.position;
     return { rises, max: Math.max(...ys), samples: ys.length, dy: p.y - face, dx: p.x - w.x, dz: p.z - w.z };

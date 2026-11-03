@@ -185,7 +185,7 @@ Dropped routes remain consumed and never restart on redraw.
 Preserve `store.ts` as the sole robbery-related audio owner.
 The rat event, renderer, card pickup and return emit no sound.
 Keep `hear` and `soundsFor` responsible for existing FAHH substitution and normal wayfarer audio.
-Continue using `MEME_VOLUME`, the existing sound queue and global mute.
+Continue using the existing sound queue and global mute; the clip plays at volume 1, since it is leveled with the other reactions (#1073).
 Muting before or during travel produces no deferred sound on unmute.
 
 Today's FAHH means a local building faces an incoming wayfarer; it does not prove successful theft.

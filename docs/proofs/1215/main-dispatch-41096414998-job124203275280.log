@@ -1,0 +1,206 @@
+﻿2026-10-30T17:10:10.2934440Z Current runner version: '2.338.2'
+2026-10-30T17:10:10.2952160Z ##[group]Runner Image Provisioner
+2026-10-30T17:10:10.2952766Z Hosted Compute Agent
+2026-10-30T17:10:10.2953161Z Version: 20261021.618
+2026-10-30T17:10:10.2953580Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+2026-10-30T17:10:10.2954003Z Build Date: 2026-10-21T00:45:21Z
+2026-10-30T17:10:10.2954438Z Worker ID: {c00ccb97-1ac2-4b47-a486-67e93639aa0d}
+2026-10-30T17:10:10.2954857Z Region: centralus
+2026-10-30T17:10:10.2955181Z Cloud: Azure
+2026-10-30T17:10:10.2955577Z ##[endgroup]
+2026-10-30T17:10:10.2956424Z ##[group]Operating System
+2026-10-30T17:10:10.2956809Z Ubuntu
+2026-10-30T17:10:10.2957168Z 24.04.5
+2026-10-30T17:10:10.2957463Z LTS
+2026-10-30T17:10:10.2957849Z ##[endgroup]
+2026-10-30T17:10:10.2958174Z ##[group]Runner Image
+2026-10-30T17:10:10.2958545Z Image: ubuntu-24.04
+2026-10-30T17:10:10.2958894Z Version: 20261025.353.1
+2026-10-30T17:10:10.2959684Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261025.353/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-30T17:10:10.2960533Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261025.353
+2026-10-30T17:10:10.2961095Z ##[endgroup]
+2026-10-30T17:10:10.2962047Z ##[group]GITHUB_TOKEN Permissions
+2026-10-30T17:10:10.2963425Z Checks: read
+2026-10-30T17:10:10.2963782Z Contents: read
+2026-10-30T17:10:10.2964114Z Issues: write
+2026-10-30T17:10:10.2964745Z Metadata: read
+2026-10-30T17:10:10.2965146Z PullRequests: read
+2026-10-30T17:10:10.2965501Z ##[endgroup]
+2026-10-30T17:10:10.2966764Z Secret source: Actions
+2026-10-30T17:10:10.2967266Z Cache mode: write
+2026-10-30T17:10:10.2967742Z Prepare workflow directory
+2026-10-30T17:10:10.3164924Z Prepare all required actions
+2026-10-30T17:10:10.3196007Z Getting action download info
+2026-10-30T17:10:10.5412531Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-30T17:10:10.6472692Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-10-30T17:10:10.8139683Z Complete job name: board
+2026-10-30T17:10:10.8647982Z ##[group]Run actions/checkout@v4
+2026-10-30T17:10:10.8648391Z with:
+2026-10-30T17:10:10.8648615Z   ref: main
+2026-10-30T17:10:10.8648857Z   persist-credentials: false
+2026-10-30T17:10:10.8649149Z   sparse-checkout: scripts/desk-board.mjs
+2026-10-30T17:10:10.8649469Z   sparse-checkout-cone-mode: false
+2026-10-30T17:10:10.8649772Z   repository: jarrodjohnson-gif/emberisle
+2026-10-30T17:10:10.8652063Z   token: ***
+2026-10-30T17:10:10.8652294Z   ssh-strict: true
+2026-10-30T17:10:10.8652529Z   ssh-user: git
+2026-10-30T17:10:10.8652758Z   clean: true
+2026-10-30T17:10:10.8652984Z   fetch-depth: 1
+2026-10-30T17:10:10.8653219Z   fetch-tags: false
+2026-10-30T17:10:10.8653459Z   show-progress: true
+2026-10-30T17:10:10.8653706Z   lfs: false
+2026-10-30T17:10:10.8653934Z   submodules: false
+2026-10-30T17:10:10.8654179Z   set-safe-directory: true
+2026-10-30T17:10:10.8654455Z   allow-unsafe-pr-checkout: false
+2026-10-30T17:10:10.8654830Z ##[endgroup]
+2026-10-30T17:10:11.1009965Z Syncing repository: jarrodjohnson-gif/emberisle
+2026-10-30T17:10:11.1011295Z ##[group]Getting Git version info
+2026-10-30T17:10:11.1011684Z Working directory is '/home/runner/work/emberisle/emberisle'
+2026-10-30T17:10:11.1012401Z [command]/usr/bin/git version
+2026-10-30T17:10:11.1115213Z git version 2.56.0
+2026-10-30T17:10:11.1127765Z ##[endgroup]
+2026-10-30T17:10:11.1138908Z Temporarily overriding HOME='/home/runner/work/_temp/92200fef-b295-4b1d-915f-a2450d7372af' before making global git config changes
+2026-10-30T17:10:11.1139930Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-30T17:10:11.1143462Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/emberisle/emberisle
+2026-10-30T17:10:11.1191655Z Deleting the contents of '/home/runner/work/emberisle/emberisle'
+2026-10-30T17:10:11.1194890Z ##[group]Initializing the repository
+2026-10-30T17:10:11.1198135Z [command]/usr/bin/git init /home/runner/work/emberisle/emberisle
+2026-10-30T17:10:11.1298712Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-30T17:10:11.1300117Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-30T17:10:11.1301692Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-30T17:10:11.1303022Z hint: call:
+2026-10-30T17:10:11.1303750Z hint:
+2026-10-30T17:10:11.1304359Z hint: 	git config --global init.defaultBranch <name>
+2026-10-30T17:10:11.1305030Z hint:
+2026-10-30T17:10:11.1305667Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-30T17:10:11.1306645Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-30T17:10:11.1307447Z hint:
+2026-10-30T17:10:11.1307946Z hint: 	git branch -m <name>
+2026-10-30T17:10:11.1308491Z hint:
+2026-10-30T17:10:11.1309169Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-30T17:10:11.1315713Z Initialized empty Git repository in /home/runner/work/emberisle/emberisle/.git/
+2026-10-30T17:10:11.1324154Z [command]/usr/bin/git remote add origin https://github.com/jarrodjohnson-gif/emberisle
+2026-10-30T17:10:11.1366323Z ##[endgroup]
+2026-10-30T17:10:11.1367006Z ##[group]Disabling automatic garbage collection
+2026-10-30T17:10:11.1368881Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-30T17:10:11.1397990Z ##[endgroup]
+2026-10-30T17:10:11.1398603Z ##[group]Setting up auth
+2026-10-30T17:10:11.1403614Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-30T17:10:11.1434758Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-30T17:10:11.1801854Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-30T17:10:11.1839120Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-30T17:10:11.2029567Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-30T17:10:11.2066399Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-30T17:10:11.2251636Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-30T17:10:11.2292698Z ##[endgroup]
+2026-10-30T17:10:11.2293271Z ##[group]Fetching the repository
+2026-10-30T17:10:11.2301353Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --filter=blob:none --depth=1 origin +refs/heads/main*:refs/remotes/origin/main* +refs/tags/main*:refs/tags/main*
+2026-10-30T17:10:11.6456400Z From https://github.com/jarrodjohnson-gif/emberisle
+2026-10-30T17:10:11.6456954Z  * [new branch]      main       -> origin/main
+2026-10-30T17:10:11.6459668Z ##[endgroup]
+2026-10-30T17:10:11.6460129Z ##[group]Determining the checkout info
+2026-10-30T17:10:11.6466068Z [command]/usr/bin/git branch --list --remote origin/main
+2026-10-30T17:10:11.6498447Z   origin/main
+2026-10-30T17:10:11.6502086Z ##[endgroup]
+2026-10-30T17:10:11.6502709Z ##[group]Setting up sparse checkout
+2026-10-30T17:10:11.6506367Z [command]/usr/bin/git config core.sparseCheckout true
+2026-10-30T17:10:11.6550533Z [command]/usr/bin/git rev-parse --git-path info/sparse-checkout
+2026-10-30T17:10:11.6578050Z .git/info/sparse-checkout
+2026-10-30T17:10:11.6583877Z ##[endgroup]
+2026-10-30T17:10:11.6584466Z ##[group]Checking out the ref
+2026-10-30T17:10:11.6586449Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-10-30T17:10:11.9406417Z Switched to a new branch 'main'
+2026-10-30T17:10:11.9407513Z branch 'main' set up to track 'origin/main'.
+2026-10-30T17:10:11.9463040Z ##[endgroup]
+2026-10-30T17:10:11.9465042Z [command]/usr/bin/git log -1 --format=%H
+2026-10-30T17:10:11.9497454Z 9a38ae268db9e92894f236f65a940b4e9b3b2f74
+2026-10-30T17:10:11.9509147Z ##[group]Removing auth
+2026-10-30T17:10:11.9510779Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-30T17:10:11.9547985Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-30T17:10:11.9763040Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-30T17:10:11.9795220Z http.https://github.com/.extraheader
+2026-10-30T17:10:11.9802186Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-30T17:10:11.9839654Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-30T17:10:12.0030155Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-30T17:10:12.0064633Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-30T17:10:12.0252225Z ##[endgroup]
+2026-10-30T17:10:12.0489212Z ##[group]Run actions/setup-node@v4
+2026-10-30T17:10:12.0489660Z with:
+2026-10-30T17:10:12.0489937Z   node-version: 22
+2026-10-30T17:10:12.0490246Z   always-auth: false
+2026-10-30T17:10:12.0490577Z   check-latest: false
+2026-10-30T17:10:12.0496178Z   token: ***
+2026-10-30T17:10:12.0496460Z ##[endgroup]
+2026-10-30T17:10:12.1497079Z Found in cache @ /opt/hostedtoolcache/node/22.23.4/x64
+2026-10-30T17:10:12.1498886Z ##[group]Environment details
+2026-10-30T17:10:12.1503615Z (node:2240) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-30T17:10:12.1504805Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-30T17:10:12.4721476Z node: v22.23.4
+2026-10-30T17:10:12.4721845Z npm: 10.9.9
+2026-10-30T17:10:12.4722207Z yarn: 1.22.22
+2026-10-30T17:10:12.4723133Z ##[endgroup]
+2026-10-30T17:10:12.4915279Z ##[group]Run node scripts/desk-board.mjs
+2026-10-30T17:10:12.4915679Z [36;1mnode scripts/desk-board.mjs[0m
+2026-10-30T17:10:12.4940523Z shell: /usr/bin/bash -e {0}
+2026-10-30T17:10:12.4940717Z env:
+2026-10-30T17:10:12.4942577Z   GH_TOKEN: ***
+2026-10-30T17:10:12.4942762Z   GITHUB_REPOSITORY: jarrodjohnson-gif/emberisle
+2026-10-30T17:10:12.4942970Z ##[endgroup]
+2026-10-30T17:11:43.1155774Z <!-- desk-board:start -->
+2026-10-30T17:11:43.1156179Z ## Desk board
+2026-10-30T17:11:43.1156520Z checked: 2026-10-30T17:10:12.517Z
+2026-10-30T17:11:43.1156715Z 
+2026-10-30T17:11:43.1156990Z | PR | Head | checks | Reviewed head | State | Route | Reason |
+2026-10-30T17:11:43.1157356Z |---|---|---|---|---|---|---|
+2026-10-30T17:11:43.1158009Z | #1216 | 26d1cd9351ad6a8ff2ddaefe6f75fc7497451e9c | red / pending | none | Red / waiting | Sonnet | checks not green on exact head |
+2026-10-30T17:11:43.1159171Z | #1212 | b149f3f54024c7758d3ac5173dd87e4896deb4ff | green | b149f3f54024c7758d3ac5173dd87e4896deb4ff | Red / waiting | Haiku | desk findings or unrecognized verdict |
+2026-10-30T17:11:43.1160340Z | #1184 | 902c8414b2fdfda0edffc8866c76ba21b79130d6 | green | 902c8414b2fdfda0edffc8866c76ba21b79130d6 | Red / waiting | Opus | desk findings or unrecognized verdict |
+2026-10-30T17:11:43.1161504Z | #1181 | 33ae6593e3da4f1c0d8848803506d5132845cf24 | green | 33ae6593e3da4f1c0d8848803506d5132845cf24 | Red / waiting | Opus | desk findings or unrecognized verdict |
+2026-10-30T17:11:43.1162773Z | #1161 | 5dd6c16b7393555a2ff6c3aabae22c5f6ef8beb7 | green | 5dd6c16b7393555a2ff6c3aabae22c5f6ef8beb7 | Red / waiting | Opus | desk findings or unrecognized verdict |
+2026-10-30T17:11:43.1163955Z | #1159 | edd2ead2c42f1b2e40720ffc02c9f8410ec80a0f | green | edd2ead2c42f1b2e40720ffc02c9f8410ec80a0f | Red / waiting | Opus | desk findings or unrecognized verdict |
+2026-10-30T17:11:43.1165723Z | #1149 | 2a5e8dbd6e11298ae8da7d485f45b1407693a3b1 | green | none | Ready for desk | Opus | unreviewed head |
+2026-10-30T17:11:43.1166522Z | #1148 | f27199868c5a671c2eb08183ceab32691614f7a0 | green | none | Ready for desk | Opus | unreviewed head |
+2026-10-30T17:11:43.1167387Z | #1144 | 039860e47958f101ba0b218a97cbfcf5d1e293d7 | red / pending | none | Red / waiting | Opus | checks not green on exact head |
+2026-10-30T17:11:43.1168378Z | #1139 | 7259150bfb8cd9da07240d89312f2f38ea79387f | green | 7259150bfb8cd9da07240d89312f2f38ea79387f | Red / waiting | Opus | desk findings or unrecognized verdict |
+2026-10-30T17:11:43.1169535Z | #1136 | fd8a9268a39c1d62afdfd71e0a62e23067ec8744 | green | fd8a9268a39c1d62afdfd71e0a62e23067ec8744 | Red / waiting | Opus | clean review; desk merge decision pending |
+2026-10-30T17:11:43.1170460Z | #1117 | 4e51d74aa3253cdc3022a776c21ff4b6b7cc2c8a | green | none | Ready for desk | Opus | unreviewed head |
+2026-10-30T17:11:43.1171284Z | #1104 | 1259c9a16838f35b25bada99799529d6335ef464 | green | none | Ready for desk | Opus | unreviewed head |
+2026-10-30T17:11:43.1172283Z | #998 | e534c0288c75827666d19d18cf431ed1a2f7bbac | red / pending | none | Red / waiting | Opus | checks not green on exact head |
+2026-10-30T17:11:43.1173267Z | #997 | 5dfa3cb1943762c77cb0f0c97446daba12c42c70 | red / pending | none | Red / waiting | Opus | checks not green on exact head |
+2026-10-30T17:11:43.1174202Z | #995 | b8f30d17267089dec5c0855765613bab98041c88 | green | none | Ready for desk | Opus | unreviewed head |
+2026-10-30T17:11:43.1175042Z | #973 | 2d8333aa528bc5c7bf1f2ed3f60b2487d6e5daab | green | none | Ready for desk | Opus | unreviewed head |
+2026-10-30T17:11:43.1175848Z | #970 | 5af61e7749fe7568fa3b1f9cb320a49c16571700 | green | none | Ready for desk | Opus | unreviewed head |
+2026-10-30T17:11:43.1176617Z | #963 | d1f85b96da2c46b32442eeefa0ff37ede4a9e351 | green | none | Red / waiting | Opus | review footer missing |
+2026-10-30T17:11:43.1177434Z | #962 | 3ca5a37b049d57f48945a86e7e2c9993bbf6a8f4 | red / pending | none | Red / waiting | Opus | checks not green on exact head |
+2026-10-30T17:11:43.1178386Z | #960 | 706233ca000781c8595268d7d965e2bbe7589a01 | green | none | Red / waiting | Opus | review footer missing |
+2026-10-30T17:11:43.1179186Z | #936 | add84cd70621a2d1915f31d41a305b2252d0a3da | red / pending | none | Red / waiting | Opus | checks not green on exact head |
+2026-10-30T17:11:43.1179782Z | #905 | 6f122352f77b91c2631e57cc8e2f5dfca89d449e | green | none | Red / waiting | Opus | review footer missing |
+2026-10-30T17:11:43.1180384Z | #883 | 9a1a91d6eb56cb5ee7994f2bd516e9ce452216a6 | green | 9a1a91d6eb56cb5ee7994f2bd516e9ce452216a6 | Red / waiting | Opus | desk findings or unrecognized verdict |
+2026-10-30T17:11:43.1180972Z | #881 | 0ac700e7dbd17efa01deadd0d5ff6067d2cca0f9 | red / pending | none | Red / waiting | Opus | checks not green on exact head |
+2026-10-30T17:11:43.1181446Z | #879 | 9b03eff53585bc2b0d23a1defd7ad6849d4f468e | green | none | Ready for desk | Opus | unreviewed head |
+2026-10-30T17:11:43.1181870Z | #873 | 763d2fcb62bf271ecbf7796d3057c7024f59ab6f | green | none | Ready for desk | Opus | unreviewed head |
+2026-10-30T17:11:43.1182884Z | #867 | 0a733507aed59ae0911361f0e2c54617dffe1704 | green | 0a733507aed59ae0911361f0e2c54617dffe1704 | Ready for Jarrod | Opus | visual / audio sign-off pending |
+2026-10-30T17:11:43.1183939Z | #848 | 74d52747a953d49de3fd9422504f08b3a71dd919 | green | 74d52747a953d49de3fd9422504f08b3a71dd919 | Red / waiting | Opus | desk findings or unrecognized verdict |
+2026-10-30T17:11:43.1184557Z | #824 | f53062dccdc2c539472127f9a809ea6c4c17b908 | green | none | Ready for desk | Opus | unreviewed head |
+2026-10-30T17:11:43.1184980Z | #812 | 9452f37a47d91767bc83b4af5f24ac65b69260c1 | waiting | none | Red / waiting | Opus | no checks on head |
+2026-10-30T17:11:43.1185397Z | #709 | 46090571271260e2dd812a7d20369c69de66fe82 | green | none | Ready for desk | Haiku | unreviewed head |
+2026-10-30T17:11:43.1185918Z | #706 | dac5406728ac3e70a0129376d924640cde5322b0 | green | none | Ready for desk | Opus | unreviewed head |
+2026-10-30T17:11:43.1186186Z <!-- desk-board:end -->
+2026-10-30T17:11:43.1280799Z Post job cleanup.
+2026-10-30T17:11:43.2148846Z (node:3492) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-30T17:11:43.2152818Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-30T17:11:43.2408027Z Post job cleanup.
+2026-10-30T17:11:43.2973316Z [command]/usr/bin/git version
+2026-10-30T17:11:43.3005094Z git version 2.56.0
+2026-10-30T17:11:43.3032511Z Temporarily overriding HOME='/home/runner/work/_temp/a0802a23-e165-40b5-946c-20b43f957b8b' before making global git config changes
+2026-10-30T17:11:43.3033513Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-30T17:11:43.3034332Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/emberisle/emberisle
+2026-10-30T17:11:43.3064529Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-30T17:11:43.3091692Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-30T17:11:43.3298902Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-30T17:11:43.3345992Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-30T17:11:43.3553391Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-30T17:11:43.3591757Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-30T17:11:43.3917982Z Cleaning up orphan processes
+2026-10-30T17:11:43.4141290Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+

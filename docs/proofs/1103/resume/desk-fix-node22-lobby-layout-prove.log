@@ -1,0 +1,21 @@
+$ node scripts/lobby-layout-prove.mjs (artifact destination: docs/proofs/1103/desk-fix)
+390x844: chat 52.16%; two columns; 44px targets / 8px gaps; no card/people scroll; copy/invite/rules/target/chat/reaction/ready/start passed
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: sound-bubble: whole bubble stays inside its seat and clear of the name
+    at clearOfName (<checkout>/[eval1]:98:10)
+    at runNextTicks (node:internal/process/task_queues:64:5)
+    at process.processImmediate (node:internal/timers:452:9)
+    at process.callbackTrampoline (node:internal/async_hooks:130:17)
+    at async <checkout>/[eval1]:149:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.4

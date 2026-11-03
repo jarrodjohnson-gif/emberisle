@@ -1,0 +1,13 @@
+[
+  {
+    "case": "old",
+    "expectedFailure": true,
+    "error": "Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'getState')"
+  },
+  {
+    "case": "new",
+    "waitedBeforeRelease": true,
+    "seed": 676,
+    "randomRestored": true
+  }
+]

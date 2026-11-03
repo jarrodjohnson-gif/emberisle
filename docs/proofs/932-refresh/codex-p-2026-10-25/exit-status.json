@@ -1,0 +1,62 @@
+{
+  "offline": {
+    "command": [
+      "npm",
+      "run",
+      "stale-pr-sweeper-prove"
+    ],
+    "exit_code": 0
+  },
+  "types": {
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "exit_code": 0
+  },
+  "registered": {
+    "command": [
+      "npm",
+      "run",
+      "registered-prove"
+    ],
+    "exit_code": 0
+  },
+  "loosen": {
+    "command": [
+      "npm",
+      "run",
+      "loosen-prove",
+      "--",
+      "--base",
+      "3db641d6744617ebc55a3dbb6add1ce34855a72b"
+    ],
+    "exit_code": 0
+  },
+  "build": {
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "exit_code": 0
+  },
+  "size": {
+    "command": [
+      "node",
+      "scripts/size-prove.mjs",
+      "--base",
+      "/workspace/emberisle/work/p-base934"
+    ],
+    "exit_code": 0
+  },
+  "wayfarer": {
+    "command": [
+      "npm",
+      "run",
+      "wayfarer-setup-prove"
+    ],
+    "exit_code": 0
+  }
+}

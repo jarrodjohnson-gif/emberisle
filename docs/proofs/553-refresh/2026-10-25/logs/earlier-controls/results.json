@@ -1,0 +1,95 @@
+[
+  {
+    "name": "types",
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "exit_code": 0,
+    "seconds": 1.09
+  },
+  {
+    "name": "registered",
+    "command": [
+      "npm",
+      "run",
+      "registered-prove"
+    ],
+    "exit_code": 0,
+    "seconds": 0.13
+  },
+  {
+    "name": "loosen",
+    "command": [
+      "npm",
+      "run",
+      "loosen-prove",
+      "--",
+      "--base",
+      "caf88c6d7254bfd1beab69e9e2c02a981afc056c"
+    ],
+    "exit_code": 0,
+    "seconds": 0.13
+  },
+  {
+    "name": "size-delta",
+    "command": [
+      "npm",
+      "run",
+      "size-delta-prove"
+    ],
+    "exit_code": 0,
+    "seconds": 0.4
+  },
+  {
+    "name": "build",
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "exit_code": 0,
+    "seconds": 0.92
+  },
+  {
+    "name": "size",
+    "command": [
+      "node",
+      "scripts/size-prove.mjs",
+      "--base",
+      "/workspace/emberisle/work/base1037-main137"
+    ],
+    "exit_code": 0,
+    "seconds": 0.1
+  },
+  {
+    "name": "server",
+    "command": [
+      "npm",
+      "test"
+    ],
+    "exit_code": 0,
+    "seconds": 298.0
+  },
+  {
+    "name": "recovery",
+    "command": [
+      "npm",
+      "run",
+      "render-recovery-prove"
+    ],
+    "exit_code": 0,
+    "seconds": 25.99
+  },
+  {
+    "name": "client",
+    "command": [
+      "npm",
+      "run",
+      "client-prove"
+    ],
+    "exit_code": 1,
+    "seconds": 56.26
+  }
+]

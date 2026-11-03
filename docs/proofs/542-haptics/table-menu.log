@@ -1,0 +1,8 @@
+
+> table-menu-prove
+> node scripts/table-menu-prove.mjs
+
+1280x720: Water flips the sea crystal <-> simple in place and keeps the choice across a reload
+1280x720: one 44x44 menu button top-right, no wordmark; rows 9; How to play, sounds, code (copied), Leave (asks online, one press in hotseat) all work; Escape and Close refocus the button
+390x844: one 44x44 menu button top-right, no wordmark; rows 10; How to play, sounds, code (fallback), Leave (asks online, one press in hotseat) all work; Escape and Close refocus the button
+844x390: one 44x44 menu button top-right, no wordmark; rows 10; How to play, sounds, code (copied), Leave (asks online, one press in hotseat) all work; Escape and Close refocus the button

@@ -1,0 +1,10 @@
+/* #646: the Need chips and picker. The Trade window (trade-panel.css) places them and sets their colours. */
+.need-dot { position: absolute; top: -3px; left: -3px; z-index: 10; width: 8px; height: 8px; border-radius: 9999px; background: #be5b39; box-shadow: 0 0 0 1px #fff; pointer-events: none; }
+.need-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; line-height: 16px; color: #3f3f46; }
+.need-chip { padding: 8px 12px; border-radius: 9999px; background: #dce5ed; }
+#need-picker { min-width: 0; padding: 0; border: 0; }
+#need-picker > div { display: grid; grid-template-columns: repeat(5, minmax(44px, 1fr)); gap: 8px; }
+/* Lit is the only white pill: unlit pills take the sheet fill; a lit one gets a 2 px ink ring and bold label. No transition. */
+#need-picker .need-toggle { height: 44px; min-width: 44px; padding: 0 4px; border-color: var(--control-line); border-radius: 9999px; background: #f3f6f5; font-size: 12px; white-space: nowrap; transition: none; }
+#need-picker .need-toggle[aria-pressed="true"] { background: #fff; box-shadow: inset 0 0 0 2px var(--ink); font-weight: 700; }
+#need-picker .need-toggle:disabled { color: var(--muted); }

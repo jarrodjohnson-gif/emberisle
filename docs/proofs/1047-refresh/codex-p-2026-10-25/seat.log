@@ -1,0 +1,179 @@
+four profiles in the store: 5a6d70d6 0d862cd1 defea591 0f2b97e1
+ok the host opened the seeded store
+ok a guest host hello without a credential still opens a table
+ok a guest seat carries no profile field
+ok credential: null is a guest join
+ok a credential over plain ws:// is refused before it is looked at; no seat
+ok the refused socket can still sit down as a guest
+ok a guest game freezes a roster with no profiles, all human and eligible
+ok guest room files carry no profile binding
+ok guest table frames carry no profile fields
+ok explicit create binds the authenticated host
+ok explicit join binds a non-host seat
+ok create alias uses the public profile allowlist
+ok join alias uses the public profile allowlist
+ok both explicit aliases persist their authenticated profile IDs
+ok create refuses a mismatched HTTPS Origin before credential validity
+ok create refuses a mismatched HTTPS Origin before credential validity
+ok create origin refusal exposes no credential-validity distinction
+ok create origin refusal leaves existing seats unchanged
+ok create refused socket can retry as a guest
+ok create guest retry attaches no profile
+ok create guest retry persists no profile binding
+ok join refuses a mismatched HTTPS Origin before credential validity
+ok join refuses a mismatched HTTPS Origin before credential validity
+ok join origin refusal exposes no credential-validity distinction
+ok join origin refusal leaves existing seats unchanged
+ok join refused socket can retry as a guest
+ok join guest retry attaches no profile
+ok join guest retry persists no profile binding
+ok one human with two bots is frozen as not eligible, bots classed as bots
+ok a host hello with a valid credential opens a table
+ok the bound seat projects only profileId and displayName
+ok an unknown credential is refused
+ok a malformed credential is refused
+ok a join with a valid credential sits down bound
+ok the same profile cannot take a second seat
+ok a duplicate-binding race seats one and refuses the other
+ok a credential alone cannot recover a held lobby seat
+ok the seat secret recovers the held lobby seat and its binding
+ok a bot seat carries no profile
+ok each profile is bound to exactly one seat
+ok the room file stores the opaque binding on each bound seat
+ok the room file holds no credential, login or profile record
+ok a lobby rename keeps the profile binding
+ok the refused second device ...
+ok ... stays at the join screen and can sit down as a guest
+ok that guest seat has no profile
+ok the roster has a game UUID, start time, policy and eligibility
+ok the roster freezes seats, profiles, starting names and classes in player order
+ok game state carries no profile, credential or login
+ok a rename mid-game is refused and the roster is unchanged
+ok a watcher cannot attach a profile
+ok a watcher without a credential watches
+ok a watcher's later hello with a credential is refused
+ok the watcher took no seat
+ok a seat reads a card of a profile at its table
+ok the card is the public allowlist only
+ok a watcher reads a card at the table it watches
+ok a seat cannot read a profile from another table
+ok naming another room's code changes nothing
+ok a watcher cannot read a profile from another table
+ok the other table cannot read this one's profiles
+ok a guest id or junk is not found
+ok a socket at no table reads no card
+ok a valid credential alone cannot recover the held game seat
+ok a credential beside a wrong secret recovers nothing
+ok Ash's seat is still held, not handed to the credential
+ok past the grace the bot plays Ash's seat
+ok the takeover keeps the frozen roster
+ok the seat keeps its public binding under the bot
+ok Ash's seat secret recovers the seat after the takeover
+ok the rejoin restores the binding without a profile session
+ok Pine's seat is let go after the hold
+ok seat expiry keeps Pine in the frozen roster
+ok a frozen participant's card is still readable after the seat expires
+ok and by the watcher
+ok the stopped host saved the roster
+ok Tide's credential has expired
+ok Ember's first device is signed out
+ok the expired credential cannot attach anywhere
+ok nor can the signed-out one
+ok Tide's seat secret recovers her seat after expiry and restart
+ok Ash's seat secret recovers his seat after sign-out and restart
+ok a guest seat with a non-UUID binding still rejoins
+ok a legacy room still loads and rejoins
+ok a damaged room still loads
+ok the non-UUID binding is dropped
+ok both bindings come back from the room file
+ok the restart keeps the frozen roster and game UUID
+ok after a restart a credential alone still recovers nothing
+ok a legacy room has no bindings and no roster
+ok duplicate and bot bindings are dropped; the first good one stays
+ok a roster that does not match its game is dropped, not trusted
+ok the rematch freezes a new game UUID
+ok the winner's seat goes first and the roster follows the new order
+ok the starting names carry into the rematch roster
+ok seats keep their bindings across the rematch
+ok a player from the last game but not this one has no card here
+ok this game's players still do
+ok the rate-test socket recovers the existing seat
+ok seat: a card burst gets throttled
+ok seat: successful cards obey the ten-token burst and two-per-second refill
+ok seat: every reply is a public card or a cardless slowDown
+ok the exhausted seat card bucket refills and returns only a public card
+ok the rate-test watcher watches without taking a seat
+ok an exhausted seat cannot throttle a fresh watcher
+ok a seated card burst does not block chat to another seat
+ok a card burst does not spend the gameplay action bucket
+ok the rate-test watcher watches without taking a seat
+ok a watcher burst is bounded by its stricter ingress bucket
+ok admitted watcher replies remain public cards; excess frames are dropped before card handling
+ok an exhausted watcher cannot throttle another seated socket
+ok the exhausted watcher ingress bucket refills and returns only a public card
+ok card bursts and chat leave the canonical game sequence unchanged
+ok bound-logout fixture creates a real authenticated profile
+ok the logout fixture hosts a profile-bound seat
+ok a guest joins the bound-logout fixture
+ok a guest joins the bound-logout fixture
+ok the started game freezes the authenticated profile
+ok logout acknowledges the bound device
+ok the logged-out bound credential cannot resume
+ok the logged-out bound credential cannot open another seat
+ok logout keeps the original live public binding
+ok the live bound socket still reads its profile card
+ok another participant still reads the bound profile card
+ok logout leaves frozen attribution unchanged
+ok the seat secret alone recovers the logged-out profile seat
+ok recovery preserves the profile without adding a seat
+ok recovery durably preserves the same frozen game attribution
+ok no credential reached any table or watcher socket
+ok no login reached any table or watcher socket
+ok no private profile field reached any table or watcher socket
+ok no game state frame carries a profile
+ok roster valid control: seat secret still recovers the room
+ok roster version: seat secret still recovers the room
+ok roster game UUID: seat secret still recovers the room
+ok roster start time: seat secret still recovers the room
+ok roster policy type: seat secret still recovers the room
+ok roster eligibility type: seat secret still recovers the room
+ok roster player array: seat secret still recovers the room
+ok roster player count: seat secret still recovers the room
+ok roster player order: seat secret still recovers the room
+ok roster seat type: seat secret still recovers the room
+ok roster profile UUID: seat secret still recovers the room
+ok roster name type: seat secret still recovers the room
+ok roster colour type: seat secret still recovers the room
+ok roster player kind: seat secret still recovers the room
+ok roster duplicate profile: seat secret still recovers the room
+ok roster valid control: game identity survives metadata validation
+ok roster valid control: valid frozen record preserved exactly
+ok roster version: game identity survives metadata validation
+ok roster version: invalid record resaved as null
+ok roster game UUID: game identity survives metadata validation
+ok roster game UUID: invalid record resaved as null
+ok roster start time: game identity survives metadata validation
+ok roster start time: invalid record resaved as null
+ok roster policy type: game identity survives metadata validation
+ok roster policy type: invalid record resaved as null
+ok roster eligibility type: game identity survives metadata validation
+ok roster eligibility type: invalid record resaved as null
+ok roster player array: game identity survives metadata validation
+ok roster player array: invalid record resaved as null
+ok roster player count: game identity survives metadata validation
+ok roster player count: invalid record resaved as null
+ok roster player order: game identity survives metadata validation
+ok roster player order: invalid record resaved as null
+ok roster seat type: game identity survives metadata validation
+ok roster seat type: invalid record resaved as null
+ok roster profile UUID: game identity survives metadata validation
+ok roster profile UUID: invalid record resaved as null
+ok roster name type: game identity survives metadata validation
+ok roster name type: invalid record resaved as null
+ok roster colour type: game identity survives metadata validation
+ok roster colour type: invalid record resaved as null
+ok roster player kind: game identity survives metadata validation
+ok roster player kind: invalid record resaved as null
+ok roster duplicate profile: game identity survives metadata validation
+ok roster duplicate profile: invalid record resaved as null
+profile-seat-prove: 177 checks passed

@@ -6,9 +6,11 @@
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Box, Copy, Ellipsis, Eye, Hammer, LogOut, ScrollText, Volume2, VolumeX, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConnectionOverlay } from "@/components/game/chunks";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { useGame } from "@/lib/game/store";
-import { play, setMusicOn, setMuted, useMuted, useMusicOn } from "@/lib/sound";
+import { haptics, play, setMusicOn, setMuted, useMuted, useMusicOn } from "@/lib/sound";
+import { LazyBoundary } from "@/lib/lazy";
 
 const ROW = "h-11 w-full justify-start px-3 text-body";
 const ICON = "size-4 shrink-0 text-muted";
@@ -16,6 +18,7 @@ const ICON = "size-4 shrink-0 text-muted";
 export function TableMenu() {
   const state = useGame((s) => s.state)!;
   const mode = useGame((s) => s.mode);
+  const serverSha = useGame((s) => s.serverSha);
   const code = useGame((s) => s.code);
   const spectator = useGame((s) => s.spectator);
   const watching = useGame((s) => s.watching);
@@ -98,6 +101,7 @@ export function TableMenu() {
 
   return (
     <div className="relative">
+      {mode === "online" ? <LazyBoundary failed={null}><ConnectionOverlay /></LazyBoundary> : null}
       <Button
         ref={trigger}
         variant="ghost"
@@ -183,6 +187,7 @@ export function TableMenu() {
                 {music ? <Volume2 className={ICON} /> : <VolumeX className={ICON} />}
                 Music {music ? "on" : "off"}
               </Button>
+              {haptics.row}
               {/* The sea's look; the choice is remembered and overrides the GPU probe (docs/design/crystal-water.md). */}
               <div role="group" aria-label="Water" data-testid="water-toggle" className="flex h-11 items-center gap-2 px-3 text-body">
                 <Waves className={ICON} /> Water
@@ -225,6 +230,10 @@ export function TableMenu() {
           {/* Outside the question's branch: the field focuses itself when it mounts, and must not take the focus back from
               Leave table each time the question folds into the rows (CI has no clipboard, so the field is the common case). */}
           <CopyFallback state={copied} label={copied?.what === "log" ? "Game log" : "Table code"} className="px-3" />
+          {/* #834/#913: one version line, including the connected host and an unambiguous build time. */}
+          <p data-testid="build-version" className="break-words px-3 pt-1 text-caption text-muted">
+            client {__BUILD_SHA__}{mode === "online" ? ` · server ${serverSha ?? "unknown"}${serverSha && serverSha !== "dev" && __BUILD_SHA__ !== "dev" && serverSha !== __BUILD_SHA__ ? " · different builds" : ""}` : ""} · <time dateTime={__BUILD_TIME__}>{new Date(__BUILD_TIME__).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" })}</time>
+          </p>
         </div>
       ) : null}
     </div>

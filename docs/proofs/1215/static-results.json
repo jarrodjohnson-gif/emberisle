@@ -1,0 +1,18 @@
+[
+  {
+    "check": "typecheck",
+    "exit": 0
+  },
+  {
+    "check": "registered",
+    "exit": 0
+  },
+  {
+    "check": "loosen",
+    "exit": 0
+  },
+  {
+    "check": "workflow-scope",
+    "exit": 0
+  }
+]

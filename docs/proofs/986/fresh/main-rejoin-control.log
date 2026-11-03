@@ -1,0 +1,12 @@
+table 2V6V: 3 seats, Ember (p0) rolls first, seq 0
+within the grace: Ember is away, no state pushed, seq still 0
+rejoin: welcome you=s0, state you=p0, seq 0; the grace timer was cancelled
+same secret on a live seat: "Seat is taken."
+past the grace: p0 is a bot, play moved to p1
+late rejoin: p0 is human again, named Ember
+all sockets closed for 900 ms: room 2V6V survived, Tide rejoined at seq 1
+past the hold: "Seat is gone."
+keepalive: silent socket cut after 236 ms (ping 300 ms), answering seats kept for 900 ms more, Reed rejoined as s2
+lobby hold: away+not ready with 3 seats, start refused, rejoin kept s1, after 300 ms 2 seats and "Seat is gone."
+lobby host drop: Pine is host, Ember rejoined as s0 with host=false
+rejoin prove ok

@@ -4,7 +4,7 @@ import { allow } from "./chat.mjs";
 import { ProfileError, publicCard, seatView } from "./profiles.mjs";
 
 export const CAPS = ["profilesV1"];
-export const PROFILE_TYPES = new Set(["profileHello", "profileCreate", "profileLogin", "profileResume", "profileLogout"]);
+export const PROFILE_TYPES = new Set(["profileHello", "profileCreate", "profileLogin", "profileResume", "profileLogout", "profileEdit", "profileChangePin"]);
 
 // What a refused request says. Sign-in failures share one message: a wrong PIN, an unknown login and a spent budget look alike.
 const MESSAGES = {
@@ -18,6 +18,9 @@ const MESSAGES = {
   origin: "Profiles need the HTTPS link. You can still play as a guest.",
   unavailable: "Profiles unavailable on this host.",
   tableSocket: "Profiles use their own connection.",
+  pinLocked: "PIN changes are locked. Contact the host for a verified local reset.",
+  mustChangePin: "Change your PIN before continuing.",
+  notFound: "Profile not found.",
 };
 
 const AUTH_PER_MIN = 20;
@@ -89,6 +92,8 @@ function session(id, out, withCredential) {
     },
     expiresAt: out.expiresAt,
   };
+  // pinMustChange is omitted when false to keep the stable profile projection for existing clients.
+  if (p.pinMustChange) msg.profile.pinMustChange = true;
   if (withCredential) msg.credential = out.token;
   return msg;
 }
@@ -127,6 +132,21 @@ export function profileHandler(store, send) {
       await store.logout(msg.credential);
       return send(ws, { type: "profileLoggedOut", id });
     }
+    if (msg.type === "profileEdit") {
+      const out = await store.profileEdit(msg.credential, {
+        displayName: msg.displayName,
+        login: msg.login,
+        pin: msg.pin,
+        color: msg.color,
+        backupColor: msg.backupColor,
+        catchphrase: msg.catchphrase,
+      });
+      return send(ws, session(id, out, false));
+    }
+    if (msg.type === "profileChangePin") {
+      const out = await store.profileChangePin(msg.credential, msg.currentPin, msg.newPin, msg.newPinConfirm);
+      return send(ws, session(id, out, true));
+    }
   }
 
   // The host routes every PROFILE_TYPES frame here, after parsing and before any table branch.
@@ -156,6 +176,7 @@ const SEAT_MESSAGES = {
   unavailable: MESSAGES.unavailable,
   slowDown: MESSAGES.slowDown,
   signedOut: "Signed out on this device. Sign in again, or join as a guest.",
+  mustChangePin: MESSAGES.mustChangePin,
   profileSeated: "That profile already has a seat at this table. Join as a guest, or leave the other seat.",
   watcher: "Watchers join as guests.",
   notAtTable: "Profile cards are for players at your table.",
@@ -172,6 +193,7 @@ export function seatCredential(store, ws, msg, taken) {
   if (!store.ready) return refuse("unavailable");
   const profileId = store.validate(msg.credential);
   if (!profileId) return refuse("signedOut");
+  if (store.profile(profileId)?.pinMustChange) return refuse("mustChangePin");
   if (taken(profileId)) return refuse("profileSeated");
   return { profileId };
 }

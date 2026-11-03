@@ -1,0 +1,10 @@
+
+> lobby-overflow-prove
+> node scripts/lobby-overflow-prove.mjs
+
+ok 320x568 portrait: hOverflow=0px, vOverflow=0px
+ok 390x844 portrait: hOverflow=0px, vOverflow=0px
+ok 640x360 landscape: hOverflow=0px, vOverflow=0px
+ok 667x375 landscape: hOverflow=0px, vOverflow=0px
+ok 844x390 landscape: hOverflow=0px, vOverflow=0px
+ok lobby-overflow-prove: all narrow portrait and short landscape checks passed

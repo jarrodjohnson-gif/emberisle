@@ -1,0 +1,15 @@
+{
+  "final_source_head": "830812c67798671ffb5f7331bb5606890a958ac5",
+  "frozen_browser_source": "0331546203880bb5646401c77c0430803cb93937",
+  "frozen_checkout_clean": true,
+  "source_hash_count": 319,
+  "frozen_source_hashes_match": true,
+  "runtime_and_both_browser_proofs_match_0331546": true,
+  "archive_original_count": 164,
+  "archive_all_original_bytes_match_git0331546": true,
+  "archive_sha256": "6b41f29379d11b2dfd82ced2d00f617e43a8a781c75a272ee9eeb641ccc5e2ee",
+  "focus_original_sha256": "e36dba409562b9b53fb4e3e736854b05f3ef9aa381131ece8a31f00d5969b68a",
+  "quantity_component_byte_exact": true,
+  "seven_fixture_values_unchanged": true,
+  "all_size_checker_executable_code_unchanged_except_chunk_name": true
+}

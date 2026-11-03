@@ -1,0 +1,88 @@
+
+> profile-pin-queue-prove
+> node server/profile-pin-queue-prove.mjs
+
+ok the real profile store opens
+ok policy remains one running and eight waiting
+ok only the first admitted derivation starts while its callback is held
+ok the tenth request is busy before reaching the derivation
+ok no admitted request settles while the first callback is held
+ok completing the first callback starts exactly the next job
+ok a freed slot admits a new request without starting it early
+ok queue-0: the exact profile result returns
+ok queue-0: its derivation result is retained
+ok queue-0: its issued credential is usable
+ok queue-1: the exact profile result returns
+ok queue-1: its derivation result is retained
+ok queue-1: its issued credential is usable
+ok queue-2: the exact profile result returns
+ok queue-2: its derivation result is retained
+ok queue-2: its issued credential is usable
+ok queue-3: the exact profile result returns
+ok queue-3: its derivation result is retained
+ok queue-3: its issued credential is usable
+ok queue-4: the exact profile result returns
+ok queue-4: its derivation result is retained
+ok queue-4: its issued credential is usable
+ok queue-5: the exact profile result returns
+ok queue-5: its derivation result is retained
+ok queue-5: its issued credential is usable
+ok queue-6: the exact profile result returns
+ok queue-6: its derivation result is retained
+ok queue-6: its issued credential is usable
+ok queue-7: the exact profile result returns
+ok queue-7: its derivation result is retained
+ok queue-7: its issued credential is usable
+ok queue-8: the exact profile result returns
+ok queue-8: its derivation result is retained
+ok queue-8: its issued credential is usable
+ok refill: the exact profile result returns
+ok refill: its derivation result is retained
+ok refill: its issued credential is usable
+ok successful admitted requests settle in order
+ok every admitted derivation starts once in FIFO order
+ok the drained queue has no running derivation
+ok a synchronous throw starts the queued successor
+ok sync-head: the exact profile result returns
+ok sync-head: its derivation result is retained
+ok sync-head: its issued credential is usable
+ok the synchronous failure reaches its own caller
+ok sync-tail: the exact profile result returns
+ok sync-tail: its derivation result is retained
+ok sync-tail: its issued credential is usable
+ok a callback failure starts the queued successor
+ok the callback failure reaches its own caller
+ok async-tail: the exact profile result returns
+ok async-tail: its derivation result is retained
+ok async-tail: its issued credential is usable
+ok all nine slots remain admissible after success and both failure paths
+ok sync-bad: the exact profile result returns
+ok sync-bad: its derivation result is retained
+ok sync-bad: its issued credential is usable
+ok async-bad: the exact profile result returns
+ok async-bad: its derivation result is retained
+ok async-bad: its issued credential is usable
+ok overflow: the exact profile result returns
+ok overflow: its derivation result is retained
+ok overflow: its issued credential is usable
+ok after-0: the exact profile result returns
+ok after-0: its derivation result is retained
+ok after-0: its issued credential is usable
+ok after-1: the exact profile result returns
+ok after-1: its derivation result is retained
+ok after-1: its issued credential is usable
+ok after-2: the exact profile result returns
+ok after-2: its derivation result is retained
+ok after-2: its issued credential is usable
+ok after-3: the exact profile result returns
+ok after-3: its derivation result is retained
+ok after-3: its issued credential is usable
+ok after-4: the exact profile result returns
+ok after-4: its derivation result is retained
+ok after-4: its issued credential is usable
+ok after-5: the exact profile result returns
+ok after-5: its derivation result is retained
+ok after-5: its issued credential is usable
+ok maximum concurrent derivations is exactly one
+ok every callback finished and the queue drained
+profile-pin-queue-prove: 83 checks passed

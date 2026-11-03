@@ -1,0 +1,89 @@
+{
+  "seat": {
+    "command": [
+      "node",
+      "--import",
+      "./server/register.mjs",
+      "server/profile-seat-prove.mjs"
+    ],
+    "exit_code": 0
+  },
+  "auth": {
+    "command": [
+      "node",
+      "--import",
+      "./server/register.mjs",
+      "server/profile-auth-prove.mjs"
+    ],
+    "exit_code": 0
+  },
+  "proto": {
+    "command": [
+      "node",
+      "--import",
+      "./server/register.mjs",
+      "server/proto-prove.mjs"
+    ],
+    "exit_code": 0
+  },
+  "types": {
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "exit_code": 0
+  },
+  "registered": {
+    "command": [
+      "npm",
+      "run",
+      "registered-prove"
+    ],
+    "exit_code": 0
+  },
+  "loosen": {
+    "command": [
+      "npm",
+      "run",
+      "loosen-prove",
+      "--",
+      "--base",
+      "bf2f1f6dc2aef702faec36441c533859e95dafee"
+    ],
+    "exit_code": 0
+  },
+  "build": {
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "exit_code": 0
+  },
+  "size": {
+    "command": [
+      "node",
+      "scripts/size-prove.mjs",
+      "--base",
+      "/workspace/emberisle/work/p-base1009"
+    ],
+    "exit_code": 0
+  },
+  "chat": {
+    "command": [
+      "npm",
+      "run",
+      "chat-prove"
+    ],
+    "exit_code": 0
+  },
+  "army": {
+    "command": [
+      "npm",
+      "run",
+      "longest-army-prove"
+    ],
+    "exit_code": 0
+  }
+}

@@ -1,0 +1,10 @@
+Initial inline partition/scope audit exited 1 in the default subprocess sandbox.
+Excerpt from the actual tool stderr:
+Error: spawnSync git EPERM
+  errno: -1,
+  code: 'EPERM',
+  syscall: 'spawnSync git',
+  path: 'git',
+  spawnargs: [ 'show', '9bde9861490662ef3e95e90db5cfa2dc7874fd55:scripts/audio-level-lib.mjs' ]
+Node.js v24.19.0
+No audio or application/proof source was mutated. The audit is continued with managed subprocess permissions.

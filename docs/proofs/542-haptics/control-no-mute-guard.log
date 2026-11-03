@@ -1,0 +1,32 @@
+cold source: held first tap, first legal land buzz 0 ms from knock, live menu toggle
+cold production: held first tap, first legal land buzz 0 ms from knock, live menu toggle
+cold skip: coarse=false, missingAPI=false; no module, row or buzz
+cold skip: coarse=true, missingAPI=true; no module, row or buzz
+cold failure: rejected optional module leaves the game and table menu usable
+pointer change: loaded motor still enforces the current coarse-pointer guard
+land: own outpost buzzed 10 within 1 ms of the recorded knock
+land: opponent outpost stayed quiet
+land: own closing path buzzes; opponent path handing over the turn stays quiet
+pay: three pieces buzzed 8 each
+pay: opponent-only and watcher silent; mixed pays only local pieces; hotseat pays all seats
+toggle: off silent, on buzzes 15 for your-turn
+desktop: coarse=false stays quiet and has no Haptics row
+reduced motion: your-turn still buzzed 15
+AssertionError [ERR_ASSERTION]: table mute preserves the previous haptic mute behavior
++ actual - expected
+
++ [
++   15,
++   10
++ ]
+- []
+
+    at eventGuardsProof (file:///workspace/emberisle/work/verify844-split/scripts/haptics-prove.mjs:386:10)
+    at async file:///workspace/emberisle/work/verify844-split/scripts/haptics-prove.mjs:590:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [Array],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}

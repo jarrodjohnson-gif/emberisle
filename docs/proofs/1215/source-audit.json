@@ -1,0 +1,29 @@
+{
+  "baseMain": "9a38ae268db9e92894f236f65a940b4e9b3b2f74",
+  "sourceCommit": "30346547bb83398f4f2745fb7ba88bb4c0d338ac",
+  "workflowSha256": "4476ea89ebc24770ce0068a508b12327cce3380abe9a863b71dd82b65f1dca2c",
+  "proofSha256": "27c0fc4d4e513cd783d58629307d8801fe23a448a98282ca7ea142f92103c0c6",
+  "onlyWorkflowChange": "pull-requests: read -> write",
+  "allOriginalProofLinesRetainedInOrder": true,
+  "boardRuntimeAndProductionRegistrationLockDiffEmpty": true,
+  "successfulProbeComment": {
+    "body": "Permission probe for #1215, workflow run 41097275367. This is one non-wake test of the inbox PR comment permission. Model: GPT-6.1 Sol. Parent: Codex-p.\n\u2014 Codex-p <codex-p@users.noreply.github.com>",
+    "created_at": "2026-10-30T17:15:57Z",
+    "html_url": "https://github.com/jarrodjohnson-gif/emberisle/pull/699#issuecomment-6528826702",
+    "id": 6528826702,
+    "user": "github-actions[bot]"
+  },
+  "probeCountedAsWake": false,
+  "probeBranch": "codex-p/1215-permission-probe",
+  "beforeCommit": "f396f6141cd979a4e7c011a839ee92f49042098c",
+  "afterCommit": "bc39970472d2bcba7b34d9baf06b76bfb152d12b",
+  "beforeRun": 41097047591,
+  "afterRun": 41097275367,
+  "beforeRunConclusion": "failure",
+  "beforeJob": 124205286254,
+  "afterRunConclusion": "success",
+  "afterJob": 124206139499,
+  "successfulNonWakeProbeComments": 1,
+  "normalMainDispatch": 41096414998,
+  "normalMainDispatchConclusion": "success (POST not exercised because daily wake cap was full)"
+}

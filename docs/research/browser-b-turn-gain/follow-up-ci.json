@@ -1,0 +1,43 @@
+[
+  {
+    "job_id": 120881269315,
+    "url": "https://github.com/jarrodjohnson-gif/emberisle/actions/runs/40096975989/job/120881269315",
+    "head": "4116a9446e34ed5b2ae8a5dde1e975db3ccbf6b9",
+    "observed": [
+      "2026-10-24T13:11:23.8732666Z > sounds-prove",
+      "2026-10-24T13:11:23.8733228Z > node scripts/sounds-prove.mjs",
+      "2026-10-24T13:13:19.0042130Z > music-prove",
+      "2026-10-24T13:13:19.0042856Z > node scripts/music-prove.mjs",
+      "2026-10-24T13:13:31.0484216Z > reflow-prove",
+      "2026-10-24T13:13:31.0484824Z > node scripts/reflow-prove.mjs",
+      "2026-10-24T13:13:48.0870049Z > howto-prove",
+      "2026-10-24T13:13:48.0870428Z > node scripts/howto-prove.mjs",
+      "2026-10-24T13:14:58.1541832Z Error: 956x440 touch reduced motion title: End did not reach the bottom: {\"top\":0,\"height\":282,\"total\":1375,\"focused\":true}; page.waitForFunction: Timeout 30000ms exceeded."
+    ]
+  },
+  {
+    "job_id": 120881269344,
+    "url": "https://github.com/jarrodjohnson-gif/emberisle/actions/runs/40096975989/job/120881269344",
+    "head": "4116a9446e34ed5b2ae8a5dde1e975db3ccbf6b9",
+    "observed": [
+      "2026-10-24T13:11:21.7560167Z > hand-offer-prove",
+      "2026-10-24T13:11:21.7560657Z > node scripts/hand-offer-prove.mjs",
+      "2026-10-24T13:11:34.7762281Z > chunk-fail-prove",
+      "2026-10-24T13:11:34.7762916Z > node --import ./server/register.mjs scripts/chunk-fail-prove.mjs",
+      "2026-10-24T13:12:13.5817741Z > idle-prove",
+      "2026-10-24T13:12:13.5818046Z > node scripts/idle-prove.mjs",
+      "2026-10-24T13:12:35.5183689Z > rotate-prove",
+      "2026-10-24T13:12:35.5184222Z > node scripts/rotate-prove.mjs",
+      "2026-10-24T13:14:02.6209237Z > banner-stable-prove",
+      "2026-10-24T13:14:02.6209637Z > node scripts/banner-stable-prove.mjs",
+      "2026-10-24T13:14:32.1828553Z > roll-moment-prove",
+      "2026-10-24T13:14:32.1829025Z > node scripts/roll-moment-prove.mjs",
+      "2026-10-24T13:16:08.8019527Z > goods-log-prove",
+      "2026-10-24T13:16:08.8019973Z > node scripts/goods-log-prove.mjs",
+      "2026-10-24T13:16:20.2782177Z > turn-gain-prove",
+      "2026-10-24T13:16:20.2782575Z > node scripts/turn-gain-prove.mjs",
+      "2026-10-24T13:17:50.1096317Z FAIL 390x844: \"Your turn\" never covers a hand tab [\"+1\"]",
+      "2026-10-24T13:17:50.1175070Z turn-gain-overlap-diagnostic {\"tag\":\"390x844\",\"matches\":[{\"turn\":{\"text\":\"Your turn\",\"at\":30341.100000000093,\"gone\":31700.399999999907},\"tab\":{\"text\":\"+1\",\"resource\":\"clay\",\"delta\":1,\"at\":29439.5,\"gone\":31989.699999999953},\"pairCount\":6,\"firstPair\":{\"turn\":{\"t\":31388.699999999953,\"o\":1,\"tf\":\"none\",\"box\":{\"x\":84.84375,\"y\":610.5,\"width\":220.296875,\"height\":67,\"top\":610.5,\"right\":305.140625,\"bottom\":677.5,\"left\":84.84375},\"frameId\":1733,\"placement\":{\"stage\":\"centre\",\"shift\":0,\"area\":{\"x\":12,\"y\":500,\"width\":366,\"height\":288,\"top\":500,\"right\":378,\"bottom\":788,\"left\":12},\"hole\":{\"top\":\"500px\",\"right\":\"12px\",\"bottom\":\"56px\",\"left\":\"12px\"}}},\"tab\":{\"t\":31351.699999999953,\"o\":1,\"tf\":\"matrix(1, 0, 0, 1, 0, -6)\",\"box\":{\"x\":105.453125,\"y\":640,\"width\":37.484375,\"height\":22,\"top\":640,\"right\":142.9375,\"bottom\":662,\"left\":105.453125},\"frameId\":1731},\"deltaMs\":37,\"sameFrame\":false},\"sameFramePair\":{\"turn\":{\"t\":31388.699999999953,\"o\":1,\"tf\":\"none\",\"box\":{\"x\":84.84375,\"y\":610.5,\"width\":220.296875,\"height\":67,\"top\":610.5,\"right\":305.140625,\"bottom\":677.5,\"left\":84.84375},\"frameId\":1733,\"placement\":{\"stage\":\"centre\",\"shift\":0,\"area\":{\"x\":12,\"y\":500,\"width\":366,\"height\":288,\"top\":500,\"right\":378,\"bottom\":788,\"left\":12},\"hole\":{\"top\":\"500px\",\"right\":\"12px\",\"bottom\":\"56px\",\"left\":\"12px\"}}},\"tab\":{\"t\":31388.600000000093,\"o\":1,\"tf\":\"matrix(1, 0, 0, 1, 0, -6)\",\"box\":{\"x\":105.453125,\"y\":640,\"width\":37.484375,\"height\":22,\"top\":640,\"right\":142.9375,\"bottom\":662,\"left\":105.453125},\"frameId\":1733},\"deltaMs\":0.09999999986030161,\"sameFrame\":true}}]}"
+    ]
+  }
+]

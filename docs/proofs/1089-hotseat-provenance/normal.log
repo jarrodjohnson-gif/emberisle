@@ -1,0 +1,22 @@
+
+> hotseat-prove
+> node scripts/hotseat-prove.mjs
+
+roll-off by the Roll button: 4 clicks (p0 p1 p2 p3), order p1 p2 p3 p0 ok true, tiles [1 6 4 –] then 0, "Seat 2 places first, then Seat 3, Seat 4, and Ember."
+turn announcements: ["Ember's turn.","Seat 2's turn.","Seat 3's turn.","Seat 4's turn.","Seat 2's turn."]
+rule error "Cannot roll now." announced 2x for 2 tries; alert regions: ["Cannot roll now."]
+seat change p1 -> p2: tinted tiles 0, flash labels 0
+bar: Seat 3: discard 4
+banner while Seat 3 discards on p0's turn: "Discard 4 goods · Seat 3"
+discard count: {"start":{"text":"0 of 4","disabled":true},"part":{"text":"3 of 4","disabled":true},"clamped":"1","over":{"text":"4 of 4","disabled":false},"short":{"text":"3 of 4","disabled":true}}
+after discard: {"phase":"robber","cards":5,"need":{}}
+banner after the discard: "Move the wayfarer"
+second bar inputs: 0,0,0,0,0
+two seats: phase robber
+roller discards: bar and banner side by side
+plenty with no ore in the bank: [{"r":"timber","disabled":null,"why":null},{"r":"clay","disabled":null,"why":null},{"r":"wool","disabled":null,"why":null},{"r":"grain","disabled":null,"why":null},{"r":"ore","disabled":"true","why":"The bank has no stone."}]
+plenty paid, the tray closed: {"res":{"timber":0,"clay":0,"wool":0,"grain":2,"ore":0},"plenty":0,"ore":0}
+timber emptied with the tray open: picks dropped (Play waited: true), clay ×2 paid {"timber":0,"clay":2,"wool":0,"grain":0,"ore":0}
+bank empty of everything: Plenty aria-disabled true, reason shown
+Leave played ["/audio/click_001.wav"]
+hotseat-prove: ok

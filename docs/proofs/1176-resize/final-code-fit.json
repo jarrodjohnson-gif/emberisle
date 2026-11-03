@@ -1,0 +1,1298 @@
+[
+  {
+    "label": "390x844 QFWJ ready",
+    "code": "QFWJ",
+    "font": 24,
+    "textLeft": 29,
+    "textRight": 96.4375,
+    "left": 29,
+    "right": 96.4375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 QFWJ Copy → Copied",
+    "code": "QFWJ",
+    "font": 24,
+    "textLeft": 29,
+    "textRight": 96.4375,
+    "left": 29,
+    "right": 96.4375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 QFWJ Copy link → Copied",
+    "code": "QFWJ",
+    "font": 24,
+    "textLeft": 29,
+    "textRight": 96.4375,
+    "left": 29,
+    "right": 96.4375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 WWWW ready",
+    "code": "WWWW",
+    "font": 24,
+    "textLeft": 29,
+    "textRight": 125.84375,
+    "left": 29,
+    "right": 125.84375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 WWWW Copy → Copied",
+    "code": "WWWW",
+    "font": 21.9355,
+    "textLeft": 29,
+    "textRight": 117.796875,
+    "left": 29,
+    "right": 117.796875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 WWWW Copy link → Copied",
+    "code": "WWWW",
+    "font": 24,
+    "textLeft": 29,
+    "textRight": 125.84375,
+    "left": 29,
+    "right": 125.84375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 MMMM ready",
+    "code": "MMMM",
+    "font": 24,
+    "textLeft": 29,
+    "textRight": 123.53125,
+    "left": 29,
+    "right": 123.53125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 MMMM Copy → Copied",
+    "code": "MMMM",
+    "font": 22.4176,
+    "textLeft": 29,
+    "textRight": 117.53125,
+    "left": 29,
+    "right": 117.53125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 MMMM Copy link → Copied",
+    "code": "MMMM",
+    "font": 24,
+    "textLeft": 29,
+    "textRight": 123.53125,
+    "left": 29,
+    "right": 123.53125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 before responsive change",
+    "code": "WWWW",
+    "font": 21.9355,
+    "textLeft": 29,
+    "textRight": 117.796875,
+    "left": 29,
+    "right": 117.796875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 shrinks/grows to 320",
+    "code": "WWWW",
+    "font": 15.4286,
+    "textLeft": 25,
+    "textRight": 84.59375,
+    "left": 25,
+    "right": 84.59375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 restores width",
+    "code": "WWWW",
+    "font": 21.9355,
+    "textLeft": 29,
+    "textRight": 117.796875,
+    "left": 29,
+    "right": 117.796875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 AN9Q ready",
+    "code": "AN9Q",
+    "font": 24,
+    "textLeft": 25,
+    "textRight": 97.90625,
+    "left": 25,
+    "right": 97.90625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 AN9Q Copy → Copied",
+    "code": "AN9Q",
+    "font": 24,
+    "textLeft": 25,
+    "textRight": 97.90625,
+    "left": 25,
+    "right": 97.90625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 AN9Q Copy link → Copied",
+    "code": "AN9Q",
+    "font": 24,
+    "textLeft": 25,
+    "textRight": 97.90625,
+    "left": 25,
+    "right": 97.90625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 WWWW ready",
+    "code": "WWWW",
+    "font": 24,
+    "textLeft": 25,
+    "textRight": 121.84375,
+    "left": 25,
+    "right": 121.84375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 WWWW Copy → Copied",
+    "code": "WWWW",
+    "font": 20.129,
+    "textLeft": 25,
+    "textRight": 106.796875,
+    "left": 25,
+    "right": 106.796875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 WWWW Copy link → Copied",
+    "code": "WWWW",
+    "font": 24,
+    "textLeft": 25,
+    "textRight": 121.84375,
+    "left": 25,
+    "right": 121.84375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 MMMM ready",
+    "code": "MMMM",
+    "font": 24,
+    "textLeft": 25,
+    "textRight": 119.53125,
+    "left": 25,
+    "right": 119.53125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 MMMM Copy → Copied",
+    "code": "MMMM",
+    "font": 20.5714,
+    "textLeft": 25,
+    "textRight": 106.5625,
+    "left": 25,
+    "right": 106.5625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 MMMM Copy link → Copied",
+    "code": "MMMM",
+    "font": 24,
+    "textLeft": 25,
+    "textRight": 119.53125,
+    "left": 25,
+    "right": 119.53125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 before responsive change",
+    "code": "WWWW",
+    "font": 20.129,
+    "textLeft": 25,
+    "textRight": 106.796875,
+    "left": 25,
+    "right": 106.796875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 shrinks/grows to 320",
+    "code": "WWWW",
+    "font": 15.4286,
+    "textLeft": 25,
+    "textRight": 84.59375,
+    "left": 25,
+    "right": 84.59375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 restores width",
+    "code": "WWWW",
+    "font": 20.129,
+    "textLeft": 25,
+    "textRight": 106.796875,
+    "left": 25,
+    "right": 106.796875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 88E7 ready",
+    "code": "88E7",
+    "font": 18,
+    "textLeft": 25,
+    "textRight": 65.96875,
+    "left": 25,
+    "right": 65.96875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 12,
+        "width": 47.265625,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 88E7 Copy → Copied",
+    "code": "88E7",
+    "font": 18,
+    "textLeft": 25,
+    "textRight": 65.96875,
+    "left": 25,
+    "right": 65.96875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 88E7 Copy link → Copied",
+    "code": "88E7",
+    "font": 18,
+    "textLeft": 25,
+    "textRight": 65.96875,
+    "left": 25,
+    "right": 65.96875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 12,
+        "width": 47.265625,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 WWWW ready",
+    "code": "WWWW",
+    "font": 18,
+    "textLeft": 25,
+    "textRight": 94.625,
+    "left": 25,
+    "right": 94.625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 12,
+        "width": 47.265625,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 WWWW Copy → Copied",
+    "code": "WWWW",
+    "font": 15.4286,
+    "textLeft": 25,
+    "textRight": 84.59375,
+    "left": 25,
+    "right": 84.59375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 WWWW Copy link → Copied",
+    "code": "WWWW",
+    "font": 18,
+    "textLeft": 25,
+    "textRight": 94.625,
+    "left": 25,
+    "right": 94.625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 12,
+        "width": 47.265625,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 MMMM ready",
+    "code": "MMMM",
+    "font": 18,
+    "textLeft": 25,
+    "textRight": 92.90625,
+    "left": 25,
+    "right": 92.90625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 12,
+        "width": 47.265625,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 MMMM Copy → Copied",
+    "code": "MMMM",
+    "font": 15.8824,
+    "textLeft": 25,
+    "textRight": 84.890625,
+    "left": 25,
+    "right": 84.890625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 MMMM Copy link → Copied",
+    "code": "MMMM",
+    "font": 18,
+    "textLeft": 25,
+    "textRight": 92.90625,
+    "left": 25,
+    "right": 92.90625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 12,
+        "width": 47.265625,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 before responsive change",
+    "code": "WWWW",
+    "font": 15.4286,
+    "textLeft": 25,
+    "textRight": 84.59375,
+    "left": 25,
+    "right": 84.59375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 shrinks/grows to 390",
+    "code": "WWWW",
+    "font": 21.9355,
+    "textLeft": 29,
+    "textRight": 117.796875,
+    "left": 29,
+    "right": 117.796875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 restores width",
+    "code": "WWWW",
+    "font": 15.4286,
+    "textLeft": 25,
+    "textRight": 84.59375,
+    "left": 25,
+    "right": 84.59375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  }
+]

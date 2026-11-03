@@ -1,0 +1,1 @@
+PASS: old production-root gate opens a static-origin socket and fails the exact no-WebSocket assertion; final app restored byte-for-byte and rebuilt.

@@ -1,0 +1,7 @@
+$ npm run typecheck
+
+> typecheck
+> tsc --noEmit
+
+
+EXIT 0
