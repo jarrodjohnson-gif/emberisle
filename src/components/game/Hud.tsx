@@ -23,9 +23,9 @@ import { PlaceChip } from "@/components/game/PlaceChip";
 import { SheetsFailed } from "@/components/game/SheetsFailed";
 import { TrayFailed } from "@/components/game/TrayFailed";
 import { TradeButton } from "@/components/game/TradeButton";
-import { CostChips, hintLine, needLine, priceLabel, PRICE_NAME, shortfall, type Price } from "@/components/game/BuildCost";
+import { CostChips, hintLine, needLine, priceLabel, shortfall, type Price } from "@/components/game/BuildCost";
 import { useEscapeDisarm } from "@/components/game/escape-disarm";
-import { COST, RESOURCES, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
+import { COST, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
 import { hiddenCount, legalCities, legalRoads, legalSettle, playable, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
@@ -34,68 +34,84 @@ import { useMoreBelow } from "@/lib/scroll-fade";
 import { cn } from "@/lib/utils";
 
 const PRICES = Object.keys(COST) as Price[];
-const HINT_MS = 1600;
 
 // Whether a build can happen now and, if not, why: the supply (or the deck), then a legal spot; a spot with a hand that cannot pay is missing goods (#606).
 function buildStatus(state: GameState, me: PlayerState, kind: Price) {
   const short = shortfall(me.resources, kind);
-  const left = kind === "card" ? (state.deckLeft ?? state.deck.length) : (me as any)[kind + "sLeft"];
-  const why = left <= 0 ? "None left" : (kind === "path" ? legalRoads(state, me.id, false).length : kind === "outpost" ? legalSettle(state, me.id, false).length : kind === "stronghold" ? legalCities(state, me.id).length : 1) ? null : "No spot";
-  const missing = Object.keys(short).length;
+  const missing = Object.values(short).reduce((a, b) => a + b, 0);
+  const left = kind === "card" ? state.deckLeft ?? state.deck.length : (me as any)[kind + "sLeft"];
+  const why =
+    left <= 0
+      ? "None left"
+      : (kind === "path" ? legalRoads(state, me.id, false).length : kind === "outpost" ? legalSettle(state, me.id, false).length : kind === "stronghold" ? legalCities(state, me.id).length : 1)
+        ? null
+        : "No spot";
   return { short, missing, why, ready: !why && !missing };
 }
 
-const PHASE_COPY: Record<string, string> = {
-  rollOff: "Roll for first place",
-  setupSettle: "Place an outpost · tap a glowing corner",
-  setupRoad: "Place a path · tap a glowing edge",
-  roll: "Roll the dice",
-  discard: "Discard goods",
-  robber: "Move the wayfarer",
-  main: "Build, trade, or end your turn",
-  over: "The isle has a ruler.",
-};
-const phaseCopy = (phase: string) => PHASE_COPY[phase] || "";
+function phaseCopy(phase: string) {
+  switch (phase) {
+    case "rollOff":
+      return "Roll for first place";
+    case "setupSettle":
+      return "Place an outpost · tap a glowing corner";
+    case "setupRoad":
+      return "Place a path · tap a glowing edge";
+    case "roll":
+      return "Roll the dice";
+    case "discard":
+      return "Discard goods";
+    case "robber":
+      return "Move the wayfarer";
+    case "main":
+      return "Build, trade, or end your turn";
+    case "over":
+      return "The isle has a ruler.";
+    default:
+      return "";
+  }
+}
 
 // Another seat's turn, seen from this one (online, practice, a watcher): whose turn it is and that this seat waits.
-const WAIT_ACT: Record<string, string> = {
-  rollOff: "roll for first place",
-  setupSettle: "place an outpost",
-  setupRoad: "place a path",
-  roll: "roll",
-  robber: "move the wayfarer",
-};
-const waitingCopy = (phase: string, name: string) =>
-  phase === "discard" ? "Wait for discards" : `Wait for ${name} to ${WAIT_ACT[phase] || "build or trade"}`;
+function waitingCopy(phase: string, name: string) {
+  switch (phase) {
+    case "rollOff":
+      return `Wait for ${name} to roll for first place`;
+    case "setupSettle":
+      return `Wait for ${name} to place an outpost`;
+    case "setupRoad":
+      return `Wait for ${name} to place a path`;
+    case "roll":
+      return `Wait for ${name} to roll`;
+    case "discard":
+      return "Wait for discards";
+    case "robber":
+      return `Wait for ${name} to move the wayfarer`;
+    default:
+      return `Wait for ${name} to build or trade`;
+  }
+}
 
-function armedText(mode: BuildMode, roadPicks: number, eligibleCount = 1): string | null {
-  if (mode === "none") return null;
-  const cancel = matchMedia("(pointer: coarse)").matches
-    ? `tap ${mode === "stronghold" ? "Upgrade" : (PRICE_NAME[mode as Price] ?? "Play fortune")} again to cancel`
-    : "Esc cancels";
-  const act =
-    mode === "path"
-      ? "Place a path"
-      : mode === "outpost"
-        ? "Place an outpost"
-        : mode === "knight"
-          ? "Move the wayfarer"
-          : mode === "stronghold"
-            ? eligibleCount
-              ? "Pick a home to upgrade"
-              : "No homes to upgrade"
-            : mode === "roadCard"
-              ? roadPicks
-                ? "Place one more path"
-                : "Place two paths"
-              : null;
-  return act ? `${act} · ${cancel}` : null;
+// What to pick, and the label of the button that armed it (a touch screen cancels by tapping that button again).
+function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null {
+  switch (mode) {
+    case "path":
+      return ["Place a path", "Path"];
+    case "outpost":
+      return ["Place an outpost", "Outpost"];
+    case "stronghold":
+      return ["Pick a home to upgrade", "Upgrade"];
+    // #423: both fortunes are armed from the tray, and the My fortunes button stays pressed until the pick is made or cancelled.
+    case "knight":
+      return ["Move the wayfarer", "Play fortune"];
+    case "roadCard":
+      return [roadPicks ? "Place one more path" : "Place two paths", "Play fortune"];
+    default:
+      return null;
+  }
 }
 
 
-// A build that cannot happen now uses aria-disabled, not disabled, so Tab still reaches it and the price is read out. It
-// goes muted ink, not translucent, so the chips and the reason on it stay readable.
-const NOT_NOW = "aria-disabled:cursor-not-allowed aria-disabled:text-muted aria-disabled:active:scale-100";
 // A build the hand can pay for with a legal spot waiting: a small warm dot on the button's corner (docs/design/polish.md: no glows).
 // #606: the corner check badge on a Ready chip (the chip's own fill and outline are in styles.css).
 const READY_DOT = (
@@ -103,14 +119,6 @@ const READY_DOT = (
     ✓
   </span>
 );
-
-const FORTUNE_KEYS = ["knight", "road", "plenty", "monopoly"] as const;
-const BUILD_TILES = [
-  ["path", Route],
-  ["outpost", Home],
-  ["stronghold", Landmark],
-  ["card", ScrollText],
-] as const;
 
 export function Hud() {
   const gameLog = useGame((s) => s.gameLog);
@@ -125,11 +133,15 @@ export function Hud() {
   const error = useGame((s) => s.error);
   const howTo = useGame((s) => s.howTo);
   const costs = useGame((s) => s.costs);
+  const setCosts = useGame((s) => s.setCosts);
   const chatOpen = useGame((s) => s.chatOpen);
   const tradeOpen = useGame((s) => s.tradeOpen);
+  const dispatch = useGame((s) => s.dispatch);
   const choosing = useGame((s) => !!s.pendingSteal);
+  const refuseQuietly = useGame((s) => s.refuseQuietly);
+  const setBuildMode = useGame((s) => s.setBuildMode);
+  const setHowTo = useGame((s) => s.setHowTo);
   const menuFor = useGame((s) => s.menuFor);
-  const { setCosts, dispatch, refuseQuietly, setBuildMode, setHowTo, highlights } = useGame.getState();
   // A watcher (docs/design/spectator.md): `me` below falls back to seat 0, so its hand bar is hidden by this flag, never by `localId`.
   const spectator = useGame((s) => s.spectator);
   const { phone, portrait } = useViewport();
@@ -147,11 +159,8 @@ export function Hud() {
   // turn moves on (hotseat: to the next seat); it never comes back on its own.
   const [fortunesOpen, setFortunesOpen] = useState(false);
   const fortunesButton = useRef<HTMLButtonElement>(null);
-  const turnKey = state ? `${state.turn}|${state.current}|${state.phase}` : "";
-  useEffect(() => setFortunesOpen(false), [turnKey]);
-  // #829: the cue glows once per turn. The button is rendered in more than one place (roll, main, robber), so a phase change
-  // remounts it; a ring that mounts for a turn whose glow already started is marked done and does not animate again.
   const cueKey = state ? `${state.turn}|${state.current}` : "";
+  const turnKey = `${cueKey}|${state?.phase}`;
   const glowed = useRef("");
   const cueRing = useCallback((el: HTMLSpanElement | null) => {
     if (!el) return;
@@ -174,14 +183,14 @@ export function Hud() {
   // other change (a steal, the row leaving) clears a pulse instead of leaving one to fire later. A watcher's `me` is seat 0 of
   // the opponent view, which has no `resources` online (docs/design/spectator.md), so it is checked first.
   const rowShown = !!state && !!me?.resources && state.current === actor;
-  const readyKey = rowShown ? `${me!.id}|${PRICES.map((k) => (buildStatus(state, me!, k).ready ? 1 : 0)).join("")}|${RESOURCES.map((r) => me!.resources[r]).join(",")}` : "";
+  const readyKey = rowShown ? `${me!.id}|${PRICES.map((k) => (buildStatus(state, me!, k).ready ? 1 : 0)).join("")}|${Object.values(me!.resources)}` : "";
   const wasReady = useRef(readyKey);
   const [pulse, setPulse] = useState<Price[]>([]);
   // #535: a tap on a build the hand cannot pay for hangs "Need 1 brick" above that build for 1.6 s; the next tap restarts it.
-  const [hint, setHint] = useState<{ kind: Price } | null>(null);
+  const [hint, setHint] = useState<Price | null>(null);
   useEffect(() => {
     if (!hint) return;
-    const t = setTimeout(() => setHint(null), HINT_MS);
+    const t = setTimeout(() => setHint(null), 1600);
     return () => clearTimeout(t);
   }, [hint]);
   useEffect(() => {
@@ -203,19 +212,19 @@ export function Hud() {
   const mine = state.current === actor;
   // Hotseat has no bots: the first seat still owing a discard takes the bar, whoever rolled the 7.
   const discarder =
-    state.phase === "discard"
-      ? mode === "hotseat"
-        ? state.players.find((p) => state.discardNeeded[p.id])?.id ?? null
-        : state.discardNeeded[actor]
+    state.phase !== "discard"
+      ? null
+      : mode === "hotseat"
+        ? (state.players.find((p) => (state.discardNeeded[p.id] ?? 0) > 0)?.id ?? null)
+        : (state.discardNeeded[actor] ?? 0) > 0
           ? actor
-          : null
-      : null;
+          : null;
   // #776: "Play fortune · N" or "Fortunes · N" opens the tray of held cards. It shows only while a fortune is held or armed, so a fresh hand has no
   // such button; the deck count lives on the Fortune buy tile.
   const deckLeft = state.deckLeft ?? state.deck.length;
   // #829: on my own turn, the fortunes I can play now (points are never played; ones bought this turn wait). The glow ring is keyed
   // on the turn, so it runs once when the turn starts and no later state change restarts it.
-  const playableNow = mine && !spectator && !state.playedCard ? FORTUNE_KEYS.reduce((n, k) => n + Math.max(0, playable(me, k)), 0) : 0;
+  const playableNow = mine && !spectator && !state.playedCard ? (["knight", "road", "plenty", "monopoly"] as const).reduce((n, k) => n + Math.max(0, playable(me, k)), 0) : 0;
   // Owner decision (#829, provisional): the label itself says a fortune can be played now.
   const fortunesLabel = playableNow > 0 ? "Play fortune" : "Fortunes";
   const fortunes = showFortunes ? (
@@ -243,10 +252,12 @@ export function Hud() {
   const subjectPlayer = state.players.find((p) => p.id === subject) ?? state.players[0]!;
   const yours = mode !== "hotseat" && subject === actor && (state.phase !== "discard" || discarder !== null);
   // #419: an armed build says what to pick and how to cancel (a touch screen has no Esc key).
-  const eligibleHomes = buildMode === "stronghold" ? highlights().vertices.length : 1;
-  const phaseText =
-    (mine && armedText(buildMode, roadPicks.length, eligibleHomes)) ||
-    (state.phase === "discard" ? `Discard ${state.discardNeeded[subject] ?? 0} goods` : phaseCopy(state.phase));
+  const armed = mine ? armedCopy(buildMode, roadPicks.length) : null;
+  const phaseText = armed
+    ? `${armed[0]} · ${matchMedia("(pointer: coarse)").matches ? `tap ${armed[1]} again to cancel` : "Esc cancels"}`
+    : state.phase === "discard"
+      ? `Discard ${state.discardNeeded[subject] ?? 0} goods`
+      : phaseCopy(state.phase);
   const waiting = mode !== "hotseat" && !yours;
   // #430: in hotseat a seat that owes a discard on another seat's turn is named, not given the turn.
   const turnText =
@@ -256,6 +267,8 @@ export function Hud() {
         ? waitingCopy(state.phase, subjectPlayer.name)
         : phaseText;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
+  const showBanner = banner && !(tradeOutcome && banner.endsWith("'s trade"));
+  const bannerPos = column ? "left-full top-0 ml-3 w-max max-w-[calc(100vw-21.5rem-max(0.75rem,env(safe-area-inset-left))-max(0.75rem,env(safe-area-inset-right)))]" : "bottom-full mb-2";
   const menuPlayer = menuFor ? state.players.find((p) => p.id === menuFor) : null;
   // #422: on the player's own Roll or End row the dice ride beside the button instead of taking a row of their own.
   const dice = state.dice ? <Dice values={state.dice} /> : null;
@@ -284,19 +297,6 @@ export function Hud() {
     </div>
   );
 
-  const chatBtn = mode === "online" ? (
-    <LazyBoundary failed={null} retryKey={String(chatOpen)}>
-      <ChatControls />
-    </LazyBoundary>
-  ) : null;
-  const watchBadge = spectator ? (
-    <span data-testid="watching-badge" className="flex h-11 items-center rounded-chip bg-glass px-3 text-caption text-fg backdrop-blur-md">
-      Watching
-    </span>
-  ) : null;
-  const showBanner = banner && !(tradeOutcome && banner.endsWith("'s trade"));
-  const bannerPos = column ? "left-full top-0 ml-3 w-max max-w-[calc(100vw-21.5rem-max(0.75rem,env(safe-area-inset-left))-max(0.75rem,env(safe-area-inset-right)))]" : "bottom-full mb-2";
-
   return (
     <>
 
@@ -308,21 +308,29 @@ export function Hud() {
         <div className="pointer-events-auto flex items-center justify-end gap-1">
           {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : <div className="mr-auto shrink-0">{instruction}</div>}
           {!phone && <div ref={setTimerHeader} className="mx-2 min-w-0 flex-1 empty:hidden" />}
-          {!(phone && portrait) && watchBadge}
-          {!portrait && chatBtn}
+          {spectator && !(phone && portrait) ? (
+            <span data-testid="watching-badge" className="flex h-11 items-center rounded-chip bg-glass px-3 text-caption text-fg backdrop-blur-md">
+              Watching
+            </span>
+          ) : null}
+          {mode === "online" && !portrait ? (
+            <LazyBoundary failed={null} retryKey={String(chatOpen)}>
+              <ChatControls />
+            </LazyBoundary>
+          ) : null}
           <span data-coach-skip-slot className="shrink-0 empty:hidden" />
           <TableMenu />
         </div>
         {phone && <HiddenPointHint />}
       </header>
 
-      {phone && portrait && (mode === "online" || spectator) && (
+      {phone && portrait && (mode === "online" || spectator) ? (
         <div className="hud-utilities pointer-events-none absolute right-safe top-[calc(max(0.75rem,env(safe-area-inset-top))+3rem)] z-20 flex gap-1">
           {spectator ? <span data-testid="watching-badge" className="pointer-events-auto flex h-11 items-center rounded-control bg-surface px-3 text-caption text-fg">Watching</span> : null}
-          {chatBtn}
+          {mode === "online" ? <LazyBoundary failed={null} retryKey={String(chatOpen)}><ChatControls /></LazyBoundary> : null}
         </div>
-      )}
-      {phone && menuPlayer && (
+      ) : null}
+      {phone && menuPlayer ? (
         <PlayerMenu
           player={menuPlayer}
           heading
@@ -331,9 +339,9 @@ export function Hud() {
             portrait ? "left-safe right-safe top-[calc(env(safe-area-inset-top)+4.25rem)]" : "right-safe top-16 w-72",
           )}
         />
-      )}
+      ) : null}
 
-      {!phone && <SeatRail actor={actor} />}
+      {phone ? null : <SeatRail actor={actor} />}
 
       {/* #488: the dock comes from the online chunk the lobby already loaded, so it is in the HUD's first frame (tabs-prove).
           A watcher or a rejoin can still be loading it; if that fails the table stands without a dock, and it tries again
@@ -387,17 +395,17 @@ export function Hud() {
             {/* #422: in the column the Place chip is the first row, so it never covers the hand or the turn banner. Not
                 pointer-events-none: a porous child would make the stack's chrome only its parts, and the column no rail. */}
             <PlaceChip column />
-            {phone ? instruction : null}
+            {phone && instruction}
             <TurnCountdown header={phone ? null : timerHeader} />
-            {(winner || error) && (
+            {winner || error ? (
               <p className="rounded-[16px] border border-white/50 bg-glass px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
-                {winner && <span id="hud-winner">{`${winner.name} wins with ${totalVP(state, winner.id)} points.`}</span>}
-                {winner && sheetsLost === sheetsKey && <WinFailed />}
-                {error && <span className={cn("block text-orange-700", winner && "mt-1")}>{error}</span>}
+                {winner ? <span id="hud-winner">{`${winner.name} wins with ${totalVP(state, winner.id)} points.`}</span> : null}
+                {winner && sheetsLost === sheetsKey ? <WinFailed /> : null}
+                {error ? <span className={cn("block text-orange-700", winner && "mt-1")}>{error}</span> : null}
               </p>
-            )}
+            ) : null}
 
-            {!spectator && <HandDock me={me} phase={state.phase} />}
+            {spectator ? null : <HandDock me={me} phase={state.phase} />}
 
             {discarder ? <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
             <TakeFromBar />
@@ -407,14 +415,21 @@ export function Hud() {
                 <div className="build-grid">
                 {/* Each build says whether it can happen now: the cost chips dim what the hand is short of, a build with
                     nothing to build on or none left says so, and one the hand can pay for with a spot waiting wears the dot. */}
-                {BUILD_TILES.map(([kind, Icon], at) => {
+                {(
+                  [
+                    ["path", Route, "Path"],
+                    ["outpost", Home, "Outpost"],
+                    ["stronghold", Landmark, "Stronghold"],
+                    ["card", ScrollText, "Fortune"],
+                  ] as const
+                ).map(([kind, Icon, label], at) => {
                   const arm = kind === "card" ? null : kind;
-                  const label = PRICE_NAME[kind];
                   const { short, missing, why, ready } = buildStatus(state, me, kind);
                   const blocked = !ready || spectator;
+                  const isSH = kind === "stronghold";
+                  const showDeck = kind === "card" && !why;
+                  const shRefuse = isSH && why ? (why === "None left" ? "No strongholds left" : "No homes to upgrade") : null;
                   const status = why ?? (ready ? "Ready" : needLine(short));
-                  const shRefuse = kind === "stronghold" && why ? (why === "None left" ? "No strongholds left" : "No homes to upgrade") : null;
-                  const pLabel = priceLabel(kind);
                   return (
                     <Button
                       key={kind}
@@ -426,20 +441,20 @@ export function Hud() {
                       data-build-state={why ? "nospot" : ready ? "ready" : "missing"}
                       // A 44 px two-line tile, the piece over its chips (docs/design/polish.md: actions as tiles with their amount),
                       // so the row keeps the lines it had before the chips: one at 1280x720, three builds a line on a phone.
-                      className={cn("build-tile relative h-[52px] min-w-11 flex-col px-1 py-1", kind === "card" && !why ? "gap-0" : "gap-1", NOT_NOW, pulse.includes(kind) && "build-ready")}
+                      className={cn("build-tile relative h-[52px] min-w-11 flex-col px-1 py-1 aria-disabled:cursor-not-allowed aria-disabled:text-muted aria-disabled:active:scale-100", showDeck ? "gap-0" : "gap-1", pulse.includes(kind) && "build-ready")}
                       onAnimationEnd={(e) => e.animationName === "build-ready" && setPulse((p) => p.filter((k) => k !== kind))}
                       aria-pressed={arm ? buildMode === arm : undefined}
                       aria-disabled={blocked || undefined}
-                      title={pLabel}
-                      aria-description={`${pLabel} · ${status}`}
+                      title={priceLabel(kind)}
+                      aria-description={`${priceLabel(kind)} · ${status}`}
                       onClick={() => {
                         // aria-disabled keeps the button focusable, so the click itself must refuse (but may still disarm).
                         // A tap the hand cannot pay for says what is missing (a spot waiting, goods short) instead of doing nothing.
                         if (!spectator && buildMode !== arm) {
-                          const msg = shRefuse ?? (!why && missing ? status : null);
-                          if (msg) {
-                            setHint({ kind });
-                            return void refuseQuietly(msg);
+                          const refuse = shRefuse || (!ready && !why ? status : null);
+                          if (refuse) {
+                            setHint(kind);
+                            return void refuseQuietly(refuse);
                           }
                         }
                         if (!arm) return void (blocked || dispatch({ type: "buyCard" }));
@@ -448,15 +463,15 @@ export function Hud() {
                       }}
                     >
                       <span className="flex items-center gap-1 text-caption leading-4">
-                        <Icon className="build-icon size-3.5" /> {phone && kind === "stronghold" ? "Upgrade" : label}{ready && buildMode !== arm ? READY_DOT : null}
+                        <Icon className="build-icon size-3.5" /> {phone && isSH ? "Upgrade" : label}{ready && buildMode !== arm ? READY_DOT : null}
                       </span>
                       {/* The chips and the reason are aria-hidden: the name stays the piece, the description says the rest. Missing
                           goods ring what the hand lacks and say how many short. */}
-                      {why ? <span aria-hidden className="text-caption text-muted">{why === "No spot" && kind === "stronghold" ? "No homes" : why}</span> : <CostChips kind={kind} hand={missing ? me.resources : undefined} />}
-                      {kind === "card" && !why ? <span aria-hidden data-testid="deck-left" className="text-[10px] leading-[10px] tabular-nums text-muted">{deckLeft} left</span> : null}
+                      {why ? <span aria-hidden className="text-caption text-muted">{isSH && why === "No spot" ? "No homes" : why}</span> : <CostChips kind={kind} hand={missing ? me.resources : undefined} />}
+                      {showDeck ? <span aria-hidden data-testid="deck-left" className="text-[10px] leading-[10px] tabular-nums text-muted">{deckLeft} left</span> : null}
                       {/* The ends of the row hang the chip inward, so it stays on a phone's screen. Last child: the tile's own
                           styles address its first span. */}
-                      {hint?.kind === kind ? (
+                      {hint === kind ? (
                         <span
                           aria-hidden
                           data-testid={`build-hint-${kind}`}
@@ -480,7 +495,7 @@ export function Hud() {
               </div>
             ) : null}
 
-            {mine && /^roll/.test(state.phase) ? (
+            {(state.phase === "roll" || state.phase === "rollOff") && mine ? (
               <div className="flex flex-col gap-2">
                 <div className="flex flex-wrap gap-2 *:self-center">
                   {dice}
@@ -492,9 +507,9 @@ export function Hud() {
               </div>
             ) : null}
 
-            {!diceInBar ? (
+            {!mine || !["main", "roll", "rollOff"].includes(state.phase) ? (
               fortunes || dice ? <div className="flex flex-wrap items-center gap-2">{fortunes}{dice}</div> : null
-            ) : null}
+            ) : diceInBar ? null : dice}
 
             {/* #643: the seat's numbers share the log line's row, so the tray keeps its height (the declared hole holds). They
                 ride in the moments chunk (off the first load: there are none before the first outpost); if it cannot load,
@@ -554,8 +569,8 @@ export function Hud() {
           If it fails the table stands with no sheet; SheetsFailed drops the open flags so the next tap tries again. */}
       <LazyBoundary failed={<SheetsFailed sheetsKey={sheetsKey} onLost={setSheetsLost} />} retryKey={sheetsKey}>
         <TradePanel />
-        {howTo && <HowTo onClose={() => setHowTo(false)} />}
-        {costs && <CostCard onClose={() => setCosts(false)} />}
+        {howTo ? <HowTo onClose={() => setHowTo(false)} /> : null}
+        {costs ? <CostCard onClose={() => setCosts(false)} /> : null}
         <WinScreen />
         <ChromeLanded />
       </LazyBoundary>
