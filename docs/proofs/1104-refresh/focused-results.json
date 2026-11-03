@@ -1,0 +1,22 @@
+[
+  {
+    "check": "browser-version",
+    "exit": 0
+  },
+  {
+    "check": "stage",
+    "exit": 0
+  },
+  {
+    "check": "old-source-control",
+    "exit": 1
+  },
+  {
+    "check": "loosen",
+    "exit": 0
+  },
+  {
+    "check": "size",
+    "exit": 0
+  }
+]
