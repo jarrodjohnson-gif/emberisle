@@ -1,6 +1,7 @@
 // The browser (or a Node proof) talking to server/host.mjs. Design: docs/design/online-client.md.
 import type { Action, GameState, Resource, VictoryTarget, WayfarerMode } from "@/lib/game/types";
 import { PROTO } from "@/lib/net/proto";
+import type { ProfileAttachment } from "@/lib/net/profiles";
 
 export interface Seat {
   id: string;
@@ -108,6 +109,7 @@ export interface Me {
   name: string;
   color?: string;
   avatarId?: string;
+  profile?: ProfileAttachment;
 }
 
 // An open table entry from the server's openTables list (never includes private table codes).
@@ -231,10 +233,12 @@ const LAST_CALL_MS = 1000;
 // Both action IDs and health challenges use 128 random bits, including on plain-HTTP LAN joins.
 const randomNonce = () => crypto.getRandomValues(new Uint8Array(16)).reduce((hex, b) => hex + b.toString(16).padStart(2, "0"), "");
 
+const ALLOWED_EVENTS = ["seats", "rolled", "chat", "react", "tradeOffer", "tradeDeclined", "tradeClosed"];
+
 // `giveUpMs` is only for proofs that cannot wait 10 minutes: it stands in for both holds until a welcome says otherwise.
 export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor, giveUpMs?: number): TableClient {
   const Ctor = Socket ?? (globalThis.WebSocket as unknown as SocketCtor);
-  const queue: string[] = [];
+  const queue: (() => Record<string, unknown>)[] = [];
   let ws: SocketLike;
   let closedByUs = false;
   // Set by the first welcome. With a seat to go back to, an unexpected close means dial again.
@@ -289,18 +293,16 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     }, 3000);
   };
 
-  const send = (msg: Record<string, unknown>) => {
-    const raw = JSON.stringify(msg);
-    if (ws.readyState === 1) ws.send(raw);
-    else queue.push(raw);
+  const send = (msg: Record<string, unknown> | (() => Record<string, unknown>)) => {
+    const fn = typeof msg === "function" ? msg : () => msg;
+    if (ws.readyState === 1) ws.send(JSON.stringify(fn()));
+    else queue.push(fn);
   };
 
   // Gameplay is never queued. Only the latest state on this connection authorizes an intent.
   const act = (msg: Record<string, unknown>) => {
     if (!stamp || ws.readyState !== 1 || rejoining || closedByUs) return false;
-    // getRandomValues also works on the documented plain-HTTP LAN join; randomUUID requires HTTPS.
-    const cid = randomNonce();
-    ws.send(JSON.stringify({ ...msg, ...stamp, cid }));
+    ws.send(JSON.stringify({ ...msg, ...stamp, cid: randomNonce() }));
     return true;
   };
 
@@ -325,7 +327,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         // Anything sent while the socket was down is stale after a rejoin (a second roll, an old placement).
         queue.length = 0;
       }
-      for (const raw of queue.splice(0)) ws.send(raw);
+      for (const fn of queue.splice(0)) ws.send(JSON.stringify(fn()));
     };
     ws.onclose = () => {
       // A socket a later dial replaced closing late is not a drop of the live one.
@@ -353,13 +355,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     };
     ws.onmessage = (ev) => {
       if (sock !== ws) return;
-      let msg: { type?: string; [k: string]: unknown };
-      try {
-        msg = JSON.parse(String(ev.data));
-      } catch {
-        return;
-      }
-      handle(msg);
+      try { handle(JSON.parse(String(ev.data))); } catch {}
     };
   };
 
@@ -390,9 +386,6 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         on.welcome?.(m);
         break;
       }
-      case "seats":
-        on.seats?.(msg as never);
-        break;
       case "turnExtension":
         setExtension(msg as unknown as TurnExtensionState);
         break;
@@ -403,26 +396,8 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         on.state?.(msg as never);
         if (awaitingState) { awaitingState = false; health("Reachable"); }
         break;
-      case "rolled":
-        on.rolled?.(msg as never);
-        break;
-      case "chat":
-        on.chat?.(msg as never);
-        break;
-      case "react":
-        on.react?.(msg as never);
-        break;
       case "log":
         on.log?.(String(msg.text));
-        break;
-      case "tradeOffer":
-        on.tradeOffer?.(msg as never);
-        break;
-      case "tradeDeclined":
-        on.tradeDeclined?.(msg as never);
-        break;
-      case "tradeClosed":
-        on.tradeClosed?.(msg as never);
         break;
       case "openTables":
         on.openTables?.(Array.isArray(msg.tables) ? (msg.tables as OpenTableEntry[]) : []);
@@ -445,23 +420,33 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         }
         break;
       }
+      default:
+        if (ALLOWED_EVENTS.includes(msg.type ?? "")) (on as Record<string, ((m: unknown) => void) | undefined>)[msg.type!]?.(msg);
     }
   };
 
   dial();
 
+  const initialHello = (me: Me, extra?: Record<string, unknown>) =>
+    send(() => ({
+      type: "hello", proto: PROTO, name: me.name, color: me.color, avatarId: me.avatarId, ...extra,
+      credential: me.profile?.credentialForHost(url) || undefined,
+    }));
+
+  const up = (code: string) => code.toUpperCase();
+
   return {
-    open: (me, options) => send({ type: "hello", proto: PROTO, ...me, ...options }),
-    join: (code, me) => send({ type: "hello", proto: PROTO, code: code.toUpperCase(), ...me }),
-    watch: (code) => send({ type: "hello", proto: PROTO, code: code.toUpperCase(), watch: true }),
-    peek: (code) => send({ type: "peek", code: code.toUpperCase() }),
+    open: (me, options) => initialHello(me, options),
+    join: (code, me) => initialHello(me, { code: up(code) }),
+    watch: (code) => send({ type: "hello", proto: PROTO, code: up(code), watch: true }),
+    peek: (code) => send({ type: "peek", code: up(code) }),
     list: () => send({ type: "list" }),
     rejoin: (code, secret) => {
       stamp = null;
-      seat = { code: code.toUpperCase(), secret };
+      seat = { code: up(code), secret };
       rejoining = true;
       // Not queued: onopen sends it, so a failed first dial cannot leave a second hello behind.
-      if (ws.readyState === 1) ws.send(JSON.stringify({ type: "hello", proto: PROTO, code: seat.code, secret }));
+      if (ws.readyState === 1) ws.send(JSON.stringify({ type: "hello", proto: PROTO, ...seat }));
     },
     ready: (value) => send({ type: "ready", value }),
     start: () => send({ type: "start" }),
@@ -471,25 +456,19 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     removeBot: (id) => send({ type: "removeBot", id }),
     again: () => send({ type: "again" }),
     act: (action) => {
-      const intent = toIntent(action);
-      return intent ? act(intent) : false;
+      const i = toIntent(action);
+      return i ? act(i) : false;
     },
-    ask: (give, want) => {
-      act({ type: "tradeAsk", give, want });
-    },
-    answer: (tradeId, yes) => {
-      act({ type: "tradeAnswer", tradeId, yes });
-    },
+    ask: (give, want) => act({ type: "tradeAsk", give, want }),
+    answer: (tradeId, yes) => act({ type: "tradeAnswer", tradeId, yes }),
     need: (kinds) => send({ type: "need", kinds }),
-    cancel: (tradeId) => {
-      act({ type: "tradeCancel", tradeId });
-    },
+    cancel: (tradeId) => act({ type: "tradeCancel", tradeId }),
     requestTurnExtension: (target, key) => act({ type: "turnExtensionAsk", target, key }),
     answerTurnExtension: (voteId, yes) => act({ type: "turnExtensionAnswer", voteId, yes }),
     getTurnExtension: () => extension,
     subscribeTurnExtension: (listener) => {
       extensionListeners.add(listener);
-      return () => { extensionListeners.delete(listener); };
+      return () => extensionListeners.delete(listener);
     },
     say: (text) => send({ type: "chat", text }),
     sound: (id) => send({ type: "sound", id }),
