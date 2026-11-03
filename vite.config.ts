@@ -68,7 +68,14 @@ function minigames(): Plugin {
     configureServer(server) {
       const files = minigameFiles();
       server.middlewares.use("/minigames", (req, res, next) => {
-        const file = files.get(decodeURIComponent((req.url ?? "").split("?")[0]).slice(1));
+        let name = "";
+        try {
+          // A bare "%" in the path throws. That request is not a minigame file.
+          name = decodeURIComponent((req.url ?? "").split("?")[0]).slice(1);
+        } catch {
+          return next();
+        }
+        const file = files.get(name);
         if (!file) return next();
         const ext = file.slice(file.lastIndexOf("."));
         res.setHeader("content-type", MINIGAME_TYPES[ext] ?? "application/octet-stream");
