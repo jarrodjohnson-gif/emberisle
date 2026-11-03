@@ -10,14 +10,18 @@ backtick are ordinary text, so they cannot swallow later real commands. Tilde
 headers may contain backticks. Visible lines retain their original text;
 authority metadata keeps its existing column-zero rule.
 
-This is a bounded command-input contract, not a general Markdown renderer.
+This is a conservative command-input contract, not a general Markdown renderer.
+Four-column lines are ignored even immediately after a paragraph; CommonMark
+indented code cannot interrupt a paragraph, but the bot deliberately grants no
+command authority to those indented lines. `files:` is not an authority field
+consumed by this workflow; its example lines are covered with claim identities.
 Authorization, chronological replay, release identities, PR association checks,
 workflow permissions and command names are unchanged. No new dependency or
 workflow dispatch is needed.
 
 `baseline.log`: all 26 original workflow groups passed. `regression-before.log`:
 the original parser reacted to a four-space example command; the new no-reaction
-assertion failed (`true !== false`). `final.log`: all 30 groups passed. The four
+assertion failed (`true !== false`). `final.log`: all 31 groups passed. The five
 new groups cover indented commands/metadata, bullet/ordered/nested list fences,
 container dedents, insufficient fence closers, authority metadata, and invalid
 backtick versus valid tilde headers. Every original assertion remains unchanged.

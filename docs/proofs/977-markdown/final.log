@@ -28,4 +28,5 @@ PASS indented examples cannot command or reserve
 PASS list fences hide examples and preserve later real commands
 PASS list examples cannot release claims or attach PR authority
 PASS invalid backtick info strings do not swallow commands
-PASS 30 workflow proof groups
+PASS only outside metadata supplies a real command identity
+PASS 31 workflow proof groups

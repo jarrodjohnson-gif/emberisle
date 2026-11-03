@@ -495,4 +495,20 @@ await prove('invalid backtick info strings do not swallow commands', async () =>
   winner(tilde, 1);
   winner(tilde, 2);
 });
+await prove('only outside metadata supplies a real command identity', async () => {
+  for (const example of ['    claimed: Fake, 2026-10-16\n    files: fake',
+    '- ````\n  claimed: Fake, 2026-10-16\n  files: fake\n  ~~~~\n  ```\n  /claim\n  claimed: Intruder, 2026-10-16\n  ````']) {
+    const s = fixture([comment(1, '/claim\n' + example + '\nclaimed: Real, 2026-10-16\nfiles: real'), claim(2, 'Real'), claim(3, 'Other')]);
+    await s.run(3);
+    winner(s, 1, [3]);
+    await s.run(2);
+    winner(s, 2);
+  }
+  const adjacent = fixture([comment(1, 'Paragraph immediately before\n    /claim\nclaimed: Fake, 2026-10-16'), claim(2, 'Real')]);
+  await adjacent.run(1);
+  assert.equal(adjacent.has(1, '+1'), false);
+  assert.equal(adjacent.has(1, '-1'), false);
+  await adjacent.run(2);
+  winner(adjacent, 2);
+});
 console.log(`PASS ${checks} workflow proof groups`);
