@@ -43,7 +43,7 @@
 .lobby-rules > .lobby-rule-status { min-width: 0; overflow: hidden; }
 .lobby-layout .lm { display: flex; align-items: center; gap: 8px; height: 44px; }
 .lobby-layout .lm button { flex: 0 0 auto; height: 44px; padding: 0 8px; border: 0; border-radius: 12px; background: transparent; color: #263b3b; }
-.lobby-layout .lm button[aria-selected="true"] { background: #fff; }
+.lobby-layout .lm button[aria-pressed="true"] { background: #fff; }
 .lobby-rule-status {
   display: flex;
   flex-direction: column;

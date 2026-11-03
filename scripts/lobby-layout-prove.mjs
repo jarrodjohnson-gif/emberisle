@@ -297,7 +297,7 @@ try {
     for (const label of ["Copy", "Copy link", "Invite", "Rules", "Ready", "Leave the table"]) {
       assert.equal(await page.getByRole("button", { name: label, exact: true }).count(), 1, label);
     }
-    assert.equal(await page.getByTestId("lobby-chat").getByRole("tab").count(), 2);
+    assert.equal(await page.getByRole("tab").count(), 2);
     assert.equal(await page.getByTestId("emoji-row").locator("button").count(), 6);
     assert.equal(await page.getByRole("button", { name: "Start", exact: true }).count(), 0, "host sees no Start until everyone is ready");
     assert.equal(await guest.getByRole("button", { name: "Start", exact: true }).count(), 0, "guest cannot start");

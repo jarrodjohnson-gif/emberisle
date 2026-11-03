@@ -122,9 +122,9 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
           </div>
           {copied && !copied.ok ? <div className="lobby-copy-fallback"><CopyFallback state={copied} label={copied.what === "link" ? "Join link" : "Table code"} /></div> : <CopyFallback state={copied} label="Table code" />}
           <div className="lobby-rules">
-            <div className="lm" role="tablist" aria-label="Lobby">
-              <button type="button" role="tab" aria-selected={!games} onClick={() => { setGames(false); setOpen(false); }}>Table</button>
-              <button type="button" role="tab" aria-selected={games} onClick={() => setGames(true)}><span>Play games</span></button>
+            <div className="lm">
+              <button type="button" aria-pressed={!games} onClick={() => { setGames(false); setOpen(false); }}>Table</button>
+              <button type="button" aria-pressed={games} onClick={() => setGames(true)}><span>Play games</span></button>
             </div>
             <Button variant="outline" onPointerEnter={prefetchRules} onFocus={prefetchRules} onClick={e => setHowTo(true, e.currentTarget)}>Rules</Button>
             <div className="lobby-rule-status">
