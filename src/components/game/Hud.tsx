@@ -243,7 +243,7 @@ export function Hud() {
         setFortunesOpen((o) => !o);
       }}
     >
-      {playableNow > 0 && <span key={cueKey} ref={cueRing} onAnimationStart={() => (glowed.current = cueKey)} aria-hidden="true" data-testid="fortune-cue-glow" className="fortune-cue-glow" />}
+      {playableNow > 0 && <span key={cueKey} ref={cueRing} onAnimationStart={() => (glowed.current = cueKey)} aria-hidden data-testid="fortune-cue-glow" className="fortune-cue-glow" />}
       {fortunesLabel} · {heldNow}
     </Button>
   ) : null;
