@@ -21,7 +21,7 @@ workflow dispatch is needed.
 
 `baseline.log`: all 26 original workflow groups passed. `regression-before.log`:
 the original parser reacted to a four-space example command; the new no-reaction
-assertion failed (`true !== false`). `final.log`: all 31 groups passed. The five
+assertion failed (`true !== false`). `final.log`: all 32 groups passed. The six
 new groups cover indented commands/metadata, bullet/ordered/nested list fences,
 container dedents, insufficient fence closers, authority metadata, and invalid
 backtick versus valid tilde headers. Every original assertion remains unchanged.
@@ -38,3 +38,13 @@ node --check scripts/label-commands-prove.mjs
 These fixtures execute the deployed inline JavaScript with mocked paginated
 GitHub APIs. They do not post comments, alter labels, or dispatch workflows.
 Hosted CI and independent Claude/owner review remain separate gates.
+
+Parent review then identified continuation-line list fences. The new mocked
+case reproduced an exposed example command before the fix (`continuation-before.log`).
+The scanner now retains nested list content indentation across lines and parses
+fences after deindenting their actual container. Tests cover bullet, ordered,
+nested, closed and dedented-unclosed forms, including real commands afterward.
+The first attempt included a legitimate outside `/paused`, whose approval made
+a no-reaction assertion invalid; `continuation-original-attempt.log` retains
+that failure and `continuation-fixture-correction.log` retains the subsequent
+run before the additional real-command cases. No prior group/assertion changed.

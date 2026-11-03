@@ -86,6 +86,7 @@ jobs:
             const visibleBody = body => {
               const out = [];
               let fence = null;
+              const containers = [];
               for (const raw of (body || '').split(/\r?\n/)) {
                 let line = '';
                 for (const char of raw) line += char === '\t'
@@ -100,12 +101,17 @@ jobs:
                     continue;
                   }
                 }
-                if (/^ {4}/.test(line)) continue;
-                let content = line;
-                let indent = 0;
+                const leading = line.match(/^ */)[0].length;
+                if (line.trim()) {
+                  while (containers.length && leading < containers.at(-1)) containers.pop();
+                }
+                let indent = containers.at(-1) || 0;
+                let content = line.slice(indent);
+                if (/^ {4}/.test(content)) continue;
                 let list;
                 while ((list = content.match(/^( {0,3}(?:[-+*]|\d{1,9}[.)]) {1,4})(?=\S)(.*)$/))) {
                   indent += list[1].length;
+                  containers.push(indent);
                   content = list[2];
                 }
                 const marker = content.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);

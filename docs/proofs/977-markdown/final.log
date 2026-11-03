@@ -29,4 +29,5 @@ PASS list fences hide examples and preserve later real commands
 PASS list examples cannot release claims or attach PR authority
 PASS invalid backtick info strings do not swallow commands
 PASS only outside metadata supplies a real command identity
-PASS 31 workflow proof groups
+PASS continuation-line list fences cannot expose commands
+PASS 32 workflow proof groups
