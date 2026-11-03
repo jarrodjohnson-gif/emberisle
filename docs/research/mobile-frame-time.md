@@ -139,3 +139,20 @@ left: nothing in this note. Children filed in Backlog: #329 cap pixel ratio 1.5 
 broke: nothing; `node scripts/shots.mjs` (17 shots) and `node scripts/shots.mjs --size 390x844 --coarse` (8 shots) both exit 0
 next agent: take #329 to #332 as Todo is set
 ```
+
+## Re-measure for #330 (2026-11-02)
+
+Grok 4.7. Same command the issue names, after free view sizes SSAO to `ceil(css/2)`:
+
+`node scripts/shots.mjs --budget --size 1920x1080`
+
+The script still asks for SwiftShader. On this Mac every SSAO row sat on 16.7 ms, one frame at 60 Hz, so the October fill-rate gap (1092 ms down to 402 ms at ratio 1) does not show. Half is not slower than the full CSS row at ratio 1 or 2. Draw calls stay in the same band.
+
+| pixel ratio | view | SSAO target | canvas | frames | ms/frame | p50 | calls |
+|---|---|---|---|---|---|---|---|
+| 1 | free, SSAO css | 1920x1080 | 1920x1080 | 360 | 16.7 | 16.7 | 35.2 |
+| 1 | free, SSAO half | 960x540 | 1920x1080 | 360 | 16.7 | 16.7 | 38.4 |
+| 2 | free, SSAO css | 1920x1080 | 3840x2160 | 360 | 16.7 | 16.7 | 14.8 |
+| 2 | free, SSAO half | 960x540 | 3840x2160 | 360 | 16.7 | 16.7 | 17.3 |
+
+The `css` row sets the full CSS size itself. Free-view `resize()` would otherwise leave it at half. The October tables above stay the before measurement. A phone is still `needs: jarrod` for a real frame time.

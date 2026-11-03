@@ -1,6 +1,6 @@
 // #830: placing a home or stronghold, the legal corners glow. In the browser, at 1280x720 and 390x844 (touch):
 // - armed (the setup home, then an armed Stronghold) every legal corner wears a ring at least 0.36 across in world units,
-//   a dark outline and a cream disc, and the ring + outline show on screen with a light/dark contrast of at least 3:1 on every
+//   a dark outline and a white disc, and the ring + outline show on screen with a light/dark contrast of at least 3:1 on every
 //   terrain a legal corner sits on (median over that terrain's corners, read back from the drawn frame) and beat the same
 //   corners unarmed by a margin;
 // - the marks are seen: a pixel diff of the drawn frame with the marks shown and hidden changes at least MIN_CHANGED of the
@@ -74,7 +74,11 @@ const ratioAt = (page, pts, radius) =>
 // The share of pixels around each point that differ from the patch stored under `key` (store: true saves the patches of the last
 // drawn frame; otherwise the last drawn frame is compared with them). A pixel differs when a channel moves by more than DELTA.
 const DELTA = 24;
-const MIN_CHANGED = 0.15; // measured: >= 0.16 at every setup corner with depthTest: false; Stronghold homes >= 0.55.
+// MIN_CHANGED = 0.15 reflects the geometric area of the projected ring torus (ellipse ribbon)
+// relative to the (2r) x (2r) square bounding box patch (the thin ring ribbon occupies ~0.05-0.10 of
+// the square area, plus outline and contrast edge reaching ~0.16-0.18 on light terrain).
+// With depthTest: false, the marks are 100% unoccluded by terrain ridges across all corners.
+const MIN_CHANGED = 0.15;
 const patches = (page, key, store, pts, radius) =>
   page.evaluate(
     ([key, store, pts, radius, delta]) => {
@@ -107,6 +111,7 @@ const median = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
 for (const [w, h, touch] of [
   [1280, 720, false],
   [390, 844, true],
+  [844, 390, true],
 ]) {
   const tag = `${w}x${h}`;
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, ...(touch ? { isMobile: true, hasTouch: true } : {}) });
@@ -132,6 +137,23 @@ for (const [w, h, touch] of [
       return out;
     };
   });
+  // Pin createGame's synchronous seed draw so board terrain layout and legal corner positions are deterministic across runs.
+  await page.waitForFunction(() => typeof window.__emberisle?.getState().startHotseat === "function", null, { timeout: STEP_MS });
+  await page.evaluate(() => {
+    const store = window.__emberisle;
+    const start = store.getState().startHotseat;
+    store.setState({
+      startHotseat(count) {
+        const random = Math.random;
+        Math.random = () => 830 / 1e9;
+        try {
+          start(count);
+        } finally {
+          Math.random = random;
+        }
+      },
+    });
+  });
   await page.getByRole("button", { name: "Four seats, one table" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
   await page.evaluate(() => {
@@ -149,8 +171,10 @@ for (const [w, h, touch] of [
       const kids = window.__isle.marks.children;
       const rings = kids.filter((m) => m.userData.kind === "vertex" && m.geometry?.type === "TorusGeometry");
       const outlinesMesh = kids.find((m) => m.userData.kind === "vertex-outlines");
+      // A home's halo has its own instanced outline (#830, Stronghold halo spec); both count.
+      const haloOutlines = kids.find((m) => m.userData.kind === "home-halo-outlines")?.count ?? 0;
       const discsMesh = kids.find((m) => m.userData.kind === "vertex-discs");
-      const outlines = outlinesMesh ? outlinesMesh.count : kids.filter((m) => m.userData.kind === "vertex-outline").length;
+      const outlines = (outlinesMesh ? outlinesMesh.count : kids.filter((m) => m.userData.kind === "vertex-outline").length) + haloOutlines;
       const discs = discsMesh ? discsMesh.count : kids.filter((m) => m.userData.kind === "vertex-disc").length;
       const visibleDraws = kids.filter((m) => m.visible !== false).length;
       return {
@@ -158,7 +182,8 @@ for (const [w, h, touch] of [
         outlines,
         discs,
         visibleDraws,
-        diameter: rings[0] ? 2 * (rings[0].geometry.parameters.radius + rings[0].geometry.parameters.tube) : 0,
+        // Every ring, not just the first: an empty corner's ring and a home's halo are different sizes.
+        diameter: rings.length ? Math.min(...rings.map((m) => 2 * (m.geometry.parameters.radius + m.geometry.parameters.tube))) : 0,
         total: kids.length,
       };
     });
@@ -183,14 +208,15 @@ for (const [w, h, touch] of [
   const onScreen = legal.map((_, i) => pts[i] && pts[i].x > 8 && pts[i].x < w - 8 && pts[i].y > 8 && pts[i].y < h - 8);
   const terrains = await terrainOf(legal);
   // The ring's reach on screen: 0.2 world units along x, a little over.
-  const reachOf = (id) =>
-    page.evaluate((id) => {
+  // The sampled patch's half-width in pixels: `out` world units from the corner (an empty corner's ring is 0.2 out), times 1.3.
+  const reachOf = (id, out = 0.2) =>
+    page.evaluate(([id, out]) => {
       const i = window.__isle;
       const v = i.lastState.vertices.find((x) => x.id === id);
       const a = i.screenAt(v.x, 0.3, v.z);
-      const b = i.screenAt(v.x + 0.2, 0.3, v.z);
+      const b = i.screenAt(v.x + out, 0.3, v.z);
       return Math.max(4, Math.hypot(a.x - b.x, a.y - b.y) * 1.3);
-    }, id);
+    }, [id, out]);
   const r = await reachOf(legal[0]);
   await drawn(page, 2);
   const at = pts.map((p) => p ?? { x: 0, y: 0 });
@@ -220,6 +246,10 @@ for (const [w, h, touch] of [
   for (const [t, v] of by) {
     const a = median(v.contrast);
     check(`${tag}: ${t} corners read at 3:1 or better against the hex beneath`, a >= 3, { median: +a.toFixed(2), n: v.contrast.length });
+    // Some terrains already read 4.5-4.9 unarmed, so 3:1 alone cannot fail there: the ring must also beat the bare corners by 1.5x
+    // (restored from 0c27670; see the PR body).
+    const u = median(v.unarmed);
+    check(`${tag}: ${t} corners read 1.5x the unarmed read`, a >= u * 1.5, { median: +a.toFixed(2), unarmed: +u.toFixed(2), n: v.contrast.length });
   }
   const seen = changed.filter((_, i) => onScreen[i]);
   check(`${tag}: every legal corner is seen (marks shown vs hidden)`, seen.length > 0 && Math.min(...seen) >= MIN_CHANGED, { corners: seen.length, least: +Math.min(...seen).toFixed(3), median: +median(seen).toFixed(3) });
@@ -235,6 +265,14 @@ for (const [w, h, touch] of [
   await drawn(page, 1);
   const g2 = await glowAt();
   check(`${tag}: reduced motion holds a static glow`, g1.length > 0 && g1.every((x, i) => x === g2[i] && x === 1), { first: g1[0], later: g2[0] });
+  // Owner q848-glow-v2 ("Keep it white"): every corner ring glows plain white and every disc is plain white.
+  const colours = await page.evaluate(() => {
+    const kids = window.__isle.marks.children;
+    const rings = kids.filter((m) => m.userData.baseGlow !== undefined).map((m) => m.material.emissive.getHex());
+    const discs = kids.filter((m) => m.userData.kind === "vertex-discs").map((m) => m.material.color.getHex());
+    return { rings, discs };
+  });
+  check(`${tag}: corner rings glow white and their discs are white`, colours.rings.length > 0 && colours.discs.length > 0 && [...colours.rings, ...colours.discs].every((c) => c === 0xffffff), { rings: [...new Set(colours.rings)].map((c) => c.toString(16)), discs: [...new Set(colours.discs)].map((c) => c.toString(16)) });
   await page.emulateMedia({ reducedMotion: "no-preference" });
 
   // Setup road: legal road paths glow with bars (#830)
@@ -249,10 +287,11 @@ for (const [w, h, touch] of [
       phase: g.getState().state.phase,
       legalEdges: edges.length,
       edgeMarks: edgeMarks.length,
+      visibleDraws: window.__isle.marks.visible ? edgeMarks.length : 0,
       glow: edgeMarks[0]?.material?.emissiveIntensity,
     };
   });
-  check(`${tag}: setupRoad displays glowing bars on every legal road edge`, roadInfo.phase === "setupRoad" && roadInfo.legalEdges > 0 && roadInfo.edgeMarks === roadInfo.legalEdges, roadInfo);
+  check(`${tag}: setupRoad displays glowing bars on every legal road edge`, roadInfo.phase === "setupRoad" && roadInfo.legalEdges > 0 && roadInfo.edgeMarks === roadInfo.legalEdges && roadInfo.visibleDraws === roadInfo.legalEdges, roadInfo);
 
   // Finish setup, then nothing armed leaves no marks; an armed Stronghold rings the legal homes only.
   await page.evaluate(() => {
@@ -283,11 +322,14 @@ for (const [w, h, touch] of [
   const own = await legalNow();
   const sh = await marksInfo();
   check(`${tag}: armed Stronghold rings exactly the legal homes`, own.length > 0 && sh.rings === own.length && sh.outlines === own.length, { legal: own.length, ...sh });
-  // The ring must show over the home's own base disc: a pixel diff with the marks shown and hidden, at each legal home.
+  // A home's halo must show round the piece: a pixel diff with the marks shown and hidden, at each legal home. The patch
+  // reaches 0.42 world units out, past the halo's outline (0.415).
+  // The roll moment (the dice banner) clears on its own timer; wait for it so it covers no home in the check or the picture.
+  await page.waitForFunction(() => !document.querySelector('[data-testid="roll-moment"]'), null, { timeout: STEP_MS });
   const homeAt = await page.evaluate((ids) => ids.map((id) => window.__isle.screenOf(id)), own);
   const homeOn = homeAt.map((p) => p && p.x > 8 && p.x < w - 8 && p.y > 8 && p.y < h - 8);
   const hp = homeAt.map((p) => p ?? { x: 0, y: 0 });
-  const hr = await reachOf(own[0]);
+  const hr = await reachOf(own[0], 0.42 / 1.3);
   await patches(page, "__homeShown", true, hp, hr);
   await page.screenshot({ path: `test-results/placement-glow-stronghold-${tag}.png` });
   await page.evaluate(() => {
