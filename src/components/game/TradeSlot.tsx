@@ -8,7 +8,8 @@ export type TradeSlotProps = {
   line: string;
   // The offering seat's dot; none for the asker's own offer.
   color?: string;
-  left: number;
+  // Null when a person's offer holds until answered (#1245): no clock, same as the full card.
+  left: number | null;
   why: string | null;
   // Who has declined, for the asker; none for anyone else.
   wait?: string;
@@ -37,18 +38,22 @@ export function TradeSlot({ line, color, left, why, wait, answering, lineId, why
           {line}
         </p>
         <p className="flex min-w-0 gap-2 truncate text-xs leading-4">
-          <span aria-hidden={wait === undefined || undefined} className="trade-clock shrink-0 tabular-nums" data-testid="trade-countdown" data-urgent={left <= 5 || undefined}>
-            {left} s
-          </span>
+          {left === null ? null : (
+            <span aria-hidden={wait === undefined || undefined} className="trade-clock shrink-0 tabular-nums" data-testid="trade-countdown" data-urgent={left <= 5 || undefined}>
+              {left} s
+            </span>
+          )}
           {why ? <span id={whyId} className="trade-short truncate">{why}</span> : null}
           {wait !== undefined ? <span role="status" className="trade-wait truncate">{wait}</span> : null}
         </p>
       </div>
       {answering ? (
         <>
-          <p aria-live="polite" className="sr-only" data-testid="trade-countdown-live">
-            {left === 5 ? "5 seconds left" : ""}
-          </p>
+          {left === null ? null : (
+            <p aria-live="polite" className="sr-only" data-testid="trade-countdown-live">
+              {left === 5 ? "5 seconds left" : ""}
+            </p>
+          )}
           <div className="flex shrink-0 gap-2">
             <Button
               className="trade-yes h-11 min-w-14 aria-disabled:cursor-not-allowed aria-disabled:active:scale-100"
