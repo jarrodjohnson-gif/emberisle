@@ -165,12 +165,28 @@ try {
 
   const helloSecretCountBefore = await page.evaluate(() => window.__wire.filter((f) => f.url === window.A && f.message.type === "hello" && f.message.secret).length);
   await page.evaluate(() => {
-    const tableWs = window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN && ws.__sent.some((m) => m.name === "Ash"));
+    const tableWs = window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN && ws.__sent.some((m) => m.type === "hello" && m.name === "Ash"));
     tableWs.close();
   });
   await page.waitForFunction((before) => window.__wire.filter((f) => f.url === window.A && f.message.type === "hello" && f.message.secret).length > before, helloSecretCountBefore);
   assert.equal(await page.evaluate(() => window.__wire.filter((f) => f.url === window.A && f.message.type === "hello" && f.message.secret).every((f) => !f.message.credential)), true, "rejoin hellos never carry a profile credential");
   ok("automatic reconnect while signed in redials with seat secret and never carries a profile credential");
+
+  // Hostile { type: "closed" } frame must be ignored by connectTable and not trigger on.closed
+  const hostileClosedFired = await page.evaluate(async () => {
+    let closedFired = false;
+    const hostileClient = window.table.connectTable(window.A, { closed: () => { closedFired = true; } });
+    hostileClient.open({ name: "HostileCheck" });
+    await new Promise((r) => setTimeout(r, 60));
+    const tableWs = window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN && ws.__sent.some((m) => m.type === "hello" && m.name === "HostileCheck"));
+    tableWs.dispatchEvent(new MessageEvent("message", { data: JSON.stringify({ type: "closed" }) }));
+    await new Promise((r) => setTimeout(r, 60));
+    const wasFired = closedFired;
+    hostileClient.close();
+    return wasFired;
+  });
+  assert.equal(hostileClosedFired, false, "hostile message frame {type: 'closed'} must not invoke on.closed");
+  ok("untrusted host message frames matching internal table event names are ignored");
 
   // B1: a real WebSocket close must not look like selecting another host during sign-out.
   await page.evaluate(() => window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN).close());

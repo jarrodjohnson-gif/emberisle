@@ -392,6 +392,9 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         on.welcome?.(m);
         break;
       }
+      case "seats":
+        on.seats?.(msg as never);
+        break;
       case "turnExtension":
         setExtension(msg as unknown as TurnExtensionState);
         break;
@@ -402,8 +405,26 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         on.state?.(msg as never);
         if (awaitingState) { awaitingState = false; health("Reachable"); }
         break;
+      case "rolled":
+        on.rolled?.(msg as never);
+        break;
+      case "chat":
+        on.chat?.(msg as never);
+        break;
+      case "react":
+        on.react?.(msg as never);
+        break;
       case "log":
         on.log?.(String(msg.text));
+        break;
+      case "tradeOffer":
+        on.tradeOffer?.(msg as never);
+        break;
+      case "tradeDeclined":
+        on.tradeDeclined?.(msg as never);
+        break;
+      case "tradeClosed":
+        on.tradeClosed?.(msg as never);
         break;
       case "openTables":
         on.openTables?.(Array.isArray(msg.tables) ? (msg.tables as OpenTableEntry[]) : []);
@@ -426,8 +447,6 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         }
         break;
       }
-      default:
-        (on as Record<string, ((m: unknown) => void) | undefined>)[msg.type ?? ""]?.(msg);
     }
   };
 
