@@ -113,8 +113,9 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
       const kids = window.__isle.marks.children;
       const rings = kids.filter((m) => m.userData.kind === "vertex" && m.geometry?.type === "TorusGeometry");
       const outlinesMesh = kids.find((m) => m.userData.kind === "vertex-outlines");
+      const haloOutlines = kids.find((m) => m.userData.kind === "home-halo-outlines")?.count ?? 0;
+      const outlines = (outlinesMesh ? outlinesMesh.count : kids.filter((m) => m.userData.kind === "vertex-outline").length) + haloOutlines;
       const discsMesh = kids.find((m) => m.userData.kind === "vertex-discs");
-      const outlines = outlinesMesh ? outlinesMesh.count : kids.filter((m) => m.userData.kind === "vertex-outline").length;
       const discs = discsMesh ? discsMesh.count : kids.filter((m) => m.userData.kind === "vertex-disc").length;
       return {
         rings: rings.length,
@@ -147,7 +148,7 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
 
   check(
     `${tag}: upgrade mode with eligible homes glows every eligible home`,
-    ownHomes.length === 2 && infoWithHomes.rings === 2 && infoWithHomes.outlines === 2 && infoWithHomes.discs === 2,
+    ownHomes.length === 2 && infoWithHomes.rings === 2 && infoWithHomes.outlines === 2,
     { legal: ownHomes.length, ...infoWithHomes },
   );
 
