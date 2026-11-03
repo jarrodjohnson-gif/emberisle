@@ -471,6 +471,8 @@ export class IsleRenderer {
     this.ssao.maxDistance = 0.08;
     this.composer.addPass(this.ssao);
     this.composer.addPass(new OutputPass());
+    // addPass sizes SSAO to the full composer. Resize again so the first frame uses the free-view half size (#330).
+    this.resize();
     this.renderer.setAnimationLoop(this.tick);
     } catch (err) {
       this.dispose();
@@ -879,7 +881,9 @@ export class IsleRenderer {
     this.composer?.setSize(w, h);
     const ratio = this.renderer.getPixelRatio();
     this.under?.setSize(Math.round(w * ratio), Math.round(h * ratio));
-    this.ssao?.setSize(w, h);
+    // #330: free view (title, lobby, and the free camera) runs SSAO at half the CSS size. Play views keep the full CSS size.
+    const half = this.view === "free";
+    this.ssao?.setSize(half ? Math.ceil(w / 2) : w, half ? Math.ceil(h / 2) : h);
     this.refit(true);
     // The HUD re-lays out for the new size after this event (a rotation swaps its columns and rails), so the hole just
     // measured is the old one: measure again on each of the next frames.
