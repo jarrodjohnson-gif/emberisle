@@ -86,8 +86,8 @@ try {
     await page.waitForFunction(() => window.__isle?.lastState && window.__isle.landReady && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
     await drawn(page, 3);
 
-    // Ensure dim is at default 0.75
-    await page.evaluate(() => window.__isle.setRobberHexDim(0.75));
+    // Ensure dim is at default 0.85
+    await page.evaluate(() => window.__isle.setRobberHexDim(0.85));
 
     // Capture each terrain: blocked vs normal
     for (const terrain of TERRAINS) {
@@ -180,14 +180,14 @@ try {
         const y = Math.max(0, Math.min(h - size, cy - half));
         return { x, y, width: size, height: size };
       });
-      for (const pct of [25, 50, 75]) {
+      for (const pct of [25, 50, 75, 85]) {
         await page.evaluate((dim) => window.__isle.setRobberHexDim(dim), pct / 100);
         await drawn(page, 3);
         await page.screenshot({ path: `docs/proofs/826/robber-dim-${pct}pct-${tag}.png` });
         await page.screenshot({ path: `docs/proofs/826/robber-dim-${pct}pct-crop-${tag}.png`, clip: grainCrop });
         console.log(`  dim ${pct}% (and crop) captured for ${tag}`);
       }
-      await page.evaluate(() => window.__isle.setRobberHexDim(0.75));
+      await page.evaluate(() => window.__isle.setRobberHexDim(0.85));
     }
 
     await ctx.close();

@@ -225,7 +225,7 @@ try {
         labelColor: label?.material.color.getHexString() ?? null,
         label: background ? background.slice(0, 3).map((v) => v.toString(16).padStart(2, "0")).join("") : (label?.material.color.getHexString() ?? null),
         restDisc: disc?.material.userData.rest?.getHexString?.() ?? null,
-        expectedDisc: disc?.material.userData.rest ? disc.material.userData.rest.clone().multiplyScalar(1 - 0.75).getHexString() : null,
+        expectedDisc: disc?.material.userData.rest ? disc.material.userData.rest.clone().multiplyScalar(1 - 0.85).getHexString() : null,
         background, lightInk, faceHash, textureId: label?.material.map.uuid,
       };
     };
@@ -296,7 +296,7 @@ try {
     "move: token disc and face are dimmed (dark face)",
     moved.afterA?.tokenA?.disc &&
       moved.afterA.tokenA.disc === moved.afterA.tokenA.expectedDisc &&
-      JSON.stringify(moved.afterA.tokenA.background) === "[25,25,25,255]",
+      JSON.stringify(moved.afterA.tokenA.background) === "[15,15,15,255]",
     moved.afterA?.tokenA,
   );
   check("move: light numeral and pips remain on the black face", moved.afterA?.tokenA?.lightInk >= 1000, moved.afterA?.tokenA);
