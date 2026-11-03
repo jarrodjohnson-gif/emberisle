@@ -1,0 +1,18 @@
+
+> takeover-prove
+> node --import ./server/register.mjs server/takeover-prove.mjs
+
+connected turn: waited-on human received the configured 30000 ms deadline
+setup: after GRACE_MS=400, recovery completed the forced free outpost and path
+main: recovery passed with build materials and a playable fortune untouched
+own offer: takeover withdrew the old ask, rejected a late Yes, and passed without waiting for its timeout
+rejoin: the covered seat returned to human control
+roll: recovery rolled and advanced the engine phase with an explicit action line
+discard: recovery paid the mandatory half-hand discard
+wayfarer: recovery moved the robber with one public action line
+persistence: legacy bot-seat identity was inferred and saved in the room snapshot
+trade: a helpful offer to a legacy recovery bot was declined with no goods transferred
+timers: grace 400 ms, connected turn 30000 ms, hold 2800 ms exercised; source defaults remain 90 s / 120 s / 10 min
+hold expiry: the seat was removed while its recovery identity remained persisted
+restart: the expired seat's persisted recovery identity passed without spending resources or its fortune
+takeover prove ok

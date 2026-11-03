@@ -1,0 +1,44 @@
+[
+  {
+    "width": 390,
+    "height": 844,
+    "vid": "-2.91,-0.56",
+    "events": [
+      {
+        "kind": "outpost",
+        "videoSeconds": 6.523
+      },
+      {
+        "kind": "path",
+        "videoSeconds": 8.209
+      },
+      {
+        "kind": "stronghold",
+        "videoSeconds": 9.855
+      }
+    ],
+    "errors": [],
+    "video": "/workspace/work/741-evidence/raw-video/page@41518f62503a6a7116736371c5ef765f.webm"
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "vid": "-2.91,-0.56",
+    "events": [
+      {
+        "kind": "outpost",
+        "videoSeconds": 6.713
+      },
+      {
+        "kind": "path",
+        "videoSeconds": 8.403
+      },
+      {
+        "kind": "stronghold",
+        "videoSeconds": 10.098
+      }
+    ],
+    "errors": [],
+    "video": "/workspace/work/741-evidence/raw-video/page@9f3ce9eee2f604b803b2deab189a8434.webm"
+  }
+]

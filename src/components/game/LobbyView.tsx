@@ -1,17 +1,20 @@
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useGame } from "@/lib/game/store";
 import type { Seat } from "@/lib/net/table";
-import { LazyBoundary } from "@/lib/lazy";
+import { chunk, LazyBoundary } from "@/lib/lazy";
 import { cn } from "@/lib/utils";
 import "./lobby.css";
 
+// #1262: this chunk stays out of the index. It loads when Play games is opened; Ruffle mounts only after Play.
+const Play = chunk(() => import("@/components/game/LobbyWaitBox")).pick((m) => m.LobbyPlay);
+
 // Your own name is a button; a tap opens an input. Enter or leaving the field saves (the host cleans it and answers with the
 // seat list), Escape puts it back. Empty is not sent: the old name stays.
-function OwnName({ seat, compact }: { seat: Seat; compact: boolean }) {
+function OwnName({ seat }: { seat: Seat }) {
   const rename = useGame((s) => s.renameSeat);
   const [draft, setDraft] = useState<string | null>(null);
   const done = useRef(false);
@@ -31,7 +34,6 @@ function OwnName({ seat, compact }: { seat: Seat; compact: boolean }) {
           done.current = false;
           setDraft(seat.name);
         }}
-        className={cn("min-w-0 cursor-pointer truncate text-left text-sm underline decoration-dotted underline-offset-4", compact ? "" : "-my-1 min-h-11 min-w-11")}
       >
         {seat.name}
       </button>
@@ -52,12 +54,11 @@ function OwnName({ seat, compact }: { seat: Seat; compact: boolean }) {
         if (e.key === "Enter") finish(true);
         if (e.key === "Escape") finish(false);
       }}
-      className={cn("min-w-0 flex-1 rounded-control border border-border bg-surface px-2 text-base text-fg", compact ? "h-7" : "-my-1 h-11")}
     />
   );
 }
 
-export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefetchRules }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; prefetchRules: () => Promise<boolean> }) {
+export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefetchRules, fitCode }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; prefetchRules: () => Promise<boolean>; fitCode: (el: HTMLParagraphElement, code: string) => void }) {
   const rule = useGame(s => s.tableWayfarerMode);
   const code = useGame(s => s.code);
   const seats = useGame(s => s.seats);
@@ -73,12 +74,27 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
   const removeBot = useGame(s => s.removeBot);
   const howTo = useGame(s => s.howTo);
   const setHowTo = useGame(s => s.setHowTo);
+  const [games, setGames] = useState(false);
+  const [open, setOpen] = useState(false);
   const ready = seats.find(s => s.id === seatId)?.ready ?? false;
   const canStart = isHost && seats.length >= 3 && seats.length <= 4 && seats.every(s => s.ready);
   const readyCount = seats.filter(s => s.ready).length;
   const missing = 3 - seats.length;
   const status = missing > 0 ? `Need ${missing} more player${missing === 1 ? "" : "s"}` : readyCount === seats.length ? "Everyone is ready" : `${readyCount} of ${seats.length} ready`;
   const { state: copied, copy } = useCopy<"code" | "link">();
+  const codeElement = useRef<HTMLParagraphElement>(null);
+  useLayoutEffect(() => {
+    // The host issues four-character codes. Preserve longer display fixtures unchanged.
+    const el = codeElement.current;
+    if (!el) return;
+    el.style.fontSize = "";
+    if (code.length !== 4) return;
+    const observer = new ResizeObserver(() => {
+      fitCode(el, code);
+    });
+    observer.observe(el.parentElement!);
+    return () => observer.disconnect();
+  }, [code, copied, fitCode]);
   const joinLink = () => {
     const host = new URLSearchParams(location.search).get("host");
     return `${location.origin}${location.pathname}?code=${code}${host ? `&host=${encodeURIComponent(host)}` : ""}`;
@@ -94,10 +110,10 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
 
   return (
     <>
-      <div data-testid="lobby-card" className="lobby-layout absolute z-10">
+      <div data-testid="lobby-card" className={cn("lobby-layout", open && "lg")}>
         <div className="lobby-cover lobby-layout-cover">
           <div className="lobby-header">
-            <p data-testid="table-code" className="font-display">{code}</p>
+            <p ref={codeElement} data-testid="table-code" className="font-display">{code}</p>
             <div className="lobby-copy-controls">
               <Button variant="outline" onClick={() => copy("code", code)}>{copied?.ok && copied.what === "code" ? "Copied" : "Copy"}</Button>
               <Button variant="outline" onClick={() => copy("link", joinLink())}>{copied?.ok && copied.what === "link" ? "Copied" : "Copy link"}</Button>
@@ -106,20 +122,26 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
           </div>
           {copied && !copied.ok ? <div className="lobby-copy-fallback"><CopyFallback state={copied} label={copied.what === "link" ? "Join link" : "Table code"} /></div> : <CopyFallback state={copied} label="Table code" />}
           <div className="lobby-rules">
+            <div className="lm">
+              <button type="button" aria-pressed={!games} onClick={() => { setGames(false); setOpen(false); }}>Table</button>
+              <button type="button" aria-pressed={games} onClick={() => setGames(true)}><span>Play games</span></button>
+            </div>
             <Button variant="outline" onPointerEnter={prefetchRules} onFocus={prefetchRules} onClick={e => setHowTo(true, e.currentTarget)}>Rules</Button>
             <div className="lobby-rule-status">
               <span data-testid="lobby-caption" className="max-w-full truncate">Wayfarer {rule}</span>
-              <ConnectionStatus className="max-w-full truncate whitespace-nowrap px-0" />
+              <ConnectionStatus />
             </div>
           </div>
+          {games ? <LazyBoundary failed={<button type="button" onClick={() => setGames(false)}>Close</button>}><Play onGame={setOpen} /></LazyBoundary> : (
+          <>
           <ul data-testid="lobby-players" className="lobby-players">
             {[0, 1, 2, 3].map(i => {
               const s = seats[i];
               return (
                 <li key={i} data-testid={s ? `lobby-seat-${s.id}` : undefined} className="lobby-player">
-                  <SeatDot color={s?.color ?? "transparent"} className="size-3 shrink-0 ring-1 ring-inset ring-black/25" />
+                  <SeatDot color={s?.color ?? "transparent"} className="dot" />
                   <span data-testid="lobby-name" className="lobby-name">
-                    {s?.id === seatId ? <OwnName seat={s} compact={false} /> : <span className="truncate">{s ? s.name : "Empty"}</span>}
+                    {s?.id === seatId ? <OwnName seat={s} /> : <span className="truncate">{s ? s.name : "Empty"}</span>}
                     {s?.host ? <span data-testid="host-tag" className="sr-only"> · host</span> : null}
                   </span>
                   <span className="lobby-player-status">{s ? `${s.host ? "Host · " : ""}${s.bot ? "Bot" : s.away ? "reconnecting…" : s.ready ? "Ready" : "Waiting"}` : ""}</span>
@@ -133,6 +155,8 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
           <div data-testid="lobby-chat" className="lobby-chat-panel">
             <ChatBox className="flex-1" rows={6} minRows={0} />
           </div>
+          </>
+          )}
           <div data-testid="lobby-actions" className="lobby-actions">
             <div className="lobby-summary">
               <p data-testid="lobby-status" aria-live="polite">{error ?? status}</p>
@@ -140,7 +164,7 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
             </div>
             <div className="lobby-action-buttons">
               <Button variant="outline" onClick={() => setReady(!ready)}>{ready ? "Not ready" : "Ready"}</Button>
-              {canStart ? <Button variant="sea" onClick={startTable}>Start</Button> : null}
+              {canStart ? <Button variant="sea" onClick={() => { setGames(false); setOpen(false); startTable(); }}>Start</Button> : null}
               <Button variant="ghost" onClick={goTitle}>Leave the table</Button>
             </div>
           </div>

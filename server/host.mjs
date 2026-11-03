@@ -16,6 +16,7 @@ import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
 import { PROFILE_TYPES, profileGate, profileHandler, seatCredential, seatProfile, tableCard, watchRefusal } from "./profile-protocol.mjs";
 import { openProfiles, UUID } from "./profiles.mjs";
+import { advanceRoomNeeds, restoredNeed, validNeeds } from "./needs.mjs";
 import { getOpenTables, maybeReleaseOpenSlot, registerOpenTable, unregisterOpenTable } from "./open-table.mjs";
 import { OUTCOME_V, isTime, openJournal, validOutcome, writeDurable } from "./result-journal.mjs";
 import { extensionBudget, turnExtensions } from "./turn-extension.mjs";
@@ -122,6 +123,8 @@ const TURN_EXTENSION_MS = envMs("TURN_EXTENSION_MS", 60_000);
 const BOT_ANSWER_MS = Number(process.env.BOT_ANSWER_MS ?? 1000);
 // People first (#850): a bot's Yes waits this long, or until every person asked has said No. A bot's No does not wait.
 const PEOPLE_FIRST_MS = Number(process.env.PEOPLE_FIRST_MS ?? 8000);
+// A bot's table offer closes after this if nobody takes it (#1245: a person's offer has no run-out).
+const OFFER_MS = 20000;
 // Every socket is pinged this often; one that has not answered the last ping is cut, so a phone that
 // locked or changed Wi-Fi frees its seat for the rejoin instead of holding it half-open (#202, #113).
 const PING_MS = Number(process.env.PING_MS ?? 30 * 1000);
@@ -181,6 +184,8 @@ const TYPES = {
   ".jpeg": "image/jpeg",
   ".webp": "image/webp",
   ".woff2": "font/woff2",
+  ".wasm": "application/wasm",
+  ".swf": "application/x-shockwave-flash",
   ".wav": "audio/wav",
   ".ogg": "audio/ogg",
   ".mp3": "audio/mpeg",
@@ -228,6 +233,8 @@ function seatsOf(room) {
     host: s.id === room.host,
     away: !s.bot && !s.ws,
     bot: Boolean(s.bot),
+    player: s.pid ?? null,
+    needs: [...(s.needs?.kinds ?? [])],
     url: s.avatarId ? `/avatars/${s.avatarId}.jpg` : null,
     // A guest seat carries no profile field at all (#764).
     ...(s.profileId ? { profile: seatProfile(profiles, s.profileId) } : {}),
@@ -331,7 +338,7 @@ function snapshot(room, over = {}) {
     game: room.game,
     victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10,
     wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on",
-    seats: room.seats.map(({ id, name, color, ready, pid, secret, bot, turnDeadline, turnStartedAt, extension, profileId }) => ({ id, name, color, ready, pid, secret, ...(bot ? { bot: true } : {}), turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null, extension, ...(profileId ? { profileId } : {}) })),
+    seats: room.seats.map(({ id, name, color, ready, pid, secret, bot, turnDeadline, turnStartedAt, needs, extension, profileId }) => ({ id, name, color, ready, pid, secret, ...(bot ? { bot: true } : {}), ...(needs ? { needs } : {}), turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null, extension, ...(profileId ? { profileId } : {}) })),
     // Optional versioned metadata (#764): no ROOM_SHAPE bump, so a legacy room loads with no roster and is not tracked.
     roster: room.roster ?? null,
     // The frozen outcome once the game is over, and the pids the bot played for (#889). Optional, like the roster.
@@ -527,7 +534,7 @@ async function load() {
         // Avatars live in memory only, so a restored seat has none.
         // G9: the saved window rides in `resume` until the seat is back and waited on; older files have none.
         const at = (n) => (Number.isFinite(n) ? n : null);
-        room.seats.push({ ...s, turnDeadline: null, turnStartedAt: at(s.turnStartedAt), resume: at(s.turnDeadline), avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
+        room.seats.push({ ...s, needs: restoredNeed(s.needs), turnDeadline: null, turnStartedAt: at(s.turnStartedAt), resume: at(s.turnDeadline), avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
       }
       // A profile binding must be a UUID on a human seat, once per room; anything else leaves that seat a guest (#764).
       const bound = new Set();
@@ -676,6 +683,7 @@ function runBots(room) {
       const seatName = room.seats.find((s) => s.pid === waiting.id)?.name ?? waiting.name.replace(/ \(bot\)$/i, "");
       room.game = logBotAction(g, next.state, action, waiting.id, seatName);
     }
+    if (advanceRoomNeeds(room, g, room.game, action?.type === "bankTrade")) publish(room);
   }
 }
 
@@ -1238,6 +1246,7 @@ async function startGame(ws, room) {
   const game = createGame({ humans: room.seats.map((s) => ({ name: s.name })), bots: 0, victoryTarget: room.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? "on" });
   const order = [...room.seats];
   order.forEach((s, i) => {
+    s.needs = undefined;
     game.players[i].color = s.color;
     if (s.bot) game.players[i].kind = "bot";
   });
@@ -1315,6 +1324,7 @@ async function rematch(ws, room) {
   const order = winner ? [winner, ...live.filter((s) => s !== winner)] : live;
   const game = createGame({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), victoryTarget: room.victoryTarget ?? room.game.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game.wayfarerMode ?? "on" });
   order.forEach((s, i) => {
+    s.needs = undefined;
     game.players[i].color = s.color;
     if (s.bot) game.players[i].kind = "bot";
   });
@@ -1418,13 +1428,18 @@ function openOffer(room, from, give, want) {
   if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
   closeOffer(room);
   const tradeId = `t${room.game.seq}-${(room.offerSeq = (room.offerSeq ?? 0) + 1)}`;
-  const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), botTimers: [], until: Date.now() + 20000 });
-  room.offerTimer = setTimeout(() => {
-    closeOffer(room);
-    broadcast(room, { type: "tradeClosed", tradeId });
-    botsOn(room, offer);
-  }, 20000);
-  broadcast(room, { type: "tradeOffer", tradeId, from, give, want, seconds: 20 });
+  // #1245 (owner q-trade-hold B): a person's offer holds until it is answered, declined by all, cancelled, or their turn
+  // ends; it has no run-out (until and seconds are null). A bot's offer keeps the run-out, so a bot never stalls the table.
+  const runOut = room.game.players.find((p) => p.id === from)?.kind === "bot";
+  const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), botTimers: [], until: runOut ? Date.now() + OFFER_MS : null });
+  if (runOut) {
+    room.offerTimer = setTimeout(() => {
+      closeOffer(room);
+      broadcast(room, { type: "tradeClosed", tradeId });
+      botsOn(room, offer);
+    }, OFFER_MS);
+  }
+  broadcast(room, { type: "tradeOffer", tradeId, from, give, want, seconds: runOut ? OFFER_MS / 1000 : null });
   offer.peopleUntil = Date.now() + PEOPLE_FIRST_MS;
   offer.heldYes = [];
   offer.botTimers.push(setTimeout(() => releaseHeld(room, offer), PEOPLE_FIRST_MS));
@@ -1468,6 +1483,17 @@ function ask(ws, room, msg) {
   openOffer(room, actor, msg.give, msg.want);
 }
 
+// The asker takes back its own open offer (#1245): with no run-out on a person's offer, this is the way out of one nobody
+// answers. Closes it for the whole table with no taker.
+function cancelOffer(ws, room, msg) {
+  const offer = room.offer;
+  if (!offer || offer.from !== ws.seat.pid || (msg.tradeId && msg.tradeId !== offer.tradeId)) {
+    return send(ws, { type: "error", message: "Offer is gone." });
+  }
+  closeOffer(room);
+  broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId });
+}
+
 function answer(ws, room, msg) {
   const actor = ws.seat.pid;
   const offer = room.offer;
@@ -1480,6 +1506,7 @@ function answer(ws, room, msg) {
 
 // `actor`'s Yes or No to the open offer, from a person or a bot seat. Returns an error for that seat, if any.
 function respond(room, actor, yes) {
+  const before = room.game;
   const offer = room.offer;
   if (!yes) {
     // A "No" is told to the whole table. The offer stays open for seats that have not answered and
@@ -1521,6 +1548,7 @@ function respond(room, actor, yes) {
   closeOffer(room);
   const tradeLines = newLog(room.game.log, accepted.state.log).filter((line) => !line.includes(" offers a trade to "));
   room.game = { ...accepted.state, log: [...room.game.log, ...tradeLines].slice(-200) };
+  if (advanceRoomNeeds(room, before, room.game, true)) publish(room);
   for (const line of tradeLines) say(room, line);
   // The asker's trade went through: that is their action, so their window restarts (pushState re-arms it).
   const asker = room.seats.find((s) => s.pid === offer.from);
@@ -1574,6 +1602,7 @@ function play(ws, room, msg, automated = false) {
   room.game = automated
     ? logBotAction(before, next.state, action, ws.seat.pid, room.seats.find((s) => s.pid === ws.seat.pid)?.name ?? ws.seat.name)
     : next.state;
+  if (advanceRoomNeeds(room, before, room.game, action.type === "bankTrade")) publish(room);
   disarmTurn(ws.seat);
   hear(msg.type === "place" ? `${msg.kind}_place` : SOUND[msg.type]);
   // A roll-off die is not a production roll: its lines reach every seat through the log below.
@@ -1712,9 +1741,15 @@ function handle(ws, raw) {
   if (msg.type === "leave") return leaveOnPurpose(ws, room);
   if (msg.wayfarerMode !== undefined || msg.type === "setWayfarerMode") return send(ws, { type: "error", message: "Wayfarer mode is fixed when the table is created." });
   if (msg.type === "chat" || msg.type === "react" || msg.type === "sound") return talk(ws, room, msg);
-  if (!allow(ws.seat.act, Date.now(), ACT_CAP, ACT_RATE)) return send(ws, { type: "error", message: "Slow down." });
+  if (!allow(ws.seat.act, Date.now(), ACT_CAP, ACT_RATE)) return send(ws, { type: "error", message: "Slow down.", ...(msg.type === "need" ? { request: "need" } : {}) });
   // A new game is being written to disk (#889): nothing else changes the table until it is in place or refused.
-  if (room.busy) return send(ws, { type: "error", message: "The table has updated. Please try again." });
+  if (room.busy) return send(ws, { type: "error", message: "The table has updated. Please try again.", ...(msg.type === "need" ? { request: "need" } : {}) });
+  if (msg.type === "need") {
+    if (!room.game || room.game.phase === "over") return send(ws, { type: "error", message: "Needs are available during a game.", request: "need" });
+    if (!validNeeds(msg.kinds)) return send(ws, { type: "error", message: "Choose up to two different goods.", request: "need" });
+    ws.seat.needs = msg.kinds.length ? { kinds: [...msg.kinds], turnsLeft: 2 } : undefined;
+    return publish(room);
+  }
   if (msg.type === "setVictoryTarget") {
     if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can choose the target." });
     if (room.game && room.game.phase !== "over") return send(ws, { type: "error", message: "The target is fixed for this game." });
@@ -1742,6 +1777,7 @@ function handle(ws, raw) {
   }
   if (msg.type === "tradeAsk") return ask(ws, room, msg);
   if (msg.type === "tradeAnswer") return answer(ws, room, msg);
+  if (msg.type === "tradeCancel") return cancelOffer(ws, room, msg);
   return play(ws, room, msg);
 }
 
@@ -1793,11 +1829,11 @@ function rejoin(ws, msg) {
   if (open && room.offer === open) resendOffer(ws, room, seat, open);
 }
 
-// A seat back inside an open ask it did not make sees the offer again with what is left of its window, then every No
-// it missed, so its panel matches the table (#576). After the state, so the client has the names.
+// A seat back inside an open ask sees the offer again with what is left of its window, then every No it missed, so its
+// panel matches the table (#576). After the state, so the client has the names. The asker gets it back too (#1245): a
+// person's offer holds, so the asker needs its card and Cancel again after a reload.
 function resendOffer(ws, room, seat, offer) {
-  if (offer.from === seat.pid) return;
-  const seconds = Math.max(0, Math.floor((offer.until - Date.now()) / 1000));
+  const seconds = offer.until === null ? null : Math.max(0, Math.floor((offer.until - Date.now()) / 1000));
   send(ws, { type: "tradeOffer", tradeId: offer.tradeId, from: offer.from, give: offer.give, want: offer.want, seconds });
   for (const by of offer.declined) {
     send(ws, { type: "tradeDeclined", tradeId: offer.tradeId, by, name: room.game.players.find((p) => p.id === by).name });
@@ -1857,8 +1893,9 @@ function takeOver(room, seat) {
   // Assistance is marked for the outcome and never cleared by a rejoin; the frozen roster keeps the seat human (#889).
   room.assisted = [...new Set([...(room.assisted ?? []), seat.pid])];
   room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "bot", name: `${x.name} (bot)` } : x)) };
+  seat.needs = undefined;
   say(room, `${seat.name} is played by the bot until they return.`);
-  save(room);
+  publish(room);
   // With nobody connected, the bots wait too: a rejoin runs them.
   if (!room.seats.some((s) => s.ws)) return;
   const seen = room.game.log;

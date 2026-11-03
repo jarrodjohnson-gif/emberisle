@@ -1,5 +1,6 @@
 {
   "LobbyView": 2300,
+  "LobbyWaitBox": 1800,
   "index": 122300,
   "IslandCanvas": 199500,
   "jelly-board": 7600,
@@ -21,5 +22,6 @@
   "sound-extra": 203,
   "trade-sound": 468,
   "emotes": 371,
+  "SeatNeeds": 1780,
   "TradeResource": 1430
 }

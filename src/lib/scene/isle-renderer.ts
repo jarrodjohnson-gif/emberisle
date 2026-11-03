@@ -34,6 +34,7 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { worldOfHex } from "@/lib/game/board";
 import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game/hex";
 import { LAND_MS } from "@/lib/scene/landing";
+import { LandingDust } from "@/lib/scene/landing-dust";
 import { hashStr } from "@/lib/utils";
 import { chunkUrl } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
@@ -103,6 +104,16 @@ const FLASH_S = 0.6;
 const FLASH_PEAK = 0.35;
 // The pulse token (polish.md "Motion"): legal corners and paths breathe once per 1.2 s.
 const LEGAL_PULSE_S = 1.2;
+// The legal-corner ring (#830): wide enough to see from the default view, outlined dark so it holds on every terrain.
+const VERTEX_RING = { radius: 0.2, tube: 0.04, outline: 0.025, outlineColor: 0x1c120a } as const;
+// A corner that already holds a home (a Stronghold upgrade) gets a halo on the ground around the piece, never on it (owner
+// card on PR #848, Fable spec, 2026-11-01): the piece's base ends at 0.276, so the halo's dark outline (0.285 out) meets the
+// base's own dark rim and the white band (0.31 to 0.39) sits outside it. Depth-tested, so the house stands in front of it.
+const HOME_HALO = { radius: 0.35, tube: 0.04, outline: 0.025 } as const;
+// The warm orange-white glow a paying piece takes on a roll.
+const WARM_GLOW = 0xffd27a;
+// The legal-corner rings and discs glow plain white (#830, owner q848-glow-v2: "Keep it white"); the dark outline carries the contrast.
+const RING_GLOW = 0xffffff;
 
 // The two views in play (docs/design/camera-light.md). Overhead: a frustum and a look-at point from the fit to the HUD hole,
 // and the eye on an orbit around that point, ORBIT_RADIUS out. Diorama (the default, #597): a perspective eye on an orbit
@@ -237,7 +248,8 @@ export class IsleRenderer {
   // placed (performance.now()), so a rebuild mid-fall carries the fall over to the new mesh instead of restarting it.
   private placed = new Map<string, PieceKind>();
   private landStart = new Map<string, number>();
-  private landings: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number }[] = [];
+  private landings: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number; dusted?: boolean }[] = [];
+  private dust = new LandingDust();
   private legalIds = new Set<string>();
   // An armed Upgrade: only the player's own outposts are legal, so a touch tap on one raises it at once, with no Place chip.
   private oneTap = false;
@@ -440,7 +452,7 @@ export class IsleRenderer {
     this.wayfarer = this.bruno.g;
     this.lantern = this.bruno.lantern;
     this.living.add(this.wayfarer);
-    this.scene.add(this.land, this.living, this.pieces, this.marks);
+    this.scene.add(this.land, this.living, this.pieces, this.marks, this.dust.group);
 
     canvas.style.touchAction = "none";
     canvas.addEventListener("pointerdown", this.onDown);
@@ -471,6 +483,8 @@ export class IsleRenderer {
     this.ssao.maxDistance = 0.08;
     this.composer.addPass(this.ssao);
     this.composer.addPass(new OutputPass());
+    // addPass sizes SSAO to the full composer. Resize again so the first frame uses the free-view half size (#330).
+    this.resize();
     this.renderer.setAnimationLoop(this.tick);
     } catch (err) {
       this.dispose();
@@ -663,7 +677,7 @@ export class IsleRenderer {
         }
         if (mesh.userData.payerMaterial) {
           const mat = mesh.material as THREE.MeshStandardMaterial;
-          mat.emissive.set(0xffd27a);
+          mat.emissive.set(WARM_GLOW);
           mat.emissiveIntensity = calm && active ? 0.35 : 0;
         }
       });
@@ -840,6 +854,7 @@ export class IsleRenderer {
     this.renderer?.domElement?.removeEventListener("pointermove", this.onMove);
     this.renderer?.domElement?.removeEventListener("pointercancel", this.onCancel);
     this.safeProbe?.remove();
+    this.dust?.dispose?.();
     this.oceanLife?.dispose?.();
     this.bruno?.dispose?.();
     this.under?.dispose?.();
@@ -879,7 +894,9 @@ export class IsleRenderer {
     this.composer?.setSize(w, h);
     const ratio = this.renderer.getPixelRatio();
     this.under?.setSize(Math.round(w * ratio), Math.round(h * ratio));
-    this.ssao?.setSize(w, h);
+    // #330: free view (title, lobby, and the free camera) runs SSAO at half the CSS size. Play views keep the full CSS size.
+    const half = this.view === "free";
+    this.ssao?.setSize(half ? Math.ceil(w / 2) : w, half ? Math.ceil(h / 2) : h);
     this.refit(true);
     // The HUD re-lays out for the new size after this event (a rotation swaps its columns and rails), so the hole just
     // measured is the old one: measure again on each of the next frames.
@@ -1323,7 +1340,7 @@ export class IsleRenderer {
       this.walk = null;
       this.startWalk();
     }
-    const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.jelly?.busy();
+    const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.jelly?.busy() || this.dust.active;
     const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
     // Camera constraints and glides are input state: process them even when the next draw waits on the GPU.
@@ -1344,6 +1361,7 @@ export class IsleRenderer {
     const dt = Math.min(this.clock.getDelta(), 0.1);
     this.stepFlashes(dt, calm);
     this.stepPayers(dt, calm);
+    this.dust.step(dt);
     this.controls.autoRotate = this.titleMode && !calm;
     if (!this.play()) {
       this.controls.enableDamping = !calm;
@@ -1701,6 +1719,7 @@ export class IsleRenderer {
     this.tokens = [];
     this.caps.clear();
     this.flashes = [];
+    this.dust.clear();
     this.oceanLife.reset(landKey(state));
 
     // Each hex: an unseen block to pick it by, a stand-in slab in its terrain's paint, and its token.
@@ -1872,9 +1891,18 @@ export class IsleRenderer {
   }
 
   // Pose every landing piece for this moment; a finished one is left exactly at rest. Reduced motion skips to rest.
+  // Dust fires once per landing at LAND_MS, aligned with the placement sound.
   private stepLandings(now: number, calm: boolean) {
     if (!this.landings.length) return;
     for (const l of this.landings) poseLanding(l, calm ? Infinity : now);
+    if (!calm) {
+      for (const l of this.landings) {
+        if (!l.dusted && now - l.start >= LAND_MS[LAND_SOUND[l.kind]]) {
+          l.dusted = true;
+          if (now - l.start < LAND_MS[LAND_SOUND[l.kind]] + 100) this.dust.emit(l.obj.position.x, l.restY, l.obj.position.z);
+        }
+      }
+    }
     this.landings = this.landings.filter((l) => !calm && now - l.start < LAND_MS[LAND_SOUND[l.kind]]);
     for (const [key, start] of this.landStart) if (calm || now - start >= LAND_MAX) this.landStart.delete(key);
   }
@@ -1893,16 +1921,76 @@ export class IsleRenderer {
     const seat = new THREE.Color(state.players.find((p) => p.id === state.current)?.color ?? "#fff6e8");
     // The glow leans toward cream so a dark seat (Pine) still reads on forest at the pulse trough; the hue stays the seat's.
     const glow = seat.clone().lerp(new THREE.Color(0xfff6e8), 0.35);
+    // The corner rings glow plain white (#830); the path bars keep the seat glow above.
+    const ringGlow = new THREE.Color(RING_GLOW);
 
-    for (const v of state.vertices) {
-      if (!vset.has(v.id)) continue;
+    const legalVertices = state.vertices.filter((v) => vset.has(v.id));
+    const emptyCorners = legalVertices.filter((v) => !v.building);
+    const builtCorners = legalVertices.filter((v) => v.building);
+    const dummy = new THREE.Object3D();
+    if (emptyCorners.length > 0) {
+      // Outlines and discs are instanced across all empty legal corners: drops 108 draw calls down to 2 (#830).
+      const outlineGeo = new THREE.TorusGeometry(VERTEX_RING.radius, VERTEX_RING.tube + VERTEX_RING.outline, 8, 32);
+      const outlineMat = new THREE.MeshBasicMaterial({ color: VERTEX_RING.outlineColor, depthTest: false });
+      const outlines = new THREE.InstancedMesh(outlineGeo, outlineMat, emptyCorners.length);
+      outlines.renderOrder = 98;
+      outlines.userData = { kind: "vertex-outlines" };
+
+      const discGeo = new THREE.CircleGeometry(VERTEX_RING.radius, 32);
+      const discMat = new THREE.MeshBasicMaterial({ color: RING_GLOW, transparent: true, opacity: 0.3, depthWrite: false, depthTest: false });
+      const discs = new THREE.InstancedMesh(discGeo, discMat, emptyCorners.length);
+      discs.renderOrder = 99;
+      discs.userData = { kind: "vertex-discs" };
+
+      emptyCorners.forEach((v, i) => {
+        const y = vertexTop(tops, v) + 0.03;
+        dummy.position.set(v.x, y - 0.04, v.z);
+        dummy.rotation.set(Math.PI / 2, 0, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        outlines.setMatrixAt(i, dummy.matrix);
+
+        dummy.position.set(v.x, y - 0.016, v.z);
+        dummy.rotation.set(-Math.PI / 2, 0, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        discs.setMatrixAt(i, dummy.matrix);
+      });
+      outlines.instanceMatrix.needsUpdate = true;
+      discs.instanceMatrix.needsUpdate = true;
+      this.marks.add(outlines);
+      this.marks.add(discs);
+    }
+    if (builtCorners.length > 0) {
+      // A home's halo: one instanced dark outline under the white band, depth-tested with the default render order so the
+      // house stands in front of the halo's far side. No disc at a built corner.
+      const haloGeo = new THREE.TorusGeometry(HOME_HALO.radius, HOME_HALO.tube + HOME_HALO.outline, 8, 48);
+      const haloMat = new THREE.MeshBasicMaterial({ color: VERTEX_RING.outlineColor });
+      const haloOutlines = new THREE.InstancedMesh(haloGeo, haloMat, builtCorners.length);
+      haloOutlines.userData = { kind: "home-halo-outlines" };
+      builtCorners.forEach((v, i) => {
+        dummy.position.set(v.x, vertexTop(tops, v) + 0.03 - 0.04, v.z);
+        dummy.rotation.set(Math.PI / 2, 0, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        haloOutlines.setMatrixAt(i, dummy.matrix);
+      });
+      haloOutlines.instanceMatrix.needsUpdate = true;
+      this.marks.add(haloOutlines);
+    }
+
+    for (const v of legalVertices) {
+      // An empty corner's ring draws over everything; a home's halo is depth-tested so the house stands in front of it.
+      const ring = v.building ? HOME_HALO : VERTEX_RING;
       const m = new THREE.Mesh(
-        new THREE.TorusGeometry(0.13, 0.025, 8, 24),
-        new THREE.MeshStandardMaterial({ color: seat, emissive: glow, emissiveIntensity: 0.8 }),
+        new THREE.TorusGeometry(ring.radius, ring.tube, 8, v.building ? 48 : 32),
+        new THREE.MeshStandardMaterial({ color: seat, emissive: ringGlow, emissiveIntensity: 1, depthTest: Boolean(v.building) }),
       );
+      if (!v.building) m.renderOrder = 100;
       m.rotation.x = Math.PI / 2;
+      // Both sit on the ground at the corner (no lift onto a home's base).
       m.position.set(v.x, vertexTop(tops, v) + 0.03, v.z);
-      m.userData = { kind: "vertex", id: v.id, baseGlow: 0.8 };
+      m.userData = { kind: "vertex", id: v.id, baseGlow: 1 };
       this.marks.add(m);
       const pick = new THREE.Mesh(new THREE.SphereGeometry(PICK_VERTEX_RADIUS, 8, 6), new THREE.MeshBasicMaterial());
       pick.visible = false;
@@ -2316,16 +2404,35 @@ const LAND_MAX = Math.max(...Object.values(LAND_MS));
 const easeOut = (u: number) => 1 - (1 - u) ** 5;
 const easeSnap = (u: number) => 1 + 2.70158 * (u - 1) ** 3 + 1.70158 * (u - 1) ** 2;
 
-// A path grows from 0.2 along its edge; an outpost drops 0.2 and settles; a stronghold swaps in at 1.05 and settles.
+// Drop heights: path 0.04, outpost 0.2, stronghold 0.15. Squash overlay in the last 35% of the animation:
+// a damped sine compresses Y and expands XZ, settling to [1,1,1] at u=1 (LAND_MS).
+const SQUASH_START = 0.65;
+const jellyBounce = (su: number) => Math.exp(-5 * su) * Math.sin(su * Math.PI * 3);
+
 function poseLanding(l: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number }, now: number) {
   const u = Math.min(1, Math.max(0, (now - l.start) / LAND_MS[LAND_SOUND[l.kind]]));
   const { obj } = l;
   if (u >= 1) {
     obj.position.y = l.restY;
     obj.scale.set(1, 1, 1);
-  } else if (l.kind === "path") obj.scale.set(1, 1, 0.2 + 0.8 * easeOut(u));
-  else if (l.kind === "outpost") obj.position.y = l.restY + 0.2 * (1 - easeSnap(u));
-  else obj.scale.setScalar(1.05 - 0.05 * easeSnap(u));
+    return;
+  }
+  const j = u > SQUASH_START ? jellyBounce((u - SQUASH_START) / (1 - SQUASH_START)) : 0;
+  const sqY = 1 - 0.22 * j;
+  const sqXZ = 1 + 0.11 * j;
+
+  if (l.kind === "path") {
+    const gu = Math.min(u / SQUASH_START, 1);
+    obj.scale.set(sqXZ, sqY, (0.2 + 0.8 * easeOut(gu)) * sqXZ);
+    obj.position.y = l.restY + 0.04 * (1 - easeOut(gu));
+  } else if (l.kind === "outpost") {
+    obj.position.y = l.restY + 0.2 * (1 - easeSnap(u));
+    obj.scale.set(sqXZ, sqY, sqXZ);
+  } else {
+    const s = 1.05 - 0.05 * easeSnap(u);
+    obj.position.y = l.restY + 0.15 * (1 - easeSnap(u));
+    obj.scale.set(s * sqXZ, s * sqY, s * sqXZ);
+  }
 }
 
 function makePath(seat: string, len: number) {
