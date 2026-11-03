@@ -40,7 +40,7 @@ try {
     hasTouch: true,
   });
   const page = await ctx.newPage();
-  page.on("console", (m) => m.type() === "error" && !m.text().includes("favicon.ico") && errors.push(m.text()));
+  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
 
   await page.goto(`http://127.0.0.1:${PORT}/invite.html?code=ABCD`, { waitUntil: "domcontentloaded" });
