@@ -1,0 +1,36 @@
+
+> chat-prove
+> node scripts/chat-prove.mjs
+
+ok lobby status on Ember: "Need 2 more players" +5.1s
+ok lobby status on Ember: "Need 1 more player" +6.2s
+ok lobby status on Tide: "Need 1 more player" +6.3s
+ok lobby status on Ember: "0 of 3 ready" +7.3s
+ok lobby status on Tide: "0 of 3 ready" +7.3s
+ok host tag on Ember's row only, seen by Ember +7.3s
+ok host tag on Ember's row only, seen by Tide +7.3s
+ok host tag on Ember's row only, seen by Pine +7.3s
+ok phone title card is 402 px tall, at most 55% of 844 +7.4s
+ok phone title card is full width minus 12 px, at the bottom +7.4s
+ok phone lobby card is 358x812, inside the 390x844 screen with the approved 16 px margins +9.9s
+ok phone lobby 390x844, 4 seats scrolled down: footer keeps the approved 12 px bottom padding (gap 12), nothing below it, Leave inside it +13.5s
+ok phone lobby 390x640, 4 seats scrolled down: footer keeps the approved 12 px bottom padding (gap 12), nothing below it, Leave inside it +14.9s
+ok phone lobby: the card starts unscrolled +14.9s
+ok phone lobby: Ready is inside the card and the 390x844 viewport without scrolling +15.0s
+ok phone lobby: Start is inside the card and the 390x844 viewport without scrolling +22.2s
+ok phone lobby: the Ready/Start row is wholly on screen +22.2s
+ok phone lobby 390x844: 8 whole chat lines on screen, newest ("Guslobby line 8") visible, 14px text +31.0s
+ok phone lobby 390x844: Ready/Start stay on screen beside the chat +31.0s
+ok phone lobby 390x844: the Sounds & stickers tab shows all 8 listed chips at 15px with no sideways scroll +31.2s
+ok phone lobby 390x844: the Sounds & stickers tab shows all 15 chips inside the box +31.2s
+ok 390x844: sticker monkey-pet is in the Sounds & stickers tab, loaded, on screen, 44x44 +31.4s
+ok 390x844: sticker side-eye is in the Sounds & stickers tab, loaded, on screen, 44x44 +31.5s
+ok 390x844: sticker banana-guy is in the Sounds & stickers tab, loaded, on screen, 44x44 +31.5s
+ok 390x844: sticker glasses-glance is in the Sounds & stickers tab, loaded, on screen, 44x44 +31.6s
+ok 390x844: sticker dark-smile is in the Sounds & stickers tab, loaded, on screen, 44x44 +31.8s
+ok 390x844: chip "Play sound Real badman" is on screen at 44 px tall +31.9s
+FAIL locator.scrollIntoViewIfNeeded: Element is not attached to the DOM
+Call log:
+[2m  - attempting scroll into view action[22m
+[2m    - waiting for element to be stable[22m
+

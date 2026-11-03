@@ -1,0 +1,30 @@
+
+> trade-prove
+> node scripts/trade-prove.mjs
+
+#425: Host a table -> /audio/click_001.wav once
+table 6SGL: setup done, seq 19
+Tide gives 1 timber, wants 1 ore; Pine says no, Ember says yes
+#425: Escape on the trade panel -> /audio/back_001.wav once
+#378: Enter on Trade -> dialog "Trade", focus on "Close"; 14 Tabs + 3 Shift+Tabs stayed inside (10 stops); Escape -> focus on Trade
+#609/#1107: offer of timber for ore heard as ["trade_offer.wav@1"] on the other seats and [] on the asker
+toast on Ember and Pine: full or compact per hand; asker sees "Waiting…"
+#366 / #537: Ember and Pine see a named offer region (full or compact), focus untouched
+Pine declined: asker sees "Pine declined", offer still open for Ember
+#609: trade_yes plays in full for the asker and taker, at half volume for the bystander
+Ember took it: 1 timber -> Ember, 1 ore -> Tide, hands and goods counts agree on all 3 tabs
+#537: "Tide is looking for 3 wood" is compact on Ember and Pine: Dismiss, no Yes
+#366: Escape in Pine's compact toast answered No; Ember has no Accept and answers nothing
+#609: trade_no plays for the asker only
+#366: Ember's polite line said only "5 seconds left"
+second offer ran out after 20 s left on the clock: hands unchanged, toast closed on all 3 tabs
+#537: Ember sees compact "Tide is looking for 2 wood"; Pine sees full offer "Tide offers 1 stone for 2 wood"
+#537: Ember's Dismiss and toast are described by the hidden "You need 2 more wood to accept"; Pine has none
+#537: giving Ember 2 wood flips compact to full Yes/No without a new offer
+#537: Dismiss fades the card over 9 frames (opacity 1.00 to 0.11), inert while it goes
+#537: both declined, the offer is gone on all 3 tabs in 123 ms
+#537 (normal motion): no stale offer card appears when the outcome line clears
+#537: reduced motion: dismiss at once, both declined, the offer is gone on all 3 tabs in 87 ms
+#537 (reduced motion): no stale offer card appears when the outcome line clears
+#1107: trade clips follow precedence, reach all seats, plain chime excludes the asker, and corn_no needs every explicit No
+trade prove ok

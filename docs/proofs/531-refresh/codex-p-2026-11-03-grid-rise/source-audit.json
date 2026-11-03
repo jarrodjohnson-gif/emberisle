@@ -1,0 +1,57 @@
+{
+  "code": "0de30e73738ad5c4c2c96befdb405ee91e3d4b20",
+  "proof": "daa2a59d419db801d63050bb8aa42ad704fa98db",
+  "originalAssertionLines": 36,
+  "newAssertionLines": 46,
+  "replacedAssertionLines": [
+    "assert.deepEqual([moving.card, moving.button, ...new Set(moving.kids)], [matrix(-2), matrix(2), matrix(-2)], `${v.tag}: card, button and content transforms ${JSON.stringify(moving)}`);"
+  ],
+  "addedAssertionLines": [
+    "assert.ok(samples[0].animationCount > 0, `${width} ${font}: the native rise has animations to sample`);",
+    "assert.deepEqual([samples[0].card.t, samples.at(-1).card.t], [12, 10], `${width} ${font}: the 150 ms rise moves exactly 2 px`);",
+    "assert.ok(sample.card.t <= previousTop && sample.card.t >= 10, `${tag}: rise progresses toward its 2 px endpoint`);",
+    "assert.equal(sample.points.t, sample.card.t + 1, `${tag}: content follows the risen card`);",
+    "assert.equal(sample.card.h, 44, `${tag}: card stays 44 px high`);",
+    "assert.deepEqual([sample.button.t, sample.button.h], [12, 44], `${tag}: safe-area control stays fixed`);",
+    "assert.ok(t.l >= sample.card.l && t.r <= sample.card.r && t.t >= sample.card.t && t.b <= sample.card.b, `${tag}: ${kind} stays inside its card`);",
+    "assert.ok(t.r <= sample.points.l + 0.5 || t.b <= sample.points.t || t.t >= sample.points.b, `${tag}: ${kind} tally clears the points ${JSON.stringify(sample)}`);",
+    "assert.deepEqual(moving.offsets, [\"-2px\", \"2px\", \"-2px\", \"-2px\"], `${v.tag}: card, button and content use the 2 px layout rise ${JSON.stringify(moving)}`);",
+    "assert.deepEqual([moving.card, moving.button, ...new Set(moving.kids)], [\"none\", \"none\", \"none\"], `${v.tag}: no nested transforms during the layout rise ${JSON.stringify(moving)}`);",
+    "if (v.strip) assert.deepEqual(calm.offsets, [\"0px\", \"0px\", \"0px\", \"0px\"], `${v.tag}: no layout rise under reduced motion ${JSON.stringify(calm)}`);"
+  ],
+  "originalWaitLinesUnchanged": true,
+  "files": {
+    "src/styles.css": {
+      "sha256": "17a300f32c7f667fc5472f0e9738d2ce132780df63ff2d4a93215023fb9ecb03",
+      "matchesPreviousHead": false
+    },
+    "scripts/turn-marker-prove.mjs": {
+      "sha256": "ffb17b2c9a5c5ea492acdc9557e09e3754487a35fa3ea7f024850d49181ec409",
+      "matchesPreviousHead": false
+    },
+    "scripts/longest-army-prove.mjs": {
+      "sha256": "fc308c244f299739406828037d274b2f5509b630f2661becdcc2b6f47ca069b0",
+      "matchesPreviousHead": true
+    },
+    "package.json": {
+      "sha256": "0bae7671f6b208005345fc7c4a5a505665ccb3de6a1eab92087d7a867b1adc21",
+      "matchesPreviousHead": true
+    },
+    ".github/workflows/ci.yml": {
+      "sha256": "27b406afb8ff46eb87e440ab5302e2cf7bc3340c22c215f496158d57e5901cb9",
+      "matchesPreviousHead": true
+    },
+    "package-lock.json": {
+      "sha256": "f7c5fa50812bdfdd4591f1967b5bf3cdbc4ae0b6c87098d9c0f65d29c34b04d7",
+      "matchesPreviousHead": true
+    },
+    "server/package-lock.json": {
+      "sha256": "d9db9d5e7601f2102acd29da2b96e014688eb0235b511a481c2078f8f67e1c97",
+      "matchesPreviousHead": true
+    },
+    "scripts/size-prove.mjs": {
+      "sha256": "61e77323e0aea838b3ccd7b138ca4d50c587426d6c69bb96ccb83678233a88e0",
+      "matchesPreviousHead": true
+    }
+  }
+}

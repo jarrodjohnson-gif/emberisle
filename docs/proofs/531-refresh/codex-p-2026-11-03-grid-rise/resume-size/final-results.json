@@ -1,0 +1,34 @@
+{
+  "sourceHead": "b0512d8e06bdce7174321cee5c0c182758edaab1",
+  "runtime": "Node22.23.4",
+  "finalSource": {
+    "turn-marker-prove": 0,
+    "hud-safe-area-prove": 1,
+    "hole-prove": 1,
+    "seat-rail-prove": 0,
+    "longest-army-prove": 0,
+    "trade-prove": 1
+  },
+  "mainSafeAreaControl": {
+    "head": "d5b6e48d8b6e4f0f5b39e2e78aa0253d880c3566",
+    "exit": 0,
+    "checks": 269,
+    "zeroConsoleErrors": true
+  },
+  "excludedNonfinal": "hud-safe-area-interrupted-nonfinal.log.gz: source edited during execution; deliberately stopped; never counted",
+  "candidateRetries": 0,
+  "earlierCandidateChat": "failed before game in lobby; installed unchanged main control passes; attribution unproved",
+  "hostedSourceBuild": {
+    "run": 41717447343,
+    "job": 126202626264,
+    "attempt": 1,
+    "actor": "joshjenjarrod001-tech",
+    "triggeringActor": "joshjenjarrod001-tech",
+    "indexBytes": 125171,
+    "baseBytes": 125186,
+    "growth": -15,
+    "ceiling": 125200,
+    "allowance": 400,
+    "result": "success"
+  }
+}

@@ -1,0 +1,88 @@
+
+> loosen-prove
+> node scripts/loosen-prove.mjs
+
+ok   self-test: an unchanged proof passes
+ok   self-test: re-indenting passes
+ok   self-test: an added check passes
+ok   self-test: editing only the block comment passes
+ok   self-test: a removed assert fails
+ok   self-test: a removed assert lowers the count
+ok   self-test: a wider tolerance fails
+ok   self-test: a //-commented assert fails
+ok   self-test: a /* */-commented assert fails
+ok   self-test: a check wrapped in a multi-line /* */ fails
+ok   self-test: a removed throw fails
+ok   self-test: a removed expect fails
+ok   self-test: a fail() that no longer sets exitCode 1 fails
+ok   self-test: an added process.exit(0) fails
+ok   self-test: an added process.exit() fails
+ok   self-test: a new .skip fails
+ok   self-test: an unlisted deletion fails
+ok   self-test: a listed deletion passes
+ok   self-test: a deletion listed only under another path fails
+ok   self-test: a listed proof with a weakened assert fails
+ok   self-test: a listed proof with a removed check fails
+ok   self-test: a listed proof renamed away fails
+ok   self-test: an unlisted proof renamed away fails
+ok   self-test: an added proof cannot reuse a retired path
+ok   self-test: a rename cannot reuse a retired path
+ok   self-test: an unlisted new proof passes
+ok   self-test: a missing list allows no deletion
+ok   self-test: the empty seed list allows no deletion
+ok   self-test: a full entry is listed
+ok   self-test: an entry naming a file that is not a proof fails
+ok   self-test: an entry with no date fails
+ok   self-test: an entry with no issue fails
+ok   self-test: an entry with an empty reason fails
+ok   self-test: a list with no entries array fails
+ok   self-test: a list that is not JSON fails
+ok   self-test: loosen-prove cannot be retired
+ok   self-test: registered-prove cannot be retired
+ok   self-test: an entry must cite a decision row
+ok   self-test: the decision row must name the exact proof
+ok   self-test: prose cannot stand in for a decision row
+ok   self-test: the owner may change the list
+ok   self-test: a collaborator may not change the list
+ok   self-test: a collaborator's push to the owner's PR may not change the list
+ok   self-test: the owner's run on a collaborator's PR may not change the list
+ok   self-test: a local run with no payload may not change the list
+ok   self-test: a payload with no owner may not change the list
+ok   self-test: a non-owner creating the empty seed where the base has none passes
+ok   self-test: a non-owner creating a seed with one entry fails
+ok   self-test: a non-owner creating a malformed seed fails
+ok   self-test: a non-owner adding an entry to the list fails
+ok   self-test: a non-owner emptying the list fails
+ok   self-test: a non-owner deleting the list fails
+ok   self-test: the owner adding an entry passes
+ok   self-test: the owner creating a seed with one entry passes
+ok   self-test: the owner breaking the list fails
+ok   self-test: retirement list and exact decision rows come from the base only; HEAD grants no permission
+FAIL scripts/hand-cards-prove.mjs: removed or edited check line: assert.ok(gain.cues.every((q) => q.anim === "goods-cue" && q.duration === "2.5s"), `${v.tag}: the fill and the tab hold 2200 ms and fade over 300 ms (${JSON.stringify(gain.cues)})`);
+FAIL scripts/hand-cards-prove.mjs: removed or edited check line: assert.deepEqual(parse(gain.tab.bg), rgb(PAINT.timber[1]), `${v.tag}: gain tab is the good's side colour`);
+FAIL scripts/hand-cards-prove.mjs: removed or edited check line: assert.deepEqual(parse(gain.tab.color), rgb("#ffffff"), `${v.tag}: gain tab text is white`);
+FAIL scripts/hand-cards-prove.mjs: removed or edited check line: assert.deepEqual(gain.tab.font, ["14px", "700"], `${v.tag}: the +N tab is 14 px bold`);
+FAIL scripts/hand-cards-prove.mjs: removed or edited check line: assert.ok(Math.abs(gain.tab.h - 22) <= 0.5, `${v.tag}: the +N tab is 22 px tall (${gain.tab.h})`);
+FAIL scripts/hand-cards-prove.mjs: removed or edited check line: assert.ok(Math.abs(gain.tab.above - 18) <= 0.5 && Math.abs(gain.tab.into - 4) <= 0.5, `${v.tag}: the tab grows out of the card's top edge (${gain.tab.above} px above, ${gain.tab.into} px into it)`);
+FAIL scripts/hand-cards-prove.mjs: removed or edited check line: assert.deepEqual(parse(loss.bg), rgb("#fff9f0"), `${v.tag}: loss tab is hollow (paper)`);
+FAIL scripts/hand-cards-prove.mjs: removed or edited check line: assert.deepEqual(parse(loss.color), rgb("#8a2219"), `${v.tag}: loss tab text is the loss red`);
+FAIL scripts/hand-cards-prove.mjs: removed or edited check line: assert.match(loss.edge, /rgb\(138, 34, 25\) 0px 0px 0px 1px inset/, `${v.tag}: loss tab has a 1 px red edge`);
+FAIL scripts/hand-cards-prove.mjs: removed or edited check line: assert.deepEqual(loss.font, ["14px", "700"], `${v.tag}: the −N tab is 14 px bold`);
+FAIL scripts/hand-cards-prove.mjs: removed or edited check line: assert.ok(Math.abs(loss.h - 22) <= 0.5 && Math.abs(loss.above - 19) <= 0.5, `${v.tag}: the −N tab is 22 px tall and grows out of the top edge (${loss.h}, ${loss.above})`);
+FAIL scripts/hand-cards-prove.mjs: removed or edited check line: assert.ok(tab.font === "14px" && Math.abs(tab.h - 22) <= 0.5, `deskshort ${JSON.stringify(hand)}: the tab is 14 px text, 22 px tall (${JSON.stringify(tab)})`);
+FAIL scripts/trade-prove.mjs: removed or edited check line: if (!v.toast.includes(line)) throw new Error(`${t.name} toast: "${v.toast}"`);
+FAIL scripts/trade-prove.mjs: removed or edited check line: if (got.ariaDisabled !== "true") throw new Error(`${where}: Yes is not aria-disabled though it cannot pay`);
+FAIL scripts/trade-prove.mjs: removed or edited check line: if (got.describedBy !== `Need ${short} more ${RESOURCE_LABEL[r].toLowerCase()}`) throw new Error(`${where}: Yes is not described by "Need ${short} more ${RESOURCE_LABEL[r].toLowerCase()}"`);
+FAIL scripts/trade-prove.mjs: removed or edited check line: if (sent.length) throw new Error(`${B.name}'s aria-disabled Yes answered: ${JSON.stringify(sent)}`);
+FAIL scripts/turn-gain-prove.mjs: removed or edited check line: check(roll.lines.every((l) => l.text === `+${l.d}` && l.color === WHITE && l.bg === PAINT[l.r][1]), `${tag}: each reads "+N" in white on its good's side colour`, roll.lines.map((l) => [l.r, l.text, l.color, l.bg]));
+FAIL scripts/turn-gain-prove.mjs: removed or edited check line: check(roll.lines.every(l => l.anim?.duration === CUE_MS && l.lit?.animations === 1 && l.move?.duration === CUE_MS), `${tag}: the tab, the fill and the lift each run exactly 2500 ms (2200 ms held, 300 ms fade)`, roll.lines.map((l) => [l.anim?.duration, l.move?.duration]));
+FAIL scripts/turn-gain-prove.mjs: removed or edited check line: check(expiry.every(t => t.running <= 2600), `${tag}: the batch has left within 2.6 s, excluding measured stalls`, expiry);
+FAIL scripts/turn-gain-prove.mjs: removed or edited check line: check(expiry.every(t => t.raw <= 3500), `${tag}: raw expiry stays below the 3.5 s guard`, expiry);
+FAIL scripts/turn-gain-prove.mjs: removed or edited check line: check(traded && trade.length === 2 && stone?.text === `−${gave}` && stone.color === RED && stone.bg === "rgb(255, 249, 240)" && stone.lost && !stone.lit, `${tag}: a bank trade shows −${gave} on Stone as a hollow red tab, the card ringed red`, trade);
+FAIL scripts/turn-gain-prove.mjs: removed or edited check line: check(wheat?.text === "+1" && wheat.bg === PAINT.grain[1] && wheat.lit === PAINT.grain[0], `${tag}: and +1 on the filled Wheat card`, wheat);
+FAIL scripts/turn-gain-prove.mjs: removed or edited check line: for (const c of shades) check(c.min >= 4.5, `${tag}: ${c.color === RED ? "loss" : "gain"} tab text ≥ 4.5:1 against the pixels behind it`, { color: c.color, min: c.min.toFixed(2), pixels: c.pixels });
+FAIL scripts/turn-gain-prove.mjs: removed or edited check line: check(t2.gone - t2.at <= 2000 && readable(t2) >= 1200, `${tag}: untouched, "Your turn" is up about 1.6 s and gone within 2 s`, { up: (t2.gone - t2.at).toFixed(0), readable: readable(t2).toFixed(0) });
+FAIL scripts/wayfarer-setup-prove.mjs: removed or edited check line: await page.evaluate(()=>{const g=window.__emberisle,s=structuredClone(g.getState().state),p=s.players.find(p=>p.id===g.getState().localId);s.current=p.id;s.phase='roll';s.playedCard=false;p.hidden.knight=1;p.boughtThisTurn.knight=0;g.setState({state:s,banner:null});});await page.getByTestId('fortunes-button').click();await page.getByTestId('fortune-play-knight').waitFor();assert.equal(await page.getByTestId('fortune-play-knight').innerText(),'Muster');assert.match(await page.getByTestId('fortune-row-knight').innerText(),/No target needed/);const b=await page.getByTestId('fortune-play-knight').boundingBox();assert.ok(b.width>=44&&b.height>=44&&b.y>=0&&b.y+b.height<=height);await page.screenshot({path:`test-results/wayfarer-muster-${width}.png`});await page.getByTestId('fortune-play-knight').click();const played=await page.evaluate(()=>{const g=window.__emberisle.getState();return{phase:g.state.phase,army:g.state.players.find(p=>p.id===g.localId).knightsPlayed,mode:g.buildMode,pending:g.pendingSteal,blocked:g.state.hexes.some(h=>h.blocked)};});assert.deepEqual(played,{phase:'roll',army:1,mode:'none',pending:null,blocked:false});await context.close();console.log(`ok ${width}x${height}: Off fortune adds army immediately; no picker, blocker or lost roll`);
+docs/retired-proofs.json: created with no entries, which lets no proof go
+4 proof(s) loosened, or owner-only file(s) changed, against 2f791f9cb19e. Restore the checks, or keep them and add new ones (AGENTS.md rule 7).
+To retire a proof whose feature is gone, the owner first lists it in docs/retired-proofs.json on main; a later PR then deletes it.

@@ -1,0 +1,5 @@
+
+> size-prove
+> node scripts/size-prove.mjs --base /workspace/work/531-nov2-base/dist
+
+FAIL no /workspace/work/531-nov2-base/dist/dist/assets: run npm run build first

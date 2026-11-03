@@ -1,0 +1,14 @@
+
+> turn-marker-prove
+> node scripts/turn-marker-prove.mjs
+
+390 native font: 14 fractional-rise samples keep both tallies clear and the 44 px control fixed
+AssertionError [ERR_ASSERTION]: 390 DejaVu Sans rise at 0.01 ms: army tally clears the points {"time":0.01,"animationCount":8,"card":{"l":92.5,"t":11.999394416809082,"r":169,"b":55.99939441680908,"w":76.5,"h":44},"button":{"l":92.5,"t":12,"r":169,"b":56,"w":76.5,"h":44},"points":{"l":149.28125,"t":12.999394416809082,"r":163,"b":38.99939441680908,"w":13.71875,"h":26},"tallies":[{"kind":"path","box":{"l":98.5,"t":38.999393463134766,"r":124.140625,"b":54.999393463134766,"w":25.640625,"h":16}},{"kind":"army","box":{"l":128.140625,"t":38.999393463134766,"r":153.78125,"b":54.999393463134766,"w":25.640625,"h":16}}]}
+    at file:///workspace/work/531-touch-ring/scripts/turn-marker-prove.mjs:110:16 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

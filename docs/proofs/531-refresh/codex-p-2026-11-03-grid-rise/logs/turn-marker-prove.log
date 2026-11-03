@@ -1,0 +1,25 @@
+
+> turn-marker-prove
+> node scripts/turn-marker-prove.mjs
+
+390 native font: 14 fractional-rise samples keep both tallies clear and the 44 px control fixed
+390 DejaVu Sans: 14 fractional-rise samples keep both tallies clear and the 44 px control fixed
+844 native font: 14 fractional-rise samples keep both tallies clear and the 44 px control fixed
+844 DejaVu Sans: 14 fractional-rise samples keep both tallies clear and the 44 px control fixed
+1280x720: 30 moves, 7 passes, the marker on exactly one visible seat after each, always on state.current
+1280x720: seat pointer ink [38,61,60,255]
+1280x720: trade offer pointer ink [38,61,60,255]
+1280x720: strip rise none on the rail; trade offer and win row wear the ring and mark; zero and two markers fail
+390x844: 33 moves, 7 passes, the marker on exactly one visible seat after each, always on state.current
+390x844: touch menu seat pointer ink [38,61,60,255]
+390x844: real-touch hovered strip ring pixels [[243,236,217,255],[243,236,217,255],[243,236,217,255]]
+390x844: seat pointer ink [38,61,60,255]
+390x844: trade offer pointer ink [38,61,60,255]
+390x844: strip rise 2 px under motion, none under reduced motion; trade offer and win row wear the ring and mark; zero and two markers fail
+844x390: 30 moves, 7 passes, the marker on exactly one visible seat after each, always on state.current
+844x390: touch menu seat pointer ink [38,61,60,255]
+844x390: real-touch hovered strip ring pixels [[226,61,46,255],[226,61,46,255],[226,61,46,255]]
+844x390: seat pointer ink [38,61,60,255]
+844x390: trade offer pointer ink [38,61,60,255]
+844x390: strip rise 2 px under motion, none under reduced motion; trade offer and win row wear the ring and mark; zero and two markers fail
+turn-marker-prove: ok

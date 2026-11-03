@@ -1,0 +1,73 @@
+{
+  "sourceHead": "b0512d8e06bdce7174321cee5c0c182758edaab1",
+  "main": "d5b6e48d8b6e4f0f5b39e2e78aa0253d880c3566",
+  "runtime": "Node22.23.4",
+  "files": {
+    "src/styles.css": {
+      "sha256": "7159ee3899a90d3472d2446975bc6953eebdb3dbed28e660aca567e124b9b62e",
+      "presentOnMain": true,
+      "matchesMain": false,
+      "matchesDaa2a59": false
+    },
+    "src/components/game/SeatRail.tsx": {
+      "sha256": "b9bed1b0a722750a6c514b06489c9daa74ac9809ca00602ffc470a7234522d8a",
+      "presentOnMain": true,
+      "matchesMain": false,
+      "matchesDaa2a59": false
+    },
+    "src/components/game/TradeToast.tsx": {
+      "sha256": "bc86b96c361a8bd88f689f41d85b75c5a53a08f068d5c08c183fe80d54e8bdf8",
+      "presentOnMain": true,
+      "matchesMain": false,
+      "matchesDaa2a59": false
+    },
+    "src/components/game/WinScreen.tsx": {
+      "sha256": "4c8375cb328ac950839a0a9bb0edef3666f854e7919ee524fce1689488d20e3b",
+      "presentOnMain": true,
+      "matchesMain": false,
+      "matchesDaa2a59": false
+    },
+    "scripts/turn-marker-prove.mjs": {
+      "sha256": "ffb17b2c9a5c5ea492acdc9557e09e3754487a35fa3ea7f024850d49181ec409",
+      "presentOnMain": false,
+      "matchesMain": null,
+      "matchesDaa2a59": true
+    },
+    "scripts/longest-army-prove.mjs": {
+      "sha256": "fc308c244f299739406828037d274b2f5509b630f2661becdcc2b6f47ca069b0",
+      "presentOnMain": true,
+      "matchesMain": true,
+      "matchesDaa2a59": true
+    },
+    "scripts/hud-safe-area-prove.mjs": {
+      "sha256": "9a63ac24e4d43f8a9fcbcec9f6b2d4cbf241087b9efd80aa736fe274e79806c1",
+      "presentOnMain": true,
+      "matchesMain": true,
+      "matchesDaa2a59": true
+    },
+    "scripts/chat-prove.mjs": {
+      "sha256": "9539a294d29391cc42432a71e5a7c0b2dd936776612578d73809321280ca7bd9",
+      "presentOnMain": true,
+      "matchesMain": true,
+      "matchesDaa2a59": true
+    },
+    "scripts/size-prove.mjs": {
+      "sha256": "9b0f509d3073b29e1c9dbc557f0a5feaa2a98c5d17faf1fde125a6ef45d96d39",
+      "presentOnMain": true,
+      "matchesMain": true,
+      "matchesDaa2a59": false
+    },
+    "package-lock.json": {
+      "sha256": "f7c5fa50812bdfdd4591f1967b5bf3cdbc4ae0b6c87098d9c0f65d29c34b04d7",
+      "presentOnMain": true,
+      "matchesMain": true,
+      "matchesDaa2a59": true
+    },
+    "server/package-lock.json": {
+      "sha256": "d9db9d5e7601f2102acd29da2b96e014688eb0235b511a481c2078f8f67e1c97",
+      "presentOnMain": true,
+      "matchesMain": true,
+      "matchesDaa2a59": true
+    }
+  }
+}
