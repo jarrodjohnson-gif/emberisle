@@ -23,12 +23,12 @@ import { PlaceChip } from "@/components/game/PlaceChip";
 import { SheetsFailed } from "@/components/game/SheetsFailed";
 import { TrayFailed } from "@/components/game/TrayFailed";
 import { TradeButton } from "@/components/game/TradeButton";
-import { CostChips, hintLine, needLine, priceLabel, shortfall, type Price } from "@/components/game/BuildCost";
+import { CostChips, hintLine, needLine, priceLabel, PRICE_NAME, shortfall, type Price } from "@/components/game/BuildCost";
 import { useEscapeDisarm } from "@/components/game/escape-disarm";
 import { COST, RESOURCES, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
 import { hiddenCount, legalCities, legalRoads, legalSettle, playable, totalVP } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
-import { LazyBoundary } from "@/lib/lazy";
+import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
 import { useViewport } from "@/lib/viewport";
 import { useMoreBelow } from "@/lib/scroll-fade";
 import { cn } from "@/lib/utils";
@@ -36,14 +36,11 @@ import { cn } from "@/lib/utils";
 const PRICES = Object.keys(COST) as Price[];
 const HINT_MS = 1600;
 
-const whyStronghold = (why: string) => (why === "None left" ? "No strongholds left" : "No homes to upgrade");
-
 // Whether a build can happen now and, if not, why: the supply (or the deck), then a legal spot; a spot with a hand that cannot pay is missing goods (#606).
 function buildStatus(state: GameState, me: PlayerState, kind: Price) {
   const short = shortfall(me.resources, kind);
   const left = kind === "card" ? (state.deckLeft ?? state.deck.length) : (me as any)[kind + "sLeft"];
-  const spot = kind === "path" ? legalRoads(state, me.id, false).length : kind === "outpost" ? legalSettle(state, me.id, false).length : kind === "stronghold" ? legalCities(state, me.id).length : 1;
-  const why = left <= 0 ? "None left" : spot ? null : "No spot";
+  const why = left <= 0 ? "None left" : (kind === "path" ? legalRoads(state, me.id, false).length : kind === "outpost" ? legalSettle(state, me.id, false).length : kind === "stronghold" ? legalCities(state, me.id).length : 1) ? null : "No spot";
   const missing = Object.keys(short).length;
   return { short, missing, why, ready: !why && !missing };
 }
@@ -71,22 +68,22 @@ const WAIT_ACT: Record<string, string> = {
 const waitingCopy = (phase: string, name: string) =>
   phase === "discard" ? "Wait for discards" : `Wait for ${name} to ${WAIT_ACT[phase] || "build or trade"}`;
 
-function armedText(mode: BuildMode, roadPicks: number, eligibleCount = 1, phone = false): string | null {
+function armedText(mode: BuildMode, roadPicks: number, eligibleCount = 1): string | null {
   if (mode === "none") return null;
-  const cancel = phone
-    ? `tap ${mode === "stronghold" ? "Upgrade" : mode === "path" ? "Path" : mode === "outpost" ? "Outpost" : "Play fortune"} again to cancel`
+  const cancel = matchMedia("(pointer: coarse)").matches
+    ? `tap ${mode === "stronghold" ? "Upgrade" : (PRICE_NAME[mode as Price] ?? "Play fortune")} again to cancel`
     : "Esc cancels";
   const act =
     mode === "path"
       ? "Place a path"
       : mode === "outpost"
         ? "Place an outpost"
-        : mode === "stronghold"
-          ? eligibleCount
-            ? "Pick a home to upgrade"
-            : "No homes to upgrade"
-          : mode === "knight"
-            ? "Move the wayfarer"
+        : mode === "knight"
+          ? "Move the wayfarer"
+          : mode === "stronghold"
+            ? eligibleCount
+              ? "Pick a home to upgrade"
+              : "No homes to upgrade"
             : mode === "roadCard"
               ? roadPicks
                 ? "Place one more path"
@@ -132,7 +129,7 @@ export function Hud() {
   const tradeOpen = useGame((s) => s.tradeOpen);
   const choosing = useGame((s) => !!s.pendingSteal);
   const menuFor = useGame((s) => s.menuFor);
-  const { setCosts, dispatch, refuseQuietly, setBuildMode, setHowTo, openMenu, highlights } = useGame.getState();
+  const { setCosts, dispatch, refuseQuietly, setBuildMode, setHowTo, highlights } = useGame.getState();
   // A watcher (docs/design/spectator.md): `me` below falls back to seat 0, so its hand bar is hidden by this flag, never by `localId`.
   const spectator = useGame((s) => s.spectator);
   const { phone, portrait } = useViewport();
@@ -145,6 +142,7 @@ export function Hud() {
   const [sheetsLost, setSheetsLost] = useState<string | null>(null);
   useEscapeDisarm();
   const [stackRef, moreBelow] = useMoreBelow();
+  useEffect(() => preloadOnIdle(sheets.prefetch), []);
   // #423: the fortune tray is open until a fortune is played, it is closed, the phase moves (a roll with the tray up) or the
   // turn moves on (hotseat: to the next seat); it never comes back on its own.
   const [fortunesOpen, setFortunesOpen] = useState(false);
@@ -247,7 +245,7 @@ export function Hud() {
   // #419: an armed build says what to pick and how to cancel (a touch screen has no Esc key).
   const eligibleHomes = buildMode === "stronghold" ? highlights().vertices.length : 1;
   const phaseText =
-    (mine && armedText(buildMode, roadPicks.length, eligibleHomes, phone)) ||
+    (mine && armedText(buildMode, roadPicks.length, eligibleHomes)) ||
     (state.phase === "discard" ? `Discard ${state.discardNeeded[subject] ?? 0} goods` : phaseCopy(state.phase));
   const waiting = mode !== "hotseat" && !yours;
   // #430: in hotseat a seat that owes a discard on another seat's turn is named, not given the turn.
@@ -291,7 +289,11 @@ export function Hud() {
       <ChatControls />
     </LazyBoundary>
   ) : null;
-  const watchBadge = spectator ? <span data-testid="watching-badge" className="pointer-events-auto flex h-11 items-center rounded-control bg-surface px-3 text-caption text-fg">Watching</span> : null;
+  const watchBadge = spectator ? (
+    <span data-testid="watching-badge" className="flex h-11 items-center rounded-chip bg-glass px-3 text-caption text-fg backdrop-blur-md">
+      Watching
+    </span>
+  ) : null;
   const showBanner = banner && !(tradeOutcome && banner.endsWith("'s trade"));
   const bannerPos = column ? "left-full top-0 ml-3 w-max max-w-[calc(100vw-21.5rem-max(0.75rem,env(safe-area-inset-left))-max(0.75rem,env(safe-area-inset-right)))]" : "bottom-full mb-2";
 
@@ -316,7 +318,7 @@ export function Hud() {
 
       {phone && portrait && (mode === "online" || spectator) && (
         <div className="hud-utilities pointer-events-none absolute right-safe top-[calc(max(0.75rem,env(safe-area-inset-top))+3rem)] z-20 flex gap-1">
-          {watchBadge}
+          {spectator ? <span data-testid="watching-badge" className="pointer-events-auto flex h-11 items-center rounded-control bg-surface px-3 text-caption text-fg">Watching</span> : null}
           {chatBtn}
         </div>
       )}
@@ -407,11 +409,12 @@ export function Hud() {
                     nothing to build on or none left says so, and one the hand can pay for with a spot waiting wears the dot. */}
                 {BUILD_TILES.map(([kind, Icon], at) => {
                   const arm = kind === "card" ? null : kind;
-                  const label = kind === "card" ? "Fortune" : kind[0].toUpperCase() + kind.slice(1);
+                  const label = PRICE_NAME[kind];
                   const { short, missing, why, ready } = buildStatus(state, me, kind);
                   const blocked = !ready || spectator;
                   const status = why ?? (ready ? "Ready" : needLine(short));
-                  const shRefuse = why && kind === "stronghold" ? whyStronghold(why) : null;
+                  const shRefuse = kind === "stronghold" && why ? (why === "None left" ? "No strongholds left" : "No homes to upgrade") : null;
+                  const pLabel = priceLabel(kind);
                   return (
                     <Button
                       key={kind}
@@ -427,8 +430,8 @@ export function Hud() {
                       onAnimationEnd={(e) => e.animationName === "build-ready" && setPulse((p) => p.filter((k) => k !== kind))}
                       aria-pressed={arm ? buildMode === arm : undefined}
                       aria-disabled={blocked || undefined}
-                      title={priceLabel(kind)}
-                      aria-description={`${priceLabel(kind)} · ${status}`}
+                      title={pLabel}
+                      aria-description={`${pLabel} · ${status}`}
                       onClick={() => {
                         // aria-disabled keeps the button focusable, so the click itself must refuse (but may still disarm).
                         // A tap the hand cannot pay for says what is missing (a spot waiting, goods short) instead of doing nothing.
@@ -462,7 +465,7 @@ export function Hud() {
                             at === 0 ? "left-0" : at === 3 ? "right-0" : "left-1/2 -translate-x-1/2",
                           )}
                         >
-                          {shRefuse ?? (why || hintLine(short))}
+                          {shRefuse || hintLine(short)}
                         </span>
                       ) : null}
                     </Button>
@@ -530,7 +533,9 @@ export function Hud() {
                 className={
                   column
                     ? "max-h-full"
-                    : `max-h-[calc(100dvh-${portrait ? "7.25rem" : "5rem"}-env(safe-area-inset-top)-max(0.75rem,env(safe-area-inset-bottom)))]`
+                    : portrait
+                      ? "max-h-[calc(100dvh-7.25rem-env(safe-area-inset-top)-max(0.75rem,env(safe-area-inset-bottom)))]"
+                      : "max-h-[calc(100dvh-5rem-env(safe-area-inset-top)-max(0.75rem,env(safe-area-inset-bottom)))]"
                 }
               />
             </LazyBoundary>
