@@ -133,9 +133,8 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
 // #531: the non-colour half of the current-turn marker. Every chip of the seat on turn (rail, phone strip, trade toast, win rows)
 // wears one beside its ring: an ink pointer hanging from the top edge, so the turn never rests on the seat's colour alone (#312).
 // It sits out of the flow, so a chip with and without it is the same size. The parent must be positioned.
-export function TurnMark() {
-  return <span aria-hidden="true" data-testid="turn-mark" className="turn-mark" />;
-}
+// This immutable element has no props or state; reuse its identical markup at every marker mount.
+export const turnMark = <span aria-hidden="true" data-testid="turn-mark" />;
 
 // One seat's card: the menu's trigger (docs/design/chat.md "The player action menu") with its seat bubble beside it (#899). The rail
 // gives it `rail-<id>` and chip corners, the strip `seat-<id>`, control corners and a short name.
@@ -148,12 +147,12 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
   const strip = short !== undefined;
   const turn = p.id === current;
   // #531: the one persistent turn marker. The rail and the strip never mount together (Hud.tsx), so exactly one card carries it.
-  // The ring is the seat's colour (--seat-color) and the TurnMark is the non-colour cue; the strip's card also rises 2 px (styles.css).
+  // The ring is the seat's colour (--seat-color) and the turnMark is the non-colour cue; the strip's card also rises 2 px (styles.css).
   return (
     <div
       data-testid={`${strip ? "seat" : "rail"}-${p.id}`}
-      className={cn("seat-card relative transition-colors duration-200", className, strip && "seat-strip-cell", turn && "seat-turn")}
-      data-current-turn={turn ? "true" : undefined}
+      className={cn("seat-card", className, strip && "seat-strip-cell", turn && "seat-turn")}
+      data-current-turn={turn || undefined}
       style={turn ? ({ "--seat-color": p.color } as CSSProperties) : undefined}
     >
       <button
@@ -170,7 +169,7 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
       >
         <SeatLine p={p} actor={actor} short={short} />
       </button>
-      {turn ? <TurnMark /> : null}
+      {turn && turnMark}
       {online ? (
         <LazyBoundary failed={null}>
           <SeatBubbles by="player" id={p.id} at={strip ? "strip" : "rail"} />

@@ -2,7 +2,7 @@ import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
-import { TurnMark } from "@/components/game/SeatRail";
+import { turnMark } from "@/components/game/SeatRail";
 import { totalVP, victoryTarget } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { useViewport } from "@/lib/viewport";
@@ -173,7 +173,7 @@ function Panel() {
                     >
                       <SeatDot color={r.p.color} className="mr-1.5 size-3 align-[-2px]" />
                       {r.p.name}
-                      {r.p.id === state.current ? <TurnMark /> : null}
+                      {r.p.id === state.current && turnMark}
                     </span>
                   </td>
                   <td className={cell}>{r.outposts}</td>

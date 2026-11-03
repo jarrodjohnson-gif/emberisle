@@ -203,13 +203,14 @@ body {
      While the keyboard is up or an offer or steal prompt is showing, the band is 0 (Chat.tsx), so the input and the choice fit. */
   --chat-sheet-height: min(420px, calc(100dvh - max(12px, env(safe-area-inset-top)) - 68px - var(--chat-bubble-band, 40px) - var(--active-offer-height, 0px) - var(--active-prompt-height, 0px) - var(--keyboard-inset, 0px)));
 }
-.seat-card { background: var(--table); color: var(--table-ink); box-shadow: inset 0 0 0 1px var(--table-line); }
+/* #531: keep the static card utilities here, preserving their full transition list and easing outside the JS budget. */
+.seat-card { position: relative; --tw-duration: .2s; transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to; transition-timing-function: var(--tw-ease, var(--default-transition-timing-function)); transition-duration: .2s; background: var(--table); color: var(--table-ink); box-shadow: inset 0 0 0 1px var(--table-line); }
 .seat-card [class*='text-zinc-700'] { color: var(--table-muted); }
 .seat-card.seat-turn { background: var(--paper); color: var(--ink); }
 /* #531: the current-turn ring on every chip of the seat on turn (the rail and strip cards, the trade toast, a win row): 3 px solid in
    the seat's colour (--seat-color, set inline), a 1 px ink edge inside it so the palest seat still reads on paper, then an 8 px band
    of the same colour at 20 %. It is an inset shadow on an overlay (::before), so it stays inside the box (the strip's 4 px gaps, the
-   safe area and the next row are never touched) and a hovered button cannot paint over it. Its turn mark (TurnMark, SeatRail.tsx) is
+   safe area and the next row are never touched) and a hovered button cannot paint over it. Its turn mark (turnMark, SeatRail.tsx) is
    the non-colour cue. */
 .seat-card.seat-turn::before, .turn-chip[data-turn-ring='true']::before, .trade-dock[data-turn-ring='true']::before {
   content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1;
@@ -220,7 +221,7 @@ body {
 :where(.trade-dock[data-turn-ring='true']) { position: relative; }
 /* The offer card's text sits 8 px in (p-2) and its countdown and shortfall are accent text, 4.4:1 on the tint: its band stops at the padding. */
 .trade-dock[data-turn-ring='true'] { --ring-band: 8px; }
-.turn-mark { position: absolute; z-index: 2; top: 0; left: 50%; width: 10px; height: 5px; transform: translateX(-50%); background: var(--ink); clip-path: polygon(0 0, 100% 0, 50% 100%); pointer-events: none; }
+[data-testid="turn-mark"] { position: absolute; z-index: 2; top: 0; left: 50%; width: 10px; height: 5px; transform: translateX(-50%); background: var(--ink); clip-path: polygon(0 0, 100% 0, 50% 100%); pointer-events: none; }
 .seat-card.seat-turn [class*='text-zinc-700'] { color: var(--muted); }
 .seat-card button:hover { background: var(--table-raised); color: var(--table-ink); }
 .seat-card.seat-turn button:hover { background: var(--ground); color: var(--ink); }

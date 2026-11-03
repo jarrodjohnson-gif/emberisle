@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { Check, Hourglass, X } from "lucide-react";
 import { useViewport } from "@/lib/viewport";
 import { Button } from "@/components/ui/button";
-import { TurnMark } from "@/components/game/SeatRail";
+import { turnMark } from "@/components/game/SeatRail";
 import { SeatDot } from "@/components/game/SeatDot";
 import { bagText } from "@/lib/game/trade";
 import { useGame } from "@/lib/game/store";
@@ -233,7 +233,7 @@ export function TradeToast() {
     <section
       ref={dock}
       data-testid="trade-toast"
-      data-turn-ring={onTurn ? "true" : undefined}
+      data-turn-ring={onTurn || undefined}
       data-compact={compact || undefined}
       data-leaving={fading || undefined}
       aria-hidden={fading || undefined}
@@ -247,7 +247,7 @@ export function TradeToast() {
       aria-describedby={why ? whyId : undefined}
       onKeyDown={(e) => { if (answering && e.key === "Escape") answerTrade(false); }}
     >
-      {onTurn ? <TurnMark /> : null}
+      {onTurn && turnMark}
       {body ?? lastBody.current}
     </section>
   );
