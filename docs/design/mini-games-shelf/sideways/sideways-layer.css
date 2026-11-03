@@ -1,0 +1,197 @@
+/* #1264 sideways phone (844×390), on top of the accepted shelf layer (hig-layer.css).
+   The real lobby at this size is the wide landscape card (lobby.css, max-height 600px landscape):
+   16 px inset, white card, one Ready row pinned to the bottom. The shelf swaps into that card.
+   Open games stay taller than the card, so they scroll under that fixed footer.
+   Same tokens as the accepted shelf: #f3f6f5 / #cbd3d3 / #ffffff. Not game code. */
+
+/* ---- accepted shelf layer (hig-layer.css), so one LAYER still draws the white lobby scale ---- */
+
+.cap, .roster, .status, .shelf .hint, .tile .t span, .tile .pick, .keys, .closes, .ph small, .tag {
+  font-size: 13px !important;
+  line-height: 18px !important;
+}
+
+.tab, .btn, .ttt-who, .interrupt {
+  font-size: 15px !important;
+  line-height: 20px !important;
+}
+
+.shelf h3, .tile .t b, .box .head b, .ttt-turn, .btn.lg {
+  font-size: 17px !important;
+  line-height: 22px !important;
+  font-weight: 600 !important;
+}
+
+.code {
+  font-size: 22px !important;
+  line-height: 28px !important;
+}
+.desk .code {
+  font-size: 28px !important;
+  line-height: 34px !important;
+}
+
+.btn.sm, .desk .btn.auto, .desk .tab, .tile .pick .btn, .desk .box .head .btn, .desk .box .row .btn {
+  min-height: 44px !important;
+}
+.desk .win span {
+  width: 44px !important;
+  height: 44px !important;
+}
+
+:root {
+  --ground: #f3f6f5 !important;
+  --studio: #f3f6f5 !important;
+  --paper: #ffffff !important;
+  --line: #cbd3d3 !important;
+}
+.sea circle[fill="#fff9f0"] { fill: #ffffff; }
+
+.tile.locked { display: none !important; }
+.code-row .col { flex-direction: row !important; gap: 8px !important; }
+
+.grid { max-width: 220px !important; gap: 8px !important; }
+.cell { font-size: 28px !important; }
+
+.phone .starting { align-items: flex-start !important; padding-top: 48px; }
+.desk .starting { justify-content: flex-end !important; padding-right: 22%; }
+
+.tabs { gap: 8px !important; }
+.win { gap: 8px !important; }
+
+.ttt-who { min-height: 22px; align-items: center; }
+.ttt-turn { margin-top: -30px !important; min-height: 22px; text-align: center; pointer-events: none; }
+.desk .grid { max-width: 160px !important; }
+.desk .cell { font-size: 24px !important; }
+
+.phone .card-wrap { max-height: calc(100% - 24px) !important; }
+.box .closes { display: none !important; }
+
+/* The 320×568 picture crushed the roster to one line, so "· 2 of 4 ready" painted on the heading.
+   Keep that block at its real height on the short phone and on the sideways card. The card scrolls. */
+.frame.tight .card > *,
+.frame.sideways .card > * {
+  flex-shrink: 0 !important;
+}
+.frame.tight .roster,
+.frame.sideways .roster {
+  min-height: min-content !important;
+  row-gap: 8px;
+}
+
+/* ---- 844×390 only. show() adds .sideways after the mock renders. ---- */
+
+.frame.sideways .card-wrap {
+  top: 16px !important;
+  right: 16px !important;
+  bottom: 16px !important;
+  left: 16px !important;
+  width: auto !important;
+  max-height: none !important;
+}
+.frame.sideways .card {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: 100%;
+  padding: 8px 16px !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd3d3 !important;
+  scrollbar-width: none;
+}
+/* Content scrolled past the top edge stays under the card, not as a cut-off seats line. */
+.frame.sideways .card::before {
+  content: "";
+  position: sticky;
+  top: -8px;
+  z-index: 4;
+  height: 8px;
+  margin: -8px -16px 0;
+  background: #ffffff;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+.frame.sideways .card::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+/* Title 1, as on the landscape lobby. Copy stays on the code's row, at the far side. */
+.frame.sideways .code {
+  font-size: 28px !important;
+  line-height: 34px !important;
+  letter-spacing: 1px !important;
+}
+.frame.sideways .code-row {
+  justify-content: space-between;
+  min-height: 44px;
+  margin-top: 0 !important;
+}
+
+.frame.sideways .tabs { margin-top: 8px !important; }
+.frame.sideways .roster { margin-top: 8px !important; }
+.frame.sideways .shelf,
+.frame.sideways .box { margin-top: 8px !important; }
+
+/* One Ready row, the same job as the landscape lobby's action row. It sticks; the game scrolls under it. */
+.frame.sideways .foot {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  position: sticky;
+  bottom: -8px !important;
+  margin: 8px -16px -8px !important;
+  padding: 8px 16px !important;
+  z-index: 3;
+  background: #ffffff !important;
+  box-shadow: 0 -1px 0 #cbd3d3;
+}
+.frame.sideways .foot::before {
+  top: -32px;
+  height: 32px;
+}
+.frame.sideways .status {
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: flex-start;
+}
+.frame.sideways .status p {
+  flex: 0 1 auto !important;
+  text-align: left !important;
+  white-space: nowrap;
+}
+.frame.sideways .actions {
+  flex-direction: row !important;
+  flex: 0 0 auto !important;
+  gap: 8px !important;
+}
+.frame.sideways .actions .btn,
+.frame.sideways .foot > .btn {
+  flex: 0 0 auto !important;
+}
+
+/* Stage stays 580:320. Cap the height so the held Left and Right buttons meet the footer instead of sitting
+   a full screen below it. The buttons are touch controls (choice D); this size is a phone. */
+.frame.sideways .frame-stage {
+  width: min(100%, 324px);
+  margin-inline: auto;
+}
+.frame.sideways .hold {
+  width: min(100%, 324px);
+  margin-inline: auto;
+}
+.frame.sideways .keys { margin: 0; }
+
+/* Board stays the phone size (68 px cells). Centred, it does not stretch across the wide card.
+   The shared -30 px turn margin also pulls the cells up into the words. Put that space back under the words. */
+.frame.sideways .grid { margin-inline: auto; }
+.frame.sideways .ttt-turn { margin-bottom: 30px !important; }
+
+/* "Starting…" stays off the code, the copy buttons, and the "Game closed." line. */
+.frame.sideways .starting {
+  align-items: flex-end !important;
+  justify-content: flex-end !important;
+  padding: 0 72px 108px 0 !important;
+}
+
+/* Phone layout parks a small island on the top edge. Drop it down so the margin shows board, not a cut hex. */
+.frame.sideways .sea svg {
+  transform: translateY(210px) scale(2.4);
+  transform-origin: center top;
+}

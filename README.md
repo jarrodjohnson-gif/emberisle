@@ -209,10 +209,12 @@ npm run visual-direction-prove # geometry, AA colour pairs, offer placement/refi
 npm run wayfarer-modes-prove # creation defaults, seven/discard completion, blocking/theft, useful fortunes and bot termination in every mode
 npm run wayfarer-prove       # wayfarer stands beside token (on waste, centre), hops (not slides), and target hexes wear a band (docs/design/wayfarer.md)
 npm run wayfarer-setup-prove # wayfarer mode at table setup through real lobby controls and hosted rules: default On, On/Off choice, persistence, rematch
+npm run placement-glow-prove  # placement rings and stronghold halos: visible contrast and reduced motion at desktop and phone sizes
+npm run ssao-prove            # free and play view SSAO pass sizes after load, resize and view switch
 npm run win-action-prove     # real hosted winning actions -> private pre-win views -> saved/restarted rooms -> browser win screens and reload
 ```
 
-CI splits `browser-b` into `flows` and `presentation`; the required `checks` gate requires both. CI runs `npm ci` in the root and in `server/`, then these checks in this order, and installs Chromium with `npx playwright install --with-deps chromium`. `client-prove` uses the Chromium that ships with cloud sessions (`/opt/pw-browsers/chromium`). On your own PC, run `npx playwright install chromium` once first. It saves a screenshot to `test-results/client-prove.png`.
+For ready pull requests, CI splits `browser-a` into `a1`, `a2` and `a3`. It splits `browser-b` into `flows-a`, `flows-b`, `flows-c`, `presentation`, `presentation-2`, `presentation-3`, `scene-life` and `scene-water`. The required `checks` gate covers both matrices, the build and server checks. Docs-only PRs skip heavy steps; main pushes skip the browser jobs. CI installs root and server dependencies and uses `npx playwright install --with-deps chromium` for browser jobs. `client-prove` uses `/opt/pw-browsers/chromium` if present, or Playwright’s browser otherwise. On your own PC, run `npx playwright install chromium` once first. It saves a screenshot to `test-results/client-prove.png`.
 
 ### Game night
 
