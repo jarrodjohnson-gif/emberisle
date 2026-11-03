@@ -55,7 +55,14 @@ try {
     const on = snap("free, SSAO on");
     r.setView("overhead");
     const over = snap("play view");
-    return [on, over];
+    r.setView("free");
+    const back = snap("back to free");
+    r.setPlayView("overhead");
+    r.setView("overhead");
+    const overhead = snap("overhead view");
+    r.setView("free");
+    const backOverhead = snap("back from overhead");
+    return [on, over, back, overhead, backOverhead];
   });
   for (const s of switched) {
     const half = s.view === "free";
@@ -64,6 +71,9 @@ try {
     assert.deepEqual(s.ssao, want, s.label);
     assert.equal(s.enabled, half, s.label);
   }
+  assert.equal(switched[2].view, "free", "return to free view");
+  assert.equal(switched[3].view, "overhead", "enter overhead view");
+  assert.equal(switched[4].view, "free", "return from overhead");
   console.log("ssao-prove ok");
 } catch (err) {
   console.error(err);
