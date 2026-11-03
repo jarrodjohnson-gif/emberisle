@@ -183,7 +183,7 @@ export function Hud() {
   const wasReady = useRef(readyKey);
   const [pulse, setPulse] = useState<Price[]>([]);
   // #535: a tap on a build the hand cannot pay for hangs "Need 1 brick" above that build for 1.6 s; the next tap restarts it.
-  const [hint, setHint] = useState<Price | null>(null);
+  const [hint, setHint] = useState<{ kind: Price } | null>(null);
   useEffect(() => {
     if (!hint) return;
     const t = setTimeout(() => setHint(null), 1600);
@@ -449,7 +449,7 @@ export function Hud() {
                         if (!spectator && buildMode !== arm) {
                           const refuse = shRefuse || (missing ? needLine(short) : null);
                           if (refuse) {
-                            setHint(kind);
+                            setHint({ kind });
                             return void refuseQuietly(refuse);
                           }
                         }
@@ -467,7 +467,7 @@ export function Hud() {
                       {showDeck && <span aria-hidden data-testid="deck-left" className="text-[10px] leading-[10px] tabular-nums text-muted">{deckLeft} left</span>}
                       {/* The ends of the row hang the chip inward, so it stays on a phone's screen. Last child: the tile's own
                           styles address its first span. */}
-                      {hint === kind ? (
+                      {hint?.kind === kind ? (
                         <span
                           aria-hidden
                           data-testid={`build-hint-${kind}`}
