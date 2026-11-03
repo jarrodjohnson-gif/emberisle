@@ -1,0 +1,14 @@
+
+> lobby-layout-prove
+> node scripts/lobby-layout-prove.mjs
+
+390x844: valid codes fully visible; Copy/Copied, 44px targets, 8px padding, focus and responsive fits passed
+390x844: chat 52.31%; two columns; 44px targets / 8px gaps; no card/people scroll; copy/invite/rules/target/chat/reaction/ready/start passed
+844x390: chat 39.48%; two columns; 44px targets / 8px gaps; no card/people scroll; copy/invite/rules/target/chat/reaction/ready/start passed
+1280x720: chat 41.57%; two columns; 44px targets / 8px gaps; no card/people scroll; copy/invite/rules/target/chat/reaction/ready/start passed
+375x667: valid codes fully visible; Copy/Copied, 44px targets, 8px padding, focus and responsive fits passed
+375x667: rename button tappable; bubbles clear of the name and status
+390x640: rename button tappable; bubbles clear of the name and status
+320x568: valid codes fully visible; Copy/Copied, 44px targets, 8px padding, focus and responsive fits passed
+320x568: rename button tappable; bubbles clear of the name and status
+lobby-layout-prove: ok; real host, two clients, six viewports; zero browser errors

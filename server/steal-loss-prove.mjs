@@ -304,7 +304,7 @@ async function startHost() {
   let stderr = "";
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR, ACT_CAP: "1000", ACT_RATE: "1000", GRACE_MS: "600000", HOLD_MS: "600000", TURN_MS: "600000", SAVE_MS: "50" },
+    env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, ACT_CAP: "1000", ACT_RATE: "1000", GRACE_MS: "600000", HOLD_MS: "600000", TURN_MS: "600000", SAVE_MS: "50" },
     stdio: ["ignore", "pipe", "pipe"],
   });
   host.stderr.on("data", (d) => {

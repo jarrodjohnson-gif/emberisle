@@ -1,0 +1,12 @@
+{
+  "main": "2e1635ca9516c42204a99765d7dc709a7b68dfdb",
+  "sourceCommit": "7044de5de8e39231243ab0e6526e0db919d79aaa",
+  "originalProofSha256": "a11c4084803ebed194cea5fa210a1003b2309d0f61390272e0f8a8673762dd87",
+  "finalProofSha256": "27403bc5db1beb84ac0382e031b768470f036d76415cc62bfdee5e45c7dff2cc",
+  "originalCheckCallsRetainedExactly": 7,
+  "originalWaitDeadlineLinesRetainedExactly": 6,
+  "originalThrowLinesRetainedExactly": 6,
+  "originalSeededRollConditionUnchanged": true,
+  "productionServerRegistrationBudgetLockFlakyDiffEmpty": true,
+  "controlHarnessSha256": "da86b7a7cb74b7a341138231cae89730469f163f1dfc4ee62ef93a0e0b20794b"
+}

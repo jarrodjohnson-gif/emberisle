@@ -30,7 +30,7 @@ if (!existsSync(`${DIST}index.html`)) {
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", DIST, ROOMS_DIR },
+  env: { ...process.env, PORT: "0", DIST, ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => {
   host.kill("SIGKILL");

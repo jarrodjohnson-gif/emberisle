@@ -1,0 +1,99 @@
+{
+  "source_commit": "5ef0005a3af0599a3d426dee7dd040baaf49ba39",
+  "build_log": "build-injection.log",
+  "metric": "unchanged scripts/size-prove uses node:zlib gzipSync; Vite reporter differs",
+  "assets": {
+    "table-DfM5ngr2.js": {
+      "sha256": "f2f9f105c84401cc92311464a91cca23304c8c3da57bb23542b087e703ae308c",
+      "bytes": 5080
+    },
+    "trade-sound-8cW0c4D-.js": {
+      "sha256": "7b57800cc69ab8a6a255697d854db7d7e519c9a4cdb037e684f467d99245d771",
+      "bytes": 869
+    },
+    "index-CfCirLti.js": {
+      "sha256": "b99614b9d073498b36b7f71af54f061d872b1f5df1ca78b50279a196f150d706",
+      "bytes": 396475
+    },
+    "sound-extra-DafKjM_2.js": {
+      "sha256": "afd3a44d377513e7dbe09f02aa13293c759f5e060d07585aeb2da6c31d6613a0",
+      "bytes": 481
+    },
+    "OpenTables-BlJGPPJS.js": {
+      "sha256": "f4de79a85b98eb4d74f9da2e291abdf1320f271470c546a248f8beae5d4c9136",
+      "bytes": 2714
+    },
+    "hex-jelly-CTvcCUeq.js": {
+      "sha256": "5b0d80f911ec56325ecdd14635bf1ace5b71c4e2d9e92dce99cabacbf41634a8",
+      "bytes": 136961
+    },
+    "DockInspection-BKY7C2bP.js": {
+      "sha256": "2fb75942ce2be94250598f7285873dad202ed0dbdd469438d7d47621ad55914e",
+      "bytes": 2038
+    },
+    "sheets-CM4HQGXS.js": {
+      "sha256": "bfbfa24892caf19b903f565c81c9d36da77e8b8b81740a1a011b6258d3dae491",
+      "bytes": 22425
+    },
+    "harbor-jelly-DS9g65bs.js": {
+      "sha256": "e268611a48f154ef63d91717f121f8eab614cf8b9150708ea74cd7c6b99684fd",
+      "bytes": 26563
+    },
+    "TradeResource-xyqW1pQD.js": {
+      "sha256": "391e38369ade61a57e9965c2050344cee57c6a7559b4fe8a95829360b2971aa9",
+      "bytes": 1796
+    },
+    "VictoryTargetSelect-D4bxzNdb.js": {
+      "sha256": "f4ba376588d9ae241875b5cbc0a6892465c808b07a2e2cdf4b4654e6c1420ce0",
+      "bytes": 1028
+    },
+    "WayfarerOptions-B5jmsQRn.js": {
+      "sha256": "c4289c92b18db0424e28ab64ad00e6cdda7d2123808a3fbaa33adb3e57a22f39",
+      "bytes": 806
+    },
+    "HandRates-XIZYZM1q.js": {
+      "sha256": "56e33fe819c4441faef1d50f19e49fd9ce33ce22944f9acac7f4c862856de90d",
+      "bytes": 1012
+    },
+    "online-B10fzXb8.js": {
+      "sha256": "1693196c5ada9ea1d513e2304c72e822dad5a8f3f70ea9aabed6be29abe6bf1b",
+      "bytes": 18111
+    },
+    "jelly-board-B66SgEn8.js": {
+      "sha256": "5503694c56cd5fd0db6a5db7f5d5dfa7744cd1182eb36dcc824c88b6f030d9b2",
+      "bytes": 20840
+    },
+    "haptics-BBvtHtRS.js": {
+      "sha256": "8b99e4385cc4247e94906df814b26800c2c7954f0917000a6a2a545d7b86c978",
+      "bytes": 1800
+    },
+    "Reactions-BLWC3UVE.js": {
+      "sha256": "bf4b1be19967f40a0070936aae516646e1774d07a6ef16336bb4ba2a70654c93",
+      "bytes": 6024
+    },
+    "emotes-Ijw0U75Z.js": {
+      "sha256": "93f09986666b3b6f9066d07b9358a36e0b30d96f5ffcef2e77fc3607f71ad0b7",
+      "bytes": 1240
+    },
+    "SetupReference-BWIodfs0.js": {
+      "sha256": "1042bf48360d9d3e815935e7b9dd9bc3f1aa7278ec65cae7ee8f2118121a215b",
+      "bytes": 4920
+    },
+    "TurnExtensionVote-udGeb0bk.js": {
+      "sha256": "bd007dada226c10e301bbe9c0bb91c9ea0ea4315873bae2a21568ce3099f9441",
+      "bytes": 2677
+    },
+    "moments-CvunCAW9.js": {
+      "sha256": "cb9cd4f9520307467efcdf7fca02a2331db0f0cbfa5d60b6d3dda71940e9f1e9",
+      "bytes": 9658
+    },
+    "LobbyView-DBFl-O2D.js": {
+      "sha256": "820405f4813b0c95908fd73a8322969ba81e4faac48a0a7ce89c39a4dc93bd5f",
+      "bytes": 5798
+    },
+    "IslandCanvas-CFoktByC.js": {
+      "sha256": "b59728163be6bcf259b7c35579bd1ddedd7605bf29b9be67deb4cbb907d17afe",
+      "bytes": 761792
+    }
+  }
+}

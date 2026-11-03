@@ -1,0 +1,60 @@
+{
+  "readiness_removed": [
+    {
+      "name": "Ember",
+      "requests": 1,
+      "gates": 1,
+      "full": [
+        false
+      ],
+      "burst": [
+        false
+      ]
+    },
+    {
+      "name": "Tide",
+      "requests": 1,
+      "gates": 1,
+      "full": [
+        true
+      ],
+      "burst": [
+        false
+      ]
+    },
+    {
+      "name": "Pine",
+      "requests": 1,
+      "gates": 1,
+      "full": [
+        false
+      ],
+      "burst": [
+        false
+      ]
+    }
+  ],
+  "playback_suppressed": [
+    {
+      "name": "Ember",
+      "requests": 1,
+      "gates": 0,
+      "full": [],
+      "burst": []
+    },
+    {
+      "name": "Tide",
+      "requests": 1,
+      "gates": 0,
+      "full": [],
+      "burst": []
+    },
+    {
+      "name": "Pine",
+      "requests": 1,
+      "gates": 0,
+      "full": [],
+      "burst": []
+    }
+  ]
+}

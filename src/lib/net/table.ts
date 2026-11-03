@@ -14,6 +14,8 @@ export interface Seat {
   away?: boolean;
   // A lobby bot the host seated (README: addBot). It is always ready and never away.
   bot?: boolean;
+  player?: string | null;
+  needs?: Resource[];
 }
 
 // What a peek answers (G10): enough to dim taken swatches, no names or pictures.
@@ -90,8 +92,8 @@ export interface TableEvents {
   chat(line: ChatLine): void;
   react(r: Reaction): void;
   log(text: string): void;
-  error(message: string): void;
-  tradeOffer(msg: { tradeId: string; from: string; give: Bag; want: Bag; seconds: number }): void;
+  error(message: string, request?: "need"): void;
+  tradeOffer(msg: { tradeId: string; from: string; give: Bag; want: Bag; seconds: number | null }): void;
   tradeDeclined(msg: { tradeId: string; by: string; name: string }): void;
   tradeClosed(msg: { tradeId: string; taker?: string }): void;
   // The socket dropped and the client is dialing again (attempt 1, 2, ...); `closed` follows only if it gives up.
@@ -144,6 +146,8 @@ export interface TableClient {
   // Ask-the-table trades are host-run (not rules Actions): offer `give` for `want` to every other seat, and answer one.
   ask(give: Bag, want: Bag): void;
   answer(tradeId: string, yes: boolean): void;
+  need(kinds: Resource[]): void;
+  cancel(tradeId: string): void;
   requestTurnExtension(target: string, key: string): boolean;
   answerTurnExtension(voteId: string, yes: boolean): boolean;
   getTurnExtension(): TurnExtensionState | null;
@@ -432,7 +436,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
           ws.close();
           break;
         }
-        on.error?.(message);
+        on.error?.(message, msg.request === "need" ? "need" : undefined);
         if (rejoining) {
           // "Seat is taken." on a fresh rejoin: another tab of ours is sitting in it, so keep the secret.
           // "Seat is gone." or no such table: nothing to go back to.
@@ -475,6 +479,10 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     },
     answer: (tradeId, yes) => {
       act({ type: "tradeAnswer", tradeId, yes });
+    },
+    need: (kinds) => send({ type: "need", kinds }),
+    cancel: (tradeId) => {
+      act({ type: "tradeCancel", tradeId });
     },
     requestTurnExtension: (target, key) => act({ type: "turnExtensionAsk", target, key }),
     answerTurnExtension: (voteId, yes) => act({ type: "turnExtensionAnswer", voteId, yes }),

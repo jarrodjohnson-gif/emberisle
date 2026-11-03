@@ -1,0 +1,10 @@
+--- 5ef0005/LobbyView.tsx
++++ one-shot/LobbyView.tsx
+@@ -88,6 +88,7 @@
+     if (code.length !== 4) return;
+     const observer = new ResizeObserver(() => {
+       fitCode(el, code);
++      observer.disconnect();
+     });
+     observer.observe(el.parentElement!);
+     return () => observer.disconnect();

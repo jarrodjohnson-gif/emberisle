@@ -1,0 +1,19 @@
+$ node --import ./server/register.mjs --import /tmp/sol-next/control.mjs scripts/steal-picker-push-prove.mjs
+CONTROL_PARENT_DIE 6
+CONTROL_PARENT_DIE 4
+CONTROL_PARENT_DIE 2
+CONTROL_PARENT_DIE 3
+CONTROL_PARENT_DIE 4
+file:///workspace/emberisle/work/p1209-sol/scripts/steal-picker-push-prove.mjs:45
+  throw new Error("setup: seeded roll must leave the same player and two legal victims");
+        ^
+
+Error: setup: seeded roll must leave the same player and two legal victims
+    at file:///workspace/emberisle/work/p1209-sol/scripts/steal-picker-push-prove.mjs:45:9
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at async node:internal/modules/esm/loader:643:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.19.0
+
+EXIT 1

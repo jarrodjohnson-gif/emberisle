@@ -44,6 +44,26 @@
       "id": "flash-prove",
       "pattern": "flash-prove failed: page\\.waitForFunction: Timeout 120000ms exceeded\\.\\n\\S+ +at settled \\(",
       "issue": 904
+    },
+    {
+      "id": "lobby-layout-prove",
+      "pattern": "AssertionError \\[ERR_ASSERTION\\]: \\d+x\\d+: \"Copy\" has at least 8 px between text and button edge \\(7\\.\\d / 7\\.\\d\\)",
+      "issue": 1176
+    },
+    {
+      "id": "connection-health-prove",
+      "pattern": "Z \\+   saving: false,\\n\\S+ -   saving: true,",
+      "issue": 1200
+    },
+    {
+      "id": "steal-picker-push-prove",
+      "pattern": "Error: setup: seeded roll must leave the same player and two legal victims",
+      "issue": 1209
+    },
+    {
+      "id": "audio-recovery-prove",
+      "pattern": "page\\.waitForFunction: Timeout 8000ms exceeded\\.\\n\\S+ +at \\S*audio-recovery-prove\\.mjs:\\d+",
+      "issue": 1210
     }
   ]
 }
