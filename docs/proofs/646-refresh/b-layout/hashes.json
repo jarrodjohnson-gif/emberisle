@@ -1,0 +1,104 @@
+{
+  "source_head": "8647aabf4c019a6ca6c584cb34997bd6d214bded",
+  "source_sha256": {
+    "src/components/game/SeatNeeds.tsx": "080c8de6182071a5115226511995f60c51015677dd1c9bd0aa6a39f5870d265d",
+    "src/components/game/PlayerMenu.tsx": "d3fc4415e0f9d5bfe5ebfc062b5297576652658c23cff30cb8dacebaccf33174",
+    "scripts/needs-prove.mjs": "4c5c5a10e72d43e79a50ff6d27d235c93018c5104ced22148065515adcb6553a"
+  },
+  "artifacts": {
+    "8647-needs.log": {
+      "sha256": "58cbbfe33811ca5cae6bf60f3629a1527d01cf1ed9273392b74d609f470a0611",
+      "gzip": "raw/8647-needs.log.gz"
+    },
+    "8647-seat-rail.log": {
+      "sha256": "42182e2e13fd8d8f2c8068543e7b9f583dd789c34fd7d911609ed3df6115f199",
+      "gzip": "raw/8647-seat-rail.log.gz"
+    },
+    "8647-public-score.log": {
+      "sha256": "856b7189c1554f421e6c46973d6d7e0a10cf785531dd43a01999bd92ef9d32f4",
+      "gzip": "raw/8647-public-score.log.gz"
+    },
+    "8647-build.log": {
+      "sha256": "d8af378214f1bd0bf2aecddc4a4748b41a87f941c89c78232de9af8034823583",
+      "gzip": "raw/8647-build.log.gz"
+    },
+    "8647-size.log": {
+      "sha256": "2f856649209bc60f8e8c3bb532d38498b45e0be377d5961ce2e54d9bfc16c693",
+      "gzip": "raw/8647-size.log.gz"
+    },
+    "8647-typecheck.log": {
+      "sha256": "8fa1cf5506304e8abac55868e7f1a136c9b1dde57a3981a382da4c21ea129a6f",
+      "gzip": "raw/8647-typecheck.log.gz"
+    },
+    "needs.log": {
+      "sha256": "e50e256fd072855f6b66575d8400d9e5d09ce45ab002f4ed292598a4a19cf82e",
+      "gzip": "raw/needs.log.gz"
+    },
+    "final-size.log": {
+      "sha256": "cbf241fb581cbba01827b887fab461d7aa16c6b798a9773fea7901c9897fd24d",
+      "gzip": "raw/final-size.log.gz"
+    },
+    "registered.log": {
+      "sha256": "da62d1ba344fd1ba03a31ec13cfdd66d5d0e4414688842e790fd28b2e29b697c",
+      "gzip": "raw/registered.log.gz"
+    },
+    "final-loosen.log": {
+      "sha256": "1d01cb8f2766992b6c975c9d60f72f576f77e70cbfeee1e79581c44c125e34b9",
+      "gzip": "raw/final-loosen.log.gz"
+    },
+    "product-capture.log": {
+      "sha256": "d62799c9910214e876afd06e03839c657a24f8f38cce652d965b984adbb14350",
+      "gzip": "raw/product-capture.log.gz"
+    },
+    "product-capture-corrected.log": {
+      "sha256": "5e77385758f785da599872183bc5029af11ffe198ee6a52ca1a1a0483f7484ec",
+      "gzip": "raw/product-capture-corrected.log.gz"
+    },
+    "8647-captures/needs-geometry.json": {
+      "sha256": "df5d189b3fb62bb919aa65b067ce0fcab1b3460b83cf8ecdbbd9933997d14810",
+      "gzip": "raw/8647-captures--needs-geometry.json.gz"
+    },
+    "captures/needs-geometry.json": {
+      "sha256": "70dcb3d64d98f0bb977c75ed63caee69e419022ab58cb493f9908a045620dfd3",
+      "gzip": "raw/captures--needs-geometry.json.gz"
+    },
+    "product-pictures-first-label-mismatch/capture-owner.mjs": {
+      "sha256": "bddfc3ac5f5c8994c0edfaa052d2449a4908486e6558176afdcbd0b953742dc2",
+      "gzip": "raw/product-pictures-first-label-mismatch--capture-owner.mjs.gz"
+    },
+    "product-pictures-first-label-mismatch/records.json": {
+      "sha256": "6eff428682fd0b6e3d571bb241570865ecbe959fcdbb3aa1008ba1cfec2c3151",
+      "gzip": "raw/product-pictures-first-label-mismatch--records.json.gz"
+    },
+    "pictures/1280x720-menu.png": {
+      "sha256": "4f99ae5fe9c70a7f3c15fbc800d1e8795511d14d9c1abaaf218e6ea5e9dcf1d4"
+    },
+    "pictures/1280x720-overview.png": {
+      "sha256": "6499c7ebdb54ecee7012045057fbdb815ef9184671ac82c29ae30b4adebcc12a"
+    },
+    "pictures/320x568-menu.png": {
+      "sha256": "33f5caa4497503d763a058ec97e08a5284765e347df7d49d56a64dccf010f8a9"
+    },
+    "pictures/320x568-overview.png": {
+      "sha256": "f9b36f885b888e0cc39ccf53acb8b7ea1a887529d9dbb5b5209dbc0059157609"
+    },
+    "pictures/390x844-menu.png": {
+      "sha256": "3837959dd07a791e0556758369e1cace132d5eb95f18a052e196a2a851cb6b42"
+    },
+    "pictures/390x844-overview.png": {
+      "sha256": "987d4dad5e22067de4e244d31eb03a643a3aefbac3da7a51858a734de0b6c6b0"
+    },
+    "pictures/844x390-menu.png": {
+      "sha256": "8cc54fc5841a8967e450f08526e760cf992aa1f2aa308881404aca364a1e2109"
+    },
+    "pictures/844x390-overview.png": {
+      "sha256": "9d8cc84235795a797626758ee3e28e602625c8c2fe5498a2babc730caab8b387"
+    },
+    "capture-owner.mjs": {
+      "sha256": "214f38c8fc44c5234bb3f6d03e2245bfd760d0fc792975efdeff7ea64c9fee74"
+    },
+    "records.json": {
+      "sha256": "ae8c13e72df595e17e600cb879146e6397b4ebd50575b848c19e409b369aeca2"
+    }
+  }
+}

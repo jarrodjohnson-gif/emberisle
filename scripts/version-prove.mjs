@@ -25,7 +25,7 @@ async function boot(extra = {}) {
   const dir = mkdtempSync(path.join(TEMP, "host-"));
   const h = spawn(process.execPath, ["--import", path.join(ROOT, "server/register.mjs"), path.join(ROOT, "server/host.mjs")], {
     cwd: dir, // Intentionally outside the checkout: the host must stamp its own source, not the caller's cwd.
-    env: { ...process.env, PORT: "0", DIST: path.join(ROOT, "dist"), ROOMS_DIR: path.join(dir, "rooms"), PROFILES_DIR: path.join(dir, "profiles"), TURN_MS: "600000", ...extra },
+    env: { ...process.env, PORT: "0", DIST: path.join(ROOT, "dist"), ROOMS_DIR: path.join(dir, "rooms"), RESULTS_DIR: `${path.join(dir, "rooms")}/results`, PROFILES_DIR: path.join(dir, "profiles"), TURN_MS: "600000", ...extra },
     stdio: ["ignore", "pipe", "pipe"],
   });
   hosts.push(h);

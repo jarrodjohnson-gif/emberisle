@@ -75,4 +75,5 @@ After the merge, watch `main`'s CI on the merge commit until `checks` is complet
 
 - Never push to `main`, force-push someone else's branch, or skip or loosen a test.
 - Log every owner decision in [DECISIONS.md](DECISIONS.md).
+- Keep at least 5 open, unclaimed `anytime` issues (see [LANES.md](LANES.md#anytime-queue)). Check the count each session. File or label more when it is short.
 - Never stop silently. If nothing is waiting, say so on the hub and update #916.

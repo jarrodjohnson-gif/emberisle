@@ -1,0 +1,10 @@
+{
+  "tested_source_commit": "8ce98b57166bfe0f4e7772ee7f03a10cd3d3a42b",
+  "base_commit": "7df73bed7169d5c7d7a3fbbaa5b68afaa7ec6f1d",
+  "sha256": {
+    ".github/workflows/ci.yml": "75cf70b1a46bb44772d05787d89943c939bef40742403830064e8ecadfce87a2",
+    "scripts/ci-install-prove.mjs": "85f9d657acb8c8c650974bb38819a183d2349b8e1249a1e45042305e5f1a052a",
+    "scripts/desk-gate-prove.mjs": "3a79da91575252fbabe00da9b0e55876bea494c42d7717be5b6d4bac6ad4a280",
+    "scripts/desk-gate.mjs": "3552cac865dc21b7094314fddac368bfd1dc27d21285ff0000f892a399faf4f8"
+  }
+}

@@ -24,11 +24,26 @@ These are short on purpose. Follow all of them, every round.
 7. **Never merge, never push to `main`, never force-push someone else's branch, never skip or loosen a test.**
 8. **Build with the issue's `model:` label, if it has one, and skip the issue if you can't run that model.** A `tier:` label says which models may take it.
 9. **Busy files are fine.** `package.json`, `ci.yml` and `scripts/size-prove.mjs` never count as overlap. A different function in a file another PR touches is fine if you name that PR in your claim.
-10. **Never stop, and never ask the desk for work.** If the lineup and the ready list are empty, work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible) yourself. Only when every rung is empty, post `To desk: nothing eligible` on #854.
+10. **Never stop, and never ask the desk for work.** If the lineup and the ready list are empty, work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible) yourself. Only when every rung and the [anytime queue](docs/LANES.md#anytime-queue) are empty, post `To desk: nothing eligible` on #854.
 11. **Run long browser proofs one at a time**, and paste real output in the PR. Never estimate numbers.
 12. **Don't make design decisions.** Ask on the issue with `Question:` and your recommendation, post `/paused`, and move on.
 13. **A `Question:` is not a stop.** After you post one, carry on with any part of the issue that does not depend on the answer (other files, the proof, screenshots, docs). Stop only when nothing is left to do, and check the issue for the desk's answer before you finish. A test line that an owner-approved design makes obsolete may be replaced, never deleted: own commit, old/new table in the PR ([`docs/DECISIONS.md`](docs/DECISIONS.md), 2026-10-25). Size ceilings and allowances never move without the owner.
 14. **Need the desk? Start a conversation comment with `To desk:`**, for example `To desk: PR #N ready for re-review`. Use it when you're blocked or adopting a PR too. Nothing may come before it, not even an HTML comment. Only `To desk:` and `Question:` comments wake the desk. Put progress in your PR body, not on #854.
+
+## Never idle
+
+A `Question:` or a block never ends your round. Nobody watches the desk chat all day, so answers come slowly.
+
+- After `Question:` and `/paused`, finish what does not need the answer (rule 13). Then claim the next eligible issue in the same turn.
+- Stay within your open-PR limit (rule 4) and your model's one-issue rule.
+- No eligible issue? Work down the ladder, then the [anytime queue](docs/LANES.md#anytime-queue).
+- The desk answers on the issue itself. Re-check the issue at the end of each task. Never wait for it.
+- A 403 on a comment or label blocks one step, not the round. Put your claim in the PR body (rule 3).
+- A 403 on a push: post `To desk:` once with the exact git error. Never retry another way: no fork, no other token, no force-push.
+- After a push 403, claim nothing that needs a push. Take work that does not, such as a Question or a read-only audit.
+- Check every rung of the ladder and the anytime queue before you call the list empty. Name what you checked.
+- "Stop" means nothing eligible, the ladder empty and the anytime queue empty. Then post one `To desk: nothing eligible` line.
+- The only other reason to stop is the usage limit in [`docs/LANES.md`](docs/LANES.md#sub-agents-and-usage-limits).
 
 ## The full procedure
 
@@ -52,9 +67,9 @@ These are short on purpose. Follow all of them, every round.
    `package.json`, `.github/workflows/ci.yml` and `scripts/size-prove.mjs` never count as file overlap.
    First active claim wins; a loser posts `/paused` naming itself and the winner, then picks another
    without a fixed wait. File reservations last until that agent pauses or its PR merges or closes.
-6. **Still nothing eligible?** Work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible). Only if every rung is empty, post one `To desk:` line on #854 naming the issues you skipped and why.
+6. **Still nothing eligible?** Work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible). Only if every rung and the anytime queue are empty, post one `To desk:` line on #854 naming the issues you skipped and why.
 
-**Told you are a helper**, for example a friend's AI working from a fork? (Josh's agent is a full builder, not a helper, even from his fork: see `docs/LANES.md`.) Read #854, then take work
+**Told you are a helper**, for example a friend's AI working from a fork? (Josh's agent is a full builder, not a helper: see `docs/LANES.md`.) Read #854, then take work
 from the helper queue, issue [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851), and follow
 [`docs/HELPERS.md`](docs/HELPERS.md). It wins over everything else here.
 

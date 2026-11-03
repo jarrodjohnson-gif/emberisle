@@ -6,6 +6,7 @@
 // swell (`floaters`, placed by their userData.rest) and paints a claimed harbor's sail.
 import * as THREE from "three";
 import type { HarborKind } from "@/lib/game/types";
+import { BLOCK_H, TILE_Y } from "@/lib/scene/jelly-dims";
 import { PAINT } from "@/lib/scene/palette";
 import { rng32, setBoardDetail, shoreKit } from "@/lib/scene/hex-jelly";
 
@@ -662,8 +663,12 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
         if (Math.abs(across) < best && out > 0) [best, wv] = [Math.abs(across), out];
       });
     }
+    const north = d.mz < -0.7;
+    // #1158: goods on every pier that faces north at all (d.mz < -0.4, about 4 piers a board) sit 0.14 up on a skid, above
+    // the crest shadow. Only the piers facing mostly north (d.mz < -0.7) also get the longer reach below.
+    const lift = d.mz < -0.4 ? 0.14 : 0;
     const v0 = 0.1;
-    const v1 = wv + 0.5;
+    const v1 = wv + (north ? 0.74 : 0.5);
     const len = v1 - v0;
     const W = 0.2;
     const yAt = (v: number) => (v < wv ? lerp(SURFACE + 0.07, SURFACE, smooth(v / wv, 0.3, 1)) : lerp(SURFACE, floorY(v + 0.1) + 0.004, smooth(v - wv, 0, 0.56)));
@@ -721,9 +726,10 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     P(K.part(K.cyl(1, 1, 8), "#3a3430", [lamp[0], DECK + 0.07, lamp[2]], [0, 0, 0], [0.006, 0.14, 0.006]));
     P(K.part(K.cyl(0.6, 1, 8), "#2a2622", [lamp[0], DECK + 0.158, lamp[2]], [0, 0, 0], [0.016, 0.012, 0.016]));
     add(glowParts, K.part(K.sphere(8), "#ffe1a0", [lamp[0], DECK + 0.142, lamp[2]], [0, 0, 0], [0.011, 0.014, 0.011]));
-    P(K.part(K.cyl(1, 1, 8), "#6a4a30", [-shipSide * 0.08, DECK + 0.04, v1 - 0.12], [0, 0, 0], [0.005, 0.08, 0.005]));
-    P(K.part(new THREE.TorusGeometry(1, 0.32, 6, 14), "#f07a3a", [-shipSide * 0.08 - 0.008 * -shipSide, DECK + 0.06, v1 - 0.12], [0, Math.PI / 2, 0], [0.022, 0.022, 0.022]));
-    for (let k = 0; k < 4; k++) P(K.part(K.sphere(6), "#f4efe4", [-shipSide * 0.08 + 0.002 * shipSide, DECK + 0.06 + Math.sin((k * Math.PI) / 2 + 0.78) * 0.022, v1 - 0.12 + Math.cos((k * Math.PI) / 2 + 0.78) * 0.022], [0, 0, 0], [0.006, 0.006, 0.006]));
+    const bz = v1 - 0.12, buoy: THREE.BufferGeometry[] = [], PB = (g: THREE.BufferGeometry) => { buoy.push(g); P(g); };
+    PB(K.part(K.cyl(1, 1, 8), "#6a4a30", [-shipSide * 0.08, DECK + lift + 0.04, bz], [0, 0, 0], [0.005, 0.08, 0.005]));
+    PB(K.part(new THREE.TorusGeometry(1, 0.32, 6, 14), "#f07a3a", [-shipSide * 0.08 - 0.008 * -shipSide, DECK + lift + 0.06, bz], [0, Math.PI / 2, 0], [0.022, 0.022, 0.022]));
+    for (let k = 0; k < 4; k++) PB(K.part(K.sphere(6), "#f4efe4", [-shipSide * 0.08 + 0.002 * shipSide, DECK + lift + 0.06 + Math.sin((k * Math.PI) / 2 + 0.78) * 0.022, bz + Math.cos((k * Math.PI) / 2 + 0.78) * 0.022], [0, 0, 0], [0.006, 0.006, 0.006]));
     for (const v of [tv - 0.03, v1 - 0.1, v1 - 0.2]) P(K.part(new THREE.TorusGeometry(1, 0.42, 6, 12), "#2a2828", [shipSide * (W / 2 + 0.012), DECK - 0.02, v], [0, Math.PI / 2, 0], [0.016, 0.016, 0.016]));
 
     // The dockhouse at the pier's root, on the side away from the ship, on low piles: plank walls, a pitched roof, a door, a
@@ -748,13 +754,13 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
 
     // #846: keep the original goods, enlarged 2.5x and re-packed along the narrow pier.
     // Turning pallets lengthwise and stacking bales avoids widening the deck or adding signs.
+    const S = 2.5;
+    const stride = Math.min(0.65, (len - 0.2) / 0.64);
+    const gv = Math.max(v0 + 0.22, v1 - 0.48 * stride);
+    const gy = DECK + lift + 0.02 * (lift ? 0 : 1);
     const goodsStart = pierParts.reduce((count, part) => count + part.attributes.position.count, 0);
     const goodsParts: THREE.BufferGeometry[] = [];
     const G = (geometry: THREE.BufferGeometry) => { goodsParts.push(geometry); P(geometry); };
-    const S = 2.5;
-    const gv = Math.max(v0 + 0.18, Math.min(wv - 0.04, v1 - 0.53));
-    const gy = DECK + 0.008;
-    const stride = Math.min(1, (len - 0.2) / 0.64);
     const good = d.kind;
     if (good === "timber") {
       for (const [x, y] of [[-0.06, 0], [0, 0], [0.06, 0], [-0.03, 0.06], [0.03, 0.06], [0, 0.115]] as const) {
@@ -805,19 +811,24 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       G(K.part(K.sphere(10), "#e8d2a0", [0, gy + 0.016 * S, gv + 0.49 * stride], [0, 0, 0], [0.02 * S, 0.016 * S, 0.018 * S]));
       G(K.part(box, "#6a7a5a", [0, gy + 0.002 * S, gv + 0.45 * stride], [0, Math.PI / 2, 0], [0.08 * S, 0.004 * S, 0.05 * S]));
     }
-    const packingBounds = new THREE.Box3();
-    const packingInverse = frame.clone().invert();
-    for (const geometry of goodsParts) {
-      const local = geometry.clone().applyMatrix4(packingInverse);
-      local.computeBoundingBox();
-      packingBounds.union(local.boundingBox!);
-      local.dispose();
-    }
+    // Bounds of built geometry in the pier's own frame (x across, y up, z along).
+    const inverse = frame.clone().invert();
+    const boundsOf = (parts: THREE.BufferGeometry[]) => {
+      const box = new THREE.Box3();
+      for (const geometry of parts) {
+        const local = geometry.clone().applyMatrix4(inverse);
+        local.computeBoundingBox();
+        box.union(local.boundingBox!);
+        local.dispose();
+      }
+      return box;
+    };
+    const packingBounds = boundsOf(goodsParts);
     const packingLength = packingBounds.max.z - packingBounds.min.z;
     if (packingLength > len) {
       const center = (packingBounds.min.z + packingBounds.max.z) / 2;
       const fit = new THREE.Matrix4().makeTranslation(0, 0, center).multiply(new THREE.Matrix4().makeScale(1, 1, len / packingLength)).multiply(new THREE.Matrix4().makeTranslation(0, 0, -center));
-      const worldFit = frame.clone().multiply(fit).multiply(packingInverse);
+      const worldFit = frame.clone().multiply(fit).multiply(inverse);
       for (const geometry of goodsParts) geometry.applyMatrix4(worldFit);
       packingBounds.min.z = center - len / 2;
       packingBounds.max.z = center + len / 2;
@@ -828,18 +839,33 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       for (const geometry of goodsParts) geometry.translate(delta.x, delta.y, delta.z);
     }
     // Semantic vertex ranges keep these merged goods inspectable without extra meshes or draw calls.
-    const goodsBounds = new THREE.Box3();
-    const inverse = frame.clone().invert();
-    for (const geometry of goodsParts) {
-      const local = geometry.clone().applyMatrix4(inverse);
-      local.computeBoundingBox();
-      goodsBounds.union(local.boundingBox!);
-      local.dispose();
+    const goodsBounds = boundsOf(goodsParts);
+    // The skid is sized from the packed goods (after the shift above) so nothing overhangs it, and it carries the lifebuoy,
+    // which is raised by the same lift. userData holds the bounds of the built boxes, not copies of the numbers.
+    const skid: THREE.BufferGeometry[] = [];
+    if (lift) {
+      const from = Math.max(v0, Math.min(goodsBounds.min.z, bz - 0.03)), to = Math.min(v1, Math.max(goodsBounds.max.z, bz + 0.03));
+      skid.push(K.part(box, "#8a6040", [0, DECK + lift / 2, (from + to) / 2], [0, 0, 0], [W, lift, to - from]));
+      P(skid[0]!);
     }
-    (group.userData.goodsPiles ??= []).push({ kind: good, start: goodsStart,
+    (group.userData.goodsPiles ??= []).push({ kind: good, start: goodsStart, skid: lift ? boundsOf(skid) : null, buoy: boundsOf(buoy),
       count: goodsParts.reduce((count, part) => count + part.attributes.position.count, 0),
       min: goodsBounds.min.toArray(), max: goodsBounds.max.toArray(), frame: frame.toArray(),
       deck: { width: W, from: v0, to: v1 }, scale: S });
+
+    const cornerY = TILE_Y + BLOCK_H;
+    const ramp = cornerY - DECK;
+    for (const corner of d.vids.map((id) => coast.find((c) => c.id === id)!)) {
+      const cl = new THREE.Vector3(corner.x, 0, corner.z).applyMatrix4(inverse);
+      const x0 = Math.sign(cl.x) * (W / 2 + 0.02), z0 = v0 - 0.01;
+      const dx = cl.x - x0, dz = cl.z - z0;
+      // One continuous walk from the pier deck's edge to the corner, rising from DECK to the hex surface: yaw to the corner, then
+      // pitch up along its own length.
+      const run = Math.hypot(dx, dz), len = Math.hypot(run, ramp);
+      const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.atan2(dx, dz), 0)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.atan2(ramp, run), 0, 0)));
+      const e = new THREE.Euler().setFromQuaternion(q);
+      P(K.part(box, "#a46e42", [x0 + dx / 2, DECK + ramp / 2, z0 + dz / 2], [e.x, e.y, e.z], [0.07, 0.01, len]));
+    }
 
     // The ship, moored alongside the T-head's ship side, bow to the shore.
     const sv = tv - 0.04;

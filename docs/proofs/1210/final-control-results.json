@@ -1,0 +1,44 @@
+[
+  {
+    "kind": "final-native",
+    "run": 1,
+    "exit": 0,
+    "seconds": 7.299473998995381
+  },
+  {
+    "kind": "final-cpu2",
+    "run": 1,
+    "exit": 0,
+    "seconds": 8.255673724997905
+  },
+  {
+    "kind": "final-cpu2",
+    "run": 2,
+    "exit": 0,
+    "seconds": 8.260888456999965
+  },
+  {
+    "kind": "final-cpu2",
+    "run": 3,
+    "exit": 0,
+    "seconds": 8.175940275003086
+  },
+  {
+    "kind": "no-readiness",
+    "run": 1,
+    "exit": 0,
+    "seconds": 8.564025528998172
+  },
+  {
+    "kind": "no-readiness",
+    "run": 2,
+    "exit": 1,
+    "seconds": 6.766576608999458
+  },
+  {
+    "kind": "no-host-bong",
+    "run": 1,
+    "exit": 1,
+    "seconds": 7.536268769996241
+  }
+]

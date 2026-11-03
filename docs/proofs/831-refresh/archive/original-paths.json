@@ -1,0 +1,826 @@
+{
+  "source_head": "0331546203880bb5646401c77c0430803cb93937",
+  "archive": "docs/proofs/831-refresh/archive/raw-evidence-through-0331546.tar.gz",
+  "paths": {
+    "docs/proofs/831-refresh/codex-p-2026-10-25/README.md": {
+      "sha256": "70e25e2db98be364cbfd98418b2e27e32fa7544ea4d074c65b7f959ed2743604",
+      "bytes": 5858,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/SHA256.json": {
+      "sha256": "7862794662a8f052bd74d6502e0f98c2226ed16be2fc756120f4235766c08a67",
+      "bytes": 2679,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/assertion-replacements.md": {
+      "sha256": "3250b7582859b1c1658c136934ffc75013d03d5e62387079636d96383ee8c414",
+      "bytes": 6459,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/checkpoint-exit-status.json": {
+      "sha256": "f82f66e199f4378dd53f9961bd06f2c4352d82d89a88ad2c029de54c2065da3e",
+      "bytes": 286,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/controls/exit-status.json": {
+      "sha256": "9154e955c61ca34f12af8eae3f0d1329a4749c7943e4dbf548a0ec5945c96eb4",
+      "bytes": 730,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/controls/gain-falls.diff": {
+      "sha256": "dd6a18b3c476e055c3c0f114a885b4972ca3437a02b691f8c7659a0af60f517e",
+      "bytes": 782,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/controls/gain-falls.log": {
+      "sha256": "7b5ff9f76280f9bb83601ee9e5e66ad933b83bd8fa92020863066b623073f0c5",
+      "bytes": 1910,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/controls/no-card-waapi.diff": {
+      "sha256": "3d798227ed544c0b34c4c0741b2e1810b51bac2bfc0e256cf4c85f7d6029ae3f",
+      "bytes": 870,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/controls/no-card-waapi.log": {
+      "sha256": "e3e1b37998b84b7b7300a86446fcf190b69f923ace18b05017501e422ba1818b",
+      "bytes": 1906,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/build.log": {
+      "sha256": "89d679e23af6f325a58f78d21abf0d1675e5013ee9a43406ad685dfd1044c5a7",
+      "bytes": 2916,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/client.log": {
+      "sha256": "f87a0962f2c8e4b10f056b0bb1216cace6f8f7c58e6cbc4884d949dcfa407d57",
+      "bytes": 6817,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/clone.log": {
+      "sha256": "827f16e90351ab6a5f10bd56bf64a59e48a6dfdb9080cc2bb3fd0928ef892289",
+      "bytes": 210,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/dialogs-howto.log": {
+      "sha256": "f3bcd52133a59a2c9841c7c0d206b6ca66594b579d117f14cf199310604efd8e",
+      "bytes": 2242,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/environment.log": {
+      "sha256": "f649a73d56af53f73334d37f846d00ab28ff5f76105eaed6f8be88cf62621f8a",
+      "bytes": 220,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/exit-status.json": {
+      "sha256": "59354984c9e2f5ce8d945215f0b8ea64191223d122f8388982ca1a1e5a7931cb",
+      "bytes": 4367,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/hand-cards.log": {
+      "sha256": "33a56b53bf879c7e2e16597f6599f95f05fbbe264ed5f8bd7efb5a92aa71e387",
+      "bytes": 1875,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/install.log": {
+      "sha256": "27e38b0b3975ac94c9a8321c536d2950c85817d3d240911e0b0ac4e329ed9343",
+      "bytes": 34,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/loosen-approved.log": {
+      "sha256": "9ae0fc68f973ddbd30e9004643e8dd991f1e427f932721509b9c3baa54945183",
+      "bytes": 1557,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/loosen.log": {
+      "sha256": "54830fd319dd3d4701239db45205846dcaf124b5aa1640bf4d8d5b8b6e06fb90",
+      "bytes": 956,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/overlays.log": {
+      "sha256": "75cdea896e749ea662e8155d9a0e52b6e23d2501fcf8f2a664d80b5e401ad527",
+      "bytes": 27259,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/practice-trade.log": {
+      "sha256": "8af88d010ebd4f0bf8bd443289867942ef7fc9e4e4391dbe91e124a0a8a4cb7d",
+      "bytes": 622,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/registered.log": {
+      "sha256": "b8f548c5d5157726e24ea017ec5a4eb92b128bd60621857fb2bcfd9fab5a8e3a",
+      "bytes": 716,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/server-install.log": {
+      "sha256": "a43b1b316ed2eed342b37e30ac82a40e54da0f584db127f1cbdc6e4cfec2bea2",
+      "bytes": 51,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/size-delta.log": {
+      "sha256": "0aed83c36864a2a6d278e8609a1af03c1fc3a57efc1b2036db5f314326d05f89",
+      "bytes": 540,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/size.log": {
+      "sha256": "116b361eae40e03d89f7b01af4de37ed72450b468c22c8e2618a076ab2df84b7",
+      "bytes": 2757,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/trade-map.log": {
+      "sha256": "38b2881784d129ad993283fef9f0de4dea0399386a6573f6ba3c531d64f43018",
+      "bytes": 1253,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/trade-tabs.log": {
+      "sha256": "a7546b97bfff881a477865f6445beb592746a43b591ba515f2e3d395d790b377",
+      "bytes": 4617,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/trade.log": {
+      "sha256": "7eb78c363aad2ea4b7c26b8b50a1c7a79c24ed2291bf27144797182eae65389a",
+      "bytes": 1530,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/fresh/types.log": {
+      "sha256": "36743302297ea4b497b22d219b7e72a8277ad01ab3bd7fc0772f3b828887eda6",
+      "bytes": 49,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/main-merge.log": {
+      "sha256": "074a91750a77fa0f70c38f0e14a66ef6df29e6a347ac795c062a8eff7a5ed927",
+      "bytes": 1635,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/merge-checks/build.log": {
+      "sha256": "a8277f2370905bbb76a6f57859868c75b50f5c230bf0068f2d62fe108c0d686e",
+      "bytes": 2900,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/merge-checks/exit-status.json": {
+      "sha256": "ce5182913be7eee611a45fda7681263f2ff1bb589611d5d6ba2e76a096dabf2f",
+      "bytes": 832,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/merge-checks/obsolete-trade-tabs.log": {
+      "sha256": "2b1879ac6a0192834f551ec2dab33b28080d1f3f4014e446dd9bac6a29f94351",
+      "bytes": 955,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/merge-checks/registered.log": {
+      "sha256": "c34e3377e0608fe5f454aab70ca6d2b13cd680d50e32d2729c50444def22e382",
+      "bytes": 689,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/merge-checks/size-delta-sandbox.log": {
+      "sha256": "0ad1b0d651ba0664dc03290cd78f9a4fa5ca39927882752a73cca5bf613f824b",
+      "bytes": 1096,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/merge-checks/size-delta.log": {
+      "sha256": "4ddd70352987c74fdda87edfd35e774f84a13d5ae4b3009b699993a4bcdd74d5",
+      "bytes": 513,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/merge-checks/size.log": {
+      "sha256": "6e63f4afd893692241e90f8eea738a2862fbff482d2496e6f444ecd6c682a492",
+      "bytes": 2677,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/merge-checks/types.log": {
+      "sha256": "8fa1cf5506304e8abac55868e7f1a136c9b1dde57a3981a382da4c21ea129a6f",
+      "bytes": 29,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/merge-install.log": {
+      "sha256": "4068b2e971fd4398fb303b9fc2d8ba420b41abe0e7bff8cd68e68c8a314d9c15",
+      "bytes": 25,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/merge-server-install.log": {
+      "sha256": "f9b80d3ab549519a9f1649f35d437fa7f5f9fec4afbc9e62312fb49270a73787",
+      "bytes": 26,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/scope-fdac.json": {
+      "sha256": "4573e6d35d6d411a9c9ac4edbd328632e0c11cc64c51e46e02ead420650b0e48",
+      "bytes": 1153,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/screens/SHA256.json": {
+      "sha256": "e55b36059bd38a7308b1bca2af8a73166ab147d74d9191f65494565d26009cb3",
+      "bytes": 1748,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/screens/trade-tabs-1280x720-no-preference-bank.png": {
+      "sha256": "b5541e340be4d92126efb4500d21c268e6af637ee687636ad7680cc4ccd84a54",
+      "bytes": 187084,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/screens/trade-tabs-1280x720-no-preference-table.png": {
+      "sha256": "da1526a400b94143d0c97efe5ecd900b3d708290964b0897778ad4bcb4ffbd34",
+      "bytes": 166491,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/screens/trade-tabs-390x844-no-preference-bank.png": {
+      "sha256": "2370c99eecab3c926b91e5eb61bf10dcd0f3f3d0e77108d8833605113785c93d",
+      "bytes": 89491,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/screens/trade-tabs-390x844-no-preference-table.png": {
+      "sha256": "163569aa5309474b420ce9ab9319f24a3a67386295183f164911eb0e1b3c0d64",
+      "bytes": 63117,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/screens/trade-tabs-844x390-no-preference-bank.png": {
+      "sha256": "d79e723d95050e8d1af9804406d893cf3f9945154c2f15c10738df2a48f7ac7a",
+      "bytes": 63605,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/screens/trade-tabs-844x390-no-preference-table.png": {
+      "sha256": "2a76509fc6d7bd1c63017056323bd949bdb0614de2bcb85f0b409ff316c5b4b6",
+      "bytes": 58315,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-25/trade-tabs-equivalent-attempt1.log": {
+      "sha256": "c3630404d0871a1132b11c7333402df425f77c96540b367fd6158b5a5fd00a1d",
+      "bytes": 4590,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-desk-nits/README.md": {
+      "sha256": "98fd025e97a2306a9fd16bf0827f3b1387e32812edc57f4403e2f94bfd21a503",
+      "bytes": 2526,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-luna-aria/README.md": {
+      "sha256": "239f8c1ca0fa040dc202f5ba6565bef76635bbee2a913869b2f9b510791d9044",
+      "bytes": 2825,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-luna-aria/old-runtime-tool-transcript.md": {
+      "sha256": "a35f71e9f651dc6f6942449f75b73c7daba5541f394c5e8680b1ecbd3a012865",
+      "bytes": 1280,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-luna-aria/trade-tabs.log": {
+      "sha256": "302c9f28c187784db3dc1f8c6b599b3dd3b5be1722037bab0f3032ed383cf3bd",
+      "bytes": 4590,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-luna-aria/validation.log": {
+      "sha256": "76287ad27110c8d1783ca88f0534f08a293f0a0ac330b7fe62762c1d52a61b26",
+      "bytes": 7358,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/README.md": {
+      "sha256": "0f66d54771d082d032d81e742c0640ee9e7aba1bb1f48e9a9a0978439e7b91a8",
+      "bytes": 7885,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/SHA256-all.json": {
+      "sha256": "2f8b664944756c925a813268a4776488c1bfd080907514774ee5a807775460e8",
+      "bytes": 7029,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/b-fail-first.exit.gz": {
+      "sha256": "72942094810ad95a5f9fd4ccf8d29e1fa1ec25e96b2e3feb46c89b6db20257e5",
+      "bytes": 40,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/b-fail-first.log.gz": {
+      "sha256": "3e948c065889b9bd0294477c8235288f9f7c99663aa84f806eea5064215d1f63",
+      "bytes": 407,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/b-runtime-build.exit.gz": {
+      "sha256": "98db42f1dd0d01383d42cd3105ec78f04e49d88124ee0362d2da22593ef33404",
+      "bytes": 42,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/b-runtime-build.log.gz": {
+      "sha256": "16c70ce14946393623871a4e8534a08516f3720b5e963b699e23cc4fcd46a1f5",
+      "bytes": 1368,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/b-runtime-size.exit.gz": {
+      "sha256": "a3276246ab9c78ae1e4a3103eafcacde776e3a678201225cd58efd54995191cd",
+      "bytes": 41,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/b-runtime-size.log.gz": {
+      "sha256": "e671f41674a7e3e28e641424ebf00b7d13d52d4bed7e028b2d2311e441f8fa9d",
+      "bytes": 818,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/b-runtime-trade-tabs.exit.gz": {
+      "sha256": "9841c46593aa3741c7711bab0485cee9b60352dfdf5de35c663a5cf7913cc6c2",
+      "bytes": 48,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/b-runtime-trade-tabs.log.gz": {
+      "sha256": "8c42a24c2b95433099a34fc2f05cf6b5cd7ede37a69446bcb93da431c3bc0fda",
+      "bytes": 820,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/b-runtime-types.exit.gz": {
+      "sha256": "3e0e1c637f5a8c244ef1824fed047cf8a6c59f6cee9bed7839ecb7a3091614a4",
+      "bytes": 42,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/b-runtime-types.log.gz": {
+      "sha256": "7624bf9faa9cf6451717ba2bbb38e906c293bfd6c2086236186d6d033deba856",
+      "bytes": 67,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/b-setup-missing-register.exit.gz": {
+      "sha256": "31e304e40e9375556d86cf08fc28cbee33e9c68fcc5f55a23d22af57a9e5962a",
+      "bytes": 52,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/b-setup-missing-register.log.gz": {
+      "sha256": "f64e986e84347d2bede807010035048c1b9b83a95c5088304f617dd5bee6c75e",
+      "bytes": 453,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/capture-owner-draft.mjs.gz": {
+      "sha256": "f6861296583d171b646f80082d057664e050abb60f3bd373fb074258ff579c75",
+      "bytes": 2586,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/diagnostics/README.md": {
+      "sha256": "942a387a137f22b2be1076549f0f5bd48b374a46d3422e27dfb52e51661a27e0",
+      "bytes": 2311,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/diagnostics/observer-candidate.mjs": {
+      "sha256": "95bcba0b42a68654101396b1572bbe3cccb9d934815e461ec18628ac4130bffc",
+      "bytes": 2771,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/diagnostics/observer-main.mjs": {
+      "sha256": "31d7d5810ee6697c1db04d267bb096aceee3bd0cd47e1902bf213d93578ad907",
+      "bytes": 2431,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/diagnostics/p883-candidate-client-diagnostic.log.gz": {
+      "sha256": "16f4ab57336f3f13bea6caa87f487e45ab04a9b5b30f189635602fc017b4c34e",
+      "bytes": 2300,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/diagnostics/p883-candidate-client-trace.jsonl.gz": {
+      "sha256": "8a8f77754ea655c5787757b6dbd35e5bd5d81680beda604f8ecf2def77911e1e",
+      "bytes": 684,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/diagnostics/p883-main-client-control.log.gz": {
+      "sha256": "e7c54422f971ee5f79e5b4ac26394c4929dab29a772b76727a3149eadeeadef7",
+      "bytes": 2274,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/diagnostics/p883-main-client-trace.jsonl.gz": {
+      "sha256": "db4ccfec30756e97803a6542f051b96767822e860427e8f96a9de97c74f1a22b",
+      "bytes": 549,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/diagnostics/summary.json": {
+      "sha256": "c10e73eea651aa5eb92643f4fa896d204a118aaff521b805473d05617771d2b8",
+      "bytes": 260,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/SHA256.json": {
+      "sha256": "8b9a39a76aa7288b626a69e10c6d30d34dc1e12c5f5162784bc44da382d021ba",
+      "bytes": 2030,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/browser-status.json.gz": {
+      "sha256": "b7c91e0ac95753a3f83ae9c5efed2b3f98eed8c8a1817235e147fdafc754fec7",
+      "bytes": 73,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/build.log.gz": {
+      "sha256": "dace18f75d9352a6699b1549b554ae81bdc6e3acf3b19155a3bf21f989f6916a",
+      "bytes": 1361,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/client.log.gz": {
+      "sha256": "bc7ec78f9dfeb7799da9425f0ac9209504a1dcf925fb6fdd6b3fd12080fcd053",
+      "bytes": 2553,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/loosen.log.gz": {
+      "sha256": "a43c4f38f6d29f679e8e459211f74a52f79d8f86e1ada3cb3833527c19e41191",
+      "bytes": 352,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/npm-ci.log.gz": {
+      "sha256": "b8b17617d44aabd35938c6ed9aa73e9d228b5c92bc0a3485dc7402f31f23ff21",
+      "bytes": 56,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/registered.log.gz": {
+      "sha256": "9b19c3c6faf64b44687c6492cbe10f1da1ef8a51a9d508c2da72eb01af6b459d",
+      "bytes": 328,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/run-browsers.py.gz": {
+      "sha256": "28522c4430b83eb681e74f9d364bf087b93748870258ccb6715eae336009ac5e",
+      "bytes": 445,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/screenshots/trade-tabs-1280x720-no-preference-bank.png": {
+      "sha256": "1e5fc14abacf6b804cae801e2ca626535f8ed349526b087fc2016e537e0ce0aa",
+      "bytes": 173495,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/screenshots/trade-tabs-1280x720-no-preference-table.png": {
+      "sha256": "fae80a1a113473efe9a908d5ff73c7817bbd0188ff9c3a02d83578afbbd08e95",
+      "bytes": 175595,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/screenshots/trade-tabs-390x844-no-preference-bank.png": {
+      "sha256": "3e75629ce082b5fd4c03377436d382d40bf83125cb5b2f9d2ef52b5e3aea9a31",
+      "bytes": 66927,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/screenshots/trade-tabs-390x844-no-preference-table.png": {
+      "sha256": "c144547308f53dbab365bf2445d82b2b05e90b5b74668b987e6a9624a657535e",
+      "bytes": 67546,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/screenshots/trade-tabs-844x390-no-preference-bank.png": {
+      "sha256": "9048949b82ba58046cc5de089cbcdd49a773d8ffd3b43069825a21e6c377198d",
+      "bytes": 64048,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/screenshots/trade-tabs-844x390-no-preference-table.png": {
+      "sha256": "a535da0b7772f239e11e77b048ed274608231f96e8bfdb122314b60f28edd4a5",
+      "bytes": 65698,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/server-npm-ci.log.gz": {
+      "sha256": "36166aea8fb7dff9e43f1996331c56feeb84f538ae8fac2b53a8f9f99d0c4562",
+      "bytes": 64,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/size-delta.log.gz": {
+      "sha256": "78ca3402d96220d7baae578cd20b03ec1f7612a4ff33ac7db7205f6aa7705112",
+      "bytes": 300,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/size.log.gz": {
+      "sha256": "2265eb09296ff921c582f818b7925830edb028d3c8d13fbc813eb022d869a771",
+      "bytes": 798,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/source-sha256.json": {
+      "sha256": "3c1a18cb25498e5e29eab1b9dd71f07bb44627b3347270bb63c175761face167",
+      "bytes": 32415,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/static-status.json.gz": {
+      "sha256": "8802d5dcae744124b86656f23e948c679fdda52030d404174833dafe5c74b78d",
+      "bytes": 99,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/trade-tabs.log.gz": {
+      "sha256": "7ab20717f23a611b980177ad5bf07dfb33fac8902aeab9a178e170f355393c27",
+      "bytes": 923,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/frozen/types.log.gz": {
+      "sha256": "7245db644f813ad00cfe8dd02c19d0e484df1e42825c0a80f276039fd99b7615",
+      "bytes": 57,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/hand-cards.log.gz": {
+      "sha256": "f133f2e5144451be51110d1e3ab88fbf5202ab59a2290a7c916f823e79c4c424",
+      "bytes": 575,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/old-new.md": {
+      "sha256": "122622a077fc03b8d18dc76ade6b104b70c7aefad20ff2277dad9a4cda8f5d82",
+      "bytes": 33169,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-capture-ready.exit.gz": {
+      "sha256": "dd2fc33585a491e587bfc8c47b731bcee9a5bcb8ae3549114af41fffccf602fd",
+      "bytes": 47,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-capture-ready.log.gz": {
+      "sha256": "da43b795137ffa265d3a28e2721042292f944fc369a1a1c20e0bde514db7c408",
+      "bytes": 431,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-capture.exit.gz": {
+      "sha256": "36700df5a11a27d3b5393be5f6a7575b7eb2e12cf3fe705bb4120776c01d96b2",
+      "bytes": 41,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-capture.log.gz": {
+      "sha256": "a4fe148c2cbf015554a1e414134bf1b9d27b212ca321d91d4d5048fc24c4bd44",
+      "bytes": 312,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-pictures/1280x720-affordable.png": {
+      "sha256": "77d1ff5d83ebba3052e2e7d3c926a2c1a07b45426129528e10a0b3ecfa5a716d",
+      "bytes": 171526,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-pictures/1280x720-disabled.png": {
+      "sha256": "3069697d142a7f929ffd9eaf179c58d51c7d39e7fb644c03a9d2a284a3bc5f6c",
+      "bytes": 170429,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-pictures/1280x720-initial.png": {
+      "sha256": "c2435a7d54b235194ee7646cbbb1d5061bfb10e412659443530dd6cc9b09ee10",
+      "bytes": 190493,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-pictures/390x844-affordable.png": {
+      "sha256": "7ae046eb2900a4186bf95c6d53c59585eaf2bcab541fdf4d658b5cf1bb8d5828",
+      "bytes": 64654,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-pictures/390x844-disabled.png": {
+      "sha256": "29dccf08a87a5f2cf5bd63089b95cfaed1d2c08a105b37297af7a468cdd89aaf",
+      "bytes": 65652,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-pictures/390x844-initial.png": {
+      "sha256": "c88d59b98fdc191b2d403678e5adba2b1bca15ff5069bdf6569715471c86f2ef",
+      "bytes": 79400,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-pictures/844x390-affordable.png": {
+      "sha256": "559976d89982659094dde050ec66739ec6b93822dc01017cd59c46c65b624c90",
+      "bytes": 62465,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-pictures/844x390-disabled.png": {
+      "sha256": "ccbf8e24cd812a036e8aae0b8b955b950ae7d297ac45202967fa09cb49db53c2",
+      "bytes": 63539,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-pictures/844x390-initial.png": {
+      "sha256": "ed7c42aceb3e2d687aaf394a30fb465884d69b098ff3ac979572e8dd6e700bb1",
+      "bytes": 68659,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-pictures/README.md": {
+      "sha256": "5e87015a693b074be054cef1cad0fefec2e6b0c9401d998de6eca0f2a2729302",
+      "bytes": 2719,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-pictures/SHA256.json": {
+      "sha256": "31f0653230535c7924c874917769fcb028f48f979e27abcdad355b1400fbafd0",
+      "bytes": 1118,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-pictures/capture.mjs": {
+      "sha256": "6ea572a208c9c285cf466ef28faed0e3715a0cd18a28f088b5b110b6ae544375",
+      "bytes": 7177,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-pictures/fixture.json.gz": {
+      "sha256": "a5b0cfeb1a82c25801b5e981a9216180feb6f891911cb27f0da117e545f0c9cd",
+      "bytes": 3173,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/owner-pictures/records.json.gz": {
+      "sha256": "4649dcd98a1dcef6bca361e899d150be8dff5bc26b33f290e3916cdd3bca2930",
+      "bytes": 2605,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/remaining-status.json.gz": {
+      "sha256": "e80e26056b53decfd27da53a9944d3d4aa4e2dcdba3c5188f2e84545d4d3f79c",
+      "bytes": 95,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/rotate-overlays.log.gz": {
+      "sha256": "47d763db96066542f7303ce60fd51d294d22a0a3e68f29d45617ecf50f791789",
+      "bytes": 1522,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/run-remaining.py.gz": {
+      "sha256": "1ce4ca67bc904d2667bef058792b457aa58707e1232eeb1313346c27a8446a25",
+      "bytes": 417,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/trade-map.log.gz": {
+      "sha256": "64a8518a271962111a43c81604b9abf4f87caf2a5e1bd78260b2008162882292",
+      "bytes": 465,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-option-b/trade.log.gz": {
+      "sha256": "ec2ef8b0cb6ec6c52859294ad7fa94a12c9c34a0437f344ecb1a546a8a8efb17",
+      "bytes": 792,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/README.md": {
+      "sha256": "3858f1ec2a69e2ff8338a39c0bfccd13c865aa72a7f5eebbc83f760248ea36b6",
+      "bytes": 4880,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/SHA256.json": {
+      "sha256": "dff1bf3ddf0e271d8c918bd058c9d7288d017b6f71f781ca4271717c9a58c18d",
+      "bytes": 2714,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/base-build.log": {
+      "sha256": "bb9de44a751e143819cdf849a23650051f29e3fa914c3dc84f99e1fc6d6b883a",
+      "bytes": 3116,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/base-checkout.log": {
+      "sha256": "2ab59b20755f1ae621e5269b3acac497b761f341bc9477f503a456086b6ad275",
+      "bytes": 147,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/base-clone.log": {
+      "sha256": "fb8a0d6ad2a3d98623a24af0d52e626bcc947a4c7703cf7f87f589c4f84de263",
+      "bytes": 213,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/base-install.log": {
+      "sha256": "f303c18a01eb593bd20de8c63aabfd7a276499d8834b3c0a83d285017de90200",
+      "bytes": 34,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/build.log": {
+      "sha256": "8c601e7606ff85e8b78acc05cc55322825b61c55cc1a6b88acc7c9ad6a6e3536",
+      "bytes": 2916,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/checkout-proof.log": {
+      "sha256": "9f9648e5fc8c870429bc37d558e35d872fe20d23678bb88f7b2acaa31f72af1e",
+      "bytes": 230,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/checkout.log": {
+      "sha256": "e24cf9f67dd7a049d6040bcad4fec5b7bc637b44f75f1343345973d60b995bca",
+      "bytes": 233,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/clean-proof.log": {
+      "sha256": "6d20c9ada832106f2892c4a227a033de0dbff5eb6fb387bd028c4420d40d4224",
+      "bytes": 25,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/clean.log": {
+      "sha256": "6d20c9ada832106f2892c4a227a033de0dbff5eb6fb387bd028c4420d40d4224",
+      "bytes": 25,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/clone-clean.log": {
+      "sha256": "6d20c9ada832106f2892c4a227a033de0dbff5eb6fb387bd028c4420d40d4224",
+      "bytes": 25,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/environment.log": {
+      "sha256": "90b681baeafc712652104b05024fa1a29e002420b4475df0fc928a06daeb26f4",
+      "bytes": 445,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/exit-status.json": {
+      "sha256": "ab415b3bd6a014c33ab7076b437145198cc527d44d52bc794afa7f7e38a477af",
+      "bytes": 6136,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/fetch-proof.log": {
+      "sha256": "a37fb2ed4a3c53343ab138853d02bf6e92c6159be4a246ead13e45e0d3de473d",
+      "bytes": 245,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/fetch.log": {
+      "sha256": "fcd857aff4f6e197f2081628e1d09a03db9b4f47c5497f16d569d60f9938efa9",
+      "bytes": 333,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/install.log": {
+      "sha256": "b2b7515cb23de9b8c4d06fcc01d338bb3c82d30c7b3543736efea81eac1c0111",
+      "bytes": 34,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/loosen-proof.log": {
+      "sha256": "49f2d0c726ea27dcace27e6b0b6f236b9659f177ff228eb424eef78a35231d9a",
+      "bytes": 857,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/loosen.log": {
+      "sha256": "49f2d0c726ea27dcace27e6b0b6f236b9659f177ff228eb424eef78a35231d9a",
+      "bytes": 857,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/registered.log": {
+      "sha256": "b8f548c5d5157726e24ea017ec5a4eb92b128bd60621857fb2bcfd9fab5a8e3a",
+      "bytes": 716,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/server-install.log": {
+      "sha256": "73b57abde0d3eb4ed3c692a13903c92bac2af36807df8b2428567f065c3b17fd",
+      "bytes": 51,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/size.log": {
+      "sha256": "f36e64601365a514e19dcafdc6891790c8d3a83387ed43e20e498679c76ca4fb",
+      "bytes": 2769,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/trade-map.log": {
+      "sha256": "38b2881784d129ad993283fef9f0de4dea0399386a6573f6ba3c531d64f43018",
+      "bytes": 1253,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/trade-tabs-prefetch.log": {
+      "sha256": "a399ba83433aa9c29e3e0cccfbbc7089a41c186b9131023c94b551ae0ee1c10a",
+      "bytes": 4618,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/trade-tabs.log": {
+      "sha256": "7b75b5740d3367eb7c9272ed9a6fc9b0f1c588ff4d54a66233ad41400decd25c",
+      "bytes": 4703,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/fresh/types.log": {
+      "sha256": "36743302297ea4b497b22d219b7e72a8277ad01ab3bd7fc0772f3b828887eda6",
+      "bytes": 49,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/proof-setup-audit.json": {
+      "sha256": "ef7e8e827dd5f6a23a858ddc109c6f88ac03ae195c9c5b053ffd4ed82aee44bc",
+      "bytes": 347,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/scope-prefetch.json": {
+      "sha256": "c4080e30c8f9a32f9a7ba82d7ccd889363646c8d5ef39226bf9568ae37c9ba67",
+      "bytes": 40574,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/scope-proof-head.json": {
+      "sha256": "8806eb423f62a81dd7498a964e60f5e6f8a981168df79a4fe29d7a02b6606e43",
+      "bytes": 43138,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p-2026-10-26-review/validation-runner.py": {
+      "sha256": "4cb66433c537461def16b2e7f6ff84c2a6d1827ced18fa83c6834ff7aad09c0c",
+      "bytes": 3239,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p3-main/README.md": {
+      "sha256": "a8a85d5f9950138477c6803b8fc0a9429cc4448ae672cdbdc785298fec6afbca",
+      "bytes": 1666,
+      "storage": "visible"
+    },
+    "docs/proofs/831-refresh/codex-p3-main/build.log": {
+      "sha256": "e00d55fd41549ba179cf024c1b9c2e59ff86e719e745ef27610ad6ba50bdbb6f",
+      "bytes": 3191,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p3-main/loosen.log": {
+      "sha256": "1de275f229bcb96775fd6f7ca2579796a995cb43c2a88a5035c0874a6e1811e5",
+      "bytes": 829,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p3-main/preservation.json": {
+      "sha256": "76a5e2e4dc746350cdc7272383b8788bbc0dcc7a7e9767dc27abb6d30fc51eb7",
+      "bytes": 276,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p3-main/registered.log": {
+      "sha256": "1068f9c74a26e2bbf29ec43323e8915b66f332ae537132421cb95167d80cb9a3",
+      "bytes": 668,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p3-main/results.json": {
+      "sha256": "7792877b335b20d04dd269e2c7e82bdce5a396fd342189b44f2d5f84f5334eff",
+      "bytes": 1435,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p3-main/size.log": {
+      "sha256": "76e4fcfc1e03a56a75b395d351d0dc7007e1416989dc8a3f94c4a106e5a0c3db",
+      "bytes": 2744,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p3-main/trade-map.log": {
+      "sha256": "38b2881784d129ad993283fef9f0de4dea0399386a6573f6ba3c531d64f43018",
+      "bytes": 1253,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p3-main/trade-tabs.log": {
+      "sha256": "bd636a564d00a75427bcc5b9bf842fc121dbff5e00d723e772f40dc98af169ea",
+      "bytes": 4617,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p3-main/typecheck.log": {
+      "sha256": "36743302297ea4b497b22d219b7e72a8277ad01ab3bd7fc0772f3b828887eda6",
+      "bytes": 49,
+      "storage": "archive"
+    },
+    "docs/proofs/831-refresh/codex-p3-main/validation-runner.py": {
+      "sha256": "94843209dad969fd3003deb994861d19eb362f08c0fd4e2f903ea0bb0be682e0",
+      "bytes": 1063,
+      "storage": "archive"
+    }
+  }
+}
