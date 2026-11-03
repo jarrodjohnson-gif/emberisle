@@ -740,7 +740,7 @@ export class IsleRenderer {
         const m = c.material as THREE.MeshBasicMaterial;
         if (!m?.color) continue;
         m.userData.rest ??= m.color.clone();
-        m.color.copy(m.userData.rest as THREE.Color).multiplyScalar(blocked ? 1 - robberHexDim : 1);
+        m.color.copy(m.userData.rest as THREE.Color).multiplyScalar(blocked && !m.map ? 1 - robberHexDim : 1);
         if (m.map && blocked !== !!m.userData.blocked) {
           if (!m.userData.restMap) {
             m.userData.restMap = m.map;

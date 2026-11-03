@@ -222,7 +222,7 @@ try {
       }
       return {
         disc: disc?.material.color.getHexString() ?? null,
-        label: label?.material.color.getHexString() ?? null,
+        label: background ? background.slice(0, 3).map((v) => v.toString(16).padStart(2, "0")).join("") : (label?.material.color.getHexString() ?? null),
         restDisc: disc?.material.userData.rest?.getHexString?.() ?? null,
         expectedDisc: disc?.material.userData.rest ? disc.material.userData.rest.clone().multiplyScalar(1 - 0.75).getHexString() : null,
         background, lightInk, faceHash, textureId: label?.material.map.uuid,
