@@ -226,19 +226,18 @@ body {
 .seat-card.seat-turn button:hover { background: var(--ground); color: var(--ink); }
 .seat-card button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .seat-turn .seat-dot { animation: none; outline: 2px solid var(--ink); outline-offset: 2px; }
-/* #531: on the phone strip the seat on turn rises 2 px (150 ms, --ease-out). The card rises and its button stays put: the button is the
-   seat's control and the strip sits on the safe-area edge, so a risen button would leave the safe area (hud-safe-area-prove). The button
-   takes the card's -2 px back (+2 px) and its content takes it again (-2 px), so the card, its ring, mark and content all rise and the
-   hit area does not move. Reduced motion keeps the ring and mark and drops the rise. This replaces the card's transition-colors, so it
-   lists the colour changes too (the 200 ms brightening, #443). */
-.seat-strip-cell { transition: color 200ms, background-color 200ms, transform 150ms var(--ease-out); }
-.seat-strip-cell > button, .seat-strip-cell > button > * { transition: transform 150ms var(--ease-out); }
-.seat-strip-cell.seat-turn { transform: translateY(-2px); }
-.seat-strip-cell.seat-turn > button { transform: translateY(2px); }
-.seat-strip-cell.seat-turn > button > * { transform: translateY(-2px); }
+/* #531: the card, ring, mark and content rise 2 px while the button stays on the safe-area edge.
+   Relative offsets use the layout grid: nested transforms can give the adjacent points/tally boxes different floating-point
+   edges during the rise. Each offset cancels its parent's offset for the fixed 44 px control, then restores it for the content.
+   Reduced motion keeps the ring and mark with no rise; the 200 ms colour brightening (#443) is unchanged. */
+.seat-strip-cell { top: 0; transition: color 200ms, background-color 200ms, top 150ms var(--ease-out); }
+.seat-strip-cell > button, .seat-strip-cell > button > * { position: relative; top: 0; transition: top 150ms var(--ease-out); }
+.seat-strip-cell.seat-turn { top: -2px; }
+.seat-strip-cell.seat-turn > button { top: 2px; }
+.seat-strip-cell.seat-turn > button > * { top: -2px; }
 @media (prefers-reduced-motion: reduce) {
   .seat-strip-cell, .seat-strip-cell > button, .seat-strip-cell > button > * { transition: none; }
-  .seat-strip-cell.seat-turn, .seat-strip-cell.seat-turn > button, .seat-strip-cell.seat-turn > button > * { transform: none; }
+  .seat-strip-cell.seat-turn, .seat-strip-cell.seat-turn > button, .seat-strip-cell.seat-turn > button > * { top: 0; }
 }
 .seat-card [data-testid='seat-vp'] { font-weight: 750; }
 .hud-header > div > div > button[aria-label='Table menu'] { background: var(--table); color: var(--table-ink); border: 1px solid var(--table-line); }
