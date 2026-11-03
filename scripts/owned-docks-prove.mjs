@@ -1,4 +1,7 @@
 // #560: DOM geometry and real pointer proof; uses the real renderer, camera and game store.
+// Owner decision 2026-10-19 (docs/DECISIONS.md, PR #881): no sentence on the board.
+// Old check: the visible text was "Your 3:1 dock" or "Your 2:1 wood dock", and the box sat 12 px above the building.
+// New check: the visible text is "3:1" or "2:1", the chip is centered on the building, and the full sentence is the accessible name.
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync } from 'node:fs';
 import { chromium } from 'playwright';
@@ -62,11 +65,13 @@ async function labels(page, expected, tag) {
     const state = window.__emberisle.getState().state;
     const vertex = state.vertices.find(v => v.id === el.dataset.vertexId);
     const p = window.__isle.screenOf(vertex.id);
-    return { id: vertex.id, text: el.textContent.replace(/\s+/g, ' ').trim(), owner: el.dataset.ownerId,
+    return { id: vertex.id, text: el.textContent.replace(/\s+/g, ' ').trim(), aria: el.getAttribute('aria-label'),
+      owner: el.dataset.ownerId,
       actualOwner: vertex.building?.playerId, kind: el.dataset.harbor, actualKind: vertex.harbor,
       x: parseFloat(el.style.left), y: parseFloat(el.style.top), px: p.x, py: p.y,
       left: r.left, right: r.right, top: r.top, bottom: r.bottom,
       width: r.width, height: r.height, font: parseFloat(css.fontSize), pointer: css.pointerEvents,
+      bg: css.backgroundColor,
       inside: r.left >= -1 && r.top >= -1 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1,
       clipped: el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1 };
     });
@@ -76,15 +81,17 @@ async function labels(page, expected, tag) {
   assert.deepEqual(result.map(x => x.id).sort(), expected.map(x => x.id).sort(), `${tag}: only controlling buildings have labels`);
   for (const row of result) {
     const want = expected.find(x => x.id === row.id);
-    assert.equal(row.text, want.text, `${tag}: exact README good and owned rate`);
+    assert.equal(row.text, want.text, `${tag}: visible rate chip`);
+    assert.equal(row.aria, want.name, `${tag}: full words stay on the accessible name`);
     assert.equal(row.owner, row.actualOwner, `${tag}: label owner matches actual building`);
     assert.equal(row.owner, want.owner, `${tag}: only viewing seat owns label`);
     assert.equal(row.kind, row.actualKind, `${tag}: dock kind matches controlling vertex`);
+    assert.equal(row.bg, want.bg, `${tag}: chip color is the good, or the surface for a 3:1`);
     assert.ok(Math.hypot(row.x - row.px, row.y - row.py) < 1.5, `${tag}: independent real-camera building anchor: ${JSON.stringify(row)}`);
-    assert.ok(row.inside && !row.clipped && row.width > 0 && row.height > 0 && row.font >= 10,
-      `${tag}: readable unclipped label fits viewport: ${JSON.stringify(row)}`);
+    assert.ok(row.inside && !row.clipped && row.width > 0 && row.width <= 44 && row.height > 0 && row.height <= 22 && row.font === 10,
+      `${tag}: tiny unclipped chip fits the viewport: ${JSON.stringify(row)}`);
     assert.equal(row.pointer, 'none', `${tag}: label never intercepts input`);
-    assert.ok(Math.abs(row.bottom - (row.py - 12)) < 2, `${tag}: label sits above its actual building: ${JSON.stringify(row)}`);
+    assert.ok(row.top - 1 <= row.py && row.py <= row.bottom + 1, `${tag}: chip sits on its building: ${JSON.stringify(row)}`);
   }
   return result;
 }
@@ -134,8 +141,12 @@ try {
     await page.waitForFunction(() => window.__isle && window.__emberisle?.getState().state);
     const f = await fixture(page);
     mkdirSync('test-results', { recursive: true });
-    const mine = [{ id: f.generic, owner: f.me, text: 'Your 3:1 dock' }, { id: f.wood, owner: f.me, text: 'Your 2:1 wood dock' }];
-    const theirs = [{ id: f.opponent, owner: f.other, text: 'Your 2:1 brick dock' }];
+    const surface = 'rgb(255, 249, 240)';
+    const mine = [
+      { id: f.generic, owner: f.me, text: '3:1', name: 'Your 3:1 dock', bg: surface },
+      { id: f.wood, owner: f.me, text: '2:1', name: 'Your 2:1 wood dock', bg: 'rgb(47, 106, 79)' },
+    ];
+    const theirs = [{ id: f.opponent, owner: f.other, text: '2:1', name: 'Your 2:1 brick dock', bg: 'rgb(184, 83, 61)' }];
     await labels(page, mine, tag);
     // Staging the hand can trigger the normal gain cue; capture the permanent labels after it clears.
     await page.waitForFunction(() => !document.querySelector('[data-testid="gain-float"]'));
@@ -148,12 +159,16 @@ try {
       docks.sort((a, b) => a.x - b.x);
       const ids = [docks[0].id, docks.at(-1).id];
       const names = { timber: 'wood', clay: 'brick', wool: 'sheep', grain: 'wheat', ore: 'stone' };
+      const goods = { timber: 'rgb(47, 106, 79)', clay: 'rgb(184, 83, 61)', wool: 'rgb(178, 206, 128)', grain: 'rgb(227, 196, 98)', ore: 'rgb(99, 116, 138)' };
       for (const v of state.vertices) v.building = ids.includes(v.id) ? { playerId: me, kind: 'outpost' } : null;
       state.seq++;
       api.setState({ state });
       return ids.map(id => {
         const v = state.vertices.find(v => v.id === id);
-        return { id, owner: me, text: v.harbor === 'any' ? 'Your 3:1 dock' : `Your 2:1 ${names[v.harbor]} dock` };
+        const any = v.harbor === 'any';
+        return { id, owner: me, text: any ? '3:1' : '2:1',
+          name: any ? 'Your 3:1 dock' : `Your 2:1 ${names[v.harbor]} dock`,
+          bg: any ? 'rgb(255, 249, 240)' : goods[v.harbor] };
       });
     }, f.me);
     await labels(page, extremes, `${tag} extreme left/right coast`);
