@@ -178,7 +178,7 @@
   line-height: var(--seat-row);
   font-weight: 700;
 }
-.lobby-name > button[data-testid="rename-seat"] { display: block; min-width: 0; cursor: pointer; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: underline dotted; text-underline-offset: 4px; }
+.lobby-name > button[data-testid="rename-seat"] { display: block; min-width: 44px; cursor: pointer; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: underline dotted; text-underline-offset: 4px; }
 .lobby-name > input[data-testid="rename-input"] { min-width: 0; flex: 1; border: 1px solid #cbcfc6; border-radius: 8px; background: #fff9f0; color: #263d3c; }
 .lobby-layout .dot { width: 12px; height: 12px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.25); }
 .lobby-summary [data-testid="victory-target"] { gap: 8px; font-size: 13px; font-weight: 500; color: #46524e; }
