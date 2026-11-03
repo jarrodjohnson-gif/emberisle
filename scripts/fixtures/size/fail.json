@@ -1,7 +1,7 @@
 {
   "LobbyView": 2300,
   "LobbyWaitBox": 1800,
-  "index": 122600,
+  "index": 123080,
   "IslandCanvas": 199000,
   "jelly-board": 7600,
   "hex-jelly": 46800,
@@ -23,5 +23,6 @@
   "trade-sound": 468,
   "emotes": 371,
   "SeatNeeds": 1780,
-  "TradeResource": 1430
+  "TradeResource": 1430,
+  "TradeSlot": 800
 }
