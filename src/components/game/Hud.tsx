@@ -36,13 +36,15 @@ import { cn } from "@/lib/utils";
 const PRICES = Object.keys(COST) as Price[];
 const HINT_MS = 1600;
 
+const whyStronghold = (why: string) => (why === "None left" ? "No strongholds left" : "No homes to upgrade");
+
 // Whether a build can happen now and, if not, why: the supply (or the deck), then a legal spot; a spot with a hand that cannot pay is missing goods (#606).
 function buildStatus(state: GameState, me: PlayerState, kind: Price) {
   const short = shortfall(me.resources, kind);
-  const missing = Object.values(short).reduce((a, b) => a + b, 0);
+  const missing = Object.keys(short).length;
   const left = { path: me.pathsLeft, outpost: me.outpostsLeft, stronghold: me.strongholdsLeft, card: state.deckLeft ?? state.deck.length }[kind];
   const spot = () =>
-    kind === "path" ? legalRoads(state, me.id, false).length > 0 : kind === "outpost" ? legalSettle(state, me.id, false).length > 0 : kind === "stronghold" ? legalCities(state, me.id).length > 0 : true;
+    kind === "path" ? legalRoads(state, me.id, false).length : kind === "outpost" ? legalSettle(state, me.id, false).length : kind === "stronghold" ? legalCities(state, me.id).length : 1;
   const why = left <= 0 ? "None left" : spot() ? null : "No spot";
   return { short, missing, why, ready: !why && !missing };
 }
@@ -99,7 +101,7 @@ function armedCopy(mode: BuildMode, roadPicks: number, eligibleCount = 1, phone 
       return ["Place an outpost", "Outpost"];
     case "stronghold":
       return [
-        eligibleCount === 0 ? "No homes to upgrade" : "Pick a home to upgrade",
+        eligibleCount ? "Pick a home to upgrade" : whyStronghold(""),
         phone ? "Upgrade" : "Stronghold",
       ];
     // #423: both fortunes are armed from the tray, and the My fortunes button stays pressed until the pick is made or cancelled.
@@ -260,11 +262,10 @@ export function Hud() {
   const subjectPlayer = state.players.find((p) => p.id === subject) ?? state.players[0]!;
   const yours = mode !== "hotseat" && subject === actor && (state.phase !== "discard" || discarder !== null);
   // #419: an armed build says what to pick and how to cancel (a touch screen has no Esc key).
-  const eligibleHomes = useGame((s) => (buildMode === "stronghold" ? s.highlights().vertices.length : 1));
+  const eligibleHomes = buildMode === "stronghold" ? legalCities(state, actor).length : 1;
   const armed = mine ? armedCopy(buildMode, roadPicks.length, eligibleHomes, phone) : null;
-  const cancelNote = matchMedia("(pointer: coarse)").matches || phone ? `tap ${armed?.[1]} again to cancel` : "Esc cancels";
   const phaseText = armed
-    ? `${armed[0]} · ${cancelNote}`
+    ? `${armed[0]} · ${phone || matchMedia("(pointer: coarse)").matches ? `tap ${armed[1]} again to cancel` : "Esc cancels"}`
     : state.phase === "discard"
       ? `Discard ${state.discardNeeded[subject] ?? 0} goods`
       : phaseCopy(state.phase);
@@ -457,8 +458,7 @@ export function Hud() {
                         // A tap the hand cannot pay for says what is missing (a spot waiting, goods short) instead of doing nothing.
                         if (!spectator && why && kind === "stronghold" && buildMode !== arm) {
                           setHint({ kind });
-                          const reason = why === "None left" ? "No strongholds left" : "No homes to upgrade";
-                          return void refuseQuietly(reason);
+                          return void refuseQuietly(whyStronghold(why));
                         }
                         if (!spectator && !why && missing && buildMode !== arm) {
                           setHint({ kind });
@@ -488,11 +488,7 @@ export function Hud() {
                             at === 0 ? "left-0" : at === 3 ? "right-0" : "left-1/2 -translate-x-1/2",
                           )}
                         >
-                          {why
-                            ? why === "None left"
-                              ? (kind === "stronghold" ? "No strongholds left" : "None left")
-                              : (kind === "stronghold" ? "No homes to upgrade" : "No spot")
-                            : hintLine(short)}
+                          {why ? (kind === "stronghold" ? whyStronghold(why) : why) : hintLine(short)}
                         </span>
                       ) : null}
                     </Button>
