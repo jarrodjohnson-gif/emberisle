@@ -40,12 +40,8 @@ function buildStatus(state: GameState, me: PlayerState, kind: Price) {
   const short = shortfall(me.resources, kind);
   const missing = Object.values(short).reduce((a, b) => a + b, 0);
   const left = kind === "card" ? state.deckLeft ?? state.deck.length : (me as any)[kind + "sLeft"];
-  const why =
-    left <= 0
-      ? "None left"
-      : (kind === "path" ? legalRoads(state, me.id, false).length : kind === "outpost" ? legalSettle(state, me.id, false).length : kind === "stronghold" ? legalCities(state, me.id).length : 1)
-        ? null
-        : "No spot";
+  const spot = kind === "path" ? legalRoads(state, me.id, false).length : kind === "outpost" ? legalSettle(state, me.id, false).length : kind === "stronghold" ? legalCities(state, me.id).length : 1;
+  const why = left <= 0 ? "None left" : spot ? null : "No spot";
   return { short, missing, why, ready: !why && !missing };
 }
 
@@ -160,7 +156,7 @@ export function Hud() {
   const [fortunesOpen, setFortunesOpen] = useState(false);
   const fortunesButton = useRef<HTMLButtonElement>(null);
   const cueKey = state ? `${state.turn}|${state.current}` : "";
-  const turnKey = `${cueKey}|${state?.phase}`;
+  useEffect(() => setFortunesOpen(false), [cueKey, state?.phase]);
   const glowed = useRef("");
   const cueRing = useCallback((el: HTMLSpanElement | null) => {
     if (!el) return;
@@ -451,7 +447,7 @@ export function Hud() {
                         // aria-disabled keeps the button focusable, so the click itself must refuse (but may still disarm).
                         // A tap the hand cannot pay for says what is missing (a spot waiting, goods short) instead of doing nothing.
                         if (!spectator && buildMode !== arm) {
-                          const refuse = shRefuse || (!ready && !why ? status : null);
+                          const refuse = shRefuse || (missing ? needLine(short) : null);
                           if (refuse) {
                             setHint(kind);
                             return void refuseQuietly(refuse);
@@ -463,12 +459,12 @@ export function Hud() {
                       }}
                     >
                       <span className="flex items-center gap-1 text-caption leading-4">
-                        <Icon className="build-icon size-3.5" /> {phone && isSH ? "Upgrade" : label}{ready && buildMode !== arm ? READY_DOT : null}
+                        <Icon className="build-icon size-3.5" /> {phone && isSH ? "Upgrade" : label}{ready && buildMode !== arm && READY_DOT}
                       </span>
                       {/* The chips and the reason are aria-hidden: the name stays the piece, the description says the rest. Missing
                           goods ring what the hand lacks and say how many short. */}
                       {why ? <span aria-hidden className="text-caption text-muted">{isSH && why === "No spot" ? "No homes" : why}</span> : <CostChips kind={kind} hand={missing ? me.resources : undefined} />}
-                      {showDeck ? <span aria-hidden data-testid="deck-left" className="text-[10px] leading-[10px] tabular-nums text-muted">{deckLeft} left</span> : null}
+                      {showDeck && <span aria-hidden data-testid="deck-left" className="text-[10px] leading-[10px] tabular-nums text-muted">{deckLeft} left</span>}
                       {/* The ends of the row hang the chip inward, so it stays on a phone's screen. Last child: the tile's own
                           styles address its first span. */}
                       {hint === kind ? (
