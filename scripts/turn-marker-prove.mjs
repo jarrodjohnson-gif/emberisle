@@ -9,7 +9,7 @@
 //   non-zero box: the non-colour cue, so the turn never rests on colour alone (#312);
 // - the check itself fails on zero markers and on two, proved on the live page (the attribute removed, a clone added).
 // Also:
-// - on the strip the card rises 2 px (translateY(-2px)) under motion and does not under reduced motion, while its button, the
+// - on the strip the card rises 2 px under motion and does not under reduced motion, while its button, the
 //   control on the safe-area edge, stays level with the other seats'; on the rail nothing rises;
 // - an open trade offer from the seat on turn, and the win row of the seat on turn, wear the ring and the turn mark without
 //   adding a second `[data-current-turn]`, and a win row is the same height with and without them; an offer from a seat that is
@@ -65,6 +65,59 @@ const browser = await chromium.launch({
 const errors = [];
 let code = 0;
 try {
+  // #706: pause the native rise at fractional progress. DejaVu Sans reproduces the
+  // hosted tally/points widths, where horizontal clearance cannot hide vertical drift.
+  // Keep the exact army-proof clearance predicate, including its existing horizontal 0.5 px.
+  for (const width of [390, 844]) for (const font of [null, 'DejaVu Sans']) {
+    const ctx = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : 390 }, hasTouch: true, isMobile: true });
+    await ctx.addInitScript(() => localStorage.setItem("emberisle-first-game-coach", '\"done\"'));
+    const page = await ctx.newPage();
+    page.on("console", (m) => m.type() === "error" && errors.push(`fractional rise: ${m.text()}`));
+    page.on("pageerror", (e) => errors.push(`fractional rise: ${e}`));
+    await page.goto(`http://127.0.0.1:${PORT}/`);
+    await page.waitForFunction(() => window.__emberisle);
+    await page.evaluate(() => window.__emberisle.getState().startHotseat(4));
+    await page.getByTestId("seat-p1").waitFor();
+    if (font) await page.addStyleTag({ content: `#root { font-family: "${font}", sans-serif; }` });
+    await page.evaluate(() => {
+      const state = structuredClone(window.__emberisle.getState().state);
+      state.phase = "main"; state.current = "p0";
+      window.__emberisle.setState({ state, localId: "p0" });
+    });
+    await page.waitForTimeout(400);
+    const samples = await page.evaluate(async () => {
+      const state = structuredClone(window.__emberisle.getState().state);
+      state.current = "p1";
+      window.__emberisle.setState({ state, localId: "p1" });
+      await new Promise((r) => requestAnimationFrame(r));
+      const card = document.querySelector('[data-testid="seat-p1"]');
+      card.getBoundingClientRect();
+      const animations = document.getAnimations().filter((a) => a.effect?.target?.closest?.(".seat-strip-cell"));
+      animations.forEach((a) => a.pause());
+      const box = (el) => { const r = el.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height }; };
+      return [0, 0.01, 0.02, 0.1, 1, 10, 25, 50, 75, 100, 125, 149, 149.99, 150].map((time) => {
+        animations.forEach((a) => { a.currentTime = time; });
+        return { time, animationCount: animations.length, card: box(card), button: box(card.querySelector(":scope > button")), points: box(card.querySelector('[data-testid="seat-vp"]')), tallies: ["path", "army"].map((kind) => ({ kind, box: box(card.querySelector(`[data-testid="tally-${kind}"]`)) })) };
+      });
+    });
+    assert.ok(samples[0].animationCount > 0, `${width} ${font}: the native rise has animations to sample`);
+    assert.deepEqual([samples[0].card.t, samples.at(-1).card.t], [12, 10], `${width} ${font}: the 150 ms rise moves exactly 2 px`);
+    let previousTop = 12;
+    for (const sample of samples) {
+      const tag = `${width} ${font ?? "native font"} rise at ${sample.time} ms`;
+      assert.ok(sample.card.t <= previousTop && sample.card.t >= 10, `${tag}: rise progresses toward its 2 px endpoint`);
+      previousTop = sample.card.t;
+      assert.equal(sample.points.t, sample.card.t + 1, `${tag}: content follows the risen card`);
+      assert.equal(sample.card.h, 44, `${tag}: card stays 44 px high`);
+      assert.deepEqual([sample.button.t, sample.button.h], [12, 44], `${tag}: safe-area control stays fixed`);
+      for (const { kind, box: t } of sample.tallies) {
+        assert.ok(t.l >= sample.card.l && t.r <= sample.card.r && t.t >= sample.card.t && t.b <= sample.card.b, `${tag}: ${kind} stays inside its card`);
+        assert.ok(t.r <= sample.points.l + 0.5 || t.b <= sample.points.t || t.t >= sample.points.b, `${tag}: ${kind} tally clears the points ${JSON.stringify(sample)}`);
+      }
+    }
+    console.log(`${width} ${font ?? "native font"}: 14 fractional-rise samples keep both tallies clear and the 44 px control fixed`);
+    await ctx.close();
+  }
   for (const v of VIEWS) {
     const ctx = await browser.newContext({ viewport: { width: v.width, height: v.height }, hasTouch: !!v.touch, isMobile: !!v.touch });
     const page = await ctx.newPage();
@@ -202,6 +255,7 @@ try {
         const btn = cur.querySelector(":scope > button");
         const top = (el) => el.getBoundingClientRect().top;
         return {
+          offsets: [cur, btn, ...btn.children].map((el) => getComputedStyle(el).top),
           card: getComputedStyle(cur).transform,
           button: getComputedStyle(btn).transform,
           kids: [...btn.children].map((k) => getComputedStyle(k).transform),
@@ -210,11 +264,11 @@ try {
           cardToButton: top(btn) - top(cur),
         };
       }, v.seat);
-    const matrix = (y) => `matrix(1, 0, 0, 1, 0, ${y})`;
     await page.waitForTimeout(400);
     const moving = await rise();
     if (v.strip) {
-      assert.deepEqual([moving.card, moving.button, ...new Set(moving.kids)], [matrix(-2), matrix(2), matrix(-2)], `${v.tag}: card, button and content transforms ${JSON.stringify(moving)}`);
+      assert.deepEqual(moving.offsets, ["-2px", "2px", "-2px", "-2px"], `${v.tag}: card, button and content use the 2 px layout rise ${JSON.stringify(moving)}`);
+      assert.deepEqual([moving.card, moving.button, ...new Set(moving.kids)], ["none", "none", "none"], `${v.tag}: no nested transforms during the layout rise ${JSON.stringify(moving)}`);
       assert.deepEqual([moving.cardAbove, moving.buttonAbove], [2, 0], `${v.tag}: the card is 2 px above the other seats and its button level with theirs ${JSON.stringify(moving)}`);
     } else {
       assert.deepEqual([moving.card, moving.button, ...new Set(moving.kids)], ["none", "none", "none"], `${v.tag}: nothing rises on the rail ${JSON.stringify(moving)}`);
@@ -257,6 +311,7 @@ try {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.waitForTimeout(100);
     const calm = await rise();
+    if (v.strip) assert.deepEqual(calm.offsets, ["0px", "0px", "0px", "0px"], `${v.tag}: no layout rise under reduced motion ${JSON.stringify(calm)}`);
     assert.deepEqual([calm.card, calm.button, ...new Set(calm.kids)], ["none", "none", "none"], `${v.tag}: no rise under reduced motion ${JSON.stringify(calm)}`);
     if (v.strip) assert.deepEqual([calm.cardAbove, calm.buttonAbove], [0, 0], `${v.tag}: level under reduced motion ${JSON.stringify(calm)}`);
     assert.equal(verdict((await read()).read, want(live)), null, `${v.tag}: the ring and mark stay under reduced motion`);
