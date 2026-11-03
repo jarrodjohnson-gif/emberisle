@@ -1,0 +1,27 @@
+PASS ordered, reversed and cancelled runs choose the earliest claim
+PASS timestamp then comment id determines order, independent of API order
+PASS own pause, historical pause and losing-agent pause
+PASS released claims remain historically accepted and reruns do not resurrect status
+PASS issue close and reopen release reservations at their actual time
+PASS linked claimant PR closure releases chronologically; previous losers stay losers
+PASS unrelated PRs and forged PR ownership cannot release the claimant
+PASS reopened PRs keep historical releases and cross-account PRs cannot bind
+PASS standalone status commands and rejected helper claims retain reaction semantics
+PASS unauthorized claims, pauses and commands never affect replay
+PASS forged reactions and refusal markers cannot become authority
+PASS owner-only signoffs retain original refusal and external-label protection
+PASS owner labels, marks, unknown commands and malformed claims preserve boundaries
+PASS losing claims cannot smuggle status changes through other commands
+PASS comment bodies containing executable text remain inert data
+PASS edited comments cannot become claims
+PASS commands inside code fences are ignored
+PASS CRLF fences hide commands and reservation metadata
+PASS edited pauses, releases and PR associations cannot change reservations
+PASS owner /todo and /unclaim release the active claim
+PASS shared owner account cannot release a claim without its explicit target
+PASS fenced identities, pauses, releases and PR links never reserve or release
+PASS same-agent re-claim is a no-op approval
+PASS non-status commands preserve a hand-set status label
+PASS label-commands-prove is registered for CI
+PASS each command in KNOWN appears in the workflow if: guard
+PASS 26 workflow proof groups

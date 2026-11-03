@@ -1,0 +1,2 @@
+node --check server/needs-prove.mjs
+exit_status=0 (no stdout)

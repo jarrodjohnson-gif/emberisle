@@ -19,6 +19,10 @@ try {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
+  // #1166: a diagnostic record of failed requests, kept apart from `errors` so it changes no pass/fail result.
+  // Printed only when the host-down title wait fails, to name the failed module fetches (e.g. ERR_INSUFFICIENT_RESOURCES).
+  const failedRequests = [];
+  page.on("requestfailed", (r) => failedRequests.push(`${r.failure()?.errorText ?? "?"} ${r.resourceType()} ${r.url().split(/[?#]/)[0]}`));
   // #303: record which /audio/<file> each play() came from instead of playing it; headless has no speaker to hear.
   await page.addInitScript(() => {
     window.__plays = [];
@@ -257,8 +261,8 @@ try {
   await page.getByRole("button", { name: "Trade", exact: true }).click();
   await page.getByTestId("trade-panel").waitFor();
   const askPractice = await page.getByRole("button", { name: "Ask the table" }).count();
-  await page.getByRole("button", { name: "More stone to give" }).click();
-  await page.getByRole("button", { name: "More sheep to want" }).click();
+  await page.getByRole("button", { name: "More Stone to give", exact: true }).click();
+  await page.getByRole("button", { name: "More Sheep to want", exact: true }).click();
   const rateButton = page.getByRole("button", { name: /^(Bank 4|Dock 3|Dock 2):1$/ });
   const rateLabel = await rateButton.textContent();
   await rateButton.click();
@@ -453,6 +457,24 @@ try {
   console.log("win tab order:", JSON.stringify({ tabs, back }));
   if (tabs.some((t) => !t.inDialog)) throw new Error(`win screen: Tab left the dialog: ${JSON.stringify(tabs)}`);
   if (back.id !== "win-menu") throw new Error(`win screen: Shift+Tab from Look around went to ${back.id}`);
+  const negativeTabStop = await page.getByTestId("win-look").evaluate((el) => {
+    const original = el.getAttribute("tabindex");
+    el.setAttribute("tabindex", "-1");
+    return original;
+  });
+  await page.getByTestId("win-menu").focus();
+  await page.keyboard.press("Tab");
+  const afterNegativeTab = await winFocus();
+  await page.keyboard.press("Shift+Tab");
+  const afterNegativeShiftTab = await winFocus();
+  await page.getByTestId("win-look").evaluate((el, original) => {
+    if (original === null) el.removeAttribute("tabindex");
+    else el.setAttribute("tabindex", original);
+  }, negativeTabStop);
+  console.log("win negative tabindex:", JSON.stringify({ afterTab: afterNegativeTab, afterShiftTab: afterNegativeShiftTab }));
+  if (afterNegativeTab.id !== "win-menu" || afterNegativeShiftTab.id !== "win-menu") {
+    throw new Error(`win screen: negative tabindex button entered the Tab sequence: ${JSON.stringify({ afterNegativeTab, afterNegativeShiftTab })}`);
+  }
   await page.getByTestId("win-look").click();
   await page.getByTestId("win-chip").waitFor({ timeout: 2000 });
   if (await page.getByTestId("win-screen").count()) throw new Error("win screen still shown after Look around");
@@ -905,7 +927,7 @@ try {
   const roomsDir = mkdtempSync(`${tmpdir()}/emberisle-rooms-`);
   const rejoinHost = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL("../server/", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR: roomsDir },
+    env: { ...process.env, PORT: "0", ROOMS_DIR: roomsDir, RESULTS_DIR: `${roomsDir}/results` },
   });
   process.on("exit", () => rejoinHost.kill());
   for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -953,9 +975,18 @@ try {
       localStorage.setItem("emberisle-seat", JSON.stringify({ code: "ZZZZ", secret: "x" }));
       localStorage.setItem("emberisle-seat-live", "ZZZZ");
     });
+    failedRequests.length = 0;
     await page.reload();
     const downAt = Date.now();
-    await page.getByTestId("title-card").waitFor({ timeout: 6000 });
+    try {
+      await page.getByTestId("title-card").waitFor({ timeout: 6000 });
+    } catch (e) {
+      // #1166: diagnostics only. The original wait, timeout and error are unchanged; the error is rethrown as is.
+      const booted = await page.evaluate(() => !!window.__emberisle).catch(() => "page unavailable");
+      console.log("host-down title wait failed; app booted:", booted, "; failed requests since the reload:", failedRequests.length);
+      for (const f of failedRequests.slice(0, 40)) console.log("  failed request:", f);
+      throw e;
+    }
     const downMs = Date.now() - downAt;
     console.log("live seat, host down: title card after", downMs, "ms");
     if (downMs > 4500) throw new Error(`host-down restore took ${downMs} ms to show the title`);

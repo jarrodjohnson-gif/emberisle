@@ -43,7 +43,7 @@ for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 function boot(env = {}) {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR, SAVE_MS: "9999999", ...env },
+    env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, SAVE_MS: "9999999", ...env },
   });
   return new Promise((resolve, reject) => {
     host.stdout.on("data", (d) => {

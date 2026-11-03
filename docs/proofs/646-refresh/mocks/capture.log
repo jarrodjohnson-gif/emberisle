@@ -1,0 +1,19 @@
+NODE_PATH=/workspace/emberisle/node_modules flock -n /tmp/emberisle-team-browser.lock node docs/proofs/646-refresh/mocks/capture-mocks.mjs
+captured A 320x568
+captured B overview 320x568
+captured B menu 320x568
+captured B trade 320x568
+captured A 390x844
+captured B overview 390x844
+captured B menu 390x844
+captured B trade 390x844
+captured A 844x390
+captured B overview 844x390
+captured B menu 844x390
+captured B trade 844x390
+captured A 1280x720
+captured B overview 1280x720
+captured B menu 1280x720
+captured B trade 1280x720
+Browser version: Chromium 154.0.8037.57 built on Debian GNU/Linux 13 (trixie)
+Capture exit status: 0 (all 16 screenshots and measurements written)

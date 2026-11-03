@@ -1,0 +1,6 @@
+
+> desk-board-prove
+> node scripts/desk-board-prove.mjs
+
+desk-board-prove: 85 assertions passed; classification, routes, pagination, head races, deduplication, daily cap, body preservation, workflow trust
+EXIT 0

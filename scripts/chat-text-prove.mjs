@@ -60,7 +60,7 @@ async function until(fn, label, ms = 10000) {
 try {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: path.join(ROOT, "server"),
-    env: { ...process.env, PORT: "0", ROOMS_DIR, PROFILES_DIR },
+    env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, PROFILES_DIR },
     stdio: ["ignore", "pipe", "pipe"],
   });
   const hostPort = await listeningPort(host);
