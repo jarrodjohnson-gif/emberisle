@@ -3,8 +3,8 @@ import { RESOURCE_ICON } from "@/components/game/ResourceSymbols";
 import { RESOURCES, RESOURCE_LABEL, type Phase, type PlayerState, type Resource } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 import { useGame } from "@/lib/game/store";
-import { LazyBoundary } from "@/lib/lazy";
-import { HandRates } from "@/components/game/chunks";
+import { chunk, LazyBoundary } from "@/lib/lazy";
+const HandRates = chunk(() => import("./HandRates")).pick((m) => m.default);
 import "./hand-motion.css";
 
 export { RESOURCE_ICON } from "@/components/game/ResourceSymbols";

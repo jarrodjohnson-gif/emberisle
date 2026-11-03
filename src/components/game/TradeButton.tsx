@@ -1,4 +1,4 @@
-import { Handshake } from "lucide-react";
+import { ArrowLeftRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGame } from "@/lib/game/store";
 
@@ -6,7 +6,7 @@ export function TradeButton() {
   const setTradeOpen = useGame((s) => s.setTradeOpen);
   return (
     <Button size="sm" variant="secondary" data-after-fortune onClick={(e) => setTradeOpen(true, e.currentTarget)}>
-      <Handshake className="size-4" /> Trade
+      <ArrowLeftRight className="size-4" /> Trade
     </Button>
   );
 }

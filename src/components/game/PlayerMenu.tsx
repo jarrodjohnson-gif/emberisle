@@ -10,8 +10,9 @@ import { cards, hiddenCount, publicVP, publicScoreBreakdown } from "@/lib/game/r
 import { useGame } from "@/lib/game/store";
 import type { Seat } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
-import { LazyBoundary } from "@/lib/lazy";
-import { MenuNeeds } from "@/components/game/chunks";
+import { chunk, LazyBoundary } from "@/lib/lazy";
+
+const MenuNeeds = chunk(() => import("@/components/game/SeatNeeds")).pick(module => module.MenuNeeds);
 
 // The seat's socket dropped and the table is holding it (docs/design/spectator.md "away").
 export function seatAway(seats: Seat[], p: PlayerState) {
@@ -26,8 +27,6 @@ function focusChat() {
 }
 
 const ROW = "flex h-11 w-full cursor-pointer items-center gap-2 rounded-[8px] px-2 text-left text-sm text-zinc-900 hover:bg-white/70";
-
-const SCORE_LABELS = { outposts: "Outposts (1 each)", strongholds: "Strongholds (2 each)", longestPath: "Longest path", largestArmy: "Largest army" } as const;
 
 // `heading` names the seat at the top: for the phone menus, which float away from their chip; the desktop rail's menu
 // sits under its card, which already says it.
@@ -49,14 +48,8 @@ export function PlayerMenu({ player: p, className, heading }: { player: PlayerSt
   const myMain = state.phase === "main" && state.current === actor;
   const close = () => openMenu(null);
   const parts = publicScoreBreakdown(state, p.id);
+  const labels = { outposts: "Outposts (1 each)", strongholds: "Strongholds (2 each)", longestPath: "Longest path", largestArmy: "Largest army" };
   const reveal = state.phase === "over";
-  const openTrade = () => { setTradeOpen(true, trigger()); close(); };
-  const openChatWith = (draft?: string) => {
-    if (draft) setChatDraft(draft);
-    setChatOpen(true);
-    focusChat();
-    close();
-  };
   useLayoutEffect(() => {
     const fit = () => {
       if (root.current) root.current.style.maxHeight = `calc(100dvh - ${root.current.getBoundingClientRect().top}px - max(12px, env(safe-area-inset-bottom)))`;
@@ -126,7 +119,7 @@ export function PlayerMenu({ player: p, className, heading }: { player: PlayerSt
       <dl data-testid="score-breakdown" aria-label={`${p.name}'s public score`} className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 rounded-control bg-surface px-2 py-2 text-xs text-muted">
         {Object.entries(parts).map(([kind, points]) => (
           <div key={kind} className="contents" data-component={kind} data-points={points}>
-            <dt>{SCORE_LABELS[kind as keyof typeof SCORE_LABELS]}</dt><dd className="text-right tabular-nums text-fg">{points}</dd>
+            <dt>{labels[kind as keyof typeof labels]}</dt><dd className="text-right tabular-nums text-fg">{points}</dd>
           </div>
         ))}
         {own || reveal ? <>
@@ -135,22 +128,53 @@ export function PlayerMenu({ player: p, className, heading }: { player: PlayerSt
         </> : null}
       </dl>
       {own && myMain ? (
-        <button type="button" className={ROW} onClick={openTrade}>
+        <button
+          type="button"
+          className={ROW}
+          onClick={() => {
+            setTradeOpen(true, trigger());
+            close();
+          }}
+        >
           <Landmark className="size-4 shrink-0 text-zinc-600" /> Trade with the bank or a dock…
         </button>
       ) : null}
       {!own && online && myMain ? (
-        <button type="button" className={ROW} onClick={openTrade}>
+        <button
+          type="button"
+          className={ROW}
+          onClick={() => {
+            setTradeOpen(true, trigger());
+            close();
+          }}
+        >
           <Handshake className="size-4 shrink-0 text-zinc-600" /> Offer a trade…
         </button>
       ) : null}
       {!own && online ? (
-        <button type="button" className={ROW} onClick={() => openChatWith(`@${p.name} `)}>
+        <button
+          type="button"
+          className={ROW}
+          onClick={() => {
+            setChatDraft(`@${p.name} `);
+            setChatOpen(true);
+            focusChat();
+            close();
+          }}
+        >
           <AtSign className="size-4 shrink-0 text-zinc-600" /> Mention @{p.name} in chat
         </button>
       ) : null}
       {own && online ? (
-        <button type="button" className={ROW} onClick={() => openChatWith()}>
+        <button
+          type="button"
+          className={ROW}
+          onClick={() => {
+            setChatOpen(true);
+            focusChat();
+            close();
+          }}
+        >
           <MessageSquare className="size-4 shrink-0 text-zinc-600" /> Open chat
         </button>
       ) : null}

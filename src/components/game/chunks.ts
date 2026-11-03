@@ -21,11 +21,6 @@ export const OpenTables = openTables.pick((m) => m.OpenTables);
 export const OpenModeToggle = openTables.pick((m) => m.OpenModeToggle);
 export const SetupReference = chunk(() => import("@/components/game/SetupReference")).pick(m => m.SetupReference);
 export const WayfarerOptions = chunk(() => import("@/components/game/WayfarerOptions")).pick(m => m.WayfarerOptions);
-export const HandRates = chunk(() => import("@/components/game/HandRates")).pick((m) => m.default);
-export const TurnExtensionVote = chunk(() => import("@/components/game/TurnExtensionVote")).pick((m) => m.TurnExtensionVote);
-const seatNeeds = chunk(() => import("@/components/game/SeatNeeds"));
-export const SeatNeeds = seatNeeds.pick(m => m.SeatNeeds);
-export const MenuNeeds = seatNeeds.pick(m => m.MenuNeeds);
 
 export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);

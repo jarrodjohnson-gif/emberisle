@@ -3,8 +3,9 @@ import { createPortal } from "react-dom";
 import { useGame } from "@/lib/game/store";
 import { play } from "@/lib/sound";
 import { cn } from "@/lib/utils";
-import { LazyBoundary } from "@/lib/lazy";
-import { TurnExtensionVote } from "@/components/game/chunks";
+
+import { chunk, LazyBoundary } from "@/lib/lazy";
+const TurnExtensionVote = chunk(() => import("./TurnExtensionVote")).pick((m) => m.TurnExtensionVote);
 const extensionVote = <LazyBoundary failed={null}><TurnExtensionVote /></LazyBoundary>;
 
 // The chip shows only in the last SHOW_MS of the host's window and turns to the accent in the last URGENT_MS (#345).

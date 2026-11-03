@@ -9,14 +9,17 @@
 // Your fortunes by kind and a dropped seat's state are facts in the player menu, one tap away.
 import { useMemo } from "react";
 import { type LucideIcon, Route, ScrollText, Swords } from "lucide-react";
-import { SeatBubbles, SeatNeeds } from "@/components/game/chunks";
-import { LazyBoundary } from "@/lib/lazy";
+import { SeatBubbles } from "@/components/game/chunks";
+import { chunk, LazyBoundary } from "@/lib/lazy";
 import { PlayerMenu, seatAway } from "@/components/game/PlayerMenu";
 import { SeatDot } from "@/components/game/SeatDot";
 import type { GameState, PlayerState } from "@/lib/game/types";
 import { cards, hiddenCount, publicVP, roadLength } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { cn } from "@/lib/utils";
+
+const needs = chunk(() => import("@/components/game/SeatNeeds"));
+const SeatNeeds = needs.pick(module => module.SeatNeeds);
 
 // Same reminder for every viewer and hand; its presence never signals a held point card.
 export function HiddenPointHint() {

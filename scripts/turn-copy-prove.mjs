@@ -29,11 +29,7 @@ try {
       assert.equal(info.transform, "none");
       assert.ok(["normal", "0px"].includes(info.tracking), info.tracking);
       assert.ok(!info.text.endsWith(".") && !info.text.includes("turn ·"), info.text);
-      if (!info.text.startsWith("Pick")) {
-        assert.match(info.text, /^(Roll|Place|Build|Move|Discard|Wait)\b/);
-      } else {
-        assert.match(info.text, /^Pick\b/);
-      }
+      assert.match(info.text, /^(Roll|Place|Build|Move|Discard|Wait)\b/);
     };
     // Real roll-off and both rounds of legal setup, through the store's normal actions.
     for (let i = 0; i < 100; i++) {
@@ -80,7 +76,9 @@ try {
     assert.match(await page.getByTestId("turn-banner").textContent(), /tap Path again to cancel|Esc cancels/);
     await path.click(); await prompt("Build, trade, or end your turn");
     const strongBtn = page.getByTestId("build-stronghold");
-    await strongBtn.click(); await prompt("Pick a home to upgrade");
+    await strongBtn.click();
+    await page.waitForFunction(() => document.querySelector('[data-testid="turn-banner"]')?.textContent.startsWith("Pick a home to upgrade"));
+    assert.match(await page.getByTestId("turn-banner").textContent(), /^Pick\b/);
     assert.match(await page.getByTestId("turn-banner").textContent(), /tap Upgrade again to cancel|Esc cancels/);
     await strongBtn.click(); await prompt("Build, trade, or end your turn");
     await page.evaluate(() => {
