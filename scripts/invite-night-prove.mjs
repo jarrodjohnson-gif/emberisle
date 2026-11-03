@@ -51,6 +51,14 @@ try {
   const threeType = await page.evaluate(() => typeof window.THREE);
   assert.equal(threeType, "object", "typeof THREE must be object");
 
+  // Verify header layout: brand wordmark does not overlap top actions
+  const brandBox = await page.locator(".brand").boundingBox();
+  const musicBox = await page.locator("#music").boundingBox();
+  const skipBox = await page.locator("#skip").boundingBox();
+  assert.ok(brandBox && musicBox && skipBox, "brand, music, and skip controls must be laid out");
+  assert.ok(brandBox.x + brandBox.width <= skipBox.x, "brand wordmark must not overlap skip control");
+  assert.ok(brandBox.x + brandBox.width <= musicBox.x, "brand wordmark must not overlap music control");
+
   // Canvas scene and initial hello panel
   const canvas = page.locator("#scene");
   assert.equal(await canvas.count(), 1, "#scene canvas must exist");
