@@ -273,8 +273,11 @@ if (process.argv.includes("--host-fixture")) {
     assert.equal(unseated.inbox.length, 0, "no preauth pong or peek response");
     const seated = clients[0];
     seated.inbox.length = 0;
-    const stable = await snapshot(code);
-    await sleep(100);
+    // Compare against a settled save, not an in-flight snapshot that can finish before the later comparison.
+    const stable = await until(async () => {
+      const state = await snapshot(code);
+      return !state.saving && !state.dirty && !state.saveTimer ? state : null;
+    }, "room save settles before health-ping comparison");
     const saved = readFileSync(path.join(dir, `${code}.json`));
     for (const nonce of [null, 1, "", "a".repeat(33), "z".repeat(32), {}, "a".repeat(10000)]) seated.send({ type: "healthPing", nonce });
     seated.send({ type: "healthPing", nonce: "a".repeat(32) });

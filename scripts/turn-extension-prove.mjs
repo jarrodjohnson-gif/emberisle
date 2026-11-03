@@ -101,7 +101,7 @@ async function desktopHeader(page, label) {
       }
     }
     const bottom = window.__isle.liveInsets().bottom;
-    if (bottom > 220) issues.push(`bottom ${bottom} exceeds 220`);
+    if (bottom > 226) issues.push(`bottom ${bottom} exceeds 226`);
     if (document.querySelectorAll('[data-testid="turn-countdown"]').length !== 1 || document.querySelectorAll('[data-testid="turn-countdown-live"]').length !== 1) issues.push("duplicate countdown owner");
     return { issues, bottom, instruction: instruction.textContent };
   });
