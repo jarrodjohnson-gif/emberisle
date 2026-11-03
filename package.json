@@ -101,6 +101,7 @@
     "restore-prove": "node scripts/restore-prove.mjs",
     "night": "node scripts/night.mjs",
     "night-prove": "node scripts/night-prove.mjs",
+    "chrome-prove": "node scripts/chrome-prove.mjs",
     "contrast-prove": "node scripts/contrast-prove.mjs",
     "title-prove": "node scripts/title-prove.mjs",
     "howto-prove": "node scripts/howto-prove.mjs",
