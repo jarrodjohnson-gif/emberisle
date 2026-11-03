@@ -1,0 +1,50 @@
+$ node --import ./server/register.mjs --import /tmp/sol-audio/cpu2.mjs scripts/audio-recovery-prove.mjs
+CPU_STRESS 2
+ok Ember: native baseline plays and advances before failure
+ok Ember: every target first download actually aborted
+FAILED_MEDIA Ember [
+  { file: 'your_turn.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'confirmation_001.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'drop_001.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'bong_001.wav', error: 4, readyState: 0, time: 0 }
+]
+CPU_STRESS 2
+ok Tide: native baseline plays and advances before failure
+ok Tide: every target first download actually aborted
+FAILED_MEDIA Tide [
+  { file: 'your_turn.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'confirmation_001.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'drop_001.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'bong_001.wav', error: 4, readyState: 0, time: 0 }
+]
+CPU_STRESS 2
+ok Pine: native baseline plays and advances before failure
+ok Pine: every target first download actually aborted
+FAILED_MEDIA Pine [
+  { file: 'your_turn.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'confirmation_001.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'drop_001.wav', error: 4, readyState: 0, time: 0 },
+  { file: 'bong_001.wav', error: 4, readyState: 0, time: 0 }
+]
+ok three distinct seats joined the real host (minimum legal table)
+ok each real host seat has a distinct player identity
+ok dropped socket rejoins the same player and seat
+ok the other host seats stay connected
+ok a real host trade transfers the offered resource after restoration
+ok host actions give all players a new turn and complete a trade
+ok host broadcasts the soundboard cue to all seats
+BONG_ADMISSION [{"name":"Ember","requests":[{"stage":"request","name":"board_bong","at":5928.80000000447,"queue":["path_place","outpost_place","dice_land","trade_offer","trade_yes","path_place","your_turn"],"pacing":true,"unlocked":true,"muted":false,"categoryGain":1,"volume":1,"noAudio":false}],"gates":[{"stage":"gate","name":"board_bong","at":5928.9000000059605,"queue":["path_place","outpost_place","dice_land","trade_offer","trade_yes","path_place","your_turn"],"pacing":true,"unlocked":true,"muted":false,"categoryGain":1,"now":1793388405007,"asked":1793388400248,"burst":false,"full":false}]},{"name":"Tide","requests":[{"stage":"request","name":"board_bong","at":4263.60000000149,"queue":["outpost_place","dice_land","trade_offer","trade_yes"],"pacing":true,"unlocked":true,"muted":false,"categoryGain":1,"volume":1,"noAudio":false}],"gates":[{"stage":"gate","name":"board_bong","at":4263.70000000298,"queue":["outpost_place","dice_land","trade_offer","trade_yes"],"pacing":true,"unlocked":true,"muted":false,"categoryGain":1,"now":1793388405009,"asked":1793388401194,"burst":false,"full":false}]},{"name":"Pine","requests":[{"stage":"request","name":"board_bong","at":3308.0999999940395,"queue":["outpost_place","path_place","dice_land","trade_yes"],"pacing":true,"unlocked":true,"muted":false,"categoryGain":1,"volume":1,"noAudio":false}],"gates":[{"stage":"gate","name":"board_bong","at":3308.1999999955297,"queue":["outpost_place","path_place","dice_land","trade_yes"],"pacing":true,"unlocked":true,"muted":false,"categoryGain":1,"now":1793388405011,"asked":1793388402212,"burst":false,"full":false}]}]
+ok one real host bong is admitted for every seat without burst/full-queue drops
+RECOVERY Ember {"identity":"dd1fb101-6c19-48cf-a49b-882bd2374453","recovered":[{"file":"your_turn.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.12551},{"file":"confirmation_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.294603},{"file":"drop_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.132063},{"file":"bong_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.009536}],"media":[{"file":"click_001.wav","error":null,"time":0.114649,"readyState":4},{"file":"your_turn.wav","error":4,"time":0,"readyState":0},{"file":"confirmation_001.wav","error":4,"time":0,"readyState":0},{"file":"drop_001.wav","error":4,"time":0,"readyState":0},{"file":"bong_001.wav","error":4,"time":0,"readyState":0},{"file":"game_start.mp3","error":null,"time":2.325146,"readyState":4},{"file":"your_turn.wav","error":4,"time":0,"readyState":0},{"file":"your_turn.wav","error":4,"time":0,"readyState":0},{"file":"your_turn.wav","error":null,"time":0.12551,"readyState":4},{"file":"drop_002.wav","error":null,"time":0.201723,"readyState":4},{"file":"drop_003.wav","error":null,"time":0.198821,"readyState":4},{"file":"drop_001.wav","error":null,"time":0.132063,"readyState":4},{"file":"trade_offer.wav","error":null,"time":0.26,"readyState":4},{"file":"confirmation_001.wav","error":null,"time":0.294603,"readyState":4},{"file":"bong_001.wav","error":null,"time":0.009536,"readyState":4}]}
+ok Ember: actual host state and soundboard messages received
+ok Ember: same document throughout failure and reconnect
+RECOVERY Tide {"identity":"bf08cfe9-6330-44c2-ab92-8efad81cda40","recovered":[{"file":"your_turn.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.42},{"file":"confirmation_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.294603},{"file":"drop_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.132063},{"file":"bong_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.132063}],"media":[{"file":"click_001.wav","error":null,"time":0.114649,"readyState":4},{"file":"your_turn.wav","error":4,"time":0,"readyState":0},{"file":"confirmation_001.wav","error":4,"time":0,"readyState":0},{"file":"drop_001.wav","error":4,"time":0,"readyState":0},{"file":"bong_001.wav","error":4,"time":0,"readyState":0},{"file":"game_start.mp3","error":null,"time":2.232497,"readyState":4},{"file":"your_turn.wav","error":null,"time":0.42,"readyState":4},{"file":"drop_002.wav","error":null,"time":0.105933,"readyState":4},{"file":"drop_003.wav","error":null,"time":0.198821,"readyState":4},{"file":"drop_001.wav","error":null,"time":0.132063,"readyState":4},{"file":"trade_offer.wav","error":null,"time":0.26,"readyState":4},{"file":"confirmation_001.wav","error":null,"time":0.294603,"readyState":4},{"file":"bong_001.wav","error":null,"time":0.132063,"readyState":4}]}
+ok Tide: actual host state and soundboard messages received
+ok Tide: same document throughout failure and reconnect
+RECOVERY Pine {"identity":"1e7bf382-13fc-471d-afc0-fc886fb96824","recovered":[{"file":"your_turn.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.42},{"file":"confirmation_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.294603},{"file":"drop_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.132063},{"file":"bong_001.wav","playing":true,"advanced":true,"startedAt":0,"currentTime":0.132063}],"media":[{"file":"click_001.wav","error":null,"time":0.114649,"readyState":4},{"file":"your_turn.wav","error":4,"time":0,"readyState":0},{"file":"confirmation_001.wav","error":4,"time":0,"readyState":0},{"file":"drop_001.wav","error":4,"time":0,"readyState":0},{"file":"bong_001.wav","error":4,"time":0,"readyState":0},{"file":"game_start.mp3","error":null,"time":2.364797,"readyState":4},{"file":"your_turn.wav","error":null,"time":0.42,"readyState":4},{"file":"drop_002.wav","error":null,"time":0.128522,"readyState":4},{"file":"drop_003.wav","error":null,"time":0.198821,"readyState":4},{"file":"drop_001.wav","error":null,"time":0.132063,"readyState":4},{"file":"confirmation_001.wav","error":null,"time":0.294603,"readyState":4},{"file":"bong_001.wav","error":null,"time":0.132063,"readyState":4}]}
+ok Pine: actual host state and soundboard messages received
+ok Pine: same document throughout failure and reconnect
+ok native host-driven playback recovers for all seats: 
+audio-recovery-prove: 21 checks passed; native recovery in 1996ms
+
+EXIT 0

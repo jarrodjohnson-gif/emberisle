@@ -1,0 +1,11 @@
+{
+  "builder": "GPT-6.1 Sol medium-1029",
+  "model": "GPT-6.1 Sol",
+  "reasoning": "medium",
+  "timestamp_utc": "2026-10-29T16:58:45.305898+00:00",
+  "original_head": "426f087f5130961c84bc1b53f4573486de131056",
+  "main": "1d87e85b8ed337924a9a9a3520c8c2d1a33d25e0",
+  "tested_merge": "991993ecf399f9497c3be5a3f74ea4abbce4088d",
+  "tested_tree": "e0fcd640286292754e4c263b79ff11f8ddcdd8d4",
+  "usage_percentages": null
+}

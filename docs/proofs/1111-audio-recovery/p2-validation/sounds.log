@@ -1,0 +1,42 @@
+
+> sounds-prove
+> node scripts/sounds-prove.mjs
+
+ok burst: one clip, one sound per 150 ms
+ok burst: five distinct clips start 466/153/161/182 ms apart
+ok mute: the queued clips stay silent
+ok practice: my outpost -> outpost_place once
+ok practice: my path -> path_place once
+ok practice: a bot round is 12 placements, one sound each, outpost then path, 13 sounds >= 220 ms apart
+ok practice: my roll -> dice_land once, 3 soft paying-piece ticks
+ok practice: my fortune -> card_buy once, full volume
+ok practice: my stronghold -> stronghold_place once
+ok practice: my wayfarer card -> card_play, wayfarer_move 177 ms apart
+ok mute: nothing plays
+ok practice: my ask closed with trade_no once (volume 1), no trade_offer for my own ask
+ok wayfarer: the player with a piece on the target hex hears robbed_fah once, not wayfarer_move
+ok wayfarer: elsewhere or by me, the usual wayfarer_move; muted, nothing
+ok game_start: practice plays it once at music volume
+ok game_start: online once on a new game's first state, not for a watcher, not again
+ok game_start: keyed on the new game, so a bot rolling first still plays it once, and a repeat state does not
+ok game_lose: every seat but the winner, once; the winner keeps win; hotseat and mute unchanged
+ok end_music: once per game end after the sting, for losers and winner; stops on leave/rematch; muted, hotseat and reload into over are silent
+ok match_point: once per player at target-1 public points (banner "Tide (bot) reached 9 points — one to win"); hidden points play nothing
+ok chat: sender chat_send once, other seat chat_recv once
+ok chat: chat_recv silent while the chat is focused
+ok chat: mute silences both
+ok chat: unmuted, chat_recv plays again
+ok soundboard: a tap on the Sounds & stickers tab plays on both seats and shows the line "Ember [speaker] Fah" in chat
+ok soundboard: four more taps inside 3 s are refused by the host, nothing plays
+ok soundboard: a muted listener sees the chip and hears nothing
+ok soundboard: a tap on each of the ten chips (fah, wololo, GG!, airhorn, quit touchin, only wood, perfect, bong, plop, pluck) plays it at 1
+ok soundboard: Airhorn, Quit touchin' me and Only wood? each play once on the other seat, labelled; a repeat reuses the clip's element
+ok soundboard: a tap from a muted seat is silent for the listener who muted it
+ok win screen: React plays sb_win_reaction on the other seat once, with a chip, and rests
+ok match_point online: banner "Tide (bot) reached 9 points — one to win" on the same state
+ok your_turn: plays once for acting seat, silent for others
+ok your_turn: repeat push of the same turn plays nothing
+ok your_turn: rejoin during own turn plays once, rejoin during another seat's turn is silent
+ok your_turn: muted is silent
+ok your_turn: hotseat plays none
+PASS sounds-prove

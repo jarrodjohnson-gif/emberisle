@@ -1,0 +1,31 @@
+
+> robber-hex-prove
+> node scripts/robber-hex-prove.mjs
+
+ok   start: wayfarer is on the Wastes {"robber":"-1,1","onWaste":true,"wasteDull":0,"robberDull":0}
+ok   start: Wastes are not dulled {"robber":"-1,1","onWaste":true,"wasteDull":0,"robberDull":0}
+ok   start: current hex dull target is 0 (Wastes skip) {"robber":"-1,1","onWaste":true,"wasteDull":0,"robberDull":0}
+ok   move: landed on a production hex {"a":"-2,0","b":"-2,1","waste":"-1,1","afterA":{"dullA":1,"dullOfA":1,"tokenA":{"disc":"000000","label":"c4c4c4","restDisc":"6b3f22","background":[0,0,0,255],"lightInk":9531,"faceHash":1231971168},"terrain":"grain"},"afterB":{"dullA":0,"dullB":1,"tokenA":{"disc":"6b3f22","label":"ffffff","restDisc":"6b3f22","background":[255,249,240,255],"lightInk":0,"faceHash":1812158205},"tokenB":{"disc":"000000","label":"c4c4c4","restDisc":"6b3f22","background":[0,0,0,255],"lightInk":7770,"faceHash":1539661971}},"afterWaste":{"dullA":0,"dullB":0,"dullWaste":0,"tokenA":{"disc":"6b3f22","label":"ffffff","restDisc":"6b3f22","background":[255,249,240,255],"lightInk":0,"faceHash":2834241269},"tokenB":{"disc":"6b3f22","label":"ffffff","restDisc":"6b3f22","background":[255,249,240,255],"lightInk":0,"faceHash":2777749861}},"restA":{"disc":"6b3f22","label":"ffffff","restDisc":"6b3f22","background":[255,249,240,255],"lightInk":0,"faceHash":1812158205},"restB":{"disc":"6b3f22","label":"ffffff","restDisc":"6b3f22","background":[255,249,240,255],"lightInk":0,"faceHash":2777749861}}
+ok   move: new hex is fully dulled {"dullA":1,"dullOfA":1,"tokenA":{"disc":"000000","label":"c4c4c4","restDisc":"6b3f22","background":[0,0,0,255],"lightInk":9531,"faceHash":1231971168},"terrain":"grain"}
+ok   move: token on that hex is dimmed (not rest cream) {"disc":"000000","label":"c4c4c4","restDisc":"6b3f22","background":[0,0,0,255],"lightInk":9531,"faceHash":1231971168}
+ok   move: token disc is dimmed vs its rest colour {"disc":"000000","label":"c4c4c4","restDisc":"6b3f22","background":[0,0,0,255],"lightInk":9531,"faceHash":1231971168}
+ok   move: token disc and face are plain black {"disc":"000000","label":"c4c4c4","restDisc":"6b3f22","background":[0,0,0,255],"lightInk":9531,"faceHash":1231971168}
+ok   move: light numeral and pips remain on the black face {"disc":"000000","label":"c4c4c4","restDisc":"6b3f22","background":[0,0,0,255],"lightInk":9531,"faceHash":1231971168}
+ok   second move: old hex clears {"dullA":0,"dullB":1,"tokenA":{"disc":"6b3f22","label":"ffffff","restDisc":"6b3f22","background":[255,249,240,255],"lightInk":0,"faceHash":1812158205},"tokenB":{"disc":"000000","label":"c4c4c4","restDisc":"6b3f22","background":[0,0,0,255],"lightInk":7770,"faceHash":1539661971}}
+ok   second move: new hex is dulled {"dullA":0,"dullB":1,"tokenA":{"disc":"6b3f22","label":"ffffff","restDisc":"6b3f22","background":[255,249,240,255],"lightInk":0,"faceHash":1812158205},"tokenB":{"disc":"000000","label":"c4c4c4","restDisc":"6b3f22","background":[0,0,0,255],"lightInk":7770,"faceHash":1539661971}}
+ok   second move: old token restored to rest {"disc":"6b3f22","label":"ffffff","restDisc":"6b3f22","background":[255,249,240,255],"lightInk":0,"faceHash":1812158205}
+ok   second move: new token is dimmed {"disc":"000000","label":"c4c4c4","restDisc":"6b3f22","background":[0,0,0,255],"lightInk":7770,"faceHash":1539661971}
+ok   back on Wastes: no hex stays dulled {"dullA":0,"dullB":0,"dullWaste":0,"tokenA":{"disc":"6b3f22","label":"ffffff","restDisc":"6b3f22","background":[255,249,240,255],"lightInk":0,"faceHash":2834241269},"tokenB":{"disc":"6b3f22","label":"ffffff","restDisc":"6b3f22","background":[255,249,240,255],"lightInk":0,"faceHash":2777749861}}
+ok   back on Wastes: both tokens restored {"a":{"disc":"6b3f22","label":"ffffff","restDisc":"6b3f22","background":[255,249,240,255],"lightInk":0,"faceHash":2834241269},"b":{"disc":"6b3f22","label":"ffffff","restDisc":"6b3f22","background":[255,249,240,255],"lightInk":0,"faceHash":2777749861}}
+FAIL back on Wastes: original face pixels restored exactly {"dullA":0,"dullB":0,"dullWaste":0,"tokenA":{"disc":"6b3f22","label":"ffffff","restDisc":"6b3f22","background":[255,249,240,255],"lightInk":0,"faceHash":2834241269},"tokenB":{"disc":"6b3f22","label":"ffffff","restDisc":"6b3f22","background":[255,249,240,255],"lightInk":0,"faceHash":2777749861}}
+ok   390x844: production hex dulls {"id":"-2,0","dull":1,"terrain":"grain"}
+ok   1280x720: rendered terrain sample covers the hex {"before":{"count":648,"mean":0.5583982280319534,"rgb":[0.6897542967804394,0.5496187363834418,0.2585754054708309]},"blocked":{"count":648,"mean":0.08001264100702013,"rgb":[0.08025901718712221,0.08102154442023762,0.06929314935850907]}}
+ok   1280x720: rendered blocked hex is at least 10% darker {"before":0.5583982280319534,"blocked":0.08001264100702013}
+FAIL 1280x720: blocked terrain is black without a brown cast {"count":648,"mean":0.08001264100702013,"rgb":[0.08025901718712221,0.08102154442023762,0.06929314935850907]}
+ok   1280x720: moving away restores rendered full colour {"before":0.5583982280319534,"restored":0.5583982280319534}
+ok   390x844: rendered terrain sample covers the hex {"before":{"count":648,"mean":0.5503489590898092,"rgb":[0.6764221738077947,0.5428044057129023,0.25384894698620236]},"blocked":{"count":648,"mean":0.07610912490922295,"rgb":[0.07797143548777577,0.07676107480029092,0.06416727184701067]}}
+ok   390x844: rendered blocked hex is at least 10% darker {"before":0.5503489590898092,"blocked":0.07610912490922295}
+ok   390x844: blocked terrain is black without a brown cast {"count":648,"mean":0.07610912490922295,"rgb":[0.07797143548777577,0.07676107480029092,0.06416727184701067]}
+ok   390x844: moving away restores rendered full colour {"before":0.5503489590898092,"restored":0.5503489590898092}
+ok   no console errors []
+FAIL 2: back on Wastes: original face pixels restored exactly, 1280x720: blocked terrain is black without a brown cast

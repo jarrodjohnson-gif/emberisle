@@ -212,7 +212,8 @@ export function layoutOf(kind: Terrain, seed: number): Layout {
     // running out from it across a dry gully to the tipple on that flank; the tarn on the other front flank.
     const s = r() < 0.5 ? -1 : 1;
     // The peaks are faceted rock meshes (mine()); the ground only swells under them.
-    L.peaks.push({ ...at(hillAt, 0.56), r: 0.24, h: 0.74 + r() * 0.04 });
+    // Keep the rear summit below the sightline to the next hex’s numeral (#634).
+    L.peaks.push({ ...at(hillAt, 0.56), r: 0.24, h: 0.56 + r() * 0.04 });
     L.peaks.push({ ...at(hillAt - s * 0.62, 0.54), r: 0.19, h: 0.5 + r() * 0.05 });
     L.peaks.push({ ...at(hillAt + s * 0.55, 0.56), r: 0.17, h: 0.42 + r() * 0.04 });
     // The massif (the owner, 2026-10-16: "more mountains on the hex so it's easier to see that it's ore"): two shoulders
@@ -4391,7 +4392,10 @@ function mine(L: Layout, ground: (x: number, z: number) => number, r: () => numb
     });
     const look = -Math.atan2(-dir.z, -dir.x);
     life.push((t) => {
-      const age = env.age ?? t;
+      // On the game board, age is seconds since the first live play frame (jelly-board.ts). Unset only in the studio or
+      // while the batcher samples motion — never fall back to the renderer's clock on the board (#966): that parks him on
+      // the summit after a long title or lobby.
+      const age = env.age ?? (env.board ? 0 : t);
       let k = tries.length - 1;
       while (k > 0 && age < tries[k]!.at) k--;
       const q = tries[k]!;

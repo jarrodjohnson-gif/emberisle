@@ -1,0 +1,176 @@
+{
+  "source": "8647aabf4c019a6ca6c584cb34997bd6d214bded",
+  "fixture": "controlled hotseat seed 14, forced main phase, cleared buildings, Joshua Stone, Dune grain/wool displayed Wheat/Sheep; not a legal play path",
+  "browser": "153.0.8010.12",
+  "records": [
+    {
+      "width": 320,
+      "height": 568,
+      "state": "overview",
+      "file": "320x568-overview.png",
+      "rendered": {
+        "landReady": true,
+        "renders": 4,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "sha256": "f9b36f885b888e0cc39ccf53acb8b7ea1a887529d9dbb5b5209dbc0059157609"
+    },
+    {
+      "width": 320,
+      "height": 568,
+      "state": "menu",
+      "file": "320x568-menu.png",
+      "rendered": {
+        "landReady": true,
+        "renders": 8,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "sha256": "33f5caa4497503d763a058ec97e08a5284765e347df7d49d56a64dccf010f8a9"
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "overview",
+      "file": "390x844-overview.png",
+      "rendered": {
+        "landReady": true,
+        "renders": 7,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "sha256": "987d4dad5e22067de4e244d31eb03a643a3aefbac3da7a51858a734de0b6c6b0"
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "menu",
+      "file": "390x844-menu.png",
+      "rendered": {
+        "landReady": true,
+        "renders": 9,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "sha256": "3837959dd07a791e0556758369e1cace132d5eb95f18a052e196a2a851cb6b42"
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "state": "overview",
+      "file": "844x390-overview.png",
+      "rendered": {
+        "landReady": true,
+        "renders": 4,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "sha256": "9d8cc84235795a797626758ee3e28e602625c8c2fe5498a2babc730caab8b387"
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "state": "menu",
+      "file": "844x390-menu.png",
+      "rendered": {
+        "landReady": true,
+        "renders": 7,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "sha256": "8cc54fc5841a8967e450f08526e760cf992aa1f2aa308881404aca364a1e2109"
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "state": "overview",
+      "file": "1280x720-overview.png",
+      "rendered": {
+        "landReady": true,
+        "renders": 6,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "sha256": "6499c7ebdb54ecee7012045057fbdb815ef9184671ac82c29ae30b4adebcc12a"
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "state": "menu",
+      "file": "1280x720-menu.png",
+      "rendered": {
+        "landReady": true,
+        "renders": 8,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "sha256": "4f99ae5fe9c70a7f3c15fbc800d1e8795511d14d9c1abaaf218e6ea5e9dcf1d4"
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,27 @@
+
+> haptics-prove
+> node scripts/haptics-prove.mjs
+
+cold source: held first tap, first legal land buzz 0 ms from knock, live menu toggle
+cold production: held first tap, first legal land buzz 0 ms from knock, live menu toggle
+cold skip: coarse=false, missingAPI=false; no module, row or buzz
+cold skip: coarse=true, missingAPI=true; no module, row or buzz
+cold failure: rejected optional module leaves the game and table menu usable
+pointer change: loaded motor still enforces the current coarse-pointer guard
+land: own outpost buzzed 10 within 1 ms of the recorded knock
+land: opponent outpost stayed quiet
+land: own closing path buzzes; opponent path handing over the turn stays quiet
+pay: three pieces buzzed 8 each
+pay: opponent-only and watcher silent; mixed pays only local pieces; hotseat pays all seats
+toggle: off silent, on buzzes 15 for your-turn
+desktop: coarse=false stays quiet and has no Haptics row
+reduced motion: your-turn still buzzed 15
+events: own fortune and win buzz; watcher, mute and missing-vibrate guards pass
+page.evaluate: TypeError: Cannot read properties of undefined (reading 'onmessage')
+    at frame (eval at evaluate (:311:30), <anonymous>:18:35)
+    at eval (eval at evaluate (:311:30), <anonymous>:19:7)
+    at async <anonymous>:337:30
+    at tradeFramesProof (/workspace/emberisle/work/verify716-oct25/scripts/haptics-prove.mjs:393:26)
+    at async file:///workspace/emberisle/work/verify716-oct25/scripts/haptics-prove.mjs:606:5 {
+  log: []
+}

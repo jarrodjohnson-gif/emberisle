@@ -1,0 +1,14 @@
+
+> sound-mixer-prove
+> node scripts/sound-mixer-prove.mjs
+
+ok all 42 audio assets have one mastering type; ambience is isolated at -30.6 LUFS
+ok autoplay gate covers immediate, delayed and background playback
+ok all 42 clips have one category and use master × category × clip
+ok each category mute silences only its own new requests
+ok active elements respond immediately to category volume and master mute/zero
+ok queued/delayed clips use current settings and remain silent after a category mute
+ok background gain, ducking, category mute and legacy music/master switches compose
+ok per-device persistence, autoplay after reload, immutable snapshots and subscriptions
+ok invalid/partial/blocked storage is safe and settings remain per device
+sound-mixer-prove ok

@@ -71,7 +71,7 @@ function fail(msg) {
   const holder = net.createServer();
   await new Promise((resolve, reject) => holder.once("error", reject).listen(BUSY, resolve));
   const busy = spawn(process.execPath, ["scripts/night.mjs"], {
-    env: { ...process.env, PORT: String(BUSY), ROOMS_DIR },
+    env: { ...process.env, PORT: String(BUSY), ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
     stdio: ["ignore", "pipe", "pipe"],
   });
   let busyOut = "";
@@ -95,7 +95,7 @@ function fail(msg) {
 const watchdog = setTimeout(() => fail("overall 150 s limit"), 150_000);
 
 night = spawn(process.execPath, ["scripts/night.mjs"], {
-  env: { ...process.env, PORT, ROOMS_DIR },
+  env: { ...process.env, PORT, ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
   stdio: ["ignore", "pipe", "inherit"],
 });
 let out = "";

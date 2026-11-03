@@ -1,0 +1,40 @@
+after 3000 ms one more hello opened 3NRG and the next was refused; 11 room files; host up
+preseat-prove ok
+ok matching proto 1: opened N7HX, welcome proto 1
+ok no proto: accepted as 0, seated as s1, welcome proto 1
+ok open with proto 999: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok the refused socket stayed seatless and opens a table with a known proto
+ok join with proto 999: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok join with proto 2: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok join with proto "1": "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok join with proto -1: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok join with proto 1.5: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok join with proto {}: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok lobby: still 2 seats, no broadcast
+ok rejoin with proto 999: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok rejoin: the refused secret left s1 held; a matching rejoin took it, welcome proto 1
+ok watch with proto 999: "Unknown protocol version; this table speaks protocol 1. Reload to update."
+ok watch: refused watcher not counted; a matching watcher counted 1, welcome proto 1
+proto prove ok
+practice roll: canonical goods event retains the bank shortage
+practice build: runBots applies and logs one attributed path build
+practice bank trade: action log keeps the public give and receive amounts
+practice Wayfarer: public leader rationale matches the selected victim; neutral case stays neutral and both log one public line
+implicit victim: a null selected id is named only when the rules actually steal from the sole target
+hidden VP: raising the victim's unrevealed points does not create a public leader claim
+practice bot action log prove ok
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: the bot rolled: The isle is dealt. Roll for first place. | <b>x</b> rolls a 2.
+    at file:///workspace/work/rematch986-verify/server/lobby-prove.mjs:207:10 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

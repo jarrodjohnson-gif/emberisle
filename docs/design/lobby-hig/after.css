@@ -1,0 +1,42 @@
+/* #1220 proposal, injected over the real lobby for the "after" pictures. Not product code.
+   Apple HIG text styles, iOS Large (default): Title 1 28/34, Title 2 22/28, Headline 17/22 semibold,
+   Body 17/22, Subheadline 15/20, Footnote 13/18. Numbers are CSS px (1 px = 1 pt on iPhone). */
+
+/* A. Type: five text styles instead of eight sizes. */
+.lobby-header > p { font-size: 28px; line-height: 34px; }
+.lobby-name, .lobby-name > button[data-testid="rename-seat"] { font-size: 17px; font-weight: 600; }
+.lobby-player-status, .lobby-rule-status > *:last-child, .lobby-summary [data-testid="victory-target"] { font-size: 13px; line-height: 18px; }
+.lobby-summary > p { font-size: 17px; line-height: 22px; font-weight: 600; }
+.lobby-layout .lobby-action-buttons > button:not(:last-child) { font-size: 17px; line-height: 22px; }
+.lobby-chat-panel [data-testid="chat-log"] > li { font-size: 1.0625rem; line-height: 1.375rem; } /* 17/22; rem keeps it following text size */
+@media (min-width: 361px) and (orientation: portrait), (min-height: 601px) {
+  .lobby-layout .lobby-player > button:not([data-emote]) { font-size: 15px; line-height: 20px; white-space: nowrap; }
+}
+.lobby-layout input { font-size: 17px !important; }
+@media (max-width: 600px) and (orientation: portrait) {
+  .lobby-header > p { font-size: 22px; line-height: 28px; }
+}
+
+/* B. Alignment: the rule and connection lines start at the leading edge, like every other row. */
+.lobby-rule-status { align-items: flex-start; padding-left: 4px; }
+
+/* C. Spacing: 12 px between bezeled buttons in a row where the screen has room. Row gaps stay 8 (chat share floors). */
+@media (min-width: 701px) {
+  .lobby-copy-controls, .lobby-action-buttons, .lobby-summary [role="radiogroup"] { gap: 12px; }
+}
+
+/* D. Safe areas on every layout, not just two. */
+@media (min-width: 601px) and (min-height: 601px) {
+  .lobby-layout { top: max(24px, env(safe-area-inset-top)); bottom: max(24px, env(safe-area-inset-bottom)); left: max(40px, env(safe-area-inset-left)); }
+}
+@media (max-width: 700px) and (orientation: landscape) {
+  .lobby-layout { inset: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+}
+
+/* E. Small phones (320 wide): the code, 12 px header buttons and two-line Add bot stay (short landscape keeps it too);
+   the emoji become one scrolling row, half of the fifth showing, so chat lines show. */
+@media (max-width: 360px) and (orientation: portrait) {
+  .lobby-header > p { font-size: 18px; line-height: 28px; }
+  .lobby-chat-panel [data-testid="emoji-row"] { display: flex; gap: 12px; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
+  .lobby-chat-panel [data-testid="emoji-row"] > button { flex: 0 0 44px; scroll-snap-align: start; }
+}

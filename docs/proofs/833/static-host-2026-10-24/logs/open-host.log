@@ -1,0 +1,8 @@
+
+> open-host-prove
+> node scripts/open-host-prove.mjs
+
+static root: 0 WebSockets; offline play works; no browser errors
+native root: served marker enables one real discovery socket and the open row
+explicit host link: unmarked static build discovers the selected native host only
+open-host-prove: all passed

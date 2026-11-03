@@ -1,0 +1,274 @@
+{
+  "runtimeHead": "98ec09cc24cee0130f83d579d1b9e7c48e60ede1",
+  "validationHead": "c002da6",
+  "base": "d09d72faaa3c23b426362d7a4f49df498e42e153",
+  "checks": [
+    {
+      "name": "typecheck",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "exit": 0,
+      "seconds": 1.513
+    },
+    {
+      "name": "registered",
+      "command": [
+        "npm",
+        "run",
+        "registered-prove"
+      ],
+      "exit": 0,
+      "seconds": 0.15
+    },
+    {
+      "name": "loosen",
+      "command": [
+        "npm",
+        "run",
+        "loosen-prove",
+        "--",
+        "--base",
+        "e0c559c"
+      ],
+      "exit": 1,
+      "seconds": 0.154
+    },
+    {
+      "name": "trade-tabs",
+      "command": [
+        "npm",
+        "run",
+        "trade-tabs-prove"
+      ],
+      "exit": 0,
+      "seconds": 161.257
+    },
+    {
+      "name": "hand-cards",
+      "command": [
+        "npm",
+        "run",
+        "hand-cards-prove"
+      ],
+      "exit": 0,
+      "seconds": 53.927
+    },
+    {
+      "name": "rotate-overlays",
+      "command": [
+        "npm",
+        "run",
+        "rotate-overlays-prove"
+      ],
+      "exit": 0,
+      "seconds": 137.569
+    },
+    {
+      "name": "trade-map",
+      "command": [
+        "node",
+        "--import",
+        "./server/register.mjs",
+        "scripts/trade-map.test.mjs"
+      ],
+      "exit": 0,
+      "seconds": 21.362
+    },
+    {
+      "name": "build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit": 0,
+      "seconds": 2.436
+    },
+    {
+      "name": "size",
+      "command": [
+        "node",
+        "scripts/size-prove.mjs",
+        "--base",
+        "/workspace/p883-b-rebuild-base"
+      ],
+      "exit": 0,
+      "seconds": 0.105
+    }
+  ],
+  "files": [
+    {
+      "source": "/workspace/p883-final-owner-output/build.log",
+      "archive": "raw/build.log.gz",
+      "bytes": 3325,
+      "sha256": "6a80836ba02da658e1b7414ad5ff41ae7b1ff340baa0492a408353b2a204a7c0"
+    },
+    {
+      "source": "/workspace/883-final-owner-pictures/fixture.json",
+      "archive": "raw/capture-fixture.json.gz",
+      "bytes": 30182,
+      "sha256": "9e8cfb39d770fc5e091301700232195e1302b4296fc949965920b734072ebf82"
+    },
+    {
+      "source": "/workspace/883-final-owner-pictures/records.json",
+      "archive": "raw/capture-records.json.gz",
+      "bytes": 39265,
+      "sha256": "95be3f6df3efd758045bb565f4c6e250cf98d698a48f3ef6753b6c8f686026b5"
+    },
+    {
+      "source": "/workspace/p883-final-owner-output/hand-cards.log",
+      "archive": "raw/hand-cards.log.gz",
+      "bytes": 1848,
+      "sha256": "0a563ea2b24cb08ff22e9174fe7cfc43da7acc277ed3f335ffcac8c4309ab48c"
+    },
+    {
+      "source": "/workspace/p883-final-owner-output/loosen.log",
+      "archive": "raw/loosen.log.gz",
+      "bytes": 1854,
+      "sha256": "af2aa95588da59cee4271fea16aa0e923bec9111c823a50dc0ac3e0258ff6f63"
+    },
+    {
+      "source": "/workspace/p883-final-owner-output/old-ui-negative.json",
+      "archive": "raw/old-ui-negative.json.gz",
+      "bytes": 163,
+      "sha256": "7e98584f606b2f92f37986eff495e35fb4a71d212b19af85f6e0bd4e39bd873c"
+    },
+    {
+      "source": "/workspace/p883-final-owner-output/old-ui-negative.log",
+      "archive": "raw/old-ui-negative.log.gz",
+      "bytes": 2733,
+      "sha256": "2f217eda1c3fa57693dadf6842e26746e737f3d05c2bc2e9b4a71a11acbf3f8a"
+    },
+    {
+      "source": "/workspace/p883-final-owner-capture.log",
+      "archive": "raw/p883-final-owner-capture.log.gz",
+      "bytes": 2522,
+      "sha256": "95214e7bea760de2fd24ff23deacf686242dc381b41e0f85436f552bc4de1c37"
+    },
+    {
+      "source": "/workspace/p883-final-owner-capture.mjs",
+      "archive": "raw/p883-final-owner-capture.mjs.gz",
+      "bytes": 7623,
+      "sha256": "d2c2039ee677479f1532728ae8414d44537bad1bcefaa31e6ed0fcf7c9568dab"
+    },
+    {
+      "source": "/workspace/p883-final-owner-checks.py",
+      "archive": "raw/p883-final-owner-checks.py.gz",
+      "bytes": 1367,
+      "sha256": "a7f16158b38b28f48f876109846278c767fd0b4c16499a7a0f7ce9de39a56b24"
+    },
+    {
+      "source": "/workspace/p883-final-owner-install.log",
+      "archive": "raw/p883-final-owner-install.log.gz",
+      "bytes": 25,
+      "sha256": "242fd2cb925e5d4625518541bb12eb3f164510acbdafe8f9c2e3ac1aa28cf3a2"
+    },
+    {
+      "source": "/workspace/p883-final-owner-lobby-ci-excerpt.log",
+      "archive": "raw/p883-final-owner-lobby-ci-excerpt.log.gz",
+      "bytes": 1775,
+      "sha256": "9b69b04a10004ac4b06c09b7d61e3e1891a389e7c49c0ae4c4ffdfac7b59f1d0"
+    },
+    {
+      "source": "/workspace/p883-final-owner-negative.py",
+      "archive": "raw/p883-final-owner-negative.py.gz",
+      "bytes": 1366,
+      "sha256": "82a3305f17a72fc5f3a60870ae4d469948608034893b90969bfb314282485e66"
+    },
+    {
+      "source": "/workspace/p883-final-owner-server-install.log",
+      "archive": "raw/p883-final-owner-server-install.log.gz",
+      "bytes": 26,
+      "sha256": "4090d892e530777400b36be4db823f89769ecec48688324eb70f9996f2726d32"
+    },
+    {
+      "source": "/workspace/p883-final-owner-output/registered.log",
+      "archive": "raw/registered.log.gz",
+      "bytes": 689,
+      "sha256": "84a14d5228148399b2db8433bb0012a581f56579bb4cdff620d60d8334279a9f"
+    },
+    {
+      "source": "/workspace/p883-final-owner-output/results.json",
+      "archive": "raw/results.json.gz",
+      "bytes": 1435,
+      "sha256": "9de7734f1087dc74ddebd93326ea6c42d17fd24f119f785e8a4d84dff409e408"
+    },
+    {
+      "source": "/workspace/p883-final-owner-output/rotate-overlays.log",
+      "archive": "raw/rotate-overlays.log.gz",
+      "bytes": 27227,
+      "sha256": "147fd8ce1c55018c3927e74990b168dcb686194ba5d9c60f14bd28786786e498"
+    },
+    {
+      "source": "/workspace/p883-final-owner-output/size.log",
+      "archive": "raw/size.log.gz",
+      "bytes": 2784,
+      "sha256": "11ee404858b99530d3de0739cedeea64626e0027f6c34e44ed03eca519965640"
+    },
+    {
+      "source": "/workspace/p883-final-owner-output/source-audit.json",
+      "archive": "raw/source-audit.json.gz",
+      "bytes": 34079,
+      "sha256": "24b51bc7b27a09b979c4cb92388c3db8e747d96b71d8e3e1658ddb1510ff5092"
+    },
+    {
+      "source": "/workspace/p883-final-owner-output/trade-map.log",
+      "archive": "raw/trade-map.log.gz",
+      "bytes": 1188,
+      "sha256": "877d5a90dbaa1e1945f93a5822c73d078f7ba8f37d2790369cc8fc3b9d05b2f0"
+    },
+    {
+      "source": "/workspace/p883-final-owner-output/trade-tabs.log",
+      "archive": "raw/trade-tabs.log.gz",
+      "bytes": 29386,
+      "sha256": "9b668350f569b3d985d66cf26ab7a2302a3b127cb3174325e5523cad3f7f8c13"
+    },
+    {
+      "source": "/workspace/p883-final-owner-output/typecheck.log",
+      "archive": "raw/typecheck.log.gz",
+      "bytes": 29,
+      "sha256": "8fa1cf5506304e8abac55868e7f1a136c9b1dde57a3981a382da4c21ea129a6f"
+    }
+  ],
+  "pictures": [
+    {
+      "file": "pictures/1280x720-table-affordable.png",
+      "sha256": "4fd89dbd2016e75f0033a7b426200dd3cad8383569de6ca4665df786dd77beea"
+    },
+    {
+      "file": "pictures/1280x720-table-disabled.png",
+      "sha256": "4a97243e7bff958f62fd2038028bf56efb3bf67c9279a07d90bff1f108069297"
+    },
+    {
+      "file": "pictures/1280x720-table-initial.png",
+      "sha256": "9515a7a4ef3cad5f2cd52345021a5556102cc40866719f516141e2c55f7d4aed"
+    },
+    {
+      "file": "pictures/390x844-table-affordable.png",
+      "sha256": "88566ad9d9b5ea99cf51a301f35c3273376378b8fbfb6775e7e0cf3b905fc0a5"
+    },
+    {
+      "file": "pictures/390x844-table-disabled.png",
+      "sha256": "3881fb4921819ac9e613b82611eee517ad352a838b8400f66614b0c272716195"
+    },
+    {
+      "file": "pictures/390x844-table-initial.png",
+      "sha256": "6b82f5c15508f5fb43f5a3e69f7e1e6f41a3634e5d65ec35d251809d210d1469"
+    },
+    {
+      "file": "pictures/844x390-table-affordable.png",
+      "sha256": "e68bc9bb0fcf2ce355e152e9abbd297a92e49ab9801c28f179c16b2e9d7c1d19"
+    },
+    {
+      "file": "pictures/844x390-table-disabled.png",
+      "sha256": "269ac0f1508dbc369988e332036d8fa5c1bdf25ed45799b9651fe3aeafeac9cc"
+    },
+    {
+      "file": "pictures/844x390-table-initial.png",
+      "sha256": "6fa5b6d920d657d610b82619e4a1b42e4f4b2a5ac6bd375a821d4fbd0fad452c"
+    }
+  ]
+}

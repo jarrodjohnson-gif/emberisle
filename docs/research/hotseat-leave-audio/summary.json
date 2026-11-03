@@ -1,0 +1,92 @@
+[
+  {
+    "case": "main-normal",
+    "throttle": [],
+    "baseline": 25,
+    "leaveAt": 8819.299999982119,
+    "lastBefore": {
+      "path": "/audio/click_001.wav",
+      "at": 8317.09999999404
+    },
+    "firstAfter": {
+      "path": "/audio/click_001.wav",
+      "at": 8821.299999982119
+    },
+    "observed": [
+      "/audio/click_001.wav"
+    ],
+    "maxPumpLatenessLastSecond": 368.30000001192093
+  },
+  {
+    "case": "main-cpu2",
+    "throttle": [
+      {
+        "rate": 2,
+        "accepted": true,
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        }
+      }
+    ],
+    "baseline": 25,
+    "leaveAt": 11355.09999999404,
+    "lastBefore": {
+      "path": "/audio/click_001.wav",
+      "at": 10806.40000000596
+    },
+    "firstAfter": {
+      "path": "/audio/click_001.wav",
+      "at": 11357.699999988079
+    },
+    "observed": [
+      "/audio/click_001.wav"
+    ],
+    "maxPumpLatenessLastSecond": 38.30000001192093
+  },
+  {
+    "case": "pr-normal",
+    "throttle": [],
+    "baseline": 29,
+    "leaveAt": 8536,
+    "lastBefore": {
+      "path": "/audio/click_001.wav",
+      "at": 8033.5
+    },
+    "firstAfter": {
+      "path": "/audio/click_001.wav",
+      "at": 8536.699999988079
+    },
+    "observed": [
+      "/audio/click_001.wav"
+    ],
+    "maxPumpLatenessLastSecond": 247.30000001192093
+  },
+  {
+    "case": "pr-cpu2",
+    "throttle": [
+      {
+        "rate": 2,
+        "accepted": true,
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        }
+      }
+    ],
+    "baseline": 27,
+    "leaveAt": 12498.90000000596,
+    "lastBefore": {
+      "path": "/audio/click_001.wav",
+      "at": 11979.5
+    },
+    "firstAfter": {
+      "path": "/audio/click_001.wav",
+      "at": 12499.5
+    },
+    "observed": [
+      "/audio/click_001.wav"
+    ],
+    "maxPumpLatenessLastSecond": 35.80000001192093
+  }
+]

@@ -1,0 +1,41 @@
+$ npm ci
+
+added 61 packages in 3s
+
+$ npm --prefix server ci
+
+added 1 package in 186ms
+
+$ npm run build
+
+> build
+> vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 1991 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                2.61 kB │ gzip:   1.30 kB
+dist/assets/ben-10-BZkFZeMq.webp               6.80 kB
+dist/assets/index-CdmJHvHG.css                73.30 kB │ gzip:  15.23 kB
+dist/assets/HandRates-l_im89HI.js              1.01 kB │ gzip:   0.64 kB
+dist/assets/VictoryTargetSelect-CQrZr9jI.js    1.12 kB │ gzip:   0.68 kB
+dist/assets/DockInspection-Dfz75S-2.js         2.03 kB │ gzip:   1.03 kB
+dist/assets/TurnExtensionVote-X_FyOaQS.js      2.67 kB │ gzip:   1.20 kB
+dist/assets/Reactions-yxonbmUt.js              5.47 kB │ gzip:   2.30 kB
+dist/assets/moments-BxRTh8IV.js                9.56 kB │ gzip:   4.09 kB
+dist/assets/jelly-board-g66UmGfi.js           20.42 kB │ gzip:   7.90 kB
+dist/assets/sheets-SnXg3exZ.js                22.25 kB │ gzip:   7.02 kB
+dist/assets/online-DvEGBU8p.js                22.31 kB │ gzip:   7.58 kB
+dist/assets/harbor-jelly-Lm-Tuijx.js          25.97 kB │ gzip:  10.32 kB
+dist/assets/hex-jelly-Bhlj2q8e.js            136.94 kB │ gzip:  47.25 kB
+dist/assets/index-DA5gxzwI.js                397.42 kB │ gzip: 125.95 kB
+dist/assets/IslandCanvas-BpOH-mAi.js         759.43 kB │ gzip: 201.53 kB
+
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 716ms

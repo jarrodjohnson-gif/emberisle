@@ -1,0 +1,8 @@
+
+> dock-piles-prove
+> node scripts/dock-piles-prove.mjs
+
+ok 1280x720: all nine piles enlarged 2.5x, within piers and clear of corners; visible colour pixels [{"kind":"any","visible":164,"colour":164},{"kind":"any","visible":60,"colour":60},{"kind":"wool","visible":56,"colour":51},{"kind":"any","visible":112,"colour":112},{"kind":"any","visible":192,"colour":192},{"kind":"grain","visible":168,"colour":168},{"kind":"clay","visible":471,"colour":465},{"kind":"timber","visible":280,"colour":280},{"kind":"ore","visible":346,"colour":69}]
+ok 1920x1080: all nine piles enlarged 2.5x, within piers and clear of corners; visible colour pixels [{"kind":"any","visible":556,"colour":556},{"kind":"any","visible":213,"colour":213},{"kind":"wool","visible":194,"colour":172},{"kind":"any","visible":384,"colour":384},{"kind":"any","visible":625,"colour":625},{"kind":"grain","visible":564,"colour":564},{"kind":"clay","visible":1579,"colour":1554},{"kind":"timber","visible":937,"colour":937},{"kind":"ore","visible":1151,"colour":219}]
+ok 390x844: all nine piles enlarged 2.5x, within piers and clear of corners; visible colour pixels [{"kind":"any","visible":61,"colour":61},{"kind":"any","visible":61,"colour":61},{"kind":"wool","visible":39,"colour":29},{"kind":"any","visible":51,"colour":51},{"kind":"any","visible":60,"colour":60},{"kind":"grain","visible":37,"colour":37},{"kind":"clay","visible":109,"colour":106},{"kind":"timber","visible":70,"colour":70},{"kind":"ore","visible":107,"colour":30}]
+dock piles prove ok

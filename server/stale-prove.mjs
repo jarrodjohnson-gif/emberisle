@@ -56,7 +56,7 @@ fixture("SGFF", "main");
 async function startHost(requestedPort = 0) {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: String(requestedPort), ROOMS_DIR: dir, ACT_CAP: "1000", ACT_RATE: "1000", GRACE_MS: "1000", HOLD_MS: "60000", TURN_MS: "60000" },
+    env: { ...process.env, PORT: String(requestedPort), ROOMS_DIR: dir, RESULTS_DIR: `${dir}/results`, ACT_CAP: "1000", ACT_RATE: "1000", GRACE_MS: "1000", HOLD_MS: "60000", TURN_MS: "60000" },
     stdio: ["ignore", "pipe", "pipe"],
   });
   stderr = "";
@@ -269,6 +269,12 @@ try {
   const oldStamp = a.state.actionStamp;
   await a.drop();
   a = await client("SGAA", "p0");
+  // #1245: a person's offer holds until answered, so the asker's rejoin replays it (with no countdown) and its
+  // decline. Wait for that replay here, so it cannot land inside the refusal check below.
+  const replayed = await a.next("tradeOffer");
+  assert.equal(replayed.tradeId, freshOffer.tradeId);
+  assert.equal(replayed.seconds, null);
+  await a.next("tradeDeclined", (m) => m.tradeId === freshOffer.tradeId && m.by === "p1");
   assert.equal(a.state.game.seq, oldStamp.baseSeq);
   assert.equal(a.state.game.turn, oldStamp.turn);
   assert.notEqual(a.state.actionStamp.connection, oldStamp.connection);

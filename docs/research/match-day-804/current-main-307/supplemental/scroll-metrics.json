@@ -1,0 +1,174 @@
+{
+  "before": {
+    "top": 0,
+    "height": 218,
+    "scrollHeight": 257
+  },
+  "after": {
+    "top": 39,
+    "height": 218,
+    "scrollHeight": 257
+  },
+  "controls": [
+    {
+      "label": "Fewer Wood to want",
+      "disabled": true,
+      "inside": true,
+      "rect": {
+        "x": 122.5,
+        "y": 227,
+        "width": 44,
+        "height": 44,
+        "top": 227,
+        "right": 166.5,
+        "bottom": 271,
+        "left": 122.5
+      },
+      "hit": false
+    },
+    {
+      "label": "More Wood to want",
+      "disabled": false,
+      "inside": true,
+      "rect": {
+        "x": 184.671875,
+        "y": 227,
+        "width": 44,
+        "height": 44,
+        "top": 227,
+        "right": 228.671875,
+        "bottom": 271,
+        "left": 184.671875
+      },
+      "hit": true
+    },
+    {
+      "label": "Fewer Brick to want",
+      "disabled": true,
+      "inside": true,
+      "rect": {
+        "x": 245.6875,
+        "y": 227,
+        "width": 44,
+        "height": 44,
+        "top": 227,
+        "right": 289.6875,
+        "bottom": 271,
+        "left": 245.6875
+      },
+      "hit": false
+    },
+    {
+      "label": "More Brick to want",
+      "disabled": false,
+      "inside": true,
+      "rect": {
+        "x": 307.875,
+        "y": 227,
+        "width": 44,
+        "height": 44,
+        "top": 227,
+        "right": 351.875,
+        "bottom": 271,
+        "left": 307.875
+      },
+      "hit": true
+    },
+    {
+      "label": "Fewer Sheep to want",
+      "disabled": true,
+      "inside": true,
+      "rect": {
+        "x": 368.890625,
+        "y": 227,
+        "width": 44,
+        "height": 44,
+        "top": 227,
+        "right": 412.890625,
+        "bottom": 271,
+        "left": 368.890625
+      },
+      "hit": false
+    },
+    {
+      "label": "More Sheep to want",
+      "disabled": false,
+      "inside": true,
+      "rect": {
+        "x": 431.078125,
+        "y": 227,
+        "width": 44,
+        "height": 44,
+        "top": 227,
+        "right": 475.078125,
+        "bottom": 271,
+        "left": 431.078125
+      },
+      "hit": true
+    },
+    {
+      "label": "Fewer Wheat to want",
+      "disabled": true,
+      "inside": true,
+      "rect": {
+        "x": 492.09375,
+        "y": 227,
+        "width": 44,
+        "height": 44,
+        "top": 227,
+        "right": 536.09375,
+        "bottom": 271,
+        "left": 492.09375
+      },
+      "hit": false
+    },
+    {
+      "label": "More Wheat to want",
+      "disabled": false,
+      "inside": true,
+      "rect": {
+        "x": 554.28125,
+        "y": 227,
+        "width": 44,
+        "height": 44,
+        "top": 227,
+        "right": 598.28125,
+        "bottom": 271,
+        "left": 554.28125
+      },
+      "hit": true
+    },
+    {
+      "label": "Fewer Stone to want",
+      "disabled": true,
+      "inside": true,
+      "rect": {
+        "x": 615.296875,
+        "y": 227,
+        "width": 44,
+        "height": 44,
+        "top": 227,
+        "right": 659.296875,
+        "bottom": 271,
+        "left": 615.296875
+      },
+      "hit": false
+    },
+    {
+      "label": "More Stone to want",
+      "disabled": false,
+      "inside": true,
+      "rect": {
+        "x": 677.46875,
+        "y": 227,
+        "width": 44,
+        "height": 44,
+        "top": 227,
+        "right": 721.46875,
+        "bottom": 271,
+        "left": 677.46875
+      },
+      "hit": true
+    }
+  ]
+}

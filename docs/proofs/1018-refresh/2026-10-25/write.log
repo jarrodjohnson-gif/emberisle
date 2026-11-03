@@ -1,0 +1,57 @@
+profiles: write failed: injected file-open
+ok file-open: fault reached and first mutation refused
+ok file-open: recoverable failure leaves queue and store usable
+profiles: write failed: injected file-write
+ok file-write: fault reached and first mutation refused
+ok file-write: recoverable failure leaves queue and store usable
+profiles: write failed: injected file-sync
+ok file-sync: fault reached and first mutation refused
+ok file-sync: recoverable failure leaves queue and store usable
+profiles: write failed: injected file-close
+ok file-close: fault reached and first mutation refused
+ok file-close: recoverable failure leaves queue and store usable
+profiles: write failed: injected rename-before
+ok rename-before: fault reached and first mutation refused
+ok rename-before: readiness fenced and queued callback never runs
+ok rename-before: actual replacement state preserved
+ok rename-before: all later writes and credentials refused without disk rollback
+profiles: write failed: injected rename-after
+ok rename-after: fault reached and first mutation refused
+ok rename-after: readiness fenced and queued callback never runs
+ok rename-after: actual replacement state preserved
+ok rename-after: all later writes and credentials refused without disk rollback
+profiles: write failed: injected directory-open
+ok directory-open: fault reached and first mutation refused
+ok directory-open: readiness fenced and queued callback never runs
+ok directory-open: actual replacement state preserved
+ok directory-open: all later writes and credentials refused without disk rollback
+profiles: write failed: injected directory-sync
+ok directory-sync: fault reached and first mutation refused
+ok directory-sync: readiness fenced and queued callback never runs
+ok directory-sync: actual replacement state preserved
+ok directory-sync: all later writes and credentials refused without disk rollback
+profiles: write failed: injected directory-close
+ok directory-close: fault reached and first mutation refused
+ok directory-close: readiness fenced and queued callback never runs
+ok directory-close: actual replacement state preserved
+ok directory-close: all later writes and credentials refused without disk rollback
+ok real host creates a durable profile before faults
+ok real host file-write: request refused
+ok real host file-write: original file and readiness preserved
+ok real host file-write: next request succeeds
+ok real host file-sync: request refused
+ok real host file-sync: original file and readiness preserved
+ok real host file-sync: next request succeeds
+ok real host refuses uncertain login reservation
+ok failed acknowledgement leaves the real PIN reservation on disk
+ok real host stops advertising profile availability
+ok real host fences profileResume
+ok real host fences profileLogout
+ok real host fences profileLogin
+ok real host fences profileCreate
+ok later profile traffic cannot overwrite the pending budget
+ok guests still host and join while profiles are fenced
+ok clean restart reloads the file and restores availability
+ok original device credential survives recovery
+ok restart charges uncertain reservation plus later wrong PIN exactly once
+profile-write-prove: 47 checks passed

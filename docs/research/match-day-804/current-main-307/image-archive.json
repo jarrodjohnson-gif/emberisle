@@ -1,0 +1,320 @@
+{
+  "archive": "match-day-804-current-main-307-images.zip",
+  "bytes": 13787401,
+  "sha256": "b83116840e9709b460bc40b7fd1f36f711bd76318fce4b5c0a8633cbdb171fde",
+  "pngCount": 62,
+  "primaryCaptureCount": 56,
+  "manifestSha256": "63d0f248b5176caac5516b67c16f75e276ef57db52fbaf719d73faebe05ead06",
+  "files": [
+    {
+      "file": "captures/1280x720-end-turn.png",
+      "bytes": 439444,
+      "sha256": "52bfc7933766caebde739a784d18c6424889ce57f98589ff2cab411916435c5d"
+    },
+    {
+      "file": "captures/1280x720-first-road-placement.png",
+      "bytes": 425881,
+      "sha256": "7f6cd8df5fa0b4d61530ff54548a5e317e0cac8cb68e0034269717d4fd4cb131"
+    },
+    {
+      "file": "captures/1280x720-first-settlement-placement.png",
+      "bytes": 422654,
+      "sha256": "e610666e4060e7ef6f5dadd5077020d676756b85bd1564e74f85208ebf3d6b90"
+    },
+    {
+      "file": "captures/1280x720-fortune-tray.png",
+      "bytes": 431934,
+      "sha256": "5e9450562801f0b40c87cc88a9ad70ff7371228f8d8da92497a5c777257f9d3f"
+    },
+    {
+      "file": "captures/1280x720-joined-by-link.png",
+      "bytes": 483193,
+      "sha256": "83fd7caf47f71f9463d537c9059c042051c2146b4a4696130a041b992a803739"
+    },
+    {
+      "file": "captures/1280x720-lobby-4-seats.png",
+      "bytes": 486790,
+      "sha256": "3250bad4a32e2494642022e8ebdb3665111e593daf914dc7ac688dca899d822e"
+    },
+    {
+      "file": "captures/1280x720-paying-roll.png",
+      "bytes": 423069,
+      "sha256": "0f075674a5ebf7a404c2a56f0791604772076e9dab757209db29e5c1f00fee5b"
+    },
+    {
+      "file": "captures/1280x720-robber.png",
+      "bytes": 405062,
+      "sha256": "81180fb29b0ed33dae2b6730e6723849c3908eb910014b14f537d211c539874d"
+    },
+    {
+      "file": "captures/1280x720-roll-off.png",
+      "bytes": 409503,
+      "sha256": "560d20ec084127405d56bbbca931623daebe207a6aa30172179205b137897015"
+    },
+    {
+      "file": "captures/1280x720-settlement-and-road-placed.png",
+      "bytes": 440818,
+      "sha256": "def49d03c6bf2862400e50717aeb02747a41e811f4a8e48c037c18041a0eb978"
+    },
+    {
+      "file": "captures/1280x720-title.png",
+      "bytes": 498059,
+      "sha256": "26b83d945cb13fa9df8645a24257315196f78b95dc03983bfe0ed22c23b5d50a"
+    },
+    {
+      "file": "captures/1280x720-trade-panel.png",
+      "bytes": 190164,
+      "sha256": "ae3135ff038fb17c7ee2ff55593309a906e2764905d64c9adce8f2f824f95432"
+    },
+    {
+      "file": "captures/1280x720-watcher.png",
+      "bytes": 289563,
+      "sha256": "d06c893774bff18b38e9a490a48aae5522e4c647b3e247aa1298dea4d512a6eb"
+    },
+    {
+      "file": "captures/1280x720-win-screen.png",
+      "bytes": 100622,
+      "sha256": "f5aa59e7c491c58482c389502c9eddb377b792d73cf375faf352672140a3bef5"
+    },
+    {
+      "file": "captures/390x844-end-turn.png",
+      "bytes": 191337,
+      "sha256": "9c39310c14bf975e289576f5558b47ba4e2f939110396a6cacf15acda7a67067"
+    },
+    {
+      "file": "captures/390x844-first-road-placement.png",
+      "bytes": 153722,
+      "sha256": "eba82d06f2c49be3a9a3c8b1608693cd649b83932ab7630a39bf9a03fae37b37"
+    },
+    {
+      "file": "captures/390x844-first-settlement-placement.png",
+      "bytes": 196860,
+      "sha256": "5ac9b6e78d0cfe23846ae78e4b9cc8198b55fdf450cd4cd1b27056841d67cd91"
+    },
+    {
+      "file": "captures/390x844-fortune-tray.png",
+      "bytes": 185771,
+      "sha256": "6ec72e67fc87468059df06ea24ce9e3efc42755e010a938b3174329b9e4ad66b"
+    },
+    {
+      "file": "captures/390x844-joined-by-link.png",
+      "bytes": 69508,
+      "sha256": "4745a298b5e1df927d62533bfc56a56d408f8db3248209a012ea31aa956918b6"
+    },
+    {
+      "file": "captures/390x844-lobby-4-seats.png",
+      "bytes": 71858,
+      "sha256": "c93abffff2e23fb5592d0f7c65990230383d42983cb438dbecae6f687bff97ae"
+    },
+    {
+      "file": "captures/390x844-paying-roll.png",
+      "bytes": 184897,
+      "sha256": "1b64ba92b669d01a2d9149f7ba982003eba3b3a4b0646c4145a8dd02efa531e3"
+    },
+    {
+      "file": "captures/390x844-robber.png",
+      "bytes": 172239,
+      "sha256": "850a6666609512f1da7029ed8e5d80e1a01f21d5455b29c061f901f5b3870ad8"
+    },
+    {
+      "file": "captures/390x844-roll-off.png",
+      "bytes": 184329,
+      "sha256": "da44af0fb6c1a7f9e188f7bf1ddff8b49a41c95d7c599896171050a6e6e416ac"
+    },
+    {
+      "file": "captures/390x844-settlement-and-road-placed.png",
+      "bytes": 197209,
+      "sha256": "0bed271a62bbd8262bdb262ae875c752e05634f887a7ded001a3b3f4eea193c7"
+    },
+    {
+      "file": "captures/390x844-title.png",
+      "bytes": 169461,
+      "sha256": "8889b2a57b08f2dd775b85fb2126bcc1648d51d12968348f8171aa413ac475b4"
+    },
+    {
+      "file": "captures/390x844-trade-panel.png",
+      "bytes": 63984,
+      "sha256": "b7f9f1973dc7c2c0673190ef752f2c9f34e5f8299ba4da0e05ea288c63f93816"
+    },
+    {
+      "file": "captures/390x844-watcher.png",
+      "bytes": 122022,
+      "sha256": "bf4feb02c06a03d25b520e17d9a6e16391c1974f3441e9944dc639205a4e0486"
+    },
+    {
+      "file": "captures/390x844-win-screen.png",
+      "bytes": 73071,
+      "sha256": "1e133aeff839132314c8ec1bf0775563a9eca6c03d46cdb128e2cd5d34ac2b24"
+    },
+    {
+      "file": "captures/440x956-end-turn.png",
+      "bytes": 235321,
+      "sha256": "36d85449693604f87437d8fdd6bacc3e0f50506cdfcf43226cd59eb21926faa6"
+    },
+    {
+      "file": "captures/440x956-first-road-placement.png",
+      "bytes": 215213,
+      "sha256": "36a0707c9ed091615486698f7b510305b2c844894a7a5bca8ce9b35aa96824f1"
+    },
+    {
+      "file": "captures/440x956-first-settlement-placement.png",
+      "bytes": 237969,
+      "sha256": "91d98da5a733d79cf5de2f3fa7c526ea7929557246f7ebd1a70238635097915f"
+    },
+    {
+      "file": "captures/440x956-fortune-tray.png",
+      "bytes": 223379,
+      "sha256": "ae1c76abd136ecf04da3d1a8d4e35d45b16744d3828b601a006d8f6aab87797f"
+    },
+    {
+      "file": "captures/440x956-joined-by-link.png",
+      "bytes": 80074,
+      "sha256": "56c2ee7b9c32e814a2d14ed3352d7f30ac3ab19b481c9d55746a6bdc8aed8c6e"
+    },
+    {
+      "file": "captures/440x956-lobby-4-seats.png",
+      "bytes": 82091,
+      "sha256": "e63597fee0ad9682b5fa138f38a99fb8b2f4859d85c7237e060905e603c90a51"
+    },
+    {
+      "file": "captures/440x956-paying-roll.png",
+      "bytes": 235970,
+      "sha256": "06b49dec5b47ad8530431dff2d3a39f648787b832e7fd6e761eb3ca0e6b9c56a"
+    },
+    {
+      "file": "captures/440x956-robber.png",
+      "bytes": 224038,
+      "sha256": "ad1febd445fdc970caf89a64f8b25958b64c740d138b4a91de83068e1015dd9e"
+    },
+    {
+      "file": "captures/440x956-roll-off.png",
+      "bytes": 223237,
+      "sha256": "447c9a189ec80d449ec8c4afee7bc51b3dcc6363bf68dc1e243f162747feef10"
+    },
+    {
+      "file": "captures/440x956-settlement-and-road-placed.png",
+      "bytes": 236377,
+      "sha256": "e94dc090611d948ee27f3117471076f64e758156681f42290b2c675d840475bf"
+    },
+    {
+      "file": "captures/440x956-title.png",
+      "bytes": 212180,
+      "sha256": "6cd3ce9b96613587b1ba72354d82e776810d9353c9bf83fcebc29eabfd2cf330"
+    },
+    {
+      "file": "captures/440x956-trade-panel.png",
+      "bytes": 79798,
+      "sha256": "4728846253f628f649cfb9141dbd62b3e2da883c96c8f80c2bcf741f868b3bf0"
+    },
+    {
+      "file": "captures/440x956-watcher.png",
+      "bytes": 228933,
+      "sha256": "6b9f4cb653d44abcc6fab754da175e41b294088b73d0dc762bbbd63f126c9359"
+    },
+    {
+      "file": "captures/440x956-win-screen.png",
+      "bytes": 80280,
+      "sha256": "c430c91a1901bb42b341faf211c25030eca963b3d81a60a4ddada602ec88815c"
+    },
+    {
+      "file": "captures/844x390-end-turn.png",
+      "bytes": 186863,
+      "sha256": "c76b3fb5545bea6b9e9a01591d04290b6aeb19fafb5c48833fc363ca6ace31e7"
+    },
+    {
+      "file": "captures/844x390-first-road-placement.png",
+      "bytes": 158010,
+      "sha256": "b075c1f03f1e9f9f67fc5ed50389e5d681610b5a9401d791b52f8d542fe355a8"
+    },
+    {
+      "file": "captures/844x390-first-settlement-placement.png",
+      "bytes": 186189,
+      "sha256": "f6d3ccc3a8eaac5aff73eb7696e5810655d52d4617a37c20c4b9ee137c12df4b"
+    },
+    {
+      "file": "captures/844x390-fortune-tray.png",
+      "bytes": 170816,
+      "sha256": "f4bfcb82beb20aab54a1d4f3a59698dc2f07063bdb5c784cb675f1ff54dfc67e"
+    },
+    {
+      "file": "captures/844x390-joined-by-link.png",
+      "bytes": 71998,
+      "sha256": "98f36bb86008e95054e495b1c3bebceabe42005363b00e8b2edbd7412d223aa4"
+    },
+    {
+      "file": "captures/844x390-lobby-4-seats.png",
+      "bytes": 74313,
+      "sha256": "26a3ec117d7b252a54b13ab8a772f656610e201b11d2a0ecb42adfe73db2bd56"
+    },
+    {
+      "file": "captures/844x390-paying-roll.png",
+      "bytes": 189059,
+      "sha256": "b84585888f2e5d36a2090d7926cf35c9195f365f3d87faf99b26f8914fded276"
+    },
+    {
+      "file": "captures/844x390-robber.png",
+      "bytes": 177084,
+      "sha256": "0dab0cfacb2f532243e99238ff3731d420924160234c54821288166b69accbf1"
+    },
+    {
+      "file": "captures/844x390-roll-off.png",
+      "bytes": 179958,
+      "sha256": "1d5c0f08e320737ad434b7f6a69cfbb6e10188e11ffc7aa4ddd2ad6927744f3e"
+    },
+    {
+      "file": "captures/844x390-settlement-and-road-placed.png",
+      "bytes": 189433,
+      "sha256": "03816f49b1071452f0d2e8b9b40d629d902f3106a0e41ccb8b63799e2de1c82e"
+    },
+    {
+      "file": "captures/844x390-title.png",
+      "bytes": 119817,
+      "sha256": "69529e2638b6b3c3a84aafbc904f43cb582da93bbb85d343b3c3ab866729af79"
+    },
+    {
+      "file": "captures/844x390-trade-panel.png",
+      "bytes": 66924,
+      "sha256": "c72a4bedd376777d56e88b5dea00ca053bb129232a70e9612b2b8cc205b9019b"
+    },
+    {
+      "file": "captures/844x390-watcher.png",
+      "bytes": 182899,
+      "sha256": "a1843f48cadf44cdf287f4005aa9c412b9607bf8c2c3667dfcaf951b969a4713"
+    },
+    {
+      "file": "captures/844x390-win-screen.png",
+      "bytes": 62573,
+      "sha256": "fba669d6b66d8ba609ea811d839eda5d3d624202ccb9fba2e860f99b2e9ec0ab"
+    },
+    {
+      "file": "contact-1280.png",
+      "bytes": 502897,
+      "sha256": "557f8b135f509c7d07915e4e0bd6c6c97c794337bbb3dafd9bb0dcb284b7dba1"
+    },
+    {
+      "file": "contact-390.png",
+      "bytes": 356818,
+      "sha256": "12318566ec2670e9f307c51deb2948357f584db571943cefc8588d5e3e01db7d"
+    },
+    {
+      "file": "contact-440.png",
+      "bytes": 343972,
+      "sha256": "c731585f217dac7405cccbb3eef885f9df443c71946d71e40ea74b03b115d1a7"
+    },
+    {
+      "file": "contact-844.png",
+      "bytes": 390887,
+      "sha256": "241cd6a58a2dded95dc9ebd093fd5a80044a70076f3e82ee7099dfef91d54723"
+    },
+    {
+      "file": "supplemental/captures/844x390-trade-panel-scrolled.png",
+      "bytes": 66459,
+      "sha256": "18b6356fa76bea8302bf375a8fe7c3c6d95bc5082a8feabac661de633b11a883"
+    },
+    {
+      "file": "supplemental/captures/844x390-trade-panel.png",
+      "bytes": 66761,
+      "sha256": "f92fcc01f7bf35cd3c4bbb2275a49614fd7155e612db7a2fdf6394f0be1f672c"
+    }
+  ]
+}

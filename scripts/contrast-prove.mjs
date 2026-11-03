@@ -13,6 +13,9 @@ import { existsSync, readFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
+const cpuThrottle = Number(process.env.CONTRAST_PROVE_CPU_THROTTLE || 1);
+assert.ok(Number.isInteger(cpuThrottle) && cpuThrottle >= 1 && cpuThrottle <= 16, 'CPU throttle must be an integer from 1 to 16');
+console.log(`contrast-prove: tab-local CPU throttle x${cpuThrottle}`);
 const PORT = Number(process.env.VITE_PORT) || 8093;
 const MIN = 4.5;
 const lum = ([r, g, b]) => {
@@ -31,9 +34,14 @@ const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
+async function openPage(options) {
+  const pg = await browser.newPage(options);
+  if (cpuThrottle > 1) await (await pg.context().newCDPSession(pg)).send('Emulation.setCPUThrottlingRate', { rate: cpuThrottle });
+  return pg;
+}
 let code = 0;
 try {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const page = await openPage({ viewport: { width: 1280, height: 720 } });
   const errors = [];
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
@@ -72,6 +80,8 @@ try {
   // The error line only appears after a failed join, so take its colour from the token the source names.
   const errorInk = /text-accent-ink/.test(readFileSync("src/components/game/EmberisleApp.tsx", "utf8")) ? read.accentInk : read.accent;
   await page.screenshot({ path: "test-results/contrast-prove.png" });
+  // Its colours and image are captured. Do not leave this title renderer competing with later fixtures.
+  await page.close();
   const checks = [
     ["Play (primary) on fill", ratio(read.play.fg, read.play.bg)],
     ["Join (secondary) on fill", ratio(read.join.fg, read.join.bg)],
@@ -98,7 +108,8 @@ try {
   if (/text-sea"/.test(app)) bad.push("EmberisleApp.tsx still uses text-sea for text");
 
   // #424: resolve the chip's text colour, hide the text, screenshot the box inside its border, and decode it in the page.
-  const sample = async (pg, testid, label) => {
+  const sample = async (pg, testid, label, expectedText) => {
+    assert.equal(browser.contexts().flatMap((context) => context.pages()).length, 1, 'contrast sampling has one live page renderer');
     const el = pg.getByTestId(testid);
     // The chip can remount (a turn change re-keys the banner) or move (a line mounts beside it) between hiding its text and
     // the screenshot. So the shot only counts if the marked node is still there, hidden, settled and in place.
@@ -120,6 +131,7 @@ try {
         const [t, rt, b, l] = ["Top", "Right", "Bottom", "Left"].map((k, i) => parseFloat(s[`border${k}Width`]) + (i % 2 ? radius : 2));
         return { fg, text: node.textContent, at: [r.left, r.top], clip: { x: r.left + l, y: r.top + t, width: r.width - l - rt, height: r.height - t - b } };
       });
+      if (expectedText !== undefined) assert.equal(info.text.trim(), expectedText, 'sampled headline belongs to the requested winner');
       await pg.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
       const png = (await pg.screenshot({ clip: info.clip })).toString("base64");
       const steady = await pg.evaluate(([id, at]) => {
@@ -166,7 +178,7 @@ try {
   const sampled = [];
   for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
     const tag = `${viewport.width}x${viewport.height}`;
-    const pg = await browser.newPage({ viewport });
+    const pg = await openPage({ viewport });
     pg.on("console", (m) => m.type() === "error" && errors.push(m.text()));
     pg.on("pageerror", (e) => errors.push(String(e)));
     await pg.goto(`http://127.0.0.1:${PORT}/`);
@@ -235,12 +247,14 @@ try {
   }
   // #513: the win headline on the sheet, for every seat colour as the winner, sampled with its text made transparent.
   {
-    const pg = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    const pg = await openPage({ viewport: { width: 1280, height: 720 } });
     pg.on("console", (m) => m.type() === "error" && errors.push(m.text()));
     pg.on("pageerror", (e) => errors.push(String(e)));
     await pg.goto(`http://127.0.0.1:${PORT}/`);
     await pg.getByRole("button", { name: "Join", exact: true }).waitFor();
     await pg.evaluate(() => window.__emberisle.getState().startHotseat(4));
+    // Finish the real table's cold renderer setup before measuring the end-screen transition.
+    await pg.waitForFunction(() => window.__isle?.landReady && window.__isle.lastState === window.__emberisle.getState().state);
     for (let i = 0; i < 4; i++) {
       const seat = await pg.evaluate((i) => {
         const g = window.__emberisle;
@@ -249,10 +263,11 @@ try {
         st.winner = st.players[i].id;
         st.seq += 1;
         g.setState({ state: st });
-        return st.players[i].color;
+        return { color: st.players[i].color, name: st.players[i].name };
       }, i);
-      await pg.getByTestId("win-headline").waitFor();
-      sampled.push(...(await sample(pg, "win-headline", `win headline, winner ${seat}`)));
+      const expectedText = `${seat.name} wins`;
+      await pg.getByTestId('win-headline').and(pg.getByText(expectedText, { exact: true })).waitFor();
+      sampled.push(...(await sample(pg, 'win-headline', `win headline, winner ${seat.color}`, expectedText)));
     }
     await pg.close();
   }
@@ -260,7 +275,7 @@ try {
   // the paper the chip sits on (>= 3:1, a graphic) and the "-N" badge's white on its red; read as computed from the live chips.
   for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
     const tag = `${viewport.width}x${viewport.height}`;
-    const pg = await browser.newPage({ viewport });
+    const pg = await openPage({ viewport });
     pg.on("console", (m) => m.type() === "error" && errors.push(m.text()));
     pg.on("pageerror", (e) => errors.push(String(e)));
     await pg.goto(`http://127.0.0.1:${PORT}/`);

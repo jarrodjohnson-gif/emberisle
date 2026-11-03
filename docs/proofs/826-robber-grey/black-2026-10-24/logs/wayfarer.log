@@ -1,0 +1,13 @@
+
+> wayfarer-prove
+> node scripts/wayfarer-prove.mjs
+
+ok   contrast #2b2420 on #f4ead6 >= 10 "12.78"
+ok   setup finished "rollOff"
+ok   1 on his spot {"dy":0,"dx":0,"dz":0,"walking":false}
+ok   2 two hops in 700 ms {"rises":2,"max":0.3,"samples":14}
+ok   2 lands on his new spot (beside the token) {"rises":2,"max":0.2999467057141985,"samples":14,"dy":5.551115123125783e-17,"dx":0,"dz":2.220446049250313e-16}
+ok   3 a ring on every legal hex, none on the wayfarer's {"legal":18,"rings":18,"hasOwn":false}
+ok   4 every ring 0.012 above its cap [0.012,0.012,0.012,0.012,0.012,0.012,0.012,0.012,0.012,0.012,0.012,0.012,0.012,0.012,0.012,0.012,0.012,0.012]
+ok   no console errors []
+wayfarer-prove ok

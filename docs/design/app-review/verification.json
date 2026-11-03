@@ -1,0 +1,43 @@
+{
+  "baseline": "8a9e75d7dd6709192dc8c6fa681cf9725c3e4e95",
+  "observations": 35,
+  "jpg_count": 8,
+  "jpg_under_300000_bytes": true,
+  "files": [
+    {
+      "file": "screenshots/08-chat-desktop.jpg",
+      "bytes": 61272
+    },
+    {
+      "file": "screenshots/02-practice-desktop.jpg",
+      "bytes": 52606
+    },
+    {
+      "file": "screenshots/03-trade-desktop.jpg",
+      "bytes": 53374
+    },
+    {
+      "file": "screenshots/07-watching-landscape.jpg",
+      "bytes": 27832
+    },
+    {
+      "file": "screenshots/05-lobby-desktop.jpg",
+      "bytes": 70732
+    },
+    {
+      "file": "screenshots/01-entry-desktop.jpg",
+      "bytes": 65169
+    },
+    {
+      "file": "screenshots/06-lobby-phone.jpg",
+      "bytes": 24570
+    },
+    {
+      "file": "screenshots/04-hotseat-result.jpg",
+      "bytes": 30581
+    }
+  ],
+  "runtime_source_changes": "git status --short is empty",
+  "tests": "No regression suite run: documentation-only audit; live app walks recorded separately.",
+  "limits": "Browser page-error listener was not reattached after restart; no zero-error claim. Offline toggle did not prove disconnect. Explicit untested paths remain."
+}

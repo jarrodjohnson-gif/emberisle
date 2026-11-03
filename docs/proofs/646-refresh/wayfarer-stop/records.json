@@ -1,0 +1,62 @@
+[
+  {
+    "source": "/workspace/873-b-output/wayfarer-main-after.sha256",
+    "file": "raw/wayfarer-main-after.sha256.gz",
+    "bytes": 551,
+    "sha256": "12262f129bbd89c04f810a98effeccefd8d7b022134b12c999ce8e9617b204f7"
+  },
+  {
+    "source": "/workspace/873-b-output/wayfarer-main-before.sha256",
+    "file": "raw/wayfarer-main-before.sha256.gz",
+    "bytes": 551,
+    "sha256": "12262f129bbd89c04f810a98effeccefd8d7b022134b12c999ce8e9617b204f7"
+  },
+  {
+    "source": "/workspace/873-b-output/wayfarer-main-diag.jsonl",
+    "file": "raw/wayfarer-main-diag.jsonl.gz",
+    "bytes": 8712,
+    "sha256": "73aaa750a1584adf49c373d531b29eedf34c0d2023b00e239fe7512cc0c41405"
+  },
+  {
+    "source": "/workspace/873-b-output/wayfarer-main-run.log",
+    "file": "raw/wayfarer-main-run.log.gz",
+    "bytes": 1012,
+    "sha256": "8e778e45b73d1fe91881238b92325e92c602c7f3bc2bbdede62cdc29f63c2672"
+  },
+  {
+    "source": "/workspace/873-b-output/wayfarer-pr-after.sha256",
+    "file": "raw/wayfarer-pr-after.sha256.gz",
+    "bytes": 551,
+    "sha256": "12262f129bbd89c04f810a98effeccefd8d7b022134b12c999ce8e9617b204f7"
+  },
+  {
+    "source": "/workspace/873-b-output/wayfarer-pr-before.sha256",
+    "file": "raw/wayfarer-pr-before.sha256.gz",
+    "bytes": 551,
+    "sha256": "12262f129bbd89c04f810a98effeccefd8d7b022134b12c999ce8e9617b204f7"
+  },
+  {
+    "source": "/workspace/873-b-output/wayfarer-pr-diag.jsonl",
+    "file": "raw/wayfarer-pr-diag.jsonl.gz",
+    "bytes": 8598,
+    "sha256": "b473aaff1d6cb5d3d53c4e37612d24edefb927a9301e158f2ebd2409d7c43d42"
+  },
+  {
+    "source": "/workspace/873-b-output/wayfarer-pr-run.log",
+    "file": "raw/wayfarer-pr-run.log.gz",
+    "bytes": 1012,
+    "sha256": "8e778e45b73d1fe91881238b92325e92c602c7f3bc2bbdede62cdc29f63c2672"
+  },
+  {
+    "source": "/workspace/873-b-output/ci-wayfarer-failure-excerpt.log",
+    "file": "raw/ci-wayfarer-failure-excerpt.log.gz",
+    "bytes": 2430,
+    "sha256": "74d119afb25b19a271bfbe9f645a1886a12fedddb9ac1bb636191eb5a5dc2391"
+  },
+  {
+    "source": "/tmp/wayfarer-bounds-preload.cjs",
+    "file": "raw/wayfarer-bounds-preload.cjs.gz",
+    "bytes": 3130,
+    "sha256": "8b5aaa5d57058a35d8950a5d070a473c536ce13892e3d5ee05ccb4e5788753da"
+  }
+]

@@ -1,0 +1,379 @@
+{
+  "commit": "8a9e75d7dd6709192dc8c6fa681cf9725c3e4e95",
+  "steps": [
+    {
+      "label": "title",
+      "screen": "title",
+      "mode": "ai",
+      "localId": "p0",
+      "code": "",
+      "error": null,
+      "text": "Emberisle\nEmber\nWayfarer\nPractice: On · Online: On · Hotseat: On\nPlay\n\n3 bots, no network\n\nHost a table\nJoin\n\nFour seats, one table\nHow to play"
+    },
+    {
+      "label": "entry-help",
+      "screen": "title",
+      "mode": "ai",
+      "localId": "p0",
+      "code": "",
+      "error": null,
+      "text": "Emberisle\nEmber\nWayfarer\nPractice: On · Online: On · Hotseat: On\nPlay\n\n3 bots, no network\n\nHost a table\nJoin\n\nFour seats, one table\nHow to play\nHow to play\n\nWin at 10 points.\n\nEach turn: roll. Matching numbers pay goods from tiles you touch. On a seven, anyone with more than seven goods discards half. Move and block a hex; the wayfarer takes a card from an adjacent seat. Blocked land pays nothing.\n\nBuild paths (wood + brick), outposts (wood, brick, sheep, wheat), strongholds (three wheat, two stone). Fortunes cost sheep, wheat, stone.\n\nOutposts score 1, strongholds 2. Longest path of five and largest army of three wayfarer cards score 2 more. Docks cut bank trade to 3:1 or 2:1.\n\nDrag to orbit the isle. Tap glowing corners and paths to build."
+    },
+    {
+      "label": "bad-code",
+      "screen": "title",
+      "mode": "online",
+      "localId": "p0",
+      "code": "ZZZZ",
+      "error": "No table with that code",
+      "text": "Emberisle\nMap reviewer\nWayfarer\nPractice: On · Online: On · Hotseat: On\nPlay\n\n3 bots, no network\n\nHost a table\nJoin\nWatch\n\nWatch available\n\nNo table with that code\n\nFour seats, one table\nHow to play"
+    },
+    {
+      "label": "practice-entry",
+      "screen": "play",
+      "mode": "ai",
+      "phase": "rollOff",
+      "localId": "p0",
+      "current": "p0",
+      "code": "ZZZZ",
+      "error": null,
+      "text": "Roll for first place\n\nMap reviewer\n–\n0\npoints\n0\n0\nTide (bot)\n–\n0\npoints\n0\n0\nDune (bot)\n–\n0\npoints\n0\n0\nPine (bot)\n–\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\nYour turn.\n\nThe isle is dealt. Roll for first place.\n\nRoll\n\nThe isle is dealt. Roll for first place.\n\nDeck 25"
+    },
+    {
+      "label": "practice-after-rolloff",
+      "screen": "play",
+      "mode": "ai",
+      "phase": "rollOff",
+      "localId": "p0",
+      "current": "p0",
+      "code": "ZZZZ",
+      "error": null,
+      "text": "Roll for first place\n\nMap reviewer\n–\n0\npoints\n0\n0\nTide (bot)\n–\n0\npoints\n0\n0\nDune (bot)\n5\n0\npoints\n0\n0\nPine (bot)\n1\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\nYour turn.\n\nMap reviewer and Tide (bot) tie at 6 and roll again.\n\nBot rolled for Pine: roll-off die 1. · Map reviewer and Tide (bot) tie at 6 and roll again.\n\nRoll\n\nMap reviewer and Tide (bot) tie at 6 and roll again.\n\nDeck 25"
+    },
+    {
+      "label": "table-menu",
+      "screen": "play",
+      "mode": "ai",
+      "phase": "rollOff",
+      "localId": "p0",
+      "current": "p0",
+      "code": "ZZZZ",
+      "error": null,
+      "text": "Roll for first place\n\nTurn 1\n\nHow to play\nCosts\nTable sounds on\nMusic on\nWater\nCrystal\nSimple\nView\nDiorama\nOverhead\nLeave table\n\nMap reviewer\n–\n0\npoints\n0\n0\nTide (bot)\n–\n0\npoints\n0\n0\nDune (bot)\n5\n0\npoints\n0\n0\nPine (bot)\n1\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\nYour turn.\n\nMap reviewer and Tide (bot) tie at 6 and roll again.\n\nBot rolled for Pine: roll-off die 1. · Map reviewer and Tide (bot) tie at 6 and roll again.\n\nRoll\n\nMap reviewer and Tide (bot) tie at 6 and roll again.\n\nDeck 25"
+    },
+    {
+      "label": "costs",
+      "screen": "play",
+      "mode": "ai",
+      "phase": "rollOff",
+      "localId": "p0",
+      "current": "p0",
+      "code": "ZZZZ",
+      "error": null,
+      "text": "Roll for first place\n\nMap reviewer\n–\n0\npoints\n0\n0\nTide (bot)\n–\n0\npoints\n0\n0\nDune (bot)\n5\n0\npoints\n0\n0\nPine (bot)\n1\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\nYour turn.\n\nMap reviewer and Tide (bot) tie at 6 and roll again.\n\nBot rolled for Pine: roll-off die 1. · Map reviewer and Tide (bot) tie at 6 and roll again.\n\nRoll\n\nMap reviewer and Tide (bot) tie at 6 and roll again.\n\nDeck 25\nCosts\nPath\nPath · 1 wood, 1 brick\nOutpost\nOutpost · 1 wood, 1 brick, 1 sheep, 1 wheat\nStronghold\nStronghold · 3 wheat, 2 stone\n3\n2\nFortune\nFortune · 1 sheep, 1 wheat, 1 stone\nOutpost\n1\nStronghold\n2\nLongest path (5+)\n2\nLargest army (3 wayfarers)\n2\nPoints fortune, hidden\n1\n\n10 points claims the isle."
+    },
+    {
+      "label": "practice-main-assisted-setup",
+      "screen": "play",
+      "mode": "ai",
+      "phase": "robber",
+      "localId": "p0",
+      "current": "p0",
+      "code": "ZZZZ",
+      "error": null,
+      "text": "Move the wayfarer\n\nSkip tips\nDune (bot)\n1\ngood\n1\nfortune\n2\npoints\n1\n0\nMap reviewer\n2\ngoods\n2\npoints\n1\n0\nTide (bot)\n3\ngoods\n2\npoints\n1\n0\nPine (bot)\n3\ngoods\n2\npoints\n1\n0\n\nHidden fortunes may add points.\n\nYour turn.\n\nNobody gains goods — Map reviewer's roll.\n\nYou rolled 2 and 5: 7.\n\nTip 3 of 3 · Move the wayfarer to a new hex, then pick a victim if available\n\n1\nWOOD\n0\nBRICK\n0\nSHEEP\n1\nWHEAT\n0\nSTONE\n7\n4\n10\n\nNobody gains goods — Map reviewer's roll.\n\nDeck 24\nMove the wayfarer\n10 Fields (grain), west\n9 Hills (clay)\n6 Pasture (wool), south-west\n4 Forest (timber)\n6 Pasture (wool), west\n12 Mountains (ore)\n10 Fields (grain), south\n5 Forest (timber), north-west\n3 Forest (timber)\n11 Fields (grain)\n2 Pasture (wool)\n8 Mountains (ore)\n9 Mountains (ore)\n8 Fields (grain)\n5 Forest (timber), east\n3 Hills (clay)\n11 Pasture (wool)\n4 Hills (clay)"
+    },
+    {
+      "label": "practice-robber",
+      "screen": "play",
+      "mode": "ai",
+      "phase": "robber",
+      "localId": "p0",
+      "current": "p0",
+      "code": "ZZZZ",
+      "error": null,
+      "text": "Move the wayfarer\n\nSkip tips\nDune (bot)\n1\ngood\n1\nfortune\n2\npoints\n1\n0\nMap reviewer\n2\ngoods\n2\npoints\n1\n0\nTide (bot)\n3\ngoods\n2\npoints\n1\n0\nPine (bot)\n3\ngoods\n2\npoints\n1\n0\n\nHidden fortunes may add points.\n\nYour turn.\n\nNobody gains goods — Map reviewer's roll.\n\nYou rolled 2 and 5: 7.\n\nTip 3 of 3 · Move the wayfarer to a new hex, then pick a victim if available\n\n1\nWOOD\n0\nBRICK\n0\nSHEEP\n1\nWHEAT\n0\nSTONE\n7\n4\n10\n\nNobody gains goods — Map reviewer's roll.\n\nDeck 24\nMove the wayfarer\n10 Fields (grain), west\n9 Hills (clay)\n6 Pasture (wool), south-west\n4 Forest (timber)\n6 Pasture (wool), west\n12 Mountains (ore)\n10 Fields (grain), south\n5 Forest (timber), north-west\n3 Forest (timber)\n11 Fields (grain)\n2 Pasture (wool)\n8 Mountains (ore)\n9 Mountains (ore)\n8 Fields (grain)\n5 Forest (timber), east\n3 Hills (clay)\n11 Pasture (wool)\n4 Hills (clay)"
+    },
+    {
+      "label": "practice-main",
+      "screen": "play",
+      "mode": "ai",
+      "phase": "main",
+      "localId": "p0",
+      "current": "p0",
+      "code": "ZZZZ",
+      "error": null,
+      "text": "Build, trade, or end your turn\n\nSkip tips\nDune (bot)\n1\nfortune\n2\npoints\n1\n0\nMap reviewer\n3\ngoods\n2\npoints\n1\n0\nTide (bot)\n3\ngoods\n2\npoints\n1\n0\nPine (bot)\n3\ngoods\n2\npoints\n1\n0\n\nHidden fortunes may add points.\n\nYour turn.\n\nMap reviewer moves the wayfarer — Map reviewer gains 1 good; Dune (bot) loses 1 good; Dune (bot) is a joint public leader.\n\nYou rolled 2 and 5: 7.\n\nTip 3 of 3 · Build when you have goods and a legal spot. Costs are in the menu.\n\n1\nWOOD\n0\nBRICK\n1\nSHEEP\n1\nSHEEP\n+1\n1\nWHEAT\n0\nSTONE\nPath\n−1\nOutpost\nNo spot\nStronghold\n3\n−2\n2\n−2\nFortune\n−1\n24 left\nTrade\n7\nEnd turn\n4\n10\n\nMap reviewer moves the wayfarer — Map reviewer gains 1 good; Dune (bot) loses 1 good; Dune (bot) is a joint public leader.\n\nDeck 24"
+    },
+    {
+      "label": "practice-trade",
+      "screen": "play",
+      "mode": "ai",
+      "phase": "main",
+      "localId": "p0",
+      "current": "p0",
+      "code": "ZZZZ",
+      "error": null,
+      "text": "Build, trade, or end your turn\n\nSkip tips\nDune (bot)\n1\nfortune\n2\npoints\n1\n0\nMap reviewer\n3\ngoods\n2\npoints\n1\n0\nTide (bot)\n3\ngoods\n2\npoints\n1\n0\nPine (bot)\n3\ngoods\n2\npoints\n1\n0\n\nHidden fortunes may add points.\n\nYour turn.\n\nMap reviewer moves the wayfarer — Map reviewer gains 1 good; Dune (bot) loses 1 good; Dune (bot) is a joint public leader.\n\nYou rolled 2 and 5: 7.\n\nTip 3 of 3 · Build when you have goods and a legal spot. Costs are in the menu.\n\n1\nWOOD\n0\nBRICK\n1\nSHEEP\n1\nSHEEP\n+1\n1\nWHEAT\n0\nSTONE\nPath\n−1\nOutpost\nNo spot\nStronghold\n3\n−2\n2\n−2\nFortune\n−1\n24 left\nTrade\n7\nEnd turn\n4\n10\n\nMap reviewer moves the wayfarer — Map reviewer gains 1 good; Dune (bot) loses 1 good; Dune (bot) is a joint public leader.\n\nDeck 24\nTrade\n\nChoose goods below. You can mix goods when trading with players.\n\nYou give\nWood\nHave 1\n0\nBrick\nHave 0\n0\nSheep\nHave 1\n0\nWheat\nHave 1\n0\nStone\nHave 0\n0\nYou get\nWood\nHave 1\n0\nBrick\nHave 0\n0\nSheep\nHave 1\n0\nWheat\nHave 1\n0\nStone\nHave 0\n0\nWith players\n\nYou give: choose goods\nYou get: choose goods\n\nAsk the table\nBank & docks · one exchange\n\nChoose one kind on each side for a bank or dock exchange.\n\nBank"
+    },
+    {
+      "label": "unavailable-build-inspection",
+      "screen": "play",
+      "mode": "ai",
+      "phase": "main",
+      "localId": "p0",
+      "current": "p0",
+      "code": "ZZZZ",
+      "error": null,
+      "text": "Build, trade, or end your turn\n\nSkip tips\nDune (bot)\n1\nfortune\n2\npoints\n1\n0\nMap reviewer\n3\ngoods\n2\npoints\n1\n0\nTide (bot)\n3\ngoods\n2\npoints\n1\n0\nPine (bot)\n3\ngoods\n2\npoints\n1\n0\n\nHidden fortunes may add points.\n\nYour turn.\n\nMap reviewer moves the wayfarer — Map reviewer gains 1 good; Dune (bot) loses 1 good; Dune (bot) is a joint public leader.\n\nYou rolled 2 and 5: 7.\n\nTip 3 of 3 · Build when you have goods and a legal spot. Costs are in the menu.\n\n1\nWOOD\n0\nBRICK\n1\nSHEEP\n1\nWHEAT\n0\nSTONE\nPath\n−1\nOutpost\nNo spot\nStronghold\n3\n−2\n2\n−2\nFortune\n−1\n24 left\nTrade\n7\nEnd turn\n4\n10\n\nMap reviewer moves the wayfarer — Map reviewer gains 1 good; Dune (bot) loses 1 good; Dune (bot) is a joint public leader.\n\nDeck 24"
+    },
+    {
+      "label": "practice-leave",
+      "screen": "title",
+      "mode": "ai",
+      "localId": "p0",
+      "code": "",
+      "error": null,
+      "text": "Emberisle\nMap reviewer\nWayfarer\nPractice: On · Online: On · Hotseat: On\nPlay\n\n3 bots, no network\n\nHost a table\nJoin\n\nFour seats, one table\nHow to play"
+    },
+    {
+      "label": "hotseat-entry",
+      "screen": "play",
+      "mode": "hotseat",
+      "phase": "rollOff",
+      "localId": "p0",
+      "current": "p0",
+      "code": "",
+      "error": null,
+      "text": "Roll for first place\n\nMap reviewer\n–\n0\npoints\n0\n0\nSeat 2\n–\n0\npoints\n0\n0\nSeat 3\n–\n0\npoints\n0\n0\nSeat 4\n–\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\nMap reviewer's turn.\n\nThe isle is dealt. Roll for first place.\n\nRoll\n\nThe isle is dealt. Roll for first place.\n\nDeck 25"
+    },
+    {
+      "label": "hotseat-next-seat",
+      "screen": "play",
+      "mode": "hotseat",
+      "phase": "rollOff",
+      "localId": "p0",
+      "current": "p1",
+      "code": "",
+      "error": null,
+      "text": "Roll for first place\n\nMap reviewer\n1\n0\npoints\n0\n0\nSeat 2\n–\n0\npoints\n0\n0\nSeat 3\n–\n0\npoints\n0\n0\nSeat 4\n–\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\nSeat 2's turn.\n\nMap reviewer rolls a 1.\n\nMap reviewer rolls a 1.\n\nRoll\n\nMap reviewer rolls a 1.\n\nDeck 25"
+    },
+    {
+      "label": "hotseat-real-rules-assisted-autoplay",
+      "result": {
+        "counts": {
+          "rollOff": 3,
+          "setupSettle": 8,
+          "setupRoad": 8,
+          "roll": 89,
+          "main": 186,
+          "robber": 15,
+          "discard": 9,
+          "over": 1
+        },
+        "turn": 23,
+        "winner": "p2"
+      }
+    },
+    {
+      "label": "hotseat-result",
+      "screen": "play",
+      "mode": "hotseat",
+      "phase": "over",
+      "localId": "p0",
+      "current": "p2",
+      "code": "",
+      "error": null,
+      "text": "Seat 3\n2\ngoods\n2\nfortunes\n8\npoints, plus 2 hidden\n+2\n4\n6\nSeat 4\n6\ngoods\n1\nfortune\n2\npoints\n3\n2\nMap reviewer\n4\ngoods\n2\nfortunes\n4\npoints\n3\n1\nSeat 2\n4\ngoods\n4\npoints\n4\n5\n\nHidden fortunes may add points.\n\nSeat 3 claims the isle with 10 points.\n\nSeat 3 rolled 2 and 6: 8.\n\nSeat 3 holds the largest army\n\nSeat 3 wins with 10 points.\n\n0\nWOOD\n−1\n0\nBRICK\n1\nSHEEP\n−1\n0\nWHEAT\n−3\n1\nSTONE\n−4\nFortunes · 2\n7\n6\n8\n5\n9\n10\n11\n2\n\nSeat 3 claims the isle with 10 points.\n\nDeck 0\n\nSeat 3 wins\n\n10points\n\nUpgraded to a stronghold · 10 points, target 10.\n\n6 stronghold points\n+ 2 largest army\n+ 2 hidden\nPLAYER\tOUTPOSTS\tSTRONGHOLDS\tLONGEST PATH\tLARGEST ARMY\tHIDDEN\tTOTAL\nSeat 3\t0\t3\t\t✓\t2\t10\nMap reviewer\t0\t2\t\t\t2\t6\nSeat 2\t0\t2\t\t\t0\t4\nSeat 4\t2\t0\t\t\t1\t3\nLook around\nPlay again\nBack to menu"
+    },
+    {
+      "label": "results-look-around",
+      "screen": "play",
+      "mode": "hotseat",
+      "phase": "over",
+      "localId": "p0",
+      "current": "p2",
+      "code": "",
+      "error": null,
+      "text": "Seat 3\n2\ngoods\n2\nfortunes\n8\npoints, plus 2 hidden\n+2\n4\n6\nSeat 4\n6\ngoods\n1\nfortune\n2\npoints\n3\n2\nMap reviewer\n4\ngoods\n2\nfortunes\n4\npoints\n3\n1\nSeat 2\n4\ngoods\n4\npoints\n4\n5\n\nHidden fortunes may add points.\n\nSeat 3 claims the isle with 10 points.\n\nSeat 3 rolled 2 and 6: 8.\n\nSeat 3 holds the largest army\n\nSeat 3 wins with 10 points.\n\n0\nWOOD\n−1\n0\nBRICK\n1\nSHEEP\n−1\n0\nWHEAT\n−3\n1\nSTONE\n−4\nFortunes · 2\n7\n6\n8\n5\n9\n10\n11\n2\n\nSeat 3 claims the isle with 10 points.\n\nDeck 0\nShow scores\nPlay again\nBack to menu"
+    },
+    {
+      "label": "hotseat-rematch",
+      "screen": "play",
+      "mode": "hotseat",
+      "phase": "rollOff",
+      "localId": "p0",
+      "current": "p1",
+      "code": "",
+      "error": null,
+      "text": "Roll for first place\n\nSeat 3\n–\n0\npoints\n0\n0\nSeat 4\n–\n0\npoints\n0\n0\nMap reviewer\n–\n0\npoints\n0\n0\nSeat 2\n–\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\nSeat 4's turn.\n\nThe isle is dealt. Seat 3 places first; the rest roll for their order.\n\nSeat 3 rolled 2 and 6: 8.\n\nSeat 3 holds the largest army\n\nRoll\n\nThe isle is dealt. Seat 3 places first; the rest roll for their order.\n\nDeck 25"
+    },
+    {
+      "label": "host-lobby",
+      "screen": "lobby",
+      "mode": "online",
+      "localId": "p0",
+      "code": "UFTD",
+      "error": null,
+      "text": "Table code · Wayfarer On\n\nUFTD\n\nCopy\nCopy link\n\nMap reviewer\n · host\nWaiting\nEmpty\nAdd bot\nEmpty\nAdd bot\nEmpty\nAdd bot\nChat\nSounds & stickers\n😠\n😊\n👏\n😂\n🔥\n🐑\nSend\n\nNeed 2 more players\n\nWin at\n7\n10\nReady\nLeave the table"
+    },
+    {
+      "label": "join-link-lobby",
+      "screen": "lobby",
+      "mode": "online",
+      "localId": "p0",
+      "code": "UFTD",
+      "error": null,
+      "text": "Table code · Wayfarer On\n\nUFTD\n\nCopy\nCopy link\n\nMap reviewer\n · host\nWaiting\nEmber\nWaiting\nEmpty\nEmpty\nChat\nSounds & stickers\n😠\n😊\n👏\n😂\n🔥\n🐑\nSend\n\nNeed 1 more player\n\nWin at 10 points\nReady\nLeave the table"
+    },
+    {
+      "label": "lobby-ready",
+      "screen": "lobby",
+      "mode": "online",
+      "localId": "p0",
+      "code": "UFTD",
+      "error": null,
+      "text": "Table code · Wayfarer On\n\nUFTD\n\nCopy\nCopy link\n\nMap reviewer\n · host\nReady\nEmber\nReady\nBot\nBot\nRemove\nEmpty\nAdd bot\nChat\nSounds & stickers\n😠\n😊\n👏\n😂\n🔥\n🐑\nSend\n\nEveryone is ready\n\nWin at\n7\n10\nNot ready\nStart\nLeave the table"
+    },
+    {
+      "label": "online-start",
+      "screen": "play",
+      "mode": "online",
+      "phase": "rollOff",
+      "localId": "p0",
+      "current": "p0",
+      "code": "UFTD",
+      "error": null,
+      "text": "Roll for first place\n\nMap reviewer\n–\n0\npoints\n0\n0\nEmber\n–\n0\npoints\n0\n0\nBot\n–\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\nYour turn.\n\nThe isle is dealt. Roll for first place.\n\nRoll\n\nThe isle is dealt. Roll for first place.\n\nDeck 25"
+    },
+    {
+      "label": "watch-link-game",
+      "screen": "play",
+      "mode": "online",
+      "phase": "rollOff",
+      "localId": "",
+      "current": "p0",
+      "code": "UFTD",
+      "error": null,
+      "text": "Map reviewer\n–\n0\npoints\n0\n0\nEmber\n–\n0\npoints\n0\n0\nBot\n–\n0\npoints\n0\n0\nWatching\n\nHidden fortunes may add points.\n\nMap reviewer's turn.\n\nThe isle is dealt. Roll for first place.\n\nWait for Map reviewer to roll for first place\n\nThe isle is dealt. Roll for first place.\n\nDeck 25"
+    },
+    {
+      "label": "online-reload-rejoin",
+      "screen": "play",
+      "mode": "online",
+      "phase": "rollOff",
+      "localId": "p1",
+      "current": "p0",
+      "code": "UFTD",
+      "error": null,
+      "text": "Map reviewer\nMap\n–\n0\npoints\n0\n0\nEmber\nEmb\n–\n0\npoints\n0\n0\nBot\nBot\n–\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\nMap reviewer's turn.\n\nThe isle is dealt. Roll for first place.\n\nWait for Map reviewer to roll for first place\n\nGive Map reviewer more time\n\nThe isle is dealt. Roll for first place.\n\nDeck 25"
+    },
+    {
+      "label": "online-chat",
+      "screen": "play",
+      "mode": "online",
+      "phase": "rollOff",
+      "localId": "p0",
+      "current": "p0",
+      "code": "UFTD",
+      "error": null,
+      "text": "Roll for first place\n\nAsk for more time\nMap reviewer\n–\n0\npoints\n0\n0\nEmber\n–\n0\npoints\n0\n0\nBot\n–\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\nChat\nSounds & stickers\nMap reviewer sat down.\nEmber sat down.\nBot sat down.\nRoll for first place.\nThe isle is dealt. Roll for first place.\nSomeone is watching.\nEmber lost connection.\nEmber is back.\n😠\n😊\n👏\n😂\n🔥\n🐑\nSend\n\nYour turn.\n\nRoll\n\nEmber is back.\n\nDeck 25"
+    },
+    {
+      "label": "online-sounds-stickers",
+      "screen": "play",
+      "mode": "online",
+      "phase": "rollOff",
+      "localId": "p0",
+      "current": "p0",
+      "code": "UFTD",
+      "error": null,
+      "text": "Roll for first place\n\nAsk for more time\nMap reviewer\n–\n0\npoints\n0\n0\nEmber\n–\n0\npoints\n0\n0\nBot\n–\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\nChat\nSounds & stickers\n\nSounds · everyone hears\none every 3 s\n\nFah\nWololo\nGG!\nAirhorn\nQuit touchin' me\nOnly wood?\nBong\nPlop\nPluck\ngg\nnice roll\nyour turn\none sec\nty\n\nStickers · silent\n\nYour turn.\n\nRoll\n\nEmber is back.\n\nDeck 25"
+    },
+    {
+      "label": "phone-received-chat",
+      "screen": "play",
+      "mode": "online",
+      "phase": "rollOff",
+      "localId": "p1",
+      "current": "p0",
+      "code": "UFTD",
+      "error": null,
+      "text": "Map reviewer\nMap\n–\n0\npoints\n0\n0\nLocal checkpoint map message\nEmber\nEmb\n–\n0\npoints\n0\n0\nBot\nBot\n–\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\n1\n\nMap reviewer's turn.\n\nThe isle is dealt. Roll for first place.\n\nWait for Map reviewer to roll for first place\n\nGive Map reviewer more time\n\nThe isle is dealt. Roll for first place.\n\nDeck 25"
+    },
+    {
+      "label": "phone-disconnected",
+      "screen": "play",
+      "mode": "online",
+      "phase": "rollOff",
+      "localId": "p1",
+      "current": "p0",
+      "code": "UFTD",
+      "error": null,
+      "text": "Map reviewer\nMap\n–\n0\npoints\n0\n0\nLocal checkpoint map message\nEmber\nEmb\n–\n0\npoints\n0\n0\nBot\nBot\n–\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\n1\n\nMap reviewer's turn.\n\nThe isle is dealt. Roll for first place.\n\nWait for Map reviewer to roll for first place\n\nGive Map reviewer more time\n\nThe isle is dealt. Roll for first place.\n\nDeck 25"
+    },
+    {
+      "label": "phone-reconnected",
+      "screen": "play",
+      "mode": "online",
+      "phase": "rollOff",
+      "localId": "p1",
+      "current": "p0",
+      "code": "UFTD",
+      "error": null,
+      "text": "Map reviewer\nMap\n–\n0\npoints\n0\n0\nLocal checkpoint map message\nEmber\nEmb\n–\n0\npoints\n0\n0\nBot\nBot\n–\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\n1\n\nMap reviewer's turn.\n\nThe isle is dealt. Roll for first place.\n\nWait for Map reviewer to roll for first place\n\nGive Map reviewer more time\n\nThe isle is dealt. Roll for first place.\n\nDeck 25"
+    },
+    {
+      "label": "online-leave-confirmation",
+      "screen": "play",
+      "mode": "online",
+      "phase": "rollOff",
+      "localId": "p0",
+      "current": "p0",
+      "code": "UFTD",
+      "error": null,
+      "text": "Roll for first place\n\nAsk for more time\n\nTurn 1\n1\n\nLeave the table? Your seat goes to the bot.\n\nStay\nLeave\n\nMap reviewer\n–\n0\npoints\n0\n0\nEmber\n–\n0\npoints\n0\n0\nBot\n–\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\nYour turn.\n\nEmber is back.\n\nRoll\n\nEmber is back.\n\nDeck 25"
+    },
+    {
+      "label": "online-stay",
+      "screen": "play",
+      "mode": "online",
+      "phase": "rollOff",
+      "localId": "p0",
+      "current": "p0",
+      "code": "UFTD",
+      "error": null,
+      "text": "Roll for first place\n\nAsk for more time\n\nTurn 1\n1\n\nHow to play\nCosts\nTable sounds on\nMusic on\nWater\nCrystal\nSimple\nView\nDiorama\nOverhead\nCopy table code UFTD\nCopy log\nLeave table\n\nMap reviewer\n–\n0\npoints\n0\n0\nEmber\n–\n0\npoints\n0\n0\nBot\n–\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\nYour turn.\n\nEmber is back.\n\nRoll\n\nEmber is back.\n\nDeck 25"
+    },
+    {
+      "label": "online-left",
+      "screen": "title",
+      "mode": "online",
+      "localId": "p0",
+      "code": "",
+      "error": null,
+      "text": "Emberisle\nMap reviewer\nWayfarer\nPractice: On · Online: On · Hotseat: On\nPlay\n\n3 bots, no network\n\nHost a table\nJoin\n\nFour seats, one table\nHow to play"
+    },
+    {
+      "label": "remaining-player-after-host-left",
+      "screen": "play",
+      "mode": "online",
+      "phase": "rollOff",
+      "localId": "p1",
+      "current": "p1",
+      "code": "UFTD",
+      "error": null,
+      "text": "Map reviewer\nMap\nreconnecting\n6\n0\npoints\n0\n0\nEmber\nEmb\n–\n0\npoints\n0\n0\nBot\nBot\n–\n0\npoints\n0\n0\n\nHidden fortunes may add points.\n\n1\n\nYour turn.\n\nMap reviewer lost connection.\n\nRoll for first place\n\nAsk for more time\nRoll\n\nMap reviewer lost connection.\n\nDeck 25"
+    },
+    {
+      "label": "watcher-left",
+      "screen": "title",
+      "mode": "online",
+      "localId": "",
+      "code": "",
+      "error": null,
+      "text": "Emberisle\nEmber\nWayfarer\nPractice: On · Online: On · Hotseat: On\nPlay\n\n3 bots, no network\n\nHost a table\nJoin\n\nFour seats, one table\nHow to play"
+    }
+  ],
+  "errors": []
+}

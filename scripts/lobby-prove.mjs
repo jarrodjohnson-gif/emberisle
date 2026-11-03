@@ -16,7 +16,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR, RENAME_MS: "0" },
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, RENAME_MS: "0" },
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -55,7 +55,7 @@ async function tab(name) {
   await page.getByTestId("title-card").waitFor();
   return { name, page };
 }
-const seatNames = (t) => t.page.locator('[data-testid="lobby-card"] ul > li').evaluateAll((lis) => lis.map((li) => li.querySelector("span.flex-1")?.textContent?.replace(/ · host$/, "").trim()).filter((n) => n !== "Empty"));
+const seatNames = (t) => t.page.locator('[data-testid="lobby-card"] ul > li').evaluateAll((lis) => lis.map((li) => li.querySelector('[data-testid="lobby-name"]')?.textContent?.replace(/ · host$/, "").trim()).filter((n) => n !== "Empty"));
 const until = async (fn, what, ms = 8000) => {
   const end = Date.now() + ms;
   let last;

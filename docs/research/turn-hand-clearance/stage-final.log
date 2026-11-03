@@ -1,0 +1,29 @@
+
+> stage-prove
+> node scripts/stage-prove.mjs
+
+ok  initial clear centre: no cover {"label":"initial clear centre","area":{"x":12,"y":100,"width":366,"height":288,"top":100,"bottom":388,"left":12,"right":378},"moment":{"x":85,"y":210.5,"width":220,"height":67,"top":210.5,"bottom":277.5,"left":85,"right":305},"hud":{"x":12,"y":620,"width":366,"height":190,"top":620,"bottom":810,"left":12,"right":378},"gain":{"x":248,"y":640,"width":34,"height":22,"top":640,"bottom":662,"left":248,"right":282},"stage":"centre","shift":0,"text":"Your turn"}
+ok  initial clear centre: visible cue stays inside hole {"top":210.5,"bottom":277.5}
+ok  initial clear centre: centre restored "centre"
+ok  same-size position refit: first frame: no cover {"label":"same-size position refit: first frame","area":{"x":12,"y":500,"width":366,"height":288,"top":500,"bottom":788,"left":12,"right":378},"moment":{"x":85,"y":545,"width":220,"height":67,"top":545,"bottom":612,"left":85,"right":305},"hud":{"x":12,"y":620,"width":366,"height":190,"top":620,"bottom":810,"left":12,"right":378},"gain":{"x":248,"y":640,"width":34,"height":22,"top":640,"bottom":662,"left":248,"right":282},"stage":"moved","shift":-65.5,"text":"Your turn"}
+ok  same-size position refit: first frame: visible cue stays inside hole {"top":545,"bottom":612}
+ok  same-size position refit: first frame: existing least-move clearance {"stage":"moved","shift":-65.5,"bottom":612}
+ok  same-size position refit: next frame: no cover {"label":"same-size position refit: next frame","area":{"x":12,"y":500,"width":366,"height":288,"top":500,"bottom":788,"left":12,"right":378},"moment":{"x":85,"y":545,"width":220,"height":67,"top":545,"bottom":612,"left":85,"right":305},"hud":{"x":12,"y":620,"width":366,"height":190,"top":620,"bottom":810,"left":12,"right":378},"gain":{"x":248,"y":640,"width":34,"height":22,"top":640,"bottom":662,"left":248,"right":282},"stage":"moved","shift":-65.5,"text":"Your turn"}
+ok  same-size position refit: next frame: visible cue stays inside hole {"top":545,"bottom":612}
+ok  same-size position refit: next frame: existing least-move clearance {"stage":"moved","shift":-65.5,"bottom":612}
+ok  React dependency update while moved: no cover {"label":"React dependency update while moved","area":{"x":12,"y":500,"width":366,"height":288,"top":500,"bottom":788,"left":12,"right":378},"moment":{"x":85,"y":545,"width":220,"height":67,"top":545,"bottom":612,"left":85,"right":305},"hud":{"x":12,"y":620,"width":366,"height":190,"top":620,"bottom":810,"left":12,"right":378},"gain":{"x":248,"y":640,"width":34,"height":22,"top":640,"bottom":662,"left":248,"right":282},"stage":"moved","shift":-65.5,"text":"Your turn"}
+ok  React dependency update while moved: visible cue stays inside hole {"top":545,"bottom":612}
+ok  React dependency update while moved: existing least-move clearance {"stage":"moved","shift":-65.5,"bottom":612}
+ok  restore observed pre-refit hole: no cover {"label":"restore observed pre-refit hole","area":{"x":12,"y":103,"width":366,"height":381,"top":103,"bottom":484,"left":12,"right":378},"moment":{"x":85,"y":260,"width":220,"height":67,"top":260,"bottom":327,"left":85,"right":305},"hud":{"x":12,"y":620,"width":366,"height":190,"top":620,"bottom":810,"left":12,"right":378},"gain":{"x":248,"y":640,"width":34,"height":22,"top":640,"bottom":662,"left":248,"right":282},"stage":"centre","shift":0,"text":"Your turn"}
+ok  restore observed pre-refit hole: visible cue stays inside hole {"top":260,"bottom":327}
+ok  size-changing refit: first frame: no cover {"label":"size-changing refit: first frame","area":{"x":12,"y":500,"width":366,"height":288,"top":500,"bottom":788,"left":12,"right":378},"moment":{"x":85,"y":545,"width":220,"height":67,"top":545,"bottom":612,"left":85,"right":305},"hud":{"x":12,"y":620,"width":366,"height":190,"top":620,"bottom":810,"left":12,"right":378},"gain":{"x":248,"y":640,"width":34,"height":22,"top":640,"bottom":662,"left":248,"right":282},"stage":"moved","shift":-65.5,"text":"Your turn"}
+ok  size-changing refit: first frame: visible cue stays inside hole {"top":545,"bottom":612}
+ok  size-changing refit: first frame: existing least-move clearance {"stage":"moved","shift":-65.5,"bottom":612}
+ok  size-changing refit: next frame: no cover {"label":"size-changing refit: next frame","area":{"x":12,"y":500,"width":366,"height":288,"top":500,"bottom":788,"left":12,"right":378},"moment":{"x":85,"y":545,"width":220,"height":67,"top":545,"bottom":612,"left":85,"right":305},"hud":{"x":12,"y":620,"width":366,"height":190,"top":620,"bottom":810,"left":12,"right":378},"gain":{"x":248,"y":640,"width":34,"height":22,"top":640,"bottom":662,"left":248,"right":282},"stage":"moved","shift":-65.5,"text":"Your turn"}
+ok  size-changing refit: next frame: visible cue stays inside hole {"top":545,"bottom":612}
+ok  size-changing refit: next frame: existing least-move clearance {"stage":"moved","shift":-65.5,"bottom":612}
+ok  restore clear centre: first frame: no cover {"label":"restore clear centre: first frame","area":{"x":12,"y":100,"width":366,"height":288,"top":100,"bottom":388,"left":12,"right":378},"moment":{"x":85,"y":210.5,"width":220,"height":67,"top":210.5,"bottom":277.5,"left":85,"right":305},"hud":{"x":12,"y":620,"width":366,"height":190,"top":620,"bottom":810,"left":12,"right":378},"gain":{"x":248,"y":640,"width":34,"height":22,"top":640,"bottom":662,"left":248,"right":282},"stage":"centre","shift":0,"text":"Your turn"}
+ok  restore clear centre: first frame: visible cue stays inside hole {"top":210.5,"bottom":277.5}
+ok  restore clear centre: first frame: centre restored "centre"
+ok  position-only refit retains area size 288
+ok  no browser errors []

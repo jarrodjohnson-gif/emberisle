@@ -1,0 +1,233 @@
+{
+  "base-clone": {
+    "exit": 0,
+    "seconds": 12.25,
+    "command": [
+      "git",
+      "clone",
+      "--single-branch",
+      "--branch",
+      "main",
+      "https://github.com/jarrodjohnson-gif/emberisle.git",
+      "/workspace/emberisle/work/p-review-base1015-main9bd"
+    ],
+    "cwd": "/workspace",
+    "tested_commit": "9bde9861490662ef3e95e90db5cfa2dc7874fd55"
+  },
+  "base-checkout": {
+    "exit": 0,
+    "seconds": 0.35,
+    "command": [
+      "git",
+      "checkout",
+      "--detach",
+      "9bde9861490662ef3e95e90db5cfa2dc7874fd55"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-base1015-main9bd",
+    "tested_commit": "9bde9861490662ef3e95e90db5cfa2dc7874fd55"
+  },
+  "base-install": {
+    "exit": 0,
+    "seconds": 4.19,
+    "command": [
+      "npm",
+      "ci"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-base1015-main9bd",
+    "tested_commit": "9bde9861490662ef3e95e90db5cfa2dc7874fd55"
+  },
+  "base-build": {
+    "exit": 0,
+    "seconds": 1.3,
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-base1015-main9bd",
+    "tested_commit": "9bde9861490662ef3e95e90db5cfa2dc7874fd55"
+  },
+  "clone": {
+    "exit": 0,
+    "seconds": 7.84,
+    "command": [
+      "git",
+      "clone",
+      "--single-branch",
+      "--branch",
+      "codex/sea-ambience-asset-1014",
+      "https://github.com/jarrodjohnson-gif/emberisle.git",
+      "/workspace/emberisle/work/p-verify1015-main"
+    ],
+    "cwd": "/workspace",
+    "tested_commit": "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+  },
+  "fetch-main": {
+    "exit": 0,
+    "seconds": 0.59,
+    "command": [
+      "git",
+      "fetch",
+      "origin",
+      "refs/heads/main:refs/remotes/origin/main"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify1015-main",
+    "tested_commit": "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+  },
+  "checkout": {
+    "exit": 0,
+    "seconds": 0.07,
+    "command": [
+      "git",
+      "checkout",
+      "--detach",
+      "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify1015-main",
+    "tested_commit": "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+  },
+  "install": {
+    "exit": 0,
+    "seconds": 4.57,
+    "command": [
+      "npm",
+      "ci"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify1015-main",
+    "tested_commit": "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+  },
+  "server-install": {
+    "exit": 0,
+    "seconds": 0.25,
+    "command": [
+      "npm",
+      "--prefix",
+      "server",
+      "ci"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify1015-main",
+    "tested_commit": "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+  },
+  "environment": {
+    "exit": 0,
+    "seconds": 0.42,
+    "command": [
+      "bash",
+      "-c",
+      "node --version; npm ls playwright @ffmpeg-installer/ffmpeg --depth=0; ffmpeg -version | head -1; ffprobe -version | head -1; /workspace/emberisle/work/browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell --version; git rev-parse HEAD; git merge-base origin/main HEAD"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify1015-main",
+    "tested_commit": "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+  },
+  "types": {
+    "exit": 0,
+    "seconds": 1.52,
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify1015-main",
+    "tested_commit": "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+  },
+  "registered": {
+    "exit": 0,
+    "seconds": 0.18,
+    "command": [
+      "npm",
+      "run",
+      "registered-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify1015-main",
+    "tested_commit": "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+  },
+  "loosen": {
+    "exit": 0,
+    "seconds": 0.15,
+    "command": [
+      "npm",
+      "run",
+      "loosen-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify1015-main",
+    "tested_commit": "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+  },
+  "build": {
+    "exit": 0,
+    "seconds": 1.68,
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify1015-main",
+    "tested_commit": "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+  },
+  "size": {
+    "exit": 0,
+    "seconds": 0.12,
+    "command": [
+      "node",
+      "scripts/size-prove.mjs",
+      "--base",
+      "/workspace/emberisle/work/p-review-base1015-main9bd"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify1015-main",
+    "tested_commit": "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+  },
+  "loop": {
+    "exit": 0,
+    "seconds": 6.39,
+    "command": [
+      "npm",
+      "run",
+      "ambience-loop-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify1015-main",
+    "tested_commit": "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+  },
+  "audio-level": {
+    "exit": 0,
+    "seconds": 10.04,
+    "command": [
+      "npm",
+      "run",
+      "audio-level-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify1015-main",
+    "tested_commit": "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+  },
+  "mixer": {
+    "exit": 0,
+    "seconds": 16.62,
+    "command": [
+      "npm",
+      "run",
+      "sound-mixer-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify1015-main",
+    "tested_commit": "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+  },
+  "built-asset": {
+    "exit": 0,
+    "seconds": 0.01,
+    "command": [
+      "cmp",
+      "public/audio/amb_sea.mp3",
+      "dist/audio/amb_sea.mp3"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify1015-main",
+    "tested_commit": "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+  },
+  "clean": {
+    "exit": 0,
+    "seconds": 0.08,
+    "command": [
+      "git",
+      "status",
+      "--porcelain"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify1015-main",
+    "tested_commit": "cf1f5082038d5b74de3fd475e2b2ea8047b023a2"
+  }
+}

@@ -1,0 +1,1226 @@
+{
+  "baseline": "51cbe384b24f5ba45c91b630ec45f6a05c162a43",
+  "captured": "2026-10-20T22:25:40.291Z",
+  "state": "setup",
+  "kind": "real local actions",
+  "notes": "",
+  "errors": [],
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "dpr": 1
+  },
+  "smallText": [],
+  "controls": [
+    {
+      "selector": "div:nth-child(1) > div:nth-child(1) > header:nth-child(2) > div:nth-child(1) > div:nth-child(3) > button[aria-label=\"Table menu\"]",
+      "tag": "button",
+      "role": null,
+      "name": "Table menu",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500"
+      },
+      "rect": {
+        "x": 1224,
+        "y": 12,
+        "width": 44,
+        "height": 44,
+        "right": 1268,
+        "bottom": 56
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"rail-p0\"] > button:nth-child(1)",
+      "tag": "button",
+      "role": null,
+      "name": "Ember 0 points 0 0",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 12,
+        "y": 80,
+        "width": 192,
+        "height": 44,
+        "right": 204,
+        "bottom": 124
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"rail-p2\"] > button:nth-child(1)",
+      "tag": "button",
+      "role": null,
+      "name": "Seat 3 0 points 0 0",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 12,
+        "y": 128,
+        "width": 192,
+        "height": 44,
+        "right": 204,
+        "bottom": 172
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"rail-p3\"] > button:nth-child(1)",
+      "tag": "button",
+      "role": null,
+      "name": "Seat 4 0 points 0 0",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 12,
+        "y": 176,
+        "width": 192,
+        "height": 44,
+        "right": 204,
+        "bottom": 220
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"rail-p1\"] > button:nth-child(1)",
+      "tag": "button",
+      "role": null,
+      "name": "Seat 2 0 points 0 0",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 12,
+        "y": 224,
+        "width": 192,
+        "height": 44,
+        "right": 204,
+        "bottom": 268
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": null
+    }
+  ],
+  "smallTargets": [],
+  "clipping": [],
+  "allVisibleText": [
+    {
+      "selector": "p[data-testid=\"turn-banner\"]",
+      "text": "Place an outpost · tap a glowing corner",
+      "font": {
+        "size": 15,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 28,
+        "y": 25,
+        "width": 272.41,
+        "height": 18,
+        "right": 300.41,
+        "bottom": 43
+      },
+      "elementRect": {
+        "x": 12,
+        "y": 18,
+        "width": 300.41,
+        "height": 32,
+        "right": 312.41,
+        "bottom": 50
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"seat-name\"]",
+      "text": "Ember",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 40,
+        "y": 85,
+        "width": 42.67,
+        "height": 17,
+        "right": 82.67,
+        "bottom": 102
+      },
+      "elementRect": {
+        "x": 40,
+        "y": 84,
+        "width": 135.19,
+        "height": 20,
+        "right": 175.19,
+        "bottom": 104
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"seat-vp\"]",
+      "text": "0",
+      "font": {
+        "size": 20,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "750",
+        "lineHeight": "26px"
+      },
+      "rect": {
+        "x": 181.19,
+        "y": 82,
+        "width": 12.81,
+        "height": 23,
+        "right": 194,
+        "bottom": 105
+      },
+      "elementRect": {
+        "x": 181.19,
+        "y": 81,
+        "width": 12.81,
+        "height": 26,
+        "right": 194,
+        "bottom": 107
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"tally-path\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 38,
+        "y": 107,
+        "width": 7.78,
+        "height": 15,
+        "right": 45.78,
+        "bottom": 122
+      },
+      "elementRect": {
+        "x": 22,
+        "y": 107,
+        "width": 25.78,
+        "height": 16,
+        "right": 47.78,
+        "bottom": 123
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"tally-army\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 67.78,
+        "y": 107,
+        "width": 7.78,
+        "height": 15,
+        "right": 75.56,
+        "bottom": 122
+      },
+      "elementRect": {
+        "x": 51.78,
+        "y": 107,
+        "width": 25.78,
+        "height": 16,
+        "right": 77.56,
+        "bottom": 123
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"seat-name\"]",
+      "text": "Seat 3",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 40,
+        "y": 133,
+        "width": 42.36,
+        "height": 17,
+        "right": 82.36,
+        "bottom": 150
+      },
+      "elementRect": {
+        "x": 40,
+        "y": 132,
+        "width": 135.19,
+        "height": 20,
+        "right": 175.19,
+        "bottom": 152
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"seat-vp\"]",
+      "text": "0",
+      "font": {
+        "size": 20,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "750",
+        "lineHeight": "26px"
+      },
+      "rect": {
+        "x": 181.19,
+        "y": 130,
+        "width": 12.81,
+        "height": 23,
+        "right": 194,
+        "bottom": 153
+      },
+      "elementRect": {
+        "x": 181.19,
+        "y": 129,
+        "width": 12.81,
+        "height": 26,
+        "right": 194,
+        "bottom": 155
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"tally-path\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 38,
+        "y": 155,
+        "width": 7.78,
+        "height": 15,
+        "right": 45.78,
+        "bottom": 170
+      },
+      "elementRect": {
+        "x": 22,
+        "y": 155,
+        "width": 25.78,
+        "height": 16,
+        "right": 47.78,
+        "bottom": 171
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"tally-army\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 67.78,
+        "y": 155,
+        "width": 7.78,
+        "height": 15,
+        "right": 75.56,
+        "bottom": 170
+      },
+      "elementRect": {
+        "x": 51.78,
+        "y": 155,
+        "width": 25.78,
+        "height": 16,
+        "right": 77.56,
+        "bottom": 171
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"seat-name\"]",
+      "text": "Seat 4",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 40,
+        "y": 181,
+        "width": 42.61,
+        "height": 17,
+        "right": 82.61,
+        "bottom": 198
+      },
+      "elementRect": {
+        "x": 40,
+        "y": 180,
+        "width": 135.19,
+        "height": 20,
+        "right": 175.19,
+        "bottom": 200
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"seat-vp\"]",
+      "text": "0",
+      "font": {
+        "size": 20,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "750",
+        "lineHeight": "26px"
+      },
+      "rect": {
+        "x": 181.19,
+        "y": 178,
+        "width": 12.81,
+        "height": 23,
+        "right": 194,
+        "bottom": 201
+      },
+      "elementRect": {
+        "x": 181.19,
+        "y": 177,
+        "width": 12.81,
+        "height": 26,
+        "right": 194,
+        "bottom": 203
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"tally-path\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 38,
+        "y": 203,
+        "width": 7.78,
+        "height": 15,
+        "right": 45.78,
+        "bottom": 218
+      },
+      "elementRect": {
+        "x": 22,
+        "y": 203,
+        "width": 25.78,
+        "height": 16,
+        "right": 47.78,
+        "bottom": 219
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"tally-army\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 67.78,
+        "y": 203,
+        "width": 7.78,
+        "height": 15,
+        "right": 75.56,
+        "bottom": 218
+      },
+      "elementRect": {
+        "x": 51.78,
+        "y": 203,
+        "width": 25.78,
+        "height": 16,
+        "right": 77.56,
+        "bottom": 219
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"seat-name\"]",
+      "text": "Seat 2",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 40,
+        "y": 229,
+        "width": 42.02,
+        "height": 17,
+        "right": 82.02,
+        "bottom": 246
+      },
+      "elementRect": {
+        "x": 40,
+        "y": 228,
+        "width": 135.19,
+        "height": 20,
+        "right": 175.19,
+        "bottom": 248
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"seat-vp\"]",
+      "text": "0",
+      "font": {
+        "size": 20,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "750",
+        "lineHeight": "26px"
+      },
+      "rect": {
+        "x": 181.19,
+        "y": 226,
+        "width": 12.81,
+        "height": 23,
+        "right": 194,
+        "bottom": 249
+      },
+      "elementRect": {
+        "x": 181.19,
+        "y": 225,
+        "width": 12.81,
+        "height": 26,
+        "right": 194,
+        "bottom": 251
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"tally-path\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 38,
+        "y": 251,
+        "width": 7.78,
+        "height": 15,
+        "right": 45.78,
+        "bottom": 266
+      },
+      "elementRect": {
+        "x": 22,
+        "y": 251,
+        "width": 25.78,
+        "height": 16,
+        "right": 47.78,
+        "bottom": 267
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"tally-army\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 67.78,
+        "y": 251,
+        "width": 7.78,
+        "height": 15,
+        "right": 75.56,
+        "bottom": 266
+      },
+      "elementRect": {
+        "x": 51.78,
+        "y": 251,
+        "width": 25.78,
+        "height": 16,
+        "right": 77.56,
+        "bottom": 267
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "p[data-testid=\"hidden-point-hint\"]",
+      "text": "Hidden fortunes may add points.",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 20,
+        "y": 270,
+        "width": 142.67,
+        "height": 27,
+        "right": 162.67,
+        "bottom": 297
+      },
+      "elementRect": {
+        "x": 12,
+        "y": 272,
+        "width": 192,
+        "height": 24,
+        "right": 204,
+        "bottom": 296
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > canvas:nth-child(1)"
+    },
+    {
+      "selector": "p[data-testid=\"banner\"]",
+      "text": "Seat 4 rolls a 3. · Ember places first, then Seat 3, Seat 4, and Seat 2.",
+      "font": {
+        "size": 14,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 415.67,
+        "y": 652,
+        "width": 448.64,
+        "height": 17,
+        "right": 864.31,
+        "bottom": 669
+      },
+      "elementRect": {
+        "x": 280,
+        "y": 642,
+        "width": 720,
+        "height": 38,
+        "right": 1000,
+        "bottom": 680
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > canvas:nth-child(1)"
+    },
+    {
+      "selector": "p[data-testid=\"log-line\"]",
+      "text": "Ember places first, then Seat 3, Seat 4, and Seat 2.",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 292,
+        "y": 690,
+        "width": 287.78,
+        "height": 15,
+        "right": 579.78,
+        "bottom": 705
+      },
+      "elementRect": {
+        "x": 280,
+        "y": 688,
+        "width": 652.69,
+        "height": 20,
+        "right": 932.69,
+        "bottom": 708
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"deck-count\"]",
+      "text": "Deck",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 944.69,
+        "y": 690,
+        "width": 32.19,
+        "height": 15,
+        "right": 976.88,
+        "bottom": 705
+      },
+      "elementRect": {
+        "x": 936.69,
+        "y": 688,
+        "width": 63.31,
+        "height": 20,
+        "right": 1000,
+        "bottom": 708
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"deck-count\"]",
+      "text": "25",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 976.88,
+        "y": 690,
+        "width": 15.13,
+        "height": 15,
+        "right": 992,
+        "bottom": 705
+      },
+      "elementRect": {
+        "x": 936.69,
+        "y": 688,
+        "width": 63.31,
+        "height": 20,
+        "right": 1000,
+        "bottom": 708
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    }
+  ],
+  "geometry": {
+    "insets": {
+      "top": 68,
+      "right": 312,
+      "bottom": 220,
+      "left": 216
+    },
+    "liveInsets": {
+      "top": 68,
+      "right": 12,
+      "bottom": 44,
+      "left": 216
+    },
+    "pose": {
+      "left": 0,
+      "right": 0,
+      "top": 0,
+      "bottom": 0,
+      "tx": 0,
+      "tz": 0,
+      "focal": 1016.2001036473463,
+      "dist": 18.839811646455136,
+      "cx": 584.9357146045814,
+      "cy": 244.121628632661,
+      "polar": 0.9075712110370514,
+      "azimuth": 0.3490658503988659,
+      "zoom": 1
+    },
+    "fit": {
+      "focal": 1016.2001036473463,
+      "dist": 18.839811646455136,
+      "cx": 584.9357146045814,
+      "cy": 244.121628632661
+    },
+    "view": "diorama",
+    "canvas": {
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720,
+        "right": 1280,
+        "bottom": 720
+      },
+      "width": 1280,
+      "height": 720,
+      "clientWidth": 1280,
+      "clientHeight": 720
+    },
+    "shell": {
+      "x": 0,
+      "y": 0,
+      "width": 1280,
+      "height": 720,
+      "right": 1280,
+      "bottom": 720
+    },
+    "projectedVertexBounds": {
+      "left": 337.3736276108403,
+      "right": 853.7252571774603,
+      "top": 110.07949841375883,
+      "bottom": 447.83822102613397
+    },
+    "projectedVertices": [
+      {
+        "id": "-2.91,-0.56",
+        "x": 456.023906442571,
+        "y": 197.03395499522946
+      },
+      {
+        "id": "-2.91,0.56",
+        "x": 430.2020628144314,
+        "y": 229.26834973012924
+      },
+      {
+        "id": "-3.88,1.12",
+        "x": 370.15852272619827,
+        "y": 235.53207379186188
+      },
+      {
+        "id": "-4.85,0.56",
+        "x": 340.45109639461634,
+        "y": 208.63174355471
+      },
+      {
+        "id": "-4.85,-0.56",
+        "x": 369.23555041282015,
+        "y": 178.04887252737842
+      },
+      {
+        "id": "-3.88,-1.12",
+        "x": 424.92358955582347,
+        "y": 172.6653838476078
+      },
+      {
+        "id": "-1.94,1.12",
+        "x": 464.0202726448148,
+        "y": 257.6798654821667
+      },
+      {
+        "id": "-1.94,2.24",
+        "x": 436.3779222396996,
+        "y": 295.49431000635894
+      },
+      {
+        "id": "-2.91,2.8",
+        "x": 371.2397780513511,
+        "y": 302.8732243043631
+      },
+      {
+        "id": "-3.88,2.24",
+        "x": 339.03941040486643,
+        "y": 271.2547652610757
+      },
+      {
+        "id": "-0.97,2.8",
+        "x": 473.4300477178163,
+        "y": 329.04532853703944
+      },
+      {
+        "id": "-0.97,3.92",
+        "x": 443.7012729822422,
+        "y": 374.02523209635694
+      },
+      {
+        "id": "-1.94,4.48",
+        "x": 372.52385169961303,
+        "y": 382.8460066853485
+      },
+      {
+        "id": "-2.91,3.92",
+        "x": 337.3736276108403,
+        "y": 345.1496348183391
+      },
+      {
+        "id": "-1.94,-2.24",
+        "x": 533.864403748066,
+        "y": 162.13382897524306
+      },
+      {
+        "id": "-1.94,-1.12",
+        "x": 512.49491764271,
+        "y": 191.36706113526776
+      },
+      {
+        "id": "-3.88,-2.24",
+        "x": 449.1447406374333,
+        "y": 144.8610975883097
+      },
+      {
+        "id": "-2.91,-2.8",
+        "x": 501.74730281885445,
+        "y": 139.95569100143587
+      },
+      {
+        "id": "-0.97,-0.56",
+        "x": 547.4609284842393,
+        "y": 217.03594009425245
+      },
+      {
+        "id": "-0.97,0.56",
+        "x": 524.9736718849043,
+        "y": 251.05936158230185
+      },
+      {
+        "id": "0,1.12",
+        "x": 563.3296545169078,
+        "y": 281.1130904593605
+      },
+      {
+        "id": "0,2.24",
+        "x": 539.6384577743659,
+        "y": 321.2085758640659
+      },
+      {
+        "id": "0.97,2.8",
+        "x": 582.0920974576627,
+        "y": 356.87493013423324
+      },
+      {
+        "id": "0.97,3.92",
+        "x": 557.1188437484474,
+        "y": 404.8262536581199
+      },
+      {
+        "id": "0,4.48",
+        "x": 484.6643051859366,
+        "y": 414.2480012970301
+      },
+      {
+        "id": "-0.97,-3.92",
+        "x": 604.7547869883173,
+        "y": 130.3498168693075
+      },
+      {
+        "id": "-0.97,-2.8",
+        "x": 587.1524203563265,
+        "y": 156.9823559014413
+      },
+      {
+        "id": "-2.91,-3.92",
+        "x": 522.0846597243968,
+        "y": 114.56779074928708
+      },
+      {
+        "id": "-1.94,-4.48",
+        "x": 571.9161076297318,
+        "y": 110.07949841375883
+      },
+      {
+        "id": "0,-2.24",
+        "x": 622.9044682589998,
+        "y": 180.28740820943102
+      },
+      {
+        "id": "0,-1.12",
+        "x": 604.7203137165956,
+        "y": 211.06265823057674
+      },
+      {
+        "id": "0.97,-0.56",
+        "x": 643.9303911009478,
+        "y": 238.13877908315612
+      },
+      {
+        "id": "0.97,0.56",
+        "x": 625.1993257077443,
+        "y": 274.10443206033074
+      },
+      {
+        "id": "1.94,1.12",
+        "x": 668.5751042650996,
+        "y": 305.9470009649334
+      },
+      {
+        "id": "1.94,2.24",
+        "x": 649.378412013612,
+        "y": 348.53636710502076
+      },
+      {
+        "id": "2.91,2.8",
+        "x": 697.8608249501276,
+        "y": 386.52463369902773
+      },
+      {
+        "id": "2.91,3.92",
+        "x": 678.3599320009853,
+        "y": 437.75192247830546
+      },
+      {
+        "id": "1.94,4.48",
+        "x": 604.6191844764937,
+        "y": 447.83822102613397
+      },
+      {
+        "id": "0.97,-3.92",
+        "x": 691.4480061102216,
+        "y": 146.89986576717186
+      },
+      {
+        "id": "0.97,-2.8",
+        "x": 676.8805834941461,
+        "y": 174.87087839156436
+      },
+      {
+        "id": "0,-4.48",
+        "x": 655.1901018313881,
+        "y": 125.64651506455935
+      },
+      {
+        "id": "1.94,-2.24",
+        "x": 716.6040691593942,
+        "y": 199.3909784786127
+      },
+      {
+        "id": "1.94,-1.12",
+        "x": 701.9809237953688,
+        "y": 231.83357243538856
+      },
+      {
+        "id": "2.91,-0.56",
+        "x": 745.8595080206719,
+        "y": 260.43592560282093
+      },
+      {
+        "id": "2.91,0.56",
+        "x": 731.3637883287654,
+        "y": 298.5150238603911
+      },
+      {
+        "id": "3.88,1.12",
+        "x": 780.3052477273917,
+        "y": 332.3110517638617
+      },
+      {
+        "id": "3.88,2.24",
+        "x": 766.2273968345587,
+        "y": 377.6344716745082
+      },
+      {
+        "id": "2.91,-3.92",
+        "x": 782.4653129884364,
+        "y": 164.27539864787184
+      },
+      {
+        "id": "2.91,-2.8",
+        "x": 771.2685518951133,
+        "y": 193.6883960637395
+      },
+      {
+        "id": "1.94,-4.48",
+        "x": 742.4878752719669,
+        "y": 141.9657261911018
+      },
+      {
+        "id": "3.88,-2.24",
+        "x": 815.3387895164353,
+        "y": 219.52111404187747
+      },
+      {
+        "id": "3.88,-1.12",
+        "x": 804.7006806334333,
+        "y": 253.77033855987145
+      },
+      {
+        "id": "4.85,-0.56",
+        "x": 853.7252571774603,
+        "y": 284.0317192885104
+      },
+      {
+        "id": "4.85,0.56",
+        "x": 844.011026590464,
+        "y": 324.41621228750597
+      }
+    ],
+    "scroll": {
+      "width": 1280,
+      "height": 720,
+      "x": 0,
+      "y": 0
+    },
+    "settled": {
+      "glide": false,
+      "refitDue": false,
+      "gainFloats": 0,
+      "rollMoments": 0,
+      "turnMoments": 0
+    }
+  },
+  "fixture": {
+    "phase": "setupSettle",
+    "mode": "hotseat",
+    "current": "p0",
+    "target": 10,
+    "winner": null,
+    "water": {
+      "path": "simple",
+      "source": "saved",
+      "ms": null
+    },
+    "waterChoice": "simple"
+  }
+}

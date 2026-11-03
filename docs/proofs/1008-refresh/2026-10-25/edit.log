@@ -1,0 +1,93 @@
+ok profileCreate succeeds
+ok profileEdit with missing credential is refused
+ok profileEdit with expired/invalid credential is refused
+ok profileEdit displayName succeeds with valid credential
+ok UUID is unchanged after displayName edit
+ok profileEdit colour and catchphrase
+ok identical color and backupColor is rejected
+ok login rename with correct PIN succeeds
+ok UUID survives rename
+ok old login is reserved
+ok old login cannot be claimed
+ok wrong PIN is refused for rename
+ok wrong rename PIN durably counts once and releases its reservation
+ok mediaKey and winSongId survive rename+restart (they stay private)
+ok mediaKey not in owner view (stays private)
+ok winSongId is in owner view
+ok mediaKey is preserved in store after rename
+ok rename race preserves exactly one login
+ok winning login is 'river'
+ok loser got loginTaken
+ok two devices for cedar
+ok two failures recorded before PIN change
+ok profileChangePin succeeds with correct current PIN
+ok PIN change issues a new credential
+ok old credential 1 is revoked after PIN change
+ok old credential 2 is revoked after PIN change
+ok new credential works
+ok lifetime budget is retained after PIN change (not replenished)
+ok wrong PIN is refused for changePin
+ok wrong change PIN durably counts once and releases its reservation
+ok mismatched newPin confirmation is rejected
+ok pine has 30 lifetime failures
+ok lifetime-locked profile still resumes via device credential
+ok lifetime lock blocks changePin even with correct PIN and valid device
+ok pinLocked message is informative
+ok stolen device + lifetime lock cannot change PIN
+ok admin resets pine and shows temp PIN
+ok temp PIN is exactly 4 digits
+ok lifetime lock is cleared after local reset
+ok failure times are cleared after local reset
+ok pinMustChange is true after local reset
+ok tempPinExpiresAt is set after local reset
+ok all devices are revoked after local reset
+ok temp PIN can log in successfully
+ok session shows pinMustChange=true after temp PIN login
+ok profileEdit is refused when pinMustChange is true
+ok mustChangePin message is informative
+ok profileChangePin clears pinMustChange
+ok old temp credential is revoked after changePin
+ok profileEdit works after PIN change
+ok second admin reset works
+ok wrong guess 1 against temp PIN fails
+ok wrong guess 2 against temp PIN fails
+ok wrong guess 3 against temp PIN fails
+ok wrong guess 4 against temp PIN fails
+ok wrong guess 5 against temp PIN fails
+ok 5 wrong guesses against temp PIN are counted
+ok correct temp PIN is refused during cooldown after 5 failures
+ok expired temp PIN login fails with signInFailed
+ok failure budget increments on expired-PIN attempt
+ok devices are NOT restored after temp PIN expiry
+ok pinMustChange stays true after expiry
+ok another local reset works after expired temp PIN
+ok new temp PIN from second reset works
+ok pine fully recovered after two resets
+ok admin is refused while host holds the lock
+ok a second host on same profile dir refuses profiles while admin holds lock
+ok guest seat rejoin works alongside profile traffic
+ok game frames contain no fixture PINs
+ok game frames contain no credentials
+ok dune (renamed to river) login survives across restarts
+ok credential survives restart
+ok cedar credential and new PIN survive restart
+ok cedar pinMustChange stays false after restart
+ok pine normal login works after recovery and restart
+ok reserved logins survive restart
+ok logout during a queued rename refuses its commit
+ok revoked rename leaves login and reservations intact
+ok logout during PIN hashing cannot issue a replacement credential
+ok a refused queued PIN change leaves the old PIN usable
+ok queued text edits also recheck credential revocation
+ok in-flight old-PIN login cannot survive a local reset
+ok temporary credential cannot bind a table profile
+ok expired temporary credential cannot resume a profile
+ok expired temporary credential cannot change its PIN
+ok expiry keeps the profile locked and the attempt counted
+ok expiry lock and failed attempt survive reopening
+ok a verified second reset allows required PIN change
+ok failed reset hashing leaves the profile unchanged
+ok failed reset hashing releases exactly one queue slot
+ok admin refuses a missing store directory before creating anything
+
+profile-edit-prove: 91 checks passed

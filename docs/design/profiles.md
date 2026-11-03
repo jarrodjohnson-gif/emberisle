@@ -192,6 +192,7 @@ Construct explicit allowlists for every projection. Never spread stored profile 
 Use a private profile directory beside the room directory, configured through `PROFILES_DIR`.
 Add its default path and temporary files to `.gitignore` during implementation. Never put live profile data in `dist/`.
 The Node host is the only writer. Reject a second process using the same profile directory.
+Run one host per profile store directory; sharing that directory across PID namespaces is unsupported.
 The same deployment owns rooms and profiles; do not add a cloud database or third-party identity service.
 
 | Durable record | Required fields |

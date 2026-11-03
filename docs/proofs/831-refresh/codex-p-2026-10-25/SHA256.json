@@ -1,0 +1,33 @@
+{
+  "tested_commit": "fdac0aba3d09a9376eb2e6a6be8ad5d0b970af03",
+  "normal_merge_commit": "716c5f3f2c94bb97cff5d18f9ff40a1d7b55de64",
+  "merge_parents": [
+    "663530749574c539cf9085e9c8ad27681e49541a",
+    "b90290abf4a3cd8c63bddf1e7f939e75b71c2418"
+  ],
+  "sha256": {
+    "src/components/game/BankTradePicker.tsx": "443edece09e508773fcfa666e8743574faecfa4d30b37183a2d9c2257640f012",
+    "src/components/game/TradePanel.tsx": "e577deccbb984d1e06dafed74ff6d5d417a9b0de64ee38621d8fbddabb311d76",
+    "src/components/game/trade-panel.css": "b20bcf09289b40464045d0ab2a478df23a7e052350d16dd3b9077b5e7eec62a4",
+    "src/lib/focus-trap.ts": "e36dba409562b9b53fb4e3e736854b05f3ef9aa381131ece8a31f00d5969b68a",
+    "src/components/game/Hand.tsx": "8dce345f95462d725142bb61f8a12764607329593eeb29b0394f2c833fe35b3f",
+    "src/components/game/hand-motion.css": "c9c76031c2f4ce4490b57176c85babd63dc0b36b339c206c8d0da15a40fe0b7c",
+    "src/styles.css": "7e798668f226e70518dbc3bc85aaac69f4531196d8e90e4f1ca772b150378c64",
+    "scripts/trade-tabs-prove.mjs": "53c9299685ccddb378599221a3ee7569ec23d7b614c5cafacd16529155e5997e",
+    "scripts/client-prove.mjs": "860e9931a3c9403ba3e0c7d0eff14cb06a7e4eaf0c8fff51df8d72b56d3e84ba",
+    "scripts/hand-cards-prove.mjs": "b306d70fcdcde5563cfe9a3e9c3919ad288c2cb2ff3fa35a221d03359f37526f",
+    "scripts/trade-map.test.mjs": "3e19e1bac02b14d142f8369d5aeb412fb58c9c0b15a068655b8e83dbc8ac01d2",
+    "scripts/size-prove.mjs": "0bcf4ac07ca21feeabd5d79ec882b8862bb4480ffc055444f13e30779f26510b",
+    "package.json": "77392bab20892506d377273defd06a9d01ad875b658ae309ce32dedb99b08b11",
+    ".github/workflows/ci.yml": "6b1d54c4b70165da025eb13c4c65821d71c0ad6edca4c627b22da1096f0b5733",
+    "package-lock.json": "8f3a57d5235fe5b7650c06b841042aec2c9edbb0b5bfbb370f39efdb631644a5",
+    "server/package-lock.json": "d9db9d5e7601f2102acd29da2b96e014688eb0235b511a481c2078f8f67e1c97",
+    "scripts/fixtures/size/base-old.json": "7ce7e8c45e34cc1da5650a0ae140049cd37bc72f67431755cad9ea4379bfc6f9",
+    "scripts/fixtures/size/base-with-legacy.json": "3e504c86840ec5fbeed92114f7632a69b5130d62fc19939c504b980066b5ce21",
+    "scripts/fixtures/size/base.json": "a326b3d00b59829c64def1f66605c7c19e7363a3dc8cc74bd85d485b48b1a17b",
+    "scripts/fixtures/size/fail.json": "2b1f53f4f68b55675985a3f801d1dc4d1537d5aa03921359d96cd6cc246a3039",
+    "scripts/fixtures/size/new-chunk.json": "ac040fa51e52d6356c853d02aa90c2911ceebe6600237bc89054f09a04af54e9",
+    "scripts/fixtures/size/over-ceiling.json": "239e4918524808ee3ac43ffbc6d96358942dac280ffc3cbcf801ca9cbb1c0a54",
+    "scripts/fixtures/size/pass.json": "2f0c9b4c7cbc3505d0e405060ae0d6a3f6a28d87e7b6b877579a41c395134af2"
+  }
+}

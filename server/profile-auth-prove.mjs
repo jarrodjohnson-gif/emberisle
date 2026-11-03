@@ -39,12 +39,32 @@ function check(why, ok, extra) {
 }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function startHost(env = {}, dir = PROFILES_DIR) {
-  const proc = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+async function startHost(env = {}, dir = PROFILES_DIR, observeHashes = false) {
+  const proc = spawn(process.execPath, ["--import", "./register.mjs", ...(observeHashes ? ["--import", "./profile-auth-observer.mjs"] : []), "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR, PROFILES_DIR: dir, PROFILES_DEV: "", ...env },
+    env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, PROFILES_DIR: dir, PROFILES_DEV: "", ...env },
+    stdio: observeHashes ? ["ignore", "pipe", "pipe", "ipc"] : undefined,
   });
-  const h = { proc, log: "" };
+  const h = { proc, log: "", hashEvents: [] };
+  proc.on("message", (message) => {
+    if (message?.type === "profile-hash-proof") h.hashEvents.push(message);
+  });
+  h.hashUntil = (condition, why) => new Promise((resolve) => {
+    const done = () => {
+      if (!condition()) return;
+      clearTimeout(timer);
+      proc.off("message", done);
+      resolve();
+    };
+    const timer = setTimeout(() => fail(`waited for ${why}`), 60000);
+    proc.on("message", done);
+    done();
+  });
+  h.hashControl = async (command) => {
+    const from = h.hashEvents.length;
+    proc.send({ type: "profile-hash-proof-control", command });
+    await h.hashUntil(() => h.hashEvents.slice(from).some((e) => e.event === "ack" && e.command === command), command);
+  };
   hosts.add(h);
   proc.stderr.on("data", (d) => (h.log += d));
   h.port = await new Promise((resolve, reject) => {
@@ -131,7 +151,7 @@ async function guestTable(h) {
   return { a, b, wa, wb };
 }
 
-let h = await startHost();
+let h = await startHost({}, PROFILES_DIR, true);
 
 // --- Capability and transport ---------------------------------------------------------------------------------------------
 const plain = await client(h, { origin: `http://127.0.0.1:${h.port}` });
@@ -168,6 +188,23 @@ check("the profile id is a UUID", /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][
 check("a mismatched PIN confirmation is invalid", isErr(await (await client(h, tunnel())).req(fields("ash", "1111", { pinConfirm: "1112" })), "invalid"));
 check("a bad login shape is invalid", isErr(await (await client(h, tunnel())).req(fields("-no-", "1111")), "invalid"));
 check("a colour off the palette is invalid", isErr(await (await client(h, tunnel())).req(fields("ash", "1111", { color: "#000000" })), "invalid"));
+
+// Text caps count characters, including those outside the BMP; UTF-16 clipping must not halve these limits.
+for (const [label, extra] of [["exact", 0], ["clipped", 1]]) {
+  const login = `unicode-${label}`;
+  const reply = await (await client(h, tunnel())).req(fields(login, "4821", {
+    displayName: ` \u0007${"𠮷".repeat(16 + extra)}\u200b `,
+    catchphrase: ` \u0000${"🚀".repeat(80 + extra)}\u200b `,
+  }));
+  check(`${label} Unicode text creates a profile`, reply.type === "profileSession");
+  check(`${label} display name preserves sixteen complete characters`, reply.profile.displayName === "𠮷".repeat(16));
+  check(`${label} catchphrase preserves eighty complete characters`, reply.profile.catchphrase === "🚀".repeat(80));
+  const stored = byLogin(store(), login);
+  check(`${label} cleaned text is durable`, stored.displayName === reply.profile.displayName && stored.catchphrase === reply.profile.catchphrase);
+}
+const beforeEmptyName = readFileSync(STORE, "utf8");
+check("control-only display name cannot create a profile", isErr(await (await client(h, tunnel())).req(fields("empty-name", "4821", { displayName: " \u0007\u200b\n " })), "invalid"));
+check("rejected empty name leaves the private file unchanged", readFileSync(STORE, "utf8") === beforeEmptyName);
 
 // Two devices race for one login; a third spells it differently.
 const racers = await Promise.all([1, 2, 3].map(() => client(h, tunnel())));
@@ -214,15 +251,41 @@ check("an unknown login costs a real derivation", unknown.ms > 0.5 * wrong.ms, {
 check("an unknown login's failure is counted in its own bucket", store().unknownLogins["nobody-here"]?.times.length === 1);
 
 const crowd = await Promise.all(Array.from({ length: 12 }, () => client(h, tunnel())));
-const flood = await Promise.all(crowd.map((c, i) => c.req({ type: "profileLogin", login: `ghost-${i}`, pin: "1234" })));
+await h.hashControl("hold-next");
+const hashFrom = h.hashEvents.length;
+const floodStarted = Date.now();
+const requests = [];
+const request = (i) => requests[i] = crowd[i].req({ type: "profileLogin", login: `ghost-${i}`, pin: "1234" });
+for (let i = 0; i < 7; i++) request(i);
+const reserved = (n) => Array.from({ length: n }, (_, i) => store().unknownLogins[`ghost-${i}`]).every((g) => g && Object.keys(g.pending).length === 1);
+const awaitReserved = async (n) => {
+  for (const until = Date.now() + 10000; !reserved(n) && Date.now() < until; await wait(5)) {}
+  check(`${n} flood attempts are durably reserved before releasing native work`, reserved(n));
+};
+await awaitReserved(7);
+for (let i = 7; i < 9; i++) { crowd[i].ws.pause(); request(i); }
+await awaitReserved(9);
+for (let i = 9; i < 12; i++) request(i);
+await Promise.all(requests.slice(9));
+await h.hashUntil(() => h.hashEvents.slice(hashFrom).some((e) => e.event === "held"), "the gated native call");
+check("overflow replies arrive before any gated native derivation starts", !h.hashEvents.slice(hashFrom).some((e) => e.event === "start"));
+await h.hashControl("release");
+await h.hashUntil(() => h.hashEvents.slice(hashFrom).filter((e) => e.event === "finish").length === 9 && h.hashEvents.slice(hashFrom).filter((e) => e.event === "failureSent").length === 9, "all nine native completions and queued replies");
+for (let i = 7; i < 9; i++) crowd[i].ws.resume();
+const flood = await Promise.all(requests);
 const busy = flood.filter((r) => isErr(r, "busy"));
 check("one running plus eight queued derivations; the overflow is refused", busy.length === 3 && flood.filter((r) => isErr(r, "signInFailed")).length === 9, flood.map((r) => r.code));
-const done = flood.filter((r) => r.code === "signInFailed").map((r) => r.ms).sort((a, b) => a - b);
+const observed = h.hashEvents.slice(hashFrom);
+const starts = observed.filter((e) => e.event === "start");
+const finishes = observed.filter((e) => e.event === "finish");
+check("native derivations never overlap", starts.length === 9 && finishes.length === 9 && starts.every((e, i) => e.active === 1 && finishes[i].id === e.id && finishes[i].active === 0 && (i === 0 || e.at >= finishes[i - 1].at)));
+const done = finishes.map((e) => e.at - floodStarted);
 check("overflow is refused before any derivation finishes", Math.max(...busy.map((r) => r.ms)) < done[0], { busy: busy.map((r) => r.ms), first: done[0] });
-// One at a time means one finish per derivation, evenly spaced; parallel work would land several finishes together.
+// Native completion times retain the original spacing threshold, unaffected by delayed client reads.
 const gaps = done.slice(1).map((t, i) => t - done[i]);
 const median = [...gaps].sort((x, y) => x - y)[gaps.length >> 1];
 check("derivations run one at a time", Math.min(...gaps) >= 0.25 * median, { done, gaps });
+console.log("native queue timing", JSON.stringify({ done, gaps, delayedClientReplies: flood.filter((r) => r.code === "signInFailed").map((r) => r.ms).sort((a, b) => a - b) }));
 
 // --- Concurrent PIN budget reservations ---------------------------------------------------------------------------------------
 const guessers = await Promise.all(Array.from({ length: 8 }, () => client(h, tunnel())));
@@ -341,12 +404,42 @@ await restartAfter(() =>
 check("an expired credential no longer resumes", isErr(await (await client(h, tunnel())).req({ type: "profileResume", credential: cred1 }), "signedOut"));
 check("a weaker verifier still signs in", (await (await client(h, tunnel())).req({ type: "profileLogin", login: "dune", pin: "7531" })).profile.profileId === duneId);
 check("and is upgraded to the accepted parameters", byLogin(store(), "dune").pin.N === 131072);
-for (let i = 0; i < 6; i++) await (await client(h, tunnel())).req({ type: "profileLogin", login: "ember", pin: "4821" });
+const overflowSessions = [];
+for (let i = 0; i < 6; i++) overflowSessions.push(await (await client(h, tunnel())).req({ type: "profileLogin", login: "ember", pin: "4821" }));
 check("at most five remembered devices per profile", Object.values(store().devices).filter((d) => d.profileId === emberId).length === 5);
+// A row count alone can pass even if login returns a credential that was immediately evicted (#999).
+check("each overflow login returns a credential for the same profile", overflowSessions.every((r) => r.type === "profileSession" && r.profile.profileId === emberId && typeof r.credential === "string"));
+const budgetState = () => {
+  const d = store();
+  return JSON.stringify({ guards: Object.values(d.profiles).map((p) => [p.id, p.guard]), unknown: d.unknownLogins });
+};
+const beforeResumes = budgetState();
+const resumeOverflow = async () => {
+  const replies = [];
+  for (const r of overflowSessions) replies.push(await (await client(h, tunnel())).req({ type: "profileResume", credential: r.credential }));
+  return replies;
+};
+const overflowResumes = await resumeOverflow();
+check("newest credential remains usable at capacity", overflowResumes.at(-1).type === "profileSession" && overflowResumes.at(-1).profile.profileId === emberId);
+check("five issued credentials resume and one is signed out", overflowResumes.filter((r) => r.type === "profileSession" && r.profile.profileId === emberId).length === 5 && overflowResumes.filter((r) => isErr(r, "signedOut")).length === 1);
+check("overflow does not evict another profile's credential", (await (await client(h, tunnel())).req({ type: "profileResume", credential: dune.credential })).profile?.profileId === duneId);
+check("resume at capacity changes no PIN budget", budgetState() === beforeResumes);
+await h.stop("SIGKILL");
+h = await startHost();
+const recoveredResumes = await resumeOverflow();
+const outcome = (r) => r.type === "profileSession" ? r.profile.profileId : r.code;
+check("crash/restart preserves each credential's capacity outcome", JSON.stringify(recoveredResumes.map(outcome)) === JSON.stringify(overflowResumes.map(outcome)));
+check("other profile still resumes after overflow and restart", (await (await client(h, tunnel())).req({ type: "profileResume", credential: dune.credential })).profile?.profileId === duneId);
+check("restart and repeated resumes preserve every PIN budget", budgetState() === beforeResumes);
+
 
 // --- Nothing secret on disk or in game frames -----------------------------------------------------------------------------
 const files = readdirSync(PROFILES_DIR);
-const text = files.map((f) => readFileSync(path.join(PROFILES_DIR, f), "utf8")).join("\n");
+const privateText = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+  const file = path.join(dir, entry.name);
+  return entry.isDirectory() ? privateText(file) : [readFileSync(file, "utf8")];
+});
+const text = privateText(PROFILES_DIR).join("\n");
 const values = [];
 (function walk(v) {
   if (typeof v === "string") values.push(v);

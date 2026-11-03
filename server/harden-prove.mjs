@@ -53,7 +53,7 @@ process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
   // A short grace so the bot takes over a dropped seat within the proof (#195). Watching is off (docs/design/spectator.md).
-  env: { ...process.env, PORT: "0", GRACE_MS: "100", SPECTATOR_MAX: "0", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", GRACE_MS: "100", SPECTATOR_MAX: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
   stdio: ["ignore", "pipe", "pipe"],
 });
 process.on("exit", () => host.kill("SIGKILL"));
@@ -206,7 +206,7 @@ const SMALL_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(SMALL_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 }));
 const small3 = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR: SMALL_DIR, ROOM_MAX: "3" },
+  env: { ...process.env, PORT: "0", ROOMS_DIR: SMALL_DIR, RESULTS_DIR: `${SMALL_DIR}/results`, ROOM_MAX: "3" },
   stdio: ["ignore", "pipe", "pipe"],
 });
 process.on("exit", () => small3.kill("SIGKILL"));

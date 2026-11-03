@@ -1,0 +1,32 @@
+ok autoplay gate covers immediate, delayed and background playback
+ok all 42 clips have one category and use master × category × clip
+ok each category mute silences only its own new requests
+ok active elements respond immediately to category volume and master mute/zero
+ok queued/delayed clips use current settings and remain silent after a category mute
+ok background gain, ducking, category mute and legacy music/master switches compose
+ok per-device persistence, autoplay after reload, immutable snapshots and subscriptions
+ok invalid/partial/blocked storage is safe and settings remain per device
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: zero browser errors
++ actual - expected
+
++ [
++   'Failed to load resource: the server responded with a status of 404 (Not Found)'
++ ]
+- []
+
+    at file:///workspace/emberisle/work/p2-base1009/scripts/sound-mixer-prove.mjs:224:10 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    'Failed to load resource: the server responded with a status of 404 (Not Found)'
+  ],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

@@ -1,0 +1,21 @@
+{
+  "oldColourSourceCommit": "f1bbf7a",
+  "substitutedOnly": [
+    "shadeRobber",
+    "DULL",
+    "hexPatch"
+  ],
+  "cpuCanvasReadbackRetained": true,
+  "exit": 1,
+  "expectedFailures": [
+    "FAIL move: token disc and face are plain black",
+    "FAIL move: light numeral and pips remain on the black face",
+    "FAIL 1280x720: blocked terrain is black without a brown cast",
+    "FAIL 390x844: blocked terrain is black without a brown cast"
+  ],
+  "restoredSha256": {
+    "src/lib/scene/isle-renderer.ts": "a598d2c4aa6f1cdbbe1f582c69023d0cfbdf90d1e7112247394623235027cc1a",
+    "src/lib/scene/jelly-board.ts": "4f13d7d6f7b23b9728d56fd2a0fb78829664511001b7b5be49d2ffa9a1880f55"
+  },
+  "positiveCapturesRestored": true
+}

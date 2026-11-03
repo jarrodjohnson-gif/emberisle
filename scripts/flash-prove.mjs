@@ -34,7 +34,10 @@ async function openTable(reducedMotion) {
       if (this.src.endsWith("/click_002.wav")) window.__ticks.push({ volume: this.volume, t: performance.now() });
       return Promise.resolve();
     };
-    Object.defineProperty(navigator, "vibrate", { value: (ms) => { if (ms === 8) window.__buzz.push(ms); return true; } });
+    // #542: paying-piece buzz is phones-only (pointer: coarse). Force coarse so the existing 8 ms checks still run.
+    const realMatch = window.matchMedia.bind(window);
+    window.matchMedia = (q) => (q === "(pointer: coarse)" ? { matches: true, media: q, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent() { return false; } } : realMatch(q));
+    Object.defineProperty(navigator, "vibrate", { value: (ms) => { if (ms === 8) window.__buzz.push(ms); return true; }, configurable: true });
   });
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.getByRole("button", { name: "Four seats, one table" }).focus();
@@ -85,7 +88,13 @@ async function openTable(reducedMotion) {
         o.traverse((c) => { glow = Math.max(glow, c.material?.emissiveIntensity && c.userData.payerMaterial ? c.material.emissiveIntensity : 0); });
         return [o.userData.key.slice(2), { scale: o.scale.x, glow }];
       })));
-      return draw(...a);
+      const result = draw(...a);
+      // #904: reproduce a slow GPU exhausting the wake hold after each reduced-motion frame.
+      if (window.__idleAfterFrame) {
+        isle.busyUntil = 0;
+        window.__forcedIdleFrames++;
+      }
+      return result;
     };
   });
   await page.waitForFunction(() => window.__isle?.lastSeq === window.__emberisle.getState().state.seq, null, { timeout: STEP_MS });
@@ -128,7 +137,15 @@ async function roll(page, { dice, bank, robber }) {
 }
 
 const settled = (page, minFrames = 4) =>
-  page.waitForFunction((n) => window.__isle.flashes.length === 0 && window.__isle.payingPieces.length === 0 && window.__frames.length >= n, minFrames, { timeout: STEP_MS * 8 });
+  page.waitForFunction((n) => {
+    const isle = window.__isle;
+    if (isle.lastSeq !== window.__emberisle.getState().state.seq || isle.flashes.length || isle.payingPieces.length) return false;
+    if (window.__frames.length >= n) return true;
+    // Reduced motion stops drawing when idle. Ask for the remaining observation frames;
+    // keep the real draw, animation clock and all four frame assertions intact.
+    isle.wake();
+    return false;
+  }, minFrames, { timeout: STEP_MS * 8 });
 const glowing = (page) =>
   page.evaluate(() => {
     const f = window.__frames;
@@ -212,8 +229,14 @@ async function pieceProof(page, reduced) {
   if (got.ticks.length !== 2 || got.buzz.length !== 2 || got.ticks.some((t) => t.volume !== 0.35)) throw new Error(`piece ticks: ${JSON.stringify(got.ticks)}, buzz ${got.buzz}`);
   console.log(`paying pieces (${reduced ? "reduced" : "motion"}): two payers, adjacent nonpayer dark, two soft ticks and 8ms kicks`);
   await clear();
+  if (reduced) await page.evaluate(() => { window.__idleAfterFrame = true; window.__forcedIdleFrames = 0; });
   await roll(page, { dice: [3, 3], bank: { timber: 19, clay: 19, wool: 1, grain: 19, ore: 19 } });
   await settled(page);
+  if (reduced) {
+    const forced = await page.evaluate(() => { window.__idleAfterFrame = false; return window.__forcedIdleFrames; });
+    if (forced < 4) throw new Error(`reduced idle regression observed only ${forced} forced-idle frames`);
+    console.log(`reduced idle regression: ${forced} real frames, wake hold exhausted after every frame`);
+  }
   const short = await inspect();
   if (short.ticks.length || short.buzz.length || short.frames.some((f) => Object.values(f).some((p) => p.scale > 1 || p.glow > 0))) throw new Error("bank-short pieces pulsed");
   // One seat, bank has only one wool: the first stronghold gets a partial grant, the later outpost gets none.

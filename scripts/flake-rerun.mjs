@@ -6,8 +6,8 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
-// `checks` fails whenever a job it needs fails, so it never has a flake of its own.
-const AGGREGATE_JOBS = ["checks"];
+// `checks` and `browser-a` fail whenever a job they need fails, so they never have a flake of their own.
+const AGGREGATE_JOBS = ["checks", "browser-a"];
 const FAILED = ["failure", "cancelled", "timed_out"];
 
 export function loadFlakes(text) {

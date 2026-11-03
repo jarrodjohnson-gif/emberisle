@@ -1,0 +1,23 @@
+$ npm run served-prove
+
+> served-prove
+> node scripts/tabs-prove.mjs --served
+
+tab B typed the code: Tide swatch disabled at opacity 0.35, aria-checked=false; Ember, Dune, Pine enabled
+join link: Pine joined from ?code=6H95 (link http://127.0.0.1:51716/?code=6H95; URL after open: "/")
+chat dock on every tab in the HUD's first frame (built chunks)
+table 6H95: 3 seats, 3 tabs in, phase rollOff
+host's chosen color round-tripped into the game: #2d6ee8
+roll-off: 5 rolls, each by the current tab, shared on all 3 tabs; order p2 4, p1 3, p0 2; no production banner
+tab B screens during the rejoin: play, turn banner still attached
+tab B dropped 3 s: saw reconnecting=true, back as p1 (was p1), host log on A: Tide is back=true
+tab C reloaded: back as p2 (was p2)
+setup done on all tabs, seq 17
+persistent roll event on all tabs: "Nobody gains goods — Pine's roll."; no goods banner
+roll moment on all tabs: 4+2
+5 rolls, same on all 3 tabs: 4+2 1+4 6+6 6+2 4+3
+dice faces: 5/5 match the log (pips, aria-label, no settle on the reduced-motion tab)
+resource flash: green "Ember grain+1" and red "Ember wool-1" each showed and went away (longest label 2989 ms)
+table trade: Ember gave 1 wool for 1 grain from Tide; hands and goods counts agree on all 3 tabs
+boards match on 3 tabs
+tabs prove ok (served by the host on :51716, no ?host=)

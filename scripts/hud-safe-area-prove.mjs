@@ -15,7 +15,7 @@
 // the topmost element at its centre, with no scrolling needed; Tab never lands a control behind the pinned row, the "more
 // below" cue meets the row, and the open fortune tray covers the row inside the safe area.
 // The chat dock and sheet are Chat.tsx: their controls are measured and listed, and fail the run unless CHAT_PENDING is true
-// (#475 left it true; #477 moved Quick reactions and Open chat into the top row, so they pass).
+// (#475 left it true; #477 moved the chat buttons into the top row, so they pass; #899 left Open chat as the one button).
 // Run: npm run hud-safe-area-prove. Port from VITE_PORT, default 8475. Screenshots to test-results/hud-safe-*.png.
 import { spawn } from "node:child_process";
 import { once } from "node:events";
@@ -44,7 +44,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -234,7 +234,7 @@ async function pinned(p, moment, name, mustScroll) {
   check(`${tag} ${moment}: Tab through ${seen.length} column controls, none hidden behind the pinned row`, seen.length > 3 && bad.length === 0, bad.length ? bad : undefined);
   check(`${tag} ${moment}: the "more below" cue sits above the pinned row`, seen.every((f) => f.cueClear));
   // The fortune tray (#423) rises from the column's bottom edge over the pinned row: it covers the bar cleanly, inside the viewport.
-  await page.getByRole("button", { name: /^Fortunes/ }).click();
+  await page.getByRole("button", { name: /^(Play fortune|Fortunes)/ }).click();
   const tray = await page.getByRole("dialog").first().waitFor({ timeout: STEP_MS }).then(() =>
     page.waitForFunction(() => {
       const d = document.querySelector("#fortune-title")?.closest('[role="dialog"]');
@@ -259,7 +259,7 @@ async function pinned(p, moment, name, mustScroll) {
   await page.locator("#fortune-title").waitFor({ state: "detached", timeout: STEP_MS });
   check(
     `${tag} ${moment}: Escape closes the tray and focus returns to Fortunes`,
-    await page.evaluate(() => /^Fortunes/.test(document.activeElement?.textContent ?? "")),
+    await page.evaluate(() => /^(Play fortune|Fortunes)/.test(document.activeElement?.textContent ?? "")),
   );
 }
 

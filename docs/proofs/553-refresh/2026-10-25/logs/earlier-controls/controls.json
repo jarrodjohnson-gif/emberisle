@@ -1,0 +1,29 @@
+{
+  "cases": [
+    {
+      "name": "missing-cancel",
+      "code": 1,
+      "expected": "late client load cannot pull practice back online",
+      "matched": true,
+      "seconds": 12.89
+    },
+    {
+      "name": "cached-retry",
+      "code": 1,
+      "expected": "timed out: next explicit action retries the client",
+      "matched": true,
+      "seconds": 24.54
+    },
+    {
+      "name": "widened-restore",
+      "code": 1,
+      "expected": "quiet fallback keeps the original 3000ms delay",
+      "matched": true,
+      "seconds": 17.59
+    }
+  ],
+  "restored": {
+    "src/lib/game/store.ts": "69e865de8f241825d81703f013accd378d5924ba4eacc12e268d84299eb85f02",
+    "src/lib/lazy.ts": "5f9646e75d2425abc0ea32505e59a70491a68fd3d0cf2bc657fc5e868198948e"
+  }
+}

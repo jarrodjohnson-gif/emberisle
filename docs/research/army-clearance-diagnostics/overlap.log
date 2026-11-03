@@ -1,0 +1,43 @@
+440x956: path 4 (below the minimum): p0 🛤4 ⚔0  p3 🛤1 ⚔0  p2 🛤1 ⚔0  p1 🛤2 ⚔0
+440x956: path 5 leads: p0 🛤4 ⚔0  p3 🛤1 ⚔0  p2 🛤1 ⚔0  p1 🛤5* ⚔0
+440x956: path 5 ties path 5: p0 🛤4 ⚔0  p3 🛤2 ⚔0  p2 🛤5 ⚔0  p1 🛤5* ⚔0
+440x956: paths 4, 5, 7, 2: p0 🛤4 ⚔0  p3 🛤2 ⚔0  p2 🛤7* ⚔0  p1 🛤5 ⚔0
+440x956: army 2 (below the minimum): p0 🛤4 ⚔0  p3 🛤2 ⚔0  p2 🛤7* ⚔0  p1 🛤5 ⚔2
+440x956: army 3 against 2: p0 🛤4 ⚔3*  p3 🛤2 ⚔0  p2 🛤7* ⚔0  p1 🛤5 ⚔2
+440x956: army 3 ties army 3: p0 🛤4 ⚔3*  p3 🛤2 ⚔0  p2 🛤7* ⚔0  p1 🛤5 ⚔3
+440x956: army 4 passes army 3: p0 🛤4 ⚔3  p3 🛤2 ⚔0  p2 🛤7* ⚔0  p1 🛤5 ⚔4*
+440x956: one seat holds both: p0 🛤4 ⚔0  p3 🛤2 ⚔0  p2 🛤7* ⚔3*  p1 🛤5 ⚔0
+956x440: path 4 (below the minimum): p0 🛤4 ⚔0  p3 🛤1 ⚔0  p2 🛤1 ⚔0  p1 🛤2 ⚔0
+956x440: path 5 leads: p0 🛤4 ⚔0  p3 🛤1 ⚔0  p2 🛤1 ⚔0  p1 🛤5* ⚔0
+956x440: path 5 ties path 5: p0 🛤4 ⚔0  p3 🛤2 ⚔0  p2 🛤5 ⚔0  p1 🛤5* ⚔0
+956x440: paths 4, 5, 7, 2: p0 🛤4 ⚔0  p3 🛤2 ⚔0  p2 🛤7* ⚔0  p1 🛤5 ⚔0
+956x440: army 2 (below the minimum): p0 🛤4 ⚔0  p3 🛤2 ⚔0  p2 🛤7* ⚔0  p1 🛤5 ⚔2
+956x440: army 3 against 2: p0 🛤4 ⚔3*  p3 🛤2 ⚔0  p2 🛤7* ⚔0  p1 🛤5 ⚔2
+956x440: army 3 ties army 3: p0 🛤4 ⚔3*  p3 🛤2 ⚔0  p2 🛤7* ⚔0  p1 🛤5 ⚔3
+956x440: army 4 passes army 3: p0 🛤4 ⚔3  p3 🛤2 ⚔0  p2 🛤7* ⚔0  p1 🛤5 ⚔4*
+956x440: one seat holds both: p0 🛤4 ⚔0  p3 🛤2 ⚔0  p2 🛤7* ⚔3*  p1 🛤5 ⚔0
+1280x720: path 4 (below the minimum): p0 🛤4 ⚔0  p3 🛤1 ⚔0  p2 🛤1 ⚔0  p1 🛤2 ⚔0
+1280x720: path 5 leads: p0 🛤4 ⚔0  p3 🛤1 ⚔0  p2 🛤1 ⚔0  p1 🛤5* ⚔0
+1280x720: path 5 ties path 5: p0 🛤4 ⚔0  p3 🛤2 ⚔0  p2 🛤5 ⚔0  p1 🛤5* ⚔0
+1280x720: paths 4, 5, 7, 2: p0 🛤4 ⚔0  p3 🛤2 ⚔0  p2 🛤7* ⚔0  p1 🛤5 ⚔0
+1280x720: army 2 (below the minimum): p0 🛤4 ⚔0  p3 🛤2 ⚔0  p2 🛤7* ⚔0  p1 🛤5 ⚔2
+1280x720: army 3 against 2: p0 🛤4 ⚔3*  p3 🛤2 ⚔0  p2 🛤7* ⚔0  p1 🛤5 ⚔2
+1280x720: army 3 ties army 3: p0 🛤4 ⚔3*  p3 🛤2 ⚔0  p2 🛤7* ⚔0  p1 🛤5 ⚔3
+1280x720: army 4 passes army 3: p0 🛤4 ⚔3  p3 🛤2 ⚔0  p2 🛤7* ⚔0  p1 🛤5 ⚔4*
+1280x720: one seat holds both: p0 🛤4 ⚔0  p3 🛤2 ⚔0  p2 🛤7* ⚔3*  p1 🛤5 ⚔0
+390x844: path 4 (below the minimum): p0 🛤4 ⚔0  p3 🛤1 ⚔0  p2 🛤1 ⚔0  p1 🛤2 ⚔0
+390x844: path 5 leads: p0 🛤4 ⚔0  p3 🛤1 ⚔0  p2 🛤1 ⚔0  p1 🛤5* ⚔0
+390x844: path 5 ties path 5: p0 🛤4 ⚔0  p3 🛤2 ⚔0  p2 🛤5 ⚔0  p1 🛤5* ⚔0
+390x844: paths 4, 5, 7, 2: p0 🛤4 ⚔0  p3 🛤2 ⚔0  p2 🛤7* ⚔0  p1 🛤5 ⚔0
+CONTROL: injected real 1px points box inside p1 army tally at 390x844 / army 2
+army-clearance-diagnostic {"viewport":{"tag":"390x844","width":390,"height":844},"step":"army 2 (below the minimum)","phase":null,"seat":"p1","kind":"army","badge":false,"shown":true,"label":"Wayfarers played, 2","animation":"none","tally":{"l":288.375,"t":34,"r":313.25,"b":50,"w":24.875,"h":16},"card":{"l":253.5,"t":12,"r":330,"b":56,"w":76.5,"h":44},"points":{"l":300.8125,"t":42,"r":301.8125,"b":43,"w":1,"h":1},"clauses":{"leftOfPoints":false,"abovePoints":false,"belowPoints":false}}
+AssertionError [ERR_ASSERTION]: 390x844 army 2 (below the minimum) p1: army tally clears the points
+    at check (file:///workspace/emberisle/work/verify1081-current/scripts/longest-army-prove.mjs:183:18)
+    at async file:///workspace/emberisle/work/verify1081-current/scripts/longest-army-prove.mjs:228:21 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

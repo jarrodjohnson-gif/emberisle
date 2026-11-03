@@ -1,0 +1,12 @@
+Baseline: 587951aa81db45982a8e79e51c4378afaa2986e3 (main)
+Model: GPT-6.1 Sol (canonical harness adapted from GPT-6 Luna)
+Phone emulation: hasTouch=true, isMobile=true, deviceScaleFactor=1; pointer:coarse.
+Host: http://127.0.0.1:8791/
+Viewport captures: 390x844, 844x390, 440x956
+Online table code was captured in browser state only; it is not copied into this report.
+Observed final practice state: {"winner":"p1","phase":"over","turn":17,"roll":65}
+Practice automation: real UI actions; natural built-in bot scheduler; no bot fast-forward or state injection.
+Stop: {"stopReason":"winner reached","actions":49,"polls":830,"elapsedMs":208893}
+Missing practice captures (never reached/captured within bounds): []
+Captured state manifest: {"title":{},"lobby-4-seats":{},"joined-by-link":{},"watcher":{"phase":"rollOff","seq":0,"current":"p0","turn":0,"winner":null},"roll-off":{"phase":"rollOff","seq":0,"current":"p0","turn":0,"winner":null},"first-settlement-placement":{"phase":"setupSettle","seq":10,"current":"p0","turn":0,"winner":null},"first-road-placement":{"phase":"setupRoad","seq":11,"current":"p0","turn":0,"winner":null},"settlement-and-road-placed":{"phase":"main","seq":29,"current":"p0","turn":1,"winner":null},"trade-panel":{"phase":"main","seq":29,"current":"p0","turn":1,"winner":null},"fortune-tray":{"phase":"main","seq":29,"current":"p0","turn":1,"winner":null},"end-turn":{"phase":"main","seq":29,"current":"p0","turn":1,"winner":null},"paying-roll":{"phase":"main","seq":83,"current":"p0","turn":6,"winner":null},"robber":{"phase":"robber","seq":192,"current":"p0","turn":14,"winner":null},"win-screen":{"phase":"over","seq":228,"current":"p1","turn":17,"winner":"p1"}}
+Page errors: []

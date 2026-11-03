@@ -88,10 +88,10 @@ grow while play stays snappy); measured locally, the median is about 1.5 s.
 - **Tap:** a tapped hex gives a small jelly wobble, and its token wobbles with it.
 - **Wayfarer:** the hex he stands on darkens and cools.
 - **Reduced motion:** the scenes hold still. A dulling or a glow still lands.
-- **Board age:** `env.age` is seconds since the board's first live frame, so a story can start with the match (the ore's
-  climber), however late the board is built (after the lobby, a rematch). `create()`'s first update and the snaps (the swap,
-  reduced motion) don't start it; until it starts, the age is 0. Unset (the studio, the batcher sampling motion), a story
-  uses `t`.
+- **Board age:** `env.age` is seconds since the board's first live *play* frame, so a story can start with the match (the
+  ore's climber), however late the board is built (after the lobby, a rematch). `create()`'s first update, the snaps (the
+  swap, reduced motion), and the title/lobby demo board don't start it; until it starts, the age is 0. Unset (the studio),
+  a story uses `t`; the batcher sets `age` to each sample time so motion is still found.
 - **Picking:** an unseen hex prism per hex.
 
 ## The shore (Harbor Jelly)

@@ -1,0 +1,25 @@
+# Current overlay addendum — 51cbe38
+
+Visually inspected results, help, fortunes, trade, costs and table menu at all three evidence sizes, using local PNGs only. Evidence directory: `work/emberisle-current/docs/design/hud-pass/v2/evidence/current/`. Companion JSON inspected for target sizes and clipping. Source unchanged.
+
+## Additional findings worth keeping
+
+1. **Results, medium/high — portrait hides the most important table column.** `390x844-results.png` clips TOTAL and all four totals at the right edge. Companion JSON reports table scrollWidth333px versus clientWidth324px, and lists the total header plus four `win-total` cells as clipped. Desktop and landscape totals fit. This is horizontal scroll, not inaccessible data, but the initial view sacrifices the answer the table is meant to provide and offers little visual overflow cue. Source `WinScreen.tsx:135–176` combines scrollable wrap with nowrap cells and full player names. Route to existing #748/#878; retain approved short headings. Offsuit inference: reserve the total column first; let names lose width or change the row layout before hiding totals.
+
+2. **Trade, medium — helper contradicts the hotseat affordances.** All three `*-trade.png` screenshots say “You can mix goods when trading with players”, yet this hotseat fixture offers only the Bank action. `TradePanel.tsx:141` is unconditional, while `:161–170` deliberately hides the player route in hotseat. Route to #831. Offsuit inference: show only the instruction relevant to the chosen route; current helper is both extra clutter and misleading in this context.
+
+3. **Landscape overlay overflow, medium — important content starts outside the first view without a clear cue.** `844x390-fortunes.png` hides the entire Points×2 row below the fold and cuts the “Tap two goods” line. `844x390-help.png` cuts the next rules paragraph at the bottom; `844x390-trade.png` shows the Get steppers disappearing under the pinned footer. `844x390-table-menu.png` puts Leave table below the first view (JSON: menu scrollHeight348px/clientHeight310px). Each container intentionally scrolls; these are discoverability issues, not claims of inaccessible/clipped-out content. Offsuit inference: a visibly clipped next row or small consistent overflow cue, restrained grouping and shorter headings, preserving full target areas. Fortune behaviour #829, help #749, trade #831; menu composition #903.
+
+4. **Sameness/decoration, medium — overlays supply direct non-main examples.** `1280x720-fortunes.png`, `390x844-fortunes.png`, `844x390-fortunes.png` show three white rounded card containers inside a cream rounded sheet. The player-menu set likewise shows cream ledger inside translucent blurred sheet. Trade adds ten equally weighted outlined resource cards inside another outlined cream panel. Results/help/costs repeat large cream shells; this confirms that the no-cream and nested-surface problem extends beyond the main bar. Offsuit inference: plain ledger/rows on one neutral surface; meaningful selection and action states carry emphasis.
+
+5. **Alignment, medium/low — Fortune sheet uses a different anchor.** `1280x720-fortunes.png` puts the 448px Fortune tray at x280, the left edge of the 720px HUD stack; goods/main controls are centred on the board. It feels like a separate panel family. `FortuneTray.tsx:129` uses absolute inset-x-0/max-w-md without a centring rule. Phone placement is coherent. Offsuit inference: align desktop tray with the action/hand centre or use the same deliberate side anchor across menus. Treat as #903 presentation; preserve #776/#829 functionality.
+
+## Passes and limits
+
+* The modal/action control inventories in results, help, fortunes, trade and costs contain **no sub-44px targets** at the three captured sizes. The 36px discard inputs remain a separate finding; do not extend it to these sheets.
+* Help text reads at14px and has a clear24px heading and44px Close control at all sizes. Its main weakness is long prose and landscape scroll discovery, not tiny text.
+* Costs fits completely at all three sizes, including the two-column landscape layout; no new content loss or scale defect found. The semantic distinction between build costs and scoring is clear, though the heading scale differs from Help and the shell is cream.
+* Results correctly makes10 points the hero and keeps Play again the strongest action. Contribution equation and real breakdown are useful information, not generic decoration. Retain them. Known11px heading/equation text remains in the Scale inventory.
+* Fortune card choices are visually distinct through game colours; the two-step Plenty interaction has a readable Play action and44px goods choices. The 12px effects are not sub-12 findings.
+* Trade has genuine44px steppers and a stable visible Bank action, including landscape. The existing tiny owned/short-view text is already in the Scale list. Same “Have N” inventory repeated in both Give and Get adds density but is not a new functional defect.
+* No new emoji/gradient decoration appears in these sheets. Checkmarks in results indicate actual awards; do not remove their meaning as decoration.

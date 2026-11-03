@@ -1,0 +1,22 @@
+
+> flash-prove
+> node scripts/flash-prove.mjs
+
+paying pieces (motion): two payers, adjacent nonpayer dark, two soft ticks and 8ms kicks
+bank-short: no pulses; partial stronghold: one tick, unpaid same-seat neighbour dark
+motion roll: sum 8, gained [wool,grain,ore], short [], expect 3 glow, saw 3, 17 frames, peak 0.35, in-between 12
+bank short: sum 8, gained [grain,ore], short [wool], expect 2 glow, saw 2, 13 frames, peak 0.35, in-between 8
+wayfarer-blocked: sum 8, gained [grain,ore], short [], expect 2 glow, saw 2, 13 frames, peak 0.35, in-between 8
+twins: wool hexes -2,1,-2,2 on a 6, bank holds 1 wool, hands gained [timber,wool], 1 of them glowed
+one push, 2 actions, 1 roll: 3 glowed, 3 expected
+first load onto a state with dice: 4 frames, glowing 0
+seq jump onto a state with dice: 4 frames, glowing 0
+coalesced build/roll/build (motion): four actions, only earlier building paid/pulsed, one tick
+payoff clock (motion): 50 unique pieces / 102 grants; eight ticks at 0,0.09,0.18,0.27,0.36,0.45,0.54,0.63; hold 0
+paying pieces (reduced): two payers, adjacent nonpayer dark, two soft ticks and 8ms kicks
+reduced idle regression: 5 real frames, wake hold exhausted after every frame
+bank-short: no pulses; partial stronghold: one tick, unpaid same-seat neighbour dark
+reduced motion roll: sum 8, gained [ore], short [wool], expect 1 glow, saw 1, 24 frames, peak 0.35, in-between 0
+coalesced build/roll/build (reduced): four actions, only earlier building paid/pulsed, one tick
+payoff clock (reduced): 54 unique pieces / 108 grants; eight ticks at 0,0.09,0.18,0.27,0.36,0.45,0.54,0.63; hold 1.19
+flash-prove: ok

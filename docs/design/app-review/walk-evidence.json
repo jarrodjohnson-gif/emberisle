@@ -1,0 +1,25 @@
+{
+  "commit": "8a9e75d7dd6709192dc8c6fa681cf9725c3e4e95",
+  "steps": [
+    {
+      "label": "title",
+      "screen": "title",
+      "mode": "ai",
+      "localId": "p0",
+      "code": "",
+      "error": null,
+      "text": "Emberisle\nEmber\nWayfarer\nPractice: On · Online: On · Hotseat: On\nPlay\n\n3 bots, no network\n\nHost a table\nJoin\n\nFour seats, one table\nHow to play"
+    },
+    {
+      "label": "entry-help",
+      "screen": "title",
+      "mode": "ai",
+      "localId": "p0",
+      "code": "",
+      "error": null,
+      "text": "Emberisle\nEmber\nWayfarer\nPractice: On · Online: On · Hotseat: On\nPlay\n\n3 bots, no network\n\nHost a table\nJoin\n\nFour seats, one table\nHow to play\nHow to play\n\nWin at 10 points.\n\nEach turn: roll. Matching numbers pay goods from tiles you touch. On a seven, anyone with more than seven goods discards half. Move and block a hex; the wayfarer takes a card from an adjacent seat. Blocked land pays nothing.\n\nBuild paths (wood + brick), outposts (wood, brick, sheep, wheat), strongholds (three wheat, two stone). Fortunes cost sheep, wheat, stone.\n\nOutposts score 1, strongholds 2. Longest path of five and largest army of three wayfarer cards score 2 more. Docks cut bank trade to 3:1 or 2:1.\n\nDrag to orbit the isle. Tap glowing corners and paths to build."
+    }
+  ],
+  "errors": [],
+  "blocked": "Name field fill timed out: element not visible. Invalid join and practice commands did not run."
+}

@@ -1,0 +1,10 @@
+{
+  "prototype": "8728e4c",
+  "expectedExit": 1,
+  "failedAssertion": "Host node survives optional mode arrival",
+  "restored": {
+    "src/components/game/EmberisleApp.tsx": "52869e51ebab10d2ac86358d32f23ee91b73248c719c32f65fe1ff464b016997",
+    "src/components/game/OpenTables.tsx": "3d201a0543e0f47e7cb91b2f79c9b51aabbed5242dda92631cfcd4fa22f359ad",
+    "src/components/game/chunks.ts": "30284c3a3f0b3c40f017399455ed9a7cc438a5a554ed7e313671360fbcdce357"
+  }
+}

@@ -1,0 +1,80 @@
+[
+  {
+    "job": 120815850592,
+    "runner": [
+      "﻿2026-10-24T07:36:55.6747741Z Current runner version: '2.338.0'",
+      "2026-10-24T07:36:55.6773067Z ##[group]Runner Image Provisioner",
+      "2026-10-24T07:36:55.6774633Z Version: 20261021.618",
+      "2026-10-24T07:36:55.6780797Z ##[group]Operating System",
+      "2026-10-24T07:36:55.6781459Z Ubuntu",
+      "2026-10-24T07:36:55.6783808Z ##[group]Runner Image",
+      "2026-10-24T07:36:55.6784385Z Image: ubuntu-24.04",
+      "2026-10-24T07:36:55.6785011Z Version: 20261012.334.1",
+      "2026-10-24T07:36:55.6786272Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md"
+    ],
+    "turn": [
+      "2026-10-24T07:44:05.3070415Z ok   1280x720: \"Your turn\" never covers a hand tab []",
+      "2026-10-24T07:44:54.0469931Z ok   390x844: \"Your turn\" never covers a hand tab []",
+      "2026-10-24T07:45:39.9728830Z ok   360x640: \"Your turn\" never covers a hand tab []",
+      "2026-10-24T07:46:26.2639856Z ok   844x390: \"Your turn\" never covers a hand tab []",
+      "2026-10-24T07:47:13.3687145Z turn-gain-prove: all passed"
+    ]
+  },
+  {
+    "job": 120817692667,
+    "runner": [
+      "﻿2026-10-24T07:46:29.7208006Z Current runner version: '2.338.0'",
+      "2026-10-24T07:46:29.7228850Z ##[group]Runner Image Provisioner",
+      "2026-10-24T07:46:29.7230378Z Version: 20261021.618",
+      "2026-10-24T07:46:29.7235069Z ##[group]Operating System",
+      "2026-10-24T07:46:29.7235603Z Ubuntu",
+      "2026-10-24T07:46:29.7237506Z ##[group]Runner Image",
+      "2026-10-24T07:46:29.7238005Z Image: ubuntu-24.04",
+      "2026-10-24T07:46:29.7238472Z Version: 20261012.334.1",
+      "2026-10-24T07:46:29.7239547Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md"
+    ],
+    "turn": [
+      "2026-10-24T07:49:50.7341550Z ok   1280x720: \"Your turn\" never covers a hand tab []",
+      "2026-10-24T07:50:35.9500677Z FAIL 390x844: \"Your turn\" never covers a hand tab [\"+1\"]",
+      "2026-10-24T07:51:25.3828315Z ok   360x640: \"Your turn\" never covers a hand tab []",
+      "2026-10-24T07:52:14.0248989Z ok   844x390: \"Your turn\" never covers a hand tab []",
+      "2026-10-24T07:52:58.7403057Z turn-gain-prove: 1 failed"
+    ]
+  },
+  {
+    "job": 120862179128,
+    "runner": [
+      "﻿2026-10-24T11:36:13.8891235Z Current runner version: '2.338.0'",
+      "2026-10-24T11:36:13.8909997Z ##[group]Runner Image Provisioner",
+      "2026-10-24T11:36:13.8911015Z Version: 20261012.601",
+      "2026-10-24T11:36:13.8914910Z ##[group]Operating System",
+      "2026-10-24T11:36:13.8915284Z Ubuntu",
+      "2026-10-24T11:36:13.8916648Z ##[group]Runner Image",
+      "2026-10-24T11:36:13.8917019Z Image: ubuntu-24.04",
+      "2026-10-24T11:36:13.8917398Z Version: 20261012.334.1",
+      "2026-10-24T11:36:13.8918213Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md"
+    ],
+    "turn": [
+      "2026-10-24T11:38:54.3985225Z ok   1280x720: \"Your turn\" never covers a hand tab []",
+      "2026-10-24T11:39:48.2116073Z FAIL 390x844: \"Your turn\" never covers a hand tab [\"+1\"]",
+      "2026-10-24T11:40:34.6101770Z ok   360x640: \"Your turn\" never covers a hand tab []",
+      "2026-10-24T11:41:23.9024697Z ok   844x390: \"Your turn\" never covers a hand tab []",
+      "2026-10-24T11:42:10.3947671Z turn-gain-prove: 1 failed"
+    ]
+  },
+  {
+    "job": 120817692698,
+    "runner": [
+      "﻿2026-10-24T07:46:29.7911496Z Current runner version: '2.338.0'",
+      "2026-10-24T07:46:29.7933487Z ##[group]Runner Image Provisioner",
+      "2026-10-24T07:46:29.7935019Z Version: 20261012.601",
+      "2026-10-24T07:46:29.7939913Z ##[group]Operating System",
+      "2026-10-24T07:46:29.7940459Z Ubuntu",
+      "2026-10-24T07:46:29.7942270Z ##[group]Runner Image",
+      "2026-10-24T07:46:29.7942817Z Image: ubuntu-24.04",
+      "2026-10-24T07:46:29.7943295Z Version: 20261012.334.1",
+      "2026-10-24T07:46:29.7944556Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md"
+    ],
+    "turn": []
+  }
+]

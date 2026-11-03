@@ -18,8 +18,7 @@ always the next `helper-ok` issue.
 - One issue per pull request.
 - No eligible issue left? Wait (see below). Don't pick anything else.
 - **Model:** if an issue has a `model:opus` or `model:sonnet` label, build it with that model. If your
-  tool can't switch models, use a subagent on that model when you can. Otherwise, say in the PR which
-  model you used.
+  tool can't switch models, use a subagent on that model when you can. If you can't, skip the issue.
 
 ## Ideas and suggested changes
 

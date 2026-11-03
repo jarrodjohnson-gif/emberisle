@@ -1,0 +1,18 @@
+
+> connection-health-prove
+> node scripts/connection-health-prove.mjs
+
+ok transport: no pre-welcome probe; duplicate welcome keeps one challenge and its 3s timeout; close cancels probing
+ok browser: nonce matched 137ms monotonic RTT; 30s spacing, one outstanding, 3s timeout, full-state recovery once; host timers/save bytes unchanged
+ok lobby: four ready seats and every health state fit 320/390/667/844px layouts; no landscape scrolling
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.evaluate: Execution context was destroyed, most likely because of a navigation
+    at /workspace/emberisle/work/verify716-oct25/scripts/connection-health-prove.mjs:456:22 {
+  log: [],
+  name: 'Error'
+}
+
+Node.js v24.19.0

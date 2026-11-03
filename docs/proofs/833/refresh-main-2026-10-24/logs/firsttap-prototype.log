@@ -1,0 +1,26 @@
+
+> title-chunks-prove
+> node scripts/title-chunks-prove.mjs
+
+ok  held mode controls retain private Host
+ok  mode arrival preserves Join text and focus
+ok  loaded mode remains Private by default
+ok  OpenTables held: no unrelated browser errors []
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Host node survives optional mode arrival
+    at check (file:///workspace/emberisle/work/verify882-oct24/scripts/title-chunks-prove.mjs:35:10)
+    at file:///workspace/emberisle/work/verify882-oct24/scripts/title-chunks-prove.mjs:99:5
+    at async controlled (file:///workspace/emberisle/work/verify882-oct24/scripts/title-chunks-prove.mjs:74:7)
+    at async file:///workspace/emberisle/work/verify882-oct24/scripts/title-chunks-prove.mjs:91:3 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

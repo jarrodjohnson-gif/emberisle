@@ -1,0 +1,3 @@
+PASS reviewed compatibility proof exact10efa80 SHA256 8abbda1d548ee4ad29bf6b08b68c5fb5cb894f665dadfc9f9db4e0b958213046
+PASS every main command/condition/matrix retained plus permissions proof once
+PASS three-file implementation scope; all runtime, existing proofs and budgets byte-identical main caf88c6d7254bfd1beab69e9e2c02a981afc056c
