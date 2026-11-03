@@ -46,6 +46,7 @@ const observe = () => {
   window.WebSocket = class extends Native {
     constructor(...args) {
       super(...args);
+      this.__sent = [];
       window.__profileSockets.push(this);
       this.addEventListener("message", (event) => {
         const message = JSON.parse(event.data);
@@ -57,7 +58,7 @@ const observe = () => {
     }
     set onmessage(handler) { this.handler = handler; }
     get onmessage() { return this.handler; }
-    send(raw) { window.__wire.push({ url: this.url, message: JSON.parse(raw) }); if (window.__dropLogout && JSON.parse(raw).type === "profileLogout") return; return super.send(raw); }
+    send(raw) { const m = JSON.parse(raw); this.__sent.push(m); window.__wire.push({ url: this.url, message: m }); if (window.__dropLogout && m.type === "profileLogout") return; return super.send(raw); }
   };
 };
 async function fixture(proxy, https) {
@@ -161,6 +162,16 @@ try {
   assert.equal(await page.evaluate(() => window.other.seats.some((s) => s.profile)), false);
   assert.equal(await page.evaluate(() => window.__wire.filter((f) => f.message.type === "hello").some((f) => f.message.pin || f.message.credential === "must-not-spread" || f.message.profile)), false);
   assert.equal(await page.evaluate(() => window.__wire.filter((f) => f.url === window.B).some((f) => f.message.credential)), false);
+
+  const helloSecretCountBefore = await page.evaluate(() => window.__wire.filter((f) => f.url === window.A && f.message.type === "hello" && f.message.secret).length);
+  await page.evaluate(() => {
+    const tableWs = window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN && ws.__sent.some((m) => m.name === "Ash"));
+    tableWs.close();
+  });
+  await page.waitForFunction((before) => window.__wire.filter((f) => f.url === window.A && f.message.type === "hello" && f.message.secret).length > before, helloSecretCountBefore);
+  assert.equal(await page.evaluate(() => window.__wire.filter((f) => f.url === window.A && f.message.type === "hello" && f.message.secret).every((f) => !f.message.credential)), true, "rejoin hellos never carry a profile credential");
+  ok("automatic reconnect while signed in redials with seat secret and never carries a profile credential");
+
   // B1: a real WebSocket close must not look like selecting another host during sign-out.
   await page.evaluate(() => window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN).close());
   await page.waitForFunction(() => window.client.getSnapshot().status === "offline");
@@ -191,7 +202,7 @@ try {
   ok("blocked storage keeps an authenticated memory-only session and preserves guest seat storage");
 
   await page.evaluate(async () => {
-    window.recovery = window.profiles.createProfileClient(window.A, { timeoutMs: 500 });
+    window.recovery = window.profiles.createProfileClient(window.A, { timeoutMs: 3000 });
     window.recovery.confirmHost(window.A);
     await window.recovery.login("ember-user", "8521", true);
     window.__profileSockets.at(-1).close();
@@ -235,6 +246,92 @@ try {
   assert.equal(await page.evaluate(() => localStorage.getItem(window.profiles.profileStorageKey(window.B))), null);
   assert.equal(await page.evaluate(() => window.__wire.filter((f) => f.url === window.B).some((f) => f.message.credential || f.message.pin)), false);
   ok("a late real-host session cannot cross an endpoint change, persist credentials or authenticate the replacement host");
+
+  // Failed resume must not leave a credential attached in credentialForHost or table hellos
+  await page.evaluate(async () => {
+    const key = window.profiles.profileStorageKey(window.A);
+    localStorage.setItem(key, JSON.stringify({ version: 1, host: window.A, credential: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", expiresAt: Date.now() + 60000 }));
+    window.failedResumeClient = window.profiles.createProfileClient(window.A);
+    window.failedResumeClient.confirmHost(window.A);
+    const p = window.failedResumeClient.resume();
+    window.__profileSockets.at(-1)?.close();
+    let failed = false;
+    try { await p; } catch { failed = true; }
+    if (!failed) throw Error("resume with dropped socket should fail");
+    await window.failedResumeClient.check();
+  });
+  assert.equal(await page.evaluate(() => window.failedResumeClient.getSnapshot().profile), null, "profile must be null after failed resume");
+  assert.equal(await page.evaluate(() => window.failedResumeClient.credentialForHost(window.A)), null, "credentialForHost must be null after failed resume");
+  await page.evaluate(() => {
+    window.failedResumeTable = window.table.connectTable(window.A, { welcome: () => {} });
+    window.failedResumeTable.open({ name: "GuestAfterFailedResume", profile: window.failedResumeClient });
+  });
+  await page.waitForFunction(() => window.__wire.some((f) => f.url === window.A && f.message.name === "GuestAfterFailedResume"));
+  await page.evaluate(() => window.failedResumeTable.close());
+  assert.equal(await page.evaluate(() => window.__wire.find((f) => f.url === window.A && f.message.name === "GuestAfterFailedResume")?.message.credential), undefined, "failed resume leaves no credential attached to new table connections");
+  ok("failed resume clears in-memory credentials and never attaches a credential to subsequent table connects");
+
+  // Queued hello before socket opens must not keep credential after immediate sign-out
+  await page.evaluate(async () => {
+    const client = window.profiles.createProfileClient(window.A);
+    client.confirmHost(window.A);
+    await client.login("ember-user", "8521");
+    window.signoutBeforeOpenTable = window.table.connectTable(window.A, { welcome: () => {} });
+    window.signoutBeforeOpenTable.open({ name: "AshSignoutBeforeOpen", profile: client });
+    await client.logout();
+    client.close();
+  });
+  await page.waitForFunction(() => window.__wire.some((f) => f.url === window.A && f.message.name === "AshSignoutBeforeOpen"));
+  await page.evaluate(() => window.signoutBeforeOpenTable.close());
+  assert.equal(await page.evaluate(() => window.__wire.find((f) => f.url === window.A && f.message.name === "AshSignoutBeforeOpen")?.message.credential), undefined, "hello queued before socket open drops credential when signed out");
+  ok("hello queued before socket open drops credential if signed out before connect");
+
+  // Per-endpoint storage keys: remember on A and on B, verify both keys exist, B's logout leaves A's, resume() works on both
+  const storagePage = await context.newPage();
+  storagePage.on("pageerror", (error) => errors.push(String(error)));
+  await storagePage.goto(secure + "/__profiles");
+  await storagePage.waitForFunction(() => window.profiles);
+  await storagePage.evaluate(async ({ A, B }) => {
+    window.clientA = window.profiles.createProfileClient(A);
+    window.clientA.confirmHost(A);
+    await window.clientA.login("ember-user", "8521", true);
+
+    window.clientB = window.profiles.createProfileClient(B);
+    window.clientB.confirmHost(B);
+    await window.clientB.create({ displayName: "Breeze", login: "breeze-user", pin: "5912", pinConfirm: "5912", color: "#2d6ee8", catchphrase: "Breeze along" }, true);
+  }, { A, B });
+  const storageKeys = await storagePage.evaluate(({ A, B }) => ({
+    keyA: window.profiles.profileStorageKey(A),
+    keyB: window.profiles.profileStorageKey(B),
+    valA: localStorage.getItem(window.profiles.profileStorageKey(A)),
+    valB: localStorage.getItem(window.profiles.profileStorageKey(B)),
+  }), { A, B });
+  assert.notEqual(storageKeys.keyA, storageKeys.keyB, "endpoint storage keys must be distinct");
+  assert.ok(storageKeys.valA, "host A credential must exist in storage");
+  assert.ok(storageKeys.valB, "host B credential must exist in storage");
+
+  await storagePage.evaluate(async () => {
+    await window.clientB.logout();
+    window.clientB.close();
+    window.clientA.close();
+  });
+  const afterLogout = await storagePage.evaluate(({ A, B }) => ({
+    valA: localStorage.getItem(window.profiles.profileStorageKey(A)),
+    valB: localStorage.getItem(window.profiles.profileStorageKey(B)),
+  }), { A, B });
+  assert.equal(afterLogout.valB, null, "logging out of host B clears host B key");
+  assert.ok(afterLogout.valA, "logging out of host B leaves host A key intact");
+
+  const resumedA = await storagePage.evaluate(async ({ A }) => {
+    const c = window.profiles.createProfileClient(A);
+    c.confirmHost(A);
+    const p = await c.resume();
+    c.close();
+    return p.displayName;
+  }, { A });
+  assert.equal(resumedA, "Ash", "host A profile resumes successfully from its preserved key");
+  await storagePage.close();
+  ok("storage keys are endpoint-scoped; logging out of one host leaves other host credentials and resume intact");
 
   assert.equal(await page.evaluate(async (legacy) => {
     window.unsupported = window.profiles.createProfileClient(legacy); window.unsupported.confirmHost(legacy);

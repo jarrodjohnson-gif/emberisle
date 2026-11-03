@@ -236,7 +236,7 @@ const randomNonce = () => crypto.getRandomValues(new Uint8Array(16)).reduce((hex
 // `giveUpMs` is only for proofs that cannot wait 10 minutes: it stands in for both holds until a welcome says otherwise.
 export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor, giveUpMs?: number): TableClient {
   const Ctor = Socket ?? (globalThis.WebSocket as unknown as SocketCtor);
-  const queue: string[] = [];
+  const queue: (string | (() => string))[] = [];
   let ws: SocketLike;
   let closedByUs = false;
   // Set by the first welcome. With a seat to go back to, an unexpected close means dial again.
@@ -291,9 +291,9 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     }, 3000);
   };
 
-  const send = (msg: Record<string, unknown>) => {
-    const raw = JSON.stringify(msg);
-    if (ws.readyState === 1) ws.send(raw);
+  const send = (msg: Record<string, unknown> | (() => Record<string, unknown>)) => {
+    const raw = typeof msg === "function" ? () => JSON.stringify(msg()) : JSON.stringify(msg);
+    if (ws.readyState === 1) ws.send(typeof raw === "function" ? raw() : raw);
     else queue.push(raw);
   };
 
@@ -327,7 +327,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         // Anything sent while the socket was down is stale after a rejoin (a second roll, an old placement).
         queue.length = 0;
       }
-      for (const raw of queue.splice(0)) ws.send(raw);
+      for (const raw of queue.splice(0)) ws.send(typeof raw === "function" ? raw() : raw);
     };
     ws.onclose = () => {
       // A socket a later dial replaced closing late is not a drop of the live one.
@@ -392,9 +392,6 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         on.welcome?.(m);
         break;
       }
-      case "seats":
-        on.seats?.(msg as never);
-        break;
       case "turnExtension":
         setExtension(msg as unknown as TurnExtensionState);
         break;
@@ -405,26 +402,8 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         on.state?.(msg as never);
         if (awaitingState) { awaitingState = false; health("Reachable"); }
         break;
-      case "rolled":
-        on.rolled?.(msg as never);
-        break;
-      case "chat":
-        on.chat?.(msg as never);
-        break;
-      case "react":
-        on.react?.(msg as never);
-        break;
       case "log":
         on.log?.(String(msg.text));
-        break;
-      case "tradeOffer":
-        on.tradeOffer?.(msg as never);
-        break;
-      case "tradeDeclined":
-        on.tradeDeclined?.(msg as never);
-        break;
-      case "tradeClosed":
-        on.tradeClosed?.(msg as never);
         break;
       case "openTables":
         on.openTables?.(Array.isArray(msg.tables) ? (msg.tables as OpenTableEntry[]) : []);
@@ -447,18 +426,22 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         }
         break;
       }
+      default:
+        (on as Record<string, ((m: unknown) => void) | undefined>)[msg.type ?? ""]?.(msg);
     }
   };
 
   dial();
 
-  const initialHello = (me: Me, extra: Record<string, unknown>) => {
-    const credential = me.profile?.credentialForHost(url);
-    send({ type: "hello", proto: PROTO, name: me.name, color: me.color, avatarId: me.avatarId, ...extra, ...(credential ? { credential } : {}) });
+  const initialHello = (me: Me, extra?: Record<string, unknown>) => {
+    send(() => {
+      const c = me.profile?.credentialForHost(url);
+      return { type: "hello", proto: PROTO, name: me.name, color: me.color, avatarId: me.avatarId, ...extra, ...(c ? { credential: c } : {}) };
+    });
   };
 
   return {
-    open: (me, options) => initialHello(me, { wayfarerMode: options?.wayfarerMode, visibility: options?.visibility }),
+    open: (me, options) => initialHello(me, options),
     join: (code, me) => initialHello(me, { code: code.toUpperCase() }),
     watch: (code) => send({ type: "hello", proto: PROTO, code: code.toUpperCase(), watch: true }),
     peek: (code) => send({ type: "peek", code: code.toUpperCase() }),

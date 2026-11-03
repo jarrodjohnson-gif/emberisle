@@ -85,7 +85,8 @@ export function createProfileClient(initialHost: string, options: {
     const p = pending; pending = null; clearTimeout(p.timer); p.reject(new ProfileClientError(code));
   };
   const disconnect = (code: string) => {
-    generation++; connecting = null; failPending(code);
+    if (code === "hostChanged") generation++;
+    connecting = null; failPending(code);
     const cancel = cancelConnecting; cancelConnecting = null; cancel?.(code);
     if (socket) { socket.onopen = socket.onmessage = socket.onclose = socket.onerror = null; socket.close(); socket = null; }
   };
@@ -171,10 +172,10 @@ export function createProfileClient(initialHost: string, options: {
     } catch { /* retain the session in memory */ }
     update({ remembered });
   };
-  const adopt = (reply: Reply, ownGeneration: number, keep: boolean) => {
+  const adopt = (reply: Reply, ownGeneration: number, keep: boolean, needsCredential = false) => {
     if (ownGeneration !== generation) throw new ProfileClientError("hostChanged");
     const p = reply.profile as Partial<ProfileOwner> | null;
-    const token = typeof reply.credential === "string" ? reply.credential : credential;
+    const token = typeof reply.credential === "string" ? reply.credential : (needsCredential ? credential : null);
     if (reply.type !== "profileSession" || !p || !token || !TOKEN.test(token) || typeof reply.expiresAt !== "number" || !Number.isFinite(reply.expiresAt) || reply.expiresAt <= Date.now() ||
       typeof p.profileId !== "string" || typeof p.displayName !== "string" || typeof p.login !== "string" || typeof p.color !== "string" ||
       !(p.backupColor === null || typeof p.backupColor === "string") || typeof p.catchphrase !== "string" || !(p.winSongId === null || typeof p.winSongId === "string")) throw new ProfileClientError("unavailable");
@@ -186,7 +187,7 @@ export function createProfileClient(initialHost: string, options: {
   const sessionRequest = async (type: string, fields: Record<string, unknown>, keep: boolean, needsCredential: boolean) => {
     const ownGeneration = await authorized();
     if (needsCredential && (!credential || expiresAt <= Date.now())) throw new ProfileClientError("signedOut");
-    try { return adopt(await request(type, { ...fields, ...(needsCredential ? { credential } : {}) }), ownGeneration, keep); }
+    try { return adopt(await request(type, { ...fields, ...(needsCredential ? { credential } : {}) }), ownGeneration, keep, needsCredential); }
     catch (error) {
       if (ownGeneration === generation && error instanceof ProfileClientError && error.code === "signedOut") { removeRemembered(); forgetSession(); }
       throw error;
@@ -219,7 +220,8 @@ export function createProfileClient(initialHost: string, options: {
         removeRemembered(); throw new ProfileClientError("signedOut");
       }
       credential = saved.credential; expiresAt = saved.expiresAt;
-      return sessionRequest("profileResume", {}, true, true);
+      try { return await sessionRequest("profileResume", {}, true, true); }
+      catch (error) { if (!snapshot.profile) forgetSession(); throw error; }
     },
     edit: (fields: Partial<ProfileFields> & { pin?: string }) => sessionRequest("profileEdit", { ...fieldsOf(fields), ...(fields.pin === undefined ? {} : { pin: fields.pin }) }, snapshot.remembered, true),
     changePin: (currentPin: string, newPin: string, newPinConfirm: string) => sessionRequest("profileChangePin", { currentPin, newPin, newPinConfirm }, snapshot.remembered, true),
@@ -233,9 +235,10 @@ export function createProfileClient(initialHost: string, options: {
       }
     },
     credentialForHost(host: string) {
+      if (!snapshot.profile) return null;
       try { if (normalizeProfileHost(host) === snapshot.host && snapshot.confirmed && snapshot.status === "available" && transportAllowed(snapshot.host) && expiresAt > Date.now() && !snapshot.profile?.pinMustChange) return credential; } catch { /* guest */ }
       return null;
     },
-    close() { disconnect("offline"); forgetSession(); update({ status: "idle", confirmed: false }); },
+    close() { disconnect("hostChanged"); forgetSession(); update({ status: "idle", confirmed: false }); },
   };
 }
