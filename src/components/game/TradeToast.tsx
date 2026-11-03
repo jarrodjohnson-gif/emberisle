@@ -42,6 +42,7 @@ export function TradeToast() {
   const outcome = useGame((s) => s.tradeOutcome);
   const takerId = useGame((s) => s.tradeTaker);
   const players = useGame((s) => s.state?.players);
+  const fromColor = players?.find((p) => p.id === offer?.from)?.color;
   const localId = useGame((s) => s.localId);
   // A watcher (docs/design/spectator.md) reads the offer and the clock, with no Yes or No.
   const spectator = useGame((s) => s.spectator);
@@ -137,7 +138,6 @@ export function TradeToast() {
     compact = answering && short.length > 0;
     // #537: the compact signal drops the visible "Need" line, so keyboard and screen-reader users still get the reason.
     why = compact && me ? `You need ${short.map((r) => `${offer.want[r]! - me.resources[r]} more ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ")} to accept` : null;
-    const fromColor = players?.find((p) => p.id === offer.from)?.color ?? "transparent";
     const line = compact
       ? `${offer.fromName} is looking for ${bagText(offer.want)}`
       : offerLine(asker ? null : offer.fromName, offer.give, offer.want);
@@ -145,7 +145,7 @@ export function TradeToast() {
       <>
         <div className="trade-summary flex min-w-0 items-center justify-between gap-2">
           <p id={lineId} className="text-sm font-medium leading-5" title={line} data-testid={compact ? "trade-demand" : undefined}>
-            {!asker || compact ? <SeatDot color={fromColor} className="mr-1.5 size-3 align-[-1px]" /> : null}
+            {!asker || compact ? <SeatDot color={fromColor ?? "transparent"} className="mr-1.5 size-3 align-[-1px]" /> : null}
             {line}
           </p>
           {left === null ? null : (
@@ -240,7 +240,7 @@ export function TradeToast() {
       inert={fading || undefined}
       data-fade-ms={fadeMs}
       className={`trade-dock pointer-events-auto shrink-0 rounded-chip p-2${aboveChat ? " trade-above-chat" : ""}${fading ? " opacity-0" : " opacity-100"}`}
-      style={{ transition: fading ? `opacity ${fadeMs}ms linear` : undefined, ...(onTurn ? { "--seat-color": players?.find((p) => p.id === offer?.from)?.color } : {}) } as CSSProperties}
+      style={{ transition: fading ? `opacity ${fadeMs}ms linear` : undefined, ...(onTurn ? { "--seat-color": fromColor } : {}) } as CSSProperties}
       role="region"
       aria-label="Trade offer"
       aria-labelledby={offer ? lineId : undefined}

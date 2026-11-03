@@ -139,13 +139,12 @@ export const turnMark = <span aria-hidden="true" data-testid="turn-mark" />;
 // One seat's card: the menu's trigger (docs/design/chat.md "The player action menu") with its seat bubble beside it (#899). The rail
 // gives it `rail-<id>` and chip corners, the strip `seat-<id>`, control corners and a short name.
 function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: string; short?: string; className: string }) {
-  const current = useGame((s) => s.state!.current);
+  const turn = useGame((s) => s.state!.current === p.id);
   const menuFor = useGame((s) => s.menuFor);
   const openMenu = useGame((s) => s.openMenu);
   // #488: reactions only arrive at an online table; the chunk that draws them is loaded by then (see chunks.ts).
   const online = useGame((s) => s.mode === "online");
   const strip = short !== undefined;
-  const turn = p.id === current;
   // #531: the one persistent turn marker. The rail and the strip never mount together (Hud.tsx), so exactly one card carries it.
   // The ring is the seat's colour (--seat-color) and the turnMark is the non-colour cue; the strip's card also rises 2 px (styles.css).
   return (
@@ -160,7 +159,7 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
         data-menu-trigger={p.id}
         aria-expanded={menuFor === p.id}
         aria-controls={`player-menu-${p.id}`}
-        aria-current={p.id === current || undefined}
+        aria-current={turn || undefined}
         onClick={() => openMenu(menuFor === p.id ? null : p.id)}
         className={cn(
           "flex h-11 w-full cursor-pointer flex-col justify-center rounded-[inherit] text-left hover:bg-white/40",
