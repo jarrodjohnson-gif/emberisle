@@ -346,6 +346,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
         run: npm run dpr-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
+        run: npm run ssao-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
         run: npm run hotseat-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run tabs-prove
@@ -503,6 +505,8 @@ jobs:
         run: npm run contrast-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run keyboard-place-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+        run: npm run placement-glow-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run upgrade-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
