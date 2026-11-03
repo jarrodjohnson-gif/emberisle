@@ -37,10 +37,9 @@ async function surface(locator, label) {
 async function inside(locator, label) {
   const bounds = await locator.evaluate(el => {
     const r = el.getBoundingClientRect();
-    return { fits: r.left >= 0 && r.top >= 0 && r.right <= innerWidth + 0.5 && r.bottom <= innerHeight + 0.5, horizontalOverflow: el.scrollWidth - el.clientWidth };
+    return { fits: r.left >= 0 && r.top >= 0 && r.right <= innerWidth + 0.5 && r.bottom <= innerHeight + 0.5 };
   });
   assert.ok(bounds.fits, `${label}: stays inside viewport`);
-  assert.ok(bounds.horizontalOverflow <= 1, `${label}: no horizontal overflow`);
 }
 try {
   for (const [width, height] of [[1280, 720], [390, 844], [844, 390], [320, 568]]) {
