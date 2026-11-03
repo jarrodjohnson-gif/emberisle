@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -46,8 +46,47 @@ function buildSha(): string {
   }
 }
 
+// #1262: Ruffle and the Sandwich Stacker SWF are files under /minigames/, not JS imports. The build copies them into
+// dist/minigames/ (source maps left out); the dev server reads the same paths from node_modules and docs/spike/928.
+const RUFFLE_DIR = fileURLToPath(new URL("./node_modules/@ruffle-rs/ruffle/", import.meta.url));
+const SWF_FILE = fileURLToPath(new URL("./docs/spike/928/sandwichStacker.swf", import.meta.url));
+const MINIGAME_TYPES: Record<string, string> = { ".js": "text/javascript", ".wasm": "application/wasm", ".swf": "application/x-shockwave-flash" };
+function minigameFiles(): Map<string, string> {
+  const files = new Map<string, string>([["sandwichStacker.swf", SWF_FILE]]);
+  for (const f of readdirSync(RUFFLE_DIR)) {
+    if (f.endsWith(".map") || !statSync(RUFFLE_DIR + f).isFile()) continue;
+    files.set(`ruffle/${f}`, RUFFLE_DIR + f);
+  }
+  return files;
+}
+function minigames(): Plugin {
+  return {
+    name: "emberisle-minigames",
+    generateBundle() {
+      for (const [name, file] of minigameFiles()) this.emitFile({ type: "asset", fileName: `minigames/${name}`, source: readFileSync(file) });
+    },
+    configureServer(server) {
+      const files = minigameFiles();
+      server.middlewares.use("/minigames", (req, res, next) => {
+        let name = "";
+        try {
+          // A bare "%" in the path throws. That request is not a minigame file.
+          name = decodeURIComponent((req.url ?? "").split("?")[0]).slice(1);
+        } catch {
+          return next();
+        }
+        const file = files.get(name);
+        if (!file) return next();
+        const ext = file.slice(file.lastIndexOf("."));
+        res.setHeader("content-type", MINIGAME_TYPES[ext] ?? "application/octet-stream");
+        res.end(readFileSync(file));
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss(), preloadChunks()],
+  plugins: [react(), tailwindcss(), preloadChunks(), minigames()],
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   define: {
     __BUILD_SHA__: JSON.stringify(buildSha()),
