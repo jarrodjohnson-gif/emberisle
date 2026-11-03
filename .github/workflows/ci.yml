@@ -383,6 +383,8 @@ jobs:
         run: npm run lobby-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run my-numbers-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run invite-night-prove
       # pages-prove rebuilds dist/ under /emberisle/; browser-a has no later dist/ reader.
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run pages-prove
