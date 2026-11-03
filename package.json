@@ -94,6 +94,7 @@
     "label-commands-prove": "node scripts/label-commands-prove.mjs",
     "dice-prove": "node --import ./server/register.mjs scripts/dice-prove.mjs",
     "dpr-prove": "node scripts/dpr-prove.mjs",
+    "ssao-prove": "node scripts/ssao-prove.mjs",
     "served-prove": "node scripts/tabs-prove.mjs --served",
     "size-prove": "node scripts/size-prove.mjs",
     "size-delta-prove": "node scripts/size-delta-prove.mjs",
