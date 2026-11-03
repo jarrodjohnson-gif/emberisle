@@ -2,10 +2,14 @@
 // Lives in its own lazy chunk so the first-load index stays inside the growth allowance.
 // The list rides the WebSocket `{type:"list"}` → `openTables` path — no HTTP /tables poll.
 import { useEffect, useState } from "react";
-import { Globe, Lock } from "lucide-react";
+import { createLucideIcon } from "lucide-react";
 import { useGame } from "@/lib/game/store";
 import { connectTable, hostUrl, type OpenTableEntry } from "@/lib/net/table";
 import { Button } from "@/components/ui/button";
+
+// Same globe and lock marks, with short keys so the list warning stays quiet and the chunk stays under its ceiling.
+const Globe = createLucideIcon("g", [["circle", { cx: "12", cy: "12", r: "10", key: "a" }], ["path", { d: "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20", key: "b" }], ["path", { d: "M2 12h20", key: "c" }]]);
+const Lock = createLucideIcon("l", [["rect", { width: "18", height: "11", x: "3", y: "11", rx: "2", ry: "2", key: "a" }], ["path", { d: "M7 11V7a5 5 0 0 1 10 0v4", key: "b" }]]);
 
 // Only the rules host marks its served HTML. Static root builds also support offline play.
 function hostExpected(): boolean {
@@ -100,7 +104,6 @@ export function OpenModeToggle({ openMode, setOpenMode }: {
   openMode: boolean;
   setOpenMode: (toggle: (old: boolean) => boolean) => void;
 }) {
-  const VisibilityIcon = openMode ? Globe : Lock;
   return (
     <Button
       variant="ghost"
@@ -111,7 +114,7 @@ export function OpenModeToggle({ openMode, setOpenMode }: {
       data-testid="open-mode-toggle"
       onClick={() => setOpenMode((m) => !m)}
     >
-      <VisibilityIcon size={16} aria-hidden />
+      {openMode ? <Globe size={16} aria-hidden /> : <Lock size={16} aria-hidden />}
     </Button>
   );
 }
