@@ -9,6 +9,38 @@ import path from "node:path";
 const WORKFLOW = new URL("../.github/workflows/soak.yml", import.meta.url);
 const yaml = readFileSync(WORKFLOW, "utf8");
 const scripts = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).scripts;
+// #1032/#1124: the owner paused automatic runs; retain the manual entry point.
+// Read the workflow's block-style on: mapping, excluding comments and nested input keys.
+function assertManualOnly(text) {
+  const lines = text.split("\n").map((line) => line.replace(/#.*$/, ""));
+  const starts = lines.flatMap((line, i) => /^on:\s*$/.test(line) ? [i] : []);
+  assert.equal(starts.length, 1, "soak has exactly one block-style on: mapping");
+  const events = [];
+  for (let i = starts[0] + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+    if (!/^\s/.test(line)) break;
+    if (!/^  \S/.test(line)) continue;
+    const event = line.match(/^  (?:([a-z_]+)|"([a-z_]+)"|'([a-z_]+)'):(?:\s|$)/);
+    assert.ok(event, "soak trigger keys use direct event names");
+    events.push(event[1] ?? event[2] ?? event[3]);
+  }
+  assert.deepEqual(events, ["workflow_dispatch"], "soak stays manual-only until a new owner decision");
+}
+const manual = "# schedule: documentation only\non:\n  workflow_dispatch:\n    inputs:\n      schedule:\n        description: Optional manual input\npermissions:\n  contents: read\n";
+assertManualOnly(manual);
+for (const [name, fixture] of [
+  ["restored schedule", manual.replace("  workflow_dispatch:", "  schedule:\n    - cron: '17 9 * * *'\n  workflow_dispatch:")],
+  ["quoted schedule", manual.replace("  workflow_dispatch:", "  'schedule':\n    - cron: '17 9 * * *'\n  workflow_dispatch:")],
+  ["automatic push", manual.replace("  workflow_dispatch:", "  push:\n  workflow_dispatch:")],
+  ["missing manual entry point", "on:\n  schedule:\n    - cron: '17 9 * * *'\n"],
+  ["duplicate on: mapping", `${manual}on:\n  schedule:\n    - cron: '17 9 * * *'\n`],
+]) {
+  assert.throws(() => assertManualOnly(fixture), `trigger guard rejects ${name}`);
+  console.log(`ok trigger guard rejects ${name}`);
+}
+assertManualOnly(yaml);
+console.log("ok manual-only soak: workflow_dispatch retained; automatic triggers absent");
 // Named steps in this workflow use run: |. Stop at the next YAML key at the run key's indentation.
 function shellBlocks(text) {
   const lines = text.split("\n"), blocks = [];

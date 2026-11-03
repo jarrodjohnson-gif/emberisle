@@ -1,0 +1,28 @@
+
+> lobby-prove
+> node scripts/lobby-prove.mjs
+
+ok title: deleting every letter leaves the field empty (it no longer snaps back to Ember) +0.4s
+ok title: retyping after clearing gives exactly what was typed +0.4s
+ok title: leaving an empty field commits the default, Ember +0.4s
+ok title: spaces are allowed while editing +0.4s
+ok title: blur trims and remembers the name +0.4s
+ok title: hosting with an empty field sits down as Ember +0.9s
+ok title: and Ember is what is remembered +0.9s
+ok lobby: each tab has one tap-to-rename name, its own +1.3s
+ok lobby: tapping your name opens a focused input, 16 characters at most +1.4s
+ok lobby: the input stops at the title's length +1.4s
+ok lobby: the new name is on the renamer's own seat list +1.4s
+ok lobby: the rename is also the name the title remembers +1.4s
+ok lobby: Enter closes the input +1.4s
+ok lobby: Escape keeps the old name +1.5s
+ok lobby: an empty name is not sent; the old one stays +1.5s
+ok lobby: after a reload the renamed seat is still one seat on the host +2.5s
+ok lobby: a guest has no Add bot +2.5s
+ok lobby: the host has Add bot on each of the two Empty seats +2.5s
+ok lobby: a guest still cannot add or remove +2.6s
+ok lobby: the host can remove the bot, and add one more +2.6s
+ok lobby: a bot counts toward the three: the status asks for readiness, not for players +2.7s
+ok a table of 2 people + 1 bot starts (human:Ember,human:Gus,bot:Bot) +2.9s
+ok zero console errors in all tabs +2.9s
+lobby prove ok

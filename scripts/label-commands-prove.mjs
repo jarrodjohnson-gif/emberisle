@@ -427,4 +427,19 @@ await prove('label-commands-prove is registered for CI', async () => {
   const ci = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
   assert.match(ci, /npm run label-commands-prove/);
 });
+await prove('each command in KNOWN appears in the workflow if: guard', async () => {
+  const guardMatch = workflow.match(/jobs:\s*\n\s*label:\s*\n\s*if:\s*>-?\s*\n((?:\s+.*\n)+?)\s*runs-on:/);
+  assert.ok(guardMatch, 'found label job if: guard in workflow');
+  const guard = guardMatch[1];
+  const statusBlock = source.match(/const STATUS = \{[\s\S]*?\};/)[0];
+  const knownBlock = source.match(/const KNOWN = \[[\s\S]*?\];/)[0];
+  const KNOWN = vm.runInNewContext(`(() => { ${statusBlock} ${knownBlock} return KNOWN; })()`);
+  assert.ok(KNOWN.length > 0, 'KNOWN is non-empty');
+  for (const cmd of KNOWN) {
+    assert.ok(
+      guard.includes(`'${cmd}'`) || guard.includes(`"${cmd}"`),
+      `command ${cmd} from KNOWN must appear in label-commands.yml job if: guard`
+    );
+  }
+});
 console.log(`PASS ${checks} workflow proof groups`);

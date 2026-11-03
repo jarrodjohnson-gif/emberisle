@@ -1,0 +1,13 @@
+{
+  "sourceCommit": "ff0728ad1823f1f2ef010070692ef51e0c21614e",
+  "oldRuntime": "6e818be527b50bc5bf7b4e4d79c3cc32d7d76702",
+  "builtBase": "d91388b4b684614d80f6dd1d6cb739dd4f69860f",
+  "node": "v24.19.0",
+  "browser": "153.0.8010.12",
+  "nativeFullProof": "pass; real host; two clients; six viewports; zero browser errors;45 code-fit records",
+  "matchedControl": "old: caught actual AssertionError; candidate: all same codeFits assertions pass",
+  "knownReadability": "controlled DejaVuSans WWWW/Copied still fails14.8136<15; not actual hosted font attribution",
+  "firstCandidateFailure": "fractional-after did not trigger fitting after font override and still failed; retained separately; paired triggered helper is the valid old/fixed comparison",
+  "sandboxFailure": "first loosen invocation EPERM spawning git; escalated exact committed-source audit passes",
+  "legacyRawLabelCorrection": "The untouched fractional-before/after JSON source string runtime unchanged99a was copied from the older helper. Before used6e runtime (byte-equal99a); after used the pending ff0728 Range candidate. Neither is the matched triggered comparison; use fractional-triggered-{before,after} and the explicit sourceCommit above."
+}

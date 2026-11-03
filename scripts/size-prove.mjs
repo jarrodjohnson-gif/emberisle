@@ -21,6 +21,9 @@ const DIR = "dist/assets";
 // Hard ceilings, set 2026-10-19 (#868) from main's gzip sizes (index 122150 B, IslandCanvas 199470 B) plus generous room:
 // +3 kB on the two big chunks, about +1 kB on the lazy ones.
 const CEILINGS = [
+  // #646: lazy public needs and picker; reviewed ceiling retained.
+  { name: "SeatNeeds", gzipBytes: 1900 },
+  { name: "LobbyView", gzipBytes: 2500 },
   // #553: shared on-demand table transport, measured 2.08 kB; existing caps stay fixed.
   { name: "table", gzipBytes: 2200 },
   // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
@@ -47,6 +50,8 @@ const CEILINGS = [
   // #538: coast inspection UI loads separately; measured 1030 B.
   { name: "DockInspection", gzipBytes: 1200 },
   { name: "HandRates", gzipBytes: 800 },
+  // #831: shared quantity cards load separately.
+  { name: "TradeResource", gzipBytes: 1650 },
   // #833: title open-table list; measured ~1.1 kB after extract from index.
   { name: "OpenTables", gzipBytes: 1300 },
   // #833: the existing closed title settings body loads separately; new chunk only.

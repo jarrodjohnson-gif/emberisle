@@ -1,0 +1,2 @@
+$ git checkout --detach cf1f5082038d5b74de3fd475e2b2ea8047b023a2
+HEAD is now at cf1f508 Merge current audio inventory into the quiet ambience candidate

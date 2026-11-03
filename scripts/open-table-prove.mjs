@@ -18,7 +18,13 @@ const hostLog = [];
 async function boot(port = 0) {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL("../server/", import.meta.url),
-    env: { ...process.env, PORT: String(port), ROOMS_DIR, PROFILES_DIR: path.join(ROOMS_DIR, "profiles") },
+    env: {
+      ...process.env,
+      PORT: String(port),
+      ROOMS_DIR,
+      PROFILES_DIR: path.join(ROOMS_DIR, "profiles"),
+      RESULTS_DIR: path.join(ROOMS_DIR, "results"),
+    },
   });
   host.stderr.on("data", (d) => hostLog.push(String(d).trimEnd()));
   return await new Promise((resolve, reject) => {
@@ -85,15 +91,32 @@ async function openTab(name, viewport = { width: 1280, height: 720 }) {
     window.discoveryDials = [];
     window.discoveryLive = 0;
     const NativeSocket = WebSocket;
+    // Vite's dev socket stays open after the title unmounts. Count only the rules host.
+    const pinned = new URL(new URLSearchParams(location.search).get("host") || "about:blank");
+    const tracked = new WeakSet();
+    const isDiscovery = (url) => {
+      try {
+        const got = new URL(String(url));
+        return got.protocol === pinned.protocol && got.host === pinned.host;
+      } catch {
+        return false;
+      }
+    };
     window.WebSocket = class extends NativeSocket {
       constructor(...args) {
         super(...args);
+        if (!isDiscovery(args[0])) return;
+        tracked.add(this);
         window.discoveryDials.push(performance.now());
         window.discoveryLive++;
-        this.addEventListener("close", () => window.discoveryLive--);
+        this.addEventListener("close", () => {
+          if (!tracked.has(this)) return;
+          tracked.delete(this);
+          window.discoveryLive--;
+        });
       }
       send(data) {
-        window.discoveryTraffic.push(JSON.parse(data));
+        if (tracked.has(this)) window.discoveryTraffic.push(JSON.parse(String(data)));
         return super.send(data);
       }
     };

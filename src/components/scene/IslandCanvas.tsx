@@ -15,20 +15,30 @@ export default function IslandCanvas() {
   const ref = useRef<HTMLCanvasElement>(null);
   const [docks, setDocks] = useState<DockTarget[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
+  const [fallback, setFallback] = useState<string | null>(null);
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
-    const renderer = new IsleRenderer(
-      canvas,
-      (kind, id) => {
-        const g = useGame.getState();
-        g.setPendingPlace(null);
-        if (kind === "hex") g.pickHex(id);
-        if (kind === "vertex") g.pickVertex(id);
-        if (kind === "edge") g.pickEdge(id);
-      },
-      (sel) => useGame.getState().setPendingPlace(sel),
-    );
+    let renderer: IsleRenderer;
+    try {
+      renderer = new IsleRenderer(
+        canvas,
+        (kind, id) => {
+          const g = useGame.getState();
+          g.setPendingPlace(null);
+          if (kind === "hex") g.pickHex(id);
+          if (kind === "vertex") g.pickVertex(id);
+          if (kind === "edge") g.pickEdge(id);
+        },
+        (sel) => useGame.getState().setPendingPlace(sel),
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      const isWebGL = Boolean(e && typeof e === "object" && (e as { isWebGL?: boolean }).isWebGL) || /webgl/i.test(msg);
+      console.error(isWebGL ? "WebGL creation failed; 3D view unavailable:" : "Renderer init failed; 3D view failed to start:", e);
+      setFallback((current) => current ?? (isWebGL ? "3D view unavailable" : "3D view failed to start"));
+      return;
+    }
     renderer.onDocks = setDocks;
     renderer.onDock = (id) => {
       const s = useGame.getState();
@@ -42,7 +52,19 @@ export default function IslandCanvas() {
     renderer.onView = (playView) => queueMicrotask(() => useGame.setState({ playView }));
     let action = "";
     let chrome = "";
+    let failed = false;
+    let unsub: () => void = () => {};
+    const fail = (e: unknown) => {
+      if (failed) return;
+      failed = true;
+      unsub();
+      console.error("Renderer sync failed; 3D view unavailable:", e);
+      setFallback("3D view unavailable");
+      renderer.dispose();
+    };
+
     const sync = () => {
+      if (failed) return;
       const s = useGame.getState();
       renderer.setWaterChoice(s.waterChoice);
       renderer.setPlayView(s.viewChoice);
@@ -77,16 +99,32 @@ export default function IslandCanvas() {
         renderer.setBoard(demo, { vertices: [], edges: [], hexes: [] }, false);
       }
     };
-    sync();
-    const unsub = useGame.subscribe(sync);
+    try {
+      sync();
+    } catch (e) {
+      fail(e);
+      return;
+    }
+    unsub = useGame.subscribe(() => {
+      try {
+        sync();
+      } catch (e) {
+        fail(e);
+      }
+    });
     return () => {
       unsub();
-      renderer.dispose();
+      if (!failed) renderer.dispose();
     };
   }, []);
 
   return <>
     <canvas ref={ref} className="absolute inset-0 h-full w-full" />
+    {fallback && (
+      <div data-testid="canvas-fallback" className="absolute inset-0 flex items-center justify-center bg-bg p-6 text-center select-none pointer-events-none">
+        <p className="text-sm text-muted">{fallback}</p>
+      </div>
+    )}
     {docks.length > 0 && <LazyBoundary retryKey={selected ?? ""} failed={null}><DockInspection docks={docks} selected={selected} setSelected={setSelected} /></LazyBoundary>}
   </>;
 }

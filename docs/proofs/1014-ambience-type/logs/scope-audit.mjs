@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';import{readFileSync,writeFileSync}from'node:fs';import{execFileSync}from'node:child_process';import{pathToFileURL}from'node:url';import{resolve}from'node:path';
+const old=(ref,p)=>execFileSync('git',['show',`${ref}:${p}`],{maxBuffer:1<<27});
+const base='0c0e0c3';const source=readFileSync('scripts/audio-level-lib.mjs','utf8');const mainText=old(base,'scripts/audio-level-lib.mjs').toString();
+const current=await import(pathToFileURL(resolve('scripts/audio-level-lib.mjs')));const main=await import('data:text/javascript;base64,'+Buffer.from(mainText).toString('base64'));
+const types={...current.TYPE_OF};assert.deepEqual(types.ambience,['amb_sea']);delete types.ambience;assert.deepEqual(types,main.TYPE_OF);
+const targets={...current.TARGETS};assert.deepEqual(targets.ambience,{method:'lufs',target:-30.6});delete targets.ambience;assert.deepEqual(targets,main.TARGETS);assert.equal(current.TOLERANCE,main.TOLERANCE);assert.equal(current.MAX_TRUE_PEAK,main.MAX_TRUE_PEAK);
+const strip=s=>s.replace(/export const TYPE_OF = \{[\s\S]*?^\};/m,'').replace(/^export const TARGETS = .*$/m,'');assert.equal(strip(source),strip(mainText),'existing measurement and levelling algorithms unchanged');
+for(const p of ['scripts/level-audio.mjs','scripts/audio-level-prove.mjs'])assert.ok(readFileSync(p).equals(old(base,p)),p);
+assert.ok(readFileSync('scripts/ambience-loop-prove.mjs').equals(old('8e38bda','scripts/ambience-loop-prove.mjs')),'all original loop proof bytes retained');
+const mixer=readFileSync('scripts/sound-mixer-prove.mjs','utf8'),before=old(base,'scripts/sound-mixer-prove.mjs').toString();assert.equal(mixer.slice(mixer.indexOf('const groups =')),before.slice(before.indexOf('const groups =')),'all original runtime-key groups and mixer checks unchanged');
+const gen=readFileSync('scripts/make-ambience.mjs','utf8'),oldGen=old('8e38bda','scripts/make-ambience.mjs').toString();assert.equal(gen.slice(gen.indexOf('export function makePcm()'),gen.indexOf('\nfunction encodeRaw(')),oldGen.slice(oldGen.indexOf('export function makePcm()'),oldGen.indexOf('\nexport function encode(')),'original PCM recipe unchanged');
+const assets=execFileSync('git',['ls-tree','-r','--name-only',base,'public/audio'],{encoding:'utf8'}).trim().split('\n').filter(p=>/\.(mp3|wav)$/.test(p));for(const p of assets)assert.ok(readFileSync(p).equals(old(base,p)),p);
+assert.equal(execFileSync('git',['diff','--name-only',base,'--','src','server'],{encoding:'utf8'}),'','runtime/UI/server files unchanged');
+const p=JSON.parse(readFileSync('package.json'));assert.equal(p.scripts['ambience-loop-prove'],'node scripts/ambience-loop-prove.mjs');delete p.scripts['ambience-loop-prove'];assert.equal(p.devDependencies['@ffmpeg-installer/ffmpeg'],'1.1.0');delete p.devDependencies['@ffmpeg-installer/ffmpeg'];assert.deepEqual(p,JSON.parse(old(base,'package.json')));
+const step="      - if: needs.changes.outputs.docs_only != 'true'\n        run: npm run ambience-loop-prove\n";const ci=readFileSync('.github/workflows/ci.yml','utf8');assert.equal(ci.split(step).length,2);assert.equal(ci.replace(step,''),old(base,'.github/workflows/ci.yml').toString());assert.ok(ci.indexOf('run: npm run ambience-loop-prove')>ci.indexOf('run: npm run audio-level-prove'));
+console.log(`PASS: ${assets.length} existing audio files byte-identical to main; all old types/targets/tolerances/peak limits and measurement/levelling algorithms unchanged.`);
+console.log('PASS: original PCM recipe, loop proof, all runtime-key groups and mixer assertions retained; runtime/UI/server files unchanged.');
+console.log('PASS: exact main package/CI plus pinned encoder and one loop registration after existing FFmpeg/audio-level setup; all eight legs retained.');

@@ -86,6 +86,7 @@ export function hudInsets(cssW: number, cssH: number, coarse: boolean, safe: Par
 // wide, the docked right rail (chat, offer, PlaceList: 312 px) and the offer's taller bottom stack (220 px) ramp in.
 // The widest upright phone whose main-phase action row takes two lines: styles.css forces the wrap up to here and forbids it above.
 // The declared bottom carries 4 px for sub-pixel font differences.
+// A desktop tray carries 6 px more at the top for the +N / -N pill (#825: 22 to 28 px), so its bottom is 186, not 180.
 export const TRAY_WRAP_MAX = 400;
 const RAIL_FROM = 960;
 const RAIL_FULL = 1024;
@@ -95,7 +96,7 @@ export function playHole(cssW: number, cssH: number, phone: boolean, safe: Parti
   else if (phone) i = { top: 68, right: 12, bottom: 12, left: 284 };
   else {
     const t = Math.min(1, Math.max(0, (cssW - RAIL_FROM) / (RAIL_FULL - RAIL_FROM)));
-    i = { top: 68, right: 12 + 300 * t, bottom: 180 + 40 * t, left: 216 };
+    i = { top: 68, right: 12 + 300 * t, bottom: 186 + 40 * t, left: 216 };
   }
   return { top: i.top + Math.max(0, (safe.top ?? 0) - 12), right: i.right + (safe.right ?? 0), bottom: i.bottom + (safe.bottom ?? 0), left: i.left + (safe.left ?? 0) };
 }

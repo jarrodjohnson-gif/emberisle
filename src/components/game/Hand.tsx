@@ -20,8 +20,8 @@ export const RESOURCE_PAINT: Record<Resource, string> = {
 
 // A gain or loss cue holds for FLASH_MS, then fades over FADE_MS (#773, docs/design/goods-cards-v1). The CSS keyframes in
 // hand-motion.css run for the same CUE_MS.
-const FLASH_MS = 2200;
-const FADE_MS = 300;
+const FLASH_MS = 2500;
+const FADE_MS = 500;
 const CUE_MS = FLASH_MS + FADE_MS;
 const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
 type ResourceFlash = { delta: number; id: number };
