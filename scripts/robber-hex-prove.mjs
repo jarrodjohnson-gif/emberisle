@@ -1,4 +1,4 @@
-// #826: the owner's blocked hex/token palette is 50% dimmed to black with readable light ink; the Wastes stay plain;
+// #826: the owner's blocked hex/token palette is 75% dimmed to black with readable light ink; the Wastes stay plain;
 // moving him clears the old hex. Run: node scripts/robber-hex-prove.mjs
 import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
@@ -119,11 +119,10 @@ async function pixelProof(width, height) {
   const blocked = await sample();
   check(`${width}x${height}: rendered terrain sample covers the hex`, before.count >= 500 && blocked.count >= 500, { before, blocked });
   check(`${width}x${height}: rendered blocked hex is at least 10% darker`, blocked.mean <= before.mean * 0.9, { before: before.mean, blocked: blocked.mean });
-  // Blocked hex luminance at ROBBER_HEX_DIM = 0.5: at most 0.80 of normal terrain luminance.
-  // The floor (0.15) was chosen because normal terrain luminances range from ~0.33 (dark clay/ore)
-  // to ~0.55 (pasture); at 50% dimming, the darkest terrain sits at ~0.165, which stays comfortably
-  // above the 0.15 floor while plain black is much lower (<= 0.08).
-  const MAX_BLOCKED_LUM_RATIO = 0.8;
+  // Blocked hex luminance at ROBBER_HEX_DIM = 0.75: at most 0.60 of normal terrain luminance.
+  // The floor (0.15) was chosen because normal grain luminance sits at ~0.55; at 75% dimming,
+  // grain luminance sits at ~0.27, which stays comfortably above the 0.15 floor while plain black is much lower (<= 0.08).
+  const MAX_BLOCKED_LUM_RATIO = 0.60;
   const MIN_BLOCKED_LUM_FLOOR = 0.15;
   check(`${width}x${height}: blocked terrain is dimmed but above plain black`, blocked.mean <= before.mean * MAX_BLOCKED_LUM_RATIO && blocked.mean >= MIN_BLOCKED_LUM_FLOOR, blocked);
   const screenshotFrame = await page.evaluate(() => {
@@ -225,7 +224,7 @@ try {
         disc: disc?.material.color.getHexString() ?? null,
         label: label?.material.color.getHexString() ?? null,
         restDisc: disc?.material.userData.rest?.getHexString?.() ?? null,
-        expectedDisc: disc?.material.userData.rest ? disc.material.userData.rest.clone().multiplyScalar(1 - 0.5).getHexString() : null,
+        expectedDisc: disc?.material.userData.rest ? disc.material.userData.rest.clone().multiplyScalar(1 - 0.75).getHexString() : null,
         background, lightInk, faceHash, textureId: label?.material.map.uuid,
       };
     };
@@ -291,7 +290,7 @@ try {
     "move: token disc and face are dimmed (dark face)",
     moved.afterA?.tokenA?.disc &&
       moved.afterA.tokenA.disc === moved.afterA.tokenA.expectedDisc &&
-      JSON.stringify(moved.afterA.tokenA.background) === "[50,50,50,255]",
+      JSON.stringify(moved.afterA.tokenA.background) === "[25,25,25,255]",
     moved.afterA?.tokenA,
   );
   check("move: light numeral and pips remain on the black face", moved.afterA?.tokenA?.lightInk >= 1000, moved.afterA?.tokenA);
