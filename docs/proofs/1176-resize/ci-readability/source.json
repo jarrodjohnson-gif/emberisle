@@ -1,0 +1,10 @@
+{
+  "diagnosticProofCommit": "5a39dcbfa668dc08da777c173d14a2ec28023cc0",
+  "runtimeCommit": "5ef0005a3af0599a3d426dee7dd040baaf49ba39",
+  "proofSHA256": "c619876514dcde7da0feed267542db803d0bb0ad877c18e34f3f86fb553d5c1a",
+  "runtimeUnchanged": true,
+  "assertionCalls": 44,
+  "allConditionsAndMessagesUnchanged": true,
+  "fullSixViewportRerunAfterDiagnostic": "not run",
+  "localControlledFontReproduction": "not actual CI font attribution"
+}

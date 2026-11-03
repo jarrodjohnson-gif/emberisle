@@ -21,6 +21,8 @@ const DIR = "dist/assets";
 // Hard ceilings, set 2026-10-19 (#868) from main's gzip sizes (index 122150 B, IslandCanvas 199470 B) plus generous room:
 // +3 kB on the two big chunks, about +1 kB on the lazy ones.
 const CEILINGS = [
+  // #646: lazy public needs and picker; reviewed ceiling retained.
+  { name: "SeatNeeds", gzipBytes: 1900 },
   { name: "LobbyView", gzipBytes: 2500 },
   // #553: shared on-demand table transport, measured 2.08 kB; existing caps stay fixed.
   { name: "table", gzipBytes: 2200 },

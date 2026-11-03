@@ -567,6 +567,8 @@ async function accessibility(page, tag) {
     ["More Wheat want", more(page, "grain", "want")],
     ["More Stone want", more(page, "ore", "want")],
     ["Fewer Stone want", fewer(page, "ore", "want")],
+    // #646: five Need stops (Need Wood to Need Stone) after the cards, at every size.
+    ...["Wood", "Brick", "Sheep", "Wheat", "Stone"].map((good) => [`Need ${good}`, panelFor(page).getByRole("button", { name: `Need ${good}`, exact: true })]),
     ["Ask", askFor(page)],
     ["Bank", bankFor(page)],
     ["Close", panelFor(page).getByRole("button", { name: "Close", exact: true })],

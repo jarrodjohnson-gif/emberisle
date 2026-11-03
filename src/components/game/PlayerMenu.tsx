@@ -10,6 +10,9 @@ import { cards, hiddenCount, publicVP, publicScoreBreakdown } from "@/lib/game/r
 import { useGame } from "@/lib/game/store";
 import type { Seat } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
+import { chunk, LazyBoundary } from "@/lib/lazy";
+
+const MenuNeeds = chunk(() => import("@/components/game/SeatNeeds")).pick(module => module.MenuNeeds);
 
 // The seat's socket dropped and the table is holding it (docs/design/spectator.md "away").
 export function seatAway(seats: Seat[], p: PlayerState) {
@@ -104,6 +107,7 @@ export function PlayerMenu({ player: p, className, heading }: { player: PlayerSt
           {p.name}
         </p>
       ) : null}
+      <LazyBoundary failed={null}><MenuNeeds player={p.id} /></LazyBoundary>
       <dl data-testid="menu-facts" className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 px-2 py-1 text-xs text-zinc-600">
         {facts.map(([label, n]) => (
           <div key={label} className="contents">

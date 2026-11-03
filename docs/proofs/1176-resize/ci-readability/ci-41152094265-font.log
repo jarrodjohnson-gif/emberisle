@@ -1,0 +1,568 @@
+﻿2026-10-31T00:50:20.9598758Z Current runner version: '2.338.2'
+2026-10-31T00:50:20.9622998Z ##[group]Runner Image Provisioner
+2026-10-31T00:50:20.9623802Z Hosted Compute Agent
+2026-10-31T00:50:20.9624356Z Version: 20261021.618
+2026-10-31T00:50:20.9624912Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+2026-10-31T00:50:20.9625573Z Build Date: 2026-10-21T00:45:21Z
+2026-10-31T00:50:20.9626321Z Worker ID: {a312d68d-cfda-423f-8a00-a200b0d723f2}
+2026-10-31T00:50:20.9626971Z Region: westus3
+2026-10-31T00:50:20.9627522Z Cloud: Azure
+2026-10-31T00:50:20.9628223Z ##[endgroup]
+2026-10-31T00:50:20.9629204Z ##[group]Operating System
+2026-10-31T00:50:20.9629650Z Ubuntu
+2026-10-31T00:50:20.9630011Z 24.04.5
+2026-10-31T00:50:20.9630325Z LTS
+2026-10-31T00:50:20.9630695Z ##[endgroup]
+2026-10-31T00:50:20.9631046Z ##[group]Runner Image
+2026-10-31T00:50:20.9631473Z Image: ubuntu-24.04
+2026-10-31T00:50:20.9631873Z Version: 20261025.353.1
+2026-10-31T00:50:20.9632683Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261025.353/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-31T00:50:20.9633584Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261025.353
+2026-10-31T00:50:20.9634182Z ##[endgroup]
+2026-10-31T00:50:20.9634982Z ##[group]GITHUB_TOKEN Permissions
+2026-10-31T00:50:20.9636536Z Contents: read
+2026-10-31T00:50:20.9636892Z Metadata: read
+2026-10-31T00:50:20.9637232Z Packages: read
+2026-10-31T00:50:20.9637678Z ##[endgroup]
+2026-10-31T00:50:20.9639321Z Secret source: Actions
+2026-10-31T00:50:20.9640003Z Cache mode: write
+2026-10-31T00:50:20.9640681Z Prepare workflow directory
+2026-10-31T00:50:20.9852197Z Prepare all required actions
+2026-10-31T00:50:20.9884431Z Getting action download info
+2026-10-31T00:50:21.2902378Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-31T00:50:21.3788102Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-10-31T00:50:21.4804880Z Download action repository 'actions/cache@v4' (SHA:0057852bfaa89a56745cba8c7296529d2fc39830)
+2026-10-31T00:50:21.5992699Z Download action repository 'actions/download-artifact@v4' (SHA:d3f86a106a0bac45b974a628896c90dbdf5c8093)
+2026-10-31T00:50:22.2132235Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-10-31T00:50:22.4229233Z Complete job name: browser-b (presentation)
+2026-10-31T00:50:22.5055892Z ##[group]Run actions/checkout@v4
+2026-10-31T00:50:22.5056352Z with:
+2026-10-31T00:50:22.5056630Z   repository: jarrodjohnson-gif/emberisle
+2026-10-31T00:50:22.5059277Z   token: ***
+2026-10-31T00:50:22.5059528Z   ssh-strict: true
+2026-10-31T00:50:22.5059785Z   ssh-user: git
+2026-10-31T00:50:22.5060051Z   persist-credentials: true
+2026-10-31T00:50:22.5081572Z   clean: true
+2026-10-31T00:50:22.5081861Z   sparse-checkout-cone-mode: true
+2026-10-31T00:50:22.5082188Z   fetch-depth: 1
+2026-10-31T00:50:22.5082445Z   fetch-tags: false
+2026-10-31T00:50:22.5082713Z   show-progress: true
+2026-10-31T00:50:22.5083013Z   lfs: false
+2026-10-31T00:50:22.5083264Z   submodules: false
+2026-10-31T00:50:22.5083535Z   set-safe-directory: true
+2026-10-31T00:50:22.5083840Z   allow-unsafe-pr-checkout: false
+2026-10-31T00:50:22.5084384Z ##[endgroup]
+2026-10-31T00:50:22.7514890Z Syncing repository: jarrodjohnson-gif/emberisle
+2026-10-31T00:50:22.7516530Z ##[group]Getting Git version info
+2026-10-31T00:50:22.7517338Z Working directory is '/home/runner/work/emberisle/emberisle'
+2026-10-31T00:50:22.7518399Z [command]/usr/bin/git version
+2026-10-31T00:50:22.7593136Z git version 2.56.0
+2026-10-31T00:50:22.7614116Z ##[endgroup]
+2026-10-31T00:50:22.7622568Z Temporarily overriding HOME='/home/runner/work/_temp/aaa19688-80f8-450d-9ddc-3808a16cf383' before making global git config changes
+2026-10-31T00:50:22.7624657Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-31T00:50:22.7627954Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/emberisle/emberisle
+2026-10-31T00:50:22.7690482Z Deleting the contents of '/home/runner/work/emberisle/emberisle'
+2026-10-31T00:50:22.7695605Z ##[group]Initializing the repository
+2026-10-31T00:50:22.7700363Z [command]/usr/bin/git init /home/runner/work/emberisle/emberisle
+2026-10-31T00:50:22.7818575Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-31T00:50:22.7819722Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-31T00:50:22.7820772Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-31T00:50:22.7821736Z hint: call:
+2026-10-31T00:50:22.7822261Z hint:
+2026-10-31T00:50:22.7822854Z hint: 	git config --global init.defaultBranch <name>
+2026-10-31T00:50:22.7823526Z hint:
+2026-10-31T00:50:22.7824109Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-31T00:50:22.7825172Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-31T00:50:22.7825989Z hint:
+2026-10-31T00:50:22.7826420Z hint: 	git branch -m <name>
+2026-10-31T00:50:22.7826931Z hint:
+2026-10-31T00:50:22.7827614Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-31T00:50:22.7828891Z Initialized empty Git repository in /home/runner/work/emberisle/emberisle/.git/
+2026-10-31T00:50:22.7838703Z [command]/usr/bin/git remote add origin https://github.com/jarrodjohnson-gif/emberisle
+2026-10-31T00:50:22.7889577Z ##[endgroup]
+2026-10-31T00:50:22.7890400Z ##[group]Disabling automatic garbage collection
+2026-10-31T00:50:22.7891939Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-31T00:50:22.7936374Z ##[endgroup]
+2026-10-31T00:50:22.7937110Z ##[group]Setting up auth
+2026-10-31T00:50:22.7940029Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-31T00:50:22.7980726Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-31T00:50:22.8325610Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-31T00:50:22.8363685Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-31T00:50:22.8560999Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-31T00:50:22.8598836Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-31T00:50:22.8795944Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-31T00:50:22.8840395Z ##[endgroup]
+2026-10-31T00:50:22.8841017Z ##[group]Fetching the repository
+2026-10-31T00:50:22.8850348Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +3b5500a2fce40e6020ede5e400fd0eee7b2075ad:refs/remotes/pull/1181/merge
+2026-10-31T00:50:25.0255298Z From https://github.com/jarrodjohnson-gif/emberisle
+2026-10-31T00:50:25.0255765Z  * [new ref]         3b5500a2fce40e6020ede5e400fd0eee7b2075ad -> pull/1181/merge
+2026-10-31T00:50:25.0259241Z ##[endgroup]
+2026-10-31T00:50:25.0259597Z ##[group]Determining the checkout info
+2026-10-31T00:50:25.0261729Z ##[endgroup]
+2026-10-31T00:50:25.0265392Z [command]/usr/bin/git sparse-checkout disable
+2026-10-31T00:50:25.0319350Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-31T00:50:25.0352670Z ##[group]Checking out the ref
+2026-10-31T00:50:25.0355000Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/1181/merge
+2026-10-31T00:50:25.3248902Z Note: switching to 'refs/remotes/pull/1181/merge'.
+2026-10-31T00:50:25.3249221Z 
+2026-10-31T00:50:25.3249415Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-31T00:50:25.3249694Z changes and commit them, and you can discard any commits you make in this
+2026-10-31T00:50:25.3250626Z state without impacting any branches by switching back to a branch.
+2026-10-31T00:50:25.3250875Z 
+2026-10-31T00:50:25.3251076Z If you want to create a new branch to retain commits you create, you may
+2026-10-31T00:50:25.3251453Z do so (now or later) by using -c with the switch command. Example:
+2026-10-31T00:50:25.3251672Z 
+2026-10-31T00:50:25.3251743Z   git switch -c <new-branch-name>
+2026-10-31T00:50:25.3251853Z 
+2026-10-31T00:50:25.3251932Z Or undo this operation with:
+2026-10-31T00:50:25.3252025Z 
+2026-10-31T00:50:25.3252093Z   git switch -
+2026-10-31T00:50:25.3252192Z 
+2026-10-31T00:50:25.3252338Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-31T00:50:25.3252504Z 
+2026-10-31T00:50:25.3252690Z HEAD is now at 3b5500a Merge 99a1d911bc7f7dda0b48462f573b6c74f7267c28 into 39e06ac3cc4547ad76763451e2fca1e7c8da3fdc
+2026-10-31T00:50:25.3282595Z ##[endgroup]
+2026-10-31T00:50:25.3331156Z [command]/usr/bin/git log -1 --format=%H
+2026-10-31T00:50:25.3362674Z 3b5500a2fce40e6020ede5e400fd0eee7b2075ad
+2026-10-31T00:50:25.3575650Z ##[group]Run actions/setup-node@v4
+2026-10-31T00:50:25.3575822Z with:
+2026-10-31T00:50:25.3575943Z   node-version: 22
+2026-10-31T00:50:25.3576059Z   cache: npm
+2026-10-31T00:50:25.3576242Z   cache-dependency-path: package-lock.json
+server/package-lock.json
+
+2026-10-31T00:50:25.3576457Z   always-auth: false
+2026-10-31T00:50:25.3576582Z   check-latest: false
+2026-10-31T00:50:25.3578235Z   token: ***
+2026-10-31T00:50:25.3578353Z ##[endgroup]
+2026-10-31T00:50:25.4612299Z Found in cache @ /opt/hostedtoolcache/node/22.23.4/x64
+2026-10-31T00:50:25.4616024Z (node:2126) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-31T00:50:25.4616797Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-31T00:50:25.4618602Z ##[group]Environment details
+2026-10-31T00:50:25.7978608Z node: v22.23.4
+2026-10-31T00:50:25.7979433Z npm: 10.9.9
+2026-10-31T00:50:25.7979901Z yarn: 1.22.22
+2026-10-31T00:50:25.7981179Z ##[endgroup]
+2026-10-31T00:50:25.7993814Z [command]/opt/hostedtoolcache/node/22.23.4/x64/bin/npm config get cache
+2026-10-31T00:50:25.8833857Z /home/runner/.npm
+2026-10-31T00:50:26.1081652Z Cache hit for: node-cache-Linux-x64-npm-49c9c2197aaa074bac6642d1c6c524e8bc63b921b50eb3440e9ab367d831c2b7
+2026-10-31T00:50:26.1159035Z (node:2126) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-31T00:50:27.3471976Z Received 46137344 of 87059028 (53.0%), 44.0 MBs/sec
+2026-10-31T00:50:27.6632878Z Received 87059028 of 87059028 (100.0%), 63.0 MBs/sec
+2026-10-31T00:50:27.6633140Z Cache Size: ~83 MB (87059028 B)
+2026-10-31T00:50:27.6675052Z [command]/usr/bin/tar -xf /home/runner/work/_temp/d7cffacb-1d76-4721-abdd-39e2e9f14a06/cache.tzst -P -C /home/runner/work/emberisle/emberisle --use-compress-program unzstd
+2026-10-31T00:50:27.7770323Z Cache restored successfully
+2026-10-31T00:50:27.7811861Z Cache restored from key: node-cache-Linux-x64-npm-49c9c2197aaa074bac6642d1c6c524e8bc63b921b50eb3440e9ab367d831c2b7
+2026-10-31T00:50:27.8568739Z ##[group]Run actions/cache@v4
+2026-10-31T00:50:27.8568925Z with:
+2026-10-31T00:50:27.8569058Z   path: node_modules
+server/node_modules
+
+2026-10-31T00:50:27.8569355Z   key: installed-v1-Linux-X64-v22.23.4-165477924890a8021063c72bf9d4b6e77755d748c3fe9e81474a81e9bd4244ed
+2026-10-31T00:50:27.8569641Z   enableCrossOsArchive: false
+2026-10-31T00:50:27.8569789Z   fail-on-cache-miss: false
+2026-10-31T00:50:27.8569932Z   lookup-only: false
+2026-10-31T00:50:27.8570055Z   save-always: false
+2026-10-31T00:50:27.8570180Z ##[endgroup]
+2026-10-31T00:50:27.9314617Z (node:2186) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-31T00:50:27.9315394Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-31T00:50:28.1341672Z Cache hit for: installed-v1-Linux-X64-v22.23.4-165477924890a8021063c72bf9d4b6e77755d748c3fe9e81474a81e9bd4244ed
+2026-10-31T00:50:28.1440124Z (node:2186) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-31T00:50:29.3632028Z Received 79825811 of 79825811 (100.0%), 76.5 MBs/sec
+2026-10-31T00:50:29.3633598Z Cache Size: ~76 MB (79825811 B)
+2026-10-31T00:50:29.3681642Z [command]/usr/bin/tar -xf /home/runner/work/_temp/febcd584-24e9-4b93-88f2-db0d0dc4e077/cache.tzst -P -C /home/runner/work/emberisle/emberisle --use-compress-program unzstd
+2026-10-31T00:50:29.8513494Z Cache restored successfully
+2026-10-31T00:50:29.8698153Z Cache restored from key: installed-v1-Linux-X64-v22.23.4-165477924890a8021063c72bf9d4b6e77755d748c3fe9e81474a81e9bd4244ed
+2026-10-31T00:50:29.9325986Z ##[group]Run actions/cache@v4
+2026-10-31T00:50:29.9326173Z with:
+2026-10-31T00:50:29.9326300Z   path: ~/.cache/ms-playwright
+2026-10-31T00:50:29.9326558Z   key: playwright-Linux-bcf554ecf856b82d17d36a206386fec07e0d6e51d01d425269ef0d723fac4c8f
+2026-10-31T00:50:29.9326829Z   enableCrossOsArchive: false
+2026-10-31T00:50:29.9326979Z   fail-on-cache-miss: false
+2026-10-31T00:50:29.9327124Z   lookup-only: false
+2026-10-31T00:50:29.9327248Z   save-always: false
+2026-10-31T00:50:29.9327371Z ##[endgroup]
+2026-10-31T00:50:30.0059689Z (node:2215) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-31T00:50:30.0060428Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-31T00:50:30.2068677Z Cache hit for: playwright-Linux-bcf554ecf856b82d17d36a206386fec07e0d6e51d01d425269ef0d723fac4c8f
+2026-10-31T00:50:30.2154218Z (node:2215) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-31T00:50:31.4634529Z Received 46137344 of 284185847 (16.2%), 44.0 MBs/sec
+2026-10-31T00:50:32.4640597Z Received 184549376 of 284185847 (64.9%), 88.0 MBs/sec
+2026-10-31T00:50:33.4653804Z Received 279991543 of 284185847 (98.5%), 88.9 MBs/sec
+2026-10-31T00:50:33.8519048Z Received 284185847 of 284185847 (100.0%), 80.0 MBs/sec
+2026-10-31T00:50:33.8520522Z Cache Size: ~271 MB (284185847 B)
+2026-10-31T00:50:33.8603120Z [command]/usr/bin/tar -xf /home/runner/work/_temp/330f61bc-8075-4f7d-bdf5-a40337f04fca/cache.tzst -P -C /home/runner/work/emberisle/emberisle --use-compress-program unzstd
+2026-10-31T00:50:34.5685645Z Cache restored successfully
+2026-10-31T00:50:34.5865767Z Cache restored from key: playwright-Linux-bcf554ecf856b82d17d36a206386fec07e0d6e51d01d425269ef0d723fac4c8f
+2026-10-31T00:50:34.5995383Z ##[group]Run npx playwright install --with-deps chromium
+2026-10-31T00:50:34.5995693Z [36;1mnpx playwright install --with-deps chromium[0m
+2026-10-31T00:50:34.6020916Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:50:34.6021080Z ##[endgroup]
+2026-10-31T00:50:35.4073594Z Installing dependencies...
+2026-10-31T00:50:35.4128249Z Switching to root user to install dependencies...
+2026-10-31T00:50:35.4937479Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-10-31T00:50:35.5139956Z Get:6 https://packages.microsoft.com/ubuntu/24.04/prod noble InRelease [3600 B]
+2026-10-31T00:50:35.5554885Z Hit:2 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+2026-10-31T00:50:35.5578892Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+2026-10-31T00:50:35.5613742Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+2026-10-31T00:50:35.5629006Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+2026-10-31T00:50:35.5769390Z Get:7 https://packages.microsoft.com/ubuntu/24.04/prod noble/main amd64 Packages [682 kB]
+2026-10-31T00:50:35.5899990Z Get:8 https://packages.microsoft.com/ubuntu/24.04/prod noble/main arm64 Packages [617 kB]
+2026-10-31T00:50:35.6633739Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1408 kB]
+2026-10-31T00:50:35.6704660Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble-updates/main Translation-en [311 kB]
+2026-10-31T00:50:35.6705574Z Get:11 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1708 kB]
+2026-10-31T00:50:35.6768588Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [343 kB]
+2026-10-31T00:50:35.6819021Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [1813 kB]
+2026-10-31T00:50:35.6890391Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted Translation-en [412 kB]
+2026-10-31T00:50:35.6915954Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse Translation-en [14.3 kB]
+2026-10-31T00:50:35.7570381Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [1146 kB]
+2026-10-31T00:50:35.7615806Z Get:17 http://azure.archive.ubuntu.com/ubuntu noble-security/main Translation-en [231 kB]
+2026-10-31T00:50:35.7633109Z Get:18 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1223 kB]
+2026-10-31T00:50:35.8108478Z Get:19 http://azure.archive.ubuntu.com/ubuntu noble-security/universe Translation-en [246 kB]
+2026-10-31T00:50:38.6925354Z Fetched 10.5 MB in 1s (12.5 MB/s)
+2026-10-31T00:50:39.4278296Z Reading package lists...
+2026-10-31T00:50:39.4542426Z Reading package lists...
+2026-10-31T00:50:39.6598578Z Building dependency tree...
+2026-10-31T00:50:39.6604266Z Reading state information...
+2026-10-31T00:50:39.8008586Z libasound2t64 is already the newest version (1.2.11-1ubuntu0.3).
+2026-10-31T00:50:39.8009291Z libasound2t64 set to manually installed.
+2026-10-31T00:50:39.8009909Z libatk-bridge2.0-0t64 is already the newest version (2.52.0-1build1).
+2026-10-31T00:50:39.8010483Z libatk-bridge2.0-0t64 set to manually installed.
+2026-10-31T00:50:39.8011044Z libatk1.0-0t64 is already the newest version (2.52.0-1build1).
+2026-10-31T00:50:39.8011541Z libatk1.0-0t64 set to manually installed.
+2026-10-31T00:50:39.8012067Z libatspi2.0-0t64 is already the newest version (2.52.0-1build1).
+2026-10-31T00:50:39.8012590Z libatspi2.0-0t64 set to manually installed.
+2026-10-31T00:50:39.8013091Z libcairo2 is already the newest version (1.18.0-3build1).
+2026-10-31T00:50:39.8013688Z libcairo2 set to manually installed.
+2026-10-31T00:50:39.8014197Z libcups2t64 is already the newest version (2.4.7-1.2ubuntu7.14).
+2026-10-31T00:50:39.8014708Z libcups2t64 set to manually installed.
+2026-10-31T00:50:39.8015219Z libdbus-1-3 is already the newest version (1.14.10-4ubuntu4.1).
+2026-10-31T00:50:39.8015665Z libdbus-1-3 set to manually installed.
+2026-10-31T00:50:39.8016783Z libdrm2 is already the newest version (2.4.125-1ubuntu0.1~24.04.2).
+2026-10-31T00:50:39.8017107Z libdrm2 set to manually installed.
+2026-10-31T00:50:39.8017343Z libgbm1 is already the newest version (25.2.8-0ubuntu0.24.04.4).
+2026-10-31T00:50:39.8017573Z libgbm1 set to manually installed.
+2026-10-31T00:50:39.8017953Z libglib2.0-0t64 is already the newest version (2.80.0-6ubuntu3.10).
+2026-10-31T00:50:39.8018238Z libglib2.0-0t64 set to manually installed.
+2026-10-31T00:50:39.8018478Z libnspr4 is already the newest version (2:4.35-1.1build1).
+2026-10-31T00:50:39.8018694Z libnspr4 set to manually installed.
+2026-10-31T00:50:39.8018915Z libnss3 is already the newest version (2:3.98-1ubuntu0.3).
+2026-10-31T00:50:39.8019125Z libnss3 set to manually installed.
+2026-10-31T00:50:39.8019360Z libpango-1.0-0 is already the newest version (1.52.1+ds-1build1).
+2026-10-31T00:50:39.8019592Z libpango-1.0-0 set to manually installed.
+2026-10-31T00:50:39.8019963Z libx11-6 is already the newest version (2:1.8.7-1ubuntu0.1).
+2026-10-31T00:50:39.8020228Z libx11-6 set to manually installed.
+2026-10-31T00:50:39.8020442Z libxcb1 is already the newest version (1.15-1ubuntu2).
+2026-10-31T00:50:39.8020651Z libxcb1 set to manually installed.
+2026-10-31T00:50:39.8021100Z libxcomposite1 is already the newest version (1:0.4.5-1build3).
+2026-10-31T00:50:39.8021336Z libxcomposite1 set to manually installed.
+2026-10-31T00:50:39.8021568Z libxdamage1 is already the newest version (1:1.1.6-1build1).
+2026-10-31T00:50:39.8021789Z libxdamage1 set to manually installed.
+2026-10-31T00:50:39.8022014Z libxext6 is already the newest version (2:1.3.4-1build2).
+2026-10-31T00:50:39.8022222Z libxext6 set to manually installed.
+2026-10-31T00:50:39.8022446Z libxfixes3 is already the newest version (1:6.0.0-2build1).
+2026-10-31T00:50:39.8022685Z libxfixes3 set to manually installed.
+2026-10-31T00:50:39.8022999Z libxkbcommon0 is already the newest version (1.6.0-1build1).
+2026-10-31T00:50:39.8023222Z libxkbcommon0 set to manually installed.
+2026-10-31T00:50:39.8023454Z libxrandr2 is already the newest version (2:1.5.2-2build1).
+2026-10-31T00:50:39.8023671Z libxrandr2 set to manually installed.
+2026-10-31T00:50:39.8023891Z xvfb is already the newest version (2:21.1.12-1ubuntu1.9).
+2026-10-31T00:50:39.8024202Z fonts-noto-color-emoji is already the newest version (2.047-0ubuntu0.24.04.1).
+2026-10-31T00:50:39.8024517Z libfontconfig1 is already the newest version (2.15.0-1.1ubuntu2).
+2026-10-31T00:50:39.8024748Z libfontconfig1 set to manually installed.
+2026-10-31T00:50:39.8025000Z libfreetype6 is already the newest version (2.13.2+dfsg-1ubuntu0.2).
+2026-10-31T00:50:39.8025322Z libfreetype6 set to manually installed.
+2026-10-31T00:50:39.8025663Z fonts-liberation is already the newest version (1:2.1.5-3).
+2026-10-31T00:50:39.8025996Z fonts-liberation set to manually installed.
+2026-10-31T00:50:39.8026335Z The following additional packages will be installed:
+2026-10-31T00:50:39.8026636Z   xfonts-encodings xfonts-utils
+2026-10-31T00:50:39.8026911Z Recommended packages:
+2026-10-31T00:50:39.8027175Z   fonts-ipafont-mincho fonts-tlwg-loma
+2026-10-31T00:50:39.8211942Z The following NEW packages will be installed:
+2026-10-31T00:50:39.8212627Z   fonts-freefont-ttf fonts-ipafont-gothic fonts-tlwg-loma-otf fonts-unifont
+2026-10-31T00:50:39.8218628Z   fonts-wqy-zenhei xfonts-cyrillic xfonts-encodings xfonts-scalable
+2026-10-31T00:50:39.8219094Z   xfonts-utils
+2026-10-31T00:50:39.8406879Z 0 upgraded, 9 newly installed, 0 to remove and 6 not upgraded.
+2026-10-31T00:50:39.8407308Z Need to get 21.1 MB of archives.
+2026-10-31T00:50:39.8407683Z After this operation, 79.5 MB of additional disk space will be used.
+2026-10-31T00:50:39.8408242Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-10-31T00:50:39.9147106Z Get:2 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-ipafont-gothic all 00303-21ubuntu1 [3513 kB]
+2026-10-31T00:50:40.0094570Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 fonts-freefont-ttf all 20211204+svn4273-2 [5641 kB]
+2026-10-31T00:50:40.1473653Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-tlwg-loma-otf all 1:0.7.3-1 [107 kB]
+2026-10-31T00:50:40.1943229Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-unifont all 1:15.1.01-1build1 [2993 kB]
+2026-10-31T00:50:40.2919744Z Get:6 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-wqy-zenhei all 0.9.45-8 [7472 kB]
+2026-10-31T00:50:40.4403390Z Get:7 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-encodings all 1:1.0.5-0ubuntu2 [578 kB]
+2026-10-31T00:50:40.4906359Z Get:8 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-utils amd64 1:7.7+6build3 [94.4 kB]
+2026-10-31T00:50:40.5373283Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 xfonts-cyrillic all 1:1.0.5+nmu1 [384 kB]
+2026-10-31T00:50:40.5855368Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-scalable all 1:1.0.3-1.3 [304 kB]
+2026-10-31T00:50:40.8119373Z Fetched 21.1 MB in 1s (27.8 MB/s)
+2026-10-31T00:50:40.8384720Z Selecting previously unselected package fonts-ipafont-gothic.
+2026-10-31T00:50:40.8654957Z (Reading database ... 
+2026-10-31T00:50:40.8655273Z (Reading database ... 5%
+2026-10-31T00:50:40.8655823Z (Reading database ... 10%
+2026-10-31T00:50:40.8656100Z (Reading database ... 15%
+2026-10-31T00:50:40.8656402Z (Reading database ... 20%
+2026-10-31T00:50:40.8656659Z (Reading database ... 25%
+2026-10-31T00:50:40.8656933Z (Reading database ... 30%
+2026-10-31T00:50:40.8657189Z (Reading database ... 35%
+2026-10-31T00:50:40.8657459Z (Reading database ... 40%
+2026-10-31T00:50:40.8657724Z (Reading database ... 45%
+2026-10-31T00:50:40.8658127Z (Reading database ... 50%
+2026-10-31T00:50:40.8694959Z (Reading database ... 55%
+2026-10-31T00:50:41.0090537Z (Reading database ... 60%
+2026-10-31T00:50:41.2138245Z (Reading database ... 65%
+2026-10-31T00:50:41.4171861Z (Reading database ... 70%
+2026-10-31T00:50:41.6247288Z (Reading database ... 75%
+2026-10-31T00:50:41.8050890Z (Reading database ... 80%
+2026-10-31T00:50:41.9600810Z (Reading database ... 85%
+2026-10-31T00:50:42.1159095Z (Reading database ... 90%
+2026-10-31T00:50:42.2698195Z (Reading database ... 95%
+2026-10-31T00:50:42.2698535Z (Reading database ... 100%
+2026-10-31T00:50:42.2698944Z (Reading database ... 215504 files and directories currently installed.)
+2026-10-31T00:50:42.2738558Z Preparing to unpack .../0-fonts-ipafont-gothic_00303-21ubuntu1_all.deb ...
+2026-10-31T00:50:42.2889994Z Unpacking fonts-ipafont-gothic (00303-21ubuntu1) ...
+2026-10-31T00:50:42.5186676Z Selecting previously unselected package fonts-freefont-ttf.
+2026-10-31T00:50:42.5298722Z Preparing to unpack .../1-fonts-freefont-ttf_20211204+svn4273-2_all.deb ...
+2026-10-31T00:50:42.5307156Z Unpacking fonts-freefont-ttf (20211204+svn4273-2) ...
+2026-10-31T00:50:42.6240898Z Selecting previously unselected package fonts-tlwg-loma-otf.
+2026-10-31T00:50:42.6353161Z Preparing to unpack .../2-fonts-tlwg-loma-otf_1%3a0.7.3-1_all.deb ...
+2026-10-31T00:50:42.6361588Z Unpacking fonts-tlwg-loma-otf (1:0.7.3-1) ...
+2026-10-31T00:50:42.6585130Z Selecting previously unselected package fonts-unifont.
+2026-10-31T00:50:42.6698592Z Preparing to unpack .../3-fonts-unifont_1%3a15.1.01-1build1_all.deb ...
+2026-10-31T00:50:42.6705722Z Unpacking fonts-unifont (1:15.1.01-1build1) ...
+2026-10-31T00:50:42.8592550Z Selecting previously unselected package fonts-wqy-zenhei.
+2026-10-31T00:50:42.8722143Z Preparing to unpack .../4-fonts-wqy-zenhei_0.9.45-8_all.deb ...
+2026-10-31T00:50:42.8848788Z Unpacking fonts-wqy-zenhei (0.9.45-8) ...
+2026-10-31T00:50:43.4998303Z Selecting previously unselected package xfonts-encodings.
+2026-10-31T00:50:43.5117960Z Preparing to unpack .../5-xfonts-encodings_1%3a1.0.5-0ubuntu2_all.deb ...
+2026-10-31T00:50:43.6489733Z Unpacking xfonts-encodings (1:1.0.5-0ubuntu2) ...
+2026-10-31T00:50:44.1272730Z Selecting previously unselected package xfonts-utils.
+2026-10-31T00:50:44.1391747Z Preparing to unpack .../6-xfonts-utils_1%3a7.7+6build3_amd64.deb ...
+2026-10-31T00:50:44.2675111Z Unpacking xfonts-utils (1:7.7+6build3) ...
+2026-10-31T00:50:44.7344085Z Selecting previously unselected package xfonts-cyrillic.
+2026-10-31T00:50:44.7485565Z Preparing to unpack .../7-xfonts-cyrillic_1%3a1.0.5+nmu1_all.deb ...
+2026-10-31T00:50:44.7801115Z Unpacking xfonts-cyrillic (1:1.0.5+nmu1) ...
+2026-10-31T00:50:44.8813502Z Selecting previously unselected package xfonts-scalable.
+2026-10-31T00:50:44.8948424Z Preparing to unpack .../8-xfonts-scalable_1%3a1.0.3-1.3_all.deb ...
+2026-10-31T00:50:44.8993264Z Unpacking xfonts-scalable (1:1.0.3-1.3) ...
+2026-10-31T00:50:45.3259466Z Setting up fonts-wqy-zenhei (0.9.45-8) ...
+2026-10-31T00:50:46.1653271Z Setting up fonts-freefont-ttf (20211204+svn4273-2) ...
+2026-10-31T00:50:46.4949404Z Setting up fonts-tlwg-loma-otf (1:0.7.3-1) ...
+2026-10-31T00:50:46.8040634Z Setting up xfonts-encodings (1:1.0.5-0ubuntu2) ...
+2026-10-31T00:50:46.8538392Z Setting up fonts-ipafont-gothic (00303-21ubuntu1) ...
+2026-10-31T00:50:47.2863583Z update-alternatives: using /usr/share/fonts/opentype/ipafont-gothic/ipag.ttf to provide /usr/share/fonts/truetype/fonts-japanese-gothic.ttf (fonts-japanese-gothic.ttf) in auto mode
+2026-10-31T00:50:47.2877381Z Setting up fonts-unifont (1:15.1.01-1build1) ...
+2026-10-31T00:50:47.2894939Z Setting up xfonts-utils (1:7.7+6build3) ...
+2026-10-31T00:50:47.2931702Z Setting up xfonts-cyrillic (1:1.0.5+nmu1) ...
+2026-10-31T00:50:47.3179059Z Setting up xfonts-scalable (1:1.0.3-1.3) ...
+2026-10-31T00:50:47.3403138Z Processing triggers for man-db (2.12.0-4build2) ...
+2026-10-31T00:50:47.3422818Z Not building database; man-db/auto-update is not 'true'.
+2026-10-31T00:50:47.3433811Z Processing triggers for fontconfig (2.15.0-1.1ubuntu2) ...
+2026-10-31T00:50:47.9014077Z 
+2026-10-31T00:50:47.9014720Z Running kernel seems to be up-to-date.
+2026-10-31T00:50:47.9014927Z 
+2026-10-31T00:50:47.9015024Z No services need to be restarted.
+2026-10-31T00:50:47.9015141Z 
+2026-10-31T00:50:47.9015231Z No containers need to be restarted.
+2026-10-31T00:50:47.9015341Z 
+2026-10-31T00:50:47.9015448Z No user sessions are running outdated binaries.
+2026-10-31T00:50:47.9015609Z 
+2026-10-31T00:50:47.9015770Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+2026-10-31T00:50:48.7592893Z ##[group]Run actions/download-artifact@v4
+2026-10-31T00:50:48.7593076Z with:
+2026-10-31T00:50:48.7593195Z   name: dist
+2026-10-31T00:50:48.7593308Z   path: dist/
+2026-10-31T00:50:48.7593433Z   merge-multiple: false
+2026-10-31T00:50:48.7593580Z   repository: jarrodjohnson-gif/emberisle
+2026-10-31T00:50:48.7593741Z   run-id: 41152094265
+2026-10-31T00:50:48.7593869Z ##[endgroup]
+2026-10-31T00:50:48.8632132Z Downloading single artifact
+2026-10-31T00:50:48.8717303Z (node:2838) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-31T00:50:48.8717998Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-31T00:50:49.1097522Z Preparing to download the following artifacts:
+2026-10-31T00:50:49.1098451Z - dist (ID: 13023153396, Size: 3439210, Expected Digest: sha256:d2479e9b93986f842d8ce187243f8d441c4c408badb18e5e5758335fdf8f0d06)
+2026-10-31T00:50:49.3246189Z Redirecting to blob download url: https://productionresultssa10.blob.core.windows.net/actions-results/24ce874e-0674-86f1-9ba5-807bbaca7d06/workflow-job-run-e8dd69d9-bf9e-5fb8-a958-7f234c70d772/artifacts/bcae0416621b3db43d8cba1e4454a792c7af9e4b7287e51056efc5a215d95839.zip
+2026-10-31T00:50:49.3247466Z Starting download of artifact to: /home/runner/work/emberisle/emberisle/dist
+2026-10-31T00:50:49.5955873Z (node:2838) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-10-31T00:50:50.0451625Z SHA256 digest of downloaded artifact is d2479e9b93986f842d8ce187243f8d441c4c408badb18e5e5758335fdf8f0d06
+2026-10-31T00:50:50.0452214Z Artifact download completed successfully.
+2026-10-31T00:50:50.0452521Z Total of 1 artifact(s) downloaded
+2026-10-31T00:50:50.0455619Z Download artifact has finished successfully
+2026-10-31T00:50:50.0607047Z ##[group]Run npm run restore-prove
+2026-10-31T00:50:50.0607263Z [36;1mnpm run restore-prove[0m
+2026-10-31T00:50:50.0624346Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:50:50.0624503Z ##[endgroup]
+2026-10-31T00:50:50.1361742Z 
+2026-10-31T00:50:50.1362295Z > restore-prove
+2026-10-31T00:50:50.1362660Z > node scripts/restore-prove.mjs
+2026-10-31T00:50:50.1362851Z 
+2026-10-31T00:50:52.5696562Z ok   setup: the seated browser holds a hand in a started game {"code":"UEKT","phase":"roll"}
+2026-10-31T00:50:58.4184663Z run 1: html 167ms, dom 560ms | chunks index 536-536 (cache), IslandCanvas 537-537 (cache), online 543-543 (cache), trade-sound 559-559 (cache), haptics 559-559 (cache), table 566-566 (cache), Reactions 572-572 (cache), LobbyView 574-574 (cache), VictoryTargetSelect 574-574 (cache), sheets 893-893 (cache), moments 1152-1152 (cache), TurnExtensionVote 1153-1153 (cache), jelly-board 1424-1424 (cache), hex-jelly 1425-1425 (cache), DockInspection 1437-1437 (cache), TradeResource 1445-1445 (cache)
+2026-10-31T00:50:58.4191681Z run 1: first paint 552 fcp 552 | socket dial 567 open 723 welcome 745 state 867 | marks {"firstContent":548,"loading":548,"island":1165,"state":1165,"hand":1165,"hud":1165,"firstFrame":1441,"canvas":1441,"board":1441}
+2026-10-31T00:50:58.4193002Z run 1: long tasks 866+291 1163+269
+2026-10-31T00:50:58.4193929Z ok   run 1: board + own hand on screen at 1441 ms (outlier cap 6000) {"firstContent":548,"loading":548,"island":1165,"state":1165,"hand":1165,"hud":1165,"firstFrame":1441,"canvas":1441,"board":1441}
+2026-10-31T00:50:58.4195138Z ok   run 1: the branded loading state painted (552 ms) before any table content {"paints":{"first-paint":552,"first-contentful-paint":552},"loading":548}
+2026-10-31T00:50:58.4196294Z ok   run 1: no flash of the title {"firstContent":548,"loading":548,"island":1165,"state":1165,"hand":1165,"hud":1165,"firstFrame":1441,"canvas":1441,"board":1441}
+2026-10-31T00:50:58.7613475Z ok   run 1: still seated at the table
+2026-10-31T00:51:01.5120657Z run 2: html 167ms, dom 739ms | chunks index 715-715 (cache), IslandCanvas 716-716 (cache), online 721-721 (cache), trade-sound 738-738 (cache), haptics 738-738 (cache), table 743-743 (cache), Reactions 750-750 (cache), LobbyView 751-751 (cache), VictoryTargetSelect 751-751 (cache), sheets 1073-1073 (cache), moments 1356-1356 (cache), TurnExtensionVote 1356-1356 (cache), jelly-board 1675-1675 (cache), hex-jelly 1676-1676 (cache), DockInspection 1685-1685 (cache), TradeResource 1693-1693 (cache)
+2026-10-31T00:51:01.5129094Z run 2: first paint 732 fcp 732 | socket dial 745 open 903 welcome 917 state 1040 | marks {"firstContent":726,"loading":727,"island":1367,"state":1367,"hand":1368,"hud":1368,"firstFrame":1688,"canvas":1688,"board":1688}
+2026-10-31T00:51:01.5129865Z run 2: long tasks 1038+320 1366+312
+2026-10-31T00:51:01.5130874Z ok   run 2: board + own hand on screen at 1688 ms (outlier cap 6000) {"firstContent":726,"loading":727,"island":1367,"state":1367,"hand":1368,"hud":1368,"firstFrame":1688,"canvas":1688,"board":1688}
+2026-10-31T00:51:01.5132013Z ok   run 2: the branded loading state painted (732 ms) before any table content {"paints":{"first-paint":732,"first-contentful-paint":732},"loading":727}
+2026-10-31T00:51:01.5133547Z ok   run 2: no flash of the title {"firstContent":726,"loading":727,"island":1367,"state":1367,"hand":1368,"hud":1368,"firstFrame":1688,"canvas":1688,"board":1688}
+2026-10-31T00:51:01.5232153Z ok   run 2: still seated at the table
+2026-10-31T00:51:03.6881115Z run 3: html 166ms, dom 748ms | chunks index 720-720 (cache), IslandCanvas 720-720 (cache), online 728-728 (cache), trade-sound 747-747 (cache), haptics 748-748 (cache), table 753-753 (cache), Reactions 766-766 (cache), LobbyView 767-767 (cache), VictoryTargetSelect 768-768 (cache), sheets 1075-1075 (cache), moments 1322-1322 (cache), TurnExtensionVote 1322-1322 (cache), jelly-board 1587-1587 (cache), hex-jelly 1587-1587 (cache), DockInspection 1599-1599 (cache), TradeResource 1606-1606 (cache)
+2026-10-31T00:51:03.6884285Z run 3: first paint 752 fcp 752 | socket dial 755 open 909 welcome 924 state 1046 | marks {"firstContent":734,"loading":734,"island":1333,"state":1333,"hand":1334,"hud":1334,"firstFrame":1602,"canvas":1602,"board":1602}
+2026-10-31T00:51:03.6885391Z run 3: long tasks 1045+280 1332+262
+2026-10-31T00:51:03.6886388Z ok   run 3: board + own hand on screen at 1602 ms (outlier cap 6000) {"firstContent":734,"loading":734,"island":1333,"state":1333,"hand":1334,"hud":1334,"firstFrame":1602,"canvas":1602,"board":1602}
+2026-10-31T00:51:03.6887683Z ok   run 3: the branded loading state painted (752 ms) before any table content {"paints":{"first-paint":752,"first-contentful-paint":752},"loading":734}
+2026-10-31T00:51:03.6889060Z ok   run 3: no flash of the title {"firstContent":734,"loading":734,"island":1333,"state":1333,"hand":1334,"hud":1334,"firstFrame":1602,"canvas":1602,"board":1602}
+2026-10-31T00:51:03.7302062Z ok   run 3: still seated at the table
+2026-10-31T00:51:05.4152566Z run 4: html 166ms, dom 253ms | chunks index 238-238 (cache), IslandCanvas 238-238 (cache), online 244-244 (cache), trade-sound 253-253 (cache), haptics 253-253 (cache), table 265-265 (cache), Reactions 271-271 (cache), LobbyView 272-272 (cache), VictoryTargetSelect 272-272 (cache), sheets 580-580 (cache), moments 837-837 (cache), TurnExtensionVote 837-837 (cache), jelly-board 1083-1083 (cache), hex-jelly 1084-1084 (cache), DockInspection 1095-1095 (cache), TradeResource 1097-1097 (cache)
+2026-10-31T00:51:05.4155541Z run 4: first paint 264 fcp 264 | socket dial 267 open 424 welcome 430 state 553 | marks {"firstContent":259,"loading":260,"island":848,"state":848,"hand":848,"hud":848,"firstFrame":1096,"canvas":1096,"board":1096}
+2026-10-31T00:51:05.4156908Z run 4: long tasks 552+288 846+246
+2026-10-31T00:51:05.4157548Z ok   run 4: board + own hand on screen at 1096 ms (outlier cap 6000) {"firstContent":259,"loading":260,"island":848,"state":848,"hand":848,"hud":848,"firstFrame":1096,"canvas":1096,"board":1096}
+2026-10-31T00:51:05.4158463Z ok   run 4: the branded loading state painted (264 ms) before any table content {"paints":{"first-paint":264,"first-contentful-paint":264},"loading":260}
+2026-10-31T00:51:05.4159442Z ok   run 4: no flash of the title {"firstContent":259,"loading":260,"island":848,"state":848,"hand":848,"hud":848,"firstFrame":1096,"canvas":1096,"board":1096}
+2026-10-31T00:51:05.4580968Z ok   run 4: still seated at the table
+2026-10-31T00:51:07.8856160Z run 5: html 162ms, dom 941ms | chunks index 914-914 (cache), IslandCanvas 915-915 (cache), online 922-922 (cache), trade-sound 940-940 (cache), haptics 940-940 (cache), table 946-946 (cache), Reactions 953-953 (cache), LobbyView 954-954 (cache), VictoryTargetSelect 955-955 (cache), sheets 1287-1287 (cache), moments 1544-1544 (cache), TurnExtensionVote 1544-1544 (cache), jelly-board 1804-1804 (cache), hex-jelly 1804-1804 (cache), DockInspection 1815-1815 (cache), TradeResource 1822-1822 (cache)
+2026-10-31T00:51:07.8860071Z run 5: first paint 932 fcp 932 | socket dial 948 open 1106 welcome 1128 state 1251 | marks {"firstContent":928,"loading":928,"island":1554,"state":1554,"hand":1555,"hud":1555,"firstFrame":1819,"canvas":1819,"board":1819}
+2026-10-31T00:51:07.8860900Z run 5: long tasks 1249+298 1553+256
+2026-10-31T00:51:07.8861781Z ok   run 5: board + own hand on screen at 1819 ms (outlier cap 6000) {"firstContent":928,"loading":928,"island":1554,"state":1554,"hand":1555,"hud":1555,"firstFrame":1819,"canvas":1819,"board":1819}
+2026-10-31T00:51:07.8862883Z ok   run 5: the branded loading state painted (932 ms) before any table content {"paints":{"first-paint":932,"first-contentful-paint":932},"loading":928}
+2026-10-31T00:51:07.8863926Z ok   run 5: no flash of the title {"firstContent":928,"loading":928,"island":1554,"state":1554,"hand":1555,"hud":1555,"firstFrame":1819,"canvas":1819,"board":1819}
+2026-10-31T00:51:08.1931546Z ok   run 5: still seated at the table
+2026-10-31T00:51:08.6941906Z board on screen, ms from navigationStart: 1441, 1688, 1602, 1096, 1819 (median 1602, max 1819)
+2026-10-31T00:51:08.6942872Z ok   median 1602 ms inside 3000 ms
+2026-10-31T00:51:08.6943133Z ok   no page errors []
+2026-10-31T00:51:08.7430800Z restore prove ok (5 reloads, median inside 3000 ms, every run under the 6000 ms outlier cap)
+2026-10-31T00:51:08.7735253Z ##[group]Run npm run upgrade-prove
+2026-10-31T00:51:08.7735462Z [36;1mnpm run upgrade-prove[0m
+2026-10-31T00:51:08.7751649Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:51:08.7751801Z ##[endgroup]
+2026-10-31T00:51:08.8355426Z 
+2026-10-31T00:51:08.8356066Z > upgrade-prove
+2026-10-31T00:51:08.8356585Z > node --import ./server/register.mjs scripts/upgrade-prove.mjs
+2026-10-31T00:51:08.8356861Z 
+2026-10-31T00:51:13.4439234Z 440x956: one touch tap upgrades a starter outpost
+2026-10-31T00:51:15.1143722Z 440x956: the second starter outpost upgrades in one tap
+2026-10-31T00:51:16.5637676Z 440x956: a path still selects, then places on the chip
+2026-10-31T00:51:18.4989653Z 440x956: online, one tap sends buildStronghold to the host
+2026-10-31T00:51:19.1059392Z 440x956: a short hand says "Need 1 more stone" / "Need 3 more wheat and 2 more stone"
+2026-10-31T00:51:22.6657444Z 956x440: one touch tap upgrades a starter outpost
+2026-10-31T00:51:23.7159793Z 956x440: the second starter outpost upgrades in one tap
+2026-10-31T00:51:24.8982083Z 956x440: a path still selects, then places on the chip
+2026-10-31T00:51:26.9449992Z 956x440: online, one tap sends buildStronghold to the host
+2026-10-31T00:51:27.5092988Z 956x440: a short hand says "Need 1 more stone" / "Need 3 more wheat and 2 more stone"
+2026-10-31T00:51:31.4061088Z 1280x720: one click upgrades a starter outpost
+2026-10-31T00:51:31.8652864Z 1280x720: a short hand says "Need 1 more stone" / "Need 3 more wheat and 2 more stone"
+2026-10-31T00:51:32.5196284Z upgrade prove ok
+2026-10-31T00:51:33.0552678Z ##[group]Run npm run flash-prove
+2026-10-31T00:51:33.0552891Z [36;1mnpm run flash-prove[0m
+2026-10-31T00:51:33.0571326Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:51:33.0571493Z ##[endgroup]
+2026-10-31T00:51:33.1235392Z 
+2026-10-31T00:51:33.1235743Z > flash-prove
+2026-10-31T00:51:33.1235977Z > node scripts/flash-prove.mjs
+2026-10-31T00:51:33.1236097Z 
+2026-10-31T00:51:38.8682535Z paying pieces (motion): two payers, adjacent nonpayer dark, two soft ticks and 8ms kicks
+2026-10-31T00:51:40.2846330Z bank-short: no pulses; partial stronghold: one tick, unpaid same-seat neighbour dark
+2026-10-31T00:51:44.5681036Z motion roll: sum 8, gained [clay,wool,ore], short [], expect 3 glow, saw 3, 17 frames, peak 0.35, in-between 12
+2026-10-31T00:51:47.3504773Z bank short: sum 8, gained [clay,ore], short [wool], expect 2 glow, saw 2, 13 frames, peak 0.35, in-between 8
+2026-10-31T00:51:50.1343198Z wayfarer-blocked: sum 8, gained [clay,ore], short [], expect 2 glow, saw 2, 13 frames, peak 0.35, in-between 8
+2026-10-31T00:51:53.4345936Z twins: wool hexes -2,1,-2,2 on a 6, bank holds 1 wool, hands gained [clay,wool], 1 of them glowed
+2026-10-31T00:51:56.5820074Z one push, 2 actions, 1 roll: 4 glowed, 4 expected
+2026-10-31T00:51:59.0664582Z first load onto a state with dice: 4 frames, glowing 0
+2026-10-31T00:52:00.1504395Z seq jump onto a state with dice: 4 frames, glowing 0
+2026-10-31T00:52:00.3155606Z coalesced build/roll/build (motion): four actions, only earlier building paid/pulsed, one tick
+2026-10-31T00:52:00.6857556Z payoff clock (motion): 52 unique pieces / 102 grants; eight ticks at 0,0.09,0.18,0.27,0.36,0.45,0.54,0.63; hold 0
+2026-10-31T00:52:07.0060360Z paying pieces (reduced): two payers, adjacent nonpayer dark, two soft ticks and 8ms kicks
+2026-10-31T00:52:07.6511730Z reduced idle regression: 5 real frames, wake hold exhausted after every frame
+2026-10-31T00:52:09.1799284Z bank-short: no pulses; partial stronghold: one tick, unpaid same-seat neighbour dark
+2026-10-31T00:52:15.2150426Z reduced motion roll: sum 8, gained [wool,ore], short [], expect 3 glow, saw 3, 40 frames, peak 0.35, in-between 0
+2026-10-31T00:52:15.3833472Z coalesced build/roll/build (reduced): four actions, only earlier building paid/pulsed, one tick
+2026-10-31T00:52:16.2549616Z payoff clock (reduced): 54 unique pieces / 108 grants; eight ticks at 0,0.09,0.18,0.27,0.36,0.45,0.54,0.63; hold 1.19
+2026-10-31T00:52:19.3349045Z flash-prove: ok
+2026-10-31T00:52:19.3836698Z ##[group]Run npm run lobby-overflow-prove
+2026-10-31T00:52:19.3836924Z [36;1mnpm run lobby-overflow-prove[0m
+2026-10-31T00:52:19.3853435Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:52:19.3853597Z ##[endgroup]
+2026-10-31T00:52:19.4493265Z 
+2026-10-31T00:52:19.4493889Z > lobby-overflow-prove
+2026-10-31T00:52:19.4494187Z > node scripts/lobby-overflow-prove.mjs
+2026-10-31T00:52:19.4494330Z 
+2026-10-31T00:52:21.9919821Z ok 320x568 portrait: hOverflow=0px, vOverflow=0px
+2026-10-31T00:52:23.4484420Z ok 390x844 portrait: hOverflow=0px, vOverflow=0px
+2026-10-31T00:52:25.3072310Z ok 640x360 landscape: hOverflow=0px, vOverflow=0px
+2026-10-31T00:52:27.0945269Z ok 667x375 landscape: hOverflow=0px, vOverflow=0px
+2026-10-31T00:52:28.9356026Z ok 844x390 landscape: hOverflow=0px, vOverflow=0px
+2026-10-31T00:52:28.9384817Z ok lobby-overflow-prove: all narrow portrait and short landscape checks passed
+2026-10-31T00:52:29.4816556Z ##[group]Run npm run lobby-layout-prove
+2026-10-31T00:52:29.4816931Z [36;1mnpm run lobby-layout-prove[0m
+2026-10-31T00:52:29.4834367Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:52:29.4834533Z ##[endgroup]
+2026-10-31T00:52:29.5473834Z 
+2026-10-31T00:52:29.5474443Z > lobby-layout-prove
+2026-10-31T00:52:29.5474859Z > node scripts/lobby-layout-prove.mjs
+2026-10-31T00:52:29.5475071Z 
+2026-10-31T00:52:40.0796947Z node:internal/modules/run_main:123
+2026-10-31T00:52:40.0797393Z     triggerUncaughtException(
+2026-10-31T00:52:40.0797644Z     ^
+2026-10-31T00:52:40.0797748Z 
+2026-10-31T00:52:40.0798738Z AssertionError [ERR_ASSERTION]: 390x844 WWWW Copy → Copied: code remains at least as large as its control labels
+2026-10-31T00:52:40.0799422Z     at codeFits (file:///home/runner/work/emberisle/emberisle/scripts/lobby-layout-prove.mjs:201:10)
+2026-10-31T00:52:40.0800469Z     at runNextTicks (node:internal/process/task_queues:64:5)
+2026-10-31T00:52:40.0800960Z     at process.processImmediate (node:internal/timers:452:9)
+2026-10-31T00:52:40.0801359Z     at process.callbackTrampoline (node:internal/async_hooks:130:17)
+2026-10-31T00:52:40.0802034Z     at async supportedCodeFits (file:///home/runner/work/emberisle/emberisle/scripts/lobby-layout-prove.mjs:224:9)
+2026-10-31T00:52:40.0802736Z     at async file:///home/runner/work/emberisle/emberisle/scripts/lobby-layout-prove.mjs:278:24 {
+2026-10-31T00:52:40.0803175Z   generatedMessage: false,
+2026-10-31T00:52:40.0803435Z   code: 'ERR_ASSERTION',
+2026-10-31T00:52:40.0803658Z   actual: false,
+2026-10-31T00:52:40.0803886Z   expected: true,
+2026-10-31T00:52:40.0804091Z   operator: '==',
+2026-10-31T00:52:40.0804310Z   diff: 'simple'
+2026-10-31T00:52:40.0804525Z }
+2026-10-31T00:52:40.0804629Z 
+2026-10-31T00:52:40.0804714Z Node.js v22.23.4
+2026-10-31T00:52:40.1192654Z ##[error]Process completed with exit code 1.
+2026-10-31T00:52:40.1266398Z ##[group]Run actions/upload-artifact@v4
+2026-10-31T00:52:40.1266576Z with:
+2026-10-31T00:52:40.1266741Z   name: browser-b-presentation-test-results
+2026-10-31T00:52:40.1266920Z   path: test-results/
+2026-10-31T00:52:40.1267077Z   if-no-files-found: ignore
+2026-10-31T00:52:40.1267229Z   compression-level: 6
+2026-10-31T00:52:40.1267362Z   overwrite: false
+2026-10-31T00:52:40.1267671Z   include-hidden-files: false
+2026-10-31T00:52:40.1283943Z ##[endgroup]
+2026-10-31T00:52:40.2451772Z (node:3622) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-31T00:52:40.2452278Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-31T00:52:40.2479821Z With the provided path, there will be 8 files uploaded
+2026-10-31T00:52:40.2488707Z Artifact name is valid!
+2026-10-31T00:52:40.2489204Z Root directory input is valid!
+2026-10-31T00:52:40.6018313Z Beginning upload of artifact content to blob storage
+2026-10-31T00:52:40.6412463Z (node:3622) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-31T00:52:41.1963076Z Uploaded bytes 901746
+2026-10-31T00:52:41.2588494Z Finished uploading artifact content to blob storage!
+2026-10-31T00:52:41.2588962Z SHA256 digest of uploaded artifact zip is 91d973f5a0d882ec7f40ca4c8ee52dda6a4379cdf3fdce620a6feb5e84b29407
+2026-10-31T00:52:41.2589634Z Finalizing artifact upload
+2026-10-31T00:52:41.7270485Z Artifact browser-b-presentation-test-results.zip successfully finalized. Artifact ID 13023761912
+2026-10-31T00:52:41.7271394Z Artifact browser-b-presentation-test-results has been successfully uploaded! Final size is 901746 bytes. Artifact ID is 13023761912
+2026-10-31T00:52:41.7276227Z Artifact download URL: https://github.com/jarrodjohnson-gif/emberisle/actions/runs/41152094265/artifacts/13023761912
+2026-10-31T00:52:41.7468840Z Post job cleanup.
+2026-10-31T00:52:41.8047617Z [command]/usr/bin/git version
+2026-10-31T00:52:41.8082657Z git version 2.56.0
+2026-10-31T00:52:41.8109666Z Temporarily overriding HOME='/home/runner/work/_temp/4af24d53-2208-4767-b731-51224e346a60' before making global git config changes
+2026-10-31T00:52:41.8110679Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-31T00:52:41.8113072Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/emberisle/emberisle
+2026-10-31T00:52:41.8151864Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-31T00:52:41.8183468Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-31T00:52:41.8398463Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-31T00:52:41.8426088Z http.https://github.com/.extraheader
+2026-10-31T00:52:41.8435187Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-31T00:52:41.8469489Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-31T00:52:41.8730268Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-31T00:52:41.8770115Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-31T00:52:41.9105154Z Cleaning up orphan processes
+2026-10-31T00:52:41.9428304Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/cache@v4, actions/checkout@v4, actions/download-artifact@v4, actions/setup-node@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+
