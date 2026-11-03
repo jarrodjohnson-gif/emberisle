@@ -80,18 +80,40 @@ jobs:
             const react = (content) =>
               github.rest.reactions.createForIssueComment({ owner, repo, comment_id, content });
 
-            // Strip fenced examples before reading commands or reservation metadata.
+            // Commands and authority metadata share the same example filter.
+            // Four-column indentation is always an example; list-contained fences
+            // end at a matching closer or when their list container is left.
             const visibleBody = body => {
               const out = [];
               let fence = null;
               for (const raw of (body || '').split(/\r?\n/)) {
-                const marker = raw.match(/^\s{0,3}(`{3,}|~{3,})(.*)$/);
+                let line = '';
+                for (const char of raw) line += char === '\t'
+                  ? ' '.repeat(4 - line.length % 4) : char;
                 if (fence) {
-                  if (marker && marker[1][0] === fence.char &&
-                      marker[1].length >= fence.length && !marker[2].trim()) fence = null;
+                  if (line.trim() && line.match(/^ */)[0].length < fence.indent) {
+                    fence = null;
+                  } else {
+                    const close = line.slice(fence.indent).match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+                    if (close && close[1][0] === fence.char &&
+                        close[1].length >= fence.length && !close[2].trim()) fence = null;
+                    continue;
+                  }
+                }
+                if (/^ {4}/.test(line)) continue;
+                let content = line;
+                let indent = 0;
+                let list;
+                while ((list = content.match(/^( {0,3}(?:[-+*]|\d{1,9}[.)]) {1,4})(?=\S)(.*)$/))) {
+                  indent += list[1].length;
+                  content = list[2];
+                }
+                const marker = content.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+                // Backticks in a backtick fence's info string invalidate its opener.
+                if (marker && !(marker[1][0] === '`' && marker[2].includes('`'))) {
+                  fence = { char: marker[1][0], length: marker[1].length, indent };
                   continue;
                 }
-                if (marker) { fence = { char: marker[1][0], length: marker[1].length }; continue; }
                 out.push(raw);
               }
               return out.join('\n');
