@@ -58,7 +58,7 @@ All changes are in [`hig-layer.css`](hig-layer.css), applied over the unchanged 
 | Phone 390×844 | **All six screens fit** (12 px to spare; tic-tac-toe 12 px) | None | None | Visible |
 | Desktop 1280×720 | **All six screens fit** (Sandwich Stacker 12 px, tic-tac-toe 7 px to spare) | None | None | Visible |
 | Small phone 320×568 | **Does not fit: the card scrolls under its fixed footer.** The shelf scrolls 51 px, Sandwich Stacker 157 px and tic-tac-toe 229 px. | None | Only board cells scrolled under the footer | Visible |
-| Sideways phone 844×390 | **Not drawn.** The card is 342 px tall; the shelf needs 225 px more and tic-tac-toe 323 px more. It needs its own layout (for example the game as a sheet over the island), which is a separate owner choice. | None | Measured only | Visible |
+| Sideways phone 844×390 | **Scrolls under the fixed Ready row.** The card is the wide lobby card (812×358), not the 342 px side card. The shelf ends 61 px under, Sandwich Stacker 42 px and tic-tac-toe 88 px. See [The sideways phone](#the-sideways-phone). | None | None | Visible |
 
 At 320×568 the card already fills the screen on the Table tab, so the Play games tab scrolls like the rest of the lobby there. The footer stays put and the game scrolls under it.
 
@@ -83,6 +83,36 @@ Choice D, as recommended:
 - **Phone:** the held Left and Right buttons show under the stage.
 
 The same screens as the mock drew them (cream, mock sizes, the Trivia tile) are in [`pictures/as-drawn/`](pictures/as-drawn/), for comparison.
+
+## The sideways phone
+
+Issue [#1264](https://github.com/jarrodjohnson-gif/emberisle/issues/1264) draws 844×390. Grok 4.7, 2026-11-03. Design only.
+
+Choice H is already answered. On a portrait phone the card may grow while a game is open. This section is the sideways phone. It does not need a new owner choice.
+
+The old note used the desktop side card. That card is 342 px tall at 844×390. The real lobby is not that card. At this size the lobby is one wide card, 16 px in from each edge. The card is 812 by 358 px. It stays that size when a game opens. Ready is one fixed row along the bottom. The shelf and the open games are taller than the room above that row. They scroll under Ready. Ready does not move.
+
+The open-game pictures are scrolled so you can see that. Scroll 0 would show only the top of a tall game. These pictures move until the controls meet Ready.
+
+| Screen | Picture | Ends under Ready |
+|---|---|---|
+| The shelf | ![](pictures/sideways/sideways-844x390-b-shelf.png) | 61 px |
+| Sandwich Stacker open | ![](pictures/sideways/sideways-844x390-c-solo-stacker.png) | 42 px |
+| Tic-tac-toe open | ![](pictures/sideways/sideways-844x390-d-tictactoe.png) | 88 px |
+
+No control is under 44 px. No two controls sit closer than 8 px. Colours are the lobby white tokens. The card is `#ffffff`. Lines are `#cbd3d3`. The ground is `#f3f6f5`. There is no cream. The room code is 28/34, the wide lobby size. Other text stays on the lobby scale. Sandwich Stacker shows Left and Right, because this size is a touch phone.
+
+The card does not take a new sheet. Nothing stacks on top of the lobby. The strip above the card stays 4% of the screen. A strip of the island also shows along the bottom edge. Opening a game does not change that.
+
+### Small phone, for comparison
+
+The old 320×568 shelf let the seats line cover the heading. "2 of 4 ready" sat on top of "While you wait". The accepted pictures still show that overlap. This comparison does not. The seats wrap, and the heading starts 12 px below them.
+
+![](pictures/sideways/phone-320x568-b-shelf.png)
+
+The card still scrolls under Ready there. The shelf ends 75 px under it. Sandwich Stacker ends 181 px under it. Tic-tac-toe ends 253 px under it. Three board cells sit 5 px from the Win at buttons. Those cells are under the footer. Nothing at 844×390 is that close.
+
+Every number is in [`sideways/measure.txt`](sideways/measure.txt). The drawing is [`sideways/sideways-layer.css`](sideways/sideways-layer.css), applied as the capture layer. Pass `ONLY=sideways,320` to draw just these pictures.
 
 Known small issue: at 17 px, the desktop "Sandwich Stacker" title in screen C wraps to two lines beside Sound and Close. The build can shorten the title or let the buttons wrap; the shelf itself is not affected.
 
@@ -132,4 +162,4 @@ The build issues are filed only after Jarrod's OK on the Decisions page. Nothing
 1. **Shelf and tab (tier 2, `lane:hud`):** the two tabs, the shelf, and #970's box moved into it, at the accepted scale and colours, with the one registered proof above. PR #970 is reworked or replaced so its box lands here, not above the chat.
 2. **Tic-tac-toe (tier 1, `lane:net`):** host messages, invites, seat-id relay, and closing on Start and Leave. It must never block or slow the table. Opus builds; a different model reviews.
 3. **Trivia:** later. It needs content and an owner decision on who writes it.
-4. **Sideways phone layout:** to be drawn after Jarrod answers H, since it depends on how much of the screen an open game may take.
+4. **Sideways phone:** drawn in [The sideways phone](#the-sideways-phone). The wide card stays put. The open game scrolls under Ready. No separate owner choice.
