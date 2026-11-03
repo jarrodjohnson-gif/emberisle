@@ -304,6 +304,8 @@ try{
     useLocalNeeds.setState({},true);g.setState({mode:'ai',screen:'play',state,localId:'p0',spectator:false,tradeOpen:false,offer:null,declined:[]});g.getState().setTradeOpen(true);
    },names);
    await page.getByTestId('trade-panel').waitFor();
+   // Zero published needs means zero chips, so the chip count is already true before the trade chunk mounts.
+   await page.locator('#trade-others-title').waitFor();
    const frames={};
    for(const [label,needs] of Object.entries(configs)){
     await page.evaluate(async needs=>{const {useLocalNeeds}=await import('/src/components/game/need-state.ts');useLocalNeeds.setState(Object.fromEntries(Object.entries(needs).map(([id,kinds])=>[id,{kinds,turnsLeft:2}])),true);},needs);
