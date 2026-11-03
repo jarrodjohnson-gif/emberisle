@@ -222,6 +222,7 @@ try {
       }
       return {
         disc: disc?.material.color.getHexString() ?? null,
+        labelColor: label?.material.color.getHexString() ?? null,
         label: background ? background.slice(0, 3).map((v) => v.toString(16).padStart(2, "0")).join("") : (label?.material.color.getHexString() ?? null),
         restDisc: disc?.material.userData.rest?.getHexString?.() ?? null,
         expectedDisc: disc?.material.userData.rest ? disc.material.userData.rest.clone().multiplyScalar(1 - 0.75).getHexString() : null,
@@ -283,6 +284,11 @@ try {
   check(
     "move: token on that hex is dimmed (not rest cream)",
     moved.afterA?.tokenA?.label && moved.afterA.tokenA.label !== "ffffff" && moved.afterA.tokenA.label !== "fff9f0",
+    moved.afterA?.tokenA,
+  );
+  check(
+    "move: mapped face material stays at rest color to prevent double dimming",
+    moved.afterA?.tokenA?.labelColor === "ffffff",
     moved.afterA?.tokenA,
   );
   check("move: token disc is dimmed vs its rest colour", moved.afterA?.tokenA?.disc && moved.afterA.tokenA.restDisc && moved.afterA.tokenA.disc !== moved.afterA.tokenA.restDisc, moved.afterA?.tokenA);
