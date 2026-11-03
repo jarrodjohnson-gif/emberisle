@@ -65,7 +65,7 @@ async function labels(page, expected, tag) {
     const state = window.__emberisle.getState().state;
     const vertex = state.vertices.find(v => v.id === el.dataset.vertexId);
     const p = window.__isle.screenOf(vertex.id);
-    return { id: vertex.id, text: el.textContent.replace(/\s+/g, ' ').trim(), aria: el.getAttribute('aria-label'),
+    return { id: vertex.id, text: el.textContent.replace(/\s+/g, ' ').trim(), aria: el.getAttribute('aria-label'), role: el.getAttribute('role'),
       owner: el.dataset.ownerId,
       actualOwner: vertex.building?.playerId, kind: el.dataset.harbor, actualKind: vertex.harbor,
       x: parseFloat(el.style.left), y: parseFloat(el.style.top), px: p.x, py: p.y,
@@ -82,14 +82,17 @@ async function labels(page, expected, tag) {
   for (const row of result) {
     const want = expected.find(x => x.id === row.id);
     assert.equal(row.text, want.text, `${tag}: visible rate chip`);
+    assert.equal(row.role, 'img', `${tag}: the chip is an image so its name is exposed`);
     assert.equal(row.aria, want.name, `${tag}: full words stay on the accessible name`);
     assert.equal(row.owner, row.actualOwner, `${tag}: label owner matches actual building`);
     assert.equal(row.owner, want.owner, `${tag}: only viewing seat owns label`);
     assert.equal(row.kind, row.actualKind, `${tag}: dock kind matches controlling vertex`);
     assert.equal(row.bg, want.bg, `${tag}: chip color is the good, or the surface for a 3:1`);
     assert.ok(Math.hypot(row.x - row.px, row.y - row.py) < 1.5, `${tag}: independent real-camera building anchor: ${JSON.stringify(row)}`);
-    assert.ok(row.inside && !row.clipped && row.width > 0 && row.width <= 44 && row.height > 0 && row.height <= 22 && row.font === 10,
-      `${tag}: tiny unclipped chip fits the viewport: ${JSON.stringify(row)}`);
+    assert.ok(row.inside && !row.clipped && row.width > 0 && row.width <= 48 && row.height > 0 && row.height <= 24 && row.font === 12,
+      `${tag}: 12 px chip fits the viewport: ${JSON.stringify(row)}`);
+    const named = await page.getByRole('img', { name: want.name }).count();
+    assert.equal(named, expected.filter(x => x.name === want.name).length, `${tag}: accessibility tree exposes ${want.name}`);
     assert.equal(row.pointer, 'none', `${tag}: label never intercepts input`);
     assert.ok(row.top - 1 <= row.py && row.py <= row.bottom + 1, `${tag}: chip sits on its building: ${JSON.stringify(row)}`);
   }
@@ -141,7 +144,7 @@ try {
     await page.waitForFunction(() => window.__isle && window.__emberisle?.getState().state);
     const f = await fixture(page);
     mkdirSync('test-results', { recursive: true });
-    const surface = 'rgb(255, 249, 240)';
+    const surface = 'rgb(255, 255, 255)';
     const mine = [
       { id: f.generic, owner: f.me, text: '3:1', name: 'Your 3:1 dock', bg: surface },
       { id: f.wood, owner: f.me, text: '2:1', name: 'Your 2:1 wood dock', bg: 'rgb(47, 106, 79)' },
@@ -168,7 +171,7 @@ try {
         const any = v.harbor === 'any';
         return { id, owner: me, text: any ? '3:1' : '2:1',
           name: any ? 'Your 3:1 dock' : `Your 2:1 ${names[v.harbor]} dock`,
-          bg: any ? 'rgb(255, 249, 240)' : goods[v.harbor] };
+          bg: any ? 'rgb(255, 255, 255)' : goods[v.harbor] };
       });
     }, f.me);
     await labels(page, extremes, `${tag} extreme left/right coast`);

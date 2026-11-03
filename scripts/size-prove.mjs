@@ -58,7 +58,7 @@ const CEILINGS = [
   { name: "WayfarerOptions", gzipBytes: 500 },
   // #832: the online-only timer ballot loads separately (2026-10-20; measured 1.20 kB).
   { name: "TurnExtensionVote", gzipBytes: 1400 },
-  // #560: owned-building rate chips load separately (0.55 kB gzip measured).
+  // #560: owned-building rate chips load separately (0.62 kB gzip on CI, ceiling 700 B).
   { name: "OwnedDockLabels", gzipBytes: 700 },
 ];
 

@@ -20,8 +20,9 @@ export default function OwnedDockLabels({ docks }: { docks: readonly OwnedDockPo
         data-harbor={d.kind}
         data-owner-id={d.owner}
         data-rate={rate}
+        role="img"
         aria-label={phrase(d)}
-        className={"pointer-events-none absolute whitespace-nowrap rounded-control border border-line px-1 py-0.5 text-[10px] font-semibold leading-none shadow-sm" + (good ? "" : " bg-surface text-fg")}
+        className={"pointer-events-none absolute whitespace-nowrap rounded-control border border-line px-1 py-0.5 text-[12px] font-semibold leading-none shadow-sm" + (good ? "" : " bg-raised text-fg")}
         style={{
           left: d.x,
           top: d.y,
