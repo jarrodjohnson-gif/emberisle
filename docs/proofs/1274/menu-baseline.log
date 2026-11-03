@@ -1,0 +1,66 @@
+{
+  "scrollWidth": 258,
+  "clientWidth": 256,
+  "children": [
+    {
+      "text": "Turn 1",
+      "width": 240,
+      "scrollWidth": 240,
+      "clientWidth": 240
+    },
+    {
+      "text": " How to play",
+      "width": 240,
+      "scrollWidth": 240,
+      "clientWidth": 240
+    },
+    {
+      "text": " Costs",
+      "width": 240,
+      "scrollWidth": 240,
+      "clientWidth": 240
+    },
+    {
+      "text": "Table sounds on",
+      "width": 240,
+      "scrollWidth": 240,
+      "clientWidth": 240
+    },
+    {
+      "text": "Music on",
+      "width": 240,
+      "scrollWidth": 240,
+      "clientWidth": 240
+    },
+    {
+      "text": " WaterCrystalSimple",
+      "width": 240,
+      "scrollWidth": 240,
+      "clientWidth": 240
+    },
+    {
+      "text": " ViewDioramaOverhead",
+      "width": 240,
+      "scrollWidth": 250,
+      "clientWidth": 240
+    },
+    {
+      "text": " Leave table",
+      "width": 240,
+      "scrollWidth": 240,
+      "clientWidth": 240
+    },
+    {
+      "text": "",
+      "width": 1,
+      "scrollWidth": 1,
+      "clientWidth": 1
+    },
+    {
+      "text": "client fa8b967 · Nov 3, 3:45 PM UTC",
+      "width": 240,
+      "scrollWidth": 240,
+      "clientWidth": 240
+    }
+  ]
+}
