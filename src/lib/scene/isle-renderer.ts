@@ -103,6 +103,16 @@ const FLASH_S = 0.6;
 const FLASH_PEAK = 0.35;
 // The pulse token (polish.md "Motion"): legal corners and paths breathe once per 1.2 s.
 const LEGAL_PULSE_S = 1.2;
+// The legal-corner ring (#830): wide enough to see from the default view, outlined dark so it holds on every terrain.
+const VERTEX_RING = { radius: 0.2, tube: 0.04, outline: 0.025, outlineColor: 0x1c120a } as const;
+// A corner that already holds a home (a Stronghold upgrade) gets a halo on the ground around the piece, never on it (owner
+// card on PR #848, Fable spec, 2026-11-01): the piece's base ends at 0.276, so the halo's dark outline (0.285 out) meets the
+// base's own dark rim and the white band (0.31 to 0.39) sits outside it. Depth-tested, so the house stands in front of it.
+const HOME_HALO = { radius: 0.35, tube: 0.04, outline: 0.025 } as const;
+// The warm orange-white glow a paying piece takes on a roll.
+const WARM_GLOW = 0xffd27a;
+// The legal-corner rings and discs glow plain white (#830, owner q848-glow-v2: "Keep it white"); the dark outline carries the contrast.
+const RING_GLOW = 0xffffff;
 
 // The two views in play (docs/design/camera-light.md). Overhead: a frustum and a look-at point from the fit to the HUD hole,
 // and the eye on an orbit around that point, ORBIT_RADIUS out. Diorama (the default, #597): a perspective eye on an orbit
@@ -665,7 +675,7 @@ export class IsleRenderer {
         }
         if (mesh.userData.payerMaterial) {
           const mat = mesh.material as THREE.MeshStandardMaterial;
-          mat.emissive.set(0xffd27a);
+          mat.emissive.set(WARM_GLOW);
           mat.emissiveIntensity = calm && active ? 0.35 : 0;
         }
       });
@@ -1897,16 +1907,76 @@ export class IsleRenderer {
     const seat = new THREE.Color(state.players.find((p) => p.id === state.current)?.color ?? "#fff6e8");
     // The glow leans toward cream so a dark seat (Pine) still reads on forest at the pulse trough; the hue stays the seat's.
     const glow = seat.clone().lerp(new THREE.Color(0xfff6e8), 0.35);
+    // The corner rings glow plain white (#830); the path bars keep the seat glow above.
+    const ringGlow = new THREE.Color(RING_GLOW);
 
-    for (const v of state.vertices) {
-      if (!vset.has(v.id)) continue;
+    const legalVertices = state.vertices.filter((v) => vset.has(v.id));
+    const emptyCorners = legalVertices.filter((v) => !v.building);
+    const builtCorners = legalVertices.filter((v) => v.building);
+    const dummy = new THREE.Object3D();
+    if (emptyCorners.length > 0) {
+      // Outlines and discs are instanced across all empty legal corners: drops 108 draw calls down to 2 (#830).
+      const outlineGeo = new THREE.TorusGeometry(VERTEX_RING.radius, VERTEX_RING.tube + VERTEX_RING.outline, 8, 32);
+      const outlineMat = new THREE.MeshBasicMaterial({ color: VERTEX_RING.outlineColor, depthTest: false });
+      const outlines = new THREE.InstancedMesh(outlineGeo, outlineMat, emptyCorners.length);
+      outlines.renderOrder = 98;
+      outlines.userData = { kind: "vertex-outlines" };
+
+      const discGeo = new THREE.CircleGeometry(VERTEX_RING.radius, 32);
+      const discMat = new THREE.MeshBasicMaterial({ color: RING_GLOW, transparent: true, opacity: 0.3, depthWrite: false, depthTest: false });
+      const discs = new THREE.InstancedMesh(discGeo, discMat, emptyCorners.length);
+      discs.renderOrder = 99;
+      discs.userData = { kind: "vertex-discs" };
+
+      emptyCorners.forEach((v, i) => {
+        const y = vertexTop(tops, v) + 0.03;
+        dummy.position.set(v.x, y - 0.04, v.z);
+        dummy.rotation.set(Math.PI / 2, 0, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        outlines.setMatrixAt(i, dummy.matrix);
+
+        dummy.position.set(v.x, y - 0.016, v.z);
+        dummy.rotation.set(-Math.PI / 2, 0, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        discs.setMatrixAt(i, dummy.matrix);
+      });
+      outlines.instanceMatrix.needsUpdate = true;
+      discs.instanceMatrix.needsUpdate = true;
+      this.marks.add(outlines);
+      this.marks.add(discs);
+    }
+    if (builtCorners.length > 0) {
+      // A home's halo: one instanced dark outline under the white band, depth-tested with the default render order so the
+      // house stands in front of the halo's far side. No disc at a built corner.
+      const haloGeo = new THREE.TorusGeometry(HOME_HALO.radius, HOME_HALO.tube + HOME_HALO.outline, 8, 48);
+      const haloMat = new THREE.MeshBasicMaterial({ color: VERTEX_RING.outlineColor });
+      const haloOutlines = new THREE.InstancedMesh(haloGeo, haloMat, builtCorners.length);
+      haloOutlines.userData = { kind: "home-halo-outlines" };
+      builtCorners.forEach((v, i) => {
+        dummy.position.set(v.x, vertexTop(tops, v) + 0.03 - 0.04, v.z);
+        dummy.rotation.set(Math.PI / 2, 0, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        haloOutlines.setMatrixAt(i, dummy.matrix);
+      });
+      haloOutlines.instanceMatrix.needsUpdate = true;
+      this.marks.add(haloOutlines);
+    }
+
+    for (const v of legalVertices) {
+      // An empty corner's ring draws over everything; a home's halo is depth-tested so the house stands in front of it.
+      const ring = v.building ? HOME_HALO : VERTEX_RING;
       const m = new THREE.Mesh(
-        new THREE.TorusGeometry(0.13, 0.025, 8, 24),
-        new THREE.MeshStandardMaterial({ color: seat, emissive: glow, emissiveIntensity: 0.8 }),
+        new THREE.TorusGeometry(ring.radius, ring.tube, 8, v.building ? 48 : 32),
+        new THREE.MeshStandardMaterial({ color: seat, emissive: ringGlow, emissiveIntensity: 1, depthTest: Boolean(v.building) }),
       );
+      if (!v.building) m.renderOrder = 100;
       m.rotation.x = Math.PI / 2;
+      // Both sit on the ground at the corner (no lift onto a home's base).
       m.position.set(v.x, vertexTop(tops, v) + 0.03, v.z);
-      m.userData = { kind: "vertex", id: v.id, baseGlow: 0.8 };
+      m.userData = { kind: "vertex", id: v.id, baseGlow: 1 };
       this.marks.add(m);
       const pick = new THREE.Mesh(new THREE.SphereGeometry(PICK_VERTEX_RADIUS, 8, 6), new THREE.MeshBasicMaterial());
       pick.visible = false;
