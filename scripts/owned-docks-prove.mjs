@@ -1,7 +1,8 @@
 // #560: DOM geometry and real pointer proof; uses the real renderer, camera and game store.
-// Owner 2026-11-03: the chip sits on the dock plate, not the controlling building.
+// Owner 2026-11-03: every dock is tagged once, on its pier. The two corners share that tag.
+// The words name the trade. A dock the viewer controls reads "Your 2:1 wood" or "Your 3:1 any".
+// The others name the trade with no "Your".
 // Owner 2026-10-16 (docs/design/harbor-jelly-prompt.md): the sails carry no rate.
-// The visible text is "3:1" or "2:1", and the full sentence is the accessible name.
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync } from 'node:fs';
 import { chromium } from 'playwright';
@@ -60,17 +61,18 @@ async function labels(page, expected, tag) {
   const handle = await page.waitForFunction(expected => {
     const nodes = [...document.querySelectorAll('[data-testid="owned-dock-label"]')];
     if (nodes.length !== expected.length || !expected.every(want => nodes.some(el => el.dataset.vertexId === want.id && el.textContent.replace(/\s+/g, ' ').trim() === want.text))) return false;
-    if (nodes.some(el => !window.__isle.pierScreen(el.dataset.vertexId) || !window.__isle.screenOf(el.dataset.vertexId))) return false;
+    if (nodes.some(el => !window.__isle.pierScreen(el.dataset.vertexId) || el.dataset.vertexId.split(':').some(id => !window.__isle.screenOf(id)))) return false;
     return nodes.map(el => {
     const r = el.getBoundingClientRect();
     const css = getComputedStyle(el);
     const state = window.__emberisle.getState().state;
-    const vertex = state.vertices.find(v => v.id === el.dataset.vertexId);
-    const p = window.__isle.pierScreen(vertex.id);
+    const corners = el.dataset.vertexId.split(':').map(id => state.vertices.find(v => v.id === id));
+    const vertex = corners.find(v => v?.building) ?? corners[0];
+    const p = window.__isle.pierScreen(el.dataset.vertexId);
     const b = window.__isle.screenOf(vertex.id);
-    return { id: vertex.id, text: el.textContent.replace(/\s+/g, ' ').trim(), aria: el.getAttribute('aria-label'), role: el.getAttribute('role'),
-      owner: el.dataset.ownerId,
-      actualOwner: vertex.building?.playerId, kind: el.dataset.harbor, actualKind: vertex.harbor,
+    return { id: el.dataset.vertexId, text: el.textContent.replace(/\s+/g, ' ').trim(), aria: el.getAttribute('aria-label'), role: el.getAttribute('role'),
+      owner: el.dataset.ownerId ?? '',
+      actualOwner: vertex.building?.playerId ?? '', kind: el.dataset.harbor, actualKind: vertex.harbor,
       x: parseFloat(el.style.left), y: parseFloat(el.style.top), px: p.x, py: p.y, bx: b.x, by: b.y,
       left: r.left, right: r.right, top: r.top, bottom: r.bottom,
       width: r.width, height: r.height, font: parseFloat(css.fontSize), pointer: css.pointerEvents,
@@ -81,21 +83,22 @@ async function labels(page, expected, tag) {
   }, expected, { timeout: TIMEOUT });
   const result = await handle.jsonValue();
   await handle.dispose();
-  assert.deepEqual(result.map(x => x.id).sort(), expected.map(x => x.id).sort(), `${tag}: only controlling buildings have labels`);
+  assert.deepEqual(result.map(x => x.id).sort(), expected.map(x => x.id).sort(), `${tag}: every dock is labelled`);
   for (const row of result) {
     const want = expected.find(x => x.id === row.id);
     assert.equal(row.text, want.text, `${tag}: visible rate chip`);
     assert.equal(row.role, 'img', `${tag}: the chip is an image so its name is exposed`);
     assert.equal(row.aria, want.name, `${tag}: full words stay on the accessible name`);
     assert.equal(row.owner, row.actualOwner, `${tag}: label owner matches actual building`);
-    assert.equal(row.owner, want.owner, `${tag}: only viewing seat owns label`);
+    assert.equal(row.owner, want.owner, `${tag}: label owner matches the building`);
     assert.equal(row.kind, row.actualKind, `${tag}: dock kind matches controlling vertex`);
     assert.equal(row.bg, want.bg, `${tag}: chip color is the good, or the surface for a 3:1`);
     assert.ok(Math.hypot(row.x - row.px, row.y - row.py) < 1.5, `${tag}: independent real-camera dock plate anchor: ${JSON.stringify(row)}`);
     assert.ok(row.bx < row.left || row.bx > row.right || row.by < row.top || row.by > row.bottom, `${tag}: chip does not cover the controlling building: ${JSON.stringify(row)}`);
-    assert.ok(row.inside && !row.clipped && row.width > 0 && row.width <= 48 && row.height > 0 && row.height <= 24 && row.font === 12,
+    assert.ok(row.inside && !row.clipped && row.width > 0 && row.width <= 140 && row.height > 0 && row.height <= 24 && row.font === 12,
       `${tag}: 12 px chip fits the viewport: ${JSON.stringify(row)}`);
-    const named = await page.getByRole('img', { name: want.name }).count();
+    assert.ok(row.text !== '2:1' && row.text !== '3:1', `${tag}: the trade is written in words`);
+    const named = await page.getByRole('img', { name: want.name, exact: true }).count();
     assert.equal(named, expected.filter(x => x.name === want.name).length, `${tag}: accessibility tree exposes ${want.name}`);
     assert.equal(row.pointer, 'none', `${tag}: label never intercepts input`);
     assert.ok(row.top - 1 <= row.py && row.py <= row.bottom + 1, `${tag}: chip sits on its dock: ${JSON.stringify(row)}`);
@@ -126,6 +129,31 @@ async function rotate(page, touch) {
     Math.abs(window.__isle.orbit.getPolarAngle() - before[1]) > .02, before, { timeout: TIMEOUT });
   await page.waitForFunction(() => !window.__isle.glide && !window.__isle.refitDue, null, { timeout: TIMEOUT });
 }
+async function expected(page) {
+  return page.evaluate(() => {
+    const s = window.__emberisle.getState();
+    const viewing = s.screen === 'play' && !s.spectator ? (s.mode === 'hotseat' ? s.state.current : s.localId) : null;
+    const names = { timber: 'wood', clay: 'brick', wool: 'sheep', grain: 'wheat', ore: 'stone' };
+    const goods = { timber: 'rgb(47, 106, 79)', clay: 'rgb(184, 83, 61)', wool: 'rgb(178, 206, 128)', grain: 'rgb(227, 196, 98)', ore: 'rgb(99, 116, 138)' };
+    const byId = new Map(s.state.vertices.map(v => [v.id, v]));
+    const seen = new Set();
+    const rows = [];
+    for (const e of s.state.edges) {
+      const va = byId.get(e.va);
+      const vb = byId.get(e.vb);
+      if (!va?.harbor || va.harbor !== vb?.harbor) continue;
+      const id = [va.id, vb.id].sort().join(':');
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const held = [va, vb].find(v => v.building) ?? va;
+      const trade = va.harbor === 'any' ? '3:1 any' : `2:1 ${names[va.harbor]}`;
+      const owner = held.building?.playerId ?? '';
+      const line = !!viewing && owner === viewing ? `Your ${trade}` : trade;
+      rows.push({ id, owner, text: line, name: line, bg: va.harbor === 'any' ? 'rgb(255, 255, 255)' : goods[va.harbor] });
+    }
+    return rows;
+  });
+}
 try {
   browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ||
     (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined) });
@@ -150,13 +178,12 @@ try {
     await page.waitForFunction(() => window.__isle && window.__emberisle?.getState().state);
     const f = await fixture(page);
     mkdirSync('test-results', { recursive: true });
-    const surface = 'rgb(255, 255, 255)';
-    const mine = [
-      { id: f.generic, owner: f.me, text: '3:1', name: 'Your 3:1 dock', bg: surface },
-      { id: f.wood, owner: f.me, text: '2:1', name: 'Your 2:1 wood dock', bg: 'rgb(47, 106, 79)' },
-    ];
-    const theirs = [{ id: f.opponent, owner: f.other, text: '2:1', name: 'Your 2:1 brick dock', bg: 'rgb(184, 83, 61)' }];
-    await labels(page, mine, tag);
+    const first = await labels(page, await expected(page), tag);
+    const textOf = id => first.find(row => row.id.split(':').includes(id))?.text;
+    assert.equal(textOf(f.generic), 'Your 3:1 any', `${tag}: a 3:1 dock says any`);
+    assert.equal(textOf(f.wood), 'Your 2:1 wood', `${tag}: a 2:1 dock names its good`);
+    assert.equal(textOf(f.opponent), '2:1 brick', `${tag}: someone else's dock is labelled without Your`);
+    assert.ok(first.length > 3, `${tag}: docks with no building are labelled`);
     // Staging the hand can trigger the normal gain cue; capture the permanent labels after it clears.
     await page.waitForFunction(() => !document.querySelector('[data-testid="gain-float"]'));
     await page.screenshot({ path: `test-results/owned-docks-${view.width}x${view.height}.png` });
@@ -167,35 +194,28 @@ try {
       const docks = state.vertices.filter(v => v.harbor).map(v => ({ id: v.id, x: window.__isle.screenOf(v.id).x }));
       docks.sort((a, b) => a.x - b.x);
       const ids = [docks[0].id, docks.at(-1).id];
-      const names = { timber: 'wood', clay: 'brick', wool: 'sheep', grain: 'wheat', ore: 'stone' };
-      const goods = { timber: 'rgb(47, 106, 79)', clay: 'rgb(184, 83, 61)', wool: 'rgb(178, 206, 128)', grain: 'rgb(227, 196, 98)', ore: 'rgb(99, 116, 138)' };
       for (const v of state.vertices) v.building = ids.includes(v.id) ? { playerId: me, kind: 'outpost' } : null;
       state.seq++;
       api.setState({ state });
-      return ids.map(id => {
-        const v = state.vertices.find(v => v.id === id);
-        const any = v.harbor === 'any';
-        return { id, owner: me, text: any ? '3:1' : '2:1',
-          name: any ? 'Your 3:1 dock' : `Your 2:1 ${names[v.harbor]} dock`,
-          bg: any ? 'rgb(255, 255, 255)' : goods[v.harbor] };
-      });
+      return ids;
     }, f.me);
-    await labels(page, extremes, `${tag} extreme left/right coast`);
+    const extremeRows = await labels(page, await expected(page), `${tag} extreme left/right coast`);
+    for (const id of extremes) assert.ok(extremeRows.find(row => row.id.split(':').includes(id)).text.startsWith('Your '), `${tag}: extreme dock the viewer controls reads Your`);
     await page.screenshot({ path: `test-results/owned-docks-extremes-${view.width}x${view.height}.png` });
     await fixture(page);
     const initialState = await snapshot(page);
-    const initial = await labels(page, mine, `${tag} restored`);
+    const initial = await labels(page, await expected(page), `${tag} restored`);
     await page.setViewportSize({ width: view.width - 20, height: view.height - 20 });
     await page.waitForFunction(old => [...document.querySelectorAll('[data-testid="owned-dock-label"]')].some(el => {
       const was = old.find(p => p.id === el.dataset.vertexId);
       return was && Math.hypot(parseFloat(el.style.left) - was.x, parseFloat(el.style.top) - was.y) > 1;
     }), initial);
-    await labels(page, mine, `${tag} resized`);
+    await labels(page, await expected(page), `${tag} resized`);
     await page.evaluate(() => window.__emberisle.setState({ viewChoice: 'diorama' }));
     await page.waitForFunction(() => window.__emberisle.getState().playView === 'diorama');
-    const beforeRotate = await labels(page, mine, `${tag} diorama`);
+    const beforeRotate = await labels(page, await expected(page), `${tag} diorama`);
     await rotate(page, view.touch);
-    const afterRotate = await labels(page, mine, `${tag} rotated`);
+    const afterRotate = await labels(page, await expected(page), `${tag} rotated`);
     assert.ok(afterRotate.some(p => {
       const old = beforeRotate.find(x => x.id === p.id);
       return Math.hypot(p.x - old.x, p.y - old.y) > 2;
@@ -203,11 +223,15 @@ try {
     assert.equal(await snapshot(page), initialState, `${tag}: viewing, resizing and real drag preserve every game field`);
     await page.evaluate(() => window.__isle.goHome());
     await page.evaluate(other => window.__emberisle.setState({ mode: 'online', localId: other }), f.other);
-    await labels(page, theirs, `${tag} online seat changes`);
+    const online = await labels(page, await expected(page), `${tag} online seat changes`);
+    const rowOf = (rows, id) => rows.find(row => row.id.split(':').includes(id));
+    assert.equal(rowOf(online, f.opponent).text, 'Your 2:1 brick', `${tag}: the new seat's dock reads Your`);
+    assert.equal(rowOf(online, f.wood).text, '2:1 wood', `${tag}: the previous seat's dock stays labelled`);
     await page.evaluate(() => window.__emberisle.setState({ spectator: true }));
-    await labels(page, [], `${tag} watcher`);
+    const watching = await labels(page, await expected(page), `${tag} watcher`);
+    assert.ok(watching.length > 3 && watching.every(row => !row.text.startsWith('Your ')), `${tag}: a watcher still sees every dock, and none read Your`);
     await page.evaluate(() => window.__emberisle.setState({ spectator: false, mode: 'hotseat' }));
-    await labels(page, mine, `${tag} hotseat current seat beats localId`);
+    await labels(page, await expected(page), `${tag} hotseat current seat beats localId`);
     await page.evaluate(other => {
       const api = window.__emberisle;
       const state = structuredClone(api.getState().state);
@@ -215,7 +239,8 @@ try {
       state.seq++;
       api.setState({ state });
     }, f.other);
-    await labels(page, theirs, `${tag} hotseat turn changes`);
+    const turned = await labels(page, await expected(page), `${tag} hotseat turn changes`);
+    assert.equal(turned.find(row => row.id.split(':').includes(f.opponent)).text, 'Your 2:1 brick', `${tag}: hotseat Your follows the current seat`);
     await page.evaluate(id => {
       const api = window.__emberisle;
       const state = structuredClone(api.getState().state);
@@ -223,9 +248,10 @@ try {
       state.seq++;
       api.setState({ state });
     }, f.opponent);
-    await labels(page, [], `${tag} controlling building removed`);
+    const cleared = await labels(page, await expected(page), `${tag} controlling building removed`);
+    assert.equal(cleared.find(row => row.id.split(':').includes(f.opponent)).text, '2:1 brick', `${tag}: removing the building keeps the dock tag`);
     assert.deepEqual(errors, [], `${tag}: zero browser, console and HTTP errors`);
-    console.log(`${tag}: exact generic/wood labels, opponent excluded, independent building projection, resize, real ${view.touch ? 'touch' : 'mouse'} rotation, pointer pass-through, state isolation, online/hotseat changes, watcher and ownership removal; zero errors`);
+    console.log(`${tag}: every dock named in words, Your follows the seat, independent pier projection, resize, real ${view.touch ? 'touch' : 'mouse'} rotation, pointer pass-through, state isolation, watcher and ownership removal; zero errors`);
     await ctx.close();
   }
   console.log('owned-docks-prove: ok (real renderer; no GPU draw suppression)');

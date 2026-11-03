@@ -43,7 +43,7 @@ export default function IslandCanvas() {
       return;
     }
     renderer.onDocks = setDocks;
-    renderer.onOwnedDocks = setOwnedDocks;
+    renderer.onTags = setOwnedDocks;
     renderer.onDock = (id) => {
       const s = useGame.getState();
       if (s.screen !== "play" || s.buildMode !== "none" || !s.state || !["roll", "main", "over"].includes(s.state.phase)) return false;
