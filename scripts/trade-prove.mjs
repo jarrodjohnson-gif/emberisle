@@ -709,12 +709,12 @@ try {
   clip = await hearOffer("please-two-goods", { clay: 1 }, { wool: 1, grain: 1 });
   assert.deepEqual(clip[tabs.indexOf(A)], [], "multi-resource request keeps the usual asker silence");
   for (const t of [B, C]) assert.deepEqual(clip[tabs.indexOf(t)], ["trade_offer.wav@1"], "multi-resource request uses the plain trade chime");
-  const botId = vs[tabs.indexOf(C)].you;
+  const tabBotId = vs[tabs.indexOf(C)].you;
   await Promise.all(tabs.map((t) => t.page.evaluate((id) => {
     const state = window.__emberisle.getState().state;
     window.__emberisle.setState({ state: { ...state, players: state.players.map((p) => p.id === id ? { ...p, kind: "bot", name: "Tide bot" } : p) } });
-  }, botId)));
-  clip = await hearOffer("please-bot-ask", { timber: 1 }, { wool: 1 }, botId);
+  }, tabBotId)));
+  clip = await hearOffer("please-bot-ask", { timber: 1 }, { wool: 1 }, tabBotId);
   for (const got of clip) assert.deepEqual(got, ["sb_sheep_please.mp3@1"], "bot asks use the same resource clip on every seat");
   clip = await hearOffer("please-repeat-first", { clay: 1 }, { wool: 1 }, vs[tabs.indexOf(B)].you);
   for (const got of clip) assert.deepEqual(got, ["sb_sheep_please.mp3@1"], "first ask plays its please clip");
