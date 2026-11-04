@@ -452,6 +452,51 @@ function orderOk(g) {
   }
   console.log("roll-off: a forced tie at 6 rerolls only the leaders, in join order; order ok after it");
 
+  function withDice(seq, fn) {
+    const orig = crypto.getRandomValues.bind(crypto);
+    const d = [...seq];
+    crypto.getRandomValues = (buf) => {
+      if (d.length) buf[0] = d.shift() - 1;
+      else orig(buf);
+      return buf;
+    };
+    try {
+      return fn();
+    } finally {
+      crypto.getRandomValues = orig;
+    }
+  }
+
+  // #1286: tiebreak rerolls compute leaders only from rerollers; eliminated players follow in round-1 order
+  withDice([6, 6, 5, 2, 1], () => {
+    let g = three();
+    for (let i = 0; i < 5; i++) {
+      const r = applyAction(g, g.current, { type: "roll" });
+      if (r.error) fail("forced tiebreak roll", r.error);
+      g = r.state;
+    }
+    const ids = g.players.map((p) => p.id).join();
+    if (ids !== "p0,p1,p2" || g.phase !== "setupSettle" || g.current !== "p0") {
+      fail("forced tiebreak order p0,p1,p2", { players: ids, phase: g.phase, current: g.current, rolls: g.rollOff?.rolls });
+    }
+  });
+
+  // #1286: reroll matching an eliminated player's round-1 die does not pull them back in
+  withDice([6, 6, 5, 5, 1], () => {
+    let g = three();
+    for (let i = 0; i < 5; i++) {
+      const r = applyAction(g, g.current, { type: "roll" });
+      if (r.error) fail("forced tiebreak reroll", r.error);
+      g = r.state;
+    }
+    const ids = g.players.map((p) => p.id).join();
+    const pulledP2 = g.log.some((l) => l.includes("C tie") || l.includes("and C tie"));
+    if (ids !== "p0,p1,p2" || g.phase !== "setupSettle" || g.current !== "p0" || pulledP2) {
+      fail("forced reroll p2 not pulled into reroll", { players: ids, phase: g.phase, current: g.current, rolls: g.rollOff?.rolls, log: g.log });
+    }
+  });
+  console.log("roll-off: #1286 forced rerolls resolve leaders among rerollers and do not pull eliminated players back in");
+
   // 200 full roll-offs at 3 and 4 seats: order ok every time, ties happen, and state.rng is never touched.
   let ties = 0;
   for (const humans of [3, 4]) {

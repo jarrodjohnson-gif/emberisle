@@ -299,9 +299,14 @@ function names(list: PlayerState[]) {
   return n.length < 3 ? n.join(" and ") : `${n.slice(0, -1).join(", ")}, and ${n.at(-1)}`;
 }
 
+type RollOffState = NonNullable<GameState["rollOff"]> & {
+  tied?: string[];
+  settled?: string[];
+};
+
 // The pre-setup roll-off (docs/design/first-player.md). Never touches state.rng.
 function rollOffRoll(state: GameState, me: PlayerState) {
-  const ro = state.rollOff!;
+  const ro = state.rollOff as RollOffState;
   const die = rollDie();
   ro.rolls[me.id] = die;
   ro.pending.shift();
@@ -312,17 +317,23 @@ function rollOffRoll(state: GameState, me: PlayerState) {
   }
   const seated = state.players.filter((p) => p.id === ro.first);
   const rolling = state.players.filter((p) => p.id !== ro.first);
-  const top = Math.max(...Object.values(ro.rolls));
-  const leaders = rolling.filter((p) => ro.rolls[p.id] === top);
+  const candidates = ro.tied ? rolling.filter((p) => ro.tied!.includes(p.id)) : rolling;
+  const top = Math.max(...candidates.map((p) => ro.rolls[p.id]!));
+  const leaders = candidates.filter((p) => ro.rolls[p.id] === top);
   if (leaders.length > 1) {
+    const out = candidates.filter((p) => ro.rolls[p.id] !== top).sort((a, b) => ro.rolls[b.id]! - ro.rolls[a.id]!);
+    ro.settled = [...out.map((p) => p.id), ...(ro.settled ?? [])];
     for (const p of leaders) delete ro.rolls[p.id];
     ro.pending = leaders.map((p) => p.id);
+    ro.tied = leaders.map((p) => p.id);
     state.current = leaders[0]!.id;
     log(state, `${names(leaders)} tie at ${top} and roll again.`);
     return;
   }
   const lead = leaders[0]!;
-  const rest = rolling.filter((p) => p !== lead).sort((a, b) => ro.rolls[b.id]! - ro.rolls[a.id]!);
+  const out = candidates.filter((p) => p !== lead).sort((a, b) => ro.rolls[b.id]! - ro.rolls[a.id]!);
+  ro.settled = [...out.map((p) => p.id), ...(ro.settled ?? [])];
+  const rest = ro.settled.map((id) => rolling.find((p) => p.id === id)!);
   state.players = [...seated, lead, ...rest];
   const [first, ...after] = state.players;
   state.current = first!.id;
