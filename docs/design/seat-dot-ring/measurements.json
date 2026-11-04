@@ -800,12 +800,10 @@
     "#ffffff": 3.9428016446127825,
     "#f3f6f5": 3.625830172916382
   },
-  "sourceSha256": "a337a5dd67a9baccf3b8d9a27a356f12c024509fc4ae6003ef6ae53022f1510c",
+  "sourceSha256": "5a01d7d75588e6b7601a401a51002dacae7c5b8882329b646893ea3c345cfb20",
   "screenshotsSha256": {
-    "390x844.png": "61929c16a335d049eb95ce07f1698ac35cce795ab87ee1ed2de00cf5d77f050e",
-    "1280x720.png": "3fdca04fa546982c0076b04f0af1c8e0687b853cadba65dee917eb0c9d90faa5",
-    "844x390.png": "bb4e7b7d7981daa4fb7510a5a5379f951ba0a774361ea908f55766ee3a5488e7"
-  },
-  "capturedSourceSha256": "db0d34d6e0901345896d95ac6f5bcda6befc70fe6e959954869391014613ffe0",
-  "postCaptureChange": "Removed trailing whitespace only; no markup, style values, or script behavior changed."
+    "390x844.png": "50f02b1dab46e9fd5dd5292a0bccac6f2b6e78ec0d00c1984b76d60224d51641",
+    "844x390.png": "a61f7866c547180ef4928a61a8ef22b9e38cd1906bfed487337f8a0fb322f393",
+    "1280x720.png": "c3b0885273e2a25793d52f5df84baf6dfc56350275570f74686a63365352feec"
+  }
 }
