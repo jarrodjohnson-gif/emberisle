@@ -7,6 +7,7 @@ Rows that a later decision replaced, or that expired, are kept word for word und
 
 | Date | Decision | Where |
 |---|---|---|
+| 2026-11-03 | **Index ceiling raised to 127,000 B.** Owner: "I don't care. Raise it if Opus says so." Raised from 125,200 B to 127,000 B now, followed by paired trim issue [#1285](https://github.com/jarrodjohnson-gif/emberisle/issues/1285). The index ceiling may rise by at most 1,000 B per DECISIONS row and at most once a week. Each row names the PR and the measured bytes, and a trim issue must be opened at the same time. Going above 130,000 B needs Jarrod. The startup loading screen (#1281) gets its own row with its measured size. | Jarrod, Desk Decisions q-main-red; [#1283](https://github.com/jarrodjohnson-gif/emberisle/issues/1283) |
 | 2026-10-27 | **Reviews stay on Claude.** The desk's review subagents (Sonnet, Opus, Haiku, per `DESK.md`) do every review. ChatGPT plans are for building, not reviewing, and the work ChatGPT plan is not relied on. | Jarrod, in chat |
 | 2026-10-27 | **Ready for up to 15 builders.** A new model Jarrod adds may claim `tier:3` issues at once, as provisional and one at a time. After two clean merges, the desk lists it in the tier table. This replaces "a model not in the table claims nothing". | Jarrod, in chat; [`docs/LANES.md`](LANES.md) |
 | 2026-10-27 | **Mock order:** goods cards (#772) first, then dice (#680). The ore climber (#976) is not a priority. | Jarrod, in chat |
