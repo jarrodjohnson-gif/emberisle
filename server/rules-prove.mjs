@@ -4,6 +4,7 @@ import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, harborRate, legalRoads, legalSettle, publicVP, roadLength, stealTargets } from "../src/lib/game/rules.ts";
 import { RESOURCES } from "../src/lib/game/types.ts";
 import { AXIAL_DIRS } from "../src/lib/game/hex.ts";
+import { rollOffOrderOk } from "../scripts/roll-off-oracle.mjs";
 
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
@@ -406,21 +407,9 @@ function rollOff(g) {
   if (g.phase !== "setupSettle") fail("roll-off never ended", g.phase);
   return g;
 }
-// The invariant wherever a roll-off ends: the first seat's die is strictly highest, the rest by die then join order.
+// The invariant wherever a roll-off ends: verified against the shared roll-off oracle (scripts/roll-off-oracle.mjs).
 function orderOk(g) {
-  const { rolls, pending } = g.rollOff;
-  const die = (p) => rolls[p.id];
-  const [first, ...rest] = g.players;
-  const join = (p) => Number(p.id.slice(1));
-  const hasTie = g.log.some((l) => / tie at \d and roll again\.$/.test(l));
-  const descending =
-    rest.every((p) => die(first) > die(p)) &&
-    rest.every((p, i) => i === 0 || die(rest[i - 1]) > die(p) || (die(rest[i - 1]) === die(p) && join(rest[i - 1]) < join(p)));
-  return (
-    (hasTie || descending) &&
-    g.current === first.id && g.phase === "setupSettle" && g.setupIndex === 0 &&
-    pending.length === 0 && Object.keys(rolls).length === g.players.length && g.players.every((p) => die(p) >= 1 && die(p) <= 6)
-  );
+  return rollOffOrderOk(g);
 }
 {
   const three = () => createGame({ humans: [{ name: "A" }, { name: "B" }, { name: "C" }], bots: 0, seed: 9 });
