@@ -1,0 +1,4958 @@
+{
+  "browser": "154.0.8037.57",
+  "note": "Synthetic prototype measurements, not game/runtime proof. Safe insets top/right/bottom/left: portrait 44/0/34/0; landscape 0/44/21/44. Desktop uses portrait stress inset.",
+  "records": [
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 0,
+      "state": "empty",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 268,
+        "width": 358,
+        "height": 560,
+        "bottom": 828,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 771,
+        "width": 332,
+        "height": 44,
+        "bottom": 815,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 357.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 700.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 708.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 815,
+        "right": 361
+      },
+      "scrollHeight": 343,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 0,
+      "state": "unselected",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 268,
+        "width": 358,
+        "height": 560,
+        "bottom": 828,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 771,
+        "width": 332,
+        "height": 44,
+        "bottom": 815,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 357.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 700.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 708.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 815,
+        "right": 361
+      },
+      "scrollHeight": 419,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 0,
+      "state": "selected",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 268,
+        "width": 358,
+        "height": 560,
+        "bottom": 828,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 771,
+        "width": 332,
+        "height": 44,
+        "bottom": 815,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 357.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 700.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 708.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 815,
+        "right": 361
+      },
+      "scrollHeight": 419,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 0,
+      "state": "unplayable",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 268,
+        "width": 358,
+        "height": 560,
+        "bottom": 828,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 771,
+        "width": 332,
+        "height": 44,
+        "bottom": 815,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 357.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 700.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 708.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 815,
+        "right": 361
+      },
+      "scrollHeight": 432,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 0,
+      "state": "just-bought",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 268,
+        "width": 358,
+        "height": 560,
+        "bottom": 828,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 771,
+        "width": 332,
+        "height": 44,
+        "bottom": 815,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 357.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 700.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 708.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 815,
+        "right": 361
+      },
+      "scrollHeight": 432,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 0,
+      "state": "already-played",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 268,
+        "width": 358,
+        "height": 560,
+        "bottom": 828,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 771,
+        "width": 332,
+        "height": 44,
+        "bottom": 815,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 357.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 700.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 708.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 815,
+        "right": 361
+      },
+      "scrollHeight": 432,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 0,
+      "state": "points",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 268,
+        "width": 358,
+        "height": 560,
+        "bottom": 828,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 771,
+        "width": 332,
+        "height": 44,
+        "bottom": 815,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 357.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 700.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 708.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 815,
+        "right": 361
+      },
+      "scrollHeight": 419,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 0,
+      "state": "long-list",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 268,
+        "width": 358,
+        "height": 560,
+        "bottom": 828,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 771,
+        "width": 332,
+        "height": 44,
+        "bottom": 815,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 357.796875,
+        "width": 332,
+        "height": 282.609375,
+        "bottom": 640.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 648.40625,
+        "width": 332,
+        "height": 166.59375,
+        "bottom": 815,
+        "right": 361
+      },
+      "scrollHeight": 419,
+      "clientHeight": 283,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 0,
+      "state": "muster",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 268,
+        "width": 358,
+        "height": 560,
+        "bottom": 828,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 771,
+        "width": 332,
+        "height": 44,
+        "bottom": 815,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 357.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 700.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 708.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 815,
+        "right": 361
+      },
+      "scrollHeight": 419,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 0,
+      "state": "before-roll",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 268,
+        "width": 358,
+        "height": 560,
+        "bottom": 828,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 771,
+        "width": 332,
+        "height": 44,
+        "bottom": 815,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 357.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 700.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 708.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 815,
+        "right": 361
+      },
+      "scrollHeight": 429,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 0,
+      "state": "no-path",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 268,
+        "width": 358,
+        "height": 560,
+        "bottom": 828,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 771,
+        "width": 332,
+        "height": 44,
+        "bottom": 815,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 357.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 700.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 708.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 815,
+        "right": 361
+      },
+      "scrollHeight": 422,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 0,
+      "state": "empty-bank",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 268,
+        "width": 358,
+        "height": 560,
+        "bottom": 828,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 771,
+        "width": 332,
+        "height": 44,
+        "bottom": 815,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 357.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 700.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 708.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 815,
+        "right": 361
+      },
+      "scrollHeight": 422,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 1,
+      "state": "empty",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 250,
+        "width": 358,
+        "height": 560,
+        "bottom": 810,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 753,
+        "width": 332,
+        "height": 44,
+        "bottom": 797,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 339.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 682.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 690.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 797,
+        "right": 361
+      },
+      "scrollHeight": 343,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 1,
+      "state": "unselected",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 250,
+        "width": 358,
+        "height": 560,
+        "bottom": 810,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 753,
+        "width": 332,
+        "height": 44,
+        "bottom": 797,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 339.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 682.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 690.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 797,
+        "right": 361
+      },
+      "scrollHeight": 419,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 1,
+      "state": "selected",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 250,
+        "width": 358,
+        "height": 560,
+        "bottom": 810,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 753,
+        "width": 332,
+        "height": 44,
+        "bottom": 797,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 339.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 682.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 690.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 797,
+        "right": 361
+      },
+      "scrollHeight": 419,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 1,
+      "state": "unplayable",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 250,
+        "width": 358,
+        "height": 560,
+        "bottom": 810,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 753,
+        "width": 332,
+        "height": 44,
+        "bottom": 797,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 339.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 682.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 690.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 797,
+        "right": 361
+      },
+      "scrollHeight": 432,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 1,
+      "state": "just-bought",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 250,
+        "width": 358,
+        "height": 560,
+        "bottom": 810,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 753,
+        "width": 332,
+        "height": 44,
+        "bottom": 797,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 339.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 682.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 690.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 797,
+        "right": 361
+      },
+      "scrollHeight": 432,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 1,
+      "state": "already-played",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 250,
+        "width": 358,
+        "height": 560,
+        "bottom": 810,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 753,
+        "width": 332,
+        "height": 44,
+        "bottom": 797,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 339.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 682.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 690.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 797,
+        "right": 361
+      },
+      "scrollHeight": 432,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 1,
+      "state": "points",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 250,
+        "width": 358,
+        "height": 560,
+        "bottom": 810,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 753,
+        "width": 332,
+        "height": 44,
+        "bottom": 797,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 339.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 682.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 690.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 797,
+        "right": 361
+      },
+      "scrollHeight": 419,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 1,
+      "state": "long-list",
+      "image": "390x844-safe-long-list.png",
+      "tray": {
+        "x": 16,
+        "y": 250,
+        "width": 358,
+        "height": 560,
+        "bottom": 810,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 753,
+        "width": 332,
+        "height": 44,
+        "bottom": 797,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 339.796875,
+        "width": 332,
+        "height": 282.609375,
+        "bottom": 622.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 630.40625,
+        "width": 332,
+        "height": 166.59375,
+        "bottom": 797,
+        "right": 361
+      },
+      "scrollHeight": 419,
+      "clientHeight": 283,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 1,
+      "state": "muster",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 250,
+        "width": 358,
+        "height": 560,
+        "bottom": 810,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 753,
+        "width": 332,
+        "height": 44,
+        "bottom": 797,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 339.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 682.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 690.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 797,
+        "right": 361
+      },
+      "scrollHeight": 419,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 1,
+      "state": "before-roll",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 250,
+        "width": 358,
+        "height": 560,
+        "bottom": 810,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 753,
+        "width": 332,
+        "height": 44,
+        "bottom": 797,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 339.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 682.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 690.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 797,
+        "right": 361
+      },
+      "scrollHeight": 429,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 1,
+      "state": "no-path",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 250,
+        "width": 358,
+        "height": 560,
+        "bottom": 810,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 753,
+        "width": 332,
+        "height": 44,
+        "bottom": 797,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 339.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 682.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 690.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 797,
+        "right": 361
+      },
+      "scrollHeight": 422,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safe": 1,
+      "state": "empty-bank",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 250,
+        "width": 358,
+        "height": 560,
+        "bottom": 810,
+        "right": 374
+      },
+      "play": {
+        "x": 29,
+        "y": 753,
+        "width": 332,
+        "height": 44,
+        "bottom": 797,
+        "right": 361
+      },
+      "list": {
+        "x": 29,
+        "y": 339.796875,
+        "width": 332,
+        "height": 342.609375,
+        "bottom": 682.40625,
+        "right": 361
+      },
+      "footer": {
+        "x": 29,
+        "y": 690.40625,
+        "width": 332,
+        "height": 106.59375,
+        "bottom": 797,
+        "right": 361
+      },
+      "scrollHeight": 422,
+      "clientHeight": 343,
+      "bodyWidth": 390,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 0,
+      "state": "empty",
+      "image": null,
+      "tray": {
+        "x": 512,
+        "y": 12,
+        "width": 320,
+        "height": 366,
+        "bottom": 378,
+        "right": 832
+      },
+      "play": {
+        "x": 525,
+        "y": 321,
+        "width": 294,
+        "height": 44,
+        "bottom": 365,
+        "right": 819
+      },
+      "list": {
+        "x": 525,
+        "y": 101.796875,
+        "width": 294,
+        "height": 165.609375,
+        "bottom": 267.40625,
+        "right": 819
+      },
+      "footer": {
+        "x": 525,
+        "y": 275.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 365,
+        "right": 819
+      },
+      "scrollHeight": 166,
+      "clientHeight": 166,
+      "bodyWidth": 844,
+      "order": [],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 0,
+      "state": "unselected",
+      "image": null,
+      "tray": {
+        "x": 512,
+        "y": 12,
+        "width": 320,
+        "height": 366,
+        "bottom": 378,
+        "right": 832
+      },
+      "play": {
+        "x": 525,
+        "y": 321,
+        "width": 294,
+        "height": 44,
+        "bottom": 365,
+        "right": 819
+      },
+      "list": {
+        "x": 525,
+        "y": 101.796875,
+        "width": 294,
+        "height": 165.609375,
+        "bottom": 267.40625,
+        "right": 819
+      },
+      "footer": {
+        "x": 525,
+        "y": 275.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 365,
+        "right": 819
+      },
+      "scrollHeight": 420,
+      "clientHeight": 166,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 0,
+      "state": "selected",
+      "image": null,
+      "tray": {
+        "x": 512,
+        "y": 12,
+        "width": 320,
+        "height": 366,
+        "bottom": 378,
+        "right": 832
+      },
+      "play": {
+        "x": 525,
+        "y": 321,
+        "width": 294,
+        "height": 44,
+        "bottom": 365,
+        "right": 819
+      },
+      "list": {
+        "x": 525,
+        "y": 101.796875,
+        "width": 294,
+        "height": 165.609375,
+        "bottom": 267.40625,
+        "right": 819
+      },
+      "footer": {
+        "x": 525,
+        "y": 275.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 365,
+        "right": 819
+      },
+      "scrollHeight": 420,
+      "clientHeight": 166,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 0,
+      "state": "unplayable",
+      "image": null,
+      "tray": {
+        "x": 512,
+        "y": 12,
+        "width": 320,
+        "height": 366,
+        "bottom": 378,
+        "right": 832
+      },
+      "play": {
+        "x": 525,
+        "y": 321,
+        "width": 294,
+        "height": 44,
+        "bottom": 365,
+        "right": 819
+      },
+      "list": {
+        "x": 525,
+        "y": 101.796875,
+        "width": 294,
+        "height": 165.609375,
+        "bottom": 267.40625,
+        "right": 819
+      },
+      "footer": {
+        "x": 525,
+        "y": 275.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 365,
+        "right": 819
+      },
+      "scrollHeight": 449,
+      "clientHeight": 166,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 0,
+      "state": "just-bought",
+      "image": null,
+      "tray": {
+        "x": 512,
+        "y": 12,
+        "width": 320,
+        "height": 366,
+        "bottom": 378,
+        "right": 832
+      },
+      "play": {
+        "x": 525,
+        "y": 321,
+        "width": 294,
+        "height": 44,
+        "bottom": 365,
+        "right": 819
+      },
+      "list": {
+        "x": 525,
+        "y": 101.796875,
+        "width": 294,
+        "height": 165.609375,
+        "bottom": 267.40625,
+        "right": 819
+      },
+      "footer": {
+        "x": 525,
+        "y": 275.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 365,
+        "right": 819
+      },
+      "scrollHeight": 449,
+      "clientHeight": 166,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 0,
+      "state": "already-played",
+      "image": null,
+      "tray": {
+        "x": 512,
+        "y": 12,
+        "width": 320,
+        "height": 366,
+        "bottom": 378,
+        "right": 832
+      },
+      "play": {
+        "x": 525,
+        "y": 321,
+        "width": 294,
+        "height": 44,
+        "bottom": 365,
+        "right": 819
+      },
+      "list": {
+        "x": 525,
+        "y": 101.796875,
+        "width": 294,
+        "height": 165.609375,
+        "bottom": 267.40625,
+        "right": 819
+      },
+      "footer": {
+        "x": 525,
+        "y": 275.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 365,
+        "right": 819
+      },
+      "scrollHeight": 449,
+      "clientHeight": 166,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 0,
+      "state": "points",
+      "image": null,
+      "tray": {
+        "x": 512,
+        "y": 12,
+        "width": 320,
+        "height": 366,
+        "bottom": 378,
+        "right": 832
+      },
+      "play": {
+        "x": 525,
+        "y": 321,
+        "width": 294,
+        "height": 44,
+        "bottom": 365,
+        "right": 819
+      },
+      "list": {
+        "x": 525,
+        "y": 101.796875,
+        "width": 294,
+        "height": 165.609375,
+        "bottom": 267.40625,
+        "right": 819
+      },
+      "footer": {
+        "x": 525,
+        "y": 275.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 365,
+        "right": 819
+      },
+      "scrollHeight": 420,
+      "clientHeight": 166,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 0,
+      "state": "long-list",
+      "image": null,
+      "tray": {
+        "x": 512,
+        "y": 12,
+        "width": 320,
+        "height": 366,
+        "bottom": 378,
+        "right": 832
+      },
+      "play": {
+        "x": 525,
+        "y": 321,
+        "width": 294,
+        "height": 44,
+        "bottom": 365,
+        "right": 819
+      },
+      "list": {
+        "x": 525,
+        "y": 101.796875,
+        "width": 294,
+        "height": 105.609375,
+        "bottom": 207.40625,
+        "right": 819
+      },
+      "footer": {
+        "x": 525,
+        "y": 215.40625,
+        "width": 294,
+        "height": 149.59375,
+        "bottom": 365,
+        "right": 819
+      },
+      "scrollHeight": 420,
+      "clientHeight": 106,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 0,
+      "state": "muster",
+      "image": null,
+      "tray": {
+        "x": 512,
+        "y": 12,
+        "width": 320,
+        "height": 366,
+        "bottom": 378,
+        "right": 832
+      },
+      "play": {
+        "x": 525,
+        "y": 321,
+        "width": 294,
+        "height": 44,
+        "bottom": 365,
+        "right": 819
+      },
+      "list": {
+        "x": 525,
+        "y": 101.796875,
+        "width": 294,
+        "height": 165.609375,
+        "bottom": 267.40625,
+        "right": 819
+      },
+      "footer": {
+        "x": 525,
+        "y": 275.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 365,
+        "right": 819
+      },
+      "scrollHeight": 420,
+      "clientHeight": 166,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 0,
+      "state": "before-roll",
+      "image": null,
+      "tray": {
+        "x": 512,
+        "y": 12,
+        "width": 320,
+        "height": 366,
+        "bottom": 378,
+        "right": 832
+      },
+      "play": {
+        "x": 525,
+        "y": 321,
+        "width": 294,
+        "height": 44,
+        "bottom": 365,
+        "right": 819
+      },
+      "list": {
+        "x": 525,
+        "y": 101.796875,
+        "width": 294,
+        "height": 165.609375,
+        "bottom": 267.40625,
+        "right": 819
+      },
+      "footer": {
+        "x": 525,
+        "y": 275.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 365,
+        "right": 819
+      },
+      "scrollHeight": 442,
+      "clientHeight": 166,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 0,
+      "state": "no-path",
+      "image": null,
+      "tray": {
+        "x": 512,
+        "y": 12,
+        "width": 320,
+        "height": 366,
+        "bottom": 378,
+        "right": 832
+      },
+      "play": {
+        "x": 525,
+        "y": 321,
+        "width": 294,
+        "height": 44,
+        "bottom": 365,
+        "right": 819
+      },
+      "list": {
+        "x": 525,
+        "y": 101.796875,
+        "width": 294,
+        "height": 165.609375,
+        "bottom": 267.40625,
+        "right": 819
+      },
+      "footer": {
+        "x": 525,
+        "y": 275.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 365,
+        "right": 819
+      },
+      "scrollHeight": 427,
+      "clientHeight": 166,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 0,
+      "state": "empty-bank",
+      "image": null,
+      "tray": {
+        "x": 512,
+        "y": 12,
+        "width": 320,
+        "height": 366,
+        "bottom": 378,
+        "right": 832
+      },
+      "play": {
+        "x": 525,
+        "y": 321,
+        "width": 294,
+        "height": 44,
+        "bottom": 365,
+        "right": 819
+      },
+      "list": {
+        "x": 525,
+        "y": 101.796875,
+        "width": 294,
+        "height": 165.609375,
+        "bottom": 267.40625,
+        "right": 819
+      },
+      "footer": {
+        "x": 525,
+        "y": 275.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 365,
+        "right": 819
+      },
+      "scrollHeight": 427,
+      "clientHeight": 166,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 1,
+      "state": "empty",
+      "image": null,
+      "tray": {
+        "x": 480,
+        "y": 12,
+        "width": 320,
+        "height": 357,
+        "bottom": 369,
+        "right": 800
+      },
+      "play": {
+        "x": 493,
+        "y": 312,
+        "width": 294,
+        "height": 44,
+        "bottom": 356,
+        "right": 787
+      },
+      "list": {
+        "x": 493,
+        "y": 101.796875,
+        "width": 294,
+        "height": 156.609375,
+        "bottom": 258.40625,
+        "right": 787
+      },
+      "footer": {
+        "x": 493,
+        "y": 266.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 356,
+        "right": 787
+      },
+      "scrollHeight": 157,
+      "clientHeight": 157,
+      "bodyWidth": 844,
+      "order": [],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 1,
+      "state": "unselected",
+      "image": null,
+      "tray": {
+        "x": 480,
+        "y": 12,
+        "width": 320,
+        "height": 357,
+        "bottom": 369,
+        "right": 800
+      },
+      "play": {
+        "x": 493,
+        "y": 312,
+        "width": 294,
+        "height": 44,
+        "bottom": 356,
+        "right": 787
+      },
+      "list": {
+        "x": 493,
+        "y": 101.796875,
+        "width": 294,
+        "height": 156.609375,
+        "bottom": 258.40625,
+        "right": 787
+      },
+      "footer": {
+        "x": 493,
+        "y": 266.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 356,
+        "right": 787
+      },
+      "scrollHeight": 420,
+      "clientHeight": 157,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 1,
+      "state": "selected",
+      "image": null,
+      "tray": {
+        "x": 480,
+        "y": 12,
+        "width": 320,
+        "height": 357,
+        "bottom": 369,
+        "right": 800
+      },
+      "play": {
+        "x": 493,
+        "y": 312,
+        "width": 294,
+        "height": 44,
+        "bottom": 356,
+        "right": 787
+      },
+      "list": {
+        "x": 493,
+        "y": 101.796875,
+        "width": 294,
+        "height": 156.609375,
+        "bottom": 258.40625,
+        "right": 787
+      },
+      "footer": {
+        "x": 493,
+        "y": 266.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 356,
+        "right": 787
+      },
+      "scrollHeight": 420,
+      "clientHeight": 157,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 1,
+      "state": "unplayable",
+      "image": null,
+      "tray": {
+        "x": 480,
+        "y": 12,
+        "width": 320,
+        "height": 357,
+        "bottom": 369,
+        "right": 800
+      },
+      "play": {
+        "x": 493,
+        "y": 312,
+        "width": 294,
+        "height": 44,
+        "bottom": 356,
+        "right": 787
+      },
+      "list": {
+        "x": 493,
+        "y": 101.796875,
+        "width": 294,
+        "height": 156.609375,
+        "bottom": 258.40625,
+        "right": 787
+      },
+      "footer": {
+        "x": 493,
+        "y": 266.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 356,
+        "right": 787
+      },
+      "scrollHeight": 449,
+      "clientHeight": 157,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 1,
+      "state": "just-bought",
+      "image": null,
+      "tray": {
+        "x": 480,
+        "y": 12,
+        "width": 320,
+        "height": 357,
+        "bottom": 369,
+        "right": 800
+      },
+      "play": {
+        "x": 493,
+        "y": 312,
+        "width": 294,
+        "height": 44,
+        "bottom": 356,
+        "right": 787
+      },
+      "list": {
+        "x": 493,
+        "y": 101.796875,
+        "width": 294,
+        "height": 156.609375,
+        "bottom": 258.40625,
+        "right": 787
+      },
+      "footer": {
+        "x": 493,
+        "y": 266.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 356,
+        "right": 787
+      },
+      "scrollHeight": 449,
+      "clientHeight": 157,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 1,
+      "state": "already-played",
+      "image": null,
+      "tray": {
+        "x": 480,
+        "y": 12,
+        "width": 320,
+        "height": 357,
+        "bottom": 369,
+        "right": 800
+      },
+      "play": {
+        "x": 493,
+        "y": 312,
+        "width": 294,
+        "height": 44,
+        "bottom": 356,
+        "right": 787
+      },
+      "list": {
+        "x": 493,
+        "y": 101.796875,
+        "width": 294,
+        "height": 156.609375,
+        "bottom": 258.40625,
+        "right": 787
+      },
+      "footer": {
+        "x": 493,
+        "y": 266.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 356,
+        "right": 787
+      },
+      "scrollHeight": 449,
+      "clientHeight": 157,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 1,
+      "state": "points",
+      "image": null,
+      "tray": {
+        "x": 480,
+        "y": 12,
+        "width": 320,
+        "height": 357,
+        "bottom": 369,
+        "right": 800
+      },
+      "play": {
+        "x": 493,
+        "y": 312,
+        "width": 294,
+        "height": 44,
+        "bottom": 356,
+        "right": 787
+      },
+      "list": {
+        "x": 493,
+        "y": 101.796875,
+        "width": 294,
+        "height": 156.609375,
+        "bottom": 258.40625,
+        "right": 787
+      },
+      "footer": {
+        "x": 493,
+        "y": 266.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 356,
+        "right": 787
+      },
+      "scrollHeight": 420,
+      "clientHeight": 157,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 1,
+      "state": "long-list",
+      "image": "844x390-safe-long-list.png",
+      "tray": {
+        "x": 480,
+        "y": 12,
+        "width": 320,
+        "height": 357,
+        "bottom": 369,
+        "right": 800
+      },
+      "play": {
+        "x": 493,
+        "y": 312,
+        "width": 294,
+        "height": 44,
+        "bottom": 356,
+        "right": 787
+      },
+      "list": {
+        "x": 493,
+        "y": 101.796875,
+        "width": 294,
+        "height": 96.609375,
+        "bottom": 198.40625,
+        "right": 787
+      },
+      "footer": {
+        "x": 493,
+        "y": 206.40625,
+        "width": 294,
+        "height": 149.59375,
+        "bottom": 356,
+        "right": 787
+      },
+      "scrollHeight": 420,
+      "clientHeight": 97,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 1,
+      "state": "muster",
+      "image": null,
+      "tray": {
+        "x": 480,
+        "y": 12,
+        "width": 320,
+        "height": 357,
+        "bottom": 369,
+        "right": 800
+      },
+      "play": {
+        "x": 493,
+        "y": 312,
+        "width": 294,
+        "height": 44,
+        "bottom": 356,
+        "right": 787
+      },
+      "list": {
+        "x": 493,
+        "y": 101.796875,
+        "width": 294,
+        "height": 156.609375,
+        "bottom": 258.40625,
+        "right": 787
+      },
+      "footer": {
+        "x": 493,
+        "y": 266.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 356,
+        "right": 787
+      },
+      "scrollHeight": 420,
+      "clientHeight": 157,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 1,
+      "state": "before-roll",
+      "image": null,
+      "tray": {
+        "x": 480,
+        "y": 12,
+        "width": 320,
+        "height": 357,
+        "bottom": 369,
+        "right": 800
+      },
+      "play": {
+        "x": 493,
+        "y": 312,
+        "width": 294,
+        "height": 44,
+        "bottom": 356,
+        "right": 787
+      },
+      "list": {
+        "x": 493,
+        "y": 101.796875,
+        "width": 294,
+        "height": 156.609375,
+        "bottom": 258.40625,
+        "right": 787
+      },
+      "footer": {
+        "x": 493,
+        "y": 266.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 356,
+        "right": 787
+      },
+      "scrollHeight": 442,
+      "clientHeight": 157,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 1,
+      "state": "no-path",
+      "image": null,
+      "tray": {
+        "x": 480,
+        "y": 12,
+        "width": 320,
+        "height": 357,
+        "bottom": 369,
+        "right": 800
+      },
+      "play": {
+        "x": 493,
+        "y": 312,
+        "width": 294,
+        "height": 44,
+        "bottom": 356,
+        "right": 787
+      },
+      "list": {
+        "x": 493,
+        "y": 101.796875,
+        "width": 294,
+        "height": 156.609375,
+        "bottom": 258.40625,
+        "right": 787
+      },
+      "footer": {
+        "x": 493,
+        "y": 266.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 356,
+        "right": 787
+      },
+      "scrollHeight": 427,
+      "clientHeight": 157,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safe": 1,
+      "state": "empty-bank",
+      "image": null,
+      "tray": {
+        "x": 480,
+        "y": 12,
+        "width": 320,
+        "height": 357,
+        "bottom": 369,
+        "right": 800
+      },
+      "play": {
+        "x": 493,
+        "y": 312,
+        "width": 294,
+        "height": 44,
+        "bottom": 356,
+        "right": 787
+      },
+      "list": {
+        "x": 493,
+        "y": 101.796875,
+        "width": 294,
+        "height": 156.609375,
+        "bottom": 258.40625,
+        "right": 787
+      },
+      "footer": {
+        "x": 493,
+        "y": 266.40625,
+        "width": 294,
+        "height": 89.59375,
+        "bottom": 356,
+        "right": 787
+      },
+      "scrollHeight": 427,
+      "clientHeight": 157,
+      "bodyWidth": 844,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 0,
+      "state": "empty",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 136,
+        "width": 448,
+        "height": 560,
+        "bottom": 696,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 639,
+        "width": 422,
+        "height": 44,
+        "bottom": 683,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 225.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 568.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 576.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 683,
+        "right": 851
+      },
+      "scrollHeight": 343,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 0,
+      "state": "unselected",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 136,
+        "width": 448,
+        "height": 560,
+        "bottom": 696,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 639,
+        "width": 422,
+        "height": 44,
+        "bottom": 683,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 225.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 568.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 576.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 683,
+        "right": 851
+      },
+      "scrollHeight": 419,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 0,
+      "state": "selected",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 136,
+        "width": 448,
+        "height": 560,
+        "bottom": 696,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 639,
+        "width": 422,
+        "height": 44,
+        "bottom": 683,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 225.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 568.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 576.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 683,
+        "right": 851
+      },
+      "scrollHeight": 419,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 0,
+      "state": "unplayable",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 136,
+        "width": 448,
+        "height": 560,
+        "bottom": 696,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 639,
+        "width": 422,
+        "height": 44,
+        "bottom": 683,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 225.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 568.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 576.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 683,
+        "right": 851
+      },
+      "scrollHeight": 432,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 0,
+      "state": "just-bought",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 136,
+        "width": 448,
+        "height": 560,
+        "bottom": 696,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 639,
+        "width": 422,
+        "height": 44,
+        "bottom": 683,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 225.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 568.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 576.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 683,
+        "right": 851
+      },
+      "scrollHeight": 432,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 0,
+      "state": "already-played",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 136,
+        "width": 448,
+        "height": 560,
+        "bottom": 696,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 639,
+        "width": 422,
+        "height": 44,
+        "bottom": 683,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 225.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 568.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 576.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 683,
+        "right": 851
+      },
+      "scrollHeight": 432,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 0,
+      "state": "points",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 136,
+        "width": 448,
+        "height": 560,
+        "bottom": 696,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 639,
+        "width": 422,
+        "height": 44,
+        "bottom": 683,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 225.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 568.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 576.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 683,
+        "right": 851
+      },
+      "scrollHeight": 419,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 0,
+      "state": "long-list",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 136,
+        "width": 448,
+        "height": 560,
+        "bottom": 696,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 639,
+        "width": 422,
+        "height": 44,
+        "bottom": 683,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 225.796875,
+        "width": 422,
+        "height": 282.609375,
+        "bottom": 508.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 516.40625,
+        "width": 422,
+        "height": 166.59375,
+        "bottom": 683,
+        "right": 851
+      },
+      "scrollHeight": 419,
+      "clientHeight": 283,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 0,
+      "state": "muster",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 136,
+        "width": 448,
+        "height": 560,
+        "bottom": 696,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 639,
+        "width": 422,
+        "height": 44,
+        "bottom": 683,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 225.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 568.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 576.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 683,
+        "right": 851
+      },
+      "scrollHeight": 419,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 0,
+      "state": "before-roll",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 136,
+        "width": 448,
+        "height": 560,
+        "bottom": 696,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 639,
+        "width": 422,
+        "height": 44,
+        "bottom": 683,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 225.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 568.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 576.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 683,
+        "right": 851
+      },
+      "scrollHeight": 429,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 0,
+      "state": "no-path",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 136,
+        "width": 448,
+        "height": 560,
+        "bottom": 696,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 639,
+        "width": 422,
+        "height": 44,
+        "bottom": 683,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 225.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 568.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 576.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 683,
+        "right": 851
+      },
+      "scrollHeight": 422,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 0,
+      "state": "empty-bank",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 136,
+        "width": 448,
+        "height": 560,
+        "bottom": 696,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 639,
+        "width": 422,
+        "height": 44,
+        "bottom": 683,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 225.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 568.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 576.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 683,
+        "right": 851
+      },
+      "scrollHeight": 422,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 1,
+      "state": "empty",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 126,
+        "width": 448,
+        "height": 560,
+        "bottom": 686,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 629,
+        "width": 422,
+        "height": 44,
+        "bottom": 673,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 215.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 558.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 566.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 673,
+        "right": 851
+      },
+      "scrollHeight": 343,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 1,
+      "state": "unselected",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 126,
+        "width": 448,
+        "height": 560,
+        "bottom": 686,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 629,
+        "width": 422,
+        "height": 44,
+        "bottom": 673,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 215.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 558.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 566.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 673,
+        "right": 851
+      },
+      "scrollHeight": 419,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 1,
+      "state": "selected",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 126,
+        "width": 448,
+        "height": 560,
+        "bottom": 686,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 629,
+        "width": 422,
+        "height": 44,
+        "bottom": 673,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 215.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 558.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 566.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 673,
+        "right": 851
+      },
+      "scrollHeight": 419,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 1,
+      "state": "unplayable",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 126,
+        "width": 448,
+        "height": 560,
+        "bottom": 686,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 629,
+        "width": 422,
+        "height": 44,
+        "bottom": 673,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 215.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 558.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 566.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 673,
+        "right": 851
+      },
+      "scrollHeight": 432,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 1,
+      "state": "just-bought",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 126,
+        "width": 448,
+        "height": 560,
+        "bottom": 686,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 629,
+        "width": 422,
+        "height": 44,
+        "bottom": 673,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 215.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 558.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 566.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 673,
+        "right": 851
+      },
+      "scrollHeight": 432,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 1,
+      "state": "already-played",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 126,
+        "width": 448,
+        "height": 560,
+        "bottom": 686,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 629,
+        "width": 422,
+        "height": 44,
+        "bottom": 673,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 215.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 558.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 566.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 673,
+        "right": 851
+      },
+      "scrollHeight": 432,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 1,
+      "state": "points",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 126,
+        "width": 448,
+        "height": 560,
+        "bottom": 686,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 629,
+        "width": 422,
+        "height": 44,
+        "bottom": 673,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 215.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 558.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 566.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 673,
+        "right": 851
+      },
+      "scrollHeight": 419,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 1,
+      "state": "long-list",
+      "image": "1280x720-safe-long-list.png",
+      "tray": {
+        "x": 416,
+        "y": 126,
+        "width": 448,
+        "height": 560,
+        "bottom": 686,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 629,
+        "width": 422,
+        "height": 44,
+        "bottom": 673,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 215.796875,
+        "width": 422,
+        "height": 282.609375,
+        "bottom": 498.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 506.40625,
+        "width": 422,
+        "height": 166.59375,
+        "bottom": 673,
+        "right": 851
+      },
+      "scrollHeight": 419,
+      "clientHeight": 283,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 1,
+      "state": "muster",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 126,
+        "width": 448,
+        "height": 560,
+        "bottom": 686,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 629,
+        "width": 422,
+        "height": 44,
+        "bottom": 673,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 215.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 558.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 566.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 673,
+        "right": 851
+      },
+      "scrollHeight": 419,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 1,
+      "state": "before-roll",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 126,
+        "width": 448,
+        "height": 560,
+        "bottom": 686,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 629,
+        "width": 422,
+        "height": 44,
+        "bottom": 673,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 215.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 558.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 566.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 673,
+        "right": 851
+      },
+      "scrollHeight": 429,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 1,
+      "state": "no-path",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 126,
+        "width": 448,
+        "height": 560,
+        "bottom": 686,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 629,
+        "width": 422,
+        "height": 44,
+        "bottom": 673,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 215.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 558.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 566.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 673,
+        "right": 851
+      },
+      "scrollHeight": 422,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "safe": 1,
+      "state": "empty-bank",
+      "image": null,
+      "tray": {
+        "x": 416,
+        "y": 126,
+        "width": 448,
+        "height": 560,
+        "bottom": 686,
+        "right": 864
+      },
+      "play": {
+        "x": 429,
+        "y": 629,
+        "width": 422,
+        "height": 44,
+        "bottom": 673,
+        "right": 851
+      },
+      "list": {
+        "x": 429,
+        "y": 215.796875,
+        "width": 422,
+        "height": 342.609375,
+        "bottom": 558.40625,
+        "right": 851
+      },
+      "footer": {
+        "x": 429,
+        "y": 566.40625,
+        "width": 422,
+        "height": 106.59375,
+        "bottom": 673,
+        "right": 851
+      },
+      "scrollHeight": 422,
+      "clientHeight": 343,
+      "bodyWidth": 1280,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 0,
+      "state": "empty",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 16,
+        "width": 288,
+        "height": 536,
+        "bottom": 552,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 495,
+        "width": 262,
+        "height": 44,
+        "bottom": 539,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 105.796875,
+        "width": 262,
+        "height": 318.609375,
+        "bottom": 424.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 432.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 539,
+        "right": 291
+      },
+      "scrollHeight": 319,
+      "clientHeight": 319,
+      "bodyWidth": 320,
+      "order": [],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 0,
+      "state": "unselected",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 16,
+        "width": 288,
+        "height": 536,
+        "bottom": 552,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 495,
+        "width": 262,
+        "height": 44,
+        "bottom": 539,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 105.796875,
+        "width": 262,
+        "height": 318.609375,
+        "bottom": 424.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 432.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 539,
+        "right": 291
+      },
+      "scrollHeight": 436,
+      "clientHeight": 319,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 0,
+      "state": "selected",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 16,
+        "width": 288,
+        "height": 536,
+        "bottom": 552,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 495,
+        "width": 262,
+        "height": 44,
+        "bottom": 539,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 105.796875,
+        "width": 262,
+        "height": 318.609375,
+        "bottom": 424.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 432.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 539,
+        "right": 291
+      },
+      "scrollHeight": 436,
+      "clientHeight": 319,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 0,
+      "state": "unplayable",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 16,
+        "width": 288,
+        "height": 536,
+        "bottom": 552,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 495,
+        "width": 262,
+        "height": 44,
+        "bottom": 539,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 105.796875,
+        "width": 262,
+        "height": 318.609375,
+        "bottom": 424.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 432.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 539,
+        "right": 291
+      },
+      "scrollHeight": 466,
+      "clientHeight": 319,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 0,
+      "state": "just-bought",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 16,
+        "width": 288,
+        "height": 536,
+        "bottom": 552,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 495,
+        "width": 262,
+        "height": 44,
+        "bottom": 539,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 105.796875,
+        "width": 262,
+        "height": 318.609375,
+        "bottom": 424.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 432.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 539,
+        "right": 291
+      },
+      "scrollHeight": 466,
+      "clientHeight": 319,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 0,
+      "state": "already-played",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 16,
+        "width": 288,
+        "height": 536,
+        "bottom": 552,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 495,
+        "width": 262,
+        "height": 44,
+        "bottom": 539,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 105.796875,
+        "width": 262,
+        "height": 318.609375,
+        "bottom": 424.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 432.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 539,
+        "right": 291
+      },
+      "scrollHeight": 466,
+      "clientHeight": 319,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 0,
+      "state": "points",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 16,
+        "width": 288,
+        "height": 536,
+        "bottom": 552,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 495,
+        "width": 262,
+        "height": 44,
+        "bottom": 539,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 105.796875,
+        "width": 262,
+        "height": 318.609375,
+        "bottom": 424.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 432.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 539,
+        "right": 291
+      },
+      "scrollHeight": 436,
+      "clientHeight": 319,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 0,
+      "state": "long-list",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 16,
+        "width": 288,
+        "height": 536,
+        "bottom": 552,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 495,
+        "width": 262,
+        "height": 44,
+        "bottom": 539,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 105.796875,
+        "width": 262,
+        "height": 258.609375,
+        "bottom": 364.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 372.40625,
+        "width": 262,
+        "height": 166.59375,
+        "bottom": 539,
+        "right": 291
+      },
+      "scrollHeight": 436,
+      "clientHeight": 259,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 0,
+      "state": "muster",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 16,
+        "width": 288,
+        "height": 536,
+        "bottom": 552,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 495,
+        "width": 262,
+        "height": 44,
+        "bottom": 539,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 105.796875,
+        "width": 262,
+        "height": 318.609375,
+        "bottom": 424.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 432.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 539,
+        "right": 291
+      },
+      "scrollHeight": 436,
+      "clientHeight": 319,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 0,
+      "state": "before-roll",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 16,
+        "width": 288,
+        "height": 536,
+        "bottom": 552,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 495,
+        "width": 262,
+        "height": 44,
+        "bottom": 539,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 105.796875,
+        "width": 262,
+        "height": 318.609375,
+        "bottom": 424.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 432.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 539,
+        "right": 291
+      },
+      "scrollHeight": 446,
+      "clientHeight": 319,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 0,
+      "state": "no-path",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 16,
+        "width": 288,
+        "height": 536,
+        "bottom": 552,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 495,
+        "width": 262,
+        "height": 44,
+        "bottom": 539,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 105.796875,
+        "width": 262,
+        "height": 318.609375,
+        "bottom": 424.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 432.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 539,
+        "right": 291
+      },
+      "scrollHeight": 439,
+      "clientHeight": 319,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 0,
+      "state": "empty-bank",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 16,
+        "width": 288,
+        "height": 536,
+        "bottom": 552,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 495,
+        "width": 262,
+        "height": 44,
+        "bottom": 539,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 105.796875,
+        "width": 262,
+        "height": 318.609375,
+        "bottom": 424.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 432.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 539,
+        "right": 291
+      },
+      "scrollHeight": 439,
+      "clientHeight": 319,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 1,
+      "state": "empty",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 44,
+        "width": 288,
+        "height": 490,
+        "bottom": 534,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 477,
+        "width": 262,
+        "height": 44,
+        "bottom": 521,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 133.796875,
+        "width": 262,
+        "height": 272.609375,
+        "bottom": 406.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 414.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 521,
+        "right": 291
+      },
+      "scrollHeight": 273,
+      "clientHeight": 273,
+      "bodyWidth": 320,
+      "order": [],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 1,
+      "state": "unselected",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 44,
+        "width": 288,
+        "height": 490,
+        "bottom": 534,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 477,
+        "width": 262,
+        "height": 44,
+        "bottom": 521,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 133.796875,
+        "width": 262,
+        "height": 272.609375,
+        "bottom": 406.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 414.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 521,
+        "right": 291
+      },
+      "scrollHeight": 436,
+      "clientHeight": 273,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 1,
+      "state": "selected",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 44,
+        "width": 288,
+        "height": 490,
+        "bottom": 534,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 477,
+        "width": 262,
+        "height": 44,
+        "bottom": 521,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 133.796875,
+        "width": 262,
+        "height": 272.609375,
+        "bottom": 406.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 414.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 521,
+        "right": 291
+      },
+      "scrollHeight": 436,
+      "clientHeight": 273,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 1,
+      "state": "unplayable",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 44,
+        "width": 288,
+        "height": 490,
+        "bottom": 534,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 477,
+        "width": 262,
+        "height": 44,
+        "bottom": 521,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 133.796875,
+        "width": 262,
+        "height": 272.609375,
+        "bottom": 406.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 414.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 521,
+        "right": 291
+      },
+      "scrollHeight": 466,
+      "clientHeight": 273,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 1,
+      "state": "just-bought",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 44,
+        "width": 288,
+        "height": 490,
+        "bottom": 534,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 477,
+        "width": 262,
+        "height": 44,
+        "bottom": 521,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 133.796875,
+        "width": 262,
+        "height": 272.609375,
+        "bottom": 406.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 414.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 521,
+        "right": 291
+      },
+      "scrollHeight": 466,
+      "clientHeight": 273,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 1,
+      "state": "already-played",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 44,
+        "width": 288,
+        "height": 490,
+        "bottom": 534,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 477,
+        "width": 262,
+        "height": 44,
+        "bottom": 521,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 133.796875,
+        "width": 262,
+        "height": 272.609375,
+        "bottom": 406.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 414.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 521,
+        "right": 291
+      },
+      "scrollHeight": 466,
+      "clientHeight": 273,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 1,
+      "state": "points",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 44,
+        "width": 288,
+        "height": 490,
+        "bottom": 534,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 477,
+        "width": 262,
+        "height": 44,
+        "bottom": 521,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 133.796875,
+        "width": 262,
+        "height": 272.609375,
+        "bottom": 406.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 414.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 521,
+        "right": 291
+      },
+      "scrollHeight": 436,
+      "clientHeight": 273,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 1,
+      "state": "long-list",
+      "image": "320x568-safe-long-list.png",
+      "tray": {
+        "x": 16,
+        "y": 44,
+        "width": 288,
+        "height": 490,
+        "bottom": 534,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 477,
+        "width": 262,
+        "height": 44,
+        "bottom": 521,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 133.796875,
+        "width": 262,
+        "height": 212.609375,
+        "bottom": 346.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 354.40625,
+        "width": 262,
+        "height": 166.59375,
+        "bottom": 521,
+        "right": 291
+      },
+      "scrollHeight": 436,
+      "clientHeight": 213,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 1,
+      "state": "muster",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 44,
+        "width": 288,
+        "height": 490,
+        "bottom": 534,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 477,
+        "width": 262,
+        "height": 44,
+        "bottom": 521,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 133.796875,
+        "width": 262,
+        "height": 272.609375,
+        "bottom": 406.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 414.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 521,
+        "right": 291
+      },
+      "scrollHeight": 436,
+      "clientHeight": 273,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 1,
+      "state": "before-roll",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 44,
+        "width": 288,
+        "height": 490,
+        "bottom": 534,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 477,
+        "width": 262,
+        "height": 44,
+        "bottom": 521,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 133.796875,
+        "width": 262,
+        "height": 272.609375,
+        "bottom": 406.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 414.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 521,
+        "right": 291
+      },
+      "scrollHeight": 446,
+      "clientHeight": 273,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 1,
+      "state": "no-path",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 44,
+        "width": 288,
+        "height": 490,
+        "bottom": 534,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 477,
+        "width": 262,
+        "height": 44,
+        "bottom": 521,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 133.796875,
+        "width": 262,
+        "height": 272.609375,
+        "bottom": 406.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 414.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 521,
+        "right": 291
+      },
+      "scrollHeight": 439,
+      "clientHeight": 273,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "safe": 1,
+      "state": "empty-bank",
+      "image": null,
+      "tray": {
+        "x": 16,
+        "y": 44,
+        "width": 288,
+        "height": 490,
+        "bottom": 534,
+        "right": 304
+      },
+      "play": {
+        "x": 29,
+        "y": 477,
+        "width": 262,
+        "height": 44,
+        "bottom": 521,
+        "right": 291
+      },
+      "list": {
+        "x": 29,
+        "y": 133.796875,
+        "width": 262,
+        "height": 272.609375,
+        "bottom": 406.40625,
+        "right": 291
+      },
+      "footer": {
+        "x": 29,
+        "y": 414.40625,
+        "width": 262,
+        "height": 106.59375,
+        "bottom": 521,
+        "right": 291
+      },
+      "scrollHeight": 439,
+      "clientHeight": 273,
+      "bodyWidth": 320,
+      "order": [
+        "knight",
+        "road",
+        "plenty",
+        "monopoly",
+        "vp"
+      ],
+      "fixedPlayAfterScroll": true
+    }
+  ],
+  "interactionChecks": [
+    "selection: zero local attempts",
+    "Play twice: one local attempt",
+    "close/reopen: cleared selection, retained submitted guard",
+    "turn-change: closed, action unavailable on reopen",
+    "offer: only one open dialog; focus restored",
+    "keyboard: wrap both ways, Escape restores entry"
+  ]
+}
