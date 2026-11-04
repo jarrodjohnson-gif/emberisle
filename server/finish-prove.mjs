@@ -3,7 +3,7 @@
 // over (viewFor's reveal), the host refuses every action after the win, and the winner line reaches every seat.
 // #266: the second game is the first table's rematch (`again`), with a watcher who stays through it. The first game
 // seats four; one closes at the win and the rematch lets it go, picture and all.
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -40,7 +40,7 @@ process.on("exit", () => {
 // Every observer, including a watcher, must get the zero placeholder until the win.
 {
   const fixtureProfiles = mkdtempSync(path.join(tmpdir(), "emberisle-hidden-fixture-"));
-  const fixture = spawnSync(process.execPath, ["--import", "./register.mjs", "--input-type=module", "--eval", `
+  const fixture = spawn(process.execPath, ["--import", "./register.mjs", "--input-type=module", "--eval", `
     import { viewFor } from "./host.mjs";
     import { createGame } from "../src/lib/game/board.ts";
     const g = createGame({ humans: [{name:"A"}, {name:"B"}, {name:"C"}], bots:0, seed:9 });
@@ -54,11 +54,22 @@ process.on("exit", () => {
       }
     }
     console.log("deterministic nonzero host fortunes stay hidden from opponents and watcher: ok");
-    process.exit(0);
-  `], { cwd: new URL(".", import.meta.url), env: { ...process.env, PORT:"0", ROOMS_DIR, RESULTS_DIR, PROFILES_DIR: fixtureProfiles }, encoding:"utf8" });
+  `], { cwd: new URL(".", import.meta.url), env: { ...process.env, PORT:"0", ROOMS_DIR, RESULTS_DIR, PROFILES_DIR: fixtureProfiles } });
+  let output = "", stderr = "", passed = false;
+  const timer = setTimeout(() => { fixture.kill("SIGKILL"); fail("deterministic hidden-fortune fixture timed out"); }, STEP_MS);
+  fixture.stdout.on("data", (data) => {
+    output += data;
+    if (output.includes("deterministic nonzero host fortunes stay hidden from opponents and watcher: ok")) {
+      passed = true;
+      fixture.kill("SIGTERM");
+    }
+  });
+  fixture.stderr.on("data", (data) => { stderr += data; });
+  await new Promise((resolve) => fixture.on("close", resolve));
+  clearTimeout(timer);
   rmSync(fixtureProfiles, { recursive: true, force: true });
-  console.log(fixture.stdout);
-  if (fixture.status !== 0) fail("deterministic hidden-fortune projection", fixture.stderr || fixture.status);
+  console.log(output);
+  if (!passed) fail("deterministic hidden-fortune projection", stderr || "fixture failed");
 }
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),

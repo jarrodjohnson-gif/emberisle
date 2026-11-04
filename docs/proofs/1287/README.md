@@ -18,3 +18,10 @@ The deterministic fixture imports the real host projection in a child process wi
 The main hosted run checks nonzero opponent hidden values on every pre-win seat push.
 Existing table-prove checks only the zero placeholder once; it does not ensure a nonzero host fixture.
 No steal rule or README wording change. CI and independent Claude review remain required.
+
+## Review follow-up
+
+The initial fixture success exit triggered loosen-prove. The final child writes a unique post-assertion success marker.
+The parent requires that marker, terminates the child's imported host, and retains a 5000 ms failure timeout.
+finish-lifecycle-final.log passes; hidden-leak-lifecycle-final.log fails the private-record mutation.
+The initial main-only refusal mutation hit an older own-building assertion; the final opponent-only refusal mutation targets the new check.
