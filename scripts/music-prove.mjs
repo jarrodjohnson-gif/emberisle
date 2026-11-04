@@ -7,6 +7,8 @@
 // - the win screen stops it (a rematch brings it back). Returning to the title keeps the same track playing (#1279).
 // - on a fresh title, one tap starts it; the lobby keeps that same element; Music off never creates it; the title's
 //   sound button mutes it and unmuting resumes it.
+// - one fresh run goes title, lobby, then the practice start: the same element fires play once, never pause, and
+//   does not rewind across that start, the game_start sting, and the first roll (#1279).
 // Zero console errors. Run: npm run music-prove
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
@@ -202,6 +204,93 @@ try {
   assert.ok(inLobby.t + 0.05 >= atTitle, `the lobby did not restart it (title ${atTitle}, lobby ${inLobby.t})`);
   assert.equal(await titlePage.evaluate((f) => window.__audios.filter((x) => x.src.endsWith(f)).length, TRACK), 1, "one track element from the title into the lobby");
   ok("one tap on the title starts the track; mute works; the lobby keeps that play");
+
+  // ---- Title, lobby, then the practice start: one play, no pause, no rewind, through the sting and the first roll.
+  const contPage = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
+  contPage.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  contPage.on("pageerror", (e) => errors.push(String(e)));
+  await contPage.addInitScript(() => {
+    window.__audios = [];
+    const Real = window.Audio;
+    window.Audio = function (src) {
+      const a = new Real(src);
+      a.__plays = 0;
+      a.__pauses = 0;
+      a.__last = 0;
+      a.__rewound = false;
+      a.addEventListener("play", () => { a.__plays += 1; });
+      a.addEventListener("pause", () => { a.__pauses += 1; });
+      const note = () => {
+        if (a.currentTime + 0.15 < a.__last) a.__rewound = true;
+        if (a.currentTime > a.__last) a.__last = a.currentTime;
+      };
+      a.addEventListener("timeupdate", note);
+      a.addEventListener("seeked", note);
+      window.__audios.push(a);
+      return a;
+    };
+  });
+  await contPage.goto(`http://127.0.0.1:${PORT}/`);
+  await contPage.waitForFunction(() => window.__emberisle);
+  await contPage.getByTestId("title-card").waitFor();
+  const contTrack = () => contPage.evaluate((f) => {
+    const a = window.__audios.find((x) => x.src.endsWith(f));
+    return a && { paused: a.paused, t: a.currentTime, plays: a.__plays, pauses: a.__pauses, rewound: a.__rewound, volume: a.volume };
+  }, TRACK);
+  await contPage.mouse.click(8, 8);
+  await until(async () => { const x = await contTrack(); return !!x && !x.paused && x.plays === 1; }, "one play starts the track on the title");
+  await contPage.evaluate((f) => { window.__audios.find((x) => x.src.endsWith(f)).dataset.ember = "held"; }, TRACK);
+  const atContTitle = await contTrack();
+  await contPage.evaluate(() => window.__emberisle.setState({ screen: "lobby" }));
+  await sleep(400);
+  const atContLobby = await contTrack();
+  assert.equal(atContLobby.paused, false, "still playing in the lobby before Start");
+  assert.equal(atContLobby.plays, 1, "the lobby does not start the track again");
+  assert.equal(atContLobby.pauses, 0, "the lobby does not pause the track");
+  assert.equal(atContLobby.rewound, false, "the lobby does not rewind the track");
+  assert.ok(atContLobby.t + 0.05 >= atContTitle.t, `lobby time went back (title ${atContTitle.t}, lobby ${atContLobby.t})`);
+  await contPage.evaluate(() => window.__emberisle.getState().startAi());
+  await until(async () => {
+    const sting = await contPage.evaluate(() => {
+      const a = window.__audios.find((x) => x.src.endsWith("game_start.mp3"));
+      return !!a && !a.paused && !a.ended;
+    });
+    const x = await contTrack();
+    return sting && x && !x.paused && x.volume < 0.1;
+  }, "game_start ducks the track after Start");
+  const duringSting = await contTrack();
+  assert.equal(duringSting.plays, 1, "the sting does not play the track a second time");
+  assert.equal(duringSting.pauses, 0, "the sting does not pause the track");
+  assert.equal(duringSting.rewound, false, "the sting does not rewind the track");
+  const started = await contPage.evaluate(async () => {
+    const ai = await import("/src/lib/game/ai.ts");
+    for (let i = 0; i < 40; i++) {
+      const st = window.__emberisle.getState().state;
+      if (!st) throw new Error("no game");
+      if (st.phase === "roll") {
+        const rolled = window.__emberisle.getState().dispatch({ type: "roll" }, st.current, true);
+        if (!rolled.ok) throw new Error(rolled.error || "roll failed");
+        const after = window.__emberisle.getState().state;
+        return { rolls: after.rolls, phase: after.phase, screen: window.__emberisle.getState().screen };
+      }
+      const actor = st.current;
+      const action = ai.chooseBotAction(st, actor);
+      if (!action) throw new Error(`stuck in ${st.phase} for ${actor}`);
+      const result = window.__emberisle.getState().dispatch(action, actor, true);
+      if (!result.ok) throw new Error(result.error || `could not ${action.type}`);
+    }
+    throw new Error("never reached the first roll");
+  });
+  assert.equal(started.screen, "play", "Start left the lobby for the table");
+  assert.ok(started.rolls >= 1, "the first roll happened");
+  const afterStart = await contTrack();
+  assert.equal(afterStart.plays, 1, "Start does not play the track a second time");
+  assert.equal(afterStart.pauses, 0, "Start, the sting and the first roll never pause the track");
+  assert.equal(afterStart.rewound, false, "Start does not rewind the track");
+  assert.ok(afterStart.t + 0.05 >= atContLobby.t, `time went back at Start (lobby ${atContLobby.t}, play ${afterStart.t})`);
+  assert.equal(await contPage.evaluate((f) => window.__audios.filter((x) => x.src.endsWith(f)).length, TRACK), 1, "one track element from the title through the first roll");
+  assert.equal(await contPage.evaluate((f) => window.__audios.find((x) => x.src.endsWith(f)).dataset.ember, TRACK), "held", "the same element is still the one from the title");
+  ok("title to lobby to Start keeps one play through the sting and the first roll");
 
   const offContext = await browser.newContext();
   const offPage = await offContext.newPage();
