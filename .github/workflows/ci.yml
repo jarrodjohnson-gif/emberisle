@@ -503,6 +503,8 @@ jobs:
         run: npm run idle-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run chrome-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+        run: npm run issue-1274-proposal-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run contrast-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'

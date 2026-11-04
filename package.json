@@ -104,6 +104,7 @@
     "night": "node scripts/night.mjs",
     "night-prove": "node scripts/night-prove.mjs",
     "chrome-prove": "node scripts/chrome-prove.mjs",
+    "issue-1274-proposal-prove": "node docs/design/issue-1274/capture.mjs",
     "contrast-prove": "node scripts/contrast-prove.mjs",
     "title-prove": "node scripts/title-prove.mjs",
     "howto-prove": "node scripts/howto-prove.mjs",
