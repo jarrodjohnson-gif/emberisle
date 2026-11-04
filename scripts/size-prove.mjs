@@ -24,11 +24,14 @@ const CEILINGS = [
   // #646: lazy public needs and picker; reviewed ceiling retained.
   { name: "SeatNeeds", gzipBytes: 1900 },
   { name: "LobbyView", gzipBytes: 2500 },
+  // #1262: Sandwich Stacker shelf and player, measured 1867 B gzip. The owner must OK this new ceiling before merge.
+  { name: "LobbyWaitBox", gzipBytes: 2100 },
   // #553: shared on-demand table transport, measured 2.08 kB; existing caps stay fixed.
   { name: "table", gzipBytes: 2200 },
   // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
   { name: "haptics", gzipBytes: 1200 },
-  { name: "index", gzipBytes: 125200 },
+  // #1283: raised from 125,200 B to 127,000 B per owner decision 2026-11-03.
+  { name: "index", gzipBytes: 127000 },
   { name: "IslandCanvas", gzipBytes: 202500 },
   { name: "jelly-board", gzipBytes: 9000 },
   { name: "hex-jelly", gzipBytes: 50000 },
