@@ -983,12 +983,7 @@ export class IsleRenderer {
         this.ortho.updateProjectionMatrix();
       } else if (this.view === "diorama") {
         const p = this.unshrunkDiorama ?? this.lens;
-        const fullW = 2 * Math.max(p.cx, w - p.cx, 1);
-        const fullH = 2 * Math.max(p.cy, this.unshrunkH - p.cy, 1);
-        this.persp.fov = (2 * Math.atan(fullH / 2 / p.focal) * 180) / Math.PI;
-        this.persp.aspect = fullW / fullH;
-        this.persp.setViewOffset(fullW, fullH, fullW / 2 - p.cx, fullH / 2 - p.cy, w, h);
-        this.orbit.panSpeed = h / fullH;
+        this.frameDiorama(p, w, h, this.unshrunkH);
         this.persp.updateProjectionMatrix();
       }
     } else {
@@ -1055,6 +1050,17 @@ export class IsleRenderer {
     return { ...NO_FIT, left: o.left, right: o.right, top: o.top, bottom: o.bottom, tx: this.orbit.target.x, tz: this.orbit.target.z, ...eye, zoom: o.zoom };
   }
 
+  // Share the lens frame; a keyboard crop keeps the full fit height while drawing into the shorter canvas.
+  private frameDiorama(p: Pick<DioramaFit, "cx" | "cy" | "focal">, w: number, h: number, fitHeight = h) {
+    const fullW = 2 * Math.max(p.cx, w - p.cx, 1);
+    const fullH = 2 * Math.max(p.cy, fitHeight - p.cy, 1);
+    this.persp.fov = (2 * Math.atan(fullH / 2 / p.focal) * 180) / Math.PI;
+    this.persp.aspect = fullW / fullH;
+    this.persp.setViewOffset(fullW, fullH, fullW / 2 - p.cx, fullH / 2 - p.cy, w, h);
+    // The lens frame is wider than the canvas, so a pan step in pixels matches the finger.
+    this.orbit.panSpeed = h / fullH;
+  }
+
   // Overhead: leaned toward the player (+Z is screen-down), looking at cap level over the hole's centre. Diorama: looking at
   // cap level over the island's centre, the lens axis meeting the canvas at (cx, cy), so the island sits in the hole.
   private applyPose(p: Pose) {
@@ -1063,17 +1069,11 @@ export class IsleRenderer {
       const c = this.persp;
       const [w, h] = [this.sizeW || 1, this.sizeH || 1];
       // A frame centred on the lens axis that holds the canvas, and the canvas as a view into it.
-      const fullW = 2 * Math.max(p.cx, w - p.cx, 1);
-      const fullH = 2 * Math.max(p.cy, h - p.cy, 1);
-      c.fov = (2 * Math.atan(fullH / 2 / p.focal) * 180) / Math.PI;
-      c.aspect = fullW / fullH;
-      c.setViewOffset(fullW, fullH, fullW / 2 - p.cx, fullH / 2 - p.cy, w, h);
+      this.frameDiorama(p, w, h);
       this.lens = { focal: p.focal, dist: p.dist, cx: p.cx, cy: p.cy };
       this.orbit.minDistance = p.dist / this.orbit.maxZoom;
       this.orbit.maxDistance = p.dist / this.orbit.minZoom;
       this.orbit.target.set(p.tx, CAP_LEVEL, p.tz);
-      // The lens frame is wider than the canvas, so a pan step in pixels is scaled to match the finger.
-      this.orbit.panSpeed = h / fullH;
       c.up.set(0, 1, 0);
       c.position.setFromSphericalCoords(p.dist / p.zoom, p.polar, p.azimuth).add(this.orbit.target);
       c.lookAt(this.orbit.target);
