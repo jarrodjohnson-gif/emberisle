@@ -1,8 +1,8 @@
 # Issue 1274: proposed decisions and build boundary
 
-Prepared 2026-11-03 by Astra. This is a review proposal, not an accepted specification. The owner comments on #1274 explicitly keep all eleven decisions open. The current request to take the issue authorizes work, but does not select between the eleven alternatives.
+Prepared 2026-11-03 by Astra; decision status updated 2026-11-04. All eleven owner decisions are now answered: **4=C; all others=A**. See [approved answers and build order](build-order.md) for the controlling citations and existing issue ownership. The recommendations below are historical; notably, the proposed teal primary was not selected. Approval of the named choices does not approve every layout or behavior proposed in this document.
 
-## Eleven recommended answers
+## Eleven original recommendations (superseded by the owner answers)
 
 | # | Proposed answer | Reason and implementation consequence |
 |---|---|---|
@@ -100,7 +100,7 @@ Live PR metadata checked 2026-11-03. All entries below were open at that check; 
 
 Recommended order: land the narrowly approved chrome colour slice; review these eleven recommendations and the geometry study; coordinate with1144's claimant on its existing blockers; then implement only accepted geometry on that branch or its landed successor. Desktop is a separate follow-up after question10. Titles, hands, seats and lobby remain with their existing work until claims and accepted designs are reconciled. New behavioural proofs belong in package.json and CI; temporary mock measurement scripts are review evidence, not new runtime proofs.
 
-## One owner approval bundle
+## Historical owner approval bundle
 
 Proposed answer for one review, with any exceptions named in the reply:
 
@@ -108,7 +108,7 @@ Proposed answer for one review, with any exceptions named in the reply:
 >
 > For the dock study, approve taking the corrected 250px portrait and 232px landscape compositions into the existing #1144 work after its ownership and blockers are resolved. Landscape Menu/Chat sit above the dock as shown. This is approval to develop and verify the direction, not acceptance of schematic card faces, placeholder costs, small type, incomplete phases, or runtime behaviour.
 
-The title and fortune layouts still need their concrete follow-up mocks before runtime implementation. This bundle consolidates the decisions; it does not silently approve unseen screens or supersede the existing hand/title proposals. None of it is accepted unless the owner explicitly selects it.
+The title and fortune layouts still need their concrete follow-up mocks before runtime implementation. This bundle consolidates the decisions; it does not silently approve unseen screens or supersede the existing hand/title proposals. The later individual answers supersede this bundle; use [build-order.md](build-order.md), especially decision 4C, rather than implementing the bundle wholesale.
 
 ## Owner audit additions, checked 2026-11-04
 
@@ -121,8 +121,8 @@ These findings supplement the proposal. They do not approve new layouts or flows
 - **Title music:** Track the reported title music failure through #1279. This proposal does not duplicate that code change. [Owner finding](https://github.com/jarrodjohnson-gif/emberisle/issues/1274#issuecomment-6618032805).
 - **Colour boundary:** Keep the approved white/mist chrome correction separate from scene changes. Retain the current scene cream until its replacement mock receives approval. [Desk clarification](https://github.com/jarrodjohnson-gif/emberisle/issues/1274#issuecomment-6615110075).
 
-### Decision publication
+### Completed decision publication (historical instructions)
 
-Publish each of the eleven decisions as its own `Question:` comment. Give each a TLDR and exactly four options. Put the recommendation in A. Embed its PNG comparison and link its SVG source at the committed revision. The earlier bundle remains a reference, not a substitute for these separate questions.
+All eleven questions were published and answered. The original publication instruction was: publish each decision as its own `Question:` comment. Give each a TLDR and exactly four options. Put the recommendation in A. Embed its PNG comparison and link its SVG source at the committed revision. The earlier bundle remains a reference, not a substitute for these separate questions.
 
 The comparisons are schematic proposals. They do not establish runtime fit or approve implementation. Keep the existing dock geometry studies alongside the comparisons. Jarrod answers through the Desk Decisions page. [Publication direction](https://github.com/jarrodjohnson-gif/emberisle/issues/1274#issuecomment-6615110075).

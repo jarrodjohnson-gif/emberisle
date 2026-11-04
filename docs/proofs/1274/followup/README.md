@@ -20,3 +20,11 @@ The original head `08dfc165` passes public-score at all three sizes. Candidate a
 Hosted run [41759126184](https://github.com/jarrodjohnson-gif/emberisle/actions/runs/41759126184) fails build at the existing index ceiling: 125451 B versus 125200 B. Its base `33e10b09` is also 125451 B, so this PR adds 0 B to that chunk. This is the open upstream [#1283](https://github.com/jarrodjohnson-gif/emberisle/issues/1283) blocker. Browser-b was skipped, so this run provides no passing hosted result for the install/chrome/presentation follow-ups. The advisory obsolete-palette assertion warning remains documented in the parent README and PR table.
 
 The PR has not been announced ready for re-review. Independent repository review and owner visual acceptance remain required.
+
+## Subsequent CI and ownership check
+
+Final evidence-head run [41759616754](https://github.com/jarrodjohnson-gif/emberisle/actions/runs/41759616754) is red. Besides the index ceiling, `browser-a (a3)` cannot parse the integrated `trade-prove.mjs`: a second `const botId` declaration appears at line 712. This is tracked upstream as [#1290](https://github.com/jarrodjohnson-gif/emberisle/issues/1290). Browser-b did not run; no hosted success is inferred from the local proofs.
+
+The follow-up ownership check found Gemini's active fixes in [#1291](https://github.com/jarrodjohnson-gif/emberisle/pull/1291) and [#1293](https://github.com/jarrodjohnson-gif/emberisle/pull/1293), both still unmerged. The latter is the isolated variable rename; the former combines it with a ceiling raise. Neither is imported here. This branch preserves its ceilings and the other builder's work.
+
+All eleven design questions now have [owner answers](https://github.com/jarrodjohnson-gif/emberisle/issues/1274#issuecomment-6621507049). These supersede the earlier open-question status, not the runtime validation history. Decision 4 is C (keep contextual fills); the other ten are A. See the audit build-order document for the separately scoped follow-ups and their gates.
