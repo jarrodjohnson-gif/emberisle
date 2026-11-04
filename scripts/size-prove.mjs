@@ -30,7 +30,8 @@ const CEILINGS = [
   { name: "table", gzipBytes: 2200 },
   // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
   { name: "haptics", gzipBytes: 1200 },
-  { name: "index", gzipBytes: 125200 },
+  // #1283: raised from 125,200 B to 127,000 B per owner decision 2026-11-03.
+  { name: "index", gzipBytes: 127000 },
   { name: "IslandCanvas", gzipBytes: 202500 },
   { name: "jelly-board", gzipBytes: 9000 },
   { name: "hex-jelly", gzipBytes: 50000 },
