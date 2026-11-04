@@ -3,7 +3,7 @@
 // over (viewFor's reveal), the host refuses every action after the win, and the winner line reaches every seat.
 // #266: the second game is the first table's rematch (`again`), with a watcher who stays through it. The first game
 // seats four; one closes at the win and the rematch lets it go, picture and all.
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -36,6 +36,30 @@ process.on("exit", () => {
   rmSync(ROOMS_DIR, { recursive: true, force: true });
   rmSync(RESULTS_DIR, { recursive: true, force: true });
 });
+// #1287: use the real host projection with deliberately nonzero private cards.
+// Every observer, including a watcher, must get the zero placeholder until the win.
+{
+  const fixtureProfiles = mkdtempSync(path.join(tmpdir(), "emberisle-hidden-fixture-"));
+  const fixture = spawnSync(process.execPath, ["--import", "./register.mjs", "--input-type=module", "--eval", `
+    import { viewFor } from "./host.mjs";
+    import { createGame } from "../src/lib/game/board.ts";
+    const g = createGame({ humans: [{name:"A"}, {name:"B"}, {name:"C"}], bots:0, seed:9 });
+    g.phase = "main";
+    g.players[1].hidden = { knight:1, road:2, plenty:3, monopoly:4, vp:5 };
+    for (const you of ["p0", "p2", null]) {
+      const q = viewFor(g, you).players.find(p => p.id === "p1");
+      if (Object.values(q.hidden).some(n => n !== 0)) {
+        console.log("FAIL deterministic opponent hidden fortunes leaked", JSON.stringify({you, hidden:q.hidden}));
+        process.exit(1);
+      }
+    }
+    console.log("deterministic nonzero host fortunes stay hidden from opponents and watcher: ok");
+    process.exit(0);
+  `], { cwd: new URL(".", import.meta.url), env: { ...process.env, PORT:"0", ROOMS_DIR, RESULTS_DIR, PROFILES_DIR: fixtureProfiles }, encoding:"utf8" });
+  rmSync(fixtureProfiles, { recursive: true, force: true });
+  console.log(fixture.stdout);
+  if (fixture.status !== 0) fail("deterministic hidden-fortune projection", fixture.stderr || fixture.status);
+}
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
   env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR, RESULTS_DIR },
@@ -85,6 +109,9 @@ function player(name) {
         // Before the end: no seed or rng (#111), and no other seat's hand (#186).
         if ("seed" in g || "rng" in g) p.leaks.push({ seq: g.seq, what: "seed/rng" });
         for (const q of g.players) if (q.id !== m.you && "resources" in q) p.leaks.push({ seq: g.seq, what: `${q.id} resources` });
+        for (const q of g.players) if (q.id !== m.you && Object.values(q.hidden ?? {}).some((n) => n !== 0)) {
+          p.leaks.push({ seq: g.seq, what: `${q.id} hidden fortunes` });
+        }
       }
       p.prev = p.state;
       p.state = g;
