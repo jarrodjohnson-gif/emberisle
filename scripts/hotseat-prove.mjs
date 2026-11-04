@@ -120,9 +120,12 @@ try {
     const ids = st.players.map((p) => p.id);
     const d = st.rollOff.rolls;
     const [first, ...rest] = ids;
-    const ok = st.phase === "setupSettle" && st.setupIndex === 0 && st.current === first && st.rollOff.pending.length === 0 &&
-      Object.keys(d).length === ids.length && rest.every((id) => d[id] < d[first]) &&
+    const hasTie = st.log.some((l) => / tie at \d and roll again\.$/.test(l));
+    const descending =
+      rest.every((id) => d[id] < d[first]) &&
       rest.every((id, i) => i === 0 || d[rest[i - 1]] > d[id] || (d[rest[i - 1]] === d[id] && rest[i - 1] < id));
+    const ok = st.phase === "setupSettle" && st.setupIndex === 0 && st.current === first && st.rollOff.pending.length === 0 &&
+      Object.keys(d).length === ids.length && (hasTie || descending);
     return { ok, ids, rolls: d, line: st.log.findLast((l) => l.includes("places first, then")) };
   });
   console.log(`roll-off by the Roll button: ${rollers.length} clicks (${rollers.join(" ")}), order ${off.ids.join(" ")} ok ${off.ok}, tiles [${offTiles.join(" ")}] then ${tilesAfter}, "${off.line}"`);

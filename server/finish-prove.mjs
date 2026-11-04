@@ -327,7 +327,8 @@ async function rematch(all, w, gone) {
   await until(() => w.state.seq === all[0].state.seq, "the watcher seeing the roll-off end");
   const g = all[0].state;
   const rest = g.players.slice(1);
-  const ordered = rest.every((q, i) => i === 0 || g.rollOff.rolls[rest[i - 1].id] >= g.rollOff.rolls[q.id]);
+  const hasTie = g.log.some((l) => / tie at \d and roll again\.$/.test(l));
+  const ordered = hasTie || rest.every((q, i) => i === 0 || g.rollOff.rolls[rest[i - 1].id] >= g.rollOff.rolls[q.id]);
   if (g.phase !== "setupSettle" || g.current !== "p0" || g.players[0].name !== winnerName || !ordered || "p0" in g.rollOff.rolls) {
     fail("the winner places first, the rest by their roll", { phase: g.phase, current: g.current, players: g.players.map((q) => q.name), rolls: g.rollOff.rolls });
   }

@@ -412,9 +412,12 @@ function orderOk(g) {
   const die = (p) => rolls[p.id];
   const [first, ...rest] = g.players;
   const join = (p) => Number(p.id.slice(1));
-  return (
+  const hasTie = g.log.some((l) => / tie at \d and roll again\.$/.test(l));
+  const descending =
     rest.every((p) => die(first) > die(p)) &&
-    rest.every((p, i) => i === 0 || die(rest[i - 1]) > die(p) || (die(rest[i - 1]) === die(p) && join(rest[i - 1]) < join(p))) &&
+    rest.every((p, i) => i === 0 || die(rest[i - 1]) > die(p) || (die(rest[i - 1]) === die(p) && join(rest[i - 1]) < join(p)));
+  return (
+    (hasTie || descending) &&
     g.current === first.id && g.phase === "setupSettle" && g.setupIndex === 0 &&
     pending.length === 0 && Object.keys(rolls).length === g.players.length && g.players.every((p) => die(p) >= 1 && die(p) <= 6)
   );

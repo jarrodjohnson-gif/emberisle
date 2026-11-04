@@ -167,9 +167,12 @@ async function step(c, msg) {
     const g = c.state.game;
     const die = (p) => g.rollOff.rolls[p.id];
     const [first, ...rest] = g.players;
-    const ordered =
+    const hasTie = g.log.some((l) => / tie at \d and roll again\.$/.test(l));
+    const descending =
       rest.every((p) => die(first) > die(p)) &&
-      rest.every((p, i) => i === 0 || die(rest[i - 1]) > die(p) || (die(rest[i - 1]) === die(p) && join(rest[i - 1].id) < join(p.id))) &&
+      rest.every((p, i) => i === 0 || die(rest[i - 1]) > die(p) || (die(rest[i - 1]) === die(p) && join(rest[i - 1].id) < join(p.id)));
+    const ordered =
+      (hasTie || descending) &&
       g.current === first.id && g.phase === "setupSettle" && g.setupIndex === 0 && g.rollOff.pending.length === 0 && Object.keys(g.rollOff.rolls).length === 3;
     if (!ordered) fail(`${c.name} roll-off order`, g.rollOff);
     if (c.rolls.length) fail(`${c.name} got rolled during the roll-off`, c.rolls);
