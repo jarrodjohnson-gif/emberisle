@@ -1,0 +1,30 @@
+[
+  {
+    "mutation": "opponent-distance",
+    "exit": 1,
+    "failure": [
+      "FAIL README each setup legal spot stays clear of all buildings "
+    ]
+  },
+  {
+    "mutation": "buildPath-before-roll",
+    "exit": 1,
+    "failure": [
+      "FAIL README buildPath before the roll is refused and changes nothing allowed"
+    ]
+  },
+  {
+    "mutation": "bankTrade-before-roll",
+    "exit": 1,
+    "failure": [
+      "FAIL README bankTrade before the roll is refused and changes nothing allowed"
+    ]
+  },
+  {
+    "mutation": "offerTrade-before-roll",
+    "exit": 1,
+    "failure": [
+      "FAIL README offerTrade before the roll is refused and changes nothing allowed"
+    ]
+  }
+]

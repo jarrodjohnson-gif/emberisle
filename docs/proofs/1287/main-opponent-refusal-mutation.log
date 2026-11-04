@@ -1,0 +1,61 @@
+star of 6 segments: trail 4, no award
+line of 5: award to p0, and the log says so
+tie at 5 with no holder: nobody
+holder p0 tied at 5: keeps it
+outpost at the middle of p0's line: p0 trail 3, award removed
+buy a knight, play it the same turn: rejected ("A fortune cannot be played the turn it is bought.")
+pass, then play it next turn before the roll: works
+path fortune with no paths left: rejected ("No paths left to place."), card kept
+path fortune with no legal edge: rejected ("No place for a path."), card kept
+path past an opponent's outpost: rejected ("Path must connect to you.")
+path from your own outpost: works
+README three or four players: ok
+README first to 10 points wins: ok
+README 10 points reached on another's turn win as your turn starts: ok
+README one island of 19 hexes: ok
+20000 deals: 0 land hexes without a token, 0 adjacent red tokens
+README forest, hills, pasture, fields, mountains, or the wastes: ok
+README a token from 2 to 12 on every hex except the wastes: ok
+README there is no 7 token: ok
+README the wastes produce nothing: ok
+README stock: 15 paths, 5 outposts, 4 strongholds: ok
+README path costs 1 wood, 1 brick: ok
+README no path past the stock: ok
+README outpost costs wood, brick, sheep, wheat: ok
+README no outpost past the stock: ok
+README stronghold costs 2 stone, 3 wheat, on an outpost you own: ok
+README a shared deck of 25: ok
+README 14 knights, 2 path-building, 2 plenty, 2 monopoly, 5 hidden points: ok
+README fortune costs sheep, wheat, stone: ok
+README a fortune bought this turn cannot be played this turn (check 6 above): ok
+README a knight may be played before the roll (check 7 above): ok
+README every fortune kind bought this turn is refused this turn: ok
+README an older fortune of the same kind can still be played the turn another is bought: ok
+README an outpost is 1, a stronghold is 2: ok
+README longest path is 2 and takes 5 segments in one unbroken line (checks 1, 2 above): ok
+README a tie with nobody holding the longest path gives it to nobody (check 3 above): ok
+README largest army is 2 and takes 3 knights: ok
+README the log says who holds the largest army (#188): ok
+README a tie does not take the award away (army; path is check 4 above): ok
+README hidden points stay hidden until the end (server/table-prove.mjs, viewFor): ok
+roll-off: starts with p0, "Not your turn." out of turn, "Not placing outposts." before it, a sent face is ignored, order ok
+roll-off: a forced tie at 6 rerolls only the leaders, in join order; order ok after it
+README before setup, each player rolls one die; the highest roll places first; tied players reroll among themselves: ok
+roll-off: 400 full roll-offs (3 and 4 seats), 103 with a tie, order ok, rng untouched
+README in a rematch at the same table, the last game's winner places first; the others roll off for the remaining order: ok
+roll-off: 400 rematch roll-offs (3 and 4 seats), p0 first with no die, 81 with a tie among the rest, rest ordered by the roll-off rule
+README each setup legal spot stays clear of all buildings: ok
+README each setup legal spot stays clear of all buildings: ok
+README each setup legal spot stays clear of all buildings: ok
+README each setup legal spot stays clear of all buildings: ok
+README each setup legal spot stays clear of all buildings: ok
+README each setup legal spot stays clear of all buildings: ok
+README seat order, then the reverse: ok
+README each setup turn is one outpost and one path from it: ok
+README only the second outpost pays: one card per hex it touches: ok
+README an outpost must not touch another building, including your own: ok
+README setup legal spots stay clear of every seat’s buildings: ok
+README after setup, a new outpost must touch one of your paths: ok
+README a path must touch your own path or building: ok
+README a path cannot continue past an opponent's building (check 8 above): ok
+FAIL README an outpost next to a building says "Too close — leave one corner between buildings." and changes nothing Illegal outpost.
