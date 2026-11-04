@@ -25,3 +25,6 @@ The initial fixture success exit triggered loosen-prove. The final child writes 
 The parent requires that marker, terminates the child's imported host, and retains a 5000 ms failure timeout.
 finish-lifecycle-final.log passes; hidden-leak-lifecycle-final.log fails the private-record mutation.
 The initial main-only refusal mutation hit an older own-building assertion; the final opponent-only refusal mutation targets the new check.
+
+loosen-final.log read the earlier committed head while the lifecycle fix was uncommitted; it remains a failure record.
+loosen-committed-pass.log checks committed 8fd6205 against33e10b09: two changed proofs, none loosened.
