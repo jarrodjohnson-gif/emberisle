@@ -1,93 +1,283 @@
-# Open-ended trade asks
+# Open-ended trade asks, counters, and requests
 
-Design for [#561](https://github.com/jarrodjohnson-gif/emberisle/issues/561). **Proposal for owner review; no gameplay or protocol change is made by this note.** “Any good” needs explicit terms before an acceptance can move cards. The recommended contract is a binding ask for a fixed number of cards, with the responder choosing their exact goods before accepting. The two interaction choices at the end need Jarrod's decision under `docs/FRAMEWORK.md` §7; supporting implementation details are proposals for review.
+Design for [#561](https://github.com/jarrodjohnson-gif/emberisle/issues/561).
+This note changes no gameplay or protocol.
+It reconciles owner decisions, accepted research, and current source.
+The proposed wire contract is reviewable; unresolved policies below still need Jarrod's decision before implementation.
+
+## Authority and scope
+
+| Record | What it establishes |
+|---|---|
+| [Owner decisions, October 17](https://github.com/jarrodjohnson-gif/emberisle/issues/561#issuecomment-6244802140) | Mixed payments; exactly N eligible cards selected by the responder; exact preview; one Accept; visible owned counts. No gifts or matching resource types across directions. |
+| [Owner request, October 18](https://github.com/jarrodjohnson-gif/emberisle/issues/561#issuecomment-6250347429) | Actual counteroffers and request-only “Looking for X” asks. The asker chooses one response. |
+| [Research acceptance](https://github.com/jarrodjohnson-gif/emberisle/issues/561#issuecomment-6253888543) and [fast-trading research](../research/fast-trading.md) | Reconcile this design with actual counters and complete response proposals. Research recommendations remain recommendations. |
+| [Human-offer hold decision, #1245](https://github.com/jarrodjohnson-gif/emberisle/issues/1245) and [bot exception](https://github.com/jarrodjohnson-gif/emberisle/issues/1245#issuecomment-6551936127) | Human offers no longer expire after 20 seconds. Bot offers retain their timeout. |
+| [People-first decision](../DECISIONS.md) | Bots wait up to eight seconds before accepting while humans have not declined. |
+
+The later request expands the earlier nonbinding-counter suggestion into an actual negotiated deal.
+Reposting a suggestion to the whole table does not satisfy that request.
+Publishing a request or proposal moves no goods.
+Accepting one complete, agreed deal settles it once; there is no additional confirmation.
+
+Bank and dock exchanges remain separate.
+Bank exchanges use four identical resources; generic owned docks use three; specific owned docks use two of their resource.
+Each buys one other resource.
+These ratios do not constrain negotiated player trades.
+
+## Research pattern and limits
+
+Follow the accepted research's explicit give/get receipts and editable complete counteroffers.
+Keep request-only discovery separate from executable deals, so interest cannot look like a gift.
+This follows the documented Colonist pattern as inherited by the research, not a verified current-client measurement.
+CATAN Universe evidence is historical publisher documentation; current Colonist behavior could not be checked.
+No source establishes a measured fastest product or proves request-only selection is a current competitor feature.
+The request-only selection requirement comes from Jarrod.
 
 ## Verified current behavior
 
-- `src/lib/game/types.ts:RESOURCES` defines timber, clay, wool, grain and ore. `src/lib/game/rules.ts:validBag` accepts only those keys and nonnegative integer counts; empty bags are valid. It does not enforce safe integers or a nonempty bag.
-- `server/host.mjs:ask` permits the current seat in `main` to open a named `give`/`want` offer if it owns `give`. It rejects only a completely empty pair: **one-sided named-good gifts currently remain possible.** This note changes no runtime behavior; the future no-gift validation change is explicit below.
-- `openOffer` holds one in-memory offer with identity `t${game.seq}-${++offerSeq}`, a declined-seat set, bot timers and a 20-second `until`. Replacement broadcasts `tradeClosed` before the new `tradeOffer`. `answer` currently checks a supplied ID, but also accepts an omitted ID; new open-ask replies must always supply it.
-- `respond` constructs `offerTrade` on a temporary rules state, then `respondTrade`; only a successful pair replaces `room.game`. The rules recheck both hands and transfer both bags. A responder lacking goods leaves the table offer open; a failed offerer's rules validation closes it. The intermediate rules offer is never published. Successful trade sequences follow these existing rules actions; do not invent a requirement that `seq` advances by exactly one.
-- `play` closes an offer when its asker loses the `main` turn or no longer owns all offered goods. Goods are not reserved: spending some offered resource only closes the ask if the remaining hand cannot cover `give`. `rematch` and `takeOver` close relevant offers; offers/timers are not persisted. `resendOffer` restores an eligible rejoining responder's remaining window and declines after its private state, without restarting the window.
-- #524 is implemented through `actionStamp`, `freshAction` and `src/lib/net/table.ts:act`. Every gameplay/trade frame has fresh `cid`, `turn`, `baseSeq`, `connection`; the seat remembers 32 IDs, including refused intents. **Noncurrent `tradeAnswer` intentionally allows an older nonnegative `baseSeq` within the current turn**, but never a future sequence, wrong connection/turn or duplicate ID. Other actions require exact current sequence. Preserve this existing race allowance, subject to exact offer identity and live terms validation. Gameplay is never queued for reconnect.
-- `src/lib/game/ai.ts:shouldAcceptTrade` pays only from the bot's own hand, requires receiving at least as many cards as it pays, reduces cards missing for its `goalFor` build, and avoids helping an asker tied for highest public points when ahead of the bot. `chooseTradeAsk` produces concrete one-for-one asks when one card short. `botAnswer` delays 1–2 seconds, rechecks offer and seat kind, and makes recovery seats decline. `runBots` permits one ask per bot turn and pauses on its own open ask. Practice mirrors this in `src/lib/game/store.ts:openOffer/respond`. These #363/#414 boundaries remain.
+Source baseline: `2c161a1e8356aecb238e1966f0e2956eccfbf671`, checked November 4, 2026.
+The links below name files and the symbols inspected.
 
-## Proposed terms and interaction
+| Source | Current behavior |
+|---|---|
+| [types.ts](../../src/lib/game/types.ts), `RESOURCES`; [rules.ts](../../src/lib/game/rules.ts), `validBag` | Five resources: timber, clay, wool, grain, ore. Bags allow known keys and nonnegative integer counts, including empty bags. Safe-integer totals are not enforced. |
+| [host.mjs](../../server/host.mjs), `ask` | Only the current seat in main phase publishes an offer. It checks bags and offered holdings, but rejects only the completely empty pair. One-sided and overlapping named bags remain possible. |
+| `openOffer`, `cancelOffer`, `resendOffer` | One in-memory offer has `tradeId`, declined seats, bot timers, and nullable `until`. Humans have no offer timeout; bots have 20 seconds. Replacement closes the previous identity. `tradeCancel` already exists. Rejoin restores the offer and declines after private state, including for its asker. |
+| `answer`, `respond`; rules `offerTrade`, `respondTrade` | Replies check a supplied trade ID but permit omission. Yes constructs both rules actions on temporary state. Only success replaces the game; failed responder payment leaves the offer open. Failed offerer validation closes it. |
+| `play`, `takeOver`, `rematch`, `closeOffer` | Phase/turn loss or insufficient offered holdings closes an offer. Goods are not reserved. Relevant takeover and rematch close it. Offers and timers are ephemeral. |
+| `actionStamp`, `freshAction`; [table.ts](../../src/lib/net/table.ts), `act` | Gameplay uses `cid`, `turn`, `baseSeq`, and `connection`. Refused dispatched intents consume IDs; the ledger keeps 32. Noncurrent `tradeAnswer` permits an older same-turn baseline, never a future sequence. Other trade intents require the current sequence. Gameplay is not queued for reconnect. |
+| `botAnswer`, `peopleWaiting`, `releaseHeld`, `runBots` | Bots evaluate after a default 1–2 seconds. Positive answers wait while humans remain undecided, up to eight seconds. Recovery bots decline. Bot asks are limited to one per turn; their own offer pauses play. |
+| [ai.ts](../../src/lib/game/ai.ts), `shouldAcceptTrade`, `chooseTradeAsk` | Bots use their own hand and public information. They require affordability, no card-count loss, fewer missing goal resources, and the existing public-leader check. Originated asks are concrete one-for-one trades. |
+| [store.ts](../../src/lib/game/store.ts), `openOffer`, `respond`, `releaseHeld` | Practice mirrors human holds, bot expiry, people-first answers, and temporary concrete settlement. |
+| [proto.ts](../../src/lib/net/proto.ts), `PROTO`; host handshake | Version is 1. The host accepts missing/older versions, so a version bump alone cannot safely negotiate new trade semantics. |
 
-The new ask contains a concrete, nonempty offered bag and `any.count = N`, a positive safe integer. N is an exact card count, not a value score, range or unlimited request. Recommended first release: N cards may be a mixture of any of the five resources **except resources appearing positively in `give`**. There are no fortunes, pieces, bank payments or unknown resource names. The host derives this allowed set; clients cannot widen it. Reject an offer with no allowed resource. Both `give` and the selected payment use `validBag` plus safe-integer, positive-total and affordability checks; summation must also remain a safe integer. Zero entries are ignored/canonicalized away.
+Current source supports neither actual counteroffers nor request proposal collection.
+A short “looking for” label on an unaffordable named offer is not request-only negotiation.
+The October research's universal 20-second baseline predates #1245.
+Do not restore that timeout for existing human offers.
 
-Disjoint positive supports ensure each party actually gives and receives goods: no gifts, empty payment, self-swap or zero-net transfer. Unequal card counts are allowed; no new exchange-rate rule is imposed. For the future implementation, named offers and counter-derived named offers must also reject gifts and zero-net transfers; otherwise they bypass this requirement. Canonicalize each resource to its net transfer and require a positive nonempty transfer in both directions. Normal two-sided named trades and their wire format remain supported. This is an explicit proposed validation change when implementation lands, not a change made by this documentation PR.
+## Approved interaction requirements
 
-The responder sees “2 wool for any 1 card” and the eligible goods, chooses exactly N cards from their hand, then sees the concrete exchange on an **Accept** control. No default payment and no generic Yes that lets the host select goods. Selecting is local only: no reservation or transfer. Final acceptance binds the offerer to the advertised choice rule; no second offerer confirmation. Decline uses the existing per-seat decline/close behavior. A declined responder cannot later accept or counter that same new open ask; replacing it produces a new identity and clears declines. Spectators have no controls.
+Use A for the active asker, and B/C for other seated players.
+All examples name resource keys in messages; visible receipts use the game's resource labels.
 
-An exact-N eligible choice is acceptance, not a counter. To propose a different quantity or offered bag, a responder may send one **nonbinding counter suggestion per trade ID** with both concrete bags, viewed from the original asker's perspective. It must pass the same two-sided/disjoint validation, and the responder must currently own its proposed `want`. The host delivers it privately to the asker, without moving goods, reserving cards, declining the original, changing its terms, or extending any clock. It reveals no other hand information. Suggestions vanish when that offer closes. They are not executable commitments and need not survive reconnect. The responder can still accept or decline the original.
+| Flow | Commitment and final action |
+|---|---|
+| Named offer | A publishes exact give/get terms. Another seat's Accept settles those terms once. |
+| Any-N offer | A publishes a concrete give bag and an exact count N. B selects exactly N eligible cards. B sees the exact receipt, then Accept settles it once. |
+| Actual counteroffer | B publishes changed, complete terms. A sees both payments and accepts that counter once. B does not confirm again. |
+| Request-only ask | A publishes only desired goods. No payment is promised and no transfer is authorized. |
+| Request response | B publishes both payments. A compares complete proposals and accepts one. The request closes with its sibling proposals. |
 
-The asker may ignore a counter or use its terms to publish a **new named-good table ask**, validated through the normal current-seat ask path; the original first closes and a new ID opens for all other seats. T2 retains the open-ask path’s two-sided/nonzero validation, mandatory exact reply identity, and capability gate; republishing cannot fall back to permissive legacy gift validation. Another seat may take that new table ask. Label this action “Offer these terms to table”, not “Accept counter”; there is no targeted counter-acceptance or reservation in this proposal. A true targeted counter flow would be a separate owner decision and protocol design.
+“Send proposal” and “Accept” are different actions, not two confirmations of the same deal.
+Changing a published deal requires a new immutable identity or revision and fresh acceptance by its recipient.
+Never reuse a previous Yes for changed terms.
+The exact permissions for counter chains remain an owner policy below.
 
-## Proposed wire contract and transitions
+For Any-N, N is a positive safe integer, not a value score or range.
+Eligible cards are the five resources absent from A's positive give bag.
+Mixed eligible payments are allowed.
+Offering all five resource types leaves no eligible payment and must fail.
 
-These are additive messages with required discriminator validation; never encode “any” as an empty named `want`.
+Every settling deal has two nonempty, disjoint positive bags.
+Reject unknown resources, negative/fractional/unsafe counts, unsafe totals, and unaffordable payments.
+Ignore zero entries when comparing positive resource types.
+Reject matching positive types outright; do not silently net an invalid receipt into a different trade.
+Unequal card counts are allowed.
+Fortunes, pieces, and bank inventory cannot satisfy player payments.
+
+Apply these checks to named, Any-N, counter, and request-response settlement in the future implementation.
+Legacy named messages must not bypass the no-gift rule.
+This is an intentional future validation change; this documentation changes no current named-good behavior.
+A request's absent give bag is discovery data, never a zero-payment executable offer.
+
+Show owned counts and the exact “You give” / “You get” receipt before Accept.
+Identify the other player and every quantity.
+Local selection moves no goods and sends no acceptance.
+An unaffordable original offer must not prevent submitting an affordable changed counter.
+Keep publication, acceptance, refusal, cancellation, and completion distinguishable.
+Closing an editor must not silently accept a deal.
+No sizes, screen layout, new art, or placement choices are specified here.
+
+## Proposed protocol model
+
+Everything in this section is a technical proposal, not a shipped API or an owner policy decision.
+Policy-dependent transitions explicitly reference the choices below.
+
+Retain one active negotiation root per active player turn, building on today's one-offer record.
+Use the existing host-issued `tradeId` for that root.
+A replacement root gets a new identity and invalidates its children.
+Keep rules `TradeOffer` concrete: only resolved payments enter `applyAction`.
+
+Proposed root variants:
 
 ```text
-A → host: tradeAsk { give:{wool:2}, any:{count:1}, ...stamp }
-host → seats: tradeOffer { tradeId:T, from:A, give:{wool:2},
-                          any:{count:1}, seconds:20 }
-  CLOSED → OPEN(T); no goods move; no game.seq advance merely for opening.
-
-B → host: tradeAnswer { tradeId:T, yes:true, pay:{ore:1}, ...stamp }
-  OPEN(T) → CLOSED(T,taker:B); atomically A:-2 wool,+1 ore;
-  B:+2 wool,-1 ore. Broadcast existing tradeClosed {tradeId:T,taker:B},
-  then normal private state/log results containing concrete goods.
-
-B → host: tradeAnswer { tradeId:T, yes:false, ...stamp }
-  OPEN(T) → OPEN(T,declined+=B), or CLOSED if all other seats declined.
-
-B → host: tradeAnswer { tradeId:T, reply:"counter",
-                       counter:{give:{wool:3},want:{ore:1}}, ...stamp }
-host → A only: tradeCounter { tradeId:T, by:B, give:{wool:3},want:{ore:1} }
-  OPEN(T) → OPEN(T); no transfer, seq change or deadline extension.
-  A may send ordinary named tradeAsk with those terms and a fresh stamp;
-  host closes T before opening T2. B must freshly accept T2.
-
-A → host: tradeWithdraw { tradeId:T, ...stamp }
-  OPEN(T) → CLOSED(T); only T's asker can withdraw; no goods move.
+named:   { tradeId, from:A, kind:"named", give, want, until }
+any:     { tradeId, from:A, kind:"any", give, count:N, until }
+request: { tradeId, from:A, kind:"request", want, until }
 ```
 
-For open offers `tradeAsk` has exactly one of `want` or `any`; `tradeAnswer` is exactly accept-with-pay, decline, or counter, with incompatible fields rejected. Never let `reply:"counter"` fall through today's Boolean-coercion decline path. Require exact `tradeId` on every new-mode reply/withdraw/counter, authenticate the seat from its socket, and reject asker/self replies and declined seats. `tradeWithdraw` is new and requires the current exact action stamp. Counter stays a `tradeAnswer`, preserving the existing noncurrent same-turn parallel-stamp allowance. Explicit validation must precede side effects.
+A concrete proposal carries `{tradeId, proposalId, author, recipient, give, want, until}`.
+Its bags always use A's perspective: `give` leaves A; `want` reaches A.
+A is always one participant; this does not authorize B–C trading during A's turn.
+Only the addressed recipient can accept the proposal under the recommended bilateral policy P4.
+The author commits by publishing those exact terms, subject to live validation at settlement.
 
-On acceptance, check `Date.now() < until` explicitly (a delayed timeout callback is not authority to accept after expiry), current game/turn/phase and exact live identity, both hands, selection whitelist/count and disjointness. Resolve `pay` to a concrete `want` and reuse the existing temporary `offerTrade` → `respondTrade` transaction. Commit/close synchronously with no asynchronous gap. On payment validation failure reject only that response; on invalidated asker/phase close the offer. Emit one committed goods event using the existing rules/log machinery. Do not expose the intermediate transaction or mutate any hand on failure.
+Give each revision a fresh host-issued `proposalId`; never mutate terms behind an existing ID.
+A revision identifies the proposal it replaces.
+Accept must name both the exact root and exact proposal identity seen in its receipt.
+Retain author/recipient identity even when another player edits a local draft.
 
-The host's serial dispatch makes the first valid acceptance processed before expiry win; this is arrival/processing order, not client timestamp or lowest seat number. Closing T and committing the transaction occur in the same synchronous operation. Another near-simultaneous reply, replayed `cid`, late counter or old-T reply cannot find an executable T. Do not auto-retry any acceptance against T2. Old reconnect/rematch frames fail their connection/turn stamp even if an ID/counter coincidentally matches.
+The following candidate names illustrate discrimination; implementation review must finalize encoding and compatibility.
+Every client intent includes the existing action stamp.
 
-No reservation or clock renewal occurs while selecting, countering or declining. Expiry, replacement, explicit withdrawal, end turn/phase, loss of offered affordability, recovery takeover and rematch close T and cancel its bot timers and suggestions. Rejoin gets only remaining time after a fresh private snapshot; expired offers are closed rather than resurrected. Host restart drops the in-memory offer. Rejections do not rearm gameplay/offer deadlines, write a save or run bots; expiry itself may perform normal close/resume behavior. Successful trades retain the existing offerer's turn-window behavior.
-
-## Bots and compatibility
-
-For an open ask, enumerate eligible affordable concrete payment bags of exactly N cards from the bot's own hand. Bound enumeration by its holdings, total-N checks and the existing five-resource space; prune when `N > size(give)` because existing policy cannot accept. Call unchanged `shouldAcceptTrade` for each concrete `{from,give,want:pay}`. Choose an accepted candidate with smallest post-trade goal deficit, then greatest remaining spare cards for that goal, then canonical `RESOURCES` order as a deterministic tie break. If none passes, decline. Do not read opponents' private hands, invent willingness probabilities or weaken leader/card-count checks. A delayed callback rechecks live identity, expiry, bot kind, recovery status and affordability before using the shared commit path. Bots do not counter or originate open asks in this first design; `chooseTradeAsk`, one-ask-per-turn, rejection memory and 20-second pause bound remain unchanged. Practice uses the same concrete selection and validation policy, with store-owned timers; local play has no socket stamps to invent.
-
-Required implementation surface: host open-offer record/validation/dispatch/resend/expiry, typed wire offers/replies in `src/lib/net/table.ts`, `OpenOffer`/online handlers/practice mirrors in store, payment selection and counter/withdraw controls in `TradeToast`/`TradePanel`, and a pure bot payment selector next to `shouldAcceptTrade`. The rules' `TradeOffer` remains concrete; no “any” state enters `applyAction`.
-
-Current `src/lib/net/proto.ts` is version 1. A bump alone is insufficient: current host handshake accepts older versions and missing proto, while old UI interprets empty wants as gifts. Recommended rollout adds explicit `tradeOpenAsk:1` capability in hello/welcome, records it for every human seat, and enables publishing open asks only when all seated human clients support it; bots use host support. Legacy clients continue normal two-sided named offers with the existing wire shape. The future host rejects their one-sided or zero-net offers too; this intentional validation change prevents a legacy-message bypass of the no-gifts requirement. A late incompatible join/rejoin during T closes T before sending the legacy client any offer; an old spectator gets a safe textual summary, never an executable/gift-shaped offer. Upgraded clients omit the feature against old hosts and do not send new messages without negotiated support. The implementation must not send `any` alongside a fake empty `want`, reinterpret a legacy Yes as a payment choice, or accept missing `pay` for an open offer. Saved game/rules state needs no wildcard migration because offers remain ephemeral and accepted trades are concrete.
-
-## Acceptance cases for the future implementation
-
-| Case | Required observable result |
+| Message or event | Proposed transition |
 |---|---|
-| One human | A gives 2 wool for any 1; B selects 1 ore and sees those concrete terms. Exactly A −2 wool/+1 ore and B +2 wool/−1 ore; others/bank unchanged; one committed trade event and T closes. Merely selecting moves nothing. |
-| Quantities and invalid bags | Any-2 accepts 1 ore + 1 grain; unknown keys, unsafe/fractional/negative counts, offered-resource overlap, empty give/pay, wrong total and unaffordable pay reject without any transfer. Offering all five resources leaves no allowed payment and rejects. |
-| Two simultaneous accepts | B pays ore and C pays clay using the same T and observed baseline. Exactly the first valid processed reply commits. Second gets gone/stale without losing goods; one closure/result. Duplicate fresh-baseline replay with same cid and replay after reconnect/rematch cannot transfer again. |
-| Counter/decline | B's 3-wool-for-ore suggestion moves nothing and does not reset T. A publishes it as T2; late yes/counter/withdraw for T cannot affect T2. T2 needs its own acceptance. B's explicit decline counts once; all decline closes T; a declined B cannot accept original T. |
-| Expiry/withdrawal | A valid-looking accept after `until` fails even before timeout callback runs. Explicit withdraw, replacement, pass, takeover and rematch close/cancel timers. No late bot/human reply moves goods; reconnect never supplies a new 20 seconds. |
-| Offerer spends goods | A spends below the 2-wool commitment: T closes before bots run and late B acceptance changes nothing. Spending while still owning 2 wool leaves T valid; valid same-turn responder reply can use an older baseline but must revalidate T and both hands. |
-| Responder races | Payment becomes unaffordable before processing: reject that reply, leave valid offer for others. Wrong connection/turn, future seq or duplicate cid is refused and private state resynced without deadline/save mutation. |
-| Bot | Helpful affordable candidate passes unchanged acceptance policy after bounded delay; unhelpful, leader-helping or impossible payment declines. Recovery bot always declines; callback on closed/replaced offer does nothing; bots neither counter nor exceed one named ask per turn. |
-| Legacy | Normal two-sided named offer/accept/decline remains supported. Once implementation lands, legacy one-sided or zero-net named offers reject without transfer, including a counter republished as T2. Old host/client combination cannot create/accept an open ask or render it as a gift. |
+| A: `tradeAsk {kind:"any", give:{wool:2}, count:2}` | Closed → open Any-N root T. No goods move. |
+| B: `tradeAnswer {tradeId:T, reply:"accept", pay:{ore:1,grain:1}}` | Validate exact N and live holdings. Commit A −2 wool/+1 ore/+1 grain; B receives the inverse. Close T. |
+| B: `tradeAnswer {tradeId:T, reply:"decline"}` | Record B's decline once. Root closure and existing proposals follow P2/P3, not implicit acceptance. |
+| B: `tradeAnswer {tradeId:T, reply:"propose", give:{wool:3}, want:{ore:1}}` | Publish counter P1 addressed to A. No transfer. Original-offer availability follows P2. Visibility follows P1. |
+| A: `tradeAsk {kind:"request", want:{ore:1}}` | Closed → request R. No offered payment and no transfer. |
+| B: `tradeAnswer {tradeId:R, reply:"propose", give:{timber:1}, want:{ore:1}}` | Publish response P2: A gives timber; B gives ore. Validate B's payment. Request matching follows P6. |
+| C: same request with `give:{wool:1}, want:{ore:1}` | Publish distinct P3. Response capacity follows P3 policy. |
+| A: `tradeSelect {tradeId:R, proposalId:P2}` | Accept exactly P2. Atomically settle with B, close R, and invalidate P3. No second confirmation. |
+| Author: `tradeRevise {tradeId, proposalId, give, want}` | If revision is permitted, invalidate the old identity and publish a new one. Never transfer. |
+| Author: `tradeWithdrawProposal {tradeId, proposalId}` | Withdraw that proposal only. Do not close unrelated proposals. |
+| A: `tradeCancel {tradeId}` | Reuse the existing root-cancellation concept. Close root and every child without transfer. |
+| Host: `tradeProposal`, `tradeProposalClosed`, `tradeClosed` | Acknowledge immutable terms and authoritative lifecycle results to authorized viewers under P1. |
 
-This design step's review is source/reference inspection and document diff checks. It runs no gameplay proofs and claims no implementation behavior beyond the verified current paths above.
+Require mutually exclusive message fields and a valid discriminator before side effects.
+A request cannot include an executable empty `give`.
+An Any-N acceptance must include `pay`; legacy Yes cannot choose payment automatically.
+Do not let `reply:"propose"` fall into today's Boolean-coercion decline path.
+Require exact IDs for every new-mode action, including cancel and withdrawal.
+Reject watcher actions, forged authors, self-trades, unauthorized recipients, and unknown or closed parents.
 
-## Owner decisions (recommendations, not approvals)
+Preserve `freshAction` connection/turn/cid checks.
+Noncurrent proposals using `tradeAnswer` retain its existing older-same-turn baseline allowance.
+Current-player selection requires the exact current baseline, like current asks/cancellation.
+New revision/withdrawal messages should require exact baseline unless their race allowance is separately specified and tested.
+A refusal resynchronizes without retrying settlement or extending a deadline.
 
-1. **What can satisfy “any N”?** Recommended: exactly N mixed cards from the five resources, excluding goods the asker offers, as specified above. Alternative: require all N cards to be one selected resource. This changes both wording and payment selection.
-2. **Does selecting eligible goods accept immediately?** Recommended: the ask binds the offerer; the responder's concrete Accept commits, with optional nonbinding counter suggestions and republish-to-table flow. Alternative: every response is a proposal requiring the offerer's second confirmation; that requires a different pending-proposal/expiry/race design before implementation.
+## Proposed settlement and lifecycle
 
-Sources: issue #561; `docs/research/complaints-digital.md` §16; issues #524/#363/#414 and their decision/completion comments; checkout symbols cited above. Approval of bot trading in #363 does not establish approval of this proposed open-ask UX.
+1. Authenticate the socket's seat and validate its action stamp.
+2. Resolve the exact open root and proposal, if any.
+3. Check author, recipient, current main turn, permitted response state, and unchanged displayed terms.
+4. Check any finite authoritative deadline with `now < until`, even before its timeout callback executes.
+5. Resolve Any-N payment or proposal bags into the same concrete A/B exchange.
+6. Recheck both live hands and every bag, total, eligibility, and no-gift constraint.
+7. Run `offerTrade` for A to B on temporary state, then `respondTrade` for B.
+8. Commit only the successful pair, close the root, and invalidate every child synchronously.
+9. Publish the authoritative result through existing private state, goods-event, and log machinery.
+
+A selecting A can authorize B's rules response only because B published that exact proposal.
+Never expose an unrestricted client ability to act as B.
+The intermediate rules offer is not published.
+Do not assume settlement advances `seq` exactly once; retain existing rules-action sequencing.
+Keep bank and uninvolved players' goods unchanged.
+
+Host processing order decides races, not client timestamps or seat numbers.
+Acceptance versus revision, withdrawal, cancellation, or another acceptance has exactly one winning transition.
+A late or duplicate request cannot execute against a replacement identity.
+A replay with a fresh cid still fails once its original root/proposal is closed.
+Connection rotation and absent ephemeral roots prevent reconnect/rematch/restart replay.
+
+For a direct offer, insufficient asker goods invalidates the root; insufficient responder payment rejects only that response.
+For a proposal, insufficient payment invalidates that proposal without discarding unrelated affordable proposals.
+For request discovery, there is no fixed offered bag to reserve or invalidate.
+Do not require A to own another player's entire hand or expose holdings to validate proposed terms.
+Host validation uses private hands without publishing them.
+
+Proposed no-reservation semantics preserve current building and bank-trading freedom.
+Revalidate at acceptance rather than promising that publication locks cards.
+Phase/turn end, root cancellation/replacement, rematch, and relevant takeover close the negotiation and its children.
+A takeover must invalidate proposals authored by that seat; a recovery bot cannot inherit its outstanding commitments.
+
+Human named offers keep their current null deadline.
+Bot named offers keep their 20-second timeout.
+New-mode deadline inheritance remains P5; do not infer a new timeout from the October research.
+If P5 chooses a finite deadline, replies and revisions cannot silently renew it.
+Negotiation must not bypass the existing total-turn cap.
+
+On rejoin, send fresh private state before live negotiation state visible under P1.
+Restore remaining finite time or the null hold; never restart a clock or revive closed proposals.
+Do not replay pending gameplay intents.
+Host restart drops the ephemeral negotiation; saved rules state needs no wildcard migration.
+
+## Bots, practice, and rollout
+
+Preserve #363/#414 concrete evaluation and the #850 people-first gate.
+For a future Any-N selector, enumerate affordable eligible payment bags using only the bot's own holdings.
+Prune N greater than the offered card count: existing acceptance policy cannot approve that payment.
+Run unchanged `shouldAcceptTrade` on each concrete candidate.
+Recommend deterministic resource-order selection among approved candidates; this recommendation belongs to P7, not a new approved bot strategy.
+Recheck identity, affordability, seat kind, recovery status, and deadline when a delayed or held answer executes.
+
+Counter pricing, request responses, counter depth, and bot-originated new modes need P7's explicit policy.
+Do not treat existing named-offer strategy as permission to generate proposals.
+Recovery bots keep conservative declines.
+Practice must share the same validation and lifecycle contract, without inventing socket stamps for local play.
+
+A capability gate is required before exposing new variants to old clients.
+Proposed capability: `tradeNegotiation:1` in hello/welcome, recorded for seated humans.
+Enable new roots only when host and seated human clients support the chosen contract.
+An incompatible rejoin closes a new-mode root before sending that client executable trade data.
+Legacy spectators must never receive an unsupported payload resembling a free trade.
+Visibility under P1 also applies to spectator summaries.
+Upgraded clients must omit new modes against old hosts.
+Keep ordinary named wire messages compatible, with the explicit future no-gift validation tightening described above.
+
+Implementation touches host negotiation records/dispatch, typed network events, store/practice mirrors, and concrete settlement guards.
+Payment/proposal controls must follow a separately approved UI specification.
+No new implementation children or readiness claims follow automatically from this document.
+
+## Remaining owner policies
+
+These research recommendations are not approvals.
+Each policy blocks only its dependent implementation decisions, not this reconciliation or the approved requirements above.
+
+| ID | Decision needed | Recommendation and alternative |
+|---|---|---|
+| P1 | Who sees proposals and their terms? | Public terms, matching current table offers. Alternative: only author/recipient; projection and rejoin must then hide others' terms. |
+| P2 | Does a counter leave the original offer available? What does declining do to that seat's proposal? | Keep the original independently available. Make decline affect the original only; withdraw a proposal explicitly. Alternative: counter/decline removes that seat's original opportunity. Define all-decline closure with outstanding proposals explicitly. |
+| P3 | How many proposals and revisions per seat? Can the asker counter a response? | One live response per seat/root, replaced explicitly. Initially no nested counter chains; asker asks for a revised proposal. Alternative: bounded alternating counters with explicit recipient and revision rules. |
+| P4 | Can a third player take another player's counter? | Addressed bilateral proposals only. Alternative: public joinable counters with separate authorization; never allow accidental third-party acceptance. |
+| P5 | Do new human negotiation roots and children inherit #1245's hold? | Inherit human hold until closure/turn end; children never outlive their root. Preserve bot timeouts. Alternative: an explicit finite new-mode deadline, requiring Jarrod's exception to the current hold direction. |
+| P6 | Must request responses supply exactly the requested goods? | Require exact requested bags for matching responses. Alternative: visibly distinct changed-request counters; never present changed quantities as an exact match. |
+| P7 | Which new flows may bots use? | Retain named behavior; review Any-N selection separately. Keep counter/request generation off until a bounded pricing policy is approved. Alternative: specify and test a complete proposal policy now. |
+
+P5 updates the research recommendation to account for the later human-offer decision.
+Nothing here reopens the settled mixed-payment or single-Accept choices.
+
+## Acceptance plan for implementation
+
+These are future tests, not claims that the runtime already supports new flows.
+Policy-dependent cases run against Jarrod's recorded P1–P7 answers.
+
+| Case | Required result |
+|---|---|
+| One human Any-N | A offers two wool for any two. B chooses ore and grain, sees both directions, then Accept transfers exactly those bags once. Selection alone changes nothing. |
+| Invalid inputs | Empty payments, gifts, overlapping types, unknown keys, unsafe totals/counts, fractions, negative values, wrong N, and unavailable cards fail without partial movement. All-five-resource give fails Any-N eligibility. |
+| Simultaneous direct accepts | B and C use the same observed baseline and root. First valid host-processed acceptance wins; the other loses no cards. Exactly one committed trade event. |
+| Actual counter | B publishes three wool for one ore from A's perspective. A accepts that exact proposal once. B receives wool without another Yes; no public repost is required. |
+| Request collection | A requests ore without offering payment. B proposes timber-for-ore; C proposes wool-for-ore. Publication transfers nothing. A accepts B; only A/B exchange and C's sibling closes. |
+| Two request selections | A submits acceptance of B and C. At most one commits, including when selection messages arrive with fresh stamps. |
+| Revision/withdraw race | A accepts P1 while B revises or withdraws it. Processing order determines completion or refusal. P1 never silently selects P2. |
+| Decline and counter availability | Verify P2's original/proposal relationship and all-decline closure. Decline never counts as proposal acceptance. Repeated decline has no duplicate effect. |
+| Capacity and request matching | Enforce P3/P6 explicitly. Reject unsupported chains, excess live proposals, and mismatched requests without replacing unrelated commitments. |
+| Cancellation and expiry | Root cancel closes children. Finite expiry rejects late acceptance before delayed timeout callbacks. Human named offers remain open after 60 seconds while the turn remains valid. |
+| Spending | Direct ask closes when A cannot cover give. Spending that leaves enough keeps it valid. Proposal payment loss prevents only that trade; no negative or partial hand results. |
+| Turn/takeover/restart | End turn, phase loss, rematch, root replacement, and relevant takeover invalidate affected commitments. Recovery bots cannot execute inherited proposals. Restart does not restore an ephemeral deal. |
+| Rejoin and replay | Show only still-live authorized records after private state. Preserve null/remaining deadlines. Wrong connection/turn, future seq, repeated cid, and closed-ID replay transfer nothing. |
+| Authorization and privacy | Watchers and third parties cannot settle bilateral proposals. P1's visibility applies consistently to publication, logs, snapshots, and rejoin. Never reveal private holdings in errors. |
+| Bot response | Every enabled Any-N candidate passes unchanged affordability/goal/leader rules and people-first timing. Recovery bots decline. Closed-root callbacks do nothing. P7-disabled modes generate no proposals. |
+| Practice and compatibility | Practice matches settlement/lifecycle. Unsupported clients cannot publish or receive executable new-mode payloads. Future named validation rejects gifts and matching types without changing valid named exchanges. |
+| Receipt interaction | Owned counts and exact give/get survive changed holdings and revisions. A stale focused Accept cannot settle changed terms. Pending state does not animate an unconfirmed transfer. |
+
+## Validation boundary
+
+This document uses source inspection, reference checks, and diff checks.
+No runtime proofs are required or claimed for this documentation-only change.
+Independent Claude review must verify authority, lifecycle, races, compatibility, and the unresolved policy boundaries.
