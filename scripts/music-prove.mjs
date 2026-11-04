@@ -1,8 +1,8 @@
 // #814: the gameplay background music (docs/design/sound.md, "Game music"). Headless Chromium on the practice table, with real
 // audio elements (every `new Audio` is recorded so the proof can read the track's paused, volume, loop and currentTime).
 // - nothing is requested or played before the first press or key, even on the play screen;
-// - after it the track plays at 0.25, loops (seek to the end, it wraps and keeps playing) and the lobby counts as a play screen;
-// - game_start ducks it to 30% (0.075) and its end, and a cut-off sting, restore 0.25;
+// - after it the track plays at 0.12, loops (seek to the end, it wraps and keeps playing) and the lobby counts as a play screen;
+// - game_start ducks it to 30% (0.036) and its end, and a cut-off sting, restore 0.12;
 // - mute stops it and unmuting resumes it, the same for a watcher; the Music toggle stops and resumes it and is remembered;
 // - the win screen stops it (a rematch brings it back), and so does leaving to the title.
 // Zero console errors. Run: npm run music-prove
@@ -73,7 +73,7 @@ try {
   await page.keyboard.press("Shift");
   await until(playing, "the track plays after the first key");
   let t = await track();
-  assert.equal(t.volume, 0.25, "volume 0.25");
+  assert.equal(t.volume, 0.12, "volume 0.12");
   assert.equal(t.loop, true, "loop on");
   const t0 = (await track()).t;
   await until(async () => (await track()).t > t0 + 0.3, "currentTime advances");
@@ -87,16 +87,16 @@ try {
   await sound((m) => m.play("game_start", 0.5));
   await until(async () => (await track()).volume < 0.1, "ducked while game_start plays");
   t = await track();
-  assert.ok(Math.abs(t.volume - 0.075) < 1e-9, `ducked to 30% (0.075), got ${t.volume}`);
+  assert.ok(Math.abs(t.volume - 0.036) < 1e-9, `ducked to 30% (0.036), got ${t.volume}`);
   assert.ok(!t.paused, "still playing while ducked");
   ok(`game_start ducks it to ${t.volume}`);
-  await until(async () => (await track()).volume === 0.25, "restored after game_start ends", 30_000);
-  ok("the volume is back to 0.25 when game_start ends");
+  await until(async () => (await track()).volume === 0.12, "restored after game_start ends", 30_000);
+  ok("the volume is back to 0.12 when game_start ends");
   await sleep(300);
   await sound((m) => m.play("game_lose", 0.5));
   await until(async () => (await track()).volume < 0.1, "ducked while game_lose plays");
   await sound((m) => m.stop("game_lose"));
-  await until(async () => (await track()).volume === 0.25, "restored when the sting is cut off");
+  await until(async () => (await track()).volume === 0.12, "restored when the sting is cut off");
   ok("a cut-off sting restores it too");
 
   // ---- Mute, and the Music toggle.
