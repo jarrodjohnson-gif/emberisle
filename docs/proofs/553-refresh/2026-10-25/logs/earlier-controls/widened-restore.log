@@ -1,0 +1,29 @@
+
+> connection-health-prove
+> node scripts/connection-health-prove.mjs
+
+ok transport: no pre-welcome probe; duplicate welcome keeps one challenge and its 3s timeout; close cancels probing
+ok browser: nonce matched 137ms monotonic RTT; 30s spacing, one outstanding, 3s timeout, full-state recovery once; host timers/save bytes unchanged
+ok lobby: four ready seats and every health state fit 320/390/667/844px layouts; no landscape scrolling
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: quiet fallback keeps the original 3000ms delay
++ actual - expected
+
+  [
++   4000
+-   3000
+  ]
+
+    at file:///workspace/emberisle/work/verify716-oct25/scripts/connection-health-prove.mjs:448:14 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [ 4000 ],
+  expected: [ 3000 ],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

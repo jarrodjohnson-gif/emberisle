@@ -1,0 +1,44 @@
+{
+  "viewport": {
+    "tag": "390x844",
+    "width": 390,
+    "height": 844
+  },
+  "step": "army 2 (below the minimum)",
+  "phase": null,
+  "seat": "p1",
+  "kind": "army",
+  "badge": false,
+  "shown": true,
+  "label": "Wayfarers played, 2",
+  "animation": "none",
+  "tally": {
+    "l": 288.375,
+    "t": 34,
+    "r": 313.25,
+    "b": 50,
+    "w": 24.875,
+    "h": 16
+  },
+  "card": {
+    "l": 253.5,
+    "t": 12,
+    "r": 330,
+    "b": 56,
+    "w": 76.5,
+    "h": 44
+  },
+  "points": {
+    "l": 300.8125,
+    "t": 42,
+    "r": 301.8125,
+    "b": 43,
+    "w": 1,
+    "h": 1
+  },
+  "clauses": {
+    "leftOfPoints": false,
+    "abovePoints": false,
+    "belowPoints": false
+  }
+}

@@ -1,0 +1,437 @@
+{
+  "baseline": "51cbe38",
+  "files": [
+    {
+      "path": "current/1280x720-board.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "0d973edb0409d841a8942fbb90f23319be20350739f427a0589c82e33c4e6ead"
+    },
+    {
+      "path": "current/1280x720-coach.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "94e5493ffcef85d4bab249ce401067ab346876f7268b99569cf4e6be21ea247e"
+    },
+    {
+      "path": "current/1280x720-costs.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "94db3e69b113bb1c8e53ae1997a2fbc4872c84106cfb0172a797337d2da3e492"
+    },
+    {
+      "path": "current/1280x720-disabled-build.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "b6388ea5c396ae0e01a734c38bf9324c684f6440867d5e4a3e208e00c0bb616b"
+    },
+    {
+      "path": "current/1280x720-discard.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "c08a8fb2e756884ad70e0c8cbb4603ec25576a999d36a11f392ce6dc90687425"
+    },
+    {
+      "path": "current/1280x720-error.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "6d353470add570ad4f80a2b45e099b5c22460fd11a19dd7a14d49aece34f1f87"
+    },
+    {
+      "path": "current/1280x720-fortunes.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "ed2d217354b910c62277a17cf4caca4185d75a284ed8fc69b609781ce7efe460"
+    },
+    {
+      "path": "current/1280x720-help.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "2b354f13b0068c8343778e65cfa0890696ed20042534511b56a4d75187d57db3"
+    },
+    {
+      "path": "current/1280x720-incoming-offer.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "b5997a5c96c5994ad7c31cc967c2df0845ce861a8ecfd87ce3cf81984711fe91"
+    },
+    {
+      "path": "current/1280x720-main.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "b3fa587e123e0c5591451206e37cb7e54338c1941e4731fdfed812bbec3cb1cf"
+    },
+    {
+      "path": "current/1280x720-player-menu.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "6970aee8b03ac05d0b5311756e062a9c68f75e76411199e5beafc9fccdb27672"
+    },
+    {
+      "path": "current/1280x720-restoring.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "918f9bd63ea9c3e603686762fe875cd8c34540b9ad2c4e651750907e90381102"
+    },
+    {
+      "path": "current/1280x720-results-look.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "03865f6acde76c9af66fa80faa471dbac6bc92487133751ebe986a0f8f7753ad"
+    },
+    {
+      "path": "current/1280x720-results.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "bf5bd4c98ea563e18784e14bc83c637a819f7c1de7f2a3950529269db870e2a6"
+    },
+    {
+      "path": "current/1280x720-robber.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "9e240540ae018f8b062e0939ec218693446b3d4a79db3878a4e88132c6257ef4"
+    },
+    {
+      "path": "current/1280x720-rolloff.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "2cd150b9d3a4705732b241e7aaba81dcc694f71bafa5be261813c223f9e921b5"
+    },
+    {
+      "path": "current/1280x720-setup.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "607b48e7fe5afb6580c9e36df5a02727f8d69a0c4387c71e4281463fa717421b"
+    },
+    {
+      "path": "current/1280x720-table-menu.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "3f4c36b6d9911ddb9b377ccc8efb6ab547e58cf0174df1418b922ede0b31b61b"
+    },
+    {
+      "path": "current/1280x720-trade.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "98cc2fbc8f8dfdb5bac780c4f35c6453eba5e5d065118693f972d2f28c1d1d9d"
+    },
+    {
+      "path": "current/1280x720-victim.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "3323fbdf9fc871f76e1e01b6a5a56caee8ebf921ac3cf6663650424f9ab86fc1"
+    },
+    {
+      "path": "current/390x844-board.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "a83acbe33546bd9716e838257f4486954adc7c37643b5b8f24b7990ce6a226bb"
+    },
+    {
+      "path": "current/390x844-coach.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "16105e9c1f7f621e1cc3fb83f546b52c8763b54eff952fe869ce32b7548140aa"
+    },
+    {
+      "path": "current/390x844-costs.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "12a341f52bd30dab7324ea3e6b53f2a7a4942a1168d0a1f7eb8ea308006c5197"
+    },
+    {
+      "path": "current/390x844-disabled-build.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "6f2cd53771eb4380a6184378f55cd0ce96502cd6fd8cb6ef1c26cd67fe27e805"
+    },
+    {
+      "path": "current/390x844-discard.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "41143b3cb6783549635e8531626ed1ad8ed3a0b33491f5d86021f64e2b86d336"
+    },
+    {
+      "path": "current/390x844-error.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "ba091bbe79ded61a9d9c6de512d60f03eb661e8447189204d43cdfbeb43d6067"
+    },
+    {
+      "path": "current/390x844-fortunes.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "ed218046767d037d9617dfba39bdf67a626c85de2cc0414a3bbc8abeb8bd70da"
+    },
+    {
+      "path": "current/390x844-help.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "44ec6f56cc1fa295f10efbdf088a166284bfd178ebf7d095618b1e6f9764de78"
+    },
+    {
+      "path": "current/390x844-incoming-offer.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "17305832fc3632972cf0014e74bd1696c3ffae2ba2aa5af511067f05207ff5c3"
+    },
+    {
+      "path": "current/390x844-main.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "0110aa4b6d2599d5afb3a4a42b0189aaaf157f281fde0fd12df25d7cea9d5d86"
+    },
+    {
+      "path": "current/390x844-player-menu.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "0fe9603e6c2174eaa51e50eee11d672add085bd972c7f483246a1751eb82c4b3"
+    },
+    {
+      "path": "current/390x844-restoring.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "fbad2b1e08f0e3e0bd554ee310e9e3546816db4ddb396de3d1ec560e48372420"
+    },
+    {
+      "path": "current/390x844-results-look.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "54e88759cfcc7eb0120327fd8e7ba58fc3bb7218b124b348e69274aecba16afe"
+    },
+    {
+      "path": "current/390x844-results.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "f9a5e7a2ccdcfecbf2fac3f2df45f7a75edd3043bd94d5bd8d1df6ede942e2e2"
+    },
+    {
+      "path": "current/390x844-robber.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "43671905f601c0af7ca9b3a6b638ea944cd85f8422894fdcb5f4637650402911"
+    },
+    {
+      "path": "current/390x844-rolloff.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "57f59f96d10a742e0dd62b8ad7f177aba9ef42b5c9d58a6405c22cf31d928053"
+    },
+    {
+      "path": "current/390x844-setup.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "c418a87263724880a9cfe83d725b61993d43fd591b2807731cd78dbca3412740"
+    },
+    {
+      "path": "current/390x844-table-menu.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "5b066ffe7970219a82c0173d1d047a2116def7d7a88ec5dafd35fb66b4d654cb"
+    },
+    {
+      "path": "current/390x844-trade.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "f68eab17215cf8566e7f9e5d48a261d0c2f756c000fde9f78a96328f27ce8536"
+    },
+    {
+      "path": "current/390x844-victim.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "3a85b9ed391ed2da102778f92e98cd158da963774b8f3a502267ae4aabe87d97"
+    },
+    {
+      "path": "current/844x390-board.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "ccbe41f56372242bbe09d8c3a91a13f34ca67570d6c307782c33a17496112023"
+    },
+    {
+      "path": "current/844x390-coach.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "1538c349e216e070ab2881d4176a5277a5ba0ee2514a8e0ee1496ebdf58526f9"
+    },
+    {
+      "path": "current/844x390-costs.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "ecb60d19a3e1a62409734e0ff3dd293b01376dcc9c468145bf6b934582168390"
+    },
+    {
+      "path": "current/844x390-disabled-build.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "6816a406cfb130fa4fcde1ca289e210169dac6979a908af1f7beadabdb5b2324"
+    },
+    {
+      "path": "current/844x390-discard.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "583ddfecdb312bbf4615572df6a333d02788ad398751f82ab4908dfb29fdaad8"
+    },
+    {
+      "path": "current/844x390-error.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "7ee05776aa390d1272c01245b1a683ac36e119386c7dd563790bf0a2859df3cb"
+    },
+    {
+      "path": "current/844x390-fortunes.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "d4328dc73bf82d4b4e0f951af1e11e00c051eba0f6a4424c01fd3127bb8dd2bd"
+    },
+    {
+      "path": "current/844x390-help.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "392406623782a707aed8c3080884fcf96c4b27884c7ddc3c2b11f8945229a75e"
+    },
+    {
+      "path": "current/844x390-incoming-offer.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "7cc274ec326665f9a913e238635423eaf2c15c9e9cfb40d13161f6e515f79f94"
+    },
+    {
+      "path": "current/844x390-main.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "5eced42ddaa901d7597cbc980431f9afdf906882e2ab14497d171b78c876acf3"
+    },
+    {
+      "path": "current/844x390-player-menu.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "b3fcaf7add40b7121e2077bc03d99ab1e343cc17994383c95b056f01093fb60a"
+    },
+    {
+      "path": "current/844x390-restoring.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "b6c984b4c28ffef56a65a29ff605655685f9ab4c6262a9f265c40ae3ace8cfa6"
+    },
+    {
+      "path": "current/844x390-results-look.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "748bb7a9c0e6e33bc5a37d1cda0e8286958414d4dc88e9543bcdb7ac7c51f2e3"
+    },
+    {
+      "path": "current/844x390-results.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "e3e4c861742a8359e218ab67d662bf17da6d833154c0bd55d740ae202632afa2"
+    },
+    {
+      "path": "current/844x390-robber.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "aaac98110fcd41c41b345d8b54f605324e8c8cc8caa7a14316f865c4111c7630"
+    },
+    {
+      "path": "current/844x390-rolloff.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "6b402c26184f23ec3daa9a5660055c7a3bd05767c72d4759eaa9c70c48e29e41"
+    },
+    {
+      "path": "current/844x390-setup.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "445934d41fa62d5ba054bff806321c9b90b85fb9e4562a82103bc05d31ea8184"
+    },
+    {
+      "path": "current/844x390-table-menu.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "42471f550609d804f880253d93665f183835f6f19a1169bcafbb85bc1c49d2f7"
+    },
+    {
+      "path": "current/844x390-trade.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "87a516b66a0f2104359e47801ccaa7e86283c1ed66ad438e3c4dfffd589477fc"
+    },
+    {
+      "path": "current/844x390-victim.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "39da6ede79d8be2d4e4588c77dee2d9a77c45e1d1f4f69774c137e6bfa827d7c"
+    },
+    {
+      "path": "current-supplement/1280x720-hand-rates.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "61ce8b982df9f371062704c7e4877c5efa33583788b01a5af9485c1c3aebe6b1"
+    },
+    {
+      "path": "current-supplement/1280x720-keyboard-place-list.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "6ba16c3b1b2f3d779d278bebd110236714f852a438febcee2eb876d11f1046a0"
+    },
+    {
+      "path": "current-supplement/1280x720-main-geometry.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "697cf35bd97c7c67cd81ef8f0c84ad824b7516dbb8259dc645f465ddd61d9d45"
+    },
+    {
+      "path": "current-supplement/1280x720-own-player-menu.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "19d9ddb0e5223022f599f5590d0efaaa3b2b058d253bb88f40967f4fc0042bb0"
+    },
+    {
+      "path": "current-supplement/390x844-hand-rates.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "918aad61c5ec68d5e5a9b00f4d6453d9403b2f746c22ba05513efcf1a93f8104"
+    },
+    {
+      "path": "current-supplement/390x844-keyboard-place-list.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "5f2201e4b2d8f6be04e7645295b1ebe08b52e2e6a81dd2174e4adb55e67930e9"
+    },
+    {
+      "path": "current-supplement/390x844-main-geometry.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "2eb18537c2e962f7a27375105e27a41f130f2df2228bdeae7fe25ea4536150bb"
+    },
+    {
+      "path": "current-supplement/390x844-own-player-menu.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "a758cf7c7a27f8f6de96d40779f79f3586cd9a364b7eca2a9f2cbc25a87b3ed0"
+    },
+    {
+      "path": "current-supplement/844x390-hand-rates.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "8fd760496dc24ec089a7de17299cd10b6eb1c68e8a78332d4e971e51f0d68eb8"
+    },
+    {
+      "path": "current-supplement/844x390-keyboard-place-list.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "d531286756dd2757a1605e229f535c4d9604286c76a76c6bfd90fdf192c3f57e"
+    },
+    {
+      "path": "current-supplement/844x390-main-geometry.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "176b5ac8380da3a241b22274c88065378f79c24d9b7bf3d66440bfe1d8cba7ed"
+    },
+    {
+      "path": "current-supplement/844x390-own-player-menu.png",
+      "width": 844,
+      "height": 390,
+      "sha256": "17514877da3c1cb9723e868e23728516e6007c248d78746022966a41f6565ea0"
+    }
+  ]
+}

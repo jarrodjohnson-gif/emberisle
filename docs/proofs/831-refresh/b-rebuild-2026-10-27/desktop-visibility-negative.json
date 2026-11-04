@@ -1,0 +1,58 @@
+{
+  "source": "native997b7b1 Trade proof log before CSS fit fix",
+  "predicate": "every row top>=goods.top-0.5 and bottom<=goods.bottom+0.5",
+  "rejectedSamples": [
+    {
+      "sample": "approved B layout 1280x720-no-preference bank",
+      "goods": {
+        "left": 321,
+        "right": 959,
+        "top": 74,
+        "bottom": 498,
+        "width": 638
+      },
+      "rows": [
+        {
+          "left": 337,
+          "right": 943,
+          "top": 117.5,
+          "bottom": 314,
+          "width": 606
+        },
+        {
+          "left": 337,
+          "right": 943,
+          "top": 330,
+          "bottom": 526.5,
+          "width": 606
+        }
+      ]
+    },
+    {
+      "sample": "approved B layout 1280x720-reduce bank",
+      "goods": {
+        "left": 321,
+        "right": 959,
+        "top": 74,
+        "bottom": 498,
+        "width": 638
+      },
+      "rows": [
+        {
+          "left": 337,
+          "right": 943,
+          "top": 117.5,
+          "bottom": 314,
+          "width": 606
+        },
+        {
+          "left": 337,
+          "right": 943,
+          "top": 330,
+          "bottom": 526.5,
+          "width": 606
+        }
+      ]
+    }
+  ]
+}

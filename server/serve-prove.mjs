@@ -38,7 +38,7 @@ async function start(dist) {
   const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
     // #369: a short lobby hold so a stranger's table drops within the proof, and a store small enough to fill.
-    env: { ...process.env, PORT: "0", DIST: dist, ROOMS_DIR: path.join(temp, "rooms"), LOBBY_HOLD_MS: "300", AVATAR_MAX: "2", AVATAR_STORE_BYTES: "1000" },
+    env: { ...process.env, PORT: "0", DIST: dist, ROOMS_DIR: path.join(temp, "rooms"), RESULTS_DIR: `${path.join(temp, "rooms")}/results`, LOBBY_HOLD_MS: "300", AVATAR_MAX: "2", AVATAR_STORE_BYTES: "1000" },
   });
   hosts.push(host);
   return new Promise((resolve) =>

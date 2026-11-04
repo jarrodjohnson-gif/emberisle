@@ -1,10 +1,9 @@
 name: Soak
 
-# Nightly 5x soak of the full browser proof lists on main, to catch flakes.
-# Also runnable via workflow_dispatch.
+# 5x soak of the full browser proof lists on main, to catch flakes. Run by hand (workflow_dispatch).
+# The nightly schedule is off: it cost about 300 billed Actions minutes a night; see docs/DECISIONS.md, 2026-10-25.
+# Put `schedule: - cron: '17 9 * * *'` (09:17 UTC) back under `on:` to restore it.
 on:
-  schedule:
-    - cron: '17 9 * * *'  # 09:17 UTC
   workflow_dispatch:
 
 permissions:
@@ -63,13 +62,27 @@ jobs:
           : > soak-results/counts.txt
           for run in 1 2 3 4 5; do
             for proof in "${PROOFS[@]}"; do
-              if ! npm run "$proof" > /tmp/proof.log 2>&1; then
-                # Save each failure immediately, retaining partial evidence on a timeout.
+              marker="$(mktemp)"
+              attempt="soak-results/failed/browser-a/run-${run}/${proof}"
+              mkdir -p "$attempt"
+              # Write directly into the artifact tree, so an interrupted proof keeps its partial log too.
+              if ! npm run "$proof" > "$attempt/output.log" 2>&1; then
                 printf '%s\n' "$proof" >> soak-results/counts.txt
                 printf 'RUN %s %s FAILED:\n' "$run" "$proof" >> soak-results/failures.txt
-                tail -n 40 /tmp/proof.log >> soak-results/failures.txt
+                tail -n 40 "$attempt/output.log" >> soak-results/failures.txt
                 printf '\n---\n' >> soak-results/failures.txt
+                # Snapshot only files created or changed by this attempt, before another proof overwrites them.
+                if [ -d test-results ]; then
+                  while IFS= read -r -d '' file; do
+                    target="$attempt/evidence/$file"
+                    mkdir -p "$(dirname "$target")"
+                    cp -- "$file" "$target"
+                  done < <(find test-results -type f -cnewer "$marker" -print0)
+                fi
+              else
+                rm -rf -- "$attempt"
               fi
+              rm -f -- "$marker"
             done
           done
       - name: Upload browser-a soak results
@@ -135,13 +148,27 @@ jobs:
           : > soak-results/counts.txt
           for run in 1 2 3 4 5; do
             for proof in "${PROOFS[@]}"; do
-              if ! npm run "$proof" > /tmp/proof.log 2>&1; then
-                # Save each failure immediately, retaining partial evidence on a timeout.
+              marker="$(mktemp)"
+              attempt="soak-results/failed/${SUITE}/run-${run}/${proof}"
+              mkdir -p "$attempt"
+              # Write directly into the artifact tree, so an interrupted proof keeps its partial log too.
+              if ! npm run "$proof" > "$attempt/output.log" 2>&1; then
                 printf '%s\n' "$proof" >> soak-results/counts.txt
                 printf 'RUN %s %s FAILED:\n' "$run" "$proof" >> soak-results/failures.txt
-                tail -n 40 /tmp/proof.log >> soak-results/failures.txt
+                tail -n 40 "$attempt/output.log" >> soak-results/failures.txt
                 printf '\n---\n' >> soak-results/failures.txt
+                # Snapshot only files created or changed by this attempt, before another proof overwrites them.
+                if [ -d test-results ]; then
+                  while IFS= read -r -d '' file; do
+                    target="$attempt/evidence/$file"
+                    mkdir -p "$(dirname "$target")"
+                    cp -- "$file" "$target"
+                  done < <(find test-results -type f -cnewer "$marker" -print0)
+                fi
+              else
+                rm -rf -- "$attempt"
               fi
+              rm -f -- "$marker"
             done
           done
       - name: Upload browser-b soak results

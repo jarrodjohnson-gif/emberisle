@@ -1,0 +1,243 @@
+{
+  "issues": [
+    {
+      "number": 1,
+      "title": "Claimed",
+      "state": "open",
+      "labels": [
+        "status:todo",
+        "lane:net",
+        "prio:p0"
+      ]
+    },
+    {
+      "number": 2,
+      "title": "Released | safe",
+      "state": "open",
+      "labels": [
+        "status:todo",
+        "lane:hud",
+        "prio:p1",
+        "helper-ok"
+      ],
+      "body": "## Files\nsrc/example.ts"
+    },
+    {
+      "number": 3,
+      "title": "PR in progress",
+      "state": "open",
+      "labels": [
+        "status:todo",
+        "lane:net",
+        "prio:p0"
+      ]
+    },
+    {
+      "number": 4,
+      "title": "Dependency open",
+      "state": "open",
+      "labels": [
+        "status:todo",
+        "lane:docs",
+        "prio:p0"
+      ],
+      "body": "## Depends on\n#99\n\n## Source\n#100"
+    },
+    {
+      "number": 5,
+      "title": "First priority",
+      "state": "open",
+      "labels": [
+        "status:todo",
+        "lane:docs",
+        "prio:p0"
+      ],
+      "milestone": {
+        "number": 2
+      }
+    },
+    {
+      "number": 6,
+      "title": "Earliest milestone",
+      "state": "open",
+      "labels": [
+        "status:todo",
+        "lane:docs",
+        "prio:p0"
+      ],
+      "milestone": {
+        "number": 1
+      }
+    },
+    {
+      "number": 7,
+      "title": "Lower priority",
+      "state": "open",
+      "labels": [
+        "status:todo",
+        "lane:docs",
+        "prio:p2"
+      ]
+    },
+    {
+      "number": 8,
+      "title": "No priority",
+      "state": "open",
+      "labels": [
+        "status:todo",
+        "lane:docs"
+      ]
+    },
+    {
+      "number": 9,
+      "title": "No lane",
+      "state": "open",
+      "labels": [
+        "status:todo"
+      ]
+    },
+    {
+      "number": 10,
+      "title": "Done",
+      "state": "closed",
+      "labels": [
+        "status:todo",
+        "lane:net"
+      ]
+    },
+    {
+      "number": 11,
+      "title": "Closed dependency",
+      "state": "open",
+      "labels": [
+        "status:todo",
+        "lane:docs",
+        "prio:p0"
+      ],
+      "body": "Depends on: #100"
+    },
+    {
+      "number": 12,
+      "title": "Another agent paused",
+      "state": "open",
+      "labels": [
+        "status:in-review",
+        "lane:net"
+      ]
+    },
+    {
+      "number": 13,
+      "title": "Unknown dependency",
+      "state": "open",
+      "labels": [
+        "status:todo",
+        "lane:docs"
+      ],
+      "body": "## Depends on\n#101"
+    },
+    {
+      "number": 14,
+      "title": "Backlog",
+      "state": "open",
+      "labels": [
+        "status:backlog",
+        "lane:docs"
+      ]
+    },
+    {
+      "number": 15,
+      "title": "Not an issue",
+      "state": "open",
+      "labels": [
+        "status:todo",
+        "lane:docs"
+      ],
+      "pull_request": {}
+    },
+    {
+      "number": 16,
+      "title": "P1 milestone must not beat P0 without milestone",
+      "state": "open",
+      "labels": [
+        "status:todo",
+        "lane:docs",
+        "prio:p1"
+      ],
+      "milestone": {
+        "number": 1
+      }
+    },
+    {
+      "number": 18,
+      "title": "Tiebreak higher number arrives first",
+      "state": "open",
+      "labels": [
+        "status:todo",
+        "lane:docs",
+        "prio:p0"
+      ],
+      "milestone": {
+        "number": 2
+      }
+    },
+    {
+      "number": 17,
+      "title": "Tiebreak lower number arrives last",
+      "state": "open",
+      "labels": [
+        "status:todo",
+        "lane:docs",
+        "prio:p0"
+      ],
+      "milestone": {
+        "number": 2
+      }
+    }
+  ],
+  "prs": [
+    {
+      "number": 30,
+      "state": "open",
+      "draft": true,
+      "title": "Fix #3",
+      "body": ""
+    },
+    {
+      "number": 31,
+      "state": "closed",
+      "title": "Fix #2"
+    },
+    {
+      "number": 32,
+      "state": "open",
+      "title": "Fix #110"
+    }
+  ],
+  "comments": {
+    "1": [
+      {
+        "body": "/claim\nclaimed: Alpha, 2026-10-18\nfiles: src/a.ts"
+      }
+    ],
+    "2": [
+      {
+        "body": "claimed: Alpha, 2026-10-18"
+      },
+      {
+        "body": "/paused\npaused: Alpha, 2026-10-18"
+      }
+    ],
+    "12": [
+      {
+        "body": "claimed: Alpha, 2026-10-18"
+      },
+      {
+        "body": "paused: Beta, 2026-10-18"
+      }
+    ]
+  },
+  "dependencyStates": {
+    "99": "open",
+    "100": "closed"
+  }
+}

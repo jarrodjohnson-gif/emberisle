@@ -1,0 +1,32 @@
+
+> chunk-fail-prove
+> node --import ./server/register.mjs scripts/chunk-fail-prove.mjs
+
+ok   sheets: the title reloaded itself once on the failed prefetch and not again {"loads":2,"blocked":2}
+ok   sheets: Play renders the table with the chunk still failing {"screen":"play","header":true,"canvas":true,"rootChildren":1,"seats":4,"loads":2,"blocked":3}
+ok   sheets: How to play with the chunk failing opens nothing, closes its flag and leaves the table standing {"dialogs":0,"screen":"play","header":true}
+ok   sheets: once the route recovers, How to play opens on the next press {"loads":2}
+ok   sheets: no other page errors []
+ok   online: the session remembers the chunk URL it reloaded for ["http://127.0.0.1:8109/assets/online-BRFIM_tw.js"]
+ok   online: Host with the chunk failing shows the message and a Reload button, not a blank page {"screen":"lobby","text":"Couldn't load the table lobby.Reload","reload":true,"rootChildren":1,"loads":2,"blocked":3}
+ok   online: after Reload with the route recovered, the saved seat rejoins into a working lobby {"code":"7UQZ","loads":3}
+ok   online: no other page errors []
+ok   join link: the code is still in the field after the stale-chunk reload {"value":"K7QP","loads":2}
+ok   title How to play: a refused press opens nothing and drops its flag
+ok   title How to play: the first press after the route recovers opens it
+ok   typing: no reload while focus is in the join-code input {"loads":1,"value":"K7","focused":true}
+ok   typing: the reload fires after focus leaves the field {"loads":2}
+ok   watch link: the field survived the reload; a later title starts empty with Play primary {"kept":"K7QP","value":"","watch":0}
+ok   watch link: the URL has no watch/code once Play left the title {"urlAfterPlay":"?host=ws%3A%2F%2F127.0.0.1%3A37895"}
+ok   watch link: a reload at the title does not refill the stale code {"value":""}
+ok   typing: a typed code is still in the field after the reload Join released {"before":1,"loads":2,"value":"K7QP"}
+ok   dev: chunkUrl matches .tsx URLs and still the built .js ones {"dev":"http://localhost:8080/src/components/game/online.tsx","built":"http://localhost/assets/online-AbCd1234.js"}
+ok   game over (practice): the chunk is asked for again, refused, and the winner line gets a focused Back to menu {"line":"Tide (bot) wins with 0 points.","button":"Back to menu","focused":true,"inView":true,"dialogs":0,"screen":"play","header":true,"name":"Tide (bot)","blocked":4,"before":3,"loads":2}
+ok   game over (practice): Back to menu reaches the title without a reload {"loads":2}
+ok   game over (practice): no other page errors []
+ok   game over (retry succeeds): the win screen opens with focus and the way-out button never mounts {"seen":["focus:win-menu"],"headline":"Tide (bot) wins","focusInside":true,"blocked":3,"before":3}
+ok   game over (retry succeeds): no other page errors []
+ok   game over (online): the rejoined seat finds the chunk refused, and the winner line gets a focused Reload inside the viewport {"line":"Sage wins with 0 points.","button":"Reload for the results","focused":true,"inView":true,"dialogs":0,"screen":"play","header":true,"blocked":1,"loads":1}
+ok   game over (online): Reload for the results rejoins into the finished table and the win screen shows the results {"headline":"Sage wins","rows":3,"fallback":0,"loads":2}
+ok   game over (online): no other page errors []
+chunk-fail prove ok

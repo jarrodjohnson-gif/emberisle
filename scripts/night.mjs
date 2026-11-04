@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "vite";
+import { readTunnel, tunnelPort } from "./named-tunnel.mjs";
 
 // Prefer a real LAN address (192.168.x, 10.x, 172.16-31.x) over a virtual adapter's
 // (Hyper-V, WSL, a VPN), which is often unreachable from another machine on the network.
@@ -25,13 +26,22 @@ export function lanAddress() {
   return candidates[0] ?? null;
 }
 
-export function joinLines(port, lan) {
+export function joinLines(port, lan, named = null) {
   return [
     `On this PC:        http://127.0.0.1:${port}`,
     lan ? `On your network:   http://${lan}:${port}` : "On your network:   (no LAN address found)",
-    "Friends on the internet — run this in a second terminal and leave it open:",
-    `  cloudflared tunnel --url http://127.0.0.1:${port}`,
-    "Paste the https://….trycloudflare.com line it prints. They open that link and Join with the table code.",
+    ...(named ? [
+      `Permanent link:    https://${named.hostname}`,
+      "Run this in a second terminal and leave it open:",
+      "  node scripts/named-tunnel.mjs --run",
+      "Open the permanent link before hosting, then share Copy link with friends.",
+      "The address stays the same. This PC, the host, and the tunnel must be running.",
+    ] : [
+      "Friends on the internet — run this in a second terminal and leave it open:",
+      `  cloudflared tunnel --url http://127.0.0.1:${port}`,
+      "Paste the https://….trycloudflare.com line it prints. They open that link and Join with the table code.",
+      "For a permanent address, configure a named tunnel once: docs/named-tunnel.md",
+    ]),
   ].join("\n");
 }
 
@@ -79,13 +89,24 @@ export function portFree(port) {
 }
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+let named = null;
+let port;
+if (isMain) {
+  try {
+    named = readTunnel();
+    port = tunnelPort(named, process.env.PORT);
+  } catch (error) {
+    console.error(`Game night: ${error.message}`);
+    process.exit(1);
+  }
+}
 
 if (isMain && process.argv.includes("--print")) {
-  console.log(joinLines(process.env.PORT || "8787", lanAddress()));
+  console.log(joinLines(port, lanAddress(), named));
 } else if (isMain) {
-  const port = process.env.PORT || "8787";
   if (!(await portFree(port))) {
-    console.error(`Port ${port} is busy: another npm run night or host is already running. Close it, or run with PORT=${Number(port) + 1}.`);
+    const next = named ? "Close the other host; the named tunnel needs its saved origin port." : `Close it, or run with PORT=${Number(port) + 1}.`;
+    console.error(`Port ${port} is busy: another npm run night or host is already running. ${next}`);
     process.exit(1);
   }
   // Call Vite's build() in-process (as scripts/tabs-prove.mjs does with createServer): no shell,
@@ -108,7 +129,7 @@ if (isMain && process.argv.includes("--print")) {
     host.stdout.on("data", (chunk) => {
       process.stdout.write(chunk);
       const heard = String(chunk).match(/listening (\d+)/);
-      if (heard) console.log(`\n${joinLines(heard[1], lanAddress())}\n`);
+      if (heard) console.log(`\n${joinLines(heard[1], lanAddress(), named)}\n`);
     });
     return host;
   };

@@ -16,10 +16,10 @@ import { cn } from "@/lib/utils";
 
 const CHIP = "h-11 min-w-11 flex-1 border-0 px-0 ring-1 ring-inset ring-black/10 aria-disabled:cursor-not-allowed aria-disabled:opacity-40 aria-disabled:active:scale-100";
 
-// "Timber ×2" or "Timber and ore".
+// "Wood ×2" or "Wood and ore".
 function pickText(picks: Resource[]) {
   if (picks.length === 2 && picks[0] === picks[1]) return `${RESOURCE_LABEL[picks[0]!]} ×2`;
-  return picks.map((r, i) => (i ? r : RESOURCE_LABEL[r])).join(" and ");
+  return picks.map((r, i) => (i ? RESOURCE_LABEL[r].toLowerCase() : RESOURCE_LABEL[r])).join(" and ");
 }
 
 // Plenty's chips count their picks in the label and the caption under them is a live region; Monopoly's are radios.
@@ -42,7 +42,7 @@ function Chips({ kind, picks, bank, onPick }: { kind: "plenty" | "monopoly"; pic
             aria-label={n ? `${RESOURCE_LABEL[r]}, picked${n > 1 ? ` ${n}` : ""}` : RESOURCE_LABEL[r]}
             aria-checked={kind === "monopoly" ? n > 0 : undefined}
             aria-disabled={short || undefined}
-            aria-description={short ? (bank[r] === 0 ? `The bank has no ${r}.` : `The bank has only ${bank[r]} ${r}.`) : undefined}
+            aria-description={short ? (bank[r] === 0 ? `The bank has no ${RESOURCE_LABEL[r].toLowerCase()}.` : `The bank has only ${bank[r]} ${RESOURCE_LABEL[r].toLowerCase()}.`) : undefined}
             className={cn(CHIP, RESOURCE_PAINT[r], n > 0 && "outline-2 outline-offset-2 outline-sea-ink")}
             onClick={() => {
               if (!short) onPick(r);
@@ -185,7 +185,7 @@ export function FortuneTray({ me, opener, onClose, className }: { me?: PlayerSta
                 <>
                   <Chips kind="monopoly" picks={monopoly ? [monopoly] : []} bank={bank} onPick={setMonopoly} />
                   <p data-testid="monopoly-pick" className="text-caption text-muted">
-                    {monopoly ? `Every other seat's ${monopoly}` : "Tap a kind"}
+                    {monopoly ? `Every other seat's ${RESOURCE_LABEL[monopoly].toLowerCase()}` : "Tap a kind"}
                   </p>
                 </>
               ) : null}

@@ -1,0 +1,19 @@
+
+> connection-health-prove
+> node scripts/connection-health-prove.mjs
+
+ok transport: no pre-welcome probe; duplicate welcome keeps one challenge and its 3s timeout; close cancels probing
+ok browser: nonce matched 137ms monotonic RTT; 30s spacing, one outstanding, 3s timeout, full-state recovery once; host timers/save bytes unchanged
+ok lobby: four ready seats and every health state fit 320/390/667/844px layouts; no landscape scrolling
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36021/assets/table-BDd_O3ov.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36021/assets/OpenTables-ut1scfgb.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36021/assets/table-BDd_O3ov.js
+file:///workspace/emberisle/work/verify716-oct25/scripts/connection-health-prove.mjs:51
+    throw Error(`timed out: ${label}`);
+          ^
+
+Error: timed out: next explicit action retries the client
+    at until (file:///workspace/emberisle/work/verify716-oct25/scripts/connection-health-prove.mjs:51:11)
+    at async file:///workspace/emberisle/work/verify716-oct25/scripts/connection-health-prove.mjs:482:7
+
+Node.js v24.19.0

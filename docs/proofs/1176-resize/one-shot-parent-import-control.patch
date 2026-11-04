@@ -1,0 +1,10 @@
+--- final/LobbyView.tsx
++++ one-shot/LobbyView.tsx
+@@ -89,6 +89,7 @@
+     if (code.length !== 4) return;
+     const observer = new ResizeObserver(() => {
+       fitLobbyCode(el, code);
++      observer.disconnect();
+     });
+     observer.observe(el.parentElement!);
+     return () => observer.disconnect();

@@ -1,0 +1,1256 @@
+{
+  "baseline": "51cbe384b24f5ba45c91b630ec45f6a05c162a43",
+  "captured": "2026-10-20T22:25:40.291Z",
+  "state": "rolloff",
+  "kind": "real local hotseat start",
+  "notes": "",
+  "errors": [],
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "dpr": 1
+  },
+  "smallText": [],
+  "controls": [
+    {
+      "selector": "div[data-testid=\"seat-p0\"] > button:nth-child(1)",
+      "tag": "button",
+      "role": null,
+      "name": "Ember Emb – 0 0",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 12,
+        "y": 12,
+        "width": 76.5,
+        "height": 44,
+        "right": 88.5,
+        "bottom": 56
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"seat-p1\"] > button:nth-child(1)",
+      "tag": "button",
+      "role": null,
+      "name": "Seat 2 S2 – 0 0",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 92.5,
+        "y": 12,
+        "width": 76.5,
+        "height": 44,
+        "right": 169,
+        "bottom": 56
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"seat-p2\"] > button:nth-child(1)",
+      "tag": "button",
+      "role": null,
+      "name": "Seat 3 S3 – 0 0",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 173,
+        "y": 12,
+        "width": 76.5,
+        "height": 44,
+        "right": 249.5,
+        "bottom": 56
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div[data-testid=\"seat-p3\"] > button:nth-child(1)",
+      "tag": "button",
+      "role": null,
+      "name": "Seat 4 S4 – 0 0",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400"
+      },
+      "rect": {
+        "x": 253.5,
+        "y": 12,
+        "width": 76.5,
+        "height": 44,
+        "right": 330,
+        "bottom": 56
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div:nth-child(1) > div:nth-child(1) > header:nth-child(2) > div:nth-child(1) > div:nth-child(3) > button[aria-label=\"Table menu\"]",
+      "tag": "button",
+      "role": null,
+      "name": "Table menu",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500"
+      },
+      "rect": {
+        "x": 334,
+        "y": 12,
+        "width": 44,
+        "height": 44,
+        "right": 378,
+        "bottom": 56
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div:nth-child(5) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(1)",
+      "tag": "button",
+      "role": null,
+      "name": "Roll",
+      "disabled": false,
+      "ariaDisabled": null,
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500"
+      },
+      "rect": {
+        "x": 12,
+        "y": 760,
+        "width": 366,
+        "height": 48,
+        "right": 378,
+        "bottom": 808
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "below44": false,
+      "occludedAtCenterBy": null
+    }
+  ],
+  "smallTargets": [],
+  "clipping": [],
+  "allVisibleText": [
+    {
+      "selector": "span[data-testid=\"seat-name\"]",
+      "text": "Emb",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 32,
+        "y": 18,
+        "width": 25.47,
+        "height": 15,
+        "right": 57.47,
+        "bottom": 33
+      },
+      "elementRect": {
+        "x": 32,
+        "y": 18,
+        "width": 26.5,
+        "height": 16,
+        "right": 58.5,
+        "bottom": 34
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"rolloff-die\"]",
+      "text": "–",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 68.91,
+        "y": 18,
+        "width": 7.19,
+        "height": 15,
+        "right": 76.09,
+        "bottom": 33
+      },
+      "elementRect": {
+        "x": 62.5,
+        "y": 16,
+        "width": 20,
+        "height": 20,
+        "right": 82.5,
+        "bottom": 36
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"tally-path\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 34,
+        "y": 36,
+        "width": 7.78,
+        "height": 15,
+        "right": 41.78,
+        "bottom": 51
+      },
+      "elementRect": {
+        "x": 18,
+        "y": 36,
+        "width": 25.78,
+        "height": 16,
+        "right": 43.78,
+        "bottom": 52
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"tally-army\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 63.78,
+        "y": 36,
+        "width": 7.78,
+        "height": 15,
+        "right": 71.56,
+        "bottom": 51
+      },
+      "elementRect": {
+        "x": 47.78,
+        "y": 36,
+        "width": 25.78,
+        "height": 16,
+        "right": 73.56,
+        "bottom": 52
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"seat-name\"]",
+      "text": "S2",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 112.5,
+        "y": 18,
+        "width": 15.2,
+        "height": 15,
+        "right": 127.7,
+        "bottom": 33
+      },
+      "elementRect": {
+        "x": 112.5,
+        "y": 18,
+        "width": 26.5,
+        "height": 16,
+        "right": 139,
+        "bottom": 34
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"rolloff-die\"]",
+      "text": "–",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 149.41,
+        "y": 18,
+        "width": 7.19,
+        "height": 15,
+        "right": 156.59,
+        "bottom": 33
+      },
+      "elementRect": {
+        "x": 143,
+        "y": 16,
+        "width": 20,
+        "height": 20,
+        "right": 163,
+        "bottom": 36
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"tally-path\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 114.5,
+        "y": 36,
+        "width": 7.78,
+        "height": 15,
+        "right": 122.28,
+        "bottom": 51
+      },
+      "elementRect": {
+        "x": 98.5,
+        "y": 36,
+        "width": 25.78,
+        "height": 16,
+        "right": 124.28,
+        "bottom": 52
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"tally-army\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 144.28,
+        "y": 36,
+        "width": 7.78,
+        "height": 15,
+        "right": 152.06,
+        "bottom": 51
+      },
+      "elementRect": {
+        "x": 128.28,
+        "y": 36,
+        "width": 25.78,
+        "height": 16,
+        "right": 154.06,
+        "bottom": 52
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"seat-name\"]",
+      "text": "S3",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 193,
+        "y": 18,
+        "width": 15.5,
+        "height": 15,
+        "right": 208.5,
+        "bottom": 33
+      },
+      "elementRect": {
+        "x": 193,
+        "y": 18,
+        "width": 26.5,
+        "height": 16,
+        "right": 219.5,
+        "bottom": 34
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"rolloff-die\"]",
+      "text": "–",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 229.91,
+        "y": 18,
+        "width": 7.19,
+        "height": 15,
+        "right": 237.09,
+        "bottom": 33
+      },
+      "elementRect": {
+        "x": 223.5,
+        "y": 16,
+        "width": 20,
+        "height": 20,
+        "right": 243.5,
+        "bottom": 36
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"tally-path\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 195,
+        "y": 36,
+        "width": 7.78,
+        "height": 15,
+        "right": 202.78,
+        "bottom": 51
+      },
+      "elementRect": {
+        "x": 179,
+        "y": 36,
+        "width": 25.78,
+        "height": 16,
+        "right": 204.78,
+        "bottom": 52
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"tally-army\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 224.78,
+        "y": 36,
+        "width": 7.78,
+        "height": 15,
+        "right": 232.56,
+        "bottom": 51
+      },
+      "elementRect": {
+        "x": 208.78,
+        "y": 36,
+        "width": 25.78,
+        "height": 16,
+        "right": 234.56,
+        "bottom": 52
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"seat-name\"]",
+      "text": "S4",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 273.5,
+        "y": 18,
+        "width": 15.7,
+        "height": 15,
+        "right": 289.2,
+        "bottom": 33
+      },
+      "elementRect": {
+        "x": 273.5,
+        "y": 18,
+        "width": 26.5,
+        "height": 16,
+        "right": 300,
+        "bottom": 34
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"rolloff-die\"]",
+      "text": "–",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 310.41,
+        "y": 18,
+        "width": 7.19,
+        "height": 15,
+        "right": 317.59,
+        "bottom": 33
+      },
+      "elementRect": {
+        "x": 304,
+        "y": 16,
+        "width": 20,
+        "height": 20,
+        "right": 324,
+        "bottom": 36
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"tally-path\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 275.5,
+        "y": 36,
+        "width": 7.78,
+        "height": 15,
+        "right": 283.28,
+        "bottom": 51
+      },
+      "elementRect": {
+        "x": 259.5,
+        "y": 36,
+        "width": 25.78,
+        "height": 16,
+        "right": 285.28,
+        "bottom": 52
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"tally-army\"]",
+      "text": "0",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "16px"
+      },
+      "rect": {
+        "x": 305.28,
+        "y": 36,
+        "width": 7.78,
+        "height": 15,
+        "right": 313.06,
+        "bottom": 51
+      },
+      "elementRect": {
+        "x": 289.28,
+        "y": 36,
+        "width": 25.78,
+        "height": 16,
+        "right": 315.06,
+        "bottom": 52
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "p[data-testid=\"hidden-point-hint\"]",
+      "text": "Hidden fortunes may add points.",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "12px"
+      },
+      "rect": {
+        "x": 20,
+        "y": 54,
+        "width": 184.5,
+        "height": 15,
+        "right": 204.5,
+        "bottom": 69
+      },
+      "elementRect": {
+        "x": 12,
+        "y": 56,
+        "width": 366,
+        "height": 12,
+        "right": 378,
+        "bottom": 68
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": "div:nth-child(1) > div:nth-child(1) > canvas:nth-child(1)"
+    },
+    {
+      "selector": "p[data-testid=\"turn-banner\"]",
+      "text": "Roll for first place",
+      "font": {
+        "size": 15,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 28,
+        "y": 731,
+        "width": 122.92,
+        "height": 18,
+        "right": 150.92,
+        "bottom": 749
+      },
+      "elementRect": {
+        "x": 12,
+        "y": 724,
+        "width": 366,
+        "height": 32,
+        "right": 378,
+        "bottom": 756
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "div:nth-child(5) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(1)",
+      "text": "Roll",
+      "font": {
+        "size": 16,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "500",
+        "lineHeight": "24px"
+      },
+      "rect": {
+        "x": 195.33,
+        "y": 775,
+        "width": 27.34,
+        "height": 18,
+        "right": 222.67,
+        "bottom": 793
+      },
+      "elementRect": {
+        "x": 12,
+        "y": 760,
+        "width": 366,
+        "height": 48,
+        "right": 378,
+        "bottom": 808
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "p[data-testid=\"log-line\"]",
+      "text": "The isle is dealt. Roll for first place.",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 24,
+        "y": 814,
+        "width": 198.36,
+        "height": 15,
+        "right": 222.36,
+        "bottom": 829
+      },
+      "elementRect": {
+        "x": 12,
+        "y": 812,
+        "width": 298.69,
+        "height": 20,
+        "right": 310.69,
+        "bottom": 832
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"deck-count\"]",
+      "text": "Deck",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 322.69,
+        "y": 814,
+        "width": 32.19,
+        "height": 15,
+        "right": 354.88,
+        "bottom": 829
+      },
+      "elementRect": {
+        "x": 314.69,
+        "y": 812,
+        "width": 63.31,
+        "height": 20,
+        "right": 378,
+        "bottom": 832
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    },
+    {
+      "selector": "span[data-testid=\"deck-count\"]",
+      "text": "25",
+      "font": {
+        "size": 12,
+        "family": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "weight": "400",
+        "lineHeight": "20px"
+      },
+      "rect": {
+        "x": 354.88,
+        "y": 814,
+        "width": 15.13,
+        "height": 15,
+        "right": 370,
+        "bottom": 829
+      },
+      "elementRect": {
+        "x": 314.69,
+        "y": 812,
+        "width": 63.31,
+        "height": 20,
+        "right": 378,
+        "bottom": 832
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "occludedAtCenterBy": null
+    }
+  ],
+  "geometry": {
+    "insets": {
+      "top": 68,
+      "right": 12,
+      "bottom": 326,
+      "left": 12
+    },
+    "liveInsets": {
+      "top": 68,
+      "right": 12,
+      "bottom": 132,
+      "left": 12
+    },
+    "pose": {
+      "left": -6.180327868852459,
+      "right": 6.180327868852459,
+      "top": 13.374863387978142,
+      "bottom": -13.374863387978142,
+      "tx": 0,
+      "tz": 4.511187753922056,
+      "focal": 0,
+      "dist": 0,
+      "cx": 0,
+      "cy": 0,
+      "polar": 0.43633231299858244,
+      "azimuth": 0,
+      "zoom": 1
+    },
+    "fit": {
+      "left": -6.180327868852459,
+      "right": 6.180327868852459,
+      "top": 13.374863387978142,
+      "bottom": -13.374863387978142,
+      "x": 0,
+      "z": 4.511187753922056
+    },
+    "view": "overhead",
+    "canvas": {
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "right": 390,
+        "bottom": 844
+      },
+      "width": 390,
+      "height": 844,
+      "clientWidth": 390,
+      "clientHeight": 844
+    },
+    "shell": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 844,
+      "right": 390,
+      "bottom": 844
+    },
+    "projectedVertexBounds": {
+      "left": 41.98227003477711,
+      "right": 348.0177299652229,
+      "top": 165.0251750508378,
+      "bottom": 421.24151164536437
+    },
+    "projectedVertices": [
+      {
+        "id": "-2.91,-0.56",
+        "x": 103.18936202086628,
+        "y": 277.1198223109431
+      },
+      {
+        "id": "-2.91,0.56",
+        "x": 103.18936202086628,
+        "y": 309.146864385259
+      },
+      {
+        "id": "-3.88,1.12",
+        "x": 72.58581602782169,
+        "y": 325.1603854224169
+      },
+      {
+        "id": "-4.85,0.56",
+        "x": 41.98227003477711,
+        "y": 309.146864385259
+      },
+      {
+        "id": "-4.85,-0.56",
+        "x": 41.98227003477711,
+        "y": 277.1198223109431
+      },
+      {
+        "id": "-3.88,-1.12",
+        "x": 72.58581602782169,
+        "y": 261.1063012737852
+      },
+      {
+        "id": "-1.94,1.12",
+        "x": 133.79290801391087,
+        "y": 325.1603854224169
+      },
+      {
+        "id": "-1.94,2.24",
+        "x": 133.79290801391087,
+        "y": 357.1874274967327
+      },
+      {
+        "id": "-2.91,2.8",
+        "x": 103.18936202086628,
+        "y": 373.2009485338906
+      },
+      {
+        "id": "-3.88,2.24",
+        "x": 72.58581602782169,
+        "y": 357.1874274967327
+      },
+      {
+        "id": "-0.97,2.8",
+        "x": 164.39645400695542,
+        "y": 373.2009485338906
+      },
+      {
+        "id": "-0.97,3.92",
+        "x": 164.39645400695542,
+        "y": 405.2279906082064
+      },
+      {
+        "id": "-1.94,4.48",
+        "x": 133.79290801391085,
+        "y": 421.24151164536437
+      },
+      {
+        "id": "-2.91,3.92",
+        "x": 103.18936202086628,
+        "y": 405.2279906082064
+      },
+      {
+        "id": "-1.94,-2.24",
+        "x": 133.79290801391087,
+        "y": 229.07925919946933
+      },
+      {
+        "id": "-1.94,-1.12",
+        "x": 133.79290801391087,
+        "y": 261.1063012737852
+      },
+      {
+        "id": "-3.88,-2.24",
+        "x": 72.58581602782169,
+        "y": 229.07925919946933
+      },
+      {
+        "id": "-2.91,-2.8",
+        "x": 103.18936202086628,
+        "y": 213.06573816231145
+      },
+      {
+        "id": "-0.97,-0.56",
+        "x": 164.39645400695542,
+        "y": 277.1198223109431
+      },
+      {
+        "id": "-0.97,0.56",
+        "x": 164.39645400695542,
+        "y": 309.146864385259
+      },
+      {
+        "id": "0,1.12",
+        "x": 195,
+        "y": 325.1603854224169
+      },
+      {
+        "id": "0,2.24",
+        "x": 195,
+        "y": 357.1874274967327
+      },
+      {
+        "id": "0.97,2.8",
+        "x": 225.60354599304458,
+        "y": 373.2009485338906
+      },
+      {
+        "id": "0.97,3.92",
+        "x": 225.60354599304458,
+        "y": 405.2279906082064
+      },
+      {
+        "id": "0,4.48",
+        "x": 195,
+        "y": 421.24151164536437
+      },
+      {
+        "id": "-0.97,-3.92",
+        "x": 164.39645400695542,
+        "y": 181.03869608799567
+      },
+      {
+        "id": "-0.97,-2.8",
+        "x": 164.39645400695542,
+        "y": 213.06573816231145
+      },
+      {
+        "id": "-2.91,-3.92",
+        "x": 103.18936202086628,
+        "y": 181.03869608799567
+      },
+      {
+        "id": "-1.94,-4.48",
+        "x": 133.79290801391085,
+        "y": 165.0251750508378
+      },
+      {
+        "id": "0,-2.24",
+        "x": 195,
+        "y": 229.07925919946933
+      },
+      {
+        "id": "0,-1.12",
+        "x": 195,
+        "y": 261.1063012737852
+      },
+      {
+        "id": "0.97,-0.56",
+        "x": 225.60354599304458,
+        "y": 277.1198223109431
+      },
+      {
+        "id": "0.97,0.56",
+        "x": 225.60354599304458,
+        "y": 309.146864385259
+      },
+      {
+        "id": "1.94,1.12",
+        "x": 256.20709198608915,
+        "y": 325.1603854224169
+      },
+      {
+        "id": "1.94,2.24",
+        "x": 256.20709198608915,
+        "y": 357.1874274967327
+      },
+      {
+        "id": "2.91,2.8",
+        "x": 286.81063797913373,
+        "y": 373.2009485338906
+      },
+      {
+        "id": "2.91,3.92",
+        "x": 286.81063797913373,
+        "y": 405.2279906082064
+      },
+      {
+        "id": "1.94,4.48",
+        "x": 256.20709198608915,
+        "y": 421.24151164536437
+      },
+      {
+        "id": "0.97,-3.92",
+        "x": 225.60354599304458,
+        "y": 181.03869608799567
+      },
+      {
+        "id": "0.97,-2.8",
+        "x": 225.60354599304458,
+        "y": 213.06573816231145
+      },
+      {
+        "id": "0,-4.48",
+        "x": 195,
+        "y": 165.0251750508378
+      },
+      {
+        "id": "1.94,-2.24",
+        "x": 256.20709198608915,
+        "y": 229.07925919946933
+      },
+      {
+        "id": "1.94,-1.12",
+        "x": 256.20709198608915,
+        "y": 261.1063012737852
+      },
+      {
+        "id": "2.91,-0.56",
+        "x": 286.81063797913373,
+        "y": 277.1198223109431
+      },
+      {
+        "id": "2.91,0.56",
+        "x": 286.81063797913373,
+        "y": 309.146864385259
+      },
+      {
+        "id": "3.88,1.12",
+        "x": 317.4141839721783,
+        "y": 325.1603854224169
+      },
+      {
+        "id": "3.88,2.24",
+        "x": 317.4141839721783,
+        "y": 357.1874274967327
+      },
+      {
+        "id": "2.91,-3.92",
+        "x": 286.81063797913373,
+        "y": 181.03869608799567
+      },
+      {
+        "id": "2.91,-2.8",
+        "x": 286.81063797913373,
+        "y": 213.06573816231145
+      },
+      {
+        "id": "1.94,-4.48",
+        "x": 256.20709198608915,
+        "y": 165.0251750508378
+      },
+      {
+        "id": "3.88,-2.24",
+        "x": 317.4141839721783,
+        "y": 229.07925919946933
+      },
+      {
+        "id": "3.88,-1.12",
+        "x": 317.4141839721783,
+        "y": 261.1063012737852
+      },
+      {
+        "id": "4.85,-0.56",
+        "x": 348.0177299652229,
+        "y": 277.1198223109431
+      },
+      {
+        "id": "4.85,0.56",
+        "x": 348.0177299652229,
+        "y": 309.146864385259
+      }
+    ],
+    "scroll": {
+      "width": 390,
+      "height": 844,
+      "x": 0,
+      "y": 0
+    },
+    "settled": {
+      "glide": false,
+      "refitDue": false,
+      "gainFloats": 0,
+      "rollMoments": 0,
+      "turnMoments": 0
+    }
+  },
+  "fixture": {
+    "phase": "rollOff",
+    "mode": "hotseat",
+    "current": "p0",
+    "target": 10,
+    "winner": null,
+    "water": {
+      "path": "simple",
+      "source": "saved",
+      "ms": null
+    },
+    "waterChoice": "simple"
+  }
+}

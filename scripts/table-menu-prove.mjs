@@ -1,11 +1,12 @@
 // #442: the table's top chrome is one menu button. In hotseat at 1280x720, 390x844 (touch) and 844x390 (touch):
 // - no visible element on the table says "Emberisle", and the only button in the top 64 px (the seat strip aside, on a
 //   sideways phone) is the 44 px "Table menu" button, top-right;
-// - it opens a sheet with the turn number, How to play, Table sounds, Water (Crystal / Simple), View (Diorama / Overhead,
-//   #597) and Leave table, focus moving
-//   to the first row; at 1280x720 Water flips the sea's path both ways and the choice survives a reload (crystal-water.md);
-// - How to play opens its dialog and closing that puts the focus back on the menu button; the sound toggle flips and keeps
-//   the sheet open; Escape closes the sheet and refocuses the button; Enter on the button opens it; a tap outside closes it;
+// - it opens a sheet with the turn number, How to play, Table sounds, Haptics (#542, when coarse and vibrate exists), Water
+//   (Crystal / Simple), View (Diorama / Overhead, #597) and Leave table, focus moving to the first row; at 1280x720 Water
+//   flips the sea's path both ways and the choice survives a reload (crystal-water.md);
+// - How to play opens its dialog and closing that puts the focus back on the menu button; the sound and haptics toggles
+//   flip and keep the sheet open; Escape closes the sheet and refocuses the button; Enter on the button opens it; a tap
+//   outside closes it;
 // - online (a faked socket): the sheet shows the watcher count and "Copy table code" (copied where the clipboard works, the
 //   select-and-copy field where it does not, as on CI; both are run), Leave table asks first (Stay, Escape
 //   and the 5 s auto-cancel return to the rows with the focus on Leave table), then leaves; hotseat Leave table goes
@@ -70,11 +71,27 @@ try {
     assert.ok(b.w >= 44 && b.h >= 44, `${v.tag}: the menu button is ${b.w}x${b.h}, under 44 px`);
     assert.ok(b.right < 32 && b.top < 32, `${v.tag}: the menu button sits top-right (${JSON.stringify(b)})`);
 
-    // Open: the rows, the turn line, and the focus on the first row.
+    // Open: the rows, the turn line, and the focus on the first row. Haptics appears only where the API and pointer guards allow it (#542).
     await trigger.click();
     await menu.waitFor();
-    const rows = await menu.getByRole("button").allTextContents();
-    assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Costs", "Table sounds on", "Crystal", "Simple", "Diorama", "Overhead", "Leave table"], `${v.tag}: menu rows`);
+    const hasVibrate = await page.evaluate(() => typeof navigator.vibrate === "function");
+    const hasHaptics = hasVibrate && await page.evaluate(() => matchMedia("(pointer: coarse)").matches);
+    const allRows = await menu.getByRole("button").allTextContents();
+    const rows = allRows.filter(text => text.trim() !== "Haptics on");
+    const expected = [
+      "How to play",
+      "Costs",
+      "Table sounds on",
+      "Music on",
+      ...(hasHaptics ? ["Haptics on"] : []),
+      "Crystal",
+      "Simple",
+      "Diorama",
+      "Overhead",
+      "Leave table",
+    ];
+    assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Costs", "Table sounds on", "Music on", "Crystal", "Simple", "Diorama", "Overhead", "Leave table"], `${v.tag}: menu rows`);
+    assert.deepEqual(allRows.map((t) => t.trim()), expected, `${v.tag}: complete menu including haptics`);
     assert.match(await menu.textContent(), /Turn 1/, `${v.tag}: the turn number moved into the menu`);
     assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), "How to play", `${v.tag}: focus moves to the first row`);
     assert.equal(await trigger.getAttribute("aria-expanded"), "true", `${v.tag}: aria-expanded while open`);
@@ -83,6 +100,7 @@ try {
       return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight;
     });
     assert.ok(fits, `${v.tag}: the sheet is inside the viewport`);
+    await page.waitForFunction(() => window.__isle?.caps.size > 0 && window.__isle.renders > 5, null, { timeout: 90_000 });
     await page.screenshot({ path: `test-results/table-menu-${v.tag}.png` });
 
     // How to play works from the menu and gives the focus back to the button.
@@ -104,6 +122,18 @@ try {
     await menu.getByRole("button", { name: "Table sounds on" }).waitFor();
     assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-muted")), null, `${v.tag}: unmuting clears it`);
 
+    // Haptics (#542): flip off/on; the sheet stays open; the choice is remembered.
+    if (hasHaptics) {
+      await menu.getByTestId("haptics-toggle").click();
+      await menu.getByRole("button", { name: "Haptics off" }).waitFor();
+      assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-haptics")), "0", `${v.tag}: haptics off is remembered`);
+      await menu.getByTestId("haptics-toggle").click();
+      await menu.getByRole("button", { name: "Haptics on" }).waitFor();
+      assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-haptics")), "1", `${v.tag}: haptics on is remembered`);
+    }
+
+    if (!hasHaptics) assert.equal(await menu.getByTestId("haptics-toggle").count(), 0, `${v.tag}: unsupported Haptics row is absent`);
+
     // Escape closes and refocuses the button; Enter on the button opens; a pointer outside closes.
     await page.keyboard.press("Escape");
     await menu.waitFor({ state: "detached" });
@@ -113,8 +143,17 @@ try {
     await menu.waitFor();
     assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), "How to play", `${v.tag}: Enter opens with the focus on the first row`);
     const canvas = page.locator("canvas").first();
-    if (v.touch) await canvas.tap({ position: { x: v.width / 2, y: v.height / 2 } });
-    else await canvas.click({ position: { x: v.width / 2, y: v.height / 2 } });
+    // The version footer can reach the viewport centre. Measure an actual outside point rather than tapping its text.
+    const box = await menu.boundingBox(), surface = await canvas.boundingBox();
+    const outside = { x: Math.min(v.width / 2, box.x - 12), y: v.height / 2 };
+    assert.ok(outside.x >= surface.x && outside.x < box.x && outside.y >= surface.y && outside.y < surface.y + surface.height, `${v.tag}: outside gesture stays on the canvas, left of the sheet`);
+    assert.ok(await canvas.evaluate((el, p) => document.elementFromPoint(p.x, p.y) === el, outside), `${v.tag}: the outside point really hits the canvas`);
+    if (!await canvas.evaluate((el, p) => document.elementFromPoint(p.x, p.y) === el, outside)) {
+      throw new Error("no exposed board point outside the menu");
+    }
+    const position = { x: outside.x - surface.x, y: outside.y - surface.y };
+    if (v.touch) await canvas.tap({ position });
+    else await canvas.click({ position });
     await menu.waitFor({ state: "detached" });
 
     // Online: the watcher count and the table code live in the sheet; Leave asks first.
@@ -202,7 +241,7 @@ try {
       assert.ok(kept.path === "simple" && kept.source === "saved", `${v.tag}: the Water choice survives a reload: ${JSON.stringify(kept)}`);
       console.log(`${v.tag}: Water flips the sea crystal <-> simple in place and keeps the choice across a reload`);
     }
-    console.log(`${v.tag}: one ${b.w}x${b.h} menu button top-right, no wordmark; rows ${rows.length}; How to play, sounds, code (${copied}), Leave (asks online, one press in hotseat) all work; Escape and Close refocus the button`);
+    console.log(`${v.tag}: one ${b.w}x${b.h} menu button top-right, no wordmark; rows ${allRows.length}; How to play, sounds, code (${copied}), Leave (asks online, one press in hotseat) all work; Escape and Close refocus the button`);
     await ctx.close();
   }
   assert.deepEqual(errors, [], "console errors");

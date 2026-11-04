@@ -50,7 +50,7 @@ Ranked by frequency × severity, most severe first.
 - **Frequency/severity:** High — described as the pace-killer in most long-form reviews.
 - **Category:** luck (with pacing fallout)
 - **Emberisle today?** Yes. Same production rules (README.md "A turn").
-- **What Emberisle should do:** Emberisle already has two structural answers the physical game lacks: the 4:1 bank and 2:1/3:1 docks guarantee a trade outlet even when opponents refuse (README.md "Docks", "Bank"), and the host's 120 s turn timer with bot substitution means a stuck seat never stalls the table (`server/host.mjs:54`). Concrete add: make each seat's reachable dock rates visible in the HUD so a starved player sees a plan (a 2:1 dock route) instead of a wait.
+- **What Emberisle should do:** Emberisle already has two structural answers the physical game lacks: the 4:1 bank and 2:1/3:1 docks guarantee a trade outlet even when opponents refuse (README.md "Docks", "Bank"), and the host's 120 s turn timer with bot substitution means a stuck seat never stalls the table (`server/host.mjs:99`). Concrete add: make each seat's reachable dock rates visible in the HUD so a starved player sees a plan (a 2:1 dock route) instead of a wait.
 
 ### 3. Resource drought: locked out of one good for the whole game
 - **Sources:**
@@ -79,7 +79,7 @@ Ranked by frequency × severity, most severe first.
   - https://www.theodysseyonline.com/why-hate-board-games (indexed snippet) — "a monotony of rolling dice, waiting for your turn, and then rolling the dice again"
 - **Frequency/severity:** High — length is the most common reason buyers say the game doesn't hit the table.
 - **Category:** pacing
-- **Emberisle today?** Partly. The rules are the same length, but the physical downtime cause is engineered out: every connected seat gets 120 s before the host's bot moves it (`server/host.mjs:54`), and trade offers auto-close after 20 s.
+- **Emberisle today?** Partly. The rules are the same length, but the physical downtime cause is engineered out: every connected seat gets 120 s before the host's bot moves it (`server/host.mjs:99`), and trade offers auto-close after 20 s.
 - **What Emberisle should do:** Keep the 120 s default and surface the countdown prominently in the HUD in 4-seat games. Do not shorten the 10 VP target by default; consider a lobby-selectable shorter target (e.g. 7 VP) as a future variant.
 
 ### 6. Downtime between turns kills momentum, especially at four players
@@ -253,7 +253,7 @@ Ranked by frequency × severity, most severe first.
   - https://www.neogaf.com ("The New Board Game Thread", p.190, indexed snippet) — "I played the longest game of vanilla Catan ever and it made me want to never play it again. The final score was 10, 9, 9, 9."
 - **Frequency/severity:** Med — quantified as +1 hour per 2 VP in the BGG thread.
 - **Category:** pacing
-- **Emberisle today?** Partly. Fixed 10 VP target (README.md "Rule set"), but the 120 s turn timer caps how long a decided endgame can drag (`server/host.mjs:54`).
+- **Emberisle today?** Partly. Fixed 10 VP target (README.md "Rule set"), but the 120 s turn timer caps how long a decided endgame can drag (`server/host.mjs:99`).
 - **What Emberisle should do:** Keep the timer as the pacing backstop. Consider a lobby-selectable shorter VP target (e.g. 7 VP) as a future variant for weeknights — not a default change.
 
 ### 24. Setup is a chore: sorting 19 hexes, tokens, cards, and docks

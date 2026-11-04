@@ -1,0 +1,68 @@
+captured 1280x720-title.png {"coarse":false}
+stage host
+stage guest
+stage join {"text":"Emberisle\nEmber\nWayfarer\nPractice: On · Online: On · Hotseat: On\nPlay\n\n3 bots, no network\n\nHost a table\nJoin\nWatch\n\nWatch available\n\nFour seats, one table\nHow to play","join":"82CR","state":{"screen":"title","error":null}}
+guest geometry {"box":{"x":65,"y":73,"width":191.890625,"height":60,"top":73,"right":256.890625,"bottom":133,"left":65},"style":{"display":"block","visibility":"visible"},"errors":null}
+stage seats {"screen":"lobby","seats":[{"name":"Ember","bot":false},{"name":"Bot","bot":true},{"name":"Bot 2","bot":true},{"name":"Ember 2","bot":false}],"error":null}
+captured 1280x720-lobby-4-seats.png {"coarse":false}
+captured 1280x720-joined-by-link.png {"coarse":false}
+captured 1280x720-watcher.png {"phase":"rollOff","seq":0,"coarse":false}
+captured 1280x720-roll-off.png {"phase":"rollOff","seq":0,"coarse":false}
+captured 1280x720-first-settlement-placement.png {"phase":"setupSettle","seq":10,"coarse":false}
+captured 1280x720-first-road-placement.png {"phase":"setupRoad","seq":11,"coarse":false}
+captured 1280x720-paying-roll.png {"phase":"main","seq":30,"coarse":false}
+captured 1280x720-settlement-and-road-placed.png {"phase":"main","seq":30,"coarse":false}
+captured 1280x720-trade-panel.png {"phase":"main","seq":30,"coarse":false}
+captured 1280x720-end-turn.png {"phase":"main","seq":30,"coarse":false}
+captured 1280x720-fortune-tray.png {"phase":"main","seq":40,"coarse":false}
+captured 1280x720-robber.png {"phase":"robber","seq":122,"coarse":false}
+captured 1280x720-win-screen.png {"phase":"over","seq":311,"coarse":false}
+natural winner desktop {"screen":"play","phase":"over","seq":311,"current":"p3","turn":24,"winner":"p3","localId":"p0","hand":{"timber":0,"clay":0,"wool":1,"grain":0,"ore":6},"pendingSteal":false,"offer":false}
+captured 390x844-title.png {"coarse":true}
+captured 844x390-title.png {"coarse":true}
+captured 440x956-title.png {"coarse":true}
+stage host
+stage guest
+stage join {"text":"Emberisle\nEmber\nWayfarer\nPractice: On · Online: On · Hotseat: On\nPlay\n\n3 bots, no network\n\nHost a table\nJoin\nWatch\n\nWatch available\n\nFour seats, one table\nHow to play","join":"49VG","state":{"screen":"title","error":null}}
+guest geometry {"box":{"x":33,"y":91,"width":110.234375,"height":40,"top":91,"right":143.234375,"bottom":131,"left":33},"style":{"display":"block","visibility":"visible"},"errors":null}
+stage seats {"screen":"lobby","seats":[{"name":"Ember","bot":false},{"name":"Bot","bot":true},{"name":"Bot 2","bot":true},{"name":"Ember 2","bot":false}],"error":null}
+captured 390x844-lobby-4-seats.png {"coarse":true}
+captured 844x390-lobby-4-seats.png {"coarse":true}
+captured 440x956-lobby-4-seats.png {"coarse":true}
+captured 390x844-joined-by-link.png {"coarse":true}
+captured 844x390-joined-by-link.png {"coarse":true}
+captured 440x956-joined-by-link.png {"coarse":true}
+captured 390x844-watcher.png {"phase":"rollOff","seq":0,"coarse":true}
+captured 844x390-watcher.png {"phase":"rollOff","seq":0,"coarse":true}
+captured 440x956-watcher.png {"phase":"rollOff","seq":0,"coarse":true}
+captured 390x844-roll-off.png {"phase":"rollOff","seq":0,"coarse":true}
+captured 844x390-roll-off.png {"phase":"rollOff","seq":0,"coarse":true}
+captured 440x956-roll-off.png {"phase":"rollOff","seq":0,"coarse":true}
+captured 390x844-first-settlement-placement.png {"phase":"setupSettle","seq":6,"coarse":true}
+captured 844x390-first-settlement-placement.png {"phase":"setupSettle","seq":6,"coarse":true}
+captured 440x956-first-settlement-placement.png {"phase":"setupSettle","seq":6,"coarse":true}
+captured 390x844-first-road-placement.png {"phase":"setupRoad","seq":7,"coarse":true}
+captured 844x390-first-road-placement.png {"phase":"setupRoad","seq":7,"coarse":true}
+captured 440x956-first-road-placement.png {"phase":"setupRoad","seq":7,"coarse":true}
+captured 390x844-paying-roll.png {"phase":"main","seq":23,"coarse":true}
+captured 844x390-paying-roll.png {"phase":"main","seq":23,"coarse":true}
+captured 440x956-paying-roll.png {"phase":"main","seq":23,"coarse":true}
+captured 390x844-settlement-and-road-placed.png {"phase":"main","seq":23,"coarse":true}
+captured 844x390-settlement-and-road-placed.png {"phase":"main","seq":23,"coarse":true}
+captured 440x956-settlement-and-road-placed.png {"phase":"main","seq":23,"coarse":true}
+captured 390x844-trade-panel.png {"phase":"main","seq":23,"coarse":true}
+captured 844x390-trade-panel.png {"phase":"main","seq":23,"coarse":true}
+captured 440x956-trade-panel.png {"phase":"main","seq":23,"coarse":true}
+captured 390x844-fortune-tray.png {"phase":"main","seq":24,"coarse":true}
+captured 844x390-fortune-tray.png {"phase":"main","seq":24,"coarse":true}
+captured 440x956-fortune-tray.png {"phase":"main","seq":24,"coarse":true}
+captured 390x844-end-turn.png {"phase":"main","seq":24,"coarse":true}
+captured 844x390-end-turn.png {"phase":"main","seq":24,"coarse":true}
+captured 440x956-end-turn.png {"phase":"main","seq":24,"coarse":true}
+captured 390x844-robber.png {"phase":"robber","seq":45,"coarse":true}
+captured 844x390-robber.png {"phase":"robber","seq":45,"coarse":true}
+captured 440x956-robber.png {"phase":"robber","seq":45,"coarse":true}
+captured 390x844-win-screen.png {"phase":"over","seq":304,"coarse":true}
+captured 844x390-win-screen.png {"phase":"over","seq":304,"coarse":true}
+captured 440x956-win-screen.png {"phase":"over","seq":304,"coarse":true}
+natural winner touch {"screen":"play","phase":"over","seq":304,"current":"p2","turn":23,"winner":"p2","localId":"p0","hand":{"timber":0,"clay":0,"wool":1,"grain":6,"ore":6},"pendingSteal":false,"offer":false}

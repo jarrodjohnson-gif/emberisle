@@ -1,0 +1,1 @@
+PASS: published brown/grey implementation fails exactly the four added black/readability checks; original assertions pass; final source and positive captures restored byte-for-byte.

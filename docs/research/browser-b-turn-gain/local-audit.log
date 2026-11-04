@@ -1,0 +1,23 @@
+caught: dropped climber
+caught: duplicate roll-log
+caught: wrong climber leg
+caught: old turn-gain assignment
+caught: changed docs guard
+caught: changed runner
+caught: increased timeout
+caught: removed required leg
+caught: dropped aggregate dependency
+caught: dropped aggregate result gate
+PASS: all 97 npm-run steps retained in physical order; 57 browser-b proofs exactly once across 8 legs
+flows-a: 11 proofs
+flows-b: 7 proofs
+presentation: 6 proofs
+presentation-2: 9 proofs
+flows-c: 8 proofs
+presentation-3: 10 proofs
+scene-life: 3 proofs
+scene-water: 3 proofs
+PASS: all non-suite semantics, setup/install/artifacts/runners/budgets/dependencies and other jobs identical to main
+PASS: eight required names and unchanged whole-matrix checks gate retained
+PASS: owner-approved #1034 decision row preserved; every main decision unchanged
+PASS: 10 meaningful negative controls caught; CI/owner-row/research scope and no proof/package changes

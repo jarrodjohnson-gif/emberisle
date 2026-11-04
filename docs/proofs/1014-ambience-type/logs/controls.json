@@ -1,0 +1,20 @@
+{
+  "results": [
+    {
+      "case": "bad-seam",
+      "exit": 1,
+      "failedAssertion": "first/last 10 ms differ by less than 2% of full scale"
+    },
+    {
+      "case": "silent",
+      "exit": 1,
+      "failedAssertion": "the candidate is non-silent"
+    },
+    {
+      "case": "ambience also assigned to effects",
+      "exit": 1,
+      "failedAssertion": "every physical audio asset has exactly one mastering type"
+    }
+  ],
+  "restoredLibrarySha256": "c36cb121c1492abb690ff755c74a4ed6a15e6456ba8b45c474971313b0f3e75c"
+}

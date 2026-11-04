@@ -1,0 +1,90 @@
+
+> connection-health-prove
+> node scripts/connection-health-prove.mjs
+
+ok transport: no pre-welcome probe; duplicate welcome keeps one challenge and its 3s timeout; close cancels probing
+ok browser: nonce matched 137ms monotonic RTT; 30s spacing, one outstanding, 3s timeout, full-state recovery once; host timers/save bytes unchanged
+ok lobby: four ready seats and every health state fit 320/390/667/844px layouts; no landscape scrolling
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: late client load cannot pull practice back online
++ actual - expected
+
+  [
+    'play',
++   'online',
++   {
++     act: undefined,
++     addBot: undefined,
++     again: undefined,
++     answer: undefined,
++     answerTurnExtension: undefined,
++     ask: undefined,
++     close: undefined,
++     drop: undefined,
++     getTurnExtension: undefined,
++     join: undefined,
++     list: undefined,
++     open: undefined,
++     peek: undefined,
++     react: undefined,
++     ready: undefined,
++     rejoin: undefined,
++     removeBot: undefined,
++     rename: undefined,
++     requestTurnExtension: undefined,
++     say: undefined,
++     setVictoryTarget: undefined,
++     sound: undefined,
++     start: undefined,
++     subscribeTurnExtension: undefined,
++     wake: undefined,
++     watch: undefined
++   }
+-   'ai',
+-   null
+  ]
+
+    at file:///workspace/emberisle/work/verify716-oct25/scripts/connection-health-prove.mjs:430:14 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    'play',
+    'online',
+    {
+      open: undefined,
+      join: undefined,
+      watch: undefined,
+      peek: undefined,
+      list: undefined,
+      rejoin: undefined,
+      ready: undefined,
+      start: undefined,
+      setVictoryTarget: undefined,
+      rename: undefined,
+      addBot: undefined,
+      removeBot: undefined,
+      again: undefined,
+      act: undefined,
+      ask: undefined,
+      answer: undefined,
+      requestTurnExtension: undefined,
+      answerTurnExtension: undefined,
+      getTurnExtension: undefined,
+      subscribeTurnExtension: undefined,
+      say: undefined,
+      sound: undefined,
+      react: undefined,
+      drop: undefined,
+      wake: undefined,
+      close: undefined
+    }
+  ],
+  expected: [ 'play', 'ai', null ],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

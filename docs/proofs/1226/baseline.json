@@ -1,0 +1,12 @@
+{
+  "parser": "PyYAML 6.0.3",
+  "source": "7df73be",
+  "docs_only": true,
+  "skipped_prerequisites": [
+    "actions/checkout@v4",
+    "actions/setup-node@v4"
+  ],
+  "command": "npm run desk-gate-prove",
+  "status": 254,
+  "output": "npm error code ENOENT\nnpm error syscall open\nnpm error path /tmp/emberisle1226-baseline-k7i6pd_e/package.json\nnpm error errno -2\nnpm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/tmp/emberisle1226-baseline-k7i6pd_e/package.json'\nnpm error enoent This is related to npm not being able to find a file.\nnpm error enoent\nnpm error A complete log of this run can be found in: /home/agent/.npm/_logs/2026-10-30T22_18_15_142Z-debug-0.log\n"
+}

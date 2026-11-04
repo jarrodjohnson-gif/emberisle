@@ -6,7 +6,7 @@
 // #410: with the bank out of ore, the fortune tray's ore chip is greyed out (aria-disabled, described) and it cannot be picked (#423).
 // #430: while p2 owes that discard on p0's turn the banner reads "{p2} — discard 4", not "{p2}'s turn", and p0's turn after.
 // #412: a pick the bank empties while the tray is open is dropped and Play waits; an empty bank turns Plenty off.
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
@@ -30,9 +30,53 @@ try {
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
   await page.addInitScript(() => {
     window.__plays = [];
+    // #1089: collect provenance without changing input, playback, timer arguments or proof waits.
+    // Only the original Leave-sound failure emits these records.
+    window.__leaveTrace = [];
+    const note = (kind, record, at = performance.now()) => {
+      record.kind = kind; record.at = at; window.__leaveTrace.push(record);
+    };
+    for (const kind of ["pointerdown", "pointerup", "click", "keydown", "keyup"]) {
+      document.addEventListener(kind, (event) => {
+        const button = event.target.closest?.("button");
+        const input = { event: kind, eventAt: event.timeStamp, key: event.key, pointer: event.pointerType, trusted: event.isTrusted,
+          target: event.target.tagName, button: button?.textContent?.trim(), label: button?.getAttribute("aria-label") };
+        // One stack for the native Leave click; never allocate a stack per sound or timer.
+        if (kind === "click" && input.button === "Leave table") input.stack = new Error().stack;
+        note("input", input);
+      }, { capture: true, passive: true });
+    }
+    const later = window.setTimeout;
+    let pumpOrdinal = 0;
+    window.__pendingPumps = 0;
+    const pumps = new WeakMap();
+    window.setTimeout = function (callback, ms, ...args) {
+      // The served sound pump arms only one timer at a time. Reuse its wrapper across re-arms.
+      if (typeof callback !== "function" || callback.name !== "pump") return later.call(this, callback, ms, ...args);
+      let pump = pumps.get(callback);
+      if (!pump) {
+        pump = {};
+        pump.fire = function (...firedArgs) {
+          const { ordinal, ms, scheduled } = pump, now = performance.now();
+          note("pump-fired", { ordinal, ms, scheduled, lateness: now - scheduled - ms }, now);
+          // Keep an in-flight callback counted through any synchronous re-arm.
+          try { return callback.apply(this, firedArgs); }
+          finally { window.__pendingPumps--; }
+        };
+        pumps.set(callback, pump);
+      }
+      pump.ordinal = ++pumpOrdinal; pump.ms = ms; pump.scheduled = performance.now();
+      note("pump-scheduled", { ordinal: pump.ordinal, ms, scheduled: pump.scheduled }, pump.scheduled);
+      window.__pendingPumps++;
+      try { return later.call(this, pump.fire, ms, ...args); }
+      catch (failure) { window.__pendingPumps--; throw failure; }
+    };
     const play = HTMLMediaElement.prototype.play;
     HTMLMediaElement.prototype.play = function () {
+      // #814: the background music is music-prove's, not a table sound.
+      if (this.src.endsWith("/old_tower_inn_loop.mp3")) return play.call(this);
       window.__plays.push(new URL(this.src).pathname);
+      note("audio", { ordinal: window.__plays.length, path: window.__plays[window.__plays.length - 1] });
       return play.call(this);
     };
   });
@@ -163,22 +207,22 @@ try {
   const countState = async () => ({ text: (await count.textContent()).trim(), disabled: await submit.isDisabled() });
   const start = await countState();
   if (start.text !== "0 of 4" || !start.disabled) throw new Error(`empty bar: ${JSON.stringify(start)}`);
-  await form.getByLabel("Timber").fill("3");
+  await form.getByLabel("Wood").fill("3");
   const part = await countState();
   if (part.text !== "3 of 4" || !part.disabled) throw new Error(`3 picked: ${JSON.stringify(part)}`);
-  await form.getByLabel("Ore").fill("5"); // holds 1: clamped
-  const clamped = await form.getByLabel("Ore").inputValue();
+  await form.getByLabel("Stone").fill("5"); // holds 1: clamped
+  const clamped = await form.getByLabel("Stone").inputValue();
   const over = await countState();
   if (clamped !== "1" || over.text !== "4 of 4" || over.disabled) throw new Error(`clamp/exact: ${clamped} ${JSON.stringify(over)}`);
-  await form.getByLabel("Timber").fill("4"); // holds 3: clamped, total still 4
-  const tooMany = await form.getByLabel("Timber").inputValue();
+  await form.getByLabel("Wood").fill("4"); // holds 3: clamped, total still 4
+  const tooMany = await form.getByLabel("Wood").inputValue();
   if (tooMany !== "3") throw new Error(`timber not clamped: ${tooMany}`);
-  await form.getByLabel("Timber").fill("2");
+  await form.getByLabel("Wood").fill("2");
   const short = await countState();
   if (short.text !== "3 of 4" || !short.disabled) throw new Error(`short again: ${JSON.stringify(short)}`);
   console.log("discard count:", JSON.stringify({ start, part, clamped, over, short }));
-  await form.getByLabel("Timber").fill("0");
-  await form.getByLabel("Ore").fill("0");
+  await form.getByLabel("Wood").fill("0");
+  await form.getByLabel("Stone").fill("0");
   await form.locator('input[name="timber"]').fill("3");
   await form.locator('input[name="clay"]').fill("1");
   await form.getByRole("button", { name: "Discard" }).click();
@@ -269,7 +313,7 @@ try {
   const greyed = await page.locator('[data-testid^="plenty-chip-"]').evaluateAll((els) => els.map((b) => ({
     r: b.dataset.testid.slice("plenty-chip-".length), disabled: b.getAttribute("aria-disabled"), why: b.getAttribute("aria-description") })));
   console.log("plenty with no ore in the bank:", JSON.stringify(greyed));
-  if (greyed.length !== 5 || greyed.some((g) => g.r === "ore" ? g.disabled !== "true" || g.why !== "The bank has no ore." : g.disabled || g.why)) {
+  if (greyed.length !== 5 || greyed.some((g) => g.r === "ore" ? g.disabled !== "true" || g.why !== "The bank has no stone." : g.disabled || g.why)) {
     throw new Error(`ore not greyed out: ${JSON.stringify(greyed)}`);
   }
   await page.getByTestId("plenty-chip-ore").focus();
@@ -278,7 +322,7 @@ try {
   if ((await picks()) !== "Tap two goods") throw new Error(`ore was picked from an empty bank: ${await picks()}`);
   await page.getByTestId("plenty-chip-grain").click();
   await page.getByTestId("plenty-chip-grain").click();
-  if ((await picks()) !== "Grain ×2") throw new Error(`two grain picks read ${await picks()}`);
+  if ((await picks()) !== "Wheat ×2") throw new Error(`two grain picks read ${await picks()}`);
   await page.getByTestId("fortune-play-plenty").click();
   await page.waitForFunction(() => window.__emberisle.getState().state.playedCard, null, { timeout: STEP_MS });
   await tray.waitFor({ state: "detached", timeout: STEP_MS });
@@ -303,7 +347,7 @@ try {
   await openTray();
   await page.getByTestId("plenty-chip-timber").click();
   await page.getByTestId("plenty-chip-timber").click();
-  if ((await picks()) !== "Timber ×2") throw new Error(`two timber picks read ${await picks()}`);
+  if ((await picks()) !== "Wood ×2") throw new Error(`two timber picks read ${await picks()}`);
   await plentyAgain({ timber: 0 });
   await page.waitForFunction(() => document.querySelector('[data-testid="plenty-picks"]')?.textContent === "Tap two goods", null, { timeout: STEP_MS })
     .catch(async () => { throw new Error(`picks did not leave the emptied timber: ${await picks()}`); });
@@ -328,10 +372,15 @@ try {
   // #442: Leave table is a row of the table menu; the menu's own open click is not counted.
   await page.getByRole("button", { name: "Table menu" }).click();
   // Clips start 150 ms apart (#609): let the tray's Escape and the menu's open click start before counting.
-  await page.waitForFunction(() => {
-    const n = window.__plays.length;
-    return new Promise((r) => setTimeout(() => r(window.__plays.length === n), 400));
-  }, null, { timeout: 4000 });
+  // The predicate must return a boolean, not a Promise: Playwright resolves a Promise-returning predicate once, even with false (#1071).
+  await page.waitForFunction((quietMs) => {
+    const n = window.__plays.length, now = performance.now();
+    if (window.__quietN !== n) { window.__quietN = n; window.__quietAt = now; }
+    return window.__pendingPumps === 0 && now - window.__quietAt >= quietMs;
+  }, 400, { timeout: 4000 });
+  const scheduledPumps = await page.evaluate(() => window.__leaveTrace.filter(entry => entry.kind === "pump-scheduled").length);
+  console.log("Sound pumps scheduled before Leave", scheduledPumps);
+  if (scheduledPumps < 1) throw new Error("No sound pump was scheduled before Leave");
   const playsBeforeLeave = await page.evaluate(() => window.__plays.length);
   await page.getByRole("button", { name: "Leave table" }).click();
   await page.waitForFunction(() => !window.__emberisle.getState().state, null, { timeout: STEP_MS });
@@ -339,7 +388,22 @@ try {
   await page.waitForFunction((n) => window.__plays.length > n, playsBeforeLeave, { timeout: 2000 }).catch(() => {});
   const leavePlays = await page.evaluate((n) => window.__plays.slice(n), playsBeforeLeave);
   console.log("Leave played", JSON.stringify(leavePlays));
-  if (leavePlays.join() !== "/audio/click_001.wav") throw new Error(`Leave played ${JSON.stringify(leavePlays)}, not click_001.wav once`);
+  try {
+    if (leavePlays.join() !== "/audio/click_001.wav") throw new Error(`Leave played ${JSON.stringify(leavePlays)}, not click_001.wav once`);
+  } catch (failure) {
+    try {
+      const diagnostic = await page.evaluate(({ baseline, observed }) => ({
+        origin: performance.timeOrigin, at: performance.now(), baseline, observed,
+        quiet: { count: window.__quietN, at: window.__quietAt },
+        plays: window.__plays, trace: window.__leaveTrace,
+      }), { baseline: playsBeforeLeave, observed: leavePlays });
+      mkdirSync("test-results", { recursive: true });
+      writeFileSync("test-results/hotseat-leave-diagnostic.json", JSON.stringify(diagnostic, null, 2));
+      // Full history is in the uploaded artifact; keep the last 80 records readable in the job log.
+      console.error("hotseat-leave-diagnostic", JSON.stringify({ ...diagnostic, trace: diagnostic.trace.slice(-80) }));
+    } catch (diagnosticError) { console.error("hotseat-leave-diagnostic capture failed", diagnosticError); }
+    throw failure;
+  }
 } catch (e) {
   console.error("hotseat-prove failed:", e);
   code = 1;

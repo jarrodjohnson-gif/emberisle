@@ -1,0 +1,8 @@
+{
+  "head": "a1ae342ecd398a787147c1589be70bae3facb68e",
+  "negative_exit": 1,
+  "expected": "late edits cannot change the rules chosen at Host",
+  "matched": true,
+  "restored_source_sha256": "4fd052ed123b3067585553bd0586d8d9a5aa26bb3a0310b72166183a5e1ef7e7",
+  "positive_exit": 0
+}

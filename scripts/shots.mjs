@@ -31,7 +31,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -159,8 +159,12 @@ async function frameBudget(page, [w, h]) {
         r.composer.setPixelRatio(pr);
         r.resize();
         r.ssao.enabled = ssao !== "off";
-        if (ssao === "canvas") r.ssao.setSize(Math.round(r.renderer.domElement.clientWidth * pr), Math.round(r.renderer.domElement.clientHeight * pr));
-        if (ssao === "half") r.ssao.setSize(Math.round(r.renderer.domElement.clientWidth / 2), Math.round(r.renderer.domElement.clientHeight / 2));
+        // Name the target after resize(). Free view now sizes SSAO to half CSS, so the css row must set the full size itself.
+        const cssW = r.renderer.domElement.clientWidth;
+        const cssH = r.renderer.domElement.clientHeight;
+        if (ssao === "css") r.ssao.setSize(cssW, cssH);
+        if (ssao === "canvas") r.ssao.setSize(Math.round(cssW * pr), Math.round(cssH * pr));
+        if (ssao === "half") r.ssao.setSize(Math.round(cssW / 2), Math.round(cssH / 2));
         const c = r.renderer.domElement;
         return { canvas: `${c.width}x${c.height}`, ssaoTarget: `${r.ssao.width}x${r.ssao.height}` };
       },

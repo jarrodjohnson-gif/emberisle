@@ -1,0 +1,7 @@
+{
+  "node": "v24.19.0",
+  "playwright": "1.63.0",
+  "browserCache": "/workspace/emberisle/work/browsers",
+  "implementation": "d0ed4af52b46481f28b9258d1e8c1e06ef1f6ea2",
+  "base": "9c29e873876ca834b6e11943c467f48b4a110b29"
+}

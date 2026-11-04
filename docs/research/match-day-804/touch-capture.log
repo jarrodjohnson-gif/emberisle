@@ -1,0 +1,22 @@
+captured title: {}
+captured lobby-4-seats: {}
+captured joined-by-link: {}
+all seats ready {"screen":"lobby","mode":"online","spectator":false,"watching":0,"error":null,"seats":[{"id":"s0","name":"MatchHost","color":"#e23d2e","avatarId":null,"ready":true,"host":true,"away":false,"bot":false,"url":null},{"id":"s1","name":"Bot","color":"#2d6ee8","avatarId":null,"ready":true,"host":false,"away":false,"bot":true,"url":null},{"id":"s2","name":"Bot 2","color":"#f3ecd9","avatarId":null,"ready":true,"host":false,"away":false,"bot":true,"url":null},{"id":"s3","name":"MatchJoin","color":"#8a4fd3","avatarId":null,"ready":true,"host":false,"away":false,"bot":false,"url":null}],"pendingPlace":null,"pendingSteal":null,"offer":null,"declined":[],"localId":"p0","highlights":{"vertices":[],"edges":[],"hexes":[]}}
+captured watcher: {"phase":"rollOff","current":"p0","winner":null}
+captured roll-off: {"phase":"rollOff","current":"p0","winner":null}
+captured first-settlement-placement: {"phase":"setupSettle","current":"p0","winner":null}
+captured first-road-placement: {"phase":"setupRoad","current":"p0","winner":null}
+captured settlement-and-road-placed: {"phase":"main","current":"p0","winner":null}
+captured trade-panel: {"phase":"main","current":"p0","winner":null}
+captured fortune-tray: {"phase":"main","current":"p0","winner":null}
+captured end-turn: {"phase":"main","current":"p0","winner":null}
+captured paying-roll: {"phase":"main","current":"p0","winner":null}
+captured robber: {"phase":"robber","current":"p0","winner":null}
+Debugger listening on ws://127.0.0.1:9229/de720e29-e6c7-4290-bd89-0bbb6777ed27
+For help, see: https://nodejs.org/learn/getting-started/debugging
+Debugger attached.
+Debugger ending on ws://127.0.0.1:9229/de720e29-e6c7-4290-bd89-0bbb6777ed27
+For help, see: https://nodejs.org/learn/getting-started/debugging
+captured win-screen: {"phase":"over","current":"p1","winner":"p1"}
+practice stopped: {"stopReason":"winner reached","actions":49,"polls":830,"elapsedMs":208893,"phase":"over","turn":17,"winner":"p1","missing":[]}
+page errors: []

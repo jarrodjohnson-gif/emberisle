@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/workspace/emberisle/work/verify838-main/docs/proofs/826-robber-grey/black-2026-10-24/old-colour-control.py", line 15, in <module>
+    assert r.returncode==1 and failures==expected,(r.returncode,failures)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (1, ['FAIL move: token disc and face are plain black', 'FAIL move: light numeral and pips remain on the black face', 'FAIL back on Wastes: original face pixels restored exactly', 'FAIL 1280x720: blocked terrain is black without a brown cast', 'FAIL 390x844: blocked terrain is black without a brown cast', 'FAIL 5: move: token disc and face are plain black, move: light numeral and pips remain on the black face, back on Wastes: original face pixels restored exactly, 1280x720: blocked terrain is black without a brown cast, 390x844: blocked terrain is black without a brown cast'])

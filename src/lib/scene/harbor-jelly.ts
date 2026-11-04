@@ -6,6 +6,7 @@
 // swell (`floaters`, placed by their userData.rest) and paints a claimed harbor's sail.
 import * as THREE from "three";
 import type { HarborKind } from "@/lib/game/types";
+import { BLOCK_H, TILE_Y } from "@/lib/scene/jelly-dims";
 import { PAINT } from "@/lib/scene/palette";
 import { rng32, setBoardDetail, shoreKit } from "@/lib/scene/hex-jelly";
 
@@ -662,8 +663,12 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
         if (Math.abs(across) < best && out > 0) [best, wv] = [Math.abs(across), out];
       });
     }
+    const north = d.mz < -0.7;
+    // #1158: goods on every pier that faces north at all (d.mz < -0.4, about 4 piers a board) sit 0.14 up on a skid, above
+    // the crest shadow. Only the piers facing mostly north (d.mz < -0.7) also get the longer reach below.
+    const lift = d.mz < -0.4 ? 0.14 : 0;
     const v0 = 0.1;
-    const v1 = wv + 0.5;
+    const v1 = wv + (north ? 0.74 : 0.5);
     const len = v1 - v0;
     const W = 0.2;
     const yAt = (v: number) => (v < wv ? lerp(SURFACE + 0.07, SURFACE, smooth(v / wv, 0.3, 1)) : lerp(SURFACE, floorY(v + 0.1) + 0.004, smooth(v - wv, 0, 0.56)));
@@ -721,9 +726,10 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     P(K.part(K.cyl(1, 1, 8), "#3a3430", [lamp[0], DECK + 0.07, lamp[2]], [0, 0, 0], [0.006, 0.14, 0.006]));
     P(K.part(K.cyl(0.6, 1, 8), "#2a2622", [lamp[0], DECK + 0.158, lamp[2]], [0, 0, 0], [0.016, 0.012, 0.016]));
     add(glowParts, K.part(K.sphere(8), "#ffe1a0", [lamp[0], DECK + 0.142, lamp[2]], [0, 0, 0], [0.011, 0.014, 0.011]));
-    P(K.part(K.cyl(1, 1, 8), "#6a4a30", [-shipSide * 0.08, DECK + 0.04, v1 - 0.12], [0, 0, 0], [0.005, 0.08, 0.005]));
-    P(K.part(new THREE.TorusGeometry(1, 0.32, 6, 14), "#f07a3a", [-shipSide * 0.08 - 0.008 * -shipSide, DECK + 0.06, v1 - 0.12], [0, Math.PI / 2, 0], [0.022, 0.022, 0.022]));
-    for (let k = 0; k < 4; k++) P(K.part(K.sphere(6), "#f4efe4", [-shipSide * 0.08 + 0.002 * shipSide, DECK + 0.06 + Math.sin((k * Math.PI) / 2 + 0.78) * 0.022, v1 - 0.12 + Math.cos((k * Math.PI) / 2 + 0.78) * 0.022], [0, 0, 0], [0.006, 0.006, 0.006]));
+    const bz = v1 - 0.12, buoy: THREE.BufferGeometry[] = [], PB = (g: THREE.BufferGeometry) => { buoy.push(g); P(g); };
+    PB(K.part(K.cyl(1, 1, 8), "#6a4a30", [-shipSide * 0.08, DECK + lift + 0.04, bz], [0, 0, 0], [0.005, 0.08, 0.005]));
+    PB(K.part(new THREE.TorusGeometry(1, 0.32, 6, 14), "#f07a3a", [-shipSide * 0.08 - 0.008 * -shipSide, DECK + lift + 0.06, bz], [0, Math.PI / 2, 0], [0.022, 0.022, 0.022]));
+    for (let k = 0; k < 4; k++) PB(K.part(K.sphere(6), "#f4efe4", [-shipSide * 0.08 + 0.002 * shipSide, DECK + lift + 0.06 + Math.sin((k * Math.PI) / 2 + 0.78) * 0.022, bz + Math.cos((k * Math.PI) / 2 + 0.78) * 0.022], [0, 0, 0], [0.006, 0.006, 0.006]));
     for (const v of [tv - 0.03, v1 - 0.1, v1 - 0.2]) P(K.part(new THREE.TorusGeometry(1, 0.42, 6, 12), "#2a2828", [shipSide * (W / 2 + 0.012), DECK - 0.02, v], [0, Math.PI / 2, 0], [0.016, 0.016, 0.016]));
 
     // The dockhouse at the pier's root, on the side away from the ship, on low piles: plank walls, a pitched roof, a door, a
@@ -746,55 +752,119 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     P(K.part(box, "#3a2a20", [hx + shipSide * 0.057, hy + 0.065, hv + 0.03], [0, 0, 0], [0.004, 0.004, 0.03]));
     P(K.part(box, goodOf(d.kind), [hx + shipSide * 0.058, hy + 0.05, hv + 0.035], [0, 0, 0], [0.002, 0.022, 0.034]));
 
-    // The goods, on the deck's land half by the house.
-    const gv = Math.max(v0 + 0.08, wv - 0.08);
-    const gy = DECK + 0.008;
+    // #846: keep the original goods, enlarged 2.5x and re-packed along the narrow pier.
+    // Turning pallets lengthwise and stacking bales avoids widening the deck or adding signs.
+    const S = 2.5;
+    const stride = Math.min(0.65, (len - 0.2) / 0.64);
+    const gv = Math.max(v0 + 0.22, v1 - 0.48 * stride);
+    const gy = DECK + lift + 0.02 * (lift ? 0 : 1);
+    const goodsStart = pierParts.reduce((count, part) => count + part.attributes.position.count, 0);
+    const goodsParts: THREE.BufferGeometry[] = [];
+    const G = (geometry: THREE.BufferGeometry) => { goodsParts.push(geometry); P(geometry); };
     const good = d.kind;
     if (good === "timber") {
-      for (const [x, y] of [[-0.03, 0], [0.0, 0], [0.03, 0], [-0.015, 0.024], [0.015, 0.024], [0, 0.046]] as const) {
-        P(K.part(K.cyl(1, 1, 10), "#8a5a34", [x, gy + 0.012 + y, gv], [Math.PI / 2, 0, 0], [0.012, 0.11, 0.012]));
-        P(K.part(K.cyl(1, 1, 10), "#ecca90", [x, gy + 0.012 + y, gv + 0.0555], [Math.PI / 2, 0, 0], [0.0105, 0.002, 0.0105]));
+      for (const [x, y] of [[-0.06, 0], [0, 0], [0.06, 0], [-0.03, 0.06], [0.03, 0.06], [0, 0.115]] as const) {
+        G(K.part(K.cyl(1, 1, 10), "#8a5a34", [x, gy + 0.03 + y, gv], [Math.PI / 2, 0, 0], [0.012 * S, 0.11 * S, 0.012 * S]));
+        G(K.part(K.cyl(1, 1, 10), "#ecca90", [x, gy + 0.03 + y, gv + 0.0555 * S], [Math.PI / 2, 0, 0], [0.0105 * S, 0.002 * S, 0.0105 * S]));
       }
-      for (let k = 0; k < 3; k++) P(K.part(box, "#d8a870", [0, gy + 0.004 + k * 0.006, gv - 0.1], [0, 0.1 * k, 0], [0.12, 0.005, 0.03]));
-    } else if (good === "clay") {
-      for (const pv of [gv, gv - 0.09]) {
-        P(K.part(box, "#9a7048", [0, gy + 0.004, pv], [0, 0, 0], [0.11, 0.008, 0.075]));
-        for (let l = 0; l < 3; l++)
-          for (let i = 0; i < 3; i++)
-            for (let j = 0; j < 2; j++)
-              P(K.part(box, (i + j + l) % 2 ? "#c8573a" : "#d86a46", [(i - 1) * 0.034 + (l % 2) * 0.006, gy + 0.016 + l * 0.018, pv + (j - 0.5) * 0.034], [0, 0, 0], [0.032, 0.016, 0.032]));
+      for (let k = 0; k < 3; k++) G(K.part(box, "#d8a870", [0, gy + 0.01 + k * 0.015, gv + 0.3 * stride], [0, Math.PI / 2, 0], [0.12 * S, 0.005 * S, 0.03 * S]));
+    } else if (good === "clay" || good === "ore") {
+      for (const pv of [gv, gv + 0.29 * stride]) {
+        // Each original pallet is rotated, then enlarged uniformly: 0.175–0.188 across the 0.2-wide pier.
+        const pallet = (geometry: THREE.BufferGeometry) => G(geometry.translate(0, -gy, -pv).scale(S, S, S).rotateY(Math.PI / 2).translate(0, gy, pv));
+        if (good === "clay") {
+          pallet(K.part(box, "#9a7048", [0, gy + 0.004, pv], [0, 0, 0], [0.11, 0.008, 0.075]));
+          for (let l = 0; l < 3; l++) for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++)
+            pallet(K.part(box, (i + j + l) % 2 ? "#c8573a" : "#d86a46", [(i - 1) * 0.034 + (l % 2) * 0.006, gy + 0.016 + l * 0.018, pv + (j - 0.5) * 0.034], [0, 0, 0], [0.032, 0.016, 0.032]));
+        } else {
+          pallet(K.part(box, "#8a6040", [0, gy + 0.02, pv], [0, 0, 0], [0.1, 0.04, 0.07]));
+          pallet(K.part(box, "#5e4028", [0, gy + 0.02, pv], [0, 0, 0], [0.104, 0.006, 0.074]));
+          for (let k = 0; k < 7; k++)
+            pallet(K.part(K.blobGeo(860 + k + di), k === 3 ? "#dfeaf2" : ["#7a8088", "#9aa0a6", "#5a6068"][k % 3]!, [(r() - 0.5) * 0.07, gy + 0.045 + r() * 0.01, pv + (r() - 0.5) * 0.045], [r(), r(), r()], [0.015, 0.012, 0.014]));
+        }
       }
-      P(K.part(K.sphere(10), "#c8744a", [0.07, gy + 0.024, gv - 0.04], [0, 0, 0], [0.018, 0.024, 0.018]));
+      if (good === "clay") G(K.part(K.sphere(10), "#c8744a", [0.05, gy + 0.06, gv + 0.48 * stride], [0, 0, 0], [0.018 * S, 0.024 * S, 0.018 * S]));
     } else if (good === "wool") {
-      for (const [x, y, v] of [[-0.03, 0, gv], [0.03, 0, gv], [0, 0.04, gv], [0, 0, gv - 0.08]] as const) {
-        P(K.part(K.blobGeo(800 + di * 4 + Math.round(x * 100)), "#f5efe2", [x, gy + 0.022 + y, v], [0, r(), 0], [0.03, 0.022, 0.028]));
-        P(K.part(new THREE.TorusGeometry(1, 0.1, 5, 14), "#a8845a", [x, gy + 0.022 + y, v], [0, Math.PI / 2, 0], [0.024, 0.024, 0.024]));
+      for (const [y, offset] of [[0, 0], [0, 0.16], [0.1, 0.08], [0, 0.33]] as const) {
+        const v = gv + offset * stride;
+        G(K.part(K.blobGeo(800 + di * 4 + Math.round(offset * 100)), "#f5efe2", [0, gy + 0.055 + y, v], [0, r(), 0], [0.03 * S, 0.022 * S, 0.028 * S]));
+        G(K.part(new THREE.TorusGeometry(1, 0.1, 5, 14), "#a8845a", [0, gy + 0.055 + y, v], [0, Math.PI / 2, 0], [0.024 * S, 0.024 * S, 0.024 * S]));
       }
     } else if (good === "grain") {
-      for (const [x, v] of [[-0.03, gv], [0.025, gv + 0.01], [0, gv - 0.035], [-0.02, gv - 0.08], [0.03, gv - 0.075]] as const) {
-        P(K.part(K.sphere(10), "#e8d2a0", [x, gy + 0.022, v], [0, 0, 0], [0.021, 0.025, 0.019]));
-        P(K.part(K.cyl(1, 1, 8), "#c9a86a", [x, gy + 0.048, v], [0, 0, 0], [0.007, 0.01, 0.007]));
+      for (const [x, offset] of [[-0.044, 0], [0.044, 0], [-0.044, 0.13], [0.044, 0.13], [0, 0.26]] as const) {
+        const v = gv + offset * stride;
+        G(K.part(K.sphere(10), "#e8d2a0", [x, gy + 0.0625, v], [0, 0, 0], [0.021 * S, 0.025 * S, 0.019 * S]));
+        G(K.part(K.cyl(1, 1, 8), "#c9a86a", [x, gy + 0.12, v], [0, 0, 0], [0.007 * S, 0.01 * S, 0.007 * S]));
       }
       for (let k = 0; k < 9; k++) {
         const a = (k / 9) * Math.PI * 2;
-        P(K.part(K.cyl(0.5, 1, 4), "#e6bc4e", [0.06 + Math.cos(a) * 0.006, gy + 0.034, gv - 0.13 + Math.sin(a) * 0.006], [Math.sin(a) * 0.25, 0, -Math.cos(a) * 0.25], [0.005, 0.07, 0.005]));
-      }
-    } else if (good === "ore") {
-      for (const pv of [gv, gv - 0.09]) {
-        P(K.part(box, "#8a6040", [0, gy + 0.02, pv], [0, 0, 0], [0.1, 0.04, 0.07]));
-        P(K.part(box, "#5e4028", [0, gy + 0.02, pv], [0, 0, 0], [0.104, 0.006, 0.074]));
-        for (let k = 0; k < 7; k++)
-          P(K.part(K.blobGeo(860 + k + di), k === 3 ? "#dfeaf2" : ["#7a8088", "#9aa0a6", "#5a6068"][k % 3]!, [(r() - 0.5) * 0.07, gy + 0.045 + r() * 0.01, pv + (r() - 0.5) * 0.045], [r(), r(), r()], [0.015, 0.012, 0.014]));
+        G(K.part(K.cyl(0.5, 1, 4), "#e6bc4e", [Math.cos(a) * 0.006 * S, gy + 0.034 * S, gv + 0.4 * stride + Math.sin(a) * 0.006 * S], [Math.sin(a) * 0.25, 0, -Math.cos(a) * 0.25], [0.005 * S, 0.07 * S, 0.005 * S]));
       }
     } else {
-      for (const [x, v] of [[-0.035, gv], [-0.035, gv - 0.06]] as const) {
-        P(K.part(K.cyl(0.88, 0.88, 12), "#9a6a40", [x, gy + 0.03, v], [0, 0, 0], [0.024, 0.06, 0.024]));
-        for (const y of [0.012, 0.048]) P(K.part(K.cyl(1, 1, 12), "#4a4440", [x, gy + y, v], [0, 0, 0], [0.0225, 0.005, 0.0225]));
+      for (const offset of [0, 0.16]) {
+        const v = gv + offset * stride;
+        G(K.part(K.cyl(0.88, 0.88, 12), "#9a6a40", [-0.03, gy + 0.03 * S, v], [0, 0, 0], [0.024 * S, 0.06 * S, 0.024 * S]));
+        for (const y of [0.012, 0.048]) G(K.part(K.cyl(1, 1, 12), "#4a4440", [-0.03, gy + y * S, v], [0, 0, 0], [0.0225 * S, 0.005 * S, 0.0225 * S]));
       }
-      P(K.part(box, "#b88a58", [0.03, gy + 0.024, gv - 0.01], [0, 0.3, 0], [0.05, 0.048, 0.05]));
-      P(K.part(box, "#8a6040", [0.03, gy + 0.024, gv - 0.01], [0, 0.3, 0], [0.052, 0.006, 0.052]));
-      P(K.part(K.sphere(10), "#e8d2a0", [0.03, gy + 0.016, gv - 0.08], [0, 0, 0], [0.02, 0.016, 0.018]));
-      P(K.part(box, "#6a7a5a", [0.0, gy + 0.002, gv - 0.12], [0, 0.4, 0], [0.08, 0.004, 0.05]));
+      G(K.part(box, "#b88a58", [0, gy + 0.024 * S, gv + 0.33 * stride], [0, 0.15, 0], [0.05 * S, 0.048 * S, 0.05 * S]));
+      G(K.part(box, "#8a6040", [0, gy + 0.024 * S, gv + 0.33 * stride], [0, 0.15, 0], [0.052 * S, 0.006 * S, 0.052 * S]));
+      G(K.part(K.sphere(10), "#e8d2a0", [0, gy + 0.016 * S, gv + 0.49 * stride], [0, 0, 0], [0.02 * S, 0.016 * S, 0.018 * S]));
+      G(K.part(box, "#6a7a5a", [0, gy + 0.002 * S, gv + 0.45 * stride], [0, Math.PI / 2, 0], [0.08 * S, 0.004 * S, 0.05 * S]));
+    }
+    // Bounds of built geometry in the pier's own frame (x across, y up, z along).
+    const inverse = frame.clone().invert();
+    const boundsOf = (parts: THREE.BufferGeometry[]) => {
+      const box = new THREE.Box3();
+      for (const geometry of parts) {
+        const local = geometry.clone().applyMatrix4(inverse);
+        local.computeBoundingBox();
+        box.union(local.boundingBox!);
+        local.dispose();
+      }
+      return box;
+    };
+    const packingBounds = boundsOf(goodsParts);
+    const packingLength = packingBounds.max.z - packingBounds.min.z;
+    if (packingLength > len) {
+      const center = (packingBounds.min.z + packingBounds.max.z) / 2;
+      const fit = new THREE.Matrix4().makeTranslation(0, 0, center).multiply(new THREE.Matrix4().makeScale(1, 1, len / packingLength)).multiply(new THREE.Matrix4().makeTranslation(0, 0, -center));
+      const worldFit = frame.clone().multiply(fit).multiply(inverse);
+      for (const geometry of goodsParts) geometry.applyMatrix4(worldFit);
+      packingBounds.min.z = center - len / 2;
+      packingBounds.max.z = center + len / 2;
+    }
+    const shift = Math.max(0, v0 - packingBounds.min.z) - Math.max(0, packingBounds.max.z - v1);
+    if (shift) {
+      const delta = new THREE.Vector3(0, 0, shift).applyMatrix4(frame).sub(new THREE.Vector3().setFromMatrixPosition(frame));
+      for (const geometry of goodsParts) geometry.translate(delta.x, delta.y, delta.z);
+    }
+    // Semantic vertex ranges keep these merged goods inspectable without extra meshes or draw calls.
+    const goodsBounds = boundsOf(goodsParts);
+    // The skid is sized from the packed goods (after the shift above) so nothing overhangs it, and it carries the lifebuoy,
+    // which is raised by the same lift. userData holds the bounds of the built boxes, not copies of the numbers.
+    const skid: THREE.BufferGeometry[] = [];
+    if (lift) {
+      const from = Math.max(v0, Math.min(goodsBounds.min.z, bz - 0.03)), to = Math.min(v1, Math.max(goodsBounds.max.z, bz + 0.03));
+      skid.push(K.part(box, "#8a6040", [0, DECK + lift / 2, (from + to) / 2], [0, 0, 0], [W, lift, to - from]));
+      P(skid[0]!);
+    }
+    (group.userData.goodsPiles ??= []).push({ kind: good, start: goodsStart, skid: lift ? boundsOf(skid) : null, buoy: boundsOf(buoy),
+      count: goodsParts.reduce((count, part) => count + part.attributes.position.count, 0),
+      min: goodsBounds.min.toArray(), max: goodsBounds.max.toArray(), frame: frame.toArray(),
+      deck: { width: W, from: v0, to: v1 }, scale: S });
+
+    const cornerY = TILE_Y + BLOCK_H;
+    const ramp = cornerY - DECK;
+    for (const corner of d.vids.map((id) => coast.find((c) => c.id === id)!)) {
+      const cl = new THREE.Vector3(corner.x, 0, corner.z).applyMatrix4(inverse);
+      const x0 = Math.sign(cl.x) * (W / 2 + 0.02), z0 = v0 - 0.01;
+      const dx = cl.x - x0, dz = cl.z - z0;
+      // One continuous walk from the pier deck's edge to the corner, rising from DECK to the hex surface: yaw to the corner, then
+      // pitch up along its own length.
+      const run = Math.hypot(dx, dz), len = Math.hypot(run, ramp);
+      const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.atan2(dx, dz), 0)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.atan2(ramp, run), 0, 0)));
+      const e = new THREE.Euler().setFromQuaternion(q);
+      P(K.part(box, "#a46e42", [x0 + dx / 2, DECK + ramp / 2, z0 + dz / 2], [e.x, e.y, e.z], [0.07, 0.01, len]));
     }
 
     // The ship, moored alongside the T-head's ship side, bow to the shore.

@@ -195,15 +195,18 @@ try {
           // Five points across the glyph; one is hidden when the scenery (a hill, a tree, a building) is nearer the eye along the
           // ray to it.
           const top = rows[0], bottom = rows[rows.length - 1] + 1, mid = (top + bottom) / 2;
-          const hidden = [[128, mid], [128, top + 4], [128, bottom - 4], [88, mid], [168, mid]].filter(([cx, cy]) => {
+          const hits = [];
+          for (const [cx, cy] of [[128, mid], [128, top + 4], [128, bottom - 4], [88, mid], [168, mid]]) {
             const v = label.localToWorld(new V((cx / 128 - 1) * 0.245, (1 - cy / 128) * 0.245, 0));
-            return isle.jellyBoard.occludes(isle.persp.position, v);
-          }).length;
+            const hit = isle.jellyBoard.occludes(isle.persp.position, v);
+            if (hit) hits.push(hit);
+          }
           return {
             n,
             scale: g.scale.x,
             share: discPx / hexPx,
-            hidden,
+            hidden: hits.length,
+            hits,
             facing: Math.abs(g.rotation.y - az) < 1e-6 && g.rotation.x > 0.3,
             numeral: len(at(label, 128, rows[0]), at(label, 128, rows[rows.length - 1] + 1)),
             pip: Math.min(len(at(label, px - 14, 196), at(label, px + 14, 196)), len(at(label, px, 182), at(label, px, 210))),
@@ -219,7 +222,19 @@ try {
     const big = t.reduce((a, b) => (b.share > a.share ? b : a));
     check(`7 diorama discs their own size, at most 30 % of a hex across (${width}x${height})`, t.every((k) => k.scale === 1 && k.share <= 0.3), `largest ${(big.share * 100).toFixed(1)} % (the ${big.n}, ${big.scale.toFixed(3)}x)`);
     check(`7 diorama discs never overlap on screen (${width}x${height})`, m.overlaps.length === 0, m.overlaps.join(" "));
-    check(`7 no numeral behind the scenery (${width}x${height})`, t.every((k) => k.hidden === 0), t.filter((k) => k.hidden).map((k) => `the ${k.n}: ${k.hidden} of 5 points`).join(", ") || "0 of 90 points");
+    check(
+      `7 no numeral behind the scenery (${width}x${height})`,
+      t.every((k) => k.hidden === 0),
+      t
+        .filter((k) => k.hidden)
+        .map((k) => {
+          const detail = k.hits
+            .map((h) => `hit (${h.point.x.toFixed(3)}, ${h.point.y.toFixed(3)}, ${h.point.z.toFixed(3)}) on ${h.kind} seed ${h.seed}`)
+            .join("; ");
+          return `the ${k.n}: ${k.hidden} of 5 points (${detail})`;
+        })
+        .join(", ") || "0 of 90 points",
+    );
     // 8 (#633): the wayfarer, standing on each numbered hex in turn, hides none of its numeral's five points, in the diorama
     // and in the overhead view (he stands beside the token).
     for (const view of ["diorama", "overhead"]) {

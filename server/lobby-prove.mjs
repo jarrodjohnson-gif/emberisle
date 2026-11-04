@@ -19,7 +19,7 @@ for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 function boot(env = {}) {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR, SAVE_MS: "20", ACT_RATE: "1000", ACT_CAP: "1000", ...env },
+    env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, SAVE_MS: "20", ACT_RATE: "1000", ACT_CAP: "1000", ...env },
   });
   return new Promise((resolve, reject) => {
     host.stdout.on("data", (d) => {
@@ -156,8 +156,10 @@ const port = await boot({ RENAME_MS: "0" });
   const heard = await tide.next("chat");
   assert.deepEqual([heard.sound, heard.text, heard.name], ["robbed_fah", "\u{1F50A} Fah", "<b>x</b>"]);
   assert.equal(await errorOf(ember, { type: "sound", id: "bong" }), "Slow down.", "a second tap inside 3 s is refused");
-  tide.send({ type: "sound", id: "plop" });
-  assert.equal((await ember.next("chat")).sound, "plop", "the pace is per seat: Tide can tap right after Ember");
+  assert.equal(await errorOf(tide, { type: "sound", id: "plop" }), "Unknown sound.", "old clients cannot play the removed Plop chip");
+  assert.equal(await errorOf(tide, { type: "sound", id: "pluck" }), "Unknown sound.", "old clients cannot play the removed Pluck chip");
+  tide.send({ type: "sound", id: "bong" });
+  assert.equal((await ember.next("chat")).sound, "bong", "the pace is per seat: Tide can tap right after Ember");
   await settle();
   assert.ok(roomFile(code).chat.some((l) => l.sound === "robbed_fah"), "the sound line is in the room's chat");
 

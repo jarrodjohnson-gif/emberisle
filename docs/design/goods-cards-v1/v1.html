@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390">
+<title>Goods cards V1 · Column</title>
+<link rel="stylesheet" href="base.css">
+<style>
+/* V1 · Column. One axis: symbol, count and name stack on the card's centre line, so nothing is off-centre by
+   construction. The +N is a folder tab that grows out of the card's top edge in the terrain's side colour. */
+.card {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 4px 0 0;
+  background: var(--paper); color: var(--ink);
+  --fleece: var(--paper);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 42%, var(--paper)), var(--shadow-control);
+}
+.sym { display: block; width: 18px; height: 18px; color: var(--sym); }
+.sym svg { display: block; width: 100%; height: 100%; }
+.count {
+  display: block; margin-top: 1px;
+  font-family: var(--font-numeral); font-size: 24px; line-height: 24px; font-weight: 700;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+}
+.name {
+  display: block; margin-top: 1px;
+  font-size: 10px; line-height: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted);
+}
+/* Empty: the pale face stays, the symbol goes quiet, the zero stays ink. */
+.card.empty { background: var(--ground); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 22%, var(--ground)), var(--shadow-control); }
+.card.empty .sym { color: color-mix(in srgb, var(--sym) 55%, var(--ground)); }
+
+/* Gain: the full terrain colour, lifted 6 px, then back to paper. */
+.card.gain {
+  background: var(--c); color: var(--on); --fleece: color-mix(in srgb, #fff 88%, var(--c));
+  box-shadow: inset 0 0 0 1px var(--deep), 0 6px 12px rgb(24 51 45 / 0.22);
+  transform: translateY(-6px);
+  animation: v1-gain 2200ms var(--ease-out) both;
+}
+.card.gain .sym { color: var(--on); }
+.card.gain .name { color: var(--on); opacity: 0.9; }
+.tab {
+  position: absolute; left: 50%; top: -10px; transform: translateX(-50%);
+  height: 14px; min-width: 28px; padding: 0 6px;
+  border-radius: 5px 5px 0 0;
+  font-family: var(--font-numeral); font-size: 11.5px; line-height: 14px; font-weight: 700; font-variant-numeric: tabular-nums;
+  text-align: center; white-space: nowrap;
+  animation: v1-tab 2200ms var(--ease-out) both;
+}
+.tab.up { background: var(--deep); color: #fff; }
+/* Loss: the card dips 2 px and a hollow tab carries the −N. */
+.card.loss { transform: translateY(2px); animation: v1-loss 2200ms var(--ease-out) both; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--loss) 55%, var(--paper)), var(--shadow-control); }
+.tab.down { background: var(--paper); color: var(--loss); box-shadow: inset 0 0 0 1px var(--loss); top: -11px; }
+
+@keyframes v1-gain {
+  0%   { background: var(--paper); color: var(--ink); transform: translateY(0); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 42%, var(--paper)), var(--shadow-control); }
+  12%, 62% { background: var(--c); color: var(--on); transform: translateY(-6px); box-shadow: inset 0 0 0 1px var(--deep), 0 6px 12px rgb(24 51 45 / 0.22); }
+  100% { background: var(--paper); color: var(--ink); transform: translateY(0); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 42%, var(--paper)), var(--shadow-control); }
+}
+@keyframes v1-loss {
+  0% { transform: translateY(0); } 14%, 62% { transform: translateY(2px); } 100% { transform: translateY(0); }
+}
+@keyframes v1-tab { 0% { opacity: 0; } 10%, 65% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .card.gain, .card.loss, .tab { animation: none; transform: translateY(0); }
+  .tab { transform: translateX(-50%); }
+}
+</style></head>
+<body>
+<div class="instruction">Build, trade, or end your turn</div>
+<div class="tray"></div>
+<script src="cards.js"></script>
+</body></html>

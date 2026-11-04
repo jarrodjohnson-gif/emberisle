@@ -1,0 +1,39 @@
+name: Repo visibility
+
+# #1041: flips this repository public or private on request. Manual trigger only.
+# The token lives in the `visibility` Environment. That Environment must have the owner as a required reviewer
+# and deployment branches limited to `main`, so every run waits for an approval click before the job can read it.
+# Runs on a GitHub-hosted runner, never a self-hosted one, because the job holds a secret.
+on:
+  workflow_dispatch:
+    inputs:
+      visibility:
+        description: Target visibility
+        required: true
+        type: choice
+        options:
+          - private
+          - public
+
+permissions: {}
+
+concurrency:
+  group: repo-visibility
+  cancel-in-progress: false
+
+jobs:
+  flip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: visibility
+    steps:
+      - name: Set visibility
+        env:
+          GH_TOKEN: ${{ secrets.VISIBILITY_TOKEN }}
+          TARGET: ${{ inputs.visibility }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          case "$TARGET" in private|public) ;; *) echo "bad target: $TARGET"; exit 1 ;; esac
+          gh repo edit "$REPO" --visibility "$TARGET" --accept-visibility-change-consequences
+          echo "visibility is now: $(gh repo view "$REPO" --json visibility --jq .visibility)"

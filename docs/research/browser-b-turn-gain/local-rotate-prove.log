@@ -1,0 +1,76 @@
+
+> rotate-prove
+> node scripts/rotate-prove.mjs
+
+ok   390x844 start: fitted to the hole {"size":"390x844","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   390x844 -> 844x390: within 3 frames the fit is the one the new hole asks for {"size":"844x390","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   390x844 -> 844x390: island box within 10 % of a fresh load's {"got":{"x":418,"y":106,"w":279,"h":234},"fresh":{"x":418,"y":106,"w":279,"h":234},"ratio":[1,1]}
+ok   390x844 -> 844x390: settled, camera on the fit, not stretched, every corner in the hole {"size":"844x390","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   390x844 -> 390x844: within 3 frames the fit is the one the new hole asks for {"size":"390x844","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   390x844 -> 390x844: island box within 10 % of a fresh load's {"got":{"x":42,"y":165,"w":306,"h":256},"fresh":{"x":42,"y":165,"w":306,"h":256},"ratio":[1,1]}
+ok   390x844 -> 390x844: settled, camera on the fit, not stretched, every corner in the hole {"size":"390x844","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   390x844 -> 844x390: within 3 frames the fit is the one the new hole asks for {"size":"844x390","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   390x844 -> 844x390: island box within 10 % of a fresh load's {"got":{"x":418,"y":106,"w":279,"h":234},"fresh":{"x":418,"y":106,"w":279,"h":234},"ratio":[1,1]}
+ok   390x844 -> 844x390: settled, camera on the fit, not stretched, every corner in the hole {"size":"844x390","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x640 start: fitted to the hole {"size":"360x640","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x640 -> 640x360: within 3 frames the fit is the one the new hole asks for {"size":"640x360","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x640 -> 640x360: island box within 10 % of a fresh load's {"got":{"x":330,"y":102,"w":252,"h":211},"fresh":{"x":330,"y":102,"w":252,"h":211},"ratio":[1,1]}
+ok   360x640 -> 640x360: settled, camera on the fit, not stretched, every corner in the hole {"size":"640x360","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x640 -> 360x640: within 3 frames the fit is the one the new hole asks for {"size":"360x640","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x640 -> 360x640: island box within 10 % of a fresh load's {"got":{"x":69,"y":98,"w":222,"h":186},"fresh":{"x":69,"y":98,"w":222,"h":186},"ratio":[1,1]}
+ok   360x640 -> 360x640: settled, camera on the fit, not stretched, every corner in the hole {"size":"360x640","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x640 -> 640x360: within 3 frames the fit is the one the new hole asks for {"size":"640x360","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x640 -> 640x360: island box within 10 % of a fresh load's {"got":{"x":330,"y":102,"w":252,"h":211},"fresh":{"x":330,"y":102,"w":252,"h":211},"ratio":[1,1]}
+ok   360x640 -> 640x360: settled, camera on the fit, not stretched, every corner in the hole {"size":"640x360","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x640 start: fitted to the hole {"size":"360x640","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x640 -> 844x390: within 3 frames the fit is the one the new hole asks for {"size":"844x390","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x640 -> 844x390: island box within 10 % of a fresh load's {"got":{"x":418,"y":106,"w":279,"h":234},"fresh":{"x":418,"y":106,"w":279,"h":234},"ratio":[1,1]}
+ok   360x640 -> 844x390: settled, camera on the fit, not stretched, every corner in the hole {"size":"844x390","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x640 -> 360x640: within 3 frames the fit is the one the new hole asks for {"size":"360x640","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x640 -> 360x640: island box within 10 % of a fresh load's {"got":{"x":69,"y":98,"w":222,"h":186},"fresh":{"x":69,"y":98,"w":222,"h":186},"ratio":[1,1]}
+ok   360x640 -> 360x640: settled, camera on the fit, not stretched, every corner in the hole {"size":"360x640","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x640 -> 844x390: within 3 frames the fit is the one the new hole asks for {"size":"844x390","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x640 -> 844x390: island box within 10 % of a fresh load's {"got":{"x":418,"y":106,"w":279,"h":234},"fresh":{"x":418,"y":106,"w":279,"h":234},"ratio":[1,1]}
+ok   360x640 -> 844x390: settled, camera on the fit, not stretched, every corner in the hole {"size":"844x390","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   430x932 start: fitted to the hole {"size":"430x932","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   430x932 -> 932x430: within 3 frames the fit is the one the new hole asks for {"size":"932x430","view":"overhead","fresh":true,"onCamera":false,"stretched":false,"outside":0,"due":false,"glide":true}
+ok   430x932 -> 932x430: island box within 10 % of a fresh load's {"got":{"x":454,"y":108,"w":297,"h":248},"fresh":{"x":454,"y":108,"w":297,"h":248},"ratio":[1,1]}
+ok   430x932 -> 932x430: settled, camera on the fit, not stretched, every corner in the hole {"size":"932x430","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   430x932 -> 430x932: within 3 frames the fit is the one the new hole asks for {"size":"430x932","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   430x932 -> 430x932: island box within 10 % of a fresh load's {"got":{"x":45,"y":220,"w":339,"h":284},"fresh":{"x":45,"y":220,"w":339,"h":284},"ratio":[1,1]}
+ok   430x932 -> 430x932: settled, camera on the fit, not stretched, every corner in the hole {"size":"430x932","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   430x932 -> 932x430: within 3 frames the fit is the one the new hole asks for {"size":"932x430","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   430x932 -> 932x430: island box within 10 % of a fresh load's {"got":{"x":454,"y":108,"w":297,"h":248},"fresh":{"x":454,"y":108,"w":297,"h":248},"ratio":[1,1]}
+ok   430x932 -> 932x430: settled, camera on the fit, not stretched, every corner in the hole {"size":"932x430","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x740 start: fitted to the hole {"size":"360x740","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x740 -> 740x360: within 3 frames the fit is the one the new hole asks for {"size":"740x360","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x740 -> 740x360: island box within 10 % of a fresh load's {"got":{"x":380,"y":102,"w":252,"h":211},"fresh":{"x":380,"y":102,"w":252,"h":211},"ratio":[1,1]}
+ok   360x740 -> 740x360: settled, camera on the fit, not stretched, every corner in the hole {"size":"740x360","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x740 -> 360x740: within 3 frames the fit is the one the new hole asks for {"size":"360x740","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x740 -> 360x740: island box within 10 % of a fresh load's {"got":{"x":40,"y":124,"w":281,"h":235},"fresh":{"x":40,"y":124,"w":281,"h":235},"ratio":[1,1]}
+ok   360x740 -> 360x740: settled, camera on the fit, not stretched, every corner in the hole {"size":"360x740","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x740 -> 740x360: within 3 frames the fit is the one the new hole asks for {"size":"740x360","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   360x740 -> 740x360: island box within 10 % of a fresh load's {"got":{"x":380,"y":102,"w":252,"h":211},"fresh":{"x":380,"y":102,"w":252,"h":211},"ratio":[1,1]}
+ok   360x740 -> 740x360: settled, camera on the fit, not stretched, every corner in the hole {"size":"740x360","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   414x896 start: fitted to the hole {"size":"414x896","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   414x896 -> 896x414: within 3 frames the fit is the one the new hole asks for {"size":"896x414","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   414x896 -> 896x414: island box within 10 % of a fresh load's {"got":{"x":443,"y":107,"w":282,"h":236},"fresh":{"x":443,"y":107,"w":282,"h":236},"ratio":[1,1]}
+ok   414x896 -> 896x414: settled, camera on the fit, not stretched, every corner in the hole {"size":"896x414","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   414x896 -> 414x896: within 3 frames the fit is the one the new hole asks for {"size":"414x896","view":"overhead","fresh":true,"onCamera":false,"stretched":false,"outside":0,"due":false,"glide":true}
+ok   414x896 -> 414x896: island box within 10 % of a fresh load's {"got":{"x":44,"y":207,"w":326,"h":273},"fresh":{"x":44,"y":207,"w":326,"h":273},"ratio":[1,1]}
+ok   414x896 -> 414x896: settled, camera on the fit, not stretched, every corner in the hole {"size":"414x896","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   414x896 -> 896x414: within 3 frames the fit is the one the new hole asks for {"size":"896x414","view":"overhead","fresh":true,"onCamera":false,"stretched":false,"outside":0,"due":false,"glide":true}
+ok   414x896 -> 896x414: island box within 10 % of a fresh load's {"got":{"x":443,"y":107,"w":282,"h":236},"fresh":{"x":443,"y":107,"w":282,"h":236},"ratio":[1,1]}
+ok   414x896 -> 896x414: settled, camera on the fit, not stretched, every corner in the hole {"size":"896x414","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   375x667 start: fitted to the hole {"size":"375x667","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   375x667 -> 667x375: within 3 frames the fit is the one the new hole asks for {"size":"667x375","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   375x667 -> 667x375: island box within 10 % of a fresh load's {"got":{"x":337,"y":104,"w":266,"h":223},"fresh":{"x":337,"y":104,"w":266,"h":223},"ratio":[1,1]}
+ok   375x667 -> 667x375: settled, camera on the fit, not stretched, every corner in the hole {"size":"667x375","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   375x667 -> 375x667: within 3 frames the fit is the one the new hole asks for {"size":"375x667","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   375x667 -> 375x667: island box within 10 % of a fresh load's {"got":{"x":64,"y":102,"w":246,"h":206},"fresh":{"x":64,"y":102,"w":246,"h":206},"ratio":[1,1]}
+ok   375x667 -> 375x667: settled, camera on the fit, not stretched, every corner in the hole {"size":"375x667","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   375x667 -> 667x375: within 3 frames the fit is the one the new hole asks for {"size":"667x375","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   375x667 -> 667x375: island box within 10 % of a fresh load's {"got":{"x":337,"y":104,"w":266,"h":223},"fresh":{"x":337,"y":104,"w":266,"h":223},"ratio":[1,1]}
+ok   375x667 -> 667x375: settled, camera on the fit, not stretched, every corner in the hole {"size":"667x375","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+ok   zero console errors []
+rotate-prove: ok

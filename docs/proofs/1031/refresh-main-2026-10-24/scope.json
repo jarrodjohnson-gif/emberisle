@@ -1,0 +1,8 @@
+{
+  "main": "4892049",
+  "runtimeValidationCommit": "52af45f",
+  "onlyImplementationChange": "scripts/contrast-prove.mjs",
+  "proofByteIdenticalToReviewedHead": "0bd3e5b",
+  "proofSha256": "543bfeeff319a0c3ef8d66ff9ac387e18c5bd54f19d1584993dd4559b2397beb",
+  "mainRegistrationWorkflowAndBudgetsUnchanged": true
+}

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>928 Ruffle feasibility harness</title>
+<style>
+body { margin: 12px; font: 16px system-ui; max-width: 640px; }
+#stage { width: 100%; aspect-ratio: 580 / 320; }
+ruffle-player { display: block; width: 100%; height: 100%; }
+.controls { display: flex; gap: 12px; margin-block: 12px; }
+.controls button { flex: 1; min-height: 56px; touch-action: none; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>
+<h1>Ruffle feasibility only</h1>
+<p>Temporary runtime at <code>/runtime/</code>; see FINDINGS.md for setup. This page is not the lobby.</p>
+<details id="panel"><summary>Play while you wait</summary>
+<div id="stage"></div>
+<div class="controls"><button id="left" disabled>Left</button><button id="right" disabled>Right</button></div>
+<label><input id="sound" type="checkbox"> Sound</label>
+<button id="unload">Unload</button>
+</details>
+<pre id="status">Closed. No runtime loaded.</pre>
+<script>
+const panel = document.querySelector('#panel');
+const stage = document.querySelector('#stage');
+const status = document.querySelector('#status');
+const sound = document.querySelector('#sound');
+let player, generation = 0;
+window.spike = { events: [], loaded: false };
+const pressed = new Set();
+function key(code, down) {
+  if (!player) return;
+  if (down) pressed.add(code); else pressed.delete(code);
+  player.focus();
+  player.dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup', {
+    key: code, code, keyCode: code === 'ArrowLeft' ? 37 : 39, which: code === 'ArrowLeft' ? 37 : 39,
+    bubbles: true, cancelable: true,
+  }));
+  spike.events.push({ code, down, t: performance.now() });
+}
+function release() { for (const code of [...pressed]) key(code, false); }
+for (const [id, code] of [['left', 'ArrowLeft'], ['right', 'ArrowRight']]) {
+  const button = document.getElementById(id);
+  button.onpointerdown = (event) => { event.preventDefault(); button.setPointerCapture(event.pointerId); key(code, true); };
+  button.onpointerup = button.onpointercancel = button.onlostpointercapture = release;
+}
+window.addEventListener('blur', release);
+document.addEventListener('visibilitychange', () => { if (document.hidden) release(); });
+sound.onchange = () => { if (player) player.ruffle().volume = sound.checked ? 1 : 0; };
+async function load() {
+  const token = ++generation;
+  const started = performance.now();
+  status.textContent = 'Loading temporary self-hosted runtime…';
+  if (!window.RufflePlayer?.newest) {
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = new URL('ruffle.js', new URLSearchParams(location.search).get('runtime') || `${location.origin}/runtime/`);
+      script.onload = resolve; script.onerror = reject; document.head.append(script);
+    });
+  }
+  if (!panel.open || token !== generation) return;
+  const current = RufflePlayer.newest().createPlayer();
+  player = current;
+  player.tabIndex = 0;
+  stage.append(player);
+  const metadata = new Promise((resolve) => current.addEventListener('loadedmetadata', resolve, { once: true }));
+  await current.ruffle().load({ url: './sandwichStacker.swf', autoplay: 'on', unmuteOverlay: 'hidden',
+    allowScriptAccess: false, allowNetworking: 'none', contextMenu: 'off', preferredRenderer: 'webgl',
+    letterbox: 'on', scale: 'showAll', backgroundColor: '#000000', volume: 0 });
+  await metadata;
+  if (token !== generation || !panel.open) { current.remove(); return; }
+  current.ruffle().volume = sound.checked ? 1 : 0;
+  spike.loaded = true;
+  spike.loadMs = performance.now() - started;
+  spike.metadata = player.ruffle().metadata;
+  status.textContent = JSON.stringify({ loadMs: spike.loadMs, metadata: spike.metadata }, null, 2);
+  for (const id of ['left', 'right']) document.getElementById(id).disabled = false;
+}
+function unload() {
+  generation++;
+  release();
+  player?.remove(); player = null; spike.loaded = false; sound.checked = false;
+  for (const id of ['left', 'right']) document.getElementById(id).disabled = true;
+  status.textContent = 'Closed. Player removed.';
+}
+panel.ontoggle = () => {
+  if (!panel.open) unload();
+  else load().catch((e) => { if (panel.open) status.textContent = String(e); });
+};
+document.getElementById('unload').onclick = () => { panel.open = false; };
+spike.player = () => player;
+</script>
+</html>

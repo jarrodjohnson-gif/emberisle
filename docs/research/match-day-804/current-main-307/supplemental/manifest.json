@@ -1,0 +1,170 @@
+{
+  "baseline": "30737a5c81f194b1c6235c1409555ee8e6cb19bd",
+  "states": [
+    "title",
+    "lobby-4-seats",
+    "joined-by-link",
+    "watcher",
+    "roll-off",
+    "first-settlement-placement",
+    "first-road-placement",
+    "settlement-and-road-placed",
+    "trade-panel",
+    "fortune-tray",
+    "end-turn",
+    "paying-roll",
+    "robber",
+    "win-screen"
+  ],
+  "count": 2,
+  "records": [
+    {
+      "file": "844x390-trade-panel.png",
+      "state": "trade-panel",
+      "mode": "touch",
+      "baseline": "30737a5c81f194b1c6235c1409555ee8e6cb19bd",
+      "at": "2026-10-23T09:25:18.677Z",
+      "width": 844,
+      "height": 390,
+      "bytes": 66761,
+      "sha256": "f92fcc01f7bf35cd3c4bbb2275a49614fd7155e612db7a2fdf6394f0be1f672c",
+      "game": {
+        "screen": "play",
+        "phase": "main",
+        "seq": 30,
+        "current": "p0",
+        "turn": 1,
+        "winner": null,
+        "localId": "p0",
+        "hand": {
+          "timber": 0,
+          "clay": 0,
+          "wool": 1,
+          "grain": 1,
+          "ore": 0
+        },
+        "pendingSteal": false,
+        "offer": false
+      },
+      "observed": {
+        "coarse": true,
+        "viewport": [
+          844,
+          390
+        ],
+        "page": [
+          844,
+          844
+        ],
+        "seatNames": [
+          {
+            "text": "Tide (bot)",
+            "title": null
+          },
+          {
+            "text": "Pine (bot)",
+            "title": null
+          },
+          {
+            "text": "Dune (bot)",
+            "title": null
+          },
+          {
+            "text": "Ember",
+            "title": null
+          }
+        ],
+        "win": null,
+        "trade": {
+          "height": 376,
+          "scrollHeight": 376,
+          "box": {
+            "x": 102,
+            "y": 6,
+            "width": 640,
+            "height": 378,
+            "top": 6,
+            "right": 742,
+            "bottom": 384,
+            "left": 102
+          }
+        }
+      }
+    },
+    {
+      "file": "844x390-trade-panel-scrolled.png",
+      "state": "trade-panel-scrolled",
+      "mode": "touch",
+      "baseline": "30737a5c81f194b1c6235c1409555ee8e6cb19bd",
+      "at": "2026-10-23T09:25:19.864Z",
+      "width": 844,
+      "height": 390,
+      "bytes": 66459,
+      "sha256": "18b6356fa76bea8302bf375a8fe7c3c6d95bc5082a8feabac661de633b11a883",
+      "game": {
+        "screen": "play",
+        "phase": "main",
+        "seq": 30,
+        "current": "p0",
+        "turn": 1,
+        "winner": null,
+        "localId": "p0",
+        "hand": {
+          "timber": 0,
+          "clay": 0,
+          "wool": 1,
+          "grain": 1,
+          "ore": 0
+        },
+        "pendingSteal": false,
+        "offer": false
+      },
+      "observed": {
+        "coarse": true,
+        "viewport": [
+          844,
+          390
+        ],
+        "page": [
+          844,
+          844
+        ],
+        "seatNames": [
+          {
+            "text": "Tide (bot)",
+            "title": null
+          },
+          {
+            "text": "Pine (bot)",
+            "title": null
+          },
+          {
+            "text": "Dune (bot)",
+            "title": null
+          },
+          {
+            "text": "Ember",
+            "title": null
+          }
+        ],
+        "win": null,
+        "trade": {
+          "height": 376,
+          "scrollHeight": 376,
+          "box": {
+            "x": 102,
+            "y": 6,
+            "width": 640,
+            "height": 378,
+            "top": 6,
+            "right": 742,
+            "bottom": 384,
+            "left": 102
+          }
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "actions": 6
+}

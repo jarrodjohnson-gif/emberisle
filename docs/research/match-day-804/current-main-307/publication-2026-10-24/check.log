@@ -1,0 +1,3 @@
+PASS: 57 JPEGs +2 PNGs byte-identical to a2e424d; actual captures folder has56 JPEGs (contact sheet is separate).
+PASS: original56-capture/14-state manifest unchanged; two PNGs and repro JSON match recorded hashes; 12 historical logs unchanged.
+PASS: 8 README relative links resolve; entire PR diff is docs-only. No new capture or current-main play-test claimed.

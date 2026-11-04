@@ -1,0 +1,2 @@
+PASS: all 18 published check calls retained byte-for-byte; 4 stricter checks added.
+PASS: token/flash/wayfarer proofs and size rules exact main; exact main CI plus one robber step in flows-c; main package plus one registration.

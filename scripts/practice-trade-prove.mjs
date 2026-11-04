@@ -11,7 +11,7 @@ import { createServer } from "vite";
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction } from "../src/lib/game/rules.ts";
-import { RESOURCES } from "../src/lib/game/types.ts";
+import { RESOURCES, RESOURCE_LABEL } from "../src/lib/game/types.ts";
 
 // CI renders the island with software GL, where one frame can take seconds; a step gets this long to show.
 const STEP_MS = 15_000;
@@ -70,7 +70,11 @@ try {
   const watchClose = () =>
     page.evaluate(() => {
       window.__closed = null;
+      // Retain the opening before a bot can accept between animation-frame polls on a software-rendered island.
+      // Scenarios 2 and 3 reset __openedOffer here but never read it; the resets keep each scenario clean.
+      window.__openedOffer = window.__emberisle.getState().offer;
       const stop = window.__emberisle.subscribe((now, prev) => {
+        if (now.offer && now.offer.tradeId !== prev.offer?.tradeId) window.__openedOffer = now.offer;
         if (prev.offer && !now.offer) {
           window.__closed = Object.fromEntries(now.state.players.map((p) => [p.id, { ...p.resources }]));
           stop();
@@ -86,11 +90,11 @@ try {
   await load(gA);
   await page.getByRole("button", { name: "Trade", exact: true }).click({ timeout: STEP_MS });
   const panel = page.getByTestId("trade-panel");
-  await panel.getByRole("button", { name: "More grain to give" }).click();
-  await panel.getByRole("button", { name: "More wool to want" }).click();
+  await panel.getByRole("button", { name: "More wheat to give" }).click();
+  await panel.getByRole("button", { name: "More sheep to want" }).click();
   await watchClose();
   await panel.getByRole("button", { name: "Ask the table" }).click();
-  await page.waitForFunction(() => window.__emberisle.getState().offer?.from === "p0", null, { timeout: STEP_MS });
+  await page.waitForFunction(() => window.__openedOffer?.from === "p0", null, { timeout: STEP_MS });
   await page.getByTestId("trade-outcome").getByText(`${bot} takes it.`).waitFor({ timeout: STEP_MS });
   const h1 = await closedHands();
   console.log(`person asks: "${bot} takes it."; Ember ${JSON.stringify(h1.p0)}, ${bot} ${JSON.stringify(h1.p2)}`);
@@ -103,7 +107,7 @@ try {
   await watchClose();
   const line = await dialog.locator("p").first().textContent();
   const buttons = await dialog.getByRole("button").allTextContents();
-  const want = `${bot} offers 1 ${Object.keys(askC.give)[0]} for 1 ${Object.keys(askC.want)[0]}`;
+  const want = `${bot} offers 1 ${RESOURCE_LABEL[Object.keys(askC.give)[0]].toLowerCase()} for 1 ${RESOURCE_LABEL[Object.keys(askC.want)[0]].toLowerCase()}`;
   console.log(`bot asks: "${line}" [${buttons.join(" / ")}]`);
   if (line !== want || buttons.join(",") !== "Yes,No") throw new Error(`the bot's ask reads ${JSON.stringify({ line, buttons })}, wanted "${want}" + Yes/No`);
   const waiting = await page.evaluate(() => {
@@ -132,7 +136,7 @@ try {
   if (errors.length) throw new Error(`console errors: ${errors.join(" | ")}`);
   console.log("practice trade ui prove ok");
 } catch (e) {
-  console.log("FAIL", e.message);
+  console.log("FAIL", e.stack ?? e.message);
   code = 1;
 } finally {
   await browser.close();

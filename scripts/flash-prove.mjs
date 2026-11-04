@@ -27,6 +27,18 @@ async function openTable(reducedMotion) {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
+  await page.addInitScript(() => {
+    window.__ticks = [];
+    window.__buzz = [];
+    HTMLMediaElement.prototype.play = function () {
+      if (this.src.endsWith("/click_002.wav")) window.__ticks.push({ volume: this.volume, t: performance.now() });
+      return Promise.resolve();
+    };
+    // #542: paying-piece buzz is phones-only (pointer: coarse). Force coarse so the existing 8 ms checks still run.
+    const realMatch = window.matchMedia.bind(window);
+    window.matchMedia = (q) => (q === "(pointer: coarse)" ? { matches: true, media: q, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent() { return false; } } : realMatch(q));
+    Object.defineProperty(navigator, "vibrate", { value: (ms) => { if (ms === 8) window.__buzz.push(ms); return true; }, configurable: true });
+  });
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.getByRole("button", { name: "Four seats, one table" }).focus();
   await page.keyboard.press("Enter");
@@ -67,10 +79,22 @@ async function openTable(reducedMotion) {
     // Record the glow of every cap on every frame the island draws.
     const isle = window.__isle;
     window.__frames = [];
+    window.__pieceFrames = [];
     const draw = isle.composer.render.bind(isle.composer);
     isle.composer.render = (...a) => {
       window.__frames.push(Object.fromEntries([...isle.caps].map(([id, m]) => [id, m.emissiveIntensity])));
-      return draw(...a);
+      window.__pieceFrames.push(Object.fromEntries(isle.pieces.children.filter((o) => o.userData.key?.startsWith("v:")).map((o) => {
+        let glow = 0;
+        o.traverse((c) => { glow = Math.max(glow, c.material?.emissiveIntensity && c.userData.payerMaterial ? c.material.emissiveIntensity : 0); });
+        return [o.userData.key.slice(2), { scale: o.scale.x, glow }];
+      })));
+      const result = draw(...a);
+      // #904: reproduce a slow GPU exhausting the wake hold after each reduced-motion frame.
+      if (window.__idleAfterFrame) {
+        isle.busyUntil = 0;
+        window.__forcedIdleFrames++;
+      }
+      return result;
     };
   });
   await page.waitForFunction(() => window.__isle?.lastSeq === window.__emberisle.getState().state.seq, null, { timeout: STEP_MS });
@@ -113,7 +137,15 @@ async function roll(page, { dice, bank, robber }) {
 }
 
 const settled = (page, minFrames = 4) =>
-  page.waitForFunction((n) => window.__isle.flashes.length === 0 && window.__frames.length >= n, minFrames, { timeout: STEP_MS * 8 });
+  page.waitForFunction((n) => {
+    const isle = window.__isle;
+    if (isle.lastSeq !== window.__emberisle.getState().state.seq || isle.flashes.length || isle.payingPieces.length) return false;
+    if (window.__frames.length >= n) return true;
+    // Reduced motion stops drawing when idle. Ask for the remaining observation frames;
+    // keep the real draw, animation clock and all four frame assertions intact.
+    isle.wake();
+    return false;
+  }, minFrames, { timeout: STEP_MS * 8 });
 const glowing = (page) =>
   page.evaluate(() => {
     const f = window.__frames;
@@ -160,9 +192,164 @@ function check(label, got, exp, reduced) {
   }
 }
 
+// The focused piece scenarios use actual production dispatch, then inspect every mesh frame and the audio stub.
+async function pieceProof(page, reduced) {
+  const saved = await page.evaluate(() => structuredClone(window.__emberisle.getState().state));
+  const rig = await page.evaluate(() => {
+    const g = window.__emberisle, st = structuredClone(g.getState().state);
+    const h = st.hexes.find((h) => h.pip && h.id !== st.robberHex);
+    st.hexes.forEach((x) => { if (x.pip) x.pip = x.id === h.id ? 6 : 4; });
+    h.terrain = "wool";
+    st.vertices.forEach((v) => { v.building = null; });
+    const vs = st.vertices.filter((v) => v.hexes.includes(h.id));
+    // Deliberately reverse vertex order versus seat order. A stronghold is still one paying piece, not two ticks.
+    vs[0].building = { playerId: st.players[1].id, kind: "stronghold" };
+    vs[1].building = { playerId: st.players[0].id, kind: "outpost" };
+    const adjacent = st.vertices.find((v) => !v.hexes.includes(h.id) && v.hexes.some((hex) => vs[0].hexes.includes(hex)));
+    adjacent.building = { playerId: st.players[0].id, kind: "outpost" };
+    st.seq++;
+    g.setState({ state: st });
+    return { paid: [vs[1].id, vs[0].id], dark: adjacent.id };
+  });
+  await page.waitForFunction(() => window.__isle.lastSeq === window.__emberisle.getState().state.seq);
+  await page.waitForFunction(() => window.__isle.landings.length === 0);
+  const clear = () => page.evaluate(() => { window.__pieceFrames = []; window.__ticks = []; window.__buzz = []; });
+  const inspect = () => page.evaluate(() => ({ frames: window.__pieceFrames, ticks: window.__ticks, buzz: window.__buzz }));
+  await clear();
+  await roll(page, { dice: [3, 3], bank: { timber: 19, clay: 19, wool: 19, grain: 19, ore: 19 } });
+  await settled(page);
+  const got = await inspect();
+  const peak = (id, field) => Math.max(0, ...got.frames.map((f) => f[id]?.[field] ?? 0));
+  for (const id of rig.paid) {
+    if (reduced ? peak(id, "scale") !== 1 || peak(id, "glow") < 0.3 : peak(id, "scale") < 1.05) throw new Error(`payer ${id}: missing ${reduced ? "steady highlight" : "scale pulse"}`);
+    const final = got.frames.at(-1)[id];
+    if (final.scale !== 1 || final.glow !== 0) throw new Error(`payer ${id} did not settle`);
+  }
+  if (peak(rig.dark, "scale") > 1 || peak(rig.dark, "glow") > 0) throw new Error("adjacent nonpayer pulsed");
+  if (got.ticks.length !== 2 || got.buzz.length !== 2 || got.ticks.some((t) => t.volume !== 0.35)) throw new Error(`piece ticks: ${JSON.stringify(got.ticks)}, buzz ${got.buzz}`);
+  console.log(`paying pieces (${reduced ? "reduced" : "motion"}): two payers, adjacent nonpayer dark, two soft ticks and 8ms kicks`);
+  await clear();
+  if (reduced) await page.evaluate(() => { window.__idleAfterFrame = true; window.__forcedIdleFrames = 0; });
+  await roll(page, { dice: [3, 3], bank: { timber: 19, clay: 19, wool: 1, grain: 19, ore: 19 } });
+  await settled(page);
+  if (reduced) {
+    const forced = await page.evaluate(() => { window.__idleAfterFrame = false; return window.__forcedIdleFrames; });
+    if (forced < 4) throw new Error(`reduced idle regression observed only ${forced} forced-idle frames`);
+    console.log(`reduced idle regression: ${forced} real frames, wake hold exhausted after every frame`);
+  }
+  const short = await inspect();
+  if (short.ticks.length || short.buzz.length || short.frames.some((f) => Object.values(f).some((p) => p.scale > 1 || p.glow > 0))) throw new Error("bank-short pieces pulsed");
+  // One seat, bank has only one wool: the first stronghold gets a partial grant, the later outpost gets none.
+  await page.evaluate((rig) => {
+    const g = window.__emberisle, st = structuredClone(g.getState().state);
+    st.vertices.find((v) => v.id === rig.paid[1]).building.playerId = st.players[0].id;
+    st.seq++; g.setState({ state: st });
+  }, rig);
+  await clear();
+  await roll(page, { dice: [3, 3], bank: { timber: 19, clay: 19, wool: 1, grain: 19, ore: 19 } });
+  await settled(page);
+  const partial = await inspect();
+  if (partial.ticks.length !== 1 || partial.frames.some((f) => f[rig.paid[0]].scale > 1 || f[rig.paid[0]].glow > 0)) throw new Error("partial stronghold grant incorrectly pulsed unpaid same-seat neighbour");
+  console.log("bank-short: no pulses; partial stronghold: one tick, unpaid same-seat neighbour dark");
+  await page.evaluate((st) => { st.seq = window.__emberisle.getState().state.seq + 1; window.__emberisle.setState({ state: st }); }, saved);
+  await page.waitForFunction(() => window.__isle.lastSeq === window.__emberisle.getState().state.seq);
+}
+
+// One online-style push contains a real build before the roll and another after it. Only the first actually earned.
+async function coalescedBuildProof(page, reduced) {
+  const saved = await page.evaluate(() => structuredClone(window.__emberisle.getState().state));
+  const ids = await page.evaluate(() => {
+    const g = window.__emberisle, st = structuredClone(g.getState().state);
+    const h = st.hexes.find((h) => h.pip && h.id !== st.robberHex);
+    st.hexes.forEach((x) => { if (x.pip) x.pip = x.id === h.id ? 6 : 4; }); h.terrain = "wool";
+    st.vertices.forEach((v) => { v.building = null; });
+    st.edges.forEach((e) => { e.path = null; });
+    const corners = st.vertices.filter((v) => v.hexes.includes(h.id));
+    const a = corners[0], b = corners.toSorted((v, w) => Math.hypot(w.x - a.x, w.z - a.z) - Math.hypot(v.x - a.x, v.z - a.z))[0];
+    const seat0 = st.players[0].id, seat1 = st.players[1].id;
+    st.edges.find((e) => e.va === a.id || e.vb === a.id).path = seat0;
+    st.edges.find((e) => e.va === b.id || e.vb === b.id).path = seat1;
+    st.players.forEach((p) => { p.resources = { timber: 5, clay: 5, wool: 5, grain: 5, ore: 5 }; p.outpostsLeft = 5; });
+    st.bank = { timber: 19, clay: 19, wool: 19, grain: 19, ore: 19 };
+    st.phase = "main"; st.current = seat0; st.dice = [2, 2]; st.seq++; st.lastProduction = [];
+    g.setState({ state: st });
+    return { before: a.id, after: b.id };
+  });
+  await page.waitForFunction(() => window.__isle.lastSeq === window.__emberisle.getState().state.seq);
+  const result = await page.evaluate(({ ids, reduced }) => {
+    const g = window.__emberisle, isle = window.__isle, initial = g.getState().state;
+    let next = initial;
+    const act = (action) => { const r = window.__rules.applyAction(next, next.current, action); if (r.error) throw new Error(r.error); next = r.state; };
+    act({ type: "buildOutpost", vertexId: ids.before }); act({ type: "endTurn" });
+    window.__queue.push(2, 2); act({ type: "roll" }); act({ type: "buildOutpost", vertexId: ids.after });
+    window.__ticks = []; window.__buzz = [];
+    g.setState({ state: next });
+    // Remove construction poses: this proof is exclusively about roll payoff, not the separately proven landing effect.
+    isle.stepLandings(Infinity, false);
+    let payingPeak = 1, darkPeak = 1, payingGlow = 0, darkGlow = 0;
+    for (let i = 0; i < 150; i++) {
+      isle.stepPayers(0.01, reduced);
+      for (const [id, paying] of [[ids.before, true], [ids.after, false]]) {
+        const obj = isle.pieces.children.find((o) => o.userData.key === `v:${id}`);
+        let glow = 0; obj.traverse((c) => { if (c.userData.payerMaterial) glow = Math.max(glow, c.material.emissiveIntensity); });
+        if (paying) { payingPeak = Math.max(payingPeak, obj.scale.x); payingGlow = Math.max(payingGlow, glow); }
+        else { darkPeak = Math.max(darkPeak, obj.scale.x); darkGlow = Math.max(darkGlow, glow); }
+      }
+    }
+    return { payingPeak, darkPeak, payingGlow, darkGlow, ticks: window.__ticks.length, seqs: next.seq - initial.seq };
+  }, { ids, reduced });
+  if (result.seqs !== 4 || result.ticks !== 1 || result.darkPeak !== 1 || result.darkGlow !== 0 || (reduced ? result.payingPeak !== 1 || result.payingGlow < 0.3 : result.payingPeak < 1.05)) throw new Error(`coalesced buildings: ${JSON.stringify(result)}`);
+  console.log(`coalesced build/roll/build (${reduced ? "reduced" : "motion"}): four actions, only earlier building paid/pulsed, one tick`);
+  await page.evaluate((st) => { st.seq = window.__emberisle.getState().state.seq + 1; window.__emberisle.setState({ state: st }); }, saved);
+  await page.waitForFunction(() => window.__isle.lastSeq === window.__emberisle.getState().state.seq);
+}
+
+// Step only the payoff clock synchronously: wall-clock GPU speed cannot hide a bad stagger, cap or hold duration.
+async function payerClockProof(page, reduced) {
+  const result = await page.evaluate((reduced) => {
+    const isle = window.__isle, st = structuredClone(window.__emberisle.getState().state);
+    st.phase = "roll"; st.dice = null;
+    st.bank = { timber: 1000, clay: 1000, wool: 1000, grain: 1000, ore: 1000 };
+    st.hexes.forEach((h) => { if (h.pip) h.pip = 6; });
+    window.__queue.push(2, 2);
+    const paid = window.__rules.applyAction(st, st.current, { type: "roll" }).state;
+    isle.clearPayers();
+    isle.pulsePayers(paid);
+    const expected = st.players.flatMap((p) => st.vertices.filter((v) => v.building?.playerId === p.id && v.hexes.some((hex) => paid.lastProduction.some((g) => g.hex === hex && g.player === p.id))).map((v) => `v:${v.id}`));
+    const keys = isle.payingPieces.map((p) => p.key);
+    if (keys.length <= 8 || JSON.stringify(keys) !== JSON.stringify(expected)) throw new Error(`seat order or payer deduplication: ${keys.length} vs ${expected.length}`);
+    window.__ticks = []; window.__buzz = [];
+    const onsets = [], first = keys[0];
+    let previous = 0, lastHighlight = 0;
+    for (let i = 0; i <= 1000 && isle.payingPieces.length; i++) {
+      const time = i / 100;
+      isle.stepPayers(i === 0 ? 0 : 0.01, reduced);
+      if (window.__ticks.length !== previous) { onsets.push(time); previous = window.__ticks.length; }
+      const obj = isle.pieces.children.find((o) => o.userData.key === first);
+      if (reduced && obj.scale.x !== 1) throw new Error("reduced virtual pulse scaled");
+      if (reduced && obj.userData.payerMaterial && obj.material.emissiveIntensity > 0) lastHighlight = time;
+    }
+    if (window.__ticks.length !== 8 || window.__buzz.length !== 8) throw new Error(`cap: ${window.__ticks.length} ticks, ${window.__buzz.length} buzz`);
+    if (onsets.some((t, i) => Math.abs(t - i * 0.09) > 0.011)) throw new Error(`stagger: ${onsets}`);
+    if (reduced && (lastHighlight < 1.18 || lastHighlight >= 1.2)) throw new Error(`hold: ${lastHighlight}`);
+    // Leaving mid-payoff cancels every remaining tick and resets highlighted/scaled meshes.
+    isle.pulsePayers(paid); isle.stepPayers(0.05, reduced);
+    const firstObj = isle.pieces.children.find((o) => o.userData.key === first);
+    if (reduced ? firstObj.material.emissiveIntensity < 0.3 : firstObj.scale.x < 1.05) throw new Error("title scenario never activated payoff");
+    const heard = window.__ticks.length;
+    isle.setTitleMode(true); isle.stepPayers(10, reduced); isle.setTitleMode(false);
+    if (window.__ticks.length !== heard || isle.payingPieces.length || firstObj.scale.x !== 1 || (firstObj.userData.payerMaterial && firstObj.material.emissiveIntensity !== 0)) throw new Error("title left pending payoff ticks or active scale/highlight");
+    isle.pulsePayers({ ...paid, lastProduction: paid.lastProduction.map(({ vertex, ...legacy }) => legacy) });
+    if (isle.payingPieces.length) throw new Error("legacy grants guessed paying corners");
+    return { pieces: keys.length, grants: paid.lastProduction.length, onsets, lastHighlight };
+  }, reduced);
+  console.log(`payoff clock (${reduced ? "reduced" : "motion"}): ${result.pieces} unique pieces / ${result.grants} grants; eight ticks at ${result.onsets.join(",")}; hold ${result.lastHighlight}`);
+}
+
 try {
   for (const reduced of [false, true]) {
     const page = await openTable(reduced);
+    await pieceProof(page, reduced);
     const tag = reduced ? "reduced motion" : "motion";
     const hexes = await layout(page);
     const sums = [...new Set(hexes.map((h) => h.pip))].filter((n) => n !== 7);
@@ -250,6 +437,7 @@ try {
         g.setState({ state: pre });
         await new Promise((r) => { const w = () => (window.__isle.lastSeq === pre.seq ? r() : requestAnimationFrame(w)); w(); });
         window.__frames.length = 0;
+        window.__ticks = [];
         window.__queue.push(dice[0] - 1, dice[1] - 1);
         const R = window.__rules;
         const rolled = R.applyAction(pre, pre.current, { type: "roll" }).state;
@@ -266,6 +454,16 @@ try {
       if (multi.rolls !== 1 || multi.jump < 2 || !multi.expected.length || g5.ids.length !== multi.expected.length || !multi.expected.every((id) => g5.ids.includes(id))) {
         throw new Error(`multi-action push: ${JSON.stringify({ multi, glow: g5.ids })}`);
       }
+      const tickCount = await page.evaluate(() => {
+        const n = window.__ticks.length;
+        if (!n || n > 8) throw new Error(`multi-action push ticks: ${n}`);
+        const g = window.__emberisle;
+        g.setState({ state: structuredClone(g.getState().state) });
+        // Even repeated same-seq publication must leave the just-completed roll silent.
+        if (window.__isle.payingPieces.length) throw new Error("same roll queued twice");
+        return n;
+      });
+      if (await page.evaluate(() => window.__ticks.length) !== tickCount) throw new Error("same roll sounded twice");
       // 4. Negatives: a state that already has dice never flashes when it is met, only a live roll does.
       const rolled = await page.evaluate(() => structuredClone(window.__emberisle.getState().state));
       await page.evaluate(() => {
@@ -304,6 +502,8 @@ try {
       console.log(`seq jump onto a state with dice: ${jump.frames} frames, glowing ${jump.ids.length}`);
       if (jump.ids.length) throw new Error(`a seq jump flashed: ${jump.ids}`);
     }
+    await coalescedBuildProof(page, reduced);
+    await payerClockProof(page, reduced);
     await page.close();
   }
 } catch (e) {

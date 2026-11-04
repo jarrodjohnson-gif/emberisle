@@ -1,0 +1,25 @@
+{
+  "baseline": "00ba9a505d0ab9794cef0ef29ddeba050b5c4a6a",
+  "finding": "At 1280x720, a three-bot lobby sticky footer covers chat composer and Send until .lobby-cover is scrolled 74px.",
+  "files": [
+    {
+      "file": "1280x720-mouse-lobby-before.png",
+      "bytes": 477892,
+      "sha256": "27505aa896a83c910e54d2ba2f05542d4ca8a1c75704d621a65e7f90e61dd357",
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "file": "1280x720-mouse-lobby-after.png",
+      "bytes": 479773,
+      "sha256": "b6f379f9b1f831c1f4ae309dd0a6acac7a4da37e358bfff1a57690e353353ec1",
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "file": "results.json",
+      "bytes": 66282,
+      "sha256": "5d0fc7eb1be03433f316ef5fd8df4ddc844b0fc16897cee6e295ee4d3608bd8b"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+PASS every main script and CI byte preserved plus own registration once
+PASS reviewed e7c64e8 proof unchanged SHA256 10af788f1de8e45a1aa8364d78e60deb971c2071433a1b7270a84ded7fcedb3a
+PASS runtime, existing proofs, lockfiles and budgets byte-identical main bf2f1f6dc2aef702faec36441c533859e95dafee
+Tested merge 10c3eb7e4fd7d6e4085a32c66e0f3798f36f6b31
+Parents 4ba2a63ae7c4ae257bae1d7d6e615633a6ebf6a6 bf2f1f6dc2aef702faec36441c533859e95dafee

@@ -1,12 +1,17 @@
 // #609, #616: synthesises the table clips Kenney's set lacks into public/audio/ (docs/design/sound.md "The generator").
 // Plain sine and filtered noise, a fixed noise seed: the same bytes every run, no sample taken from anywhere, no licence
-// to carry. Mono, 16-bit, 22.05 kHz, each peak-normalised to the Kenney clips' level (about 29000 of 32767).
+// to carry. Mono, 16-bit, 22.05 kHz, each first peak-normalised (about 29000 of 32767), then leveled to the table-effect target by the same
+// levelFile() as scripts/level-audio.mjs (#1073), so the files written here are the leveled ones. Needs ffmpeg.
 // Run: node scripts/make-sounds.mjs
-import { writeFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { levelFile } from "./audio-level-lib.mjs";
 
 const RATE = 22050;
 const PEAK = 29000;
 const OUT = new URL("../public/audio/", import.meta.url);
+const RAW = mkdtempSync(join(tmpdir(), "make-sounds-"));
 
 let seed = 609;
 const noise = () => {
@@ -46,6 +51,18 @@ const CLIPS = {
   chat_recv: { ms: 140, voices: [tone(700, 0, 0.022, 1), tone(1400, 0, 0.012, 0.3)] },
   // #616: a soft water plop for a tap on the sea, a rising bloop over a short dark splash.
   plop: { ms: 150, voices: [slide(260, 620, 0.03, 0, 0.045, 1), hiss(0.004, 0.03, 0.12, 0.35)] },
+  // #840: two-note rising fifth (docs/design/sound.md your_turn), louder and longer than the #660 wood knocks.
+  your_turn: { ms: 420, voices: [tone(660, 0, 0.12, 1), tone(990, 0.16, 0.18, 1), hiss(0, 0.008, 0.12, 0.25)] },
+  // #661: the last seconds of your turn. A quiet 1.2 kHz sine tick (played at 0.5), then a lower 700 Hz wood knock (0.8).
+  timer_tick: { ms: 30, voices: [tone(1200, 0, 0.012, 1)] },
+  timer_final: { ms: 90, voices: [tone(700, 0, 0.03, 1), hiss(0, 0.006, 0.15, 0.5)] },
+  // #667: board touch sounds, played at 0.3 for a tap on a hex that places nothing. Pasture is the owner's own clip, so it has no entry here.
+  // Forest: a short wooden creak. Hills: a dry stone clack. Fields: a bright wheat rustle. Mountains: four pebble ticks. Waste: a dark gust.
+  tap_forest: { ms: 180, voices: [slide(420, 260, 0.06, 0, 0.07, 1), hiss(0, 0.04, 0.2, 0.3)] },
+  tap_hills: { ms: 90, voices: [tone(1500, 0, 0.008, 1), tone(900, 0, 0.015, 0.7), hiss(0, 0.006, 0.6, 0.6)] },
+  tap_fields: { ms: 200, voices: [hiss(0, 0.08, 0.7, 1), hiss(0.06, 0.07, 0.8, 0.8)] },
+  tap_mountains: { ms: 200, voices: [tone(2200, 0, 0.006, 1), tone(1700, 0.05, 0.006, 0.8), tone(2600, 0.09, 0.005, 0.7), tone(1400, 0.14, 0.008, 0.9), hiss(0, 0.2, 0.5, 0.05)] },
+  tap_waste: { ms: 300, voices: [hiss(0, 0.12, 0.12, 1), hiss(0.08, 0.1, 0.1, 0.8)] },
 };
 
 for (const [name, { ms, voices }] of Object.entries(CLIPS)) {
@@ -70,7 +87,8 @@ for (const [name, { ms, voices }] of Object.entries(CLIPS)) {
   pcm.write("data", 36);
   pcm.writeUInt32LE(n * 2, 40);
   for (let i = 0; i < n; i++) pcm.writeInt16LE(Math.round((x[i] / top) * PEAK), 44 + i * 2);
-  writeFileSync(new URL(`${name}.wav`, OUT), pcm);
+  writeFileSync(join(RAW, `${name}.wav`), pcm);
+  const { how } = levelFile(join(RAW, `${name}.wav`), new URL(`${name}.wav`, OUT).pathname);
   const rms = Math.sqrt(x.reduce((s, v) => s + ((v / top) * PEAK) ** 2, 0) / n);
-  console.log(`${name}.wav ${pcm.length} bytes, ${ms} ms, rms ${Math.round(rms)}`);
+  console.log(`${name}.wav ${pcm.length} bytes, ${ms} ms, rms ${Math.round(rms)} before leveling (${how})`);
 }

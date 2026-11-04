@@ -1,0 +1,77 @@
+Attempt resume3
+captured 1280x720-title.png {"coarse":false}
+stage host
+stage guest
+stage join
+locator.waitFor: Timeout 15000ms exceeded.
+Call log:
+[2m  - waiting for getByTestId('table-code') to be visible[22m
+
+    at online (/workspace/emberisle/work/verify896/.capture804.mjs:40:131)
+    at async file:///workspace/emberisle/work/verify896/.capture804.mjs:81:44 {
+  log: [ "  - waiting for getByTestId('table-code') to be visible" ],
+  name: 'TimeoutError'
+}
+
+Attempt resume4
+captured 1280x720-title.png {"coarse":false}
+stage host
+stage guest
+stage join {"text":"Emberisle\nEmber\nWayfarer\nPractice: On · Online: On · Hotseat: On\nPlay\n\n3 bots, no network\n\nHost a table\nJoin\nWatch\n\nWatch available\n\nFour seats, one table\nHow to play","join":"PB93","state":{"screen":"title","error":null}}
+locator.waitFor: Timeout 15000ms exceeded.
+Call log:
+[2m  - waiting for getByTestId('table-code') to be visible[22m
+
+    at online (/workspace/emberisle/work/verify896/.capture804.mjs:40:369)
+    at async file:///workspace/emberisle/work/verify896/.capture804.mjs:81:44 {
+  log: [ "  - waiting for getByTestId('table-code') to be visible" ],
+  name: 'TimeoutError'
+}
+
+Attempt resume5
+file:///workspace/emberisle/work/verify896/.capture804.mjs:40
+ console.log('stage join',JSON.stringify(await guest.evaluate(()=>({text:document.body.innerText,join:document.querySelector('input[aria-label="Join code"]')?.value,state: {screen:window.__emberisle.getState().screen,error:window.__emberisle.getState().error}}))));await guest.getByRole('button',{name:'Join',exact:true}).click();await guest.getByTestId('table-code').waitFor({state:'attached'});console.log('guest geometry',JSON.stringify(await guest.evaluate(()=>{const e=document.querySelector('[data-testid="table-code"]');return {box:e?.getBoundingClientRect().toJSON(),style:e?{display:getComputedStyle(e).display,visibility:getComputedStyle(e).visibility}:null,errors:window.__emberisle.getState().error}}))));
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ^
+
+SyntaxError: Unexpected token ')'
+    at compileSourceTextModule (node:internal/modules/esm/utils:318:16)
+    at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:89:18)
+    at #translate (node:internal/modules/esm/loader:434:20)
+    at afterLoad (node:internal/modules/esm/loader:502:29)
+    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:507:12)
+    at #getOrCreateModuleJobAfterResolve (node:internal/modules/esm/loader:560:36)
+    at afterResolve (node:internal/modules/esm/loader:607:52)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:613:12)
+    at node:internal/modules/esm/loader:632:32
+    at TracingChannel.tracePromise (node:diagnostics_channel:362:14)
+
+Node.js v24.19.0
+
+Attempt resume6
+captured 1280x720-title.png {"coarse":false}
+stage host
+stage guest
+stage join {"text":"Emberisle\nEmber\nWayfarer\nPractice: On · Online: On · Hotseat: On\nPlay\n\n3 bots, no network\n\nHost a table\nJoin\nWatch\n\nWatch available\n\nFour seats, one table\nHow to play","join":"SFB9","state":{"screen":"title","error":null}}
+locator.click: Timeout 15000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: 'Join', exact: true })[22m
+[2m    - locator resolved to <button type="submit" class="inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-control font-medium transition-[transform,filter,background-color] duration-(--duration-press) ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sea-ink active:scale-[0.97] disabled:pointer-events-none disabled:text-muted disabled:bg-bg disabled:border-border border border-control-line bg-bg text-fg hover:brightness-105 h-12 px-5 text-base">Join</button>[22m
+[2m  - attempting click action[22m
+[2m    - waiting for element to be visible, enabled and stable[22m
+
+    at online (/workspace/emberisle/work/verify896/.capture804.mjs:40:323)
+    at async file:///workspace/emberisle/work/verify896/.capture804.mjs:81:44 {
+  log: [
+    "  - waiting for getByRole('button', { name: 'Join', exact: true })",
+    '    - locator resolved to <button type="submit" class="inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-control font-medium transition-[transform,filter,background-color] duration-(--duration-press) ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sea-ink active:scale-[0.97] disabled:pointer-events-none disabled:text-muted disabled:bg-bg disabled:border-border border border-control-line bg-bg text-fg hover:brightness-105 h-12 px-5 text-base">Join</button>',
+    '  - attempting click action',
+    '    - waiting for element to be visible, enabled and stable'
+  ],
+  name: 'TimeoutError'
+}
+
+First scroll diagnostic (disabled buttons incorrectly required hit-testability)
+captured 844x390-trade-panel.png {"phase":"main","seq":27,"coarse":true}
+Error: Wanted-goods controls not reachable after scroll
+    at practice (file:///workspace/emberisle/work/verify896/.capture804-trade-scroll.mjs:79:60)
+    at async file:///workspace/emberisle/work/verify896/.capture804-trade-scroll.mjs:86:16

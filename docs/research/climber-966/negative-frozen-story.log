@@ -1,0 +1,44 @@
+
+> climber-prove
+> node scripts/climber-prove.mjs
+
+ok   title: board age stays 0 {"age":0,"envAge":0,"titleMode":true,"dist":0.6192,"y":0.3026,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.577,"baseY":0.29}
+ok   title: climber at the foot (not on the summit) {"age":0,"envAge":0,"titleMode":true,"dist":0.6192,"y":0.3026,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.577,"baseY":0.29}
+ok   first game: natural clock advances over at least 20s {"liveStart":{"age":0.9603000000119208,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29},"liveLater":{"age":22.128599999994037,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29}}
+FAIL first game: climber naturally leaves the foot and moves up the flank {"liveStart":{"age":0.9603000000119208,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29},"liveLater":{"age":22.128599999994037,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29}}
+ages {"0":{"age":0,"dist":0.6321,"y":0.2964,"sit":false,"peakR":0.24},"4":{"age":4,"dist":0.6321,"y":0.2964,"sit":false,"peakR":0.24},"20":{"age":20,"dist":0.6321,"y":0.2964,"sit":false,"peakR":0.24},"100":{"age":100,"dist":0.6321,"y":0.2964,"sit":false,"peakR":0.24},"160":{"age":160,"dist":0.6321,"y":0.2964,"sit":false,"peakR":0.24},"800":{"age":800,"dist":0.6321,"y":0.2964,"sit":false,"peakR":0.24}}
+ok   age 0: at the foot {"age":0,"dist":0.6321,"y":0.2964,"sit":false,"peakR":0.24}
+ok   age 4: still in gear-out near the foot {"age":4,"dist":0.6321,"y":0.2964,"sit":false,"peakR":0.24}
+FAIL age 20: climbing (higher and closer than age 0) {"a0":{"age":0,"dist":0.6321,"y":0.2964,"sit":false,"peakR":0.24},"a20":{"age":20,"dist":0.6321,"y":0.2964,"sit":false,"peakR":0.24}}
+ok   age 100: not sitting on the summit {"age":100,"dist":0.6321,"y":0.2964,"sit":false,"peakR":0.24}
+FAIL age 160: left the foot (summit, climb, or fall) {"age":160,"dist":0.6321,"y":0.2964,"sit":false,"peakR":0.24}
+FAIL age 800: all seeded retries have ended on the summit {"age":800,"dist":0.6321,"y":0.2964,"sit":false,"peakR":0.24}
+FAIL screenshot 1280x720: rendered age 4 {"age":4,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29}
+FAIL screenshot 1280x720: rendered age 160 {"age":160,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29}
+ok   rematch: new board and next fixed seed {"age":0,"envAge":0,"newBoard":true,"dist":0.6202022882847259,"sit":false,"peakR":0.24,"seed":677}
+ok   rematch: natural age below 2s at the foot on a new board {"age":0,"envAge":0,"newBoard":true,"dist":0.6202022882847259,"sit":false,"peakR":0.24,"seed":677}
+FAIL screenshot 390x844: rendered age 4 {"age":4,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29}
+FAIL screenshot 390x844: rendered age 160 {"age":160,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29}
+ok   lobby/title linger: still age 0 at the foot {"age":0,"envAge":0,"titleMode":true,"dist":0.6192,"y":0.3026,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.577,"baseY":0.29}
+ok   after lobby: a newly built board uses the fixed seed {"age":0,"envAge":0,"newBoard":true,"dist":0.6320516267923142,"sit":false,"peakR":0.24,"seed":676}
+ok   after lobby: natural play age below 2s, excluding the 4s title linger {"age":0,"envAge":0,"newBoard":true,"dist":0.6320516267923142,"sit":false,"peakR":0.24,"seed":676}
+ok   reduced motion: age stays 0 {"a":{"age":0,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29},"b":{"age":0,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29}}
+ok   reduced motion: holds at the foot {"a":{"age":0,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29},"b":{"age":0,"envAge":0,"titleMode":false,"dist":0.6321,"y":0.2964,"scaleY":1.15,"sit":false,"peakR":0.24,"peakH":0.5971,"baseY":0.29}}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: climber-prove failed: first game: climber naturally leaves the foot and moves up the flank; age 20: climbing (higher and closer than age 0); age 160: left the foot (summit, climb, or fall); age 800: all seeded retries have ended on the summit; screenshot 1280x720: rendered age 4; screenshot 1280x720: rendered age 160; screenshot 390x844: rendered age 4; screenshot 390x844: rendered age 160
+
+8 !== 0
+
+    at file:///workspace/emberisle/work/verify969/scripts/climber-prove.mjs:282:10 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 8,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

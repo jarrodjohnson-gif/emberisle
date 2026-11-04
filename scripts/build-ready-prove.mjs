@@ -31,7 +31,7 @@ import * as types from "../src/lib/game/types.ts";
 import { legalCities, legalRoads, legalSettle } from "../src/lib/game/rules.ts";
 
 // A namespace import, so on a main without POINTS the run fails on the table, not at link time.
-const { COST, LARGEST_ARMY_MIN, LONGEST_PATH_MIN, POINTS, RESOURCES } = types;
+const { COST, LARGEST_ARMY_MIN, LONGEST_PATH_MIN, POINTS, RESOURCES, RESOURCE_LABEL } = types;
 const PORT = Number(process.env.VITE_PORT) || 8509;
 const STEP_MS = 30_000;
 const VIEWS = [
@@ -214,7 +214,7 @@ try {
               assert.ok(m.visible && !m.hover, `${at}: the shortfall is on screen with no hover ${JSON.stringify(m)}`);
               assert.equal(m.opacity, 1, `${at}: the "−N" is at full strength`);
             }
-            for (const [res, n] of w.short) assert.match(r.description, new RegExp(`${n} more ${res}`), `${at}: aria-description names the shortfall (${r.description})`);
+            for (const [res, n] of w.short) assert.match(r.description, new RegExp(`${n} more ${RESOURCE_LABEL[res].toLowerCase()}`), `${at}: aria-description names the shortfall (${r.description})`);
           } else {
             assert.equal(r.marks.length, 0, `${at}: no shortfall on a ready build`);
             assert.match(r.description, /Ready$/, `${at}: aria-description says Ready (${r.description})`);
@@ -294,8 +294,8 @@ try {
       // aria-disabled and focusable; once the goods come (no reload) the same tap arms the build and shows no hint.
       // Review: the chip is the only line on screen. The error cue and the screen reader still get the full sentence ("Need 1
       // more clay"), so the HUD's error line stays empty and the alert region says it.
-      const hintFor = (hand, k) => `Need ${RESOURCES.filter((r) => (COST[k][r] ?? 0) > hand[r]).map((r) => `${COST[k][r] - hand[r]} ${r}`).join(", ")}`;
-      const saidFor = (hand, k) => `Need ${RESOURCES.filter((r) => (COST[k][r] ?? 0) > hand[r]).map((r) => `${COST[k][r] - hand[r]} more ${r}`).join(" and ")}`;
+      const hintFor = (hand, k) => `Need ${RESOURCES.filter((r) => (COST[k][r] ?? 0) > hand[r]).map((r) => `${COST[k][r] - hand[r]} ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ")}`;
+      const saidFor = (hand, k) => `Need ${RESOURCES.filter((r) => (COST[k][r] ?? 0) > hand[r]).map((r) => `${COST[k][r] - hand[r]} more ${RESOURCE_LABEL[r].toLowerCase()}`).join(" and ")}`;
       const tapHint = async (k) => {
         await page.evaluate((k) => {
           const b = document.querySelector(`[data-testid="build-${k}"]`);
@@ -387,7 +387,7 @@ try {
         assert.deepEqual(Object.fromEntries(chips), Object.fromEntries(RESOURCES.filter((r) => COST[k][r]).map((r) => [r, COST[k][r] > 1 ? String(COST[k][r]) : ""])), `${tag}: the ${k} row shows COST.${k} (a chip alone is one)`);
         // What a screen reader gets: the piece and its price as words (the chips are aria-hidden).
         const spoken = await card.getByTestId(`cost-row-${k}`).evaluate((row) => [...row.querySelectorAll(":scope > :not([aria-hidden])")].map((el) => el.textContent.trim()).join(" "));
-        assert.equal(spoken, `${NAME[k]} · ${RESOURCES.filter((r) => COST[k][r]).map((r) => `${COST[k][r]} ${r}`).join(", ")}`, `${tag}: the ${k} row reads its price aloud`);
+        assert.equal(spoken, `${NAME[k]} · ${RESOURCES.filter((r) => COST[k][r]).map((r) => `${COST[k][r]} ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ")}`, `${tag}: the ${k} row reads its price aloud`);
       }
       const worth = await card.getByTestId("worth-row").evaluateAll((rows) => rows.map((r) => [...r.children].map((c) => c.textContent.trim())));
       assert.deepEqual(

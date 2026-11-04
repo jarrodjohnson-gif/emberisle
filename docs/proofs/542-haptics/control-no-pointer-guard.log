@@ -1,0 +1,18 @@
+cold source: held first tap, first legal land buzz 0 ms from knock, live menu toggle
+cold production: held first tap, first legal land buzz 0 ms from knock, live menu toggle
+cold skip: coarse=false, missingAPI=false; no module, row or buzz
+cold skip: coarse=true, missingAPI=true; no module, row or buzz
+cold failure: rejected optional module leaves the game and table menu usable
+AssertionError [ERR_ASSERTION]: loaded haptics rechecks the current pointer
+
+true !== false
+
+    at changedPointerProof (file:///workspace/emberisle/work/verify844-split/scripts/haptics-prove.mjs:542:10)
+    at async file:///workspace/emberisle/work/verify844-split/scripts/haptics-prove.mjs:557:36 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: true,
+  expected: false,
+  operator: 'strictEqual',
+  diff: 'simple'
+}

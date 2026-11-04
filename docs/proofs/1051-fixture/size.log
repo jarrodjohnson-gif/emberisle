@@ -1,0 +1,31 @@
+ok   haptics: 1.09 kB gzip, ceiling 1.20 kB
+ok   index: 125.19 kB gzip, ceiling 125.20 kB
+ok   IslandCanvas: 200.25 kB gzip, ceiling 202.50 kB
+ok   jelly-board: 7.90 kB gzip, ceiling 9.00 kB
+ok   hex-jelly: 46.74 kB gzip, ceiling 50.00 kB
+ok   harbor-jelly: 10.24 kB gzip, ceiling 11.50 kB
+ok   online: 7.80 kB gzip, ceiling 9.00 kB
+ok   Reactions: 2.31 kB gzip, ceiling 2.60 kB
+ok   sheets: 7.12 kB gzip, ceiling 7.80 kB
+ok   SetupReference: 1.86 kB gzip, ceiling 2.20 kB
+ok   moments: 4.09 kB gzip, ceiling 5.70 kB
+ok   VictoryTargetSelect: 0.69 kB gzip, ceiling 1.00 kB
+ok   DockInspection: 1.03 kB gzip, ceiling 1.20 kB
+ok   HandRates: 0.65 kB gzip, ceiling 0.80 kB
+ok   TurnExtensionVote: 1.21 kB gzip, ceiling 1.40 kB
+ok   haptics growth: base 1091 B, PR 1094 B, +3 B, allowance 200 B
+ok   index growth: base 125189 B, PR 125189 B, +0 B, allowance 400 B
+ok   IslandCanvas growth: base 200246 B, PR 200253 B, +7 B, allowance 661 B
+ok   jelly-board growth: base 7901 B, PR 7904 B, +3 B, allowance 200 B
+ok   hex-jelly growth: base 46739 B, PR 46738 B, -1 B, allowance 200 B
+ok   harbor-jelly growth: base 10237 B, PR 10239 B, +2 B, allowance 200 B
+ok   online growth: base 7795 B, PR 7798 B, +3 B, allowance 200 B
+ok   Reactions growth: base 2311 B, PR 2312 B, +1 B, allowance 200 B
+ok   sheets growth: base 7112 B, PR 7116 B, +4 B, allowance 200 B
+ok   SetupReference growth: base 1858 B, PR 1861 B, +3 B, allowance 200 B
+ok   moments growth: base 4090 B, PR 4092 B, +2 B, allowance 200 B
+ok   VictoryTargetSelect growth: base 684 B, PR 686 B, +2 B, allowance 200 B
+ok   DockInspection growth: base 1030 B, PR 1033 B, +3 B, allowance 200 B
+ok   HandRates growth: base 647 B, PR 650 B, +3 B, allowance 200 B
+ok   TurnExtensionVote growth: base 1204 B, PR 1206 B, +2 B, allowance 200 B
+size-prove: all chunks inside ceiling and growth allowance

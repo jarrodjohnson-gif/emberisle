@@ -47,25 +47,26 @@ try {
   let checked = 0;
   for (const [w, h] of sizes) {
     await page.setViewportSize({ width: w, height: h });
-    for (const ph of PHASES) {
-      await page.evaluate((ph) => {
+    // #776: My fortunes joins Trade's row only while a fortune is held, so each phase is read with and without one.
+    for (const [ph, held] of PHASES.flatMap((ph) => [[ph, 0], [ph, 1]])) {
+      await page.evaluate(([ph, held]) => {
         const g = window.__emberisle;
         const st = structuredClone(g.getState().state);
         st.current = st.players[0].id;
         st.phase = ph;
         st.dice = [3, 5];
         st.seq++;
-        for (const p of st.players) p.resources = { timber: 4, clay: 3, wool: 2, grain: 5, ore: 2 };
+        for (const p of st.players) { p.resources = { timber: 4, clay: 3, wool: 2, grain: 5, ore: 2 }; p.hidden = { ...p.hidden, plenty: held }; }
         g.setState({ state: st, localId: st.current, banner: null, error: null });
-      }, ph);
+      }, [ph, held]);
       await frames(page, 6);
       await page.waitForTimeout(150);
       const m = await page.evaluate(() => ({ live: window.__isle.liveInsets(), hole: window.__isle.insets() }));
       const over = ["top", "right", "bottom", "left"].filter((k) => m.live[k] > m.hole[k] + 0.5);
       checked++;
       if (over.length) {
-        failures.push(`${w}x${h} ${ph}`);
-        console.log(`FAIL ${w}x${h} ${ph}: live ${JSON.stringify(m.live)} over declared ${JSON.stringify(m.hole)} on ${over.join(", ")}`);
+        failures.push(`${w}x${h} ${ph} held ${held}`);
+        console.log(`FAIL ${w}x${h} ${ph} held ${held}: live ${JSON.stringify(m.live)} over declared ${JSON.stringify(m.hole)} on ${over.join(", ")}`);
       }
     }
   }

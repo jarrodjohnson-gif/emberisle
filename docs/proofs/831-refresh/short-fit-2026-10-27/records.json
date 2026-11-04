@@ -1,0 +1,342 @@
+{
+  "runtimeHead": "bf38f1d97d00e7e81deada15e030fdf6eeb25387",
+  "proofHead": "86cae53412b40eb0f879c2abbe079c20438d32bb",
+  "failedHead": "242fdea8634ddb1e12a40c46467cd0c957d2101a",
+  "failedCI": 40550990849,
+  "checks": [
+    {
+      "name": "old-runtime-negative",
+      "command": [
+        "npm",
+        "run",
+        "trade-tabs-prove"
+      ],
+      "cwd": "/workspace/p883-final-owner-validation",
+      "exit": 1,
+      "seconds": 52.405
+    },
+    {
+      "name": "wrapped-font-controls",
+      "command": [
+        "node",
+        "/workspace/p883-short-fit-control.mjs"
+      ],
+      "cwd": "/workspace/p883-short-fit-validation",
+      "exit": 0,
+      "seconds": 8.666
+    },
+    {
+      "name": "typecheck",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "/workspace/p883-short-fit-validation",
+      "exit": 0,
+      "seconds": 1.461
+    },
+    {
+      "name": "registered",
+      "command": [
+        "npm",
+        "run",
+        "registered-prove"
+      ],
+      "cwd": "/workspace/p883-short-fit-validation",
+      "exit": 0,
+      "seconds": 0.158
+    },
+    {
+      "name": "loosen",
+      "command": [
+        "npm",
+        "run",
+        "loosen-prove",
+        "--",
+        "--base",
+        "242fdea"
+      ],
+      "cwd": "/workspace/p883-short-fit-validation",
+      "exit": 0,
+      "seconds": 0.143
+    },
+    {
+      "name": "trade-tabs",
+      "command": [
+        "npm",
+        "run",
+        "trade-tabs-prove"
+      ],
+      "cwd": "/workspace/p883-short-fit-validation",
+      "exit": 0,
+      "seconds": 166.974
+    },
+    {
+      "name": "rotate-overlays",
+      "command": [
+        "npm",
+        "run",
+        "rotate-overlays-prove"
+      ],
+      "cwd": "/workspace/p883-short-fit-validation",
+      "exit": 0,
+      "seconds": 163.946
+    },
+    {
+      "name": "owner-pictures",
+      "command": [
+        "node",
+        "--import",
+        "./server/register.mjs",
+        "/workspace/p883-short-fit-owner-capture.mjs"
+      ],
+      "cwd": "/workspace/p883-short-fit-validation",
+      "exit": 0,
+      "seconds": 25.344
+    },
+    {
+      "name": "build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/p883-short-fit-validation",
+      "exit": 0,
+      "seconds": 1.907
+    },
+    {
+      "name": "size",
+      "command": [
+        "node",
+        "scripts/size-prove.mjs",
+        "--base",
+        "/workspace/p883-b-rebuild-base"
+      ],
+      "cwd": "/workspace/p883-short-fit-validation",
+      "exit": 0,
+      "seconds": 0.115
+    }
+  ],
+  "files": [
+    {
+      "source": "/workspace/p883-short-fit-after/results.json",
+      "archive": "raw/after-font-results.json.gz",
+      "sha256": "c37b1277ae100dcbb046a6de82bd9cb5e5b2208e30ac2e58df1faf2a0270bec4",
+      "bytes": 5049
+    },
+    {
+      "source": "/workspace/p883-short-fit-before/results.json",
+      "archive": "raw/before-font-results.json.gz",
+      "sha256": "a3dca90d3893837f95ccd5b79092844d20f69789bf44b2707253d39e991e2f31",
+      "bytes": 5048
+    },
+    {
+      "source": "/workspace/p883-short-fit-output/build.log",
+      "archive": "raw/build.log.gz",
+      "sha256": "abf4c6151a65b495c68aec987a8dd8e72d584f077458440675f915bd9edf6a11",
+      "bytes": 3325
+    },
+    {
+      "source": "/workspace/p883-short-fit-output/loosen.log",
+      "archive": "raw/loosen.log.gz",
+      "sha256": "f81dc69666787dde1f04bb116ebbe9ed12547d291b9e0a823ee96491e66ba307",
+      "bytes": 844
+    },
+    {
+      "source": "/workspace/p883-short-fit-output/old-runtime-negative.log",
+      "archive": "raw/old-runtime-negative.log.gz",
+      "sha256": "a10bec878c76151ff0be370468bee86f2747e0f95dd0787f313d3a1c152da6e2",
+      "bytes": 14123
+    },
+    {
+      "source": "/workspace/883-short-fit-owner-pictures/fixture.json",
+      "archive": "raw/owner-fixture.json.gz",
+      "sha256": "5a7c59d1d26a3e5c1a08956f72dd11704e358250bb70906b48aba835adeeeaeb",
+      "bytes": 30056
+    },
+    {
+      "source": "/workspace/p883-short-fit-output/owner-pictures.log",
+      "archive": "raw/owner-pictures.log.gz",
+      "sha256": "84f65b49e9e8f16fca983b2e4a1036cac45e0bba8b2bbd106cfda8658368e096",
+      "bytes": 2521
+    },
+    {
+      "source": "/workspace/883-short-fit-owner-pictures/records.json",
+      "archive": "raw/owner-records.json.gz",
+      "sha256": "9e651ffb4020fe5da017d8660335156f0acd0d0fa3ec88f14ef6067eed6cf0f3",
+      "bytes": 39270
+    },
+    {
+      "source": "/workspace/p883-short-fit-before.log",
+      "archive": "raw/p883-short-fit-before.log.gz",
+      "sha256": "a8cd059c858af3c722049576471694f41b005eff316de4e806d0703ab1b922a4",
+      "bytes": 2831
+    },
+    {
+      "source": "/workspace/p883-short-fit-checks.py",
+      "archive": "raw/p883-short-fit-checks.py.gz",
+      "sha256": "a3590d054173f00ba6967f1ed5c18325359b61cd9ba25ecd408b8310ded61ca0",
+      "bytes": 2196
+    },
+    {
+      "source": "/workspace/p883-short-fit-ci.log",
+      "archive": "raw/p883-short-fit-ci.log.gz",
+      "sha256": "3f09b50064ca1c3820f72b034bcdc078de2404d9fe01f93e49bf0d89fdb5f58d",
+      "bytes": 13491
+    },
+    {
+      "source": "/workspace/p883-short-fit-control.mjs",
+      "archive": "raw/p883-short-fit-control.mjs.gz",
+      "sha256": "757eaa54a7a50ab4f0e1fce1622d413df7a01c7a1f2940bb3d7f2851e45883a8",
+      "bytes": 3452
+    },
+    {
+      "source": "/workspace/p883-short-fit-install.log",
+      "archive": "raw/p883-short-fit-install.log.gz",
+      "sha256": "db16ae345240315f4fbec5fe73006033b4ed69660e75fa2efc33da21cab23439",
+      "bytes": 25
+    },
+    {
+      "source": "/workspace/p883-short-fit-owner-capture.mjs",
+      "archive": "raw/p883-short-fit-owner-capture.mjs.gz",
+      "sha256": "d19048989218e41ab757af2f14d914113bef19a513f75a1424bf2dbf263f4892",
+      "bytes": 7613
+    },
+    {
+      "source": "/workspace/p883-short-fit-server-install.log",
+      "archive": "raw/p883-short-fit-server-install.log.gz",
+      "sha256": "1a90dece3968ade63621a730e73d35599dbf6b657f5eea3c7be6517562970811",
+      "bytes": 26
+    },
+    {
+      "source": "/workspace/p883-short-fit-source-audit.json",
+      "archive": "raw/p883-short-fit-source-audit.json.gz",
+      "sha256": "afa4232041dcb4038f3d88779a3b36713d32b83909eeba16dbb5e10ff4f6b70d",
+      "bytes": 33351
+    },
+    {
+      "source": "/workspace/p883-short-fit-output/registered.log",
+      "archive": "raw/registered.log.gz",
+      "sha256": "84a14d5228148399b2db8433bb0012a581f56579bb4cdff620d60d8334279a9f",
+      "bytes": 689
+    },
+    {
+      "source": "/workspace/p883-short-fit-output/results.json",
+      "archive": "raw/results.json.gz",
+      "sha256": "be875b3cb174afb99d9441aac4ffa34d93042798777d3669ffdf7033b8c6834b",
+      "bytes": 2146
+    },
+    {
+      "source": "/workspace/p883-short-fit-output/rotate-overlays.log",
+      "archive": "raw/rotate-overlays.log.gz",
+      "sha256": "147fd8ce1c55018c3927e74990b168dcb686194ba5d9c60f14bd28786786e498",
+      "bytes": 27227
+    },
+    {
+      "source": "/workspace/p883-short-fit-output/size.log",
+      "archive": "raw/size.log.gz",
+      "sha256": "e77487ad9deb8ec880ba0b9a4db25e588f3f95d88ee90e25bef232584ffd0e97",
+      "bytes": 2784
+    },
+    {
+      "source": "/workspace/p883-short-fit-output/trade-tabs.log",
+      "archive": "raw/trade-tabs.log.gz",
+      "sha256": "a7c35582c715ce8c111b7ab718f9888dab271bf7c08d1220c15622edda3bf9e3",
+      "bytes": 33323
+    },
+    {
+      "source": "/workspace/p883-short-fit-output/typecheck.log",
+      "archive": "raw/typecheck.log.gz",
+      "sha256": "8fa1cf5506304e8abac55868e7f1a136c9b1dde57a3981a382da4c21ea129a6f",
+      "bytes": 29
+    },
+    {
+      "source": "/workspace/p883-short-fit-output/wrapped-font-controls.log",
+      "archive": "raw/wrapped-font-controls.log.gz",
+      "sha256": "0f0ca0aedd2005a66c8c471a2df2a0edd2e0f0aab15f0a4ee2cad7f8740e933c",
+      "bytes": 2832
+    }
+  ],
+  "pictures": [
+    {
+      "file": "pictures/1280x720-table-affordable.png",
+      "sha256": "493f2851a346e05202f3e43d68d51cac486095110a159423da81109ecff2b598"
+    },
+    {
+      "file": "pictures/1280x720-table-disabled.png",
+      "sha256": "5deeea77ce5d77a3732cb8924d5ce14b5812324e131d960f7824fa6d763e2f12"
+    },
+    {
+      "file": "pictures/1280x720-table-initial.png",
+      "sha256": "91298ce35a8cee76a61a1fac6bc071a8b06af84da01b17886b4969944af4147e"
+    },
+    {
+      "file": "pictures/390x844-table-affordable.png",
+      "sha256": "84c83d0b2e93b4b93d3e359202c1335ca4c4a21022d5c4cc02e0bac4731e4a3d"
+    },
+    {
+      "file": "pictures/390x844-table-disabled.png",
+      "sha256": "9161f436f20f690b5b9226037a029b56a061c0e8ae7469c117a826c359b35163"
+    },
+    {
+      "file": "pictures/390x844-table-initial.png",
+      "sha256": "a0cbb7066b311b07631e4f23896d33c30fac083c7706b7eab9dfdcc0ff0a50ab"
+    },
+    {
+      "file": "pictures/844x390-table-affordable.png",
+      "sha256": "c049865cd2183a68074b057c2cae2b07c35a6ab0bd57a862aa56099826fdac1f"
+    },
+    {
+      "file": "pictures/844x390-table-disabled.png",
+      "sha256": "8c39ba73f03cd6dd27773300f7eec0478c048cef4ef5fe5c160a93a43789d021"
+    },
+    {
+      "file": "pictures/844x390-table-initial.png",
+      "sha256": "d9dd8b14e7f41f02eb6ac2c71146ea1f814f7ae09fb582e29207eb9deb421997"
+    }
+  ],
+  "controls": [
+    {
+      "file": "controls/before-Arial.png",
+      "sha256": "2660da0b344366878d63e46151627f8b23e990d418d0da0751d1b63d801d6b87"
+    },
+    {
+      "file": "controls/before-DejaVu-Sans.png",
+      "sha256": "4434d7845276e1abe37d041a2c4693e0826785d19cc0a21e1a0083e2ad7dd24c"
+    },
+    {
+      "file": "controls/before-Noto-Sans.png",
+      "sha256": "04b8cce738502b2fbdd5d88435b8a7db739bf33de230f8a96fc69fdf2cb6483f"
+    },
+    {
+      "file": "controls/before-monospace.png",
+      "sha256": "df93149588dc408057913ebe58cbf93108a4ab7dac728834c456fe7ba582f1e1"
+    },
+    {
+      "file": "controls/before-native.png",
+      "sha256": "0fbec33ae9b2ba2f609d9dac6e6b956db159e298e6d007baf8a7edf2f81f3c23"
+    },
+    {
+      "file": "controls/after-Arial.png",
+      "sha256": "8d0062a76310b56372d920970cbd93b276e7ac9f28a18beb63fa757dfc936a2c"
+    },
+    {
+      "file": "controls/after-DejaVu-Sans.png",
+      "sha256": "ab21efbe4b69e8fd28e2faf8a6cf7f7fec66a61cc13c97f998b938a0b3929799"
+    },
+    {
+      "file": "controls/after-Noto-Sans.png",
+      "sha256": "ce838794f21750d6133b9f872b700c50f9cc4550baefb1fea6b11de7883a3193"
+    },
+    {
+      "file": "controls/after-monospace.png",
+      "sha256": "70a7ca9475575a8af68404186162b33459dac068ec4b4fc2c6b168ecc95e4d14"
+    },
+    {
+      "file": "controls/after-native.png",
+      "sha256": "8698a2a74b2cec4070b689fe08b0b162fb42f3fef8f3b1e17936807726aa22aa"
+    }
+  ]
+}

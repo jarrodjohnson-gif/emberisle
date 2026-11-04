@@ -1,0 +1,7 @@
+{
+  "package-lock.json": true,
+  "server/package-lock.json": true,
+  "all10OriginalCheckLinesIntact": true,
+  "freshSourceEqualsBuiltAsset": true,
+  "freshCheckoutClean": true
+}

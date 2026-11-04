@@ -1,0 +1,16 @@
+FAIL haptics: 1.20 kB gzip, ceiling 1.20 kB (0.00 kB over)
+ok   index: 122.30 kB gzip, ceiling 125.20 kB
+ok   IslandCanvas: 199.50 kB gzip, ceiling 202.50 kB
+ok   jelly-board: 7.60 kB gzip, ceiling 9.00 kB
+ok   hex-jelly: 46.80 kB gzip, ceiling 50.00 kB
+ok   harbor-jelly: 9.80 kB gzip, ceiling 11.50 kB
+ok   online: 8.00 kB gzip, ceiling 9.00 kB
+ok   Reactions: 2.31 kB gzip, ceiling 2.60 kB
+ok   sheets: 6.80 kB gzip, ceiling 7.80 kB
+ok   SetupReference: 1.86 kB gzip, ceiling 2.20 kB
+ok   moments: 4.90 kB gzip, ceiling 5.70 kB
+ok   VictoryTargetSelect: 0.69 kB gzip, ceiling 1.00 kB
+ok   DockInspection: 1.03 kB gzip, ceiling 1.20 kB
+ok   HandRates: 0.64 kB gzip, ceiling 0.80 kB
+ok   TurnExtensionVote: 1.20 kB gzip, ceiling 1.40 kB
+size-prove: no base given, ceilings only. For the growth check run: node scripts/size-prove.mjs --base <dir of the base commit, built>

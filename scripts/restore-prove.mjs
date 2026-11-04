@@ -1,7 +1,8 @@
-// #543 (P-1): a reload restores the table in under two seconds. A real host serves the built dist/; three seats sit down
+// #543 (P-1): a reload restores the table in about three seconds (median, #624). A real host serves the built dist/; three seats sit down
 // (two are plain sockets), the game starts, and the seated browser at 390x844 reloads under a 4x CPU slowdown and a
 // 1.6 Mbps / 150 ms network (the "Fast 3G"-like profile). From navigationStart, the board (island canvas drawn) and the
-// player's own hand must be on screen within 3000 ms (#624), and the page must paint something branded before any table content.
+// player's own hand must be on screen with the median of five reloads inside 3000 ms (#624; no run over the 6000 ms outlier
+// cap, #673), and the page must paint something branded before any table content.
 // Each run prints where the time went. Run npm run build first.
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
@@ -10,13 +11,16 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
-// The issue's rule: 5 reloads, none over HARD (no retry), the median inside BUDGET; one run in the BUDGET..HARD band may be re-measured once.
+// The rule (#673): 5 reloads, with the median inside BUDGET.
+// HARD is only an outlier cap, twice BUDGET.
+// A busy runner can stretch one run (4114 ms against a 2516 ms median on a docs-only PR). That run no longer fails the proof.
+// A real slowdown moves the median, and the proof still fails. Every run's time is printed.
 const RUNS = Number(process.env.RESTORE_RUNS) || 5;
 // 2026-10-16 (#624): 3000 / 3500 from 2000 / 2500. The owner: "Load time can increase, not a big deal, as long as the game
 // is still snappy and has no lag." The Hex Jelly scenes load after the first draw; CI runners have measured 3.7 s medians
 // on commits that changed nothing the page loads, so the old bound failed on the runner, not the change.
 const BUDGET = Number(process.env.RESTORE_BUDGET_MS) || 3000;
-const HARD = Number(process.env.RESTORE_HARD_MS) || 3500;
+const HARD = Number(process.env.RESTORE_HARD_MS) || 2 * BUDGET;
 const DIST = fileURLToPath(new URL("../dist/", import.meta.url));
 if (!existsSync(`${DIST}index.html`)) {
   console.log("FAIL no dist/index.html: run npm run build first");
@@ -26,7 +30,7 @@ if (!existsSync(`${DIST}index.html`)) {
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", DIST, ROOMS_DIR },
+  env: { ...process.env, PORT: "0", DIST, ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => {
   host.kill("SIGKILL");
@@ -200,11 +204,9 @@ try {
   await page.waitForSelector('[data-testid="hand-dock"]');
   await sleep(1000);
 
-  // Every reload must land inside HARD, with no retry; the median must land inside BUDGET. One run in the BUDGET..HARD band
-  // (a neighbour's noise on a shared machine) may be measured once more; a run over HARD fails at once.
-  let remeasured = false;
-  for (let run = 1, attempt = 1; run <= RUNS; run++, attempt = 1) {
-   for (;; attempt++) {
+  // The median of the reloads must land inside BUDGET; a single run is only held to the outlier cap HARD (no re-measuring: a run
+  // is never thrown away, so a slow stretch shows up in the median).
+  for (let run = 1; run <= RUNS; run++) {
     await page.reload({ waitUntil: "commit" });
     const t = await until(
       () => page.evaluate(() => window.__restore?.marks.board !== undefined && window.__restore),
@@ -224,26 +226,18 @@ try {
     });
     const w = t.ws[0];
     const msgs = Object.fromEntries((w?.msgs ?? []).map(([k, v]) => [k, v]).reverse());
-    console.log(`run ${run}.${attempt}: html ${nav.responseEnd}ms, dom ${nav.dcl}ms | chunks ${nav.res.join(", ")}`);
-    console.log(`run ${run}.${attempt}: first paint ${t.paints["first-paint"]} fcp ${t.paints["first-contentful-paint"]} | socket dial ${w?.dial} open ${w?.open} welcome ${msgs.welcome} state ${msgs.state} | marks ${JSON.stringify(t.marks)}`);
-    console.log(`run ${run}.${attempt}: long tasks ${t.long.join(" ")}`);
+    console.log(`run ${run}: html ${nav.responseEnd}ms, dom ${nav.dcl}ms | chunks ${nav.res.join(", ")}`);
+    console.log(`run ${run}: first paint ${t.paints["first-paint"]} fcp ${t.paints["first-contentful-paint"]} | socket dial ${w?.dial} open ${w?.open} welcome ${msgs.welcome} state ${msgs.state} | marks ${JSON.stringify(t.marks)}`);
+    console.log(`run ${run}: long tasks ${t.long.join(" ")}`);
     const board = t.marks.board;
-    const slow = board > BUDGET && board <= HARD && !remeasured;
-    if (slow) {
-      remeasured = true;
-      console.log(`run ${run}.${attempt}: took ${board} ms, in the ${BUDGET}-${HARD} band; measuring this run once more`);
-    } else {
-      boards.push(board);
-      check(`run ${run}: board + own hand on screen at ${board} ms (hard limit ${HARD}, attempt ${attempt})`, board <= HARD, t.marks);
-    }
+    boards.push(board);
+    check(`run ${run}: board + own hand on screen at ${board} ms (outlier cap ${HARD})`, board <= HARD, t.marks);
     const fcp = t.paints["first-contentful-paint"];
-    check(`run ${run}.${attempt}: the branded loading state painted (${fcp} ms) before any table content`, t.marks.loading !== undefined && fcp !== undefined && fcp < Math.min(t.marks.hud ?? 1e9, t.marks.canvas ?? 1e9), { paints: t.paints, loading: t.marks.loading });
-    check(`run ${run}.${attempt}: no flash of the title`, t.marks.title === undefined, t.marks);
+    check(`run ${run}: the branded loading state painted (${fcp} ms) before any table content`, t.marks.loading !== undefined && fcp !== undefined && fcp < Math.min(t.marks.hud ?? 1e9, t.marks.canvas ?? 1e9), { paints: t.paints, loading: t.marks.loading });
+    check(`run ${run}: no flash of the title`, t.marks.title === undefined, t.marks);
     const screen = await page.evaluate(() => window.__emberisle.getState().screen);
-    check(`run ${run}.${attempt}: still seated at the table`, screen === "play");
+    check(`run ${run}: still seated at the table`, screen === "play");
     await sleep(500);
-    if (!slow) break;
-   }
   }
   const sorted = [...boards].sort((a, b) => a - b);
   console.log(`board on screen, ms from navigationStart: ${boards.join(", ")} (median ${sorted[Math.floor(sorted.length / 2)]}, max ${sorted.at(-1)})`);
@@ -261,5 +255,5 @@ if (fails.length) {
   console.log(`restore prove: ${fails.length} failed`);
   process.exit(1);
 }
-console.log(`restore prove ok (${RUNS} reloads, median inside ${BUDGET} ms, none over ${HARD} ms)`);
+console.log(`restore prove ok (${RUNS} reloads, median inside ${BUDGET} ms, every run under the ${HARD} ms outlier cap)`);
 process.exit(0);

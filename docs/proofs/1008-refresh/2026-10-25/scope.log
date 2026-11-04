@@ -1,0 +1,3 @@
+PASS: exact main plus own registration once; all main commands/matrix/guards retained.
+PASS: reviewed proof byte-identical e7c64e8 SHA256 10af788f1de8e45a1aa8364d78e60deb971c2071433a1b7270a84ded7fcedb3a
+PASS: three-file implementation scope; runtime, existing proofs and budgets byte-identical main aeeb4134b1be24f7d3472125b8893ac2d9bd5b27

@@ -1,0 +1,21 @@
+restart: open visibility persists through kill -9 and rejoin; private, missing and invalid visibility stay hidden
+recovery: authenticated rejoin finishes at turn start and releases discovery while the winner stays connected
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: exactly one room retains the open slot
+
+0 !== 1
+
+    at file:///workspace/work/rematch986/server/open-table-prove.mjs:438:14
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 0,
+  expected: 1,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

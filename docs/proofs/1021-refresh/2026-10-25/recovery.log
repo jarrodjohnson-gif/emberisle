@@ -1,0 +1,33 @@
+
+> profile-reservation-recovery-prove
+> node server/profile-reservation-recovery-prove.mjs
+
+ok the killed owner left six durable reservations across four guards
+ok a separate process takes over the dead owner's store
+ok recover-a: the first writer sees exact recovered timestamps and lifetime
+ok recover-b: the first writer sees exact recovered timestamps and lifetime
+ok missing-a: the first writer sees exact recovered timestamps without a lifetime charge
+ok missing-b: the first writer sees exact recovered timestamps without a lifetime charge
+ok untouched: the first writer sees exact recovered timestamps without a lifetime charge
+ok recovery preserves every unrelated persisted field
+ok the first writer durably preserves the recovered document
+ok recover-a: its remembered credential remains usable
+ok recover-b: its remembered credential remains usable
+ok recovered reservations reach the lifetime lock
+ok even the correct PIN cannot undo the recovered lifetime lock
+recovery child: 12 checks passed
+ok a separate process takes over the dead owner's store
+ok recover-a: the first writer sees exact recovered timestamps and lifetime
+ok recover-b: the first writer sees exact recovered timestamps and lifetime
+ok missing-a: the first writer sees exact recovered timestamps without a lifetime charge
+ok missing-b: the first writer sees exact recovered timestamps without a lifetime charge
+ok untouched: the first writer sees exact recovered timestamps without a lifetime charge
+ok recovery preserves every unrelated persisted field
+ok the first writer durably preserves the recovered document
+ok recover-a: its remembered credential remains usable
+ok recover-b: its remembered credential remains usable
+ok recovered reservations reach the lifetime lock
+ok even the correct PIN cannot undo the recovered lifetime lock
+recovery child: 12 checks passed
+ok another complete restart does not charge any reservation twice
+profile-reservation-recovery-prove: 2 parent checks and two 12-check recovery children passed

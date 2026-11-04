@@ -17,7 +17,7 @@ const MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.72
 // sends a fish (or the visitor) darting away from it over `dart` s; it holds there until `hold` and is back on its round by `back`.
 const FISH = { schools: 2, per: 5, radius: 5.75, orbit: 0.28, speed: 0.5, y: -0.1 } as const;
 const SCATTER = { reach: 1.5, dart: 0.25, hold: 1.5, back: 4, far: 0.9 } as const;
-type Flee = { dx: number; dz: number; age: number };
+type Flee = { dx: number; dz: number; age: number; pending?: number };
 
 export function part(geo: THREE.BufferGeometry, colour: number, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1) {
   let g = geo.index ? geo.toNonIndexed() : geo;
@@ -43,6 +43,12 @@ function fin(points: number[][], colour: number) {
   geo.setAttribute("position", new THREE.Float32BufferAttribute([...points.flat(), ...[...points].reverse().flat()], 3));
   geo.computeVertexNormals();
   return part(geo, colour);
+}
+
+// A fresh scatter can arrive between rendered frames. Its first step excludes time before the input.
+function advanceFlee(f: Flee, dt: number) {
+  f.age += Math.max(0, dt - (f.pending ?? 0));
+  f.pending = 0;
 }
 
 // How far along its dart a scattered animal is: out fast, a hold, then an eased return.
@@ -239,11 +245,11 @@ export class OceanLife {
       }
       return;
     }
+    for (const f of this.fishFlee) if (f) advanceFlee(f, dt);
+    if (this.visitorFlee) advanceFlee(this.visitorFlee, dt);
     if (dt <= 0) return;
     this.surface = surface;
     this.fishTime += dt;
-    for (const f of this.fishFlee) if (f) f.age += dt;
-    if (this.visitorFlee) this.visitorFlee.age += dt;
     this.swim();
     if (this.active) {
       this.active.age = Math.min(this.active.duration, this.active.age + dt);
@@ -267,14 +273,14 @@ export class OceanLife {
   }
 
   /** A splash at (x, z): fish and the visitor within reach dart away from it, and come back a few seconds later. */
-  scatter(x: number, z: number) {
+  scatter(x: number, z: number, sinceFrame = 0) {
     this.fishAt().forEach((p, i) => {
       const f = flee(p.x, p.z, x, z);
-      if (f) this.fishFlee[i] = f;
+      if (f) { f.pending = sinceFrame; this.fishFlee[i] = f; }
     });
     const root = this.active && this.creatures[this.active.species].root;
     const f = root && flee(root.position.x, root.position.z, x, z);
-    if (f) this.visitorFlee = f;
+    if (f) { f.pending = sinceFrame; this.visitorFlee = f; }
   }
 
   /** Where each fish is now, for the scatter and the proof. */

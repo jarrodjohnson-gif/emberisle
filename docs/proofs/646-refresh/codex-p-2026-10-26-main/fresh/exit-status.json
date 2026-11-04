@@ -1,0 +1,245 @@
+{
+  "base-clone": {
+    "exit": 0,
+    "seconds": 8.62,
+    "command": [
+      "git",
+      "clone",
+      "--single-branch",
+      "--branch",
+      "main",
+      "https://github.com/jarrodjohnson-gif/emberisle.git",
+      "/workspace/emberisle/work/p-review-base873-main9bd"
+    ],
+    "cwd": "/workspace",
+    "tested_commit": "9bde9861490662ef3e95e90db5cfa2dc7874fd55"
+  },
+  "base-checkout": {
+    "exit": 0,
+    "seconds": 0.23,
+    "command": [
+      "git",
+      "checkout",
+      "--detach",
+      "9bde9861490662ef3e95e90db5cfa2dc7874fd55"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-base873-main9bd",
+    "tested_commit": "9bde9861490662ef3e95e90db5cfa2dc7874fd55"
+  },
+  "base-install": {
+    "exit": 0,
+    "seconds": 4.56,
+    "command": [
+      "npm",
+      "ci"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-base873-main9bd",
+    "tested_commit": "9bde9861490662ef3e95e90db5cfa2dc7874fd55"
+  },
+  "base-build": {
+    "exit": 0,
+    "seconds": 2.01,
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-base873-main9bd",
+    "tested_commit": "9bde9861490662ef3e95e90db5cfa2dc7874fd55"
+  },
+  "clone": {
+    "exit": 0,
+    "seconds": 12.07,
+    "command": [
+      "git",
+      "clone",
+      "--single-branch",
+      "--branch",
+      "codex/646-seat-needs",
+      "https://github.com/jarrodjohnson-gif/emberisle.git",
+      "/workspace/emberisle/work/p-verify873-main"
+    ],
+    "cwd": "/workspace",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  },
+  "fetch-main": {
+    "exit": 0,
+    "seconds": 0.43,
+    "command": [
+      "git",
+      "fetch",
+      "origin",
+      "refs/heads/main:refs/remotes/origin/main"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify873-main",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  },
+  "checkout": {
+    "exit": 0,
+    "seconds": 0.18,
+    "command": [
+      "git",
+      "checkout",
+      "--detach",
+      "4232a45b5921f1754566414660b2684a8425a9ad"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify873-main",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  },
+  "install": {
+    "exit": 0,
+    "seconds": 4.36,
+    "command": [
+      "npm",
+      "ci"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify873-main",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  },
+  "server-install": {
+    "exit": 0,
+    "seconds": 0.29,
+    "command": [
+      "npm",
+      "--prefix",
+      "server",
+      "ci"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify873-main",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  },
+  "environment": {
+    "exit": 0,
+    "seconds": 0.29,
+    "command": [
+      "bash",
+      "-c",
+      "node --version; npm ls playwright --depth=0; /workspace/emberisle/work/browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell --version; git rev-parse HEAD; git merge-base origin/main HEAD"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify873-main",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  },
+  "types": {
+    "exit": 0,
+    "seconds": 1.51,
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify873-main",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  },
+  "registered": {
+    "exit": 0,
+    "seconds": 0.16,
+    "command": [
+      "npm",
+      "run",
+      "registered-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify873-main",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  },
+  "size-delta": {
+    "exit": 0,
+    "seconds": 0.41,
+    "command": [
+      "npm",
+      "run",
+      "size-delta-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify873-main",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  },
+  "loosen": {
+    "exit": 0,
+    "seconds": 0.16,
+    "command": [
+      "npm",
+      "run",
+      "loosen-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify873-main",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  },
+  "build": {
+    "exit": 0,
+    "seconds": 1.61,
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify873-main",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  },
+  "size": {
+    "exit": 0,
+    "seconds": 0.11,
+    "command": [
+      "node",
+      "scripts/size-prove.mjs",
+      "--base",
+      "/workspace/emberisle/work/p-review-base873-main9bd"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify873-main",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  },
+  "server": {
+    "exit": 0,
+    "seconds": 311.0,
+    "command": [
+      "npm",
+      "test"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify873-main",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  },
+  "server-needs": {
+    "exit": 0,
+    "seconds": 0.84,
+    "command": [
+      "npm",
+      "--prefix",
+      "server",
+      "run",
+      "needs-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify873-main",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  },
+  "browser-needs": {
+    "exit": 0,
+    "seconds": 11.09,
+    "command": [
+      "npm",
+      "run",
+      "needs-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify873-main",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  },
+  "trade": {
+    "exit": 0,
+    "seconds": 88.69,
+    "command": [
+      "npm",
+      "run",
+      "trade-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify873-main",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  },
+  "clean": {
+    "exit": 0,
+    "seconds": 0.01,
+    "command": [
+      "git",
+      "status",
+      "--porcelain"
+    ],
+    "cwd": "/workspace/emberisle/work/p-verify873-main",
+    "tested_commit": "4232a45b5921f1754566414660b2684a8425a9ad"
+  }
+}

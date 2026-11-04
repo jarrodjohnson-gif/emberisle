@@ -14,6 +14,7 @@ const map = {
   card_buy: "open_001.wav",
   card_play: "scratch_001.wav",
   chip_gain: "click_005.wav",
+  gain_tick: "click_002.wav",
   trade_yes: "confirmation_001.wav",
   trade_no: "error_002.wav",
   win: "pluck_001.wav",
@@ -22,6 +23,7 @@ const map = {
   chat_send: "chat_send.wav",
   chat_recv: "chat_recv.wav",
   plop: "plop.wav",
+  your_turn: "your_turn.wav",
 };
 
 export function cue(name) {

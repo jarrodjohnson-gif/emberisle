@@ -1,0 +1,10 @@
+npm error Missing script: "watch-prove"
+npm error
+npm error Did you mean one of these?
+npm error   npm run tabs-prove # run the "tabs-prove" package script
+npm error   npm run watch-ui-prove # run the "watch-ui-prove" package script
+npm error   npm run flash-prove # run the "flash-prove" package script
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run
+npm error A complete log of this run can be found in: /home/agent/.npm/_logs/2026-10-25T06_46_28_137Z-debug-0.log

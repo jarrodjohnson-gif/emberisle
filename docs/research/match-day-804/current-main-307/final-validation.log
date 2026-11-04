@@ -1,0 +1,112 @@
+=== install ===
+
+added 61 packages in 3s
+=== server-install ===
+
+added 1 package in 211ms
+=== typecheck ===
+
+> typecheck
+> tsc --noEmit
+
+=== build ===
+
+> build
+> vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 1991 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                2.61 kB │ gzip:   1.30 kB
+dist/assets/ben-10-BZkFZeMq.webp               6.80 kB
+dist/assets/index-CdmJHvHG.css                73.30 kB │ gzip:  15.23 kB
+dist/assets/HandRates-l_im89HI.js              1.01 kB │ gzip:   0.64 kB
+dist/assets/VictoryTargetSelect-CQrZr9jI.js    1.12 kB │ gzip:   0.68 kB
+dist/assets/DockInspection-Dfz75S-2.js         2.03 kB │ gzip:   1.03 kB
+dist/assets/TurnExtensionVote-X_FyOaQS.js      2.67 kB │ gzip:   1.20 kB
+dist/assets/Reactions-yxonbmUt.js              5.47 kB │ gzip:   2.30 kB
+dist/assets/moments-BxRTh8IV.js                9.56 kB │ gzip:   4.09 kB
+dist/assets/jelly-board-g66UmGfi.js           20.42 kB │ gzip:   7.90 kB
+dist/assets/sheets-SnXg3exZ.js                22.25 kB │ gzip:   7.02 kB
+dist/assets/online-DvEGBU8p.js                22.31 kB │ gzip:   7.58 kB
+dist/assets/harbor-jelly-Lm-Tuijx.js          25.97 kB │ gzip:  10.32 kB
+dist/assets/hex-jelly-Bhlj2q8e.js            136.94 kB │ gzip:  47.25 kB
+dist/assets/index-DA5gxzwI.js                397.42 kB │ gzip: 125.95 kB
+dist/assets/IslandCanvas-BpOH-mAi.js         759.43 kB │ gzip: 201.53 kB
+
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 811ms
+=== registered ===
+
+> registered-prove
+> node scripts/registered-prove.mjs
+
+ok   self-test: the fixture as written passes
+ok   self-test: a removed step fails
+ok   self-test: a command only in a # comment line fails
+ok   self-test: a command only in a trailing # comment fails
+ok   self-test: a command outside any run: fails
+ok   self-test: `if: false` fails
+ok   self-test: `if: ${{ x && false }}` fails
+ok   self-test: `continue-on-error: true` fails
+ok   self-test: `|| true` in a run: | block fails, through npm test
+ok   self-test: a dropped server test chain fails
+ok   self-test: a new proof added to the real repo fails in both places
+registered-prove: all 119 proofs are in package.json and ci.yml
+=== loosen ===
+ok   self-test: an unchanged proof passes
+ok   self-test: re-indenting passes
+ok   self-test: an added check passes
+ok   self-test: editing only the block comment passes
+ok   self-test: a removed assert fails
+ok   self-test: a removed assert lowers the count
+ok   self-test: a wider tolerance fails
+ok   self-test: a //-commented assert fails
+ok   self-test: a /* */-commented assert fails
+ok   self-test: a check wrapped in a multi-line /* */ fails
+ok   self-test: a removed throw fails
+ok   self-test: a removed expect fails
+ok   self-test: a fail() that no longer sets exitCode 1 fails
+ok   self-test: an added process.exit(0) fails
+ok   self-test: an added process.exit() fails
+ok   self-test: a new .skip fails
+loosen-prove: 0 changed proof(s) against 30737a5c81f1, none loosened
+=== size ===
+ok   index: 124.72 kB gzip, ceiling 125.20 kB
+ok   IslandCanvas: 200.09 kB gzip, ceiling 202.50 kB
+ok   jelly-board: 7.85 kB gzip, ceiling 9.00 kB
+ok   hex-jelly: 46.73 kB gzip, ceiling 50.00 kB
+ok   harbor-jelly: 10.24 kB gzip, ceiling 11.50 kB
+ok   online: 7.55 kB gzip, ceiling 9.00 kB
+ok   Reactions: 2.30 kB gzip, ceiling 2.60 kB
+ok   sheets: 7.00 kB gzip, ceiling 7.80 kB
+ok   moments: 4.09 kB gzip, ceiling 5.70 kB
+ok   VictoryTargetSelect: 0.69 kB gzip, ceiling 1.00 kB
+ok   DockInspection: 1.03 kB gzip, ceiling 1.20 kB
+ok   HandRates: 0.65 kB gzip, ceiling 0.80 kB
+ok   TurnExtensionVote: 1.21 kB gzip, ceiling 1.40 kB
+ok   index growth: base 124724 B, PR 124724 B, +0 B, allowance 400 B
+ok   IslandCanvas growth: base 200093 B, PR 200093 B, +0 B, allowance 660 B
+ok   jelly-board growth: base 7850 B, PR 7850 B, +0 B, allowance 200 B
+ok   hex-jelly growth: base 46729 B, PR 46729 B, +0 B, allowance 200 B
+ok   harbor-jelly growth: base 10237 B, PR 10237 B, +0 B, allowance 200 B
+ok   online growth: base 7554 B, PR 7554 B, +0 B, allowance 200 B
+ok   Reactions growth: base 2302 B, PR 2302 B, +0 B, allowance 200 B
+ok   sheets growth: base 7004 B, PR 7004 B, +0 B, allowance 200 B
+ok   moments growth: base 4090 B, PR 4090 B, +0 B, allowance 200 B
+ok   VictoryTargetSelect growth: base 685 B, PR 685 B, +0 B, allowance 200 B
+ok   DockInspection growth: base 1032 B, PR 1032 B, +0 B, allowance 200 B
+ok   HandRates growth: base 648 B, PR 648 B, +0 B, allowance 200 B
+ok   TurnExtensionVote growth: base 1206 B, PR 1206 B, +0 B, allowance 200 B
+size-prove: all chunks inside ceiling and growth allowance
+=== diff ===
+=== evidence ===
+Fresh clone c175c97: 56 unique PNGs; exact filename set, SHA-256, bytes, dimensions and pointer modes pass.
+Gameplay, title and scroll results all exit 0. All 10 wanted controls fit; enabled controls hit-testable.
+Application/server/scripts/packages/CI unchanged against main307.

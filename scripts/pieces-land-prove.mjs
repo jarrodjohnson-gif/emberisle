@@ -100,6 +100,8 @@ try {
     await page.addInitScript(() => {
       window.__plays = [];
       HTMLMediaElement.prototype.play = function () {
+        // #814: the background music is music-prove's, not a table sound.
+        if (this.src.endsWith("/old_tower_inn_loop.mp3")) return Promise.resolve();
         window.__plays.push({ file: new URL(this.src).pathname.replace("/audio/", ""), t: performance.now() });
         return Promise.resolve();
       };
@@ -232,6 +234,8 @@ try {
     await page.addInitScript(() => {
       window.__plays = [];
       HTMLMediaElement.prototype.play = function () {
+        // #814: the background music is music-prove's, not a table sound.
+        if (this.src.endsWith("/old_tower_inn_loop.mp3")) return Promise.resolve();
         window.__plays.push({ file: new URL(this.src).pathname.replace("/audio/", ""), t: performance.now() });
         return Promise.resolve();
       };
