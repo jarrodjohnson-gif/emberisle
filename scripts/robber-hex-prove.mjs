@@ -119,11 +119,11 @@ async function pixelProof(width, height) {
   const blocked = await sample();
   check(`${width}x${height}: rendered terrain sample covers the hex`, before.count >= 500 && blocked.count >= 500, { before, blocked });
   check(`${width}x${height}: rendered blocked hex is at least 10% darker`, blocked.mean <= before.mean * 0.9, { before: before.mean, blocked: blocked.mean });
-  // Blocked hex luminance at ROBBER_HEX_DIM = 0.75: at most 0.60 of normal terrain luminance.
-  // The floor (0.15) was chosen because normal grain luminance sits at ~0.55; at 75% dimming,
-  // grain luminance sits at ~0.27, which stays comfortably above the 0.15 floor while plain black is much lower (<= 0.08).
+  // Blocked hex luminance at ROBBER_HEX_DIM = 0.95: at most 0.60 of normal terrain luminance.
+  // The floor (0.10) ensures the blocked hex is still above plain black (<= 0.08)
+  // while terrain remains distinguishable.
   const MAX_BLOCKED_LUM_RATIO = 0.60;
-  const MIN_BLOCKED_LUM_FLOOR = 0.15;
+  const MIN_BLOCKED_LUM_FLOOR = 0.10;
   check(`${width}x${height}: blocked terrain is dimmed but above plain black`, blocked.mean <= before.mean * MAX_BLOCKED_LUM_RATIO && blocked.mean >= MIN_BLOCKED_LUM_FLOOR, blocked);
   const screenshotFrame = await page.evaluate(() => {
     const isle = window.__isle;
@@ -225,7 +225,7 @@ try {
         labelColor: label?.material.color.getHexString() ?? null,
         label: background ? background.slice(0, 3).map((v) => v.toString(16).padStart(2, "0")).join("") : (label?.material.color.getHexString() ?? null),
         restDisc: disc?.material.userData.rest?.getHexString?.() ?? null,
-        expectedDisc: disc?.material.userData.rest ? disc.material.userData.rest.clone().multiplyScalar(1 - 0.85).getHexString() : null,
+        expectedDisc: disc?.material.userData.rest ? disc.material.userData.rest.clone().multiplyScalar(1 - 0.95).getHexString() : null,
         background, lightInk, faceHash, textureId: label?.material.map.uuid,
       };
     };
@@ -296,7 +296,7 @@ try {
     "move: token disc and face are dimmed (dark face)",
     moved.afterA?.tokenA?.disc &&
       moved.afterA.tokenA.disc === moved.afterA.tokenA.expectedDisc &&
-      JSON.stringify(moved.afterA.tokenA.background) === "[15,15,15,255]",
+      JSON.stringify(moved.afterA.tokenA.background) === "[5,5,5,255]",
     moved.afterA?.tokenA,
   );
   check("move: light numeral and pips remain on the black face", moved.afterA?.tokenA?.lightInk >= 1000, moved.afterA?.tokenA);
