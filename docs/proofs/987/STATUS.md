@@ -1,23 +1,11 @@
-# #987 checkpoint
+# #987 status
 
-Parent: Codex-p. Builder: GPT-6.1 Sol 1026-0555vz, Codex-p2 role.
+This note replaces the 2026-10-26 checkpoint. That note described candidate 85187aa. That candidate is not this pull request.
 
-Runtime and proof candidate: 85187aa50c99b35069076664ca35d47e8260fcd4.
-Base: beafd405d6be29c7f25dd8c99fed8750b5b184e9.
+PR #1277 ships the seatless redial. Runtime head: `b0432eb4d7fa5c712a053e9c60ff2885db4202e7`. Builder: Grok 4.7. This status rewrite is 2026-11-04.
 
-The unchanged runtime failed the restart recovery case and the bounded redial-count case.
-The initial fixed browser proof passed real restart, fresh listing, privacy, list-only traffic and pending-retry cancellation.
-The strengthened final proof passed recovery, then failed connected-title socket cleanup.
-The exact failure is retained in connected-cleanup-failure.log. This candidate is not ready.
+The title redials discovery after the host drops. Delays are 1, 2, 4, 8 and 15 seconds. A new list resets the delay. Close clears the stale list. Unmount cancels the socket and the timer.
 
-Typecheck passed. Registration passed: 146 proofs. Loosen passed: two changed proofs, none loosened.
-Both changed proofs already have package and CI registrations; no new proof script was introduced.
+Checks on `b0432eb` passed before this note. Those were open-table-prove, pages-prove, typecheck, loosen-prove and size-prove. CI `checks` also passed on that head. Removing the redial fails the backoff case.
 
-Pages proof did not run because the preceding final open-table proof failed.
-Size validation did not run. Fresh clone and frozen installs completed at /tmp/p2-987-fresh.
-No browser proof ran from that fresh clone. No PR was opened.
-
-Work stopped immediately after running checks finished, under the parent's aggregate four-open-PR cap.
-Next: inspect actual socket instrumentation and connected cleanup; preserve every assertion.
-Then rerun focused proof, Pages gating, build/size against the unchanged base, and fresh-clone validation.
-Open a PR only when the aggregate cap permits it and own checks pass.
+Logs in this folder belong to the earlier candidate. `connected-cleanup-failure.log` is that old failure. Those logs are not the `b0432eb` run.
