@@ -1,7 +1,7 @@
 // #826: Pictures of blocked hex vs normal across all five terrains at 4 viewports,
 // plus comparison pictures at 25%, 50%, and 75% black, and zoomed crops for owner cards.
 // Run: node --import ./server/register.mjs scripts/robber-pictures.mjs
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
@@ -86,8 +86,8 @@ try {
     await page.waitForFunction(() => window.__isle?.lastState && window.__isle.landReady && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
     await drawn(page, 3);
 
-    // Ensure dim is at default 0.85
-    await page.evaluate(() => window.__isle.setRobberHexDim(0.85));
+    // Ensure dim is at default 0.95
+    await page.evaluate(() => window.__isle.setRobberHexDim(0.95));
 
     // Capture each terrain: blocked vs normal
     for (const terrain of TERRAINS) {
@@ -180,14 +180,58 @@ try {
         const y = Math.max(0, Math.min(h - size, cy - half));
         return { x, y, width: size, height: size };
       });
-      for (const pct of [25, 50, 75, 85]) {
+      for (const pct of [25, 50, 75, 85, 95]) {
         await page.evaluate((dim) => window.__isle.setRobberHexDim(dim), pct / 100);
         await drawn(page, 3);
         await page.screenshot({ path: `docs/proofs/826/robber-dim-${pct}pct-${tag}.png` });
         await page.screenshot({ path: `docs/proofs/826/robber-dim-${pct}pct-crop-${tag}.png`, clip: grainCrop });
         console.log(`  dim ${pct}% (and crop) captured for ${tag}`);
       }
-      await page.evaluate(() => window.__isle.setRobberHexDim(0.85));
+      await page.evaluate(() => window.__isle.setRobberHexDim(0.95));
+
+      if (tag === "1280x720") {
+        const compHtml = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { margin: 0; background: #121212; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; display: inline-block; }
+  h1 { margin: 0 0 16px 0; font-size: 20px; font-weight: 600; text-align: center; }
+  .grid { display: flex; gap: 20px; }
+  .card { display: flex; flex-direction: column; align-items: center; background: #1e1e1e; border: 1px solid #333; border-radius: 10px; padding: 12px; }
+  .label { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .sub { font-size: 13px; color: #aaa; margin-bottom: 10px; }
+  img { border: 1px solid #444; border-radius: 6px; width: 280px; height: 280px; display: block; }
+</style>
+</head>
+<body>
+  <h1>Robber Hex Dim Comparison: 75% vs 85% vs 95% Black</h1>
+  <div class="grid">
+    <div class="card">
+      <div class="label">75% Black</div>
+      <div class="sub">ROBBER_HEX_DIM = 0.75</div>
+      <img src="data:image/png;base64,${readFileSync("docs/proofs/826/robber-dim-75pct-crop-1280x720.png").toString("base64")}">
+    </div>
+    <div class="card">
+      <div class="label">85% Black</div>
+      <div class="sub">ROBBER_HEX_DIM = 0.85</div>
+      <img src="data:image/png;base64,${readFileSync("docs/proofs/826/robber-dim-85pct-crop-1280x720.png").toString("base64")}">
+    </div>
+    <div class="card" style="border-color: #66afe9;">
+      <div class="label" style="color: #66afe9;">95% Black (Selected)</div>
+      <div class="sub">ROBBER_HEX_DIM = 0.95</div>
+      <img src="data:image/png;base64,${readFileSync("docs/proofs/826/robber-dim-95pct-crop-1280x720.png").toString("base64")}">
+    </div>
+  </div>
+</body>
+</html>`;
+        const compPage = await ctx.newPage();
+        await compPage.setContent(compHtml);
+        const compElem = await compPage.$("body");
+        await compElem.screenshot({ path: "docs/proofs/826/robber-dim-comparison-75-85-95.png" });
+        await compPage.close();
+        console.log("  side-by-side comparison image captured: docs/proofs/826/robber-dim-comparison-75-85-95.png");
+      }
     }
 
     await ctx.close();
