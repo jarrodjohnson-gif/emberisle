@@ -15,6 +15,8 @@ declare global {
   }
 }
 
+const STACKER_LOGO = `${import.meta.env.BASE_URL}images/sandwich-stacker-logo.png`;
+
 const KEY_CODES = { ArrowLeft: 37, ArrowRight: 39 } as const;
 type Arrow = keyof typeof KEY_CODES;
 
@@ -50,7 +52,7 @@ export function LobbyPlay({ onGame }: { onGame: (open: boolean) => void }) {
       {stacker ? <LobbyWaitBox onClose={() => setStacker(false)} /> : (
         <div className="ls">
           <h2>While you wait</h2>
-          <div className="lt"><span className="lw" /><span><b>Sandwich Stacker</b><span>Solo</span></span><button type="button" onClick={() => setStacker(true)}>Play</button></div>
+          <div className="lt" role="group" aria-label="Sandwich Stacker"><img className="lw" src={STACKER_LOGO} alt="Sandwich Stacker" width="240" height="210" /><span><b aria-hidden="true">Sandwich Stacker</b><span>Solo</span></span><button type="button" onClick={() => setStacker(true)}>Play</button></div>
         </div>
       )}
     </div>
@@ -170,7 +172,7 @@ export function LobbyWaitBox({ onClose }: { onClose: () => void }) {
       }}
     >
       <div className="lobby-wait-head">
-        <b>Sandwich Stacker</b>
+        <b className="stacker-title"><img src={STACKER_LOGO} alt="Sandwich Stacker" width="240" height="210" /><span aria-hidden="true">Sandwich Stacker</span></b>
         <Button variant="outline" aria-pressed={sound} data-testid="lobby-wait-sound" onClick={() => setSound((on) => !on)}>{sound ? "Sound on" : "Sound off"}</Button>
         <Button variant="outline" onClick={onClose}>Close</Button>
       </div>
