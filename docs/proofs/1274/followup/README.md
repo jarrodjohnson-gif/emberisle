@@ -28,3 +28,7 @@ Final evidence-head run [41759616754](https://github.com/jarrodjohnson-gif/ember
 The follow-up ownership check found Gemini's active fixes in [#1291](https://github.com/jarrodjohnson-gif/emberisle/pull/1291) and [#1293](https://github.com/jarrodjohnson-gif/emberisle/pull/1293), both still unmerged. The latter is the isolated variable rename; the former combines it with a ceiling raise. Neither is imported here. This branch preserves its ceilings and the other builder's work.
 
 All eleven design questions now have [owner answers](https://github.com/jarrodjohnson-gif/emberisle/issues/1274#issuecomment-6621507049). These supersede the earlier open-question status, not the runtime validation history. Decision 4 is C (keep contextual fills); the other ten are A. See the audit build-order document for the separately scoped follow-ups and their gates.
+
+## Upstream resolution
+
+The upstream fixes were merged through #1291 as `a3914297e4e57657fff4c899d94a69507529de20`. This supersedes the earlier unmerged-status snapshot. The white-chrome branch has not edited size ceilings or proof allowances. Previous red runs remain red evidence; a fresh head must be checked against the repaired upstream before a readiness announcement. No passing result is inferred from the merge alone.

@@ -46,6 +46,15 @@ Each design row is one S-sized deliverable: inventory, measured mock/spec, and i
 
 ## Current ownership and next independent work
 
+### Published design drafts
+
+Two independent research packets now have isolated branches. They preserve runtime source and do not claim spec acceptance or implementation eligibility:
+
+- [Seat-dot ring draft, b4731cd](https://github.com/jarrodjohnson-gif/emberisle/tree/b4731cdd873c25625c4d0284f04f8165f91f42ba/docs/design/seat-dot-ring): actual four-colour comparison on white/mist at all three standard sizes, caller inventory, current-turn and existing-border exceptions. Proposed edge contrast is 3.9428:1 on white and 3.6258:1 on mist. A local sanity review corrected the Empty-label copy and all pictures were recaptured.
+- [Contextual button audit, dc5bdf4](https://github.com/jarrodjohnson-gif/emberisle/tree/dc5bdf42b1b11490081aa3787ad83a657748d89f/docs/design/button-audit): source-cited shared-Button inventory and three schematic state sheets. All 19 swatches per frame fit the measured viewport and have at least 44px dimensions. This is not a runtime target, keyboard, or contrast pass; those checks remain explicitly listed.
+
+Both packets contain measured JSON and image/source hashes. They are review artifacts for #1297/#1298, not additional changes in the white-chrome PR. Runtime work still waits for accepted specs and existing ownership/file-release requirements. The older eligibility snapshot below records the check before these drafts were prepared.
+
 Live PR metadata, not old PR-body checkpoints: #1144 is open at `da2b7e4`; [Grok's claim](https://github.com/jarrodjohnson-gif/emberisle/issues/1101#issuecomment-6618131694) reserves bounded dock/tap/connection/proof hunks. #1216 is open at `26d1cd9` under Astra-1030-title. #936 and draft #799 remain open. #867 is open at `ead3996`, adopted by Claude Opus 5.5 builder 2. #706 is **closed unmerged** and must not be revived. #1271 is **merged**, so its shelf is a baseline, not an active reservation. Refresh all claims immediately before taking work; shared account names do not identify builders.
 
 The next independent design candidate is the **#1297 ring inventory and measured spec**, not a SeatDot runtime patch. It is not currently eligible to claim: its backlog design gate remains. At this check #1297 is backlog with no comments/claim; its issue explicitly makes SeatDot and callers read-only. Local SeatDot has a fill and no shared ring, so the need remains real. Do not start its mocks or implementation until scheduling/eligibility is resolved. #1298 inventory is similarly independent of dock/title runtime ownership but also remains backlog. The immediately executable #1274 continuation is to finish and publish this approved-decision/dependency record and maintain PR #1275's validation and review evidence; no new runtime slice is established by these answers alone. No runtime claim, implementation approval, new issue, or external post is established by this document.
