@@ -57,9 +57,9 @@ try {
     enforce: 'pre',
     transform(source, id) {
       if (!/\/src\/lib\/sound\.ts(?:\?|$)/.test(id)) return;
-      const request = 'export function play(name: SoundName, volume = 1) {';
+      const request = 'export function play(name: SoundName, volume = 1, category = soundCategory(name)) {';
       const gate = '  if ((!UI.has(name) && now - (asked.get(name) ?? -GAP_MS) < GAP_MS) || queue.length >= MAX_QUEUE) return;';
-      const start = '  const gain = volume * categoryGain(soundCategory(name));';
+      const start = '  const gain = volume * categoryGain(category);';
       for (const anchor of [request, gate, start]) if (source.split(anchor).length !== 2) throw new Error('audio diagnostic source anchor changed');
       // Observations only: the original guards, queue, timings and start calls stay intact.
       const trace = `const __audioRecoveryTrace = [];
@@ -69,9 +69,9 @@ function __audioRecoveryRecord(stage, name, facts = {}) {
   if (__audioRecoveryTrace.length > 400) __audioRecoveryTrace.shift();
 }\n`;
       return { code: trace + source
-        .replace(request, request + '\n  __audioRecoveryRecord("request", name, {volume, noAudio: typeof Audio === "undefined"});')
+        .replace(request, request + '\n  __audioRecoveryRecord("request", name, {volume, category, categoryGain: categoryGain(category), noAudio: typeof Audio === "undefined"});')
         .replace(gate, '  __audioRecoveryRecord("gate", name, {now, asked: asked.get(name) ?? null, burst: !UI.has(name) && now - (asked.get(name) ?? -GAP_MS) < GAP_MS, full: queue.length >= MAX_QUEUE});\n' + gate)
-        .replace(start, start + '\n  __audioRecoveryRecord("start", name, {gain});')
+        .replace(start, start + '\n  __audioRecoveryRecord("start", name, {gain, category, categoryGain: categoryGain(category)});')
         + '\nexport const __audioRecoveryQueue = () => ({pacing, queue: queue.map(item => item[0]), trace: __audioRecoveryTrace.slice()});\n', map: null };
     },
   }] });
