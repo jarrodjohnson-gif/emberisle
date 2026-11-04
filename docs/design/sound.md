@@ -202,4 +202,4 @@ These answer section 4 and override any recommendation above that disagrees.
 - It ducks to 30% of its volume (0.036) while `game_start`, `match_point`, `game_lose` or `end_music` is playing, and returns to 0.12 when the last of them ends or is cut off.
 - It stops at the win screen (where `end_music` plays), when a new game leaves it, and on the title; a rematch brings it back.
 
-Background bed level, Jarrod2026-11-03 (#1284): BG_VOLUME0.25→0.12; BG_DUCK remains0.3. Sting gains stay unchanged. Final listening acceptance remains with Jarrod.
+Background bed level, Jarrod 2026-11-03 (#1284): `BG_VOLUME` 0.25 → 0.12; `BG_DUCK` remains 0.3. Sting gains stay unchanged. Final listening acceptance remains with Jarrod.
