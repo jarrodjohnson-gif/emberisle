@@ -23,5 +23,8 @@
   "trade-sound": 468,
   "emotes": 371,
   "SeatNeeds": 1780,
-  "TradeResource": 1430
+  "TradeResource": 1430,
+  "TradeToast": 2661,
+  "losses": 1407,
+  "trade-panel": 157
 }
