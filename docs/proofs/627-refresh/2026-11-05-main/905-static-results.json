@@ -1,0 +1,22 @@
+[
+  {
+    "check": "types",
+    "exit": 0,
+    "seconds": 2.76
+  },
+  {
+    "check": "registered",
+    "exit": 0,
+    "seconds": 0.48
+  },
+  {
+    "check": "build",
+    "exit": 0,
+    "seconds": 2.54
+  },
+  {
+    "check": "size",
+    "exit": 0,
+    "seconds": 0.49
+  }
+]
