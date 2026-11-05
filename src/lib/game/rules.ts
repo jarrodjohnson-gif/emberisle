@@ -299,14 +299,9 @@ function names(list: PlayerState[]) {
   return n.length < 3 ? n.join(" and ") : `${n.slice(0, -1).join(", ")}, and ${n.at(-1)}`;
 }
 
-type RollOffState = NonNullable<GameState["rollOff"]> & {
-  tied?: string[];
-  settled?: string[];
-};
-
 // The pre-setup roll-off (docs/design/first-player.md). Never touches state.rng.
 function rollOffRoll(state: GameState, me: PlayerState) {
-  const ro = state.rollOff as RollOffState;
+  const ro = state.rollOff!;
   const die = rollDie();
   ro.rolls[me.id] = die;
   ro.pending.shift();
