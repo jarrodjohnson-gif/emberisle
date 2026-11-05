@@ -46,3 +46,11 @@ Ring/button branches were pushed and verified by GitHub reads. They do not have 
 - Browser/localhost/git commands sometimes need approved sandbox escalation. Preserve inherited proxy/CA settings; do not change accounts or infrastructure. There was one execution-service disconnect; it recovered on a later invocation. Recheck normally if it recurs and checkpoint affected work rather than bypassing limits.
 - Temporary capture utilities were not permanent CI proofs. Design measurements are not evidence of production behavior.
 - User previously enabled hourly continuation, automation id `6aea00ab36ec8191975a7fe06d6415aa`. It was not disabled here. Scheduled invocations are not continuously active workers; be candid about that distinction. Coordinate fresh sessions to avoid duplicate work.
+
+## Resumed checkpoint — 2026-11-05
+
+Live PR #1275 review supersedes the earlier pending-gates snapshot. Opus found the code clean; the owner accepted the pictures. Desk comment6650989487 requested one normal current-main merge. That merge is pushed at `50045c636206f6c84685a67f8cb3124583eebcda`, with main parent `82c440b2b78943494fd15e6bda98cec312454fc3`. Local registration179/build/ceilings and four-size chrome pass. Hosted CI and merge-delta review are still pending at this checkpoint. No PR merge was performed.
+
+The Fortunes packet now has a complete proposed contract and source inventory, refreshed four-size pictures and96 measurements. Seven local interaction groups pass. These are mock checks only. New owner acceptance is still required for layout, reset and offer policy. Real-game composites must resolve header clearance and right-column placement versus the current left dock. The synthetic automatic offer modal was removed; the alternative hook now returns to a nonmodal dock placeholder. Runtime files remain untouched.
+
+An execution environment transition interrupted the read-only Sol validation worker. Its logs survived; Astra recovered them. The worker is no longer active. Browser installation used `/workspace/work/pw-browsers` after the default home-cache path failed. Browser checks remained serial under the team lock. Claims: #1274 comment6651610960; #1302 comment6652561951. No automation was changed.

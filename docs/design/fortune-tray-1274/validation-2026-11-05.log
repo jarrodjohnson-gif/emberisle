@@ -1,0 +1,12 @@
+{
+  "records": 96,
+  "checks": [
+    "Selection dispatches no action",
+    "Bank reduction drops unpayable second pick and disables Play",
+    "Refusal stays open and permits explicit retry; success closes",
+    "Double activation arms once; cancellation releases mock arm guard",
+    "Reopen clears selection; Tab wraps both ways; Escape returns focus",
+    "Turn change closes; other turn blocks; new own turn clears guard",
+    "Proposed arrival closes tray, exposes nonmodal dock placeholder; never opens offer modal"
+  ]
+}
