@@ -7,18 +7,15 @@ import {
   ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ChatControls, ChatDock, ChromeLanded, CostCard, FirstGameCoach, FortuneTray, HowTo, MyNumbers, sheets, TradePanel, TurnMoment, WinScreen } from "@/components/game/chunks";
-import { TradeToast } from "@/components/game/TradeToast";
+import { ChatControls, ChatDock, ChromeLanded, CostCard, DiscardBar, FirstGameCoach, FortuneTray, HowTo, losses, MyNumbers, sheets, TakeFromBar, TradePanel, tradeToast, TradeToast, TurnMoment, WinScreen } from "@/components/game/chunks";
 import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
 import { SeatRail, SeatStrip, HiddenPointHint } from "@/components/game/SeatRail";
-import { DiscardBar } from "@/components/game/DiscardBar";
 import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice, RollMoment } from "@/components/game/Dice";
 import { TableMenu } from "@/components/game/TableMenu";
 import { HandDock } from "@/components/game/Hand";
-import { TakeFromBar } from "@/components/game/TakeFromBar";
 import { PlaceChip } from "@/components/game/PlaceChip";
 import { SheetsFailed } from "@/components/game/SheetsFailed";
 import { TrayFailed } from "@/components/game/TrayFailed";
@@ -156,7 +153,11 @@ export function Hud() {
   const [sheetsLost, setSheetsLost] = useState<string | null>(null);
   useEscapeDisarm();
   const [stackRef, moreBelow] = useMoreBelow();
-  useEffect(() => preloadOnIdle(sheets.prefetch), []);
+  useEffect(() => {
+    preloadOnIdle(sheets.prefetch);
+    preloadOnIdle(tradeToast.prefetch);
+    preloadOnIdle(losses.prefetch);
+  }, []);
   // #423: the fortune tray is open until a fortune is played, it is closed, the phase moves (a roll with the tray up) or the
   // turn moves on (hotseat: to the next seat); it never comes back on its own.
   const [fortunesOpen, setFortunesOpen] = useState(false);
@@ -411,8 +412,14 @@ export function Hud() {
 
             {spectator ? null : <HandDock me={me} phase={state.phase} />}
 
-            {discarder ? <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
-            <TakeFromBar />
+            {discarder ? (
+              <LazyBoundary failed={null}>
+                <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} />
+              </LazyBoundary>
+            ) : null}
+            <LazyBoundary failed={null}>
+              <TakeFromBar />
+            </LazyBoundary>
 
             {state.phase === "main" && mine ? (
               <div className="hud-actions">
@@ -529,7 +536,9 @@ export function Hud() {
               <span data-testid="deck-count" data-deck-left={deckLeft} title={`${deckLeft} fortunes left in the deck`} className="shrink-0 px-2 text-xs leading-5 tabular-nums">Deck {deckLeft}</span>
             </div>
             {pinEnd ? endRow : null}
-            <TradeToast />
+            <LazyBoundary failed={null}>
+              <TradeToast />
+            </LazyBoundary>
           </div>
           {/* #423: the tray rises over the stack from its bottom edge and may cover the island, like a sheet, but never the
               header or the portrait seat strip; it is inside the sheets chunk, which the table prefetched on idle (#488). */}
