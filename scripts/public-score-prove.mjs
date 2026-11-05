@@ -26,6 +26,11 @@ for(const code of ['PSAA','PSAB']){
  writeFileSync(path.join(dir,`${code}.json`),JSON.stringify({code,host:'s0',next:4,chat:[],chatSeq:0,game,seats,recoveryPids:[],shape:2,savedAt:Date.now()}));
 }
 const vite=await createServer({server:{host:'127.0.0.1',port,strictPort:true},logLevel:'error'});
+async function whiteSurface(locator,label){
+ const paint=await locator.evaluate(el=>{const s=getComputedStyle(el);return{background:s.backgroundColor,blur:s.backdropFilter};});
+ assert.equal(paint.background,'rgb(255, 255, 255)',`${label}: opaque white surface`);
+ assert.equal(paint.blur,'none',`${label}: no backdrop blur`);
+}
 try{
  host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:dir, RESULTS_DIR: `${dir}/results`,GRACE_MS:'600000',HOLD_MS:'600000',TURN_MS:'600000'},stdio:['ignore','pipe','pipe']});
  const hostPort=await new Promise((resolve,reject)=>{host.stdout.on('data',d=>{const m=String(d).match(/listening (\d+)/);if(m)resolve(Number(m[1]));});host.on('exit',c=>reject(Error(`host ${c}`)));});
@@ -60,6 +65,7 @@ try{
    for(let p=0;p<4;p++){
     await page.locator(`[data-menu-trigger="p${p}"]`).click();
     const menu=page.getByTestId('player-menu');await menu.getByTestId('score-breakdown').waitFor();
+    await whiteSurface(menu,`${width} player menu`);
     const parts=await menu.locator('[data-component]').evaluateAll(nodes=>Object.fromEntries(nodes.map(n=>[n.dataset.component,Number(n.dataset.points)])));
     assert.deepEqual(parts,expected[p].parts);assert.equal(Object.values(parts).reduce((n,k)=>n+k,0),expected[p].public);
     if(i===p){assert.equal(await menu.getByTestId('private-points').textContent(),String(expected[p].hidden));assert.equal(await menu.getByTestId('private-total').textContent(),String(expected[p].public+expected[p].hidden));}
@@ -75,8 +81,11 @@ try{
    await page.keyboard.press('Escape');
    await load(stages.zero[i],i);assert.equal(await page.getByTestId('hidden-point-hint').textContent(),hint);
    await load(stages.over[i],i);await page.getByTestId('win-screen').waitFor();
+   await whiteSurface(page.getByTestId('win-screen').locator(':scope > div'),`${width} scores`);
+   assert.equal(await page.getByTestId('win-screen').evaluate(el=>getComputedStyle(el).backdropFilter),'none',`${width}: score backdrop has no blur`);
    for(let p=0;p<4;p++){const cells=await page.locator(`[data-testid="win-row"][data-player="p${p}"] td`).allTextContents();assert.equal(cells[5],String(expected[p].hidden));}
    await page.getByTestId('win-look').click();
+   await whiteSurface(page.getByTestId('win-chip'),`${width} scores chip`);
    await page.locator('[data-menu-trigger="p1"]').click();assert.equal(await page.getByTestId('private-points').textContent(),'1');await page.keyboard.press('Escape');
   }
   await page.screenshot({path:`test-results/public-score-${width}.png`});await context.close();
