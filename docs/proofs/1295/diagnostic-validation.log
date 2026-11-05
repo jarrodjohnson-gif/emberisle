@@ -1,0 +1,133 @@
+PASS: diagnostic seed/state match; 19 hexes, vertices and edges regenerate exactly from captured seed; four seats, geometry, crystal/calm and populated GL metadata validated. Actual executable unavailable. Sample and full screenshot are separate moments, as in original proof.
+{
+  "seed": 608879584,
+  "hexes": [
+    {
+      "id": "-2,0",
+      "terrain": "wool"
+    },
+    {
+      "id": "-2,1",
+      "terrain": "grain"
+    },
+    {
+      "id": "-2,2",
+      "terrain": "clay"
+    },
+    {
+      "id": "-1,-1",
+      "terrain": "grain"
+    },
+    {
+      "id": "-1,0",
+      "terrain": "timber"
+    },
+    {
+      "id": "-1,1",
+      "terrain": "grain"
+    },
+    {
+      "id": "-1,2",
+      "terrain": "ore"
+    },
+    {
+      "id": "0,-2",
+      "terrain": "clay"
+    },
+    {
+      "id": "0,-1",
+      "terrain": "timber"
+    },
+    {
+      "id": "0,0",
+      "terrain": "timber"
+    },
+    {
+      "id": "0,1",
+      "terrain": "wool"
+    },
+    {
+      "id": "0,2",
+      "terrain": "grain"
+    },
+    {
+      "id": "1,-2",
+      "terrain": "ore"
+    },
+    {
+      "id": "1,-1",
+      "terrain": "wool"
+    },
+    {
+      "id": "1,0",
+      "terrain": "clay"
+    },
+    {
+      "id": "1,1",
+      "terrain": "waste"
+    },
+    {
+      "id": "2,-2",
+      "terrain": "timber"
+    },
+    {
+      "id": "2,-1",
+      "terrain": "ore"
+    },
+    {
+      "id": "2,0",
+      "terrain": "wool"
+    }
+  ],
+  "spots": {
+    "shore": {
+      "x": 807.7582416875143,
+      "y": 287.19072360022994
+    },
+    "deep": {
+      "x": 922.5708091275085,
+      "y": 287.19072360022994
+    }
+  },
+  "samples": {
+    "shore": [
+      199,
+      228,
+      219
+    ],
+    "deep": [
+      138,
+      211,
+      213
+    ],
+    "shoreStats": {
+      "p5": 0.8553435294117646,
+      "p95": 0.8799898039215687,
+      "mean": {
+        "r": 0.7797143548777535,
+        "g": 0.8957153231663036,
+        "b": 0.8590656015492617
+      }
+    },
+    "deepStats": {
+      "p5": 0.7612831372549018,
+      "p95": 0.7719105882352941,
+      "mean": {
+        "r": 0.5396272089082547,
+        "g": 0.8272573226821592,
+        "b": 0.8334059549745824
+      }
+    }
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "dpr": 1
+  },
+  "waterPath": "crystal",
+  "gl": {
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "vendor": "Google Inc. (Google)",
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+  }
+}

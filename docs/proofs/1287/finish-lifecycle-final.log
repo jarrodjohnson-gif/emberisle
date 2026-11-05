@@ -1,0 +1,10 @@
+results: 0 pending outcome(s) kept for recording, 0 repaired from rooms, 0 room(s) fenced
+deterministic nonzero host fortunes stay hidden from opponents and watcher: ok
+host listening 34081
+
+game 1: Tide wins with 10 in 438 actions, reveal ok, post-win refused
+rematch: same code UKVM, Pine (closed) let go and its picture 404, seats s0,s1,s3, new seed, Tide is p0 and places first, then Ember and Dune by roll; guest, watcher and second again refused; the watcher stayed
+game 2: Ember wins with 10 in 273 actions, reveal ok, post-win refused
+rematch: two at the table is refused, the finished game and all three seats kept
+2 hosted games to the win in 5412 ms
+finish prove ok

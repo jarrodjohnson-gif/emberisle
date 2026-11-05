@@ -32,7 +32,7 @@ const CEILINGS = [
   { name: "haptics", gzipBytes: 1200 },
   // #1283: raised from 125,200 B to 127,000 B per owner decision 2026-11-03.
   { name: "index", gzipBytes: 127000 },
-  { name: "IslandCanvas", gzipBytes: 202500 },
+  { name: "IslandCanvas", gzipBytes: 203500 }, // #1307, 2026-11-04: raised from 202,500 B to 203,500 B
   { name: "jelly-board", gzipBytes: 9000 },
   { name: "hex-jelly", gzipBytes: 50000 },
   { name: "harbor-jelly", gzipBytes: 11500 },
