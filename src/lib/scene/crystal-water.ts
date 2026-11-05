@@ -137,14 +137,16 @@ export const CAUSTIC_GLSL = /* glsl */ `
 
 // The splashes, shared by the crystal sea, its droplets and (rings only) the simple sea; ported line for line in makeSplashes.
 // uSplash[i] is (x, z, start time, strength); a strength of 0 is an empty slot.
+// Every live splash at p: x the height, yz its gradient, w how white (the rings' crests, plus the foam patch x foam).
+// Nothing live (nearly always): skip the loop, so a still sea costs what it did before.
 export const SPLASH_GLSL = /* glsl */ `
   uniform vec4 uSplash[${SPLASH.max}];
   uniform float uSplashNow;
   uniform float uSplashLive;
-  // Every live splash at p: x the height, yz its gradient, w how white (the rings' crests, plus the foam patch x foam).
+
   vec4 splashField(vec2 p, float motion, float foam) {
     vec4 acc = vec4(0.0);
-    // Nothing live (nearly always): skip the loop, so a still sea costs what it did before.
+
     if (uSplashLive < 0.5) return acc;
     for (int i = 0; i < ${SPLASH.max}; i++) {
       vec4 s = uSplash[i];
@@ -178,6 +180,17 @@ export const SPLASH_GLSL = /* glsl */ `
 // The wave field, shared by the surface, the wash on the sand and (ported line for line in makeSwell) the boats. Needs uTime
 // and uMotion. Rest point p, o off the coast, inward n pointing at the beach, depth d, travel time tau to the coast.
 const g3 = (g: readonly number[]) => `${f(g[0]!)} * p.x + ${f(g[1]!)} * p.y + ${f(g[2]!)} * uTime`;
+// 1 near the coast (travel-time phase), 0 on the open sea, and its slope along o.
+// Near the coast a swell's phase is the open sea's phase at the anchor, the point straight out from the island's centre
+// where the blend ends, tau(anchor) - tau seconds ago: one crest, slowing as it comes in. The anchor uses the radial
+// direction, not the coast's normal, because the hexes' zigzag coast would kink the crest. shift is that phase minus the
+// open sea's here; it is continuous, so the crest never jumps.
+// Its gradient, nearly: the open sea's k d, turning near the coast to w / c along the inward n while the along-coast part
+// stays (refraction), plus the blend's own slope.
+// The two swells here: x, y their phases, z the height of their group (the set envelope), w how much it is breaking.
+// The swells' height factor: Green's law, capped once broken at gamma x the depth.
+// Seconds since the group's crest passed (0 to about 6), from the phase of the two swells' sum.
+// The displacement of the rest point. nrm is the world normal.
 const WAVE_GLSL = /* glsl */ `
   const float TAU = 6.28318530718;
   float hash21(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
@@ -191,29 +204,29 @@ const WAVE_GLSL = /* glsl */ `
   float gust(vec2 p) { return 0.6 + 0.4 * (0.5 + 0.5 * sin(${g3(GUST[0])}) * sin(${g3(GUST[1])})); }
   float chop1Phase(vec2 p) { return ${f(k(chop1.length))} * dot(${v2(chop1.dir)}, p) - ${f(w(chop1.period))} * uTime; }
   float chop2Phase(vec2 p) { return ${f(k(chop2.length))} * dot(${v2(chop2.dir)}, p) - ${f(w(chop2.period))} * uTime; }
-  // 1 near the coast (travel-time phase), 0 on the open sea, and its slope along o.
+
   float shoreBlend(float o) { return 1.0 - smoothstep(${f(SHOAL.blend[0])}, ${f(SHOAL.blend[1])}, o); }
   float shoreBlendSlope(float o) {
     float u = clamp((o - ${f(SHOAL.blend[0])}) / ${f(SHOAL.blend[1] - SHOAL.blend[0])}, 0.0, 1.0);
     return -6.0 * u * (1.0 - u) / ${f(SHOAL.blend[1] - SHOAL.blend[0])};
   }
-  // Near the coast a swell's phase is the open sea's phase at the anchor, the point straight out from the island's centre
-  // where the blend ends, tau(anchor) - tau seconds ago: one crest, slowing as it comes in. The anchor uses the radial
-  // direction, not the coast's normal, because the hexes' zigzag coast would kink the crest. shift is that phase minus the
-  // open sea's here; it is continuous, so the crest never jumps.
+
+
+
+
   float shift(vec2 p, float o, float tau, float k, float w, vec2 d) {
     return k * dot(d, normalize(p)) * (${f(SHOAL.blend[1])} - o) + w * (${f(TRAVEL_OUT)} - tau);
   }
   float swellPhase(vec2 p, float o, float tau, float k, float w, vec2 d) {
     return k * dot(d, p) - w * uTime + shoreBlend(o) * shift(p, o, tau, k, w, d);
   }
-  // Its gradient, nearly: the open sea's k d, turning near the coast to w / c along the inward n while the along-coast part
-  // stays (refraction), plus the blend's own slope.
+
+
   vec2 swellGrad(vec2 p, float o, vec2 n, float tau, float c, float k, float w, vec2 d) {
     return k * d + (shoreBlend(o) * (w / c - k * dot(d, n)) - shoreBlendSlope(o) * shift(p, o, tau, k, w, d)) * n;
   }
   float celerity(float d) { return ${f(C0)} * sqrt(tanh(${f(KA)} * d) / ${f(Math.tanh(KA * SHOAL.deep))}); }
-  // The two swells here: x, y their phases, z the height of their group (the set envelope), w how much it is breaking.
+
   vec4 swells(vec2 p, float o, float tau, float d) {
     float thA = swellPhase(p, o, tau, ${f(k(swellA.length))}, ${f(w(swellA.period))}, ${v2(swellA.dir)});
     float thB = swellPhase(p, o, tau, ${f(k(swellB.length))}, ${f(w(swellB.period))}, ${v2(swellB.dir)});
@@ -221,11 +234,11 @@ const WAVE_GLSL = /* glsl */ `
     float h = 2.0 * e * pow(${f(SHOAL.deep)} / max(d, ${f(SHOAL.minDepth)}), 0.25) * beachTaper(o);
     return vec4(thA, thB, e, smoothstep(${f(SHOAL.breakAt[0])}, ${f(SHOAL.breakAt[1])}, h / d));
   }
-  // The swells' height factor: Green's law, capped once broken at gamma x the depth.
+
   float shoal(float e, float d) {
     return min(pow(${f(SHOAL.deep)} / max(d, ${f(SHOAL.minDepth)}), 0.25), ${f(SHOAL.gamma / 2)} * d / max(e, 1e-4));
   }
-  // Seconds since the group's crest passed (0 to about 6), from the phase of the two swells' sum.
+
   float sinceCrest(vec4 sw) {
     float phi = atan(${f(swellA.amp)} * sin(sw.x) + ${f(swellB.amp)} * sin(sw.y), ${f(swellA.amp)} * cos(sw.x) + ${f(swellB.amp)} * cos(sw.y));
     return mod(1.5707963 - phi, TAU) / ${f(w(swellA.period))};
@@ -235,7 +248,7 @@ const WAVE_GLSL = /* glsl */ `
     off += vec3(q * a * d.x * c, a * s, q * a * d.y * c);
     n += vec3(-d.x * k * a * c, -q * k * a * s, -d.y * k * a * c);
   }
-  // The displacement of the rest point. nrm is the world normal.
+
   vec3 seaOffset(vec2 p, float o, vec2 n, float tau, float d, out vec3 nrm) {
     nrm = vec3(0.0, 1.0, 0.0);
     vec3 off = vec3(0.0);
@@ -399,6 +412,16 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
         gl_Position = projectionMatrix * view;
       }
     `,
+    // The waves' own normal plus a faint, broad ripple.
+    // The splashes' craters and rings, drawn to the pixel (the vertices carry only their broad height).
+    // Refraction: the scene below, shifted along the surface slope, never picking up something in front of the water.
+    // Absorb the floor by the path length; the water's own colour rises with depth, pale over sand, teal over the deep.
+    // Fresnel sky and the sun's glint.
+    // A fine, sparse sparkle: the glint only where the surface faces the sun and a fine noise peaks, on the crests.
+    // Breakers, only where this wave is breaking: a solid lip behind the crest, then broad lace that drifts shoreward
+    // with the water and dissolves.
+    // Carried shoreward by its own age (bounded, so the corners' turning inward cannot smear it), and slid sideways with
+    // the clock so each wave's lace is new.
     fragmentShader: /* glsl */ `
       #include <packing>
       uniform float uTime;
@@ -432,40 +455,40 @@ export function makeCrystalSea(coast: Coast, shared: SeaUniforms) {
         return isOrthographic ? orthographicDepthToViewZ(d, uNear, uFar) : perspectiveDepthToViewZ(d, uNear, uFar);
       }
       void main() {
-        // The waves' own normal plus a faint, broad ripple.
+
         vec2 p = vRest;
         float a = p.x * 0.8 + uTime * 0.17, b = p.y * 0.6 - uTime * 0.13;
         vec2 g = 0.01 * uMotion * vec2(0.8 * cos(a) * sin(b), 0.6 * sin(a) * cos(b));
-        // The splashes' craters and rings, drawn to the pixel (the vertices carry only their broad height).
+
         vec4 sp = splashField(vRest, uMotion, 1.0);
         vec3 N = normalize(vWaveN + vec3(-g.x - sp.y, 0.0, -g.y - sp.z));
         vec3 V = isOrthographic ? normalize(vec3(viewMatrix[0][2], viewMatrix[1][2], viewMatrix[2][2])) : normalize(cameraPosition - vWorld);
-        // Refraction: the scene below, shifted along the surface slope, never picking up something in front of the water.
+
         vec2 uv = gl_FragCoord.xy / uResolution;
         float d0 = max(vView.z - sceneZ(uv), 0.0);
         vec2 ruv = uv + (viewMatrix * vec4(N, 0.0)).xy * 0.02 * min(d0, 1.0);
         float d = vView.z - sceneZ(ruv);
         if (d < 0.0) { ruv = uv; d = d0; }
         vec3 under = texture2D(uUnder, ruv).rgb;
-        // Absorb the floor by the path length; the water's own colour rises with depth, pale over sand, teal over the deep.
+
         vec3 c = under * exp(-uSigma * d) * mix(vec3(1.0), uTint, smoothstep(0.0, 0.3, d));
         vec3 body = mix(uShallow, uDeep, smoothstep(0.15, 0.85, d));
         c = mix(c, body, 1.0 - exp(-d / uBodyDepth));
-        // Fresnel sky and the sun's glint.
+
         float F = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 5.0);
         c = mix(c, uSky, 0.02 + 0.55 * F);
-        // A fine, sparse sparkle: the glint only where the surface faces the sun and a fine noise peaks, on the crests.
+
         float glint = pow(max(dot(reflect(-V, N), uSunDir), 0.0), 900.0);
         float fleck = smoothstep(0.975, 1.0, vnoise(vRest * 25.0 + uTime * vec2(0.3, -0.2)))
           * smoothstep(0.02, 0.05, vWorld.y) * smoothstep(0.85, 0.97, dot(reflect(-V, N), uSunDir));
         c += vec3(1.8, 1.7, 1.5) * (glint * 0.6 + fleck * 0.5) * uMotion;
-        // Breakers, only where this wave is breaking: a solid lip behind the crest, then broad lace that drifts shoreward
-        // with the water and dissolves.
+
+
         float o = vCoast;
         vec4 sw = swells(vRest, o, vTravel, vDepth);
         float age = sinceCrest(sw);
-        // Carried shoreward by its own age (bounded, so the corners' turning inward cannot smear it), and slid sideways with
-        // the clock so each wave's lace is new.
+
+
         vec2 q = vRest - vInward * ${f(FOAM.drift)} * age + vec2(0.07, 0.05) * uTime;
         float n = 0.7 * vnoise(q * ${f(FOAM.scales[0])}) + 0.3 * vnoise(q * ${f(FOAM.scales[1])});
         float u = age / ${f(FOAM.life)}, thr = 0.05 + 0.17 * age;
@@ -519,6 +542,8 @@ export function makeWash(coast: Coast, { uTime, uMotion }: SeaUniforms) {
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `,
+    // Each wave as it reaches the waterline: a run-up 0.9 s fast and a 2.1 s draw-back, as far as the wave is big (a lull
+    // laps, a set rushes).
     fragmentShader: /* glsl */ `
       uniform float uTime;
       uniform float uMotion;
@@ -527,8 +552,8 @@ export function makeWash(coast: Coast, { uTime, uMotion }: SeaUniforms) {
       varying vec2 vInward;
       ${WAVE_GLSL}
       void main() {
-        // Each wave as it reaches the waterline: a run-up 0.9 s fast and a 2.1 s draw-back, as far as the wave is big (a lull
-        // laps, a set rushes).
+
+
         float d = ${f(depthAt(SWASH_AT))};
         vec4 sw = swells(vRest + vInward * (vCoast - ${f(SWASH_AT)}), ${f(SWASH_AT)}, ${f(travelAt(SWASH_AT))}, d);
         float t = sinceCrest(sw), u = clamp(t / 3.0, 0.0, 1.0);
@@ -692,6 +717,7 @@ function makeDroplets(u: SeaUniforms & { uResolution: { value: THREE.Vector2 } }
     transparent: true,
     depthWrite: false,
     uniforms: { uSplash: u.uSplash, uSplashNow: u.uSplashNow, uMotion: u.uMotion, uResolution: u.uResolution },
+    // Thrown from the crater, falling at 4 units/s², gone at 0.7 s or back under the surface.
     vertexShader: /* glsl */ `
       uniform vec4 uSplash[${SPLASH.max}];
       uniform float uSplashNow;
@@ -703,7 +729,7 @@ function makeDroplets(u: SeaUniforms & { uResolution: { value: THREE.Vector2 } }
       void main() {
         vec4 s = uSplash[int(aSlot)];
         float a = uSplashNow - s.z;
-        // Thrown from the crater, falling at 4 units/s², gone at 0.7 s or back under the surface.
+
         vec3 p = vec3(s.x, 0.0, s.y) + aVel * a - vec3(0.0, 2.0 * a * a, 0.0);
         float on = uMotion * step(0.6, s.w) * step(0.0, a) * step(a, 0.7) * step(0.0, p.y);
         vAlpha = on * (1.0 - smoothstep(0.4, 0.7, a));
@@ -754,9 +780,10 @@ export function makeSeaFloor(coast: Coast, { uTime, uFade }: SeaUniforms) {
       .replace("void main() {", `uniform float uTime;\nuniform vec2 uFade;\nuniform vec3 uPaper;\nvarying vec2 vFloorXZ;\n${CAUSTIC_GLSL}\nvoid main() {`)
       .replace(
         "#include <color_fragment>",
+        // Soft light, not a net: two drifting scales of wide-edged cells, at most 25 % contrast, gone by 14 units out.
         /* glsl */ `#include <color_fragment>
         {
-          // Soft light, not a net: two drifting scales of wide-edged cells, at most 25 % contrast, gone by 14 units out.
+
           vec2 p = vFloorXZ + vec2(sin(vFloorXZ.y * 0.9 + uTime * 0.2), cos(vFloorXZ.x * 0.7 - uTime * 0.16)) * 0.2;
           float soft = 0.6 * softCaustic(p * 1.3 + vec2(uTime * 0.05, -uTime * 0.03)) + 0.4 * softCaustic(mat2(0.8, -0.6, 0.6, 0.8) * p * 2.4 - vec2(uTime * 0.04, uTime * 0.05));
           diffuseColor.rgb *= 1.0 + 0.25 * (soft - 0.4) * (1.0 - smoothstep(6.0, 14.0, length(vFloorXZ)));

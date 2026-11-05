@@ -2148,8 +2148,9 @@ function makeWater() {
       uFog: { value: PAPER.clone() },
       uFade: { value: new THREE.Vector2(11, 22) },
     },
+    // The circle is local XY; +Z is up after the mesh's rotation. Crests stay at or below y = 0.
     vertexShader: /* glsl */ `
-      // The circle is local XY; +Z is up after the mesh's rotation. Crests stay at or below y = 0.
+
       uniform float uTime;
       varying vec2 vXZ;
       void main() {
