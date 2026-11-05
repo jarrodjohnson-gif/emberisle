@@ -12,6 +12,7 @@ import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { totalVP } from "../src/lib/game/rules.ts";
 import { RESOURCES } from "../src/lib/game/types.ts";
 import { connectTable } from "../src/lib/net/table.ts";
+import { rollOffOrderOk } from "../scripts/roll-off-oracle.mjs";
 
 const GAMES = 2;
 const MAX_ACTIONS = 5000;
@@ -365,8 +366,8 @@ async function rematch(all, w, gone) {
   await until(() => w.state.seq === all[0].state.seq, "the watcher seeing the roll-off end");
   const g = all[0].state;
   const rest = g.players.slice(1);
-  const ordered = rest.every((q, i) => i === 0 || g.rollOff.rolls[rest[i - 1].id] >= g.rollOff.rolls[q.id]);
-  if (g.phase !== "setupSettle" || g.current !== "p0" || g.players[0].name !== winnerName || !ordered || "p0" in g.rollOff.rolls) {
+  const ordered = rollOffOrderOk(g);
+  if (!ordered || g.players[0].name !== winnerName || "p0" in g.rollOff.rolls) {
     fail("the winner places first, the rest by their roll", { phase: g.phase, current: g.current, players: g.players.map((q) => q.name), rolls: g.rollOff.rolls });
   }
   if (g.log.at(-1) !== `${winnerName} places first, then ${rest[0].name} and ${rest[1].name}.`) fail("the order line", g.log.at(-1));

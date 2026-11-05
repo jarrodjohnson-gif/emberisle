@@ -4,6 +4,7 @@ import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, harborRate, legalRoads, legalSettle, publicVP, roadLength, stealTargets } from "../src/lib/game/rules.ts";
 import { RESOURCES } from "../src/lib/game/types.ts";
 import { AXIAL_DIRS } from "../src/lib/game/hex.ts";
+import { rollOffOrderOk } from "../scripts/roll-off-oracle.mjs";
 
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
@@ -407,18 +408,9 @@ function rollOff(g) {
   if (g.phase !== "setupSettle") fail("roll-off never ended", g.phase);
   return g;
 }
-// The invariant wherever a roll-off ends: the first seat's die is strictly highest, the rest by die then join order.
+// The invariant wherever a roll-off ends: verified against the shared roll-off oracle (scripts/roll-off-oracle.mjs).
 function orderOk(g) {
-  const { rolls, pending } = g.rollOff;
-  const die = (p) => rolls[p.id];
-  const [first, ...rest] = g.players;
-  const join = (p) => Number(p.id.slice(1));
-  return (
-    rest.every((p) => die(first) > die(p)) &&
-    rest.every((p, i) => i === 0 || die(rest[i - 1]) > die(p) || (die(rest[i - 1]) === die(p) && join(rest[i - 1]) < join(p))) &&
-    g.current === first.id && g.phase === "setupSettle" && g.setupIndex === 0 &&
-    pending.length === 0 && Object.keys(rolls).length === g.players.length && g.players.every((p) => die(p) >= 1 && die(p) <= 6)
-  );
+  return rollOffOrderOk(g);
 }
 {
   const three = () => createGame({ humans: [{ name: "A" }, { name: "B" }, { name: "C" }], bots: 0, seed: 9 });
@@ -452,6 +444,51 @@ function orderOk(g) {
     if (!orderOk(end)) fail("order after tie", end.rollOff);
   }
   console.log("roll-off: a forced tie at 6 rerolls only the leaders, in join order; order ok after it");
+
+  function withDice(seq, fn) {
+    const orig = crypto.getRandomValues.bind(crypto);
+    const d = [...seq];
+    crypto.getRandomValues = (buf) => {
+      if (d.length) buf[0] = d.shift() - 1;
+      else orig(buf);
+      return buf;
+    };
+    try {
+      return fn();
+    } finally {
+      crypto.getRandomValues = orig;
+    }
+  }
+
+  // #1286: tiebreak rerolls compute leaders only from rerollers; eliminated players follow in round-1 order
+  withDice([6, 6, 5, 2, 1], () => {
+    let g = three();
+    for (let i = 0; i < 5; i++) {
+      const r = applyAction(g, g.current, { type: "roll" });
+      if (r.error) fail("forced tiebreak roll", r.error);
+      g = r.state;
+    }
+    const ids = g.players.map((p) => p.id).join();
+    if (ids !== "p0,p1,p2" || g.phase !== "setupSettle" || g.current !== "p0") {
+      fail("forced tiebreak order p0,p1,p2", { players: ids, phase: g.phase, current: g.current, rolls: g.rollOff?.rolls });
+    }
+  });
+
+  // #1286: reroll matching an eliminated player's round-1 die does not pull them back in
+  withDice([6, 6, 5, 5, 1], () => {
+    let g = three();
+    for (let i = 0; i < 5; i++) {
+      const r = applyAction(g, g.current, { type: "roll" });
+      if (r.error) fail("forced tiebreak reroll", r.error);
+      g = r.state;
+    }
+    const ids = g.players.map((p) => p.id).join();
+    const pulledP2 = g.log.some((l) => l.includes("C tie") || l.includes("and C tie"));
+    if (ids !== "p0,p1,p2" || g.phase !== "setupSettle" || g.current !== "p0" || pulledP2) {
+      fail("forced reroll p2 not pulled into reroll", { players: ids, phase: g.phase, current: g.current, rolls: g.rollOff?.rolls, log: g.log });
+    }
+  });
+  console.log("roll-off: #1286 forced rerolls resolve leaders among rerollers and do not pull eliminated players back in");
 
   // 200 full roll-offs at 3 and 4 seats: order ok every time, ties happen, and state.rng is never touched.
   let ties = 0;
