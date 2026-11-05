@@ -130,3 +130,9 @@ These checks observe a local counter and mocked state only. They establish neith
 Before implementation acceptance, require real-game composites at all four sizes, header/seat/island clearance, current dock compatibility, disabled reasons, focus semantics, and the chosen offer policy. Runtime proofs must preserve existing assertions or replace owner-obsolete expectations separately with old/new tables. Register every new permanent proof in npm and CI.
 
 No owner acceptance or independent repository review is claimed. #1274 remains open for the full audit.
+
+## Current-game assessment after the first checkpoint
+
+[Four diagnostic composites](composites/README.md) now test the proposal over the current game. They confirm header overlap at320×568 and844×390. Landscape also places the sheet on the wrong side for the existing dock. The other two sizes clear the header.
+
+These negative findings block accepting the current geometry. Retain the existing header-clearance and left-column proof assertions. Refine the composition with #1144 before runtime implementation. The transparent overlay is not an integrated game change; safe insets apply only to the mock.
