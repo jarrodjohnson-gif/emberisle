@@ -1,0 +1,19 @@
+
+> public-score-prove
+> node --import ./server/register.mjs scripts/public-score-prove.mjs
+
+ok 390x844: four seats + watcher; public components reconcile; live updates; own-only hidden points; identical zero/many reminder; full end reveal
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.textContent: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByTestId('private-points')[22m
+
+    at /workspace/emberisle/scripts/public-score-prove.mjs:89:113 {
+  log: [ "  - waiting for getByTestId('private-points')" ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.19.0

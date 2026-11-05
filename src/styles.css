@@ -22,10 +22,10 @@
 
 /* Jelly Ocean palette. Existing player colours/marks remain in types.ts. */
 @theme {
-  --color-bg: #eeece7;
+  --color-bg: #f3f6f5;
   /* The studio paper behind the canvas; the sea fades into the same colour at its horizon (crystal-water.md). */
   --color-studio: #f1efe9;
-  --color-surface: #fff9f0;
+  --color-surface: #ffffff;
   --color-raised: #ffffff;
   --color-fg: #263d3c;
   --color-muted: #555e58;
@@ -37,7 +37,7 @@
   --color-sea-ink: #246d72;
   --color-accent-ink: #246d72;
   /* Opaque paper: the legacy glass utility now guarantees contrast on every terrain. */
-  --color-glass: #fff9f0;
+  --color-glass: #ffffff;
   --font-display: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
 }
 
@@ -168,13 +168,13 @@ body {
 
 /* Jelly Ocean. Opaque ground guarantees contrast over every terrain. */
 :root {
-  --table: #fff9f0;
-  --table-raised: #f2eee5;
+  --table: #ffffff;
+  --table-raised: #f3f6f5;
   --table-ink: #263d3c;
   --table-muted: #555e58;
   --table-line: #78837a;
-  --paper: #fff9f0;
-  --ground: #eeece7;
+  --paper: #ffffff;
+  --ground: #f3f6f5;
   --ink: #263d3c;
   --muted: #555e58;
   --line: #cbcfc6;

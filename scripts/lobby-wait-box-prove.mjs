@@ -10,7 +10,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 
-const out = "docs/proofs/1262";
+const out = process.env.LOBBY_PROOF_OUT || "docs/proofs/1262";
 mkdirSync(out, { recursive: true });
 
 function walk(dir, acc = []) {
@@ -105,6 +105,7 @@ const ruffleCount = (page) => page.evaluate(() => [...document.querySelectorAll(
 async function openShelf(page) {
   await page.getByRole("button", { name: "Play games" }).click();
   await page.locator(".ls").waitFor();
+  await logo(page, ".lt", "shelf");
 }
 
 async function openStacker(page) {
@@ -114,6 +115,32 @@ async function openStacker(page) {
   const status = await page.getByTestId("lobby-wait-status").textContent();
   assert.ok(!status.includes("Couldn't"), `Sandwich Stacker failed to load (${status})`);
   await until(async () => (await ruffleCount(page)) === 1, "one ruffle player");
+  await logo(page, ".lobby-wait-head", "header");
+}
+
+// #1280: the original captured art loads only with the shelf and is never stretched.
+async function logo(page, selector, label) {
+  const image = page.locator(selector).getByRole("img", { name: "Sandwich Stacker", exact: true });
+  await image.waitFor();
+  await image.evaluate((el) => el.decode());
+  const m = await image.evaluate((el) => {
+    const r = el.getBoundingClientRect(), s = getComputedStyle(el);
+    return { natural: [el.naturalWidth, el.naturalHeight], complete: el.complete,
+      fit: s.objectFit, x: r.x, y: r.y, right: r.right, bottom: r.bottom,
+      width: r.width, height: r.height, viewport: [innerWidth, innerHeight] };
+  });
+  assert.equal(m.complete, true, `${label}: logo loaded`);
+  assert.deepEqual(m.natural, [240, 210], `${label}: original captured art dimensions`);
+  assert.equal(m.fit, "contain", `${label}: logo preserves its natural aspect ratio`);
+  assert.ok(m.width > 0 && m.height > 0 && m.x >= 0 && m.y >= 0 && m.right <= m.viewport[0] && m.bottom <= m.viewport[1], `${label}: logo visible inside viewport ${JSON.stringify(m)}`);
+  const box = page.locator(selector);
+  if (label === "shelf") {
+    assert.equal(await box.getAttribute("aria-label"), "Sandwich Stacker", "shelf tile accessible name");
+    const target = await box.locator("button").boundingBox();
+    assert.ok(target.width >= 44 && target.height >= 44, "shelf Play target at least 44px");
+  }
+  console.log(`ok  ${m.viewport.join("x")} ${label}: captured logo loaded, contained and named ${JSON.stringify(m)}`);
+  await page.screenshot({ path: `${out}/logo-${label}-${m.viewport.join("x")}.png` });
 }
 
 function lum(rgb) {
@@ -197,6 +224,7 @@ try {
   assert.equal(await desk.getByTestId("lobby-players").count(), 1);
   await desk.evaluate(() => document.fonts.ready);
   assert.equal(minigames().length, 0, "nothing under /minigames/ before a game opens");
+  assert.ok(!requests.some((r) => r.includes("sandwich-stacker-logo.png")), "logo is not fetched on the Table tab");
   assert.equal(await desk.locator("ruffle-player, script[src*='ruffle']").count(), 0);
   assert.equal(await desk.getByRole("button", { name: "Table", exact: true }).getAttribute("aria-pressed"), "true");
   await desk.getByTestId("add-bot").first().click();
@@ -295,6 +323,12 @@ try {
   await small.screenshot({ path: `${out}/320x568.png` });
   await small.context().close();
   console.log("ok  320x568: picture saved");
+
+  const sideways = await client({ width: 844, height: 390 }, true);
+  await openShelf(sideways);
+  await openStacker(sideways);
+  await sideways.context().close();
+  console.log("ok  844x390: shelf and header logo checked");
 
   assert.deepEqual(problems, [], `browser errors:\n${problems.join("\n")}`);
   console.log("lobby-wait-box-prove: ok");

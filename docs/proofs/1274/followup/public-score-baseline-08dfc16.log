@@ -1,0 +1,8 @@
+
+> public-score-prove
+> node --import ./server/register.mjs scripts/public-score-prove.mjs
+
+ok 390x844: four seats + watcher; public components reconcile; live updates; own-only hidden points; identical zero/many reminder; full end reveal
+ok 1280x720: four seats + watcher; public components reconcile; live updates; own-only hidden points; identical zero/many reminder; full end reveal
+ok 844x390 reduced: four seats + watcher; public components reconcile; live updates; own-only hidden points; identical zero/many reminder; full end reveal
+public-score-prove: all passed

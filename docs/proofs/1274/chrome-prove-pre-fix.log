@@ -1,0 +1,22 @@
+
+> chrome-prove
+> node scripts/chrome-prove.mjs
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: 1280x720 title: text contrast >= 4.5:1
+    at surface (file:///workspace/emberisle/scripts/chrome-prove.mjs:35:10)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processImmediate (node:internal/timers:502:9)
+    at async file:///workspace/emberisle/scripts/chrome-prove.mjs:58:7 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

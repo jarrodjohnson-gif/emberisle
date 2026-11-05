@@ -552,7 +552,7 @@ try {
     for (const r of RESOURCES) {
       const c = cards[r];
       const fill = parse(c.fill);
-      assert.deepEqual(fill, rgb(want[r] === 0 ? "#eeece7" : "#fff9f0"), `${v.tag} ${r}: fill ${c.fill}`);
+      assert.deepEqual(fill, rgb(want[r] === 0 ? "#f3f6f5" : "#ffffff"), `${v.tag} ${r}: fill ${c.fill}`);
       assert.deepEqual(parse(c.color), rgb("#263d3c"), `${v.tag} ${r}: count colour ${c.color}`);
       const cr = ratio(parse(c.color), fill);
       assert.ok(cr >= 4.5, `${v.tag} ${r}: count contrast ${cr.toFixed(2)}`);

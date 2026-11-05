@@ -1,0 +1,159 @@
+size base: 33e10b09e283d79f90947ce3758da5c0488b5af0 (first parent of 953439143dbfa7a614506ae018695e0ca2d46a52)
+2026-11-04T02:12:48.3830173Z From https://github.com/jarrodjohnson-gif/emberisle
+2026-11-04T02:12:48.3830999Z  * branch            33e10b09e283d79f90947ce3758da5c0488b5af0 -> FETCH_HEAD
+2026-11-04T02:12:48.3851744Z Preparing worktree (detached HEAD 33e10b0)
+2026-11-04T02:12:48.8207904Z HEAD is now at 33e10b0 Play resource clips for matching trade asks (#1132) (#1139)
+2026-11-04T02:12:52.1918544Z 
+2026-11-04T02:12:52.1919267Z added 64 packages, and audited 65 packages in 3s
+2026-11-04T02:12:52.1919741Z 
+2026-11-04T02:12:52.1919954Z 14 packages are looking for funding
+2026-11-04T02:12:52.1920355Z   run `npm fund` for details
+2026-11-04T02:12:52.2023596Z 
+2026-11-04T02:12:52.2024139Z 2 high severity vulnerabilities
+2026-11-04T02:12:52.2024768Z 
+2026-11-04T02:12:52.2024944Z To address all issues, run:
+2026-11-04T02:12:52.2025302Z   npm audit fix
+2026-11-04T02:12:52.2025483Z 
+2026-11-04T02:12:52.2025639Z Run `npm audit` for details.
+2026-11-04T02:12:52.3320231Z 
+2026-11-04T02:12:52.3320786Z > build
+2026-11-04T02:12:52.3321089Z > vite build
+2026-11-04T02:12:52.3321213Z 
+2026-11-04T02:12:52.5830794Z [36mvite v8.3.1 [32mbuilding client environment for production...[36m[39m
+2026-11-04T02:12:52.5908687Z transforming...
+2026-11-04T02:12:53.0323140Z ✓ 2022 modules transformed.
+2026-11-04T02:12:53.0954330Z rendering chunks...
+2026-11-04T02:12:53.2150880Z computing gzip size...
+2026-11-04T02:12:53.5735046Z dist/minigames/ruffle/package.json                              0.41 kB │ gzip:     0.27 kB
+2026-11-04T02:12:53.5735915Z dist/minigames/ruffle/LICENSE_MIT                               1.09 kB
+2026-11-04T02:12:53.5736649Z dist/assets/dark-smile-DZxYOvL1.webp                            1.24 kB
+2026-11-04T02:12:53.5737389Z dist/assets/shrek-smirk-Do0Xo01U.webp                           2.25 kB
+2026-11-04T02:12:53.5737923Z dist/minigames/ruffle/README.md                                 2.32 kB
+2026-11-04T02:12:53.5738470Z dist/index.html                                                 2.61 kB │ gzip:     1.30 kB
+2026-11-04T02:12:53.5739096Z dist/assets/mike-sully-Ct202qR2.webp                            2.79 kB
+2026-11-04T02:12:53.5739900Z dist/assets/wide-eyes-BDiZHgYT.webp                             2.84 kB
+2026-11-04T02:12:53.5740676Z dist/assets/side-eye-CGXmLOil.webp                              2.86 kB
+2026-11-04T02:12:53.5741294Z dist/assets/goggles-guy-BssxYY7b.webp                           2.99 kB
+2026-11-04T02:12:53.5742218Z dist/assets/memoji-scheme-BM7oeLzb.webp                         3.05 kB
+2026-11-04T02:12:53.5743122Z dist/assets/leo-laugh-fpWzArdY.webp                             3.45 kB
+2026-11-04T02:12:53.5744062Z dist/assets/old-grump-BBGe0_6b.webp                             4.17 kB
+2026-11-04T02:12:53.5744911Z dist/assets/daffy-shock-DVzTkIuj.webp                           6.32 kB
+2026-11-04T02:12:53.5745576Z dist/assets/ben-10-BZkFZeMq.webp                                6.80 kB
+2026-11-04T02:12:53.5746123Z dist/assets/monkey-pet-BzZVr9yQ.webp                            8.01 kB
+2026-11-04T02:12:53.5746679Z dist/assets/banana-guy-NMFRZZni.webp                            8.83 kB
+2026-11-04T02:12:53.5747782Z dist/minigames/ruffle/LICENSE_APACHE                            9.72 kB
+2026-11-04T02:12:53.5748359Z dist/assets/glasses-glance-DrqNFuNw.webp                       10.72 kB
+2026-11-04T02:12:53.5761966Z dist/assets/sponge-thumbs-vsqILehC.webp                        47.96 kB
+2026-11-04T02:12:53.5762601Z dist/minigames/ruffle/core.ruffle.16d61072ac7fdc4d5013.js     108.32 kB
+2026-11-04T02:12:53.5763194Z dist/minigames/ruffle/core.ruffle.994eeef0a471a88cd0e3.js     114.74 kB
+2026-11-04T02:12:53.5763775Z dist/minigames/sandwichStacker.swf                            183.73 kB
+2026-11-04T02:12:53.5764323Z dist/minigames/ruffle/ruffle.js                               465.88 kB
+2026-11-04T02:12:53.5765138Z dist/minigames/ruffle/878d548199cddef07035.wasm            14,227.88 kB │ gzip: 5,069.32 kB
+2026-11-04T02:12:53.5765956Z dist/minigames/ruffle/172de42e6619eac8f371.wasm            14,302.75 kB │ gzip: 5,092.28 kB
+2026-11-04T02:12:53.5766742Z dist/assets/SeatNeeds--1Pb-Sls.css                              0.83 kB │ gzip:     0.45 kB
+2026-11-04T02:12:53.5767489Z dist/assets/LobbyView-C4CdT6rY.css                             11.46 kB │ gzip:     2.57 kB
+2026-11-04T02:12:53.5768206Z dist/assets/index-BTyqlNAl.css                                 76.94 kB │ gzip:    15.84 kB
+2026-11-04T02:12:53.5768930Z dist/assets/sound-extra-DafKjM_2.js                             0.48 kB │ gzip:     0.22 kB
+2026-11-04T02:12:53.5769841Z dist/assets/WayfarerOptions-BfN48PvY.js                         0.80 kB │ gzip:     0.49 kB
+2026-11-04T02:12:53.5770638Z dist/assets/trade-sound-DZQbl1-l.js                             0.88 kB │ gzip:     0.53 kB
+2026-11-04T02:12:53.5771801Z dist/assets/HandRates-eCupj320.js                               1.01 kB │ gzip:     0.64 kB
+2026-11-04T02:12:53.5772671Z dist/assets/VictoryTargetSelect-Dszyxk3o.js                     1.02 kB │ gzip:     0.61 kB
+2026-11-04T02:12:53.5773605Z dist/assets/emotes-Ijw0U75Z.js                                  1.24 kB │ gzip:     0.46 kB
+2026-11-04T02:12:53.5774433Z dist/assets/TradeResource-DKQx1hlU.js                           1.79 kB │ gzip:     0.83 kB
+2026-11-04T02:12:53.5775237Z dist/assets/haptics-DaPWvwZd.js                                 1.80 kB │ gzip:     1.06 kB
+2026-11-04T02:12:53.5776110Z dist/assets/DockInspection-RknIMAxZ.js                          2.03 kB │ gzip:     1.03 kB
+2026-11-04T02:12:53.5777031Z dist/assets/TurnExtensionVote-Dpzvtjk8.js                       2.67 kB │ gzip:     1.20 kB
+2026-11-04T02:12:53.5777946Z dist/assets/OpenTables-DQx5_5k9.js                              2.71 kB │ gzip:     1.27 kB
+2026-11-04T02:12:53.5778856Z dist/assets/SeatNeeds-BucuFHYX.js                               4.15 kB │ gzip:     1.70 kB
+2026-11-04T02:12:53.5779996Z dist/assets/LobbyWaitBox-D_t507SD.js                            4.42 kB │ gzip:     1.87 kB
+2026-11-04T02:12:53.5780982Z dist/assets/SetupReference-CnQsac93.js                          4.92 kB │ gzip:     1.85 kB
+2026-11-04T02:12:53.5781938Z dist/assets/table-Cz9AI20j.js                                   5.10 kB │ gzip:     2.20 kB
+2026-11-04T02:12:53.5782853Z dist/assets/Reactions-CMXkSe_h.js                               6.02 kB │ gzip:     2.48 kB
+2026-11-04T02:12:53.5783784Z dist/assets/LobbyView-gERxAoFQ.js                               6.19 kB │ gzip:     2.43 kB
+2026-11-04T02:12:53.5784705Z dist/assets/moments-bsxktrjM.js                                10.16 kB │ gzip:     4.32 kB
+2026-11-04T02:12:53.5785504Z dist/assets/online-B2Kp1-hk.js                                 18.25 kB │ gzip:     6.52 kB
+2026-11-04T02:12:53.5786068Z dist/assets/jelly-board-CNAjrmBg.js                            21.15 kB │ gzip:     8.18 kB
+2026-11-04T02:12:53.5786625Z dist/assets/sheets-Bvz47wSN.js                                 22.54 kB │ gzip:     7.22 kB
+2026-11-04T02:12:53.5787191Z dist/assets/harbor-jelly-DvV9WDdB.js                           27.12 kB │ gzip:    10.80 kB
+2026-11-04T02:12:53.5787751Z dist/assets/hex-jelly-7ksL_MB5.js                             136.96 kB │ gzip:    47.26 kB
+2026-11-04T02:12:53.5788497Z dist/assets/index-Cs71kF67.js                                 399.28 kB │ gzip:   126.71 kB
+2026-11-04T02:12:53.5789061Z dist/assets/IslandCanvas-D5atwpY-.js                          764.99 kB │ gzip:   203.44 kB
+2026-11-04T02:12:53.5789329Z 
+2026-11-04T02:12:53.5789733Z [33m[plugin builtin:vite-reporter] 
+2026-11-04T02:12:53.5790122Z (!) Some chunks are larger than 500 kB after minification. Consider:
+2026-11-04T02:12:53.5790555Z - Using dynamic import() to code-split the application
+2026-11-04T02:12:53.5791193Z - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+2026-11-04T02:12:53.5791933Z - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+2026-11-04T02:12:53.5792371Z [32m✓ built in 991ms[39m
+2026-11-04T02:12:53.6181262Z ##[group]Run node scripts/size-prove.mjs --base "$RUNNER_TEMP/base"
+2026-11-04T02:12:53.6181687Z [36;1mnode scripts/size-prove.mjs --base "$RUNNER_TEMP/base"[0m
+2026-11-04T02:12:53.6199203Z shell: /usr/bin/bash -e {0}
+2026-11-04T02:12:53.6199432Z ##[endgroup]
+2026-11-04T02:12:53.7070269Z ok   SeatNeeds: 1.70 kB gzip, ceiling 1.90 kB
+2026-11-04T02:12:53.7071528Z ok   LobbyView: 2.43 kB gzip, ceiling 2.50 kB
+2026-11-04T02:12:53.7072062Z ok   LobbyWaitBox: 1.87 kB gzip, ceiling 2.10 kB
+2026-11-04T02:12:53.7072569Z ok   table: 2.20 kB gzip, ceiling 2.20 kB
+2026-11-04T02:12:53.7072874Z ok   haptics: 1.07 kB gzip, ceiling 1.20 kB
+2026-11-04T02:12:53.7073312Z FAIL index: 125.45 kB gzip, ceiling 125.20 kB (0.25 kB over)
+2026-11-04T02:12:53.7073689Z ok   IslandCanvas: 202.00 kB gzip, ceiling 202.50 kB
+2026-11-04T02:12:53.7074368Z ok   jelly-board: 8.12 kB gzip, ceiling 9.00 kB
+2026-11-04T02:12:53.7074690Z ok   hex-jelly: 46.71 kB gzip, ceiling 50.00 kB
+2026-11-04T02:12:53.7075250Z ok   harbor-jelly: 10.72 kB gzip, ceiling 11.50 kB
+2026-11-04T02:12:53.7075641Z ok   online: 6.49 kB gzip, ceiling 9.00 kB
+2026-11-04T02:12:53.7076063Z ok   Reactions: 2.48 kB gzip, ceiling 2.60 kB
+2026-11-04T02:12:53.7076632Z ok   sound-extra: 0.23 kB gzip, ceiling 0.60 kB
+2026-11-04T02:12:53.7077028Z ok   trade-sound: 0.53 kB gzip, ceiling 0.60 kB
+2026-11-04T02:12:53.7077326Z ok   emotes: 0.46 kB gzip, ceiling 0.60 kB
+2026-11-04T02:12:53.7077610Z ok   sheets: 7.19 kB gzip, ceiling 7.80 kB
+2026-11-04T02:12:53.7078140Z ok   SetupReference: 1.86 kB gzip, ceiling 2.20 kB
+2026-11-04T02:12:53.7078707Z ok   moments: 4.32 kB gzip, ceiling 5.70 kB
+2026-11-04T02:12:53.7079155Z ok   VictoryTargetSelect: 0.62 kB gzip, ceiling 1.00 kB
+2026-11-04T02:12:53.7079652Z ok   DockInspection: 1.03 kB gzip, ceiling 1.20 kB
+2026-11-04T02:12:53.7079976Z ok   HandRates: 0.65 kB gzip, ceiling 0.80 kB
+2026-11-04T02:12:53.7080527Z ok   TradeResource: 0.83 kB gzip, ceiling 1.65 kB
+2026-11-04T02:12:53.7081079Z ok   OpenTables: 1.27 kB gzip, ceiling 1.30 kB
+2026-11-04T02:12:53.7081410Z ok   WayfarerOptions: 0.49 kB gzip, ceiling 0.50 kB
+2026-11-04T02:12:53.7081915Z ok   TurnExtensionVote: 1.20 kB gzip, ceiling 1.40 kB
+2026-11-04T02:12:53.7082585Z ok   SeatNeeds growth: base 1700 B, PR 1698 B, -2 B, allowance 200 B
+2026-11-04T02:12:53.7083165Z ok   LobbyView growth: base 2430 B, PR 2431 B, +1 B, allowance 200 B
+2026-11-04T02:12:53.7083597Z ok   LobbyWaitBox growth: base 1868 B, PR 1867 B, -1 B, allowance 200 B
+2026-11-04T02:12:53.7084002Z ok   table growth: base 2196 B, PR 2196 B, +0 B, allowance 200 B
+2026-11-04T02:12:53.7084397Z ok   haptics growth: base 1069 B, PR 1068 B, -1 B, allowance 200 B
+2026-11-04T02:12:53.7084794Z ok   index growth: base 125451 B, PR 125451 B, +0 B, allowance 400 B
+2026-11-04T02:12:53.7085250Z ok   IslandCanvas growth: base 202000 B, PR 201997 B, -3 B, allowance 667 B
+2026-11-04T02:12:53.7085708Z ok   jelly-board growth: base 8123 B, PR 8123 B, +0 B, allowance 200 B
+2026-11-04T02:12:53.7086128Z ok   hex-jelly growth: base 46714 B, PR 46714 B, +0 B, allowance 200 B
+2026-11-04T02:12:53.7086549Z ok   harbor-jelly growth: base 10715 B, PR 10717 B, +2 B, allowance 200 B
+2026-11-04T02:12:53.7086966Z ok   online growth: base 6492 B, PR 6490 B, -2 B, allowance 200 B
+2026-11-04T02:12:53.7087380Z ok   Reactions growth: base 2481 B, PR 2479 B, -2 B, allowance 200 B
+2026-11-04T02:12:53.7087793Z ok   sound-extra growth: base 225 B, PR 225 B, +0 B, allowance 200 B
+2026-11-04T02:12:53.7088189Z ok   trade-sound growth: base 533 B, PR 531 B, -2 B, allowance 200 B
+2026-11-04T02:12:53.7088578Z ok   emotes growth: base 464 B, PR 464 B, +0 B, allowance 200 B
+2026-11-04T02:12:53.7088966Z ok   sheets growth: base 7207 B, PR 7190 B, -17 B, allowance 200 B
+2026-11-04T02:12:53.7089380Z ok   SetupReference growth: base 1857 B, PR 1856 B, -1 B, allowance 200 B
+2026-11-04T02:12:53.7090007Z ok   moments growth: base 4317 B, PR 4316 B, -1 B, allowance 200 B
+2026-11-04T02:12:53.7090679Z ok   VictoryTargetSelect growth: base 617 B, PR 616 B, -1 B, allowance 200 B
+2026-11-04T02:12:53.7091159Z ok   DockInspection growth: base 1030 B, PR 1030 B, +0 B, allowance 200 B
+2026-11-04T02:12:53.7091586Z ok   HandRates growth: base 647 B, PR 646 B, -1 B, allowance 200 B
+2026-11-04T02:12:53.7091993Z ok   TradeResource growth: base 830 B, PR 829 B, -1 B, allowance 200 B
+2026-11-04T02:12:53.7092414Z ok   OpenTables growth: base 1276 B, PR 1275 B, -1 B, allowance 200 B
+2026-11-04T02:12:53.7092831Z ok   WayfarerOptions growth: base 489 B, PR 489 B, +0 B, allowance 200 B
+2026-11-04T02:12:53.7093291Z ok   TurnExtensionVote growth: base 1205 B, PR 1204 B, -1 B, allowance 200 B
+2026-11-04T02:12:53.7136692Z ##[error]Process completed with exit code 1.
+2026-11-04T02:12:53.7242210Z Post job cleanup.
+2026-11-04T02:12:53.7941698Z [command]/usr/bin/git version
+2026-11-04T02:12:53.7981011Z git version 2.56.0
+2026-11-04T02:12:53.8011799Z Temporarily overriding HOME='/home/runner/work/_temp/a155daf5-dedb-42b8-b6a9-44c711318aad' before making global git config changes
+2026-11-04T02:12:53.8013300Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-04T02:12:53.8016178Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/emberisle/emberisle
+2026-11-04T02:12:53.8051067Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-04T02:12:53.8081344Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-04T02:12:53.8335904Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-04T02:12:53.8364370Z http.https://github.com/.extraheader
+2026-11-04T02:12:53.8372903Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-11-04T02:12:53.8407687Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-04T02:12:53.8636503Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-04T02:12:53.8674469Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-04T02:12:53.9057596Z Cleaning up orphan processes
+2026-11-04T02:12:53.9373470Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/cache@v4, actions/checkout@v4, actions/setup-node@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+

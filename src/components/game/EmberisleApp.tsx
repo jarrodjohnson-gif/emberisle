@@ -35,10 +35,11 @@ export function EmberisleApp() {
   // A bot's turn waits while its own ask is open (#363); the offer's close wakes it again.
   const offerOpen = useGame((s) => s.offer !== null);
   useTurnTitle();
-  // #814: background music from the lobby through play; the title and the end screen (where end_music plays) are quiet.
+  // #814, #1279: background music from the title through the lobby and play, after the first tap or key.
+  // The end screen stays quiet, where end_music plays.
   const over = useGame((s) => s.state?.phase === "over");
   useEffect(() => {
-    setMusicWanted(screen !== "title" && !(screen === "play" && over));
+    setMusicWanted(!(screen === "play" && over));
   }, [screen, over]);
 
   useEffect(() => {
