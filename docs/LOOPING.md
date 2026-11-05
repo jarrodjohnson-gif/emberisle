@@ -153,6 +153,88 @@ Take over [task] within the permissions and pause state in [checkpoint]. Recover
 
 ---
 
+## Example prompt: resuming a paused design task (Jarrod's pick, 2026-11-05)
+
+An example of a strong task prompt for an agent that is resuming earlier work. It is an example, not a template to reuse unchanged: its links, heads and issue numbers are historical. The qualities that make it work:
+
+- It names the exact task and says which other task not to touch.
+- It says which model leads and which helpers may be used.
+- It says what the message does and does not authorize.
+- It gives a published handoff and labels every recorded head as history, not proof of current state.
+- It lists what to read first and what to verify (workers, claims, branches, heads, reviews, CI) before editing.
+- It says to check the owner's actual answers, not the recorded ones, and not to pick unresolved design choices silently.
+- It sets scope, permitted actions, never-actions and the separate review gates.
+- It says what to checkpoint and how to stop at a real limit.
+
+```text
+Resume the Astra-led design and implementation work for
+jarrodjohnson-gif/emberisle issue #1274, not the automation-guide task.
+
+Use GPT-6 Astra for design leadership where the issue's model pin requires it.
+Use GPT-6.1 Terra, GPT-6 Luna, and GPT-6.1 Sol for bounded, nonoverlapping
+helper work that repository rules permit.
+
+This message authorizes resuming the previously paused #1274 work.
+It does not authorize changing automation settings.
+
+FIRST: recover the published handoff:
+https://github.com/jarrodjohnson-gif/emberisle/blob/7c2efc19db58e6160e7c63e1e02a3406748d5925/docs/design/issue-1274/HANDOFF.md
+
+Treat that handoff and the following references as historical checkpoints,
+not proof of current state:
+
+- White/mist chrome: PR #1275; last recorded head
+  74c6a7cf85053a163e33226687ec61b939d81fb4.
+- Seat-ring design: branch codex/1297-seat-ring-spec;
+  last recorded head b4731cdd873c25625c4d0284f04f8165f91f42ba.
+- Button audit: branch codex/1298-button-audit;
+  last recorded head dc5bdf42b1b11490081aa3787ad83a657748d89f.
+- Unfinished fortune-tray design and handoff:
+  branch codex/1302-fortune-tray-spec;
+  last recorded head 7c2efc19db58e6160e7c63e1e02a3406748d5925.
+
+Read current AGENTS.md, docs/FRAMEWORK.md, docs/LANES.md and
+docs/DECISIONS.md. Read hub #854's body and comments after its newest digest,
+then issue #1274 and its linked issues/PRs, including current owner decisions.
+
+Check actual active workers, claims, branches, worktrees, dirty files,
+remote heads, reviews and CI before editing. Another builder may have
+advanced or completed these slices. Preserve their work and authorship.
+
+The last checkpoint recorded answers to all eleven design choices:
+choice 4 = C (retain contextual fills), the others = A.
+Verify the actual owner answers and subsequent amendments before using them.
+Do not treat the original Section 2 proposal as an accepted specification.
+
+Scope stays #1274 and its concrete approved dependencies.
+Recover the unfinished fortune-tray work, determine the next approved step
+from live state, and continue implementation or corrected reviewable mocks.
+Do not select unresolved major design choices silently.
+
+Continue through successive bounded steps: implement, verify, checkpoint,
+then take the next authorized step while useful work and capacity remain.
+Assign helpers explicit file ownership and isolated worktrees where needed.
+
+Preserve behavioral assertions and size ceilings. Register permanent new
+proofs according to repository rules. Run browser checks serially under
+/tmp/emberisle-team-browser.lock when sharing that environment.
+Never claim unrun checks passed; verify CI on the actual current head.
+Keep obsolete palette expectation replacements separate and document old/new
+values where still applicable.
+
+You may edit, test, commit, push feature branches, and prepare/update PRs
+within this scope. Never merge, push main, overwrite another builder's work,
+or close #1274 merely because one slice is finished. Independent repository
+review and owner visual acceptance remain separate gates.
+
+Checkpoint meaningful progress durably, including exact commits, remote
+verification, unfinished changes, checks, claims, blockers and next action.
+At a genuine usage/runtime limit, stop affected work without bypassing it.
+Report meaningful completions or precise blockers requiring user action.
+```
+
+---
+
 ## Appendix: example assessment of one continuation (historical, 2026-11-04)
 
 Astra's handoff for the Terra p1 builder task. It is an example of reporting configuration, direct execution, scheduled execution and recovery separately. Do not reuse its IDs or dates for another task.
