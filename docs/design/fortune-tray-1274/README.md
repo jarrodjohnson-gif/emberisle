@@ -1,8 +1,10 @@
 # Fortunes tray — measured proposal for #1302
 
-Astra resumed this packet on 2026-11-05 from `7c2efc1`. It remains a proposal, not accepted runtime work.
+Astra redrew this packet on 2026-11-05 from `faa84c3ef9fa3c29792954f2a3c6502ce42e7178`. It remains a proposal, not accepted runtime work.
 
-Owner decision [8A](https://github.com/jarrodjohnson-gif/emberisle/issues/1274#issuecomment-6621485712) approves bottom anchoring, normal order, selection, and one fixed Play region. It does not approve every dimension or the interruption policy below.
+**Current review pictures and measurements: [2026-11-05 redraw](redraw-2026-11-05/README.md).** The older pictures and JSON below are retained unchanged as historical evidence; they do not measure the revised HTML. The small-phone header overlap and wrong landscape side are corrected in the redraw.
+
+Owner decision [8A](https://github.com/jarrodjohnson-gif/emberisle/issues/1274#issuecomment-6621485712) approves bottom anchoring, normal order, selection, and one fixed Play region. It does not approve every dimension. The offer policy was answered in [desk comment6671764662](https://github.com/jarrodjohnson-gif/emberisle/issues/1274#issuecomment-6671764662).
 
 ## Scope and acceptance
 
@@ -16,7 +18,7 @@ Owner decision [8A](https://github.com/jarrodjohnson-gif/emberisle/issues/1274#i
 
 This packet contains a synthetic HTML mock and browser measurements. It does not contain production code or a registered production proof.
 
-## Pictures
+## Historical pictures
 
 Each picture shows the five-kind list with Plenty selected, before choosing goods. The list scrolls; the footer stays fixed.
 
@@ -29,7 +31,7 @@ Each picture shows the five-kind list with Plenty selected, before choosing good
 
 These are schematic surfaces over a neutral field. They do not establish real-game island visibility or header clearance.
 
-## Proposed geometry
+## Historical geometry (superseded by the redraw)
 
 All dimensions are CSS pixels. Border-box measurements appear in `measurements.json`.
 
@@ -88,15 +90,13 @@ Focus starts on Close. Tab proceeds through held rows, goods when present, then 
 
 Use the production focus-trap helper and real accessibility semantics. The mock's manual Tab trap is not the implementation. Preserve Monopoly radio semantics and Plenty group semantics, accessible stock reasons, live pick feedback, and visible focus.
 
-## Incoming offer decision still required
+## Answered incoming-offer policy
 
-The older checkpoint automatically opened a second offer dialog. That conflicts with the approved dock direction and is removed.
+The owner/desk answer is recorded in [comment6671764662](https://github.com/jarrodjohnson-gif/emberisle/issues/1274#issuecomment-6671764662). Only the current player sends a trade, so an incoming trade cannot arrive while the local player legally plays a fortune. On someone else's turn, Fortunes is a looking sheet; Play remains unavailable with “On your turn.”
 
-The updated hook closes Fortunes and exposes a nonmodal dock placeholder. It does not add an offer modal. This demonstrates mutual exclusion only; the automatic interruption is **not approved**.
+Leave that sheet open and preserve its selection and focus. The offer stays in the existing dock. Do not add another window, a waiting line, automatic dismissal, or an automatic response. Dismiss Fortunes normally to interact with the dock. The mock's arrival hook now rejects the impossible own-turn arrival and retains the off-turn sheet. Its dock placeholder is not a new offer design or runtime implementation.
 
-Astra recommends preserving the selected tray until the user dismisses it, then exposing the existing inline offer. An incoming offer must never send a trade response or steal a queued Play press. Alternatively, the owner may choose automatic dismissal to the dock. Neither option may create a second interactive modal or replace the approved inline Yes/No flow.
-
-The hook exercises the automatic-dismiss alternative to reveal its focus consequences. It is not the recommended default. The final policy and real dock focus target need owner and dock-owner coordination.
+The former automatic-dismiss experiment and its results survive in the old checkpoint and measurement files. They are superseded, not an unanswered design gate. No further answer is requested.
 
 ## Source inventory
 
@@ -123,11 +123,11 @@ The original 96-case measurements and four pictures are preserved in git at `7c2
 
 The resumed inspection found four shortcomings: 4px goods gaps, 11px labels, missing bank-change/refusal simulation, and a board-arm guard that survived cancellation. The revised mock addresses those points. It also removes the extra offer modal.
 
-Fresh measurements cover four sizes, two inset settings, and twelve states. They check list order, minimum goods targets, viewport bounds, bottom-third Play placement, and fixed footer position. Interaction checks cover selection, repeated activation, bank changes, refusal/retry, board cancellation, reopen, keyboard wrap, turn changes, and nonmodal offer handoff.
+Fresh measurements cover four sizes, two inset settings, and twelve states. They check list order, minimum goods targets, viewport bounds, bottom-third Play placement, and fixed footer position. Interaction checks cover selection, repeated activation, bank changes, refusal/retry, board cancellation, reopen, keyboard wrap, turn changes, and the then-proposed nonmodal offer handoff. The latter is historical; the new redraw measurements record the answered keep-open policy.
 
 These checks observe a local counter and mocked state only. They establish neither production dispatch safety nor online timing. No existing test assertion, test ceiling, runtime file, or CI registration was changed.
 
-Before implementation acceptance, require real-game composites at all four sizes, header/seat/island clearance, current dock compatibility, disabled reasons, focus semantics, and the chosen offer policy. Runtime proofs must preserve existing assertions or replace owner-obsolete expectations separately with old/new tables. Register every new permanent proof in npm and CI.
+Before implementation acceptance, require real-game composites at all four sizes, header/seat/island clearance, current dock compatibility, disabled reasons, focus semantics, and the answered offer policy. Runtime proofs must preserve existing assertions or replace owner-obsolete expectations separately with old/new tables. Register every new permanent proof in npm and CI.
 
 No owner acceptance or independent repository review is claimed. #1274 remains open for the full audit.
 
@@ -136,3 +136,7 @@ No owner acceptance or independent repository review is claimed. #1274 remains o
 [Four diagnostic composites](composites/README.md) now test the proposal over the current game. They confirm header overlap at320×568 and844×390. Landscape also places the sheet on the wrong side for the existing dock. The other two sizes clear the header.
 
 These negative findings block accepting the current geometry. Retain the existing header-clearance and left-column proof assertions. Refine the composition with #1144 before runtime implementation. The transparent overlay is not an integrated game change; safe insets apply only to the mock.
+
+## Current redraw
+
+The new HTML caps height at the actual header/seat bottom plus 8px, while preserving the bottom safe-area gutter. Landscape uses the left inset, retaining the current dock side. Deck count shares the heading block so a full row remains visible even in landscape with goods choices. Full measurements and limits are in the [redraw notes](redraw-2026-11-05/README.md). No runtime acceptance is claimed.

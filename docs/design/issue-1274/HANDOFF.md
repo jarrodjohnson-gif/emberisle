@@ -56,3 +56,15 @@ The Fortunes packet now has a complete proposed contract and source inventory, r
 An execution environment transition interrupted the read-only Sol validation worker. Its logs survived; Astra recovered them. The worker is no longer active. Browser installation used `/workspace/work/pw-browsers` after the default home-cache path failed. Browser checks remained serial under the team lock. Claims: #1274 comment6651610960; #1302 comment6652561951. No automation was changed.
 
 Subsequent current-game composites confirmed two geometry failures: small-phone and landscape header overlap; landscape also violates the existing left-column boundary. Raw screenshots and assessment JSON are in `fortune-tray-1274/composites/`. Preserve those failures. Do not implement the current dimensions or weaken `fortune-tray-prove` to accommodate them. The next geometry step is a coordinated left-column/header-clearance refinement, not runtime coding.
+
+## Bounded redraw completed — 2026-11-05
+
+This section supersedes the pending palette/offer/geometry status above. PR #1275 merged as `f29c36fbfe6bf38f0101e64fbfd6b8c69b170344`; white chrome is finished and main is green per live desk. Do not push its old branch or repaint it. #1274 was reopened after an accidental closure.
+
+Live desk direction: [comment6671764662](https://github.com/jarrodjohnson-gif/emberisle/issues/1274#issuecomment-6671764662). The Fortunes trade question is answered: only the current player sends trades; leave the off-turn looking sheet open and the offer in the dock. No second window or waiting line. Do not ask again.
+
+Astra resumed the exact Fortune branch checkpoint `faa84c3ef9fa3c29792954f2a3c6502ce42e7178`, claim #1302 comment6671847213. New four-size current-game composites and measured geometry are in `docs/design/fortune-tray-1274/redraw-2026-11-05/`. Small phone and landscape now begin at y64, 8px below the seat row. Landscape spans x44–364, inside the left half. The fixed footer, 44px targets, normal list order and off-turn keep-open policy were checked. All four pictures were inspected. The small-phone open sheet still obscures most of the island; this limitation is explicit for picture review.
+
+All previous PNGs, measurement JSON, validation log and old checksum file were preserved byte-for-byte; new SHA-256 comparison records document this. No runtime, production proof, CI registration, automation or unrelated ownership changed. Existing #1144/#1101, #1216/#1151, #936/#799 and #867 remain reserved. No duplicate children or runtime PR were created.
+
+Published on the existing `codex/1302-fortune-tray-spec` branch after normal commit/push and remote verification. The final full commit and image links are posted on #1302 and #1274. This handoff is part of that commit; use `git log -1` on this branch to resolve its exact SHA. Then `/paused` and STOP, as the user requested. Further runtime work requires accepted drawings, independent review and shared-hunk release; this bounded task does not claim those approvals.
