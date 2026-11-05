@@ -63,7 +63,8 @@ No claim belonging to another builder was released.
 #1311 requires a one-off original/new GLSL equivalence audit, with meaningful negative fixtures.
 Compare shader tokens, line breaks, directives and JavaScript interpolation syntax independently of the edit.
 Keep this audit as evidence instead of freezing every shader in a permanent snapshot test.
-Run existing water-probe, crystal-water, waves, splash and board-look proofs serially.
+Run registered waves-prove, splash-prove, board-look-prove, jelly-ocean-prove and dpr-prove serially.
+Board-look covers simple and crystal water; no separate water-probe or crystal-water command exists.
 Then run types/build/size/growth/registered/loosen and inspect exact-head CI.
 No existing proof or acceptance gate changes.
 

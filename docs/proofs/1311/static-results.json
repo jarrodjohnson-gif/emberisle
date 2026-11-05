@@ -1,0 +1,32 @@
+[
+  {
+    "check": "base-build",
+    "exit": 0,
+    "seconds": 2.86
+  },
+  {
+    "check": "types",
+    "exit": 0,
+    "seconds": 2.91
+  },
+  {
+    "check": "build",
+    "exit": 0,
+    "seconds": 2.27
+  },
+  {
+    "check": "size-growth",
+    "exit": 0,
+    "seconds": 0.56
+  },
+  {
+    "check": "registered",
+    "exit": 0,
+    "seconds": 0.51
+  },
+  {
+    "check": "loosen",
+    "exit": 0,
+    "seconds": 0.51
+  }
+]
