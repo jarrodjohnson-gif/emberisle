@@ -71,12 +71,14 @@ check("clear restores null", (await edit(b, B.credential, { winSongId: null })).
 for (const value of ["/audio/isaac_win.mp3", "https://example.test/song.mp3", "../isaac_win.mp3", "removed-song", {}, 42]) {
   const c = await client(port);
   const reply = await edit(c, A.credential, { winSongId: value, displayName: "Must not commit" });
-  check(`rejects ${typeof value === "string" ? value : typeof value} atomically`, reply.type === "profileError" && reply.code === "invalid");
+  const unchanged = await c.req({ type: "profileResume", credential: A.credential });
+  check(`rejects ${typeof value === "string" ? value : typeof value} atomically`, reply.type === "profileError" && reply.code === "invalid" && unchanged.profile?.displayName === "Renamed" && unchanged.profile?.winSongId === song.id);
 }
 const c = await client(port);
 check("missing foreign credential is refused", (await edit(c, "not-an-owner-token", { profileId: A.profile.profileId, winSongId: null })).code === "signedOut");
 check("a foreign target field cannot redirect the authenticated owner's edit", (await edit(c, B.credential, { profileId: A.profile.profileId, winSongId: null })).profile?.profileId === B.profile.profileId);
-check("target owner's selected song and name are unchanged", (await a.req({ type: "profileResume", credential: A.credential })).profile?.displayName === "Renamed");
+const targetAfter = await a.req({ type: "profileResume", credential: A.credential });
+check("target owner's selected song and name are unchanged", targetAfter.profile?.displayName === "Renamed" && targetAfter.profile?.winSongId === song.id);
 const table = await client(port);
 table.ws.send(JSON.stringify({ type: "hello", name: "Player", credential: A.credential }));
 const welcome = await table.next((m) => m.type === "welcome");
