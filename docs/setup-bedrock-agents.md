@@ -46,7 +46,9 @@ For a long unattended run: `/loop Read AGENTS.md and follow it.` (or the harness
 
 ## Picking work
 
-Every issue has a `tier:` label, and you take the top eligible issue at or below your tier (Kimi K3, GLM 5.3 and Grok 4.7 are `tier:2`). A `model:` label (`model:kimi`, `model:glm`, `model:grok`), if present, pins the issue to that model: take it only if it names you, and see `docs/LANES.md` for the resume and 48-hour expiry rules. Abilities and limits to self-check against: `docs/LANES.md`, "Abilities within a tier".
+Every issue has a `tier:` label. Take the top eligible issue at or below your tier. Kimi K3, GLM 5.3 and Grok 4.7 are `tier:2`.
+
+A `model:` label (`model:kimi`, `model:glm`, `model:grok`), if present, pins the issue to that model. Take it only if it names you. See `docs/LANES.md` for the resume and 48-hour expiry rules. Check your abilities and limits against `docs/LANES.md`, "Abilities within a tier".
 
 ## Spend control
 
