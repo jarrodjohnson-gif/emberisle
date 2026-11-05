@@ -268,7 +268,9 @@ try {
   const knight = await p.evaluate(() => {
     const st = window.__emberisle.getState().state;
     const busy = new Set(st.vertices.filter((v) => v.building).flatMap((v) => v.hexes));
-    const hex = st.hexes.find((h) => h.id !== st.robberHex && !busy.has(h.id));
+    // Eight setup pieces can touch every land (about 2% of seeds). Any other land is a legal move.
+    const hex = st.hexes.find((h) => h.id !== st.robberHex && !busy.has(h.id))
+      ?? st.hexes.find((h) => h.id !== st.robberHex);
     return window.__emberisle.getState().dispatch({ type: "playKnight", hexId: hex.id, stealFrom: null });
   });
   assert.ok(knight.ok, knight.error);

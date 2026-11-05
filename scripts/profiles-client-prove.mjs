@@ -188,6 +188,39 @@ try {
   assert.equal(hostileClosedFired, false, "hostile message frame {type: 'closed'} must not invoke on.closed");
   ok("untrusted host message frames matching internal table event names are ignored");
 
+  // Hostile frames matching internal callbacks (reconnecting, health, closed) or Object prototype properties (constructor, toString, __proto__)
+  // must be ignored and not invoke internal handlers or prototype methods.
+  const hostileEventsResults = await page.evaluate(async () => {
+    let reconnectingCalls = 0;
+    let healthHostile = 0;
+    let constructorPayload = null;
+    let reactPayload = null;
+    const client = window.table.connectTable(window.A, {
+      reconnecting: () => { reconnectingCalls++; },
+      health: (p) => { if (typeof p === "object" && p?.malicious) healthHostile++; },
+      react: (p) => { reactPayload = p; },
+      constructor: (p) => { constructorPayload = p; },
+    });
+    client.open({ name: "EventFilterCheck" });
+    await new Promise((r) => setTimeout(r, 60));
+    const sock = window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN && ws.__sent.some((m) => m.type === "hello" && m.name === "EventFilterCheck"));
+
+    const hostileTypes = ["reconnecting", "health", "closed", "constructor", "toString", "valueOf", "__proto__", "customEvent"];
+    for (const type of hostileTypes) {
+      sock.dispatchEvent(new MessageEvent("message", { data: JSON.stringify({ type, malicious: true }) }));
+    }
+    sock.dispatchEvent(new MessageEvent("message", { data: JSON.stringify({ type: "react", seat: "p0", emoji: "🔥" }) }));
+    await new Promise((r) => setTimeout(r, 60));
+    client.close();
+    return { reconnectingCalls, healthHostile, constructorPayload, reactPayload, unhandled: window.__unhandled.length };
+  });
+  assert.equal(hostileEventsResults.reconnectingCalls, 0, "hostile {type: 'reconnecting'} must not invoke on.reconnecting");
+  assert.equal(hostileEventsResults.healthHostile, 0, "hostile {type: 'health'} must not invoke on.health");
+  assert.equal(hostileEventsResults.constructorPayload, null, "hostile {type: 'constructor'} must not invoke prototype constructor");
+  assert.equal(hostileEventsResults.unhandled, 0, "prototype property message types must not trigger errors or unhandled rejections");
+  assert.equal(hostileEventsResults.reactPayload?.emoji, "🔥", "allowed event type 'react' is delivered to handler");
+  ok("table event dispatch rejects internal names and prototype properties while delivering allowed events");
+
   // B1: a real WebSocket close must not look like selecting another host during sign-out.
   await page.evaluate(() => window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN).close());
   await page.waitForFunction(() => window.client.getSnapshot().status === "offline");

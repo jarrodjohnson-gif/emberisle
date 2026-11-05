@@ -1,0 +1,56 @@
+
+> build
+> vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 2015 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/assets/dark-smile-DZxYOvL1.webp           1.24 kB
+dist/assets/shrek-smirk-Do0Xo01U.webp          2.25 kB
+dist/index.html                                2.61 kB │ gzip:   1.30 kB
+dist/assets/mike-sully-Ct202qR2.webp           2.79 kB
+dist/assets/wide-eyes-BDiZHgYT.webp            2.84 kB
+dist/assets/side-eye-CGXmLOil.webp             2.86 kB
+dist/assets/goggles-guy-BssxYY7b.webp          2.99 kB
+dist/assets/memoji-scheme-BM7oeLzb.webp        3.05 kB
+dist/assets/leo-laugh-fpWzArdY.webp            3.45 kB
+dist/assets/old-grump-BBGe0_6b.webp            4.17 kB
+dist/assets/daffy-shock-DVzTkIuj.webp          6.32 kB
+dist/assets/ben-10-BZkFZeMq.webp               6.80 kB
+dist/assets/monkey-pet-BzZVr9yQ.webp           8.01 kB
+dist/assets/banana-guy-NMFRZZni.webp           8.83 kB
+dist/assets/glasses-glance-DrqNFuNw.webp      10.72 kB
+dist/assets/sponge-thumbs-vsqILehC.webp       47.96 kB
+dist/assets/LobbyView-D00nkorv.css             8.23 kB │ gzip:   2.02 kB
+dist/assets/index-CuuHXs8-.css                73.08 kB │ gzip:  15.17 kB
+dist/assets/sound-extra-DafKjM_2.js            0.48 kB │ gzip:   0.22 kB
+dist/assets/WayfarerOptions-Bgk4TUev.js        0.80 kB │ gzip:   0.48 kB
+dist/assets/trade-sound-DBuOJpa-.js            0.86 kB │ gzip:   0.52 kB
+dist/assets/HandRates-CCJmUmJ3.js              1.01 kB │ gzip:   0.64 kB
+dist/assets/VictoryTargetSelect-Ckrrhed8.js    1.02 kB │ gzip:   0.61 kB
+dist/assets/emotes-Ijw0U75Z.js                 1.24 kB │ gzip:   0.46 kB
+dist/assets/haptics-BAheEeR4.js                1.80 kB │ gzip:   1.06 kB
+dist/assets/DockInspection-CyB3Tcxx.js         2.03 kB │ gzip:   1.03 kB
+dist/assets/TurnExtensionVote-Dkl5A3x-.js      2.67 kB │ gzip:   1.20 kB
+dist/assets/OpenTables-NaMX4zg9.js             2.71 kB │ gzip:   1.27 kB
+dist/assets/SetupReference-DvqlLJBx.js         4.92 kB │ gzip:   1.85 kB
+dist/assets/table-DfM5ngr2.js                  5.08 kB │ gzip:   2.09 kB
+dist/assets/LobbyView-DDtW9pOz.js              5.56 kB │ gzip:   2.24 kB
+dist/assets/Reactions-CrZVnJwD.js              6.02 kB │ gzip:   2.48 kB
+dist/assets/moments-CQ8_DPHZ.js                9.65 kB │ gzip:   4.13 kB
+dist/assets/online-BDVFMXSO.js                17.85 kB │ gzip:   6.33 kB
+dist/assets/jelly-board-CweZffbO.js           20.84 kB │ gzip:   8.02 kB
+dist/assets/sheets-CBC3akwS.js                22.63 kB │ gzip:   7.15 kB
+dist/assets/harbor-jelly-BAY7kyy6.js          26.56 kB │ gzip:  10.51 kB
+dist/assets/hex-jelly-BeFNNWRi.js            136.96 kB │ gzip:  47.25 kB
+dist/assets/index-Bytxuioa.js                396.47 kB │ gzip: 125.85 kB
+dist/assets/IslandCanvas-EHLgkObV.js         761.79 kB │ gzip: 202.37 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 1.84s

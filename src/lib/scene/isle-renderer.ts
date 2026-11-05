@@ -34,10 +34,12 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { worldOfHex } from "@/lib/game/board";
 import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game/hex";
 import { LAND_MS } from "@/lib/scene/landing";
+import { LandingDust } from "@/lib/scene/landing-dust";
 import { hashStr } from "@/lib/utils";
 import { chunkUrl } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
-import { BLOCK_H, TILE_Y } from "@/lib/scene/jelly-dims";
+import { BLOCK_H, ROBBER_HEX_DIM, robberHexDim, setRobberHexDim, TILE_Y } from "@/lib/scene/jelly-dims";
+export { ROBBER_HEX_DIM, robberHexDim };
 import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
 import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
 import { OceanLife } from "@/lib/scene/ocean-life";
@@ -247,7 +249,8 @@ export class IsleRenderer {
   // placed (performance.now()), so a rebuild mid-fall carries the fall over to the new mesh instead of restarting it.
   private placed = new Map<string, PieceKind>();
   private landStart = new Map<string, number>();
-  private landings: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number }[] = [];
+  private landings: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number; dusted?: boolean }[] = [];
+  private dust = new LandingDust();
   private legalIds = new Set<string>();
   // An armed Upgrade: only the player's own outposts are legal, so a touch tap on one raises it at once, with no Place chip.
   private oneTap = false;
@@ -450,7 +453,7 @@ export class IsleRenderer {
     this.wayfarer = this.bruno.g;
     this.lantern = this.bruno.lantern;
     this.living.add(this.wayfarer);
-    this.scene.add(this.land, this.living, this.pieces, this.marks);
+    this.scene.add(this.land, this.living, this.pieces, this.marks, this.dust.group);
 
     canvas.style.touchAction = "none";
     canvas.addEventListener("pointerdown", this.onDown);
@@ -729,7 +732,7 @@ export class IsleRenderer {
     }
   }
 
-  // #826: black terrain/token with readable light ink (waste / missing → restore).
+  // #826: blocked terrain/token with readable light ink (waste / missing → restore).
   private shadeRobber(rh?: HexCell) {
     const id = rh && rh.terrain !== "waste" ? rh.id : null;
     this.jelly?.robber(id);
@@ -739,7 +742,7 @@ export class IsleRenderer {
         const m = c.material as THREE.MeshBasicMaterial;
         if (!m?.color) continue;
         m.userData.rest ??= m.color.clone();
-        m.color.copy(m.userData.rest as THREE.Color).multiplyScalar(blocked ? (m.map ? 0.55 : 0) : 1);
+        m.color.copy(m.userData.rest as THREE.Color).multiplyScalar(blocked && !m.map ? 1 - robberHexDim : 1);
         if (m.map && blocked !== !!m.userData.blocked) {
           if (!m.userData.restMap) {
             m.userData.restMap = m.map;
@@ -750,13 +753,30 @@ export class IsleRenderer {
           }
           if (blocked) m.map = blackNumberFace(m.userData.restMap, t.userData.token);
           else {
-            m.map.dispose();
+            if (m.map !== m.userData.restMap) m.map.dispose();
             m.map = m.userData.restMap;
           }
           m.userData.blocked = blocked;
         }
       }
     }
+  }
+
+  setRobberHexDim(dim: number) {
+    setRobberHexDim(dim);
+    this.jelly?.setRobberHexDim(dim);
+    for (const t of this.tokens) {
+      for (const c of t.children as THREE.Mesh[]) {
+        const m = c.material as THREE.MeshBasicMaterial;
+        if (m?.map && m.userData.blocked) {
+          if (m.map !== m.userData.restMap) m.map.dispose();
+          m.map = blackNumberFace(m.userData.restMap, t.userData.token);
+        }
+      }
+    }
+    const rh = this.lastState?.hexes.find((h) => h.id === this.lastState?.robberHex);
+    this.shadeRobber(rh);
+    this.wake();
   }
 
   // Where the wayfarer stands on a hex: on the waste (no token) its centre; on a hex with a number, beside the token, to its
@@ -852,6 +872,7 @@ export class IsleRenderer {
     this.renderer?.domElement?.removeEventListener("pointermove", this.onMove);
     this.renderer?.domElement?.removeEventListener("pointercancel", this.onCancel);
     this.safeProbe?.remove();
+    this.dust?.dispose?.();
     this.oceanLife?.dispose?.();
     this.bruno?.dispose?.();
     this.under?.dispose?.();
@@ -1337,7 +1358,7 @@ export class IsleRenderer {
       this.walk = null;
       this.startWalk();
     }
-    const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.jelly?.busy();
+    const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.jelly?.busy() || this.dust.active;
     const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
     // Camera constraints and glides are input state: process them even when the next draw waits on the GPU.
@@ -1358,6 +1379,7 @@ export class IsleRenderer {
     const dt = Math.min(this.clock.getDelta(), 0.1);
     this.stepFlashes(dt, calm);
     this.stepPayers(dt, calm);
+    this.dust.step(dt);
     this.controls.autoRotate = this.titleMode && !calm;
     if (!this.play()) {
       this.controls.enableDamping = !calm;
@@ -1715,6 +1737,7 @@ export class IsleRenderer {
     this.tokens = [];
     this.caps.clear();
     this.flashes = [];
+    this.dust.clear();
     this.oceanLife.reset(landKey(state));
 
     // Each hex: an unseen block to pick it by, a stand-in slab in its terrain's paint, and its token.
@@ -1886,9 +1909,18 @@ export class IsleRenderer {
   }
 
   // Pose every landing piece for this moment; a finished one is left exactly at rest. Reduced motion skips to rest.
+  // Dust fires once per landing at LAND_MS, aligned with the placement sound.
   private stepLandings(now: number, calm: boolean) {
     if (!this.landings.length) return;
     for (const l of this.landings) poseLanding(l, calm ? Infinity : now);
+    if (!calm) {
+      for (const l of this.landings) {
+        if (!l.dusted && now - l.start >= LAND_MS[LAND_SOUND[l.kind]]) {
+          l.dusted = true;
+          if (now - l.start < LAND_MS[LAND_SOUND[l.kind]] + 100) this.dust.emit(l.obj.position.x, l.restY, l.obj.position.z);
+        }
+      }
+    }
     this.landings = this.landings.filter((l) => !calm && now - l.start < LAND_MS[LAND_SOUND[l.kind]]);
     for (const [key, start] of this.landStart) if (calm || now - start >= LAND_MAX) this.landStart.delete(key);
   }
@@ -2324,9 +2356,16 @@ function blackNumberFace(map: THREE.Texture, n: number) {
   ctx.drawImage(map.image as HTMLCanvasElement, 0, 0);
   const image = ctx.getImageData(0, 0, 256, 256);
   const ink = n === 6 || n === 8 ? 38 : 25;
+  // Face background derived from (1 - robberHexDim): higher dimming (more black) gives a darker face.
+  // 50% dimming -> bg = 50; 25% -> bg = 75; 75% -> bg = 25. Numerals/pips at 255 maintain >= 4.5:1 contrast across all.
+  const bg = Math.round(100 * (1 - robberHexDim));
+  const fg = 255;
   for (let i = 0; i < image.data.length; i += 4) {
+    // Leave transparent pixels outside the circular token boundary untouched.
+    if (image.data[i + 3]! === 0) continue;
     const coverage = Math.max(0, Math.min(255, Math.round((249 - image.data[i + 1]!) * 255 / (249 - ink))));
-    image.data[i] = image.data[i + 1] = image.data[i + 2] = coverage;
+    const val = Math.round(bg + (coverage * (fg - bg)) / 255);
+    image.data[i] = image.data[i + 1] = image.data[i + 2] = val;
   }
   ctx.putImageData(image, 0, 0);
   const tex = new THREE.CanvasTexture(c);
@@ -2390,16 +2429,35 @@ const LAND_MAX = Math.max(...Object.values(LAND_MS));
 const easeOut = (u: number) => 1 - (1 - u) ** 5;
 const easeSnap = (u: number) => 1 + 2.70158 * (u - 1) ** 3 + 1.70158 * (u - 1) ** 2;
 
-// A path grows from 0.2 along its edge; an outpost drops 0.2 and settles; a stronghold swaps in at 1.05 and settles.
+// Drop heights: path 0.04, outpost 0.2, stronghold 0.15. Squash overlay in the last 35% of the animation:
+// a damped sine compresses Y and expands XZ, settling to [1,1,1] at u=1 (LAND_MS).
+const SQUASH_START = 0.65;
+const jellyBounce = (su: number) => Math.exp(-5 * su) * Math.sin(su * Math.PI * 3);
+
 function poseLanding(l: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number }, now: number) {
   const u = Math.min(1, Math.max(0, (now - l.start) / LAND_MS[LAND_SOUND[l.kind]]));
   const { obj } = l;
   if (u >= 1) {
     obj.position.y = l.restY;
     obj.scale.set(1, 1, 1);
-  } else if (l.kind === "path") obj.scale.set(1, 1, 0.2 + 0.8 * easeOut(u));
-  else if (l.kind === "outpost") obj.position.y = l.restY + 0.2 * (1 - easeSnap(u));
-  else obj.scale.setScalar(1.05 - 0.05 * easeSnap(u));
+    return;
+  }
+  const j = u > SQUASH_START ? jellyBounce((u - SQUASH_START) / (1 - SQUASH_START)) : 0;
+  const sqY = 1 - 0.22 * j;
+  const sqXZ = 1 + 0.11 * j;
+
+  if (l.kind === "path") {
+    const gu = Math.min(u / SQUASH_START, 1);
+    obj.scale.set(sqXZ, sqY, (0.2 + 0.8 * easeOut(gu)) * sqXZ);
+    obj.position.y = l.restY + 0.04 * (1 - easeOut(gu));
+  } else if (l.kind === "outpost") {
+    obj.position.y = l.restY + 0.2 * (1 - easeSnap(u));
+    obj.scale.set(sqXZ, sqY, sqXZ);
+  } else {
+    const s = 1.05 - 0.05 * easeSnap(u);
+    obj.position.y = l.restY + 0.15 * (1 - easeSnap(u));
+    obj.scale.set(s * sqXZ, s * sqY, s * sqXZ);
+  }
 }
 
 function makePath(seat: string, len: number) {
