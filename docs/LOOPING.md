@@ -1,6 +1,6 @@
 # Looping guide for cloud agents
 
-**Opt-in only.** This is not a standing rule and is not part of the default agent reading list. Use it only when Jarrod's prompt for your task says the task should loop (repeat across resets). If your task prompt does not say to loop, do not create automations, and do not look for a handoff. Nothing here changes `AGENTS.md` (never merge, claim before you code, the open-PR limit, `To desk:` for the desk). Written at Jarrod's direction, 2026-11-05.
+**Opt-in only.** This is not a standing rule and is not part of the default agent reading list. Use it only when Jarrod's prompt for your task says the task should loop (repeat across resets). If your task prompt does not say to loop, do not create automations: creating or changing an automation needs Jarrod's authorization. Every task, looping or not, still needs a handoff (the issue, PR body, claims and checkpoint it names), so read it as usual. Nothing here changes `AGENTS.md` (never merge, claim before you code, the open-PR limit, `To desk:` for the desk). Written at Jarrod's direction, 2026-11-05.
 
 This guide is an operating manual, not a self-starting mechanism. It does not create an automation. Reliable continuation needs: an actual saved automation that invokes the agent again; working repository access and execution tools; filled-in task instructions and permissions; a durable checkpoint and pause record the next invocation can read; and a successful scheduled-run test followed by recovery in a fresh invocation.
 
@@ -13,7 +13,7 @@ Four pieces must work together:
 3. An execution prompt that authorizes work, recovers state, verifies it and records progress.
 4. A durable checkpoint the next run can find without relying on process memory.
 
-The most frequent scheduled recurrence is hourly. A schedule is an opportunity to run, not proof a run succeeded. There is no verified immediate wake on a quota reset.
+The automation tools inspected for this guide supported at most hourly recurrence; inspect current capabilities. A schedule is an opportunity to run, not proof a run succeeded. There is no verified immediate wake on a quota reset.
 
 ## Quick diagnostic
 
@@ -124,7 +124,7 @@ proxy, credentials, and approval boundaries; do not print secrets or bypass limi
 
 ## Stop, pause, resume
 
-A direct stop or pause applies immediately; a stale scheduled prompt cannot override it. Stopping the current turn, disabling future runs (`is_enabled: false` on that task only, after authorization) and cancelling active workers are three different actions; verify each. To resume, set `is_enabled: true` rather than creating a duplicate. Schedules can overlap or arrive after a pause: at each start, check the latest instructions, checkpoint and live workers. A checkpoint claim is a coordination aid, not an atomic lock.
+A direct stop or pause applies immediately; a stale scheduled prompt cannot override it. A clear request to stop the recurring automation authorizes disabling its future runs (`is_enabled: false` on that task only); no second confirmation is needed. Stopping the current turn, disabling future runs and cancelling active workers are three different actions. Verify separately whether already-running workers have stopped. To resume, set `is_enabled: true` rather than creating a duplicate. Schedules can overlap or arrive after a pause: at each start, check the latest instructions, checkpoint and live workers. A checkpoint claim is a coordination aid, not an atomic lock.
 
 ## Verifying the loop really works
 
