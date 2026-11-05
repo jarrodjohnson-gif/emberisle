@@ -201,7 +201,7 @@
 .lobby-layout .ls { display: flex; min-height: 0; flex-direction: column; gap: 8px; }
 .lobby-layout .ls h2 { margin: 0; font-size: 17px; font-weight: 600; line-height: 22px; color: #263b3b; }
 .lobby-layout .lt { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px; border: 1px solid #cbd3d3; border-radius: 12px; background: #fff; }
-.lobby-layout .lw { width: 44px; height: 44px; flex: 0 0 44px; border-radius: 12px; background: #e3c462; }
+.lobby-layout .lw { width: 44px; height: 44px; flex: 0 0 44px; object-fit: contain; }
 .lobby-layout .lt > span:nth-child(2) { display: flex; min-width: 0; flex: 1; flex-direction: column; }
 .lobby-layout .lt b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; font-weight: 600; line-height: 22px; color: #263b3b; }
 .lobby-layout .lt > span:nth-child(2) span { font-size: 13px; font-weight: 500; line-height: 18px; color: #46524e; }
@@ -226,3 +226,8 @@
 @media (pointer: coarse) {
   .lobby-wait-holds { display: flex; }
 }
+
+/* #1280: original title art, contained without changing the existing tile/header footprints. */
+.lobby-wait-head .stacker-title { display: flex; align-items: center; gap: 8px; }
+.stacker-title img { width: 32px; height: 32px; flex: 0 0 32px; object-fit: contain; }
+.stacker-title span { overflow: hidden; text-overflow: ellipsis; }

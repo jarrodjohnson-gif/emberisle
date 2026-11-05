@@ -1,0 +1,47 @@
+
+> open-table-prove
+> node --import ./server/register.mjs scripts/open-table-prove.mjs
+
+ok open-mode-toggle selects Open +2.4s
+ok Jarrod sees the lobby after hosting an Open table +2.9s
+ok 390x844 open-table row and Join fully visible (got {"ok":true,"entry":{"x":33,"y":741.8125,"width":324,"height":58,"top":741.8125,"right":357,"bottom":799.8125,"left":33},"join":{"x":295.4375,"y":748.8125,"width":50.5625,"height":44,"top":748.8125,"right":346,"bottom":792.8125,"left":295.4375},"card":{"x":12,"y":367.8125,"width":366,"height":464.1875,"top":367.8125,"right":378,"bottom":832,"left":12}}) +4.2s
+ok private-code helper uses the approved text +4.2s
+ok code input is described by the private-table helper +4.3s
+ok open-table heading uses the approved text +4.3s
+ok listed Join has the table's accessible name +4.3s
+ok listed Join has a 44px tap height +4.3s
+ok open table entry shows Jarrod's table (got "Jarrod's table
+
+1/4 seated
+
+Join") +5.6s
+ok Joshua joined the open table without typing a code +6.4s
+ok private host got a code (got 525E) +8.3s
+ok observer sees exactly 1 open table, got 1 +10.1s
+ok open entry is Jarrod's, got "Jarrod's table
+
+2/4 seated
+
+Join" +10.1s
+ok private host name Sidecar not exposed, got "Jarrod's table
+
+2/4 seated
+
+Join" +10.1s
+ok private code 525E not exposed, got "Jarrod's table
+
+2/4 seated
+
+Join" +10.1s
+ok no console errors (found: ) +10.1s
+ok bounded offline backoff: 2 redials during 3.5 seconds offline +13.8s
+ok host restarted at the same address +14.5s
+ok discovery recovered without document reload +24.3s
+ok recovered list contains only the current open table +24.3s
+ok private table remains excluded after restart +24.3s
+ok seatless discovery sends only list, never credentials +24.3s
+FAIL timed out: connected title socket closed on unmount
+host log:
+host listening 45873
+restored 2 room(s): 525E YCU6
+host listening 45873
