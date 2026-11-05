@@ -4,6 +4,7 @@ import { createHash, randomBytes, randomInt, randomUUID, scrypt, timingSafeEqual
 import { closeSync, fsyncSync, lstatSync, mkdirSync, mkdtempSync, openSync, readFileSync, readdirSync, renameSync, rmdirSync, rmSync, unlinkSync, writeSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { isProfileSongId } from "../src/lib/profile-songs.ts";
 
 export const SCHEMA = 1;
 // "Authentication boundaries": OWASP's scrypt row, one derivation at a time, eight more waiting, overflow refused before hashing.
@@ -59,7 +60,7 @@ export function ownerView(p) {
     color: p.color,
     backupColor: p.backupColor,
     catchphrase: p.catchphrase,
-    winSongId: p.winSongId,
+    winSongId: isProfileSongId(p.winSongId) ? p.winSongId : null,
   };
   if (p.pinMustChange) out.pinMustChange = true;
   return out;
@@ -117,6 +118,10 @@ export function validDoc(doc, colors) {
 
 // Apply validated text/colour fields to a profile record inside a mutate callback. Login renames are handled separately.
 function _applyEditFields(p, f, colors) {
+  if (f.winSongId !== undefined) {
+    if (f.winSongId !== null && !isProfileSongId(f.winSongId)) throw new ProfileError("invalid");
+    p.winSongId = f.winSongId;
+  }
   if (f.displayName !== undefined) {
     const v = cleanLine(f.displayName, 16);
     if (!v) throw new ProfileError("invalid");

@@ -204,6 +204,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm test
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-songs-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-pin-queue-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-unknown-cap-prove
