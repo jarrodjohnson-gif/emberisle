@@ -208,6 +208,7 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
 import type { Bag, ChatLine, Legal, Me, Reaction, Seat, TableClient } from "@/lib/net/table";
+import type { ProfileAttachment } from "@/lib/net/profiles";
 import { chunk } from "@/lib/lazy";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
@@ -294,6 +295,9 @@ interface GameStore {
   // The Costs card (the building-costs card that comes with the board game), opened from the Table menu.
   costs: boolean;
   costsOpener: HTMLElement | null;
+  // #766: the title's profile client, set when its sheet first opens. It gives Host and Join a credential only for its own
+  // confirmed host, at the moment of sending; nothing of it reaches game state or the saved seat.
+  profile: ProfileAttachment | null;
   toast: string | null;
   // One line everyone reads for a moment: the roll and who got what, or an award changing hands (#188).
   banner: string | null;
@@ -521,6 +525,7 @@ export const useGame = create<GameStore>((set, get) => ({
   howToOpener: null,
   costs: false,
   costsOpener: null,
+  profile: null,
   toast: null,
   banner: null,
   net: null,
@@ -1153,7 +1158,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
   // Not a leave: a rejoin after a crash dials the same seat, which the host must still be holding.
   get().net?.close(false);
   const selectedHost = new URL(window.location.href);
-  const selectedMe: Me = { name: get().name.trim() || "Ember", color: get().color ?? undefined };
+  const selectedMe: Me = { name: get().name.trim() || "Ember", color: get().color ?? undefined, profile: get().profile ?? undefined };
   let cancelled = false;
   let removeListeners = () => {};
   let restoreTimer: ReturnType<typeof setTimeout> | undefined;
