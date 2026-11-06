@@ -45,3 +45,7 @@ A union-result type inference failure on this checkpoint is preserved in types-r
 
 Source7d37c7266a05abd57f05b12743b5a14ee6c8dbe1 PASS: actual renderer lifecycle, controlled shared-registry overlap/rejection/cleanup, and isolated production build smoke. Two real hashed Classic requests failed; Jelly remained displayed without navigation, and explicit retry2 published full Classic before switching back to Jelly. No source URL was requested, Jelly startup fetched no Classic, and production reported zero unexpected browser errors. Three production pictures were captured for later owner review, not accepted by the owner.
 Typecheck/build/registration181 PASS. Valid production growth: Canvas+1148/663 (485B over), Jelly+193/200, index+52/400; new Classic18050/19500. Canvas remains blocked. Disposed pending-import ownership, essential/unrelated failure negatives and affected existing proofs remain unfinished.
+
+## Tenth frozen run
+
+Source587b1af passed all ninth assertions plus actual production request disposal: dispose while a real Classic request is held, abort it, observe no reload, then a controlled event for that same asset reloads after settlement. A controlled event naming the actual essential IslandCanvas asset still reloads while an optional request is pending. These controlled events test routing, not a real essential network outage. Title screenshots do not establish beach/ramp visibility, especially on the mobile title, and are not owner acceptance.

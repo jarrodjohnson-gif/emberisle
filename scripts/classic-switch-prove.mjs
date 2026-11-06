@@ -1,7 +1,7 @@
 // #759: actual IsleRenderer and both production builders. Selection, cancellation, failure and shared-scene ownership.
 // Delays wrap the real builders/compile; every positive case still constructs and publishes the production appearance.
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer, preview } from "vite";
 import { execFileSync } from "node:child_process";
@@ -325,6 +325,40 @@ try {
   assert.deepEqual(prodErrors, [], "production has zero unexpected browser errors");
   console.log(`ok production hashed imports, failed-import recovery, full Classic and switchback; expected injected failures ${JSON.stringify(expectedFailures)}`);
   console.log(`production lazy requests ${JSON.stringify(prodRequests.filter((url) => /jelly-board|classic-board/.test(url)))}`);
+  // Actual playable-board views, separately labelled from the earlier title pictures.
+  await prod.setViewportSize({ width: 1280, height: 720 });
+  await prod.getByRole("button", { name: "Four seats, one table" }).click();
+  await prod.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: 120_000 });
+  await prod.evaluate(() => {
+    const game = window.__emberisle;
+    while (game.getState().state.phase === "rollOff") game.getState().dispatch({ type: "roll" });
+    window.__isle.lite = false; window.__isle.setLandLook("classic");
+  });
+  await prod.waitForFunction(() => window.__isle.landStatus.displayed === "classic" && !window.__isle.landStatus.loading, null, { timeout: 120_000 });
+  const pictureFrames = [];
+  for (const [width, height] of [[1280, 720], [390, 844], [844, 390]]) {
+    await prod.setViewportSize({ width, height });
+    await prod.evaluate(() => { const r = window.__isle; r.resize(); r.setView("diorama"); r.wake(); });
+    await prod.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide, null, { timeout: 120_000 });
+    const renders = await prod.evaluate(() => window.__isle.renders);
+    await prod.waitForFunction((n) => window.__isle.renders > n + 2, renders, { timeout: 120_000 });
+    const frame = await prod.evaluate(() => {
+      const r = window.__isle, rect = r.renderer.domElement.getBoundingClientRect();
+      return { viewport: [innerWidth, innerHeight], canvas: [rect.width, rect.height], titleMode: r.titleMode,
+        status: r.landStatus, stats: r.landAppearance.stats(), coastEdges: r.coast.length, renders: r.renders, view: r.view };
+    });
+    assert.equal(frame.titleMode, false, "picture is an actual playable board");
+    assert.equal(frame.stats.quality, "full", "picture contains full Classic props");
+    assert.ok(frame.coastEdges > 0 && frame.canvas[0] > 0 && frame.canvas[1] > 0, "shore and drawable canvas exist");
+    await prod.screenshot({ path: `test-results/classic-switch-production-play-${width}x${height}.png` });
+    // Supplemental unobscured scene: controlled visibility only, not product UI or owner acceptance.
+    const sceneOnly = await prod.addStyleTag({ content: "body * { visibility: hidden !important; } canvas { visibility: visible !important; }" });
+    await prod.screenshot({ path: `test-results/classic-switch-production-scene-${width}x${height}.png` });
+    await sceneOnly.evaluate((style) => style.remove());
+    pictureFrames.push(frame);
+  }
+  writeFileSync("test-results/classic-switch-production-pictures.json", JSON.stringify({ source: "playable board plus labelled UI-hidden supplemental scene", ownerAccepted: false, frames: pictureFrames }, null, 2));
+  console.log(`ok production playable-board and unobscured scene pictures ${JSON.stringify(pictureFrames)}`);
   await context.close();
 
   // A disposed renderer still owns its optional request until that request settles.
