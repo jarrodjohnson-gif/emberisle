@@ -157,6 +157,8 @@ jobs:
         run: npm run size-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run size-delta-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run named-tunnel-test
 
   server:
     needs: [changes, dependencies]

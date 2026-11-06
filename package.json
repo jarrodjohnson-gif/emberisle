@@ -14,6 +14,7 @@
     "next-up-prove": "node scripts/next-up-prove.mjs",
     "host": "npm --prefix server run host",
     "test": "npm --prefix server test",
+    "named-tunnel-test": "node scripts/named-tunnel.test.mjs",
     "profile-songs-prove": "node --import ./server/register.mjs server/profile-songs-prove.mjs",
     "profile-write-prove": "node --import ./server/register.mjs server/profile-write-prove.mjs",
     "profile-pin-queue-prove": "node server/profile-pin-queue-prove.mjs",
