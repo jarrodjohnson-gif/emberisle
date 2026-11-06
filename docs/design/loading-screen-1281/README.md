@@ -2,7 +2,7 @@
 
 Owner decision, 2026-11-06 (Desk Decisions card `q1281-loading`, A): looks right. Move the title to the 56 px wordmark too.
 
-Owner note: on the final zoom in, the end view is a nice aerial view of the island, in the spirit of Peter Pan's approach to Neverland. The mock's last frame shows the title view and does not yet do this.
+Owner note: the final zoom in should end on a nice aerial view of the island. Think of Peter Pan flying toward Neverland. The mock's last frame shows the title view and does not do this yet.
 
 ## What the mock shows
 
@@ -24,6 +24,9 @@ With no state, it runs a live demo.
 
 ## Rules for the build
 
-- Same tokens as the #1274 audit: white on mist, ink text, one teal primary, 8 px grid, 44 px targets, no blur or translucent controls.
+- Use the #1274 audit tokens. That means white on mist, ink text and one teal primary.
+- Keep the 8 px grid and 44 px targets. Use no blur and no translucent controls.
 - Heavy files load during this screen, which keeps the first download small (see PR #1144).
 - Show the owner pictures before merge. The end view of the push must read as an aerial view of the island.
+
+The three `island-*.jpg` files are the backdrop pictures the mock loads. Keep them beside `index.html`.
