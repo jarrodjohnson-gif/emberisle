@@ -1738,7 +1738,7 @@ export class IsleRenderer {
     performance.mark("props-start");
     const pause = () => new Promise<boolean>((resolve) => setTimeout(() => resolve(alive()), 0));
     let candidate: LandAppearance | null = null;
-    void loadLand(look).then(({ createAppearance }) => alive() ?
+    void loadLand(look).then<LandAppearance | null>(({ createAppearance }) => alive() ?
       createAppearance(hexes, key, pause, this.lite, () => this.titleMode) : null).then(async (built) => {
       candidate = built;
       if (!candidate) return;

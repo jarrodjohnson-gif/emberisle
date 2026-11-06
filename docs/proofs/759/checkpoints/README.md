@@ -33,3 +33,10 @@ Its execution context was destroyed before the retained-land assertion could exe
 This is a real contract failure, not a successful production recovery or an environment explanation.
 The subsequent candidate reuses the shared non-React chunk loader and scopes land-error handling to each import lifetime.
 That correction remains unverified until a later completed production run.
+
+## Recovery registry checkpoint
+
+Seventh run faf3c3cfb922fcceb87e584987f01a0d435c4f69 still reloaded: a later window capture listener ran after the existing window-target recovery listener. The production-ordering diagnostic records that ordering.
+Eighth run 21020ced20bb8944a561657ac8550b6cdab800c9 passed development lifecycle and controlled overlapping registry ownership, original rejection identity, and final cleanup followed by unowned recovery. Its initial actual production import failure retained Jelly without reload. It then timed out on an incorrect fixture condition requiring loading=false after only two failures; the production renderer correctly schedules up to six attempts. That condition is corrected separately, without altering deadlines or retry policy.
+The eighth in-process build inherited NODE_ENV=development from Vite's development server. Its inflated React-development bundle sizes are not a valid production size comparison. Subsequent smoke builds run in an isolated production subprocess.
+A union-result type inference failure on this checkpoint is preserved in types-registry-failed.log; a common LandAppearance result annotation corrects it without runtime changes.

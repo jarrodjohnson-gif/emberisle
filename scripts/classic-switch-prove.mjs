@@ -3,7 +3,8 @@
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { chromium } from "playwright";
-import { build, createServer, preview } from "vite";
+import { createServer, preview } from "vite";
+import { execFileSync } from "node:child_process";
 
 const PORT = Number(process.env.VITE_PORT) || 8198;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true, hmr: false }, logLevel: "error" });
@@ -276,7 +277,7 @@ try {
   await page.close();
 
   // Production smoke validates compiler-owned hashed URLs and the fresh-query recovery path.
-  await build({ logLevel: "error" });
+  execFileSync(process.execPath, ["node_modules/vite/bin/vite.js", "build", "--logLevel", "error"], { env: { ...process.env, NODE_ENV: "production" }, stdio: "inherit" });
   production = await preview({ preview: { host: "127.0.0.1", port: PORT + 1, strictPort: true }, logLevel: "error" });
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   await context.addInitScript(() => {
@@ -304,8 +305,10 @@ try {
   await prod.evaluate(() => window.__isle.setLandLook("classic"));
   await prod.waitForFunction(() => window.__isle.landStatus.error, null, { timeout: 120_000 });
   assert.equal(await prod.evaluate(() => window.__isle.landStatus.displayed === "jelly" && window.__isle.landReady), true, "production failed import retains matching Jelly");
+  const failedRetry = prod.waitForRequest((request) => /classic-board-[^/]+\.js\?retry=/.test(request.url()));
   await prod.evaluate(() => { window.__isle.lite = false; window.__isle.retryLandLook(); });
-  await prod.waitForFunction(() => window.__isle.landStatus.error && !window.__isle.landStatus.loading, null, { timeout: 120_000 });
+  await failedRetry;
+  await prod.waitForFunction(() => window.__isle.landStatus.error, null, { timeout: 120_000 });
   assert.equal(navigations, 1, "failed retry also leaves the playable production page intact");
   await prod.evaluate(() => window.__isle.retryLandLook());
   await prod.waitForFunction(() => window.__isle.landStatus.displayed === "classic" && !window.__isle.landStatus.error, null, { timeout: 120_000 });
