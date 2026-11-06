@@ -343,6 +343,8 @@ jobs:
         run: npm run client-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run dock-rates-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run owned-docks-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
         run: npm run dpr-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'

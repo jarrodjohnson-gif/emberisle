@@ -61,6 +61,8 @@ const CEILINGS = [
   { name: "WayfarerOptions", gzipBytes: 500 },
   // #832: the online-only timer ballot loads separately (2026-10-20; measured 1.20 kB).
   { name: "TurnExtensionVote", gzipBytes: 1400 },
+  // #560: owned-building rate chips load separately (0.62 kB gzip on CI, ceiling 700 B).
+  { name: "OwnedDockLabels", gzipBytes: 700 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
