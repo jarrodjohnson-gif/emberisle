@@ -369,6 +369,8 @@ jobs:
         run: npm run trade-tabs-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run practice-trade-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
+        run: npm run lazy-hud-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
         run: npm run hud-safe-area-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'

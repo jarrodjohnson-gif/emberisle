@@ -35,6 +35,14 @@ export const MyNumbers = moments.pick((m) => m.MyNumbers);
 export const FirstGameCoach = moments.pick((m) => m.FirstGameCoach);
 export const SetupPipHints = moments.pick((m) => m.SetupPipHints);
 
+// #1285: trade toast and loss bars (discard, steal) moved out of initial index chunk.
+export const tradeToast = chunk(() => import("@/components/game/TradeToast"));
+export const TradeToast = tradeToast.pick((m) => m.TradeToast);
+
+export const losses = chunk(() => import("@/components/game/losses"));
+export const DiscardBar = losses.pick((m) => m.DiscardBar);
+export const TakeFromBar = losses.pick((m) => m.TakeFromBar);
+
 // A sibling of the lazy dock or panel inside its Suspense boundary: its effect runs on the commit that lands them, which is
 // a commit later than the chatOpen or tradeOpen flip when the chunk was still loading, so the island measures the hole again.
 export function ChromeLanded() {

@@ -61,6 +61,10 @@ const CEILINGS = [
   { name: "WayfarerOptions", gzipBytes: 500 },
   // #832: the online-only timer ballot loads separately (2026-10-20; measured 1.20 kB).
   { name: "TurnExtensionVote", gzipBytes: 1400 },
+  // #1285: trade toast, loss bars (discard/steal) and shared trade-panel helper chunk (ceilings per owner/Opus decision 2026-11-06).
+  { name: "TradeToast", gzipBytes: 3000 },
+  { name: "losses", gzipBytes: 1600 },
+  { name: "trade-panel", gzipBytes: 300 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
