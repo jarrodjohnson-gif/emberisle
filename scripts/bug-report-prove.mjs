@@ -21,4 +21,8 @@ assert.ok(long.length < 2000, `long link is ${long.length} characters`);
 const injected = new URL(bugReportUrl({ version: "a\nSeed: 1", seed: 1, seq: 1, width: 1, height: 1 })).searchParams.get("body");
 assert.equal(injected.split("\n").filter((l) => l.startsWith("Seed:")).length, 1, "a newline in a field cannot add a line");
 assert.ok(!/[ &#]/.test(url.split("?")[1].replace(/&body=/, "")), "query is fully encoded");
+// Online: the host strips the seed, so an absent seed leaves the Seed line out and never prints "undefined".
+const online = new URL(bugReportUrl({ version: "abc1234", seed: undefined, seq: 7, width: 390, height: 844 })).searchParams.get("body");
+assert.equal(online, "Build: abc1234\nSeq: 7\nViewport: 390x844\n\n## What happened\n\n");
+assert.ok(!/Seed|undefined/.test(online), "online report has no seed line");
 console.log(`bug-report-prove: ok (${url.length} chars, long case ${long.length})`);

@@ -4,7 +4,7 @@
 // Opens with focus on the first row; Escape, a pointerdown outside or focus leaving closes it, and Escape puts the focus
 // back on the button. Leaving an online seat asks first (the seat goes to a bot for good); Stay, Escape or 5 s cancels.
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Box, Bug, Copy, Ellipsis, Eye, Hammer, LogOut, ScrollText, Volume2, VolumeX, Waves } from "lucide-react";
+import { BookOpen, Box, Copy, Ellipsis, Eye, Hammer, LogOut, ScrollText, Volume2, VolumeX, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConnectionOverlay } from "@/components/game/chunks";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
@@ -230,7 +230,7 @@ export function TableMenu() {
                 data-testid="report-bug"
                 onClick={() => window.open(bugReportUrl({ version: __BUILD_SHA__, seed: state.seed, seq: state.seq, width: window.innerWidth, height: window.innerHeight }), "_blank", "noopener")}
               >
-                <Bug className={ICON} /> Report a bug
+                <ScrollText className={ICON} /> Report a bug
               </Button>
               <Button ref={leaveRef} variant="ghost" className={ROW} onClick={confirm ? () => setAsking(true) : goTitle}>
                 <LogOut className={ICON} /> Leave table
