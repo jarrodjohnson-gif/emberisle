@@ -33,6 +33,8 @@ const CEILINGS = [
   // #1283: raised from 125,200 B to 127,000 B per owner decision 2026-11-03.
   { name: "index", gzipBytes: 127000 },
   { name: "IslandCanvas", gzipBytes: 203500 }, // #1307, 2026-11-04: raised from 202,500 B to 203,500 B
+  // #759: lazy Classic land builder; measured 18,015 B (7f3fa6f). Opus per owner delegation 2026-11-06.
+  { name: "classic-board", gzipBytes: 19500 },
   { name: "jelly-board", gzipBytes: 9000 },
   { name: "hex-jelly", gzipBytes: 50000 },
   { name: "harbor-jelly", gzipBytes: 11500 },

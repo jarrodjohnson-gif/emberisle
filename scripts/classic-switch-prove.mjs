@@ -26,6 +26,23 @@ try {
   await page.waitForFunction(() => window.__isle?.landReady, null, { timeout: 120_000 });
   assert.equal(requests.some((url) => /classic-board|terrain-classic/.test(url)), false, "Jelly-only startup never requests Classic");
   console.log("ok Jelly-only startup never requests Classic");
+  let releaseImport, importStarted;
+  const importGate = new Promise((resolve) => { releaseImport = resolve; });
+  const observedImport = new Promise((resolve) => { importStarted = resolve; });
+  await page.route("**/src/lib/scene/classic-board.ts", async (route) => {
+    importStarted(); await importGate; await route.continue();
+  });
+  await page.evaluate(() => window.__isle.setLandLook("classic"));
+  await observedImport;
+  assert.equal(await page.evaluate(() => {
+    const r = window.__isle;
+    return r.landReady && r.landStatus.requested === "classic" && r.landStatus.displayed === "jelly" && r.landStatus.loading;
+  }), true, "delayed real import keeps matching displayed Jelly");
+  await page.evaluate(() => window.__isle.setLandLook("jelly"));
+  const imported = page.waitForResponse((response) => response.url().includes("/src/lib/scene/classic-board.ts") && response.status() === 200);
+  releaseImport(); await imported;
+  await page.unroute("**/src/lib/scene/classic-board.ts");
+  console.log("ok delayed real import preserves matching land and cancellation retains latest Jelly request");
   const checks = await page.evaluate(async () => {
     const r = window.__isle;
     const { ClassicBoard } = await import("/src/lib/scene/classic-board.ts");
@@ -67,6 +84,7 @@ try {
       await until(() => r.landStatus.displayed === look && !r.landStatus.loading && !r.landStatus.error, look);
     };
     check("initial status distinguishes request, display, quality and readiness", r.landStatus.requested === "jelly" && r.landStatus.displayed === "jelly" && r.landStatus.quality === "lite" && r.landStatus.ready && !r.landStatus.error, r.landStatus);
+    check("cancelled import cannot publish Classic", r.landStatus.displayed === "jelly" && r.landStatus.requested === "jelly" && !r.landStatus.loading);
     const oldJelly = r.jellyBoard;
     const waitBuild = held();
     let began = false, cancelledBuilt = null;
@@ -100,14 +118,27 @@ try {
     check("rapid choices reject and dispose stale construction", r.landStatus.displayed === "jelly" && !r.landStatus.loading && cancelledBuilt.group.parent === null);
     ClassicBoard.create = originalClassic;
 
+    // Exercise the production parallel-compile branch even on software GL without the extension.
+    // Three's real compileAsync still compiles every actual shader, using its documented fallback when needed.
+    const originalHas = r.renderer.extensions.has.bind(r.renderer.extensions);
+    console.log(`classic-switch: native parallel compile extension ${originalHas("KHR_parallel_shader_compile")}`);
+    let forceCompileBranch = false, controlledBranches = 0, realCompileCalls = 0;
+    r.renderer.extensions.has = (name) => {
+      if (name === "KHR_parallel_shader_compile" && forceCompileBranch) {
+        forceCompileBranch = false; ++controlledBranches; return true;
+      }
+      return originalHas(name);
+    };
     // A compile completion must not publish after selection ownership changed.
     const compileGate = held(); let compileStarted = false;
-    r.renderer.compileAsync = async (...args) => { await originalCompile(...args); compileStarted = true; await compileGate.wait; };
+    r.renderer.compileAsync = async (...args) => { ++realCompileCalls; await originalCompile(...args); compileStarted = true; await compileGate.wait; };
+    forceCompileBranch = true;
     r.setLandLook("classic");
     await until(() => compileStarted, "held real shader compile");
     r.setLandLook("jelly"); compileGate.release();
     await new Promise((resolve) => setTimeout(resolve, 25));
     check("stale shader completion cannot overwrite latest selection", r.landStatus.displayed === "jelly" && r.landAppearance.group.parent === r.living);
+    check("controlled compile branch uses real Three compilation and held completion", controlledBranches === 1 && realCompileCalls === 1, { controlledBranches, realCompileCalls });
     r.renderer.compileAsync = originalCompile;
 
     // Construction and shader failures preserve the matching land and expose explicit recovery.
@@ -122,6 +153,7 @@ try {
     let failedCandidate;
     ClassicBoard.create = async (...args) => { failedCandidate = await originalClassic.apply(ClassicBoard, args); return failedCandidate; };
     r.renderer.compileAsync = async () => { throw new Error("injected shader failure"); };
+    forceCompileBranch = true;
     r.setLandLook("classic"); await until(() => r.landStatus.error, "shader error");
     check("shader failure disposes unpublished geometry and retains old land", failedCandidate.group.children.length === 0 && r.landStatus.displayed === "jelly" && r.landReady);
     r.renderer.compileAsync = originalCompile; ClassicBoard.create = originalClassic;
