@@ -39,6 +39,7 @@
     "tabs-prove-4": "node scripts/tabs-prove.mjs --seats 4",
     "spiral-prove": "node --import ./server/register.mjs scripts/spiral-prove.mjs",
     "wayfarer-modes-prove": "node --import ./server/register.mjs server/wayfarer-modes-prove.mjs",
+    "game-text-prove": "node --import ./server/register.mjs scripts/game-text-prove.mjs",
     "wayfarer-setup-prove": "node --import ./server/register.mjs scripts/wayfarer-setup-prove.mjs",
     "wayfarer-prove": "node scripts/wayfarer-prove.mjs",
     "robber-hex-prove": "node scripts/robber-hex-prove.mjs",
