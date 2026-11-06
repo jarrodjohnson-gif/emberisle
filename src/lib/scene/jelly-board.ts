@@ -1,3 +1,4 @@
+import type { LandAppearance } from "@/lib/scene/land-appearance";
 import * as THREE from "three";
 import { type Terrain } from "@/lib/game/types";
 import { rng32, setBoardDetail, tileSteps, type Tile } from "@/lib/scene/hex-jelly";
@@ -1052,6 +1053,36 @@ export class JellyBoard {
       }
     }
     return closest;
+  }
+
+  // Preserve the complete Jelly-specific diagnostics while adapting its presentation hooks.
+  appearance(holdAge: () => boolean): LandAppearance {
+    return {
+      group: this.group,
+      update: (t, all, snap) => this.update(t, all, snap, holdAge()),
+      glow: (id, level) => this.glow(id, level),
+      roll: (ids) => this.roll(ids),
+      tap: (id) => this.tap(id),
+      robber: (id) => this.robber(id),
+      busy: () => this.busy(),
+      setVisibilityContext: () => {}, // Jelly owns its existing camera-independent clearance contract.
+      groundAt: (id, dx, dz) => this.groundAt(id, dx, dz),
+      stats: () => {
+        const stats = this.stats();
+        const geometries = new Set(), materials = new Set();
+        let meshes = 0;
+        this.group.traverse((object) => {
+          const mesh = object as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          ++meshes;
+          geometries.add(mesh.geometry);
+          for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(material);
+        });
+        return { quality: this.lite ? "lite" : "full", drawCalls: stats.drawCalls, triangles: stats.triangles,
+          objects: { meshes, geometries: geometries.size, materials: materials.size } };
+      },
+      dispose: () => this.dispose(),
+    };
   }
 
   stats(): JellyStats {
