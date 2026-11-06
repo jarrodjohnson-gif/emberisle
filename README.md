@@ -1,6 +1,6 @@
 # Emberisle
 
-A private island settler game for Jarrod and friends. One person hosts a table on their PC, and the others join with a four-character code. It is 3 or 4 players, first to 10 points, on one island of 19 hexes. The full rules are in [Rule set](#rule-set) below.
+A private island settler game for Jarrod and friends. One person hosts a table on their PC, and the others join with a four-character code. It is 3 or 4 players, first to 10 points (or 7 if set), on one island of 19 hexes. The full rules are in [Rule set](#rule-set) below.
 
 **Play in the browser: <https://jarrodjohnson-gif.github.io/emberisle/>** (GitHub Pages: `main` is published nightly, or on demand from Actions → Pages → Run workflow). The old Netlify site is frozen until 2026-10-26 and is no longer updated.
 
@@ -64,7 +64,7 @@ Then you may trade, build, buy fortunes, and play fortunes bought on an earlier 
 
 ### A seven
 
-Anyone with more than 7 cards discards half, rounded down. Then the roller moves the wayfarer onto a different hex and may steal one random card from a player who has a building there.
+Anyone with more than 7 cards discards half, rounded down. Unless the table is Wayfarer Off, the roller moves the wayfarer onto a different hex. They may steal one random card from a player with a building there. In Wayfarer Off, no wayfarer moves and nobody steals.
 
 ### Docks
 
@@ -84,8 +84,9 @@ The bank starts with 19 of each resource.
 ### Table options
 
 A lobby host can set the win line to 7 or 10 points. The default is 10.
-A table can set the Wayfarer to On or Off. The default is On.
-With Off there is no wayfarer move after a seven and no wayfarer fortune; a "Muster" replaces it.
+Tables choose Wayfarer On or Off before creation across practice, online, and hotseat. The default is On.
+With Off there is no wayfarer move after a seven and no theft.
+A targetless "Muster" replaces the wayfarer fortune.
 See [docs/design/wayfarer-modes.md](docs/design/wayfarer-modes.md).
 
 ## Names
