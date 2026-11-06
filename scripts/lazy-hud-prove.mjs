@@ -170,7 +170,7 @@ try {
   });
   await stealBar.waitFor({ state: "hidden", timeout: STEP_MS }).catch(() => {});
 
-  // --- 4. Failed chunk load and recovery test ---
+  // --- 4. Failed chunk load and recovery test (discard) ---
   const failPage = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   let failLosses = true;
   await failPage.route(/losses/, async (route) => {
@@ -189,27 +189,6 @@ try {
     window.__emberisle.getState().startAi();
     window.__emberisle.setState({ state });
   }, g);
-
-  // Trigger steal while losses chunk is failing:
-  await failPage.evaluate(() => {
-    window.__emberisle.setState({
-      pendingSteal: {
-        hexId: "-2,0",
-        kind: "moveRobber",
-        targets: ["p1", "p2"],
-      },
-    });
-  });
-  const stealFailedAlert = failPage.getByTestId("losses-failed");
-  await stealFailedAlert.waitFor({ state: "visible", timeout: STEP_MS });
-  const stealAlertText = await stealFailedAlert.innerText();
-  check("failed steal chunk load shows error message and Try again button", stealAlertText.includes("could not load") && stealAlertText.includes("Try again"), stealAlertText);
-  await failPage.screenshot({ path: "docs/proofs/1285/losses-failed-steal.png" });
-
-  // Clear steal on failPage:
-  await failPage.evaluate(() => {
-    window.__emberisle.setState({ pendingSteal: null });
-  });
 
   // Trigger discard while losses chunk is failing:
   await failPage.evaluate(() => {
@@ -232,17 +211,52 @@ try {
   const recoveredDiscardBar = failPage.locator('form:has-text("Discard 2")');
   await recoveredDiscardBar.waitFor({ state: "visible", timeout: STEP_MS });
   check("tapping Try again recovers discard bar", await recoveredDiscardBar.isVisible());
+  await failPage.close();
 
-  // Clear discard on failPage:
-  await failPage.evaluate(() => {
-    const s = window.__emberisle;
-    const st = structuredClone(s.getState().state);
-    st.phase = "main";
-    st.discardNeeded = {};
-    s.setState({ state: st });
+  // --- 5. Failed chunk load and recovery test (steal picker) ---
+  const stealFailPage = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  let failStealLosses = true;
+  await stealFailPage.route(/losses/, async (route) => {
+    if (failStealLosses) {
+      await route.abort("failed");
+    } else {
+      await route.continue();
+    }
   });
 
-  await failPage.close();
+  await stealFailPage.goto(`http://127.0.0.1:${PORT}/`);
+  await stealFailPage.getByRole("button", { name: "Play", exact: true }).click({ timeout: STEP_MS });
+  await stealFailPage.waitForFunction(() => window.__emberisle?.getState().state);
+
+  await stealFailPage.evaluate((state) => {
+    window.__emberisle.getState().startAi();
+    window.__emberisle.setState({ state });
+  }, g);
+
+  // Trigger steal while losses chunk is failing:
+  await stealFailPage.evaluate(() => {
+    window.__emberisle.setState({
+      pendingSteal: {
+        hexId: "-2,0",
+        kind: "moveRobber",
+        targets: ["p1", "p2"],
+      },
+    });
+  });
+
+  const stealFailedAlert = stealFailPage.getByTestId("losses-failed");
+  await stealFailedAlert.waitFor({ state: "visible", timeout: STEP_MS });
+  const stealAlertText = await stealFailedAlert.innerText();
+  check("failed steal chunk load shows error message and Try again button", stealAlertText.includes("could not load") && stealAlertText.includes("Try again"), stealAlertText);
+  await stealFailPage.screenshot({ path: "docs/proofs/1285/losses-failed-steal.png" });
+
+  // Unblock losses chunk and tap Try again to recover steal picker:
+  failStealLosses = false;
+  await stealFailedAlert.getByRole("button", { name: "Try again" }).click();
+  const recoveredStealBar = stealFailPage.getByRole("group", { name: "The wayfarer takes a card" });
+  await recoveredStealBar.waitFor({ state: "visible", timeout: STEP_MS });
+  check("tapping Try again recovers steal picker", await recoveredStealBar.isVisible());
+  await stealFailPage.close();
 
 } finally {
   check("zero console errors", errors.length === 0, errors.slice(0, 5));
