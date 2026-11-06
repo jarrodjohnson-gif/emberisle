@@ -253,7 +253,8 @@ body {
 .turn-stamp-dot { width: 20px; height: 20px; border: 2px solid var(--ink); }
 @media (max-width: 359px) { .turn-stamp { padding: 12px 20px; font-size: 20px; } .turn-stamp-dot { width: 16px; height: 16px; } }
 .title-cover { box-shadow: var(--shadow-sheet); }
-.title-wordmark { font-weight: 800; font-size: 64px; line-height: 64px; letter-spacing: -2px; }
+/* #1281: the owner-approved 56 px wordmark, on every screen size (docs/design/loading-screen-1281). */
+.title-wordmark { font: 400 56px/64px Georgia, "Times New Roman", serif; letter-spacing: -1.5px; }
 .seat-settings { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 4px; }
 .seat-settings > summary { display: flex; min-height: 44px; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 600; list-style: none; }
 .seat-settings > summary::-webkit-details-marker { display: none; }
@@ -274,7 +275,6 @@ body {
   .trade-dock { grid-template-columns: minmax(0, 1fr); }
   .trade-summary { min-height: 32px; }
   .trade-answers { width: 100%; }
-  .title-wordmark { font-size: 52px; line-height: 56px; }
 }
 @media (max-height: 480px) and (pointer: coarse) {
   .hud-stack > .sticky { background: var(--table); }

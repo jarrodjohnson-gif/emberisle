@@ -22,9 +22,12 @@ function preloadChunks(): Plugin {
         const file = (name: string) => Object.keys(ctx.bundle ?? {}).find((f) => new RegExp(`^assets/${name}-[\\w-]+\\.js$`).test(f));
         const island = file("IslandCanvas");
         const online = file("online");
-        if (!island || !online) throw new Error("emberisle-preload-chunks: the IslandCanvas or online chunk is missing from the build");
+        const loading = file("LoadingScreen");
+        if (!island || !online || !loading) throw new Error("emberisle-preload-chunks: the IslandCanvas, online or LoadingScreen chunk is missing from the build");
         return [
           { tag: "link", attrs: { rel: "modulepreload", crossorigin: true, href: `${base}${island}` }, injectTo: "head" },
+          // #1281: the loading screen is the first thing a fresh visit shows.
+          { tag: "link", attrs: { rel: "modulepreload", crossorigin: true, href: `${base}${loading}` }, injectTo: "head" },
           {
             tag: "script",
             children: `try{if(localStorage.getItem("emberisle-seat")){var l=document.createElement("link");l.rel="modulepreload";l.crossOrigin="";l.href="${base}${online}";document.head.appendChild(l)}}catch(e){}`,

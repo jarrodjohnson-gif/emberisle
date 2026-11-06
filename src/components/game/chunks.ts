@@ -29,6 +29,9 @@ export const HowTo = sheets.pick((m) => m.HowTo);
 export const TradePanel = sheets.pick((m) => m.TradePanel);
 export const WinScreen = sheets.pick((m) => m.WinScreen);
 
+// #1281: the startup loading screen, preloaded by the built page beside the index (vite.config.ts).
+export const LoadingScreen = chunk(() => import("@/components/game/LoadingScreen")).pick((m) => m.LoadingScreen);
+
 export const moments = chunk(() => import("@/components/game/moments"));
 export const TurnMoment = moments.pick((m) => m.TurnMoment);
 export const MyNumbers = moments.pick((m) => m.MyNumbers);

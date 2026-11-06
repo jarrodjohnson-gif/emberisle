@@ -70,6 +70,11 @@ export function chunk<M>(load: () => Promise<M>) {
   return { prefetch, pick, load: loadModule };
 }
 
+// #1281: the startup loading screen's real progress, set by the island as it comes up (first frame drawn, Hex Jelly scenes
+// in, shore in; a load that gives up counts as done, as the game plays on without it), and the push's camera lift, which
+// the island reads each title frame. It lives in the index, so neither lazy chunk imports the other.
+export const boot = { drawn: false, scenes: false, shore: false, lift: 0 };
+
 // Prefetch when the browser is idle (within 2 s even while the island keeps every frame busy), or after a short delay
 // where requestIdleCallback is missing (Safari).
 export function preloadOnIdle(prefetch: () => void) {
