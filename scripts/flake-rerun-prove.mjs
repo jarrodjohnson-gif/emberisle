@@ -10,21 +10,26 @@ const workflow = readFileSync(new URL("../.github/workflows/flake-rerun.yml", im
 // Each signature matches the failure text its proof really prints, as it appears in a job log.
 const at = "2026-10-19T01:00:00.0000000Z ";
 const failures = {
-  "countdown-prove": `${at}FAIL Error: the waited-on seat heard timer_tick, timer_tick, timer_tick, timer_tick, timer_tick`,
-  "rotate-overlays-prove": `${at}FAIL locator.waitFor: Timeout 120000ms exceeded.\n${at}  - waiting for getByTestId('chat-sheet') to be visible`,
   "hotseat-prove": `${at}hotseat-prove failed: Error: Leave played ["/audio/click_001.wav","/audio/click_001.wav"], not click_001.wav once`,
   "turn-gain-prove": `${at}FAIL host 844x390: no gain line is up while "Your turn" is [{"t":1}]`,
   "chat-prove": `${at}FAIL phone game 390x844 {"total":63,"whole":9,"newest":false,"newestText":"Embergame line 6","font":14,"size":"390x844"}: 9 whole chat lines on screen, newest ("Embergame line 6") visible, 14px text\n`,
   "tokens-prove": `${at}FAIL 7 no numeral behind the scenery (1280x720): the 8: 1 of 5 points (hit (-3.144, 1.362, 1.186) on ore seed 450910998)\n`,
-  "tabs-prove-4": `${at}FAIL timed out: start\n${at}##[error]Process completed with exit code 1.`,
   "board-touch-prove": `${at}AssertionError [ERR_ASSERTION]: setup: a tap on a Pasture hex plays nothing\n${at}+ actual - expected`,
-  "flash-prove": `${at}flash-prove failed: page.waitForFunction: Timeout 120000ms exceeded.\n${at}    at settled (/home/runner/work/emberisle/emberisle/scripts/flash-prove.mjs:131:8)`,
   "lobby-layout-prove": `${at}AssertionError [ERR_ASSERTION]: 375x667: "Copy" has at least 8 px between text and button edge (7.3 / 7.2)`,
   "connection-health-prove": `${at}+   saving: false,\n${at}-   saving: true,`,
-  "steal-picker-push-prove": `${at}Error: setup: seeded roll must leave the same player and two legal victims\n${at}    at file:///home/runner/work/emberisle/emberisle/scripts/steal-picker-push-prove.mjs:45:9`,
-  "audio-recovery-prove": `${at}page.waitForFunction: Timeout 8000ms exceeded.\n${at}    at /home/runner/work/emberisle/emberisle/scripts/audio-recovery-prove.mjs:163:42`,
   "server-needs-prove": `${at}Error: timeout p0 state:`,
 };
+// Retired signatures (#1323): the fix landed and the tracking issue is closed, so each entry left .github/flaky.json.
+// The failure text each one matched is kept here: a failed job that prints it is a real failure and is not re-run.
+const retired = {
+  "countdown-prove": `${at}FAIL Error: the waited-on seat heard timer_tick, timer_tick, timer_tick, timer_tick, timer_tick`,
+  "rotate-overlays-prove": `${at}FAIL locator.waitFor: Timeout 120000ms exceeded.\n${at}  - waiting for getByTestId('chat-sheet') to be visible`,
+  "tabs-prove-4": `${at}FAIL timed out: start\n${at}##[error]Process completed with exit code 1.`,
+  "flash-prove": `${at}flash-prove failed: page.waitForFunction: Timeout 120000ms exceeded.\n${at}    at settled (/home/runner/work/emberisle/emberisle/scripts/flash-prove.mjs:131:8)`,
+  "steal-picker-push-prove": `${at}Error: setup: seeded roll must leave the same player and two legal victims\n${at}    at file:///home/runner/work/emberisle/emberisle/scripts/steal-picker-push-prove.mjs:45:9`,
+  "audio-recovery-prove": `${at}page.waitForFunction: Timeout 8000ms exceeded.\n${at}    at /home/runner/work/emberisle/emberisle/scripts/audio-recovery-prove.mjs:163:42`,
+};
+for (const id of Object.keys(retired)) assert.equal(flakes.some((f) => f.id === id), false, `${id} is retired from flaky.json`);
 assert.deepEqual(flakes.map((f) => f.id).sort(), Object.keys(failures).sort());
 for (const f of flakes) {
   assert.ok(Number.isInteger(f.issue), `${f.id} has a tracking issue`);
@@ -48,9 +53,7 @@ const notFlake = {
     `${at}FAIL 7 no numeral behind the scenery (1280x720): the 8: 2 of 5 points (hit (1, 1, 1) on ore seed 1; hit (1, 1, 1) on ore seed 1)\n`,
     `${at}FAIL 7 no numeral behind the scenery (1280x720): the 8: 1 of 5 points (hit (1, 1, 1) on ore seed 1), the 9: 1 of 5 points (hit (1, 1, 1) on ore seed 2)\n`,
   ],
-  "tabs-prove-4": [`${at}FAIL timed out: start the game\n`, `${at}FAIL timed out: tab B notices the drop\n`],
   "board-touch-prove": [`${at}AssertionError [ERR_ASSERTION]: a one-finger drag from a Pasture hex plays nothing\n`],
-  "flash-prove": [`${at}flash-prove failed: page.waitForFunction: Timeout 120000ms exceeded.\n${at}    at pieceProof (/x/scripts/flash-prove.mjs:216:9)`],
   "lobby-layout-prove": [
     `${at}AssertionError [ERR_ASSERTION]: 375x667: "Copy" has at least 8 px between text and button edge (not a number)`,
     `${at}AssertionError [ERR_ASSERTION]: 320x568: "Join" has at least 8 px between text and button edge (7.3 / 7.2)`,
@@ -138,6 +141,18 @@ assert.deepEqual(serverNeeds.jobs, [
 check("browser needs-prove is not the server timeout flake", run([
   ["browser-a (a3)", "needs-prove", failures["server-needs-prove"]],
 ]), false);
+
+// A retired signature is no longer a flake: its failed job is not re-run, and neither are the near misses it once excluded.
+const retiredNear = {
+  "tabs-prove-4": [`${at}FAIL timed out: start the game\n`, `${at}FAIL timed out: tab B notices the drop\n`],
+  "flash-prove": [`${at}flash-prove failed: page.waitForFunction: Timeout 120000ms exceeded.\n${at}    at pieceProof (/x/scripts/flash-prove.mjs:216:9)`],
+};
+for (const [step, log] of Object.entries(retired)) {
+  check(`retired ${step} signature is not a known flake`, run([["browser-a (a3)", step, log]]), false);
+}
+for (const [step, logs] of Object.entries(retiredNear)) {
+  for (const log of logs) check(`retired ${step} near miss is not a known flake`, run([["browser-a (a3)", step, log]]), false);
+}
 
 const timedOut = run([["browser-a (a3)", "hotseat-prove", failures["hotseat-prove"]]]);
 timedOut.jobs[2].conclusion = "cancelled";
