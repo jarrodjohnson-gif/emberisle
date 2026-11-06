@@ -24,3 +24,12 @@ Explicit recovery, full Classic rendering, reduced-motion stability and disposal
 Full Classic reported40 draws and214290 triangles, with40 geometries and20 materials.
 Three development-renderer pictures were captured; they do not establish production URL loading or owner acceptance.
 Later refactors and production smoke remain separately unverified until their next completed run.
+
+## Production integration failure
+
+Sixth run source7a4c41c931d00e880b3635797674ee8e209f8a27 passed its development lifecycle sections.
+The production hashed Classic import failure triggered the existing title stale-chunk page reload.
+Its execution context was destroyed before the retained-land assertion could execute.
+This is a real contract failure, not a successful production recovery or an environment explanation.
+The subsequent candidate reuses the shared non-React chunk loader and scopes land-error handling to each import lifetime.
+That correction remains unverified until a later completed production run.

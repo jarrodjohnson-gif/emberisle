@@ -36,7 +36,7 @@ import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game
 import { LAND_MS } from "@/lib/scene/landing";
 import { LandingDust } from "@/lib/scene/landing-dust";
 import { hashStr } from "@/lib/utils";
-import { chunkUrl } from "@/lib/lazy";
+import { chunk, chunkUrl } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
 import { BLOCK_H, ROBBER_HEX_DIM, robberHexDim, setRobberHexDim, TILE_Y } from "@/lib/scene/jelly-dims";
 export { ROBBER_HEX_DIM, robberHexDim };
@@ -61,14 +61,20 @@ export function topOf(_terrain: Terrain) {
 // The Hex Jelly scenes load as their own chunk; the board shows plain slabs until every scene is built, then the island swaps
 // in whole (the owner, 2026-10-16: wait for it, no pop-in). A failed load leaves the slabs (the board still plays) and tries
 // again a few seconds on (five times at most), under a fresh query: the browser remembers a module that failed for the life of the page (lazy.ts).
-const failedLand: Partial<Record<LandLook, string>> = {};
-let landRetries = 0;
-const loadLand = (look: LandLook) =>
-  (failedLand[look] ? import(/* @vite-ignore */ `${failedLand[look]}?retry=${++landRetries}`) :
-    look === "classic" ? import("@/lib/scene/classic-board") : import("@/lib/scene/jelly-board")).catch((error: unknown) => {
-    failedLand[look] = chunkUrl(error) ?? failedLand[look];
-    throw error;
-  }) as Promise<typeof import("@/lib/scene/jelly-board") | typeof import("@/lib/scene/classic-board")>;
+const landModules = {
+  jelly: chunk(() => import("@/lib/scene/jelly-board")),
+  classic: chunk(() => import("@/lib/scene/classic-board")),
+};
+const loadLand = (look: LandLook): Promise<typeof import("@/lib/scene/jelly-board") | typeof import("@/lib/scene/classic-board")> => {
+  // These optional land assets own their recovery; a stale-title reload must not discard the playable board.
+  // Listen only for this import's lifetime, including completion after its renderer request was cancelled.
+  const ownedFailure = (event: Event) => {
+    const url = chunkUrl((event as Event & { payload?: unknown }).payload) ?? "";
+    if (/\/(classic-board|jelly-board|hex-jelly)-[\w-]+\.js$/.test(url)) event.stopImmediatePropagation();
+  };
+  window.addEventListener("vite:preloadError", ownedFailure, true);
+  return landModules[look].load().finally(() => window.removeEventListener("vite:preloadError", ownedFailure, true));
+};
 const JELLY_RETRY_MS = 4000;
 // The jelly pieces (#638, pieces-jelly-prompt.md); ?pieces=slab keeps the slab pieces (for the classic look, #641).
 const JELLY_PIECES = (() => {

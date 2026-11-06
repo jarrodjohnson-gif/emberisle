@@ -256,7 +256,8 @@ try {
     localStorage.setItem("emberisle-jelly", "lite");
   });
   const prod = await context.newPage(), prodRequests = [], prodErrors = [], expectedFailures = [];
-  let injected = false;
+  let injected = false, navigations = 0;
+  prod.on("framenavigated", (frame) => { if (frame === prod.mainFrame()) ++navigations; });
   prod.on("request", (request) => prodRequests.push(request.url()));
   prod.on("pageerror", (error) => prodErrors.push(error.message));
   prod.on("console", (message) => {
@@ -286,6 +287,7 @@ try {
   await prod.evaluate(() => window.__isle.setLandLook("jelly"));
   await prod.waitForFunction(() => window.__isle.landStatus.displayed === "jelly" && !window.__isle.landStatus.loading, null, { timeout: 120_000 });
   assert.equal(prodRequests.some((url) => /\/src\//.test(url)), false, "production switching uses no source URLs");
+  assert.equal(navigations, 1, "owned land failure never reloads the production page");
   assert.deepEqual(prodErrors, [], "production has zero unexpected browser errors");
   console.log(`ok production hashed imports, failed-import recovery, full Classic and switchback; expected injected failures ${JSON.stringify(expectedFailures)}`);
   console.log(`production lazy requests ${JSON.stringify(prodRequests.filter((url) => /jelly-board|classic-board/.test(url)))}`);
