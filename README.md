@@ -27,7 +27,7 @@ A private island settler game for Jarrod and friends. One person hosts a table o
 
 ## Rule set
 
-Three or four players. First to 10 points wins. One island of 19 hexes.
+Three or four players. First to 10 points wins (7 if the table picks it, see Table options). One island of 19 hexes.
 
 ### Land
 
@@ -80,6 +80,13 @@ The picture in [docs/harbors-example.png](docs/harbors-example.png) is one legal
 ### Bank
 
 The bank starts with 19 of each resource.
+
+### Table options
+
+A lobby host can set the win line to 7 or 10 points. The default is 10.
+A table can set the Wayfarer to On or Off. The default is On.
+With Off there is no wayfarer move after a seven and no wayfarer fortune; a "Muster" replaces it.
+See [docs/design/wayfarer-modes.md](docs/design/wayfarer-modes.md).
 
 ## Names
 
