@@ -34,7 +34,7 @@ Sheet radius remains 20px; rows and controls use 8px. Unselected rows use a quie
 
 Goods paths are copied directly from `src/components/game/ResourceSymbols.tsx` into this standalone drawing. Wood, brick and ore marks retain their existing resource hues; wool and grain use dark readable marks on pale resource-tinted selection grounds. These local drawing tints do not change runtime resource tokens. Names and accessible names remain present, selected counts are explicit, and empty-bank Brick is unavailable. No hand-card style is changed.
 
-The entrance reuses the game's existing hand-in timing: 220ms, opacity 0→1 and translateY 8px→0, cubic-bezier(.22,1,.36,1). It does not bounce or glow. The final layout is reserved before motion. Selection fill settles over 120ms; pressing legal Play moves 1px without changing its hitbox layout. Reduced motion removes the entrance, row transition and pressed translation. Dismissal remains immediate; no new sound is specified.
+The entrance reuses the game's existing hand-in timing: 220ms, opacity 0→1 and translateY 8px→0, cubic-bezier(.22,1,.36,1). It does not bounce or glow. The final layout is reserved before motion. Selection changes immediately, without animating paint; pressing legal Play moves 1px without changing its hitbox layout. Reduced motion removes the entrance and pressed translation. Dismissal remains immediate; no new sound is specified.
 
 Actual paused animation frames: [0ms](motion-0ms.png), [110ms](motion-110ms.png), [220ms](motion-220ms.png). Browser samples at those times are in the measurements: opacity 0 / .961383 / 1 and vertical translation 8 / .30894 / 0px. These are synthetic mock frames, not evidence of production motion performance.
 
