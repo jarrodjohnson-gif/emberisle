@@ -61,20 +61,14 @@ export function topOf(_terrain: Terrain) {
 // The Hex Jelly scenes load as their own chunk; the board shows plain slabs until every scene is built, then the island swaps
 // in whole (the owner, 2026-10-16: wait for it, no pop-in). A failed load leaves the slabs (the board still plays) and tries
 // again a few seconds on (five times at most), under a fresh query: the browser remembers a module that failed for the life of the page (lazy.ts).
-let jellyFailed: string | undefined;
-let jellyRetries = 0;
-const loadJelly = (): Promise<typeof import("@/lib/scene/jelly-board")> =>
-  (jellyFailed ? import(/* @vite-ignore */ `${jellyFailed}?retry=${++jellyRetries}`) : import("@/lib/scene/jelly-board")).catch((e: unknown) => {
-    jellyFailed = chunkUrl(e) ?? jellyFailed;
-    throw e;
-  });
-let classicFailed: string | undefined;
-let classicRetries = 0;
-const loadClassic = (): Promise<typeof import("@/lib/scene/classic-board")> =>
-  (classicFailed ? import(/* @vite-ignore */ `${classicFailed}?retry=${++classicRetries}`) : import("@/lib/scene/classic-board")).catch((e: unknown) => {
-    classicFailed = chunkUrl(e) ?? classicFailed;
-    throw e;
-  });
+const failedLand: Partial<Record<LandLook, string>> = {};
+let landRetries = 0;
+const loadLand = (look: LandLook) =>
+  (failedLand[look] ? import(/* @vite-ignore */ `${failedLand[look]}?retry=${++landRetries}`) :
+    look === "classic" ? import("@/lib/scene/classic-board") : import("@/lib/scene/jelly-board")).catch((error: unknown) => {
+    failedLand[look] = chunkUrl(error) ?? failedLand[look];
+    throw error;
+  }) as Promise<typeof import("@/lib/scene/jelly-board") | typeof import("@/lib/scene/classic-board")>;
 const JELLY_RETRY_MS = 4000;
 // The jelly pieces (#638, pieces-jelly-prompt.md); ?pieces=slab keeps the slab pieces (for the classic look, #641).
 const JELLY_PIECES = (() => {
@@ -98,7 +92,7 @@ const HARBOR_JELLY = (() => {
     return true;
   }
 })();
-type TerrainStats = { ready: boolean } & JellyStats;
+type TerrainStats = { ready: boolean } & Omit<JellyStats, "quality" | "objects">;
 // The stand-in slab and the unseen pick block: a hex prism the jelly block's size (corners at 30 + 60k degrees, as the
 // board's pointy-top hexes), standing on its base.
 const SLAB_GEO = new THREE.CylinderGeometry(HEX_SIZE * 0.98, HEX_SIZE * 0.98, BLOCK_H, 6).translate(0, BLOCK_H / 2, 0);
@@ -244,11 +238,9 @@ export class IsleRenderer {
   private appearance: LandAppearance | null = null;
   private look: LandLook = "jelly";
   private displayedLook: LandLook | null = null;
-  private appearanceKey: string | null = null;
   private appearanceLoading = false;
   private appearanceError = false;
   private appearanceRetry: ReturnType<typeof setTimeout> | undefined;
-  private shoreLoading = false;
   onLand: (status: LandStatus) => void = () => {};
   // Whether the GPU is software, and whether the board is lite (the ground only).
   software = false;
@@ -1705,7 +1697,7 @@ export class IsleRenderer {
     const state = this.lastState;
     if (!state) return this.reportLand();
     const key = landKey(state);
-    this.appearanceLoading = this.displayedLook !== this.look || this.appearanceKey !== key;
+    this.appearanceLoading = this.displayedLook !== this.look;
     this.reportLand();
     if (!this.appearanceLoading) return;
     const hexes = state.hexes.map((h) => Object.freeze({ id: h.id, terrain: h.terrain, q: h.q, r: h.r, ...worldOfHex(h), y: TILE_Y }));
@@ -1714,10 +1706,9 @@ export class IsleRenderer {
 
   private visibility(): VisibilityContext {
     const camera = this.cam();
-    camera.updateMatrixWorld();
-    return { view: this.view, camera: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+    return { view: this.view, camera: { ...camera.position },
       azimuth: this.view === "diorama" ? this.orbit.getAzimuthalAngle() : 0,
-      tokens: this.tokens.map((token) => ({ x: token.position.x, y: token.position.y, z: token.position.z,
+      tokens: this.tokens.map((token) => ({ ...token.position,
         glyphBottom: token.position.y - 0.13 * (TOKEN_FACE / 0.29) })) };
   }
 
@@ -1744,15 +1735,11 @@ export class IsleRenderer {
     let candidate: LandAppearance | null = null;
     let jelly: JellyBoard | null = null;
     const construct = async () => {
-      if (look === "classic") {
-        const { ClassicBoard } = await loadClassic();
-        if (!alive()) return null;
-        return ClassicBoard.create(hexes, hashStr(key), pause, this.lite ? "lite" : "full");
-      }
-      const { JellyBoard } = await loadJelly();
+      const { createAppearance } = await loadLand(look);
       if (!alive()) return null;
-      jelly = await JellyBoard.create([...hexes], (kind) => hashStr(`${key}|${kind}`), pause, this.lite);
-      return jelly?.appearance(() => this.titleMode) ?? null;
+      const built = await createAppearance(hexes, key, pause, this.lite, () => this.titleMode);
+      if (look === "jelly") jelly = built as JellyBoard | null;
+      return built;
     };
     void construct().then(async (built) => {
       candidate = built;
@@ -1780,7 +1767,6 @@ export class IsleRenderer {
       if (previous) this.living.remove(previous.group);
       this.appearance = candidate;
       this.jelly = jelly;
-      this.appearanceKey = key;
       this.displayedLook = look;
       this.appearanceLoading = this.appearanceError = false;
       if (this.slabs) {
@@ -1796,15 +1782,14 @@ export class IsleRenderer {
       }
       this.reportLand();
       // Shore ownership follows the canonical board, independently from look requests.
-      if (HARBOR_JELLY && !this.lite && !this.shore && !this.shoreLoading) {
-        this.shoreLoading = true;
+      if (HARBOR_JELLY && !this.lite && !previous) {
         void loadShore().then(({ buildShore }) => {
           if (this.stopped || this.lastLand !== key) return;
           this.swapShore(buildShore(this.coast, this.docks, hashStr(`${key}|shore`)));
         }).catch((error: unknown) => {
           if (!shoreFailed) console.warn("The jelly shore did not load; the plain beach stays.", error);
           shoreFailed = true;
-        }).finally(() => { if (this.lastLand === key) this.shoreLoading = false; });
+        });
       }
       (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
       this.wake();
@@ -1828,8 +1813,6 @@ export class IsleRenderer {
     this.appearance = null;
     this.jelly = null;
     this.displayedLook = null;
-    this.appearanceKey = null;
-    this.shoreLoading = false;
     this.slabs = null;
     disposeGroup(this.land);
     disposeGroup(this.living);

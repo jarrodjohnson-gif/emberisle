@@ -43,7 +43,7 @@ try {
   releaseImport(); await imported;
   await page.unroute("**/src/lib/scene/classic-board.ts");
   console.log("ok delayed real import preserves matching land and cancellation retains latest Jelly request");
-  const checks = await page.evaluate(async () => {
+  const evaluating = page.evaluate(async () => {
     const r = window.__isle;
     const { ClassicBoard } = await import("/src/lib/scene/classic-board.ts");
     const { JellyBoard } = await import("/src/lib/scene/jelly-board.ts");
@@ -196,12 +196,52 @@ try {
       counts.push({ ...r.renderer.info.memory });
     }
     check("repeated swaps stabilize renderer resources", counts.slice(1).every((v) => v.geometries === counts[0].geometries && v.textures === counts[0].textures), counts);
+    // Real timers exercise the unchanged initial-plus-five policy and four-second retry spacing.
+    await choose("jelly");
+    const attempts = [];
+    ClassicBoard.create = async () => { attempts.push(performance.now()); throw new Error("injected repeated construction failure"); };
+    r.setLandLook("classic");
+    await until(() => attempts.length === 6 && !r.landStatus.loading, "six bounded attempts");
+    await new Promise((resolve) => setTimeout(resolve, 4100));
+    check("automatic retry stops after exactly six attempts at four-second spacing", attempts.length === 6 && attempts.slice(1).every((time, i) => time - attempts[i] >= 4000), attempts.map((time) => Math.round(time - attempts[0])));
+    check("exhausted retries retain matching terrain and expose explicit recovery", r.landReady && r.landStatus.displayed === "jelly" && r.landStatus.requested === "classic" && r.landStatus.error === "Classic could not load");
+    ClassicBoard.create = originalClassic;
+    r.retryLandLook(); await until(() => r.landStatus.displayed === "classic" && !r.landStatus.loading, "recovery after exhausted retries");
+    check("explicit retry recovers after exhaustion", !r.landStatus.error);
+
+    // Full quality uses the same real renderer and production Classic builder.
+    await choose("jelly"); r.lite = false;
+    await choose("classic"); draw();
+    check("full Classic publishes its actual props and preserves common ground plane", r.landAppearance.stats().quality === "full" && r.landAppearance.stats().drawCalls > 19 && next.hexes.every((h) => Math.abs(r.landAppearance.groundAt(h.id, 0, 0) - 0.34) < 1e-6), r.landAppearance.stats());
+    const board = r.landAppearance;
+    const pose = () => { const values = []; board.group.traverse((o) => values.push(...o.position.toArray(), ...o.scale.toArray(), ...o.quaternion.toArray())); return JSON.stringify(values); };
+    board.update(10, true, true); const still = pose(); board.update(200, true, true);
+    check("full Classic reduced motion retains a stable pose", pose() === still);
+    // Save the actual renderer before the disposal fixture; no UI preference control is implied.
+    window.__switchPicturesReady = true;
+    await new Promise((resolve) => { window.__continueAfterPictures = resolve; });
+    await choose("jelly"); r.lite = true;
+    const disposalGate = held(); let disposalBuilt;
+    ClassicBoard.create = async (...args) => { disposalBuilt = await originalClassic.apply(ClassicBoard, args); await disposalGate.wait; return disposalBuilt; };
+    r.setLandLook("classic"); await until(() => disposalBuilt, "constructed candidate before dispose");
+    r.dispose(); disposalGate.release();
+    await until(() => disposalBuilt.group.children.length === 0, "disposed renderer rejects completion");
+    check("renderer disposal cancels pending publication and frees its built candidate", disposalBuilt.group.parent === null && !r.landReady && r.appearanceRetry === undefined);
+    ClassicBoard.create = originalClassic;
     window.__switchProof = { counts, checks: out.length };
     return out;
   });
+  await Promise.race([page.waitForFunction(() => window.__switchPicturesReady, null, { timeout: 180_000 }), evaluating.then(() => { throw new Error("proof ended before its picture checkpoint"); })]);
+  mkdirSync("test-results", { recursive: true });
+  for (const [width, height] of [[1280, 720], [390, 844], [844, 390]]) {
+    await page.setViewportSize({ width, height });
+    await page.evaluate(() => { window.__isle.resize(); window.__isle.draw(); });
+    await page.screenshot({ path: `test-results/classic-switch-${width}x${height}.png` });
+  }
+  await page.evaluate(() => window.__continueAfterPictures());
+  const checks = await evaluating;
   for (const c of checks) console.log(`ok ${c.name}${c.details === undefined ? "" : ` ${JSON.stringify(c.details)}`}`);
   mkdirSync("test-results", { recursive: true });
-  await page.screenshot({ path: "test-results/classic-switch-1280.png" });
   assert.deepEqual(errors, [], "zero unexpected browser errors");
   console.log("ok zero browser errors");
 } finally {
