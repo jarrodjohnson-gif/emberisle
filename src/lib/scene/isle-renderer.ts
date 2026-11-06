@@ -234,12 +234,9 @@ export class IsleRenderer {
   // The crystal sea's own lace, kept while a shore's moved one stands in for it.
   private baseWash: THREE.Mesh | null = null;
   // The island's Hex Jelly scenes, batched (jelly-board.ts), once built; until then `slabs` stand in.
-  private jelly: JellyBoard | null = null;
+  private get jelly(): JellyBoard | null { return this.landState.displayed === "jelly" ? this.appearance as JellyBoard | null : null; }
   private appearance: LandAppearance | null = null;
-  private look: LandLook = "jelly";
-  private displayedLook: LandLook | null = null;
-  private appearanceLoading = false;
-  private appearanceError = false;
+  private landState: Omit<LandStatus, "quality" | "ready"> = { requested: "jelly", displayed: null, loading: false, error: null };
   private appearanceRetry: ReturnType<typeof setTimeout> | undefined;
   onLand: (status: LandStatus) => void = () => {};
   // Whether the GPU is software, and whether the board is lite (the ground only).
@@ -864,7 +861,6 @@ export class IsleRenderer {
     this.cancelAppearance();
     this.appearance?.dispose();
     this.appearance = null;
-    this.jelly = null;
     this.shore?.dispose();
     this.shore = null;
     this.renderer?.setAnimationLoop(null);
@@ -1649,10 +1645,10 @@ export class IsleRenderer {
   // The jelly board (#599, jelly-board.ts): its draw calls and triangles in the main pass, read by board-look-prove through
   // `window.__terrain`; before it is built, the stand-in slabs.
   terrainStats(): TerrainStats {
-    if (this.jelly) return { ready: true, ...this.jelly.stats() };
-    if (this.appearance) return { ready: true, lite: this.lite, ...this.appearance.stats(), kinds: 0, batches: 0, bakes: 0, sprites: 0 };
     const n = this.slabs?.count ?? 0;
-    return { ready: false, lite: this.lite, drawCalls: n ? 1 : 0, triangles: n * 24, kinds: 0, batches: 0, bakes: 0, sprites: 0 };
+    return { ready: this.appearance !== null, lite: this.lite, drawCalls: n ? 1 : 0, triangles: n * 24,
+      kinds: 0, batches: 0, bakes: 0, sprites: 0, ...this.appearance?.stats() };
+
   }
 
   // Ready once the island's scenes are built and showing (the proofs wait on it).
@@ -1666,21 +1662,20 @@ export class IsleRenderer {
   }
 
   get landStatus(): LandStatus {
-    return { requested: this.look, displayed: this.displayedLook, quality: this.lite ? "lite" : "full", ready: this.appearance !== null,
-      loading: this.appearanceLoading, error: this.appearanceError ? `${this.look === "classic" ? "Classic" : "Jelly"} could not load` : null };
+    return { ...this.landState, quality: this.lite ? "lite" : "full", ready: this.appearance !== null };
   }
 
   // Appearance-neutral proof access; jellyBoard keeps its original Jelly-only identity.
   get landAppearance() { return this.appearance; }
 
   setLandLook(look: LandLook) {
-    if (this.stopped || this.look === look) return;
-    this.look = look;
+    if (this.stopped || this.landState.requested === look) return;
+    this.landState.requested = look;
     this.requestAppearance();
   }
 
   retryLandLook() {
-    if (!this.stopped && this.appearanceError) this.requestAppearance();
+    if (!this.stopped && this.landState.error) this.requestAppearance();
   }
 
   private reportLand() { this.onLand(this.landStatus); }
@@ -1693,15 +1688,15 @@ export class IsleRenderer {
 
   private requestAppearance() {
     this.cancelAppearance();
-    this.appearanceError = false;
+    this.landState.error = null;
     const state = this.lastState;
     if (!state) return this.reportLand();
     const key = landKey(state);
-    this.appearanceLoading = this.displayedLook !== this.look;
+    this.landState.loading = this.landState.displayed !== this.landState.requested;
     this.reportLand();
-    if (!this.appearanceLoading) return;
+    if (!this.landState.loading) return;
     const hexes = state.hexes.map((h) => Object.freeze({ id: h.id, terrain: h.terrain, q: h.q, r: h.r, ...worldOfHex(h), y: TILE_Y }));
-    this.growScenes(this.landGen, key, Object.freeze(hexes), this.look);
+    this.growScenes(this.landGen, key, Object.freeze(hexes), this.landState.requested);
   }
 
   private visibility(): VisibilityContext {
@@ -1733,15 +1728,8 @@ export class IsleRenderer {
     performance.mark("props-start");
     const pause = () => new Promise<boolean>((resolve) => setTimeout(() => resolve(alive()), 0));
     let candidate: LandAppearance | null = null;
-    let jelly: JellyBoard | null = null;
-    const construct = async () => {
-      const { createAppearance } = await loadLand(look);
-      if (!alive()) return null;
-      const built = await createAppearance(hexes, key, pause, this.lite, () => this.titleMode);
-      if (look === "jelly") jelly = built as JellyBoard | null;
-      return built;
-    };
-    void construct().then(async (built) => {
+    void loadLand(look).then(({ createAppearance }) => alive() ?
+      createAppearance(hexes, key, pause, this.lite, () => this.titleMode) : null).then(async (built) => {
       candidate = built;
       if (!candidate) return;
       if (!alive()) { candidate.dispose(); return; }
@@ -1766,9 +1754,9 @@ export class IsleRenderer {
       this.living.add(candidate.group);
       if (previous) this.living.remove(previous.group);
       this.appearance = candidate;
-      this.jelly = jelly;
-      this.displayedLook = look;
-      this.appearanceLoading = this.appearanceError = false;
+      this.landState.displayed = look;
+      this.landState.loading = false;
+      this.landState.error = null;
       if (this.slabs) {
         this.land.remove(this.slabs);
         this.slabs.dispose();
@@ -1797,8 +1785,8 @@ export class IsleRenderer {
     }).catch(() => {
       if (candidate && candidate !== this.appearance) candidate.dispose();
       if (!alive()) return;
-      this.appearanceError = true;
-      this.appearanceLoading = tries < 5;
+      this.landState.error = `${look === "classic" ? "Classic" : "Jelly"} could not load`;
+      this.landState.loading = tries < 5;
       this.reportLand();
       if (tries < 5) this.appearanceRetry = setTimeout(() => {
         if (alive()) this.growScenes(gen, key, hexes, look, tries + 1);
@@ -1808,11 +1796,9 @@ export class IsleRenderer {
 
   private buildLand(state: GameState) {
     this.docksDirty = true;
-    this.cancelAppearance();
     this.appearance?.dispose();
     this.appearance = null;
-    this.jelly = null;
-    this.displayedLook = null;
+    this.landState.displayed = null;
     this.slabs = null;
     disposeGroup(this.land);
     disposeGroup(this.living);

@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { chromium } from "playwright";
-import { createServer } from "vite";
+import { build, createServer, preview } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8198;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true, hmr: false }, logLevel: "error" });
@@ -13,6 +13,7 @@ const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [], requests = [];
+let production;
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   await page.addInitScript(() => {
@@ -244,7 +245,53 @@ try {
   mkdirSync("test-results", { recursive: true });
   assert.deepEqual(errors, [], "zero unexpected browser errors");
   console.log("ok zero browser errors");
+  await page.close();
+
+  // Production smoke validates compiler-owned hashed URLs and the fresh-query recovery path.
+  await build({ logLevel: "error" });
+  production = await preview({ preview: { host: "127.0.0.1", port: PORT + 1, strictPort: true }, logLevel: "error" });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  await context.addInitScript(() => {
+    localStorage.setItem("emberisle-water", "simple");
+    localStorage.setItem("emberisle-jelly", "lite");
+  });
+  const prod = await context.newPage(), prodRequests = [], prodErrors = [], expectedFailures = [];
+  let injected = false;
+  prod.on("request", (request) => prodRequests.push(request.url()));
+  prod.on("pageerror", (error) => prodErrors.push(error.message));
+  prod.on("console", (message) => {
+    if (message.type() !== "error") return;
+    if (injected && /\/assets\/classic-board-[^/]+\.js/.test(message.location().url) && /Failed to load resource/.test(message.text())) expectedFailures.push(message.text());
+    else prodErrors.push(message.text());
+  });
+  await prod.goto(`http://127.0.0.1:${PORT + 1}/`);
+  await prod.waitForFunction(() => window.__isle?.landReady, null, { timeout: 120_000 });
+  assert.equal(prodRequests.some((url) => /classic-board|terrain-classic/.test(url)), false, "production Jelly startup never requests Classic");
+  assert.equal(prodRequests.some((url) => /\/src\//.test(url)), false, "production startup uses built assets");
+  await prod.route("**/assets/classic-board-*.js*", async (route) => {
+    if (!injected) { injected = true; await route.abort("failed"); }
+    else await route.continue();
+  });
+  await prod.evaluate(() => window.__isle.setLandLook("classic"));
+  await prod.waitForFunction(() => window.__isle.landStatus.error, null, { timeout: 120_000 });
+  assert.equal(await prod.evaluate(() => window.__isle.landStatus.displayed === "jelly" && window.__isle.landReady), true, "production failed import retains matching Jelly");
+  await prod.evaluate(() => { window.__isle.lite = false; window.__isle.retryLandLook(); });
+  await prod.waitForFunction(() => window.__isle.landStatus.displayed === "classic" && !window.__isle.landStatus.error, null, { timeout: 120_000 });
+  assert.equal(prodRequests.some((url) => /\/assets\/classic-board-[^/]+\.js\?retry=\d+/.test(url)), true, "production recovery requests the hashed chunk with a fresh query");
+  assert.equal(await prod.evaluate(() => window.__isle.landAppearance.stats().quality), "full", "production full Classic actually publishes");
+  for (const [width, height] of [[1280, 720], [390, 844], [844, 390]]) {
+    await prod.setViewportSize({ width, height });
+    await prod.screenshot({ path: `test-results/classic-switch-production-${width}x${height}.png` });
+  }
+  await prod.evaluate(() => window.__isle.setLandLook("jelly"));
+  await prod.waitForFunction(() => window.__isle.landStatus.displayed === "jelly" && !window.__isle.landStatus.loading, null, { timeout: 120_000 });
+  assert.equal(prodRequests.some((url) => /\/src\//.test(url)), false, "production switching uses no source URLs");
+  assert.deepEqual(prodErrors, [], "production has zero unexpected browser errors");
+  console.log(`ok production hashed imports, failed-import recovery, full Classic and switchback; expected injected failures ${JSON.stringify(expectedFailures)}`);
+  console.log(`production lazy requests ${JSON.stringify(prodRequests.filter((url) => /jelly-board|classic-board/.test(url)))}`);
+  await context.close();
 } finally {
+  if (production) await new Promise((resolve) => production.httpServer.close(resolve));
   await browser.close();
   await vite.close();
 }

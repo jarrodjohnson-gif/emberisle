@@ -828,7 +828,7 @@ export class JellyBoard implements LandAppearance {
   // Proofs: put every board story at this age (seconds) and rewrite every instance.
   setAge(seconds: number) {
     this.t0 = 0;
-    this.update(Math.max(0, seconds), true, false);
+    this.update(Math.max(0, seconds), true, false, false);
   }
 
   // Advance every scene to time t (seconds) and copy what moved to its instances. `all` rewrites every instance; `snap` lands
@@ -1072,13 +1072,13 @@ export class JellyBoard implements LandAppearance {
     for (const sb of this.sprites) triangles += 2 * sb.count;
     const geometries = new Set(), materials = new Set();
     let meshes = 0;
-    this.group.traverse((object) => {
-      const mesh = object as THREE.Mesh;
-      if (!mesh.isMesh) return;
+    // Every published child is a batched, baked or sprite mesh; builders attach no nested groups here.
+    for (const child of this.group.children) {
+      const mesh = child as THREE.Mesh;
       ++meshes;
       geometries.add(mesh.geometry);
       for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(material);
-    });
+    }
     return { quality: this.lite ? "lite" : "full", objects: { meshes, geometries: geometries.size, materials: materials.size }, lite: this.lite, drawCalls: this.batches.size + this.bakes.length + this.sprites.length, triangles: Math.round(triangles), kinds: this.kinds.length, batches: this.batches.size, bakes: this.bakes.length, sprites: this.sprites.length };
   }
 
