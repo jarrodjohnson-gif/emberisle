@@ -1,0 +1,108 @@
+{
+  "source": "playable board plus labelled UI-hidden supplemental scene",
+  "ownerAccepted": false,
+  "frames": [
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "canvas": [
+        1280,
+        720
+      ],
+      "titleMode": false,
+      "status": {
+        "requested": "classic",
+        "displayed": "classic",
+        "loading": false,
+        "error": null,
+        "quality": "full",
+        "ready": true
+      },
+      "stats": {
+        "quality": "full",
+        "drawCalls": 40,
+        "triangles": 217166,
+        "objects": {
+          "meshes": 40,
+          "geometries": 40,
+          "materials": 20
+        },
+        "rings": 18,
+        "hexes": 19
+      },
+      "coastEdges": 30,
+      "renders": 13,
+      "view": "diorama"
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "canvas": [
+        390,
+        844
+      ],
+      "titleMode": false,
+      "status": {
+        "requested": "classic",
+        "displayed": "classic",
+        "loading": false,
+        "error": null,
+        "quality": "full",
+        "ready": true
+      },
+      "stats": {
+        "quality": "full",
+        "drawCalls": 40,
+        "triangles": 217166,
+        "objects": {
+          "meshes": 40,
+          "geometries": 40,
+          "materials": 20
+        },
+        "rings": 18,
+        "hexes": 19
+      },
+      "coastEdges": 30,
+      "renders": 18,
+      "view": "overhead"
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "canvas": [
+        844,
+        390
+      ],
+      "titleMode": false,
+      "status": {
+        "requested": "classic",
+        "displayed": "classic",
+        "loading": false,
+        "error": null,
+        "quality": "full",
+        "ready": true
+      },
+      "stats": {
+        "quality": "full",
+        "drawCalls": 40,
+        "triangles": 217166,
+        "objects": {
+          "meshes": 40,
+          "geometries": 40,
+          "materials": 20
+        },
+        "rings": 18,
+        "hexes": 19
+      },
+      "coastEdges": 30,
+      "renders": 23,
+      "view": "overhead"
+    }
+  ]
+}

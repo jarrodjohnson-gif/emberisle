@@ -49,3 +49,8 @@ Typecheck/build/registration181 PASS. Valid production growth: Canvas+1148/663 (
 ## Tenth frozen run
 
 Source587b1af passed all ninth assertions plus actual production request disposal: dispose while a real Classic request is held, abort it, observe no reload, then a controlled event for that same asset reloads after settlement. A controlled event naming the actual essential IslandCanvas asset still reloads while an optional request is pending. These controlled events test routing, not a real essential network outage. Title screenshots do not establish beach/ramp visibility, especially on the mobile title, and are not owner acceptance.
+
+## Eleventh frozen run and pictures
+
+Sourcec00b0d2740573416b8597adcc92fb1586ebced4c passed the complete focused proof, including actual production playable hotseat captures at1280x720,390x844,844x390. Metadata verifies titleMode=false, full Classic40draws/217166triangles,30coast edges and matching canvas/viewport dimensions after refit and three rendered frames. Desktop used diorama; the existing mobile policy selected overhead. Pictures are in ../pictures/: play-* preserves HUD; scene-* is a labelled supplemental scene with UI visibility hidden only for capture. The earlier title captures remain distinct. No picture constitutes owner beach/ramp acceptance.
+First existing chunk-fail regression did not reach the browser: server startup exited with unsettled top-level await because this worktree lacked server/node_modules. Its output is retained; server npm ci completed before retry.
