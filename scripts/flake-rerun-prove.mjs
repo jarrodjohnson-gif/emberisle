@@ -23,6 +23,7 @@ const failures = {
   "connection-health-prove": `${at}+   saving: false,\n${at}-   saving: true,`,
   "steal-picker-push-prove": `${at}Error: setup: seeded roll must leave the same player and two legal victims\n${at}    at file:///home/runner/work/emberisle/emberisle/scripts/steal-picker-push-prove.mjs:45:9`,
   "audio-recovery-prove": `${at}page.waitForFunction: Timeout 8000ms exceeded.\n${at}    at /home/runner/work/emberisle/emberisle/scripts/audio-recovery-prove.mjs:163:42`,
+  "server-needs-prove": `${at}Error: timeout p0 state:`,
 };
 assert.deepEqual(flakes.map((f) => f.id).sort(), Object.keys(failures).sort());
 for (const f of flakes) {
@@ -55,6 +56,10 @@ const notFlake = {
     `${at}AssertionError [ERR_ASSERTION]: 320x568: "Join" has at least 8 px between text and button edge (7.3 / 7.2)`,
     `${at}AssertionError [ERR_ASSERTION]: 375x667: "Copy" has at least 8 px between text and button edge (2.0 / 1.5)`,
     `${at}AssertionError [ERR_ASSERTION]: 375x667: "Send" has at least 8 px between text and button edge (7.3 / 7.2)`,
+  ],
+  "server-needs-prove": [
+    `${at}Error: timeout p1 state:`,
+    `${at}Error: timeout p0 welcome:`,
   ],
 };
 for (const [id, lines] of Object.entries(notFlake)) {
@@ -121,6 +126,17 @@ check("signature in the log, another step failed", run([
 // A suffix proof name is not the flaky proof.
 check("step name must be the proof exactly", run([
   ["browser-b (flows-b)", "rotate-overlays-prove-4", failures["rotate-overlays-prove"]],
+]), false);
+
+// #1326: the host proof's step is server-needs-prove. The browser proof's step is needs-prove.
+const serverNeeds = check("server-needs-prove timeout is a known flake", run([
+  ["server", "server-needs-prove", failures["server-needs-prove"]],
+]), true);
+assert.deepEqual(serverNeeds.jobs, [
+  { name: "server", flakes: ["server-needs-prove"] },
+]);
+check("browser needs-prove is not the server timeout flake", run([
+  ["browser-a (a3)", "needs-prove", failures["server-needs-prove"]],
 ]), false);
 
 const timedOut = run([["browser-a (a3)", "countdown-prove", failures["countdown-prove"]]]);
