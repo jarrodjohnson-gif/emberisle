@@ -10,6 +10,15 @@ import { Component, createElement, Suspense, use, type ComponentType, type React
 // protocol allows, so a loaded chunk renders synchronously on every later pass (React must see `use` called on each pass).
 type Tracked<M> = Promise<M> & { status?: "fulfilled" | "rejected"; value?: M; reason?: unknown; waited?: boolean };
 
+// Optional non-React imports may own their recovery instead of reloading a playable page.
+// Ownership lasts through settlement, including a cancelled caller whose network request is still pending.
+const chunkRecoveries = new Set<(url: string) => boolean>();
+export function withChunkRecovery<M>(load: () => Promise<M>, owns: (url: string) => boolean): Promise<M> {
+  const entry = (url: string) => owns(url);
+  chunkRecoveries.add(entry);
+  return Promise.resolve().then(load).finally(() => chunkRecoveries.delete(entry));
+}
+
 // The boundary that catches a chunk's failure forgets it, so the next mount asks the network: keyed by the error thrown.
 const caught = new WeakMap<object, () => void>();
 
@@ -173,7 +182,10 @@ export function reloadOnStaleChunk(when: () => boolean) {
     keepJoinCode();
     location.reload();
   };
-  const onError = (e: Event) => attempt(chunkUrl((e as Event & { payload?: unknown }).payload) ?? "?");
+  const onError = (event: Event) => {
+    const url = chunkUrl((event as Event & { payload?: unknown }).payload) ?? "?";
+    if (![...chunkRecoveries].some((owns) => owns(url))) attempt(url);
+  };
   window.addEventListener("vite:preloadError", onError);
   return () => window.removeEventListener("vite:preloadError", onError);
 }

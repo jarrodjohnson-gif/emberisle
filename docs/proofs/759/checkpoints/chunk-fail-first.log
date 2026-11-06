@@ -1,0 +1,10 @@
+
+> chunk-fail-prove
+> node --import ./server/register.mjs scripts/chunk-fail-prove.mjs
+
+Warning: Detected unsettled top-level await at file:///tmp/emberisle-759-atomic/scripts/chunk-fail-prove.mjs:56
+const hostPort = await new Promise((resolve) =>
+                 ^
+
+
+
