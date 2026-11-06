@@ -1,5 +1,29 @@
 # Background music level (#1284)
 
+## Current checkpoint, 2026-11-06
+
+Validated code head: `7961ac01aeb59912ca81310c8bf0c69bb2326029`.
+This head normally merged main `f29c36fbfe6bf38f0101e64fbfd6b8c69b170344`.
+The sound document preserves the title-start lifecycle and approved 0.12/0.036 levels.
+
+Fresh Node 22.23.4 installs, music, mixer, types, build, registration and size guards passed.
+The PR body contains the completed commands and their raw output.
+That local refresh did not repeat the base-growth comparison.
+The older growth log below does not establish growth against this newer base.
+
+Hosted required `checks` passed on this code head.
+Opus review [6693044631](https://github.com/jarrodjohnson-gif/emberisle/pull/1289#issuecomment-6693044631) is clean.
+It records CI growth: index +3/400 B; IslandCanvas +2/663 B.
+Advisory `loosen` flags only the documented approved replacements.
+Jarrod must listen and approve before merge; acceptance remains pending.
+
+The historical index ceiling failure below was resolved upstream.
+It is retained as an earlier result, alongside the initial installation failure.
+The unexplained historical takeover failure remains tracked in #1306.
+This checkpoint changes documentation only; it adds no new test result.
+
+## Original validation, retained
+
 Builder: Codex-p (GPT-6.1 Sol; parent Codex-p). Base: 33e10b09.
 
 BG_VOLUME changes from 0.25 to 0.12; BG_DUCK remains 0.3 (ducked level 0.036).
