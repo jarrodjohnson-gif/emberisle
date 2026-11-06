@@ -1057,6 +1057,16 @@ export class JellyBoard {
 
   // Preserve the complete Jelly-specific diagnostics while adapting its presentation hooks.
   appearance(holdAge: () => boolean): LandAppearance {
+    const geometries = new Set(), materials = new Set();
+    let meshes = 0;
+    this.group.traverse((object) => {
+      const mesh = object as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      ++meshes;
+      geometries.add(mesh.geometry);
+      for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(material);
+    });
+    const objects = { meshes, geometries: geometries.size, materials: materials.size };
     return {
       group: this.group,
       update: (t, all, snap) => this.update(t, all, snap, holdAge()),
@@ -1067,20 +1077,7 @@ export class JellyBoard {
       busy: () => this.busy(),
       setVisibilityContext: () => {}, // Jelly owns its existing camera-independent clearance contract.
       groundAt: (id, dx, dz) => this.groundAt(id, dx, dz),
-      stats: () => {
-        const stats = this.stats();
-        const geometries = new Set(), materials = new Set();
-        let meshes = 0;
-        this.group.traverse((object) => {
-          const mesh = object as THREE.Mesh;
-          if (!mesh.isMesh) return;
-          ++meshes;
-          geometries.add(mesh.geometry);
-          for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(material);
-        });
-        return { quality: this.lite ? "lite" : "full", drawCalls: stats.drawCalls, triangles: stats.triangles,
-          objects: { meshes, geometries: geometries.size, materials: materials.size } };
-      },
+      stats: () => ({ quality: this.lite ? "lite" : "full", ...this.stats(), objects }),
       dispose: () => this.dispose(),
     };
   }

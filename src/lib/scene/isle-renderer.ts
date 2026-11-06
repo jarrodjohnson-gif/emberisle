@@ -1721,6 +1721,16 @@ export class IsleRenderer {
         glyphBottom: token.position.y - 0.13 * (TOKEN_FACE / 0.29) })) };
   }
 
+  private prepareAppearance(appearance: LandAppearance) {
+    this.poseTokens();
+    appearance.setVisibilityContext(this.visibility());
+    const hex = this.lastState?.hexes.find((h) => h.id === this.lastState?.robberHex);
+    appearance.robber(hex && hex.terrain !== "waste" ? hex.id : null);
+    for (const [id, cap] of this.caps) appearance.glow(id, cap.emissiveIntensity);
+    appearance.update(this.jellyT, true, true);
+    return hex;
+  }
+
   private growScenes(gen: number, key: string, hexes: readonly LandHex[], look: LandLook, tries = 0) {
     const alive = () => gen === this.landGen && !this.stopped;
     if (!alive()) return;
@@ -1748,11 +1758,7 @@ export class IsleRenderer {
       candidate = built;
       if (!candidate) return;
       if (!alive()) { candidate.dispose(); return; }
-      candidate.setVisibilityContext(this.visibility());
-      const rh = this.lastState?.hexes.find((h) => h.id === this.lastState?.robberHex);
-      candidate.robber(rh && rh.terrain !== "waste" ? rh.id : null);
-      for (const [id, cap] of this.caps) candidate.glow(id, cap.emissiveIntensity);
-      candidate.update(this.jellyT, true, true);
+      this.prepareAppearance(candidate);
       if (this.renderer.extensions.has("KHR_parallel_shader_compile")) {
         this.living.add(candidate.group);
         const was = this.renderer.getRenderTarget();
@@ -1768,11 +1774,7 @@ export class IsleRenderer {
       }
       if (!alive()) { candidate.dispose(); return; }
       // Visibility and game signals may have changed while shaders compiled.
-      candidate.setVisibilityContext(this.visibility());
-      const currentHex = this.lastState?.hexes.find((h) => h.id === this.lastState?.robberHex);
-      candidate.robber(currentHex && currentHex.terrain !== "waste" ? currentHex.id : null);
-      for (const [id, cap] of this.caps) candidate.glow(id, cap.emissiveIntensity);
-      candidate.update(this.jellyT, true, true);
+      const currentHex = this.prepareAppearance(candidate);
       const previous = this.appearance;
       this.living.add(candidate.group);
       if (previous) this.living.remove(previous.group);
