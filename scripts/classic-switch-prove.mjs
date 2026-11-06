@@ -326,6 +326,66 @@ try {
   console.log(`ok production hashed imports, failed-import recovery, full Classic and switchback; expected injected failures ${JSON.stringify(expectedFailures)}`);
   console.log(`production lazy requests ${JSON.stringify(prodRequests.filter((url) => /jelly-board|classic-board/.test(url)))}`);
   await context.close();
+
+  // A disposed renderer still owns its optional request until that request settles.
+  const disposedContext = await browser.newContext();
+  await disposedContext.addInitScript(() => {
+    localStorage.setItem("emberisle-water", "simple"); localStorage.setItem("emberisle-jelly", "lite");
+    window.__ownedFailureEvents = 0;
+    window.addEventListener("vite:preloadError", () => ++window.__ownedFailureEvents);
+  });
+  const disposedPage = await disposedContext.newPage();
+  let disposedNavigations = 0, releaseDisposed, disposedUrl;
+  disposedPage.on("framenavigated", (frame) => { if (frame === disposedPage.mainFrame()) ++disposedNavigations; });
+  const requestHeld = new Promise((resolve) => { releaseDisposed = resolve; });
+  let markHeld;
+  const heldObserved = new Promise((resolve) => { markHeld = resolve; });
+  await disposedPage.route("**/assets/classic-board-*.js*", async (route) => {
+    disposedUrl = route.request().url(); markHeld(); await requestHeld; await route.abort("failed");
+  });
+  await disposedPage.goto(`http://127.0.0.1:${PORT + 1}/`);
+  await disposedPage.waitForFunction(() => window.__isle?.landReady, null, { timeout: 120_000 });
+  await disposedPage.evaluate(() => window.__isle.setLandLook("classic"));
+  await heldObserved;
+  await disposedPage.evaluate(() => window.__isle.dispose());
+  releaseDisposed();
+  await disposedPage.waitForFunction(() => window.__ownedFailureEvents === 1);
+  assert.equal(disposedNavigations, 1, "disposed renderer's pending optional failure does not reload another board");
+  // A later unowned event for the same real asset must recover normally after settlement.
+  await Promise.all([
+    disposedPage.waitForEvent("framenavigated", { predicate: (frame) => frame === disposedPage.mainFrame() }),
+    disposedPage.evaluate((url) => setTimeout(() => {
+      const event = new Event("vite:preloadError", { cancelable: true });
+      event.payload = new Error(`Failed to fetch dynamically imported module: ${url}`);
+      window.dispatchEvent(event);
+    }, 0), disposedUrl),
+  ]);
+  assert.equal(disposedNavigations, 2, "settled disposed request leaves no recovery ownership");
+  await disposedContext.close();
+  console.log("ok production disposed pending import stays owned through rejection and cleans up after settlement (controlled subsequent event)");
+
+  // Essential renderer chunks remain outside the optional land request's ownership.
+  const essentialContext = await browser.newContext();
+  await essentialContext.addInitScript(() => { localStorage.setItem("emberisle-water", "simple"); localStorage.setItem("emberisle-jelly", "lite"); });
+  const essentialPage = await essentialContext.newPage();
+  let essentialRelease, essentialObserved;
+  const essentialGate = new Promise((resolve) => { essentialRelease = resolve; });
+  const essentialHeld = new Promise((resolve) => { essentialObserved = resolve; });
+  await essentialPage.route("**/assets/classic-board-*.js*", async (route) => { essentialObserved(); await essentialGate; await route.abort("failed"); });
+  await essentialPage.goto(`http://127.0.0.1:${PORT + 1}/`);
+  await essentialPage.waitForFunction(() => window.__isle?.landReady, null, { timeout: 120_000 });
+  await essentialPage.evaluate(() => window.__isle.setLandLook("classic"));
+  await essentialHeld;
+  await Promise.all([
+    essentialPage.waitForEvent("framenavigated", { predicate: (frame) => frame === essentialPage.mainFrame() }),
+    essentialPage.evaluate(() => {
+      const url = [...document.querySelectorAll('link[rel="modulepreload"]')].find((link) => /IslandCanvas-/.test(link.href)).href;
+      setTimeout(() => { const event = new Event("vite:preloadError"); event.payload = new Error(`Failed to fetch dynamically imported module: ${url}`); window.dispatchEvent(event); }, 0);
+    }),
+  ]);
+  essentialRelease();
+  await essentialContext.close();
+  console.log("ok production essential IslandCanvas recovery remains active during optional request (controlled essential event)");
 } finally {
   if (production) await new Promise((resolve) => production.httpServer.close(resolve));
   await browser.close();
