@@ -1,0 +1,30 @@
+{
+  "node": "22.23.4",
+  "passed": [
+    "typecheck",
+    "build",
+    "stationary-dock-prove (six states, both sizes; thirteen screenshots)",
+    "build-ready-prove",
+    "first-game-coach-prove",
+    "fortune-count-prove after spectator privacy fix",
+    "fortune-cue-prove",
+    "fortune-tray-prove",
+    "table-menu-prove",
+    "registered-prove",
+    "size-prove against freshly built .base-main"
+  ],
+  "advisory_failure": "loosen-prove: ten approved replacement lines across five proofs; table still required",
+  "initial_failures_corrected_not_yet_verified": [
+    "hud-safe-area-prove: old turn-banner ancestor cannot find End turn; replaced dock selector, strengthened exact turn-slot containment",
+    "reflow-prove: fixed 320px column at 640x360 was not detected; replaced with dock/orientation detector"
+  ],
+  "interrupted": "hud-safe-area-prove rerun stopped on usage cutoff; incomplete final log is not a pass",
+  "not_run": [
+    "hand-hidden-prove",
+    "visual-direction-prove",
+    "trade-map.test.mjs",
+    "rotate-overlays-prove",
+    "chat-prove"
+  ],
+  "size": "Before spectator text fix: index126023 B, main125189 B, growth834 B, temporary ceiling126100 B, allowance1300 B; final size rerun required"
+}

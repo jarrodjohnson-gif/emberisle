@@ -1,0 +1,9 @@
+
+> hand-hidden-prove
+> node scripts/hand-hidden-prove.mjs
+
+desk motion 1280x720: 0 tiles through roll-off and setup, 5 once the second outpost paid (held {"timber":0,"clay":0,"wool":1,"grain":0,"ore":1}), banner bottom 688 -> 578, hole bottom inset 220 -> 220; 220 ms rise, midpoint opacity 0.96, height 106/106, props opacity,transform; island unmoved by a forced re-measure on arrival and on leaving; stays at 0 goods; 0 console errors
+desk reduced motion 1280x720: 0 tiles through roll-off and setup, 5 once the second outpost paid (held {"timber":1,"clay":0,"wool":1,"grain":0,"ore":0}), banner bottom 688 -> 578, hole bottom inset 220 -> 220; 1 ms step; island unmoved by a forced re-measure on arrival and on leaving; stays at 0 goods; 0 console errors
+port motion 390x844: 5 fixed tiles through roll-off, setup and payment (held {"timber":1,"clay":0,"wool":0,"grain":0,"ore":1}), banner bottom 588 -> 588, hole bottom inset 268 -> 268; fixed phone hand, exact boxes and counts, no mount animation; island unmoved by a forced re-measure on arrival and on leaving; stays at 0 goods; 0 console errors
+port reduced motion 390x844: 5 fixed tiles through roll-off, setup and payment (held {"timber":0,"clay":1,"wool":0,"grain":1,"ore":0}), banner bottom 588 -> 588, hole bottom inset 268 -> 268; fixed phone hand, exact boxes and counts, no mount animation; island unmoved by a forced re-measure on arrival and on leaving; stays at 0 goods; 0 console errors
+hand-hidden-prove: ok

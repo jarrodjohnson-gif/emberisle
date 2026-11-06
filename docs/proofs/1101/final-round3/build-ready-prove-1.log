@@ -1,0 +1,14 @@
+
+> build-ready-prove
+> node --import ./server/register.mjs scripts/build-ready-prove.mjs
+
+1280x720: stack 194 px (main 208), hole bottom 220
+1280x720: 6 hands read as rules.ts says; shortfall chips visible without hover; pulse build-ready; Costs card opens, fits, traps focus, closes on Escape
+1280x720 reduced motion: stack 194 px (main 208), hole bottom 220
+1280x720 reduced motion: 6 hands read as rules.ts says; shortfall chips visible without hover; pulse none; Costs card opens, fits, traps focus, closes on Escape
+390x844: stack 244 px (main 352), hole bottom 302
+390x844: 6 hands read as rules.ts says; shortfall chips visible without hover; pulse build-ready; Costs card opens, fits, traps focus, closes on Escape
+360x640: stack 245 px (main 352), hole bottom 268
+360x640: 6 hands read as rules.ts says; shortfall chips visible without hover; pulse build-ready; Costs card opens, fits, traps focus, closes on Escape
+844x390: stack 278 px (main 316), hole bottom 33
+844x390: 6 hands read as rules.ts says; shortfall chips visible without hover; pulse build-ready; Costs card opens, fits, traps focus, closes on Escape

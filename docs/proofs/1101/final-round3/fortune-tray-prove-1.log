@@ -1,0 +1,40 @@
+
+> fortune-tray-prove
+> node scripts/fortune-tray-prove.mjs
+
+1280x720: Fortunes ×6, tray ["wayfarer ×2: Move and block a hex. The wayfarer takes a card.","path ×1: Lay two paths for free","plenty ×1: Take two goods from the bank","monopoly ×1: Take every other seat's goods of one kind","points ×1: A hidden point toward the win"]
+1280x720: wayfarer armed, cancelled, armed again and played
+1280x720: path fortune laid two paths
+1280x720: plenty took ore and wool through the chips
+1280x720: monopoly took 6 ore
+1280x720: new card blocked; seat menu says "wayfarer ×1 · plenty ×1 (1 new) · points ×1"
+1280x720: empty ore greyed, emptied timber dropped, empty bank refused
+1280x720: Esc, Tab and a press outside behave
+1280x720: the tray closed with the seat change
+1280x720: a roll with the tray up closed it for the rest of the turn
+1280x720: reduced motion ok (0s)
+390x844: Fortunes ×6, tray ["wayfarer ×2: Move and block a hex. The wayfarer takes a card.","path ×1: Lay two paths for free","plenty ×1: Take two goods from the bank","monopoly ×1: Take every other seat's goods of one kind","points ×1: A hidden point toward the win"]
+390x844: wayfarer armed, cancelled, armed again and played
+390x844: path fortune laid two paths
+390x844: plenty took ore and wool through the chips
+390x844: monopoly took 6 ore
+390x844: new card blocked; seat menu says "wayfarer ×1 · plenty ×1 (1 new) · points ×1"
+390x844: empty ore greyed, emptied timber dropped, empty bank refused
+390x844: Esc, Tab and a press outside behave
+390x844: the tray closed with the seat change
+390x844: a roll with the tray up closed it for the rest of the turn
+390x844: reduced motion ok (0s)
+844x390: Fortunes ×6, tray ["wayfarer ×2: Move and block a hex. The wayfarer takes a card.","path ×1: Lay two paths for free","plenty ×1: Take two goods from the bank","monopoly ×1: Take every other seat's goods of one kind","points ×1: A hidden point toward the win"]
+844x390: wayfarer armed, cancelled, armed again and played
+844x390: path fortune laid two paths
+844x390: plenty took ore and wool through the chips
+844x390: monopoly took 6 ore
+844x390: new card blocked; seat menu says "wayfarer ×1 · plenty ×1 (1 new) · points ×1"
+844x390: empty ore greyed, emptied timber dropped, empty bank refused
+844x390: Esc, Tab and a press outside behave
+844x390: the tray closed with the seat change
+844x390: a roll with the tray up closed it for the rest of the turn
+844x390: reduced motion ok (0s)
+844x390: tray corners hit div[fortune-tray-backdrop].hand-in pointer-events-auto absolute ins | div[fortune-tray-backdrop].hand-in pointer-events-auto absolute ins
+667x375: tray corners hit div[fortune-tray-backdrop].hand-in pointer-events-auto absolute ins | div[fortune-tray-backdrop].hand-in pointer-events-auto absolute ins
+fortune-tray-prove: ok

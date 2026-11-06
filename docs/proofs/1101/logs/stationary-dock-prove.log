@@ -1,0 +1,244 @@
+     390x844 your turn: dock {"x":12,"y":588,"w":366,"h":244} slots {"goods":{"x":12,"y":588,"w":366,"h":62},"status":{"x":12,"y":658,"w":366,"h":44},"path":{"x":12,"y":710,"w":85.5,"h":46},"outpost":{"x":105.5,"y":710,"w":85.5,"h":46},"stronghold":{"x":199,"y":710,"w":85.5,"h":46},"card":{"x":292.5,"y":710,"w":85.5,"h":46},"trade":{"x":12,"y":764,"w":85.5,"h":44},"fortunes":{"x":105.5,"y":764,"w":85.5,"h":44},"turn":{"x":199,"y":764,"w":85.5,"h":44},"menu":{"x":292.5,"y":764,"w":85.5,"h":44},"log":{"x":12,"y":812,"w":298.7,"h":20}}
+ok   390x844 your turn: the dock is on screen
+ok   390x844 your turn: slot goods is on screen
+ok   390x844 your turn: slot status is on screen
+ok   390x844 your turn: slot path is on screen
+ok   390x844 your turn: slot outpost is on screen
+ok   390x844 your turn: slot stronghold is on screen
+ok   390x844 your turn: slot card is on screen
+ok   390x844 your turn: slot trade is on screen
+ok   390x844 your turn: slot fortunes is on screen
+ok   390x844 your turn: slot turn is on screen
+ok   390x844 your turn: slot menu is on screen
+ok   390x844 your turn: slot log is on screen
+ok   390x844 your turn: every control is at least 44x44 []
+ok   390x844 your turn: controls are at least 8 px apart []
+ok   390x844 your turn: every control is in the bottom third (y >= 563) []
+ok   390x844 your turn: the island keeps at least 60 % of the height {"hole":{"top":68,"right":12,"bottom":268,"left":12},"share":60.2}
+ok   390x844 your turn: the dock stays out of the island's hole {"live":{"top":68,"right":12,"bottom":268,"left":12},"hole":{"top":68,"right":12,"bottom":268,"left":12}}
+     390x844 offer: dock {"x":12,"y":588,"w":366,"h":244} slots {"goods":{"x":12,"y":588,"w":366,"h":62},"status":{"x":12,"y":658,"w":366,"h":44},"path":{"x":12,"y":710,"w":85.5,"h":46},"outpost":{"x":105.5,"y":710,"w":85.5,"h":46},"stronghold":{"x":199,"y":710,"w":85.5,"h":46},"card":{"x":292.5,"y":710,"w":85.5,"h":46},"trade":{"x":12,"y":764,"w":85.5,"h":44},"fortunes":{"x":105.5,"y":764,"w":85.5,"h":44},"turn":{"x":199,"y":764,"w":85.5,"h":44},"menu":{"x":292.5,"y":764,"w":85.5,"h":44},"log":{"x":12,"y":812,"w":298.7,"h":20}}
+ok   390x844 offer: the dock is on screen
+ok   390x844 offer: slot goods is on screen
+ok   390x844 offer: slot status is on screen
+ok   390x844 offer: slot path is on screen
+ok   390x844 offer: slot outpost is on screen
+ok   390x844 offer: slot stronghold is on screen
+ok   390x844 offer: slot card is on screen
+ok   390x844 offer: slot trade is on screen
+ok   390x844 offer: slot fortunes is on screen
+ok   390x844 offer: slot turn is on screen
+ok   390x844 offer: slot menu is on screen
+ok   390x844 offer: slot log is on screen
+ok   390x844 offer: the dock box matches your turn {"was":{"x":12,"y":588,"w":366,"h":244},"now":{"x":12,"y":588,"w":366,"h":244}}
+ok   390x844 offer: every slot matches your turn []
+ok   390x844 offer: every control is at least 44x44 []
+ok   390x844 offer: controls are at least 8 px apart []
+ok   390x844 offer: every control is in the bottom third (y >= 563) []
+ok   390x844 offer: the island keeps at least 60 % of the height {"hole":{"top":68,"right":12,"bottom":268,"left":12},"share":60.2}
+ok   390x844 offer: the dock stays out of the island's hole {"live":{"top":68,"right":12,"bottom":268,"left":12},"hole":{"top":68,"right":12,"bottom":268,"left":12}}
+     390x844 other's turn: dock {"x":12,"y":588,"w":366,"h":244} slots {"goods":{"x":12,"y":588,"w":366,"h":62},"status":{"x":12,"y":658,"w":366,"h":44},"path":{"x":12,"y":710,"w":85.5,"h":46},"outpost":{"x":105.5,"y":710,"w":85.5,"h":46},"stronghold":{"x":199,"y":710,"w":85.5,"h":46},"card":{"x":292.5,"y":710,"w":85.5,"h":46},"trade":{"x":12,"y":764,"w":85.5,"h":44},"fortunes":{"x":105.5,"y":764,"w":85.5,"h":44},"turn":{"x":199,"y":764,"w":85.5,"h":44},"menu":{"x":292.5,"y":764,"w":85.5,"h":44},"log":{"x":12,"y":812,"w":298.7,"h":20}}
+ok   390x844 other's turn: the dock is on screen
+ok   390x844 other's turn: slot goods is on screen
+ok   390x844 other's turn: slot status is on screen
+ok   390x844 other's turn: slot path is on screen
+ok   390x844 other's turn: slot outpost is on screen
+ok   390x844 other's turn: slot stronghold is on screen
+ok   390x844 other's turn: slot card is on screen
+ok   390x844 other's turn: slot trade is on screen
+ok   390x844 other's turn: slot fortunes is on screen
+ok   390x844 other's turn: slot turn is on screen
+ok   390x844 other's turn: slot menu is on screen
+ok   390x844 other's turn: slot log is on screen
+ok   390x844 other's turn: the dock box matches your turn {"was":{"x":12,"y":588,"w":366,"h":244},"now":{"x":12,"y":588,"w":366,"h":244}}
+ok   390x844 other's turn: every slot matches your turn []
+ok   390x844 other's turn: every control is at least 44x44 []
+ok   390x844 other's turn: controls are at least 8 px apart []
+ok   390x844 other's turn: every control is in the bottom third (y >= 563) []
+ok   390x844 other's turn: the island keeps at least 60 % of the height {"hole":{"top":68,"right":12,"bottom":268,"left":12},"share":60.2}
+ok   390x844 other's turn: the dock stays out of the island's hole {"live":{"top":68,"right":12,"bottom":268,"left":12},"hole":{"top":68,"right":12,"bottom":268,"left":12}}
+     390x844 off-turn gain: dock {"x":12,"y":588,"w":366,"h":244} slots {"goods":{"x":12,"y":588,"w":366,"h":62},"status":{"x":12,"y":658,"w":366,"h":44},"path":{"x":12,"y":710,"w":85.5,"h":46},"outpost":{"x":105.5,"y":710,"w":85.5,"h":46},"stronghold":{"x":199,"y":710,"w":85.5,"h":46},"card":{"x":292.5,"y":710,"w":85.5,"h":46},"trade":{"x":12,"y":764,"w":85.5,"h":44},"fortunes":{"x":105.5,"y":764,"w":85.5,"h":44},"turn":{"x":199,"y":764,"w":85.5,"h":44},"menu":{"x":292.5,"y":764,"w":85.5,"h":44},"log":{"x":12,"y":812,"w":298.7,"h":20}}
+ok   390x844 off-turn gain: the dock is on screen
+ok   390x844 off-turn gain: slot goods is on screen
+ok   390x844 off-turn gain: slot status is on screen
+ok   390x844 off-turn gain: slot path is on screen
+ok   390x844 off-turn gain: slot outpost is on screen
+ok   390x844 off-turn gain: slot stronghold is on screen
+ok   390x844 off-turn gain: slot card is on screen
+ok   390x844 off-turn gain: slot trade is on screen
+ok   390x844 off-turn gain: slot fortunes is on screen
+ok   390x844 off-turn gain: slot turn is on screen
+ok   390x844 off-turn gain: slot menu is on screen
+ok   390x844 off-turn gain: slot log is on screen
+ok   390x844 off-turn gain: the dock box matches your turn {"was":{"x":12,"y":588,"w":366,"h":244},"now":{"x":12,"y":588,"w":366,"h":244}}
+ok   390x844 off-turn gain: every slot matches your turn []
+ok   390x844 off-turn gain: every control is at least 44x44 []
+ok   390x844 off-turn gain: controls are at least 8 px apart []
+ok   390x844 off-turn gain: every control is in the bottom third (y >= 563) []
+ok   390x844 off-turn gain: the island keeps at least 60 % of the height {"hole":{"top":68,"right":12,"bottom":268,"left":12},"share":60.2}
+ok   390x844 off-turn gain: the dock stays out of the island's hole {"live":{"top":68,"right":12,"bottom":268,"left":12},"hole":{"top":68,"right":12,"bottom":268,"left":12}}
+     390x844 off-turn loss: dock {"x":12,"y":588,"w":366,"h":244} slots {"goods":{"x":12,"y":588,"w":366,"h":62},"status":{"x":12,"y":658,"w":366,"h":44},"path":{"x":12,"y":710,"w":85.5,"h":46},"outpost":{"x":105.5,"y":710,"w":85.5,"h":46},"stronghold":{"x":199,"y":710,"w":85.5,"h":46},"card":{"x":292.5,"y":710,"w":85.5,"h":46},"trade":{"x":12,"y":764,"w":85.5,"h":44},"fortunes":{"x":105.5,"y":764,"w":85.5,"h":44},"turn":{"x":199,"y":764,"w":85.5,"h":44},"menu":{"x":292.5,"y":764,"w":85.5,"h":44},"log":{"x":12,"y":812,"w":298.7,"h":20}}
+ok   390x844 off-turn loss: the dock is on screen
+ok   390x844 off-turn loss: slot goods is on screen
+ok   390x844 off-turn loss: slot status is on screen
+ok   390x844 off-turn loss: slot path is on screen
+ok   390x844 off-turn loss: slot outpost is on screen
+ok   390x844 off-turn loss: slot stronghold is on screen
+ok   390x844 off-turn loss: slot card is on screen
+ok   390x844 off-turn loss: slot trade is on screen
+ok   390x844 off-turn loss: slot fortunes is on screen
+ok   390x844 off-turn loss: slot turn is on screen
+ok   390x844 off-turn loss: slot menu is on screen
+ok   390x844 off-turn loss: slot log is on screen
+ok   390x844 off-turn loss: the dock box matches your turn {"was":{"x":12,"y":588,"w":366,"h":244},"now":{"x":12,"y":588,"w":366,"h":244}}
+ok   390x844 off-turn loss: every slot matches your turn []
+ok   390x844 off-turn loss: every control is at least 44x44 []
+ok   390x844 off-turn loss: controls are at least 8 px apart []
+ok   390x844 off-turn loss: every control is in the bottom third (y >= 563) []
+ok   390x844 off-turn loss: the island keeps at least 60 % of the height {"hole":{"top":68,"right":12,"bottom":268,"left":12},"share":60.2}
+ok   390x844 off-turn loss: the dock stays out of the island's hole {"live":{"top":68,"right":12,"bottom":268,"left":12},"hole":{"top":68,"right":12,"bottom":268,"left":12}}
+     390x844 empty hand: dock {"x":12,"y":588,"w":366,"h":244} slots {"goods":{"x":12,"y":588,"w":366,"h":62},"status":{"x":12,"y":658,"w":366,"h":44},"path":{"x":12,"y":710,"w":85.5,"h":46},"outpost":{"x":105.5,"y":710,"w":85.5,"h":46},"stronghold":{"x":199,"y":710,"w":85.5,"h":46},"card":{"x":292.5,"y":710,"w":85.5,"h":46},"trade":{"x":12,"y":764,"w":85.5,"h":44},"fortunes":{"x":105.5,"y":764,"w":85.5,"h":44},"turn":{"x":199,"y":764,"w":85.5,"h":44},"menu":{"x":292.5,"y":764,"w":85.5,"h":44},"log":{"x":12,"y":812,"w":298.7,"h":20}}
+ok   390x844 empty hand: the dock is on screen
+ok   390x844 empty hand: slot goods is on screen
+ok   390x844 empty hand: slot status is on screen
+ok   390x844 empty hand: slot path is on screen
+ok   390x844 empty hand: slot outpost is on screen
+ok   390x844 empty hand: slot stronghold is on screen
+ok   390x844 empty hand: slot card is on screen
+ok   390x844 empty hand: slot trade is on screen
+ok   390x844 empty hand: slot fortunes is on screen
+ok   390x844 empty hand: slot turn is on screen
+ok   390x844 empty hand: slot menu is on screen
+ok   390x844 empty hand: slot log is on screen
+ok   390x844 empty hand: the dock box matches your turn {"was":{"x":12,"y":588,"w":366,"h":244},"now":{"x":12,"y":588,"w":366,"h":244}}
+ok   390x844 empty hand: every slot matches your turn []
+ok   390x844 empty hand: every control is at least 44x44 []
+ok   390x844 empty hand: controls are at least 8 px apart []
+ok   390x844 empty hand: every control is in the bottom third (y >= 563) []
+ok   390x844 empty hand: the island keeps at least 60 % of the height {"hole":{"top":68,"right":12,"bottom":268,"left":12},"share":60.2}
+ok   390x844 empty hand: the dock stays out of the island's hole {"live":{"top":68,"right":12,"bottom":268,"left":12},"hole":{"top":68,"right":12,"bottom":268,"left":12}}
+     844x390 your turn: dock {"x":12,"y":100,"w":320,"h":278} slots {"goods":{"x":12,"y":100,"w":320,"h":44},"status":{"x":12,"y":152,"w":320,"h":44},"path":{"x":12,"y":204,"w":74,"h":46},"outpost":{"x":94,"y":204,"w":74,"h":46},"stronghold":{"x":176,"y":204,"w":74,"h":46},"card":{"x":258,"y":204,"w":74,"h":46},"trade":{"x":12,"y":258,"w":101.3,"h":44},"fortunes":{"x":121.3,"y":258,"w":101.3,"h":44},"turn":{"x":230.7,"y":258,"w":101.3,"h":44},"menu":{"x":12,"y":334,"w":156,"h":44},"log":{"x":12,"y":306,"w":252.7,"h":20},"seats":{"x":12,"y":12,"w":320,"h":44},"chat":{"x":176,"y":334,"w":156,"h":44}}
+ok   844x390 your turn: the dock is on screen
+ok   844x390 your turn: slot goods is on screen
+ok   844x390 your turn: slot status is on screen
+ok   844x390 your turn: slot path is on screen
+ok   844x390 your turn: slot outpost is on screen
+ok   844x390 your turn: slot stronghold is on screen
+ok   844x390 your turn: slot card is on screen
+ok   844x390 your turn: slot trade is on screen
+ok   844x390 your turn: slot fortunes is on screen
+ok   844x390 your turn: slot turn is on screen
+ok   844x390 your turn: slot menu is on screen
+ok   844x390 your turn: slot log is on screen
+ok   844x390 your turn: slot seats is on screen
+ok   844x390 your turn: slot chat is on screen
+ok   844x390 your turn: every control is at least 44x44 []
+ok   844x390 your turn: controls are at least 8 px apart []
+ok   844x390 your turn: the island takes the full height beside the column {"hole":{"top":12,"right":12,"bottom":12,"left":344},"dock":{"x":12,"y":100,"w":320,"h":278}}
+ok   844x390 your turn: the dock stays out of the island's hole {"live":{"top":12,"right":12,"bottom":12,"left":344},"hole":{"top":12,"right":12,"bottom":12,"left":344}}
+     844x390 offer: dock {"x":12,"y":100,"w":320,"h":278} slots {"goods":{"x":12,"y":100,"w":320,"h":44},"status":{"x":12,"y":152,"w":320,"h":44},"path":{"x":12,"y":204,"w":74,"h":46},"outpost":{"x":94,"y":204,"w":74,"h":46},"stronghold":{"x":176,"y":204,"w":74,"h":46},"card":{"x":258,"y":204,"w":74,"h":46},"trade":{"x":12,"y":258,"w":101.3,"h":44},"fortunes":{"x":121.3,"y":258,"w":101.3,"h":44},"turn":{"x":230.7,"y":258,"w":101.3,"h":44},"menu":{"x":12,"y":334,"w":156,"h":44},"log":{"x":12,"y":306,"w":252.7,"h":20},"seats":{"x":12,"y":12,"w":320,"h":44},"chat":{"x":176,"y":334,"w":156,"h":44}}
+ok   844x390 offer: the dock is on screen
+ok   844x390 offer: slot goods is on screen
+ok   844x390 offer: slot status is on screen
+ok   844x390 offer: slot path is on screen
+ok   844x390 offer: slot outpost is on screen
+ok   844x390 offer: slot stronghold is on screen
+ok   844x390 offer: slot card is on screen
+ok   844x390 offer: slot trade is on screen
+ok   844x390 offer: slot fortunes is on screen
+ok   844x390 offer: slot turn is on screen
+ok   844x390 offer: slot menu is on screen
+ok   844x390 offer: slot log is on screen
+ok   844x390 offer: slot seats is on screen
+ok   844x390 offer: slot chat is on screen
+ok   844x390 offer: the dock box matches your turn {"was":{"x":12,"y":100,"w":320,"h":278},"now":{"x":12,"y":100,"w":320,"h":278}}
+ok   844x390 offer: every slot matches your turn []
+ok   844x390 offer: every control is at least 44x44 []
+ok   844x390 offer: controls are at least 8 px apart []
+ok   844x390 offer: the island takes the full height beside the column {"hole":{"top":12,"right":12,"bottom":12,"left":344},"dock":{"x":12,"y":100,"w":320,"h":278}}
+ok   844x390 offer: the dock stays out of the island's hole {"live":{"top":12,"right":12,"bottom":12,"left":344},"hole":{"top":12,"right":12,"bottom":12,"left":344}}
+     844x390 other's turn: dock {"x":12,"y":100,"w":320,"h":278} slots {"goods":{"x":12,"y":100,"w":320,"h":44},"status":{"x":12,"y":152,"w":320,"h":44},"path":{"x":12,"y":204,"w":74,"h":46},"outpost":{"x":94,"y":204,"w":74,"h":46},"stronghold":{"x":176,"y":204,"w":74,"h":46},"card":{"x":258,"y":204,"w":74,"h":46},"trade":{"x":12,"y":258,"w":101.3,"h":44},"fortunes":{"x":121.3,"y":258,"w":101.3,"h":44},"turn":{"x":230.7,"y":258,"w":101.3,"h":44},"menu":{"x":12,"y":334,"w":156,"h":44},"log":{"x":12,"y":306,"w":252.7,"h":20},"seats":{"x":12,"y":12,"w":320,"h":44},"chat":{"x":176,"y":334,"w":156,"h":44}}
+ok   844x390 other's turn: the dock is on screen
+ok   844x390 other's turn: slot goods is on screen
+ok   844x390 other's turn: slot status is on screen
+ok   844x390 other's turn: slot path is on screen
+ok   844x390 other's turn: slot outpost is on screen
+ok   844x390 other's turn: slot stronghold is on screen
+ok   844x390 other's turn: slot card is on screen
+ok   844x390 other's turn: slot trade is on screen
+ok   844x390 other's turn: slot fortunes is on screen
+ok   844x390 other's turn: slot turn is on screen
+ok   844x390 other's turn: slot menu is on screen
+ok   844x390 other's turn: slot log is on screen
+ok   844x390 other's turn: slot seats is on screen
+ok   844x390 other's turn: slot chat is on screen
+ok   844x390 other's turn: the dock box matches your turn {"was":{"x":12,"y":100,"w":320,"h":278},"now":{"x":12,"y":100,"w":320,"h":278}}
+ok   844x390 other's turn: every slot matches your turn []
+ok   844x390 other's turn: every control is at least 44x44 []
+ok   844x390 other's turn: controls are at least 8 px apart []
+ok   844x390 other's turn: the island takes the full height beside the column {"hole":{"top":12,"right":12,"bottom":12,"left":344},"dock":{"x":12,"y":100,"w":320,"h":278}}
+ok   844x390 other's turn: the dock stays out of the island's hole {"live":{"top":12,"right":12,"bottom":12,"left":344},"hole":{"top":12,"right":12,"bottom":12,"left":344}}
+     844x390 off-turn gain: dock {"x":12,"y":100,"w":320,"h":278} slots {"goods":{"x":12,"y":100,"w":320,"h":44},"status":{"x":12,"y":152,"w":320,"h":44},"path":{"x":12,"y":204,"w":74,"h":46},"outpost":{"x":94,"y":204,"w":74,"h":46},"stronghold":{"x":176,"y":204,"w":74,"h":46},"card":{"x":258,"y":204,"w":74,"h":46},"trade":{"x":12,"y":258,"w":101.3,"h":44},"fortunes":{"x":121.3,"y":258,"w":101.3,"h":44},"turn":{"x":230.7,"y":258,"w":101.3,"h":44},"menu":{"x":12,"y":334,"w":156,"h":44},"log":{"x":12,"y":306,"w":252.7,"h":20},"seats":{"x":12,"y":12,"w":320,"h":44},"chat":{"x":176,"y":334,"w":156,"h":44}}
+ok   844x390 off-turn gain: the dock is on screen
+ok   844x390 off-turn gain: slot goods is on screen
+ok   844x390 off-turn gain: slot status is on screen
+ok   844x390 off-turn gain: slot path is on screen
+ok   844x390 off-turn gain: slot outpost is on screen
+ok   844x390 off-turn gain: slot stronghold is on screen
+ok   844x390 off-turn gain: slot card is on screen
+ok   844x390 off-turn gain: slot trade is on screen
+ok   844x390 off-turn gain: slot fortunes is on screen
+ok   844x390 off-turn gain: slot turn is on screen
+ok   844x390 off-turn gain: slot menu is on screen
+ok   844x390 off-turn gain: slot log is on screen
+ok   844x390 off-turn gain: slot seats is on screen
+ok   844x390 off-turn gain: slot chat is on screen
+ok   844x390 off-turn gain: the dock box matches your turn {"was":{"x":12,"y":100,"w":320,"h":278},"now":{"x":12,"y":100,"w":320,"h":278}}
+ok   844x390 off-turn gain: every slot matches your turn []
+ok   844x390 off-turn gain: every control is at least 44x44 []
+ok   844x390 off-turn gain: controls are at least 8 px apart []
+ok   844x390 off-turn gain: the island takes the full height beside the column {"hole":{"top":12,"right":12,"bottom":12,"left":344},"dock":{"x":12,"y":100,"w":320,"h":278}}
+ok   844x390 off-turn gain: the dock stays out of the island's hole {"live":{"top":12,"right":12,"bottom":12,"left":344},"hole":{"top":12,"right":12,"bottom":12,"left":344}}
+     844x390 off-turn loss: dock {"x":12,"y":100,"w":320,"h":278} slots {"goods":{"x":12,"y":100,"w":320,"h":44},"status":{"x":12,"y":152,"w":320,"h":44},"path":{"x":12,"y":204,"w":74,"h":46},"outpost":{"x":94,"y":204,"w":74,"h":46},"stronghold":{"x":176,"y":204,"w":74,"h":46},"card":{"x":258,"y":204,"w":74,"h":46},"trade":{"x":12,"y":258,"w":101.3,"h":44},"fortunes":{"x":121.3,"y":258,"w":101.3,"h":44},"turn":{"x":230.7,"y":258,"w":101.3,"h":44},"menu":{"x":12,"y":334,"w":156,"h":44},"log":{"x":12,"y":306,"w":252.7,"h":20},"seats":{"x":12,"y":12,"w":320,"h":44},"chat":{"x":176,"y":334,"w":156,"h":44}}
+ok   844x390 off-turn loss: the dock is on screen
+ok   844x390 off-turn loss: slot goods is on screen
+ok   844x390 off-turn loss: slot status is on screen
+ok   844x390 off-turn loss: slot path is on screen
+ok   844x390 off-turn loss: slot outpost is on screen
+ok   844x390 off-turn loss: slot stronghold is on screen
+ok   844x390 off-turn loss: slot card is on screen
+ok   844x390 off-turn loss: slot trade is on screen
+ok   844x390 off-turn loss: slot fortunes is on screen
+ok   844x390 off-turn loss: slot turn is on screen
+ok   844x390 off-turn loss: slot menu is on screen
+ok   844x390 off-turn loss: slot log is on screen
+ok   844x390 off-turn loss: slot seats is on screen
+ok   844x390 off-turn loss: slot chat is on screen
+ok   844x390 off-turn loss: the dock box matches your turn {"was":{"x":12,"y":100,"w":320,"h":278},"now":{"x":12,"y":100,"w":320,"h":278}}
+ok   844x390 off-turn loss: every slot matches your turn []
+ok   844x390 off-turn loss: every control is at least 44x44 []
+ok   844x390 off-turn loss: controls are at least 8 px apart []
+ok   844x390 off-turn loss: the island takes the full height beside the column {"hole":{"top":12,"right":12,"bottom":12,"left":344},"dock":{"x":12,"y":100,"w":320,"h":278}}
+ok   844x390 off-turn loss: the dock stays out of the island's hole {"live":{"top":12,"right":12,"bottom":12,"left":344},"hole":{"top":12,"right":12,"bottom":12,"left":344}}
+     844x390 empty hand: dock {"x":12,"y":100,"w":320,"h":278} slots {"goods":{"x":12,"y":100,"w":320,"h":44},"status":{"x":12,"y":152,"w":320,"h":44},"path":{"x":12,"y":204,"w":74,"h":46},"outpost":{"x":94,"y":204,"w":74,"h":46},"stronghold":{"x":176,"y":204,"w":74,"h":46},"card":{"x":258,"y":204,"w":74,"h":46},"trade":{"x":12,"y":258,"w":101.3,"h":44},"fortunes":{"x":121.3,"y":258,"w":101.3,"h":44},"turn":{"x":230.7,"y":258,"w":101.3,"h":44},"menu":{"x":12,"y":334,"w":156,"h":44},"log":{"x":12,"y":306,"w":252.7,"h":20},"seats":{"x":12,"y":12,"w":320,"h":44},"chat":{"x":176,"y":334,"w":156,"h":44}}
+ok   844x390 empty hand: the dock is on screen
+ok   844x390 empty hand: slot goods is on screen
+ok   844x390 empty hand: slot status is on screen
+ok   844x390 empty hand: slot path is on screen
+ok   844x390 empty hand: slot outpost is on screen
+ok   844x390 empty hand: slot stronghold is on screen
+ok   844x390 empty hand: slot card is on screen
+ok   844x390 empty hand: slot trade is on screen
+ok   844x390 empty hand: slot fortunes is on screen
+ok   844x390 empty hand: slot turn is on screen
+ok   844x390 empty hand: slot menu is on screen
+ok   844x390 empty hand: slot log is on screen
+ok   844x390 empty hand: slot seats is on screen
+ok   844x390 empty hand: slot chat is on screen
+ok   844x390 empty hand: the dock box matches your turn {"was":{"x":12,"y":100,"w":320,"h":278},"now":{"x":12,"y":100,"w":320,"h":278}}
+ok   844x390 empty hand: every slot matches your turn []
+ok   844x390 empty hand: every control is at least 44x44 []
+ok   844x390 empty hand: controls are at least 8 px apart []
+ok   844x390 empty hand: the island takes the full height beside the column {"hole":{"top":12,"right":12,"bottom":12,"left":344},"dock":{"x":12,"y":100,"w":320,"h":278}}
+ok   844x390 empty hand: the dock stays out of the island's hole {"live":{"top":12,"right":12,"bottom":12,"left":344},"hole":{"top":12,"right":12,"bottom":12,"left":344}}
+ok   zero console errors []
+stationary-dock-prove: ok

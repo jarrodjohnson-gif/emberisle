@@ -1,0 +1,8 @@
+
+> fortune-count-prove
+> node --import ./server/register.mjs scripts/fortune-count-prove.mjs
+
+ok 390x844: all seats + watcher read the public Deck chip 25→0 and after restart; the holder's tray updates live; off-turn refusal, private deck/kinds protected
+ok 1280x720: all seats + watcher read the public Deck chip 25→0 and after restart; the holder's tray updates live; off-turn refusal, private deck/kinds protected
+ok 844x390 reduced: all seats + watcher read the public Deck chip 25→0 and after restart; the holder's tray updates live; off-turn refusal, private deck/kinds protected
+fortune-count-prove: all passed

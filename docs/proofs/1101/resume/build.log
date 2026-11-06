@@ -1,0 +1,50 @@
+
+> build
+> vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 2009 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/assets/shrek-smirk-Do0Xo01U.webp          2.25 kB
+dist/index.html                                2.61 kB │ gzip:   1.30 kB
+dist/assets/mike-sully-Ct202qR2.webp           2.79 kB
+dist/assets/wide-eyes-BDiZHgYT.webp            2.84 kB
+dist/assets/goggles-guy-BssxYY7b.webp          2.99 kB
+dist/assets/memoji-scheme-BM7oeLzb.webp        3.05 kB
+dist/assets/leo-laugh-fpWzArdY.webp            3.45 kB
+dist/assets/old-grump-BBGe0_6b.webp            4.17 kB
+dist/assets/daffy-shock-DVzTkIuj.webp          6.32 kB
+dist/assets/ben-10-BZkFZeMq.webp               6.80 kB
+dist/assets/sponge-thumbs-vsqILehC.webp       47.96 kB
+dist/assets/index-DIGPvOmQ.css                76.67 kB │ gzip:  15.70 kB
+dist/assets/sound-extra-DPddLi4I.js            0.42 kB │ gzip:   0.20 kB
+dist/assets/WayfarerOptions--PXG4idh.js        0.80 kB │ gzip:   0.49 kB
+dist/assets/trade-sound-IAGgnD3J.js            0.86 kB │ gzip:   0.52 kB
+dist/assets/emotes-M_5Qp6IF.js                 0.87 kB │ gzip:   0.37 kB
+dist/assets/HandRates-CvebdlwL.js              1.01 kB │ gzip:   0.64 kB
+dist/assets/VictoryTargetSelect-BZmDx9EF.js    1.12 kB │ gzip:   0.68 kB
+dist/assets/TradeSlot-Czueo7hA.js              1.70 kB │ gzip:   0.80 kB
+dist/assets/haptics-CfH9THMB.js                1.80 kB │ gzip:   1.06 kB
+dist/assets/DockInspection-BHKiYIxm.js         2.03 kB │ gzip:   1.03 kB
+dist/assets/TurnExtensionVote-VsCD7U4l.js      2.67 kB │ gzip:   1.20 kB
+dist/assets/OpenTables-CeGGkllW.js             2.71 kB │ gzip:   1.27 kB
+dist/assets/SetupReference-CF9rfuiR.js         4.92 kB │ gzip:   1.86 kB
+dist/assets/table-DfM5ngr2.js                  5.08 kB │ gzip:   2.09 kB
+dist/assets/Reactions-DgKPT5cG.js              6.00 kB │ gzip:   2.48 kB
+dist/assets/moments-CLbyor4W.js                9.65 kB │ gzip:   4.13 kB
+dist/assets/jelly-board-1aQ7ZJo0.js           20.84 kB │ gzip:   8.02 kB
+dist/assets/sheets-CY_cqQUO.js                22.55 kB │ gzip:   7.13 kB
+dist/assets/online-CVetfHLo.js                23.71 kB │ gzip:   7.97 kB
+dist/assets/harbor-jelly-DSw35AMP.js          25.97 kB │ gzip:  10.33 kB
+dist/assets/hex-jelly-CSF1i2J9.js            136.96 kB │ gzip:  47.25 kB
+dist/assets/index-B3Y_wVrl.js                399.68 kB │ gzip: 126.36 kB
+dist/assets/IslandCanvas-3yhWAKdF.js         760.80 kB │ gzip: 202.01 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 324ms

@@ -140,7 +140,7 @@ try {
   for (const viewport of [{ width: 320, height: 568 }, { width: 360, height: 640 }, { width: 844, height: 390 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport);
     await page.waitForTimeout(500);
-    const headerControls = await page.evaluate(() => [...document.querySelectorAll('header [data-menu-trigger], header [aria-label="Table menu"], [data-coach-skip-slot] button')].map((el) => {
+    const headerControls = await page.evaluate(() => [...document.querySelectorAll('header [data-menu-trigger], [data-slot="menu"] [aria-label="Table menu"], [data-coach-skip-slot] button')].map((el) => {
       const r = el.getBoundingClientRect(); return { name: el.textContent.trim(), x: r.x, y: r.y, w: r.width, h: r.height };
     }));
     assert.equal(headerControls.length, 6, "four seats, Skip and menu stay available");
@@ -158,9 +158,10 @@ try {
   }
   // Start from the adjacent menu control, independent of focus left by the roll-off or viewport change.
   await page.getByRole("button", { name: "Table menu", exact: true }).focus();
-  await page.keyboard.press("Shift+Tab");
+  const walk = async (key) => { const seen = []; for (let i = 0; i < 11; i++) { await page.keyboard.press(key); seen.push(await page.evaluate(() => { const a = document.activeElement; return a.closest("[data-coach-skip-slot]") ? "Skip" : a.getAttribute("aria-label") === "Table menu" ? "Menu" : a.closest('[data-testid="dock"]') ? "dock" : `outside: ${a.tagName} ${a.getAttribute("aria-label") ?? a.textContent.trim().slice(0, 24)}`; })); } return seen; };
+  assert.deepEqual(await walk("Shift+Tab"), [...Array(10).fill("dock"), "Skip"], "keyboard Shift+Tab reaches Skip from the menu through the dock's ten controls (five goods, four builds, Fortunes) and nothing else");
   assert.ok(await page.getByRole("button", { name: "Skip tips" }).evaluate((el) => el === document.activeElement), "keyboard Shift+Tab reaches Skip from the menu");
-  await page.keyboard.press("Tab");
+  assert.deepEqual(await walk("Tab"), [...Array(10).fill("dock"), "Menu"], "keyboard Tab continues from Skip through the dock to the menu");
   assert.ok(await page.getByRole("button", { name: "Table menu", exact: true }).evaluate((el) => el === document.activeElement), "keyboard Tab continues from Skip to the menu");
   mkdirSync("test-results", { recursive: true });
   await page.screenshot({ path: "test-results/first-game-coach-setup-390.png" });

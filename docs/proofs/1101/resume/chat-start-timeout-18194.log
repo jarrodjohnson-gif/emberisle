@@ -1,0 +1,63 @@
+ok lobby status on Ember: "Need 2 more players" +1.4s
+ok lobby status on Ember: "Need 1 more player" +1.6s
+ok lobby status on Tide: "Need 1 more player" +1.6s
+ok lobby status on Ember: "0 of 3 ready" +1.8s
+ok lobby status on Tide: "0 of 3 ready" +1.8s
+ok host tag on Ember's row only, seen by Ember +1.8s
+ok host tag on Ember's row only, seen by Tide +1.8s
+ok host tag on Ember's row only, seen by Pine +1.8s
+ok phone title card is 402 px tall, at most 55% of 844 +1.8s
+ok phone title card is full width minus 12 px, at the bottom +1.8s
+ok phone lobby card is 366x808, inside the 390x844 screen and full width +4.2s
+ok phone lobby 390x844, 4 seats scrolled down: sticky row ends at the card's bottom edge (gap 0), nothing below it, Leave inside it +4.5s
+ok phone lobby 390x640, 4 seats scrolled down: sticky row ends at the card's bottom edge (gap 0), nothing below it, Leave inside it +4.6s
+ok phone lobby: the card starts unscrolled +4.6s
+ok phone lobby: Ready is inside the card and the 390x844 viewport without scrolling +4.7s
+ok phone lobby: Start is inside the card and the 390x844 viewport without scrolling +6.5s
+ok phone lobby: the Ready/Start row is wholly on screen +6.5s
+ok phone lobby 390x844: 5 whole chat lines on screen, newest ("Guslobby line 8") visible, 14px text +15.0s
+ok phone lobby 390x844: Ready/Start stay on screen beside the chat +15.0s
+ok phone lobby 390x844: the Sounds & stickers tab shows all 10 chips at 14px with no sideways scroll +15.1s
+ok phone lobby 390x844: the Sounds & stickers tab shows all 15 chips inside the box +15.1s
+ok phone lobby 390x844: back on the Chat tab, 5 chat lines and the newest are on screen +15.3s
+ok phone lobby 440x956: 5 whole chat lines on screen, newest ("Guslobby line 8") visible, 14px text +15.7s
+ok phone lobby 440x956: Ready/Start stay on screen beside the chat +15.7s
+ok phone lobby 440x956: the Sounds & stickers tab shows all 10 chips at 14px with no sideways scroll +17.6s
+ok phone lobby 440x956: the Sounds & stickers tab shows all 15 chips inside the box +17.6s
+ok phone lobby 440x956: back on the Chat tab, 5 chat lines and the newest are on screen +18.0s
+ok phone lobby: a line that arrives while the log is at the bottom is scrolled into view +18.7s
+ok phone landscape 844x390, 4 seats all ready: status, Ready, Start and Leave are on screen without scrolling +22.3s
+ok phone landscape 844x390: all four seat rows are on screen +22.3s
+ok phone landscape 844x390: nothing in the card scrolls (0) +22.3s
+ok phone landscape 844x390: the rename button is 44.0x44.0, at least 44x44 +22.5s
+ok phone landscape 844x390: Sounds & stickers shows the 10 chips and 5 presets at 44 px, in a 180 px scroll box (scrollHeight 428) +22.5s
+ok phone landscape 844x390: Sounds & stickers shows the 15 chips and 5 presets at 44 px +22.5s
+ok phone landscape 667x375, 4 seats all ready: status, Ready, Start and Leave are on screen without scrolling +23.3s
+ok phone landscape 667x375: all four seat rows are on screen +23.3s
+ok phone landscape 667x375: nothing in the card scrolls (0) +23.3s
+ok phone landscape 667x375: the rename button is 44.0x44.0, at least 44x44 +23.3s
+ok phone landscape 667x375: Sounds & stickers shows the 10 chips and 5 presets at 44 px, in a 165 px scroll box (scrollHeight 524) +23.4s
+ok phone landscape 667x375: Sounds & stickers shows the 15 chips and 5 presets at 44 px +23.4s
+ok lobby status on Ember: "0 of 4 ready" +23.5s
+ok lobby: Ember shows "hello" from Ember +23.6s
+ok lobby: Tide shows "hello" from Ember +23.6s
+ok lobby: Pine shows "hello" from Ember +23.6s
+ok lobby: Ember shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect  +23.6s
+ok lobby: Tide shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect  +23.7s
+ok lobby: Pine shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect  +23.7s
+ok lobby: Tide's one-tap emoji is a light line in all 3 logs +23.7s
+ok lobby: Ember shows Pine's Wololo bubble, clear of the name  +23.8s
+ok lobby: Tide shows Pine's Wololo bubble, clear of the name  +23.8s
+ok lobby: Pine shows Pine's Wololo bubble, clear of the name  +23.9s
+ok lobby: Pine's sound is a bubble and a light line on all 3 tabs +23.9s
+ok lobby: input cleared after Enter +23.9s
+ok desktop lobby 1280x720 (host, before Ready): a hit test reaches the input, Send and both tabs, none under the footer {"input":"ok","Send":"ok","Chat tab":"ok","Sounds & stickers tab":"ok"} +23.9s
+ok desktop lobby 1280x720 (guest, before Ready): a hit test reaches the input, Send and both tabs, none under the footer {"input":"ok","Send":"ok","Chat tab":"ok","Sounds & stickers tab":"ok"} +23.9s
+ok lobby status on Ember: "1 of 4 ready" +27.7s
+ok lobby status on Ember: "2 of 4 ready" +28.0s
+ok lobby status on Ember: "3 of 4 ready" +28.1s
+ok lobby status on Ember: "Everyone is ready" +28.2s
+FAIL locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: 'Start', exact: true }) to be visible[22m
+

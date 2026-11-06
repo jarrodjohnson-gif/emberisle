@@ -227,7 +227,7 @@ try {
         // The build row has not grown: the stack's content is no taller than on main, and the island's hole no smaller.
         if (h.name === "outpost goods, no spot") {
           const fit = await page.evaluate(() => ({
-            stack: document.querySelector('[data-testid="build-path"]').closest(".overflow-y-auto").scrollHeight,
+            stack: ((el) => el.closest('[data-testid="dock"]')?.scrollHeight ?? el.closest(".overflow-y-auto").scrollHeight)(document.querySelector('[data-testid="build-path"]')),
             holeBottom: window.__isle.insets().bottom,
           }));
           const allow = MAIN_STACK[v.tag] + (v.touch ? 0 : DESKTOP_GROW) + 2;
@@ -269,7 +269,7 @@ try {
       await page.waitForFunction(() => !document.querySelector('[data-testid="build-path"]').classList.contains("build-ready"));
       // A roll: the row is not up in the roll phase and the goods come with main; that makes the Path newly payable too.
       await craft({ hand: NONE, pathsLeft: 5, deckLeft: 5, phase: "roll" });
-      await page.waitForFunction(() => !document.querySelector('[data-testid="build-path"]') && window.__emberisle.getState().state.phase === "roll");
+      await page.waitForFunction((touch) => { const p = document.querySelector('[data-testid="build-path"]'); return (touch ? p?.dataset.buildState === "idle" && p.getAttribute("aria-disabled") === "true" : !p) && window.__emberisle.getState().state.phase === "roll"; }, !!v.touch);
       await page.waitForTimeout(300);
       await craft({ hand: { ...NONE, timber: 1, clay: 1 }, pathsLeft: 5, deckLeft: 5, phase: "main" });
       await page.waitForFunction(() => document.querySelector('[data-testid="build-path"]').classList.contains("build-ready"));

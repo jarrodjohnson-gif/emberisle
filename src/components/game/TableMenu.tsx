@@ -9,13 +9,15 @@ import { Button } from "@/components/ui/button";
 import { ConnectionOverlay } from "@/components/game/chunks";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { useGame } from "@/lib/game/store";
+import { cn } from "@/lib/utils";
 import { haptics, play, setMusicOn, setMuted, useMuted, useMusicOn } from "@/lib/sound";
 import { LazyBoundary } from "@/lib/lazy";
 
 const ROW = "h-11 w-full justify-start px-3 text-body";
 const ICON = "size-4 shrink-0 text-muted";
 
-export function TableMenu() {
+// #1101: on a phone the menu is a "Menu" slot in the dock (`dock` names the side it sits on) and its sheet opens upward.
+export function TableMenu({ dock }: { dock?: "left" | "right" }) {
   const state = useGame((s) => s.state)!;
   const mode = useGame((s) => s.mode);
   const serverSha = useGame((s) => s.serverSha);
@@ -104,16 +106,16 @@ export function TableMenu() {
       {mode === "online" ? <LazyBoundary failed={null}><ConnectionOverlay /></LazyBoundary> : null}
       <Button
         ref={trigger}
-        variant="ghost"
-        size="icon"
-        className="size-11 bg-glass backdrop-blur-md"
+        variant={dock ? "secondary" : "ghost"}
+        size={dock ? "sm" : "icon"}
+        className={dock ? "h-11 w-full" : "size-11 bg-glass backdrop-blur-md"}
         aria-label="Table menu"
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls="table-menu"
         onClick={() => (open ? close(false) : setOpen(true))}
       >
-        <Ellipsis className="size-5" />
+        {dock ? "Menu" : <Ellipsis className="size-5" />}
       </Button>
       {open ? (
         <div
@@ -122,7 +124,10 @@ export function TableMenu() {
           role="dialog"
           aria-label="Table menu"
           data-testid="table-menu"
-          className="absolute right-0 top-full z-20 mt-2 flex max-h-[calc(100dvh-5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-64 flex-col overflow-y-auto rounded-sheet bg-surface p-2 shadow-[0_8px_32px_rgb(28_25_21_/_0.18)]"
+          className={cn(
+            "absolute z-20 flex max-h-[calc(100dvh-5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-64 flex-col overflow-y-auto rounded-sheet bg-surface p-2 shadow-[0_8px_32px_rgb(28_25_21_/_0.18)]",
+            dock ? cn("bottom-full mb-2", dock === "left" ? "left-0" : "right-0") : "right-0 top-full mt-2",
+          )}
           onBlur={(e) => {
             const to = e.relatedTarget as Node | null;
             if (to && !sheet.current?.contains(to) && !trigger.current?.contains(to)) close(false);

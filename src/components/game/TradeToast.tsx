@@ -9,9 +9,13 @@ import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import { bagText } from "@/lib/game/trade";
 import { useGame } from "@/lib/game/store";
+import { chunk, LazyBoundary } from "@/lib/lazy";
 import { RESOURCES, RESOURCE_LABEL } from "@/lib/game/types";
 import type { Bag } from "@/lib/net/table";
 import "./trade-panel.css";
+
+export const tradeSlot = chunk(() => import("./TradeSlot"));
+const TradeSlot = tradeSlot.pick((m) => m.TradeSlot);
 
 const DISMISS_MS = 150;
 const calm = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -31,7 +35,8 @@ function declinedLine(names: string[]) {
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]} declined`;
 }
 
-export function TradeToast() {
+// #1101: the closed-chat phone offer occupies the fixed status slot.
+export function TradeToast({ slot }: { slot?: boolean }) {
   const { phone } = useViewport();
   const chatOpen = useGame((s) => s.chatOpen);
   const aboveChat = phone && chatOpen;
@@ -77,7 +82,7 @@ export function TradeToast() {
 
   useLayoutEffect(() => {
     const el = dock.current;
-    if (!el) return;
+    if (!el || slot) return;
     const stack = el.closest<HTMLElement>("[data-hud-stack]");
     const root = document.documentElement;
     let lastHeight = -1;
@@ -96,7 +101,7 @@ export function TradeToast() {
     });
     observer.observe(el);
     return () => { observer.disconnect(); cancelAnimationFrame(frame); stack?.style.removeProperty("--trade-height"); root.style.removeProperty("--active-offer-height"); };
-  }, [shown, aboveChat, leaving]);
+  }, [shown, aboveChat, leaving, slot]);
 
   useEffect(() => {
     if (!offer) return;
@@ -109,6 +114,7 @@ export function TradeToast() {
   const fading = leaving || (hadOffer.current && !shown && !outcome);
   const me = players?.find((p) => p.id === localId);
   if ((!me && !spectator) || (!offer && !outcome && !fading)) return null;
+  if (slot && !shown && !outcome) return null;
   const name = (id: string) => players?.find((p) => p.id === id)?.name ?? "Someone";
 
   let body;
@@ -120,7 +126,7 @@ export function TradeToast() {
       const taker = players?.find((p) => p.id === takerId);
       const ResultIcon = takerId ? Check : X;
       return (
-        <p className="trade-result table-log flex items-center gap-1 rounded-control px-3 py-1 text-caption" role="status" data-testid="trade-outcome" data-taker={takerId ?? undefined} data-fade-ms={fadeMs}>
+        <p className={`trade-result table-log flex items-center gap-1 rounded-control px-3 text-caption ${slot ? "h-11 min-w-0 flex-1" : "py-1"}`} role="status" data-testid="trade-outcome" data-taker={takerId ?? undefined} data-fade-ms={fadeMs}>
           {taker ? <SeatDot color={taker.color} className="size-2.5" /> : null}
           <ResultIcon aria-hidden="true" className="size-3.5" />{outcome}
         </p>
@@ -139,6 +145,14 @@ export function TradeToast() {
     const line = compact
       ? `${offer.fromName} is looking for ${bagText(offer.want)}`
       : offerLine(asker ? null : offer.fromName, offer.give, offer.want);
+    if (slot) {
+      const wait = asker ? (declined.length ? declinedLine(declined.map(name)) : "Waiting…") : undefined;
+      return (
+        <LazyBoundary failed={null}>
+          <TradeSlot line={line} color={asker ? undefined : fromColor} left={left} why={why} wait={wait} answering={answering} lineId={lineId} whyId={whyId} />
+        </LazyBoundary>
+      );
+    }
     const tick = (
       <>
         <div className="trade-summary flex min-w-0 items-center justify-between gap-2">

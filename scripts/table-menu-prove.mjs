@@ -65,11 +65,11 @@ try {
       return { wordmark: wordmark.map((el) => el.textContent.trim()), buttons };
     });
     assert.deepEqual(top.wordmark, [], `${v.tag}: nothing on the table says Emberisle`);
-    assert.equal(top.buttons.length, 1, `${v.tag}: one button in the top 64 px: ${JSON.stringify(top.buttons)}`);
-    const [b] = top.buttons;
+    assert.equal(top.buttons.length, v.touch ? 0 : 1, `${v.tag}: ${v.touch ? "no button" : "one button"} in the top 64 px: ${JSON.stringify(top.buttons)}`);
+    const [b] = v.touch ? [await trigger.evaluate((el) => { const r = el.getBoundingClientRect(), s = el.closest('[data-slot="menu"]')?.getBoundingClientRect(); return { name: el.getAttribute("aria-label"), w: Math.round(r.width), h: Math.round(r.height), right: Math.round(innerWidth - r.right), left: Math.round(r.left), bottom: Math.round(innerHeight - r.bottom), portrait: innerHeight > innerWidth, inSlot: !!s && [r.x, r.y, r.width, r.height].join() === [s.x, s.y, s.width, s.height].join() }; })] : top.buttons;
     assert.equal(b.name, "Table menu", `${v.tag}: the one button is the menu`);
     assert.ok(b.w >= 44 && b.h >= 44, `${v.tag}: the menu button is ${b.w}x${b.h}, under 44 px`);
-    assert.ok(b.right < 32 && b.top < 32, `${v.tag}: the menu button sits top-right (${JSON.stringify(b)})`);
+    assert.ok(v.touch ? b.inSlot && b.bottom < 48 && (b.portrait ? b.right < 32 : b.left < 32) : b.right < 32 && b.top < 32, `${v.tag}: the menu button sits ${v.touch ? "in the dock's Menu slot, bottom-right upright and bottom-left sideways" : "top-right"} (${JSON.stringify(b)})`);
 
     // Open: the rows, the turn line, and the focus on the first row. Haptics appears only where the API and pointer guards allow it (#542).
     await trigger.click();

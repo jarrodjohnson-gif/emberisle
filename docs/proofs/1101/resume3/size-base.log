@@ -1,0 +1,45 @@
+ok   table: 2.09 kB gzip, ceiling 2.20 kB
+ok   haptics: 1.06 kB gzip, ceiling 1.20 kB
+ok   index: 125.17 kB gzip, ceiling 125.20 kB
+ok   IslandCanvas: 200.56 kB gzip, ceiling 202.50 kB
+ok   jelly-board: 7.97 kB gzip, ceiling 9.00 kB
+ok   hex-jelly: 46.73 kB gzip, ceiling 50.00 kB
+ok   harbor-jelly: 10.24 kB gzip, ceiling 11.50 kB
+ok   online: 7.94 kB gzip, ceiling 9.00 kB
+ok   Reactions: 2.50 kB gzip, ceiling 2.60 kB
+ok   sound-extra: 0.23 kB gzip, ceiling 0.60 kB
+ok   trade-sound: 0.53 kB gzip, ceiling 0.60 kB
+ok   emotes: 0.46 kB gzip, ceiling 0.60 kB
+ok   sheets: 7.12 kB gzip, ceiling 7.80 kB
+ok   SetupReference: 1.86 kB gzip, ceiling 2.20 kB
+ok   moments: 4.13 kB gzip, ceiling 5.70 kB
+ok   VictoryTargetSelect: 0.68 kB gzip, ceiling 1.00 kB
+ok   DockInspection: 1.03 kB gzip, ceiling 1.20 kB
+ok   HandRates: 0.65 kB gzip, ceiling 0.80 kB
+ok   OpenTables: 1.27 kB gzip, ceiling 1.30 kB
+ok   WayfarerOptions: 0.49 kB gzip, ceiling 0.50 kB
+ok   TurnExtensionVote: 1.20 kB gzip, ceiling 1.40 kB
+ok   TradeSlot: 0.80 kB gzip, ceiling 1.00 kB
+ok   table growth: base 2091 B, PR 2091 B, +0 B, allowance 200 B
+ok   haptics growth: base 1069 B, PR 1065 B, -4 B, allowance 200 B
+ok   index growth: base 124341 B, PR 125171 B, +830 B, allowance 880 B
+ok   IslandCanvas growth: base 200571 B, PR 200561 B, -10 B, allowance 662 B
+ok   jelly-board growth: base 7970 B, PR 7969 B, -1 B, allowance 200 B
+ok   hex-jelly growth: base 46735 B, PR 46735 B, +0 B, allowance 200 B
+ok   harbor-jelly growth: base 10237 B, PR 10237 B, +0 B, allowance 200 B
+ok   online growth: base 7942 B, PR 7941 B, -1 B, allowance 200 B
+ok   Reactions growth: base 2504 B, PR 2504 B, +0 B, allowance 200 B
+ok   sound-extra growth: base 225 B, PR 225 B, +0 B, allowance 200 B
+ok   trade-sound growth: base 526 B, PR 525 B, -1 B, allowance 200 B
+ok   emotes growth: base 464 B, PR 464 B, +0 B, allowance 200 B
+ok   sheets growth: base 7123 B, PR 7118 B, -5 B, allowance 200 B
+ok   SetupReference growth: base 1859 B, PR 1858 B, -1 B, allowance 200 B
+ok   moments growth: base 4127 B, PR 4125 B, -2 B, allowance 200 B
+ok   VictoryTargetSelect growth: base 686 B, PR 684 B, -2 B, allowance 200 B
+ok   DockInspection growth: base 1033 B, PR 1030 B, -3 B, allowance 200 B
+ok   HandRates growth: base 650 B, PR 645 B, -5 B, allowance 200 B
+ok   OpenTables growth: base 1277 B, PR 1275 B, -2 B, allowance 200 B
+ok   WayfarerOptions growth: base 491 B, PR 488 B, -3 B, allowance 200 B
+ok   TurnExtensionVote growth: base 1207 B, PR 1204 B, -3 B, allowance 200 B
+new  TradeSlot: 0.80 kB gzip, not in the base; the ceiling is its only limit
+size-prove: all chunks inside ceiling and growth allowance

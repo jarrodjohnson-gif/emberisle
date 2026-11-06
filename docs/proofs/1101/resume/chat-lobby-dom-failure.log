@@ -1,0 +1,31 @@
+ok lobby status on Ember: "Need 2 more players" +1.4s
+ok lobby status on Ember: "Need 1 more player" +1.6s
+ok lobby status on Tide: "Need 1 more player" +1.6s
+ok lobby status on Ember: "0 of 3 ready" +1.7s
+ok lobby status on Tide: "0 of 3 ready" +1.7s
+ok host tag on Ember's row only, seen by Ember +1.7s
+ok host tag on Ember's row only, seen by Tide +1.7s
+ok host tag on Ember's row only, seen by Pine +1.7s
+ok phone title card is 402 px tall, at most 55% of 844 +1.8s
+ok phone title card is full width minus 12 px, at the bottom +1.8s
+ok phone lobby card is 366x808, inside the 390x844 screen and full width +4.0s
+ok phone lobby 390x844, 4 seats scrolled down: sticky row ends at the card's bottom edge (gap 0), nothing below it, Leave inside it +4.2s
+ok phone lobby 390x640, 4 seats scrolled down: sticky row ends at the card's bottom edge (gap 0), nothing below it, Leave inside it +4.3s
+ok phone lobby: the card starts unscrolled +4.3s
+ok phone lobby: Ready is inside the card and the 390x844 viewport without scrolling +4.3s
+ok phone lobby: Start is inside the card and the 390x844 viewport without scrolling +6.1s
+ok phone lobby: the Ready/Start row is wholly on screen +6.1s
+ok phone lobby 390x844: 5 whole chat lines on screen, newest ("Guslobby line 8") visible, 14px text +14.1s
+ok phone lobby 390x844: Ready/Start stay on screen beside the chat +14.1s
+ok phone lobby 390x844: the Sounds & stickers tab shows all 10 chips at 14px with no sideways scroll +14.1s
+ok phone lobby 390x844: the Sounds & stickers tab shows all 15 chips inside the box +14.1s
+ok phone lobby 390x844: back on the Chat tab, 5 chat lines and the newest are on screen +14.2s
+ok phone lobby 440x956: 5 whole chat lines on screen, newest ("Guslobby line 8") visible, 14px text +14.2s
+ok phone lobby 440x956: Ready/Start stay on screen beside the chat +14.2s
+ok phone lobby 440x956: the Sounds & stickers tab shows all 10 chips at 14px with no sideways scroll +14.5s
+ok phone lobby 440x956: the Sounds & stickers tab shows all 15 chips inside the box +14.5s
+ok phone lobby 440x956: back on the Chat tab, 5 chat lines and the newest are on screen +14.5s
+FAIL page.evaluate: TypeError: Cannot read properties of null (reading 'getBoundingClientRect')
+    at eval (eval at evaluate (:311:30), <anonymous>:3:19)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)

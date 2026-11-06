@@ -59,8 +59,9 @@ try {
       if (phase === "main" && width === 844) {
         const dice = await page.evaluate(() => {
           const row = document.querySelector('[data-testid="dice-row"]'), r = row?.getBoundingClientRect();
-          const foot = document.querySelector('.end-footer')?.getBoundingClientRect(), end = [...document.querySelectorAll('.end-footer button')].at(-1)?.getBoundingClientRect();
-          return { clipped: !foot || !end || end.right > foot.right + 0.5 || end.left < foot.left, dice: [...document.querySelectorAll('[data-testid="die"]')].filter(d => d.checkVisibility()).length, sum: row?.lastElementChild?.textContent, inside: !!r && r.width > 0 && r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight };
+          const foot = document.querySelector('[data-slot="turn"]')?.getBoundingClientRect(), end = document.querySelector('[data-slot="turn"] button')?.getBoundingClientRect();
+          const status = document.querySelector('[data-slot="status"]')?.getBoundingClientRect();
+          return { clipped: !foot || !end || end.right > foot.right + 0.5 || end.left < foot.left || end.top < foot.top || end.bottom > foot.bottom + 0.5, dice: [...document.querySelectorAll('[data-testid="die"]')].filter(d => d.checkVisibility()).length, sum: row?.lastElementChild?.textContent, inside: !!r && r.width > 0 && r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight && !!status && r.left >= status.left && r.right <= status.right && r.top >= status.top && r.bottom <= status.bottom };
         });
         assert.deepEqual(dice, { clipped: false, dice: 2, sum: "8", inside: true }, `${width}: two dice and the sum show in your own main phase`);
       }
@@ -91,7 +92,8 @@ try {
         const offer = document.querySelector('[data-testid="trade-toast"]');
         const stack = document.querySelector('[data-hud-stack]').getBoundingClientRect();
         const b = offer?.getBoundingClientRect();
-        return { scale, hole, out, covered, clippedCosts, offer: b ? { top: b.top, bottom: b.bottom, left: b.left, right: b.right, insideStack: b.top >= stack.top && b.bottom <= stack.bottom + 0.5, modal: offer.getAttribute('aria-modal') } : null };
+        const slot = document.querySelector('[data-slot="status"]')?.getBoundingClientRect();
+        return { scale, hole, out, covered, clippedCosts, offer: b ? { top: b.top, bottom: b.bottom, left: b.left, right: b.right, inSlot: !!slot && ["x", "y", "width", "height"].every(k => Math.abs(b[k] - slot[k]) <= 0.5), insideStack: b.top >= stack.top && b.bottom <= stack.bottom + 0.5, modal: offer.getAttribute('aria-modal') } : null };
       }, holeFor);
       if (phase === "main") { mainFit = fitNow; mainHole = geometry.hole; }
       else assert.equal(fitNow, mainFit, `${width}: the offer opening leaves the fit where it was`);
@@ -107,6 +109,7 @@ try {
       if (geometry.offer) {
         assert.equal(geometry.offer.modal, null);
         assert.ok(geometry.offer.insideStack && geometry.offer.bottom <= height - 12 + 0.5, `${width}: offer in visible bottom stack`);
+        if (phone) assert.equal(geometry.offer.inSlot, true, `${width}: the offer fills the exact fixed status slot`);
       }
       metrics.push({ width, height, reduced, phase, ...geometry });
     }

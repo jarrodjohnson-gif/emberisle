@@ -185,8 +185,8 @@ async function pinned(p, moment, name, mustScroll) {
   const btn = page.getByRole("button", { name, exact: true });
   await btn.waitFor({ timeout: STEP_MS });
   const m = await btn.evaluate((el, insets) => {
-    let sc = el.parentElement;
-    while (sc && getComputedStyle(sc).overflowY !== "auto") sc = sc.parentElement;
+    const sc = el.closest('[data-testid="dock"]');
+    if (!sc) throw new Error(`no dock around ${el.textContent.trim()}`);
     sc.scrollTop = 0;
     const b = el.getBoundingClientRect();
     const top = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
@@ -199,13 +199,13 @@ async function pinned(p, moment, name, mustScroll) {
       tall: b.height >= 44,
     };
   }, insets);
-  if (mustScroll) check(`${tag} ${moment}: the column scrolls (full hand, every fortune)`, m.scrolls);
-  check(`${tag} ${moment}: ${name} is inside the safe area, 44 px tall, uncovered, scrolled to the top`, m.inside && m.topmost && m.inScroller && m.tall, m.box);
+  if (mustScroll) check(`${tag} ${moment}: the dock does not scroll (full hand, every fortune)`, !m.scrolls);
+  check(`${tag} ${moment}: ${name} is inside the safe area, 44 px tall, uncovered, inside the dock`, m.inside && m.topmost && m.inScroller && m.tall, m.box);
   if (!mustScroll) return;
   // Keyboard: Tab through the column from its top; every focused control stays uncovered (the pinned row does not hide it),
   // and the "more below" cue does not sit under that row.
   await page.evaluate(() => {
-    const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+    const sc = document.querySelector('[data-testid="dock"]');
     sc.scrollTop = 0;
     sc.querySelector("button").focus();
   });
@@ -213,17 +213,17 @@ async function pinned(p, moment, name, mustScroll) {
   for (let i = 0; i < 30; i++) {
     const f = await page.evaluate(() => {
       const el = document.activeElement;
-      const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+      const sc = document.querySelector('[data-testid="dock"]');
       if (!sc.contains(el)) return null;
       const b = el.getBoundingClientRect();
       const top = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
-      const cue = document.querySelector('[data-testid="hud-more-below"]')?.getBoundingClientRect();
-      const end = [...sc.querySelectorAll("button")].find((x) => x.textContent.trim() === "End turn")?.parentElement.getBoundingClientRect();
+      const cue = document.querySelector('[data-testid="hud-more-below"]');
+      const end = [...sc.querySelectorAll("button")].find((x) => x.textContent.trim() === "End turn");
       return {
         name: (el.getAttribute("aria-label") || el.textContent.trim()).slice(0, 24),
         y: [Math.round(b.top), Math.round(b.bottom)],
         uncovered: el.contains(top),
-        cueClear: !cue || !end || Math.abs(cue.bottom - end.top) <= 1,
+        cueClear: !cue && !!end && end.parentElement === sc.querySelector('[data-slot="turn"]'),
       };
     });
     if (!f) break;
@@ -231,8 +231,8 @@ async function pinned(p, moment, name, mustScroll) {
     await page.keyboard.press("Tab");
   }
   const bad = seen.filter((f) => !f.uncovered);
-  check(`${tag} ${moment}: Tab through ${seen.length} column controls, none hidden behind the pinned row`, seen.length > 3 && bad.length === 0, bad.length ? bad : undefined);
-  check(`${tag} ${moment}: the "more below" cue sits above the pinned row`, seen.every((f) => f.cueClear));
+  check(`${tag} ${moment}: Tab through ${seen.length} dock controls, none hidden`, seen.length > 3 && bad.length === 0, bad.length ? bad : undefined);
+  check(`${tag} ${moment}: no "more below" cue, and End turn in its slot, at every focus`, seen.every((f) => f.cueClear));
   // The fortune tray (#423) rises from the column's bottom edge over the pinned row: it covers the bar cleanly, inside the viewport.
   await page.getByRole("button", { name: /^(Play fortune|Fortunes)/ }).click();
   const tray = await page.getByRole("dialog").first().waitFor({ timeout: STEP_MS }).then(() =>
@@ -243,7 +243,7 @@ async function pinned(p, moment, name, mustScroll) {
   ).then(() =>
     page.evaluate((insets) => {
       const t = document.querySelector("#fortune-title").closest('[role="dialog"]').getBoundingClientRect();
-      const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+      const sc = document.querySelector('[data-testid="dock"]');
       const end = [...sc.querySelectorAll("button")].find((x) => x.textContent.trim() === "End turn");
       const b = end.parentElement.getBoundingClientRect();
       const hit = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
@@ -291,10 +291,13 @@ async function practice(spec) {
   for (let tries = 0; !(await chip.isVisible()); tries++) {
     if (tries === 5) throw new Error("setup: five taps on a legal corner brought up no PlaceChip");
     await settled(page);
-    const spot = await page.evaluate(() => {
+    const point = await page.waitForFunction(() => {
       const id = window.__emberisle.getState().highlights().vertices[0];
-      return window.__isle.screenOf(id);
-    });
+      const spot = id && window.__isle.screenOf(id);
+      return spot && Number.isFinite(spot.x) && Number.isFinite(spot.y) ? spot : null;
+    }, null, { timeout: STEP_MS });
+    const spot = await point.jsonValue();
+    await point.dispose();
     await page.touchscreen.tap(spot.x, spot.y);
     await chip.waitFor({ timeout: STEP_MS / 4 }).catch(() => {});
   }

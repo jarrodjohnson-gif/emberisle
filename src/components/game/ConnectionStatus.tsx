@@ -16,6 +16,14 @@ export function ConnectionStatus({ className }: { className?: string }) {
 
 // Online-only UI stays with the lobby and chat instead of the first-load index.
 export function ConnectionOverlay() {
-  const { phone, portrait } = useViewport();
-  return <div className={`pointer-events-none absolute right-0 top-full whitespace-nowrap rounded bg-surface/90 ${phone && portrait ? "mt-14" : "mt-1"}`}><ConnectionStatus /></div>;
+  const { phone } = useViewport();
+  // #1101: the phone Menu sits in the bottom dock. top-full (and mt-14 on a portrait phone) hangs this readout past the screen. Open it above the button. The header Menu still hangs just below.
+  return (
+    <div className={cn(
+      "pointer-events-none absolute right-0 whitespace-nowrap rounded bg-surface/90",
+      phone ? "bottom-full mb-1" : "top-full mt-1",
+    )}>
+      <ConnectionStatus />
+    </div>
+  );
 }

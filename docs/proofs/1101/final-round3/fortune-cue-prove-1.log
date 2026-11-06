@@ -1,0 +1,9 @@
+
+> fortune-cue-prove
+> node scripts/fortune-cue-prove.mjs
+
+ok 1280x720
+ok 1280x720 reduced
+ok 390x844
+ok 390x844 reduced
+fortune-cue-prove: ok

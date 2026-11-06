@@ -125,8 +125,8 @@ try {
         assert.equal(next.starts.length, 1, `${tag}: and it glows`);
       }
       // An empty hand has no button, so no cue.
-      await craft({ hidden: {} });
-      await button.waitFor({ state: "detached", timeout: STEP_MS });
+      const held = await button.boundingBox(); await craft({ hidden: {} });
+      if (v.touch) { await glow.waitFor({ state: "detached", timeout: STEP_MS }); assert.equal(await button.getAttribute("aria-disabled"), "true", `${tag}: an empty hand greys the dock's Fortunes button`); assert.equal(await label(), "Fortunes · 0", `${tag}: and it reads Fortunes · 0`); assert.deepEqual(await button.boundingBox(), held, `${tag}: in the same box`); } else await button.waitFor({ state: "detached", timeout: STEP_MS });
       console.log(`ok ${tag}`);
       await ctx.close();
     }
