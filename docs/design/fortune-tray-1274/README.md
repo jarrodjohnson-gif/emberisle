@@ -2,7 +2,7 @@
 
 Astra redrew this packet on 2026-11-05 from `faa84c3ef9fa3c29792954f2a3c6502ce42e7178`. It remains a proposal, not accepted runtime work.
 
-**Current review pictures and measurements: [2026-11-05 redraw](redraw-2026-11-05/README.md).** The older pictures and JSON below are retained unchanged as historical evidence; they do not measure the revised HTML. The small-phone header overlap and wrong landscape side are corrected in the redraw.
+**Current review pictures and measurements: [2026-11-06 visual polish](polish-2026-11-06/README.md).** The [2026-11-05 geometry redraw](redraw-2026-11-05/README.md) remains the preserved geometry baseline. The older pictures and JSON below are retained unchanged as historical evidence; they do not measure the revised HTML. The small-phone header overlap and wrong landscape side are corrected in the redraw.
 
 Owner decision [8A](https://github.com/jarrodjohnson-gif/emberisle/issues/1274#issuecomment-6621485712) approves bottom anchoring, normal order, selection, and one fixed Play region. It does not approve every dimension. The offer policy was answered in [desk comment6671764662](https://github.com/jarrodjohnson-gif/emberisle/issues/1274#issuecomment-6671764662).
 

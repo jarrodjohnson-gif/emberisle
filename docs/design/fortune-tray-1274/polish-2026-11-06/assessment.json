@@ -1,0 +1,193 @@
+{
+  "runtimeHead": "f29c36fbfe6bf38f0101e64fbfd6b8c69b170344",
+  "mockHead": "ed815c3764df7e21e6ccd3656580f455609d614f",
+  "browser": "153.0.8010.12",
+  "note": "Runtime underlay with synthetic transparent iframe overlay. Safe insets affect mock only. Not an integrated runtime or interaction proof.",
+  "records": [
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "runtime": {
+        "header": {
+          "x": 12,
+          "y": 12,
+          "width": 366,
+          "height": 44,
+          "right": 378,
+          "bottom": 56
+        },
+        "seats": {
+          "x": 12,
+          "y": 12,
+          "width": 318,
+          "height": 44,
+          "right": 330,
+          "bottom": 56
+        },
+        "entry": {
+          "x": 106.953125,
+          "y": 712,
+          "width": 125.109375,
+          "height": 44,
+          "right": 232.0625,
+          "bottom": 756
+        },
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "right": 390,
+          "bottom": 844
+        }
+      },
+      "proposal": {
+        "x": 16,
+        "y": 250,
+        "right": 374,
+        "bottom": 810
+      },
+      "clearsChrome": true,
+      "landscapeLeftColumn": null
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "runtime": {
+        "header": {
+          "x": 12,
+          "y": 12,
+          "width": 820,
+          "height": 44,
+          "right": 832,
+          "bottom": 56
+        },
+        "seats": {
+          "x": 16,
+          "y": 12,
+          "width": 768,
+          "height": 44,
+          "right": 784,
+          "bottom": 56
+        },
+        "entry": {
+          "x": 106.953125,
+          "y": 250,
+          "width": 125.109375,
+          "height": 44,
+          "right": 232.0625,
+          "bottom": 294
+        },
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 844,
+          "height": 390,
+          "right": 844,
+          "bottom": 390
+        }
+      },
+      "proposal": {
+        "x": 44,
+        "y": 64,
+        "right": 364,
+        "bottom": 369
+      },
+      "clearsChrome": true,
+      "landscapeLeftColumn": true
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "runtime": {
+        "header": {
+          "x": 12,
+          "y": 12,
+          "width": 1256,
+          "height": 44,
+          "right": 1268,
+          "bottom": 56
+        },
+        "seats": null,
+        "entry": {
+          "x": 680.046875,
+          "y": 632,
+          "width": 125.109375,
+          "height": 44,
+          "right": 805.15625,
+          "bottom": 676
+        },
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 1280,
+          "height": 720,
+          "right": 1280,
+          "bottom": 720
+        }
+      },
+      "proposal": {
+        "x": 416,
+        "y": 126,
+        "right": 864,
+        "bottom": 686
+      },
+      "clearsChrome": true,
+      "landscapeLeftColumn": null
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "runtime": {
+        "header": {
+          "x": 12,
+          "y": 12,
+          "width": 296,
+          "height": 44,
+          "right": 308,
+          "bottom": 56
+        },
+        "seats": {
+          "x": 12,
+          "y": 12,
+          "width": 248,
+          "height": 44,
+          "right": 260,
+          "bottom": 56
+        },
+        "entry": {
+          "x": 106.953125,
+          "y": 436,
+          "width": 125.109375,
+          "height": 44,
+          "right": 232.0625,
+          "bottom": 480
+        },
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 320,
+          "height": 568,
+          "right": 320,
+          "bottom": 568
+        }
+      },
+      "proposal": {
+        "x": 16,
+        "y": 64,
+        "right": 304,
+        "bottom": 534
+      },
+      "clearsChrome": true,
+      "landscapeLeftColumn": null
+    }
+  ]
+}

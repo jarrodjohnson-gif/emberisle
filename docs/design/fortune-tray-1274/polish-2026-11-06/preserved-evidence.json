@@ -1,0 +1,120 @@
+{
+  "base": "def5444e7e66a34d08e2c2226efba321bf3504f4",
+  "files": [
+    {
+      "path": "docs/design/fortune-tray-1274/SHA256SUMS",
+      "sha256": "5b9a6c33383a0a5f3fc90ed9894985328f60eef50dd2357f3b1594ad97e0ad3a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/composites/1280x720-proposal.png",
+      "sha256": "1e48bcb437afe14200d3dfc41ae6974cd30724f62a71efcc609f1a00a59cefa4",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/composites/1280x720-runtime.png",
+      "sha256": "d2c0065661c7b24bba6a42eb666a413e950fdaa7f79b4275f9ba86808b57827a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/composites/320x568-proposal.png",
+      "sha256": "0049b2b24916a86acb8ca655e73917a390e67b1ee866f8fc61faeb7140b1ee1b",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/composites/320x568-runtime.png",
+      "sha256": "dac33d6fed199d0b1c8f7f5705bbf51773cd7484f8e155fdeea5291e87240018",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/composites/390x844-proposal.png",
+      "sha256": "e9fe34d44c1b221d115553d60632d222d6be7a1a62d6780d728f2060af605337",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/composites/390x844-runtime.png",
+      "sha256": "879db84fc06dd78f44b4b9f12d97670a5a87fd5151e43efd8dcb5efb8791035c",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/composites/844x390-proposal.png",
+      "sha256": "284fc70f0fee2266f643d26b9545572e672f4890050343a219d4d5ea95bf67ce",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/composites/844x390-runtime.png",
+      "sha256": "6eec1cfdead755eab4592bc028ab474dc497debdb4b3629458b4cc908e7b995b",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/composites/assessment.json",
+      "sha256": "d0436400c610a315ed61985efc32d994329d31c3a11a4b442d57184cc32b1259",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/images/1280x720-safe-long-list.png",
+      "sha256": "c676902c136fe63e3453524d8235cad61abfb4d5822d63b0d7afe817d5d5fb72",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/images/320x568-safe-long-list.png",
+      "sha256": "aafa723904835bd675d6ab7c5b9bbe501561f3f8e49614d9cc3d51a1c5fad416",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/images/390x844-safe-long-list.png",
+      "sha256": "9a4bf69578299e2aff9fdb5c89015268e38c877aef9827fed2b2e6ce4451258f",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/images/844x390-safe-long-list.png",
+      "sha256": "51c1d5a16639b6a0ade8675b97f7763c5eba5a42c0db036a5bb18c5669ccc355",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/measurements.json",
+      "sha256": "fa44f97a4e7610e35dc1b34ab006c6c2d44c9cb75936a183e8e6e0ea17a948f8",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/redraw-2026-11-05/1280x720-proposal.png",
+      "sha256": "3a1d949d2f78e2711e499de302bafd60984f61f8dcb26f1a758fd18be71d904d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/redraw-2026-11-05/320x568-proposal.png",
+      "sha256": "5979ce498ab27d88362774d0d5ff30e5f7ca8708fbc5d7f07b7c00d1cc95c7ae",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/redraw-2026-11-05/390x844-proposal.png",
+      "sha256": "438fbbe153b8bff42d6cfb60f42532fc97a500bae59485ed1f0131e10d008324",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/redraw-2026-11-05/844x390-proposal.png",
+      "sha256": "a89ae82dd5d1ce902a5300f70dcc3afcbb4e136c3c2df7d90108e384833e9e57",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/redraw-2026-11-05/SHA256SUMS",
+      "sha256": "002d39dd198dd6a9c832fe95bfdc19cab634fb53811bdfc94c6be9cbf9a21a86",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/redraw-2026-11-05/measurements.json",
+      "sha256": "f29a82a6b20f5542086989774e4e87855f9c3ab38502c8f0e0b9a95846cbacb8",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/redraw-2026-11-05/preserved-evidence.json",
+      "sha256": "f74756c7b6c50ca4de2a318b91133274179b9740441c771325b55b9569f1eeca",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/fortune-tray-1274/validation-2026-11-05.log",
+      "sha256": "e7d8cbc7ee9954b3ca223493464bbd049b94bb918d2562b55416560fa779aba4",
+      "unchanged": true
+    }
+  ]
+}

@@ -68,3 +68,15 @@ Astra resumed the exact Fortune branch checkpoint `faa84c3ef9fa3c29792954f2a3c65
 All previous PNGs, measurement JSON, validation log and old checksum file were preserved byte-for-byte; new SHA-256 comparison records document this. No runtime, production proof, CI registration, automation or unrelated ownership changed. Existing #1144/#1101, #1216/#1151, #936/#799 and #867 remain reserved. No duplicate children or runtime PR were created.
 
 Published on the existing `codex/1302-fortune-tray-spec` branch after normal commit/push and remote verification. The final full commit and image links are posted on #1302 and #1274. This handoff is part of that commit; use `git log -1` on this branch to resolve its exact SHA. Then `/paused` and STOP, as the user requested. Further runtime work requires accepted drawings, independent review and shared-hunk release; this bounded task does not claim those approvals.
+
+## Visual polish resumed — 2026-11-06
+
+Jarrod resumed #1302; desk correction6693803418 explicitly lifts the historical publish-then-pause instruction. Claim6693837538 reserves the Fortune drawing packet and this handoff. The four new composites, 96 state measurements, eight mock interaction/motion groups, state pictures and honest critique are in `../fortune-tray-1274/polish-2026-11-06/`.
+
+Sheet bounds match the 2026-11-05 redraw exactly. Changes are internal typography, quiet list edges, selected treatment, existing goods symbols plus visible names, compact fixed action grouping, and documented existing entrance motion/reduced-motion behavior. All 23 prior evidence artifacts are unchanged. No runtime, production proof, ceiling, automation or other owner's implementation was touched.
+
+Astra considers this its best completed constrained polish pass, but not finished-game quality: text-led fortune identities and weak landscape scroll discovery remain. Owner polish acceptance and independent review are outstanding; runtime remains blocked on #1144/#1101 and shared-file release. Small-phone island coverage and unrelated fixture/dock clutter are disclosed. Publication is on the existing Fortune branch; resolve its final SHA with `git log -1` and the #1302 picture comment.
+
+Do not stop merely because this packet is published. The parent session continues read-only recovery and presentation of the already-published #1297/#1298 design proposals, then records actual remaining owner/dependency gates. Do not duplicate those branches or child issues. No blanket claim that every #1274 child is blocked on #1144 is justified.
+
+The parent subsequently verified remote seat-ring head `b4731cdd873c25625c4d0284f04f8165f91f42ba` and button-audit head `dc5bdf42b1b11490081aa3787ad83a657748d89f`, read their existing specifications, and surfaced them for owner acceptance: [#1297 comment6694010693](https://github.com/jarrodjohnson-gif/emberisle/issues/1297#issuecomment-6694010693) and [#1298 comment6694011146](https://github.com/jarrodjohnson-gif/emberisle/issues/1298#issuecomment-6694011146). These are historical schematic measurements, not freshly rerun runtime proofs. Neither branch was changed.
