@@ -245,6 +245,34 @@ try {
   mkdirSync("test-results", { recursive: true });
   assert.deepEqual(errors, [], "zero unexpected browser errors");
   console.log("ok zero browser errors");
+  // Controlled events exercise the shared registry's lifetime, including callers sharing one predicate.
+  await page.evaluate(async () => {
+    const { withChunkRecovery } = await import("/src/lib/lazy.ts");
+    const url = `${location.origin}/assets/optional-controlled.js`;
+    const owns = (candidate) => candidate === url;
+    let first, second;
+    const sentinel = new Error("controlled rejection");
+    const a = withChunkRecovery(() => new Promise((resolve) => { first = resolve; }), owns);
+    const b = withChunkRecovery(() => new Promise((_, reject) => { second = reject; }), owns).catch((error) => error);
+    await Promise.resolve();
+    const emit = () => {
+      const event = new Event("vite:preloadError", { cancelable: true });
+      event.payload = new Error(`Failed to fetch dynamically imported module: ${url}`);
+      window.dispatchEvent(event);
+      if (event.defaultPrevented) throw new Error("owned recovery must preserve original Vite rejection");
+    };
+    emit(); first(); await a; emit();
+    second(sentinel);
+    if (await b !== sentinel) throw new Error("original rejection identity changed");
+    window.__recoveryCleanupEvent = emit;
+  });
+  await page.waitForTimeout(100);
+  assert.equal(await page.evaluate(() => typeof window.__recoveryCleanupEvent), "function", "overlapping registry entries remain owned after first settlement");
+  await Promise.all([
+    page.waitForEvent("framenavigated", { predicate: (frame) => frame === page.mainFrame() }),
+    page.evaluate(() => setTimeout(() => window.__recoveryCleanupEvent(), 0)),
+  ]);
+  console.log("ok controlled overlapping ownership retains original rejection and cleans up after final settlement; unowned recovery reloads");
   await page.close();
 
   // Production smoke validates compiler-owned hashed URLs and the fresh-query recovery path.
@@ -256,7 +284,7 @@ try {
     localStorage.setItem("emberisle-jelly", "lite");
   });
   const prod = await context.newPage(), prodRequests = [], prodErrors = [], expectedFailures = [];
-  let injected = false, navigations = 0;
+  let injected = 0, navigations = 0;
   prod.on("framenavigated", (frame) => { if (frame === prod.mainFrame()) ++navigations; });
   prod.on("request", (request) => prodRequests.push(request.url()));
   prod.on("pageerror", (error) => prodErrors.push(error.message));
@@ -270,13 +298,16 @@ try {
   assert.equal(prodRequests.some((url) => /classic-board|terrain-classic/.test(url)), false, "production Jelly startup never requests Classic");
   assert.equal(prodRequests.some((url) => /\/src\//.test(url)), false, "production startup uses built assets");
   await prod.route("**/assets/classic-board-*.js*", async (route) => {
-    if (!injected) { injected = true; await route.abort("failed"); }
+    if (injected < 2) { ++injected; await route.abort("failed"); }
     else await route.continue();
   });
   await prod.evaluate(() => window.__isle.setLandLook("classic"));
   await prod.waitForFunction(() => window.__isle.landStatus.error, null, { timeout: 120_000 });
   assert.equal(await prod.evaluate(() => window.__isle.landStatus.displayed === "jelly" && window.__isle.landReady), true, "production failed import retains matching Jelly");
   await prod.evaluate(() => { window.__isle.lite = false; window.__isle.retryLandLook(); });
+  await prod.waitForFunction(() => window.__isle.landStatus.error && !window.__isle.landStatus.loading, null, { timeout: 120_000 });
+  assert.equal(navigations, 1, "failed retry also leaves the playable production page intact");
+  await prod.evaluate(() => window.__isle.retryLandLook());
   await prod.waitForFunction(() => window.__isle.landStatus.displayed === "classic" && !window.__isle.landStatus.error, null, { timeout: 120_000 });
   assert.equal(prodRequests.some((url) => /\/assets\/classic-board-[^/]+\.js\?retry=\d+/.test(url)), true, "production recovery requests the hashed chunk with a fresh query");
   assert.equal(await prod.evaluate(() => window.__isle.landAppearance.stats().quality), "full", "production full Classic actually publishes");

@@ -36,7 +36,7 @@ import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game
 import { LAND_MS } from "@/lib/scene/landing";
 import { LandingDust } from "@/lib/scene/landing-dust";
 import { hashStr } from "@/lib/utils";
-import { chunk, chunkUrl } from "@/lib/lazy";
+import { chunk, withChunkRecovery } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
 import { BLOCK_H, ROBBER_HEX_DIM, robberHexDim, setRobberHexDim, TILE_Y } from "@/lib/scene/jelly-dims";
 export { ROBBER_HEX_DIM, robberHexDim };
@@ -65,16 +65,20 @@ const landModules = {
   jelly: chunk(() => import("@/lib/scene/jelly-board")),
   classic: chunk(() => import("@/lib/scene/classic-board")),
 };
-const loadLand = (look: LandLook): Promise<typeof import("@/lib/scene/jelly-board") | typeof import("@/lib/scene/classic-board")> => {
-  // These optional land assets own their recovery; a stale-title reload must not discard the playable board.
-  // Listen only for this import's lifetime, including completion after its renderer request was cancelled.
-  const ownedFailure = (event: Event) => {
-    const url = chunkUrl((event as Event & { payload?: unknown }).payload) ?? "";
-    if (/\/(classic-board|jelly-board|hex-jelly)-[\w-]+\.js$/.test(url)) event.stopImmediatePropagation();
-  };
-  window.addEventListener("vite:preloadError", ownedFailure, true);
-  return landModules[look].load().finally(() => window.removeEventListener("vite:preloadError", ownedFailure, true));
-};
+const loadLand = (look: LandLook): Promise<typeof import("@/lib/scene/jelly-board") | typeof import("@/lib/scene/classic-board")> =>
+  withChunkRecovery<typeof import("@/lib/scene/jelly-board") | typeof import("@/lib/scene/classic-board")>(
+    () => landModules[look].load(),
+    (url) => {
+      try {
+        const asset = new URL(url, location.href);
+        const names = look === "classic" ? /\/classic-board-[\w-]+\.js$/ : /\/(jelly-board|hex-jelly)-[\w-]+\.js$/;
+        // Vite's preload links identify this build's exact entry/dependency URLs; retries only change the query.
+        return asset.origin === location.origin && names.test(asset.pathname) &&
+          [...document.querySelectorAll<HTMLLinkElement>('link[rel="modulepreload"],link[rel="preload"][as="script"]')]
+            .some((link) => new URL(link.href).pathname === asset.pathname);
+      } catch { return false; }
+    },
+  );
 const JELLY_RETRY_MS = 4000;
 // The jelly pieces (#638, pieces-jelly-prompt.md); ?pieces=slab keeps the slab pieces (for the classic look, #641).
 const JELLY_PIECES = (() => {
