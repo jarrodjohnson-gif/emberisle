@@ -118,6 +118,25 @@ const READY_DOT = (
   </span>
 );
 
+function LossesFailed({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div
+      data-testid="losses-failed"
+      role="alert"
+      className="flex items-center justify-between gap-3 rounded-[16px] border border-white/50 bg-glass px-4 py-2 text-sm text-zinc-900 backdrop-blur-md"
+    >
+      <span>{message}</span>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="rounded-[10px] bg-zinc-900 px-3 py-1 font-medium text-white hover:bg-zinc-800"
+      >
+        Try again
+      </button>
+    </div>
+  );
+}
+
 export function Hud() {
   const gameLog = useGame((s) => s.gameLog);
   const state = useGame((s) => s.state);
@@ -153,10 +172,16 @@ export function Hud() {
   const [sheetsLost, setSheetsLost] = useState<string | null>(null);
   useEscapeDisarm();
   const [stackRef, moreBelow] = useMoreBelow();
+  const [lossesRetry, setLossesRetry] = useState(0);
   useEffect(() => {
-    preloadOnIdle(sheets.prefetch);
-    preloadOnIdle(tradeToast.prefetch);
-    preloadOnIdle(losses.prefetch);
+    const cancelSheets = preloadOnIdle(sheets.prefetch);
+    const cancelToast = preloadOnIdle(tradeToast.prefetch);
+    const cancelLosses = preloadOnIdle(losses.prefetch);
+    return () => {
+      cancelSheets();
+      cancelToast();
+      cancelLosses();
+    };
   }, []);
   // #423: the fortune tray is open until a fortune is played, it is closed, the phase moves (a roll with the tray up) or the
   // turn moves on (hotseat: to the next seat); it never comes back on its own.
@@ -413,13 +438,32 @@ export function Hud() {
             {spectator ? null : <HandDock me={me} phase={state.phase} />}
 
             {discarder ? (
-              <LazyBoundary failed={null}>
+              <LazyBoundary
+                key={`discard-${discarder}`}
+                retryKey={String(lossesRetry)}
+                failed={
+                  <LossesFailed
+                    message="Discard choices could not load."
+                    onRetry={() => setLossesRetry((r) => r + 1)}
+                  />
+                }
+              >
                 <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} />
               </LazyBoundary>
             ) : null}
-            <LazyBoundary failed={null}>
-              <TakeFromBar />
-            </LazyBoundary>
+            {choosing ? (
+              <LazyBoundary
+                retryKey={String(lossesRetry)}
+                failed={
+                  <LossesFailed
+                    message="Victim choices could not load."
+                    onRetry={() => setLossesRetry((r) => r + 1)}
+                  />
+                }
+              >
+                <TakeFromBar />
+              </LazyBoundary>
+            ) : null}
 
             {state.phase === "main" && mine ? (
               <div className="hud-actions">
@@ -540,9 +584,11 @@ export function Hud() {
               <span data-testid="deck-count" data-deck-left={deckLeft} title={`${deckLeft} fortunes left in the deck`} className="shrink-0 px-2 text-xs leading-5 tabular-nums">Deck {deckLeft}</span>
             </div>
             {pinEnd ? endRow : null}
-            <LazyBoundary failed={null}>
-              <TradeToast />
-            </LazyBoundary>
+            {tradeVisible ? (
+              <LazyBoundary failed={null}>
+                <TradeToast />
+              </LazyBoundary>
+            ) : null}
           </div>
           {/* #423: the tray rises over the stack from its bottom edge and may cover the island, like a sheet, but never the
               header or the portrait seat strip; it is inside the sheets chunk, which the table prefetched on idle (#488). */}

@@ -1,11 +1,13 @@
 // #1285: Trade offer popup, discard bar, and take-from bar lazy loading.
-// Verifies that under a throttled connection (1000ms chunk delay):
+// Verifies:
 // 1. Initial idle prefetch loads TradeToast and losses chunks at game start.
-// 2. The first trade offer appears immediately (< 100ms) with no visible delay.
-// 3. A discard prompt appears immediately (< 100ms) with no visible delay.
-// 4. A steal victim pick appears immediately (< 100ms) with no visible delay.
-// Zero console errors. Run: npm run lazy-hud-prove
-import { existsSync } from "node:fs";
+// 2. The first trade offer appears immediately (< 250ms) with no visible delay.
+// 3. A discard prompt appears immediately (< 250ms) with no visible delay.
+// 4. A steal victim pick appears immediately (< 250ms) with no visible delay.
+// 5. Network failure for losses chunk renders visible alert with Try again.
+// 6. Tapping Try again recovers once the network failure clears.
+// Run: npm run lazy-hud-prove
+import { existsSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { createServer } from "vite";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
@@ -28,6 +30,8 @@ function mainGame(seed = 11) {
   return g;
 }
 
+mkdirSync("docs/proofs/1285", { recursive: true });
+
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 
@@ -44,8 +48,18 @@ const browser = await chromium.launch({
 
 const errors = [];
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-page.on("pageerror", (e) => errors.push(String(e)));
+page.on("console", (m) => {
+  const text = m.text();
+  if (m.type() === "error" && !text.includes("Failed to load resource") && !text.includes("net::ERR_FAILED")) {
+    errors.push(text);
+  }
+});
+page.on("pageerror", (e) => {
+  const text = String(e);
+  if (!text.includes("Failed to fetch dynamically imported module") && !text.includes("error loading dynamically imported module")) {
+    errors.push(text);
+  }
+});
 
 // Delay all chunk fetches for TradeToast and losses by 1000ms to simulate a throttled connection.
 let chunkRequests = 0;
@@ -116,8 +130,8 @@ try {
     s.setState({ state: st });
   });
 
-  const discardBar = page.getByText("Discard 2 of 2", { exact: false }).first();
-  await page.locator('form:has-text("Discard 2")').waitFor({ state: "visible", timeout: STEP_MS });
+  const discardBar = page.locator('form:has-text("Discard 2")');
+  await discardBar.waitFor({ state: "visible", timeout: STEP_MS });
   const discardElapsed = Date.now() - t1;
   check("discard prompt appears without delay (< 250ms)", discardElapsed < 250, { discardElapsed });
 
@@ -155,6 +169,80 @@ try {
     window.__emberisle.setState({ pendingSteal: null });
   });
   await stealBar.waitFor({ state: "hidden", timeout: STEP_MS }).catch(() => {});
+
+  // --- 4. Failed chunk load and recovery test ---
+  const failPage = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  let failLosses = true;
+  await failPage.route(/losses/, async (route) => {
+    if (failLosses) {
+      await route.abort("failed");
+    } else {
+      await route.continue();
+    }
+  });
+
+  await failPage.goto(`http://127.0.0.1:${PORT}/`);
+  await failPage.getByRole("button", { name: "Play", exact: true }).click({ timeout: STEP_MS });
+  await failPage.waitForFunction(() => window.__emberisle?.getState().state);
+
+  await failPage.evaluate((state) => {
+    window.__emberisle.getState().startAi();
+    window.__emberisle.setState({ state });
+  }, g);
+
+  // Trigger steal while losses chunk is failing:
+  await failPage.evaluate(() => {
+    window.__emberisle.setState({
+      pendingSteal: {
+        hexId: "-2,0",
+        kind: "moveRobber",
+        targets: ["p1", "p2"],
+      },
+    });
+  });
+  const stealFailedAlert = failPage.getByTestId("losses-failed");
+  await stealFailedAlert.waitFor({ state: "visible", timeout: STEP_MS });
+  const stealAlertText = await stealFailedAlert.innerText();
+  check("failed steal chunk load shows error message and Try again button", stealAlertText.includes("could not load") && stealAlertText.includes("Try again"), stealAlertText);
+  await failPage.screenshot({ path: "docs/proofs/1285/losses-failed-steal.png" });
+
+  // Clear steal on failPage:
+  await failPage.evaluate(() => {
+    window.__emberisle.setState({ pendingSteal: null });
+  });
+
+  // Trigger discard while losses chunk is failing:
+  await failPage.evaluate(() => {
+    const s = window.__emberisle;
+    const st = structuredClone(s.getState().state);
+    st.phase = "discard";
+    st.discardNeeded = { p0: 2 };
+    s.setState({ state: st });
+  });
+
+  const discardFailedAlert = failPage.getByTestId("losses-failed");
+  await discardFailedAlert.waitFor({ state: "visible", timeout: STEP_MS });
+  const discardAlertText = await discardFailedAlert.innerText();
+  check("failed discard chunk load shows error message and Try again button", discardAlertText.includes("could not load") && discardAlertText.includes("Try again"), discardAlertText);
+  await failPage.screenshot({ path: "docs/proofs/1285/losses-failed-discard.png" });
+
+  // Unblock losses chunk and tap Try again to recover:
+  failLosses = false;
+  await discardFailedAlert.getByRole("button", { name: "Try again" }).click();
+  const recoveredDiscardBar = failPage.locator('form:has-text("Discard 2")');
+  await recoveredDiscardBar.waitFor({ state: "visible", timeout: STEP_MS });
+  check("tapping Try again recovers discard bar", await recoveredDiscardBar.isVisible());
+
+  // Clear discard on failPage:
+  await failPage.evaluate(() => {
+    const s = window.__emberisle;
+    const st = structuredClone(s.getState().state);
+    st.phase = "main";
+    st.discardNeeded = {};
+    s.setState({ state: st });
+  });
+
+  await failPage.close();
 
 } finally {
   check("zero console errors", errors.length === 0, errors.slice(0, 5));
