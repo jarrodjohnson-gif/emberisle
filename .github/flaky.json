@@ -64,6 +64,11 @@
       "id": "audio-recovery-prove",
       "pattern": "page\\.waitForFunction: Timeout 8000ms exceeded\\.\\n\\S+ +at \\S*audio-recovery-prove\\.mjs:\\d+",
       "issue": 1210
+    },
+    {
+      "id": "server-needs-prove",
+      "pattern": "Error: timeout p0 state:",
+      "issue": 1326
     }
   ]
 }
