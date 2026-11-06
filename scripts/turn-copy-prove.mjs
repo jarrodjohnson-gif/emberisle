@@ -75,6 +75,12 @@ try {
     await path.click(); await prompt("Place a path");
     assert.match(await page.getByTestId("turn-banner").textContent(), /tap Path again to cancel|Esc cancels/);
     await path.click(); await prompt("Build, trade, or end your turn");
+    const strongBtn = page.getByTestId("build-stronghold");
+    await strongBtn.click();
+    await page.waitForFunction(() => document.querySelector('[data-testid="turn-banner"]')?.textContent.startsWith("Pick a home to upgrade"));
+    assert.match(await page.getByTestId("turn-banner").textContent(), /^Pick\b/);
+    assert.match(await page.getByTestId("turn-banner").textContent(), /tap Upgrade again to cancel|Esc cancels/);
+    await strongBtn.click(); await prompt("Build, trade, or end your turn");
     await page.evaluate(() => {
       const g=window.__emberisle, st=structuredClone(g.getState().state);
       st.phase="discard";st.discardNeeded={[st.current]:3};st.seq++;g.setState({state:st});
