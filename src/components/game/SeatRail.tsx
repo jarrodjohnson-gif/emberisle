@@ -84,7 +84,7 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
           "flex w-full items-center",
           strip
             ? away
-              ? "gap-1.5 @max-[100px]:gap-0.5 @max-[72px]:gap-0"
+              ? "gap-1 @max-[100px]:gap-0"
               : "gap-1.5 @max-[100px]:gap-1"
             : "gap-1.5",
         )}
@@ -160,7 +160,7 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
         onClick={() => openMenu(menuFor === p.id ? null : p.id)}
         className={cn(
           "flex h-11 w-full cursor-pointer flex-col justify-center rounded-[inherit] text-left hover:bg-white/40",
-          strip ? "px-2 @max-[100px]:px-1 @max-[72px]:px-1" : "px-2.5",
+          strip ? "px-2 @max-[100px]:px-1.5 @max-[72px]:px-1" : "px-2.5",
         )}
       >
         <SeatLine p={p} actor={actor} short={short} />
