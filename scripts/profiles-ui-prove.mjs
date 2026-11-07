@@ -78,7 +78,6 @@ try {
     const store = openProfiles(process.env.PROFILES_DIR, { colors: PLAYER_COLORS });
     const made = await store.create({ displayName: "Kelp", login: "kelp-user", pin: "5555", pinConfirm: "5555", color: PLAYER_COLORS[3] });
     process.stdout.write(JSON.stringify((await store.localResetPin(made.profile.profileId)).tempPin));
-    process.exit(0);
   `], { cwd: new URL("../server/", import.meta.url), env: { ...process.env, PROFILES_DIR: path.join(dir, "c", "profiles") }, encoding: "utf8" }));
   const c = await host("c");
   legacyServer = httpServer();
