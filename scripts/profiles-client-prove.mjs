@@ -187,7 +187,11 @@ try {
     const hostileClient = window.table.connectTable(window.A, { closed: () => { closedFired = true; } });
     hostileClient.open({ name: "HostileCheck" });
     let tableWs;
-    while (!(tableWs = window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN && ws.__sent.some((m) => m.type === "hello" && m.name === "HostileCheck")))) await new Promise((r) => setTimeout(r, 10));
+    const deadline = performance.now() + 15000;
+    while (!(tableWs = window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN && ws.__sent.some((m) => m.type === "hello" && m.name === "HostileCheck")))) {
+      if (performance.now() > deadline) throw Error("HostileCheck hello was never sent");
+      await new Promise((r) => setTimeout(r, 10));
+    }
     tableWs.dispatchEvent(new MessageEvent("message", { data: JSON.stringify({ type: "closed" }) }));
     await new Promise((r) => setTimeout(r, 60));
     const wasFired = closedFired;
@@ -212,7 +216,11 @@ try {
     });
     client.open({ name: "EventFilterCheck" });
     let sock;
-    while (!(sock = window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN && ws.__sent.some((m) => m.type === "hello" && m.name === "EventFilterCheck")))) await new Promise((r) => setTimeout(r, 10));
+    const deadline = performance.now() + 15000;
+    while (!(sock = window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN && ws.__sent.some((m) => m.type === "hello" && m.name === "EventFilterCheck")))) {
+      if (performance.now() > deadline) throw Error("EventFilterCheck hello was never sent");
+      await new Promise((r) => setTimeout(r, 10));
+    }
 
     const hostileTypes = ["reconnecting", "health", "closed", "constructor", "toString", "valueOf", "__proto__", "customEvent"];
     for (const type of hostileTypes) {
@@ -337,12 +345,15 @@ try {
     // Hold the table socket's open event until the sign-out has finished. Logout is a round trip, so a socket that opened
     // first would rightly send the credential; the order is fixed here instead of left to the network.
     window.__holdOpen = true;
-    window.signoutBeforeOpenTable = window.table.connectTable(window.A, { welcome: () => {} });
-    window.signoutBeforeOpenTable.open({ name: "AshSignoutBeforeOpen", profile: client });
-    await client.logout();
-    client.close();
-    window.__holdOpen = false;
-    for (const release of window.__heldOpen.splice(0)) release();
+    try {
+      window.signoutBeforeOpenTable = window.table.connectTable(window.A, { welcome: () => {} });
+      window.signoutBeforeOpenTable.open({ name: "AshSignoutBeforeOpen", profile: client });
+      await client.logout();
+      client.close();
+    } finally {
+      window.__holdOpen = false;
+      for (const release of window.__heldOpen.splice(0)) release();
+    }
   });
   await page.waitForFunction(() => window.__wire.some((f) => f.url === window.A && f.message.name === "AshSignoutBeforeOpen"));
   await page.evaluate(() => window.signoutBeforeOpenTable.close());

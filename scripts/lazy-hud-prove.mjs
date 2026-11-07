@@ -116,6 +116,7 @@ try {
   while (chunkRequests < 2 && Date.now() < endWait) {
     await new Promise((r) => setTimeout(r, 50));
   }
+  check("idle prefetch fetched throttled chunks early", chunkRequests >= 2, { chunkRequests });
   // Wait for the real event, not a clock: the throttled response is only the first step. Vite then transforms and serves the
   // chunk's own imports, which takes as long as the runner is slow. The browser keeps one module record per URL, so this
   // import settles when the prefetch the app started has fetched and evaluated the whole graph (the app's own handler on
@@ -126,8 +127,6 @@ try {
       import(/* @vite-ignore */ "/src/components/game/losses.ts"),
     ]),
   );
-
-  check("idle prefetch fetched throttled chunks early", chunkRequests >= 2, { chunkRequests });
 
   // --- 1. First trade offer ---
   const tradeElapsed = await timeToAppear(
