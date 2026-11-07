@@ -1,10 +1,10 @@
 // #442: the table's top chrome is one menu button. In hotseat at 1280x720, 390x844 (touch) and 844x390 (touch):
 // - no visible element on the table says "Emberisle", and the only button in the top 64 px (the seat strip aside, on a
 //   sideways phone) is the 44 px "Table menu" button, top-right;
-// - it opens a sheet with the turn number, How to play, Table sounds, Haptics (#542, when coarse and vibrate exists), Water
+// - it opens a sheet with the turn number, How to play, Sound, Haptics (#542, when coarse and vibrate exists), Water
 //   (Crystal / Simple), View (Diorama / Overhead, #597) and Leave table, focus moving to the first row; at 1280x720 Water
 //   flips the sea's path both ways and the choice survives a reload (crystal-water.md);
-// - How to play opens its dialog and closing that puts the focus back on the menu button; the sound and haptics toggles
+// - How to play opens its dialog and closing that puts the focus back on the menu button; the Sound panel and the haptics toggle
 //   flip and keep the sheet open; Escape closes the sheet and refocuses the button; Enter on the button opens it; a tap
 //   outside closes it;
 // - online (a faked socket): the sheet shows the watcher count and "Copy table code" (copied where the clipboard works, the
@@ -81,8 +81,7 @@ try {
     const expected = [
       "How to play",
       "Costs",
-      "Table sounds on",
-      "Music on",
+      "Sound100%",
       ...(hasHaptics ? ["Haptics on"] : []),
       "Crystal",
       "Simple",
@@ -91,7 +90,7 @@ try {
       "Report a bug",
       "Leave table",
     ];
-    assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Costs", "Table sounds on", "Music on", "Crystal", "Simple", "Diorama", "Overhead", "Report a bug", "Leave table"], `${v.tag}: menu rows`);
+    assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Costs", "Sound100%", "Crystal", "Simple", "Diorama", "Overhead", "Report a bug", "Leave table"], `${v.tag}: menu rows`);
     assert.deepEqual(allRows.map((t) => t.trim()), expected, `${v.tag}: complete menu including haptics`);
     assert.match(await menu.textContent(), /Turn 1/, `${v.tag}: the turn number moved into the menu`);
     assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), "How to play", `${v.tag}: focus moves to the first row`);
@@ -113,15 +112,22 @@ try {
     await howTo.waitFor({ state: "detached" });
     assert.ok(await trigger.evaluate((el) => document.activeElement === el), `${v.tag}: closing How to play returns the focus to the menu button`);
 
-    // Sound: the toggle flips and the sheet stays open.
+    // Sound (#669): the row opens the Sound panel (sound-sheet-prove covers the panel); All sound's mute flips, the row reads Off, and Back returns to the rows.
     await trigger.click();
     await menu.waitFor();
-    await menu.getByRole("button", { name: "Table sounds on" }).click();
-    await menu.getByRole("button", { name: "Table sounds off" }).waitFor();
+    await menu.getByTestId("sound-entry").click();
+    const sound = page.getByRole("dialog", { name: "Sound" });
+    await sound.getByRole("button", { name: "Mute All sound" }).click();
+    await sound.getByRole("button", { name: "Unmute All sound" }).waitFor();
     assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-muted")), "1", `${v.tag}: muting is remembered`);
-    await menu.getByRole("button", { name: "Table sounds off" }).click();
-    await menu.getByRole("button", { name: "Table sounds on" }).waitFor();
+    await sound.getByRole("button", { name: "Back to Table menu" }).click();
+    assert.match(await menu.getByTestId("sound-entry").textContent(), /Off/, `${v.tag}: the Sound row reads Off while muted`);
+    await menu.getByTestId("sound-entry").click();
+    await sound.getByRole("button", { name: "Unmute All sound" }).click();
+    await sound.getByRole("button", { name: "Mute All sound" }).waitFor();
     assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-muted")), null, `${v.tag}: unmuting clears it`);
+    await sound.getByRole("button", { name: "Back to Table menu" }).click();
+    await menu.getByTestId("sound-entry").waitFor();
 
     // Haptics (#542): flip off/on; the sheet stays open; the choice is remembered.
     if (hasHaptics) {
