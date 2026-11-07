@@ -1,6 +1,65 @@
 {
   "chromium": "153.0.8010.12",
+  "browserErrors": [],
   "results": [
+    {
+      "which": "layers (today)",
+      "viewport": "320x568",
+      "bubbleOverMenu": true,
+      "menuTabs": [
+        "How to play",
+        "Costs",
+        "Table sounds on",
+        "Music on",
+        "Haptics on",
+        "Crystal",
+        "Simple",
+        "Diorama",
+        "Overhead",
+        "Copy table code L2LM",
+        "Copy log",
+        "Report a bug",
+        "Leave table"
+      ],
+      "menuAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Open chat, 3 unread"
+      },
+      "chatTabs": [
+        "Chat",
+        "Sounds & stickers",
+        "Mute players",
+        "Minimize chat",
+        "Chat",
+        "React angry",
+        "React happy",
+        "React clap",
+        "React laugh",
+        "React fire",
+        "React sheep",
+        "Say something…",
+        "Send"
+      ],
+      "chatAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "JarrodJar–0 points00Bartholo"
+      },
+      "tap": {
+        "menuOpen": false,
+        "chatOpen": false
+      },
+      "menuOpen": true,
+      "chatOpen": true,
+      "overlap": 103424,
+      "picture": "layers-today-320x568.png",
+      "afterEscape": {
+        "menuOpen": false,
+        "chatOpen": true,
+        "focus": "Table menu"
+      }
+    },
     {
       "picture": "today-chat-320x568.png",
       "which": "chat",
@@ -36,9 +95,10 @@
           "w": 94.5,
           "h": 44,
           "lines": 1,
-          "cut": false
+          "cut": true
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -85,6 +145,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -131,6 +192,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": null,
       "moreBelow": true,
       "fontSizes": [
@@ -177,6 +239,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -224,6 +287,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -254,6 +318,7 @@
       "minGap": 8,
       "minGapPair": "How to play / Costs",
       "tabs": [],
+      "outside": [],
       "inputEdge": null,
       "moreBelow": true,
       "fontSizes": [
@@ -269,19 +334,119 @@
       }
     },
     {
-      "which": "layers (today)",
+      "which": "layers (proposed)",
       "viewport": "320x568",
+      "bubbleOverMenu": false,
+      "menuTabs": [
+        "How to play",
+        "Costs",
+        "Table sounds on",
+        "Music on",
+        "Haptics on",
+        "Crystal",
+        "Simple",
+        "Diorama",
+        "Overhead",
+        "Copy table code L2LM",
+        "Copy log",
+        "Report a bug",
+        "Leave table"
+      ],
+      "menuAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Open chat, 4 unread"
+      },
+      "chatTabs": [
+        "Chat",
+        "Sounds & stickers",
+        "Mute players",
+        "Minimize chat",
+        "Chat",
+        "React angry",
+        "React happy",
+        "React clap",
+        "React laugh",
+        "React fire",
+        "React sheep",
+        "Say something…",
+        "Send"
+      ],
+      "chatAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "JarrodJar–0 points00Bartholo"
+      },
+      "tap": {
+        "menuOpen": true,
+        "chatOpen": false
+      },
       "menuOpen": true,
-      "chatOpen": true,
-      "overlap": 103424,
+      "chatOpen": false,
+      "overlap": 0,
+      "picture": "layers-proposed-320x568.png",
       "afterEscape": {
         "menuOpen": false,
-        "chatOpen": true,
+        "chatOpen": false,
         "focus": "Table menu"
+      }
+    },
+    {
+      "which": "layers (today)",
+      "viewport": "390x844",
+      "bubbleOverMenu": true,
+      "menuTabs": [
+        "How to play",
+        "Costs",
+        "Table sounds on",
+        "Music on",
+        "Haptics on",
+        "Crystal",
+        "Simple",
+        "Diorama",
+        "Overhead",
+        "Copy table code GSGV",
+        "Copy log",
+        "Report a bug",
+        "Leave table"
+      ],
+      "menuAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Open chat, 3 unread"
+      },
+      "chatTabs": [
+        "Chat",
+        "Sounds & stickers",
+        "Mute players",
+        "Minimize chat",
+        "Chat",
+        "React angry",
+        "React happy",
+        "React clap",
+        "React laugh",
+        "React fire",
+        "React sheep",
+        "Say something…",
+        "Send"
+      ],
+      "chatAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "JarrodJar–0 points00Bartholo"
       },
       "tap": {
         "menuOpen": false,
         "chatOpen": false
+      },
+      "menuOpen": true,
+      "chatOpen": true,
+      "overlap": 51200,
+      "picture": "layers-today-390x844.png",
+      "afterEscape": {
+        "menuOpen": false,
+        "chatOpen": true,
+        "focus": "Table menu"
       }
     },
     {
@@ -322,6 +487,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -368,6 +534,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -414,6 +581,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": null,
       "moreBelow": true,
       "fontSizes": [
@@ -460,6 +628,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -507,6 +676,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -529,7 +699,7 @@
         "x": 122,
         "y": 64,
         "w": 256,
-        "h": 604
+        "h": 688
       },
       "inside": true,
       "controls": 12,
@@ -537,6 +707,7 @@
       "minGap": 8,
       "minGapPair": "How to play / Costs",
       "tabs": [],
+      "outside": [],
       "inputEdge": null,
       "moreBelow": false,
       "fontSizes": [
@@ -552,19 +723,119 @@
       }
     },
     {
-      "which": "layers (today)",
+      "which": "layers (proposed)",
       "viewport": "390x844",
+      "bubbleOverMenu": false,
+      "menuTabs": [
+        "How to play",
+        "Costs",
+        "Table sounds on",
+        "Music on",
+        "Haptics on",
+        "Crystal",
+        "Simple",
+        "Diorama",
+        "Overhead",
+        "Copy table code GSGV",
+        "Copy log",
+        "Report a bug",
+        "Leave table"
+      ],
+      "menuAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Open chat, 4 unread"
+      },
+      "chatTabs": [
+        "Chat",
+        "Sounds & stickers",
+        "Mute players",
+        "Minimize chat",
+        "Chat",
+        "React angry",
+        "React happy",
+        "React clap",
+        "React laugh",
+        "React fire",
+        "React sheep",
+        "Say something…",
+        "Send"
+      ],
+      "chatAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "JarrodJar–0 points00Bartholo"
+      },
+      "tap": {
+        "menuOpen": true,
+        "chatOpen": false
+      },
       "menuOpen": true,
-      "chatOpen": true,
-      "overlap": 75776,
+      "chatOpen": false,
+      "overlap": 0,
+      "picture": "layers-proposed-390x844.png",
       "afterEscape": {
         "menuOpen": false,
-        "chatOpen": true,
+        "chatOpen": false,
         "focus": "Table menu"
+      }
+    },
+    {
+      "which": "layers (today)",
+      "viewport": "844x390",
+      "bubbleOverMenu": null,
+      "menuTabs": [
+        "How to play",
+        "Costs",
+        "Table sounds on",
+        "Music on",
+        "Haptics on",
+        "Crystal",
+        "Simple",
+        "Diorama",
+        "Overhead",
+        "Copy table code QNMQ",
+        "Copy log",
+        "Report a bug",
+        "Leave table"
+      ],
+      "menuAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Ask for more time"
+      },
+      "chatTabs": [
+        "Chat",
+        "Sounds & stickers",
+        "Mute players",
+        "Minimize chat",
+        "Chat",
+        "React angry",
+        "React happy",
+        "React clap",
+        "React laugh",
+        "React fire",
+        "React sheep",
+        "Say something…",
+        "Send"
+      ],
+      "chatAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "JarrodJar–0 points00Bartholo"
       },
       "tap": {
         "menuOpen": false,
         "chatOpen": false
+      },
+      "menuOpen": true,
+      "chatOpen": true,
+      "overlap": 65024,
+      "picture": "layers-today-844x390.png",
+      "afterEscape": {
+        "menuOpen": false,
+        "chatOpen": true,
+        "focus": "Table menu"
       }
     },
     {
@@ -605,6 +876,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -651,6 +923,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -697,6 +970,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": null,
       "moreBelow": true,
       "fontSizes": [
@@ -743,6 +1017,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -790,6 +1065,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -820,6 +1096,7 @@
       "minGap": 8,
       "minGapPair": "How to play / Costs",
       "tabs": [],
+      "outside": [],
       "inputEdge": null,
       "moreBelow": true,
       "fontSizes": [
@@ -835,19 +1112,118 @@
       }
     },
     {
-      "which": "layers (today)",
+      "which": "layers (proposed)",
       "viewport": "844x390",
+      "bubbleOverMenu": null,
+      "menuTabs": [
+        "How to play",
+        "Costs",
+        "Table sounds on",
+        "Music on",
+        "Haptics on",
+        "Crystal",
+        "Simple",
+        "Diorama",
+        "Overhead",
+        "Copy table code QNMQ",
+        "Copy log",
+        "Report a bug",
+        "Leave table"
+      ],
+      "menuAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Ask for more time"
+      },
+      "chatTabs": [
+        "Chat",
+        "Sounds & stickers",
+        "Mute players",
+        "Minimize chat",
+        "Chat",
+        "React angry",
+        "React happy",
+        "React clap",
+        "React laugh",
+        "React fire",
+        "React sheep",
+        "Say something…",
+        "Send"
+      ],
+      "chatAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "JarrodJar–0 points00Bartholo"
+      },
+      "tap": {
+        "menuOpen": true,
+        "chatOpen": false
+      },
+      "menuOpen": true,
+      "chatOpen": false,
+      "overlap": 0,
+      "picture": "layers-proposed-844x390.png",
+      "afterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Table menu"
+      }
+    },
+    {
+      "which": "layers (today)",
+      "viewport": "1280x720",
+      "bubbleOverMenu": null,
+      "menuTabs": [
+        "How to play",
+        "Costs",
+        "Table sounds on",
+        "Music on",
+        "Crystal",
+        "Simple",
+        "Diorama",
+        "Overhead",
+        "Copy table code EA3B",
+        "Copy log",
+        "Report a bug",
+        "Leave table"
+      ],
+      "menuAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Jarrod–0 points00"
+      },
+      "chatTabs": [
+        "Chat",
+        "Sounds & stickers",
+        "Mute players",
+        "Minimize chat",
+        "Chat",
+        "React angry",
+        "React happy",
+        "React clap",
+        "React laugh",
+        "React fire",
+        "React sheep",
+        "Say something…",
+        "Send"
+      ],
+      "chatAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Roll for first placeAsk for "
+      },
+      "tap": {
+        "menuOpen": true,
+        "chatOpen": true
+      },
       "menuOpen": true,
       "chatOpen": true,
-      "overlap": 65024,
+      "overlap": 79872,
+      "picture": "layers-today-1280x720.png",
       "afterEscape": {
         "menuOpen": false,
         "chatOpen": true,
         "focus": "Table menu"
-      },
-      "tap": {
-        "menuOpen": false,
-        "chatOpen": false
       }
     },
     {
@@ -891,6 +1267,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -937,6 +1314,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -990,6 +1368,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -1036,6 +1415,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": null,
       "moreBelow": true,
       "fontSizes": [
@@ -1082,6 +1462,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -1129,6 +1510,7 @@
           "cut": false
         }
       ],
+      "outside": [],
       "inputEdge": "rgb(120, 131, 122)",
       "moreBelow": false,
       "fontSizes": [
@@ -1151,7 +1533,7 @@
         "x": 1012,
         "y": 64,
         "w": 256,
-        "h": 552
+        "h": 636
       },
       "inside": true,
       "controls": 11,
@@ -1159,6 +1541,7 @@
       "minGap": 8,
       "minGapPair": "How to play / Costs",
       "tabs": [],
+      "outside": [],
       "inputEdge": null,
       "moreBelow": false,
       "fontSizes": [
@@ -1174,19 +1557,60 @@
       }
     },
     {
-      "which": "layers (today)",
+      "which": "layers (proposed)",
       "viewport": "1280x720",
-      "menuOpen": true,
-      "chatOpen": true,
-      "overlap": 77824,
-      "afterEscape": {
+      "bubbleOverMenu": null,
+      "menuTabs": [
+        "How to play",
+        "Costs",
+        "Table sounds on",
+        "Music on",
+        "Crystal",
+        "Simple",
+        "Diorama",
+        "Overhead",
+        "Copy table code EA3B",
+        "Copy log",
+        "Report a bug",
+        "Leave table"
+      ],
+      "menuAfterEscape": {
         "menuOpen": false,
-        "chatOpen": true,
-        "focus": "Table menu"
+        "chatOpen": false,
+        "focus": "Jarrod–0 points00"
+      },
+      "chatTabs": [
+        "Chat",
+        "Sounds & stickers",
+        "Mute players",
+        "Minimize chat",
+        "Chat",
+        "React angry",
+        "React happy",
+        "React clap",
+        "React laugh",
+        "React fire",
+        "React sheep",
+        "Say something…",
+        "Send"
+      ],
+      "chatAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Roll for first placeAsk for "
       },
       "tap": {
         "menuOpen": true,
-        "chatOpen": true
+        "chatOpen": false
+      },
+      "menuOpen": true,
+      "chatOpen": false,
+      "overlap": 0,
+      "picture": "layers-proposed-1280x720.png",
+      "afterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Table menu"
       }
     }
   ]
