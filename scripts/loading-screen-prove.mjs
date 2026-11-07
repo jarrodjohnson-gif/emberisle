@@ -31,13 +31,30 @@ const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
-async function open(size, { skip = false, reducedMotion = "no-preference", hold = false, fail = false, slow = false, stall = 0 } = {}) {
+async function open(size, { skip = false, reducedMotion = "no-preference", hold = false, fail = false, slow = false, stall = 0, trace = false } = {}) {
   const ctx = await browser.newContext({ viewport: size, deviceScaleFactor: SHOTS ? 2 : 1, reducedMotion, hasTouch: size.width < 900, isMobile: false });
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   if (skip) await page.addInitScript(() => (window.__emberisleSkipIntro = true));
+  if (trace) {
+    // #1385: what the page did around Start, printed with the result: when the bar read 100%, the main thread's long tasks,
+    // and the island's draws and GL programs since Start.
+    await page.addInitScript(() => {
+      const t = (window.__trace = { long: [], at100: 0, start: 0, renders: 0, programs: 0 });
+      new PerformanceObserver((l) => l.getEntries().forEach((e) => t.long.push([e.startTime, e.duration]))).observe({ type: "longtask", buffered: true });
+      new MutationObserver(() => {
+        if (!t.at100 && document.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow") === "100") t.at100 = performance.now();
+      }).observe(document, { subtree: true, attributes: true, childList: true });
+      addEventListener("click", (e) => {
+        if (t.start || e.target?.textContent !== "Start") return;
+        t.start = performance.now();
+        t.renders = window.__isle?.renders ?? 0;
+        t.programs = window.__isle?.renderer?.info?.programs?.length ?? 0;
+      }, true);
+    });
+  }
   if (stall) {
     // #1385: from the moment the title card appears, every animation frame is held back for `stall` ms while the page's
     // scripts and timers run on, as when a slow GPU or a loaded machine delays frames.
@@ -161,15 +178,31 @@ try {
 
   // Reduced motion: no push, a cross-fade that lands the title card in well under a second.
   {
-    const { ctx, page, errors } = await open({ width: 390, height: 844 }, { reducedMotion: "reduce" });
+    const { ctx, page, errors } = await open({ width: 390, height: 844 }, { reducedMotion: "reduce", trace: true });
     await page.waitForFunction(() => document.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow") === "100", null, { timeout: 60_000 });
     await start(page).click();
     const t0 = Date.now();
-    await page.getByTestId("title-card").waitFor();
-    const moved = await page.getByTestId("loading-card").evaluateAll((els) => els.map((el) => el.style.transform).join(""));
-    await page.getByTestId("loading-card").waitFor({ state: "detached", timeout: 2000 });
-    const ms = Date.now() - t0;
-    check(ms < 1000 && !moved, "reduced motion: a cross-fade only (the card never moves) and the title is up in under a second", { ms });
+    const traced = () =>
+      page.evaluate(() => {
+        const t = window.__trace;
+        return {
+          at100: Math.round(t.at100),
+          start: Math.round(t.start),
+          long: t.long.filter(([s, d]) => s + d >= t.at100).map(([s, d]) => `${Math.round(s - t.start)}+${Math.round(d)}`),
+          draws: (window.__isle?.renders ?? 0) - t.renders,
+          programs: `${t.programs}->${window.__isle?.renderer?.info?.programs?.length ?? 0}`,
+        };
+      });
+    let ms;
+    try {
+      await page.getByTestId("title-card").waitFor();
+      const moved = await page.getByTestId("loading-card").evaluateAll((els) => els.map((el) => el.style.transform).join(""));
+      await page.getByTestId("loading-card").waitFor({ state: "detached", timeout: 2000 });
+      ms = Date.now() - t0;
+      check(ms < 1000 && !moved, "reduced motion: a cross-fade only (the card never moves) and the title is up in under a second", { ms });
+    } finally {
+      console.log(`     reduced motion trace (ms from navigation; long tasks as ms-from-Start+duration): ${JSON.stringify({ ms: ms ?? Date.now() - t0, ...(await traced()) })}`);
+    }
     check(errors.length === 0, "reduced motion: no browser errors", errors);
     await ctx.close();
   }
