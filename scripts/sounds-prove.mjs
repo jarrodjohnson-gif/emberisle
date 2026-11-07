@@ -684,16 +684,30 @@ try {
     const ember = { id: "s1", name: "Ember" };
     const lucky = { id: "s2", name: "Lucky Diggler" };
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-    window.__plays = [];
+    // Sounds are paced 150 ms apart behind whatever the sections before queued, so a ring has no fixed delay: wait for the
+    // first clip (up to 5 s), then 300 ms more to see whether it repeats. Start from a drained queue (400 ms of silence).
+    const quiet = async () => {
+      let n = -1;
+      while (window.__plays.length !== n) {
+        n = window.__plays.length;
+        await sleep(400);
+      }
+      window.__plays = [];
+    };
+    const rang = async () => {
+      const end = Date.now() + 5000;
+      while (!window.__plays.length && Date.now() < end) await sleep(25);
+      await sleep(300);
+      return window.__plays.map((x) => x.file);
+    };
+    await quiet();
     window.__emberisle.setState({ seats: [ember] });
     pushSeats([ember, lucky]);
-    await sleep(300);
-    const joined = window.__plays.map((x) => x.file);
+    const joined = await rang();
     window.__plays = [];
     const isaac = { ...ember, name: "Isaaac" };
     pushSeats([isaac, lucky]);
-    await sleep(300);
-    const renamed = window.__plays.map((x) => x.file);
+    const renamed = await rang();
     window.__plays = [];
     pushSeats([isaac, lucky]);
     await sleep(300);
