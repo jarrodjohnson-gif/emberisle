@@ -10,12 +10,12 @@ Author: Claude Opus 5.5, 2026-11-07. Base: `main` at `a3dde1fd`, with profiles s
 - The game makes the code when a profile is made. It shows it **once**, on a "Save your recovery code" screen.
 - Forgot your PIN? Tap **Forgot your PIN? Use your recovery code** under Sign in. Type your login, the code and a new PIN.
 - The code only works **together with its login**. A code typed with any other login does nothing.
-- Wrong codes are strictly limited. After 10 wrong codes in a profile's whole life, its code stops working. Only your local reset unlocks it.
-- With these limits, a stranger guessing B has about **1 chance in 73 million**, ever. Today's PIN is about 1 in 333.
+- Wrong codes are strictly limited. After 10 wrong tries at one code, it stops working. Your local reset, or the owner making a new code with their PIN, unlocks it.
+- With these limits, a stranger guessing B has about **1 chance in 73 million** per code, ever. Today's PIN is about 1 in 333.
 - The code is stored scrambled (the same scrypt hashing as the PIN). Nobody can read it back, not even you as host.
 - So "show my code" can't show the old one. **New recovery code** makes a new one instead, after the player types their PIN.
 - Lost the code and the PIN? Your local reset still works, as today. It also gives the friend a new code.
-- Four questions for you are at the end. The main one: which code (A, B, C or D)?
+- Five questions for you are at the end. The main one: which code (A, B, C or D)?
 
 ## The pictures
 
@@ -68,10 +68,27 @@ From the final run of [capture.mjs](capture.mjs). Full numbers are in [measureme
 - The recovery form asks for the login and the code together. The host looks up the login, then checks that profile's code.
 - A code is never searched for across profiles. So guessing one code tells you nothing about anybody else.
 - Only the profile's **current** login works. A former login reserved by a rename (#1069), or the login of a deleted profile (#891), acts like an unknown login.
-- An unknown login costs the same hashing work as a real one, with a dummy check, as for PINs today.
 - Every refusal reads the same: "Couldn't use that code. Check your login and code, or try again later."
-- That covers a wrong code, an unknown login, a spent budget and a locked code. Nobody learns which.
 - The form always adds "Still stuck? Ask the host for a reset."
+
+**Making refusals look alike.** The words are not enough: a refusal must also take the same time.
+Today's PIN check does not fully do this, and the code check must not copy it:
+
+- `refused()` (`server/profiles.mjs:334–345`) answers a spent budget at once, before any hashing.
+- A real login gets a life lock there; an unknown login is called with `lifetime` false and never gets one.
+- So after 10 wrong tries, a real login would be refused instantly, while an unknown login still takes about 0.4 s.
+- That gap would tell a stranger which logins are real.
+
+The build closes it with these rules:
+
+1. **New PIN first.** The host checks the new PIN's format and that both copies match before it looks at the code. A bad new PIN never reveals that the code was right.
+2. **Same work every time.** A try refused by a spent budget or a locked code still runs one dummy hash, so it takes as long as a real check.
+3. **Unknown logins get a life count too.** `unknownRecovery[login]` keeps the same 3, 5 and 10 counters as a real code.
+4. Creating a profile deletes that login's `unknownRecovery` entry, as `create` already does for `unknownLogins` (`server/profiles.mjs:496`).
+5. **A profile with no code yet** (every profile made before this feature) is checked against the dummy hash and counted exactly like an unknown login.
+6. Only then does "Nobody learns which" hold: a wrong code, an unknown login, a profile with no code, a spent budget and a locked code all look and time alike.
+
+`server/profile-auth-prove.mjs:250` only compares a wrong PIN with an unknown login. The new proof adds a line for the refused path: a locked real login and a locked unknown login answer alike and take about the same time.
 
 ### What a wrong code costs
 
@@ -81,17 +98,26 @@ Codes get their own budget. It sits beside the PIN budget and never touches it.
 |---|---|---|
 | Per profile, short | 3 wrong in 15 minutes, then a 15-minute wait | 5 wrong in 15 minutes, then a 15-minute wait |
 | Per profile, per day | 5 wrong in a rolling 24 hours | 10 wrong in a rolling 24 hours |
-| Per profile, for life | **10 wrong, then the code is locked** | 30 wrong, then PIN sign-in is locked |
+| Per code, for life | **10 wrong, then the code is locked** | 30 wrong per profile, then PIN sign-in is locked |
 | Per address | **5 code tries per hour** (new), inside the 20 sign-in requests per minute | 20 sign-in requests per minute |
-| Unlocks | Only your local reset | Only your local reset |
+| Unlocks | Your local reset, or the owner making a new code with their PIN | Only your local reset |
 
 - Each try is reserved on disk before hashing, as PIN tries are. A host crash counts it as a wrong try.
 - A right code does not give back earlier wrong tries.
-- Time, restarts, renames and a successful sign-in never clear the code's counters.
+- **A new code starts with fresh counters.** Wrong tries at the old code say nothing about a new random code.
+- So the life limit is 10 wrong tries **per code**. Making a new code needs the PIN, so a stranger can't use this to get more tries.
+- Apart from a new code or your local reset, nothing clears the code's counters: not time, restarts, renames or a successful sign-in.
+
+**The per-address limit** is kept in the host's memory only (`windowed`, `server/profile-protocol.mjs:64`), like today's 20-per-minute limit.
+
+- A host restart empties it. The per-code counters are on disk and survive.
+- Right and wrong codes both count toward the 5 per hour.
+- Everyone behind one address shares it: a home, a school, a phone network, or one IPv6 /64.
+- So one friend spending 5 tries can make a housemate wait up to an hour. The per-code limits are what keep codes safe.
 - **A code never refills the PIN budget and never clears a PIN lock** (the accepted #766 amendments). A PIN never refills the code budget either.
 - After a code reset, the PIN keeps its failure history. The daily windows still run out on their own.
 - **Under a PIN life lock (30 wrong PINs), the code is refused** with today's message: "PIN changes are locked. Contact the host for a verified local reset." See question 2.
-- The code is checked first, so only someone with the right code learns about the lock.
+- The new PIN is checked first, then the code. So only someone with the right code learns about the lock.
 
 ### What the right code does
 
@@ -100,6 +126,14 @@ Codes get their own budget. It sits beside the PIN budget and never touches it.
 - Every other device is signed out, as with Change PIN today. This device is signed in.
 - The code stays the same. It is permanent, as you asked.
 - The login, profile, history and win song are not touched.
+- **Temporary PINs.** Your local reset deletes the code. So while a temporary PIN waits to be changed (`pinMustChange`), the profile has no code, and every code try fails like an unknown login.
+- The friend changes the temporary PIN as today. Only then do they get a code again (question 4, or **Get a recovery code**).
+
+**Build notes.**
+
+- Hashing runs outside the store's write step. So inside the final write, the host checks again that nothing changed meanwhile.
+- It re-checks the PIN life lock, and that the stored code's salt and hash are still the ones it tested. `samePin` does this for PINs today (`server/profiles.mjs:606`).
+- If either changed, the try fails and saves nothing, as a stale PIN change does today.
 
 ### Making a new code ("show my code")
 
@@ -107,7 +141,8 @@ Codes get their own budget. It sits beside the PIN budget and never touches it.
 - **New recovery code** in the signed-in sheet makes a fresh code. The old one stops working at once.
 - It asks for the current PIN. A wrong PIN counts against the PIN budget, as on Change PIN.
 - Why the PIN: a stolen remembered device must not mint a code and then reset the PIN.
-- `profiles.md` already promises that "a stolen device credential ... cannot reset the PIN or revoke the owner's other devices". This keeps that promise.
+- `profiles.md` says: "A stolen device credential plus 30 wrong guesses therefore cannot reset the PIN or revoke the owner's other devices." Asking for the PIN here keeps that true.
+- The new code starts with fresh counters (see above).
 - Under a PIN life lock, New recovery code is refused, like Change PIN.
 - The new code then shows on the same "Save your recovery code" screen.
 - Profiles made before this feature have no code. Their summary says "No recovery code yet." with **Get a recovery code**. It works the same way.
@@ -120,7 +155,7 @@ Codes get their own budget. It sits beside the PIN budget and never touches it.
 | A remembered device and their PIN | Same: New recovery code. |
 | A remembered device, but not their PIN | Ask you for a local reset. The device alone can't make a code. |
 | Nothing (no PIN, no device, no code) | Ask you for a local reset, as today. |
-| The code, but the code is locked (10 wrong) | Ask you for a local reset. |
+| The code, but the code is locked (10 wrong) | With their PIN: New recovery code. Without it: ask you for a local reset. |
 
 ### Your local reset (#763, #857)
 
@@ -140,9 +175,10 @@ Codes get their own budget. It sits beside the PIN budget and never touches it.
 ## Short code against longer codes
 
 The "chance" columns are for a stranger who knows the login and has no other help.
-"Whole life" uses the 10-try life limit. "Every profile" assumes 30 profiles on the host, so 300 tries.
+"Whole life" uses the 10-try limit for one code. Each new code the owner makes gives a stranger 10 more tries against a fresh code.
+"Every profile" assumes 30 profiles on the host, so 300 tries.
 
-| Option | Example | Possible codes | Chance on one profile, whole life | Chance on any of 30 profiles | Chance per year with no life limit (5 a day) |
+| Option | Example | Possible codes | Chance on one code, whole life | Chance on any of 30 profiles | Chance per year with no life limit (5 a day) |
 |---|---|---|---|---|---|
 | Today's PIN, for scale | 4821 | 10,000 | 1 in 333 (30 tries) | — | — |
 | **A.** 6 digits | 482-913 | 1,000,000 | 1 in 100,000 | 1 in 3,333 | 1 in 548 |
@@ -156,13 +192,14 @@ The "chance" columns are for a stranger who knows the login and has no other hel
 
 **If someone steals the host's `profiles.json` file**, they can test guesses on their own computer, with no limits.
 One check took 0.34 to 0.41 s, average 0.38 s, on one core of this test machine (5 runs, Node 22.23.4, `N=131072, r=8, p=1`).
-Trying every value on one core takes:
+Trying every value on one core takes (a full sweep; on average the right value turns up halfway):
 
 | Today's PIN | A | B | C | D |
 |---|---|---|---|---|
-| about 63 minutes | about 4.4 days | about 8.7 years | about 7,800 years | billions of years |
+| about 63 minutes | about 4.4 days | about 8.8 years | about 7,900 years | billions of years |
 
-- A thief with many cores divides these times.
+- A thief with many cores divides these times. With 100 cores, B's 8.8 core-years becomes about a month.
+- The code is permanent, while a PIN can be changed. So a code cracked from an old copy of the file stays useful until the owner makes a new code.
 - The PIN already falls in about an hour. So even with A, the code is never the weakest part of a stolen file.
 
 **Why B.** It is as short to write as A: six symbols. It is 729 times harder to guess than A.
@@ -170,7 +207,7 @@ So the life limit is a second safety, not the only one. Letters cost a keyboard 
 C is safer still, but eight symbols are harder to copy right. D is the long code you turned down on #1070.
 
 **Cost of the life limit.** Someone who knows a friend's login can spend that friend's 10 code tries on purpose.
-The friend then needs your reset. The PIN has the same problem today.
+The friend then makes a new code with their PIN, or needs your reset if they forgot it. The PIN has the same problem today.
 The 5-a-day limit makes burning one profile's 10 tries take over a day.
 The 5-per-hour address limit stops one address from burning many profiles at once.
 
@@ -258,7 +295,10 @@ Nothing is loosened, removed or replaced. Every line below still passes with thi
 - create shows the code once; the store holds only its hash; no log line holds it;
 - the right code with the right login resets the PIN, signs out the other devices, keeps the code;
 - the right code with another login, a former login, or a deleted profile's login fails alike;
-- the 3, 5 and 10 code limits, the 5-per-hour address limit, and their survival across a restart;
+- the 3, 5 and 10 code limits survive a restart; the 5-per-hour address limit holds while the host runs (it is in memory, like today's address limits);
+- a new code starts with fresh counters;
+- a bad new PIN is refused before the code is checked, and costs no code try;
+- a profile with no code, an unknown login, and a spent or locked budget (real and unknown login) answer alike and take about the same time;
 - code tries leave the PIN's `guard` byte for byte unchanged, and PIN tries leave the code's counters unchanged;
 - a PIN life lock refuses the right code with `pinLocked`;
 - New recovery code needs the PIN, kills the old code, and is refused under a PIN life lock;
@@ -279,6 +319,7 @@ The recovery and New code forms can join `ProfileForms` or a new chunk. If a cei
 2. **Under a PIN life lock (30 wrong PINs), may the code still reset the PIN?** Recommended: **no**. The lock still needs your reset, as #1070 recommended. "Yes" would let a code holder skip a lock that someone else's guessing set off.
 3. **"Show my code" can't show the old code, because only its hash is kept. Is New recovery code (with the PIN) right instead?** Recommended: **yes**. Keeping codes readable would put every friend's code in the host's file in plain form.
 4. **After your local reset, should the friend get a new code automatically?** Recommended: **yes**. The old code may be what went wrong, and you never have to see or send a code.
+5. **How should "Forgot your PIN? Use your recovery code" look?** In the pictures it uses the sheet's plain (ghost) button style, so it reads like plain text. Recommended: **keep it plain**. It stays quiet beside Sign in. The other choice is an outlined button, like Create profile, which is easier to spot but competes with Sign in.
 
 ## How it was made
 
@@ -291,6 +332,7 @@ The recovery and New code forms can join `ProfileForms` or a new chunk. If a cei
 - The run fails if the real sheet, host line, Sign in form, Login and PIN fields, Sign in, Create profile, Continue as guest, Show PIN or Remember me are missing.
 - It also fails if the real signed-in summary (Signed in as, Edit profile, Change PIN, Done, Sign out) is missing after Create.
 - It also fails if a control is under 44 px, the sheet or its main button leaves the screen, the page scrolls, the code is cut, Done works before the tick, or the page logs an error.
+- The "Done is off until ticked" check tests the mock's own little handler, not the real sheet. The build's proof must test the real one.
 - Pictures are at device scale 1.5, with touch, to keep the set under 8 MB. Chromium 153.0.8010.12.
 - The host line reads `ws://127.0.0.1:…` because of the development switch. Through your tunnel link it shows the `wss://` address.
 - Run it from the repo root, one browser at a time: `node --import ./server/register.mjs docs/design/recovery-code-1070/capture.mjs`. Add `--save` to replace the pictures here.
