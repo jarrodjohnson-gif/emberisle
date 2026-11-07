@@ -204,7 +204,7 @@ try {
     for (const row of ["Offer a trade…", "Mention @Mira in chat"]) assert.ok(oppOnline.buttons.some((b) => b.name === row), `${tag}: "${row}" on an opponent online`);
     await shut("Escape", "p2", "opponent online");
 
-    console.log(`ok ${tag}${phone ? ` (insets ${JSON.stringify(insets)})` : ""}: no reminder on the seats; reminder last in every ledger; no seat moves; ${phone ? `sheet ${JSON.stringify(own.box)} own, ${JSON.stringify(ownOnline.box)} online, inside the safe area, rows and Close >= 44 px` : "rail menu unchanged"}; focus, Escape, Close, tap outside and the card work; watcher has no actions; all four trade routes`);
+    console.log(`ok ${tag}${phone ? ` (insets ${JSON.stringify(insets)})` : ""}: no reminder on the seats; reminder last in every ledger; ${phone ? `no seat moves; sheet ${JSON.stringify(own.box)} own, ${JSON.stringify(ownOnline.box)} online, inside the safe area, rows and Close >= 44 px` : "rail menu unchanged"}; focus, Escape, Close, tap outside and the card work; watcher has no actions; all four trade routes`);
     await context.close();
   }
   assert.deepEqual(errors, [], "page errors");
