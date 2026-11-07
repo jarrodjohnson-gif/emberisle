@@ -114,6 +114,7 @@
     "chrome-prove": "node scripts/chrome-prove.mjs",
     "issue-1274-proposal-prove": "node docs/design/issue-1274/capture.mjs",
     "contrast-prove": "node scripts/contrast-prove.mjs",
+    "trade-contrast-prove": "node scripts/trade-contrast-prove.mjs",
     "title-prove": "node scripts/title-prove.mjs",
     "howto-prove": "node scripts/howto-prove.mjs",
     "reflow-prove": "node scripts/reflow-prove.mjs",
