@@ -90,7 +90,7 @@ the file it plays is in `public/audio/`.
 **Proposed** (needs Jarrod's OK, and nothing here is decided):
 
 - The UI clicks drop to 0.5, the bible's "−6 dB under pieces". Today they play at 1.0.
-- Ambience, when turned on, plays at 0.12 (the bible's −18 dB) and never ducks the dice.
+- Ambience plays at 0.12 (the bible's −18 dB) and never ducks the dice.
 - When a second long clip is asked for, the higher one wins and the other is dropped or cut. The order, from lowest to
   highest, would be game start < end music < soundboard < match point < win/lose sting. Today two different mp3s overlap.
 - At most 3 short clips sound at once. The pacing already comes close to this.
@@ -130,7 +130,7 @@ to about 15 s and 300 kB at most.
 | `end_` | the end screen's music | `end_music` (#635) |
 | `turn_` | your turn starts | `click_005.wav` (to be replaced, Decision 5) |
 | `timer_` | the last seconds of your turn | none yet (Decision 5) |
-| `amb_` | the optional ambience loop | none yet (Decision 2) |
+| `amb_` | the optional ambience loop | none yet (Decisions 2 and 7) |
 
 Any builder can then wire a new soundboard clip with a one-line whitelist and label change: one entry in `SOUNDBOARD` in
 `server/chat.mjs`, plus its `FILES` and `SOUNDBOARD` entries in `src/lib/sound.ts`. Any other slot is a one-line `FILES` change
@@ -143,7 +143,7 @@ All six are answered by the Decisions below. Each question keeps the recommendat
 1. **Overall vibe?** Recommended: *dry, woody board game for every core sound, with the memes kept on the soundboard*.
    **Answered (Decision 1):** as recommended.
 2. **Music beyond start and end?** Recommended: *no music loop; add an optional very quiet sea-and-wind ambience, off by
-   default*. **Answered (Decision 2):** as recommended.
+   default*. **Answered (Decision 2):** as recommended, except the default: on, see Decision 7.
 3. **How loud are the meme clips against the core sounds?** Recommended: *0.4, below the music's 0.5*. **Answered
    (Decision 3):** 0.4, then replaced on 2026-10-24: no blanket volume, the files are leveled by type (see Decision 3).
 4. **Replace soundboard and music clips with no known source (Wololo is from Age of Empires)?** Recommended: *yes, use CC0
@@ -165,7 +165,7 @@ These answer section 4 and override any recommendation above that disagrees.
 5. **New cues:** only two: a **"your turn"** cue for the seat whose turn starts, and a **turn-timer countdown** tick for the last seconds of your turn. No join/leave, emote-received or payout cues.
 6. **Licensing:** Jarrod keeps the soundboard and meme clips (Wololo, the Charlie Kirk song, the airhorn, etc.) public and accepts the risk, since this is a free game for friends. The README's "CC0 only" line becomes "CC0 or owner-approved".
 7. **Ambience on by default (2026-10-16, #662):** the sea and wind ambience is **on by default**, still very quiet. This replaces "off by default" in item 2. Its on/off toggle lives in the Sound panel. Source: [#662 comment](https://github.com/jarrodjohnson-gif/emberisle/issues/662#issuecomment-6223432727).
-8. **Sound panel (2026-11-07, option A):** the Table menu has one **Sound** row, not two sound toggles. The row opens the Sound panel. Mocks: `docs/design/sound-sheet-1276/`. Built in PR #1396.
+8. **Sound panel (2026-11-07, option A):** the Table menu has one **Sound** row, not two sound toggles. The row opens the Sound panel. Mocks: `docs/design/sound-sheet-1276/`. Built in open PR #1396, not yet on main.
 
 ## Owner clips carried to main (#1107)
 
