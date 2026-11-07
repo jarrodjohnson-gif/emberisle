@@ -6,6 +6,7 @@ import { EmojiRow, Emote, setTab, SoundsTab, useMutedSeats, useTalk, type ChatTa
 import { useGame, type GameLogLine } from "@/lib/game/store";
 import type { ChatLine } from "@/lib/net/table";
 import { LazyBoundary } from "@/lib/lazy";
+import { OPEN_SOUND_EVENT } from "@/lib/sound-settings";
 import { cn } from "@/lib/utils";
 import { useViewport } from "@/lib/viewport";
 
@@ -328,6 +329,17 @@ function MuteMenu({ above = false }: { above?: boolean }) {
               </button>
             );
           })}
+          <button
+            type="button"
+            data-testid="chat-mute-sound"
+            onClick={() => {
+              setOpen(false);
+              window.dispatchEvent(new Event(OPEN_SOUND_EVENT));
+            }}
+            className="h-11 shrink-0 cursor-pointer rounded-control px-3 text-left text-sm text-zinc-700 underline hover:text-zinc-900"
+          >
+            Sound settings
+          </button>
         </div>
       ) : null}
     </div>

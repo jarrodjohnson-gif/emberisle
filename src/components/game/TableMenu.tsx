@@ -1,15 +1,18 @@
 // #442: the table's one top-right control. A 44 px quiet "…" button opens a small sheet holding what the top chrome used
-// to spread out: the turn number and watcher count, How to play, Costs, the sound toggle, the table code (online), Copy log (#899, online) and Leave table.
+// to spread out: the turn number and watcher count, How to play, Costs, Sound, the table code (online), Copy log (#899, online) and Leave table.
 // A watcher's own "Watching" chip stays in the header beside the button (docs/design/spectator.md), not in here.
 // Opens with focus on the first row; Escape, a pointerdown outside or focus leaving closes it, and Escape puts the focus
 // back on the button. Leaving an online seat asks first (the seat goes to a bot for good); Stay, Escape or 5 s cancels.
+// #669: Sound opens the Sound panel (SoundSheet.tsx) in the same place, with every level showing; Back and Escape return to the rows.
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Box, Copy, Ellipsis, Eye, Hammer, LogOut, ScrollText, Volume2, VolumeX, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ConnectionOverlay } from "@/components/game/chunks";
+import { ConnectionOverlay, SoundSheet, soundSheet } from "@/components/game/chunks";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { useGame } from "@/lib/game/store";
-import { haptics, play, setMusicOn, setMuted, useMuted, useMusicOn } from "@/lib/sound";
+import { cn } from "@/lib/utils";
+import { haptics, play, useMuted } from "@/lib/sound";
+import { OPEN_SOUND_EVENT, useSoundMix } from "@/lib/sound-settings";
 import { LazyBoundary } from "@/lib/lazy";
 import { bugReportUrl } from "@/lib/bug-report";
 
@@ -31,11 +34,12 @@ export function TableMenu() {
   const view = useGame((s) => s.playView);
   const setViewChoice = useGame((s) => s.setViewChoice);
   const muted = useMuted();
-  const music = useMusicOn();
+  const master = useSoundMix().master;
   const { state: copied, copy, reset } = useCopy<"code" | "log">();
   const gameLog = useGame((s) => s.gameLog);
   const [open, setOpen] = useState(false);
   const [asking, setAsking] = useState(false);
+  const [panel, setPanel] = useState<"menu" | "sound">("menu");
   const trigger = useRef<HTMLButtonElement>(null);
   const sheet = useRef<HTMLDivElement>(null);
   const leaveRef = useRef<HTMLButtonElement>(null);
@@ -51,13 +55,20 @@ export function TableMenu() {
     setAsking(false);
     if (refocus) trigger.current?.focus();
   };
+  const sound = panel === "sound";
+  const back = () => setPanel("menu");
   const stay = () => {
     refocusLeave.current = true;
     setAsking(false);
   };
 
+  // The chunk is fetched as the menu opens, so Sound shows at once when it is pressed.
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setPanel("menu");
+      return;
+    }
+    void soundSheet.prefetch();
     sheet.current?.querySelector<HTMLElement>("button")?.focus();
     const onDown = (e: PointerEvent) => {
       const t = e.target as Node | null;
@@ -79,11 +90,22 @@ export function TableMenu() {
       e.stopPropagation();
       play("ui_back");
       if (asking) stay();
+      else if (panel === "sound") back();
       else close(true);
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [open, asking]);
+  }, [open, asking, panel]);
+
+  // The Mute players list in the chat (Chat.tsx) points here.
+  useEffect(() => {
+    const show = () => {
+      setPanel("sound");
+      setOpen(true);
+    };
+    window.addEventListener(OPEN_SOUND_EVENT, show);
+    return () => window.removeEventListener(OPEN_SOUND_EVENT, show);
+  }, []);
 
   useEffect(() => {
     if (!asking) {
@@ -121,15 +143,23 @@ export function TableMenu() {
           ref={sheet}
           id="table-menu"
           role="dialog"
-          aria-label="Table menu"
-          data-testid="table-menu"
-          className="absolute right-0 top-full z-20 mt-2 flex max-h-[calc(100dvh-5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-64 flex-col overflow-y-auto rounded-sheet bg-surface p-2 shadow-[0_8px_32px_rgb(28_25_21_/_0.18)]"
+          aria-label={sound ? "Sound" : "Table menu"}
+          data-testid={sound ? "sound-menu" : "table-menu"}
+          className={cn(
+            "absolute right-0 top-full z-20 mt-2 flex max-h-[calc(100dvh-5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex-col",
+            sound ? "ss" : "w-64 overflow-y-auto rounded-sheet bg-surface p-2 shadow-[0_8px_32px_rgb(28_25_21_/_0.18)]",
+          )}
           onBlur={(e) => {
             const to = e.relatedTarget as Node | null;
             if (to && !sheet.current?.contains(to) && !trigger.current?.contains(to)) close(false);
           }}
         >
-          <p className="flex items-center gap-2 px-3 py-1 text-caption text-muted">
+          {sound ? (
+            <LazyBoundary failed={<p className="px-3 py-2 text-body">Sound did not load. Close the menu and try again.</p>}>
+              <SoundSheet onBack={back} onClose={() => close(true)} />
+            </LazyBoundary>
+          ) : null}
+          <p className={cn(sound ? "hidden" : "flex", "items-center gap-2 px-3 py-1 text-caption text-muted")}>
             <span>Turn {Math.max(1, state.turn)}</span>
             {watching > 0 ? (
               <span data-testid="watching-count" aria-label={`${watching} watching`} className="ml-auto flex items-center gap-1 tabular-nums">
@@ -138,7 +168,7 @@ export function TableMenu() {
               </span>
             ) : null}
           </p>
-          {asking ? (
+          {sound ? null : asking ? (
             <div
               role="alertdialog"
               aria-label="Leave the table?"
@@ -178,15 +208,14 @@ export function TableMenu() {
               >
                 <Hammer className={ICON} /> Costs
               </Button>
-              {/* A toggle, so the menu stays open to show the new state (#303). */}
-              <Button variant="ghost" className={ROW} data-testid="sound-toggle" aria-pressed={!muted} silent onClick={() => { setMuted(!muted); if (muted) play("ui_click"); }}>
+              {/* #669: one row for every sound setting; the levels live in the Sound panel. */}
+              <Button variant="ghost" className={ROW} data-testid="sound-entry" onClick={() => setPanel("sound")}>
                 {muted ? <VolumeX className={ICON} /> : <Volume2 className={ICON} />}
-                Table sounds {muted ? "off" : "on"}
-              </Button>
-              {/* #814: a stopgap until the Sound menu (#669) takes over the music. */}
-              <Button variant="ghost" className={ROW} data-testid="music-toggle" aria-pressed={music} silent onClick={() => setMusicOn(!music)}>
-                {music ? <Volume2 className={ICON} /> : <VolumeX className={ICON} />}
-                Music {music ? "on" : "off"}
+                Sound
+                <span className="ml-auto flex items-center gap-1 text-caption text-muted">
+                  {muted ? "Off" : `${Math.round(master * 100)}%`}
+                  <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                </span>
               </Button>
               {haptics.row}
               {/* The sea's look; the choice is remembered and overrides the GPU probe (docs/design/crystal-water.md). */}
@@ -239,9 +268,9 @@ export function TableMenu() {
           )}
           {/* Outside the question's branch: the field focuses itself when it mounts, and must not take the focus back from
               Leave table each time the question folds into the rows (CI has no clipboard, so the field is the common case). */}
-          <CopyFallback state={copied} label={copied?.what === "log" ? "Game log" : "Table code"} className="px-3" />
+          {sound ? null : <CopyFallback state={copied} label={copied?.what === "log" ? "Game log" : "Table code"} className="px-3" />}
           {/* #834/#913: one version line, including the connected host and an unambiguous build time. */}
-          <p data-testid="build-version" className="break-words px-3 pt-1 text-caption text-muted">
+          <p data-testid="build-version" hidden={sound} className="break-words px-3 pt-1 text-caption text-muted">
             client {__BUILD_SHA__}{mode === "online" ? ` · server ${serverSha ?? "unknown"}${serverSha && serverSha !== "dev" && __BUILD_SHA__ !== "dev" && serverSha !== __BUILD_SHA__ ? " · different builds" : ""}` : ""} · <time dateTime={__BUILD_TIME__}>{new Date(__BUILD_TIME__).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" })}</time>
           </p>
         </div>
