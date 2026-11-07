@@ -149,38 +149,73 @@ try {
 
     const isOpen = () => page.evaluate(() => ({ menuOpen: !!document.querySelector('[data-testid="table-menu"]'), chatOpen: !!document.querySelector('section[aria-label="Table chat"]') }));
     const label = () => page.evaluate(() => { const a = document.activeElement; return (a?.getAttribute("aria-label") || a?.textContent?.trim() || a?.placeholder || a?.tagName || "").replace(/\s+/g, " ").slice(0, 28); });
-    // Layers and keys, measured the same way on today's game and on the proposal.
+    // Layers and keys, measured the same way on today's game and on the proposal. The proposal's menu shows the Sound row
+    // the owner accepted in #1276; today's shows today's two sound rows.
+    const soundRow = (kind) => kind === "proposed" ? page.evaluate((html) => {
+      const menu = document.querySelector('[data-testid="table-menu"]');
+      menu?.querySelector('[data-testid="music-toggle"]')?.remove();
+      const t = menu?.querySelector('[data-testid="sound-toggle"]');
+      if (t) t.outerHTML = html;
+    }, entryRow()) : null;
+    const openMenuByKey = async (kind) => {
+      await page.getByRole("button", { name: "Table menu", exact: true }).focus();
+      await page.keyboard.press("Enter");
+      await page.getByTestId("table-menu").waitFor();
+      await soundRow(kind);
+      await page.locator('[data-testid="table-menu"] button').first().focus();
+    };
+    // What is drawn on top at a point: the menu, the chat, the chat's backdrop, or something else.
+    const topAt = () => page.evaluate(() => {
+      const what = (el) => !el ? "nothing" : el.closest('[data-testid="table-menu"]') ? "menu" : el.closest('section[aria-label="Table chat"]') ? "chat" : el.closest('[data-testid="chat-backdrop"]') ? "chat backdrop" : el.tagName.toLowerCase();
+      const a = document.querySelector('[data-testid="table-menu"]')?.getBoundingClientRect();
+      const b = document.querySelector('section[aria-label="Table chat"]')?.getBoundingClientRect();
+      const overlap = a && b ? Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)) : 0;
+      const out = { menuOpen: !!a, chatOpen: !!b, overlap: Math.round(overlap) };
+      if (a) out.atMenuCentre = what(document.elementFromPoint(a.left + a.width / 2, a.top + a.height / 2));
+      if (overlap) out.atOverlapCentre = what(document.elementFromPoint((Math.max(a.left, b.left) + Math.min(a.right, b.right)) / 2, (Math.max(a.top, b.top) + Math.min(a.bottom, b.bottom)) / 2));
+      return out;
+    });
     async function layers(kind) {
       const m = { which: `layers (${kind})`, viewport: tag };
-      // 1. A seat's bubble while the menu is open: is it drawn over the menu? (Bubbles ignore the pointer, so the test
-      // turns that off for a moment.)
+      // 1. A seat's bubble while the menu is open. Where the bubble does not reach the menu (wide screens and phones held
+      // sideways), the test moves it over the menu's centre, then asks what is drawn on top there. Bubbles ignore the
+      // pointer, so the test turns that off for a moment. No bubble at all counts as a failure (null).
       await say(`Bubble check, ${kind}`);
+      await page.waitForFunction(() => [...document.querySelectorAll(".seat-bubble")].some((b) => b.getBoundingClientRect().width > 1));
       await page.getByRole("button", { name: "Table menu", exact: true }).click();
       await page.getByTestId("table-menu").waitFor();
-      m.bubbleOverMenu = await page.evaluate(() => {
+      await soundRow(kind);
+      Object.assign(m, await page.evaluate(() => {
         const menu = document.querySelector('[data-testid="table-menu"]').getBoundingClientRect();
-        for (const b of document.querySelectorAll(".seat-bubble")) {
-          const r = b.getBoundingClientRect();
-          const x0 = Math.max(r.left, menu.left), x1 = Math.min(r.right, menu.right), y0 = Math.max(r.top, menu.top), y1 = Math.min(r.bottom, menu.bottom);
-          if (x1 - x0 < 2 || y1 - y0 < 2) continue;
-          const all = [b, ...b.querySelectorAll("*")];
-          for (const el of all) el.style.pointerEvents = "auto";
-          const hit = document.elementFromPoint((x0 + x1) / 2, (y0 + y1) / 2);
-          for (const el of all) el.style.pointerEvents = "";
-          return b.contains(hit);
-        }
-        return null;
-      });
-      // 2. Keys in the menu: the Tab order from its first row, then Escape.
+        const b = [...document.querySelectorAll(".seat-bubble")].find((x) => x.getBoundingClientRect().width > 1);
+        if (!b) return { bubbleOverMenu: null };
+        const r = b.getBoundingClientRect();
+        const natural = Math.max(0, Math.min(r.right, menu.right) - Math.max(r.left, menu.left)) * Math.max(0, Math.min(r.bottom, menu.bottom) - Math.max(r.top, menu.top));
+        const moved = natural < 4;
+        if (moved) b.style.transform = `translate(${menu.left + menu.width / 2 - (r.left + r.width / 2)}px, ${menu.top + menu.height / 2 - (r.top + r.height / 2)}px)`;
+        const q = b.getBoundingClientRect();
+        const x = (Math.max(q.left, menu.left) + Math.min(q.right, menu.right)) / 2, y = (Math.max(q.top, menu.top) + Math.min(q.bottom, menu.bottom)) / 2;
+        const all = [b, ...b.querySelectorAll("*")];
+        for (const el of all) el.style.pointerEvents = "auto";
+        const hit = document.elementFromPoint(x, y);
+        for (const el of all) el.style.pointerEvents = "";
+        b.style.transform = "";
+        return { bubbleOverMenu: b.contains(hit), bubbleNaturalOverlap: Math.round(natural), bubbleMoved: moved };
+      }));
+      // 2. Keys in the menu: the Tab order from its first row. Tab past the last row leaves the menu (it closes on blur).
+      await page.locator('[data-testid="table-menu"] button').first().focus();
       m.menuTabs = [await label()];
       for (let i = 0; i < 16; i++) {
         await page.keyboard.press("Tab");
         if (!(await page.evaluate(() => !!document.activeElement?.closest('[data-testid="table-menu"]')))) break;
         m.menuTabs.push(await label());
       }
-      if ((await isOpen()).menuOpen) await page.keyboard.press("Escape");
+      m.menuAfterTabOut = { ...(await isOpen()), focus: await label() };
+      if (m.menuAfterTabOut.menuOpen) await page.keyboard.press("Escape");
+      // Then Escape from inside a freshly opened menu.
+      await openMenuByKey(kind);
+      await page.keyboard.press("Escape");
       m.menuAfterEscape = { ...(await isOpen()), focus: await label() };
-      if (m.menuAfterEscape.menuOpen) await page.keyboard.press("Escape");
       // 3. Keys in the chat: the Tab order from the Chat tab, then Escape from the field.
       await openChat();
       await page.locator("#chat-tab-chat").focus();
@@ -194,7 +229,8 @@ try {
       await page.keyboard.press("Escape");
       m.chatAfterEscape = { ...(await isOpen()), focus: await label() };
       // 4. The chat open, then a tap where the menu button is. If the tap does not open the menu (a phone's chat backdrop
-      // takes it), Enter on the focused menu button does.
+      // takes it), Enter on the focused menu button does. Then: what is drawn on top at the menu's centre and where the two
+      // overlap.
       await openChat();
       const at = await page.getByRole("button", { name: "Table menu", exact: true }).boundingBox();
       await page.mouse.click(at.x + at.width / 2, at.y + at.height / 2);
@@ -202,25 +238,23 @@ try {
       m.tap = await isOpen();
       if (!m.tap.menuOpen) {
         await openChat();
-        await page.getByRole("button", { name: "Table menu", exact: true }).focus();
-        await page.keyboard.press("Enter");
-        await page.getByTestId("table-menu").waitFor();
+        await openMenuByKey(kind);
+        m.openedBy = "Enter";
+      } else {
+        await soundRow(kind);
+        m.openedBy = "tap";
       }
-      Object.assign(m, await page.evaluate(() => {
-        const a = document.querySelector('[data-testid="table-menu"]')?.getBoundingClientRect();
-        const b = document.querySelector('section[aria-label="Table chat"]')?.getBoundingClientRect();
-        const overlap = a && b ? Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)) : 0;
-        return { menuOpen: !!a, chatOpen: !!b, overlap: Math.round(overlap) };
-      }));
       await page.mouse.move(0, 0);
+      Object.assign(m, await topAt());
       pictures.push([`layers-${kind}-${tag}.png`, await page.screenshot()]);
       m.picture = `layers-${kind}-${tag}.png`;
       await page.keyboard.press("Escape");
       m.afterEscape = { ...(await isOpen()), focus: await label() };
       if (m.afterEscape.chatOpen) await page.evaluate(() => window.__emberisle.getState().setChatOpen(false));
+      if (m.afterEscape.menuOpen) await page.keyboard.press("Escape");
       results.push(m);
-      console.log(`layers ${kind} ${tag}: bubble over menu ${m.bubbleOverMenu}; a tap on the menu button opens the menu ${m.tap.menuOpen}, chat left open ${m.tap.chatOpen}; then menu ${m.menuOpen}, chat ${m.chatOpen}, overlap ${m.overlap} px²; Escape leaves menu ${m.afterEscape.menuOpen}, chat ${m.afterEscape.chatOpen}, focus ${m.afterEscape.focus}`);
-      console.log(`keys ${kind} ${tag}: menu Tab ${m.menuTabs.join(" > ")}; Escape: menu ${m.menuAfterEscape.menuOpen}, focus ${m.menuAfterEscape.focus}; chat Tab ${m.chatTabs.join(" > ")}; Escape from field: chat ${m.chatAfterEscape.chatOpen}, focus ${m.chatAfterEscape.focus}`);
+      console.log(`layers ${kind} ${tag}: bubble over menu ${m.bubbleOverMenu} (natural overlap ${m.bubbleNaturalOverlap} px², moved ${m.bubbleMoved}); tap opens menu ${m.tap.menuOpen}, chat left open ${m.tap.chatOpen}; opened by ${m.openedBy}: menu ${m.menuOpen}, chat ${m.chatOpen}, overlap ${m.overlap} px², on top at menu centre ${m.atMenuCentre}, in the overlap ${m.atOverlapCentre ?? "-"}; Escape leaves menu ${m.afterEscape.menuOpen}, chat ${m.afterEscape.chatOpen}, focus ${m.afterEscape.focus}`);
+      console.log(`keys ${kind} ${tag}: menu Tab ${m.menuTabs.join(" > ")}; Tab out: menu ${m.menuAfterTabOut.menuOpen}; Escape: menu ${m.menuAfterEscape.menuOpen}, focus ${m.menuAfterEscape.focus}; chat Tab ${m.chatTabs.join(" > ")}; Escape from field: chat ${m.chatAfterEscape.chatOpen}, focus ${m.chatAfterEscape.focus}`);
     }
 
     // Today's game first, with no mock CSS: layers and keys, then the chat.
@@ -301,9 +335,10 @@ try {
     if (x.tabs.some((t) => t.cut)) fails.push(`${x.picture}: a tab label is cut`);
   }
   for (const x of results.filter((r) => r.which === "layers (proposed)")) {
-    if (x.bubbleOverMenu) fails.push(`${x.viewport}: a seat bubble draws over the menu`);
-    if (!x.tap.menuOpen || x.chatOpen || x.overlap) fails.push(`${x.viewport}: the menu and the chat are open together, or the tap missed the menu`);
+    if (x.bubbleOverMenu !== false) fails.push(`${x.viewport}: a seat bubble draws over the menu, or no bubble was tested (${x.bubbleOverMenu})`);
+    if (!x.tap.menuOpen || x.chatOpen || x.overlap || x.atMenuCentre !== "menu") fails.push(`${x.viewport}: the menu and the chat are open together, the tap missed the menu, or the menu is not on top (${x.atMenuCentre})`);
     if (x.afterEscape.menuOpen || x.afterEscape.focus !== "Table menu") fails.push(`${x.viewport}: Escape did not close the menu back to its button`);
+    if (x.menuAfterEscape.menuOpen || x.menuAfterEscape.focus !== "Table menu") fails.push(`${x.viewport}: Escape inside the menu did not close it back to its button`);
   }
   if (errors.length) fails.push(`${errors.length} browser errors`);
   if (fails.length) throw new Error(`capture checks failed:\n${fails.join("\n")}`);

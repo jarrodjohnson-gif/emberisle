@@ -6,6 +6,8 @@
       "which": "layers (today)",
       "viewport": "320x568",
       "bubbleOverMenu": true,
+      "bubbleNaturalOverlap": 4231,
+      "bubbleMoved": false,
       "menuTabs": [
         "How to play",
         "Costs",
@@ -16,15 +18,20 @@
         "Simple",
         "Diorama",
         "Overhead",
-        "Copy table code L2LM",
+        "Copy table code 2G46",
         "Copy log",
         "Report a bug",
         "Leave table"
       ],
-      "menuAfterEscape": {
+      "menuAfterTabOut": {
         "menuOpen": false,
         "chatOpen": false,
         "focus": "Open chat, 3 unread"
+      },
+      "menuAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Table menu"
       },
       "chatTabs": [
         "Chat",
@@ -50,9 +57,12 @@
         "menuOpen": false,
         "chatOpen": false
       },
+      "openedBy": "Enter",
       "menuOpen": true,
       "chatOpen": true,
       "overlap": 103424,
+      "atMenuCentre": "chat",
+      "atOverlapCentre": "chat",
       "picture": "layers-today-320x568.png",
       "afterEscape": {
         "menuOpen": false,
@@ -337,25 +347,31 @@
       "which": "layers (proposed)",
       "viewport": "320x568",
       "bubbleOverMenu": false,
+      "bubbleNaturalOverlap": 4834,
+      "bubbleMoved": false,
       "menuTabs": [
         "How to play",
         "Costs",
-        "Table sounds on",
-        "Music on",
+        "Sound80%",
         "Haptics on",
         "Crystal",
         "Simple",
         "Diorama",
         "Overhead",
-        "Copy table code L2LM",
+        "Copy table code 2G46",
         "Copy log",
         "Report a bug",
         "Leave table"
       ],
-      "menuAfterEscape": {
+      "menuAfterTabOut": {
         "menuOpen": false,
         "chatOpen": false,
         "focus": "Open chat, 4 unread"
+      },
+      "menuAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Table menu"
       },
       "chatTabs": [
         "Chat",
@@ -381,9 +397,11 @@
         "menuOpen": true,
         "chatOpen": false
       },
+      "openedBy": "tap",
       "menuOpen": true,
       "chatOpen": false,
       "overlap": 0,
+      "atMenuCentre": "menu",
       "picture": "layers-proposed-320x568.png",
       "afterEscape": {
         "menuOpen": false,
@@ -395,6 +413,8 @@
       "which": "layers (today)",
       "viewport": "390x844",
       "bubbleOverMenu": true,
+      "bubbleNaturalOverlap": 3488,
+      "bubbleMoved": false,
       "menuTabs": [
         "How to play",
         "Costs",
@@ -405,15 +425,20 @@
         "Simple",
         "Diorama",
         "Overhead",
-        "Copy table code GSGV",
+        "Copy table code U7S6",
         "Copy log",
         "Report a bug",
         "Leave table"
       ],
-      "menuAfterEscape": {
+      "menuAfterTabOut": {
         "menuOpen": false,
         "chatOpen": false,
         "focus": "Open chat, 3 unread"
+      },
+      "menuAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Table menu"
       },
       "chatTabs": [
         "Chat",
@@ -439,9 +464,12 @@
         "menuOpen": false,
         "chatOpen": false
       },
+      "openedBy": "Enter",
       "menuOpen": true,
       "chatOpen": true,
       "overlap": 51200,
+      "atMenuCentre": "menu",
+      "atOverlapCentre": "chat",
       "picture": "layers-today-390x844.png",
       "afterEscape": {
         "menuOpen": false,
@@ -726,25 +754,31 @@
       "which": "layers (proposed)",
       "viewport": "390x844",
       "bubbleOverMenu": false,
+      "bubbleNaturalOverlap": 3854,
+      "bubbleMoved": false,
       "menuTabs": [
         "How to play",
         "Costs",
-        "Table sounds on",
-        "Music on",
+        "Sound80%",
         "Haptics on",
         "Crystal",
         "Simple",
         "Diorama",
         "Overhead",
-        "Copy table code GSGV",
+        "Copy table code U7S6",
         "Copy log",
         "Report a bug",
         "Leave table"
       ],
-      "menuAfterEscape": {
+      "menuAfterTabOut": {
         "menuOpen": false,
         "chatOpen": false,
         "focus": "Open chat, 4 unread"
+      },
+      "menuAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Table menu"
       },
       "chatTabs": [
         "Chat",
@@ -770,9 +804,11 @@
         "menuOpen": true,
         "chatOpen": false
       },
+      "openedBy": "tap",
       "menuOpen": true,
       "chatOpen": false,
       "overlap": 0,
+      "atMenuCentre": "menu",
       "picture": "layers-proposed-390x844.png",
       "afterEscape": {
         "menuOpen": false,
@@ -783,7 +819,9 @@
     {
       "which": "layers (today)",
       "viewport": "844x390",
-      "bubbleOverMenu": null,
+      "bubbleOverMenu": true,
+      "bubbleNaturalOverlap": 0,
+      "bubbleMoved": true,
       "menuTabs": [
         "How to play",
         "Costs",
@@ -794,15 +832,20 @@
         "Simple",
         "Diorama",
         "Overhead",
-        "Copy table code QNMQ",
+        "Copy table code KWKA",
         "Copy log",
         "Report a bug",
         "Leave table"
       ],
-      "menuAfterEscape": {
+      "menuAfterTabOut": {
         "menuOpen": false,
         "chatOpen": false,
         "focus": "Ask for more time"
+      },
+      "menuAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Table menu"
       },
       "chatTabs": [
         "Chat",
@@ -828,9 +871,12 @@
         "menuOpen": false,
         "chatOpen": false
       },
+      "openedBy": "Enter",
       "menuOpen": true,
       "chatOpen": true,
       "overlap": 65024,
+      "atMenuCentre": "chat",
+      "atOverlapCentre": "chat",
       "picture": "layers-today-844x390.png",
       "afterEscape": {
         "menuOpen": false,
@@ -1114,26 +1160,32 @@
     {
       "which": "layers (proposed)",
       "viewport": "844x390",
-      "bubbleOverMenu": null,
+      "bubbleOverMenu": false,
+      "bubbleNaturalOverlap": 0,
+      "bubbleMoved": true,
       "menuTabs": [
         "How to play",
         "Costs",
-        "Table sounds on",
-        "Music on",
+        "Sound80%",
         "Haptics on",
         "Crystal",
         "Simple",
         "Diorama",
         "Overhead",
-        "Copy table code QNMQ",
+        "Copy table code KWKA",
         "Copy log",
         "Report a bug",
         "Leave table"
       ],
-      "menuAfterEscape": {
+      "menuAfterTabOut": {
         "menuOpen": false,
         "chatOpen": false,
         "focus": "Ask for more time"
+      },
+      "menuAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Table menu"
       },
       "chatTabs": [
         "Chat",
@@ -1159,9 +1211,11 @@
         "menuOpen": true,
         "chatOpen": false
       },
+      "openedBy": "tap",
       "menuOpen": true,
       "chatOpen": false,
       "overlap": 0,
+      "atMenuCentre": "menu",
       "picture": "layers-proposed-844x390.png",
       "afterEscape": {
         "menuOpen": false,
@@ -1172,7 +1226,9 @@
     {
       "which": "layers (today)",
       "viewport": "1280x720",
-      "bubbleOverMenu": null,
+      "bubbleOverMenu": false,
+      "bubbleNaturalOverlap": 0,
+      "bubbleMoved": true,
       "menuTabs": [
         "How to play",
         "Costs",
@@ -1182,15 +1238,20 @@
         "Simple",
         "Diorama",
         "Overhead",
-        "Copy table code EA3B",
+        "Copy table code SMUE",
         "Copy log",
         "Report a bug",
         "Leave table"
       ],
-      "menuAfterEscape": {
+      "menuAfterTabOut": {
         "menuOpen": false,
         "chatOpen": false,
         "focus": "Jarrod–0 points00"
+      },
+      "menuAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Table menu"
       },
       "chatTabs": [
         "Chat",
@@ -1216,9 +1277,12 @@
         "menuOpen": true,
         "chatOpen": true
       },
+      "openedBy": "tap",
       "menuOpen": true,
       "chatOpen": true,
       "overlap": 79872,
+      "atMenuCentre": "menu",
+      "atOverlapCentre": "menu",
       "picture": "layers-today-1280x720.png",
       "afterEscape": {
         "menuOpen": false,
@@ -1559,25 +1623,31 @@
     {
       "which": "layers (proposed)",
       "viewport": "1280x720",
-      "bubbleOverMenu": null,
+      "bubbleOverMenu": false,
+      "bubbleNaturalOverlap": 0,
+      "bubbleMoved": true,
       "menuTabs": [
         "How to play",
         "Costs",
-        "Table sounds on",
-        "Music on",
+        "Sound80%",
         "Crystal",
         "Simple",
         "Diorama",
         "Overhead",
-        "Copy table code EA3B",
+        "Copy table code SMUE",
         "Copy log",
         "Report a bug",
         "Leave table"
       ],
-      "menuAfterEscape": {
+      "menuAfterTabOut": {
         "menuOpen": false,
         "chatOpen": false,
         "focus": "Jarrod–0 points00"
+      },
+      "menuAfterEscape": {
+        "menuOpen": false,
+        "chatOpen": false,
+        "focus": "Table menu"
       },
       "chatTabs": [
         "Chat",
@@ -1603,9 +1673,11 @@
         "menuOpen": true,
         "chatOpen": false
       },
+      "openedBy": "tap",
       "menuOpen": true,
       "chatOpen": false,
       "overlap": 0,
+      "atMenuCentre": "menu",
       "picture": "layers-proposed-1280x720.png",
       "afterEscape": {
         "menuOpen": false,
