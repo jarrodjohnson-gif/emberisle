@@ -194,6 +194,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run registered-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run roll-off-oracle-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run readme-server-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run spiral-prove
