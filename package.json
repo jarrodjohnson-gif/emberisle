@@ -165,6 +165,7 @@
     "cap-prove": "node --import ./server/register.mjs server/cap-prove.mjs",
     "restart-prove": "node --import ./server/register.mjs server/restart-prove.mjs",
     "result-journal-prove": "node --import ./server/register.mjs server/result-journal-prove.mjs",
+    "profile-results-prove": "node --import ./server/register.mjs server/profile-results-prove.mjs",
     "trade-hold-prove": "node --import ./server/register.mjs server/trade-hold-prove.mjs",
     "seat-secret-log-prove": "node --import ./server/register.mjs server/seat-secret-log-prove.mjs",
     "preseat-prove": "node --import ./server/register.mjs server/preseat-prove.mjs",
