@@ -86,6 +86,7 @@ clips are the only reactions that play a sound for the table (Decision 3).
   - The name must be lowercase `a-z`, `0-9` and `-`, and the file name is the sticker id.
 - **Size limits:**
   - 128×128 px source, square. The largest allowed is 256×256.
+  - Non-square is accepted within 256×256 (owner decision on #663, 2026-11-06; `dark-smile` is 196×256). The tray, the seat bubble and the chat log draw every sticker with `object-fit: contain` in a square box, so it is never stretched or cropped. `npm run stickers-prove` checks the files and `npm run sticker-tray-prove` checks the display.
   - At most **50 KB** per file.
   - At most **24 stickers**, which fills 4 rows of 6 in the tray.
   - These caps belong in a check in `chat-prove`, or a small `sticker-prove`, so a bad drop fails CI rather than

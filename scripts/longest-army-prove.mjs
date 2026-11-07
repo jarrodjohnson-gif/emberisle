@@ -12,7 +12,7 @@
 // Zero console errors. Saves test-results/longest-army-<size>.png. Run: node scripts/longest-army-prove.mjs
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8453;

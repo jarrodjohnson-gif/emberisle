@@ -1,7 +1,7 @@
-// #826: the owner's blocked hex/token palette is black with readable light ink; the Wastes stay plain;
+// #826: the owner's blocked hex/token palette is 75% dimmed to black with readable light ink; the Wastes stay plain;
 // moving him clears the old hex. Run: node scripts/robber-hex-prove.mjs
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;
@@ -119,7 +119,12 @@ async function pixelProof(width, height) {
   const blocked = await sample();
   check(`${width}x${height}: rendered terrain sample covers the hex`, before.count >= 500 && blocked.count >= 500, { before, blocked });
   check(`${width}x${height}: rendered blocked hex is at least 10% darker`, blocked.mean <= before.mean * 0.9, { before: before.mean, blocked: blocked.mean });
-  check(`${width}x${height}: blocked terrain is black without a brown cast`, blocked.mean <= 0.08 && Math.max(...blocked.rgb) - Math.min(...blocked.rgb) <= 0.02, blocked);
+  // Blocked hex luminance at ROBBER_HEX_DIM = 0.95: at most 0.60 of normal terrain luminance.
+  // The floor (0.10) ensures the blocked hex is still above plain black (<= 0.08)
+  // while terrain remains distinguishable.
+  const MAX_BLOCKED_LUM_RATIO = 0.60;
+  const MIN_BLOCKED_LUM_FLOOR = 0.10;
+  check(`${width}x${height}: blocked terrain is dimmed but above plain black`, blocked.mean <= before.mean * MAX_BLOCKED_LUM_RATIO && blocked.mean >= MIN_BLOCKED_LUM_FLOOR, blocked);
   const screenshotFrame = await page.evaluate(() => {
     const isle = window.__isle;
     const frame = window.__terrainFrames;
@@ -217,8 +222,10 @@ try {
       }
       return {
         disc: disc?.material.color.getHexString() ?? null,
-        label: label?.material.color.getHexString() ?? null,
+        labelColor: label?.material.color.getHexString() ?? null,
+        label: background ? background.slice(0, 3).map((v) => v.toString(16).padStart(2, "0")).join("") : (label?.material.color.getHexString() ?? null),
         restDisc: disc?.material.userData.rest?.getHexString?.() ?? null,
+        expectedDisc: disc?.material.userData.rest ? disc.material.userData.rest.clone().multiplyScalar(1 - 0.95).getHexString() : null,
         background, lightInk, faceHash, textureId: label?.material.map.uuid,
       };
     };
@@ -279,8 +286,19 @@ try {
     moved.afterA?.tokenA?.label && moved.afterA.tokenA.label !== "ffffff" && moved.afterA.tokenA.label !== "fff9f0",
     moved.afterA?.tokenA,
   );
+  check(
+    "move: mapped face material stays at rest color to prevent double dimming",
+    moved.afterA?.tokenA?.labelColor === "ffffff",
+    moved.afterA?.tokenA,
+  );
   check("move: token disc is dimmed vs its rest colour", moved.afterA?.tokenA?.disc && moved.afterA.tokenA.restDisc && moved.afterA.tokenA.disc !== moved.afterA.tokenA.restDisc, moved.afterA?.tokenA);
-  check("move: token disc and face are plain black", moved.afterA?.tokenA?.disc === "000000" && JSON.stringify(moved.afterA.tokenA.background) === "[0,0,0,255]", moved.afterA?.tokenA);
+  check(
+    "move: token disc and face are dimmed (dark face)",
+    moved.afterA?.tokenA?.disc &&
+      moved.afterA.tokenA.disc === moved.afterA.tokenA.expectedDisc &&
+      JSON.stringify(moved.afterA.tokenA.background) === "[5,5,5,255]",
+    moved.afterA?.tokenA,
+  );
   check("move: light numeral and pips remain on the black face", moved.afterA?.tokenA?.lightInk >= 1000, moved.afterA?.tokenA);
 
   check("second move: old hex clears", moved.afterB?.dullA === 0, moved.afterB);

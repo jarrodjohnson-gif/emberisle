@@ -1,6 +1,6 @@
 // L13.4 Debug: open the browser client, play setup and one roll versus the bots, and fail on any console error.
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = 8091;
@@ -568,14 +568,15 @@ try {
     await new Promise((r) => setTimeout(r, 1500));
   });
   const mutedPlays = await plays();
-  // Back on, through the table menu this time (#442 moved the in-game toggle there), so both toggles are exercised.
+  // Back on, through the table menu's Sound panel this time (#442 moved the in-game toggle there, #669 into the panel), so both toggles are exercised.
   await page.getByRole("button", { name: "Table menu" }).click();
-  await page.getByTestId("table-menu").getByTestId("sound-toggle").click();
-  const menuSays = await page.getByTestId("table-menu").getByTestId("sound-toggle").textContent();
+  await page.getByTestId("table-menu").getByTestId("sound-entry").click();
+  await page.getByTestId("sound-sheet").getByTestId("sound-mute-master").click();
+  const menuSays = await page.getByTestId("sound-sheet").getByTestId("sound-mute-master").getAttribute("aria-label");
   const cleared = await page.evaluate(() => localStorage.getItem("emberisle-muted"));
-  const mute = { wasOn, stored, stillOff, mutedPlays, menuSays: menuSays?.trim(), cleared };
+  const mute = { wasOn, stored, stillOff, mutedPlays, menuSays, cleared };
   console.log("mute:", JSON.stringify(mute));
-  if (wasOn !== "true" || stored !== "1" || stillOff !== "false" || mutedPlays.length || menuSays?.trim() !== "Table sounds on" || cleared !== null) {
+  if (wasOn !== "true" || stored !== "1" || stillOff !== "false" || mutedPlays.length || menuSays !== "Mute All sound" || cleared !== null) {
     throw new Error(`mute: ${JSON.stringify(mute)}`);
   }
   console.log(`sounds: ${heard.join(" ")} played; mute remembered`);

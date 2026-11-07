@@ -7,18 +7,15 @@ import {
   ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ChatControls, ChatDock, ChromeLanded, CostCard, FirstGameCoach, FortuneTray, HowTo, MyNumbers, sheets, TradePanel, TurnMoment, WinScreen } from "@/components/game/chunks";
-import { TradeToast, tradeSlot } from "@/components/game/TradeToast";
+import { ChatControls, ChatDock, ChromeLanded, CostCard, DiscardBar, FirstGameCoach, FortuneTray, HowTo, losses, MyNumbers, sheets, TakeFromBar, TradePanel, tradeSlot, tradeToast, TradeToast, TurnMoment, WinScreen } from "@/components/game/chunks";
 import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
 import { SeatRail, SeatStrip, HiddenPointHint } from "@/components/game/SeatRail";
-import { DiscardBar } from "@/components/game/DiscardBar";
 import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice, RollMoment } from "@/components/game/Dice";
 import { TableMenu } from "@/components/game/TableMenu";
 import { HandDock } from "@/components/game/Hand";
-import { TakeFromBar } from "@/components/game/TakeFromBar";
 import { PlaceChip } from "@/components/game/PlaceChip";
 import { SheetsFailed } from "@/components/game/SheetsFailed";
 import { TrayFailed } from "@/components/game/TrayFailed";
@@ -98,7 +95,7 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
     case "outpost":
       return ["Place an outpost", "Outpost"];
     case "stronghold":
-      return ["Build a stronghold", "Stronghold"];
+      return ["Pick a home to upgrade", "Upgrade"];
     // #423: both fortunes are armed from the tray, and the My fortunes button stays pressed until the pick is made or cancelled.
     case "knight":
       return ["Move the wayfarer", "Play fortune"];
@@ -120,6 +117,25 @@ const READY_DOT = (
     ✓
   </span>
 );
+
+function LossesFailed({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div
+      data-testid="losses-failed"
+      role="alert"
+      className="flex items-center justify-between gap-3 rounded-[16px] border border-white/50 bg-glass px-4 py-2 text-sm text-zinc-900 backdrop-blur-md"
+    >
+      <span>{message}</span>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="rounded-[10px] bg-zinc-900 px-3 py-1 font-medium text-white hover:bg-zinc-800"
+      >
+        Try again
+      </button>
+    </div>
+  );
+}
 
 export function Hud() {
   const gameLog = useGame((s) => s.gameLog);
@@ -158,8 +174,20 @@ export function Hud() {
   const [sheetsLost, setSheetsLost] = useState<string | null>(null);
   useEscapeDisarm();
   const [stackRef, moreBelow] = useMoreBelow();
-  // #1101: the dock's offer slot too, so an offer never waits on the network.
-  useEffect(() => preloadOnIdle(() => { sheets.prefetch(); tradeSlot.prefetch(); }), []);
+  const [lossesRetry, setLossesRetry] = useState(0);
+  useEffect(() => {
+    const cancelSheets = preloadOnIdle(sheets.prefetch);
+    const cancelToast = preloadOnIdle(tradeToast.prefetch);
+    const cancelLosses = preloadOnIdle(losses.prefetch);
+    // #1101: the dock offer slot too, so an offer never waits on the network.
+    const cancelSlot = preloadOnIdle(tradeSlot.prefetch);
+    return () => {
+      cancelSheets();
+      cancelToast();
+      cancelLosses();
+      cancelSlot();
+    };
+  }, []);
   // #423: the fortune tray is open until a fortune is played, it is closed, the phase moves (a roll with the tray up) or the
   // turn moves on (hotseat: to the next seat); it never comes back on its own.
   const [fortunesOpen, setFortunesOpen] = useState(false);
@@ -324,6 +352,7 @@ export function Hud() {
         const idle = !live;
         const blocked = idle || !ready || spectator;
         const status = idle ? (mine && /^roll/.test(state.phase) ? "Roll first" : mine ? "Not now" : "Not your turn") : (why ?? (ready ? "Ready" : needLine(short)));
+        const shRefuse = kind === "stronghold" && why ? (why === "None left" ? "No strongholds left" : "No homes to upgrade") : null;
         return (
           <Button
             key={kind}
@@ -346,10 +375,13 @@ export function Hud() {
               if (idle) return;
               // aria-disabled keeps the button focusable, so the click itself must refuse (but may still disarm).
               // A tap the hand cannot pay for says what is missing (a spot waiting, goods short) instead of doing nothing.
-              if (!spectator && !why && missing && buildMode !== arm) {
-                setHint({ kind });
-                // The chip is the one line on screen; the error cue and the screen reader still get the full sentence.
-                return void refuseQuietly(needLine(short));
+              if (!spectator && buildMode !== arm) {
+                const refuse = shRefuse || (!why && missing ? needLine(short) : null);
+                if (refuse) {
+                  setHint({ kind });
+                  // The chip is the one line on screen; the error cue and the screen reader still get the full sentence.
+                  return void refuseQuietly(refuse);
+                }
               }
               if (!arm) return void (blocked || dispatch({ type: "buyCard" }));
               if (blocked && buildMode !== arm) return;
@@ -361,7 +393,7 @@ export function Hud() {
             </span>
             {/* The chips and the reason are aria-hidden: the name stays the piece, the description says the rest. Missing
                 goods ring what the hand lacks and say how many short. */}
-            {why ? <span aria-hidden className="text-caption text-muted">{why}</span> : <CostChips kind={kind} hand={live && missing ? me.resources : undefined} />}
+            {why ? <span aria-hidden className="text-caption text-muted">{kind === "stronghold" && why === "No spot" ? "No homes" : why}</span> : <CostChips kind={kind} hand={live && missing ? me.resources : undefined} />}
             {kind === "card" && !why ? <span aria-hidden data-testid="deck-left" className="text-[10px] leading-[10px] tabular-nums text-muted">{deckLeft} left</span> : null}
             {/* The ends of the row hang the chip inward, so it stays on a phone's screen. Last child: the tile's own
                 styles address its first span. */}
@@ -374,7 +406,7 @@ export function Hud() {
                   at === 0 ? "left-0" : at === 3 ? "right-0" : "left-1/2 -translate-x-1/2",
                 )}
               >
-                {hintLine(short)}
+                {shRefuse || hintLine(short)}
               </span>
             ) : null}
           </Button>
@@ -504,11 +536,29 @@ export function Hud() {
               <div className="pointer-events-auto empty:hidden">
                 {winnerLine}
               </div>
-              {discarder ? <div className="pointer-events-auto"><DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} /></div> : null}
               <div className="pointer-events-auto empty:hidden">
-                <TakeFromBar />
+                {discarder ? (
+                  <LazyBoundary
+                    key={`discard-${discarder}`}
+                    retryKey={String(lossesRetry)}
+                    failed={<LossesFailed message="Discard choices could not load." onRetry={() => setLossesRetry((r) => r + 1)} />}
+                  >
+                    <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} />
+                  </LazyBoundary>
+                ) : null}
+                {choosing ? (
+                  <LazyBoundary retryKey={String(lossesRetry)} failed={<LossesFailed message="Victim choices could not load." onRetry={() => setLossesRetry((r) => r + 1)} />}>
+                    <TakeFromBar />
+                  </LazyBoundary>
+                ) : null}
               </div>
-              {chatOpen ? <div className="pointer-events-auto empty:hidden"><TradeToast /></div> : null}
+              {chatOpen && tradeVisible ? (
+                <div className="pointer-events-auto empty:hidden">
+                  <LazyBoundary failed={null}>
+                    <TradeToast />
+                  </LazyBoundary>
+                </div>
+              ) : null}
             </div>
             <LazyBoundary failed={null}>
               <FirstGameCoach hidden={bannerShown} className={cn("absolute inset-x-0", column ? besideColumn : "bottom-full mb-2")} />
@@ -520,7 +570,9 @@ export function Hud() {
               </div>
               <div data-slot="status" className="dock-status mt-2 flex h-11 items-center gap-2 rounded-control">
                 {!chatOpen && tradeHere ? (
-                  <TradeToast slot />
+                  <LazyBoundary failed={null}>
+                    <TradeToast slot />
+                  </LazyBoundary>
                 ) : (
                   <>
                     {turnLine(true)}
@@ -621,8 +673,20 @@ export function Hud() {
 
               {spectator ? null : <HandDock me={me} phase={state.phase} />}
 
-              {discarder ? <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} /> : null}
-              <TakeFromBar />
+              {discarder ? (
+                <LazyBoundary
+                  key={`discard-${discarder}`}
+                  retryKey={String(lossesRetry)}
+                  failed={<LossesFailed message="Discard choices could not load." onRetry={() => setLossesRetry((r) => r + 1)} />}
+                >
+                  <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} />
+                </LazyBoundary>
+              ) : null}
+              {choosing ? (
+                <LazyBoundary retryKey={String(lossesRetry)} failed={<LossesFailed message="Victim choices could not load." onRetry={() => setLossesRetry((r) => r + 1)} />}>
+                  <TakeFromBar />
+                </LazyBoundary>
+              ) : null}
 
               {state.phase === "main" && mine ? (
                 <div className="hud-actions">
@@ -652,7 +716,11 @@ export function Hud() {
               ) : diceInBar ? null : dice}
 
               {logRow(false)}
-              <TradeToast />
+              {tradeVisible ? (
+                <LazyBoundary failed={null}>
+                  <TradeToast />
+                </LazyBoundary>
+              ) : null}
             </div>
             {/* #423: the tray rises over the stack from its bottom edge and may cover the island, like a sheet, but never the
                 header; it is inside the sheets chunk, which the table prefetched on idle (#488). */}

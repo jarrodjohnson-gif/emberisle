@@ -3,7 +3,7 @@
 // Run: npm run dpr-prove
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = 8092;

@@ -2,7 +2,7 @@
 // seed asked, 1024x768, frozen at --t seconds. Headless Chromium here is SwiftShader. Run: node scripts/hex-jelly.mjs [timber]
 // [--seeds 7,11,23] [--t 2.05] [--focus pool,camp] [--q ring=1&az=200]; --lineup for the size ladder (jelly-lineup.png)
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const KINDS = ["timber", "wool", "grain", "clay", "ore", "waste"];

@@ -4,7 +4,7 @@
 // what is under the finger (screenOf lands on the mark); turning the phone refits home. Real touch through CDP
 // Input.dispatchTouchEvent. Run: npm run pan-prove
 import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;

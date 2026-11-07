@@ -4,12 +4,13 @@ import { allow } from "./chat.mjs";
 import { ProfileError, publicCard, seatView } from "./profiles.mjs";
 
 export const CAPS = ["profilesV1"];
-export const PROFILE_TYPES = new Set(["profileHello", "profileCreate", "profileLogin", "profileResume", "profileLogout", "profileEdit", "profileChangePin"]);
+export const PROFILE_TYPES = new Set(["profileHello", "profileCreate", "profileLogin", "profileResume", "profileLogout", "profileEdit", "profileChangePin", "profileRecord", "profileHistory"]);
 
 // What a refused request says. Sign-in failures share one message: a wrong PIN, an unknown login and a spent budget look alike.
 const MESSAGES = {
   invalid: "Check the highlighted fields.",
   loginTaken: "Choose another login.",
+  loginLimit: "You have changed your login too often. You can switch back to an old one.",
   signInFailed: "Couldn't sign in. Check your login and PIN, or try again later.",
   signedOut: "Signed out on this device. Sign in again.",
   busy: "The host is busy. Try again in a moment.",
@@ -134,6 +135,7 @@ export function profileHandler(store, send) {
     }
     if (msg.type === "profileEdit") {
       const out = await store.profileEdit(msg.credential, {
+        winSongId: msg.winSongId,
         displayName: msg.displayName,
         login: msg.login,
         pin: msg.pin,
@@ -146,6 +148,15 @@ export function profileHandler(store, send) {
     if (msg.type === "profileChangePin") {
       const out = await store.profileChangePin(msg.credential, msg.currentPin, msg.newPin, msg.newPinConfirm);
       return send(ws, session(id, out, true));
+    }
+    // Owner-only results (#890): the credential names the profile; any profile id in the request is ignored.
+    if (msg.type === "profileRecord") {
+      const r = store.ownRecord(msg.credential);
+      return send(ws, { type: "profileRecord", id, record: { games: r.games, wins: r.wins, losses: r.losses, winRate: r.winRate, streak: r.streak, lastPlayed: r.lastPlayed } });
+    }
+    if (msg.type === "profileHistory") {
+      const page = store.ownHistory(msg.credential, msg.before);
+      return send(ws, { type: "profileHistory", id, rows: page.rows, next: page.next });
     }
   }
 

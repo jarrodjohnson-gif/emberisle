@@ -14,7 +14,7 @@ import { once } from "node:events";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { connectTable } from "../src/lib/net/table.ts";

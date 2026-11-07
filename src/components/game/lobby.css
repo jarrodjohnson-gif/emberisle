@@ -200,11 +200,11 @@
 .lobby-layout .lr { margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; font-weight: 500; line-height: 18px; color: #46524e; }
 .lobby-layout .ls { display: flex; min-height: 0; flex-direction: column; gap: 8px; }
 .lobby-layout .ls h2 { margin: 0; font-size: 17px; font-weight: 600; line-height: 22px; color: #263b3b; }
-.lobby-layout .lt { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px; border: 1px solid #cbd3d3; border-radius: 12px; background: #fff; }
-.lobby-layout .lw { width: 44px; height: 44px; flex: 0 0 44px; border-radius: 12px; background: #e3c462; }
-.lobby-layout .lt > span:nth-child(2) { display: flex; min-width: 0; flex: 1; flex-direction: column; }
-.lobby-layout .lt b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; font-weight: 600; line-height: 22px; color: #263b3b; }
-.lobby-layout .lt > span:nth-child(2) span { font-size: 13px; font-weight: 500; line-height: 18px; color: #46524e; }
+.lobby-layout .lt, .lobby-layout .lx-tile { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px; border: 1px solid #cbd3d3; border-radius: 12px; background: #fff; }
+.lobby-layout .lw { width: 44px; height: 44px; flex: 0 0 44px; object-fit: contain; }
+.lobby-layout .lt > span:nth-child(2), .lobby-layout .lx-tile > span:nth-child(2) { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+.lobby-layout .lt b, .lobby-layout .lx-tile b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; font-weight: 600; line-height: 22px; color: #263b3b; }
+.lobby-layout .lt > span:nth-child(2) span, .lobby-layout .lx-tile > span:nth-child(2) span { font-size: 13px; font-weight: 500; line-height: 18px; color: #46524e; }
 .lobby-layout .lt > button { padding: 0 8px; border: 1px solid #cbd3d3; border-radius: 12px; background: #fff; color: #263b3b; }
 .lobby-wait { display: flex; min-height: 0; flex: 1; flex-direction: column; gap: 8px; }
 .lobby-wait-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -220,9 +220,35 @@
   color: #263b3b;
 }
 .lobby-wait-stage { position: relative; width: 100%; aspect-ratio: 580 / 320; overflow: hidden; background: #000; }
-.lobby-wait-stage > * { position: absolute; inset: 0; width: 100%; height: 100%; }
+.lobby-wait-stage > * { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 .lobby-wait-holds { display: none; gap: 8px; }
 .lobby-wait-keys { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; line-height: 18px; color: #46524e; }
 @media (pointer: coarse) {
   .lobby-wait-holds { display: flex; }
+}
+
+/* #1280: original title art, contained without changing the existing tile/header footprints. */
+.lobby-wait-head .stacker-title { display: flex; align-items: center; gap: 8px; }
+.stacker-title img { width: 32px; height: 32px; flex: 0 0 32px; object-fit: contain; }
+.stacker-title span { overflow: hidden; text-overflow: ellipsis; }
+
+/* #1263: tic-tac-toe. The tile shares the shelf tile's look; cells are 68 px on a portrait phone and 48 px elsewhere. */
+.lobby-layout .lm button { position: relative; }
+.lobby-layout .lb { position: absolute; top: 0; right: 0; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 10px; background: #1d5f64; color: #fff; font-size: 13px; font-weight: 600; line-height: 20px; }
+.lobby-layout .lx-tile { flex-wrap: wrap; }
+.lobby-layout .lx-pic { display: flex; width: 44px; height: 44px; flex: 0 0 44px; align-items: center; justify-content: center; border-radius: 8px; background: #b2ce80; color: #263d3c; font-size: 22px; font-weight: 700; }
+.lobby-layout .lx-tile > button { padding: 0 12px; }
+.lobby-layout .lx-pick { display: flex; flex: 1 0 100%; flex-wrap: wrap; gap: 8px; }
+.lobby-layout .lx-who { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; font-size: 15px; font-weight: 500; line-height: 20px; color: #263b3b; }
+.lobby-layout .lx-who > span { display: inline-flex; min-width: 0; align-items: center; gap: 6px; }
+.lobby-layout .lx-who i { font-style: normal; font-size: 18px; font-weight: 800; }
+.lobby-layout .lx-who b { font-weight: 600; text-align: center; }
+.lobby-layout .lx-grid { display: grid; grid-template-columns: repeat(3, 48px); grid-auto-rows: 48px; gap: 8px; justify-content: center; }
+.lobby-layout .lx-grid button { border: 1px solid #cbd3d3; border-radius: 12px; background: #fff; font-size: 24px; font-weight: 800; }
+.lobby-layout .lx-grid button.lx-win { background: #e3efe9; }
+.lobby-layout .lx-foot { display: flex; justify-content: space-between; gap: 8px; }
+.lobby-layout .lx-foot > :last-child { margin-left: auto; }
+@media (max-width: 600px) and (orientation: portrait) {
+  .lobby-layout .lx-grid { grid-template-columns: repeat(3, 68px); grid-auto-rows: 68px; }
+  .lobby-layout .lx-grid button { font-size: 28px; }
 }

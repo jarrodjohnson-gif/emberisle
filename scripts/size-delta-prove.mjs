@@ -31,7 +31,7 @@ check("a new chunk is held to its ceiling only", ["--sizes", fx("new-chunk.json"
 check("a removed chunk passes and is reported", ["--sizes", fx("base.json"), "--base-sizes", fx("base-with-legacy.json")], 0, "gone legacy");
 check("a chunk gone from the PR that still has a ceiling fails", ["--sizes", fx("base-old.json"), "--base-sizes", fx("base.json")], 1, "FAIL VictoryTargetSelect: no chunk named");
 check("without a base only the ceilings run and the delta command is printed", ["--sizes", fx("pass.json")], 0, "no base given", "--base <dir");
-check("over the absolute ceiling fails even inside the allowance", ["--sizes", fx("over-ceiling.json"), "--base-sizes", fx("over-ceiling.json")], 1, "FAIL index: 125.30 kB gzip, ceiling 125.20 kB");
+check("over the absolute ceiling fails even inside the allowance", ["--sizes", fx("over-ceiling.json"), "--base-sizes", fx("over-ceiling.json")], 1, "FAIL index: 127.10 kB gzip, ceiling 127.00 kB");
 
 if (failed) process.exit(1);
 console.log("size-delta-prove: all cases behave");

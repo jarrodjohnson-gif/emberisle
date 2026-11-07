@@ -25,7 +25,7 @@
 // Saves test-results/build-ready-390.png and -1280.png (Path Ready, Outpost No spot, Stronghold Missing in one view), build-ready-<size>.png and build-ready-card-<size>.png. Run: npm run build-ready-prove (VITE_PORT, default 8509).
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import * as types from "../src/lib/game/types.ts";
 import { legalCities, legalRoads, legalSettle } from "../src/lib/game/rules.ts";

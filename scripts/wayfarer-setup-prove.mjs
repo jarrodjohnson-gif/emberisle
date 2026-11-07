@@ -6,7 +6,7 @@ import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import WebSocket from '../server/node_modules/ws/wrapper.mjs';
-import { chromium } from 'playwright';
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from 'vite';
 const dir=mkdtempSync(path.join(tmpdir(),'emberisle-wayfarer-setup-'));
 const port=Number(process.env.VITE_PORT||18545),sockets=[];const wait=ms=>new Promise(r=>setTimeout(r,ms));

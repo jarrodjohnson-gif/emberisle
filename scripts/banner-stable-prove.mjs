@@ -5,7 +5,7 @@
 // (and a 21 px home bar), a long roll line stays inside the safe area. Zero console errors.
 // Run: npm run banner-stable-prove
 import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8101;

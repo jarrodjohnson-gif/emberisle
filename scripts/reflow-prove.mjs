@@ -12,7 +12,7 @@
 // - #419: on that touch screen an armed Path's banner ends "tap Path again to cancel", and a second tap restores it.
 // Zero console errors. Run: npm run reflow-prove
 import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8100;

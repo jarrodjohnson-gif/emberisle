@@ -207,12 +207,13 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
 }
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
-import type { Bag, ChatLine, Legal, Me, Reaction, Seat, TableClient } from "@/lib/net/table";
+import type { Bag, ChatLine, Legal, Me, Reaction, Seat, TableClient, TttMsg } from "@/lib/net/table";
+import type { ProfileAttachment } from "@/lib/net/profiles";
 import { chunk } from "@/lib/lazy";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
 import { HAPTIC_MS } from "@/lib/haptic-durations";
-import { haptics, play, playLater, stop, yourTurn, type SoundName } from "@/lib/sound";
+import { haptics, play, playLater, resetTradePlease, stop, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
@@ -294,6 +295,9 @@ interface GameStore {
   // The Costs card (the building-costs card that comes with the board game), opened from the Table menu.
   costs: boolean;
   costsOpener: HTMLElement | null;
+  // #766: the title's profile client, set when its sheet first opens. It gives Host and Join a credential only for its own
+  // confirmed host, at the moment of sending; nothing of it reaches game state or the saved seat.
+  profile: ProfileAttachment | null;
   toast: string | null;
   // One line everyone reads for a moment: the roll and who got what, or an award changing hands (#188).
   banner: string | null;
@@ -364,6 +368,8 @@ interface GameStore {
   resync: boolean;
   // How many spectators the table has, from `seats {watching}` (#347).
   watching: number;
+  // This seat's lobby tic-tac-toe game, as the host last sent it (#1263); null after each welcome.
+  ttt: TttMsg | null;
   // Sit back down in the seat this browser held (localStorage), e.g. after a reload (#196).
   rejoinTable: () => boolean;
   setReady: (value: boolean) => void;
@@ -488,7 +494,11 @@ const NAME_MAX = 16;
 const NAME_KEY = "emberisle-name";
 function savedName() {
   if (typeof window === "undefined") return "Ember";
-  return localStorage.getItem(NAME_KEY) || "Ember";
+  try {
+    return localStorage.getItem(NAME_KEY) || "Ember";
+  } catch {
+    return "Ember";
+  }
 }
 
 // null (not a default swatch) until the player actively picks one, so a fresh tab sends no `color`
@@ -496,8 +506,12 @@ function savedName() {
 // touch the picker would both request the same default color and the second would be rejected.
 function savedColor(): string | null {
   if (typeof window === "undefined") return null;
-  const saved = localStorage.getItem("emberisle-color");
-  return saved && (PLAYER_COLORS as readonly string[]).includes(saved) ? saved : null;
+  try {
+    const saved = localStorage.getItem("emberisle-color");
+    return saved && (PLAYER_COLORS as readonly string[]).includes(saved) ? saved : null;
+  } catch {
+    return null;
+  }
 }
 
 export const useGame = create<GameStore>((set, get) => ({
@@ -521,6 +535,7 @@ export const useGame = create<GameStore>((set, get) => ({
   howToOpener: null,
   costs: false,
   costsOpener: null,
+  profile: null,
   toast: null,
   banner: null,
   net: null,
@@ -538,6 +553,7 @@ export const useGame = create<GameStore>((set, get) => ({
   synced: 0,
   resync: false,
   watching: 0,
+  ttt: null,
   pendingSteal: null,
   seatId: "",
   chat: [],
@@ -559,17 +575,35 @@ export const useGame = create<GameStore>((set, get) => ({
   menuFor: null,
   setName: (n) => {
     const name = Array.from(n).slice(0, NAME_MAX).join("");
-    if (name.trim() && typeof window !== "undefined") localStorage.setItem(NAME_KEY, name.trim());
+    if (name.trim() && typeof window !== "undefined") {
+      try {
+        localStorage.setItem(NAME_KEY, name.trim());
+      } catch {
+        // storage can be blocked; name is still set in state
+      }
+    }
     set({ name });
   },
   commitName: () => {
     const name = get().name.trim() || "Ember";
-    if (typeof window !== "undefined") localStorage.setItem(NAME_KEY, name);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(NAME_KEY, name);
+      } catch {
+        // storage can be blocked; name is still set in state
+      }
+    }
     set({ name });
     return name;
   },
   setColor: (c) => {
-    if (typeof window !== "undefined") localStorage.setItem("emberisle-color", c);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("emberisle-color", c);
+      } catch {
+        // storage can be blocked; color is still set in state
+      }
+    }
     set({ color: c });
   },
   setHowTo: (v, opener) => set({ howTo: v, howToOpener: v ? (opener ?? null) : null }),
@@ -581,6 +615,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (get().screen === "title" && ["on", "off"].includes(mode)) set({ wayfarerChoices: { ...get().wayfarerChoices, [context]: mode } });
   },
   startAi: () => {
+    resetTradePlease();
     stopEndMusic();
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
     clearWake();
@@ -613,6 +648,7 @@ export const useGame = create<GameStore>((set, get) => ({
     play("game_start");
   },
   startHotseat: (count) => {
+    resetTradePlease();
     stopEndMusic();
     clearWake();
     clearKnocks();
@@ -645,6 +681,7 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   restoring: typeof window !== "undefined" && inPlayAtSavedSeat(),
   loadState: (s, localId, host, table) => {
+    if (!get().state || (get().state?.phase === "over" && s.phase !== "over") || (table && table !== get().table)) resetTradePlease();
     // A push that leaves the turn alone (a seat rejoining) keeps an open picker, with the host's fresh victims (#1110).
     const { pendingSteal: ps, state: was, legal } = get();
     const targets = ps && was && s.phase === was.phase && s.current === was.current ? (legal?.steal[ps.hexId] ?? []) : [];
@@ -664,6 +701,7 @@ export const useGame = create<GameStore>((set, get) => ({
     });
   },
   goTitle: () => {
+    resetTradePlease();
     stopEndMusic();
     // Leaving on purpose frees the seat; only a drop keeps it. A watcher never held one, and the saved seat may be another table's.
     if (!get().spectator) rememberSeat(null);
@@ -928,7 +966,13 @@ export const useGame = create<GameStore>((set, get) => ({
     const name = Array.from(n.trim()).slice(0, NAME_MAX).join("");
     if (!name) return;
     set({ name });
-    if (typeof window !== "undefined") localStorage.setItem(NAME_KEY, name);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(NAME_KEY, name);
+      } catch {
+        // storage can be blocked; name is still set in state
+      }
+    }
     get().net?.rename(name);
   },
   addBot: () => {
@@ -945,6 +989,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (spectator) return;
     if (mode === "online") return net?.again();
     if (mode !== "hotseat" || state?.phase !== "over") return;
+    resetTradePlease();
     const winner = state.players.find((p) => p.id === state.winner)!;
     const ordered = [winner, ...state.players.filter((p) => p !== winner)];
     const next = createGame({ humans: ordered.map((p) => ({ name: p.name })), bots: 0, winnerFirst: true, wayfarerMode: state.wayfarerMode ?? "on" });
@@ -1148,7 +1193,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
   // Not a leave: a rejoin after a crash dials the same seat, which the host must still be holding.
   get().net?.close(false);
   const selectedHost = new URL(window.location.href);
-  const selectedMe: Me = { name: get().name.trim() || "Ember", color: get().color ?? undefined };
+  const selectedMe: Me = { name: get().name.trim() || "Ember", color: get().color ?? undefined, profile: get().profile ?? undefined };
   let cancelled = false;
   let removeListeners = () => {};
   let restoreTimer: ReturnType<typeof setTimeout> | undefined;
@@ -1216,7 +1261,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
           recovery = false;
           set({ restoring: false, screen: "lobby" });
         }, 1500);
-      set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
+      set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0, ttt: null });
     },
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
     reconnecting: (attempt) => {
@@ -1282,6 +1327,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       else if (swing) showBanner(set, swing);
     },
     log: (text) => set({ lobbyLog: text, gameLog: appendLog(get().gameLog, [text]) }),
+    ttt: (ttt) => set({ ttt }),
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       // #1245: a null `seconds` is an offer that holds until answered (no run-out).

@@ -25,13 +25,16 @@ const CEILINGS = [
   { name: "SeatNeeds", gzipBytes: 1900 },
   { name: "LobbyView", gzipBytes: 2500 },
   // #1262: Sandwich Stacker shelf and player, measured 1867 B gzip. The owner must OK this new ceiling before merge.
-  { name: "LobbyWaitBox", gzipBytes: 2100 },
+  { name: "LobbyWaitBox", gzipBytes: 2100 }, // #1366, 2026-11-07: back to 2,100 B after the trim in PR #1373
+  // #1263: tic-tac-toe tile and board, loaded with the shelf; measured 1390 B gzip. Decided 2026-11-07, q-size-standing.
+  { name: "LobbyTicTacToe", gzipBytes: 1600 },
   // #553: shared on-demand table transport, measured 2.08 kB; existing caps stay fixed.
-  { name: "table", gzipBytes: 2200 },
+  { name: "table", gzipBytes: 2200 }, // #1366, 2026-11-07: back to 2,200 B after the trim in PR #1373
   // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
   { name: "haptics", gzipBytes: 1200 },
-  { name: "index", gzipBytes: 125200 },
-  { name: "IslandCanvas", gzipBytes: 202500 },
+  // #1283: raised from 125,200 B to 127,000 B per owner decision 2026-11-03.
+  { name: "index", gzipBytes: 127000 },
+  { name: "IslandCanvas", gzipBytes: 203500 }, // #1307, 2026-11-04: raised from 202,500 B to 203,500 B
   { name: "jelly-board", gzipBytes: 9000 },
   { name: "hex-jelly", gzipBytes: 50000 },
   { name: "harbor-jelly", gzipBytes: 11500 },
@@ -60,6 +63,27 @@ const CEILINGS = [
   { name: "WayfarerOptions", gzipBytes: 500 },
   // #832: the online-only timer ballot loads separately (2026-10-20; measured 1.20 kB).
   { name: "TurnExtensionVote", gzipBytes: 1400 },
+  // #1285: trade toast, loss bars (discard/steal) and shared trade-panel helper chunk (ceilings per owner/Opus decision 2026-11-06).
+  { name: "TradeToast", gzipBytes: 3000 },
+  { name: "losses", gzipBytes: 1600 },
+  // #766: the shared lucide X icon chunk, named trade-panel until the profile sheet also used it; same 300 B ceiling.
+  { name: "x", gzipBytes: 300 },
+  // #766: the title's profile sheet with its profile client, measured 5481 B; focus-trap now shared by it and the sheets,
+  // measured 469 B. Ceilings decided by Opus under the owner's 2026-11-06 size-limit delegation (PR #1355 review).
+  { name: "ProfileSheet", gzipBytes: 6000 },
+  { name: "focus-trap", gzipBytes: 550 },
+  // #766 slice 2, 2026-11-07. ProfileForms: measured 2,182 B. eye-off (the EyeOff icon the bundler split out): measured
+  // 292 B. Ceilings decided by Opus per q-size-standing (PR #1401 review).
+  { name: "ProfileForms", gzipBytes: 2350 },
+  { name: "eye-off", gzipBytes: 310 },
+  // #1281, 2026-11-07: startup loading screen, preloaded beside index; measured 2,420 B gzip. Decided per q-size-standing; paired trim to follow.
+  { name: "LoadingScreen", gzipBytes: 2600 },
+  // #669, 2026-11-07: the Sound panel in the Table menu, loaded as the menu opens; measured 1,872 B gzip. New chunk only; the owner must OK this ceiling.
+  { name: "SoundSheet", gzipBytes: 2000 },
+  // #669, 2026-11-07: the mute-list hook shared by the chat chunk and the Sound panel; measured 414 B gzip. New chunk only; the owner must OK this ceiling.
+  { name: "use-muted-seats", gzipBytes: 500 },
+  // #748, 2026-11-07: the win screen's compact list on phones, loaded on phones as the table starts; measured 1,253 B gzip. New chunk only; the desk sets this ceiling.
+  { name: "WinList", gzipBytes: 1360 },
   // #1101: the phone dock's offer slot (Yes and No) loads separately, prefetched on idle; new chunk only (measured 0.80 kB).
   { name: "TradeSlot", gzipBytes: 1000 },
 ];
