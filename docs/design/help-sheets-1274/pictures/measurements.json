@@ -425,9 +425,9 @@
       "before": {
         "sheet": {
           "x": 12,
-          "y": 363.5,
+          "y": 156.8,
           "w": 366,
-          "h": 468.5
+          "h": 675.2
         },
         "gutter": {
           "left": 12,
@@ -447,7 +447,7 @@
         },
         "close": {
           "x": 313,
-          "y": 384.5,
+          "y": 177.8,
           "w": 44,
           "h": 44,
           "inView": true,
@@ -457,8 +457,15 @@
           "font": "14/22.75px",
           "color": "oklch(0.442 0.017 285.786)"
         },
-        "scrolls": null,
+        "scrolls": {
+          "what": "region",
+          "hidden": 854,
+          "closeInside": false,
+          "scrollbar": "auto"
+        },
         "fonts": [
+          "12/500",
+          "12/600",
           "14/400",
           "24/400"
         ]

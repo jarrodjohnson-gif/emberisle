@@ -74,6 +74,8 @@ try {
       await page.getByRole("button", { name: "Table menu", exact: true }).click();
       await page.getByRole("button", { name: s.row, exact: true }).click();
       await page.locator(s.sheet).waitFor();
+      // How to play's setup reference is a lazy chunk; measure once its three figures are in the sheet.
+      if (s.name === "howto") await page.locator(`${s.sheet} figure`).nth(2).waitFor();
       await page.waitForTimeout(300);
       const rec = { size: tag, sheet: s.name };
       rec.before = await page.evaluate(measure, s);

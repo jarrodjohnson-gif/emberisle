@@ -53,11 +53,12 @@ Measured ([pictures/measurements.json](pictures/measurements.json)). Before uses
 | 320x400 | 296 x 320 at 12, 68 | 288 x 320 at 16, 64 | 1393 / 1419, in a region under the title, Close outside it | 296 x 320 at 12, 68 | 288 x 320 at 16, 64 | before: the whole card, 70 px hidden, Close inside the scroller. After: the body, 74 px hidden, Close outside it, thin scrollbar. |
 | 320x568 | 296 x 454 at 12, 102 | 288 x 454 at 16, 98 | 1259 / 1285 | 296 x 390 at 12 | 288 x 394 at 16 | no, it fits |
 | 390x844 | 366 x 675 at 12, 157 | 358 x 675 at 16, 153 | 854 / 884 | 320 x 390 at 35 | 358 x 394 at 16 | no |
-| 844x390 | 448 x 312 centred | same | 1032 / 1067 | 448 x 278 centred | same | no |
-| 1280x720 | 448 x 576 centred | same | 768 / 803 | 448 x 278 centred | same | no |
+| 844x390 | 448 x 312 centred, y 39 | same | 1032 / 1067 | 448 x 278 centred, y 56 | 448 x 282, y 54 (the 16 px padding and the fixed title row add 4 px) | no |
+| 1280x720 | 448 x 576 centred, y 72 | same | 768 / 803 | 448 x 278 centred, y 221 | 448 x 282, y 219 (same 4 px) | no |
 
 On every run: Close is inside the viewport and focused on open; Tab pressed more times than the sheet has stops never leaves the sheet; Escape removes the sheet, focus returns to the Table menu button, and `state.seq` is unchanged. The capture throws on any of these. Zero page errors.
-Title 24/400 to 20/600 on How to play; body 14 px to 15 px (the Costs rows are already 15 px). Costs grows from 320 to 358 px wide at 390 so both sheets share one width rule. The gutter goes from 12 to 16 px on phones; on desktop and sideways the sheet is centred, well inside 24 px.
+Title 24/400 to 20/600 on How to play; body 14 px to 15 px (the Costs rows are already 15 px). Costs grows from 320 to 358 px wide at 390 so both sheets share one width rule. The gutter goes from 12 to 16 px on upright phones. On a sideways phone the 16 px rule also applies (the 24 px step starts at 1024 px wide), but the sheet is centred at 448 px wide, 198 px from either edge, so the gutter never binds there; the owner's 12 px landscape exception (decision 11) is for the dock column, which these sheets do not use. On desktop the sheet is centred, 416 px from the edges, inside the 24 px rule.
+The capture waits for How to play's lazy setup reference (its three figures) before measuring, so the "before" box and the hidden height are the loaded sheet's.
 
 ## For the build issue
 
