@@ -1,0 +1,32 @@
+/* #1299: the three box-shadow pulses drawn as rings that only change opacity, added on top of the running game by
+   capture.mjs. No src/ file changes. Same names, same durations, same easing, same triggers, same reduced-motion rules.
+   This is the proposed styles.css change, line for line. */
+
+/* Build ready (styles.css .build-ready): the tile still scales to 1.04 at the midpoint; the 2 px green ring is a layer
+   over the tile that fades in and out instead of a box-shadow that grows. */
+@keyframes build-ready { 50% { transform: scale(1.04); } }
+@keyframes build-ready-ring { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+.build-ready { position: relative; }
+.build-ready::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 2px #46c27f; opacity: 0; animation: build-ready-ring 320ms var(--ease-snap); }
+
+/* My numbers (styles.css .my-number-lit): the chip still scales to 1.12 at 25 %; the 4 px teal halo is a layer that
+   fades in by 25 % and out by the end, instead of a box-shadow spread that grows. */
+@keyframes my-number-glow { 0% { transform: scale(1); } 25% { transform: scale(1.12); } 100% { transform: scale(1); } }
+@keyframes my-number-ring { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
+.my-number-lit { position: relative; }
+.my-number-lit::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: 0 0 0 4px rgb(36 109 114 / 0.35); opacity: 0; animation: my-number-ring 1200ms ease-out both; }
+
+/* Fortunes cue (styles.css .fortune-cue-glow): the ring span already sits over the button. Its 6 px halo is now fixed
+   and the span's opacity does the pulse. At rest, and once data-done stops the animation, the span is invisible. */
+@keyframes fortune-cue-glow { 0% { opacity: 0; } 40% { opacity: 1; } 100% { opacity: 0; } }
+.fortune-cue-glow { box-shadow: 0 0 0 6px rgb(36 109 114 / 0.35); opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .build-ready::after, .my-number-lit::after { animation: none; opacity: 0; }
+  /* Unchanged: a still 2 px outline marks the button instead of the pulse. */
+  .fortune-cue-glow { animation: none; box-shadow: 0 0 0 2px var(--color-accent); opacity: 1; }
+}
+
+/* The seat card's colour transition (SeatRail.tsx transition-colors duration-200): both colours are white since #1275,
+   so it animates nothing. Off. */
+.seat-card { transition-property: none; }
