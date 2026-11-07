@@ -23,31 +23,23 @@
 .lc-btn svg, .lc-code svg { width: 1rem; height: 1rem; flex: none; }
 .lc-btn:focus-visible, .lc-code:focus-visible, .lc-seg button:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
 
-/* Header: the code is the copy button; the links sit at the right end. */
-.lc-header { display: flex; flex: 1; min-width: 0; align-items: center; justify-content: space-between; gap: 8px; }
+/* Header: the code is the copy button, alone at the left. Copy, Copy link and Invite are gone (owner, 2026-11-07). */
+.lc-header { display: flex; flex: 1; min-width: 0; align-items: center; gap: 8px; }
 .lobby-layout button.lc-code { gap: 8px; min-width: 0; }
 /* The code is already display text, so it does not grow past its 100% size: the header row stays 44 px at any text size. */
 .lc-code-text { font-size: min(1.75rem, 28px); line-height: min(2.125rem, 34px); font-weight: 700; letter-spacing: 1px; }
 .lc-code-act { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); }
 .lc-code[data-copied] .lc-code-act { color: var(--gain); }
-.lc-links { display: flex; flex: none; gap: 8px; }
 /* "Copy" and "Copied" share one cell, so the button keeps the longer width and nothing moves when it changes. */
 .lc-both { display: inline-grid; }
 .lc-both > span { grid-area: 1 / 1; visibility: hidden; }
 .lc-both > [data-on] { visibility: visible; }
-.lc-icon-only { display: none; }
 
-/* Big text on a narrow screen. The header's width is measured in rem, so these follow the text size:
-   under 15.5rem Invite becomes a 44 px person-plus icon (its name stays "Invite"); under 12.5rem the code keeps only
-   its copy icon. At 100% text no phone reaches either (320 px wide leaves 17rem). */
-.lobby-header { container-type: inline-size; }
-@container (max-width: 15.5rem) {
-  :root[data-mock-lobby="a"] .lobby-layout .lc-invite { width: 44px; padding: 0; }
-  :root[data-mock-lobby="a"] .lc-invite .lc-both { display: none; }
-  :root[data-mock-lobby="a"] .lc-invite .lc-icon-only { display: block; }
-}
-@container (max-width: 12.5rem) {
-  .lc-code-act .lc-both { display: none; }
+/* Phone held sideways: with the three buttons gone, nothing sits top right, so the header keeps to the left column
+   and the chat (or Play games) runs from the top of the card. */
+@media (max-height: 600px) and (orientation: landscape) {
+  :root[data-mock-lobby] .lobby-header { grid-column: 1; }
+  :root[data-mock-lobby] .lobby-chat-panel, :root[data-mock-lobby] .lobby-layout .ly { grid-row: 1 / 4; }
 }
 
 /* Table and Play games: two tabs, each the same box, 8 px apart. The picked tab is filled white, with ink text and a
@@ -82,16 +74,10 @@
 @media (max-width: 360px) and (orientation: portrait) {
   .lc-code-text { font-size: min(1.125rem, 18px); line-height: min(1.75rem, 28px); letter-spacing: 0; }
   .lobby-layout button.lc-btn, .lobby-layout button.lc-code { padding: 0 8px; }
-  /* Option B's two link buttons keep today's 12 px at 320 wide; option A's one button keeps 15 px. */
-  :root[data-mock-lobby="b"] .lobby-layout .lc-links > .lc-btn { min-width: 44px; font-size: 0.75rem; line-height: 1rem; white-space: normal; }
-}
-/* Option B on a phone held upright: Copy link may take two lines, as today. */
-@media (max-width: 600px) and (orientation: portrait) {
-  :root[data-mock-lobby="b"] .lobby-layout .lc-links > .lc-btn { padding: 0 8px; white-space: normal; }
 }
 
 /* The Table row at big text: under 12.5rem, Rules keeps only its book (its name stays "Rules"). Only 150% text on a
-   phone reaches it (320 × 568 and 844 × 390). */
+   320 × 568 phone or a phone held sideways reaches it. */
 .lobby-rules { container-type: inline-size; }
 @container (max-width: 12.5rem) {
   .lobby-layout button.lc-rules { width: 44px; padding: 0; }

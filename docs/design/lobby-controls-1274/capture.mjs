@@ -15,7 +15,7 @@ const out = process.argv.includes("--save") ? dir : mkdtempSync(path.join(tmpdir
 mkdirSync(out, { recursive: true });
 const css = readFileSync(`${dir}/controls.css`, "utf8");
 const hig = readFileSync("docs/design/lobby-hig/after.css", "utf8");
-const SIZES = [[320, 568], [390, 844], [844, 390], [1280, 720]];
+const SIZES = [[320, 568], [390, 844], [667, 375], [844, 390], [1280, 720]];
 // The chat-share floors from #1103, as lobby-layout-prove checks them.
 const FLOOR = { "390x844": 0.52, "844x390": 0.39, "1280x720": 0.4 };
 
@@ -98,7 +98,7 @@ function measure(floor) {
     under44: boxes.filter(({ b }) => b.width < 43.5 || b.height < 43.5).map(({ el, b }) => `${name(el)} ${b.width | 0}x${b.height | 0}`),
     minGap: +minGap.toFixed(1), minGapPair: pair,
     cardScroll: [card.scrollWidth - card.clientWidth, card.scrollHeight - card.clientHeight],
-    chatShare: share === null ? null : +share.toFixed(4), chatFloor: floor ?? null, chatLog: log && shown(log) ? +log.getBoundingClientRect().height.toFixed(1) : null,
+    chat: chat && shown(chat) ? r(chat) : null, chatShare: share === null ? null : +share.toFixed(4), chatFloor: floor ?? null, chatLog: log && shown(log) ? +log.getBoundingClientRect().height.toFixed(1) : null,
     fallback: fallback ? { ...r(fallback), focused: document.activeElement?.dataset.testid ?? null } : null,
     live: document.querySelector('.lc-header [data-testid="copy-status"]')?.textContent ?? null,
     copies: window.__copies.slice(-1)[0] ?? null,
@@ -123,7 +123,7 @@ try {
         document.head.append(s);
       }
     }, [hig, css]);
-    const mount = (option, tabs) => page.evaluate(async ([o, t]) => (await import("/docs/design/lobby-controls-1274/controls.tsx")).mount(o, t), [option, tabs]);
+    const mount = (tabs) => page.evaluate(async (t) => (await import("/docs/design/lobby-controls-1274/controls.tsx")).mount(t), tabs);
     const after = (on) => page.evaluate((on) => {
       for (const id of ["mock-hig", "mock-controls"]) document.getElementById(id).disabled = !on;
       for (const el of document.querySelectorAll(".lc-header, .lc-views")) el.style.display = on ? "" : "none";
@@ -142,7 +142,7 @@ try {
     };
 
     // The host alone: nobody to start with yet.
-    await mount("a");
+    await mount();
     await shot("empty");
 
     // A guest, a bot and one chat line.
@@ -160,11 +160,9 @@ try {
     await after(false);
     await shot("before");
     await after(true);
-    await mount("b");
-    await shot("b-table");
-    await mount("a", "joined");
+    await mount("joined");
     await shot("joined-table");
-    await mount("a");
+    await mount();
     await shot("a-table");
 
     // Tap the code: the widest code, then the copy, then "Copied".
@@ -175,7 +173,7 @@ try {
     await page.evaluate(() => window.__emberisle.setState({ code: "WWWW" }));
     await page.getByTestId("mock-code").focus();
     await page.keyboard.press("Enter");
-    await page.getByTestId("mock-code").getByText("Copied").waitFor();
+    await page.locator("[data-testid=mock-code][data-copied]").waitFor({ state: "attached" });
     await shot("a-copied");
     await page.waitForTimeout(1700);
 
@@ -186,7 +184,7 @@ try {
     await shot("a-blocked");
     await page.evaluate(() => { window.__blocked = false; });
     await page.getByTestId("mock-code").click();
-    await page.getByTestId("mock-code").getByText("Copied").waitFor();
+    await page.locator("[data-testid=mock-code][data-copied]").waitFor({ state: "attached" });
     await page.waitForTimeout(1700);
     await page.evaluate((c) => window.__emberisle.setState({ code: c }), real);
 
@@ -202,6 +200,19 @@ try {
     for (const [pct, px] of [[125, 20], [150, 24]]) {
       await page.evaluate((px) => { document.documentElement.style.fontSize = `${px}px`; }, px);
       await shot(`a-text${pct}`);
+      // The widest codes at this text size, the second one copied: measured, not pictured.
+      for (const wide of ["WWWW", "MMMM"]) {
+        await page.evaluate((c) => window.__emberisle.setState({ code: c }), wide);
+        if (wide === "MMMM") {
+          await page.getByTestId("mock-code").click();
+          await page.locator("[data-testid=mock-code][data-copied]").waitFor({ state: "attached" });
+        }
+        const m = await page.evaluate(measure, FLOOR[tag]);
+        results.push({ state: `${wide}${wide === "MMMM" ? " copied" : ""} at ${pct}% (measured only)`, ...m });
+        console.log(`${wide} ${pct}% ${tag}: header fits ${m.headerFits}; copied "${m.copies}"`);
+      }
+      await page.waitForTimeout(1700);
+      await page.evaluate((c) => window.__emberisle.setState({ code: c }), real);
     }
     await page.evaluate(() => { document.documentElement.style.fontSize = ""; });
 
@@ -215,7 +226,7 @@ try {
     await guest.context().close();
     await page.context().close();
   }
-  writeFileSync(`${out}/measurements.json`, JSON.stringify({ chromium: browser.version(), results }, null, 2) + "\n");
+  writeFileSync(`${out}/measurements.json`, JSON.stringify({ chromium: browser.version(), browserErrors: errors, results }, null, 2) + "\n");
   console.log(`chromium ${browser.version()}; ${results.length} measurements; written to ${out}; browser errors ${errors.length}`);
   if (errors.length) console.log(errors.join("\n"));
 } finally {

@@ -5,18 +5,11 @@
 import { useState, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
-import { BookOpen, Check, Copy, UserPlus } from "lucide-react";
+import { BookOpen, Check, Copy } from "lucide-react";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { useGame } from "@/lib/game/store";
 
-// A: tap the code to copy it, and one Invite (share sheet, or copy the link where there is none).
-// B: tap the code to copy it, and keep Copy link and Invite as two buttons.
-export type HeaderOption = "a" | "b";
-
-const joinLink = (code: string) => {
-  const host = new URLSearchParams(location.search).get("host");
-  return `${location.origin}${location.pathname}?code=${code}${host ? `&host=${encodeURIComponent(host)}` : ""}`;
-};
+// Owner answer (2026-11-07): tap the 4-letter code to copy it; today's Copy, Copy link and Invite buttons go.
 
 // Both labels sit in one grid cell and only one shows, so a button keeps the width of its longer label.
 function Both({ on, off, onText }: { on: boolean; off: string; onText: string }) {
@@ -28,18 +21,10 @@ function Both({ on, off, onText }: { on: boolean; off: string; onText: string })
   );
 }
 
-function Header({ option }: { option: HeaderOption }) {
+function Header() {
   const code = useGame((s) => s.code);
-  const { state, copy } = useCopy<"code" | "link">();
-  const done = (what: "code" | "link") => state?.ok && state.what === what;
-  const invite = async () => {
-    if (!navigator.share) return copy("link", joinLink(code));
-    try {
-      await navigator.share({ title: "Emberisle", text: `Join table ${code}`, url: joinLink(code) });
-    } catch (e) {
-      if (!(e instanceof DOMException && e.name === "AbortError")) copy("link", joinLink(code));
-    }
-  };
+  const { state, copy } = useCopy<"code">();
+  const done = (what: "code") => state?.ok && state.what === what;
   const cover = document.querySelector(".lobby-cover");
   return (
     <>
@@ -50,20 +35,9 @@ function Header({ option }: { option: HeaderOption }) {
           <Both on={!!done("code")} off="Copy" onText="Copied" />
         </span>
       </button>
-      <span className="lc-links">
-        {option === "b" ? (
-          <button type="button" className="lc-btn" data-testid="mock-copy-link" onClick={() => copy("link", joinLink(code))}>
-            <Both on={!!done("link")} off="Copy link" onText="Copied" />
-          </button>
-        ) : null}
-        <button type="button" className="lc-btn lc-invite" data-testid="mock-invite" aria-label="Invite" onClick={invite}>
-          {option === "a" && done("link") ? <Check className="lc-icon-only" /> : <UserPlus className="lc-icon-only" />}
-          <Both on={option === "a" && !!done("link")} off="Invite" onText="Copied" />
-        </button>
-      </span>
       {/* The game's own fallback: a polite "Copied" or "Select and copy", and on failure a field with the text selected. */}
       {cover && state && !state.ok
-        ? createPortal(<div className="lobby-copy-fallback"><CopyFallback state={state} label={state.what === "link" ? "Join link" : "Table code"} /></div>, cover)
+        ? createPortal(<div className="lobby-copy-fallback"><CopyFallback state={state} label="Table code" /></div>, cover)
         : <CopyFallback state={state} label="Table code" />}
     </>
   );
@@ -102,9 +76,9 @@ function Views() {
 
 const roots: Root[] = [];
 
-// Adds the proposed controls beside today's, which controls.css hides. Call again with another option to swap the header.
-export function mount(option: HeaderOption, tabs: "split" | "joined" = "split") {
-  document.documentElement.dataset.mockLobby = option;
+// Adds the proposed controls beside today's, which controls.css hides. Call again with the other tab look to swap it.
+export function mount(tabs: "split" | "joined" = "split") {
+  document.documentElement.dataset.mockLobby = "";
   document.documentElement.dataset.mockTabs = tabs;
   if (!roots.length) {
     const head = document.createElement("div");
@@ -115,6 +89,6 @@ export function mount(option: HeaderOption, tabs: "split" | "joined" = "split") 
     document.querySelector(".lobby-rules")!.prepend(views);
     roots.push(createRoot(head), createRoot(views));
   }
-  roots[0]!.render(<Header option={option} />);
+  roots[0]!.render(<Header />);
   roots[1]!.render(<Views />);
 }
