@@ -242,6 +242,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run server-needs-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run server-play-again-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run touch-place-prove
@@ -615,6 +617,8 @@ jobs:
         run: npm run win-action-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run win-list-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+        run: npm run play-again-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run lobby-overflow-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
