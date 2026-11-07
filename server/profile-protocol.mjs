@@ -4,7 +4,7 @@ import { allow } from "./chat.mjs";
 import { ProfileError, publicCard, seatView } from "./profiles.mjs";
 
 export const CAPS = ["profilesV1"];
-export const PROFILE_TYPES = new Set(["profileHello", "profileCreate", "profileLogin", "profileResume", "profileLogout", "profileEdit", "profileChangePin", "profileRecord", "profileHistory"]);
+export const PROFILE_TYPES = new Set(["profileHello", "profileCreate", "profileLogin", "profileResume", "profileLogout", "profileEdit", "profileChangePin", "profileRecord", "profileHistory", "profileWins"]);
 
 // What a refused request says. Sign-in failures share one message: a wrong PIN, an unknown login and a spent budget look alike.
 const MESSAGES = {
@@ -156,6 +156,11 @@ export function profileHandler(store, send) {
     if (msg.type === "profileHistory") {
       const page = store.ownHistory(msg.credential, msg.before);
       return send(ws, { type: "profileHistory", id, rows: page.rows, next: page.next });
+    }
+    // The group Wins board (#767): any signed-in profile may read it; it carries aggregates only.
+    if (msg.type === "profileWins") {
+      const page = store.winsBoard(msg.credential, msg.after);
+      return send(ws, { type: "profileWins", id, rows: page.rows, next: page.next });
     }
   }
 

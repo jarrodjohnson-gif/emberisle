@@ -856,6 +856,26 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
     return { rows: page.map((g) => historyRow(doc.results[g], id)), next: end > HISTORY_PAGE ? page.at(-1) : null };
   }
 
+  // The group Wins board (#767, profiles.md "Profile and Wins surfaces"): every profile with a counted game, by wins
+  // descending, games ascending, then id. Equal wins share a rank. Aggregates and display names only, HISTORY_PAGE rows a
+  // page; `after` is the number of rows already shown. No id, login, colour or history leaves the store.
+  function winsBoard(token, after) {
+    const me = owner(token);
+    if (!(after === undefined || after === null || (Number.isSafeInteger(after) && after >= 0))) throw new ProfileError("invalid");
+    const list = Object.entries(doc.records ?? {})
+      .filter(([id, r]) => r.games > 0 && has(doc.profiles, id))
+      .sort(([a, x], [b, y]) => y.wins - x.wins || x.games - y.games || (a < b ? -1 : a > b ? 1 : 0));
+    const start = after ?? 0;
+    const rows = [];
+    for (let i = start; i < Math.min(list.length, start + HISTORY_PAGE); i++) {
+      const [id, r] = list[i];
+      const rank = list.findIndex(([, x]) => x.wins === r.wins) + 1;
+      const { games, wins, losses, winRate, streak } = recordView(r);
+      rows.push({ rank, displayName: doc.profiles[id].displayName, games, wins, losses, winRate, streak, you: id === me });
+    }
+    return { rows, next: start + HISTORY_PAGE < list.length ? start + HISTORY_PAGE : null };
+  }
+
   return {
     get ready() {
       return Boolean(doc);
@@ -881,6 +901,9 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
     recordOutcome,
     ownRecord: (token) => recordView(recordOf(owner(token))),
     ownHistory,
+    winsBoard,
+    // A profile's committed win total, for the win screen of a recorded game (#767); null when the profile is gone.
+    committedWins: (id) => (doc && typeof id === "string" && has(doc.profiles, id) ? (recordOf(id)?.wins ?? 0) : null),
     // A recorded game's receipt, or null: the host fences a stale snapshot of any game that has one.
     receipt: (id) => (doc?.receipts && typeof id === "string" && has(doc.receipts, id) ? { fingerprint: doc.receipts[id].fingerprint } : null),
     deletionPreview,
