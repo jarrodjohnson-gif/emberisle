@@ -69,6 +69,37 @@ await page.route(/(TradeToast|losses)/, async (route) => {
   await route.continue();
 });
 
+// Time from the store update to the prompt being in the DOM, measured inside the page: a MutationObserver fires at React's
+// commit, so the figure leaves out Playwright's polling and its round trips, which a starved runner stretches by whole
+// frames. The 250 ms bound is unchanged.
+const FIND = {
+  trade: () => document.querySelector('[data-testid="trade-toast"]'),
+  discard: () => [...document.querySelectorAll("form")].find((f) => f.textContent.includes("Discard 2")),
+  steal: () => document.querySelector('[role="group"][aria-label="The wayfarer takes a card"]'),
+};
+const timeToAppear = (kind, trigger) =>
+  page.evaluate(
+    ([kind, trigger, find]) =>
+      new Promise((resolve) => {
+        const found = new Function(`return (${find[kind]})()`);
+        const start = performance.now();
+        const observer = new MutationObserver(() => {
+          if (found()) {
+            observer.disconnect();
+            resolve(performance.now() - start);
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        new Function(trigger)();
+        if (found()) {
+          observer.disconnect();
+          resolve(performance.now() - start);
+        }
+        setTimeout(() => resolve(Infinity), 15_000);
+      }),
+    [kind, trigger, Object.fromEntries(Object.entries(FIND).map(([k, f]) => [k, f.toString()]))],
+  );
+
 try {
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.getByRole("button", { name: "Play", exact: true }).click({ timeout: STEP_MS });
@@ -85,30 +116,26 @@ try {
   while (chunkRequests < 2 && Date.now() < endWait) {
     await new Promise((r) => setTimeout(r, 50));
   }
-  // Allow the 1000ms throttled chunk responses to fully settle in browser memory.
-  await page.waitForLoadState("networkidle");
-  await new Promise((r) => setTimeout(r, 1100));
+  // Wait for the real event, not a clock: the throttled response is only the first step. Vite then transforms and serves the
+  // chunk's own imports, which takes as long as the runner is slow. The browser keeps one module record per URL, so this
+  // import settles when the prefetch the app started has fetched and evaluated the whole graph (the app's own handler on
+  // that load was attached first, so it has already run).
+  await page.evaluate(() =>
+    Promise.all([
+      import(/* @vite-ignore */ "/src/components/game/TradeToast.tsx"),
+      import(/* @vite-ignore */ "/src/components/game/losses.ts"),
+    ]),
+  );
 
   check("idle prefetch fetched throttled chunks early", chunkRequests >= 2, { chunkRequests });
 
   // --- 1. First trade offer ---
-  const t0 = Date.now();
-  await page.evaluate(() => {
-    window.__emberisle.setState({
-      offer: {
-        tradeId: "test-trade-1",
-        from: "p1",
-        fromName: "Dune",
-        give: { grain: 1 },
-        want: { wool: 1 },
-        until: Date.now() + 20_000,
-      },
-    });
-  });
-
+  const tradeElapsed = await timeToAppear(
+    "trade",
+    `window.__emberisle.setState({ offer: { tradeId: "test-trade-1", from: "p1", fromName: "Dune", give: { grain: 1 }, want: { wool: 1 }, until: Date.now() + 20_000 } })`,
+  );
   const toast = page.getByTestId("trade-toast");
   await toast.waitFor({ state: "visible", timeout: STEP_MS });
-  const tradeElapsed = Date.now() - t0;
   check("first trade offer appears without delay (< 250ms)", tradeElapsed < 250, { tradeElapsed });
 
   const toastText = await toast.innerText();
@@ -121,18 +148,12 @@ try {
   await toast.waitFor({ state: "hidden", timeout: STEP_MS }).catch(() => {});
 
   // --- 2. Discard prompt ---
-  const t1 = Date.now();
-  await page.evaluate(() => {
-    const s = window.__emberisle;
-    const st = structuredClone(s.getState().state);
-    st.phase = "discard";
-    st.discardNeeded = { p0: 2 };
-    s.setState({ state: st });
-  });
-
+  const discardElapsed = await timeToAppear(
+    "discard",
+    `const s = window.__emberisle; const st = structuredClone(s.getState().state); st.phase = "discard"; st.discardNeeded = { p0: 2 }; s.setState({ state: st });`,
+  );
   const discardBar = page.locator('form:has-text("Discard 2")');
   await discardBar.waitFor({ state: "visible", timeout: STEP_MS });
-  const discardElapsed = Date.now() - t1;
   check("discard prompt appears without delay (< 250ms)", discardElapsed < 250, { discardElapsed });
 
   // Clear discard
@@ -145,20 +166,12 @@ try {
   });
 
   // --- 3. Steal victim pick ---
-  const t2 = Date.now();
-  await page.evaluate(() => {
-    window.__emberisle.setState({
-      pendingSteal: {
-        hexId: "-2,0",
-        kind: "moveRobber",
-        targets: ["p1", "p2"],
-      },
-    });
-  });
-
+  const stealElapsed = await timeToAppear(
+    "steal",
+    `window.__emberisle.setState({ pendingSteal: { hexId: "-2,0", kind: "moveRobber", targets: ["p1", "p2"] } })`,
+  );
   const stealBar = page.getByRole("group", { name: "The wayfarer takes a card" });
   await stealBar.waitFor({ state: "visible", timeout: STEP_MS });
-  const stealElapsed = Date.now() - t2;
   check("steal picker appears without delay (< 250ms)", stealElapsed < 250, { stealElapsed });
 
   const stealButtons = await stealBar.getByRole("button").allInnerTexts();
