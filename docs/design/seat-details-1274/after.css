@@ -14,11 +14,11 @@
 
 /* 3. Phone: a bottom sheet over the dock, so the trade rows sit in reach. Tapping outside or Escape still closes it. */
 @media (max-width: 767px), (pointer: coarse) {
-  [data-testid="player-menu"] { position: fixed !important; top: auto !important; bottom: 0; left: 0; right: 0; width: auto !important; max-height: 70dvh !important; border: 0; border-radius: 20px 20px 0 0; padding: 16px; padding-bottom: max(16px, env(safe-area-inset-bottom)); box-shadow: var(--shadow-sheet); }
+  [data-testid="player-menu"] { position: fixed !important; top: auto !important; bottom: 0; left: 0; right: 0; width: auto !important; max-height: 50dvh !important; border: 0; border-radius: 20px 20px 0 0; padding: 16px; padding-bottom: max(16px, env(safe-area-inset-bottom)); box-shadow: var(--shadow-sheet); }
 }
 /* Sideways phone: the sheet stays inside the left column, clear of the island. */
 @media (max-height: 480px) and (pointer: coarse) {
-  [data-testid="player-menu"] { left: max(12px, env(safe-area-inset-left)); right: auto; width: 320px !important; border-radius: 20px 20px 0 0; }
+  [data-testid="player-menu"] { left: max(12px, env(safe-area-inset-left)); right: auto; width: 320px !important; max-height: 70dvh !important; border-radius: 20px 20px 0 0; }
 }
 
 /* Rows 8 px apart, at the body size, and never shorter than 44 px: the menu is a flex column that scrolls, so a row

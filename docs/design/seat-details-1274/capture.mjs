@@ -78,6 +78,8 @@ const measure = () => {
       rows: [...menu.querySelectorAll("button")].map((b) => ({ text: b.textContent.trim(), h: +b.getBoundingClientRect().height.toFixed(1), font: parseFloat(getComputedStyle(b).fontSize) })),
       focusInside: menu.contains(document.activeElement),
       inView: r(menu)[1] >= 0 && r(menu)[1] + r(menu)[3] <= innerHeight + 0.5,
+      topInBottomHalf: r(menu)[1] >= innerHeight / 2,
+      scrolls: menu.scrollHeight > menu.clientHeight + 1 ? menu.scrollHeight - menu.clientHeight : 0,
     },
   };
 };
@@ -148,7 +150,9 @@ try {
         if (!name.endsWith("own") && s.menu.privateRows) throw new Error(`${tag} ${variant} ${name}: private points shown`);
         const short = s.menu.rows.filter((r) => r.h < 44);
         if (variant === "after" && short.length) throw new Error(`${tag} ${variant} ${name}: rows under 44 px ${JSON.stringify(short)}`);
-        console.log(tag, variant, name, JSON.stringify({ moved: s.seatsMoved, box: s.menu.box, facts: s.menu.facts.length, score: s.menu.score.length, note: s.menu.ledgerNote !== "none", rows: s.menu.rows.map((x) => `${x.text.slice(0, 18)} ${x.h}`), focus: [s.menu.focusInside, s.focusAfterEscape], inView: s.menu.inView, gameEndPrivateRows: rec.gameEnd.opponentPrivateRows }));
+        // Upright phone, after: the sheet's top edge is in the bottom half of the screen.
+        if (variant === "after" && phone && height > width && !s.menu.topInBottomHalf) throw new Error(`${tag} ${variant} ${name}: sheet top ${s.menu.box[1]} is above the middle of ${height}`);
+        console.log(tag, variant, name, JSON.stringify({ moved: s.seatsMoved, box: s.menu.box, facts: s.menu.facts.length, score: s.menu.score.length, note: s.menu.ledgerNote !== "none", rows: s.menu.rows.map((x) => `${x.text.slice(0, 18)} ${x.h}`), focus: [s.menu.focusInside, s.focusAfterEscape], inView: s.menu.inView, scrolls: s.menu.scrolls, gameEndPrivateRows: rec.gameEnd.opponentPrivateRows }));
       }
       out.runs.push(rec);
       await context.close();

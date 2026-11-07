@@ -12,7 +12,7 @@
               "box": [
                 12,
                 12,
-                64.5,
+                76.5,
                 44
               ],
               "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
@@ -20,9 +20,9 @@
             {
               "id": "seat-p1",
               "box": [
-                80.5,
+                92.5,
                 12,
-                64.5,
+                76.5,
                 44
               ],
               "text": "Bartholomew LongfellowBar9 goods5 points13"
@@ -30,9 +30,9 @@
             {
               "id": "seat-p2",
               "box": [
-                149,
+                173,
                 12,
-                64.5,
+                76.5,
                 44
               ],
               "text": "MiraMir9 goods3 points10"
@@ -40,9 +40,9 @@
             {
               "id": "seat-p3",
               "box": [
-                217.5,
+                253.5,
                 12,
-                64.5,
+                76.5,
                 44
               ],
               "text": "FinnFin0 points00"
@@ -131,7 +131,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -207,7 +209,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -283,7 +287,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -359,7 +365,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -446,7 +454,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -536,7 +546,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -676,7 +688,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": true,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -752,7 +766,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": true,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -828,7 +844,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": true,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -904,7 +922,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": true,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -991,7 +1011,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": true,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -1043,9 +1065,9 @@
           "menu": {
             "box": [
               0,
-              416,
+              422,
               390,
-              428
+              422
             ],
             "label": "Jarrod's actions",
             "radius": "20px",
@@ -1081,7 +1103,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": true,
+            "scrolls": 6
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -1221,7 +1245,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -1297,7 +1323,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -1373,7 +1401,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -1449,7 +1479,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -1536,7 +1568,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -1626,7 +1660,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 12
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -1766,7 +1802,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 103
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -1842,7 +1880,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -1918,7 +1958,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -1994,7 +2036,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -2081,7 +2125,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 97
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -2171,7 +2217,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 155
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -2311,7 +2359,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [
             "rail-p1",
@@ -2391,7 +2441,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [
             "rail-p3"
@@ -2469,7 +2521,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -2545,7 +2599,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [
             "rail-p2",
@@ -2635,7 +2691,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [
             "rail-p3"
@@ -2727,7 +2785,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [
             "rail-p1",
@@ -2871,7 +2931,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -2947,7 +3009,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -3023,7 +3087,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -3099,7 +3165,9 @@
             "privateRows": 0,
             "rows": [],
             "focusInside": false,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -3186,7 +3254,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
@@ -3276,7 +3346,9 @@
               }
             ],
             "focusInside": true,
-            "inView": true
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
           },
           "seatsMoved": [],
           "focusAfterEscape": true
