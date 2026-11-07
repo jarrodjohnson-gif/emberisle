@@ -202,6 +202,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run game-text-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run stickers-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-harbor-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-action-order-prove
@@ -485,6 +487,8 @@ jobs:
         run: npm run chat-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run chat-text-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+        run: npm run sticker-tray-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run react-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
