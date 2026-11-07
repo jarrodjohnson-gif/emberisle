@@ -10,9 +10,9 @@ import { chromium } from "../../../scripts/proof-browser.mjs";
 import { createServer } from "vite";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
-const out = process.argv.includes("--save") ? path.join(dir, "pictures") : mkdtempSync(path.join(tmpdir(), "chrome-motion-"));
-mkdirSync(out, { recursive: true });
-console.error(`pictures: ${out}`);
+const outDir = process.argv.includes("--save") ? path.join(dir, "pictures") : mkdtempSync(path.join(tmpdir(), "chrome-motion-"));
+mkdirSync(outDir, { recursive: true });
+console.error(`pictures: ${outDir}`);
 const afterCss = readFileSync(path.join(dir, "after.css"), "utf8");
 const sizes = [[390, 844], [844, 390], [1280, 720]];
 // Where each pulse peaks: build-ready at 50 % of 320 ms, my-number at 25 % of 1200 ms, the fortune cue at 40 % of 1600 ms.
@@ -118,7 +118,7 @@ try {
         const frozen = await freeze(page);
         // The roll moment the trigger's roll starts is not a chrome pulse: let it leave before the picture.
         await page.waitForTimeout(1600);
-        await page.screenshot({ path: `${out}/${tag}.jpg`, type: "jpeg", quality: 78 });
+        await page.screenshot({ path: `${outDir}/${tag}.jpg`, type: "jpeg", quality: 78 });
         out.runs.push({ tag, rolled: n, ...frozen });
         console.log(tag, JSON.stringify({ animations: frozen.animations, path: frozen.path?.shadow, ring: `${frozen.path?.ring.shadow} @ ${frozen.path?.ring.opacity}`, lit: frozen.myNumber?.n, cue: `${frozen.cue?.shadow} @ ${frozen.cue?.opacity}` }));
         await context.close();
@@ -130,6 +130,6 @@ try {
   await vite.close();
 }
 out.errors = errors;
-writeFileSync(`${out}/measurements.json`, JSON.stringify(out, null, 2));
+writeFileSync(`${outDir}/measurements.json`, JSON.stringify(out, null, 2));
 console.log(JSON.stringify({ errors }));
 if (errors.length) process.exit(1);
