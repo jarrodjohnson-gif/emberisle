@@ -7,9 +7,9 @@ import { ChevronLeft, Volume2, VolumeX, X } from "lucide-react";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useGame } from "@/lib/game/store";
 import { useMutedSeats } from "@/lib/use-muted-seats";
-import { play, setMusicOn, setMuted, useMuted, useMusicOn, type SoundName } from "@/lib/sound";
+import { isMusicOn, play, setMusicOn, setMuted, useMuted, useMusicOn, type SoundName } from "@/lib/sound";
 import { useSeaSounds, setSeaSounds } from "@/lib/sea-setting";
-import { setCategoryMuted, setCategoryVolume, setMasterVolume, useSoundMix, type SoundCategory } from "@/lib/sound-settings";
+import { SOUND_CATEGORIES, getSoundMix, setCategoryMuted, setCategoryVolume, setMasterVolume, useSoundMix, type SoundCategory } from "@/lib/sound-settings";
 
 type Id = "master" | SoundCategory;
 const ROWS: { id: Id; name: string; sample: SoundName }[] = [
@@ -26,7 +26,13 @@ const Speaker = ({ off }: { off: boolean }) => (off ? <VolumeX className="size-5
 function Row({ id, name, sample, level, off, onLevel, onMute }: { id: Id; name: string; sample: SoundName; level: number; off: boolean; onLevel: (v: number) => void; onMute: () => void }) {
   const pct = Math.round(level * 100);
   // The slider commits as it moves; the sample plays on release (a pointer let go, or an arrow key lifted).
-  const sampleOnRelease = () => play(sample, 1, id === "master" ? "game" : id);
+  const sampleOnRelease = () => {
+    if (id !== "master") return play(sample, 1, id);
+    // All sound's sample follows All sound alone: ride on the loudest kind that is on, with its own level taken back out.
+    const mix = getSoundMix();
+    const kind = SOUND_CATEGORIES.filter((c) => !mix[c].muted && mix[c].volume && (c !== "music" || isMusicOn())).sort((x, y) => mix[y].volume - mix[x].volume)[0];
+    if (kind) play(sample, 1 / mix[kind].volume, kind);
+  };
   return (
     <div className={`ss-row${id === "master" ? " ss-master" : ""}`} data-testid={`sound-row-${id}`}>
       <span className="ss-label">{name}</span>
@@ -72,7 +78,7 @@ export function SoundSheet({ onBack, onClose }: { onBack: () => void; onClose: (
   const targets = mode === "online" ? seats.filter((seat) => seat.id !== seatId && seat.name) : [];
 
   const row = (r: (typeof ROWS)[number]) => {
-    if (r.id === "master") return <Row key={r.id} {...r} level={mix.master} off={muted} onLevel={setMasterVolume} onMute={() => setMuted(!muted)} />;
+    if (r.id === "master") return <Row key={r.id} {...r} level={mix.master} off={muted} onLevel={setMasterVolume} onMute={() => { setMuted(!muted); if (muted) play("ui_click"); }} />;
     const c = mix[r.id];
     // Music is also off when the old Music switch was saved off; pressing mute then brings it back.
     const off = c.muted || (r.id === "music" && !music);

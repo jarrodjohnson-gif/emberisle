@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { ConnectionOverlay, SoundSheet, soundSheet } from "@/components/game/chunks";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { useGame } from "@/lib/game/store";
-import { cn } from "@/lib/utils";
 import { haptics, play, useMuted } from "@/lib/sound";
 import { OPEN_SOUND_EVENT, useSoundMix } from "@/lib/sound-settings";
 import { LazyBoundary } from "@/lib/lazy";
@@ -144,10 +143,7 @@ export function TableMenu() {
           role="dialog"
           aria-label={sound ? "Sound" : "Table menu"}
           data-testid="table-menu"
-          className={cn(
-            "absolute right-0 top-full z-20 mt-2 flex max-h-[calc(100dvh-5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex-col",
-            sound ? "ss" : "w-64 overflow-y-auto rounded-sheet bg-surface p-2 shadow-[0_8px_32px_rgb(28_25_21_/_0.18)]",
-          )}
+          className={`absolute right-0 top-full z-20 mt-2 flex max-h-[calc(100dvh-5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex-col ${sound ? "ss" : "w-64 overflow-y-auto rounded-sheet bg-surface p-2 shadow-[0_8px_32px_rgb(28_25_21_/_0.18)]"}`}
           onBlur={(e) => {
             const to = e.relatedTarget as Node | null;
             if (to && !sheet.current?.contains(to) && !trigger.current?.contains(to)) close(false);
@@ -158,7 +154,7 @@ export function TableMenu() {
               <SoundSheet onBack={back} onClose={() => close(true)} />
             </LazyBoundary>
           ) : null}
-          <p className={cn(sound ? "hidden" : "flex", "items-center gap-2 px-3 py-1 text-caption text-muted")}>
+          <p hidden={sound} className="flex items-center gap-2 px-3 py-1 text-caption text-muted">
             <span>Turn {Math.max(1, state.turn)}</span>
             {watching > 0 ? (
               <span data-testid="watching-count" aria-label={`${watching} watching`} className="ml-auto flex items-center gap-1 tabular-nums">

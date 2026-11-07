@@ -237,6 +237,7 @@ try {
       // Music: the old Music off switch still counts, and the mute button brings it back.
       await page.evaluate(async () => (await import("/src/lib/sound.ts")).setMusicOn(false));
       assert.equal(await mute("music").getAttribute("aria-pressed"), "true", "Music saved off shows muted");
+      assert.deepEqual(await heard(page, "music"), [], "Music saved off: the stings are silent too");
       await mute("music").click();
       assert.equal(await mute("music").getAttribute("aria-pressed"), "false", "pressing it turns Music back on");
       assert.equal(await page.evaluate(async () => (await import("/src/lib/sound.ts")).isMusicOn()), true, "the music switch is on again");
