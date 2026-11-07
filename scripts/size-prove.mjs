@@ -66,10 +66,10 @@ const CEILINGS = [
   { name: "losses", gzipBytes: 1600 },
   // #766: the shared lucide X icon chunk, named trade-panel until the profile sheet also used it; same 300 B ceiling.
   { name: "x", gzipBytes: 300 },
-  // #766: the title's profile sheet with its profile client, measured 5435 B; focus-trap now shared by it and the sheets,
-  // measured 470 B. Proposed ceilings, for Opus to decide before merge.
+  // #766: the title's profile sheet with its profile client, measured 5481 B; focus-trap now shared by it and the sheets,
+  // measured 469 B. Ceilings decided by Opus under the owner's 2026-11-06 size-limit delegation (PR #1355 review).
   { name: "ProfileSheet", gzipBytes: 6000 },
-  { name: "focus-trap", gzipBytes: 600 },
+  { name: "focus-trap", gzipBytes: 550 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.

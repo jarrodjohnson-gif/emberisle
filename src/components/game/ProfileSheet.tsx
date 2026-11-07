@@ -99,6 +99,10 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
     </Button>
   );
   const formError = errors.form ? <p role="alert" className="text-sm text-accent-ink">{errors.form}</p> : null;
+  // The main action row sticks to the bottom of the scrolling sheet, so it stays on screen on a short phone.
+  const actions = (children: ReactNode) => (
+    <div className="sticky bottom-0 -mx-5 space-y-3 border-t border-border bg-surface px-5 pb-5 pt-3">{children}</div>
+  );
   let body: ReactNode;
   if (snap.profile) {
     body = (
@@ -111,12 +115,16 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
         <p className="text-sm text-muted">{snap.remembered ? "Remembered on this device." : "Not remembered on this device."}</p>
         {snap.profile.pinMustChange ? <p role="alert" className="text-sm text-accent-ink">Change your PIN before continuing.</p> : null}
         {formError}
-        <Button size="lg" variant="primary" className="w-full" onClick={onClose}>
-          Done
-        </Button>
-        <Button variant="secondary" className="w-full" disabled={busy} onClick={() => void send(() => c.logout())}>
-          Sign out
-        </Button>
+        {actions(
+          <>
+            <Button size="lg" variant="primary" className="w-full" onClick={onClose}>
+              Done
+            </Button>
+            <Button variant="secondary" className="w-full" disabled={busy} onClick={() => void send(() => c.logout())}>
+              Sign out
+            </Button>
+          </>,
+        )}
       </>
     );
   } else if (snap.status !== "available") {
@@ -188,9 +196,11 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
             Remember me on this device
           </label>
           {formError}
-          <Button size="lg" variant={remembered(snap.host) && !create ? "secondary" : "primary"} type="submit" className="w-full" disabled={busy}>
-            {create ? "Create profile" : "Sign in"}
-          </Button>
+          {actions(
+            <Button size="lg" variant={remembered(snap.host) && !create ? "secondary" : "primary"} type="submit" className="w-full" disabled={busy}>
+              {create ? "Create profile" : "Sign in"}
+            </Button>,
+          )}
         </form>
         <Button variant="secondary" className="w-full" onClick={() => { setErrors({}); setView(create ? "signin" : "create"); }}>
           {create ? "I have a profile" : "Create profile"}

@@ -135,6 +135,9 @@ try {
         const b = el.getBoundingClientRect();
         if (b.height < 44 || b.width < 44) out.push(`${el.getAttribute("aria-label") || el.textContent.trim() || el.tagName} ${b.width}x${b.height}`);
       }
+      // The main action shows inside the sheet without scrolling (sticky action row).
+      const submit = d.querySelector('button[type="submit"]').getBoundingClientRect();
+      if (submit.top < r.top || submit.bottom > r.bottom + 0.5) out.push(`submit outside the sheet ${submit.top},${submit.bottom}`);
       return out;
     });
     assert.deepEqual(bad, [], `${label}: sheet on screen and every control at least 44 px`);
