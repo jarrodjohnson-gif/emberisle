@@ -72,7 +72,7 @@ export function SoundsTab({ dense }: { dense?: boolean }) {
         <>
           <p className="mt-1 text-caption text-zinc-700">Stickers · silent</p>
           <div role="group" aria-label="Stickers" data-testid="stickers" className="flex flex-wrap gap-1">
-            {stickers.map(([id, url]) => (
+            {stickers.map(([id]) => (
               <button
                 key={id}
                 type="button"
@@ -82,7 +82,7 @@ export function SoundsTab({ dense }: { dense?: boolean }) {
                 onPointerDown={() => play("ui_click")}
                 onClick={() => sendReaction(id)}
               >
-                <img src={url} alt="" className={cn("object-contain", dense ? "size-6" : "size-8")} />
+                <Emote emote={id} once className={dense ? "size-6" : "size-8"} />
               </button>
             ))}
           </div>

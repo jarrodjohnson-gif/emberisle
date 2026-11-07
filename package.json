@@ -81,6 +81,7 @@
     "stickers-prove": "node scripts/stickers-prove.mjs",
     "sticker-host-prove": "node --import ./server/register.mjs server/sticker-host-prove.mjs",
     "sticker-tray-prove": "node scripts/sticker-tray-prove.mjs",
+    "sticker-motion-prove": "node scripts/sticker-motion-prove.mjs",
     "lobby-layout-prove": "node scripts/lobby-layout-prove.mjs",
     "lobby-prove": "node scripts/lobby-prove.mjs",
     "lobby-wait-box-prove": "node scripts/lobby-wait-box-prove.mjs",
