@@ -1,7 +1,8 @@
 // #1418: one button type and one keyboard focus colour (owner, #1298: option A and option A; design in docs/design/button-audit).
 // At 430x932, 390x844, 375x812, 820x1180, 844x390 and 1280x720, on the title, a played lobby, a main-phase table, an
 // incoming offer, the trade window, the fortune tray, the table menu and the results:
-// - every Button outside the lobby is 15 px / 22 px, weight 600 (the lobby keeps its own accepted scale, decision 7 of #1274);
+// - every Button is 15 px / 22 px, weight 600, but two that keep their own type, as in the packet's after.css: the lobby
+//   (its accepted scale, decision 7 of #1274) and the trade window's 12 px need pills (seat-needs.css);
 // - no button or tab label wraps onto a second line or clips, and every Button is at least 44 x 44;
 // - Tab through the screen: every focused button and tab shows a 2 px solid ink (#263d3c) outline.
 // Zero console errors. Run: npm run button-system-prove
@@ -68,7 +69,8 @@ const measure = () => {
     return {
       label: (b.getAttribute("aria-label") || b.textContent.trim() || b.tagName).slice(0, 40),
       testid: b.dataset.testid ?? "",
-      primitive: b.matches("button.rounded-control"),
+      primitive: b.classList.contains("duration-(--duration-press)"),
+      need: b.classList.contains("need-toggle"),
       lobby: !!b.closest(".lobby-layout"),
       w: +r.width.toFixed(1), h: +r.height.toFixed(1),
       bg: cs.backgroundColor,
@@ -87,7 +89,7 @@ const focusWalk = async (page, steps) => {
       const el = document.activeElement;
       if (!el || !el.matches("button, [role=tab]") || !el.matches(":focus-visible")) return null;
       const cs = getComputedStyle(el);
-      return { label: (el.getAttribute("aria-label") || el.textContent.trim()).slice(0, 40), testid: el.dataset.testid ?? "", style: cs.outlineStyle, width: cs.outlineWidth, color: cs.outlineColor };
+      return { label: (el.getAttribute("aria-label") || el.textContent.trim()).slice(0, 40), testid: el.dataset.testid ?? "", style: cs.outlineStyle, width: cs.outlineWidth, color: cs.outlineColor, border: cs.borderTopColor };
     });
     if (f && !seen.has(`${f.testid}|${f.label}`)) seen.set(`${f.testid}|${f.label}`, f);
   }
@@ -153,10 +155,12 @@ try {
         if (b.wraps.length) problems.push(`${at}: wraps (${b.wraps.join(" | ")})`);
         if (b.clips.length) problems.push(`${at}: clips (${b.clips.join(" | ")})`);
         if (b.primitive && (b.w < 44 || b.h < 44)) problems.push(`${at}: ${b.w}x${b.h}, under 44 x 44`);
-        if (b.primitive && !b.lobby && !PENDING_TYPE.has(b.testid) && b.font.join(" ") !== "15px 22px 600") problems.push(`${at}: type ${b.font.join(" ")}, not 15px 22px 600`);
+        if (b.primitive && !b.lobby && !b.need && !PENDING_TYPE.has(b.testid) && b.font.join(" ") !== "15px 22px 600") problems.push(`${at}: type ${b.font.join(" ")}, not 15px 22px 600`);
       }
       for (const f of focus) {
         if (PENDING_FOCUS.has(f.testid)) continue;
+        // The dock markers on the board show focus as an ink edge in place of a ring (DockInspection.tsx).
+        if (f.style === "none" && f.border === INK) continue;
         if (f.style !== "solid" || f.width !== "2px" || f.color !== INK) problems.push(`${tag} ${name} focus on "${f.label}": ${f.style} ${f.width} ${f.color}, not 2px solid ink`);
       }
       return focus.length;
