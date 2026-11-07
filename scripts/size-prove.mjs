@@ -25,11 +25,11 @@ const CEILINGS = [
   { name: "SeatNeeds", gzipBytes: 1900 },
   { name: "LobbyView", gzipBytes: 2500 },
   // #1262: Sandwich Stacker shelf and player, measured 1867 B gzip. The owner must OK this new ceiling before merge.
-  { name: "LobbyWaitBox", gzipBytes: 2300 }, // #1263, 2026-11-07: raised from 2,100 B, DECISIONS q-size-standing; paired trim #1366
+  { name: "LobbyWaitBox", gzipBytes: 2100 }, // #1366, 2026-11-07: back to 2,100 B after the trim in PR #1373
   // #1263: tic-tac-toe tile and board, loaded with the shelf; measured 1390 B gzip. Decided 2026-11-07, q-size-standing.
   { name: "LobbyTicTacToe", gzipBytes: 1600 },
   // #553: shared on-demand table transport, measured 2.08 kB; existing caps stay fixed.
-  { name: "table", gzipBytes: 2300 }, // #1263, 2026-11-07: raised from 2,200 B, DECISIONS q-size-standing; paired trim #1366
+  { name: "table", gzipBytes: 2200 }, // #1366, 2026-11-07: back to 2,200 B after the trim in PR #1373
   // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
   { name: "haptics", gzipBytes: 1200 },
   // #1283: raised from 125,200 B to 127,000 B per owner decision 2026-11-03.
@@ -72,6 +72,10 @@ const CEILINGS = [
   // measured 469 B. Ceilings decided by Opus under the owner's 2026-11-06 size-limit delegation (PR #1355 review).
   { name: "ProfileSheet", gzipBytes: 6000 },
   { name: "focus-trap", gzipBytes: 550 },
+  // #766 slice 2, 2026-11-07. ProfileForms: measured 2,182 B. eye-off (the EyeOff icon the bundler split out): measured
+  // 292 B. Ceilings decided by Opus per q-size-standing (PR #1401 review).
+  { name: "ProfileForms", gzipBytes: 2350 },
+  { name: "eye-off", gzipBytes: 310 },
   // #1281, 2026-11-07: startup loading screen, preloaded beside index; measured 2,420 B gzip. Decided per q-size-standing; paired trim to follow.
   { name: "LoadingScreen", gzipBytes: 2600 },
   // #669, 2026-11-07: the Sound panel in the Table menu, loaded as the menu opens; measured 1,872 B gzip. New chunk only; the owner must OK this ceiling.

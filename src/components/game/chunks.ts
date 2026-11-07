@@ -27,6 +27,9 @@ export const WayfarerOptions = chunk(() => import("@/components/game/WayfarerOpt
 // #766: the title's profile sheet and its profile client load only when Profile is pointed at, focused or pressed.
 export const profileSheet = chunk(() => import("@/components/game/ProfileSheet"));
 export const ProfileSheet = profileSheet.pick((m) => m.ProfileSheet);
+// #766 slice 2: its Edit profile and Change PIN forms load when the sheet opens one of them.
+export const profileForms = chunk(() => import("@/components/game/ProfileForms"));
+export const ProfileForms = profileForms.pick((m) => m.ProfileForms);
 
 export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);

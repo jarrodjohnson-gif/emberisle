@@ -31,13 +31,102 @@ const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
-async function open(size, { skip = false, reducedMotion = "no-preference", hold = false, fail = false, slow = false } = {}) {
+async function open(size, { skip = false, reducedMotion = "no-preference", hold = false, fail = false, slow = false, stall = 0, trace = false, early = false } = {}) {
   const ctx = await browser.newContext({ viewport: size, deviceScaleFactor: SHOTS ? 2 : 1, reducedMotion, hasTouch: size.width < 900, isMobile: false });
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   if (skip) await page.addInitScript(() => (window.__emberisleSkipIntro = true));
+  if (trace) {
+    // #1385: what the page did around Start, printed with the result: when the bar read 100%, the main thread's long tasks,
+    // and the island's draws and GL programs since Start.
+    await page.addInitScript(() => {
+      const t = (window.__trace = { long: [], at100: 0, start: 0, renders: 0, programs: 0, title: 0, gone: 0, timers: [], frames: [] });
+      new PerformanceObserver((l) => l.getEntries().forEach((e) => t.long.push([e.startTime, e.duration]))).observe({ type: "longtask", buffered: true });
+      new MutationObserver(() => {
+        if (!t.at100 && document.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow") === "100") t.at100 = performance.now();
+        if (t.start && !t.title && document.querySelector('[data-testid="title-card"]')) t.title = performance.now();
+        if (t.start && !t.gone && !document.querySelector('[data-testid="loading-card"]')) t.gone = performance.now();
+      }).observe(document, { subtree: true, attributes: true, childList: true });
+      // When the page's own timers and frames actually ran after Start (a 100 ms timer chain and every frame).
+      const tick = () => {
+        if (!t.start || t.timers.length >= 40) return setTimeout(tick, 100);
+        t.timers.push(performance.now());
+        setTimeout(tick, 100);
+      };
+      setTimeout(tick, 100);
+      const frame = (now) => {
+        if (t.start && t.frames.length < 60) t.frames.push(now);
+        requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+      addEventListener("click", (e) => {
+        if (t.start || e.target?.textContent !== "Start") return;
+        t.start = performance.now();
+        t.renders = window.__isle?.renders ?? 0;
+        t.programs = window.__isle?.renderer?.info?.programs?.length ?? 0;
+      }, true);
+    });
+  }
+  if (stall) {
+    // #1385: from the moment the title card appears, every animation frame is held back for `stall` ms while the page's
+    // scripts and timers run on, as when a slow GPU or a loaded machine delays frames.
+    await page.addInitScript((ms) => {
+      const raf = window.requestAnimationFrame.bind(window);
+      const caf = window.cancelAnimationFrame.bind(window);
+      let until = 0;
+      let n = 0;
+      const live = new Map();
+      window.requestAnimationFrame = (cb) => {
+        const id = ++n;
+        const step = (t) => {
+          if (!live.has(id)) return;
+          if (performance.now() < until) return live.set(id, raf(step));
+          live.delete(id);
+          cb(t);
+        };
+        live.set(id, raf(step));
+        return id;
+      };
+      window.cancelAnimationFrame = (id) => {
+        if (live.has(id)) caf(live.get(id));
+        live.delete(id);
+      };
+      new MutationObserver((_, obs) => {
+        if (!document.querySelector('[data-testid="title-card"]')) return;
+        until = performance.now() + ms;
+        obs.disconnect();
+      }).observe(document, { childList: true, subtree: true });
+    }, stall);
+  }
+  if (early) {
+    // #1383: the first frame after Start carries a timestamp 16 ms before the click, as a frame that began before the
+    // click's handler ran. Each of the next 8 frames then records a 5x5 grid of the sky canvas's pixels.
+    await page.addInitScript(() => {
+      const raf = window.requestAnimationFrame.bind(window);
+      const out = (window.__early = { first: 0, frames: [] });
+      let click = 0;
+      addEventListener("click", (e) => {
+        if (!click && e.target?.textContent === "Start") click = performance.now();
+      }, true);
+      window.requestAnimationFrame = (cb) =>
+        raf((t) => {
+          if (!click || (out.frames.length >= 8 && out.frames.at(-1).t !== t)) return cb(t);
+          out.first ||= t;
+          cb(t === out.first ? click - 16 : t);
+          const sky = document.querySelector(".loading-sky");
+          if (!sky) return;
+          const g = sky.getContext("2d");
+          const grid = [];
+          for (let i = 0; i < 5; i++)
+            for (let j = 0; j < 5; j++) grid.push([...g.getImageData(Math.floor(((i + 0.5) * sky.width) / 5), Math.floor(((j + 0.5) * sky.height) / 5), 1, 1).data]);
+          const last = out.frames.at(-1);
+          if (last?.t === t) last.grid = grid;
+          else out.frames.push({ t, grid });
+        });
+    });
+  }
   let release = () => {};
   if (hold) {
     const gate = new Promise((r) => (release = r));
@@ -130,16 +219,85 @@ try {
 
   // Reduced motion: no push, a cross-fade that lands the title card in well under a second.
   {
-    const { ctx, page, errors } = await open({ width: 390, height: 844 }, { reducedMotion: "reduce" });
+    const { ctx, page, errors } = await open({ width: 390, height: 844 }, { reducedMotion: "reduce", trace: true });
+    await page.waitForFunction(() => document.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow") === "100", null, { timeout: 60_000 });
+    await start(page).click();
+    const t0 = Date.now();
+    const traced = () =>
+      page.evaluate(() => {
+        const t = window.__trace;
+        return {
+          at100: Math.round(t.at100),
+          start: Math.round(t.start),
+          long: t.long.filter(([s, d]) => s + d >= t.at100).map(([s, d]) => `${Math.round(s - t.start)}+${Math.round(d)}`),
+          title: Math.round(t.title - t.start),
+          gone: t.gone ? Math.round(t.gone - t.start) : null,
+          timers: t.timers.map((x) => Math.round(x - t.start)).slice(0, 30),
+          frames: t.frames.map((x) => Math.round(x - t.start)).slice(0, 30),
+          hidden: document.visibilityState,
+          draws: (window.__isle?.renders ?? 0) - t.renders,
+          programs: `${t.programs}->${window.__isle?.renderer?.info?.programs?.length ?? 0}`,
+        };
+      });
+    let ms;
+    try {
+      await page.getByTestId("title-card").waitFor();
+      const moved = await page.getByTestId("loading-card").evaluateAll((els) => els.map((el) => el.style.transform).join(""));
+      await page.getByTestId("loading-card").waitFor({ state: "detached", timeout: 2000 });
+      ms = Date.now() - t0;
+      check(ms < 1000 && !moved, "reduced motion: a cross-fade only (the card never moves) and the title is up in under a second", { ms });
+    } finally {
+      console.log(`     reduced motion trace (ms from navigation; long tasks as ms-from-Start+duration): ${JSON.stringify({ ms: ms ?? Date.now() - t0, ...(await traced()) })}`);
+    }
+    check(errors.length === 0, "reduced motion: no browser errors", errors);
+    await ctx.close();
+  }
+
+  // #1385: frames that stop for 2.5 s just as the title arrives do not hold the loading card: the fade ends on its own clock.
+  {
+    const { ctx, page, errors } = await open({ width: 390, height: 844 }, { reducedMotion: "reduce", stall: 2500 });
     await page.waitForFunction(() => document.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow") === "100", null, { timeout: 60_000 });
     await start(page).click();
     const t0 = Date.now();
     await page.getByTestId("title-card").waitFor();
-    const moved = await page.getByTestId("loading-card").evaluateAll((els) => els.map((el) => el.style.transform).join(""));
     await page.getByTestId("loading-card").waitFor({ state: "detached", timeout: 2000 });
     const ms = Date.now() - t0;
-    check(ms < 1000 && !moved, "reduced motion: a cross-fade only (the card never moves) and the title is up in under a second", { ms });
-    check(errors.length === 0, "reduced motion: no browser errors", errors);
+    check(ms < 1000, "reduced motion: with frames stalled 2.5 s as the title arrives, the loading card is still gone within a second of Start", { ms });
+    check(errors.length === 0, "reduced motion with stalled frames: no browser errors", errors);
+    await ctx.close();
+  }
+
+  // #1383: a first push frame stamped before the Start click must not paint the whiteout over the whole sky.
+  {
+    const { ctx, page, errors } = await open({ width: 390, height: 844 }, { early: true });
+    await page.waitForFunction(() => document.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow") === "100", null, { timeout: 60_000 });
+    await start(page).click();
+    await page.waitForFunction(() => window.__early.frames.length >= 8, null, { timeout: 5000 });
+    const frames = await page.evaluate(() => window.__early.frames.map(({ grid }) => grid));
+    const wash = (p) => Math.abs(p[0] - 243) <= 2 && Math.abs(p[1] - 246) <= 2 && Math.abs(p[2] - 245) <= 2 && p[3] === 255;
+    const covered = frames.map((grid, i) => (grid.every(wash) ? i : -1)).filter((i) => i >= 0);
+    check(frames.length >= 8 && covered.length === 0, "a first push frame stamped 16 ms before the Start click: no frame is fully covered by the wash",
+      { frames: frames.length, covered, first: frames[0][0] });
+    await page.getByTestId("title-card").waitFor();
+    check(errors.length === 0, "early first frame: no browser errors", errors);
+    await ctx.close();
+  }
+
+  // #1385: a slow machine (CPU 6x slower) and Start tapped the instant the bar reads 100%, as on CI's failing runs. The bar
+  // must only read 100% once the island's heavy first frames are behind it, so the fade still lands within a second.
+  for (let run = 1; run <= 3; run++) {
+    const { ctx, page, errors } = await open({ width: 390, height: 844 }, { reducedMotion: "reduce", trace: true });
+    await (await ctx.newCDPSession(page)).send("Emulation.setCPUThrottlingRate", { rate: 6 });
+    const box = await start(page).boundingBox();
+    await page.waitForFunction(() => window.__trace.at100 > 0, null, { polling: 5, timeout: 120_000 });
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    const t0 = Date.now();
+    await page.getByTestId("title-card").waitFor();
+    await page.getByTestId("loading-card").waitFor({ state: "detached", timeout: 2000 });
+    const ms = Date.now() - t0;
+    const gap = await page.evaluate(() => Math.round(window.__trace.start - window.__trace.at100));
+    check(ms < 1000, `reduced motion, CPU 6x, Start tapped ${gap} ms after 100% (run ${run} of 3): the title is up and the loading card gone within a second`, { ms });
+    check(errors.length === 0, `reduced motion, CPU 6x, instant Start (run ${run} of 3): no browser errors`, errors);
     await ctx.close();
   }
 
