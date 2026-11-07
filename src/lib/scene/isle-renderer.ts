@@ -1377,8 +1377,13 @@ export class IsleRenderer {
       this.stepGlide(now);
     }
     // Moving frames, including busy ones, wait for the previous GPU work instead of flooding a software renderer's queue.
-    // Explicit reduced-motion frames still draw immediately, including synchronous snapshots.
-    if (!calm && this.gpuBehind()) return;
+    // Explicit reduced-motion frames still draw immediately, including synchronous snapshots, except while the loading screen
+    // is up (#1385): there a burst of them filled a software renderer's queue and the next GL call held the main thread
+    // through the fade. Such a frame waits for the GPU too, and the 1 s hold stays open until it draws.
+    if ((!calm || boot.intro) && this.gpuBehind()) {
+      if (calm) this.busyUntil = Math.max(this.busyUntil, now + 100);
+      return;
+    }
     // Keep a motion resume pending until a frame is accepted; a GPU wait must not consume the paused-time reset.
     this.wasCalm = calm;
     this.lastFrame = now;
