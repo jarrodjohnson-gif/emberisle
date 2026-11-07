@@ -237,14 +237,13 @@ export function hostUrl(
   loc: { protocol: string; hostname: string; host: string; search: string },
   dev: boolean = import.meta.env?.DEV ?? false,
 ): string {
-  const pinned = new URLSearchParams(loc.search).get("host");
-  if (pinned) return pinned;
-  const scheme = loc.protocol === "https:" ? "wss" : "ws";
-  return dev ? `${scheme}://${loc.hostname}:8787` : `${scheme}://${loc.host}`;
+  return (
+    new URLSearchParams(loc.search).get("host") ||
+    `ws${loc.protocol === "https:" ? "s" : ""}://${dev ? `${loc.hostname}:8787` : loc.host}`
+  );
 }
 
-// Waits between reconnect attempts, then every 15 s, for as long as the host holds the seat (docs/research/rejoin.md).
-const BACKOFF_MS = [1000, 2000, 4000, 8000, 15000];
+// Waits between reconnect attempts: 1, 2, 4, 8 s, then every 15 s, for as long as the host holds the seat (docs/research/rejoin.md).
 // What a host that says nothing about its hold is assumed to do: its own `HOLD_MS` and `LOBBY_HOLD_MS` defaults.
 const GIVE_UP_MS = 10 * 60 * 1000;
 const LOBBY_GIVE_UP_MS = 90 * 1000;
@@ -309,21 +308,22 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     healthTimer = setTimeout(() => {
       probe = null;
       health("Reconnecting");
-      // Health never forces a seat drop. A real socket close owns recovery; setTimeout clamps an overdue wait to zero.
-      healthTimer = setTimeout(probeHealth, 30_000 - (performance.now() - lastProbe));
+      // Health never forces a seat drop. A real socket close owns recovery; probeHealth waits out the rest of the 30 s.
+      probeHealth();
     }, 3000);
   };
 
+  const raw = (msg: Record<string, unknown>) => ws.send(JSON.stringify(msg));
   const send = (msg: Record<string, unknown> | (() => Record<string, unknown>)) => {
     const fn = typeof msg === "function" ? msg : () => msg;
-    if (ws.readyState === 1) ws.send(JSON.stringify(fn()));
+    if (ws.readyState === 1) raw(fn());
     else queue.push(fn);
   };
 
   // Gameplay is never queued. Only the latest state on this connection authorizes an intent.
   const act = (msg: Record<string, unknown>) => {
     if (!stamp || ws.readyState !== 1 || rejoining || closedByUs) return false;
-    ws.send(JSON.stringify({ ...msg, ...stamp, cid: randomNonce() }));
+    raw({ ...msg, ...stamp, cid: randomNonce() });
     return true;
   };
 
@@ -338,17 +338,16 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
 
   const dial = () => {
     timer = null;
-    stamp = null;
     const sock = (ws = new Ctor(url));
     ws.onopen = () => {
       // The rejoin hello goes out here only, never through the queue, so it is sent once per socket.
       if (seat && (attempt > 0 || rejoining)) {
         rejoining = true;
-        ws.send(JSON.stringify({ type: "hello", proto: PROTO, code: seat.code, secret: seat.secret }));
+        raw({ type: "hello", proto: PROTO, ...seat });
         // Anything sent while the socket was down is stale after a rejoin (a second roll, an old placement).
         queue.length = 0;
       }
-      for (const fn of queue.splice(0)) ws.send(JSON.stringify(fn()));
+      for (const fn of queue.splice(0)) raw(fn());
     };
     ws.onclose = () => {
       // A socket a later dial replaced closing late is not a drop of the live one.
@@ -357,22 +356,17 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       setExtension(null);
       stopHealth();
       if (closedByUs) return;
-      if (!seat) {
-        health("Offline");
-        on.closed?.();
-        return;
-      }
       if (attempt === 0) lostAt = Date.now();
       // Redial until the last call before the host's hold ends; by then the seat is as good as gone.
       const left = lostAt + (inGame ? hold.game : hold.lobby) - LAST_CALL_MS - Date.now();
-      if (left <= 0) {
+      if (!seat || left <= 0) {
         giveUp(taken);
         return;
       }
       attempt += 1;
       health("Reconnecting");
       on.reconnecting?.(attempt);
-      timer = setTimeout(dial, Math.min(BACKOFF_MS[Math.min(attempt, BACKOFF_MS.length) - 1]!, left));
+      timer = setTimeout(dial, Math.min(1000 * 2 ** (attempt - 1), 15000, left));
     };
     ws.onmessage = (ev) => {
       if (sock !== ws) return;
@@ -389,7 +383,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         clearTimeout(healthTimer);
         probe = null;
         if (!awaitingState) health("Reachable", Math.round(elapsed));
-        healthTimer = setTimeout(probeHealth, 30_000 - (performance.now() - lastProbe));
+        probeHealth();
         break;
       }
       case "welcome": {
@@ -425,8 +419,8 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         break;
       case "error": {
         const message = String(msg.message);
-        if (rejoining) taken = message === "Seat is taken.";
-        if (rejoining && message === "Seat is taken." && attempt > 0) {
+        taken = rejoining && message === "Seat is taken.";
+        if (taken && attempt > 0) {
           // After a drop the host can still see our old socket as open (no keepalive yet, #202).
           // Close this one and keep backing off until the host lets the old one go.
           ws.close();
@@ -467,7 +461,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       seat = { code: up(code), secret };
       rejoining = true;
       // Not queued: onopen sends it, so a failed first dial cannot leave a second hello behind.
-      if (ws.readyState === 1) ws.send(JSON.stringify({ type: "hello", proto: PROTO, ...seat }));
+      if (ws.readyState === 1) raw({ type: "hello", proto: PROTO, ...seat });
     },
     ready: (value) => send({ type: "ready", value }),
     start: () => send({ type: "start" }),
@@ -494,7 +488,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     say: (text) => send({ type: "chat", text }),
     sound: (id) => send({ type: "sound", id }),
     react: (emote, to) => send({ type: "react", emote, to }),
-    ttt: (type, fields) => send({ ...fields, type }),
+    ttt: (type, fields) => send({ type, ...fields }),
     drop: () => ws.close(),
     wake: () => {
       if (!timer) return;
@@ -508,7 +502,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       closedByUs = true;
       if (timer) clearTimeout(timer);
       timer = null;
-      if (leave && ws.readyState === 1) ws.send(JSON.stringify({ type: "leave" }));
+      if (leave && ws.readyState === 1) raw({ type: "leave" });
       ws.close();
     },
   };
