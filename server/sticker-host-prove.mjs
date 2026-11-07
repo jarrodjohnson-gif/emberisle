@@ -27,6 +27,11 @@ const hostArgs = ["--import", "./register.mjs", "host.mjs"];
   const many = path.join(TMP, "many");
   mkdirSync(many);
   for (let i = 0; i < 25; i++) writeFileSync(path.join(many, `s-${i}.png`), "x");
+  writeFileSync(path.join(many, "bad.gif"), "x");
+  writeFileSync(path.join(many, "Bad_Name.png"), "x");
+  const loaded = loadEmotes(many);
+  assert.equal(loaded.size, 25, "loadEmotes skips bad.gif and Bad_Name.png");
+  assert.ok(!loaded.has("bad") && !loaded.has("Bad_Name") && !loaded.has("bad-name"));
   for (const [why, dir] of [["missing folder", path.join(TMP, "nope")], ["a file", file], ["25 stickers", many]]) {
     const r = spawnSync(process.execPath, hostArgs, { cwd: SERVER, env: hostEnv(dir), encoding: "utf8", timeout: 20000 });
     assert.equal(r.status, 1, `${why}: host exits 1 (got ${r.status})`);
@@ -98,7 +103,7 @@ for (const id of ["test-one", "test-two"]) {
 // Ids outside the folder are dropped: an unknown one, and ben-10 (default folder only). Nothing comes back, not even a slow-down.
 sender.send({ type: "react", emote: "not-in-folder" });
 sender.send({ type: "react", emote: "ben-10" });
-await Promise.all([watcher.quiet(["react"], 300), sender.quiet(["react", "error"], 0)]);
+await Promise.all([watcher.quiet(["react"], 300), sender.quiet(["react", "error"], 300)]);
 console.log("ok ids not in the folder are dropped (not-in-folder, ben-10)");
 
 // Cooldown: 4 of the 5 tokens are spent (the host charges the bucket before it checks the id, so the 2 dropped ones count).
@@ -122,6 +127,19 @@ sender.inbox.length = 0;
 sender.send({ type: "react", emote: "test-one" });
 assert.equal((await sender.nextOf(["react", "error"])).type, "react", "a sticker goes through after the cooldown");
 console.log("ok a sticker goes through again after 1 s");
+
+// Refill rate: with the bucket just drained, a sticker 300 ms later is still slowed (1 token/s gives 0.3; a 4x faster refill
+// would give 1.2). The check uses the measured gap, not the nominal one, so a slow machine fails loudly instead of flaking.
+for (let i = 0; i < 6; i++) sender.send({ type: "react", emote: "test-one" });
+for (let i = 0; i < 6; i++) await sender.nextOf(["react", "error"]);
+const drained = Date.now();
+await new Promise((r) => setTimeout(r, 300));
+sender.send({ type: "react", emote: "test-one" });
+const gap = Date.now() - drained;
+assert.ok(gap < 700, `machine too slow to pin the refill rate: gap ${gap} ms`);
+const probe = await sender.nextOf(["react", "error"]);
+assert.equal(probe.type, "error", `a sticker ${gap} ms after the bucket drained must still be slowed down`);
+console.log(`ok refill is 1 token/s: a sticker ${gap} ms after a drained bucket is still slowed down`);
 
 host.kill("SIGKILL");
 console.log("sticker-host-prove: all checks passed");
