@@ -3,7 +3,7 @@
 // its trigger, the same card again (the trigger toggles `openMenu`), or the phone sheet's Close. Both trade rows open the
 // trade panel (#163). On a phone it is a bottom sheet (#1420, docs/design/seat-details-1274).
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { MessageSquare, Landmark, AtSign, Handshake, X } from "lucide-react";
+import { MessageSquare, Landmark, AtSign, Handshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import type { PlayerState } from "@/lib/game/types";
@@ -124,7 +124,10 @@ export function PlayerMenu({ player: p, className, sheet }: { player: PlayerStat
               trigger()?.focus();
             }}
           >
-            <X className="size-4" />
+            {/* lucide's X, drawn here: importing it would pull the lazy sheets' shared `x` chunk into index. */}
+            <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
           </Button>
         </div>
       ) : null}
