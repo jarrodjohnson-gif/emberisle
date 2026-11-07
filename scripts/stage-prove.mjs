@@ -1,7 +1,7 @@
 // Real useStage hook in a React/DOM fixture matching #1096's observed phone geometry.
 // Sample the first RAF after shell refits; no timer or retry can hide stale placement.
 import { existsSync } from 'node:fs';
-import { chromium } from 'playwright';
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from 'vite';
 
 const PORT = Number(process.env.VITE_PORT) || 8490;

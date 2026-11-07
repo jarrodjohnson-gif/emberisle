@@ -4,7 +4,7 @@ import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { preview } from "vite";
 
 const temp = mkdtempSync(path.join(tmpdir(), "emberisle-open-host-"));

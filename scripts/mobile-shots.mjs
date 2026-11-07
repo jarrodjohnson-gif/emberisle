@@ -1,7 +1,7 @@
 // #175: open the table in a touch-emulated phone at 390x844 and 844x390, place an outpost with tap-then-confirm,
 // and save screenshots to test-results/mobile/. Fails on a console error or a wrong flow.
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = 8095;

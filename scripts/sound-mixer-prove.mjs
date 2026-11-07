@@ -3,7 +3,7 @@
 // background ducking, device persistence, bad storage and autoplay. Run: npm run sound-mixer-prove
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { TARGETS, TYPE_OF } from "./audio-level-lib.mjs";
 

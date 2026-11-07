@@ -5,7 +5,7 @@ import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { preview } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8491;

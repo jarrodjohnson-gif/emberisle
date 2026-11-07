@@ -14,7 +14,7 @@
 //    - Saves docs/proofs/1155/upgrade-mode-none-{w}x{h}.png.
 // 3. Disarming via Esc or button tap cleanly returns to "none" with normal turn banner.
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";

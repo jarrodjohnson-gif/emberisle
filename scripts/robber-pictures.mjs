@@ -2,7 +2,7 @@
 // plus comparison pictures at 25%, 50%, and 75% black, and zoomed crops for owner cards.
 // Run: node --import ./server/register.mjs scripts/robber-pictures.mjs
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";

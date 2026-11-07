@@ -2,7 +2,7 @@
 // Run: CHROMIUM_PATH=/usr/bin/chromium node --import ./server/register.mjs scripts/trade-map.test.mjs
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { createGame } from "../src/lib/game/board.ts";
 import { chooseBotAction } from "../src/lib/game/ai.ts";

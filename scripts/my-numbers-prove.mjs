@@ -7,7 +7,7 @@
 //    without, and the live hole stays inside the declared one.
 // Screenshots to test-results/my-numbers-<size>.png. Run: npm run my-numbers-prove
 import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;

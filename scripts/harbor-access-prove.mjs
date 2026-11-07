@@ -2,7 +2,7 @@
 // Nothing tall (> 0.36) within 0.14 of a corner.
 // Run: npm run harbor-access-prove
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;

@@ -15,7 +15,7 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { build, createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8197;

@@ -3,7 +3,7 @@
 // every token faces the camera at its own size (#599), at most 30 % of a hex's width, overlaps no other on screen and is not hidden
 // by the scenery, and its numeral is at least 11 px tall and its pips 2 px across, at 1280x720 and 960x680.
 import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8093;

@@ -2,7 +2,7 @@
 // This complements contrast/layout proofs; it does not replace their terrain, motion or geometry coverage.
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 mkdirSync("test-results", { recursive: true });

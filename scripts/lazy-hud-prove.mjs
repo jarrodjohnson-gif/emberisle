@@ -8,7 +8,7 @@
 // 6. Tapping Try again recovers once the network failure clears.
 // Run: npm run lazy-hud-prove
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";

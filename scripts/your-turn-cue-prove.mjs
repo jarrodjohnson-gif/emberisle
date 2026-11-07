@@ -9,7 +9,7 @@
 // Run: node scripts/your-turn-cue-prove.mjs
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 15_000;
