@@ -390,12 +390,12 @@ try {
   const firstCredential = (await wire(coral)).map(frame).find((f) => f.m.type === "profileSession").m.credential;
 
   // The forms load on first open. A failed load says so on the summary and the same button tries the network again.
-  await coral.route("**/ProfileForms.tsx*", (route) => route.abort("connectionrefused"));
+  await coral.route(/ProfileForms\.tsx/, (route) => route.abort("connectionrefused"));
   await sheet(coral).getByRole("button", { name: "Edit profile" }).click();
   await sheet(coral).getByRole("alert").filter({ hasText: "Couldn't load this form. Try again." }).waitFor();
   assert.ok(await sheet(coral).getByText("Signed in as Coral").isVisible(), "a failed load leaves the summary in place");
   assert.equal(await sheet(coral).getByRole("form", { name: "Edit profile" }).count(), 0);
-  await coral.unroute("**/ProfileForms.tsx*");
+  await coral.unroute(/ProfileForms\.tsx/);
   await sheet(coral).getByRole("button", { name: "Edit profile" }).click();
   const editForm = sheet(coral).getByRole("form", { name: "Edit profile" });
   await editForm.waitFor();
