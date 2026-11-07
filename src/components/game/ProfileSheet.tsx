@@ -129,8 +129,10 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
     setView(to);
   };
   // A form opens once its chunk is in. If it can't load, the summary says so and the same button tries the network again.
-  const open = (to: "edit" | "pin" | "wins" | "history") =>
-    (to === "edit" || to === "pin" ? forms : records).load().then(() => back(to), () => setErrors({ form: "Couldn't load this form. Try again." }));
+  const open = (to: "edit" | "pin" | "wins" | "history") => {
+    const isForm = to === "edit" || to === "pin";
+    return (isForm ? forms : records).load().then(() => back(to), () => setErrors({ form: isForm ? "Couldn't load this form. Try again." : "Couldn't load your records. Try again." }));
+  };
 
   const guest = (
     <Button variant="ghost" className="w-full" onClick={onClose} back>

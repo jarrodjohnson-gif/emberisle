@@ -235,13 +235,14 @@ export interface OpenOffer {
 const tableModule = chunk(() => import("@/lib/net/table"));
 
 // #767: a finished game's profile result as the host sent it. `wins` is keyed by player id for each seat that started bound to
-// a profile: its committed total, or null while the host is still saving it. Anything malformed is dropped, never guessed.
+// a profile that still exists: its committed total, or null while the host is still saving it. Empty when every such profile
+// was deleted, so each row reads "Not tracked". Anything malformed is dropped, never guessed.
 export type GameResult = { tracked: boolean; wins: Record<string, number | null> };
 function gameResult(r: unknown): GameResult | null {
   const v = r as Partial<GameResult> | null;
   if (!v || typeof v !== "object" || typeof v.tracked !== "boolean" || !v.wins || typeof v.wins !== "object") return null;
   const wins = Object.entries(v.wins);
-  if (!wins.length || !wins.every(([, n]) => n === null || (Number.isSafeInteger(n) && (n as number) >= 0))) return null;
+  if (!wins.every(([, n]) => n === null || (Number.isSafeInteger(n) && (n as number) >= 0))) return null;
   return { tracked: v.tracked, wins: Object.fromEntries(wins) };
 }
 

@@ -287,14 +287,21 @@ function freezeOutcome(game, roster, assisted, endedAt) {
 // What a table sees of a finished game's profile result (#767, profiles.md "Profile and Wins surfaces"), keyed by game player
 // id for each starting seat that was bound to a profile. An untracked game (legacy, invalid or not eligible) says so. A tracked
 // one gives each profile's committed win total once the profile store holds this game's receipt, and null while it is saving.
-// Read from the store, never counted here, so a repeated push cannot add a win. No profiled seat, no field.
+// Read from the store, never counted here, so a repeated push cannot add a win. No profiled seat, no field. A deleted
+// profile (#891) is left out, so its row ends as "Not tracked", never "Saving record…" for good.
 function resultOf(room) {
   if (room.game?.phase !== "over" || !room.roster) return undefined;
   const rows = room.roster.players.filter((p) => p.profileId);
   if (!rows.length) return undefined;
   const tracked = room.roster.eligible && room.outcome?.gameId === room.roster.gameId;
   const recorded = tracked && Boolean(profiles.receipt(room.roster.gameId));
-  return { tracked, wins: Object.fromEntries(rows.map((p) => [p.pid, recorded ? profiles.committedWins(p.profileId) : null])) };
+  const wins = {};
+  for (const p of rows) {
+    if (profiles.tombstoned(p.profileId)) continue;
+    const n = recorded ? profiles.committedWins(p.profileId) : null;
+    if (!recorded || n !== null) wins[p.pid] = n;
+  }
+  return { tracked, wins };
 }
 
 // A saved outcome that is not this roster's is dropped; the load freezes a fresh one from the terminal snapshot instead.
@@ -942,6 +949,7 @@ async function recordAttempt(o) {
   const id = o.gameId;
   try {
     const out = await profiles.recordOutcome(o);
+    // Nothing credited: resultOf already left out every deleted profile, so the table's line has nothing to wait for.
     if (out === "excluded") return true;
     // The table's win screen swaps "Saving record…" for the committed totals.
     for (const room of rooms.values()) if (room.roster?.gameId === id && room.game?.phase === "over") pushState(room);

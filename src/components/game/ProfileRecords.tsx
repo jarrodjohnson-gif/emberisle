@@ -175,7 +175,9 @@ export function ProfileRecords({ c, kind, back }: { c: Client; kind: "wins" | "h
     <div ref={root} data-testid="profile-records" className="space-y-3" aria-busy={status === "loading" || more}>
       <h3 tabIndex={-1} className="font-display text-xl text-fg outline-none">{kind === "wins" ? "Wins" : "Your games"}</h3>
       {body}
-      <div className="sticky bottom-0 -mx-5 border-t border-border bg-surface px-5 pb-5 pt-3">
+      {/* Flush with the card's bottom edge: -bottom-5 and -mb-5 cancel the sheet's own pb-5, so no row shows beneath it. Its
+          corners follow the card's (20 px less its 1 px border). */}
+      <div className="sticky -bottom-5 -mx-5 -mb-5 rounded-b-[19px] border-t border-border bg-surface px-5 pb-5 pt-3">
         <Button variant="secondary" className="w-full" onClick={back} back>
           Back
         </Button>

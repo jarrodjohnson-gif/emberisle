@@ -859,20 +859,22 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
   // The group Wins board (#767, profiles.md "Profile and Wins surfaces"): every profile with a counted game, by wins
   // descending, games ascending, then id. Equal wins share a rank. Aggregates and display names only, HISTORY_PAGE rows a
   // page; `after` is the number of rows already shown. No id, login, colour or history leaves the store.
+  // The offset is not a snapshot: a game committing between two page loads can move one profile across the page edge, so
+  // that row shows twice or not at all until the board is opened again. A key cursor would not prevent that either.
   function winsBoard(token, after) {
     const me = owner(token);
     if (!(after === undefined || after === null || (Number.isSafeInteger(after) && after >= 0))) throw new ProfileError("invalid");
     const list = Object.entries(doc.records ?? {})
       .filter(([id, r]) => r.games > 0 && has(doc.profiles, id))
       .sort(([a, x], [b, y]) => y.wins - x.wins || x.games - y.games || (a < b ? -1 : a > b ? 1 : 0));
+    // Rank is one more than the number of profiles with more wins; the list is sorted, so one pass sets them all.
+    const ranks = [];
+    list.forEach(([, r], i) => ranks.push(i && list[i - 1][1].wins === r.wins ? ranks[i - 1] : i + 1));
     const start = after ?? 0;
-    const rows = [];
-    for (let i = start; i < Math.min(list.length, start + HISTORY_PAGE); i++) {
-      const [id, r] = list[i];
-      const rank = list.findIndex(([, x]) => x.wins === r.wins) + 1;
+    const rows = list.slice(start, start + HISTORY_PAGE).map(([id, r], i) => {
       const { games, wins, losses, winRate, streak } = recordView(r);
-      rows.push({ rank, displayName: doc.profiles[id].displayName, games, wins, losses, winRate, streak, you: id === me });
-    }
+      return { rank: ranks[start + i], displayName: doc.profiles[id].displayName, games, wins, losses, winRate, streak, you: id === me };
+    });
     return { rows, next: start + HISTORY_PAGE < list.length ? start + HISTORY_PAGE : null };
   }
 

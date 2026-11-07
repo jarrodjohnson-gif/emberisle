@@ -3,10 +3,12 @@
 // Store: two wins from three games is 66.7%; an excluded game and a replayed one leave totals as they were. Wire: the Wins
 // board ranks wins descending, games ascending, then id, equal wins share a rank, pages by 20, and carries aggregates only;
 // history is the credential's own, whatever profile id the request names. Sheet, at 440x956, 956x440 and 1280x720: Wins and
-// Your games fit with 44 px controls, take the focus and hand it back; a held reply shows loading, never a zero; a refused
-// one says so and Try again recovers; a reply landing after the view closed changes nothing; an empty record says "No
-// finished games yet." with no rate. Win screen: a tracked game shows "Saving record…" until the store commits, then each
-// profile's committed total, guests "Not tracked"; more pushes never add a win; a one-human game says it isn't tracked.
+// Your games fit with 44 px controls, with the Back row flush with the card's bottom at every scroll position, take the focus
+// and hand it back; a blocked records chunk says so in its own words and the same button retries it; a held reply shows
+// loading, never a zero; a refused one says so and Try again recovers; a reply landing after the view closed changes
+// nothing; an empty record says "No finished games yet." with no rate. Win screen: a tracked game shows "Saving record…"
+// until the store commits, then each profile's committed total, guests "Not tracked"; more pushes never add a win; a
+// one-human game says it isn't tracked; a profile deleted between host runs reads "Not tracked", never "Saving record…".
 // With SHOTS=1 it writes the pictures in docs/proofs/767/ at device scale 2.
 // Run: npm run profile-records-prove
 import assert from "node:assert/strict";
@@ -33,7 +35,8 @@ const ok = (message) => console.log(`ok ${message}`);
 // (no games) and f01..f18. Counted games: ann beats bob twice (the second with a bot assisting ann), bob beats ann once;
 // cy beats dee twice; each fN beats dee once and f01 once more, so dee has 21 games. Then a one-human game of ann's is
 // recorded (excluded) and ann's first game is replayed (duplicate). Rooms: TRAK, cy (p0) and dee (p1) with a guest (p2),
-// p1 winning as its turn starts once p0 passes; SOLO, eve (p0) with two bots, the same way.
+// p1 winning as its turn starts once p0 passes; SOLO, eve (p0) with two bots, the same way; GONE, gil (p0) and hal (p1)
+// with a guest, after which gil is deleted (#891) before the host starts.
 const SEED = `
 import { randomUUID } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -45,7 +48,7 @@ import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { PLAYER_COLORS } from "../src/lib/game/types.ts";
 const store = openProfiles(process.env.PROFILES_DIR, { colors: PLAYER_COLORS });
 const ids = {};
-const names = ["ann", "bob", "cy", "dee", "eve"];
+const names = ["ann", "bob", "cy", "dee", "eve", "gil", "hal"];
 for (let i = 1; i <= 18; i++) names.push("f" + String(i).padStart(2, "0"));
 for (const [i, n] of names.entries()) {
   const made = await store.create({ displayName: n[0].toUpperCase() + n.slice(1), login: n + "-user", pin: "1234", pinConfirm: "1234", color: PLAYER_COLORS[i % 4] });
@@ -88,6 +91,9 @@ function seedRoom(code, profiles, bots) {
 }
 seedRoom("TRAK", ["cy", "dee", null], []);
 seedRoom("SOLO", ["eve", null, null], ["p1", "p2"]);
+seedRoom("GONE", ["gil", "hal", null], []);
+// Deleted by the local admin while the host is down; the host redacts the room when it starts.
+await store.deleteProfile(ids.gil);
 process.stdout.write(JSON.stringify({ ids, out }));
 `;
 
@@ -223,8 +229,9 @@ try {
     await button.click();
     await sheet(page).waitFor();
   };
-  const signIn = async (opts, login) => {
+  const signIn = async (opts, login, before = async () => {}) => {
     const page = await open(opts);
+    await before(page);
     await goto(page, nextHost());
     await openSheet(page);
     await sheet(page).getByLabel("Login").fill(login);
@@ -251,8 +258,20 @@ try {
         const b = el.getBoundingClientRect();
         if (b.height < 44 || b.width < 44) out.push(`${el.getAttribute("aria-label") || el.textContent.trim()} ${b.width}x${b.height}`);
       }
-      const back = [...d.querySelectorAll("button")].find((b) => b.textContent.trim() === "Back").getBoundingClientRect();
+      const backButton = [...d.querySelectorAll("button")].find((b) => b.textContent.trim() === "Back");
+      const back = backButton.getBoundingClientRect();
       if (back.top < r.top || back.bottom > r.bottom + 0.5) out.push(`Back outside the sheet ${back.top},${back.bottom}`);
+      // The Back row sits flush with the bottom of the scrolling area at the top, middle and end of the scroll, so no row
+      // ever shows beneath it.
+      const scroller = d.querySelector(".overflow-y-auto");
+      const end = scroller.scrollHeight - scroller.clientHeight;
+      for (const at of [0, Math.round(end / 2), end]) {
+        scroller.scrollTop = at;
+        const foot = backButton.parentElement.getBoundingClientRect();
+        const edge = scroller.getBoundingClientRect().bottom;
+        if (Math.abs(foot.bottom - edge) > 1) out.push(`Back row ends at ${foot.bottom}, the scroll area at ${edge} (scrollTop ${at})`);
+      }
+      scroller.scrollTop = 0;
       return out;
     });
     assert.deepEqual(bad, [], `${label}: sheet on screen, nothing scrolls sideways, every control at least 44 px, Back in view`);
@@ -308,11 +327,24 @@ try {
     assert.ok(await page.getByRole("button", { name: "Host a table" }).isVisible(), `${size.name}: guest Host stays usable`);
     await page.context().close();
   }
-  ok("sheet: Wins and Your games fit at 440x956, 956x440 and 1280x720 with 44 px controls; 66.7% beside 3 games; ties share rank; Show more pages; focus moves in, stays in and returns");
+  ok("sheet: Wins and Your games fit at 440x956, 956x440 and 1280x720 with 44 px controls and the Back row flush with the card's bottom; 66.7% beside 3 games; ties share rank; Show more pages; focus moves in, stays in and returns");
 
   // --- Loading, refusal, a stale reply, paging history and an empty record ------------------------------------------------
   {
     const desk = sizes[2].opts;
+    // The records chunk loads on first open. Blocked from before sign-in (the sheet's quiet prefetch fails too), Wins says so
+    // on the summary in its own words; once the network is back, the same button loads it.
+    const blocked = await signIn(desk, "ann-user", (p) => p.route(/ProfileRecords\.tsx/, (route) => route.abort("connectionrefused")));
+    await sheet(blocked).getByRole("button", { name: "Wins", exact: true }).click();
+    await sheet(blocked).getByRole("alert").filter({ hasText: "Couldn't load your records. Try again." }).waitFor();
+    assert.ok(await sheet(blocked).getByText("Signed in as Ann").isVisible(), "a failed load leaves the summary in place");
+    assert.equal(await blocked.getByTestId("profile-records").count(), 0);
+    await blocked.unroute(/ProfileRecords\.tsx/);
+    await view(blocked, "Wins", "Wins");
+    await loaded(blocked);
+    assert.equal((await stats(blocked))["Win rate"], "66.7%", "the retry loads the chunk and the record");
+    await blocked.context().close();
+
     const page = await signIn(desk, "ann-user");
     // Held: the view says it is loading and shows no number at all.
     await page.evaluate(() => { window.__tamper.hold = { type: "profileWins", ms: 2000 }; });
@@ -359,7 +391,7 @@ try {
     assert.equal(await eve.getByTestId("records-empty").innerText(), "No finished games yet.");
     await eve.context().close();
   }
-  ok("states: a held reply shows loading and no zero; a refusal says so and Try again recovers; a late reply after Back draws nothing; history pages 20 + 1; an empty record says No finished games yet with no rate");
+  ok("states: a blocked records chunk says Couldn't load your records and the same button retries it; a held reply shows loading and no zero; a refusal says so and Try again recovers; a late reply after Back draws nothing; history pages 20 + 1; an empty record says No finished games yet with no rate");
 
   // --- The win screen --------------------------------------------------------------------------------------------------------
   const seat = (code, pid) => [(s) => { localStorage.setItem("emberisle-seat", JSON.stringify(s)); localStorage.setItem("emberisle-seat-live", s.code); }, { code, secret: `${code}-${pid}` }];
@@ -440,6 +472,28 @@ try {
     await page.context().close();
   }
   ok("win screen: a one-human game says This game isn't tracked and no row shows a count");
+
+  // A profile deleted between host runs (#891): its row carries no count and never waits on "Saving record…"; the other
+  // profile's win is still counted. The fault budget is spent by TRAK, so this game commits on the first try.
+  {
+    const gil = socket(port);
+    await gil.open;
+    gil.send({ type: "hello", code: "GONE", secret: "GONE-p0" });
+    await gil.until((m) => m.type === "state" && m.actionStamp, "gil's seat");
+    const st = lastState(gil);
+    gil.send({ type: "pass", cid: "pass-3", turn: st.actionStamp.turn, baseSeq: st.actionStamp.baseSeq, connection: st.actionStamp.connection });
+    await gil.until((m) => m.type === "state" && m.game.phase === "over" && m.result?.wins.p1 === 1, "hal's committed win");
+    const overs = gil.msgs.filter((m) => m.type === "state" && m.game.phase === "over");
+    assert.ok(overs.every((m) => m.result.tracked && !Object.hasOwn(m.result.wins, "p0")), "the deleted profile's seat never carries a count or a saving mark");
+    assert.deepEqual(overs.at(-1).result, { tracked: true, wins: { p1: 1 } });
+    gil.ws.close();
+    const page = await open(sizes[2].opts, [seat("GONE", "p1")]);
+    await goto(page, nextHost());
+    await page.getByTestId("win-screen").waitFor();
+    assert.deepEqual(await notes(page), { p1: "1 profile win", p0: "Not tracked", p2: "Not tracked" }, "the deleted profile's row says Not tracked");
+    await page.context().close();
+  }
+  ok("win screen: a profile deleted between host runs reads Not tracked, never Saving record…; the other profile's win counts");
 
   // --- Pictures for the owner ------------------------------------------------------------------------------------------------
   if (SHOTS) {
