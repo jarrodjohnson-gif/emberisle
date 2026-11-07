@@ -55,11 +55,21 @@ async function geometry(page, minimum) {
     const people = document.querySelector('[data-testid="lobby-players"]');
     const chat = document.querySelector('[data-testid="lobby-chat"]');
     const controls = [...card.querySelectorAll("button, input")].filter(el => el.getBoundingClientRect().width > 0);
+    // #1220: at 320 px the emoji are one sideways-scrolling row; a control in it is measured where scrolling shows it.
+    const reach = el => {
+      const row = el.closest('[data-testid="emoji-row"]');
+      if (!row || row.scrollWidth <= row.clientWidth) return { scrolled: false, reach: rect(el) };
+      const left = row.scrollLeft;
+      el.scrollIntoView({ block: "nearest", inline: "nearest" });
+      const r = rect(el);
+      row.scrollLeft = left;
+      return { scrolled: true, reach: r };
+    };
     return {
       card: rect(card), chat: rect(chat),
       overflow: [card.scrollWidth - card.clientWidth, card.scrollHeight - card.clientHeight, people.scrollWidth - people.clientWidth, people.scrollHeight - people.clientHeight],
       seats: [...people.children].map(rect),
-      controls: controls.map(el => ({ label: el.getAttribute("aria-label") || el.textContent || el.placeholder, ...rect(el) })),
+      controls: controls.map(el => ({ label: el.getAttribute("aria-label") || el.textContent || el.placeholder, ...rect(el), ...reach(el) })),
       background: getComputedStyle(card).backgroundColor,
     };
   });
@@ -72,7 +82,7 @@ async function geometry(page, minimum) {
   assert.ok(share >= minimum, `chat share ${share} >= ${minimum}`);
   for (const c of data.controls) {
     assert.ok(c.width >= 44 && c.height >= 44, `${c.label}: target ${c.width}x${c.height}`);
-    assert.ok(c.x >= data.card.x && c.right <= data.card.right && c.y >= data.card.y && c.bottom <= data.card.bottom, `${c.label}: inside card`);
+    assert.ok(c.reach.x >= data.card.x && c.reach.right <= data.card.right && c.reach.y >= data.card.y && c.reach.bottom <= data.card.bottom, `${c.label}: inside card${c.scrolled ? " once scrolled into view" : ""}`);
   }
   for (let i = 0; i < data.controls.length; i++) for (const b of data.controls.slice(i + 1)) {
     const a = data.controls[i];
