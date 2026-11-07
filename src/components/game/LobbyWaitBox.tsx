@@ -24,20 +24,6 @@ const STACKER_LOGO = `${import.meta.env.BASE_URL}images/sandwich-stacker-logo.pn
 const KEY_CODES = { ArrowLeft: 37, ArrowRight: 39 } as const;
 type Arrow = keyof typeof KEY_CODES;
 
-function loadRuffle(base: string): Promise<void> {
-  if (window.RufflePlayer?.newest) return Promise.resolve();
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = `${base}minigames/ruffle/ruffle.js`;
-    script.onload = () => resolve();
-    script.onerror = () => {
-      script.remove();
-      reject(new Error("ruffle"));
-    };
-    document.head.append(script);
-  });
-}
-
 // The shelf and the player share this chunk. The lobby renders it only after Play games is chosen, and the player
 // (and therefore the Ruffle script) mounts only after Play.
 export function LobbyPlay({ onGame }: { onGame: (open: boolean) => void }) {
@@ -73,8 +59,6 @@ export function LobbyWaitBox({ onClose }: { onClose: () => void }) {
   const stage = useRef<HTMLDivElement>(null);
   const player = useRef<RufflePlayerElement | null>(null);
   const held = useRef(new Set<Arrow>());
-  const soundOn = useRef(sound);
-  soundOn.current = sound;
 
   const press = (code: Arrow, down: boolean) => {
     const p = player.current;
@@ -100,12 +84,22 @@ export function LobbyWaitBox({ onClose }: { onClose: () => void }) {
     const base = import.meta.env.BASE_URL;
     let mine: RufflePlayerElement | null = null;
     (async () => {
-      await loadRuffle(base);
+      if (!window.RufflePlayer?.newest) {
+        await new Promise<unknown>((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = `${base}minigames/ruffle/ruffle.js`;
+          script.onload = resolve;
+          script.onerror = () => {
+            script.remove();
+            reject();
+          };
+          document.head.append(script);
+        });
+      }
       if (!live || !stage.current) return;
       const created = window.RufflePlayer!.newest()!.createPlayer();
       mine = created;
       created.tabIndex = 0;
-      created.style.cssText = "position:absolute;inset:0;display:block;width:100%;height:100%";
       stage.current.append(created);
       const metadata = new Promise((resolve) => created.addEventListener("loadedmetadata", resolve, { once: true }));
       await created.ruffle().load({
@@ -123,7 +117,6 @@ export function LobbyWaitBox({ onClose }: { onClose: () => void }) {
       });
       await metadata;
       if (!live) return;
-      created.ruffle().volume = soundOn.current ? 1 : 0;
       created.focus({ preventScroll: true });
       player.current = created;
       setReady(true);
@@ -133,26 +126,22 @@ export function LobbyWaitBox({ onClose }: { onClose: () => void }) {
       release();
       mine?.remove();
       player.current = null;
-      setReady(false);
-      setFailed(false);
-      setSound(false);
     };
   }, []);
 
   useEffect(() => {
     if (!ready) return;
-    const out = () => release();
-    window.addEventListener("blur", out);
-    document.addEventListener("visibilitychange", out);
+    window.addEventListener("blur", release);
+    document.addEventListener("visibilitychange", release);
     return () => {
-      window.removeEventListener("blur", out);
-      document.removeEventListener("visibilitychange", out);
+      window.removeEventListener("blur", release);
+      document.removeEventListener("visibilitychange", release);
     };
   }, [ready]);
 
   useEffect(() => {
-    if (player.current) player.current.ruffle().volume = sound ? 1 : 0;
-  }, [sound]);
+    if (ready) player.current!.ruffle().volume = sound ? 1 : 0;
+  }, [ready, sound]);
 
   const hold = (code: Arrow) => ({
     onPointerDown: (e: PointerEvent<HTMLButtonElement>) => {
@@ -174,7 +163,7 @@ export function LobbyWaitBox({ onClose }: { onClose: () => void }) {
       className="lobby-wait"
       onKeyDownCapture={(e) => {
         if (!/^ruffle-player/i.test((e.target as Element | null)?.tagName ?? "")) return;
-        if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === " ") e.preventDefault();
+        if (/^(Arrow(Left|Right|Up|Down)| )$/.test(e.key)) e.preventDefault();
       }}
     >
       <div className="lobby-wait-head">
