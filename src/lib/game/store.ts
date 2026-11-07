@@ -492,7 +492,11 @@ const NAME_MAX = 16;
 const NAME_KEY = "emberisle-name";
 function savedName() {
   if (typeof window === "undefined") return "Ember";
-  return localStorage.getItem(NAME_KEY) || "Ember";
+  try {
+    return localStorage.getItem(NAME_KEY) || "Ember";
+  } catch {
+    return "Ember";
+  }
 }
 
 // null (not a default swatch) until the player actively picks one, so a fresh tab sends no `color`
@@ -500,8 +504,12 @@ function savedName() {
 // touch the picker would both request the same default color and the second would be rejected.
 function savedColor(): string | null {
   if (typeof window === "undefined") return null;
-  const saved = localStorage.getItem("emberisle-color");
-  return saved && (PLAYER_COLORS as readonly string[]).includes(saved) ? saved : null;
+  try {
+    const saved = localStorage.getItem("emberisle-color");
+    return saved && (PLAYER_COLORS as readonly string[]).includes(saved) ? saved : null;
+  } catch {
+    return null;
+  }
 }
 
 export const useGame = create<GameStore>((set, get) => ({
@@ -564,17 +572,35 @@ export const useGame = create<GameStore>((set, get) => ({
   menuFor: null,
   setName: (n) => {
     const name = Array.from(n).slice(0, NAME_MAX).join("");
-    if (name.trim() && typeof window !== "undefined") localStorage.setItem(NAME_KEY, name.trim());
+    if (name.trim() && typeof window !== "undefined") {
+      try {
+        localStorage.setItem(NAME_KEY, name.trim());
+      } catch {
+        // storage can be blocked; name is still set in state
+      }
+    }
     set({ name });
   },
   commitName: () => {
     const name = get().name.trim() || "Ember";
-    if (typeof window !== "undefined") localStorage.setItem(NAME_KEY, name);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(NAME_KEY, name);
+      } catch {
+        // storage can be blocked; name is still set in state
+      }
+    }
     set({ name });
     return name;
   },
   setColor: (c) => {
-    if (typeof window !== "undefined") localStorage.setItem("emberisle-color", c);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("emberisle-color", c);
+      } catch {
+        // storage can be blocked; color is still set in state
+      }
+    }
     set({ color: c });
   },
   setHowTo: (v, opener) => set({ howTo: v, howToOpener: v ? (opener ?? null) : null }),
@@ -937,7 +963,13 @@ export const useGame = create<GameStore>((set, get) => ({
     const name = Array.from(n.trim()).slice(0, NAME_MAX).join("");
     if (!name) return;
     set({ name });
-    if (typeof window !== "undefined") localStorage.setItem(NAME_KEY, name);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(NAME_KEY, name);
+      } catch {
+        // storage can be blocked; name is still set in state
+      }
+    }
     get().net?.rename(name);
   },
   addBot: () => {
