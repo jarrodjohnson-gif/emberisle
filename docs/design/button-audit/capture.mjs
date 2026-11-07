@@ -1,16 +1,20 @@
 // #1298 design capture: every button family in the real game, before and after the proposed mechanical fixes, at
 // 390x844, 844x390 and 1280x720. "After" adds after.css to the running page. No src/ file changes. Not a CI proof.
 // Run from the repo root, one browser at a time: node docs/design/button-audit/capture.mjs
+// It writes to a new temp folder. Add --save to write into pictures/ next to this file, replacing the committed files.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { chromium } from "../../../scripts/proof-browser.mjs";
 import { createServer } from "vite";
 
-const dir = "docs/design/button-audit";
-mkdirSync(`${dir}/pictures`, { recursive: true });
-const afterCss = readFileSync(`${dir}/after.css`, "utf8");
+const dir = path.dirname(fileURLToPath(import.meta.url));
+const out = process.argv.includes("--save") ? path.join(dir, "pictures") : mkdtempSync(path.join(tmpdir(), "button-audit-"));
+mkdirSync(out, { recursive: true });
+console.error(`pictures: ${out}`);
+const afterCss = readFileSync(path.join(dir, "after.css"), "utf8");
 const sizes = [[390, 844], [844, 390], [1280, 720]];
 
 // A real host for the lobby picture (Start is the one `sea` fill). Rooms go to a temp folder.
@@ -96,7 +100,7 @@ try {
     };
     // The same screen twice: as it is, then with after.css on top.
     const pair = async (page, name) => {
-      const shot = (s) => page.screenshot({ path: `${dir}/pictures/${tag}-${name}-${s}.jpg`, type: "jpeg", quality: 82 });
+      const shot = (s) => page.screenshot({ path: `${out}/${tag}-${name}-${s}.jpg`, type: "jpeg", quality: 82 });
       const before = await page.evaluate(measure);
       await shot("before");
       const style = await page.addStyleTag({ content: afterCss });
@@ -184,6 +188,6 @@ try {
   host.kill();
 }
 out.errors = errors;
-writeFileSync(`${dir}/pictures/measurements.json`, JSON.stringify(out, null, 2));
+writeFileSync(`${out}/measurements.json`, JSON.stringify(out, null, 2));
 console.log(JSON.stringify({ errors }));
 if (errors.length) process.exit(1);

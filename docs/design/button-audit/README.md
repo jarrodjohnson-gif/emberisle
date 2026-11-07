@@ -11,19 +11,21 @@ Astra's and Terra's earlier packet from `codex/1298-button-audit` stays in this 
 
 | Variant | Look | Callers on `main` |
 |---|---|---|
-| `default` | ink fill `#263d3c`, mist text | 10 with no `variant`, 2 inside a state switch |
-| `primary` | the same classes as `default` | 3, and 7 inside a state switch |
-| `secondary` | mist fill `#f3f6f5`, ink text, 1 px `#78837a` edge | 21, and 7 inside a state switch |
+| `default` | ink fill `#263d3c`, mist text | 10 with no `variant`, and 3 as one side of a state switch |
+| `primary` | the same classes as `default` | 3, and 7 as one side of a state switch |
+| `secondary` | mist fill `#f3f6f5`, ink text, 1 px `#78837a` edge | 21, and 8 as one side of a state switch |
 | `outline` | no fill, ink text, 1 px `#78837a` edge | 18, all in the lobby and its games |
-| `ghost` | no fill, no edge | 25, and 2 inside a state switch |
+| `ghost` | no fill, no edge | 25, and 2 as one side of a state switch |
 | `sea` | teal fill `#246d72`, white text | 1: lobby Start |
 | `accent` | teal fill `#246d72`, white text | 0 |
 
-88 `Button` callers in all, plus 37 raw `<button>` elements outside the primitive (listed below where they look like controls).
+88 `Button` callers in all (51 with a fixed variant, 10 with none, 10 with a state switch), plus 36 raw `<button>` elements outside the primitive (`git grep -n "<button" -- src/components`, less the primitive itself; listed below where they look like controls).
+
+Two type exceptions stand and are not touched by anything below: the lobby's accepted 13 / 15 / 17 / 22 / 28 px scale (decision 7 of #1274) and the V1 hand-card name at 10 px uppercase (decision 5).
 
 Sizes: `default` and `sm` are 44 px tall (16 px and 12 px side padding), `lg` 48 px, `icon` 44 x 44. Type: 14 px / 500 on `default`, `sm` and `icon`; 16 px / 500 on `lg`. Corners: 8 px (`--radius-control`). Focus: 2 px `#246d72` outline, 2 px offset. Native `disabled`: muted text, mist fill, no pointer events.
 
-Ten callers switch variant by state (`watchLink` twice, `endPrimary`, `buildMode`, `fortunesOpen`, `canAgain`, the Water and View toggles, the fortune Play, the profile sign-in). These are hierarchy choices, not accidents.
+Ten callers switch variant by state: `watchLink` twice (`EmberisleApp.tsx:267, 313`), `endPrimary` (`Hud.tsx:323`), `buildMode` (`Hud.tsx:486`), `fortunesOpen` (`Hud.tsx:262`), `canAgain` (`WinScreen.tsx:213`), the Water and View toggles (`TableMenu.tsx:197, 209`), the fortune Play (`FortuneTray.tsx:162`), the profile sign-in (`ProfileSheet.tsx:200`). These are hierarchy choices, not accidents.
 
 ## Every button family, read on `main`
 
@@ -69,25 +71,31 @@ Lines are from `src/components/game/` unless another path is given. "Keep" means
 | Profile | Sign in, Create, Done, Sign out, Cancel | `primary` lg, `secondary`, `ghost` | `ProfileSheet.tsx:97-229` | |
 | Results | Look around, Play again, Back to menu, React, 7 / 10 | `secondary`, `default`, `secondary` (or `default` with no rematch), `secondary` | `WinScreen.tsx:191-213`, `VictoryTargetSelect.tsx:10` | Keep. |
 | Results chip | Show scores, Play again, Back to menu | `secondary` sm, `default` sm | `WinScreen.tsx:79-87` | |
-| Recovery, loading | Rejoin, Start, Retry | raw, ink fill | `TableRecoveryBoundary.tsx:59`, `LoadingScreen.tsx:231, 254` | Start follows the #1281 mock. |
+| Recovery | Rejoin | raw, ink fill | `TableRecoveryBoundary.tsx:59` | |
+| Loading | Start, Retry | raw: Start is a teal `#246d72` fill with white text (`loading.css:12`); Retry a white fill with teal text and a teal edge (`loading.css:26`) | `LoadingScreen.tsx:231, 254` | Follows the #1281 mock; teal focus outline. |
 
 Every control measured in the pictures is at least 44 x 44 px (`pictures/measurements.json`, `under44: []` on every screen).
 
 ## What is only inconsistent (fix without a decision)
 
-These change no fill and no hierarchy. One build issue, size S, files `button.tsx`, `styles.css`, `PlaceChip.tsx`, `FirstGameCoach.tsx`, `TurnExtensionVote.tsx`.
+These change no fill, no type and no hierarchy. One build issue, size S, files `button.tsx`, `PlaceChip.tsx`, `FirstGameCoach.tsx`, `TurnExtensionVote.tsx`.
 
 1. **Two names for one look.** `default` and `primary` have the same classes. Keep `primary`; make `default` the same entry. No caller changes.
-2. **Button type.** The primitive draws 14 px / 500 and 16 px / 500; the lobby draws 15 px / 600; the type scale has no 14 px size. Draw every `Button` at 15 px / 22 px / 600 (`--text-body` with the button weight), `lg` included. The build tiles keep their 12 px caption lines. See Question 1 on the issue for the owner's pick.
-3. **Two focus colours.** The primitive outlines in teal `#246d72`; `styles.css:212, 240, 250, 307` and `trade-panel.css:10, 41` override it to ink `#263d3c`. Use ink everywhere and drop the overrides. See Question 2.
-4. **Two underlined text links.** The place chip's Cancel (14 px) and Skip tips (12 px) are the only underlined buttons. Make them `ghost` Buttons at the shared type. Same targets, same places.
-5. **The last translucent control.** The more-time vote's buttons are 70 % white with a white edge (`TurnExtensionVote.tsx:29`). Make them `secondary`. The white chrome PR (#1275) removed every other one.
-6. **A stale comment.** `button.tsx:32` says corners are 12 px; the token is 8 px (decision 2).
-7. **An unused variant.** `accent` has no caller. Leave it until the owner answers on `sea` (below); then drop both or keep one.
+2. **Two underlined text links.** The place chip's Cancel (14 px) and Skip tips (12 px) are the only underlined buttons. Make them `ghost` Buttons. Same targets, same places.
+3. **The last translucent control.** The more-time vote's buttons are 70 % white with a white edge (`TurnExtensionVote.tsx:29`). Make them `secondary`. The white chrome PR (#1275) removed every other one.
+4. **A stale comment.** `button.tsx:32` says corners are 12 px; the token is 8 px (decision 2).
+5. **An unused variant.** `accent` has no caller. Leave it until the owner answers on `sea` (below); then drop both or keep one.
 
-## What needs the owner (hierarchy, kept as is for now)
+## What needs the owner
 
-Decision 4C keeps these. They are listed so the later decision has the facts.
+Two open questions on #1298, both asked with four options and no answer yet. The build issue waits for them.
+
+| Choice | Today | Asked | Where |
+|---|---|---|---|
+| Button type | 14 px / 500 on `default`, `sm` and `icon`, 16 px / 500 on `lg`; the lobby overrides to 15 px / 600; the type scale has no 14 px size | Question 1: A is 15 px / 22 px / 600 on every `Button`, the build tiles keeping their 12 px caption lines | `button.tsx:16-18`, `lobby.css:30` |
+| Focus colour | teal `#246d72` from the primitive; ink `#263d3c` from the overrides in `styles.css:212, 240, 250, 307` and `trade-panel.css:10, 41` | Question 2: A is ink everywhere, overrides dropped | |
+
+Decision 4C keeps the fills below. They are listed so the later decision has the facts.
 
 | Choice | Today | Where |
 |---|---|---|
@@ -101,7 +109,7 @@ Decision 4C keeps these. They are listed so the later decision has the facts.
 
 ## Pictures
 
-Real game, Chromium 153 through Playwright, device scale 1. "After" is the same page with [after.css](after.css) on top: the type, the focus colour and the two text links from the list above, nothing else.
+Real game, Chromium 153 through Playwright, device scale 1. The title and lobby are played; the table, offer, menu and results are crafted with `window.__emberisle.setState`. "After" is the same page with [after.css](after.css) on top: Question 1's A (15 px / 600 type), Question 2's A (ink focus) and the two text links, nothing else. Those two are open questions; the pictures show them so the owner can pick.
 The table picture has keyboard focus on the Outpost tile, which is `aria-disabled` ("No spot") and still inspectable. The lobby has Jarrod hosting, Josh ready, one bot, so Start shows.
 
 | Size | Title | Lobby | Table | Offer | Table menu | Results |
@@ -113,18 +121,20 @@ The table picture has keyboard focus on the Outpost tile, which is `aria-disable
 [pictures/measurements.json](pictures/measurements.json) records every visible button on each screen, before and after: label, box, fill, text, edge, corners, type, disabled kind, pressed state and focus outline.
 The capture fails if any fill changes between before and after. It passed with zero page errors.
 
-Contrast, from the computed colours: ink on mist 11.9:1; mist on ink 11.9:1; white on teal 5.7:1; the `#78837a` edge on white 3.9:1 and on mist 3.6:1; muted `#555e58` on mist 6.4:1 (native disabled text).
+Contrast, WCAG, from the tokens in `src/styles.css`: ink `#263d3c` on mist `#f3f6f5` 10.6:1, and the same for mist text on an ink fill; white on teal `#246d72` 6.0:1; the `#78837a` edge on white 3.9:1 and on mist 3.6:1; muted `#555e58` on mist 6.2:1 (native disabled text).
 
 ## For the build issue
 
-Completion test:
+Completion test (after the two questions are answered; the type and focus lines below assume the answers, whichever they are):
 
-1. `button.tsx` has one fill entry for `primary` and `default`, 15 px / 600 type, an ink focus outline. The `styles.css` and `trade-panel.css` focus overrides are gone.
+1. `button.tsx` has one fill entry for `primary` and `default`, the chosen type on every size, the chosen focus colour; the `styles.css` and `trade-panel.css` focus overrides are gone.
 2. `contrast-prove`, `title-prove`, `lobby-prove`, `build-ready-prove`, `hud-safe-area-prove`, `reflow-prove` and the trade proofs pass. Any assertion on a 14 px or 16 px button size is replaced under the 2026-10-25 rule, in its own commit with the old/new table.
 3. Every button in the table, lobby and title still measures 44 x 44 or more (`measurements.json` lists today's boxes).
 4. No fill changes: `measurements.json` before and after fills are equal, and the build PR shows the same.
+5. The lobby 13 / 15 / 17 / 22 / 28 px scale and the 10 px hand-card names are unchanged.
 
 ## Reproduce
 
 Run from the repo root, one browser at a time: `node docs/design/button-audit/capture.mjs`.
-It starts a host and the dev server, drives the title, a two-person lobby and a practice table, and writes the pictures and `pictures/measurements.json`.
+It starts a host and the dev server, drives the title, a two-person lobby and a practice table, and writes the pictures and `measurements.json` to a new temp folder (printed on stderr). Add `--save` to write into `pictures/` here instead, replacing the committed files.
+`SHA256SUMS` lists every file in this folder; check it with `sha256sum -c SHA256SUMS` from this folder.
