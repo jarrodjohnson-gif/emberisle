@@ -1,13 +1,19 @@
 // #1301 design capture: the seats and the player menu in the real game, before and after after.css, at 390x844,
 // 844x390 and 1280x720: own seat, an opponent, a watcher, a long name, Dune on turn, and a seat with nothing.
 // No src/ file changes. Not a CI proof. Run from the repo root, one browser at a time: node docs/design/seat-details-1274/capture.mjs
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+// It writes to a new temp folder. Add --save to write into pictures/ next to this file, replacing the committed files.
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { chromium } from "../../../scripts/proof-browser.mjs";
 import { createServer } from "vite";
 
-const dir = "docs/design/seat-details-1274";
-mkdirSync(`${dir}/pictures`, { recursive: true });
-const afterCss = readFileSync(`${dir}/after.css`, "utf8");
+const dir = path.dirname(fileURLToPath(import.meta.url));
+const out = process.argv.includes("--save") ? path.join(dir, "pictures") : mkdtempSync(path.join(tmpdir(), "seat-details-1274-"));
+mkdirSync(out, { recursive: true });
+console.error(`pictures: ${out}`);
+const afterCss = readFileSync(path.join(dir, "after.css"), "utf8");
 const sizes = [[390, 844], [844, 390], [1280, 720]];
 
 const vite = await createServer({ server: { host: "127.0.0.1", port: 0 }, logLevel: "error" });
@@ -92,7 +98,7 @@ try {
       if (variant === "after") await page.addStyleTag({ content: afterCss });
       await page.waitForTimeout(200);
       const ids = await page.evaluate(() => window.__emberisle.getState().state.players.map((p) => p.id));
-      const shot = (name) => page.screenshot({ path: `${dir}/pictures/${tag}-${name}-${variant}.jpg`, type: "jpeg", quality: 82 });
+      const shot = (name) => page.screenshot({ path: `${out}/${tag}-${name}-${variant}.jpg`, type: "jpeg", quality: 82 });
       const rec = { size: tag, variant, screens: {} };
       rec.screens.rail = await page.evaluate(measure);
       await shot("rail");
@@ -131,6 +137,6 @@ try {
   await vite.close();
 }
 out.errors = errors;
-writeFileSync(`${dir}/pictures/measurements.json`, JSON.stringify(out, null, 2));
+writeFileSync(`${out}/measurements.json`, JSON.stringify(out, null, 2));
 console.log(JSON.stringify({ errors }));
 if (errors.length) process.exit(1);

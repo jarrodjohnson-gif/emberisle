@@ -76,3 +76,4 @@ Completion test:
 ## Reproduce
 
 Run from the repo root, one browser at a time: `node docs/design/seat-details-1274/capture.mjs`.
+It writes the pictures and `measurements.json` to a new temp folder (printed on stderr). Add `--save` to write into `pictures/` here instead, replacing the committed files. The table is crafted with `window.__emberisle.setState`, not played.
