@@ -55,11 +55,21 @@ async function geometry(page, minimum) {
     const people = document.querySelector('[data-testid="lobby-players"]');
     const chat = document.querySelector('[data-testid="lobby-chat"]');
     const controls = [...card.querySelectorAll("button, input")].filter(el => el.getBoundingClientRect().width > 0);
+    // #1220: at 320 px the emoji are one sideways-scrolling row; a control in it is measured where scrolling shows it.
+    const reach = el => {
+      const row = el.closest('[data-testid="emoji-row"]');
+      if (!row || row.scrollWidth <= row.clientWidth) return { scrolled: false, reach: rect(el) };
+      const left = row.scrollLeft;
+      el.scrollIntoView({ block: "nearest", inline: "nearest" });
+      const r = rect(el);
+      row.scrollLeft = left;
+      return { scrolled: true, reach: r };
+    };
     return {
       card: rect(card), chat: rect(chat),
       overflow: [card.scrollWidth - card.clientWidth, card.scrollHeight - card.clientHeight, people.scrollWidth - people.clientWidth, people.scrollHeight - people.clientHeight],
       seats: [...people.children].map(rect),
-      controls: controls.map(el => ({ label: el.getAttribute("aria-label") || el.textContent || el.placeholder, ...rect(el) })),
+      controls: controls.map(el => ({ label: el.getAttribute("aria-label") || el.textContent || el.placeholder, ...rect(el), ...reach(el) })),
       background: getComputedStyle(card).backgroundColor,
     };
   });
@@ -72,7 +82,7 @@ async function geometry(page, minimum) {
   assert.ok(share >= minimum, `chat share ${share} >= ${minimum}`);
   for (const c of data.controls) {
     assert.ok(c.width >= 44 && c.height >= 44, `${c.label}: target ${c.width}x${c.height}`);
-    assert.ok(c.x >= data.card.x && c.right <= data.card.right && c.y >= data.card.y && c.bottom <= data.card.bottom, `${c.label}: inside card`);
+    assert.ok(c.reach.x >= data.card.x && c.reach.right <= data.card.right && c.reach.y >= data.card.y && c.reach.bottom <= data.card.bottom, `${c.label}: inside card${c.scrolled ? " once scrolled into view" : ""}`);
   }
   for (let i = 0; i < data.controls.length; i++) for (const b of data.controls.slice(i + 1)) {
     const a = data.controls[i];
@@ -181,6 +191,21 @@ async function centred(page, label) {
   assert.ok(Math.abs(m.codeDy) <= 1, `${label}: table code centred in the header row (${m.codeDy.toFixed(2)})`);
   assert.ok(Math.max(...m.foot) - Math.min(...m.foot) <= 1, `${label}: footer buttons on one centre line`);
   assert.ok(Math.abs(m.inputDy) <= 1, `${label}: chat input and Send share a centre line`);
+}
+// #1220 rows 20 and 21: the card clears notch-sized insets (emulated over CDP; plain Chromium reports 0).
+async function safeArea(page, label, expected) {
+  const insets = { top: 47, right: 21, bottom: 34, left: 59 };
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets });
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const edges = await page.getByTestId("lobby-card").evaluate(el => { const r = el.getBoundingClientRect(); return { top: r.top, right: innerWidth - r.right, bottom: innerHeight - r.bottom, left: r.left }; });
+    for (const [side, value] of Object.entries(expected)) assert.ok(Math.abs(edges[side] - value) <= .5, `${label}: card ${side} edge at ${value} px with a ${insets[side]} px safe area (${edges[side]})`);
+    console.log(`${label}: card clears the safe area (${Object.keys(expected).join(", ")})`);
+  } finally {
+    await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 0, right: 0, bottom: 0, left: 0 } });
+    await cdp.detach();
+  }
 }
 const fitResults = [];
 async function codeFits(page, label) {
@@ -306,6 +331,15 @@ try {
     const data = await geometry(page, minimum);
     await renameTappable(page, `${width}x${height}`);
     await centred(page, `${width}x${height}`);
+    if (width === 1280) await safeArea(page, `${width}x${height}`, { top: 47, bottom: 34, left: 59 });
+    if (width === 844) {
+      await page.setViewportSize({ width: 667, height: 375 });
+      try {
+        await safeArea(page, "667x375", { top: 47, right: 21, bottom: 34, left: 59 });
+      } finally {
+        await page.setViewportSize({ width, height });
+      }
+    }
     if (width === 390) await supportedCodeFits(page, `${width}x${height}`);
     if (width === 390) {
       // Actual hosted fallback font; retain the native cases and run the same assertions.
@@ -381,6 +415,11 @@ try {
     await emptySeatsFit(page, `${width}x${height}`);
     const data = await geometry(page, 0);
     results.push({ viewport: `${width}x${height}`, ...data });
+    if (width === 320) {
+      // #1220 row 22: one emoji row leaves room for two 22 px chat lines.
+      const log = await page.getByTestId("chat-log").evaluate(el => el.clientHeight);
+      assert.ok(log >= 44, `${width}x${height}: chat log shows two lines (${log} px)`);
+    }
     if (width === 375) await centred(page, `${width}x${height}`);
     if (width !== 390) await supportedCodeFits(page, `${width}x${height}`);
     try {
