@@ -184,7 +184,8 @@ export function LoadingScreen({ onArrive, onDone, onRetry }: { onArrive: () => v
         }
         return;
       }
-      const ms = now - started.current;
+      // #1383: a frame can be stamped before the Start click; a negative time would make the push's `t ** 1.6` NaN.
+      const ms = Math.max(0, now - started.current);
       const c = card.current!;
       if (calm) {
         const t = Math.min(1, ms / FADE_MS);
