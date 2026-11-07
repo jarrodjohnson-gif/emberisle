@@ -1,0 +1,15 @@
+/* #1297: the thin dark ring on every seat dot. Added on top of the running game by capture.mjs. No src/ file changes.
+   The ring is an inset box-shadow, so the dot's box, baseline and margins do not move. --control-line is #78837a. */
+
+/* The shared SeatDot: a span with aria-hidden and these three classes, nothing else draws a dot this way.
+   A transparent fill (the lobby's empty seat) gets no ring. */
+span[aria-hidden="true"].inline-block.shrink-0.rounded-full:not([style*="transparent"]) { box-shadow: inset 0 0 0 1.5px var(--control-line); }
+
+/* The chat log's three custom 8 px dots (Chat.tsx Line, ReactRow): the same ring until they go through SeatDot. */
+li > span.inline-block.size-2.rounded-full { box-shadow: inset 0 0 0 1.5px var(--control-line); }
+
+/* The lobby's own weaker ring (lobby.css:183, inset 1px black/25, 1.84:1 on white) is replaced, not stacked. */
+.lobby-layout .dot:not([style*="transparent"]) { box-shadow: inset 0 0 0 1.5px var(--control-line); }
+
+/* The turn stamp's dot already has a 2 px ink border (styles.css .turn-stamp-dot). It keeps that and gets no second ring. */
+.turn-stamp-dot { box-shadow: none; }
