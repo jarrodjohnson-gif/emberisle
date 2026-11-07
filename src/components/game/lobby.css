@@ -1,9 +1,9 @@
 .lobby-layout {
   position: absolute;
   z-index: 10;
-  top: 24px;
-  bottom: 24px;
-  left: 40px;
+  top: max(24px, env(safe-area-inset-top));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  left: max(40px, env(safe-area-inset-left));
   width: 560px;
 }
 .lobby-layout .lobby-layout-cover {
@@ -28,6 +28,7 @@
   min-width: 44px;
 }
 .lobby-layout button:not([data-emote]), .lobby-layout input, .lobby-layout [role="tab"] { font-size: 15px; font-weight: 600; }
+.lobby-layout input { font-size: 17px !important; }
 .lobby-layout button, .lobby-layout [role="tab"] { display: inline-flex; align-items: center; justify-content: center; line-height: 20px; text-align: center; }
 .lobby-header, .lobby-copy-controls, .lobby-rules, .lobby-action-buttons, .lobby-summary {
   display: flex;
@@ -36,7 +37,7 @@
   min-width: 0;
 }
 .lobby-header { justify-content: space-between; }
-.lobby-header > p { font-size: 28px; line-height: 36px; letter-spacing: 1px; font-weight: 700; }
+.lobby-header > p { font-size: 28px; line-height: 34px; letter-spacing: 1px; font-weight: 700; }
 .lobby-copy-controls > button { padding: 0 11px; }
 .lobby-rules > * { flex: 1 1 0; }
 .lobby-rules > .lm, .lobby-rules > button { flex: 0 0 auto; }
@@ -47,15 +48,16 @@
 .lobby-rule-status {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   height: 44px;
+  padding-left: 4px;
   font-size: 15px;
   line-height: 20px;
 }
 .lobby-rule-status > * { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0; }
 .lobby-rule-status > span:first-child { color: #1d5f64; font-weight: 700; }
-.lobby-rule-status > *:last-child { font-size: 13px; font-weight: 500; color: #46524e; }
+.lobby-rule-status > *:last-child { font-size: 13px; line-height: 18px; font-weight: 500; color: #46524e; }
 .lobby-players {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -77,7 +79,7 @@
   border-radius: 12px;
   background: #fff;
 }
-.lobby-name { display: flex; width: fit-content; max-width: 100%; min-width: 0; align-items: center; font-size: 15px; font-weight: 700; color: #263b3b; }
+.lobby-name { display: flex; width: fit-content; max-width: 100%; min-width: 0; align-items: center; font-size: 17px; font-weight: 600; color: #263b3b; }
 .lobby-name > button, .lobby-name > input { width: 100%; }
 .lobby-player-status { grid-column: 2; grid-row: 2; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; font-weight: 500; line-height: 18px; color: #46524e; pointer-events: none; }
 .lobby-layout .lobby-player > button:not([data-emote]) { grid-column: 3; grid-row: 1 / 3; padding: 0 8px; font-size: 13px; font-weight: 600; line-height: 16px; white-space: normal; }
@@ -89,6 +91,9 @@
 .lobby-player:has(> [data-testid="add-bot"]) > span.rounded-full { visibility: hidden; }
 .lobby-layout .lobby-player:has(> [data-testid="add-bot"]) > button { margin-left: 8px; padding: 0 7px; }
 .lobby-player:not(:has(> button)) .lobby-player-status { grid-column: 2 / 4; }
+@media (min-width: 361px) and (orientation: portrait), (min-height: 601px) {
+  .lobby-layout .lobby-player > button:not([data-emote]) { font-size: 15px; line-height: 20px; white-space: nowrap; }
+}
 .lobby-bubble { grid-column: 3; grid-row: 1; align-self: center; justify-self: end; min-width: 0; max-width: 100%; pointer-events: none; }
 .lobby-chat-panel {
   display: flex;
@@ -102,6 +107,7 @@
 .lobby-chat-panel [role="tablist"], .lobby-chat-panel [role="tabpanel"] > div:last-child,
 .lobby-chat-panel [role="tabpanel"] > div:has(> button[data-emote]) { gap: 8px; }
 .lobby-chat-panel [data-testid="chat-log"] { flex-basis: 0 !important; }
+.lobby-chat-panel [data-testid="chat-log"] > li { font-size: 1.0625rem; line-height: 1.375rem; }
 .lobby-chat-panel [data-testid="emoji-row"] { gap: 8px; justify-content: space-between; }
 .lobby-chat-panel [data-testid="emoji-row"] button, .lobby-chat-panel [role="tab"] { background: transparent; }
 .lobby-chat-panel [data-testid="emoji-row"] button { font-size: 24px; font-weight: 400; }
@@ -113,16 +119,20 @@
 .lobby-chat-panel [data-testid="sounds-tab"], .lobby-chat-panel [data-testid="sounds-tab"] [role="group"] { gap: 8px; }
 .lobby-actions { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .lobby-summary { height: 44px; justify-content: space-between; }
-.lobby-summary > p { font-size: 15px; font-weight: 700; color: #263b3b; }
+.lobby-summary > p { font-size: 17px; line-height: 22px; font-weight: 600; color: #263b3b; }
 .lobby-summary [role="radiogroup"] { gap: 8px; }
 .lobby-action-buttons > * { flex: 1 1 0; padding: 0 11px; }
 .lobby-action-buttons > button:first-child { font-weight: 700; }
 .lobby-action-buttons > button:last-child { flex: 0 0 auto; white-space: nowrap; }
+.lobby-layout .lobby-action-buttons > button:not(:last-child) { font-size: 17px; line-height: 22px; }
+@media (min-width: 701px) {
+  .lobby-copy-controls, .lobby-action-buttons, .lobby-summary [role="radiogroup"] { gap: 12px; }
+}
 .lobby-copy-fallback { position: absolute; top: 60px; right: 8px; left: 8px; z-index: 20; padding: 8px; border: 1px solid #899b9b; border-radius: 12px; background: #fff; }
 @media (max-width: 600px) and (orientation: portrait) {
   .lobby-layout { inset: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); width: auto; }
   .lobby-layout .lobby-layout-cover { padding: 12px; }
-  .lobby-header > p { font-size: 24px; line-height: 32px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lobby-header > p { font-size: 22px; line-height: 28px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .lobby-copy-controls { min-width: 0; flex-shrink: 0; }
   .lobby-copy-controls > button { padding: 0 8px; flex-shrink: 1; width: min-content; white-space: normal; }
 }
@@ -148,7 +158,7 @@
   .lobby-player .lobby-bubble [data-seat-bubble="react"] .size-8 { width: 22px; height: 22px; font-size: 18px; line-height: 22px; }
 }
 @media (max-width: 700px) and (orientation: landscape) {
-  .lobby-layout { inset: 8px; }
+  .lobby-layout { inset: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
   .lobby-layout .lobby-layout-cover { padding: 8px; column-gap: 8px; grid-template-columns: minmax(0, 42fr) minmax(0, 58fr); }
   .lobby-players { grid-template-rows: repeat(2, 44px); }
   .lobby-player { grid-template-rows: 18px 18px; --seat-row: 18px; }
@@ -162,10 +172,11 @@
 .lobby-bubble [data-seat-bubble="sound"] svg { display: inline; width: 14px; height: 14px; margin-right: 4px; vertical-align: -2px; }
 .lobby-player:has(> .lobby-bubble [data-seat-bubble="sound"]) { grid-template-columns: 12px minmax(40px, 1fr) minmax(0, max-content); }
 @media (max-width: 360px) and (orientation: portrait) {
-  .lobby-header > p { font-size: 18px; letter-spacing: 0; min-width: 0; }
+  .lobby-header > p { font-size: 18px; line-height: 28px; letter-spacing: 0; min-width: 0; }
   .lobby-copy-controls { min-width: 0; flex-shrink: 0; }
   .lobby-copy-controls > button { flex-shrink: 0; min-width: 44px; padding: 0 8px; font-size: 12px !important; white-space: normal; line-height: 16px; }
-  .lobby-chat-panel [data-testid="emoji-row"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lobby-chat-panel [data-testid="emoji-row"] { display: flex; gap: 12px; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
+  .lobby-chat-panel [data-testid="emoji-row"] > button { flex: 0 0 44px; scroll-snap-align: start; }
   .lobby-layout .lobby-layout-cover { grid-template-rows: 44px 44px 96px minmax(218px, 1fr) 96px; padding: 8px; }
 }
 /* names share one box per seat so the own (editable) name lines up with the others; its 44 px hit area starts at the seat's outer top edge, is centred on the same text, and overlaps the non-interactive status line */
@@ -176,12 +187,13 @@
   margin: calc(-1px - var(--seat-pad)) 0 calc(var(--seat-row) - 44px + 1px + var(--seat-pad));
   padding: calc(1px + var(--seat-pad)) 0 calc(43px - var(--seat-pad) - var(--seat-row));
   line-height: var(--seat-row);
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 600;
 }
 .lobby-name > button[data-testid="rename-seat"] { display: block; min-width: 44px; cursor: pointer; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: underline dotted; text-underline-offset: 4px; }
 .lobby-name > input[data-testid="rename-input"] { min-width: 0; flex: 1; border: 1px solid #cbcfc6; border-radius: 8px; background: #fff9f0; color: #263d3c; }
 .lobby-layout .dot { width: 12px; height: 12px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.25); }
-.lobby-summary [data-testid="victory-target"] { gap: 8px; font-size: 13px; font-weight: 500; color: #46524e; }
+.lobby-summary [data-testid="victory-target"] { gap: 8px; font-size: 13px; line-height: 18px; font-weight: 500; color: #46524e; }
 @media (max-width: 360px) and (max-height: 600px) and (orientation: portrait) {
   .lobby-layout { inset: max(8px, env(safe-area-inset-top)) 16px max(8px, env(safe-area-inset-bottom)); }
 }
