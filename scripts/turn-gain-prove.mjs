@@ -33,7 +33,7 @@
 // Run: npm run turn-gain-prove (ONLY=390x844, reduced or hotseat or reconnect runs one part). Port from VITE_PORT, default 8476.
 // Screenshots to test-results/turn-gain-*.png.
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 30_000;

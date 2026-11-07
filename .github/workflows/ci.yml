@@ -202,6 +202,10 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run game-text-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run stickers-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run bug-report-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-harbor-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-action-order-prove
@@ -384,6 +388,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run profiles-client-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run profiles-ui-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run first-game-coach-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run render-recovery-prove
@@ -401,6 +407,8 @@ jobs:
         run: npm run lobby-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run lobby-wait-box-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run lobby-tictactoe-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run my-numbers-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
@@ -487,6 +495,8 @@ jobs:
         run: npm run chat-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run chat-text-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+        run: npm run sticker-tray-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run react-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
@@ -558,9 +568,13 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run title-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+        run: npm run storage-blocked-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run open-table-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run title-chunks-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+        run: npm run loading-screen-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run open-host-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'

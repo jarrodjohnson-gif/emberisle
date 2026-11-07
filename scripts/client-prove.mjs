@@ -1,6 +1,6 @@
 // L13.4 Debug: open the browser client, play setup and one roll versus the bots, and fail on any console error.
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = 8091;

@@ -14,7 +14,7 @@
 // Zero console errors. Run: npm run table-menu-prove
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8107;
@@ -88,9 +88,10 @@ try {
       "Simple",
       "Diorama",
       "Overhead",
+      "Report a bug",
       "Leave table",
     ];
-    assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Costs", "Table sounds on", "Music on", "Crystal", "Simple", "Diorama", "Overhead", "Leave table"], `${v.tag}: menu rows`);
+    assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Costs", "Table sounds on", "Music on", "Crystal", "Simple", "Diorama", "Overhead", "Report a bug", "Leave table"], `${v.tag}: menu rows`);
     assert.deepEqual(allRows.map((t) => t.trim()), expected, `${v.tag}: complete menu including haptics`);
     assert.match(await menu.textContent(), /Turn 1/, `${v.tag}: the turn number moved into the menu`);
     assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), "How to play", `${v.tag}: focus moves to the first row`);
@@ -133,6 +134,20 @@ try {
     }
 
     if (!hasHaptics) assert.equal(await menu.getByTestId("haptics-toggle").count(), 0, `${v.tag}: unsupported Haptics row is absent`);
+
+    // Report a bug (#912): a 44 px row that opens the prefilled GitHub issue in a new tab, with the game left where it is.
+    const report = menu.getByRole("button", { name: "Report a bug" });
+    assert.equal(Math.round((await report.boundingBox()).height), 44, `${v.tag}: Report a bug is a 44 px row`);
+    await page.evaluate(() => { window.__opened = []; window.open = (...a) => (window.__opened.push(a), null); });
+    await report.click();
+    const [openedUrl, target, features] = (await page.evaluate(() => window.__opened))[0] ?? [];
+    const issue = new URL(openedUrl);
+    assert.equal(issue.origin + issue.pathname, "https://github.com/jarrodjohnson-gif/emberisle/issues/new", `${v.tag}: report link goes to the new-issue page`);
+    const gs = await page.evaluate(() => { const s = window.__emberisle.getState().state; return { seed: s.seed, seq: s.seq }; });
+    assert.match(issue.searchParams.get("body"), new RegExp(`^Build: .+\\nSeed: ${gs.seed}\\nSeq: ${gs.seq}\\nViewport: ${v.width}x${v.height}\\n`), `${v.tag}: report body`);
+    assert.equal(target, "_blank", `${v.tag}: report opens a new tab`);
+    assert.match(features, /noopener/, `${v.tag}: report link is noopener`);
+    assert.equal(await page.evaluate(() => window.__emberisle.getState().screen), "play", `${v.tag}: the game stays at the table`);
 
     // Escape closes and refocuses the button; Enter on the button opens; a pointer outside closes.
     await page.keyboard.press("Escape");

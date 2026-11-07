@@ -7,7 +7,7 @@
 // #430: while p2 owes that discard on p0's turn the banner reads "{p2} — discard 4", not "{p2}'s turn", and p0's turn after.
 // #412: a pick the bank empties while the tray is open is dropped and Play waits; an empty bank turns Plenty off.
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { rollOffOrderOk } from "./roll-off-oracle.mjs";
 

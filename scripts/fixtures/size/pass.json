@@ -1,6 +1,7 @@
 {
   "LobbyView": 2300,
   "LobbyWaitBox": 1800,
+  "LobbyTicTacToe": 1390,
   "index": 122300,
   "IslandCanvas": 199500,
   "jelly-board": 7600,
@@ -26,5 +27,8 @@
   "TradeResource": 1430,
   "TradeToast": 2661,
   "losses": 1407,
-  "trade-panel": 157
+  "x": 157,
+  "ProfileSheet": 5435,
+  "focus-trap": 470,
+  "LoadingScreen": 2388
 }

@@ -20,6 +20,7 @@ import { advanceRoomNeeds, restoredNeed, validNeeds } from "./needs.mjs";
 import { getOpenTables, maybeReleaseOpenSlot, registerOpenTable, unregisterOpenTable } from "./open-table.mjs";
 import { OUTCOME_V, isTime, openJournal, validOutcome, writeDurable } from "./result-journal.mjs";
 import { extensionBudget, turnExtensions } from "./turn-extension.mjs";
+import { closeTtt, resendTtt, tictactoe, TTT_CAP, TTT_RATE, TTT_TYPES } from "./tictactoe.mjs";
 
 // The running host's checkout, regardless of the shell's cwd. Archives and hosts without git report dev (#913).
 const SERVER_SHA = (() => {
@@ -1308,6 +1309,7 @@ async function startGame(ws, room) {
     if (s.bot) game.players[i].kind = "bot";
   });
   if (!(await durableStart(ws, room, order, game, () => room.seats.length === order.length && order.every((s, i) => room.seats[i] === s)))) return;
+  closeTtt(room.seats, "start", null, send);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
   say(room, "Roll for first place.");
@@ -1798,6 +1800,14 @@ function handle(ws, raw) {
   if (msg.type === "leave") return leaveOnPurpose(ws, room);
   if (msg.wayfarerMode !== undefined || msg.type === "setWayfarerMode") return send(ws, { type: "error", message: "Wayfarer mode is fixed when the table is created." });
   if (msg.type === "chat" || msg.type === "react" || msg.type === "sound") return talk(ws, room, msg);
+  if (TTT_TYPES.has(msg.type)) {
+    const now = Date.now();
+    ws.seat.tttBucket ??= { tokens: TTT_CAP, at: now };
+    if (!allow(ws.seat.tttBucket, now, TTT_CAP, TTT_RATE)) return send(ws, { type: "error", message: "Slow down." });
+    if (room.game || room.busy) return send(ws, { type: "error", message: "Games close when the table starts." });
+    const error = tictactoe(room, ws.seat, msg, send);
+    return error ? send(ws, { type: "error", message: error }) : undefined;
+  }
   if (!allow(ws.seat.act, Date.now(), ACT_CAP, ACT_RATE)) return send(ws, { type: "error", message: "Slow down.", ...(msg.type === "need" ? { request: "need" } : {}) });
   // A new game is being written to disk (#889): nothing else changes the table until it is in place or refused.
   if (room.busy) return send(ws, { type: "error", message: "The table has updated. Please try again.", ...(msg.type === "need" ? { request: "need" } : {}) });
@@ -1870,6 +1880,7 @@ function rejoin(ws, msg) {
   send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
   say(room, `${seat.name} is back.`);
   publish(room);
+  resendTtt(seat, send);
   if (!room.game) return;
   const p = room.game.players.find((x) => x.id === seat.pid);
   if (p?.kind === "bot") {
@@ -1965,6 +1976,7 @@ function takeOver(room, seat) {
 function letGo(room, seat) {
   clearTimeout(seat.graceTimer);
   forgetAvatar(seat);
+  closeTtt([seat], "left", seat, send);
   room.seats = room.seats.filter((s) => s !== seat);
   if (!room.seats.some((s) => !s.bot)) return dropRoom(room);
   if (!room.game) say(room, `${seat.name} left.`);

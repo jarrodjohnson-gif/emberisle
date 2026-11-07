@@ -6,7 +6,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 
 const BASE = "/emberisle/";
 const PORT = Number(process.env.PAGES_PORT) || 8110;
