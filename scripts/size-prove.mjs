@@ -65,7 +65,7 @@ const CEILINGS = [
   { name: "TradeToast", gzipBytes: 3000 },
   { name: "losses", gzipBytes: 1600 },
   { name: "trade-panel", gzipBytes: 300 },
-  // #1281: the startup loading screen, preloaded beside the index; measured 2388 B gzip. Proposed on #1281: Opus must OK
+  // #1281: the startup loading screen, preloaded beside the index; measured 2419 B gzip (with Try again). Proposed on #1281: Opus must OK
   // this new ceiling before merge.
   { name: "LoadingScreen", gzipBytes: 2800 },
 ];
