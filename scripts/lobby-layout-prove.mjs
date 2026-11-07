@@ -400,7 +400,7 @@ try {
     await page.context().close();
     await guest.context().close();
   }
-  for (const [width, height] of [[375, 667], [390, 640], [320, 568]]) {
+  for (const [width, height] of [[375, 667], [390, 640], [320, 568], [430, 932], [375, 812]]) {
     const page = await client("Jarrod", { width, height }, true);
     await page.evaluate(() => window.__emberisle.getState().hostTable());
     await page.getByTestId("lobby-card").waitFor();
@@ -455,7 +455,7 @@ try {
   assert.deepEqual(errors, [], "zero browser errors");
   writeFileSync(`${out}/code-fit.json`, JSON.stringify(fitResults, null, 2) + "\n");
   writeFileSync(`${out}/measurements.json`, JSON.stringify(results, null, 2) + "\n");
-  console.log("lobby-layout-prove: ok; real host, two clients, six viewports; zero browser errors");
+  console.log("lobby-layout-prove: ok; real host, two clients, eight viewports; zero browser errors");
 } finally {
   await browser.close();
   await vite.close();
