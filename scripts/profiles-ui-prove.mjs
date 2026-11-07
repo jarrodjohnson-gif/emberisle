@@ -80,7 +80,8 @@ try {
   vite = await createServer({
     root: root.pathname, logLevel: "silent",
     server: { host: "127.0.0.1", port: 0, hmr: false, https: { key: readFileSync(path.join(dir, "key.pem")), cert: readFileSync(path.join(dir, "cert.pem")) },
-      proxy: { "/a": tunnel(a.port), "/b": tunnel(b.port), "/legacy": { target: `ws://127.0.0.1:${legacyServer.address().port}`, ws: true } } },
+      // Anchored: a bare "/a" key is a prefix match and would send /audio/* to host A.
+      proxy: { "^/a(?:[/?]|$)": tunnel(a.port), "^/b(?:[/?]|$)": tunnel(b.port), "^/legacy(?:[/?]|$)": { target: `ws://127.0.0.1:${legacyServer.address().port}`, ws: true } } },
   });
   await vite.listen();
   const origin = `https://127.0.0.1:${vite.httpServer.address().port}`;
