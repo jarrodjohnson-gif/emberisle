@@ -397,3 +397,10 @@ input, select, textarea { border-color: var(--control-line); }
 }
 @media (min-width: 1000px) and (min-height: 481px) { .ss { width: 360px; } }
 @media (prefers-reduced-motion: reduce) { .ss-switch span, .ss-switch span::after { transition: none; } }
+
+/* #1419 help sheets, option A (docs/design/help-sheets-1274): How to play and Costs share one backdrop, a soft grey-green
+   wash (mist at 70 %, no blur). Its padding is the approved gutter: 16 px on phones, 24 px from 1024 px wide, or the safe-area
+   inset where that is more. The body scrolls under a fixed title row with a thin scrollbar, so overflow shows. */
+.help-wash { --gutter: 16px; background: color-mix(in srgb, var(--ground) 70%, transparent); padding: max(var(--gutter), env(safe-area-inset-top)) max(var(--gutter), env(safe-area-inset-right)) max(var(--gutter), env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left)); }
+@media (min-width: 1024px) { .help-wash { --gutter: 24px; } }
+.help-scroll { scrollbar-width: thin; scrollbar-color: var(--control-line) transparent; }
