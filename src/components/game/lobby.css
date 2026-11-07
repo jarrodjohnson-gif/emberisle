@@ -92,7 +92,7 @@
 .lobby-layout .lobby-player:has(> [data-testid="add-bot"]) > button { margin-left: 8px; padding: 0 7px; }
 .lobby-player:not(:has(> button)) .lobby-player-status { grid-column: 2 / 4; }
 @media (min-width: 361px) and (orientation: portrait), (min-height: 601px) {
-  .lobby-layout .lobby-player > button:not([data-emote]) { font-size: 15px; line-height: 20px; white-space: nowrap; }
+  .lobby-layout .lobby-player > button:not([data-emote]) { font-size: 15px; line-height: 20px; }
 }
 .lobby-bubble { grid-column: 3; grid-row: 1; align-self: center; justify-self: end; min-width: 0; max-width: 100%; pointer-events: none; }
 .lobby-chat-panel {
