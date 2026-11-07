@@ -72,9 +72,8 @@ const CEILINGS = [
   // measured 469 B. Ceilings decided by Opus under the owner's 2026-11-06 size-limit delegation (PR #1355 review).
   { name: "ProfileSheet", gzipBytes: 6000 },
   { name: "focus-trap", gzipBytes: 550 },
-  // #766 slice 2, 2026-11-07: the sheet's Edit profile and Change PIN forms, loaded when one opens, measured 2,189 B; and
-  // the lucide eye icons the bundler split out once both profile chunks used them, measured 290 B. About 7% room each;
-  // new-chunk ceilings for Opus to approve via the desk (#766 size answer: option B).
+  // #766 slice 2, 2026-11-07. ProfileForms: measured 2,182 B. eye-off (the EyeOff icon the bundler split out): measured
+  // 292 B. Ceilings decided by Opus per q-size-standing (PR #1401 review).
   { name: "ProfileForms", gzipBytes: 2350 },
   { name: "eye-off", gzipBytes: 310 },
   // #1281, 2026-11-07: startup loading screen, preloaded beside index; measured 2,420 B gzip. Decided per q-size-standing; paired trim to follow.

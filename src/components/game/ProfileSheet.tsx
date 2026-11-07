@@ -86,6 +86,9 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
 
   // A temporary PIN from a local reset opens Change PIN; nothing else is offered until it is changed.
   useEffect(() => { if (mustChange) void open("pin"); }, [mustChange]);
+  // Signed in, fetch the forms quietly, so Edit profile and Change PIN open on the first press without a wait.
+  const signedIn = Boolean(snap.profile);
+  useEffect(() => { if (signedIn) void forms.prefetch(); }, [signedIn]);
 
   // Every request confirms the host shown above it, then reports a refusal beside the field it is about.
   const send = async (run: () => Promise<unknown>) => {

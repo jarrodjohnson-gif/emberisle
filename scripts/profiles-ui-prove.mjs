@@ -383,6 +383,8 @@ try {
   await sheet(coral).getByLabel("Login").fill("coral-user");
   await sheet(coral).getByLabel("PIN", { exact: true }).fill("2468");
   await sheet(coral).getByLabel("Confirm PIN").fill("2468");
+  // Blocked before signing in: the sheet prefetches the forms once signed in, and that quiet prefetch fails too.
+  await coral.route(/ProfileForms\.tsx/, (route) => route.abort("connectionrefused"));
   await sheet(coral).getByRole("button", { name: "Create profile" }).last().click();
   await sheet(coral).getByText("Signed in as").waitFor();
   await shots(coral, "signed-in-edit-buttons");
@@ -390,7 +392,6 @@ try {
   const firstCredential = (await wire(coral)).map(frame).find((f) => f.m.type === "profileSession").m.credential;
 
   // The forms load on first open. A failed load says so on the summary and the same button tries the network again.
-  await coral.route(/ProfileForms\.tsx/, (route) => route.abort("connectionrefused"));
   await sheet(coral).getByRole("button", { name: "Edit profile" }).click();
   await sheet(coral).getByRole("alert").filter({ hasText: "Couldn't load this form. Try again." }).waitFor();
   assert.ok(await sheet(coral).getByText("Signed in as Coral").isVisible(), "a failed load leaves the summary in place");
