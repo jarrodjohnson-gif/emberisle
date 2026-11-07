@@ -20,6 +20,8 @@ export const DAY_FAILS = 10;
 export const LIFETIME_FAILS = 30;
 export const DEVICE_MS = 90 * DAY_MS;
 export const DEVICE_MAX = 5;
+// Former logins one profile may keep reserved by renaming (#1069, owner decision 2026-11-06).
+export const RESERVED_PER_PROFILE = 5;
 // Failures against logins nobody holds are kept too (the same answer and the same work), but only this many names.
 const UNKNOWN_MAX = 1024;
 const FILE = "profiles.json";
@@ -651,11 +653,16 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
       if (p.pinMustChange) return { error: "mustChangePin" };
       if (held && p.guard.lifetime >= LIFETIME_FAILS) return { error: "signInFailed" };
       if (held && !held.ok) { fail(p.guard, at, true); return { error: "signInFailed" }; }
-      if (isRename && (has(d.logins, newLogin) || has(d.reservedLogins, newLogin))) return { error: "loginTaken" };
+      // #1069: renaming back to one of this profile's own former logins releases that reservation. Any other rename adds one,
+      // and is refused once the profile holds RESERVED_PER_PROFILE; no old reservation is ever evicted to make room.
+      const reclaim = isRename && own(d.reservedLogins, newLogin) === id;
+      if (isRename && !reclaim && (has(d.logins, newLogin) || has(d.reservedLogins, newLogin))) return { error: "loginTaken" };
+      if (isRename && !reclaim && Object.values(d.reservedLogins).filter((v) => v === id).length >= RESERVED_PER_PROFILE) return { error: "loginLimit" };
       const edited = structuredClone(p);
       try { _applyEditFields(edited, f, colors); }
       catch (e) { if (e instanceof ProfileError) return { error: e.code }; throw e; }
       if (isRename) {
+        if (reclaim) delete d.reservedLogins[newLogin];
         d.reservedLogins[p.login] = id;
         delete d.logins[p.login];
         edited.login = newLogin;
