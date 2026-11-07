@@ -111,6 +111,8 @@ async function act(c, msg) {
   c.send(msg);
   await until(() => c.state.game.seq > seq || c.errors.length > errors, `${c.name} ${msg.type}`);
   if (c.errors.length > errors) fail(`${c.name} ${JSON.stringify(msg)}`, c.errors.at(-1));
+  // The loops below read every seat's phase; the host sends the new state to each socket in turn, so wait for all of them.
+  await until(() => people.every((o) => o.state.game.seq >= c.state.game.seq), `every seat to see ${c.name}'s ${msg.type}`);
 }
 
 // The goods line for `name`'s roll, as rules.ts writes it, with or without a short bank.
