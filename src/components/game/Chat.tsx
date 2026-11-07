@@ -336,7 +336,7 @@ function MuteMenu({ above = false }: { above?: boolean }) {
               setOpen(false);
               window.dispatchEvent(new Event(OPEN_SOUND_EVENT));
             }}
-            className="h-11 shrink-0 cursor-pointer rounded-control px-3 text-left text-sm text-zinc-700 underline hover:text-zinc-900"
+            className="h-11 shrink-0 cursor-pointer rounded-control bg-glass px-3 text-left text-sm text-zinc-700 hover:text-zinc-900"
           >
             Sound settings
           </button>
