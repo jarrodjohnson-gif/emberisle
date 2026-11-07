@@ -181,8 +181,6 @@ body {
   --control-line: #78837a;
   --accent: #246d72;
   --accent-ink: #246d72;
-  --sea: #158e9a;
-  --sea-shallow: #65d8cb;
   --timber: #2f6a4f; --timber-on: #ffffff; --timber-side: #173d35;
   --clay: #b8533d; --clay-on: #ffffff; --clay-side: #74372b;
   --wool: #b2ce80; --wool-on: #263d3c; --wool-side: #617744;
@@ -194,11 +192,9 @@ body {
   --font-numeral: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
   --space-5: 20px; --space-6: 24px; --space-8: 32px;
-  --radius-card: 8px;
   --shadow-control: 0 1px 0 rgb(24 51 45 / 0.12);
   --shadow-sheet: 0 10px 28px rgb(24 51 45 / 0.18);
   --duration-gain: 2200ms;
-  --duration-turn: 1800ms;
   /* #899: the phone sheet ends under the island, clear of the seat strip (68 px) and the 40 px band of seat bubbles under it.
      While the keyboard is up or an offer or steal prompt is showing, the band is 0 (Chat.tsx), so the input and the choice fit. */
   --chat-sheet-height: min(420px, calc(100dvh - max(12px, env(safe-area-inset-top)) - 68px - var(--chat-bubble-band, 40px) - var(--active-offer-height, 0px) - var(--active-prompt-height, 0px) - var(--keyboard-inset, 0px)));
@@ -245,8 +241,7 @@ body {
 .trade-yes { background: var(--ink); color: var(--paper); }
 .trade-yes[aria-disabled='true'] { background: var(--table-raised); color: var(--table-muted); border: 1px solid var(--table-line); }
 .trade-no { background: var(--table-raised); color: var(--table-ink); border-color: var(--table-line); }
-.trade-wait, .trade-short { grid-column: 1 / -1; color: var(--table-muted); }
-.trade-short { color: var(--accent); }
+.trade-wait { grid-column: 1 / -1; color: var(--table-muted); }
 .trade-dock button:focus-visible { outline-color: var(--ink); }
 .turn-stamp { background: #fff; border: 1px solid #cbd3d3; border-radius: 20px; box-shadow: var(--shadow-sheet); padding: 16px 24px; color: var(--ink); font-size: 28px; line-height: 32px; font-weight: 700; letter-spacing: -0.8px; }
 .turn-stamp[data-leaving] { animation: none !important; transition: opacity 160ms var(--ease-in), transform 160ms var(--ease-in); }
