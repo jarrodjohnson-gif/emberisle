@@ -65,9 +65,8 @@ const CEILINGS = [
   { name: "TradeToast", gzipBytes: 3000 },
   { name: "losses", gzipBytes: 1600 },
   { name: "trade-panel", gzipBytes: 300 },
-  // #1281: the startup loading screen, preloaded beside the index; measured 2419 B gzip (with Try again). Proposed on #1281: Opus must OK
-  // this new ceiling before merge.
-  { name: "LoadingScreen", gzipBytes: 2800 },
+  // #1281, 2026-11-07: startup loading screen, preloaded beside index; measured 2,420 B gzip. Decided per q-size-standing; paired trim to follow.
+  { name: "LoadingScreen", gzipBytes: 2600 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
