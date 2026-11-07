@@ -19,7 +19,7 @@ Astra's and Terra's earlier packet from `codex/1298-button-audit` stays in this 
 | `sea` | teal fill `#246d72`, white text | 1: lobby Start |
 | `accent` | teal fill `#246d72`, white text | 0 |
 
-88 `Button` callers in all (51 with a fixed variant, 10 with none, 10 with a state switch), plus 36 raw `<button>` elements outside the primitive (`git grep -n "<button" -- src/components`, less the primitive itself; listed below where they look like controls).
+88 `Button` callers in all (68 with a fixed variant: 25 ghost, 21 secondary, 18 outline, 3 primary, 1 sea; 10 with none; 10 with a state switch), plus 36 raw `<button>` elements outside the primitive (`git grep -n "<button" -- src/components`, less the primitive itself; listed below where they look like controls).
 
 Two type exceptions stand and are not touched by anything below: the lobby's accepted 13 / 15 / 17 / 22 / 28 px scale (decision 7 of #1274) and the V1 hand-card name at 10 px uppercase (decision 5).
 
@@ -43,7 +43,7 @@ Lines are from `src/components/game/` unless another path is given. "Keep" means
 | Lobby | Leave the table | `ghost` | `:170` | |
 | Lobby | Table, Play games | raw buttons | `:128, 129` | 12 px corners; Table has a white fill, Play games none. #1303 owns the consistent boxes. |
 | Lobby | Send (chat) | raw, ink fill, 14 px | `Chat.tsx:262` | Ink fill next to the teal Start: two fills on one card. Left for the owner, see below. |
-| Lobby games | Close, Play, No, Cancel, Play again, invites | `outline`, `default` | `LobbyTicTacToe.tsx:42-101`, `LobbyWaitBox.tsx:182-188` | Play and Open are `default` fills. |
+| Lobby games | Close, Play, No, Cancel, Play again, invites | `outline`, `default` | `LobbyTicTacToe.tsx:42-101`, `LobbyWaitBox.tsx:171-177` (on `main` at `f5e80395`; `182-188` before #1373) | Play and Open are `default` fills. |
 | Table | Path, Outpost, Stronghold, Fortune | `secondary` sm, `primary` when armed | `Hud.tsx:486` | 52 px tall tiles; ready tiles turn pale green with a green edge (`styles.css`, `#606`); short goods ring red. `aria-disabled` when blocked, still focusable, with the reason as a 12 px line. Keep. |
 | Table | Trade | `secondary` sm | `TradeButton.tsx:8` | |
 | Table | Fortunes · N | `secondary` sm, `primary` when open or armed | `Hud.tsx:262` | Keep. |
