@@ -83,7 +83,7 @@ try{
    await load(stages.over[i],i);await page.getByTestId('win-screen').waitFor();
    await whiteSurface(page.getByTestId('win-screen').locator(':scope > div'),`${width} scores`);
    assert.equal(await page.getByTestId('win-screen').evaluate(el=>getComputedStyle(el).backdropFilter),'none',`${width}: score backdrop has no blur`);
-   for(let p=0;p<4;p++){const cells=await page.locator(`[data-testid="win-row"][data-player="p${p}"] td`).allTextContents();assert.equal(cells[5],String(expected[p].hidden));}
+   for(let p=0;p<4;p++){assert.equal(await page.locator(`[data-player="p${p}"] [data-testid="win-hidden"]`).textContent(),String(expected[p].hidden));}
    await page.getByTestId('win-look').click();
    await whiteSurface(page.getByTestId('win-chip'),`${width} scores chip`);
    await page.locator('[data-menu-trigger="p1"]').click();assert.equal(await page.getByTestId('private-points').textContent(),'1');await page.keyboard.press('Escape');
