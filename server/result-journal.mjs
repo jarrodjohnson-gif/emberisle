@@ -111,6 +111,13 @@ export function openJournal(dir, { fault = () => {} } = {}) {
       inflight.delete(id);
     }
   }
+  // Profile deletion (#891): a pending outcome rewritten in place, durably, with a deleted profile's rows redacted. Its game
+  // stays pending under the same id.
+  async function replace(outcome) {
+    if (!validOutcome(outcome) || !ids.has(outcome.gameId)) throw new Error("bad outcome");
+    await writeDurable(dir, `${outcome.gameId}.json`, JSON.stringify(outcome));
+    outcomes.set(outcome.gameId, outcome);
+  }
   // Step 6 (#890): once the game's receipt has committed, its pending file is removed, durably. From then on the receipt in
   // the profile store fences that game id, so the host checks both.
   async function done(id) {
@@ -135,6 +142,7 @@ export function openJournal(dir, { fault = () => {} } = {}) {
     // A readable pending outcome is on disk for this game; a corrupt file is not one and is repaired from the room.
     ready: (id) => ids.has(id),
     put,
+    replace,
     done,
     // The readable pending outcomes, oldest end first, for result recording to consume.
     pending: () => [...outcomes.values()].sort((a, b) => a.endedAt - b.endedAt || a.gameId.localeCompare(b.gameId)),
