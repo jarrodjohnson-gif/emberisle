@@ -202,6 +202,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run game-text-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run bug-report-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-harbor-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-action-order-prove
