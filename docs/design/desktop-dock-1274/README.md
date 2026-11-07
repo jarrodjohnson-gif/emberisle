@@ -1,13 +1,13 @@
 # Desktop dock mock, 672 × 176 (#1300, for #1274)
 
 **Design stage only. No game code changes.** Jarrod accepts these real-game pictures before anyone builds the dock.
-Author: Claude Opus 5.5, 2026-11-07. Base: `main` at `2525ea2`.
+Author: Claude Opus 5.5, 2026-11-07. Base: the PR base, current `main`.
 
-This is owner decision 10A on #1274: one 672 × 176 px dock with five 88 px cards and seven controls, shown in the real game.
+This is the owner's answer to the desktop dock question on #1274 (2026-11-03): one 672 × 176 px dock with five 88 px cards and seven controls, shown in the real game.
 
 ## The dock
 
-One white box, centred, 24 px above the bottom edge (decision 11). It sits at x 304, y 520 at 1280 × 720.
+One white box, centred, 24 px above the bottom edge (the desktop margin the owner chose on 2026-11-03). It sits at x 304, y 520 at 1280 × 720.
 
 | Row | Height | Left 472 px | Right 176 px |
 |---|---|---|---|
@@ -17,7 +17,7 @@ One white box, centred, 24 px above the bottom edge (decision 11). It sits at x 
 
 - Padding 8 px, gaps 8 px. 8 + 80 + 8 + 44 + 8 + 20 + 8 = 176. 8 + 472 + 8 + 176 + 8 = 672.
 - Each control is 86.86 × 44 px, 8 px apart.
-- The edge is a 1 px ring in the control-line colour, so it takes no room from the slots. Corners are 12 px (decision 2).
+- The edge is a 1 px ring in the control-line colour, so it takes no room from the slots. Corners are 12 px (the owner's 8 / 12 / 20 px set).
 - The slot under the turn line shows the last roll's dice. When an offer comes in, it holds Yes and No.
 - Nothing appears or leaves by phase. A control that cannot be used now is greyed and says why to a screen reader.
 
@@ -33,10 +33,10 @@ Everything inside is the game's own parts, unchanged: the approved goods cards (
 | Offer, option A | [offer-a-1280x720.png](offer-a-1280x720.png) | Yes and No in the slot under the turn line; the seven controls stay |
 | Offer, option B | [offer-b-1280x720.png](offer-b-1280x720.png) | Yes, No and Details take the Trade, Fortunes and End turn places |
 | Another turn | [other-turn-1280x720.png](other-turn-1280x720.png) | Every control greyed except Fortunes, which stays open because you hold one; costs still show |
-| Gain off your turn | [gain-1280x720.png](gain-1280x720.png) | +1 wood and +2 wheat from Dune's roll |
+| Gain off your turn | [gain-1280x720.png](gain-1280x720.png) | +1 wood and +2 wheat from a bot's roll |
 | Loss | [loss-1280x720.png](loss-1280x720.png) | −2 stone |
 | Empty hand | [empty-1280x720.png](empty-1280x720.png) | Five empty cards; each build shows what it is short; End turn filled |
-| Roll | [roll-1280x720.png](roll-1280x720.png) | Roll takes the End turn place (an extra state, from the #1274 study) |
+| Roll | [roll-1280x720.png](roll-1280x720.png) | Roll takes the End turn place (an extra state, from the dock study on #1274) |
 
 | Your turn | Offer, option A |
 |---|---|
@@ -51,11 +51,11 @@ From the final run of [capture.mjs](capture.mjs). The full numbers are in [measu
 - **Same slots in every state.** The dock, the hand, the turn line, the slot, each of the seven controls and the meta line have the same rectangle in all 8 desktop states.
 - **Seven controls**, in the named order, in every state except option B's offer.
 - **Targets.** No control under 44 × 44. Gaps between controls are 8 px.
-- **Costs.** Each build shows its chips inside its tile: Path 2, Outpost 4, Stronghold 2, Buy fortune 3. On your turn, a build with no spot shows "No spot" in place of its chips, as today (Outpost in the own-turn and empty pictures). On other turns the chips always show.
-- **Gain and loss tabs.** Not clipped. Each tab is 28 px tall at y 504, so it rises 16 px above the dock's top edge for the 3 s cue.
-- **Text sizes.** 12, 14, 15 and 30 px, 17.5 px for a tab, 16 px for Yes and No. The 9 px red "−1" on a cost chip (how many of a good you are short) is the game's own; the mock does not change it.
-- **Goods names are 12 px here, not 10 px.** On a wide screen with a mouse, today's game already draws the goods card 1.3 times larger: 88 × 80, a 30 px count and a 12 px name (`hand-motion.css:26-38`). The 10 px uppercase name the owner kept (decision 5) is the base card's, on phones and touch screens. The mock uses the card as it is.
-- **Turn line.** Fits in 176 px in every state: "Your turn", "Roll the dice", "Dune (bot)'s turn", "Dune (bot) offers".
+- **Costs.** A build that shows chips shows the right number, inside its tile: Path 2, Outpost 4, Stronghold 2, Buy fortune 3. Recorded, not checked: on your turn a build with no spot shows "No spot" in place of its chips, as today (Outpost in the own-turn and empty pictures), and on other turns these pictures show chips on every build.
+- **Gain and loss tabs.** Two on a gain, one on a loss, none otherwise. Not clipped. Each tab is 28 px tall at y 504, so it rises 16 px above the dock's top edge for the 3 s cue.
+- **Text sizes.** No size other than 9, 12, 14, 15, 16, 17.5 and 30 px appears. Recorded, not checked: which state shows which size (17.5 px is a tab, 16 px is Yes and No). The 9 px red "−1" on a cost chip (how many of a good you are short) is the game's own; the mock does not change it.
+- **Goods names are 12 px here, not 10 px.** On a wide screen with a mouse, today's game already draws the goods card 1.3 times larger: 88 × 80, a 30 px count and a 12 px name (`hand-motion.css:26-38`). The 10 px uppercase name the owner kept is the base card's, used outside the wide-screen-with-a-mouse rule: phones, touch screens and short desktop windows. The mock uses the card as it is.
+- **Turn line.** Fits in 176 px in every state: "Your turn", "Roll the dice", a bot's turn ("Dune (bot)'s turn" in this run; the bot differs per run), and a bot's offer ("Dune (bot) offers").
 - **Browser errors:** 0. Chromium 153.0.8010.12.
 
 ### Scene and island
@@ -76,14 +76,14 @@ The scene and island numbers are recorded, not checked. The island ends at y 443
 - The fourth build is labelled **Buy fortune**. The deck count leaves that tile; it is already in the meta line as Deck N.
 - Hand cards are 8 px apart, up from 4 px.
 - Cost chips have 2 px side padding, down from 4 px, so Outpost's four chips fit an 87 px tile.
-- The turn line is shorter, to fit 176 px: "Your turn" instead of "Build, trade, or end your turn", and "Dune's turn" instead of "Wait for Dune to build or trade".
+- The turn line is shorter, to fit 176 px: "Your turn" instead of "Build, trade, or end your turn", and "Dune's turn" instead of "Wait for Dune to build or trade" (for whichever bot is on turn).
 
 ## Question for Jarrod: where do Yes and No go?
 
 The issue asks for exactly seven controls. An offer needs Yes and No. Two layouts are drawn.
 
 - **A (recommended): Yes and No go under the turn line.** The seven controls never change. The raised hand cards show the terms (+2 sheep, −1 stone).
-- **B: Yes, No and Details take the places of Trade, Fortunes and End turn**, as in the #1274 study. The seven places stay, but three of them change meaning while the offer is open.
+- **B: Yes, No and Details take the places of Trade, Fortunes and End turn**, as in the dock study on #1274. The seven places stay, but three of them change meaning while the offer is open.
 - **C: Both.** Yes and No under the turn line, and Details in place of Trade.
 - **D: Something else.**
 
@@ -93,7 +93,7 @@ A is recommended because nothing in the row changes meaning under your hand, and
 
 - Long names cut off with "…" in the turn line. The full offer is in Yes and No's description and in the line's tooltip.
 - The pale seat's colour bar on the turn line is faint.
-- The only seat dot inside the dock is the offering seat's, in the turn line during an offer. It has the dark ring (decision 9). The seat rail on the left is today's; the ring on its dots belongs to #1297.
+- The only seat dot inside the dock is the offering seat's, in the turn line during an offer. It has the dark ring the owner asked for on every seat dot. The seat rail on the left is today's; the ring on its dots belongs to #1297.
 - The online chat button and timer are not in these pictures (a practice game). They stay in the header, where they are today.
 - The tab rising 16 px above the dock is today's tab; a build could keep it inside by raising the padding to 24 px, which costs 16 px of island.
 

@@ -150,6 +150,8 @@ const STATES = [
 const BEFORE = { gain: HAND, loss: HAND };
 
 const results = [];
+// Pictures wait here and are written only after every check passes.
+const pictures = [];
 try {
   // Desktop: the mock dock in every state.
   const page = await open(1280, 720);
@@ -172,7 +174,7 @@ try {
     await page.mouse.move(0, 0);
     const m = await page.evaluate(measure);
     results.push({ state: name, viewport: "1280x720", ...m });
-    await page.screenshot({ path: `${out}/${name}-1280x720.png` });
+    pictures.push([`${name}-1280x720.png`, await page.screenshot()]);
     console.log(`${name}: dock ${m.dock.w}x${m.dock.h} at ${m.dock.x},${m.dock.y}; turn "${m.turnLine}" fits ${m.turnFits}; controls ${m.controls.map((c) => c.name).join("/")}; gaps ${[...new Set(m.gaps)].join("/")}; tabs ${m.tabs.map((t) => `${t.text}${t.clipped ? " CLIPPED" : ""}`).join(" ") || "none"}; under 44 ${m.under44.join(",") || "none"}; fonts ${m.fontSizes.join("/")}; scene ${m.scene.w}x${m.scene.h} at ${m.scene.x},0; island ${m.island.w}x${m.island.h} at ${m.island.x},${m.island.y}, above dock ${m.islandAboveDock}`);
   }
   await page.context().close();
@@ -191,7 +193,7 @@ try {
     const after = await boxes();
     const unchanged = JSON.stringify(before) === JSON.stringify(after);
     results.push({ state: "own-turn", viewport: tag, mockMounted: mounted, hudBoxes: before.length, unchanged });
-    await phone.screenshot({ path: `${out}/phone-${tag}.png` });
+    pictures.push([`phone-${tag}.png`, await phone.screenshot()]);
     console.log(`${tag}: mock mounted ${mounted}; ${before.length} HUD boxes; unchanged ${unchanged}`);
     await phone.context().close();
   }
@@ -216,7 +218,7 @@ try {
     if (x.under44.length) fails.push(`${x.state}: under 44 px ${x.under44.join(", ")}`);
     if (x.gaps.some((g) => g < 7.99 || g > 8.01)) fails.push(`${x.state}: gaps ${x.gaps.join("/")}`);
     if (x.tabs.length !== (TABS[x.state] ?? 0)) fails.push(`${x.state}: ${x.tabs.length} gain or loss tabs`);
-    if (x.tabs.some((t) => t.clipped || Math.abs(t.y - (x.dock.y - 16)) > 0.5)) fails.push(`${x.state}: a tab is clipped or not 16 px above the dock`);
+    if (x.tabs.some((t) => t.clipped || Math.abs(t.y - (x.dock.y - 16)) > 0.5 || Math.abs(t.h - 28) > 0.5)) fails.push(`${x.state}: a tab is clipped, not 28 px tall or not 16 px above the dock`);
     if (x.costs.some((c) => !c.inside || (!c.why && c.chips !== CHIPS[c.kind]))) fails.push(`${x.state}: cost chips wrong or outside their tile`);
     if (!x.turnFits) fails.push(`${x.state}: the turn line is cut`);
     if (x.fontSizes.some((s) => !SIZES_OK.includes(s))) fails.push(`${x.state}: text sizes ${x.fontSizes.join("/")}`);
@@ -225,6 +227,7 @@ try {
   for (const x of results.filter((r) => r.viewport !== "1280x720")) if (x.mockMounted || !x.unchanged) fails.push(`${x.viewport}: the mock changed the phone layout`);
   if (errors.length) fails.push(`${errors.length} browser errors`);
   if (fails.length) throw new Error(`capture checks failed:\n${fails.join("\n")}`);
+  for (const [file, png] of pictures) writeFileSync(`${out}/${file}`, png);
   writeFileSync(`${out}/measurements.json`, JSON.stringify({ chromium: browser.version(), slotsEqual: same, browserErrors: errors, results }, null, 2) + "\n");
   console.log(`chromium ${browser.version()}; written to ${out}; browser errors ${errors.length}`);
   console.log("capture checks passed: equal slots, 7 controls in order, 44 px targets, 8 px gaps, chip counts inside tiles, tab count and position, unclipped tabs, turn line fits, text sizes, 12 px goods names, phone layout untouched, no browser errors");
