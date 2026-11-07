@@ -1,0 +1,702 @@
+{
+  "browser": "153.0.8010.12",
+  "runs": [
+    {
+      "size": "320x568",
+      "sheet": "howto",
+      "before": {
+        "sheet": {
+          "x": 12,
+          "y": 101.6,
+          "w": 296,
+          "h": 454.4
+        },
+        "padding": "0px",
+        "radius": "20px",
+        "border": "1px",
+        "shadow": "none",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "oklab(0.999994 0.0000455678 0.0000200868 / 0.45)",
+        "title": {
+          "text": "How to play",
+          "font": "24/400",
+          "family": "ui-rounded"
+        },
+        "close": {
+          "x": 243,
+          "y": 122.6,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "14/22.75px",
+          "color": "oklch(0.442 0.017 285.786)"
+        },
+        "scrolls": {
+          "what": "region",
+          "hidden": 1259,
+          "closeInside": false
+        },
+        "fonts": [
+          "12/500",
+          "12/600",
+          "14/400",
+          "24/400"
+        ]
+      },
+      "after": {
+        "sheet": {
+          "x": 12,
+          "y": 101.6,
+          "w": 296,
+          "h": 454.4
+        },
+        "padding": "0px",
+        "radius": "20px",
+        "border": "0px",
+        "shadow": "rgba(24, 51, 45, 0.18) 0px 10px 28px 0px",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "color(srgb 0.952941 0.964706 0.960784 / 0.7)",
+        "title": {
+          "text": "How to play",
+          "font": "20/600",
+          "family": "ui-sans-serif"
+        },
+        "close": {
+          "x": 248,
+          "y": 117.6,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "15/22px",
+          "color": "rgb(38, 61, 60)"
+        },
+        "scrolls": {
+          "what": "region",
+          "hidden": 1285,
+          "closeInside": false
+        },
+        "fonts": [
+          "12/500",
+          "12/600",
+          "15/400",
+          "20/600"
+        ]
+      },
+      "afterEscape": {
+        "focus": "Table menu",
+        "sameState": true
+      }
+    },
+    {
+      "size": "320x568",
+      "sheet": "costs",
+      "before": {
+        "sheet": {
+          "x": 12,
+          "y": 166,
+          "w": 296,
+          "h": 390
+        },
+        "padding": "20px",
+        "radius": "20px",
+        "border": "0px",
+        "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "oklab(0.999994 0.0000455678 0.0000200868 / 0.45)",
+        "title": {
+          "text": "Costs",
+          "font": "20/600",
+          "family": "ui-sans-serif"
+        },
+        "close": {
+          "x": 244,
+          "y": 186,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "16/24px",
+          "color": "rgb(38, 61, 60)"
+        },
+        "scrolls": null,
+        "fonts": [
+          "12/500",
+          "15/500",
+          "20/600"
+        ]
+      },
+      "after": {
+        "sheet": {
+          "x": 12,
+          "y": 162,
+          "w": 296,
+          "h": 394
+        },
+        "padding": "0px",
+        "radius": "20px",
+        "border": "0px",
+        "shadow": "rgba(24, 51, 45, 0.18) 0px 10px 28px 0px",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "color(srgb 0.952941 0.964706 0.960784 / 0.7)",
+        "title": {
+          "text": "Costs",
+          "font": "20/600",
+          "family": "ui-sans-serif"
+        },
+        "close": {
+          "x": 248,
+          "y": 178,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "16/24px",
+          "color": "rgb(38, 61, 60)"
+        },
+        "scrolls": null,
+        "fonts": [
+          "12/500",
+          "15/500",
+          "20/600"
+        ]
+      },
+      "afterEscape": {
+        "focus": "Table menu",
+        "sameState": true
+      }
+    },
+    {
+      "size": "390x844",
+      "sheet": "howto",
+      "before": {
+        "sheet": {
+          "x": 12,
+          "y": 156.8,
+          "w": 366,
+          "h": 675.2
+        },
+        "padding": "0px",
+        "radius": "20px",
+        "border": "1px",
+        "shadow": "none",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "oklab(0.999994 0.0000455678 0.0000200868 / 0.45)",
+        "title": {
+          "text": "How to play",
+          "font": "24/400",
+          "family": "ui-rounded"
+        },
+        "close": {
+          "x": 313,
+          "y": 177.8,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "14/22.75px",
+          "color": "oklch(0.442 0.017 285.786)"
+        },
+        "scrolls": {
+          "what": "region",
+          "hidden": 854,
+          "closeInside": false
+        },
+        "fonts": [
+          "12/500",
+          "12/600",
+          "14/400",
+          "24/400"
+        ]
+      },
+      "after": {
+        "sheet": {
+          "x": 12,
+          "y": 156.8,
+          "w": 366,
+          "h": 675.2
+        },
+        "padding": "0px",
+        "radius": "20px",
+        "border": "0px",
+        "shadow": "rgba(24, 51, 45, 0.18) 0px 10px 28px 0px",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "color(srgb 0.952941 0.964706 0.960784 / 0.7)",
+        "title": {
+          "text": "How to play",
+          "font": "20/600",
+          "family": "ui-sans-serif"
+        },
+        "close": {
+          "x": 318,
+          "y": 172.8,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "15/22px",
+          "color": "rgb(38, 61, 60)"
+        },
+        "scrolls": {
+          "what": "region",
+          "hidden": 884,
+          "closeInside": false
+        },
+        "fonts": [
+          "12/500",
+          "12/600",
+          "15/400",
+          "20/600"
+        ]
+      },
+      "afterEscape": {
+        "focus": "Table menu",
+        "sameState": true
+      }
+    },
+    {
+      "size": "390x844",
+      "sheet": "costs",
+      "before": {
+        "sheet": {
+          "x": 35,
+          "y": 442,
+          "w": 320,
+          "h": 390
+        },
+        "padding": "20px",
+        "radius": "20px",
+        "border": "0px",
+        "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "oklab(0.999994 0.0000455678 0.0000200868 / 0.45)",
+        "title": {
+          "text": "Costs",
+          "font": "20/600",
+          "family": "ui-sans-serif"
+        },
+        "close": {
+          "x": 291,
+          "y": 462,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "16/24px",
+          "color": "rgb(38, 61, 60)"
+        },
+        "scrolls": null,
+        "fonts": [
+          "12/500",
+          "15/500",
+          "20/600"
+        ]
+      },
+      "after": {
+        "sheet": {
+          "x": 12,
+          "y": 438,
+          "w": 366,
+          "h": 394
+        },
+        "padding": "0px",
+        "radius": "20px",
+        "border": "0px",
+        "shadow": "rgba(24, 51, 45, 0.18) 0px 10px 28px 0px",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "color(srgb 0.952941 0.964706 0.960784 / 0.7)",
+        "title": {
+          "text": "Costs",
+          "font": "20/600",
+          "family": "ui-sans-serif"
+        },
+        "close": {
+          "x": 318,
+          "y": 454,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "16/24px",
+          "color": "rgb(38, 61, 60)"
+        },
+        "scrolls": null,
+        "fonts": [
+          "12/500",
+          "15/500",
+          "20/600"
+        ]
+      },
+      "afterEscape": {
+        "focus": "Table menu",
+        "sameState": true
+      }
+    },
+    {
+      "size": "844x390",
+      "sheet": "howto",
+      "before": {
+        "sheet": {
+          "x": 198,
+          "y": 39,
+          "w": 448,
+          "h": 312
+        },
+        "padding": "0px",
+        "radius": "20px",
+        "border": "1px",
+        "shadow": "none",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "oklab(0.999994 0.0000455678 0.0000200868 / 0.45)",
+        "title": {
+          "text": "How to play",
+          "font": "24/400",
+          "family": "ui-rounded"
+        },
+        "close": {
+          "x": 581,
+          "y": 60,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "14/22.75px",
+          "color": "oklch(0.442 0.017 285.786)"
+        },
+        "scrolls": {
+          "what": "region",
+          "hidden": 1032,
+          "closeInside": false
+        },
+        "fonts": [
+          "12/500",
+          "12/600",
+          "14/400",
+          "24/400"
+        ]
+      },
+      "after": {
+        "sheet": {
+          "x": 198,
+          "y": 39,
+          "w": 448,
+          "h": 312
+        },
+        "padding": "0px",
+        "radius": "20px",
+        "border": "0px",
+        "shadow": "rgba(24, 51, 45, 0.18) 0px 10px 28px 0px",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "color(srgb 0.952941 0.964706 0.960784 / 0.7)",
+        "title": {
+          "text": "How to play",
+          "font": "20/600",
+          "family": "ui-sans-serif"
+        },
+        "close": {
+          "x": 586,
+          "y": 55,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "15/22px",
+          "color": "rgb(38, 61, 60)"
+        },
+        "scrolls": {
+          "what": "region",
+          "hidden": 1067,
+          "closeInside": false
+        },
+        "fonts": [
+          "12/500",
+          "12/600",
+          "15/400",
+          "20/600"
+        ]
+      },
+      "afterEscape": {
+        "focus": "Table menu",
+        "sameState": true
+      }
+    },
+    {
+      "size": "844x390",
+      "sheet": "costs",
+      "before": {
+        "sheet": {
+          "x": 198,
+          "y": 56,
+          "w": 448,
+          "h": 278
+        },
+        "padding": "20px",
+        "radius": "20px",
+        "border": "0px",
+        "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "oklab(0.999994 0.0000455678 0.0000200868 / 0.45)",
+        "title": {
+          "text": "Costs",
+          "font": "20/600",
+          "family": "ui-sans-serif"
+        },
+        "close": {
+          "x": 582,
+          "y": 76,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "16/24px",
+          "color": "rgb(38, 61, 60)"
+        },
+        "scrolls": null,
+        "fonts": [
+          "12/500",
+          "15/500",
+          "20/600"
+        ]
+      },
+      "after": {
+        "sheet": {
+          "x": 198,
+          "y": 54,
+          "w": 448,
+          "h": 282
+        },
+        "padding": "0px",
+        "radius": "20px",
+        "border": "0px",
+        "shadow": "rgba(24, 51, 45, 0.18) 0px 10px 28px 0px",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "color(srgb 0.952941 0.964706 0.960784 / 0.7)",
+        "title": {
+          "text": "Costs",
+          "font": "20/600",
+          "family": "ui-sans-serif"
+        },
+        "close": {
+          "x": 586,
+          "y": 70,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "16/24px",
+          "color": "rgb(38, 61, 60)"
+        },
+        "scrolls": null,
+        "fonts": [
+          "12/500",
+          "15/500",
+          "20/600"
+        ]
+      },
+      "afterEscape": {
+        "focus": "Table menu",
+        "sameState": true
+      }
+    },
+    {
+      "size": "1280x720",
+      "sheet": "howto",
+      "before": {
+        "sheet": {
+          "x": 416,
+          "y": 72,
+          "w": 448,
+          "h": 576
+        },
+        "padding": "0px",
+        "radius": "20px",
+        "border": "1px",
+        "shadow": "none",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "oklab(0.999994 0.0000455678 0.0000200868 / 0.45)",
+        "title": {
+          "text": "How to play",
+          "font": "24/400",
+          "family": "ui-rounded"
+        },
+        "close": {
+          "x": 799,
+          "y": 93,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "14/22.75px",
+          "color": "oklch(0.442 0.017 285.786)"
+        },
+        "scrolls": {
+          "what": "region",
+          "hidden": 768,
+          "closeInside": false
+        },
+        "fonts": [
+          "12/500",
+          "12/600",
+          "14/400",
+          "24/400"
+        ]
+      },
+      "after": {
+        "sheet": {
+          "x": 416,
+          "y": 72,
+          "w": 448,
+          "h": 576
+        },
+        "padding": "0px",
+        "radius": "20px",
+        "border": "0px",
+        "shadow": "rgba(24, 51, 45, 0.18) 0px 10px 28px 0px",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "color(srgb 0.952941 0.964706 0.960784 / 0.7)",
+        "title": {
+          "text": "How to play",
+          "font": "20/600",
+          "family": "ui-sans-serif"
+        },
+        "close": {
+          "x": 804,
+          "y": 88,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "15/22px",
+          "color": "rgb(38, 61, 60)"
+        },
+        "scrolls": {
+          "what": "region",
+          "hidden": 803,
+          "closeInside": false
+        },
+        "fonts": [
+          "12/500",
+          "12/600",
+          "15/400",
+          "20/600"
+        ]
+      },
+      "afterEscape": {
+        "focus": "Table menu",
+        "sameState": true
+      }
+    },
+    {
+      "size": "1280x720",
+      "sheet": "costs",
+      "before": {
+        "sheet": {
+          "x": 416,
+          "y": 221,
+          "w": 448,
+          "h": 278
+        },
+        "padding": "20px",
+        "radius": "20px",
+        "border": "0px",
+        "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "oklab(0.999994 0.0000455678 0.0000200868 / 0.45)",
+        "title": {
+          "text": "Costs",
+          "font": "20/600",
+          "family": "ui-sans-serif"
+        },
+        "close": {
+          "x": 800,
+          "y": 241,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "16/24px",
+          "color": "rgb(38, 61, 60)"
+        },
+        "scrolls": null,
+        "fonts": [
+          "12/500",
+          "15/500",
+          "20/600"
+        ]
+      },
+      "after": {
+        "sheet": {
+          "x": 416,
+          "y": 219,
+          "w": 448,
+          "h": 282
+        },
+        "padding": "0px",
+        "radius": "20px",
+        "border": "0px",
+        "shadow": "rgba(24, 51, 45, 0.18) 0px 10px 28px 0px",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "color(srgb 0.952941 0.964706 0.960784 / 0.7)",
+        "title": {
+          "text": "Costs",
+          "font": "20/600",
+          "family": "ui-sans-serif"
+        },
+        "close": {
+          "x": 804,
+          "y": 235,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "16/24px",
+          "color": "rgb(38, 61, 60)"
+        },
+        "scrolls": null,
+        "fonts": [
+          "12/500",
+          "15/500",
+          "20/600"
+        ]
+      },
+      "afterEscape": {
+        "focus": "Table menu",
+        "sameState": true
+      }
+    }
+  ],
+  "errors": []
+}
