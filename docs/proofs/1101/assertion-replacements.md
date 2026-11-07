@@ -78,6 +78,16 @@ Justification keys:
 | `scripts/stationary-dock-prove.mjs` (new) | No stationary-dock proof | Two phone viewports × thirteen states (2026-11-07: added the roll phase, a real roll through the dock measured while the dice land and after, the robber, a discard, setup, a watcher with an empty goods slot, and game over with an empty status slot; the sideways dock is asserted at 320 px); exact dock/slot positions≤0.5px,44px targets,8px separation, portrait bottom-third and≥60% board-height, landscape board-height, no intrusion, zero console errors | New registered proof implements#1101 completion test. Original builder recorded105 failures on main; current actual run evidence belongs in PR. |
 
 
+## Supporting setup changed on 2026-11-07
+
+No assertion changed. Each setup moved because the dock made the old one test nothing, which CI showed on head 05c6c1f8.
+
+| File | Old setup | New setup | Why |
+|---|---|---|---|
+| `scripts/idle-prove.mjs` drag start | Canvas centre | Centre of the declared island hole (`__isle.insets()`) | At 640x400 the phone dock's 320 px column covers the canvas centre, so the drag landed on the dock. The `3x idle` check is unchanged. |
+| `scripts/jelly-ocean-prove.mjs` freeze point | Freeze right after 40,000 scheduled steps | Step on until no visit is active (at most 10,000 steps, else throw), then freeze | A disabled step ends a visit in flight on purpose. The dock's new hole moved the seeded schedule, which now ends mid-visit. The `disabled scheduler does not advance` check is unchanged. |
+| `scripts/pan-prove.mjs` fake dock band | 150 px tall | `max(150, insets().bottom + 100)` px tall | The upright phone dock already fills 268 px, so a 150 px band changed no hole. The `holeChanged` precondition and the camera checks are unchanged. |
+
 ## Chat geometry replacements
 
 | Base file:line | Old assertion / supporting geometry | New assertion / supporting geometry | Why |

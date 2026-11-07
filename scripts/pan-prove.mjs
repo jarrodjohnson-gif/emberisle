@@ -207,7 +207,8 @@ try {
       await page.evaluate(() => {
         const d = document.createElement("div");
         d.id = "fake-dock";
-        d.style.cssText = "position:absolute;left:0;right:0;bottom:0;height:150px;pointer-events:auto;background:#fff8";
+        // #1101: taller than the bottom chrome already there (the phone dock is 268 px), so the hole really changes.
+        d.style.cssText = `position:absolute;left:0;right:0;bottom:0;height:${Math.max(150, window.__isle.insets().bottom + 100)}px;pointer-events:auto;background:#fff8`;
         document.querySelector("canvas").parentElement.appendChild(d);
         window.__emberisle.setState({ offer: { tradeId: "audit", from: "p1", fromName: "Mira", give: { wool: 2 }, want: { ore: 1 }, until: Date.now() + 60000 }, declined: [] });
       });

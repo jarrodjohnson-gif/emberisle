@@ -79,10 +79,12 @@ try {
   check("idle: at most 30 renders in 2 s", still.draws <= 30, still);
   check("window.__isle.renders counts every draw", still.renders === still.draws, still);
 
-  // A drag across the canvas for 2 s.
+  // A drag across the canvas for 2 s, from the middle of the island's hole (#1101: at 640x400 the phone dock's 320 px
+  // column covers the canvas centre).
   const box = await page.locator("canvas").boundingBox();
-  const cx = box.x + box.width / 2;
-  const cy = box.y + box.height / 2;
+  const hole = await page.evaluate(() => window.__isle.insets());
+  const cx = box.x + hole.left + (box.width - hole.left - hole.right) / 2;
+  const cy = box.y + hole.top + (box.height - hole.top - hole.bottom) / 2;
   await page.mouse.move(cx, cy);
   const d0 = await page.evaluate(() => window.__draws);
   const t0 = Date.now();

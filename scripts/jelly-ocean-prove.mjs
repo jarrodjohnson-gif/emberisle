@@ -73,6 +73,10 @@ try {
         if (was && !next.active) waitAfterVisit = Math.min(waitAfterVisit,next.next);
         if (next.visible > 1) throw new Error("overlapping wildlife visits");
       }
+      // Freeze between visits: a disabled step ends a visit in flight on purpose (ocean-life.ts), and where the seeded
+      // schedule stands after 40,000 steps depends on the hole (#1101 moved it).
+      for (let i = 0; i < 10_000 && life.snapshot().active; i++) life.step(0.1, true, () => view);
+      if (life.snapshot().active) throw new Error("a visit never ended");
       const frozen = JSON.stringify(life.snapshot());
       life.step(60,false,() => view);
       const disabledUnchanged = frozen === JSON.stringify(life.snapshot());
