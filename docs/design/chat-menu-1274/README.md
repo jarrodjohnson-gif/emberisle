@@ -10,7 +10,7 @@ Measured on today's game, with none of this proposal's styles loaded ([today-cha
 - The chat's tabs, field, emoji, sound chips and quick lines are white on a white panel. They have no edge, so nothing shows what can be tapped.
 - The two tabs are 4 px apart. On desktop, Mute players and Minimize chat are 40 px wide. On a 320 px phone the second tab reads "Sounds…".
 - The Table menu and an open chat can be open together. On desktop a tap on `…` opens the menu over the chat panel (79,872 px² overlap at 1280 × 720; the menu is on top). On a phone the chat's dimmed backdrop takes that tap and closes the chat; Enter on `…` opens the menu, and the chat sheet then covers part of it: its centre at 320 × 568 and 844 × 390, its lower part at 390 × 844 ([layers-today-390x844.png](layers-today-390x844.png)). The first Escape closes the menu and leaves the chat open.
-- A seat's chat bubble draws over the open Table menu on phones (320, 390 and 844 px wide). On desktop the bubble beside the seat list draws under it.
+- A seat's chat bubble draws over the open Table menu on phones 320 and 390 px wide. At 844 × 390 and 1280 × 720 the bubble only reaches the menu when the capture moves it to the menu's centre for the test (there it draws over the menu at 844 × 390 and under it at 1280 × 720).
 - On desktop the menu's View row already runs past the menu's right edge ("Overhead" is cut, [layers-today-1280x720.png](layers-today-1280x720.png)).
 
 ## The proposal
@@ -53,7 +53,7 @@ Every control in the chat and the menu uses the lobby's control look (#1303): 44
 | Tap `…` while the chat is open | Desktop: both open, 79,872 px² overlap, the menu on top. Phone: the tap closes the chat and the menu does not open | The menu opens and the chat closes, on every size; 0 px² overlap; the menu is on top at its centre |
 | Enter on `…` while the chat is open (phones) | Both open; the chat sheet covers the menu's centre at 320 × 568 and 844 × 390, and its lower part at 390 × 844 | Not needed: the tap works |
 | Escape with the menu open | The menu closes; focus goes back to `…`; the chat stays open | The menu closes; focus goes back to `…`; nothing else was open |
-| Seat bubbles with the menu open | Drawn over the menu on phones (320, 390, 844 px wide); under it on desktop | Drawn under the menu, at every size |
+| Seat bubbles with the menu open | Drawn over the menu on phones 320 and 390 px wide. At 844 × 390 and 1280 × 720 it only reaches the menu when moved to its centre for the test (then over at 844 × 390, under at 1280 × 720) | Drawn under the menu, at every size |
 | Open the chat while the menu is open | The menu closes when focus leaves it | The same |
 | How to play, Costs or Sound from the menu | The menu closes and the sheet opens | The same |
 
