@@ -42,11 +42,25 @@ async function open(size, { skip = false, reducedMotion = "no-preference", hold 
     // #1385: what the page did around Start, printed with the result: when the bar read 100%, the main thread's long tasks,
     // and the island's draws and GL programs since Start.
     await page.addInitScript(() => {
-      const t = (window.__trace = { long: [], at100: 0, start: 0, renders: 0, programs: 0 });
+      const t = (window.__trace = { long: [], at100: 0, start: 0, renders: 0, programs: 0, title: 0, gone: 0, timers: [], frames: [] });
       new PerformanceObserver((l) => l.getEntries().forEach((e) => t.long.push([e.startTime, e.duration]))).observe({ type: "longtask", buffered: true });
       new MutationObserver(() => {
         if (!t.at100 && document.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow") === "100") t.at100 = performance.now();
+        if (t.start && !t.title && document.querySelector('[data-testid="title-card"]')) t.title = performance.now();
+        if (t.start && !t.gone && !document.querySelector('[data-testid="loading-card"]')) t.gone = performance.now();
       }).observe(document, { subtree: true, attributes: true, childList: true });
+      // When the page's own timers and frames actually ran after Start (a 100 ms timer chain and every frame).
+      const tick = () => {
+        if (!t.start || t.timers.length >= 40) return setTimeout(tick, 100);
+        t.timers.push(performance.now());
+        setTimeout(tick, 100);
+      };
+      setTimeout(tick, 100);
+      const frame = (now) => {
+        if (t.start && t.frames.length < 60) t.frames.push(now);
+        requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
       addEventListener("click", (e) => {
         if (t.start || e.target?.textContent !== "Start") return;
         t.start = performance.now();
@@ -189,6 +203,11 @@ try {
           at100: Math.round(t.at100),
           start: Math.round(t.start),
           long: t.long.filter(([s, d]) => s + d >= t.at100).map(([s, d]) => `${Math.round(s - t.start)}+${Math.round(d)}`),
+          title: Math.round(t.title - t.start),
+          gone: t.gone ? Math.round(t.gone - t.start) : null,
+          timers: t.timers.map((x) => Math.round(x - t.start)).slice(0, 30),
+          frames: t.frames.map((x) => Math.round(x - t.start)).slice(0, 30),
+          hidden: document.visibilityState,
           draws: (window.__isle?.renders ?? 0) - t.renders,
           programs: `${t.programs}->${window.__isle?.renderer?.info?.programs?.length ?? 0}`,
         };
