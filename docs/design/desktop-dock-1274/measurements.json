@@ -62,7 +62,7 @@
           "y": 616,
           "w": 86.859,
           "h": 44,
-          "disabled": false,
+          "disabled": true,
           "primary": false
         },
         {
@@ -130,10 +130,10 @@
         },
         {
           "kind": "outpost",
-          "chips": 4,
+          "chips": 0,
           "short": 0,
           "inside": true,
-          "why": null
+          "why": "No spot"
         },
         {
           "kind": "stronghold",
@@ -158,6 +158,9 @@
         14,
         15,
         30
+      ],
+      "goodsNames": [
+        12
       ],
       "scene": {
         "x": 204,
@@ -221,7 +224,7 @@
           "h": 20
         }
       },
-      "turnLine": "Pine (bot) offers",
+      "turnLine": "Dune (bot) offers",
       "turnFits": true,
       "controls": [
         {
@@ -351,6 +354,9 @@
         16,
         30
       ],
+      "goodsNames": [
+        12
+      ],
       "scene": {
         "x": 204,
         "y": 0,
@@ -413,7 +419,7 @@
           "h": 20
         }
       },
-      "turnLine": "Pine (bot) offers",
+      "turnLine": "Dune (bot) offers",
       "turnFits": true,
       "controls": [
         {
@@ -528,6 +534,9 @@
         16,
         30
       ],
+      "goodsNames": [
+        12
+      ],
       "scene": {
         "x": 204,
         "y": 0,
@@ -590,7 +599,7 @@
           "h": 20
         }
       },
-      "turnLine": "Pine (bot)'s turn",
+      "turnLine": "Dune (bot)'s turn",
       "turnFits": true,
       "controls": [
         {
@@ -704,6 +713,9 @@
         15,
         30
       ],
+      "goodsNames": [
+        12
+      ],
       "scene": {
         "x": 204,
         "y": 0,
@@ -766,7 +778,7 @@
           "h": 20
         }
       },
-      "turnLine": "Pine (bot)'s turn",
+      "turnLine": "Dune (bot)'s turn",
       "turnFits": true,
       "controls": [
         {
@@ -898,6 +910,9 @@
         17.5,
         30
       ],
+      "goodsNames": [
+        12
+      ],
       "scene": {
         "x": 204,
         "y": 0,
@@ -960,7 +975,7 @@
           "h": 20
         }
       },
-      "turnLine": "Pine (bot)'s turn",
+      "turnLine": "Dune (bot)'s turn",
       "turnFits": true,
       "controls": [
         {
@@ -1083,6 +1098,9 @@
         15,
         17.5,
         30
+      ],
+      "goodsNames": [
+        12
       ],
       "scene": {
         "x": 204,
@@ -1232,10 +1250,10 @@
         },
         {
           "kind": "outpost",
-          "chips": 4,
-          "short": 4,
+          "chips": 0,
+          "short": 0,
           "inside": true,
-          "why": null
+          "why": "No spot"
         },
         {
           "kind": "stronghold",
@@ -1260,6 +1278,9 @@
         14,
         15,
         30
+      ],
+      "goodsNames": [
+        12
       ],
       "scene": {
         "x": 204,
@@ -1436,6 +1457,9 @@
         14,
         15,
         30
+      ],
+      "goodsNames": [
+        12
       ],
       "scene": {
         "x": 204,

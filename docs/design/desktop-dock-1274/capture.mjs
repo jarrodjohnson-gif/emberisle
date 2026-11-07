@@ -127,6 +127,7 @@ function measure() {
   const turn = dock.querySelector('[data-slot="turn"]');
   return {
     dock: r(dock), slots, turnLine: turn.textContent, turnFits: turn.scrollWidth <= turn.clientWidth, controls, gaps, answers, costs, tabs, under44: small, fontSizes: fonts,
+    goodsNames: [...new Set([...dock.querySelectorAll(".goods-card > .goods-label")].map((el) => parseFloat(getComputedStyle(el).fontSize)))],
     scene: { x: Math.round(railRight), y: 0, w: Math.round(innerWidth - railRight), h: Math.round(d.top) },
     island, islandAboveDock: island.y + island.h <= d.top, islandClearOfRail: island.x >= railRight,
     fitHole: { x: ins.left, y: ins.top, w: innerWidth - ins.left - ins.right, h: innerHeight - ins.top - ins.bottom },
@@ -200,11 +201,12 @@ try {
   const key = (x) => JSON.stringify({ dock: x.dock, slots: x.slots, controls: x.controls.map(({ x, y, w, h }) => [x, y, w, h]) });
   const same = desk.every((x) => key(x) === key(desk[0]));
   console.log(`slot rectangles equal in all ${desk.length} desktop states: ${same}`);
-  writeFileSync(`${out}/measurements.json`, JSON.stringify({ chromium: browser.version(), slotsEqual: same, browserErrors: errors, results }, null, 2) + "\n");
-  console.log(`chromium ${browser.version()}; written to ${out}; browser errors ${errors.length}`);
   if (errors.length) console.log(errors.join("\n"));
-  // The README's claims, checked: the run fails if any does not hold.
+  // The README's claims, checked before anything is written: the run fails if any does not hold.
   const NAMES = "Path/Outpost/Stronghold/Buy fortune/Trade/Fortunes/End turn";
+  const CHIPS = { path: 2, outpost: 4, stronghold: 2, card: 3 };
+  const SIZES_OK = [9, 12, 14, 15, 16, 17.5, 30];
+  const TABS = { gain: 2, loss: 1 };
   const fails = [];
   if (!same) fails.push("slot rectangles differ between states");
   for (const x of desk) {
@@ -212,15 +214,20 @@ try {
     if (x.controls.length !== 7) fails.push(`${x.state}: ${x.controls.length} controls`);
     if (x.state !== "offer-b" && names !== NAMES) fails.push(`${x.state}: controls ${names}`);
     if (x.under44.length) fails.push(`${x.state}: under 44 px ${x.under44.join(", ")}`);
-    if (x.gaps.some((g) => g < 7.99)) fails.push(`${x.state}: gaps ${x.gaps.join("/")}`);
-    if (x.tabs.some((t) => t.clipped)) fails.push(`${x.state}: a gain or loss tab is clipped`);
-    if (x.costs.some((c) => !c.inside)) fails.push(`${x.state}: cost chips outside their tile`);
+    if (x.gaps.some((g) => g < 7.99 || g > 8.01)) fails.push(`${x.state}: gaps ${x.gaps.join("/")}`);
+    if (x.tabs.length !== (TABS[x.state] ?? 0)) fails.push(`${x.state}: ${x.tabs.length} gain or loss tabs`);
+    if (x.tabs.some((t) => t.clipped || Math.abs(t.y - (x.dock.y - 16)) > 0.5)) fails.push(`${x.state}: a tab is clipped or not 16 px above the dock`);
+    if (x.costs.some((c) => !c.inside || (!c.why && c.chips !== CHIPS[c.kind]))) fails.push(`${x.state}: cost chips wrong or outside their tile`);
     if (!x.turnFits) fails.push(`${x.state}: the turn line is cut`);
+    if (x.fontSizes.some((s) => !SIZES_OK.includes(s))) fails.push(`${x.state}: text sizes ${x.fontSizes.join("/")}`);
+    if (x.goodsNames.join() !== "12") fails.push(`${x.state}: goods names ${x.goodsNames.join("/")} px, not 12`);
   }
   for (const x of results.filter((r) => r.viewport !== "1280x720")) if (x.mockMounted || !x.unchanged) fails.push(`${x.viewport}: the mock changed the phone layout`);
   if (errors.length) fails.push(`${errors.length} browser errors`);
   if (fails.length) throw new Error(`capture checks failed:\n${fails.join("\n")}`);
-  console.log("capture checks passed: equal slots, 7 controls, 44 px targets, 8 px gaps, costs inside, tabs unclipped, turn line fits, phone layout untouched, no browser errors");
+  writeFileSync(`${out}/measurements.json`, JSON.stringify({ chromium: browser.version(), slotsEqual: same, browserErrors: errors, results }, null, 2) + "\n");
+  console.log(`chromium ${browser.version()}; written to ${out}; browser errors ${errors.length}`);
+  console.log("capture checks passed: equal slots, 7 controls in order, 44 px targets, 8 px gaps, chip counts inside tiles, tab count and position, unclipped tabs, turn line fits, text sizes, 12 px goods names, phone layout untouched, no browser errors");
 } finally {
   await browser.close();
   await vite.close();
