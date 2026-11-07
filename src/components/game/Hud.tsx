@@ -11,7 +11,7 @@ import { ChatControls, ChatDock, ChromeLanded, CostCard, DiscardBar, FirstGameCo
 import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
-import { SeatRail, SeatStrip, HiddenPointHint } from "@/components/game/SeatRail";
+import { SeatRail, SeatStrip } from "@/components/game/SeatRail";
 import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice, RollMoment } from "@/components/game/Dice";
 import { TableMenu } from "@/components/game/TableMenu";
@@ -350,7 +350,6 @@ export function Hud() {
           <span data-coach-skip-slot className="shrink-0 empty:hidden" />
           <TableMenu />
         </div>
-        {phone ? <HiddenPointHint /> : null}
       </header>
 
       {phone && portrait && (mode === "online" || spectator) ? (
@@ -359,13 +358,15 @@ export function Hud() {
           {mode === "online" ? <LazyBoundary failed={null} retryKey={String(chatOpen)}><ChatControls /></LazyBoundary> : null}
         </div>
       ) : null}
+      {/* #1420: a bottom sheet, so the trade rows sit under the thumb. Upright it spans the screen and its top edge stays in
+          the bottom half; sideways it is 320 px at the left, over the dock column and clear of the island. */}
       {phone && menuPlayer ? (
         <PlayerMenu
           player={menuPlayer}
-          heading
+          sheet
           className={cn(
-            "absolute z-20",
-            portrait ? "left-safe right-safe top-[calc(env(safe-area-inset-top)+4.25rem)]" : "right-safe top-16 w-72",
+            "absolute bottom-0 z-30 rounded-b-none border-b-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[var(--shadow-sheet)]",
+            portrait ? "inset-x-0 max-h-[50dvh] border-x-0 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]" : "left-safe max-h-[70dvh] w-80",
           )}
         />
       ) : null}
