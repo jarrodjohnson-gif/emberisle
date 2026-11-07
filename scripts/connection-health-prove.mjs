@@ -223,6 +223,7 @@ if (process.argv.includes("--host-fixture")) {
       const status = box(document.querySelector('[data-testid="connection-status"]'));
       const menu = box(document.querySelector('button[aria-label="Table menu"]'));
       const slot = box(document.querySelector('[data-slot="menu"]'));
+      const seats = box(document.querySelector('[data-slot="seats"]'));
       const scores = [...document.querySelectorAll('[data-testid="seat-strip"] [data-testid="seat-vp"]')].map(box);
       const utility = [...document.querySelectorAll('.hud-utilities button')].map(box);
       const clear = utility.every(r => status.right <= r.left || status.left >= r.right || status.bottom <= r.top || status.top >= r.bottom);
@@ -230,7 +231,7 @@ if (process.argv.includes("--host-fixture")) {
       // #1101: the dock Menu is the labeled slot (about 86px at 390), 44px tall, not the header's 44px icon.
       return { clear, status: onScreen(status) && status.bottom <= menu.top,
         menu: onScreen(menu) && menu.height === 44 && slot.width > 44 && Math.abs(menu.width - slot.width) < 0.5,
-        scores: scores.length === 4 && scores.every(r => r.width > 0 && r.left >= 0 && r.right <= innerWidth && r.bottom <= menu.bottom) };
+        scores: scores.length === 4 && scores.every(r => r.width > 0 && r.left >= 0 && r.right <= innerWidth && r.bottom <= seats.top + 44) };
     });
     assert.deepEqual(fits, { clear: true, status: true, menu: true, scores: true }, "390px four-seat header fits with RTT visible");
     await page.screenshot({ path: path.join(resultsDir, "connection-health-phone.png") });
