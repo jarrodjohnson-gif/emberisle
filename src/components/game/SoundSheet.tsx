@@ -28,10 +28,11 @@ function Row({ id, name, sample, level, off, onLevel, onMute }: { id: Id; name: 
   // The slider commits as it moves; the sample plays on release (a pointer let go, or an arrow key lifted).
   const sampleOnRelease = () => {
     if (id !== "master") return play(sample, 1, id);
-    // All sound's sample follows All sound alone: ride on the loudest kind that is on, with its own level taken back out.
+    // All sound's sample rides on the loudest kind that is on, at clip volume 1 (a clip volume above 1 would break the next mix change),
+    // so it is heard at All sound x that kind's level: the best a sample can do for All sound without a kind of its own.
     const mix = getSoundMix();
     const kind = SOUND_CATEGORIES.filter((c) => !mix[c].muted && mix[c].volume && (c !== "music" || isMusicOn())).sort((x, y) => mix[y].volume - mix[x].volume)[0];
-    if (kind) play(sample, 1 / mix[kind].volume, kind);
+    if (kind) play(sample, 1, kind);
   };
   return (
     <div className={`ss-row${id === "master" ? " ss-master" : ""}`} data-testid={`sound-row-${id}`}>

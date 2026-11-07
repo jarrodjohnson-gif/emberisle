@@ -50,6 +50,9 @@ let code = 0;
 const stub = () => {
   window.__plays = [];
   window.Audio = class extends EventTarget {
+    get volume() { return this._v; }
+    // Like the real element: a volume outside 0..1 throws.
+    set volume(v) { if (!(v >= 0 && v <= 1)) throw new DOMException("volume out of range", "IndexSizeError"); this._v = v; }
     constructor(src) { super(); this.src = src.split("/").at(-1); this.volume = 1; this.currentTime = 0; this.paused = true; this.ended = false; }
     play() { this.paused = false; window.__plays.push({ file: this.src, volume: this.volume }); this.dispatchEvent(new Event("play")); return Promise.resolve(); }
     pause() { this.paused = true; this.dispatchEvent(new Event("pause")); }
@@ -233,6 +236,22 @@ try {
         assert.equal(Number(await slider(id).inputValue()) % 10, 0, `${id}: it lands on a step of 10`);
         await slider(id).fill("100");
       }
+
+      // A release sample never leaves a clip volume outside 0..1 behind: every kind at 80%, release All sound, then raise Game to 100%.
+      for (const k of KINDS) await slider(k).fill("80");
+      await quiet(page);
+      const mb = await slider("master").boundingBox();
+      await page.mouse.move(mb.x + mb.width * 0.5, mb.y + mb.height / 2);
+      await page.mouse.down();
+      await page.mouse.up();
+      await quiet(page);
+      await slider("game").fill("100");
+      assert.equal(await sheet.getByTestId("sound-row-game").locator(".ss-val").textContent(), "100%", "Game sounds reads 100% after the release sample");
+      assert.equal((await stored()).game.volume, 1, "and storage agrees");
+      assert.equal(await slider("game").inputValue(), "100", "and so does the slider");
+      assert.deepEqual(errors, [], "no error from changing a level after a release sample");
+      for (const k of KINDS) await slider(k).fill("100");
+      await slider("master").fill("100");
 
       // Music: the old Music off switch still counts, and the mute button brings it back.
       await page.evaluate(async () => (await import("/src/lib/sound.ts")).setMusicOn(false));
