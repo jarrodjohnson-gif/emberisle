@@ -245,9 +245,12 @@ async function online(me, { cap = false } = {}) {
   const sent = { welcomes: 0 };
   let states = [];
   let sockets = [];
+  const requested = [];
   const { ctx, page, tag } = await open(view, {
     path: "/?host=ws://127.0.0.1:9",
     before: async (ctx, page) => {
+      page.on("request", (r) => r.url().includes("/src/components/game/moments.ts") && requested.push(r.url()));
+      if (process.env.YT_DELAY_MOMENTS && me === "p0") await page.route("**/src/components/game/moments.ts*", async (route) => { await new Promise((r) => setTimeout(r, Number(process.env.YT_DELAY_MOMENTS))); await route.continue(); });
       await ctx.addInitScript(() => localStorage.setItem("emberisle-seat", JSON.stringify({ code: "ABCD", secret: "s3cret" })));
       await page.routeWebSocket("ws://127.0.0.1:9/", (ws) => {
         sockets.push(ws);
