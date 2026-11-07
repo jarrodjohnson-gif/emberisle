@@ -72,6 +72,10 @@ const CEILINGS = [
   // measured 469 B. Ceilings decided by Opus under the owner's 2026-11-06 size-limit delegation (PR #1355 review).
   { name: "ProfileSheet", gzipBytes: 6000 },
   { name: "focus-trap", gzipBytes: 550 },
+  // #766 slice 2, 2026-11-07. ProfileForms: measured 2,182 B. eye-off (the EyeOff icon the bundler split out): measured
+  // 292 B. Ceilings decided by Opus per q-size-standing (PR #1401 review).
+  { name: "ProfileForms", gzipBytes: 2350 },
+  { name: "eye-off", gzipBytes: 310 },
   // #1281, 2026-11-07: startup loading screen, preloaded beside index; measured 2,420 B gzip. Decided per q-size-standing; paired trim to follow.
   { name: "LoadingScreen", gzipBytes: 2600 },
 ];
