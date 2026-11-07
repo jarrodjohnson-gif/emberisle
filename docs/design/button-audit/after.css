@@ -1,0 +1,14 @@
+/* #1298: the proposed mechanical button fixes, added on top of the running game by capture.mjs. No src/ file changes.
+   Fills are untouched (owner decision 4 of #1274, option C). Only type, the focus colour and two text links change. */
+
+/* One button type: 15 px / 22 px, weight 600, on every Button (lobby.css already sets this in the lobby). */
+button.rounded-control { font-size: 15px; line-height: 22px; font-weight: 600; }
+button.rounded-control.text-base { font-size: 15px; }
+/* The build tiles keep their 12 px caption lines inside the tile. */
+button.build-tile { font-size: 12px; line-height: 16px; }
+
+/* One focus colour: ink, as the HUD, seat cards and trade already use. */
+button:focus-visible, [role="tab"]:focus-visible { outline: 2px solid var(--ink) !important; outline-offset: 2px; }
+
+/* The two underlined text links become quiet buttons: the Place chip's Cancel and the coach's Skip tips. */
+button.pointer-events-auto.underline { text-decoration: none; font-size: 15px; font-weight: 600; color: var(--ink); border-radius: 8px; padding: 0 12px; }
