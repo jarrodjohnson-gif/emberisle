@@ -5,7 +5,7 @@
 // - opening a menu moves no seat;
 // - the phone sheet rests on the screen's bottom edge: upright it spans the screen with its top edge in the bottom half;
 //   sideways it is 320 px wide at the left safe edge, below the strip, in the left half; every control in it is inside the
-//   safe area, rows and Close are at least 44 px, and its bottom padding clears the home bar;
+//   safe area even when the sheet scrolls, rows and Close are at least 44 px, and its bottom room clears the home bar;
 // - keyboard: focus lands on the first row (Close when there is none), Shift+Tab from the first row reaches Close and Tab
 //   comes back; Escape, Close, a tap outside and the same card again all shut it, and the first three hand focus back to the card;
 // - a watcher's sheet holds only Close; online, every trade route is still there.
@@ -62,9 +62,10 @@ const measure = (page, insets) =>
     const menu = document.querySelector('[data-testid="player-menu"]');
     const box = (el) => { const b = el.getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom, w: b.width, h: b.height }; };
     const safe = insets ? { l: insets.left, t: insets.top, r: innerWidth - insets.right, b: innerHeight - insets.bottom } : { l: 0, t: 0, r: innerWidth, b: innerHeight };
-    // A control is checked where it can be seen: clipped by the sheet's scroller, then scrolled to its end too.
+    // A control is checked where it can be seen: clipped by the sheet's scrollport (its padding box), then scrolled to its end too.
+    const port = () => { const m = box(menu); const t = m.t + menu.clientTop, l = m.l + menu.clientLeft; return { l, t, r: l + menu.clientWidth, b: t + menu.clientHeight }; };
     const outside = () => [...menu.querySelectorAll("button")].map((el) => {
-      const b = box(el), m = box(menu);
+      const b = box(el), m = port();
       const r = { l: Math.max(b.l, m.l), t: Math.max(b.t, m.t), r: Math.min(b.r, m.r), b: Math.min(b.b, m.b) };
       if (r.r - r.l < 1 || r.b - r.t < 1) return null;
       return r.l >= safe.l - 0.5 && r.t >= safe.t - 0.5 && r.r <= safe.r + 0.5 && r.b <= safe.b + 0.5 ? null : `${el.getAttribute("aria-label") ?? el.textContent.trim()}@${r.l},${r.t}-${r.r},${r.b}`;
@@ -80,7 +81,8 @@ const measure = (page, insets) =>
       vw: innerWidth,
       vh: innerHeight,
       box: box(menu),
-      paddingBottom: parseFloat(getComputedStyle(menu).paddingBottom),
+      bottomRoom: parseFloat(getComputedStyle(menu).borderBottomWidth),
+      bottomRoomColour: getComputedStyle(menu).borderBottomColor === getComputedStyle(menu).backgroundColor,
       radius: getComputedStyle(menu).borderTopLeftRadius,
       stripBottom: strip ? strip.getBoundingClientRect().bottom : null,
       heading: menu.querySelector('[data-testid="menu-seat"]')?.textContent ?? null,
@@ -129,7 +131,7 @@ try {
       if (phone) {
         assert.ok(Math.abs(m.box.b - m.vh) <= 0.5, `${tag} ${label}: the sheet rests on the bottom edge ${JSON.stringify(m.box)}`);
         assert.equal(m.radius, "20px", `${tag} ${label}: 20 px top corners`);
-        assert.ok(m.paddingBottom >= Math.max(16, insets.bottom), `${tag} ${label}: bottom padding ${m.paddingBottom} clears the home bar`);
+        assert.ok(m.bottomRoom >= Math.max(16, insets.bottom) && m.bottomRoomColour, `${tag} ${label}: the sheet's bottom room ${m.bottomRoom} px, in the sheet's colour, clears the home bar`);
         assert.deepEqual(m.outside, [], `${tag} ${label}: every control inside the safe area`);
         const close = m.buttons.find((b) => b.name === "Close");
         assert.ok(close && close.w >= 44 && close.h >= 44, `${tag} ${label}: a 44 px Close ${JSON.stringify(close)}`);
