@@ -79,7 +79,7 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
   const path = useMemo(() => roadLength(state, p.id), [state, p.id]);
   return (
     <>
-      <span className={cn("flex w-full items-center", strip ? "gap-1.5 @max-[100px]:gap-1 @max-[100px]:has-[.seat-away]:gap-0.5 @max-[72px]:has-[.seat-away]:gap-0" : "gap-1.5")}>
+      <span className={cn("flex w-full items-center", strip ? (away ? "gap-1.5 @max-[100px]:gap-0" : "gap-1.5 @max-[100px]:gap-1") : "gap-1.5")}>
         {/* Under 100 px a cell holds "Emb" and the points with 4 px gaps; the dot gives back its two extra pixels there (#420). */}
         <SeatDot color={p.color} className={cn("seat-dot size-3", strip && "@max-[100px]:size-2.5")} />
         <span data-testid="seat-name" className={cn("min-w-0 flex-auto truncate text-sm font-medium", strip && "@max-[128px]:sr-only")}>
