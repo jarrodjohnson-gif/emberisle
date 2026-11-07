@@ -142,13 +142,34 @@ export function validDoc(doc, colors) {
 const RESULT_POLICY = 1;
 export const HISTORY_PAGE = 20;
 
-// The receipt fingerprint: SHA-256 of the frozen outcome with its keys sorted, hashed once, before any redaction.
+// The receipt fingerprint: SHA-256 of the frozen outcome with its keys sorted, hashed once, before any redaction. A redacted
+// outcome carries that original hash, so a stale unredacted copy of the same game still matches its receipt.
 function canonical(v) {
   if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
   if (v !== null && typeof v === "object") return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonical(v[k])}`).join(",")}}`;
   return JSON.stringify(v);
 }
-export const fingerprint = (outcome) => createHash("sha256").update(canonical(outcome)).digest("hex");
+export const fingerprint = (outcome) => (typeof outcome.fingerprint === "string" && HEX64.test(outcome.fingerprint) ? outcome.fingerprint : createHash("sha256").update(canonical(outcome)).digest("hex"));
+
+// Profile deletion (#891, profiles.md "Host administration and privacy"): a deleted profile's display row keeps its colour,
+// kind, points and result for the other players, and loses its profile id and name. `gone(id)` says whether id is deleted.
+export const DELETED_NAME = "Deleted player";
+export function redactRows(rows, gone) {
+  let changed = false;
+  for (const p of rows) {
+    if (typeof p?.profileId !== "string" || !gone(p.profileId)) continue;
+    p.profileId = null;
+    p.name = DELETED_NAME;
+    changed = true;
+  }
+  return changed;
+}
+// A redacted copy of a frozen outcome, fingerprinted first, or null when it names no deleted profile.
+export function redactOutcome(o, gone) {
+  const out = structuredClone(o);
+  out.fingerprint = fingerprint(o);
+  return redactRows(out.players, gone) ? out : null;
+}
 
 // "Which results count": an eligible game credits its starting humans that were bound to a profile. Guests and original bots
 // get nothing; a seat the bot finished for keeps its human row and is marked assisted.
@@ -337,7 +358,8 @@ function prune(doc, now) {
 
 // Opens the store at `dir`. Always returns a store; `store.ready` is false (and every call refuses) when the directory is held
 // by another host, unreadable, or holds a schema this host does not know. `fault(point)` lets a proof fail or kill the host
-// at "receipt-before" (inside the result transaction, before its write) and "receipt-after" (once it has committed).
+// at "receipt-before" (inside the result transaction, before its write) and "receipt-after" (once it has committed), and
+// likewise at "delete-before" and "delete-after" around the deletion transaction (#891).
 export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} } = {}) {
   let doc = null;
   let reason = null;
@@ -714,12 +736,56 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
     });
   }
 
+  // Local admin only (#891): what deleting this profile touches, for the owner to check before confirming.
+  function deletionPreview(profileId) {
+    if (!doc) throw new ProfileError("unavailable");
+    if (typeof profileId !== "string" || !has(doc.profiles, profileId)) throw new ProfileError("notFound");
+    const p = doc.profiles[profileId];
+    return {
+      profileId,
+      displayName: p.displayName,
+      login: p.login,
+      createdAt: p.createdAt,
+      devices: Object.values(doc.devices).filter((v) => v.profileId === profileId).length,
+      games: recordOf(profileId)?.games ?? 0,
+      resultRows: Object.values(doc.results ?? {}).filter((r) => r.players.some((x) => x.profileId === profileId)).length,
+      winSongId: p.winSongId,
+      mediaKey: p.mediaKey,
+    };
+  }
+
+  // Local admin only (#891): one serialized transaction, so it never interleaves with a result commit. The UUID tombstone,
+  // device revocation and login reservation land in the same durable write as the redaction of every stored result row,
+  // so no restart sees a half-deleted store. Receipts and the other players' rows and records are not touched. Pending
+  // outcomes and saved rooms live outside this store; the host redacts them against the tombstone before it serves anything.
+  async function deleteProfile(profileId) {
+    if (!doc) throw new ProfileError("unavailable");
+    if (typeof profileId !== "string" || !has(doc.profiles, profileId)) throw new ProfileError("notFound");
+    const out = await mutate((d, now) => {
+      const p = own(d.profiles, profileId);
+      if (!p) throw new ProfileError("notFound");
+      d.tombstones[profileId] = now;
+      for (const k of Object.keys(d.devices)) if (d.devices[k].profileId === profileId) delete d.devices[k];
+      delete d.logins[p.login];
+      d.reservedLogins[p.login] = profileId;
+      delete d.profiles[profileId];
+      if (d.records) delete d.records[profileId];
+      let rows = 0;
+      for (const r of Object.values(d.results ?? {})) if (redactRows(r.players, (id) => id === profileId)) rows++;
+      fault("delete-before");
+      return { resultRows: rows };
+    });
+    fault("delete-after");
+    return out;
+  }
+
   // Steps 5 and 6 of "Exactly-once recording": one serialized transaction inserts the game's unique receipt, its result rows
   // and every credited profile's aggregates, or nothing at all. The live store, and so every query, changes only once that
   // is durable. Returns "excluded" for a game that credits no profile (nothing is written), "duplicate" when the receipt
   // already holds this fingerprint, and "committed". A different fingerprint for a recorded game is ProfileError("conflict")
   // and changes nothing; an unknown policy or a profile bound twice in one game is ProfileError("invalid").
-  // A profile that no longer exists (a deletion tombstone, #891) gets no attribution; its row keeps no profile id.
+  // A profile that no longer exists gets no attribution; its row keeps no profile id. A deleted one (#891) loses its name too,
+  // so a stale outcome replayed after deletion cannot bring it back.
   async function recordOutcome(o) {
     if (o.policy !== RESULT_POLICY) throw new ProfileError("invalid");
     const rows = credited(o);
@@ -749,7 +815,7 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
         victoryTarget: Number.isSafeInteger(o.victoryTarget) ? o.victoryTarget : null,
         players: o.players.map((p) => ({
           profileId: rows.includes(p) && live.has(p.profileId) ? p.profileId : null,
-          name: p.name,
+          name: typeof p.profileId === "string" && has(d.tombstones, p.profileId) ? DELETED_NAME : p.name,
           color: p.color,
           kind: p.kind,
           points: p.points,
@@ -817,5 +883,9 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
     ownHistory,
     // A recorded game's receipt, or null: the host fences a stale snapshot of any game that has one.
     receipt: (id) => (doc?.receipts && typeof id === "string" && has(doc.receipts, id) ? { fingerprint: doc.receipts[id].fingerprint } : null),
+    deletionPreview,
+    deleteProfile,
+    // Whether id was deleted (#891). Internal only: tombstones never reach a public projection.
+    tombstoned: (id) => Boolean(doc && typeof id === "string" && has(doc.tombstones, id)),
   };
 }
