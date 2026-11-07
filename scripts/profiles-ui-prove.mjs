@@ -352,6 +352,8 @@ try {
   const frame = (f) => ({ ...f, m: JSON.parse(f.raw) });
   const sent = async (page, type) => (await wire(page)).map(frame).filter((f) => f.dir === "out" && f.m.type === type);
   const focused = (page) => page.evaluate(() => [document.activeElement?.getAttribute("data-opens"), document.activeElement?.closest("label")?.firstChild?.textContent]);
+  // The form hands the focus back once the summary is drawn, a frame after it closes.
+  const returned = (page, to, message) => page.waitForFunction((to) => document.activeElement?.getAttribute("data-opens") === to, to, { timeout: 5000 }).catch(() => assert.fail(message));
   const shots = async (page, name) => {
     if (!SHOTS) return;
     for (const size of ["320x568", "390x844", "844x390", "1280x720"]) {
@@ -387,6 +389,13 @@ try {
   await coral.setViewportSize({ width: 440, height: 956 });
   const firstCredential = (await wire(coral)).map(frame).find((f) => f.m.type === "profileSession").m.credential;
 
+  // The forms load on first open. A failed load says so on the summary and the same button tries the network again.
+  await coral.route("**/ProfileForms.tsx*", (route) => route.abort("connectionrefused"));
+  await sheet(coral).getByRole("button", { name: "Edit profile" }).click();
+  await sheet(coral).getByRole("alert").filter({ hasText: "Couldn't load this form. Try again." }).waitFor();
+  assert.ok(await sheet(coral).getByText("Signed in as Coral").isVisible(), "a failed load leaves the summary in place");
+  assert.equal(await sheet(coral).getByRole("form", { name: "Edit profile" }).count(), 0);
+  await coral.unroute("**/ProfileForms.tsx*");
   await sheet(coral).getByRole("button", { name: "Edit profile" }).click();
   const editForm = sheet(coral).getByRole("form", { name: "Edit profile" });
   await editForm.waitFor();
@@ -403,7 +412,7 @@ try {
   await editForm.getByRole("button", { name: "Save" }).click();
   await sheet(coral).getByText("Signed in as Coral Reef").waitFor();
   await sheet(coral).getByText("“Waves first.”").waitFor();
-  assert.deepEqual(await focused(coral), ["edit", undefined], "saving returns the focus to Edit profile");
+  await returned(coral, "edit", "saving returns the focus to Edit profile");
   const [edit] = await sent(coral, "profileEdit");
   assert.deepEqual({ ...edit.m, id: 0 }, { type: "profileEdit", id: 0, credential: firstCredential, displayName: "Coral Reef", login: "coral-user", catchphrase: "Waves first.", color: "#8a4fd3", backupColor: "#f3ecd9" }, "an edit without a login change carries no PIN");
 
@@ -412,7 +421,7 @@ try {
   await editForm.getByRole("radiogroup", { name: "Favourite colour" }).getByRole("radio", { name: "Dune" }).click();
   assert.equal(await editForm.getByRole("radiogroup", { name: "Backup colour" }).getByRole("radio", { name: "Pine" }).getAttribute("aria-checked"), "true", "the old favourite becomes the backup");
   await editForm.getByRole("button", { name: "Cancel" }).click();
-  assert.deepEqual(await focused(coral), ["edit", undefined], "Cancel returns the focus to Edit profile");
+  await returned(coral, "edit", "Cancel returns the focus to Edit profile");
   assert.equal((await sent(coral, "profileEdit")).length, 1, "Cancel sends nothing");
 
   // A login change asks for the current PIN, refuses a wrong one beside that field, then renames.
@@ -428,7 +437,7 @@ try {
   await editForm.getByLabel("Current PIN").fill("2468");
   await editForm.getByRole("button", { name: "Save" }).click();
   await sheet(coral).getByText("Login: reef-user").waitFor();
-  ok("edit profile: the form fits at 440x956, 956x440 and 1280x720 with 44 px controls; colours never match; a login change needs the current PIN, refused beside it; focus returns to Edit profile");
+  ok("edit profile: a failed form load says so and retries on the next press; the form fits at 440x956, 956x440 and 1280x720 with 44 px controls; colours never match; a login change needs the current PIN, refused beside it; focus returns to Edit profile");
 
   // Another device: the old login is refused, the new one signs in (not remembered).
   const kelpie = await open(desk);
@@ -474,7 +483,7 @@ try {
   await pinForm.getByLabel("Current PIN").fill("2468");
   await pinForm.getByRole("button", { name: "Save PIN" }).click();
   await sheet(coral).getByText("Remembered on this device.").waitFor();
-  assert.deepEqual(await focused(coral), ["pin", undefined], "saving returns the focus to Change PIN");
+  await returned(coral, "pin", "saving returns the focus to Change PIN");
   const newSession = (await wire(coral)).map(frame).filter((f) => f.m.type === "profileSession").at(-1);
   const newCredential = newSession.m.credential;
   assert.ok(newCredential && newCredential !== firstCredential, "the change issues this device a new credential");
