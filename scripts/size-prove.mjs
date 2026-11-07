@@ -26,6 +26,8 @@ const CEILINGS = [
   { name: "LobbyView", gzipBytes: 2500 },
   // #1262: Sandwich Stacker shelf and player, measured 1867 B gzip. The owner must OK this new ceiling before merge.
   { name: "LobbyWaitBox", gzipBytes: 2100 },
+  // #1263: tic-tac-toe tile and board, loaded with the shelf; measured 1390 B gzip. Proposed ceiling; Opus decides before merge.
+  { name: "LobbyTicTacToe", gzipBytes: 1600 },
   // #553: shared on-demand table transport, measured 2.08 kB; existing caps stay fixed.
   { name: "table", gzipBytes: 2200 },
   // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
