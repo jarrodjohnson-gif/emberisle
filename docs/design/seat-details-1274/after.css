@@ -1,0 +1,26 @@
+/* #1301: seat details and the player menu, added on top of the running game by capture.mjs. No src/ file changes.
+   The seat line keeps its dot, name, goods and fortune counts, die, points and tallies. Three things change. */
+
+/* 1. The always-on "Hidden fortunes may add points." line leaves the rail and the strip ... */
+[data-testid="hidden-point-hint"] { display: none; }
+/* ... and becomes the last row of every seat's ledger, where the points are explained. */
+[data-testid="score-breakdown"]::after { content: "Hidden fortunes may add points"; grid-column: 1 / -1; padding-top: 4px; color: var(--muted); }
+
+/* 2. Desktop: the menu is a popover beside its card, so the cards below it stay where they are. */
+@media (min-width: 768px) and (pointer: fine) {
+  aside > div { position: relative; }
+  aside [data-testid="player-menu"] { position: absolute; left: 100%; top: 0; margin-left: 8px; width: 16rem; }
+}
+
+/* 3. Phone: a bottom sheet over the dock, so the trade rows sit in reach. Tapping outside or Escape still closes it. */
+@media (max-width: 767px), (pointer: coarse) {
+  [data-testid="player-menu"] { position: fixed !important; top: auto !important; bottom: 0; left: 0; right: 0; width: auto !important; max-height: 70dvh !important; border: 0; border-radius: 20px 20px 0 0; padding: 16px; padding-bottom: max(16px, env(safe-area-inset-bottom)); box-shadow: var(--shadow-sheet); }
+}
+/* Sideways phone: the sheet stays inside the left column, clear of the island. */
+@media (max-height: 480px) and (pointer: coarse) {
+  [data-testid="player-menu"] { left: max(12px, env(safe-area-inset-left)); right: auto; width: 320px !important; border-radius: 20px 20px 0 0; }
+}
+
+/* Rows 8 px apart, at the body size. The facts stay at the 12 px caption size: they are meta. */
+[data-testid="player-menu"] { gap: 8px; }
+[data-testid="player-menu"] > button { font-size: 15px; line-height: 22px; }
