@@ -25,9 +25,11 @@ const CEILINGS = [
   { name: "SeatNeeds", gzipBytes: 1900 },
   { name: "LobbyView", gzipBytes: 2500 },
   // #1262: Sandwich Stacker shelf and player, measured 1867 B gzip. The owner must OK this new ceiling before merge.
-  { name: "LobbyWaitBox", gzipBytes: 2100 },
+  { name: "LobbyWaitBox", gzipBytes: 2300 }, // #1263, 2026-11-07: raised from 2,100 B, DECISIONS q-size-standing; paired trim #1366
+  // #1263: tic-tac-toe tile and board, loaded with the shelf; measured 1390 B gzip. Decided 2026-11-07, q-size-standing.
+  { name: "LobbyTicTacToe", gzipBytes: 1600 },
   // #553: shared on-demand table transport, measured 2.08 kB; existing caps stay fixed.
-  { name: "table", gzipBytes: 2200 },
+  { name: "table", gzipBytes: 2300 }, // #1263, 2026-11-07: raised from 2,200 B, DECISIONS q-size-standing; paired trim #1366
   // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
   { name: "haptics", gzipBytes: 1200 },
   // #1283: raised from 125,200 B to 127,000 B per owner decision 2026-11-03.
@@ -64,7 +66,14 @@ const CEILINGS = [
   // #1285: trade toast, loss bars (discard/steal) and shared trade-panel helper chunk (ceilings per owner/Opus decision 2026-11-06).
   { name: "TradeToast", gzipBytes: 3000 },
   { name: "losses", gzipBytes: 1600 },
-  { name: "trade-panel", gzipBytes: 300 },
+  // #766: the shared lucide X icon chunk, named trade-panel until the profile sheet also used it; same 300 B ceiling.
+  { name: "x", gzipBytes: 300 },
+  // #766: the title's profile sheet with its profile client, measured 5481 B; focus-trap now shared by it and the sheets,
+  // measured 469 B. Ceilings decided by Opus under the owner's 2026-11-06 size-limit delegation (PR #1355 review).
+  { name: "ProfileSheet", gzipBytes: 6000 },
+  { name: "focus-trap", gzipBytes: 550 },
+  // #1281, 2026-11-07: startup loading screen, preloaded beside index; measured 2,420 B gzip. Decided per q-size-standing; paired trim to follow.
+  { name: "LoadingScreen", gzipBytes: 2600 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.

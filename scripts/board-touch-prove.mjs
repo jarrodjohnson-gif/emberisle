@@ -8,7 +8,7 @@
 // HTMLMediaElement.play is stubbed to record { file, volume }. Run: npm run board-touch-prove
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;

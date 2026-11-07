@@ -5,7 +5,7 @@
 // the rules' own applyAction so a roll can be steered into a bank-short roll and a wayfarer-blocked one. Negatives: a state that
 // already has dice, met on first load or after a jump of several seqs, never flashes. Under reduced motion the glow is a step.
 import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 // CI renders the island with software GL, where one frame can take seconds; a step gets this long to show.

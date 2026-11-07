@@ -1,7 +1,7 @@
 // Actual browser capture for visual review; waiting intervals are shortened to show each visitor.
 // Start npm run dev first. No gameplay action or shipped event timing is changed.
 import { mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 
 mkdirSync("test-results/jelly",{recursive:true});
 const browser=await chromium.launch({args:["--use-gl=angle","--use-angle=swiftshader","--enable-unsafe-swiftshader"]});

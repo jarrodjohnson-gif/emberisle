@@ -6,7 +6,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import WebSocket from '../server/node_modules/ws/wrapper.mjs';
-import { chromium } from 'playwright';
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from 'vite';
 import { createGame } from '../src/lib/game/board.ts';
 import { publicScoreBreakdown, publicVP } from '../src/lib/game/rules.ts';

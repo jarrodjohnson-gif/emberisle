@@ -9,7 +9,7 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 
 // The rule (#673): 5 reloads, with the median inside BUDGET.
 // HARD is only an outlier cap, twice BUDGET.

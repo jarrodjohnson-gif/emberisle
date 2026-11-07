@@ -1,5 +1,5 @@
 import { createServer } from "vite";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { existsSync, mkdirSync } from "node:fs";
 
 const prefix = process.argv[2] || "after"; // "before" or "after"

@@ -4,7 +4,7 @@
 // (no stretch), and every corner of the island is inside the hole. The oracle is a fresh load: the island's settled
 // bounding box after each rotation of one page is within 10 % of the box a fresh page at that viewport draws. Zero console errors. Run: npm run rotate-prove
 import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;

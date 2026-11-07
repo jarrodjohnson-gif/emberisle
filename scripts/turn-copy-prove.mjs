@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const port = Number(process.env.VITE_PORT || 18532);

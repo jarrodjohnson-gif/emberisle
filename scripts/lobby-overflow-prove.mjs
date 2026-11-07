@@ -5,7 +5,7 @@
 // Baseline 667x375 and 844x390 landscape viewports remain unscrolled.
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 0;

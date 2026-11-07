@@ -3,7 +3,7 @@
 // Run: node scripts/hex-jelly-gif.mjs ore 23
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const [kind = "timber", seed = "7"] = process.argv.slice(2);
