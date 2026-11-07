@@ -175,7 +175,7 @@ try {
       const chat = seats.map((s, i) => ({ id: i + 1, seat: s.id, player: null, name: s.name, color: s.color, text: `hello from ${s.name}`, at: now + i }));
       chat.push({ id: 9, seat: seats[2].id, player: null, name: seats[2].name, color: seats[2].color, text: "🔊 Cheer", sound: "cheer", at: now + 10 });
       game.setState({ chat });
-      useTalk.setState({ reactLog: [{ id: 1, seat: seats[2].id, name: seats[2].name, color: seats[2].color, emote: "👍", at: now + 20 }] });
+      useTalk.setState({ reactLog: [{ id: 1, seat: seats[2].id, name: seats[2].name, color: seats[2].color, emote: "🔥", at: now + 20 }] });
     });
     await lobby.getByTestId("react-line").waitFor();
     await lobby.getByTestId("sound-line").waitFor();
