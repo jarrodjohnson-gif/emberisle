@@ -46,6 +46,7 @@ export function WinList({ rows }: { rows: Row[] }) {
                 >
                   <SeatDot color={r.p.color} className="size-3 flex-none" />
                   <span className={`min-w-0 flex-1 ${on ? "py-[11px]" : "truncate"}`}>{r.p.name}</span>
+                  {r.tag}
                   <span data-testid="win-total" className="flex-none text-xl font-bold tabular-nums">{r.total}</span>
                   <svg viewBox="0 0 20 20" aria-hidden="true" className={`size-5 flex-none text-muted ${on ? "rotate-180" : ""}`}>
                     <path d="M5 7.5l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

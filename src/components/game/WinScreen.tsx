@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
@@ -9,8 +9,23 @@ import { LazyBoundary } from "@/lib/lazy";
 import { WinList, winList } from "@/components/game/chunks";
 import { useFocusTrap } from "@/lib/focus-trap";
 import type { PlayerState } from "@/lib/game/types";
+import type { Seat } from "@/lib/net/table";
 
-export type Row = { p: PlayerState; outposts: number; strongholds: number; path: boolean; army: boolean; hiddenVp: number; total: number };
+export type Row = { p: PlayerState; outposts: number; strongholds: number; path: boolean; army: boolean; hiddenVp: number; total: number; tag?: ReactNode };
+
+// #1411 (design docs/design/play-again-1411, option A): the host and bots are always in; an away seat is left out of the next game.
+const yes = (x: Seat) => !x.away && (x.host || x.bot || x.again);
+function tagOf(x: Seat | undefined) {
+  if (!x || (!x.away && !yes(x))) return undefined;
+  return x.away ? (
+    <span className="win-tag away">Away</span>
+  ) : (
+    <span className="win-tag">
+      <span aria-hidden="true">✓ Play again</span>
+      <span className="sr-only">, wants to play again</span>
+    </span>
+  );
+}
 
 // Build bible 4.7: the island stays visible. "Look around" hides the panel and leaves a small chip.
 export function WinScreen() {
@@ -36,9 +51,13 @@ function Panel() {
   // The lobby's host test (EmberisleApp), so a handed-off host gets the button.
   const isHost = useGame((s) => s.seats.find((x) => x.id === s.seatId)?.host ?? s.isHost);
   const hostName = useGame((s) => s.seats.find((x) => x.host)?.name);
+  const seats = useGame((s) => s.seats);
+  const wanted = useGame((s) => Boolean(s.seats.find((x) => x.id === s.seatId)?.again));
+  const wantAgain = useGame((s) => s.wantAgain);
   // docs/design/rematch.md: the online host and hotseat start another; practice has no table to keep.
   const canAgain = mode === "hotseat" || (mode === "online" && isHost);
   const waiting = mode === "online" && !isHost && !spectator && hostName;
+  const seatOf = (id: string) => (mode === "online" ? seats.find((x) => x.player === id) : undefined);
   const [hidden, setHidden] = useState(false);
   const winner = state.players.find((p) => p.id === state.winner)!;
   const dialog = useRef<HTMLDivElement>(null);
@@ -73,6 +92,7 @@ function Panel() {
         army: state.largestArmy === p.id,
         hiddenVp: p.hidden.vp,
         total: totalVP(state, p.id),
+        tag: tagOf(seatOf(p.id)),
       };
     })
     .sort((a, b) => Number(b.p.id === winner.id) - Number(a.p.id === winner.id) || b.total - a.total);
@@ -140,6 +160,7 @@ function Panel() {
                   <td className="px-1 py-2 short:py-0.5 short:px-1 text-left font-medium sm:px-2 whitespace-nowrap short:text-xs">
                     <SeatDot color={r.p.color} className="mr-1.5 size-3 align-[-2px]" />
                     {r.p.name}
+                    {r.tag}
                   </td>
                   <td className={cell}>{r.outposts}</td>
                   <td className={cell}>{r.strongholds}</td>
@@ -186,6 +207,11 @@ function Panel() {
             Waiting for {hostName} to start another.
           </p>
         ) : null}
+        {mode === "online" ? (
+          <p role="status" className="sr-only">
+            {seats.filter(yes).length} of {seats.filter((x) => !x.away).length} want another game
+          </p>
+        ) : null}
         <div className={`mt-5 ${phone ? "short:mt-1" : "short:mt-2"} flex flex-wrap items-center gap-2`}>
           {mode === "online" ? <VictoryTargetSelect label="Next game" value={target} onChange={isHost && !spectator ? setTarget : undefined} /> : null}
           {mode === "online" && !spectator ? (
@@ -211,7 +237,14 @@ function Panel() {
               Play again
             </Button>
           ) : null}
-          <Button variant={canAgain ? "secondary" : "default"} className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-menu" onClick={goTitle}>
+          {/* #1411: every other seated player says "I'll play again"; only the host starts the next game. */}
+          {waiting ? (
+            <Button variant={wanted ? "secondary" : "default"} aria-pressed={wanted} className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-want" onClick={() => wantAgain(!wanted)}>
+              {wanted ? <span aria-hidden="true">✓</span> : null}
+              I'll play again
+            </Button>
+          ) : null}
+          <Button variant={canAgain || waiting ? "secondary" : "default"} className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-menu" onClick={goTitle}>
             Back to menu
           </Button>
         </div>

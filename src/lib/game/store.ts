@@ -381,6 +381,8 @@ interface GameStore {
   startTable: () => void;
   // A rematch (#266): online the host asks for it; hotseat deals it here, the last winner first.
   playAgain: () => void;
+  // #1411: an online player who is not the host says they want another game, or takes it back.
+  wantAgain: (value: boolean) => void;
   // Table chat (docs/design/chat.md)
   // This tab's seat id (s0...), from welcome. localId is the player id once the game starts.
   seatId: string;
@@ -983,6 +985,9 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   startTable: () => {
     if (!get().spectator) get().net?.start();
+  },
+  wantAgain: (value) => {
+    if (!get().spectator) get().net?.wantAgain(value);
   },
   playAgain: () => {
     const { mode, state, net, spectator } = get();
