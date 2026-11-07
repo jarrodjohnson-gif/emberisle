@@ -1,6 +1,7 @@
 {
   "chromium": "153.0.8010.12",
   "slotsEqual": true,
+  "browserErrors": [],
   "results": [
     {
       "state": "own-turn",
@@ -50,61 +51,61 @@
           "name": "Path",
           "x": 312,
           "y": 616,
-          "w": 86.8,
+          "w": 86.844,
           "h": 44,
           "disabled": false,
           "primary": false
         },
         {
           "name": "Outpost",
-          "x": 406.8,
+          "x": 406.844,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
-          "disabled": true,
+          "disabled": false,
           "primary": false
         },
         {
           "name": "Stronghold",
-          "x": 501.7,
+          "x": 501.703,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Buy fortune",
-          "x": 596.6,
+          "x": 596.563,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": false,
           "primary": false
         },
         {
           "name": "Trade",
-          "x": 691.4,
+          "x": 691.422,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": false,
           "primary": false
         },
         {
           "name": "Fortunes",
-          "x": 786.3,
+          "x": 786.281,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": false,
           "primary": false
         },
         {
           "name": "End turn",
-          "x": 881.1,
+          "x": 881.141,
           "y": 616,
-          "w": 86.8,
+          "w": 86.844,
           "h": 44,
           "disabled": false,
           "primary": false
@@ -114,9 +115,9 @@
         8,
         8,
         8,
-        7.9,
         8,
-        7.9
+        8,
+        8
       ],
       "answers": [],
       "costs": [
@@ -129,10 +130,10 @@
         },
         {
           "kind": "outpost",
-          "chips": 0,
+          "chips": 4,
           "short": 0,
           "inside": true,
-          "why": "No spot"
+          "why": null
         },
         {
           "kind": "stronghold",
@@ -220,68 +221,68 @@
           "h": 20
         }
       },
-      "turnLine": "Dune (bot) offers",
+      "turnLine": "Pine (bot) offers",
       "turnFits": true,
       "controls": [
         {
           "name": "Path",
           "x": 312,
           "y": 616,
-          "w": 86.8,
+          "w": 86.844,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Outpost",
-          "x": 406.8,
+          "x": 406.844,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Stronghold",
-          "x": 501.7,
+          "x": 501.703,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Buy fortune",
-          "x": 596.6,
+          "x": 596.563,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Trade",
-          "x": 691.4,
+          "x": 691.422,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Fortunes",
-          "x": 786.3,
+          "x": 786.281,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": false,
           "primary": false
         },
         {
           "name": "End turn",
-          "x": 881.1,
+          "x": 881.141,
           "y": 616,
-          "w": 86.8,
+          "w": 86.844,
           "h": 44,
           "disabled": true,
           "primary": false
@@ -291,9 +292,9 @@
         8,
         8,
         8,
-        7.9,
         8,
-        7.9
+        8,
+        8
       ],
       "answers": [
         {
@@ -412,68 +413,68 @@
           "h": 20
         }
       },
-      "turnLine": "Dune (bot) offers",
+      "turnLine": "Pine (bot) offers",
       "turnFits": true,
       "controls": [
         {
           "name": "Path",
           "x": 312,
           "y": 616,
-          "w": 86.8,
+          "w": 86.844,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Outpost",
-          "x": 406.8,
+          "x": 406.844,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Stronghold",
-          "x": 501.7,
+          "x": 501.703,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Buy fortune",
-          "x": 596.6,
+          "x": 596.563,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Yes",
-          "x": 691.4,
+          "x": 691.422,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": false,
           "primary": true
         },
         {
           "name": "No",
-          "x": 786.3,
+          "x": 786.281,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": false,
           "primary": false
         },
         {
           "name": "Details",
-          "x": 881.1,
+          "x": 881.141,
           "y": 616,
-          "w": 86.8,
+          "w": 86.844,
           "h": 44,
           "disabled": false,
           "primary": false
@@ -483,9 +484,9 @@
         8,
         8,
         8,
-        7.9,
         8,
-        7.9
+        8,
+        8
       ],
       "answers": [],
       "costs": [
@@ -589,68 +590,68 @@
           "h": 20
         }
       },
-      "turnLine": "Dune (bot)'s turn",
+      "turnLine": "Pine (bot)'s turn",
       "turnFits": true,
       "controls": [
         {
           "name": "Path",
           "x": 312,
           "y": 616,
-          "w": 86.8,
+          "w": 86.844,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Outpost",
-          "x": 406.8,
+          "x": 406.844,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Stronghold",
-          "x": 501.7,
+          "x": 501.703,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Buy fortune",
-          "x": 596.6,
+          "x": 596.563,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Trade",
-          "x": 691.4,
+          "x": 691.422,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Fortunes",
-          "x": 786.3,
+          "x": 786.281,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": false,
           "primary": false
         },
         {
           "name": "End turn",
-          "x": 881.1,
+          "x": 881.141,
           "y": 616,
-          "w": 86.8,
+          "w": 86.844,
           "h": 44,
           "disabled": true,
           "primary": false
@@ -660,9 +661,9 @@
         8,
         8,
         8,
-        7.9,
         8,
-        7.9
+        8,
+        8
       ],
       "answers": [],
       "costs": [
@@ -765,68 +766,68 @@
           "h": 20
         }
       },
-      "turnLine": "Dune (bot)'s turn",
+      "turnLine": "Pine (bot)'s turn",
       "turnFits": true,
       "controls": [
         {
           "name": "Path",
           "x": 312,
           "y": 616,
-          "w": 86.8,
+          "w": 86.844,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Outpost",
-          "x": 406.8,
+          "x": 406.844,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Stronghold",
-          "x": 501.7,
+          "x": 501.703,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Buy fortune",
-          "x": 596.6,
+          "x": 596.563,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Trade",
-          "x": 691.4,
+          "x": 691.422,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Fortunes",
-          "x": 786.3,
+          "x": 786.281,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": false,
           "primary": false
         },
         {
           "name": "End turn",
-          "x": 881.1,
+          "x": 881.141,
           "y": 616,
-          "w": 86.8,
+          "w": 86.844,
           "h": 44,
           "disabled": true,
           "primary": false
@@ -836,9 +837,9 @@
         8,
         8,
         8,
-        7.9,
         8,
-        7.9
+        8,
+        8
       ],
       "answers": [],
       "costs": [
@@ -959,68 +960,68 @@
           "h": 20
         }
       },
-      "turnLine": "Dune (bot)'s turn",
+      "turnLine": "Pine (bot)'s turn",
       "turnFits": true,
       "controls": [
         {
           "name": "Path",
           "x": 312,
           "y": 616,
-          "w": 86.8,
+          "w": 86.844,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Outpost",
-          "x": 406.8,
+          "x": 406.844,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Stronghold",
-          "x": 501.7,
+          "x": 501.703,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Buy fortune",
-          "x": 596.6,
+          "x": 596.563,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Trade",
-          "x": 691.4,
+          "x": 691.422,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Fortunes",
-          "x": 786.3,
+          "x": 786.281,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": false,
           "primary": false
         },
         {
           "name": "End turn",
-          "x": 881.1,
+          "x": 881.141,
           "y": 616,
-          "w": 86.8,
+          "w": 86.844,
           "h": 44,
           "disabled": true,
           "primary": false
@@ -1030,9 +1031,9 @@
         8,
         8,
         8,
-        7.9,
         8,
-        7.9
+        8,
+        8
       ],
       "answers": [],
       "costs": [
@@ -1152,61 +1153,61 @@
           "name": "Path",
           "x": 312,
           "y": 616,
-          "w": 86.8,
+          "w": 86.844,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Outpost",
-          "x": 406.8,
+          "x": 406.844,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Stronghold",
-          "x": 501.7,
+          "x": 501.703,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Buy fortune",
-          "x": 596.6,
+          "x": 596.563,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Trade",
-          "x": 691.4,
+          "x": 691.422,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": false,
           "primary": false
         },
         {
           "name": "Fortunes",
-          "x": 786.3,
+          "x": 786.281,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "End turn",
-          "x": 881.1,
+          "x": 881.141,
           "y": 616,
-          "w": 86.8,
+          "w": 86.844,
           "h": 44,
           "disabled": false,
           "primary": true
@@ -1216,9 +1217,9 @@
         8,
         8,
         8,
-        7.9,
         8,
-        7.9
+        8,
+        8
       ],
       "answers": [],
       "costs": [
@@ -1231,10 +1232,10 @@
         },
         {
           "kind": "outpost",
-          "chips": 0,
-          "short": 0,
+          "chips": 4,
+          "short": 4,
           "inside": true,
-          "why": "No spot"
+          "why": null
         },
         {
           "kind": "stronghold",
@@ -1329,61 +1330,61 @@
           "name": "Path",
           "x": 312,
           "y": 616,
-          "w": 86.8,
+          "w": 86.844,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Outpost",
-          "x": 406.8,
+          "x": 406.844,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Stronghold",
-          "x": 501.7,
+          "x": 501.703,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Buy fortune",
-          "x": 596.6,
+          "x": 596.563,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Trade",
-          "x": 691.4,
+          "x": 691.422,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": true,
           "primary": false
         },
         {
           "name": "Fortunes",
-          "x": 786.3,
+          "x": 786.281,
           "y": 616,
-          "w": 86.9,
+          "w": 86.859,
           "h": 44,
           "disabled": false,
           "primary": false
         },
         {
           "name": "End turn",
-          "x": 881.1,
+          "x": 881.141,
           "y": 616,
-          "w": 86.8,
+          "w": 86.844,
           "h": 44,
           "disabled": false,
           "primary": true
@@ -1393,9 +1394,9 @@
         8,
         8,
         8,
-        7.9,
         8,
-        7.9
+        8,
+        8
       ],
       "answers": [],
       "costs": [

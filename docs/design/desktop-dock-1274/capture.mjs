@@ -81,12 +81,13 @@ const set = (page, f) =>
 function measure() {
   const r = (el) => {
     const b = el.getBoundingClientRect();
-    return { x: +b.x.toFixed(1), y: +b.y.toFixed(1), w: +b.width.toFixed(1), h: +b.height.toFixed(1) };
+    return { x: +b.x.toFixed(3), y: +b.y.toFixed(3), w: +b.width.toFixed(3), h: +b.height.toFixed(3) };
   };
   const dock = document.querySelector('[data-testid="mock-dock"]');
   const slots = Object.fromEntries([...dock.querySelectorAll("[data-slot]")].filter((el) => ["hand", "turn", "aside", "controls", "meta"].includes(el.dataset.slot)).map((el) => [el.dataset.slot, r(el)]));
   const controls = [...dock.querySelectorAll('[data-slot="controls"] > button')].map((b) => ({ name: b.dataset.control, ...r(b), disabled: b.getAttribute("aria-disabled") === "true", primary: b.classList.contains("bg-fg") }));
-  const gaps = controls.slice(1).map((c, i) => +(c.x - controls[i].x - controls[i].w).toFixed(1));
+  const edges = [...dock.querySelectorAll('[data-slot="controls"] > button')].map((b) => b.getBoundingClientRect());
+  const gaps = edges.slice(1).map((b, i) => +(b.left - edges[i].right).toFixed(3));
   const answers = [...dock.querySelectorAll('[data-slot="aside"] > button')].map((b) => ({ name: b.textContent.trim(), ...r(b) }));
   const costs = [...dock.querySelectorAll('[data-testid^="mock-build-"]')].map((b) => {
     const t = b.getBoundingClientRect();
@@ -110,7 +111,7 @@ function measure() {
   });
   const small = [...dock.querySelectorAll("button, [role=button]")].filter((b) => {
     const q = b.getBoundingClientRect();
-    return q.width < 43.5 || q.height < 43.5;
+    return q.width < 44 || q.height < 44;
   }).map((b) => b.getAttribute("aria-label") || b.textContent.trim());
   const fonts = [...new Set([...dock.querySelectorAll("*")].filter((el) => [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())).map((el) => parseFloat(getComputedStyle(el).fontSize)))].sort((a, b) => a - b);
   // The scene: the band above the dock, right of the seat rail. Island pixels: the corners of every hex on screen.
@@ -199,9 +200,27 @@ try {
   const key = (x) => JSON.stringify({ dock: x.dock, slots: x.slots, controls: x.controls.map(({ x, y, w, h }) => [x, y, w, h]) });
   const same = desk.every((x) => key(x) === key(desk[0]));
   console.log(`slot rectangles equal in all ${desk.length} desktop states: ${same}`);
-  writeFileSync(`${out}/measurements.json`, JSON.stringify({ chromium: browser.version(), slotsEqual: same, results }, null, 2) + "\n");
+  writeFileSync(`${out}/measurements.json`, JSON.stringify({ chromium: browser.version(), slotsEqual: same, browserErrors: errors, results }, null, 2) + "\n");
   console.log(`chromium ${browser.version()}; written to ${out}; browser errors ${errors.length}`);
   if (errors.length) console.log(errors.join("\n"));
+  // The README's claims, checked: the run fails if any does not hold.
+  const NAMES = "Path/Outpost/Stronghold/Buy fortune/Trade/Fortunes/End turn";
+  const fails = [];
+  if (!same) fails.push("slot rectangles differ between states");
+  for (const x of desk) {
+    const names = x.controls.map((c) => c.name).join("/");
+    if (x.controls.length !== 7) fails.push(`${x.state}: ${x.controls.length} controls`);
+    if (x.state !== "offer-b" && names !== NAMES) fails.push(`${x.state}: controls ${names}`);
+    if (x.under44.length) fails.push(`${x.state}: under 44 px ${x.under44.join(", ")}`);
+    if (x.gaps.some((g) => g < 7.99)) fails.push(`${x.state}: gaps ${x.gaps.join("/")}`);
+    if (x.tabs.some((t) => t.clipped)) fails.push(`${x.state}: a gain or loss tab is clipped`);
+    if (x.costs.some((c) => !c.inside)) fails.push(`${x.state}: cost chips outside their tile`);
+    if (!x.turnFits) fails.push(`${x.state}: the turn line is cut`);
+  }
+  for (const x of results.filter((r) => r.viewport !== "1280x720")) if (x.mockMounted || !x.unchanged) fails.push(`${x.viewport}: the mock changed the phone layout`);
+  if (errors.length) fails.push(`${errors.length} browser errors`);
+  if (fails.length) throw new Error(`capture checks failed:\n${fails.join("\n")}`);
+  console.log("capture checks passed: equal slots, 7 controls, 44 px targets, 8 px gaps, costs inside, tabs unclipped, turn line fits, phone layout untouched, no browser errors");
 } finally {
   await browser.close();
   await vite.close();

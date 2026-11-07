@@ -125,8 +125,8 @@ function MockDock({ place }: { place: OfferPlace }) {
 
 let root: Root | null = null;
 
-// The dock is the wide layout's only (src/lib/viewport.ts: 768 px and up with a fine pointer, taller than 480 px). On a
-// phone mount() does nothing, so the phone captures show today's game.
+// The dock is for the wide layout only: 768 px and up with a fine pointer (src/lib/viewport.ts), and taller than 480 px,
+// where the 88 x 80 hand card applies (hand-motion.css). Anywhere else mount() does nothing.
 export function mount(place: OfferPlace) {
   if (!matchMedia("(min-width: 768px) and (pointer: fine) and (min-height: 481px)").matches) return false;
   document.documentElement.dataset.mockDock = "";
