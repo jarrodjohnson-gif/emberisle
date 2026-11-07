@@ -77,10 +77,21 @@ function recorders() {
         animation: css.animationName, duration: css.transitionDuration, easing: css.transitionTimingFunction };
       exiting.set(el, entry);
       window.__exits.push(entry);
-      setTimeout(() => { if (el.isConnected) { const mid = getComputedStyle(el); entry.mid = { opacity: Number(mid.opacity), transform: mid.transform, target: el.style.transform }; } }, 80);
     }
     for (const [el, entry] of exiting) if (!el.isConnected) { entry.gone = performance.now(); exiting.delete(el); }
   }).observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-leaving"] });
+  // The fade starts a frame after data-leaving is set, so a timer from that moment can land before it began or after it ended on a
+  // loaded runner. Sample the transition itself: when it runs, put it at 80 ms of its 160, read the frame, then let it carry on.
+  document.addEventListener("transitionrun", (e) => {
+    const el = e.target;
+    const entry = exiting.get(el);
+    if (!entry || entry.mid || e.propertyName !== "opacity") return;
+    const fades = el.getAnimations().filter((a) => a.transitionProperty);
+    for (const a of fades) { a.pause(); a.currentTime = 80; }
+    const mid = getComputedStyle(el);
+    entry.mid = { opacity: Number(mid.opacity), transform: mid.transform, target: el.style.transform };
+    for (const a of fades) a.play();
+  }, true);
   const OBSTACLES = 'header > div, [data-testid="seat-strip"] > *, [data-testid^="rail-"], [data-hud-stack], [data-testid="banner"], [data-testid="turn-banner"], .hud-utilities, [data-testid="resource-flash"]';
   const box = (el) => {
     const r = el.getBoundingClientRect();
