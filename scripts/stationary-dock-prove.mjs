@@ -1,12 +1,13 @@
 // #1101: the phone dock is one stationary box (docs/design/app-review/final, design laws 1, 2, 5 and 6). At 390x844 and
-// 844x390 (touch) it cycles six states: your turn, an incoming offer, another seat's turn, an off-turn gain, an off-turn
-// loss and an empty hand. In each it measures the dock box and every slot in it (x, y, width, height) and asserts they are
+// 844x390 (touch) it cycles: your turn, an incoming offer, another seat's turn, an off-turn gain, an off-turn loss, an
+// empty hand, the roll phase, a real roll (measured while the dice land and after), the robber, a discard, setup, a
+// watcher and game over. In each it measures the dock box and every slot in it (x, y, width, height) and asserts they are
 // identical to the first state: nothing appears, disappears or resizes. Every control in the dock is at least 44x44 px with
 // 8 px to its neighbours; upright, every control sits in the bottom third. The island keeps at least 60 % of the height
-// upright, and the full height beside the 344 px column sideways; no dock state reaches into its hole.
+// upright, and the full height beside the 320 px column sideways; no dock state reaches into its hole.
 // Run: npm run stationary-dock-prove (add `--shots <dir>` to save a screenshot of every state, and a 1280x720 one).
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8111;
@@ -62,7 +63,7 @@ try {
     await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle?.renders > 0, null, { timeout: STEP_MS });
     // The bots hold still: every state below is set on the store.
     await page.evaluate(() => window.__emberisle.setState({ runBots: () => {} }));
-    // One table state: whose turn, this seat's hand and fortunes, and an offer from the seat on turn.
+    // One table state: the phase, whose turn, this seat's hand and fortunes, and an offer from the seat on turn.
     const set = (o) =>
       page.evaluate((o) => {
         const g = window.__emberisle;
@@ -70,14 +71,16 @@ try {
         const st = structuredClone(s.state);
         const me = st.players.find((p) => p.id === s.localId);
         const other = st.players.find((p) => p.id !== s.localId);
-        st.phase = "main";
+        st.phase = o.phase ?? "main";
         st.current = o.mine ? me.id : other.id;
-        st.dice = [3, 5];
+        st.dice = o.phase === "roll" || o.phase === "setupSettle" ? null : [3, 5];
+        st.discardNeeded = o.phase === "discard" ? { [me.id]: 4 } : {};
+        st.winner = o.phase === "over" ? me.id : null;
         st.seq++;
         me.resources = o.hand;
         me.hidden = { ...me.hidden, plenty: o.held };
         g.setState({
-          state: st, banner: null, error: null, buildMode: "none", tradeOutcome: null, tradeTaker: null, declined: [],
+          state: st, spectator: !!o.watching, banner: null, error: null, buildMode: "none", tradeOutcome: null, tradeTaker: null, declined: [],
           offer: o.offer ? { tradeId: "t1101", from: other.id, fromName: other.name, give: { wool: 1 }, want: { timber: 1 }, until: Date.now() + 600_000 } : null,
         });
       }, o);
@@ -107,7 +110,13 @@ try {
               .map((el) => ({ name: (el.getAttribute("aria-label") || el.textContent || el.dataset.testid || el.tagName).trim().slice(0, 24), ...box(el) }))
           : [];
         const isle = window.__isle;
-        return { dock: box(dock), slots, targets, hole: isle.insets(), live: isle.liveInsets(), vh: innerHeight, vw: innerWidth };
+        const status = document.querySelector('[data-slot="status"]');
+        return {
+          dock: box(dock), slots, targets, hole: isle.insets(), live: isle.liveInsets(), vh: innerHeight, vw: innerWidth,
+          moment: !!document.querySelector('[data-testid="roll-moment"]'),
+          statusText: status?.innerText.trim() ?? null,
+          goodsEmpty: !document.querySelector('[data-slot="goods"]')?.children.length,
+        };
       }, { SLOTS, names: size.slots });
 
     const states = [
@@ -130,6 +139,31 @@ try {
         await set({ mine: true, hand: { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 }, held: 0 });
         await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
       }],
+      ["roll phase", async () => set({ mine: true, hand: HAND, held: 1, phase: "roll" })],
+      // The roll itself, through the dock's own Roll button, measured while the dice land. The dice are steered to 3 and 5
+      // (crypto.getRandomValues feeds rollDie), so no 7 sends the table to a discard first.
+      ["rolling", async () => {
+        await page.evaluate(() => {
+          const queue = [2, 4];
+          const real = crypto.getRandomValues.bind(crypto);
+          crypto.getRandomValues = (buf) => (queue.length && buf instanceof Uint32Array && buf.length === 1 ? ((buf[0] = queue.shift()), buf) : real(buf));
+        });
+        await page.locator('[data-testid="dock"] [data-slot="turn"] button').click();
+        await page.waitForFunction(() => window.__emberisle.getState().state.phase === "main", null, { timeout: STEP_MS });
+      }],
+      ["after the roll", async () => {
+        const dice = await page.evaluate(() => window.__emberisle.getState().state.dice);
+        check(JSON.stringify(dice) === "[3,5]", `${tag} rolling: the dock's Roll button rolled the steered dice`, dice);
+        await page.waitForTimeout(1500);
+      }],
+      ["robber", async () => set({ mine: true, hand: HAND, held: 1, phase: "robber" })],
+      ["discard", async () => {
+        await set({ mine: true, hand: HAND, held: 1, phase: "discard" });
+        await page.getByTestId("discard-count").waitFor({ timeout: STEP_MS });
+      }],
+      ["setup", async () => set({ mine: true, hand: { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 }, held: 0, phase: "setupSettle" })],
+      ["watcher", async () => set({ mine: false, hand: HAND, held: 0, watching: true })],
+      ["game over", async () => set({ mine: true, hand: HAND, held: 1, phase: "over" })],
     ];
     let first = null;
     for (const [name, enter] of states) {
@@ -141,6 +175,12 @@ try {
       console.log(`     ${label}: dock ${JSON.stringify(m.dock)} slots ${JSON.stringify(m.slots)}`);
       check(!!m.dock, `${label}: the dock is on screen`);
       for (const [slot, b] of Object.entries(m.slots)) check(!!b, `${label}: slot ${slot} is on screen`);
+      if (m.vw > m.vh) check(!!m.dock && Math.abs(m.dock.w - 320) <= 0.5, `${label}: the sideways dock is the 320 px column`, m.dock);
+      if (name === "rolling") check(m.moment, `${label}: measured while the roll moment is up`);
+      // The win sheet covers the table at game over; the status slot holds its place and says nothing under it.
+      if (name === "game over") check(m.statusText === "", `${label}: the status slot is empty`, m.statusText);
+      // A watcher has no hand: the goods slot keeps its box with nothing in it.
+      if (name === "watcher") check(m.goodsEmpty, `${label}: the goods slot is empty`);
       if (!first) first = { name, ...m };
       else {
         const same = (a, b) => !!a && !!b && ["x", "y", "w", "h"].every((k) => Math.abs(a[k] - b[k]) <= 0.5);
