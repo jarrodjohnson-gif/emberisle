@@ -78,6 +78,7 @@
     "chat-prove": "node scripts/chat-prove.mjs",
     "chat-text-prove": "node scripts/chat-text-prove.mjs",
     "stickers-prove": "node scripts/stickers-prove.mjs",
+    "sticker-host-prove": "node --import ./server/register.mjs server/sticker-host-prove.mjs",
     "sticker-tray-prove": "node scripts/sticker-tray-prove.mjs",
     "lobby-layout-prove": "node scripts/lobby-layout-prove.mjs",
     "lobby-prove": "node scripts/lobby-prove.mjs",

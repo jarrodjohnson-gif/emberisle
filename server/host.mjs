@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { mkdir, rename, writeFile } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
@@ -192,8 +192,20 @@ const TYPES = {
   ".ogg": "audio/ogg",
   ".mp3": "audio/mpeg",
 };
-const EMOTES_DIR = fileURLToPath(new URL("../src/assets/emotes/", import.meta.url));
+// EMOTES_DIR swaps the sticker folder for a proof (scripts/fixtures/stickers). It must be an existing folder, is read only by
+// loadEmotes (same name rules, nothing else is served from it), and holds at most the tray's 24 stickers.
+const EMOTES_DIR = process.env.EMOTES_DIR
+  ? path.resolve(process.env.EMOTES_DIR)
+  : fileURLToPath(new URL("../src/assets/emotes/", import.meta.url));
+if (process.env.EMOTES_DIR && !statSync(EMOTES_DIR, { throwIfNoEntry: false })?.isDirectory()) {
+  console.error(`EMOTES_DIR ${EMOTES_DIR} is not a folder`);
+  process.exit(1);
+}
 const EMOTES = loadEmotes(EMOTES_DIR);
+if (EMOTES.size > 24) {
+  console.error(`EMOTES_DIR ${EMOTES_DIR} has ${EMOTES.size} stickers, at most 24`);
+  process.exit(1);
+}
 
 function code() {
   let out = "";
