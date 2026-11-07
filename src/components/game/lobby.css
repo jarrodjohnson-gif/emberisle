@@ -210,6 +210,11 @@
   .lobby-chat-panel [data-testid="chat-log"] > li { font-size: 0.8125rem; line-height: 1.125rem; }
   .lobby-layout .lobby-player:has(> [data-testid="add-bot"]) > button { padding: 0 10px; font-size: 13px; line-height: 16px; }
 }
+@media (max-width: 340px) and (orientation: portrait) {
+  .lobby-name, .lobby-name > button[data-testid="rename-seat"], .lobby-name > input[data-testid="rename-input"] { font-size: 13px; }
+  .lobby-summary > p, .lobby-layout .lobby-action-buttons > button:not(:last-child) { font-size: 13px; }
+  .lobby-chat-panel [data-testid="chat-log"] > li { font-size: 0.75rem; line-height: 1rem; }
+}
 @media (max-width: 900px) {
   .lobby-layout .lm button:last-child { width: 76px; white-space: normal; }
   .lobby-layout .lm button:last-child span { display: block; max-width: 60px; line-height: 20px; text-align: center; }
