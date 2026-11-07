@@ -44,13 +44,3 @@ export function setCategoryMuted(category: SoundCategory, muted: boolean) {
 export function categoryGain(category: SoundCategory) {
   return mix.master * (mix[category].muted ? 0 : mix[category].volume);
 }
-
-// #1163: the Sea sounds switch under Music and ambience. On unless saved as "0". Playback is #662's; this is only the saved choice.
-const SEA_KEY = "emberisle-sea-sounds";
-let sea = (() => { try { return localStorage.getItem(SEA_KEY) !== "0"; } catch { return true; } })();
-export const getSeaSounds = () => sea;
-export function setSeaSounds(on: boolean) {
-  sea = on;
-  try { if (on) localStorage.removeItem(SEA_KEY); else localStorage.setItem(SEA_KEY, "0"); } catch { /* the in-memory choice still works */ }
-  for (const listener of listeners) listener();
-}

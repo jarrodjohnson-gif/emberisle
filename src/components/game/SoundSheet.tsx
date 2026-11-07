@@ -2,13 +2,14 @@
 // mute for each kind of sound, the Sea sounds switch (#1163) and the players this device has muted. Every level is a slider in
 // 10% steps with a 44 px touch area; letting go of one plays a short clip of its kind so the level can be heard.
 // A lazy chunk: it loads when the Table menu opens, long before Sound is pressed.
-import { useEffect, useRef, useSyncExternalStore, type CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import { ChevronLeft, Volume2, VolumeX, X } from "lucide-react";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useGame } from "@/lib/game/store";
-import { useMutedSeats } from "@/lib/muted-seats";
+import { useMutedSeats } from "@/lib/use-muted-seats";
 import { play, setMusicOn, setMuted, useMuted, useMusicOn, type SoundName } from "@/lib/sound";
-import { setCategoryMuted, setCategoryVolume, setMasterVolume, getSeaSounds, setSeaSounds, subscribeSoundMix, useSoundMix, type SoundCategory } from "@/lib/sound-settings";
+import { useSeaSounds, setSeaSounds } from "@/lib/sea-setting";
+import { setCategoryMuted, setCategoryVolume, setMasterVolume, useSoundMix, type SoundCategory } from "@/lib/sound-settings";
 
 type Id = "master" | SoundCategory;
 const ROWS: { id: Id; name: string; sample: SoundName }[] = [
@@ -56,7 +57,7 @@ export function SoundSheet({ onBack, onClose }: { onBack: () => void; onClose: (
   const mix = useSoundMix();
   const muted = useMuted();
   const music = useMusicOn();
-  const sea = useSyncExternalStore(subscribeSoundMix, getSeaSounds, () => true);
+  const sea = useSeaSounds();
   const seats = useGame((s) => s.seats);
   const seatId = useGame((s) => s.seatId);
   const code = useGame((s) => s.code);

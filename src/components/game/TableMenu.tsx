@@ -39,7 +39,7 @@ export function TableMenu() {
   const gameLog = useGame((s) => s.gameLog);
   const [open, setOpen] = useState(false);
   const [asking, setAsking] = useState(false);
-  const [panel, setPanel] = useState<"menu" | "sound">("menu");
+  const [sound, setSound] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const sheet = useRef<HTMLDivElement>(null);
   const leaveRef = useRef<HTMLButtonElement>(null);
@@ -55,8 +55,7 @@ export function TableMenu() {
     setAsking(false);
     if (refocus) trigger.current?.focus();
   };
-  const sound = panel === "sound";
-  const back = () => setPanel("menu");
+  const back = () => setSound(false);
   const stay = () => {
     refocusLeave.current = true;
     setAsking(false);
@@ -65,7 +64,7 @@ export function TableMenu() {
   // The chunk is fetched as the menu opens, so Sound shows at once when it is pressed.
   useEffect(() => {
     if (!open) {
-      setPanel("menu");
+      setSound(false);
       return;
     }
     void soundSheet.prefetch();
@@ -90,17 +89,17 @@ export function TableMenu() {
       e.stopPropagation();
       play("ui_back");
       if (asking) stay();
-      else if (panel === "sound") back();
+      else if (sound) back();
       else close(true);
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [open, asking, panel]);
+  }, [open, asking, sound]);
 
   // The Mute players list in the chat (Chat.tsx) points here.
   useEffect(() => {
     const show = () => {
-      setPanel("sound");
+      setSound(true);
       setOpen(true);
     };
     window.addEventListener(OPEN_SOUND_EVENT, show);
@@ -144,7 +143,7 @@ export function TableMenu() {
           id="table-menu"
           role="dialog"
           aria-label={sound ? "Sound" : "Table menu"}
-          data-testid={sound ? "sound-menu" : "table-menu"}
+          data-testid="table-menu"
           className={cn(
             "absolute right-0 top-full z-20 mt-2 flex max-h-[calc(100dvh-5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex-col",
             sound ? "ss" : "w-64 overflow-y-auto rounded-sheet bg-surface p-2 shadow-[0_8px_32px_rgb(28_25_21_/_0.18)]",
@@ -155,7 +154,7 @@ export function TableMenu() {
           }}
         >
           {sound ? (
-            <LazyBoundary failed={<p className="px-3 py-2 text-body">Sound did not load. Close the menu and try again.</p>}>
+            <LazyBoundary failed={<p className="p-2">Sound did not load.</p>}>
               <SoundSheet onBack={back} onClose={() => close(true)} />
             </LazyBoundary>
           ) : null}
@@ -209,12 +208,12 @@ export function TableMenu() {
                 <Hammer className={ICON} /> Costs
               </Button>
               {/* #669: one row for every sound setting; the levels live in the Sound panel. */}
-              <Button variant="ghost" className={ROW} data-testid="sound-entry" onClick={() => setPanel("sound")}>
+              <Button variant="ghost" className={ROW} data-testid="sound-entry" onClick={() => setSound(true)}>
                 {muted ? <VolumeX className={ICON} /> : <Volume2 className={ICON} />}
                 Sound
                 <span className="ml-auto flex items-center gap-1 text-caption text-muted">
                   {muted ? "Off" : `${Math.round(master * 100)}%`}
-                  <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                  <span aria-hidden="true" className="text-body">›</span>
                 </span>
               </Button>
               {haptics.row}

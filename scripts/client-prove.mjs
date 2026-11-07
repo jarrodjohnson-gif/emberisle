@@ -571,8 +571,8 @@ try {
   // Back on, through the table menu's Sound panel this time (#442 moved the in-game toggle there, #669 into the panel), so both toggles are exercised.
   await page.getByRole("button", { name: "Table menu" }).click();
   await page.getByTestId("table-menu").getByTestId("sound-entry").click();
-  await page.getByTestId("sound-menu").getByTestId("sound-mute-master").click();
-  const menuSays = await page.getByTestId("sound-menu").getByTestId("sound-mute-master").getAttribute("aria-label");
+  await page.getByTestId("sound-sheet").getByTestId("sound-mute-master").click();
+  const menuSays = await page.getByTestId("sound-sheet").getByTestId("sound-mute-master").getAttribute("aria-label");
   const cleared = await page.evaluate(() => localStorage.getItem("emberisle-muted"));
   const mute = { wasOn, stored, stillOff, mutedPlays, menuSays, cleared };
   console.log("mute:", JSON.stringify(mute));

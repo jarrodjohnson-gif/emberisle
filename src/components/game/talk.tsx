@@ -8,7 +8,7 @@ import { useGame } from "@/lib/game/store";
 import { chunk } from "@/lib/lazy";
 import type { Reaction } from "@/lib/net/table";
 import { play } from "@/lib/sound";
-export { useMutedSeats } from "@/lib/muted-seats";
+export { useMutedSeats } from "@/lib/use-muted-seats";
 import { cn } from "@/lib/utils";
 
 const reactions = chunk(() => import("@/components/game/Reactions"));
