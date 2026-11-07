@@ -179,6 +179,7 @@
     "stage-prove": "node scripts/stage-prove.mjs",
     "turn-gain-prove": "node scripts/turn-gain-prove.mjs",
     "your-turn-stay-prove": "node scripts/your-turn-stay-prove.mjs",
+    "desktop-dock-prove": "node scripts/desktop-dock-prove.mjs",
     "takeover-prove": "node --import ./server/register.mjs server/takeover-prove.mjs",
     "server-needs-prove": "node --import ./server/register.mjs server/needs-prove.mjs",
     "jelly-ocean-prove": "node scripts/jelly-ocean-prove.mjs",

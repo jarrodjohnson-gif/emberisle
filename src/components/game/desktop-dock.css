@@ -1,0 +1,54 @@
+/* #1429: the desktop dock (docs/design/desktop-dock-1274). 8 + 80 + 8 + 44 + 8 + 20 + 8 = 176 tall; 8 + 472 + 8 + 176 + 8 = 672
+   wide. Centred by Hud.tsx, 24 px off the bottom edge. The edge is a 1 px ring, not a border, so it takes no room from the slots. */
+.desk-dock {
+  position: relative; box-sizing: border-box; width: 672px; height: 176px; padding: 8px;
+  display: grid; grid-template-columns: 472px 176px; grid-template-rows: 80px 44px 20px; gap: 8px;
+  background: var(--table); color: var(--ink); border-radius: var(--radius-chip);
+  box-shadow: 0 0 0 1px var(--control-line), var(--shadow-sheet);
+}
+
+/* The hand: the game's five 88 x 80 cards, 8 px apart, flush in their slot. The +N tab rises above the dock's top edge. */
+.desk-hand { grid-column: 1; grid-row: 1; min-width: 0; }
+.desk-hand .goods-tray { --goods-lift: 4px; gap: 8px; padding: 0; justify-content: flex-start; }
+
+/* The turn line over one 44 px slot, the dice. An offer's card covers both with its line and its answers. */
+.desk-side { position: relative; grid-column: 2; grid-row: 1; display: grid; grid-template-rows: 32px 44px; gap: 4px; min-width: 0; }
+.desk-side > .turn-instruction {
+  box-sizing: border-box; height: 32px; min-height: 0; padding: 6px 12px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--ground);
+}
+.desk-side > .turn-instruction.border-l-4 { padding-left: 8px; }
+.desk-side > .turn-instruction-move { background: var(--ink); }
+.desk-aside { display: flex; align-items: center; min-width: 0; }
+.desk-aside [data-testid="dice-row"] { align-self: center; color: var(--table-muted); }
+
+.desk-side > .trade-dock {
+  position: absolute; inset: 0; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 32px 44px; gap: 4px;
+  padding: 0; border: 0; border-radius: 0; box-shadow: none; background: var(--table);
+}
+.desk-side > .trade-dock .trade-summary {
+  grid-column: 1; grid-row: 1; box-sizing: border-box; height: 32px; min-height: 0; padding: 0 8px; gap: 4px;
+  background: var(--ground); border-radius: var(--radius-control); border-left: 4px solid transparent;
+}
+.trade-short { display: flex; min-width: 0; align-items: center; gap: 8px; font-size: 15px; line-height: 20px; font-weight: 500; }
+.trade-short > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trade-short > span:first-child:not(:last-child) { box-shadow: 0 0 0 1.5px var(--ink); }
+.desk-side > .trade-dock .trade-details { display: none; }
+.desk-side > .trade-dock .trade-answers { grid-column: 1; grid-row: 2; min-width: 0; gap: 8px; }
+.desk-side > .trade-result { position: absolute; inset: 0 0 auto; z-index: 1; box-sizing: border-box; height: 32px; white-space: nowrap; overflow: hidden; background: var(--ground); }
+
+/* Seven equal controls, 8 px apart: (656 - 6 x 8) / 7 = 86.9 px each. A tile is its name over its chips or its reason. */
+.desk-controls { grid-column: 1 / 3; grid-row: 2; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.desk-controls > button { width: 100%; min-width: 0; height: 44px; padding: 0 4px; gap: 6px; font-size: 14px; white-space: nowrap; }
+.desk-controls > .build-tile, .desk-controls > .desk-tile { flex-direction: column; gap: 6px; padding-top: 0; padding-bottom: 0; }
+.desk-controls > .build-tile > span:first-child, .desk-name { font-size: 12px; line-height: 14px; font-weight: 500; }
+.desk-why { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--table-muted); }
+/* The ready check hangs off the tile's corner, so it never covers a name that fills the 87 px tile ("Buy fortune"). */
+.desk-controls .build-ready-mark { top: -6px; right: -6px; }
+.desk-controls > button[aria-disabled="true"] { color: var(--table-muted); cursor: not-allowed; }
+.desk-controls > button[aria-disabled="true"]:active { transform: none; }
+
+/* The meta line: the seat's numbers, the last log line and the deck. */
+.desk-meta { grid-column: 1 / 3; grid-row: 3; min-width: 0; }
+.desk-meta > div { gap: 8px; }
+.desk-meta [data-testid="log-line"] { background: var(--ground); }

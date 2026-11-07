@@ -26,7 +26,7 @@ function declinedLine(names: string[]) {
 }
 
 export function TradeToast() {
-  const { phone } = useViewport();
+  const { phone, dock: inDock } = useViewport();
   const chatOpen = useGame((s) => s.chatOpen);
   const aboveChat = phone && chatOpen;
   const offer = useGame((s) => s.offer);
@@ -135,8 +135,15 @@ export function TradeToast() {
       : offerLine(asker ? null : offer.fromName, offer.give, offer.want);
     const tick = (
       <>
-        <div className="trade-summary flex min-w-0 items-center justify-between gap-2">
-          <p id={lineId} className="text-sm font-medium leading-5" title={line} data-testid={compact ? "trade-demand" : undefined}>
+        <div className="trade-summary flex min-w-0 items-center justify-between gap-2" style={inDock && !asker ? { borderLeftColor: fromColor } : undefined}>
+          {/* #1429: the desktop dock's 176 px turn line shows who offers, as drawn; the full line stays for the name and the tooltip. */}
+          {inDock ? (
+            <span aria-hidden="true" className="trade-short" title={line}>
+              {asker ? null : <SeatDot color={fromColor} className="size-3" />}
+              <span>{asker ? "You offer" : `${offer.fromName} offers`}</span>
+            </span>
+          ) : null}
+          <p id={lineId} className={inDock ? "sr-only" : "text-sm font-medium leading-5"} title={line} data-testid={compact ? "trade-demand" : undefined}>
             {!asker || compact ? <SeatDot color={fromColor} className="mr-1.5 size-3 align-[-1px]" /> : null}
             {line}
           </p>

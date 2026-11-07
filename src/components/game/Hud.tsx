@@ -16,6 +16,7 @@ import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice, RollMoment } from "@/components/game/Dice";
 import { TableMenu } from "@/components/game/TableMenu";
 import { HandDock } from "@/components/game/Hand";
+import { DesktopDock } from "@/components/game/DesktopDock";
 import { PlaceChip } from "@/components/game/PlaceChip";
 import { SheetsFailed } from "@/components/game/SheetsFailed";
 import { TrayFailed } from "@/components/game/TrayFailed";
@@ -162,7 +163,7 @@ export function Hud() {
   const openMenu = useGame((s) => s.openMenu);
   // A watcher (docs/design/spectator.md): `me` below falls back to seat 0, so its hand bar is hidden by this flag, never by `localId`.
   const spectator = useGame((s) => s.spectator);
-  const { phone, portrait } = useViewport();
+  const { phone, portrait, dock } = useViewport();
   // #422: a sideways phone stacks the HUD in a full-height left column, so the island fills the height beside it.
   const column = phone && !portrait;
   // #492: the sheets chunk is asked for again on each open and at the win (the boundary's key). When the ask made at the
@@ -258,24 +259,29 @@ export function Hud() {
   const playableNow = mine && !spectator && !state.playedCard ? (["knight", "road", "plenty", "monopoly"] as const).reduce((n, k) => n + Math.max(0, playable(me, k)), 0) : 0;
   // Owner decision (#829, provisional): the label itself says a fortune can be played now.
   const fortunesLabel = playableNow > 0 ? "Play fortune" : "Fortunes";
-  const fortunes = showFortunes ? (
+  // #1429 (DECISIONS 2026-10-22): in the desktop dock the button never leaves its place; with none held it is greyed with the reason.
+  const noFortune = !showFortunes;
+  const fortunes = showFortunes || dock ? (
     <Button
       ref={fortunesButton}
       size="sm"
       data-testid="fortunes-button"
       data-deck-left={deckLeft}
       aria-label={`${fortunesLabel}, ${heldNow} held`}
-      className="relative h-11 min-w-11 px-3 text-sm tabular-nums"
+      className={cn("relative h-11 min-w-11 px-3 text-sm tabular-nums", dock && "desk-tile")}
       aria-pressed={fortunesOpen || fortuneArmed}
       aria-expanded={fortunesOpen}
+      aria-disabled={noFortune || undefined}
+      aria-description={noFortune ? "No fortunes held" : undefined}
       variant={fortunesOpen || fortuneArmed ? "primary" : "secondary"}
       onClick={() => {
+        if (noFortune) return;
         if (fortuneArmed) return setBuildMode("none");
         setFortunesOpen((o) => !o);
       }}
     >
       {playableNow > 0 && <span key={cueKey} ref={cueRing} onAnimationStart={() => (glowed.current = cueKey)} aria-hidden="true" data-testid="fortune-cue-glow" className="fortune-cue-glow" />}
-      {fortunesLabel} · {heldNow}
+      {dock ? <><span className="desk-name">{fortunesLabel}</span><span className="desk-why">{heldNow} held</span></> : <>{fortunesLabel} · {heldNow}</>}
     </Button>
   ) : null;
   // Hotseat has no "you": every seat is named. The turn banner sits out once the isle has a ruler (the pill says who).
@@ -309,20 +315,165 @@ export function Hud() {
   const canBuy = !spectator && PRICES.some((k) => buildStatus(state, me, k).ready);
   const endPrimary = !canBuy && buildMode === "none";
 
+  // #1429: the dock's turn line is 176 px wide, so the main phase reads "Your turn" or "Dune's turn" as drawn; a longer line
+  // is cut with "…", and the whole of it is the tooltip.
+  const lineText = dock && state.phase === "main" && !armed ? (yours ? "Your turn" : `${subjectPlayer.name}'s turn`) : turnText;
   const instruction = state.phase === "over" ? null : (
-    <p key={`turn-${state.current}`} data-testid="turn-banner"
+    <p key={`turn-${state.current}`} data-testid="turn-banner" title={dock ? turnText : undefined}
       style={{ borderLeftColor: yours ? undefined : subjectPlayer.color }}
       className={cn("turn-instruction rounded-control px-3 py-1.5 text-[15px] font-medium leading-5", yours ? "turn-instruction-own" : "border-l-4", !waiting && !choosing && (state.phase === "robber" || buildMode === "knight") && "turn-instruction-move")}
-    >{turnText}</p>
+    >{lineText}</p>
   );
 
+  // Each build says whether it can happen now: the cost chips dim what the hand is short of, a build with nothing to build
+  // on or none left says so, and one the hand can pay for with a spot waiting wears the dot. #1429: the desktop dock shows the
+  // four on every turn and phase; off `live` (not this seat's main phase) each is greyed with the reason and does nothing.
+  const idleWhy = spectator ? "Watching" : !mine ? "Not your turn" : /^roll/.test(state.phase) ? "Roll first" : "Not now";
+  const buildTiles = (live: boolean) => (
+    [
+      ["path", "path", Route, "Path"],
+      ["outpost", "outpost", Home, "Outpost"],
+      ["stronghold", "stronghold", Landmark, "Stronghold"],
+      ["card", null, ScrollText, dock ? "Buy fortune" : "Fortune"],
+    ] as const
+  ).map(([kind, arm, Icon, label], at) => {
+    // A watcher's `me` has no `resources` online (docs/design/spectator.md), so an idle tile is never measured.
+    const { short, missing, why, ready } = live ? buildStatus(state, me, kind) : { short: {}, missing: 0, why: null, ready: false };
+    const blocked = !live || !ready || spectator;
+    const status = live ? (why ?? (ready ? "Ready" : needLine(short))) : idleWhy;
+    const shRefuse = kind === "stronghold" && why ? (why === "None left" ? "No strongholds left" : "No homes to upgrade") : null;
+    return (
+      <Button
+        key={kind}
+        size="sm"
+        variant={buildMode === arm ? "primary" : "secondary"}
+        aria-label={kind === "card" ? `${label}, ${deckLeft} left in deck` : label}
+        data-testid={`build-${kind}`}
+        data-build={!live || why ? "blocked" : ready ? "ready" : "short"}
+        data-build-state={!live ? "idle" : why ? "nospot" : ready ? "ready" : "missing"}
+        // A 44 px two-line tile, the piece over its chips (docs/design/polish.md: actions as tiles with their amount),
+        // so the row keeps the lines it had before the chips: one at 1280x720, three builds a line on a phone.
+        className={cn("build-tile relative h-[52px] min-w-11 flex-col px-1 py-1", kind === "card" && !why ? "gap-0" : "gap-1", NOT_NOW, live && pulse.includes(kind) && "build-ready")}
+        onAnimationEnd={(e) => e.animationName === "build-ready" && setPulse((p) => p.filter((k) => k !== kind))}
+        aria-pressed={arm ? buildMode === arm : undefined}
+        aria-disabled={blocked || undefined}
+        title={priceLabel(kind)}
+        aria-description={`${priceLabel(kind)} · ${status}`}
+        onClick={() => {
+          if (!live) return;
+          // aria-disabled keeps the button focusable, so the click itself must refuse (but may still disarm).
+          // A tap the hand cannot pay for says what is missing (a spot waiting, goods short) instead of doing nothing.
+          if (!spectator && buildMode !== arm) {
+            const refuse = shRefuse || (!why && missing ? needLine(short) : null);
+            if (refuse) {
+              setHint({ kind });
+              // The chip is the one line on screen; the error cue and the screen reader still get the full sentence.
+              return void refuseQuietly(refuse);
+            }
+          }
+          if (!arm) return void (blocked || dispatch({ type: "buyCard" }));
+          if (blocked && buildMode !== arm) return;
+          setBuildMode(buildMode === arm ? "none" : arm);
+        }}
+      >
+        <span className="flex items-center gap-1 text-caption leading-4">
+          <Icon className="build-icon size-3.5" /> {phone && kind === "stronghold" ? "Upgrade" : label}{live && ready && buildMode !== arm ? READY_DOT : null}
+        </span>
+        {/* The chips and the reason are aria-hidden: the name stays the piece, the description says the rest. Missing
+            goods ring what the hand lacks and say how many short. */}
+        {why ? <span aria-hidden className="text-caption text-muted">{kind === "stronghold" && why === "No spot" ? "No homes" : why}</span> : <CostChips kind={kind} hand={missing ? me.resources : undefined} />}
+        {kind === "card" && !why && !dock ? <span aria-hidden data-testid="deck-left" className="text-[10px] leading-[10px] tabular-nums text-muted">{deckLeft} left</span> : null}
+        {/* The ends of the row hang the chip inward, so it stays on a phone's screen. Last child: the tile's own
+            styles address its first span. */}
+        {hint?.kind === kind ? (
+          <span
+            aria-hidden
+            data-testid={`build-hint-${kind}`}
+            className={cn(
+              "pointer-events-none absolute bottom-full z-20 mb-1 whitespace-nowrap rounded-[12px] border border-white/50 bg-glass px-2 py-1 text-xs font-medium text-zinc-900 backdrop-blur-md",
+              at === 0 ? "left-0" : at === 3 ? "right-0" : "left-1/2 -translate-x-1/2",
+            )}
+          >
+            {shRefuse || hintLine(short)}
+          </span>
+        ) : null}
+      </Button>
+    );
+  });
+
+  // #1429: End turn is greyed off this seat's main phase, where only the desktop dock shows it.
+  const live = state.phase === "main" && mine && !spectator;
+  const endButton = (
+    <Button size="sm" variant={live && endPrimary ? "primary" : "secondary"} className={phone ? "h-11" : undefined} aria-disabled={!live || undefined} aria-description={live ? undefined : idleWhy} onClick={() => live && dispatch({ type: "endTurn" })}>
+      End turn
+    </Button>
+  );
+  const rollButton = (
+    <Button size="lg" className="flex-1" data-after-fortune onClick={() => dispatch({ type: "roll" })}>
+      <Dices className="size-5" /> Roll
+    </Button>
+  );
   const endRow = (
     <div className={cn("flex *:self-center", column ? "end-footer sticky z-10 justify-between gap-1 rounded-control bg-surface p-1" : "tray-end ml-auto gap-2")}>
       {/* The 260 px column has room for End turn and the dice only with the faces shrunk (they are not targets); Trade and My fortunes share the row above. */}
       {column ? <>{fortunes ? null : <TradeButton />}<div className="[&>div]:gap-1 [&_[data-testid=die]]:size-6 [&_[data-testid=die]]:p-0.5 [&_[data-pip]]:size-1">{dice}</div></> : dice}
-      <Button size="sm" variant={endPrimary ? "primary" : "secondary"} className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
-        End turn
-      </Button>
+      {endButton}
+    </div>
+  );
+
+  const winnerLine = winner || error ? (
+    <p className="rounded-[16px] border border-white/50 bg-glass px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
+      {winner ? <span id="hud-winner">{`${winner.name} wins with ${totalVP(state, winner.id)} points.`}</span> : null}
+      {winner && sheetsLost === sheetsKey ? <WinFailed /> : null}
+      {error ? <span className={cn("block text-orange-700", winner && "mt-1")}>{error}</span> : null}
+    </p>
+  ) : null;
+  const discardBar = discarder ? (
+    <LazyBoundary
+      key={`discard-${discarder}`}
+      retryKey={String(lossesRetry)}
+      failed={
+        <LossesFailed
+          message="Discard choices could not load."
+          onRetry={() => setLossesRetry((r) => r + 1)}
+        />
+      }
+    >
+      <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} />
+    </LazyBoundary>
+  ) : null;
+  const takeBar = choosing ? (
+    <LazyBoundary
+      retryKey={String(lossesRetry)}
+      failed={
+        <LossesFailed
+          message="Victim choices could not load."
+          onRetry={() => setLossesRetry((r) => r + 1)}
+        />
+      }
+    >
+      <TakeFromBar />
+    </LazyBoundary>
+  ) : null;
+  // #643: the seat's numbers share the log line's row, so the tray keeps its height (the declared hole holds). They ride in
+  // the moments chunk (off the first load: there are none before the first outpost); if it cannot load, the row is the log
+  // line alone. #1429: the dock keeps the row through a trade, whose card covers the turn line instead.
+  const metaRow = (keep: boolean) => (
+    <div className={cn(tradeVisible && !keep ? "hidden" : "flex", "h-5 shrink-0 items-center gap-1")}>
+      {spectator ? null : (
+        <LazyBoundary failed={null}>
+          <MyNumbers state={state} playerId={me.id} />
+        </LazyBoundary>
+      )}
+      <p
+        hidden={tradeVisible && !keep}
+        data-testid="log-line"
+        className="table-log block h-5 min-w-0 flex-1 overflow-hidden truncate rounded-control px-3 text-xs leading-5"
+      >
+        {gameLog.at(-1)?.text}
+      </p>
+      {/* #776: the shared draw deck is public to every seat and watcher, so its count sits here, off the build row. */}
+      <span data-testid="deck-count" data-deck-left={deckLeft} title={`${deckLeft} fortunes left in the deck`} className="shrink-0 px-2 text-xs leading-5 tabular-nums">Deck {deckLeft}</span>
     </div>
   );
 
@@ -335,7 +486,7 @@ export function Hud() {
           a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
       <header className={cn("hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30", phone ? "pb-0" : "pb-3")}>
         <div className="pointer-events-auto flex items-center justify-end gap-1">
-          {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : <div className="mr-auto shrink-0">{instruction}</div>}
+          {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : dock ? null : <div className="mr-auto shrink-0">{instruction}</div>}
           {phone ? null : <div ref={setTimerHeader} className="mx-2 min-w-0 flex-1 empty:hidden" />}
           {spectator && !(phone && portrait) ? (
             <span data-testid="watching-badge" className="flex h-11 items-center rounded-chip bg-glass px-3 text-caption text-fg backdrop-blur-md">
@@ -388,8 +539,9 @@ export function Hud() {
         <TurnMoment />
       </LazyBoundary>
 
-      <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 px-safe pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className={cn("relative", column ? "w-[260px] max-w-[42vw]" : "mx-auto max-w-[720px]")}>
+      {/* #1429: the desktop dock sits 24 px off the bottom edge, centred (the owner's desktop margin, 2026-11-03). */}
+      <div className={cn("pointer-events-none absolute bottom-0 inset-x-0 z-10 px-safe pt-3", dock ? "pb-[max(24px,env(safe-area-inset-bottom))]" : "pb-[max(0.75rem,env(safe-area-inset-bottom))]")}>
+        <div className={cn("relative", column ? "w-[260px] max-w-[42vw]" : dock ? "mx-auto w-[672px]" : "mx-auto max-w-[720px]")}>
           {/* #459: floats above the stack, so it coming and going never reflows the turn banner. */}
           {banner && !(tradeOutcome && banner.endsWith("'s trade")) ? (
             <p
@@ -410,7 +562,26 @@ export function Hud() {
               className={cn("absolute inset-x-0", column ? "left-full top-0 ml-3 w-max max-w-[calc(100vw-21.5rem-max(0.75rem,env(safe-area-inset-left))-max(0.75rem,env(safe-area-inset-right)))]" : "bottom-full mb-2")}
             />
           </LazyBoundary>
-          <div
+          {dock ? (
+            <>
+              {/* What comes and goes floats above the dock, under the banner, so no slot in the dock ever moves. */}
+              <div className="pointer-events-auto mb-2 flex flex-col gap-1 empty:hidden">
+                <PlaceChip column />
+                <TurnCountdown header={timerHeader} />
+                {winnerLine}
+                {discardBar}
+                {takeBar}
+              </div>
+              <DesktopDock
+                hand={spectator ? null : <HandDock me={me} phase={state.phase} />}
+                turn={instruction}
+                aside={dice}
+                trade={tradeVisible ? <LazyBoundary failed={null}><TradeToast /></LazyBoundary> : null}
+                controls={<>{buildTiles(live)}<TradeButton idle={live ? undefined : idleWhy} />{fortunes}{mine && !spectator && /^roll/.test(state.phase) ? rollButton : endButton}</>}
+                meta={metaRow(true)}
+              />
+            </>
+          ) : <div
             ref={stackRef}
             data-hud-stack
             className={cn(
@@ -427,118 +598,17 @@ export function Hud() {
             <PlaceChip column />
             {phone ? instruction : null}
             <TurnCountdown header={phone ? null : timerHeader} />
-            {winner || error ? (
-              <p className="rounded-[16px] border border-white/50 bg-glass px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
-                {winner ? <span id="hud-winner">{`${winner.name} wins with ${totalVP(state, winner.id)} points.`}</span> : null}
-                {winner && sheetsLost === sheetsKey ? <WinFailed /> : null}
-                {error ? <span className={cn("block text-orange-700", winner && "mt-1")}>{error}</span> : null}
-              </p>
-            ) : null}
+            {winnerLine}
 
             {spectator ? null : <HandDock me={me} phase={state.phase} />}
 
-            {discarder ? (
-              <LazyBoundary
-                key={`discard-${discarder}`}
-                retryKey={String(lossesRetry)}
-                failed={
-                  <LossesFailed
-                    message="Discard choices could not load."
-                    onRetry={() => setLossesRetry((r) => r + 1)}
-                  />
-                }
-              >
-                <DiscardBar key={`discard-${discarder}`} id={discarder} n={state.discardNeeded[discarder]!} />
-              </LazyBoundary>
-            ) : null}
-            {choosing ? (
-              <LazyBoundary
-                retryKey={String(lossesRetry)}
-                failed={
-                  <LossesFailed
-                    message="Victim choices could not load."
-                    onRetry={() => setLossesRetry((r) => r + 1)}
-                  />
-                }
-              >
-                <TakeFromBar />
-              </LazyBoundary>
-            ) : null}
+            {discardBar}
+            {takeBar}
 
             {state.phase === "main" && mine ? (
               <div className="hud-actions">
                 <div className="build-grid">
-                {/* Each build says whether it can happen now: the cost chips dim what the hand is short of, a build with
-                    nothing to build on or none left says so, and one the hand can pay for with a spot waiting wears the dot. */}
-                {(
-                  [
-                    ["path", "path", Route, "Path"],
-                    ["outpost", "outpost", Home, "Outpost"],
-                    ["stronghold", "stronghold", Landmark, "Stronghold"],
-                    ["card", null, ScrollText, "Fortune"],
-                  ] as const
-                ).map(([kind, arm, Icon, label], at) => {
-                  const { short, missing, why, ready } = buildStatus(state, me, kind);
-                  const blocked = !ready || spectator;
-                  const status = why ?? (ready ? "Ready" : needLine(short));
-                  const shRefuse = kind === "stronghold" && why ? (why === "None left" ? "No strongholds left" : "No homes to upgrade") : null;
-                  return (
-                    <Button
-                      key={kind}
-                      size="sm"
-                      variant={buildMode === arm ? "primary" : "secondary"}
-                      aria-label={kind === "card" ? `${label}, ${deckLeft} left in deck` : label}
-                      data-testid={`build-${kind}`}
-                      data-build={why ? "blocked" : ready ? "ready" : "short"}
-                      data-build-state={why ? "nospot" : ready ? "ready" : "missing"}
-                      // A 44 px two-line tile, the piece over its chips (docs/design/polish.md: actions as tiles with their amount),
-                      // so the row keeps the lines it had before the chips: one at 1280x720, three builds a line on a phone.
-                      className={cn("build-tile relative h-[52px] min-w-11 flex-col px-1 py-1", kind === "card" && !why ? "gap-0" : "gap-1", NOT_NOW, pulse.includes(kind) && "build-ready")}
-                      onAnimationEnd={(e) => e.animationName === "build-ready" && setPulse((p) => p.filter((k) => k !== kind))}
-                      aria-pressed={arm ? buildMode === arm : undefined}
-                      aria-disabled={blocked || undefined}
-                      title={priceLabel(kind)}
-                      aria-description={`${priceLabel(kind)} · ${status}`}
-                      onClick={() => {
-                        // aria-disabled keeps the button focusable, so the click itself must refuse (but may still disarm).
-                        // A tap the hand cannot pay for says what is missing (a spot waiting, goods short) instead of doing nothing.
-                        if (!spectator && buildMode !== arm) {
-                          const refuse = shRefuse || (!why && missing ? needLine(short) : null);
-                          if (refuse) {
-                            setHint({ kind });
-                            // The chip is the one line on screen; the error cue and the screen reader still get the full sentence.
-                            return void refuseQuietly(refuse);
-                          }
-                        }
-                        if (!arm) return void (blocked || dispatch({ type: "buyCard" }));
-                        if (blocked && buildMode !== arm) return;
-                        setBuildMode(buildMode === arm ? "none" : arm);
-                      }}
-                    >
-                      <span className="flex items-center gap-1 text-caption leading-4">
-                        <Icon className="build-icon size-3.5" /> {phone && kind === "stronghold" ? "Upgrade" : label}{ready && buildMode !== arm ? READY_DOT : null}
-                      </span>
-                      {/* The chips and the reason are aria-hidden: the name stays the piece, the description says the rest. Missing
-                          goods ring what the hand lacks and say how many short. */}
-                      {why ? <span aria-hidden className="text-caption text-muted">{kind === "stronghold" && why === "No spot" ? "No homes" : why}</span> : <CostChips kind={kind} hand={missing ? me.resources : undefined} />}
-                      {kind === "card" && !why ? <span aria-hidden data-testid="deck-left" className="text-[10px] leading-[10px] tabular-nums text-muted">{deckLeft} left</span> : null}
-                      {/* The ends of the row hang the chip inward, so it stays on a phone's screen. Last child: the tile's own
-                          styles address its first span. */}
-                      {hint?.kind === kind ? (
-                        <span
-                          aria-hidden
-                          data-testid={`build-hint-${kind}`}
-                          className={cn(
-                            "pointer-events-none absolute bottom-full z-20 mb-1 whitespace-nowrap rounded-[12px] border border-white/50 bg-glass px-2 py-1 text-xs font-medium text-zinc-900 backdrop-blur-md",
-                            at === 0 ? "left-0" : at === 3 ? "right-0" : "left-1/2 -translate-x-1/2",
-                          )}
-                        >
-                          {shRefuse || hintLine(short)}
-                        </span>
-                      ) : null}
-                    </Button>
-                  );
-                })}
+                {buildTiles(true)}
                 </div>
                 {!column || fortunes ? <div data-fortunes={fortunes ? "" : undefined} className="action-utilities flex items-center gap-1">
                   <TradeButton />
@@ -553,9 +623,7 @@ export function Hud() {
                 <div className="flex flex-wrap gap-2 *:self-center">
                   {dice}
                   {fortunes}
-                  <Button size="lg" className="flex-1" data-after-fortune onClick={() => dispatch({ type: "roll" })}>
-                    <Dices className="size-5" /> Roll
-                  </Button>
+                  {rollButton}
                 </div>
               </div>
             ) : null}
@@ -564,32 +632,14 @@ export function Hud() {
               fortunes || dice ? <div className="flex flex-wrap items-center gap-2">{fortunes}{dice}</div> : null
             ) : diceInBar ? null : dice}
 
-            {/* #643: the seat's numbers share the log line's row, so the tray keeps its height (the declared hole holds). They
-                ride in the moments chunk (off the first load: there are none before the first outpost); if it cannot load,
-                the row is the log line alone. */}
-            <div className={cn(tradeVisible ? "hidden" : "flex", "h-5 shrink-0 items-center gap-1")}>
-              {spectator ? null : (
-                <LazyBoundary failed={null}>
-                  <MyNumbers state={state} playerId={me.id} />
-                </LazyBoundary>
-              )}
-              <p
-                hidden={tradeVisible}
-                data-testid="log-line"
-                className="table-log block h-5 min-w-0 flex-1 overflow-hidden truncate rounded-control px-3 text-xs leading-5"
-              >
-                {gameLog.at(-1)?.text}
-              </p>
-              {/* #776: the shared draw deck is public to every seat and watcher, so its count sits here, off the build row. */}
-              <span data-testid="deck-count" data-deck-left={deckLeft} title={`${deckLeft} fortunes left in the deck`} className="shrink-0 px-2 text-xs leading-5 tabular-nums">Deck {deckLeft}</span>
-            </div>
+            {metaRow(false)}
             {pinEnd ? endRow : null}
             {tradeVisible ? (
               <LazyBoundary failed={null}>
                 <TradeToast />
               </LazyBoundary>
             ) : null}
-          </div>
+          </div>}
           {/* #423: the tray rises over the stack from its bottom edge and may cover the island, like a sheet, but never the
               header or the portrait seat strip; it is inside the sheets chunk, which the table prefetched on idle (#488). */}
           {/* #511: in the column the tray's round top corners must not show the banner or the stack, so the column clears behind it. */}
