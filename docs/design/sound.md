@@ -51,7 +51,7 @@ the file it plays is in `public/audio/`.
 | Confirm (Ready, Start) | `button.tsx:37` | `ui_click` | the presser | missing | `polish.md:212` lists a separate `ui_confirm`. Not added (Decision 5). |
 | Error (illegal move, bad trade) | `store.ts:592`, `:668`, `:868`, `:880`, `:1062` (635:692, :768, :989, :1001, :1189) | `ui_error` → `error_001.wav` | the seat that erred | has | |
 | Sea tap | `renderer:1132` (635:1116) | `plop` → `plop.wav` (synth) | the tapper | has | |
-| Ambience (wind, sea) | none (a new toggle beside `setMuted`, `sound.ts:58`) | none | everyone who turns it on | missing | Allowed as an option, off by default (Decision 2). |
+| Ambience (wind, sea) | none (a toggle in the Sound panel, PR #1396) | none | everyone, on by default | missing | Very quiet and on by default (Decisions 2 and 7). |
 
 ## 2. Rules
 
@@ -60,7 +60,7 @@ the file it plays is in `public/audio/`.
 - Core table sounds are dry and woody. Meme clips live on the soundboard (and `robbed_fah`) only (Decision 1).
 - There is no in-game music loop. The only music is the stings already on #635: `game_start`, `match_point`, `game_lose`,
   `end_music`, and the win sting once Jarrod picks it (Decisions 2 and 4).
-- Ambience (sea and wind) is optional, very quiet, and **off by default** (Decision 2).
+- Ambience (sea and wind) is optional, very quiet, and **on by default** (Decisions 2 and 7). A toggle in the Sound panel turns it off.
 - The volume tiers:
 
   | Tier | Volume | Clips |
@@ -108,7 +108,7 @@ clip fits, Jarrod's own clip comes first.
 | `your_turn` (`turn_`), Decision 5 | A cue that stands out from the knocks when your turn starts, about 300–1000 ms, replacing the `chip_gain` click | **Jarrod's own clip**; Kenney Interface Sounds (CC0, `confirmation_002`); synth: a sine fifth (660 then 990 Hz) with a slow decay |
 | `timer_tick` (`timer_`), Decision 5 | A quiet tick, one a second, for the last seconds of your turn (proposed: the last 10 s) | Kenney Interface Sounds (CC0, `tick_*`); Freesound, filtered to "Creative Commons 0", search "clock tick wood"; synth: a 1.2 kHz sine tick, 30 ms. **Jarrod's own clip** works too, as one last-second sting. |
 | `win` (`win_`), Decision 4 | The winner's sting, the match for `game_lose`; Jarrod picks it | **Jarrod's own clip** (his pick, per Decision 4); Kenney Music Jingles (CC0, a short major jingle); synth: a decaying sine major triad of 1.5 s |
-| `amb_sea` / `amb_wind` (`amb_`), Decision 2 | A very quiet sea and wind loop, off by default, behind a toggle | Freesound CC0 "ocean waves loop"; OpenGameArt CC0 "ambient sea loop"; synth: low-passed brown noise with a slow 0.1 Hz swell, 20 s, seamless |
+| `amb_sea` / `amb_wind` (`amb_`), Decisions 2 and 7 | A very quiet sea and wind loop, on by default, behind a toggle in the Sound panel | Freesound CC0 "ocean waves loop"; OpenGameArt CC0 "ambient sea loop"; synth: low-passed brown noise with a slow 0.1 Hz swell, 20 s, seamless |
 | New soundboard clips (`sb_`), Decision 6 | More meme taps for the chat soundboard | **Jarrod's own clips**; Freesound CC0 (search by name); Kenney Voiceover Pack (CC0) |
 | Optional swaps for shipped slots (`robbed_`, `match_`, `start_`, `lose_`, `end_`) | A personal clip in place of a #635 clip, if Jarrod wants one | **Jarrod's own clip**; Kenney Music Jingles (CC0) for the stings; keep the current clip |
 
@@ -159,11 +159,13 @@ All six are answered by the Decisions below. Each question keeps the recommendat
 These answer section 4 and override any recommendation above that disagrees.
 
 1. **Vibe:** core sounds are dry and woody, like a board game. Meme clips live on the soundboard only.
-2. **Music:** no in-game loop. An optional, very quiet sea-and-wind ambience is allowed, **off by default**.
+2. **Music:** no in-game loop. An optional, very quiet sea-and-wind ambience is allowed, **on by default** (see 7).
 3. **Sound levels (replaced 2026-10-24, #1073):** every sound is leveled by type, with no blanket gain. The first answer was "soundboard and meme clips play at 0.4, below music"; Jarrod withdrew it: "Everything should play at the same volume. I'm not enforcing lowering everything by 60%. I want things all leveled equally, so all types sound the same: all sound effects the same volume, all game music the same volume, all reactions the same volume." The fix is in the files (`scripts/level-audio.mjs`), then one volume per type, 1.0, with the player's mixer on top. `MEME_VOLUME`, `MUSIC_VOLUME` and `TOUCH_VOLUME` are gone; `BG_VOLUME` and `BG_DUCK` stay, since they are real behaviour (a bed under the stings). Targets, which Jarrod can adjust after listening: reactions and soundboard clips (and `robbed_fah`) **-16 LUFS**, music and stings **-18 LUFS**, table effects **-18** by short-clip loudness (K-weighted, active part only, on the LUFS scale). True peak at or below -1 dBTP everywhere. The pasture tap `sb_plump_sheep.mp3` is a table effect (it plays as a hex tap), so it sits with the effects. `bong_001`, `plop` and `pluck_001` remain table-effect files. Only Bong keeps a soundboard chip (#1131). `npm run audio-level-prove` fails if any file is more than 1 LU from its type's target or peaks above -1 dBTP. Originals: `docs/research/audio-originals-note.md`. This also supersedes the earlier "Fah plays at half volume" rule (DECISIONS, 2026-10-18): `robbed_fah` is leveled with the other reactions and plays at 1.0.
 4. **Win sound:** the winner gets a real win sting. **Jarrod will pick the song or clip**; until then the current sound stays.
 5. **New cues:** only two: a **"your turn"** cue for the seat whose turn starts, and a **turn-timer countdown** tick for the last seconds of your turn. No join/leave, emote-received or payout cues.
 6. **Licensing:** Jarrod keeps the soundboard and meme clips (Wololo, the Charlie Kirk song, the airhorn, etc.) public and accepts the risk, since this is a free game for friends. The README's "CC0 only" line becomes "CC0 or owner-approved".
+7. **Ambience on by default (2026-10-16, #662):** the sea and wind ambience is **on by default**, still very quiet. This replaces "off by default" in item 2. Its on/off toggle lives in the Sound panel. Source: [#662 comment](https://github.com/jarrodjohnson-gif/emberisle/issues/662#issuecomment-6223432727).
+8. **Sound panel (2026-11-07, option A):** the Table menu has one **Sound** row, not two sound toggles. The row opens the Sound panel. Mocks: `docs/design/sound-sheet-1276/`. Built in PR #1396.
 
 ## Owner clips carried to main (#1107)
 
