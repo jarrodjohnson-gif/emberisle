@@ -271,6 +271,13 @@ async function online(me, { cap = false } = {}) {
     };
     const gone = (ms = 1000) => page.waitForFunction(() => !document.querySelector('[data-testid="turn-moment"]'), null, { timeout: ms });
     const shows = (n) => page.waitForFunction((n) => window.__yt.length === n && document.querySelector('[data-testid="turn-moment"]'), n, { timeout: STEP_MS });
+    // The entry fade (turn-stay-in) has finished, so an exit starts from the full pill: ended mid-entry it freezes at the fade's
+    // current opacity, which is near 0 on a loaded runner and leaves no opacity to fade.
+    const settled = () => page.waitForFunction(() => {
+      const el = document.querySelector('[data-testid="turn-moment"]');
+      const entry = el?.getAnimations().find((a) => a.animationName === "turn-stay-in");
+      return entry?.playState === "finished";
+    }, null, { timeout: STEP_MS });
     const faded = async (label) => {
       const exit = await page.evaluate(() => window.__exits.at(-1));
       check(exit?.gone - exit?.at >= 140 && exit?.gone - exit?.at < 1000 && exit?.pointer === "none" && exit?.hidden === "true" && exit?.animation === "none" && exit?.duration.split(", ").every(v => v === "0.16s") && exit?.easing === "cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)" && exit?.mid?.target === "scale(0.97)" && exit?.mid?.opacity > 0 && exit?.mid?.opacity < 1, `${tg} ${label}: pointer-transparent 160 ms fade`, exit);
@@ -334,12 +341,14 @@ async function online(me, { cap = false } = {}) {
     // The person acting ends it (Roll), and so does the turn passing on.
     push(at({ turn: 5, phase: "roll", current: me }));
     await shows(3);
+    await settled();
     push(at({ turn: 5, phase: "main", current: me }));
     await gone();
     check(true, `${tg} the person rolling ends it`);
     await faded("roll");
     push(at({ turn: 6, phase: "roll", current: me }));
     await shows(4);
+    await settled();
     push(at({ turn: 6, phase: "main", current: notMe }));
     await gone();
     check(true, `${tg} the turn passing on ends it`);
