@@ -134,6 +134,7 @@ export function LoadingScreen({ onArrive, onDone, onRetry }: { onArrive: () => v
     const canvas = sky.current!;
     const g = canvas.getContext("2d")!;
     const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    boot.intro = true;
     const clouds = makeClouds();
     let w = 0;
     let h = 0;
@@ -229,6 +230,7 @@ export function LoadingScreen({ onArrive, onDone, onRetry }: { onArrive: () => v
       for (const id of timers) clearTimeout(id);
       removeEventListener("resize", resize);
       boot.lift = 0;
+      boot.intro = false;
     };
     // The callbacks are the app's state setters, stable for the screen's life.
   }, []);

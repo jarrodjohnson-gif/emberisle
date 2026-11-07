@@ -240,6 +240,24 @@ try {
     await ctx.close();
   }
 
+  // #1385: a slow machine (CPU 6x slower) and Start tapped the instant the bar reads 100%, as on CI's failing runs. The bar
+  // must only read 100% once the island's heavy first frames are behind it, so the fade still lands within a second.
+  for (let run = 1; run <= 3; run++) {
+    const { ctx, page, errors } = await open({ width: 390, height: 844 }, { reducedMotion: "reduce", trace: true });
+    await (await ctx.newCDPSession(page)).send("Emulation.setCPUThrottlingRate", { rate: 6 });
+    const box = await start(page).boundingBox();
+    await page.waitForFunction(() => window.__trace.at100 > 0, null, { polling: 5, timeout: 120_000 });
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    const t0 = Date.now();
+    await page.getByTestId("title-card").waitFor();
+    await page.getByTestId("loading-card").waitFor({ state: "detached", timeout: 2000 });
+    const ms = Date.now() - t0;
+    const gap = await page.evaluate(() => Math.round(window.__trace.start - window.__trace.at100));
+    check(ms < 1000, `reduced motion, CPU 6x, Start tapped ${gap} ms after 100% (run ${run} of 3): the title is up and the loading card gone within a second`, { ms });
+    check(errors.length === 0, `reduced motion, CPU 6x, instant Start (run ${run} of 3): no browser errors`, errors);
+    await ctx.close();
+  }
+
   // A failed island download: an error and Try again, Start closed and inert; Try again loads it once the network is back.
   {
     const { ctx, page, errors, release } = await open({ width: 390, height: 844 }, { fail: true });

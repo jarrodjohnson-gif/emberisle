@@ -312,6 +312,13 @@ export class IsleRenderer {
   private calmMq = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
   // Frames drawn; the idle proof counts them.
   renders = 0;
+  // #1385: run once the next frame is drawn. New materials link their shaders on their first draw, which in software GL
+  // holds the main thread; the loading screen's steps finish after that frame, so Start never opens onto it.
+  private afterDraw: (() => void)[] = [];
+  private whenDrawn(done: () => void) {
+    this.afterDraw.push(done);
+    this.wake();
+  }
   private foam!: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   private coastMiter = new Map<string, { mx: number; mz: number }>();
   private coastOrder: string[] = [];
@@ -1594,12 +1601,15 @@ export class IsleRenderer {
     }
     this.renders += 1;
     boot.drawn = true;
+    for (const done of this.afterDraw.splice(0)) done();
     this.updateDockPositions();
     const p = this.probe;
     const warm = p?.stage === "simple" ? 5 : 3;
     const budget = p?.stage === "simple" ? 11 : 22;
     const now = performance.now();
-    const settled = this.settledAt > 0 && now - this.settledAt > 1000 && now - this.lastPointer > 1000;
+    // #1385: not while the loading screen is up. Each probe frame waits for the GPU to finish (readPixels), which in
+    // software GL holds the main thread for hundreds of ms, and would land in the fade or the push.
+    const settled = this.settledAt > 0 && now - this.settledAt > 1000 && now - this.lastPointer > 1000 && !boot.intro;
     if (!p || p.stage !== this.waterPath || !this.lastState || !settled || ++p.frames <= warm) return;
     const gl = this.renderer.getContext();
     gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
@@ -1721,7 +1731,7 @@ export class IsleRenderer {
             this.slabs = null;
           }
           this.living.add(jelly.group);
-          boot.scenes = true;
+          this.whenDrawn(() => (boot.scenes = true));
           // A shore that fails to load or build leaves the plain beach and docks (said once a page).
           if (HARBOR_JELLY && !this.lite)
             loadShore()
@@ -1730,8 +1740,8 @@ export class IsleRenderer {
                 if (!shoreFailed) console.warn("The jelly shore did not load; the plain beach stays.", e);
                 shoreFailed = true;
               })
-              .finally(() => (boot.shore = true));
-          else boot.shore = true;
+              .finally(() => this.whenDrawn(() => (boot.shore = true)));
+          else this.whenDrawn(() => (boot.shore = true));
           (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
           this.wake();
           performance.mark("props-end");
