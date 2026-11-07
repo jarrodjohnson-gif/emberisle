@@ -63,7 +63,8 @@ const read = (s) => {
     fill: rgba(cs.backgroundColor),
     radius: cs.borderTopLeftRadius,
     border: cs.borderTopWidth,
-    shadow: cs.boxShadow,
+    // Tailwind stacks transparent ring layers in front of the shadow; only the visible layers count.
+    shadow: cs.boxShadow.split(/,(?![^(]*\))/).map((l) => l.trim()).filter((l) => !l.startsWith("rgba(0, 0, 0, 0)")).join(", "),
     sheetScrolls: sheet.scrollHeight > sheet.clientHeight + 1,
     title: `${ts.fontSize}/${ts.lineHeight}/${ts.fontWeight}/${ts.fontFamily}`,
     head: [hs.paddingTop, hs.paddingRight, hs.paddingLeft],
