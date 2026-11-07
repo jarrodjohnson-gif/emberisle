@@ -19,7 +19,10 @@ export const ConnectionOverlay = online.pick((m) => m.Health);
 const openTables = chunk(() => import("@/components/game/OpenTables"));
 export const OpenTables = openTables.pick((m) => m.OpenTables);
 export const OpenModeToggle = openTables.pick((m) => m.OpenModeToggle);
-export const SetupReference = chunk(() => import("@/components/game/SetupReference")).pick(m => m.SetupReference);
+// #669: the Sound panel in the Table menu; the menu asks for it when it opens, so it is in memory before Sound is pressed.
+export const soundSheet = chunk(() => import("@/components/game/SoundSheet"));
+export const SoundSheet = soundSheet.pick((m) => m.SoundSheet);
+export const SetupReference =chunk(() => import("@/components/game/SetupReference")).pick(m => m.SetupReference);
 export const WayfarerOptions = chunk(() => import("@/components/game/WayfarerOptions")).pick(m => m.WayfarerOptions);
 // #766: the title's profile sheet and its profile client load only when Profile is pointed at, focused or pressed.
 export const profileSheet = chunk(() => import("@/components/game/ProfileSheet"));

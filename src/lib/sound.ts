@@ -170,7 +170,8 @@ function pump() {
 let extraFiles: Partial<Record<ExtraSoundName, string>> | null = null;
 function start(name: SoundName, volume: number, category: SoundCategory) {
   const gain = volume * categoryGain(category);
-  if (muted || !gain) return;
+  // Music off (the saved switch) silences the stings too, not only the track.
+  if (muted || !gain || (category === "music" && !bgOn)) return;
   const file = FILES[name as keyof typeof FILES] ?? extraFiles?.[name as ExtraSoundName];
   if (!file) {
     if (extraFiles) return;
