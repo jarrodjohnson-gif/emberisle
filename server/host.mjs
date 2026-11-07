@@ -15,7 +15,7 @@ import { PROTO } from "../src/lib/net/proto.ts";
 import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
 import { PROFILE_TYPES, profileGate, profileHandler, seatCredential, seatProfile, tableCard, watchRefusal } from "./profile-protocol.mjs";
-import { fingerprint, openProfiles, ProfileError, UUID } from "./profiles.mjs";
+import { fingerprint, openProfiles, ProfileError, redactOutcome, redactRows, UUID } from "./profiles.mjs";
 import { advanceRoomNeeds, restoredNeed, validNeeds } from "./needs.mjs";
 import { getOpenTables, maybeReleaseOpenSlot, registerOpenTable, unregisterOpenTable } from "./open-table.mjs";
 import { OUTCOME_V, isTime, openJournal, validOutcome, writeDurable } from "./result-journal.mjs";
@@ -153,8 +153,8 @@ const PROFILES_DEV = process.env.PROFILES_DEV === "1";
 const RESULTS = path.resolve(process.env.RESULTS_DIR ?? fileURLToPath(new URL("./results/", import.meta.url)));
 // Proof-only fault points (#889). RESULT_FAULT="room-before:fail:2,journal-after:exit" fails that commit point N times
 // (default once), or kills the host there with no exit flush, as a crash or power cut would. The points are start-, room-
-// and journal-, each -before or -after its durable write, and receipt-, before or after the profile store's result
-// transaction (#890).
+// and journal-, each -before or -after its durable write, receipt-, before or after the profile store's result
+// transaction (#890), and redact-, before or after each startup rewrite of a pending outcome or room for a deleted profile (#891).
 const FAULTS = new Map(
   String(process.env.RESULT_FAULT ?? "")
     .split(",")
@@ -456,6 +456,19 @@ async function load() {
   }
   let repaired = 0;
   let fenced = 0;
+  // Profile deletion (#891) left these for the host: before anything is recorded or served, each pending outcome naming a
+  // deleted profile is rewritten without it, one durable file at a time. An interrupted pass resumes on the next start.
+  const gone = profiles.tombstoned;
+  let redacted = 0;
+  for (const o of journal.pending()) {
+    const clean = redactOutcome(o, gone);
+    if (!clean) continue;
+    fault("redact-before");
+    await journal.replace(clean);
+    redacted++;
+    console.log(`profiles: redacted a deleted profile from the pending outcome of game ${o.gameId}`);
+    fault("redact-after");
+  }
   for (const name of names) {
     const file = path.join(ROOMS, name);
     let saved;
@@ -477,6 +490,24 @@ async function load() {
         saved.outcome = null;
         roster = null;
       }
+    }
+    // A saved room is a stale roster to the deletion tombstones (#891): its frozen rows and outcome lose a deleted profile,
+    // fingerprinted first, and its seat drops the binding but keeps playing. The file is rewritten before it is used.
+    const outcome = roster && saved.outcome ? redactOutcome(saved.outcome, gone) : null;
+    if (outcome) saved.outcome = outcome;
+    let changed = Boolean(outcome);
+    if (roster && redactRows(roster.players, gone)) changed = true;
+    for (const s of Array.isArray(saved?.seats) ? saved.seats : []) {
+      if (typeof s?.profileId !== "string" || !gone(s.profileId)) continue;
+      delete s.profileId;
+      changed = true;
+    }
+    if (changed) {
+      fault("redact-before");
+      await writeDurable(ROOMS, name, JSON.stringify(saved));
+      redacted++;
+      console.log(`profiles: redacted a deleted profile from room ${name}`);
+      fault("redact-after");
     }
     if (roster && saved.game.phase === "over") {
       // A recorded game (#890) is not journalled again; a room whose outcome is not the recorded one is reported, not counted.
@@ -566,6 +597,7 @@ async function load() {
   }
   if (rooms.size) console.log(`restored ${rooms.size} room(s): ${[...rooms.keys()].join(" ")}`);
   console.log(`results: ${journal.pending().length} pending outcome(s) kept for recording, ${repaired} repaired from rooms, ${fenced} room(s) fenced`);
+  if (redacted) console.log(`profiles: deletion redaction finished in ${redacted} file(s)`);
 }
 
 function affords(player, cost) {
