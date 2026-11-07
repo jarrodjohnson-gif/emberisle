@@ -535,7 +535,8 @@ export function Hud() {
               <div className="pointer-events-auto empty:hidden">
                 <TurnCountdown header={null} />
               </div>
-              <div className="pointer-events-auto empty:hidden">
+              {/* Only its buttons (Try again on a lost win screen) take taps: a long error line must not cover the island. */}
+              <div className="empty:hidden [&_button]:pointer-events-auto">
                 {winnerLine}
               </div>
               <div className="pointer-events-auto empty:hidden">
@@ -583,12 +584,14 @@ export function Hud() {
                 )}
               </div>
               <div className="mt-2">{buildRow(state.phase === "main" && mine && !spectator)}</div>
+              {/* Flex slots: an inline button whose label wraps to three lines (Play fortune · 1 under 382 px) would raise the
+                  slot line box past 44 px. */}
               <div className={cn("mt-2 grid gap-2", column ? "grid-cols-3" : "grid-cols-4")}>
-                <div data-slot="trade">
+                <div data-slot="trade" className="flex">
                   <TradeButton why={state.phase === "main" && mine && !spectator ? undefined : idleWhy} className={cn("h-11 w-full", NOT_NOW)} />
                 </div>
-                <div data-slot="fortunes">{fortunes}</div>
-                <div data-slot="turn">
+                <div data-slot="fortunes" className="flex">{fortunes}</div>
+                <div data-slot="turn" className="flex">
                   {mine && state.phase === "main" ? (
                     <Button size="sm" variant={endPrimary ? "primary" : "secondary"} className="h-11 w-full" onClick={() => dispatch({ type: "endTurn" })}>
                       End turn
