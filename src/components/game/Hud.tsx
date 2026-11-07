@@ -365,7 +365,8 @@ export function Hud() {
           player={menuPlayer}
           sheet
           className={cn(
-            "absolute bottom-0 z-30 rounded-b-none border-b-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[var(--shadow-sheet)]",
+            // The bottom room is a border, not padding: a border is outside the scrollport, so rows that scroll never pass under the home bar.
+            "absolute bottom-0 z-30 rounded-b-none border-b-[length:max(1rem,env(safe-area-inset-bottom))] border-b-surface p-4 pb-0 shadow-[var(--shadow-sheet)]",
             portrait ? "inset-x-0 max-h-[50dvh] border-x-0 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]" : "left-safe max-h-[70dvh] w-80",
           )}
         />
