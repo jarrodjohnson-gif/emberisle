@@ -1,13 +1,19 @@
 // #1299 design capture: the three chrome pulses frozen at their peak, as drawn today and with after.css on top, under
 // normal and reduced motion, at 390x844, 844x390 and 1280x720. No src/ file changes. Not a CI proof.
 // Run from the repo root, one browser at a time: node docs/design/chrome-motion/capture.mjs
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+// It writes to a new temp folder. Add --save to write into pictures/ next to this file, replacing the committed files.
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { chromium } from "../../../scripts/proof-browser.mjs";
 import { createServer } from "vite";
 
-const dir = "docs/design/chrome-motion";
-mkdirSync(`${dir}/pictures`, { recursive: true });
-const afterCss = readFileSync(`${dir}/after.css`, "utf8");
+const dir = path.dirname(fileURLToPath(import.meta.url));
+const out = process.argv.includes("--save") ? path.join(dir, "pictures") : mkdtempSync(path.join(tmpdir(), "chrome-motion-"));
+mkdirSync(out, { recursive: true });
+console.error(`pictures: ${out}`);
+const afterCss = readFileSync(path.join(dir, "after.css"), "utf8");
 const sizes = [[390, 844], [844, 390], [1280, 720]];
 // Where each pulse peaks: build-ready at 50 % of 320 ms, my-number at 25 % of 1200 ms, the fortune cue at 40 % of 1600 ms.
 const PEAK = { "build-ready": 160, "build-ready-ring": 160, "my-number-glow": 300, "my-number-ring": 300, "fortune-cue-glow": 640 };
@@ -112,7 +118,7 @@ try {
         const frozen = await freeze(page);
         // The roll moment the trigger's roll starts is not a chrome pulse: let it leave before the picture.
         await page.waitForTimeout(1600);
-        await page.screenshot({ path: `${dir}/pictures/${tag}.jpg`, type: "jpeg", quality: 78 });
+        await page.screenshot({ path: `${out}/${tag}.jpg`, type: "jpeg", quality: 78 });
         out.runs.push({ tag, rolled: n, ...frozen });
         console.log(tag, JSON.stringify({ animations: frozen.animations, path: frozen.path?.shadow, ring: `${frozen.path?.ring.shadow} @ ${frozen.path?.ring.opacity}`, lit: frozen.myNumber?.n, cue: `${frozen.cue?.shadow} @ ${frozen.cue?.opacity}` }));
         await context.close();
@@ -124,6 +130,6 @@ try {
   await vite.close();
 }
 out.errors = errors;
-writeFileSync(`${dir}/pictures/measurements.json`, JSON.stringify(out, null, 2));
+writeFileSync(`${out}/measurements.json`, JSON.stringify(out, null, 2));
 console.log(JSON.stringify({ errors }));
 if (errors.length) process.exit(1);

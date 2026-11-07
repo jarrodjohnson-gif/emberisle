@@ -56,7 +56,7 @@ The triggers are untouched, so these cases behave as today. Listed so the build 
 
 ## Pictures
 
-Real game, Chromium 153 through Playwright, device scale 2. One state change starts all three pulses: Jarrod gets wood and brick (Path becomes ready), the dice roll one of his numbers (its chip lights), and he holds a wayfarer at the start of his turn (the Fortunes button gets its cue). The capture pauses each animation at its peak: build ready at 160 ms, my numbers at 300 ms, the cue at 640 ms. "After" is the same page with [after.css](after.css) on top.
+Real game, crafted state: the table is set with `window.__emberisle.setState`, not played. Chromium 153 through Playwright at device scale 2, so the pictures are 780x1688, 1688x780 and 2560x1440. One state change starts all three pulses: Jarrod gets wood and brick (Path becomes ready), the dice roll one of his numbers (its chip lights), and he holds a wayfarer at the start of his turn (the Fortunes button gets its cue). The capture pauses each animation at its peak: build ready at 160 ms, my numbers at 300 ms, the cue at 640 ms. "After" is the same page with [after.css](after.css) on top.
 
 | Size | Normal motion | Reduced motion |
 |---|---|---|
@@ -68,7 +68,7 @@ Real game, Chromium 153 through Playwright, device scale 2. One state change sta
 
 ## For the build issue
 
-Size XS, `lane:hud`. Files: `src/styles.css` (the three keyframe blocks, the two tokens), `src/components/game/hand-motion.css` (the duration expression), `src/components/game/SeatRail.tsx` (drop `transition-colors duration-200`).
+Size S, `lane:hud`, as #1299 says. Files, as #1299 lists them: `src/styles.css` (the three keyframe blocks, the two tokens), `src/components/game/hand-motion.css` (the duration expression), `src/components/game/Hand.tsx` (its comment names the two tokens beside `FLASH_MS` and `FADE_MS`; the numbers do not change). One line more than the issue lists: `src/components/game/SeatRail.tsx`, to drop `transition-colors duration-200`.
 
 Completion test:
 
@@ -80,3 +80,4 @@ Completion test:
 ## Reproduce
 
 Run from the repo root, one browser at a time: `node docs/design/chrome-motion/capture.mjs`.
+It writes the pictures and `measurements.json` to a new temp folder (printed on stderr). Add `--save` to write into `pictures/` here instead, replacing the committed files. It uses Playwright's Chromium, or `CHROMIUM_PATH` when set.
