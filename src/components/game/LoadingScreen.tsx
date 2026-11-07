@@ -127,6 +127,7 @@ export function LoadingScreen({ onArrive, onDone, onRetry }: { onArrive: () => v
   // A chunk did not download: Start stays closed and Try again asks for what is still missing.
   const [failed, setFailed] = useState(false);
   const retry = useRef(() => {});
+  const begin = useRef(() => {});
   const started = useRef(0);
 
   useEffect(() => {
@@ -164,6 +165,26 @@ export function LoadingScreen({ onArrive, onDone, onRetry }: { onArrive: () => v
 
     let frame = 0;
     let arrived = false;
+    let finished = false;
+    const timers: number[] = [];
+    // #1385: the title card arrives and the screen goes on timers set at Start; the frames only paint. A frame can come
+    // seconds late on a slow GPU or a busy machine, and the screen must not wait for one to end the fade or the push.
+    const arrive = () => {
+      if (arrived) return;
+      arrived = true;
+      onArrive();
+    };
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      cancelAnimationFrame(frame);
+      onDone();
+    };
+    begin.current = () => {
+      started.current = performance.now();
+      const [at, end] = calm ? [FADE_MS / 2, FADE_MS] : [PUSH_MS * 0.8, PUSH_MS + SETTLE_MS];
+      timers.push(window.setTimeout(arrive, at), window.setTimeout(finish, end));
+    };
     const t0 = performance.now();
     const tick = (now: number) => {
       frame = requestAnimationFrame(tick);
@@ -181,12 +202,8 @@ export function LoadingScreen({ onArrive, onDone, onRetry }: { onArrive: () => v
         const t = Math.min(1, ms / FADE_MS);
         paint(g, w, h, clouds, 0, t, 1 - t, 0);
         c.style.opacity = String(1 - smooth(0, 0.5, t));
-        if (t >= 0.5 && !arrived) onArrive();
-        arrived ||= t >= 0.5;
-        if (t >= 1) {
-          cancelAnimationFrame(frame);
-          onDone();
-        }
+        if (t >= 0.5) arrive();
+        if (t >= 1) finish();
         return;
       }
       const t = Math.min(1, ms / PUSH_MS);
@@ -202,17 +219,14 @@ export function LoadingScreen({ onArrive, onDone, onRetry }: { onArrive: () => v
         g.clearRect(0, 0, w, h);
         const s = Math.min(1, (ms - PUSH_MS) / SETTLE_MS);
         boot.lift = LIFT_AERIAL * (1 - easeInOut(s));
-        if (s >= 1) {
-          cancelAnimationFrame(frame);
-          onDone();
-        }
+        if (s >= 1) finish();
       }
-      if (t >= 0.8 && !arrived) onArrive();
-      arrived ||= t >= 0.8;
+      if (t >= 0.8) arrive();
     };
     frame = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(frame);
+      for (const id of timers) clearTimeout(id);
       removeEventListener("resize", resize);
       boot.lift = 0;
     };
@@ -235,7 +249,7 @@ export function LoadingScreen({ onArrive, onDone, onRetry }: { onArrive: () => v
           onClick={() => {
             if (started.current) return;
             if (!ready) return setWaited(true);
-            started.current = performance.now();
+            begin.current();
             sky.current!.style.pointerEvents = "none";
           }}
         >

@@ -31,13 +31,44 @@ const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
-async function open(size, { skip = false, reducedMotion = "no-preference", hold = false, fail = false, slow = false } = {}) {
+async function open(size, { skip = false, reducedMotion = "no-preference", hold = false, fail = false, slow = false, stall = 0 } = {}) {
   const ctx = await browser.newContext({ viewport: size, deviceScaleFactor: SHOTS ? 2 : 1, reducedMotion, hasTouch: size.width < 900, isMobile: false });
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   if (skip) await page.addInitScript(() => (window.__emberisleSkipIntro = true));
+  if (stall) {
+    // #1385: from the moment the title card appears, every animation frame is held back for `stall` ms while the page's
+    // scripts and timers run on, as when a slow GPU or a loaded machine delays frames.
+    await page.addInitScript((ms) => {
+      const raf = window.requestAnimationFrame.bind(window);
+      const caf = window.cancelAnimationFrame.bind(window);
+      let until = 0;
+      let n = 0;
+      const live = new Map();
+      window.requestAnimationFrame = (cb) => {
+        const id = ++n;
+        const step = (t) => {
+          if (!live.has(id)) return;
+          if (performance.now() < until) return live.set(id, raf(step));
+          live.delete(id);
+          cb(t);
+        };
+        live.set(id, raf(step));
+        return id;
+      };
+      window.cancelAnimationFrame = (id) => {
+        if (live.has(id)) caf(live.get(id));
+        live.delete(id);
+      };
+      new MutationObserver((_, obs) => {
+        if (!document.querySelector('[data-testid="title-card"]')) return;
+        until = performance.now() + ms;
+        obs.disconnect();
+      }).observe(document, { childList: true, subtree: true });
+    }, stall);
+  }
   let release = () => {};
   if (hold) {
     const gate = new Promise((r) => (release = r));
@@ -140,6 +171,20 @@ try {
     const ms = Date.now() - t0;
     check(ms < 1000 && !moved, "reduced motion: a cross-fade only (the card never moves) and the title is up in under a second", { ms });
     check(errors.length === 0, "reduced motion: no browser errors", errors);
+    await ctx.close();
+  }
+
+  // #1385: frames that stop for 2.5 s just as the title arrives do not hold the loading card: the fade ends on its own clock.
+  {
+    const { ctx, page, errors } = await open({ width: 390, height: 844 }, { reducedMotion: "reduce", stall: 2500 });
+    await page.waitForFunction(() => document.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow") === "100", null, { timeout: 60_000 });
+    await start(page).click();
+    const t0 = Date.now();
+    await page.getByTestId("title-card").waitFor();
+    await page.getByTestId("loading-card").waitFor({ state: "detached", timeout: 2000 });
+    const ms = Date.now() - t0;
+    check(ms < 1000, "reduced motion: with frames stalled 2.5 s as the title arrives, the loading card is still gone within a second of Start", { ms });
+    check(errors.length === 0, "reduced motion with stalled frames: no browser errors", errors);
     await ctx.close();
   }
 
