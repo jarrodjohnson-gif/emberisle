@@ -1,6 +1,6 @@
 // #237: the wayfarer stands beside the token (#633: on the waste, its centre), hops (not slides), and the target hexes wear a band. Checks from docs/design/wayfarer.md.
 import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8092;

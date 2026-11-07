@@ -18,7 +18,7 @@
 // Reduced motion at 1280x720: the moment still shows centred and large, with no entry animation and no flight, and goes
 // after its hold. Zero console errors throughout.
 import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 // CI renders the island with software GL, where one frame can take a long time; a wait gets this long.

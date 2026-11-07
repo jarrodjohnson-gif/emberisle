@@ -19,7 +19,7 @@
 // Zero console errors. Run: npm run your-turn-stay-prove (ONLY=online, practice, reduced or hotseat runs one part; SHOTS=1 writes
 // docs/proofs/1140). Port from VITE_PORT, default 8485.
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 30_000;

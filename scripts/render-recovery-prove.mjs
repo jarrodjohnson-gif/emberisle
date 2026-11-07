@@ -5,7 +5,7 @@ import { once } from "node:events";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-render-recovery-"));

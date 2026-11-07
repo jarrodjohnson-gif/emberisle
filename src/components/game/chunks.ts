@@ -32,6 +32,13 @@ export const HowTo = sheets.pick((m) => m.HowTo);
 export const TradePanel = sheets.pick((m) => m.TradePanel);
 export const WinScreen = sheets.pick((m) => m.WinScreen);
 
+// The island behind every screen (#543 preloads it). #1281: one load through the chunk loader, shared by the canvas and the
+// loading screen, so a failed download is retried under a fresh URL by Try again instead of leaving the screen stuck.
+export const island = chunk(() => import("@/components/scene/IslandCanvas"));
+
+// #1281: the startup loading screen, preloaded by the built page beside the index (vite.config.ts).
+export const LoadingScreen = chunk(() => import("@/components/game/LoadingScreen")).pick((m) => m.LoadingScreen);
+
 export const moments = chunk(() => import("@/components/game/moments"));
 export const TurnMoment = moments.pick((m) => m.TurnMoment);
 export const MyNumbers = moments.pick((m) => m.MyNumbers);

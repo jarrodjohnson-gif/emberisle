@@ -1,7 +1,7 @@
 // #846: real rendered cargo pixels, at default camera fit. Diagnostic vertex colours identify visible cargo only.
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync } from 'node:fs';
-import { chromium } from 'playwright';
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from 'vite';
 const port=Number(process.env.VITE_PORT)||18748;
 const vite=await createServer({server:{host:'127.0.0.1',port,strictPort:true},logLevel:'error'});await vite.listen();

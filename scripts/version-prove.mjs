@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import WebSocket from "../server/node_modules/ws/wrapper.mjs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { PROTO } from "../src/lib/net/proto.ts";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));

@@ -72,6 +72,8 @@ const CEILINGS = [
   // measured 469 B. Ceilings decided by Opus under the owner's 2026-11-06 size-limit delegation (PR #1355 review).
   { name: "ProfileSheet", gzipBytes: 6000 },
   { name: "focus-trap", gzipBytes: 550 },
+  // #1281, 2026-11-07: startup loading screen, preloaded beside index; measured 2,420 B gzip. Decided per q-size-standing; paired trim to follow.
+  { name: "LoadingScreen", gzipBytes: 2600 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.

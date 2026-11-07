@@ -4,7 +4,7 @@
 // from 375 to 410, around TRAY_WRAP_MAX, where the main phase's action row stops taking two lines by rule), sideways 667-956 px. A side where the live hole is
 // bigger is a place the HUD covers a corner. Run: npm run hole-prove
 import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;

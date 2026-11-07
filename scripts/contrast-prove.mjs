@@ -10,7 +10,7 @@
 // Run: npm run contrast-prove
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const cpuThrottle = Number(process.env.CONTRAST_PROVE_CPU_THROTTLE || 1);

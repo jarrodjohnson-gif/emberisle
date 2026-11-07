@@ -6,7 +6,7 @@
 //   3. The same ask, and the person says No: once every seat has declined it closes, and the bot still plays on.
 // Every wait is on the store or the page, never a fixed sleep. Zero console errors.
 import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";

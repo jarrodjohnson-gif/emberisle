@@ -6,7 +6,7 @@
 // Run: npm run landing-dust-prove
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8120;

@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { createServer as httpServer } from "node:http";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const { WebSocketServer } = createRequire(new URL("../server/package.json", import.meta.url))("ws");
