@@ -114,7 +114,8 @@ try {
         return {
           dock: box(dock), slots, targets, hole: isle.insets(), live: isle.liveInsets(), vh: innerHeight, vw: innerWidth,
           moment: !!document.querySelector('[data-testid="roll-moment"]'),
-          statusText: status?.innerText.trim() ?? null,
+          statusTurn: !!status?.querySelector('[data-testid="turn-banner"]'),
+          statusDice: !!status?.querySelector('[data-testid="dice-row"]'),
           goodsEmpty: !document.querySelector('[data-slot="goods"]')?.children.length,
         };
       }, { SLOTS, names: size.slots });
@@ -177,8 +178,8 @@ try {
       for (const [slot, b] of Object.entries(m.slots)) check(!!b, `${label}: slot ${slot} is on screen`);
       if (m.vw > m.vh) check(!!m.dock && Math.abs(m.dock.w - 320) <= 0.5, `${label}: the sideways dock is the 320 px column`, m.dock);
       if (name === "rolling") check(m.moment, `${label}: measured while the roll moment is up`);
-      // The win sheet covers the table at game over; the status slot holds its place and says nothing under it.
-      if (name === "game over") check(m.statusText === "", `${label}: the status slot is empty`, m.statusText);
+      // The win sheet covers the table at game over; the status slot keeps its place with no turn line, only the last dice.
+      if (name === "game over") check(!m.statusTurn && m.statusDice, `${label}: the status slot drops the turn line and keeps the last dice`, { turn: m.statusTurn, dice: m.statusDice });
       // A watcher has no hand: the goods slot keeps its box with nothing in it.
       if (name === "watcher") check(m.goodsEmpty, `${label}: the goods slot is empty`);
       if (!first) first = { name, ...m };
