@@ -95,8 +95,8 @@ async function startHost() {
   hostProc = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: serverDir,
     env: { ...process.env, PORT: "0", ROOMS_DIR, PROFILES_DIR, RESULTS_DIR, PROFILES_DEV: "", SAVE_MS: "20", ACT_CAP: "1000", ACT_RATE: "1000", GRACE_MS: "600000", HOLD_MS: "600000", TURN_MS: "600000",
-      // The first four result transactions fail, so the table sees "Saving record…" for about four seconds of retries.
-      RESULT_FAULT: "receipt-before:fail:4" },
+      // The first six result transactions fail, so the table sees "Saving record…" for about 16 s of retries (0.25 s doubling).
+      RESULT_FAULT: "receipt-before:fail:6" },
     stdio: ["ignore", "pipe", "pipe"],
   });
   return new Promise((resolve, reject) => {
@@ -379,10 +379,14 @@ try {
     cy.send({ type: "pass", cid: "pass-1", turn: st.actionStamp.turn, baseSeq: st.actionStamp.baseSeq, connection: st.actionStamp.connection });
     await cy.until((m) => m.type === "state" && m.game.phase === "over", "the win");
     assert.deepEqual(lastState(cy).result, { tracked: true, wins: { p0: null, p1: null } }, "the first terminal state carries no count while the record saves");
-    for (const p of [phone, desk]) await p.getByTestId("win-screen").waitFor();
+    for (const p of [phone, desk]) await p.waitForFunction(() => document.querySelectorAll('[data-testid="win-profile"]').length === 3, null, { timeout: 10000 });
     assert.deepEqual(await notes(phone), { p1: "Saving record…", p0: "Saving record…", p2: "Not tracked" }, "phone list: saving, and the guest is not tracked");
     assert.deepEqual(await notes(desk), { p1: "Saving record…", p0: "Saving record…", p2: "Not tracked" }, "desktop table: the same");
-    await phone.waitForFunction(() => document.querySelector('[data-player="p1"]')?.closest("li")?.textContent.includes("1 profile win"), null, { timeout: 15000 });
+    if (SHOTS) {
+      mkdirSync(SHOTS, { recursive: true });
+      await phone.screenshot({ path: `${SHOTS}/win-saving-440x956.png` });
+    }
+    await phone.waitForFunction(() => document.querySelector('[data-player="p1"]')?.closest("li")?.textContent.includes("1 profile win"), null, { timeout: 30000 });
     const committed = { p1: "1 profile win", p0: "2 profile wins", p2: "Not tracked" };
     assert.deepEqual(await notes(phone), committed, "phone list: the committed totals");
     await desk.waitForFunction(() => document.querySelector('[data-player="p1"]')?.closest("tr")?.textContent.includes("1 profile win"), null, { timeout: 5000 });
