@@ -337,6 +337,8 @@ export function Hud() {
   // Each build says whether it can happen now: the cost chips dim what the hand is short of, a build with nothing to build
   // on or none left says so, and one the hand can pay for with a spot waiting wears the dot. #1101: the phone dock shows the
   // row on every turn and phase; off `live` (not this seat's main phase) every tile is greyed with the reason and does nothing.
+  // #1101: why a dock control that stays in its slot does nothing right now.
+  const idleWhy = mine && /^roll/.test(state.phase) ? "Roll first" : mine ? "Not now" : "Not your turn";
   const buildRow = (live: boolean) => (
     <div className="build-grid">
       {(
@@ -351,7 +353,7 @@ export function Hud() {
         const { short, missing, why, ready } = live || me.resources ? buildStatus(state, me, kind) : { short: {}, missing: 0, why: null, ready: false };
         const idle = !live;
         const blocked = idle || !ready || spectator;
-        const status = idle ? (mine && /^roll/.test(state.phase) ? "Roll first" : mine ? "Not now" : "Not your turn") : (why ?? (ready ? "Ready" : needLine(short)));
+        const status = idle ? idleWhy : (why ?? (ready ? "Ready" : needLine(short)));
         const shRefuse = kind === "stronghold" && why ? (why === "None left" ? "No strongholds left" : "No homes to upgrade") : null;
         return (
           <Button
@@ -583,7 +585,7 @@ export function Hud() {
               <div className="mt-2">{buildRow(state.phase === "main" && mine && !spectator)}</div>
               <div className={cn("mt-2 grid gap-2", column ? "grid-cols-3" : "grid-cols-4")}>
                 <div data-slot="trade">
-                  <TradeButton disabled={!(state.phase === "main" && mine) || spectator} className="h-11 w-full" />
+                  <TradeButton why={state.phase === "main" && mine && !spectator ? undefined : idleWhy} className={cn("h-11 w-full", NOT_NOW)} />
                 </div>
                 <div data-slot="fortunes">{fortunes}</div>
                 <div data-slot="turn">
@@ -596,7 +598,7 @@ export function Hud() {
                       <Dices className="size-4" /> Roll
                     </Button>
                   ) : (
-                    <Button size="sm" variant="secondary" className="h-11 w-full" disabled>
+                    <Button size="sm" variant="secondary" className={cn("h-11 w-full", NOT_NOW)} aria-disabled aria-description={idleWhy}>
                       {mine ? "End turn" : "Wait"}
                     </Button>
                   )}

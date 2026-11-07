@@ -124,7 +124,7 @@ export function TableMenu({ dock }: { dock?: "left" | "right" }) {
 
   return (
     <div className="relative">
-      {mode === "online" ? <LazyBoundary failed={null}><ConnectionOverlay /></LazyBoundary> : null}
+      {mode === "online" ? <LazyBoundary failed={null}><ConnectionOverlay dock={dock} /></LazyBoundary> : null}
       <Button
         ref={trigger}
         variant={dock ? "secondary" : "ghost"}
