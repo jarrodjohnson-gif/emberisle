@@ -25,11 +25,11 @@ const CEILINGS = [
   { name: "SeatNeeds", gzipBytes: 1900 },
   { name: "LobbyView", gzipBytes: 2500 },
   // #1262: Sandwich Stacker shelf and player, measured 1867 B gzip. The owner must OK this new ceiling before merge.
-  { name: "LobbyWaitBox", gzipBytes: 2100 }, // #1366, 2026-11-07: back to 2,200 B / 2,100 B after the trim in PR #1373
+  { name: "LobbyWaitBox", gzipBytes: 2100 }, // #1366, 2026-11-07: back to 2,100 B after the trim in PR #1373
   // #1263: tic-tac-toe tile and board, loaded with the shelf; measured 1390 B gzip. Decided 2026-11-07, q-size-standing.
   { name: "LobbyTicTacToe", gzipBytes: 1600 },
   // #553: shared on-demand table transport, measured 2.08 kB; existing caps stay fixed.
-  { name: "table", gzipBytes: 2200 }, // #1366, 2026-11-07: back to 2,200 B / 2,100 B after the trim in PR #1373
+  { name: "table", gzipBytes: 2200 }, // #1366, 2026-11-07: back to 2,200 B after the trim in PR #1373
   // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
   { name: "haptics", gzipBytes: 1200 },
   // #1283: raised from 125,200 B to 127,000 B per owner decision 2026-11-03.
