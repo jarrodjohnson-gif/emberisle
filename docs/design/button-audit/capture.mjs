@@ -11,9 +11,9 @@ import { chromium } from "../../../scripts/proof-browser.mjs";
 import { createServer } from "vite";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
-const out = process.argv.includes("--save") ? path.join(dir, "pictures") : mkdtempSync(path.join(tmpdir(), "button-audit-"));
-mkdirSync(out, { recursive: true });
-console.error(`pictures: ${out}`);
+const outDir = process.argv.includes("--save") ? path.join(dir, "pictures") : mkdtempSync(path.join(tmpdir(), "button-audit-"));
+mkdirSync(outDir, { recursive: true });
+console.error(`pictures: ${outDir}`);
 const afterCss = readFileSync(path.join(dir, "after.css"), "utf8");
 const sizes = [[390, 844], [844, 390], [1280, 720]];
 
@@ -100,7 +100,7 @@ try {
     };
     // The same screen twice: as it is, then with after.css on top.
     const pair = async (page, name) => {
-      const shot = (s) => page.screenshot({ path: `${out}/${tag}-${name}-${s}.jpg`, type: "jpeg", quality: 82 });
+      const shot = (s) => page.screenshot({ path: `${outDir}/${tag}-${name}-${s}.jpg`, type: "jpeg", quality: 82 });
       const before = await page.evaluate(measure);
       await shot("before");
       const style = await page.addStyleTag({ content: afterCss });
@@ -188,6 +188,6 @@ try {
   host.kill();
 }
 out.errors = errors;
-writeFileSync(`${out}/measurements.json`, JSON.stringify(out, null, 2));
+writeFileSync(`${outDir}/measurements.json`, JSON.stringify(out, null, 2));
 console.log(JSON.stringify({ errors }));
 if (errors.length) process.exit(1);
