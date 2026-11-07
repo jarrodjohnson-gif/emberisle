@@ -3,6 +3,7 @@
 // Only step `run:` text counts (inline or a `run: |` block), with comments stripped. A step with `if: false` or
 // `continue-on-error: true`, or a command line ending in `|| true`, does not count.
 // Also proves the check itself on inline fixtures and on the real files with an invented proof added.
+// #1377: also fails any scripts/*-prove.mjs that imports playwright instead of ./proof-browser.mjs.
 // Run: npm run registered-prove
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
@@ -86,6 +87,31 @@ export function unregistered({ proofs, rootScripts, serverScripts, ci }) {
   };
 }
 
+// #1377: a browser proof must take chromium from ./proof-browser.mjs, which skips the startup loading screen (#1281).
+// A proof that imports Playwright directly never leaves that screen and times out. Returns the files that do.
+const PLAYWRIGHT_EXEMPT = new Set(["loading-screen-prove.mjs", "registered-prove.mjs"]); // the real loading screen; this file holds the fixtures
+const RAW_PLAYWRIGHT = /\bfrom\s*["']playwright[\w-]*["']|\bimport\s*\(?\s*["']playwright[\w-]*["']|\brequire\s*\(\s*["']playwright[\w-]*["']/;
+export function rawPlaywright(files) {
+  return Object.keys(files).filter((f) => !PLAYWRIGHT_EXEMPT.has(f.split("/").pop()) && RAW_PLAYWRIGHT.test(files[f]));
+}
+
+const rawCases = [
+  ["a static import from playwright", `import { chromium } from "playwright";`, true],
+  ["a single-quoted import", `import { chromium } from 'playwright';`, true],
+  ["a side-effect import", `import "playwright";`, true],
+  ["a dynamic import", `const { chromium } = await import("playwright");`, true],
+  ["a require", `const { chromium } = require("playwright");`, true],
+  ["playwright-core", `import { chromium } from "playwright-core";`, true],
+  ["the import from ./proof-browser.mjs", `import { chromium } from "./proof-browser.mjs";`, false],
+  ["a comment that only names playwright", `// chromium comes from playwright\nimport { chromium } from "./proof-browser.mjs";`, false],
+];
+for (const [label, src, bad] of rawCases) {
+  assert.deepEqual(rawPlaywright({ "scripts/x-prove.mjs": src }), bad ? ["scripts/x-prove.mjs"] : [], `raw playwright: ${label}`);
+  console.log(`ok   self-test: raw playwright: ${label}`);
+}
+assert.deepEqual(rawPlaywright({ "scripts/loading-screen-prove.mjs": rawCases[0][1] }), [], "loading-screen-prove is exempt");
+console.log("ok   self-test: raw playwright: loading-screen-prove is exempt");
+
 // Self-test on inline fixtures: each case lists the proofs that must be reported, with the reason.
 const fixture = {
   proofs: ["scripts/a-prove.mjs", "scripts/b-prove.mjs", "server/c-prove.mjs"],
@@ -138,10 +164,18 @@ assert.deepEqual(withNew.notInPackage.filter((p) => !notInPackage.includes(p)), 
 assert.deepEqual(withNew.notInCi.map((g) => g.proof).filter((p) => !notInCi.some((g) => g.proof === p)), [invented], "a new proof ci.yml never runs fails");
 console.log("ok   self-test: a new proof added to the real repo fails in both places");
 
+const sources = Object.fromEntries(list("scripts").map((f) => [f, read(f)]));
+const raw = rawPlaywright(sources);
+const mutant = "scripts/zz-mutant-prove.mjs";
+assert.deepEqual(rawPlaywright({ ...sources, [mutant]: `import { chromium } from "playwright";` }).filter((f) => !raw.includes(f)), [mutant], "a new proof importing playwright fails");
+console.log("ok   self-test: a new proof importing playwright fails in the real repo");
+
+for (const f of raw) console.log(`FAIL ${f}: imports playwright directly; import { chromium } from "./proof-browser.mjs" instead (#1377)`);
 for (const p of notInPackage) console.log(`FAIL ${p}: no script in package.json or server/package.json runs it`);
 for (const { proof, why } of notInCi) console.log(`FAIL ${proof}: .github/workflows/ci.yml does not run it (${why})`);
+if (raw.length) process.exitCode = 1;
 if (notInPackage.length || notInCi.length) {
   console.log("Register each proof in package.json and .github/workflows/ci.yml, next to its neighbours (AGENTS.md rule 6).");
   process.exit(1);
 }
-console.log(`registered-prove: all ${repo.proofs.length} proofs are in package.json and ci.yml`);
+if (!raw.length) console.log(`registered-prove: all ${repo.proofs.length} proofs are in package.json and ci.yml`);

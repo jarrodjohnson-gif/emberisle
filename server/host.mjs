@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { mkdir, rename, writeFile } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
@@ -15,7 +15,7 @@ import { PROTO } from "../src/lib/net/proto.ts";
 import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
 import { PROFILE_TYPES, profileGate, profileHandler, seatCredential, seatProfile, tableCard, watchRefusal } from "./profile-protocol.mjs";
-import { openProfiles, UUID } from "./profiles.mjs";
+import { fingerprint, openProfiles, ProfileError, redactOutcome, redactRows, UUID } from "./profiles.mjs";
 import { advanceRoomNeeds, restoredNeed, validNeeds } from "./needs.mjs";
 import { getOpenTables, maybeReleaseOpenSlot, registerOpenTable, unregisterOpenTable } from "./open-table.mjs";
 import { OUTCOME_V, isTime, openJournal, validOutcome, writeDurable } from "./result-journal.mjs";
@@ -153,7 +153,8 @@ const PROFILES_DEV = process.env.PROFILES_DEV === "1";
 const RESULTS = path.resolve(process.env.RESULTS_DIR ?? fileURLToPath(new URL("./results/", import.meta.url)));
 // Proof-only fault points (#889). RESULT_FAULT="room-before:fail:2,journal-after:exit" fails that commit point N times
 // (default once), or kills the host there with no exit flush, as a crash or power cut would. The points are start-, room-
-// and journal-, each -before or -after its durable write.
+// and journal-, each -before or -after its durable write, receipt-, before or after the profile store's result
+// transaction (#890), and redact-, before or after each startup rewrite of a pending outcome or room for a deleted profile (#891).
 const FAULTS = new Map(
   String(process.env.RESULT_FAULT ?? "")
     .split(",")
@@ -191,8 +192,20 @@ const TYPES = {
   ".ogg": "audio/ogg",
   ".mp3": "audio/mpeg",
 };
-const EMOTES_DIR = fileURLToPath(new URL("../src/assets/emotes/", import.meta.url));
+// EMOTES_DIR swaps the sticker folder for a proof (scripts/fixtures/stickers). It must be an existing folder, is read only by
+// loadEmotes (same name rules, nothing else is served from it), and holds at most the tray's 24 stickers.
+const EMOTES_DIR = process.env.EMOTES_DIR
+  ? path.resolve(process.env.EMOTES_DIR)
+  : fileURLToPath(new URL("../src/assets/emotes/", import.meta.url));
+if (process.env.EMOTES_DIR && !statSync(EMOTES_DIR, { throwIfNoEntry: false })?.isDirectory()) {
+  console.error(`EMOTES_DIR ${EMOTES_DIR} is not a folder`);
+  process.exit(1);
+}
 const EMOTES = loadEmotes(EMOTES_DIR);
+if (EMOTES.size > 24) {
+  console.error(`EMOTES_DIR ${EMOTES_DIR} has ${EMOTES.size} stickers, at most 24`);
+  process.exit(1);
+}
 
 function code() {
   let out = "";
@@ -455,6 +468,19 @@ async function load() {
   }
   let repaired = 0;
   let fenced = 0;
+  // Profile deletion (#891) left these for the host: before anything is recorded or served, each pending outcome naming a
+  // deleted profile is rewritten without it, one durable file at a time. An interrupted pass resumes on the next start.
+  const gone = profiles.tombstoned;
+  let redacted = 0;
+  for (const o of journal.pending()) {
+    const clean = redactOutcome(o, gone);
+    if (!clean) continue;
+    fault("redact-before");
+    await journal.replace(clean);
+    redacted++;
+    console.log(`profiles: redacted a deleted profile from the pending outcome of game ${o.gameId}`);
+    fault("redact-after");
+  }
   for (const name of names) {
     const file = path.join(ROOMS, name);
     let saved;
@@ -477,13 +503,35 @@ async function load() {
         roster = null;
       }
     }
+    // A saved room is a stale roster to the deletion tombstones (#891): its frozen rows and outcome lose a deleted profile,
+    // fingerprinted first, and its seat drops the binding but keeps playing. The file is rewritten before it is used.
+    const outcome = roster && saved.outcome ? redactOutcome(saved.outcome, gone) : null;
+    if (outcome) saved.outcome = outcome;
+    let changed = Boolean(outcome);
+    if (roster && redactRows(roster.players, gone)) changed = true;
+    for (const s of Array.isArray(saved?.seats) ? saved.seats : []) {
+      if (typeof s?.profileId !== "string" || !gone(s.profileId)) continue;
+      delete s.profileId;
+      changed = true;
+    }
+    if (changed) {
+      fault("redact-before");
+      await writeDurable(ROOMS, name, JSON.stringify(saved));
+      redacted++;
+      console.log(`profiles: redacted a deleted profile from room ${name}`);
+      fault("redact-after");
+    }
     if (roster && saved.game.phase === "over") {
-      if (!journal.ready(roster.gameId)) {
+      // A recorded game (#890) is not journalled again; a room whose outcome is not the recorded one is reported, not counted.
+      const receipt = profiles.receipt(roster.gameId);
+      if (receipt) {
+        if (receipt.fingerprint !== fingerprint(saved.outcome)) console.error(`results: room ${name} holds game ${roster.gameId} with an outcome that differs from its recorded receipt; the receipt stands`);
+      } else if (!journal.ready(roster.gameId)) {
         await journal.put(saved.outcome);
         repaired++;
         console.log(`results: repaired the pending outcome of game ${roster.gameId} from room ${name}`);
       }
-    } else if (roster && journal.has(roster.gameId)) {
+    } else if (roster && (journal.has(roster.gameId) || profiles.receipt(roster.gameId))) {
       console.error(`results: room ${name} holds game ${roster.gameId} at ${saved.game.phase}, but that game already finished; fenced from play and kept as ${name}.fenced`);
       renameSync(file, `${file}.fenced`);
       fenced++;
@@ -527,7 +575,7 @@ async function load() {
       delete room.savedAt;
       // Reconciled above: a terminal tracked room loads with its frozen outcome already journalled, so it is settled.
       room.outcome = loadOutcome(saved.outcome, room.roster);
-      room.settled = room.outcome && journal.ready(room.outcome.gameId) ? room.outcome.gameId : null;
+      room.settled = room.outcome && (journal.ready(room.outcome.gameId) || profiles.receipt(room.outcome.gameId)) ? room.outcome.gameId : null;
       for (const [i, s] of saved.seats.entries()) {
         // #1236: name the seat and the field only. The message is logged, and the seat holds its secret.
         if (typeof s?.id !== "string") throw new Error(`bad seat ${i}: id`);
@@ -561,6 +609,7 @@ async function load() {
   }
   if (rooms.size) console.log(`restored ${rooms.size} room(s): ${[...rooms.keys()].join(" ")}`);
   console.log(`results: ${journal.pending().length} pending outcome(s) kept for recording, ${repaired} repaired from rooms, ${fenced} room(s) fenced`);
+  if (redacted) console.log(`profiles: deletion redaction finished in ${redacted} file(s)`);
 }
 
 function affords(player, cost) {
@@ -862,6 +911,58 @@ async function settle(room) {
   room.settling = null;
   room.settled = id;
   if (rooms.get(room.code) === room && room.game) pushState(room);
+  recordPending();
+}
+
+// Result recording (#890, profiles.md "Exactly-once recording" steps 5 and 6). Each pending outcome goes through the profile
+// store's one serialized transaction (receipt, result rows, aggregates), and its journal file is removed only after that
+// commits. A replay finds the receipt and only clears the file; a receipt with another fingerprint is reported and the file
+// is kept for repair. A game that credits no profile writes nothing and its file stays, as #889 left it. Transient failures
+// retry with bounded backoff on one timer. With the store unavailable nothing is tried; the files wait for the next start.
+const recording = new Map();
+const unrecordable = new Set();
+let recordTimer = null;
+let recordWait = 250;
+async function recordAttempt(o) {
+  const id = o.gameId;
+  try {
+    const out = await profiles.recordOutcome(o);
+    if (out === "excluded") return true;
+    await journal.done(id);
+    console.log(out === "duplicate" ? `results: game ${id} was already recorded; its pending outcome is cleared` : `results: recorded game ${id}`);
+    return true;
+  } catch (err) {
+    if (err instanceof ProfileError && (err.code === "conflict" || err.code === "invalid")) {
+      unrecordable.add(id);
+      console.error(`results: game ${id} ${err.code === "conflict" ? "does not match its recorded receipt" : "cannot be counted"}; nothing changed, and its pending outcome is kept for repair`);
+      return true;
+    }
+    console.error(`results: recording game ${id} failed (${err.message}); kept for retry`);
+    return false;
+  }
+}
+function recordOne(o) {
+  if (unrecordable.has(o.gameId)) return true;
+  let run = recording.get(o.gameId);
+  if (!run) {
+    run = recordAttempt(o).finally(() => recording.delete(o.gameId));
+    recording.set(o.gameId, run);
+  }
+  return run;
+}
+async function recordPending() {
+  if (!profiles.ready) return;
+  const ok = await Promise.all(journal.pending().map(recordOne));
+  if (ok.every(Boolean)) {
+    recordWait = 250;
+    return;
+  }
+  if (recordTimer || !profiles.ready) return;
+  recordTimer = setTimeout(() => {
+    recordTimer = null;
+    recordPending();
+  }, recordWait);
+  recordWait = Math.min(recordWait * 2, 10_000);
 }
 
 // A connection-bound baseline for gameplay intents. Rejoin/restart gets a new connection id even when
@@ -1089,7 +1190,7 @@ async function serveStatic(req, res) {
 }
 
 const wss = new WebSocketServer({ server, maxPayload: 16 * 1024 });
-const profiles = openProfiles(PROFILES, { colors: PLAYER_COLORS });
+const profiles = openProfiles(PROFILES, { colors: PLAYER_COLORS, fault });
 const onProfile = profileHandler(profiles, send);
 const journal = openJournal(RESULTS, { fault });
 
@@ -1982,4 +2083,6 @@ pinger.unref();
 wss.on("close", () => clearInterval(pinger));
 
 await load();
+// Pending outcomes are replayed once before the host listens (#890); anything left retries in the background.
+await recordPending();
 server.listen(PORT, () => console.log(`host listening ${server.address().port}`));

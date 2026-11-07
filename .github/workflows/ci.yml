@@ -234,6 +234,10 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-pin-race-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-results-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-deletion-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run server-needs-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
