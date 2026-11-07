@@ -4,6 +4,7 @@
 // and the camera settles into the title's slow orbit. With reduced motion it is a cross-fade only.
 import { useEffect, useRef, useState } from "react";
 import { island, moments, online, sheets } from "@/components/game/chunks";
+import { mulberry32 } from "@/lib/game/random";
 import { boot } from "@/lib/lazy";
 import "./loading.css";
 
@@ -12,7 +13,7 @@ const FADE_MS = 400;
 const SETTLE_MS = 1600;
 // The push ends this far up (boot.lift: 1 doubles the title camera's distance), then settles to the title's own view.
 const LIFT_FROM = 1.7;
-const LIFT_AERIAL = 0.9;
+const LIFT_AERIAL = 0.9; // LIFT_FROM - LIFT_AERIAL is the 0.8 in the push below
 
 // What the bar waits for, in order, with its share of the bar (about each part's share of the bytes and work) and its line.
 // The island's chunk is most of the download; the Hex Jelly scenes are the next chunk and most of the build.
@@ -24,17 +25,7 @@ const STEPS: [string, number][] = [
   ["Waking the lanterns", 7],
 ];
 
-type Cloud = { x: number; y: number; z: number; s: number; tex: HTMLCanvasElement; drift: number };
-
-function mulberry(a: number) {
-  return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+type Cloud = { x: number; y: number; z: number; s: number; t: HTMLCanvasElement; d: number };
 
 // One cloud puff: the invite page's cloud texture, lit for day (a shaded underside, then sunlit tops).
 function puff(seed: number) {
@@ -42,7 +33,7 @@ function puff(seed: number) {
   const c = document.createElement("canvas");
   c.width = c.height = n;
   const x = c.getContext("2d")!;
-  const rnd = mulberry(seed);
+  const rnd = mulberry32(seed);
   const blobs: [number, number, number][] = [];
   for (let i = 0; i < 18; i++) {
     const u = rnd();
@@ -68,10 +59,10 @@ function puff(seed: number) {
 
 function makeClouds(): Cloud[] {
   const puffs = [1, 2, 3, 4, 5, 6].map(puff);
-  const rnd = mulberry(1281);
+  const rnd = mulberry32(1281);
   const clouds: Cloud[] = [];
   for (let i = 0; i < 64; i++)
-    clouds.push({ x: (rnd() * 2 - 1) * 4.5, y: (rnd() * 2 - 1) * 3.2, z: 3.2 + rnd() * 14, s: 1.3 + rnd() * 1.6, tex: puffs[i % 6]!, drift: rnd() * 6.28 });
+    clouds.push({ x: (rnd() * 2 - 1) * 4.5, y: (rnd() * 2 - 1) * 3.2, z: 3.2 + rnd() * 14, s: 1.3 + rnd() * 1.6, t: puffs[i % 6]!, d: rnd() * 6.28 });
   return clouds.sort((a, b) => b.z - a.z);
 }
 
@@ -85,32 +76,28 @@ const easeInOut = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - (-2 * v + 2) ** 
 // The sky over the island (gone once `reveal` is 1), the cloud bank `camZ` deep, and the whiteout inside it.
 function paint(g: CanvasRenderingContext2D, w: number, h: number, clouds: Cloud[], camZ: number, reveal: number, cloudAlpha: number, time: number) {
   g.clearRect(0, 0, w, h);
-  if (reveal < 1) {
-    const sky = g.createLinearGradient(0, 0, 0, h);
-    sky.addColorStop(0, "#8fc6cf");
-    sky.addColorStop(0.7, "#cfe7e8");
-    sky.addColorStop(1, "#eef4f3");
-    g.globalAlpha = 1 - reveal;
-    g.fillStyle = sky;
-    g.fillRect(0, 0, w, h);
-  }
+  const sky = g.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, "#8fc6cf");
+  sky.addColorStop(0.7, "#cfe7e8");
+  sky.addColorStop(1, "#eef4f3");
+  g.globalAlpha = 1 - reveal;
+  g.fillStyle = sky;
+  g.fillRect(0, 0, w, h);
   const f = Math.max(w, h) * 0.55;
   for (const c of clouds) {
     const dz = c.z - camZ;
-    if (dz < 0.25) continue;
-    // Puffs fade as the camera passes through them; far ones sink into the haze.
+    // A puff at or behind the camera (dz <= 0.25) has no alpha and is skipped below. Puffs fade as the camera passes through them; far ones sink into the haze.
     const a = clamp((dz - 0.25) / 1.6, 0, 1) * clamp(1.15 - dz / 17, 0, 1) * cloudAlpha;
     if (a <= 0.01) continue;
     const k = f / dz;
     const size = c.s * k;
-    const sx = w / 2 + (c.x + Math.sin(time * 0.15 + c.drift) * 0.12) * k;
+    const sx = w / 2 + (c.x + Math.sin(time * 0.15 + c.d) * 0.12) * k;
     const sy = h * 0.42 + c.y * k;
-    if (sx + size < 0 || sx - size > w || sy + size < 0 || sy - size > h) continue;
     g.globalAlpha = a;
-    g.drawImage(c.tex, sx - size, sy - size * 0.6, size * 2, size * 1.2);
+    g.drawImage(c.t, sx - size, sy - size * 0.6, size * 2, size * 1.2);
   }
-  const wash = cloudAlpha * (0.06 + 0.4 * Math.exp(-(((camZ - 8) / 2.4) ** 2))) * (1 - reveal);
-  g.globalAlpha = clamp(wash, 0, 0.85);
+  // At most 0.46, and never below 0, so it needs no clamp.
+  g.globalAlpha = cloudAlpha * (0.06 + 0.4 * Math.exp(-(((camZ - 8) / 2.4) ** 2))) * (1 - reveal);
   g.fillStyle = "#f3f6f5";
   g.fillRect(0, 0, w, h);
   g.globalAlpha = 1;
@@ -193,7 +180,7 @@ export function LoadingScreen({ onArrive, onDone, onRetry }: { onArrive: () => v
       if (t < 1) {
         // Ease in: the push speeds up, and the island's settle eases it out.
         paint(g, w, h, clouds, t ** 1.6 * 19, smooth(0.4, 0.9, t), 1, ms / 1000);
-        boot.lift = LIFT_FROM - (LIFT_FROM - LIFT_AERIAL) * smooth(0.4, 1, t);
+        boot.lift = LIFT_FROM - 0.8 * smooth(0.4, 1, t);
         const out = smooth(0, 0.2, t);
         c.style.transform = `translateY(${out * 140}%)`;
         c.style.opacity = String(1 - out);
