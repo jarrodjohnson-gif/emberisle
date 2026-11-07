@@ -10,7 +10,7 @@ import { BLOCK_H, TILE_Y } from "@/lib/scene/jelly-dims";
 import { PAINT } from "@/lib/scene/palette";
 import { rng32, setBoardDetail, shoreKit } from "@/lib/scene/hex-jelly";
 
-export type CoastPt = { id: string; x: number; z: number; mx: number; mz: number };
+type CoastPt = { id: string; x: number; z: number; mx: number; mz: number };
 // A dock: the middle of its coastal edge, the outward miter there, its good and its two corners.
 export type Dock = { cx: number; cz: number; mx: number; mz: number; kind: HarborKind; vids: string[] };
 export type Shore = {

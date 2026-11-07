@@ -122,7 +122,7 @@ function size(bag: Cost) {
 }
 
 // A table ask (#363) as its asker sent it: the asker gives `give` and wants `want`.
-export type TradeAsk = Pick<TradeOffer, "from" | "give" | "want">;
+type TradeAsk = Pick<TradeOffer, "from" | "give" | "want">;
 
 // Whether a bot says Yes to an ask (#363). It reads only its own hand and what every seat sees:
 // it can pay, it gets at least as many cards as it gives, the trade leaves it fewer cards short of

@@ -16,8 +16,8 @@ export interface ProfileFields {
   backupColor?: string | null;
   catchphrase?: string;
 }
-export type ProfileStatus = "idle" | "connecting" | "available" | "unsupported" | "offline" | "insecure";
-export interface ProfileSnapshot {
+type ProfileStatus = "idle" | "connecting" | "available" | "unsupported" | "offline" | "insecure";
+interface ProfileSnapshot {
   host: string;
   confirmed: boolean;
   status: ProfileStatus;
