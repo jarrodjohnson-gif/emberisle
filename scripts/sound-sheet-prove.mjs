@@ -109,7 +109,7 @@ try {
     await trigger.click();
     await menu.waitFor();
     const rows = (await menu.getByRole("button").allTextContents()).map((t) => t.trim());
-    assert.ok(rows.includes("Sound100%"), `${v.tag}: one Sound row showing the level: ${rows}`);
+    assert.ok(rows.includes("Sound100%›"), `${v.tag}: one Sound row showing the level: ${rows}`);
     assert.ok(!rows.some((t) => /^(Table sounds|Music)/.test(t)), `${v.tag}: the old two sound rows are gone: ${rows}`);
     assert.ok((await entry.boundingBox()).height >= 44, `${v.tag}: the Sound row is a 44 px row`);
     await page.mouse.move(0, 0);

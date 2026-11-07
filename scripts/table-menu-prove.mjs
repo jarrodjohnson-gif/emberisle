@@ -81,7 +81,7 @@ try {
     const expected = [
       "How to play",
       "Costs",
-      "Sound100%",
+      "Sound100%›",
       ...(hasHaptics ? ["Haptics on"] : []),
       "Crystal",
       "Simple",
@@ -90,7 +90,7 @@ try {
       "Report a bug",
       "Leave table",
     ];
-    assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Costs", "Sound100%", "Crystal", "Simple", "Diorama", "Overhead", "Report a bug", "Leave table"], `${v.tag}: menu rows`);
+    assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Costs", "Sound100%›", "Crystal", "Simple", "Diorama", "Overhead", "Report a bug", "Leave table"], `${v.tag}: menu rows`);
     assert.deepEqual(allRows.map((t) => t.trim()), expected, `${v.tag}: complete menu including haptics`);
     assert.match(await menu.textContent(), /Turn 1/, `${v.tag}: the turn number moved into the menu`);
     assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), "How to play", `${v.tag}: focus moves to the first row`);
