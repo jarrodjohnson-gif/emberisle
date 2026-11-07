@@ -123,10 +123,32 @@ try {
       await open("opponent", ids[2]);
       await open("empty", ids[3]);
       await open("watcher", ids[1], true);
+      // The trade routes: Offer a trade, Mention in chat and Open chat exist only at an online table. The store's mode is
+      // set to "online" with no connection, which renders the rows without sending anything; no row is pressed.
+      await page.evaluate(() => window.__emberisle.setState({ mode: "online" }));
+      // Online, the header gains a chat button from a lazy chunk; let it land so the seats are measured at rest.
+      await page.waitForTimeout(1500);
+      await open("routes-opponent", ids[2]);
+      await open("routes-own", ids[0]);
+      await page.evaluate(() => window.__emberisle.setState({ mode: "ai" }));
+      // At game end every seat's ledger reveals its point fortunes and total (PlayerMenu.tsx `reveal`). The results sheet
+      // covers the seats then, so the menu is opened through the store and measured, not pictured.
+      await page.evaluate(() => { const g = window.__emberisle; const st = structuredClone(g.getState().state); st.phase = "over"; st.winner = st.players[0].id; st.seq++; g.setState({ state: st }); });
+      await page.evaluate((id) => window.__emberisle.getState().openMenu(id), ids[2]);
+      await page.getByTestId("player-menu").waitFor();
+      rec.gameEnd = { opponentPrivateRows: (await page.evaluate(measure)).menu.privateRows };
+      await page.evaluate(() => window.__emberisle.getState().openMenu(null));
+      if (rec.gameEnd.opponentPrivateRows !== 2) throw new Error(`${tag} ${variant}: game end shows ${rec.gameEnd.opponentPrivateRows} private rows on an opponent, not 2`);
+      const routeTexts = ["routes-own", "routes-opponent"].flatMap((k) => rec.screens[k].menu.rows.map((r) => r.text));
+      for (const want of ["Trade with the bank or a dock", "Open chat", "Offer a trade", "Mention @Mira in chat"]) {
+        if (!routeTexts.some((t) => t.includes(want))) throw new Error(`${tag} ${variant}: trade route "${want}" missing from ${JSON.stringify(routeTexts)}`);
+      }
       for (const [name, s] of Object.entries(rec.screens)) {
         if (!s.menu) continue;
-        if (name !== "own" && s.menu.privateRows) throw new Error(`${tag} ${variant} ${name}: private points shown`);
-        console.log(tag, variant, name, JSON.stringify({ moved: s.seatsMoved, box: s.menu.box, facts: s.menu.facts.length, score: s.menu.score.length, note: s.menu.ledgerNote !== "none", rows: s.menu.rows.map((x) => x.text.slice(0, 18)), focus: [s.menu.focusInside, s.focusAfterEscape], inView: s.menu.inView }));
+        if (!name.endsWith("own") && s.menu.privateRows) throw new Error(`${tag} ${variant} ${name}: private points shown`);
+        const short = s.menu.rows.filter((r) => r.h < 44);
+        if (variant === "after" && short.length) throw new Error(`${tag} ${variant} ${name}: rows under 44 px ${JSON.stringify(short)}`);
+        console.log(tag, variant, name, JSON.stringify({ moved: s.seatsMoved, box: s.menu.box, facts: s.menu.facts.length, score: s.menu.score.length, note: s.menu.ledgerNote !== "none", rows: s.menu.rows.map((x) => `${x.text.slice(0, 18)} ${x.h}`), focus: [s.menu.focusInside, s.focusAfterEscape], inView: s.menu.inView, gameEndPrivateRows: rec.gameEnd.opponentPrivateRows }));
       }
       out.runs.push(rec);
       await context.close();

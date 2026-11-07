@@ -25,8 +25,9 @@ Desktop: the menu opens under its card and pushes the cards below it down. Phone
 |---|---|---|
 | Dot, name, points, away marker | keep | identity and score |
 | Goods and fortune counts on the line | **keep** (Question 1 on the issue) | hand size is play information: who to rob, who is near a seven's discard. The strip already hides them in narrow cells and the menu repeats them. |
-| Path and army tallies, award badge | keep | owner decisions #645 and PR #859 |
-| Needs chips, public gains | keep | accepted work (#646, PR #867) |
+| Path and army tallies, award badge | keep | `docs/DECISIONS.md`, 2026-10-20: seat tallies use the Route and Swords icons (PR #859) |
+| Needs chips | keep | accepted work (#646) |
+| Public gains on seats | keep | PR #867, open and not on `main`; this spec must not conflict with it |
 | "Hidden fortunes may add points." under every rail and strip | **move** into the ledger as its last row, for every seat (Question 2) | it is a rule about the ledger, not a seat fact; on the rail it is the one line that is always on and never changes |
 | Facts in the menu | keep all four, plus Your fortunes and Connection | every fact the line can hide stays one tap away |
 | Private rows | keep: your own seat and game end only | `public-score-prove` guards this |
@@ -42,14 +43,14 @@ Desktop: the menu opens under its card and pushes the cards below it down. Phone
 | Where | a popover 8 px to the right of its card, top edges aligned, 256 px wide, above the dock | a bottom sheet across the screen, 20 px top corners, 16 px padding, bottom padding `max(16px, safe-area)` | a bottom sheet 320 px wide at the left edge, inside the dock column, clear of the island |
 | Height | content, at most the room under its top edge | content, at most 70 dvh | same |
 | Heading | none (the card says it) | dot and name, as today | same |
-| Rows | 44 px, 15 px / 22 px, 8 px apart | same | same |
-| Facts and ledger | 12 px caption, as today; the ledger ends with "Hidden fortunes may add points" | same | same |
-| Close | Escape, a click outside, the card again; focus returns to the card | the same, plus a 44 px Close in the heading row for touch (new, not in the mock) | same |
+| Rows | 44 px (a `min-height`, and the row never shrinks when the sheet is capped), 15 px / 22 px, 8 px apart | same | same |
+| Facts and ledger | 12 px caption, as today; the ledger ends with "Hidden fortunes may add points". The mock draws that line with `::after`; the build gives it a real node carrying `data-testid="hidden-point-hint"`, which `public-score-prove` reads. | same | same |
+| Close | Escape, a click outside, the card again; focus returns to the card | the same, plus a 44 px Close in the heading row for touch (new; not in the mock and not measured) | same |
 | Other seats | never move | never move | never move |
 
 ## Pictures
 
-Real game, Chromium 153 through Playwright, device scale 1. Four seats: Jarrod (your own seat, on turn, one hidden point, a wayfarer in hand), Bartholomew Longfellow (a long name, largest army), Mira (Dune), Finn (no pieces, no goods, 0 points). "Watcher" is the same table seen as a spectator with Bartholomew's menu open. "After" is the same page with [after.css](after.css) on top: the hint moved into the ledger, the desktop popover, the phone bottom sheet. The counts on the line are unchanged in both.
+The real app with a set-up table (crafted with `window.__emberisle.setState`, not played), Chromium 153 through Playwright, device scale 1. Four seats: Jarrod (your own seat, on turn, one hidden point, a wayfarer in hand), Bartholomew Longfellow (a long name, largest army), Mira (Dune), Finn (no pieces, no goods, 0 points). "Watcher" is the same table seen as a spectator with Bartholomew's menu open. "After" is the same page with [after.css](after.css) on top: the hint moved into the ledger, the desktop popover, the phone bottom sheet. The counts on the line are unchanged in both.
 
 | Size | Seats | Own seat | Opponent (Dune) | Empty seat | Watcher |
 |---|---|---|---|---|---|
@@ -59,7 +60,9 @@ Real game, Chromium 153 through Playwright, device scale 1. Four seats: Jarrod (
 
 [pictures/measurements.json](pictures/measurements.json) records, per picture, every seat's box and text, the hint's visibility, and the open menu's box, heading, facts, ledger rows, private-row count, action rows, focus on open, and whether any seat moved when the menu opened.
 
-Measured: on desktop today, opening Jarrod's menu moves `rail-p1`, `rail-p2` and `rail-p3`; after, no seat moves on any screen. Private rows appear only on the own-seat menu; the capture throws otherwise. Escape returns focus to the tapped card on every run. Zero page errors.
+Two more pictures per size show the trade routes at an online table (the store's mode set to `online` with no connection, so the rows render and nothing is sent): the own menu with "Trade with the bank or a dock…" and "Open chat" (`pictures/<size>-routes-own-before.jpg`, `-after.jpg`), and Mira's with "Offer a trade…" and "Mention @Mira in chat" (`pictures/<size>-routes-opponent-before.jpg`, `-after.jpg`).
+
+Measured: on desktop today, opening Jarrod's menu moves `rail-p1`, `rail-p2` and `rail-p3`; after, no seat moves on any screen. Private rows appear only on the own-seat menu mid-game, and on an opponent's at game end (2 rows, measured through the store with the results sheet up, not pictured); the capture throws otherwise. Every row in every "after" menu measures 44 px (before the `min-height`, the sideways sheet's rows shrank to 22 px); the capture throws under 44. All four trade routes are present; the capture throws if one is missing. Escape returns focus to the tapped card on every run. The phone sheet's box after: upright `0, 468, 390 x 376` (own) and `0, 416, 390 x 428` (own, online), top edge in the bottom half; sideways `12, 117, 320 x 273`, inside the dock column, bottom at the screen's bottom. Zero page errors.
 
 ## For the build issue
 
@@ -69,9 +72,10 @@ Completion test:
 
 1. `seat-rail-prove`, `public-score-prove`, `needs-prove`, `chat-prove`, `watch-ui-prove` and `fortune-tray-prove` pass. `public-score-prove:62-94` reads `hidden-point-hint` on the rail; the testid moves to the ledger row with the same text, replaced under the 2026-10-25 rule in its own commit with the old/new table. `needs-prove:237` reads the hint's boxes; same.
 2. Opening any seat's menu moves no other seat at 390x844, 844x390 and 1280x720 (compare `rail-*` and `seat-*` boxes before and after).
-3. The phone menu's top edge is in the bottom half of the screen; its rows are 44 px; Close is 44 px.
+3. Upright, the phone menu's top edge is in the bottom half of the screen. Sideways, the sheet sits inside the dock column with its bottom edge at the screen's bottom; its top edge is wherever its height puts it (117 px down at 844x390). Rows are at least 44 px; Close is 44 px.
 4. Private rows only on the own seat or at game end; the watcher sees none.
 5. Escape, a tap outside and the card again all close it; focus returns to the card.
+6. No trade route is lost: "Trade with the bank or a dock…" on your own seat on your main turn; "Offer a trade…" on an opponent's seat online on your main turn; "Mention @name in chat" on an opponent's seat online; "Open chat" on your own seat online.
 
 ## Reproduce
 
