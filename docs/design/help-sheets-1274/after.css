@@ -1,8 +1,17 @@
 /* #1305: one sheet chrome for How to play and Costs, added on top of the running game by capture.mjs.
    No src/ file changes. Rule text, cost rows, focus trap, Escape and focus return are untouched. */
 
-/* The backdrop: mist at 70 %, no blur, the same behind both sheets (today: white at 45 %). */
-[aria-labelledby="howto-title"], div:has(> [data-testid="cost-card"]) { background: color-mix(in srgb, var(--ground) 70%, transparent); }
+/* The backdrop: mist at 70 %, no blur, the same behind both sheets (today: white at 45 %). Its padding is the approved
+   gutter (decision 11 of #1274): 16 px on phones, 24 px on desktop, or the safe-area inset where that is more. */
+[aria-labelledby="howto-title"], div:has(> [data-testid="cost-card"]) {
+  background: color-mix(in srgb, var(--ground) 70%, transparent);
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+@media (min-width: 1024px) {
+  [aria-labelledby="howto-title"], div:has(> [data-testid="cost-card"]) {
+    padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  }
+}
 
 /* The sheet: white, 20 px corners, the sheet shadow, no border, 448 px wide at most, 80 dvh tall at most. */
 [aria-labelledby="howto-title"] > div, [data-testid="cost-card"] { border: 0; box-shadow: var(--shadow-sheet); max-width: 28rem; }

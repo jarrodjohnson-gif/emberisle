@@ -2,6 +2,220 @@
   "browser": "153.0.8010.12",
   "runs": [
     {
+      "size": "320x400",
+      "sheet": "howto",
+      "before": {
+        "sheet": {
+          "x": 12,
+          "y": 68,
+          "w": 296,
+          "h": 320
+        },
+        "gutter": {
+          "left": 12,
+          "right": 12,
+          "bottom": 12
+        },
+        "padding": "0px",
+        "radius": "20px",
+        "border": "1px",
+        "shadow": "none",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "oklab(0.999994 0.0000455678 0.0000200868 / 0.45)",
+        "title": {
+          "text": "How to play",
+          "font": "24/400",
+          "family": "ui-rounded"
+        },
+        "close": {
+          "x": 243,
+          "y": 89,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "14/22.75px",
+          "color": "oklch(0.442 0.017 285.786)"
+        },
+        "scrolls": {
+          "what": "region",
+          "hidden": 1393,
+          "closeInside": false,
+          "scrollbar": "auto"
+        },
+        "fonts": [
+          "12/500",
+          "12/600",
+          "14/400",
+          "24/400"
+        ]
+      },
+      "after": {
+        "sheet": {
+          "x": 16,
+          "y": 64,
+          "w": 288,
+          "h": 320
+        },
+        "gutter": {
+          "left": 16,
+          "right": 16,
+          "bottom": 16
+        },
+        "padding": "0px",
+        "radius": "20px",
+        "border": "0px",
+        "shadow": "rgba(24, 51, 45, 0.18) 0px 10px 28px 0px",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "color(srgb 0.952941 0.964706 0.960784 / 0.7)",
+        "title": {
+          "text": "How to play",
+          "font": "20/600",
+          "family": "ui-sans-serif"
+        },
+        "close": {
+          "x": 244,
+          "y": 80,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "15/22px",
+          "color": "rgb(38, 61, 60)"
+        },
+        "scrolls": {
+          "what": "region",
+          "hidden": 1419,
+          "closeInside": false,
+          "scrollbar": "thin"
+        },
+        "fonts": [
+          "12/500",
+          "12/600",
+          "15/400",
+          "20/600"
+        ]
+      },
+      "tab": {
+        "stops": 2,
+        "staysInside": true
+      },
+      "afterEscape": {
+        "focus": "Table menu",
+        "sameState": true
+      }
+    },
+    {
+      "size": "320x400",
+      "sheet": "costs",
+      "before": {
+        "sheet": {
+          "x": 12,
+          "y": 68,
+          "w": 296,
+          "h": 320
+        },
+        "gutter": {
+          "left": 12,
+          "right": 12,
+          "bottom": 12
+        },
+        "padding": "20px",
+        "radius": "20px",
+        "border": "0px",
+        "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "oklab(0.999994 0.0000455678 0.0000200868 / 0.45)",
+        "title": {
+          "text": "Costs",
+          "font": "20/600",
+          "family": "ui-sans-serif"
+        },
+        "close": {
+          "x": 244,
+          "y": 88,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "15/22px",
+          "color": "rgb(38, 61, 60)"
+        },
+        "scrolls": {
+          "what": "the whole sheet",
+          "hidden": 70,
+          "closeInside": true,
+          "scrollbar": "auto"
+        },
+        "fonts": [
+          "12/500",
+          "15/500",
+          "20/600"
+        ]
+      },
+      "after": {
+        "sheet": {
+          "x": 16,
+          "y": 64,
+          "w": 288,
+          "h": 320
+        },
+        "gutter": {
+          "left": 16,
+          "right": 16,
+          "bottom": 16
+        },
+        "padding": "0px",
+        "radius": "20px",
+        "border": "0px",
+        "shadow": "rgba(24, 51, 45, 0.18) 0px 10px 28px 0px",
+        "fill": "rgb(255, 255, 255)",
+        "backdrop": "color(srgb 0.952941 0.964706 0.960784 / 0.7)",
+        "title": {
+          "text": "Costs",
+          "font": "20/600",
+          "family": "ui-sans-serif"
+        },
+        "close": {
+          "x": 244,
+          "y": 80,
+          "w": 44,
+          "h": 44,
+          "inView": true,
+          "focused": true
+        },
+        "body": {
+          "font": "15/22px",
+          "color": "rgb(38, 61, 60)"
+        },
+        "scrolls": {
+          "what": "div",
+          "hidden": 74,
+          "closeInside": false,
+          "scrollbar": "thin"
+        },
+        "fonts": [
+          "12/500",
+          "15/500",
+          "20/600"
+        ]
+      },
+      "tab": {
+        "stops": 1,
+        "staysInside": true
+      },
+      "afterEscape": {
+        "focus": "Table menu",
+        "sameState": true
+      }
+    },
+    {
       "size": "320x568",
       "sheet": "howto",
       "before": {
@@ -10,6 +224,11 @@
           "y": 101.6,
           "w": 296,
           "h": 454.4
+        },
+        "gutter": {
+          "left": 12,
+          "right": 12,
+          "bottom": 12
         },
         "padding": "0px",
         "radius": "20px",
@@ -37,7 +256,8 @@
         "scrolls": {
           "what": "region",
           "hidden": 1259,
-          "closeInside": false
+          "closeInside": false,
+          "scrollbar": "auto"
         },
         "fonts": [
           "12/500",
@@ -48,10 +268,15 @@
       },
       "after": {
         "sheet": {
-          "x": 12,
-          "y": 101.6,
-          "w": 296,
+          "x": 16,
+          "y": 97.6,
+          "w": 288,
           "h": 454.4
+        },
+        "gutter": {
+          "left": 16,
+          "right": 16,
+          "bottom": 16
         },
         "padding": "0px",
         "radius": "20px",
@@ -65,8 +290,8 @@
           "family": "ui-sans-serif"
         },
         "close": {
-          "x": 248,
-          "y": 117.6,
+          "x": 244,
+          "y": 113.6,
           "w": 44,
           "h": 44,
           "inView": true,
@@ -79,7 +304,8 @@
         "scrolls": {
           "what": "region",
           "hidden": 1285,
-          "closeInside": false
+          "closeInside": false,
+          "scrollbar": "thin"
         },
         "fonts": [
           "12/500",
@@ -87,6 +313,10 @@
           "15/400",
           "20/600"
         ]
+      },
+      "tab": {
+        "stops": 2,
+        "staysInside": true
       },
       "afterEscape": {
         "focus": "Table menu",
@@ -102,6 +332,11 @@
           "y": 166,
           "w": 296,
           "h": 390
+        },
+        "gutter": {
+          "left": 12,
+          "right": 12,
+          "bottom": 12
         },
         "padding": "20px",
         "radius": "20px",
@@ -123,7 +358,7 @@
           "focused": true
         },
         "body": {
-          "font": "16/24px",
+          "font": "15/22px",
           "color": "rgb(38, 61, 60)"
         },
         "scrolls": null,
@@ -135,10 +370,15 @@
       },
       "after": {
         "sheet": {
-          "x": 12,
-          "y": 162,
-          "w": 296,
+          "x": 16,
+          "y": 158,
+          "w": 288,
           "h": 394
+        },
+        "gutter": {
+          "left": 16,
+          "right": 16,
+          "bottom": 16
         },
         "padding": "0px",
         "radius": "20px",
@@ -152,15 +392,15 @@
           "family": "ui-sans-serif"
         },
         "close": {
-          "x": 248,
-          "y": 178,
+          "x": 244,
+          "y": 174,
           "w": 44,
           "h": 44,
           "inView": true,
           "focused": true
         },
         "body": {
-          "font": "16/24px",
+          "font": "15/22px",
           "color": "rgb(38, 61, 60)"
         },
         "scrolls": null,
@@ -169,6 +409,10 @@
           "15/500",
           "20/600"
         ]
+      },
+      "tab": {
+        "stops": 1,
+        "staysInside": true
       },
       "afterEscape": {
         "focus": "Table menu",
@@ -181,9 +425,14 @@
       "before": {
         "sheet": {
           "x": 12,
-          "y": 156.8,
+          "y": 363.5,
           "w": 366,
-          "h": 675.2
+          "h": 468.5
+        },
+        "gutter": {
+          "left": 12,
+          "right": 12,
+          "bottom": 12
         },
         "padding": "0px",
         "radius": "20px",
@@ -198,7 +447,7 @@
         },
         "close": {
           "x": 313,
-          "y": 177.8,
+          "y": 384.5,
           "w": 44,
           "h": 44,
           "inView": true,
@@ -208,24 +457,23 @@
           "font": "14/22.75px",
           "color": "oklch(0.442 0.017 285.786)"
         },
-        "scrolls": {
-          "what": "region",
-          "hidden": 854,
-          "closeInside": false
-        },
+        "scrolls": null,
         "fonts": [
-          "12/500",
-          "12/600",
           "14/400",
           "24/400"
         ]
       },
       "after": {
         "sheet": {
-          "x": 12,
-          "y": 156.8,
-          "w": 366,
+          "x": 16,
+          "y": 152.8,
+          "w": 358,
           "h": 675.2
+        },
+        "gutter": {
+          "left": 16,
+          "right": 16,
+          "bottom": 16
         },
         "padding": "0px",
         "radius": "20px",
@@ -239,8 +487,8 @@
           "family": "ui-sans-serif"
         },
         "close": {
-          "x": 318,
-          "y": 172.8,
+          "x": 314,
+          "y": 168.8,
           "w": 44,
           "h": 44,
           "inView": true,
@@ -253,7 +501,8 @@
         "scrolls": {
           "what": "region",
           "hidden": 884,
-          "closeInside": false
+          "closeInside": false,
+          "scrollbar": "thin"
         },
         "fonts": [
           "12/500",
@@ -261,6 +510,10 @@
           "15/400",
           "20/600"
         ]
+      },
+      "tab": {
+        "stops": 2,
+        "staysInside": true
       },
       "afterEscape": {
         "focus": "Table menu",
@@ -276,6 +529,11 @@
           "y": 442,
           "w": 320,
           "h": 390
+        },
+        "gutter": {
+          "left": 35,
+          "right": 35,
+          "bottom": 12
         },
         "padding": "20px",
         "radius": "20px",
@@ -297,7 +555,7 @@
           "focused": true
         },
         "body": {
-          "font": "16/24px",
+          "font": "15/22px",
           "color": "rgb(38, 61, 60)"
         },
         "scrolls": null,
@@ -309,10 +567,15 @@
       },
       "after": {
         "sheet": {
-          "x": 12,
-          "y": 438,
-          "w": 366,
+          "x": 16,
+          "y": 434,
+          "w": 358,
           "h": 394
+        },
+        "gutter": {
+          "left": 16,
+          "right": 16,
+          "bottom": 16
         },
         "padding": "0px",
         "radius": "20px",
@@ -326,15 +589,15 @@
           "family": "ui-sans-serif"
         },
         "close": {
-          "x": 318,
-          "y": 454,
+          "x": 314,
+          "y": 450,
           "w": 44,
           "h": 44,
           "inView": true,
           "focused": true
         },
         "body": {
-          "font": "16/24px",
+          "font": "15/22px",
           "color": "rgb(38, 61, 60)"
         },
         "scrolls": null,
@@ -343,6 +606,10 @@
           "15/500",
           "20/600"
         ]
+      },
+      "tab": {
+        "stops": 1,
+        "staysInside": true
       },
       "afterEscape": {
         "focus": "Table menu",
@@ -358,6 +625,11 @@
           "y": 39,
           "w": 448,
           "h": 312
+        },
+        "gutter": {
+          "left": 198,
+          "right": 198,
+          "bottom": 39
         },
         "padding": "0px",
         "radius": "20px",
@@ -385,7 +657,8 @@
         "scrolls": {
           "what": "region",
           "hidden": 1032,
-          "closeInside": false
+          "closeInside": false,
+          "scrollbar": "auto"
         },
         "fonts": [
           "12/500",
@@ -400,6 +673,11 @@
           "y": 39,
           "w": 448,
           "h": 312
+        },
+        "gutter": {
+          "left": 198,
+          "right": 198,
+          "bottom": 39
         },
         "padding": "0px",
         "radius": "20px",
@@ -427,7 +705,8 @@
         "scrolls": {
           "what": "region",
           "hidden": 1067,
-          "closeInside": false
+          "closeInside": false,
+          "scrollbar": "thin"
         },
         "fonts": [
           "12/500",
@@ -435,6 +714,10 @@
           "15/400",
           "20/600"
         ]
+      },
+      "tab": {
+        "stops": 2,
+        "staysInside": true
       },
       "afterEscape": {
         "focus": "Table menu",
@@ -450,6 +733,11 @@
           "y": 56,
           "w": 448,
           "h": 278
+        },
+        "gutter": {
+          "left": 198,
+          "right": 198,
+          "bottom": 56
         },
         "padding": "20px",
         "radius": "20px",
@@ -471,7 +759,7 @@
           "focused": true
         },
         "body": {
-          "font": "16/24px",
+          "font": "15/22px",
           "color": "rgb(38, 61, 60)"
         },
         "scrolls": null,
@@ -487,6 +775,11 @@
           "y": 54,
           "w": 448,
           "h": 282
+        },
+        "gutter": {
+          "left": 198,
+          "right": 198,
+          "bottom": 54
         },
         "padding": "0px",
         "radius": "20px",
@@ -508,7 +801,7 @@
           "focused": true
         },
         "body": {
-          "font": "16/24px",
+          "font": "15/22px",
           "color": "rgb(38, 61, 60)"
         },
         "scrolls": null,
@@ -517,6 +810,10 @@
           "15/500",
           "20/600"
         ]
+      },
+      "tab": {
+        "stops": 1,
+        "staysInside": true
       },
       "afterEscape": {
         "focus": "Table menu",
@@ -532,6 +829,11 @@
           "y": 72,
           "w": 448,
           "h": 576
+        },
+        "gutter": {
+          "left": 416,
+          "right": 416,
+          "bottom": 72
         },
         "padding": "0px",
         "radius": "20px",
@@ -559,7 +861,8 @@
         "scrolls": {
           "what": "region",
           "hidden": 768,
-          "closeInside": false
+          "closeInside": false,
+          "scrollbar": "auto"
         },
         "fonts": [
           "12/500",
@@ -574,6 +877,11 @@
           "y": 72,
           "w": 448,
           "h": 576
+        },
+        "gutter": {
+          "left": 416,
+          "right": 416,
+          "bottom": 72
         },
         "padding": "0px",
         "radius": "20px",
@@ -601,7 +909,8 @@
         "scrolls": {
           "what": "region",
           "hidden": 803,
-          "closeInside": false
+          "closeInside": false,
+          "scrollbar": "thin"
         },
         "fonts": [
           "12/500",
@@ -609,6 +918,10 @@
           "15/400",
           "20/600"
         ]
+      },
+      "tab": {
+        "stops": 2,
+        "staysInside": true
       },
       "afterEscape": {
         "focus": "Table menu",
@@ -624,6 +937,11 @@
           "y": 221,
           "w": 448,
           "h": 278
+        },
+        "gutter": {
+          "left": 416,
+          "right": 416,
+          "bottom": 221
         },
         "padding": "20px",
         "radius": "20px",
@@ -645,7 +963,7 @@
           "focused": true
         },
         "body": {
-          "font": "16/24px",
+          "font": "15/22px",
           "color": "rgb(38, 61, 60)"
         },
         "scrolls": null,
@@ -661,6 +979,11 @@
           "y": 219,
           "w": 448,
           "h": 282
+        },
+        "gutter": {
+          "left": 416,
+          "right": 416,
+          "bottom": 219
         },
         "padding": "0px",
         "radius": "20px",
@@ -682,7 +1005,7 @@
           "focused": true
         },
         "body": {
-          "font": "16/24px",
+          "font": "15/22px",
           "color": "rgb(38, 61, 60)"
         },
         "scrolls": null,
@@ -691,6 +1014,10 @@
           "15/500",
           "20/600"
         ]
+      },
+      "tab": {
+        "stops": 1,
+        "staysInside": true
       },
       "afterEscape": {
         "focus": "Table menu",
