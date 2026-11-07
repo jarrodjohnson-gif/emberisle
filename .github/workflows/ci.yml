@@ -157,6 +157,8 @@ jobs:
         run: npm run size-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run size-delta-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run named-tunnel-test
 
   server:
     needs: [changes, dependencies]
@@ -198,11 +200,17 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run wayfarer-modes-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run game-text-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-harbor-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-action-order-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run rules-view-helpers-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm test
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-songs-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-pin-queue-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -222,7 +230,7 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-pin-race-prove
       - if: needs.changes.outputs.docs_only != 'true'
-        run: node --import ./server/register.mjs server/needs-prove.mjs
+        run: npm run server-needs-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -358,11 +366,15 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run trade-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+        run: npm run trade-map-test
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run needs-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
         run: npm run trade-tabs-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
         run: npm run practice-trade-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
+        run: npm run lazy-hud-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
         run: npm run hud-safe-area-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
@@ -517,6 +529,8 @@ jobs:
         run: npm run keyboard-place-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run placement-glow-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+        run: npm run stronghold-upgrade-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
         run: npm run upgrade-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'

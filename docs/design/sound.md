@@ -197,7 +197,9 @@ These answer section 4 and override any recommendation above that disagrees.
 
 `public/audio/old_tower_inn_loop.mp3`: "Medieval: The Old Tower Inn" (loop version) by RandomMind, CC0, from <https://opengameart.org/content/medieval-the-old-tower-inn>. Converted to 128 kbps MP3. Jarrod chose it on 2026-10-18. This supersedes decision 2 above ("no in-game loop").
 
-- It loops at volume 0.25 from the title through the lobby and play (practice, hotseat, online and watchers). On the title it starts after the first press or key anywhere on that screen, then keeps playing into the lobby without restarting. The file is fetched on that first start, not before, and is not in any JS chunk. The title's sound button mutes every sound, this loop included. The separate Music on/off row stays in the Table menu.
+- It loops at volume 0.12 from the title through the lobby and play (practice, hotseat, online and watchers). On the title it starts after the first press or key anywhere on that screen, then keeps playing into the lobby without restarting. The file is fetched on that first start, not before, and is not in any JS chunk. The title's sound button mutes every sound, this loop included. The separate Music on/off row stays in the Table menu.
 - Mute (the Table menu's "Table sounds" and the title's sound button) stops it; unmuting resumes it. A "Music on/off" row in the Table menu, on by default and kept in `localStorage`, is a stopgap until the Sound menu (#669).
-- It ducks to 30% of its volume (0.075) while `game_start`, `match_point`, `game_lose` or `end_music` is playing, and returns to 0.25 when the last of them ends or is cut off.
+- It ducks to 30% of its volume (0.036) while `game_start`, `match_point`, `game_lose` or `end_music` is playing, and returns to 0.12 when the last of them ends or is cut off.
 - It stops at the win screen (where `end_music` plays) and when a new game leaves that screen. Returning to the title does not stop it or rewind it. A rematch brings it back.
+
+Background bed level, Jarrod 2026-11-03 (#1284): `BG_VOLUME` 0.25 → 0.12; `BG_DUCK` remains 0.3. Sting gains stay unchanged. Final listening acceptance remains with Jarrod.

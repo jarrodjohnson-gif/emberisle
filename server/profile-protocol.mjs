@@ -134,6 +134,7 @@ export function profileHandler(store, send) {
     }
     if (msg.type === "profileEdit") {
       const out = await store.profileEdit(msg.credential, {
+        winSongId: msg.winSongId,
         displayName: msg.displayName,
         login: msg.login,
         pin: msg.pin,

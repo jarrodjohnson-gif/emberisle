@@ -8,3 +8,4 @@
 #need-picker .need-toggle { height: 44px; min-width: 44px; padding: 0 4px; border-color: var(--control-line); border-radius: 9999px; background: #f3f6f5; font-size: 12px; white-space: nowrap; transition: none; }
 #need-picker .need-toggle[aria-pressed="true"] { background: #fff; box-shadow: inset 0 0 0 2px var(--ink); font-weight: 700; }
 #need-picker .need-toggle:disabled { color: var(--muted); }
+.need-hint { margin-bottom: 8px; color: var(--muted); font-size: 12px; line-height: 16px; }
