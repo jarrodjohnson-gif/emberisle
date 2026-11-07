@@ -21,6 +21,9 @@ export const OpenTables = openTables.pick((m) => m.OpenTables);
 export const OpenModeToggle = openTables.pick((m) => m.OpenModeToggle);
 export const SetupReference = chunk(() => import("@/components/game/SetupReference")).pick(m => m.SetupReference);
 export const WayfarerOptions = chunk(() => import("@/components/game/WayfarerOptions")).pick(m => m.WayfarerOptions);
+// #766: the title's profile sheet and its profile client load only when Profile is pointed at, focused or pressed.
+export const profileSheet = chunk(() => import("@/components/game/ProfileSheet"));
+export const ProfileSheet = profileSheet.pick((m) => m.ProfileSheet);
 
 export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);

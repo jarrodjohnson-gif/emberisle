@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { OpenModeToggle, HowTo, Lobby, online, OpenTables, SetupPipHints, sheets, WayfarerOptions } from "@/components/game/chunks";
+import { OpenModeToggle, HowTo, Lobby, online, OpenTables, ProfileSheet, profileSheet, SetupPipHints, sheets, WayfarerOptions } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
@@ -114,6 +114,8 @@ function Title() {
   const howTo = useGame((s) => s.howTo);
   const [join, setJoin] = useState("");
   const [openMode, setOpenMode] = useState(false);
+  // #766: the Profile sheet is open while this holds the button that opened it, where focus returns on close.
+  const [profileOpener, setProfileOpener] = useState<HTMLElement | null>(null);
   const watchTable = useGame.getState().watchTable;
   // A ?watch= link makes Watch the primary button for this visit (docs/design/spectator.md).
   const [watchLink, setWatchLink] = useState(false);
@@ -219,6 +221,10 @@ function Title() {
                 </button>
               ))}
             </div>
+            {/* #766: inside the seat settings, so the closed title card keeps its height (title-prove at 1280x500). */}
+            <Button variant="ghost" className="mt-2 px-3" onPointerEnter={profileSheet.prefetch} onFocus={profileSheet.prefetch} onClick={(e) => setProfileOpener(e.currentTarget)}>
+              Profile
+            </Button>
             </details>
             <details data-testid="wayfarer-setup" className="group border-t border-border">
               <summary className="flex min-h-11 cursor-pointer flex-col justify-center text-xs text-muted">
@@ -336,6 +342,11 @@ function Title() {
           <HowTo onClose={() => setHowTo(false)} />
         </LazyBoundary>
       ) : null}
+      {profileOpener ? (
+        <LazyBoundary failed={<Closed close={() => setProfileOpener(null)} />}>
+          <ProfileSheet opener={profileOpener} onClose={() => setProfileOpener(null)} />
+        </LazyBoundary>
+      ) : null}
     </>
   );
 }
@@ -344,6 +355,12 @@ function Title() {
 function HowToFailed() {
   const setHowTo = useGame((s) => s.setHowTo);
   useEffect(() => setHowTo(false), [setHowTo]);
+  return null;
+}
+
+// The profile chunk did not load: close it, so the next press mounts the sheet again and retries (#492).
+function Closed({ close }: { close: () => void }) {
+  useEffect(close, [close]);
   return null;
 }
 
