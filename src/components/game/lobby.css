@@ -198,17 +198,19 @@
   .lobby-layout { inset: max(8px, env(safe-area-inset-top)) 16px max(8px, env(safe-area-inset-bottom)); }
 }
 @media (max-width: 600px) and (orientation: portrait) {
-  .lobby-name, .lobby-name > button[data-testid="rename-seat"], .lobby-name > input[data-testid="rename-input"] { font-size: 15px; }
-  .lobby-summary > p, .lobby-layout .lobby-action-buttons > button:not(:last-child) { font-size: 15px; line-height: 20px; }
-  .lobby-chat-panel [data-testid="chat-log"] > li { font-size: 0.875rem; line-height: 1.1875rem; }
+  .lobby-name, .lobby-name > button[data-testid="rename-seat"], .lobby-name > input[data-testid="rename-input"] { font-size: 14px; }
+  .lobby-summary > p, .lobby-layout .lobby-action-buttons > button:not(:last-child) { font-size: 14px; line-height: 20px; }
+  .lobby-chat-panel [data-testid="chat-log"] > li { font-size: 0.8125rem; line-height: 1.125rem; }
   .lobby-layout input { font-size: 16px !important; }
+  .lobby-layout .lobby-player:has(> [data-testid="add-bot"]) > button { padding: 0 10px; font-size: 13px; line-height: 16px; }
+}
+@media (max-width: 390px) and (orientation: portrait) {
+  .lobby-name, .lobby-name > button[data-testid="rename-seat"], .lobby-name > input[data-testid="rename-input"] { font-size: 13px; }
+  .lobby-summary > p, .lobby-layout .lobby-action-buttons > button:not(:last-child) { font-size: 13px; }
+  .lobby-chat-panel [data-testid="chat-log"] > li { font-size: 0.75rem; line-height: 1.0625rem; }
 }
 @media (max-width: 380px) and (orientation: portrait) {
   .lobby-layout .lobby-layout-cover { padding: 8px; }
-  .lobby-name, .lobby-name > button[data-testid="rename-seat"], .lobby-name > input[data-testid="rename-input"] { font-size: 14px; }
-  .lobby-summary > p, .lobby-layout .lobby-action-buttons > button:not(:last-child) { font-size: 14px; }
-  .lobby-chat-panel [data-testid="chat-log"] > li { font-size: 0.8125rem; line-height: 1.125rem; }
-  .lobby-layout .lobby-player:has(> [data-testid="add-bot"]) > button { padding: 0 10px; font-size: 13px; line-height: 16px; }
 }
 @media (max-width: 340px) and (orientation: portrait) {
   .lobby-name, .lobby-name > button[data-testid="rename-seat"], .lobby-name > input[data-testid="rename-input"] { font-size: 13px; }
