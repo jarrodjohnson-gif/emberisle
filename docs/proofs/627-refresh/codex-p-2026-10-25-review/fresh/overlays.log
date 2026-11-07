@@ -1,0 +1,311 @@
+$ npm run rotate-overlays-prove
+
+> rotate-overlays-prove
+> node scripts/rotate-overlays-prove.mjs
+
+ok   @390x844 open: chat + toast overlays are present
+ok   @390x844 open: chat is non-zero and inside the viewport {"l":0,"t":424,"r":390,"b":844,"w":390,"h":420}
+ok   @390x844 open: toast is non-zero and inside the safe area {"l":12,"t":277,"r":378,"b":416,"w":366,"h":139}
+ok   @390x844 open: chat and toast do not overlap [[0,424,390,844],[12,277,378,416]]
+ok   @390x844 open: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @390x844 open: 3 seat point totals are visible and uncovered
+ok   @844x390 rotated: chat + toast overlays are present
+ok   @844x390 rotated: chat is non-zero and inside the viewport {"l":0,"t":151,"r":844,"b":390,"w":844,"h":239}
+ok   @844x390 rotated: toast is non-zero and inside the safe area {"l":47,"t":80,"r":797,"b":143,"w":750,"h":63}
+ok   @844x390 rotated: chat and toast do not overlap [[0,151,844,390],[47,80,797,143]]
+ok   @844x390 rotated: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @844x390 rotated: 3 seat point totals are visible and uncovered
+ok   @390x844 rotated back: chat + toast overlays are present
+ok   @390x844 rotated back: chat is non-zero and inside the viewport {"l":0,"t":424,"r":390,"b":844,"w":390,"h":420}
+ok   @390x844 rotated back: toast is non-zero and inside the safe area {"l":12,"t":277,"r":378,"b":416,"w":366,"h":139}
+ok   @390x844 rotated back: chat and toast do not overlap [[0,424,390,844],[12,277,378,416]]
+ok   @390x844 rotated back: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @390x844 rotated back: 3 seat point totals are visible and uncovered
+ok   @390x844 trade: Escape closes the chat and leaves the toast
+ok   @390x844 open: chat + prompt overlays are present
+ok   @390x844 open: chat is non-zero and inside the viewport {"l":0,"t":424,"r":390,"b":844,"w":390,"h":420}
+ok   @390x844 open: prompt is non-zero and inside the safe area {"l":12,"t":354,"r":378,"b":416,"w":366,"h":62}
+ok   @390x844 open: chat and prompt do not overlap [[0,424,390,844],[12,354,378,416]]
+ok   @390x844 open: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @390x844 open: 3 seat point totals are visible and uncovered
+ok   @844x390 rotated: chat + prompt overlays are present
+ok   @844x390 rotated: chat is non-zero and inside the viewport {"l":0,"t":150,"r":844,"b":390,"w":844,"h":240}
+ok   @844x390 rotated: prompt is non-zero and inside the safe area {"l":47,"t":80,"r":797,"b":142,"w":750,"h":62}
+ok   @844x390 rotated: chat and prompt do not overlap [[0,150,844,390],[47,80,797,142]]
+ok   @844x390 rotated: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @844x390 rotated: 3 seat point totals are visible and uncovered
+ok   @390x844 rotated back: chat + prompt overlays are present
+ok   @390x844 rotated back: chat is non-zero and inside the viewport {"l":0,"t":424,"r":390,"b":844,"w":390,"h":420}
+ok   @390x844 rotated back: prompt is non-zero and inside the safe area {"l":12,"t":354,"r":378,"b":416,"w":366,"h":62}
+ok   @390x844 rotated back: chat and prompt do not overlap [[0,424,390,844],[12,354,378,416]]
+ok   @390x844 rotated back: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @390x844 rotated back: 3 seat point totals are visible and uncovered
+ok   @390x844 steal: Escape closes the chat and leaves the prompt
+ok   @844x390 open: chat + toast overlays are present
+ok   @844x390 open: chat is non-zero and inside the viewport {"l":0,"t":151,"r":844,"b":390,"w":844,"h":239}
+ok   @844x390 open: toast is non-zero and inside the safe area {"l":47,"t":80,"r":797,"b":143,"w":750,"h":63}
+ok   @844x390 open: chat and toast do not overlap [[0,151,844,390],[47,80,797,143]]
+ok   @844x390 open: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @844x390 open: 3 seat point totals are visible and uncovered
+ok   @390x844 rotated: chat + toast overlays are present
+ok   @390x844 rotated: chat is non-zero and inside the viewport {"l":0,"t":424,"r":390,"b":844,"w":390,"h":420}
+ok   @390x844 rotated: toast is non-zero and inside the safe area {"l":12,"t":277,"r":378,"b":416,"w":366,"h":139}
+ok   @390x844 rotated: chat and toast do not overlap [[0,424,390,844],[12,277,378,416]]
+ok   @390x844 rotated: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @390x844 rotated: 3 seat point totals are visible and uncovered
+ok   @844x390 rotated back: chat + toast overlays are present
+ok   @844x390 rotated back: chat is non-zero and inside the viewport {"l":0,"t":151,"r":844,"b":390,"w":844,"h":239}
+ok   @844x390 rotated back: toast is non-zero and inside the safe area {"l":47,"t":80,"r":797,"b":143,"w":750,"h":63}
+ok   @844x390 rotated back: chat and toast do not overlap [[0,151,844,390],[47,80,797,143]]
+ok   @844x390 rotated back: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @844x390 rotated back: 3 seat point totals are visible and uncovered
+ok   @844x390 trade: Escape closes the chat and leaves the toast
+ok   @844x390 open: chat + prompt overlays are present
+ok   @844x390 open: chat is non-zero and inside the viewport {"l":0,"t":150,"r":844,"b":390,"w":844,"h":240}
+ok   @844x390 open: prompt is non-zero and inside the safe area {"l":47,"t":80,"r":797,"b":142,"w":750,"h":62}
+ok   @844x390 open: chat and prompt do not overlap [[0,150,844,390],[47,80,797,142]]
+ok   @844x390 open: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @844x390 open: 3 seat point totals are visible and uncovered
+ok   @390x844 rotated: chat + prompt overlays are present
+ok   @390x844 rotated: chat is non-zero and inside the viewport {"l":0,"t":424,"r":390,"b":844,"w":390,"h":420}
+ok   @390x844 rotated: prompt is non-zero and inside the safe area {"l":12,"t":354,"r":378,"b":416,"w":366,"h":62}
+ok   @390x844 rotated: chat and prompt do not overlap [[0,424,390,844],[12,354,378,416]]
+ok   @390x844 rotated: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @390x844 rotated: 3 seat point totals are visible and uncovered
+ok   @844x390 rotated back: chat + prompt overlays are present
+ok   @844x390 rotated back: chat is non-zero and inside the viewport {"l":0,"t":150,"r":844,"b":390,"w":844,"h":240}
+ok   @844x390 rotated back: prompt is non-zero and inside the safe area {"l":47,"t":80,"r":797,"b":142,"w":750,"h":62}
+ok   @844x390 rotated back: chat and prompt do not overlap [[0,150,844,390],[47,80,797,142]]
+ok   @844x390 rotated back: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @844x390 rotated back: 3 seat point totals are visible and uncovered
+ok   @844x390 steal: Escape closes the chat and leaves the prompt
+ok   @360x640 open: chat + toast overlays are present
+ok   @360x640 open: chat is non-zero and inside the viewport {"l":0,"t":262,"r":360,"b":640,"w":360,"h":378}
+ok   @360x640 open: toast is non-zero and inside the safe area {"l":12,"t":115,"r":348,"b":254,"w":336,"h":139}
+ok   @360x640 open: chat and toast do not overlap [[0,262,360,640],[12,115,348,254]]
+ok   @360x640 open: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @360x640 open: 3 seat point totals are visible and uncovered
+ok   @640x360 rotated: chat + toast overlays are present
+ok   @640x360 rotated: chat is non-zero and inside the viewport {"l":0,"t":171,"r":640,"b":360,"w":640,"h":189}
+ok   @640x360 rotated: toast is non-zero and inside the safe area {"l":47,"t":80,"r":593,"b":163,"w":546,"h":83}
+ok   @640x360 rotated: chat and toast do not overlap [[0,171,640,360],[47,80,593,163]]
+ok   @640x360 rotated: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @640x360 rotated: 3 seat point totals are visible and uncovered
+ok   @360x640 rotated back: chat + toast overlays are present
+ok   @360x640 rotated back: chat is non-zero and inside the viewport {"l":0,"t":262,"r":360,"b":640,"w":360,"h":378}
+ok   @360x640 rotated back: toast is non-zero and inside the safe area {"l":12,"t":115,"r":348,"b":254,"w":336,"h":139}
+ok   @360x640 rotated back: chat and toast do not overlap [[0,262,360,640],[12,115,348,254]]
+ok   @360x640 rotated back: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @360x640 rotated back: 3 seat point totals are visible and uncovered
+ok   @360x640 trade: Escape closes the chat and leaves the toast
+ok   @360x640 open: chat + prompt overlays are present
+ok   @360x640 open: chat is non-zero and inside the viewport {"l":0,"t":237,"r":360,"b":640,"w":360,"h":403}
+ok   @360x640 open: prompt is non-zero and inside the safe area {"l":12,"t":115,"r":348,"b":229,"w":336,"h":114}
+ok   @360x640 open: chat and prompt do not overlap [[0,237,360,640],[12,115,348,229]]
+ok   @360x640 open: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @360x640 open: 3 seat point totals are visible and uncovered
+ok   @640x360 rotated: chat + prompt overlays are present
+ok   @640x360 rotated: chat is non-zero and inside the viewport {"l":0,"t":150,"r":640,"b":360,"w":640,"h":210}
+ok   @640x360 rotated: prompt is non-zero and inside the safe area {"l":47,"t":80,"r":593,"b":142,"w":546,"h":62}
+ok   @640x360 rotated: chat and prompt do not overlap [[0,150,640,360],[47,80,593,142]]
+ok   @640x360 rotated: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @640x360 rotated: 3 seat point totals are visible and uncovered
+ok   @360x640 rotated back: chat + prompt overlays are present
+ok   @360x640 rotated back: chat is non-zero and inside the viewport {"l":0,"t":237,"r":360,"b":640,"w":360,"h":403}
+ok   @360x640 rotated back: prompt is non-zero and inside the safe area {"l":12,"t":115,"r":348,"b":229,"w":336,"h":114}
+ok   @360x640 rotated back: chat and prompt do not overlap [[0,237,360,640],[12,115,348,229]]
+ok   @360x640 rotated back: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @360x640 rotated back: 3 seat point totals are visible and uncovered
+ok   @360x640 steal: Escape closes the chat and leaves the prompt
+ok   @640x360 open: chat + toast overlays are present
+ok   @640x360 open: chat is non-zero and inside the viewport {"l":0,"t":171,"r":640,"b":360,"w":640,"h":189}
+ok   @640x360 open: toast is non-zero and inside the safe area {"l":47,"t":80,"r":593,"b":163,"w":546,"h":83}
+ok   @640x360 open: chat and toast do not overlap [[0,171,640,360],[47,80,593,163]]
+ok   @640x360 open: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @640x360 open: 3 seat point totals are visible and uncovered
+ok   @360x640 rotated: chat + toast overlays are present
+ok   @360x640 rotated: chat is non-zero and inside the viewport {"l":0,"t":262,"r":360,"b":640,"w":360,"h":378}
+ok   @360x640 rotated: toast is non-zero and inside the safe area {"l":12,"t":115,"r":348,"b":254,"w":336,"h":139}
+ok   @360x640 rotated: chat and toast do not overlap [[0,262,360,640],[12,115,348,254]]
+ok   @360x640 rotated: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @360x640 rotated: 3 seat point totals are visible and uncovered
+ok   @640x360 rotated back: chat + toast overlays are present
+ok   @640x360 rotated back: chat is non-zero and inside the viewport {"l":0,"t":171,"r":640,"b":360,"w":640,"h":189}
+ok   @640x360 rotated back: toast is non-zero and inside the safe area {"l":47,"t":80,"r":593,"b":163,"w":546,"h":83}
+ok   @640x360 rotated back: chat and toast do not overlap [[0,171,640,360],[47,80,593,163]]
+ok   @640x360 rotated back: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @640x360 rotated back: 3 seat point totals are visible and uncovered
+ok   @640x360 trade: Escape closes the chat and leaves the toast
+ok   @640x360 open: chat + prompt overlays are present
+ok   @640x360 open: chat is non-zero and inside the viewport {"l":0,"t":150,"r":640,"b":360,"w":640,"h":210}
+ok   @640x360 open: prompt is non-zero and inside the safe area {"l":47,"t":80,"r":593,"b":142,"w":546,"h":62}
+ok   @640x360 open: chat and prompt do not overlap [[0,150,640,360],[47,80,593,142]]
+ok   @640x360 open: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @640x360 open: 3 seat point totals are visible and uncovered
+ok   @360x640 rotated: chat + prompt overlays are present
+ok   @360x640 rotated: chat is non-zero and inside the viewport {"l":0,"t":237,"r":360,"b":640,"w":360,"h":403}
+ok   @360x640 rotated: prompt is non-zero and inside the safe area {"l":12,"t":115,"r":348,"b":229,"w":336,"h":114}
+ok   @360x640 rotated: chat and prompt do not overlap [[0,237,360,640],[12,115,348,229]]
+ok   @360x640 rotated: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @360x640 rotated: 3 seat point totals are visible and uncovered
+ok   @640x360 rotated back: chat + prompt overlays are present
+ok   @640x360 rotated back: chat is non-zero and inside the viewport {"l":0,"t":150,"r":640,"b":360,"w":640,"h":210}
+ok   @640x360 rotated back: prompt is non-zero and inside the safe area {"l":47,"t":80,"r":593,"b":142,"w":546,"h":62}
+ok   @640x360 rotated back: chat and prompt do not overlap [[0,150,640,360],[47,80,593,142]]
+ok   @640x360 rotated back: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @640x360 rotated back: 3 seat point totals are visible and uncovered
+ok   @640x360 steal: Escape closes the chat and leaves the prompt
+ok   @390x844 open: chat + toast overlays are present
+ok   @390x844 open: chat is non-zero and inside the viewport {"l":0,"t":424,"r":390,"b":844,"w":390,"h":420}
+ok   @390x844 open: toast is non-zero and inside the safe area {"l":12,"t":277,"r":378,"b":416,"w":366,"h":139}
+ok   @390x844 open: chat and toast do not overlap [[0,424,390,844],[12,277,378,416]]
+ok   @390x844 open: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @390x844 open: 4 seat point totals are visible and uncovered
+ok   @844x390 rotated: chat + toast overlays are present
+ok   @844x390 rotated: chat is non-zero and inside the viewport {"l":0,"t":171,"r":844,"b":390,"w":844,"h":219}
+ok   @844x390 rotated: toast is non-zero and inside the safe area {"l":47,"t":80,"r":797,"b":163,"w":750,"h":83}
+ok   @844x390 rotated: chat and toast do not overlap [[0,171,844,390],[47,80,797,163]]
+ok   @844x390 rotated: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @844x390 rotated: 4 seat point totals are visible and uncovered
+ok   @390x844 rotated back: chat + toast overlays are present
+ok   @390x844 rotated back: chat is non-zero and inside the viewport {"l":0,"t":424,"r":390,"b":844,"w":390,"h":420}
+ok   @390x844 rotated back: toast is non-zero and inside the safe area {"l":12,"t":277,"r":378,"b":416,"w":366,"h":139}
+ok   @390x844 rotated back: chat and toast do not overlap [[0,424,390,844],[12,277,378,416]]
+ok   @390x844 rotated back: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @390x844 rotated back: 4 seat point totals are visible and uncovered
+ok   @390x844 trade: Escape closes the chat and leaves the toast
+ok   @390x844 open: chat + prompt overlays are present
+ok   @390x844 open: chat is non-zero and inside the viewport {"l":0,"t":424,"r":390,"b":844,"w":390,"h":420}
+ok   @390x844 open: prompt is non-zero and inside the safe area {"l":12,"t":302,"r":378,"b":416,"w":366,"h":114}
+ok   @390x844 open: chat and prompt do not overlap [[0,424,390,844],[12,302,378,416]]
+ok   @390x844 open: 4 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @390x844 open: 4 seat point totals are visible and uncovered
+ok   @844x390 rotated: chat + prompt overlays are present
+ok   @844x390 rotated: chat is non-zero and inside the viewport {"l":0,"t":150,"r":844,"b":390,"w":844,"h":240}
+ok   @844x390 rotated: prompt is non-zero and inside the safe area {"l":47,"t":80,"r":797,"b":142,"w":750,"h":62}
+ok   @844x390 rotated: chat and prompt do not overlap [[0,150,844,390],[47,80,797,142]]
+ok   @844x390 rotated: 4 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @844x390 rotated: 4 seat point totals are visible and uncovered
+ok   @390x844 rotated back: chat + prompt overlays are present
+ok   @390x844 rotated back: chat is non-zero and inside the viewport {"l":0,"t":424,"r":390,"b":844,"w":390,"h":420}
+ok   @390x844 rotated back: prompt is non-zero and inside the safe area {"l":12,"t":302,"r":378,"b":416,"w":366,"h":114}
+ok   @390x844 rotated back: chat and prompt do not overlap [[0,424,390,844],[12,302,378,416]]
+ok   @390x844 rotated back: 4 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @390x844 rotated back: 4 seat point totals are visible and uncovered
+ok   @390x844 steal: Escape closes the chat and leaves the prompt
+ok   @844x390 open: chat + toast overlays are present
+ok   @844x390 open: chat is non-zero and inside the viewport {"l":0,"t":171,"r":844,"b":390,"w":844,"h":219}
+ok   @844x390 open: toast is non-zero and inside the safe area {"l":47,"t":80,"r":797,"b":163,"w":750,"h":83}
+ok   @844x390 open: chat and toast do not overlap [[0,171,844,390],[47,80,797,163]]
+ok   @844x390 open: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @844x390 open: 4 seat point totals are visible and uncovered
+ok   @390x844 rotated: chat + toast overlays are present
+ok   @390x844 rotated: chat is non-zero and inside the viewport {"l":0,"t":424,"r":390,"b":844,"w":390,"h":420}
+ok   @390x844 rotated: toast is non-zero and inside the safe area {"l":12,"t":277,"r":378,"b":416,"w":366,"h":139}
+ok   @390x844 rotated: chat and toast do not overlap [[0,424,390,844],[12,277,378,416]]
+ok   @390x844 rotated: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @390x844 rotated: 4 seat point totals are visible and uncovered
+ok   @844x390 rotated back: chat + toast overlays are present
+ok   @844x390 rotated back: chat is non-zero and inside the viewport {"l":0,"t":171,"r":844,"b":390,"w":844,"h":219}
+ok   @844x390 rotated back: toast is non-zero and inside the safe area {"l":47,"t":80,"r":797,"b":163,"w":750,"h":83}
+ok   @844x390 rotated back: chat and toast do not overlap [[0,171,844,390],[47,80,797,163]]
+ok   @844x390 rotated back: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @844x390 rotated back: 4 seat point totals are visible and uncovered
+ok   @844x390 trade: Escape closes the chat and leaves the toast
+ok   @844x390 open: chat + prompt overlays are present
+ok   @844x390 open: chat is non-zero and inside the viewport {"l":0,"t":150,"r":844,"b":390,"w":844,"h":240}
+ok   @844x390 open: prompt is non-zero and inside the safe area {"l":47,"t":80,"r":797,"b":142,"w":750,"h":62}
+ok   @844x390 open: chat and prompt do not overlap [[0,150,844,390],[47,80,797,142]]
+ok   @844x390 open: 4 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @844x390 open: 4 seat point totals are visible and uncovered
+ok   @390x844 rotated: chat + prompt overlays are present
+ok   @390x844 rotated: chat is non-zero and inside the viewport {"l":0,"t":424,"r":390,"b":844,"w":390,"h":420}
+ok   @390x844 rotated: prompt is non-zero and inside the safe area {"l":12,"t":302,"r":378,"b":416,"w":366,"h":114}
+ok   @390x844 rotated: chat and prompt do not overlap [[0,424,390,844],[12,302,378,416]]
+ok   @390x844 rotated: 4 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @390x844 rotated: 4 seat point totals are visible and uncovered
+ok   @844x390 rotated back: chat + prompt overlays are present
+ok   @844x390 rotated back: chat is non-zero and inside the viewport {"l":0,"t":150,"r":844,"b":390,"w":844,"h":240}
+ok   @844x390 rotated back: prompt is non-zero and inside the safe area {"l":47,"t":80,"r":797,"b":142,"w":750,"h":62}
+ok   @844x390 rotated back: chat and prompt do not overlap [[0,150,844,390],[47,80,797,142]]
+ok   @844x390 rotated back: 4 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @844x390 rotated back: 4 seat point totals are visible and uncovered
+ok   @844x390 steal: Escape closes the chat and leaves the prompt
+ok   @360x640 open: chat + toast overlays are present
+ok   @360x640 open: chat is non-zero and inside the viewport {"l":0,"t":282,"r":360,"b":640,"w":360,"h":358}
+ok   @360x640 open: toast is non-zero and inside the safe area {"l":12,"t":115,"r":348,"b":274,"w":336,"h":159}
+ok   @360x640 open: chat and toast do not overlap [[0,282,360,640],[12,115,348,274]]
+ok   @360x640 open: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @360x640 open: 4 seat point totals are visible and uncovered
+ok   @640x360 rotated: chat + toast overlays are present
+ok   @640x360 rotated: chat is non-zero and inside the viewport {"l":0,"t":171,"r":640,"b":360,"w":640,"h":189}
+ok   @640x360 rotated: toast is non-zero and inside the safe area {"l":47,"t":80,"r":593,"b":163,"w":546,"h":83}
+ok   @640x360 rotated: chat and toast do not overlap [[0,171,640,360],[47,80,593,163]]
+ok   @640x360 rotated: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @640x360 rotated: 4 seat point totals are visible and uncovered
+ok   @360x640 rotated back: chat + toast overlays are present
+ok   @360x640 rotated back: chat is non-zero and inside the viewport {"l":0,"t":282,"r":360,"b":640,"w":360,"h":358}
+ok   @360x640 rotated back: toast is non-zero and inside the safe area {"l":12,"t":115,"r":348,"b":274,"w":336,"h":159}
+ok   @360x640 rotated back: chat and toast do not overlap [[0,282,360,640],[12,115,348,274]]
+ok   @360x640 rotated back: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @360x640 rotated back: 4 seat point totals are visible and uncovered
+ok   @360x640 trade: Escape closes the chat and leaves the toast
+ok   @360x640 open: chat + prompt overlays are present
+ok   @360x640 open: chat is non-zero and inside the viewport {"l":0,"t":237,"r":360,"b":640,"w":360,"h":403}
+ok   @360x640 open: prompt is non-zero and inside the safe area {"l":12,"t":115,"r":348,"b":229,"w":336,"h":114}
+ok   @360x640 open: chat and prompt do not overlap [[0,237,360,640],[12,115,348,229]]
+ok   @360x640 open: 4 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @360x640 open: 4 seat point totals are visible and uncovered
+ok   @640x360 rotated: chat + prompt overlays are present
+ok   @640x360 rotated: chat is non-zero and inside the viewport {"l":0,"t":150,"r":640,"b":360,"w":640,"h":210}
+ok   @640x360 rotated: prompt is non-zero and inside the safe area {"l":47,"t":80,"r":593,"b":142,"w":546,"h":62}
+ok   @640x360 rotated: chat and prompt do not overlap [[0,150,640,360],[47,80,593,142]]
+ok   @640x360 rotated: 4 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @640x360 rotated: 4 seat point totals are visible and uncovered
+ok   @360x640 rotated back: chat + prompt overlays are present
+ok   @360x640 rotated back: chat is non-zero and inside the viewport {"l":0,"t":237,"r":360,"b":640,"w":360,"h":403}
+ok   @360x640 rotated back: prompt is non-zero and inside the safe area {"l":12,"t":115,"r":348,"b":229,"w":336,"h":114}
+ok   @360x640 rotated back: chat and prompt do not overlap [[0,237,360,640],[12,115,348,229]]
+ok   @360x640 rotated back: 4 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @360x640 rotated back: 4 seat point totals are visible and uncovered
+ok   @360x640 steal: Escape closes the chat and leaves the prompt
+ok   @640x360 open: chat + toast overlays are present
+ok   @640x360 open: chat is non-zero and inside the viewport {"l":0,"t":171,"r":640,"b":360,"w":640,"h":189}
+ok   @640x360 open: toast is non-zero and inside the safe area {"l":47,"t":80,"r":593,"b":163,"w":546,"h":83}
+ok   @640x360 open: chat and toast do not overlap [[0,171,640,360],[47,80,593,163]]
+ok   @640x360 open: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @640x360 open: 4 seat point totals are visible and uncovered
+ok   @360x640 rotated: chat + toast overlays are present
+ok   @360x640 rotated: chat is non-zero and inside the viewport {"l":0,"t":282,"r":360,"b":640,"w":360,"h":358}
+ok   @360x640 rotated: toast is non-zero and inside the safe area {"l":12,"t":115,"r":348,"b":274,"w":336,"h":159}
+ok   @360x640 rotated: chat and toast do not overlap [[0,282,360,640],[12,115,348,274]]
+ok   @360x640 rotated: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @360x640 rotated: 4 seat point totals are visible and uncovered
+ok   @640x360 rotated back: chat + toast overlays are present
+ok   @640x360 rotated back: chat is non-zero and inside the viewport {"l":0,"t":171,"r":640,"b":360,"w":640,"h":189}
+ok   @640x360 rotated back: toast is non-zero and inside the safe area {"l":47,"t":80,"r":593,"b":163,"w":546,"h":83}
+ok   @640x360 rotated back: chat and toast do not overlap [[0,171,640,360],[47,80,593,163]]
+ok   @640x360 rotated back: 3 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @640x360 rotated back: 4 seat point totals are visible and uncovered
+ok   @640x360 trade: Escape closes the chat and leaves the toast
+ok   @640x360 open: chat + prompt overlays are present
+ok   @640x360 open: chat is non-zero and inside the viewport {"l":0,"t":150,"r":640,"b":360,"w":640,"h":210}
+ok   @640x360 open: prompt is non-zero and inside the safe area {"l":47,"t":80,"r":593,"b":142,"w":546,"h":62}
+ok   @640x360 open: chat and prompt do not overlap [[0,150,640,360],[47,80,593,142]]
+ok   @640x360 open: 4 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @640x360 open: 4 seat point totals are visible and uncovered
+ok   @360x640 rotated: chat + prompt overlays are present
+ok   @360x640 rotated: chat is non-zero and inside the viewport {"l":0,"t":237,"r":360,"b":640,"w":360,"h":403}
+ok   @360x640 rotated: prompt is non-zero and inside the safe area {"l":12,"t":115,"r":348,"b":229,"w":336,"h":114}
+ok   @360x640 rotated: chat and prompt do not overlap [[0,237,360,640],[12,115,348,229]]
+ok   @360x640 rotated: 4 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @360x640 rotated: 4 seat point totals are visible and uncovered
+ok   @640x360 rotated back: chat + prompt overlays are present
+ok   @640x360 rotated back: chat is non-zero and inside the viewport {"l":0,"t":150,"r":640,"b":360,"w":640,"h":210}
+ok   @640x360 rotated back: prompt is non-zero and inside the safe area {"l":47,"t":80,"r":593,"b":142,"w":546,"h":62}
+ok   @640x360 rotated back: chat and prompt do not overlap [[0,150,640,360],[47,80,593,142]]
+ok   @640x360 rotated back: 4 actions are 44 px (Minimize 44 px), inside the safe area and tappable []
+ok   @640x360 rotated back: 4 seat point totals are visible and uncovered
+ok   @640x360 steal: Escape closes the chat and leaves the prompt
+ok   zero console errors
+rotate-overlays-prove: ok

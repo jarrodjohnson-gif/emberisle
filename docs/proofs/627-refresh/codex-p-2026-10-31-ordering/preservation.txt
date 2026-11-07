@@ -1,0 +1,7 @@
+407 original proof lines retained in order; 32 additive lines
+package-lock.json byte-exact main a6398e6
+server/package-lock.json byte-exact main a6398e6
+scripts/size-prove.mjs byte-exact main a6398e6
+cb04ec17a6c3893afa8bb09a575b927177fd2b6c Codex-p <codex-p@users.noreply.github.com> / Codex-p <codex-p@users.noreply.github.com>
+c8fd51b62cf4a804f11d119c3a7d8c20a5bc167b Codex-p <codex-p@users.noreply.github.com> / Codex-p <codex-p@users.noreply.github.com>
+

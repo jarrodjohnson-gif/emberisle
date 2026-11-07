@@ -1,0 +1,78 @@
+{
+  "old_head": "6bf1ed4b110e79ce88b6c8e855262dd4ad748d8f",
+  "merged_main": "074faf0a2405484369b511655a78d768a964d28d",
+  "merge_head": "96ad756ca4cb1d824e19070021c56457eb4cf260",
+  "parents": "6bf1ed4b110e79ce88b6c8e855262dd4ad748d8f 074faf0a2405484369b511655a78d768a964d28d",
+  "main_files_count": 1565,
+  "main_files_preserved_except_feature_and_registrations": true,
+  "feature_exact_old_head": {
+    "src/lib/scene/isle-renderer.ts": true,
+    "scripts/keyboard-fit-prove.mjs": true,
+    "scripts/hole-prove.mjs": true
+  },
+  "hashes": {
+    "src/lib/scene/isle-renderer.ts": {
+      "merged": "c35ce4ba349284bb1b15459882c6233b58c21d88",
+      "old": "c35ce4ba349284bb1b15459882c6233b58c21d88",
+      "main": "48aaf1b733cbf0a832d641fdd4941607e9596c3b"
+    },
+    "scripts/keyboard-fit-prove.mjs": {
+      "merged": "4846686075c462e17952c84f17d676c3543e8535",
+      "old": "4846686075c462e17952c84f17d676c3543e8535",
+      "main": null
+    },
+    "scripts/hole-prove.mjs": {
+      "merged": "4fb1a5723d898fb84faa06101dedc98295cd1066",
+      "old": "4fb1a5723d898fb84faa06101dedc98295cd1066",
+      "main": "2a259fe6fbca0f0ce48fd87bb96e9af11bc0cea1"
+    },
+    "package.json": {
+      "merged": "d04b6d44505ee0666f849b7de6e920442e8784f2",
+      "old": "7102d96ffe3ff02931cdaf939646f908db918b66",
+      "main": "f23910092fa96583e9c3d2bb148485d236d466a2"
+    },
+    ".github/workflows/ci.yml": {
+      "merged": "ce5bcd1903ade8064baa6c87507fc0cd9f8c11a7",
+      "old": "836a75f16813e82a3bb4d9d99ab094b7dd8262c0",
+      "main": "0299a96d4c7e7736ed73da22c86c1aa067e631b6"
+    },
+    "src/components/game/Hud.tsx": {
+      "merged": "e5f662d55cbb6cf23e1ff8332cdbb1684e6f916c",
+      "old": "44df295d5966e5b19c5a8cd52adcf6e3ef1e98c4",
+      "main": "e5f662d55cbb6cf23e1ff8332cdbb1684e6f916c"
+    },
+    "src/styles.css": {
+      "merged": "c00c92c18b001949e515c704efe6d3432b952016",
+      "old": "935a50e95cb0e10d52404d80b87e03b8b02a0efa",
+      "main": "c00c92c18b001949e515c704efe6d3432b952016"
+    },
+    "scripts/robber-prompt-prove.mjs": {
+      "merged": "9468d4ad181e272a0229749628b34a4a0a8894db",
+      "old": null,
+      "main": "9468d4ad181e272a0229749628b34a4a0a8894db"
+    },
+    ".github/workflows/soak.yml": {
+      "merged": "076767d76100763d61e83147f51629129c2275bb",
+      "old": "348faa8be162258d6505e6a06f34a68445b82199",
+      "main": "076767d76100763d61e83147f51629129c2275bb"
+    },
+    "package-lock.json": {
+      "merged": "5dd0418528b610113d6b24baf4edc4358338be26",
+      "old": "5dd0418528b610113d6b24baf4edc4358338be26",
+      "main": "5dd0418528b610113d6b24baf4edc4358338be26"
+    },
+    "server/package-lock.json": {
+      "merged": "a8ef1db18d375896a6527f470265c47beb01d291",
+      "old": "a8ef1db18d375896a6527f470265c47beb01d291",
+      "main": "a8ef1db18d375896a6527f470265c47beb01d291"
+    },
+    "scripts/size-prove.mjs": {
+      "merged": "ddd65037fd0cd9d844ff6744962189bc3fd82a93",
+      "old": "ddd65037fd0cd9d844ff6744962189bc3fd82a93",
+      "main": "ddd65037fd0cd9d844ff6744962189bc3fd82a93"
+    }
+  },
+  "main_scripts_preserved": true,
+  "keyboard_package_once": true,
+  "keyboard_ci_once": true
+}

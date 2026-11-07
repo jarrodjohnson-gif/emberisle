@@ -1,0 +1,50 @@
+{
+  "hosted": {
+    "path": "/workspace/work/905-controls/hosted/board-look-crystal-1280x720.png",
+    "sha256": "b88d0d81107e93cbd85661bbc418fee610e14b191ee11eba4dbad83e1c0b0a87",
+    "later_full_frame_patch_estimate": {
+      "shore": [
+        199,
+        219,
+        205
+      ],
+      "deep": [
+        138,
+        211,
+        213
+      ]
+    }
+  },
+  "head": {
+    "path": "/workspace/work/627-resize-order/test-results/board-look-crystal-1280x720.png",
+    "sha256": "a7d0d37e83a3325f5b2fb32f0d7f581523ad8cfd2861328117959191939cde2d",
+    "later_full_frame_patch_estimate": {
+      "shore": [
+        199,
+        228,
+        219
+      ],
+      "deep": [
+        138,
+        211,
+        213
+      ]
+    }
+  },
+  "base": {
+    "path": "/workspace/work/905-ci-base-control/test-results/board-look-crystal-1280x720.png",
+    "sha256": "642049ab0377203f3647a20a09af8d588d9f6acc9a3e91ee5479cefaa35f831b",
+    "later_full_frame_patch_estimate": {
+      "shore": [
+        199,
+        229,
+        219
+      ],
+      "deep": [
+        139,
+        212,
+        213
+      ]
+    }
+  }
+}

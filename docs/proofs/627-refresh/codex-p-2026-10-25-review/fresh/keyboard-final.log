@@ -1,0 +1,63 @@
+
+> keyboard-fit-prove
+> node scripts/keyboard-fit-prove.mjs
+
+ok   a focused title field cannot capture a play-camera keyboard baseline 
+ok   phone: real two-finger gesture pans the board {"before":{"x":0,"z":4.511187753922056,"dx":0,"dz":0,"aspect":0.4620853080568721,"scale":31.551724137931018,"shrunk":false},"after":{"x":-0.3953537731347118,"z":4.511187753922056,"dx":-0.3953537731347118,"dz":0,"aspect":0.4620853080568721,"scale":31.551724137931046,"shrunk":false}}
+ok   baseline view is overhead "overhead"
+ok   baseline frustum aspect matches canvas aspect {"got":0.4620853080568721,"want":0.46208530805687204}
+ok   not keyboard-shrunk at baseline 
+ok   test input is focused 
+ok   keyboardShrunk is true after height shrink with focused input 
+ok   view remains overhead while typing (no view switch) 
+ok   shrunk frustum aspect matches canvas aspect 390/500 (no squashing) {"got":0.7800000000000001,"want":0.78}
+ok   world-per-pixel scale preserved while typing {"got":31.551724137931046,"was":31.551724137931046}
+ok   top-anchored crop keeps board top at identical screen Y {"got":154.68915078033754,"was":154.68915078033754}
+ok   seat strip remains inside visible viewport while keyboard is up {"x":12,"y":12,"width":318,"height":44,"top":12,"right":330,"bottom":56,"left":12}
+ok   phone pan survives the keyboard crop {"x":-0.3953537731347118,"z":4.511187753922056,"dx":-0.3953537731347118,"dz":0,"aspect":0.7800000000000001,"scale":31.551724137931046,"shrunk":true}
+ok   partial height growth retains the crop, scale and pan {"x":-0.3953537731347118,"z":4.511187753922056,"dx":-0.3953537731347118,"dz":0,"aspect":0.6093750000000001,"scale":31.551724137931046,"shrunk":true}
+ok   input-to-textarea focus transfer keeps the keyboard crop and pan {"x":-0.3953537731347118,"z":4.511187753922056,"dx":-0.3953537731347118,"dz":0,"aspect":0.6093750000000001,"scale":31.551724137931046,"shrunk":true}
+ok   focus transfer traversed the actual in-shell focusout listener 
+ok   keyboardShrunk cleared when height restored 
+ok   restored frustum aspect matches canvas aspect 390/844 {"got":0.4620853080568721,"want":0.46208530805687204}
+ok   world-per-pixel scale matches baseline {"got":31.551724137931046,"was":31.551724137931046}
+ok   full keyboard close preserves the original pan offset {"x":-0.3953537731347118,"z":4.511187753922056,"dx":-0.3953537731347118,"dz":0,"aspect":0.4620853080568721,"scale":31.551724137931046,"shrunk":false}
+ok   blur retains crop, scale and pan until the viewport restores {"x":-0.3953537731347118,"z":4.511187753922056,"dx":-0.3953537731347118,"dz":0,"aspect":1.1142857142857143,"scale":31.551724137931046,"shrunk":true}
+ok   partial keyboard closing across the aspect threshold keeps crop, scale and pan {"x":-0.3953537731347118,"z":4.511187753922056,"dx":-0.3953537731347118,"dz":0,"aspect":0.9285714285714286,"scale":31.551724137931046,"shrunk":true}
+ok   blur followed by full height restoration keeps pan and projection {"x":-0.3953537731347118,"z":4.511187753922056,"dx":-0.3953537731347118,"dz":0,"aspect":0.4620853080568721,"scale":31.551724137931046,"shrunk":false}
+ok   keyboardShrunk flag cleared when phone rotated while typing (w !== prevW) 
+ok   view is overhead on landscape phone "overhead"
+ok   landscape frustum aspect matches canvas aspect 844/390 {"got":2.1641025641025644,"want":2.164102564102564}
+ok   keyboardShrunk is false back upright 
+ok   view is overhead upright "overhead"
+ok   upright frustum aspect matches canvas aspect {"got":0.4620853080568721,"want":0.46208530805687204}
+ok   a new focused field keeps the crop past the pending blur settle timer 
+ok   ongoing blurred close at 580px restarts the quiet settle timer 
+ok   ongoing blurred close at 680px restarts the quiet settle timer 
+ok   ongoing blurred close at 780px restarts the quiet settle timer 
+ok   phone before short restoration: real two-finger gesture pans the board {"before":{"x":0,"z":4.511187753922056,"dx":0,"dz":0,"aspect":0.4620853080568721,"scale":31.551724137931018,"shrunk":false},"after":{"x":-0.3953537731347118,"z":4.511187753922056,"dx":-0.3953537731347118,"dz":0,"aspect":0.4620853080568721,"scale":31.551724137931046,"shrunk":false}}
+ok   quiet short restoration immediately restores the full fitted frustum {"top":13.311475409836065,"bottom":-13.311475409836065,"fitTop":13.311475409836065,"fitBottom":-13.311475409836065}
+ok   blurred short restoration settles to a full projection with pan preserved {"x":-0.3953537731347118,"z":4.511187753922056,"dx":-0.3953537731347118,"dz":0,"aspect":0.4642857142857143,"scale":31.551724137931046,"shrunk":false}
+ok   later no-focus resize refits normally after short restoration {"settled":{"x":-0.3953537731347118,"z":4.511187753922056,"dx":-0.3953537731347118,"dz":0,"aspect":0.4642857142857143,"scale":31.551724137931046,"shrunk":false},"laterFit":{"x":-0.3953537731347118,"z":4.511187753922056,"dx":-0.3953537731347118,"dz":0,"aspect":0.475609756097561,"scale":31.551724137931046,"shrunk":false}}
+ok   phone overhead: real empty-board double tap invokes goHome 
+ok   phone overhead: home while cropped keeps pan and projection without starting a glide {"before":{"x":-0.3953537731347118,"z":4.511187753922056,"dx":-0.3953537731347118,"dz":0,"aspect":0.7800000000000001,"scale":31.551724137931046,"shrunk":true},"after":{"x":-0.3953537731347118,"z":4.511187753922056,"dx":-0.3953537731347118,"dz":0,"aspect":0.7800000000000001,"scale":31.551724137931046,"shrunk":true}}
+ok   phone height restoration after cropped home preserves pan 
+ok   tablet: real two-finger gesture pans the board {"before":{"x":0,"z":0,"dx":0,"dz":0,"aspect":1.3333333333333333,"scale":65.41789509257683,"shrunk":false},"after":{"x":-3.280744509367668,"z":1.194093347642107,"dx":-3.280744509367668,"dz":1.194093347642107,"aspect":1.3333333333333333,"scale":65.41789509257683,"shrunk":false}}
+ok   tablet 1024x768 starts in diorama view "diorama"
+ok   tablet is keyboardShrunk 
+ok   tablet diorama view preserved while typing (does not flip to overhead) "diorama"
+ok   tablet frustum aspect matches canvas aspect 1024/420 {"got":2.4380952380952383,"want":2.4380952380952383}
+ok   tablet pan survives the diorama crop {"x":-3.280744509367668,"z":1.194093347642107,"dx":-3.280744509367668,"dz":1.194093347642107,"aspect":2.4380952380952383,"scale":65.41789509257683,"shrunk":true}
+ok   tablet input transfer preserves its crop and pan {"x":-3.280744509367668,"z":1.194093347642107,"dx":-3.280744509367668,"dz":1.194093347642107,"aspect":2.4380952380952383,"scale":65.41789509257683,"shrunk":true}
+ok   tablet keyboardShrunk cleared 
+ok   tablet stays in diorama view 
+ok   tablet keyboard close preserves the pan offset {"x":-3.280744509367668,"z":1.194093347642107,"dx":-3.280744509367668,"dz":1.194093347642107,"aspect":1.3333333333333333,"scale":65.41789509257683,"shrunk":false}
+ok   tablet focused close restores the full projection {"x":-3.280744509367668,"z":1.194093347642107,"dx":-3.280744509367668,"dz":1.194093347642107,"aspect":1.3333333333333333,"scale":65.41789509257683,"shrunk":false}
+ok   tablet blur retains crop, scale and pan until full restoration {"x":-3.280744509367668,"z":1.194093347642107,"dx":-3.280744509367668,"dz":1.194093347642107,"aspect":2.4380952380952383,"scale":65.41789509257683,"shrunk":true}
+ok   tablet blur cycle keeps its pan after full restoration {"x":-3.280744509367668,"z":1.194093347642107,"dx":-3.280744509367668,"dz":1.194093347642107,"aspect":1.3333333333333333,"scale":65.41789509257683,"shrunk":false}
+ok   tablet while typing: real two-finger gesture pans the board {"before":{"x":-3.280744509367668,"z":1.194093347642107,"dx":-3.280744509367668,"dz":1.194093347642107,"aspect":2.4380952380952383,"scale":65.41789509257683,"shrunk":true},"after":{"x":-1.66222065382866,"z":0.6049988407761376,"dx":-1.66222065382866,"dz":0.6049988407761376,"aspect":2.4380952380952383,"scale":65.41789509257671,"shrunk":true}}
+ok   tablet keyboard crop keeps touch movement about 1:1 {"dragRatio":0.9389632794492144}
+ok   tablet diorama: real empty-board double tap invokes goHome 
+ok   tablet diorama: home while cropped keeps pan and projection without starting a glide {"before":{"x":-1.66222065382866,"z":0.6049988407761376,"dx":-1.66222065382866,"dz":0.6049988407761376,"aspect":2.4380952380952383,"scale":65.41789509257671,"shrunk":true},"after":{"x":-1.66222065382866,"z":0.6049988407761376,"dx":-1.66222065382866,"dz":0.6049988407761376,"aspect":2.4380952380952383,"scale":65.41789509257671,"shrunk":true}}
+keyboard-fit-prove: ok
+keyboard-fit-prove: 57 checks passed, real touch pan and in-shell focus events

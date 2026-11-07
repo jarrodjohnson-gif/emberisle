@@ -1,0 +1,274 @@
+{
+  "base-clean": {
+    "exit": 0,
+    "seconds": 0.02,
+    "command": [
+      "git",
+      "status",
+      "--porcelain"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-base905",
+    "tested_commit": "b90290abf4a3cd8c63bddf1e7f939e75b71c2418"
+  },
+  "base-fetch": {
+    "exit": 0,
+    "seconds": 1.28,
+    "command": [
+      "git",
+      "fetch",
+      "origin",
+      "074faf0a2405484369b511655a78d768a964d28d"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-base905",
+    "tested_commit": "b90290abf4a3cd8c63bddf1e7f939e75b71c2418"
+  },
+  "base-checkout": {
+    "exit": 0,
+    "seconds": 0.02,
+    "command": [
+      "git",
+      "checkout",
+      "--detach",
+      "074faf0a2405484369b511655a78d768a964d28d"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-base905",
+    "tested_commit": "074faf0a2405484369b511655a78d768a964d28d"
+  },
+  "base-install": {
+    "exit": 0,
+    "seconds": 5.72,
+    "command": [
+      "npm",
+      "ci"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-base905",
+    "tested_commit": "074faf0a2405484369b511655a78d768a964d28d"
+  },
+  "base-build": {
+    "exit": 0,
+    "seconds": 1.3,
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-base905",
+    "tested_commit": "074faf0a2405484369b511655a78d768a964d28d"
+  },
+  "clone-clean": {
+    "exit": 0,
+    "seconds": 0.01,
+    "command": [
+      "git",
+      "status",
+      "--porcelain"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "6bf1ed4b110e79ce88b6c8e855262dd4ad748d8f"
+  },
+  "fetch-merge": {
+    "exit": 0,
+    "seconds": 0.18,
+    "command": [
+      "git",
+      "fetch",
+      "/workspace/emberisle/work/p-refresh905",
+      "96ad756ca4cb1d824e19070021c56457eb4cf260"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "6bf1ed4b110e79ce88b6c8e855262dd4ad748d8f"
+  },
+  "fetch-main": {
+    "exit": 0,
+    "seconds": 1.43,
+    "command": [
+      "git",
+      "fetch",
+      "origin",
+      "refs/heads/main:refs/remotes/origin/main"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "6bf1ed4b110e79ce88b6c8e855262dd4ad748d8f"
+  },
+  "checkout": {
+    "exit": 0,
+    "seconds": 0.02,
+    "command": [
+      "git",
+      "checkout",
+      "--detach",
+      "96ad756ca4cb1d824e19070021c56457eb4cf260"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "96ad756ca4cb1d824e19070021c56457eb4cf260"
+  },
+  "install": {
+    "exit": 0,
+    "seconds": 4.12,
+    "command": [
+      "npm",
+      "ci"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "96ad756ca4cb1d824e19070021c56457eb4cf260"
+  },
+  "server-install": {
+    "exit": 0,
+    "seconds": 0.27,
+    "command": [
+      "npm",
+      "--prefix",
+      "server",
+      "ci"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "96ad756ca4cb1d824e19070021c56457eb4cf260"
+  },
+  "environment": {
+    "exit": 0,
+    "seconds": 0.37,
+    "command": [
+      "bash",
+      "-c",
+      "node --version; npm ls playwright --depth=0; \"$CHROMIUM_PATH\" --version; git rev-parse HEAD"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "96ad756ca4cb1d824e19070021c56457eb4cf260"
+  },
+  "types": {
+    "exit": 0,
+    "seconds": 1.48,
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "96ad756ca4cb1d824e19070021c56457eb4cf260"
+  },
+  "registered": {
+    "exit": 0,
+    "seconds": 0.15,
+    "command": [
+      "npm",
+      "run",
+      "registered-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "96ad756ca4cb1d824e19070021c56457eb4cf260"
+  },
+  "loosen": {
+    "exit": 0,
+    "seconds": 0.15,
+    "command": [
+      "npm",
+      "run",
+      "loosen-prove",
+      "--",
+      "--base",
+      "074faf0a2405484369b511655a78d768a964d28d"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "96ad756ca4cb1d824e19070021c56457eb4cf260"
+  },
+  "build": {
+    "exit": 0,
+    "seconds": 1.33,
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "96ad756ca4cb1d824e19070021c56457eb4cf260"
+  },
+  "size": {
+    "exit": 0,
+    "seconds": 0.1,
+    "command": [
+      "node",
+      "scripts/size-prove.mjs",
+      "--base",
+      "/workspace/emberisle/work/p-review-base905"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "96ad756ca4cb1d824e19070021c56457eb4cf260"
+  },
+  "keyboard": {
+    "exit": 1,
+    "seconds": 39.04,
+    "command": [
+      "npm",
+      "run",
+      "keyboard-fit-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "96ad756ca4cb1d824e19070021c56457eb4cf260"
+  },
+  "hole": {
+    "exit": 0,
+    "seconds": 194.83,
+    "command": [
+      "npm",
+      "run",
+      "hole-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "96ad756ca4cb1d824e19070021c56457eb4cf260"
+  },
+  "overlays": {
+    "exit": 0,
+    "seconds": 155.45,
+    "command": [
+      "npm",
+      "run",
+      "rotate-overlays-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "96ad756ca4cb1d824e19070021c56457eb4cf260"
+  },
+  "robber-prompt": {
+    "exit": 0,
+    "seconds": 20.89,
+    "command": [
+      "npm",
+      "run",
+      "robber-prompt-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "96ad756ca4cb1d824e19070021c56457eb4cf260"
+  },
+  "client": {
+    "exit": 0,
+    "seconds": 59.38,
+    "command": [
+      "npm",
+      "run",
+      "client-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "96ad756ca4cb1d824e19070021c56457eb4cf260"
+  },
+  "clean": {
+    "exit": 0,
+    "seconds": 0.01,
+    "command": [
+      "git",
+      "status",
+      "--porcelain"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "96ad756ca4cb1d824e19070021c56457eb4cf260"
+  },
+  "keyboard-headless": {
+    "exit": 0,
+    "seconds": 19.54,
+    "command": [
+      "npm",
+      "run",
+      "keyboard-fit-prove"
+    ],
+    "cwd": "/workspace/emberisle/work/p-review-verify905",
+    "tested_commit": "96ad756ca4cb1d824e19070021c56457eb4cf260"
+  }
+}

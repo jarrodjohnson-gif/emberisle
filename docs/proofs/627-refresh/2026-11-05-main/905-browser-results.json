@@ -1,0 +1,27 @@
+[
+  {
+    "check": "keyboard-fit",
+    "exit": 0,
+    "seconds": 22.12
+  },
+  {
+    "check": "ssao",
+    "exit": 0,
+    "seconds": 4.22
+  },
+  {
+    "check": "hole",
+    "exit": 0,
+    "seconds": 191.07
+  },
+  {
+    "check": "pan",
+    "exit": 0,
+    "seconds": 103.44
+  },
+  {
+    "check": "board-look",
+    "exit": 0,
+    "seconds": 104.28
+  }
+]

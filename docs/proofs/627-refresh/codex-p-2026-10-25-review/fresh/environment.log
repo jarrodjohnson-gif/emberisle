@@ -1,0 +1,4 @@
+$ bash -c "node --version; /workspace/emberisle/work/browsers/chromium-1243/chrome-linux64/chrome --version; git rev-parse HEAD"
+v24.19.0
+Google Chrome for Testing 153.0.8010.12 
+d332c2441b5801ae55cc5e9eeedcecade16523f9
