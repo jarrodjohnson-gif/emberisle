@@ -10,7 +10,7 @@ The first #664 design (2026-10-17) was never committed. This doc replaces it.
 ### The decisions so far
 
 - **2026-10-16**, `docs/design/emotes.md` Decision 4: emoji, stickers and sounds sit in one tray, in the game and in the lobby. The chat's own emote tray goes.
-- **2026-10-20**, Chat C (`docs/DECISIONS.md`; `docs/design/chat-c/README.md`): one chat button opens one panel with two tabs. Chat has the six emoji. Sounds & stickers has the sounds and the stickers. The separate quick-reaction button goes.
+- **2026-10-20**, Chat C: Jarrod picked direction C (`docs/design/chat-c/README.md:3`). One chat button opens one panel with two tabs. `docs/DECISIONS.md:54` records the two tabs, and `:46-47` record two details of the pick. Chat has the six emoji. Sounds & stickers has the sounds and the stickers. The separate quick-reaction button goes.
 - Chat C's README says Decision 4 "stays true: the tray is now the chat panel". PR #918 shipped it on 2026-10-21.
 - Decision 5 (the win button reads **GG! 🔊**) is not built yet. `WinScreen.tsx:202` still says "React".
 
@@ -18,10 +18,10 @@ The first #664 design (2026-10-17) was never committed. This doc replaces it.
 
 | #736–#738 assumes | `main` today |
 |---|---|
-| A `QuickReactions` button beside Open chat | Gone. Open chat is the one button (`Chat.tsx:395`). `chat-prove.mjs:313` checks there is no "Quick reactions" button |
-| A `quick-reaction-picker` Escape layer | Gone (`escape-disarm.ts:4`) |
+| A `QuickReactions` button beside Open chat | Gone. Open chat is the one button (`Chat.tsx:395`). `scripts/chat-prove.mjs:311` checks there is no "Quick reactions" button |
+| A `quick-reaction-picker` Escape layer | Gone (`escape-disarm.ts:9`) |
 | Nine soundboard ids | 15 chips (`Reactions.tsx:11-27`; `emotes.md` Decision 6, amended 2026-10-25) |
-| A Smile tray and a speaker toggle inside the chat box | Gone. `chat-prove.mjs:330` checks for both |
+| A Smile tray and a speaker toggle inside the chat box | Gone. `scripts/chat-prove.mjs:325` checks for both |
 | A new lobby trigger | The lobby already has the same panel, inside the card (`LobbyView.tsx:157`) |
 | Aimed reactions in the player menu | Gone. `talk.tsx:156` is the only place that sends a reaction |
 
@@ -33,7 +33,7 @@ The first #664 design (2026-10-17) was never committed. This doc replaces it.
 - **Placement:**
   - Desktop game: a 300 px panel at the top right, below the top row.
   - Phone game: a bottom sheet across the full width.
-  - Lobby: inside the card, beside the seat list.
+  - Lobby: inside the card, below the seat list (`lobby.css:23`). In short landscape (height up to 600 px) it moves beside the seat list (`lobby.css:129`, `:139-140`).
 
 ### Measured
 
@@ -129,7 +129,7 @@ Each proposal lists A (recommended), B, C, and D for something else. The `Questi
 ## 4. What the child issues become if every A is accepted
 
 - **#736:** P2A, P3A (without the win button) and P4A, in `talk.tsx` and `Chat.tsx`, with its focused proof.
-  - Its dependency on #669 is dropped. #669 was listed only for its `Reactions.tsx` reservation, which the desk released on 2026-10-25.
+  - Its dependency on #669 is dropped. #736 waited on #669 because #669's claim reserved `Reactions.tsx`. The desk released that whole stale claim on 2026-10-25 ([#669 comment](https://github.com/jarrodjohnson-gif/emberisle/issues/669#issuecomment-6393541299)). Nothing here needs the Sound sheet.
   - The obsolete requirements in the table in section 1 come out of its body.
 - **#737:** Chat C (#918) already did it. The lobby has the panel, and the chat's own pickers are gone, with `chat-prove` checks. Recommend closing it as done by #918.
 - **#738:** the GG! 🔊 label (Decision 5), GG! on the shared sound wait (P3A), and the integration proof with its npm and CI registration.

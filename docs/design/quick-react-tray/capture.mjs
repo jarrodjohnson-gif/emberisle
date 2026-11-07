@@ -1,8 +1,9 @@
 // #1370: pictures and measurements for docs/design/quick-react-tray.md, taken from the real game on `main`.
 // A real host and three seated tabs: Ada at 1280x720, Bo at 390x844 and Cy at 844x390 (touch phones).
 // Run from the repo root: node docs/design/quick-react-tray/capture.mjs > /tmp/measurements.txt
-// It writes nine JPEGs next to this file and prints the measurements that measurements.txt keeps.
-// Send the output outside the repo, then copy it in: a file growing inside Vite's root reloads the pages mid-run.
+// It writes nine JPEGs to a new temp folder and prints the measurements that measurements.txt keeps.
+// Add --save to write the JPEGs next to this file instead, replacing the committed pictures.
+// Send the printed output outside the repo, then copy it in: a file growing inside Vite's root reloads the pages mid-run.
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -11,7 +12,8 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "../../../scripts/proof-browser.mjs";
 import { createServer } from "vite";
 
-const OUT = path.dirname(fileURLToPath(import.meta.url));
+const OUT = process.argv.includes("--save") ? path.dirname(fileURLToPath(import.meta.url)) : mkdtempSync(path.join(tmpdir(), "quick-react-tray-"));
+console.error(`pictures: ${OUT}`);
 const PORT = Number(process.env.VITE_PORT) || 8197;
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
