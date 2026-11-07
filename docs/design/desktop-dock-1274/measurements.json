@@ -1,0 +1,1475 @@
+{
+  "chromium": "153.0.8010.12",
+  "slotsEqual": true,
+  "results": [
+    {
+      "state": "own-turn",
+      "viewport": "1280x720",
+      "dock": {
+        "x": 304,
+        "y": 520,
+        "w": 672,
+        "h": 176
+      },
+      "slots": {
+        "hand": {
+          "x": 312,
+          "y": 528,
+          "w": 472,
+          "h": 80
+        },
+        "turn": {
+          "x": 792,
+          "y": 528,
+          "w": 176,
+          "h": 32
+        },
+        "aside": {
+          "x": 792,
+          "y": 564,
+          "w": 176,
+          "h": 44
+        },
+        "controls": {
+          "x": 312,
+          "y": 616,
+          "w": 656,
+          "h": 44
+        },
+        "meta": {
+          "x": 312,
+          "y": 668,
+          "w": 656,
+          "h": 20
+        }
+      },
+      "turnLine": "Your turn",
+      "turnFits": true,
+      "controls": [
+        {
+          "name": "Path",
+          "x": 312,
+          "y": 616,
+          "w": 86.8,
+          "h": 44,
+          "disabled": false,
+          "primary": false
+        },
+        {
+          "name": "Outpost",
+          "x": 406.8,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Stronghold",
+          "x": 501.7,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Buy fortune",
+          "x": 596.6,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": false,
+          "primary": false
+        },
+        {
+          "name": "Trade",
+          "x": 691.4,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": false,
+          "primary": false
+        },
+        {
+          "name": "Fortunes",
+          "x": 786.3,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": false,
+          "primary": false
+        },
+        {
+          "name": "End turn",
+          "x": 881.1,
+          "y": 616,
+          "w": 86.8,
+          "h": 44,
+          "disabled": false,
+          "primary": false
+        }
+      ],
+      "gaps": [
+        8,
+        8,
+        8,
+        7.9,
+        8,
+        7.9
+      ],
+      "answers": [],
+      "costs": [
+        {
+          "kind": "path",
+          "chips": 2,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "outpost",
+          "chips": 0,
+          "short": 0,
+          "inside": true,
+          "why": "No spot"
+        },
+        {
+          "kind": "stronghold",
+          "chips": 2,
+          "short": 1,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "card",
+          "chips": 3,
+          "short": 0,
+          "inside": true,
+          "why": null
+        }
+      ],
+      "tabs": [],
+      "under44": [],
+      "fontSizes": [
+        9,
+        12,
+        14,
+        15,
+        30
+      ],
+      "scene": {
+        "x": 204,
+        "y": 0,
+        "w": 1076,
+        "h": 520
+      },
+      "island": {
+        "x": 341,
+        "y": 109,
+        "w": 509,
+        "h": 334
+      },
+      "islandAboveDock": true,
+      "islandClearOfRail": true,
+      "fitHole": {
+        "x": 216,
+        "y": 68,
+        "w": 752,
+        "h": 426
+      }
+    },
+    {
+      "state": "offer-a",
+      "viewport": "1280x720",
+      "dock": {
+        "x": 304,
+        "y": 520,
+        "w": 672,
+        "h": 176
+      },
+      "slots": {
+        "hand": {
+          "x": 312,
+          "y": 528,
+          "w": 472,
+          "h": 80
+        },
+        "turn": {
+          "x": 792,
+          "y": 528,
+          "w": 176,
+          "h": 32
+        },
+        "aside": {
+          "x": 792,
+          "y": 564,
+          "w": 176,
+          "h": 44
+        },
+        "controls": {
+          "x": 312,
+          "y": 616,
+          "w": 656,
+          "h": 44
+        },
+        "meta": {
+          "x": 312,
+          "y": 668,
+          "w": 656,
+          "h": 20
+        }
+      },
+      "turnLine": "Dune (bot) offers",
+      "turnFits": true,
+      "controls": [
+        {
+          "name": "Path",
+          "x": 312,
+          "y": 616,
+          "w": 86.8,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Outpost",
+          "x": 406.8,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Stronghold",
+          "x": 501.7,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Buy fortune",
+          "x": 596.6,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Trade",
+          "x": 691.4,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Fortunes",
+          "x": 786.3,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": false,
+          "primary": false
+        },
+        {
+          "name": "End turn",
+          "x": 881.1,
+          "y": 616,
+          "w": 86.8,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        }
+      ],
+      "gaps": [
+        8,
+        8,
+        8,
+        7.9,
+        8,
+        7.9
+      ],
+      "answers": [
+        {
+          "name": "Yes",
+          "x": 792,
+          "y": 564,
+          "w": 84,
+          "h": 44
+        },
+        {
+          "name": "No",
+          "x": 884,
+          "y": 564,
+          "w": 84,
+          "h": 44
+        }
+      ],
+      "costs": [
+        {
+          "kind": "path",
+          "chips": 2,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "outpost",
+          "chips": 4,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "stronghold",
+          "chips": 2,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "card",
+          "chips": 3,
+          "short": 0,
+          "inside": true,
+          "why": null
+        }
+      ],
+      "tabs": [],
+      "under44": [],
+      "fontSizes": [
+        12,
+        14,
+        15,
+        16,
+        30
+      ],
+      "scene": {
+        "x": 204,
+        "y": 0,
+        "w": 1076,
+        "h": 520
+      },
+      "island": {
+        "x": 341,
+        "y": 109,
+        "w": 509,
+        "h": 334
+      },
+      "islandAboveDock": true,
+      "islandClearOfRail": true,
+      "fitHole": {
+        "x": 216,
+        "y": 68,
+        "w": 752,
+        "h": 426
+      }
+    },
+    {
+      "state": "offer-b",
+      "viewport": "1280x720",
+      "dock": {
+        "x": 304,
+        "y": 520,
+        "w": 672,
+        "h": 176
+      },
+      "slots": {
+        "hand": {
+          "x": 312,
+          "y": 528,
+          "w": 472,
+          "h": 80
+        },
+        "turn": {
+          "x": 792,
+          "y": 528,
+          "w": 176,
+          "h": 32
+        },
+        "aside": {
+          "x": 792,
+          "y": 564,
+          "w": 176,
+          "h": 44
+        },
+        "controls": {
+          "x": 312,
+          "y": 616,
+          "w": 656,
+          "h": 44
+        },
+        "meta": {
+          "x": 312,
+          "y": 668,
+          "w": 656,
+          "h": 20
+        }
+      },
+      "turnLine": "Dune (bot) offers",
+      "turnFits": true,
+      "controls": [
+        {
+          "name": "Path",
+          "x": 312,
+          "y": 616,
+          "w": 86.8,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Outpost",
+          "x": 406.8,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Stronghold",
+          "x": 501.7,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Buy fortune",
+          "x": 596.6,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Yes",
+          "x": 691.4,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": false,
+          "primary": true
+        },
+        {
+          "name": "No",
+          "x": 786.3,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": false,
+          "primary": false
+        },
+        {
+          "name": "Details",
+          "x": 881.1,
+          "y": 616,
+          "w": 86.8,
+          "h": 44,
+          "disabled": false,
+          "primary": false
+        }
+      ],
+      "gaps": [
+        8,
+        8,
+        8,
+        7.9,
+        8,
+        7.9
+      ],
+      "answers": [],
+      "costs": [
+        {
+          "kind": "path",
+          "chips": 2,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "outpost",
+          "chips": 4,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "stronghold",
+          "chips": 2,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "card",
+          "chips": 3,
+          "short": 0,
+          "inside": true,
+          "why": null
+        }
+      ],
+      "tabs": [],
+      "under44": [],
+      "fontSizes": [
+        12,
+        14,
+        15,
+        16,
+        30
+      ],
+      "scene": {
+        "x": 204,
+        "y": 0,
+        "w": 1076,
+        "h": 520
+      },
+      "island": {
+        "x": 341,
+        "y": 109,
+        "w": 509,
+        "h": 334
+      },
+      "islandAboveDock": true,
+      "islandClearOfRail": true,
+      "fitHole": {
+        "x": 216,
+        "y": 68,
+        "w": 752,
+        "h": 426
+      }
+    },
+    {
+      "state": "other-turn",
+      "viewport": "1280x720",
+      "dock": {
+        "x": 304,
+        "y": 520,
+        "w": 672,
+        "h": 176
+      },
+      "slots": {
+        "hand": {
+          "x": 312,
+          "y": 528,
+          "w": 472,
+          "h": 80
+        },
+        "turn": {
+          "x": 792,
+          "y": 528,
+          "w": 176,
+          "h": 32
+        },
+        "aside": {
+          "x": 792,
+          "y": 564,
+          "w": 176,
+          "h": 44
+        },
+        "controls": {
+          "x": 312,
+          "y": 616,
+          "w": 656,
+          "h": 44
+        },
+        "meta": {
+          "x": 312,
+          "y": 668,
+          "w": 656,
+          "h": 20
+        }
+      },
+      "turnLine": "Dune (bot)'s turn",
+      "turnFits": true,
+      "controls": [
+        {
+          "name": "Path",
+          "x": 312,
+          "y": 616,
+          "w": 86.8,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Outpost",
+          "x": 406.8,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Stronghold",
+          "x": 501.7,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Buy fortune",
+          "x": 596.6,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Trade",
+          "x": 691.4,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Fortunes",
+          "x": 786.3,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": false,
+          "primary": false
+        },
+        {
+          "name": "End turn",
+          "x": 881.1,
+          "y": 616,
+          "w": 86.8,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        }
+      ],
+      "gaps": [
+        8,
+        8,
+        8,
+        7.9,
+        8,
+        7.9
+      ],
+      "answers": [],
+      "costs": [
+        {
+          "kind": "path",
+          "chips": 2,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "outpost",
+          "chips": 4,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "stronghold",
+          "chips": 2,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "card",
+          "chips": 3,
+          "short": 0,
+          "inside": true,
+          "why": null
+        }
+      ],
+      "tabs": [],
+      "under44": [],
+      "fontSizes": [
+        12,
+        14,
+        15,
+        30
+      ],
+      "scene": {
+        "x": 204,
+        "y": 0,
+        "w": 1076,
+        "h": 520
+      },
+      "island": {
+        "x": 341,
+        "y": 109,
+        "w": 509,
+        "h": 334
+      },
+      "islandAboveDock": true,
+      "islandClearOfRail": true,
+      "fitHole": {
+        "x": 216,
+        "y": 68,
+        "w": 752,
+        "h": 426
+      }
+    },
+    {
+      "state": "gain",
+      "viewport": "1280x720",
+      "dock": {
+        "x": 304,
+        "y": 520,
+        "w": 672,
+        "h": 176
+      },
+      "slots": {
+        "hand": {
+          "x": 312,
+          "y": 528,
+          "w": 472,
+          "h": 80
+        },
+        "turn": {
+          "x": 792,
+          "y": 528,
+          "w": 176,
+          "h": 32
+        },
+        "aside": {
+          "x": 792,
+          "y": 564,
+          "w": 176,
+          "h": 44
+        },
+        "controls": {
+          "x": 312,
+          "y": 616,
+          "w": 656,
+          "h": 44
+        },
+        "meta": {
+          "x": 312,
+          "y": 668,
+          "w": 656,
+          "h": 20
+        }
+      },
+      "turnLine": "Dune (bot)'s turn",
+      "turnFits": true,
+      "controls": [
+        {
+          "name": "Path",
+          "x": 312,
+          "y": 616,
+          "w": 86.8,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Outpost",
+          "x": 406.8,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Stronghold",
+          "x": 501.7,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Buy fortune",
+          "x": 596.6,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Trade",
+          "x": 691.4,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Fortunes",
+          "x": 786.3,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": false,
+          "primary": false
+        },
+        {
+          "name": "End turn",
+          "x": 881.1,
+          "y": 616,
+          "w": 86.8,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        }
+      ],
+      "gaps": [
+        8,
+        8,
+        8,
+        7.9,
+        8,
+        7.9
+      ],
+      "answers": [],
+      "costs": [
+        {
+          "kind": "path",
+          "chips": 2,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "outpost",
+          "chips": 4,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "stronghold",
+          "chips": 2,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "card",
+          "chips": 3,
+          "short": 0,
+          "inside": true,
+          "why": null
+        }
+      ],
+      "tabs": [
+        {
+          "text": "+1",
+          "x": 331,
+          "y": 504,
+          "w": 50,
+          "h": 28,
+          "clipped": false
+        },
+        {
+          "text": "+2",
+          "x": 619,
+          "y": 504,
+          "w": 50,
+          "h": 28,
+          "clipped": false
+        }
+      ],
+      "under44": [],
+      "fontSizes": [
+        12,
+        14,
+        15,
+        17.5,
+        30
+      ],
+      "scene": {
+        "x": 204,
+        "y": 0,
+        "w": 1076,
+        "h": 520
+      },
+      "island": {
+        "x": 341,
+        "y": 109,
+        "w": 509,
+        "h": 334
+      },
+      "islandAboveDock": true,
+      "islandClearOfRail": true,
+      "fitHole": {
+        "x": 216,
+        "y": 68,
+        "w": 752,
+        "h": 426
+      }
+    },
+    {
+      "state": "loss",
+      "viewport": "1280x720",
+      "dock": {
+        "x": 304,
+        "y": 520,
+        "w": 672,
+        "h": 176
+      },
+      "slots": {
+        "hand": {
+          "x": 312,
+          "y": 528,
+          "w": 472,
+          "h": 80
+        },
+        "turn": {
+          "x": 792,
+          "y": 528,
+          "w": 176,
+          "h": 32
+        },
+        "aside": {
+          "x": 792,
+          "y": 564,
+          "w": 176,
+          "h": 44
+        },
+        "controls": {
+          "x": 312,
+          "y": 616,
+          "w": 656,
+          "h": 44
+        },
+        "meta": {
+          "x": 312,
+          "y": 668,
+          "w": 656,
+          "h": 20
+        }
+      },
+      "turnLine": "Dune (bot)'s turn",
+      "turnFits": true,
+      "controls": [
+        {
+          "name": "Path",
+          "x": 312,
+          "y": 616,
+          "w": 86.8,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Outpost",
+          "x": 406.8,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Stronghold",
+          "x": 501.7,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Buy fortune",
+          "x": 596.6,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Trade",
+          "x": 691.4,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Fortunes",
+          "x": 786.3,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": false,
+          "primary": false
+        },
+        {
+          "name": "End turn",
+          "x": 881.1,
+          "y": 616,
+          "w": 86.8,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        }
+      ],
+      "gaps": [
+        8,
+        8,
+        8,
+        7.9,
+        8,
+        7.9
+      ],
+      "answers": [],
+      "costs": [
+        {
+          "kind": "path",
+          "chips": 2,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "outpost",
+          "chips": 4,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "stronghold",
+          "chips": 2,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "card",
+          "chips": 3,
+          "short": 0,
+          "inside": true,
+          "why": null
+        }
+      ],
+      "tabs": [
+        {
+          "text": "−2",
+          "x": 715,
+          "y": 504,
+          "w": 50,
+          "h": 28,
+          "clipped": false
+        }
+      ],
+      "under44": [],
+      "fontSizes": [
+        12,
+        14,
+        15,
+        17.5,
+        30
+      ],
+      "scene": {
+        "x": 204,
+        "y": 0,
+        "w": 1076,
+        "h": 520
+      },
+      "island": {
+        "x": 341,
+        "y": 109,
+        "w": 509,
+        "h": 334
+      },
+      "islandAboveDock": true,
+      "islandClearOfRail": true,
+      "fitHole": {
+        "x": 216,
+        "y": 68,
+        "w": 752,
+        "h": 426
+      }
+    },
+    {
+      "state": "empty",
+      "viewport": "1280x720",
+      "dock": {
+        "x": 304,
+        "y": 520,
+        "w": 672,
+        "h": 176
+      },
+      "slots": {
+        "hand": {
+          "x": 312,
+          "y": 528,
+          "w": 472,
+          "h": 80
+        },
+        "turn": {
+          "x": 792,
+          "y": 528,
+          "w": 176,
+          "h": 32
+        },
+        "aside": {
+          "x": 792,
+          "y": 564,
+          "w": 176,
+          "h": 44
+        },
+        "controls": {
+          "x": 312,
+          "y": 616,
+          "w": 656,
+          "h": 44
+        },
+        "meta": {
+          "x": 312,
+          "y": 668,
+          "w": 656,
+          "h": 20
+        }
+      },
+      "turnLine": "Your turn",
+      "turnFits": true,
+      "controls": [
+        {
+          "name": "Path",
+          "x": 312,
+          "y": 616,
+          "w": 86.8,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Outpost",
+          "x": 406.8,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Stronghold",
+          "x": 501.7,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Buy fortune",
+          "x": 596.6,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Trade",
+          "x": 691.4,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": false,
+          "primary": false
+        },
+        {
+          "name": "Fortunes",
+          "x": 786.3,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "End turn",
+          "x": 881.1,
+          "y": 616,
+          "w": 86.8,
+          "h": 44,
+          "disabled": false,
+          "primary": true
+        }
+      ],
+      "gaps": [
+        8,
+        8,
+        8,
+        7.9,
+        8,
+        7.9
+      ],
+      "answers": [],
+      "costs": [
+        {
+          "kind": "path",
+          "chips": 2,
+          "short": 2,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "outpost",
+          "chips": 0,
+          "short": 0,
+          "inside": true,
+          "why": "No spot"
+        },
+        {
+          "kind": "stronghold",
+          "chips": 2,
+          "short": 2,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "card",
+          "chips": 3,
+          "short": 3,
+          "inside": true,
+          "why": null
+        }
+      ],
+      "tabs": [],
+      "under44": [],
+      "fontSizes": [
+        9,
+        12,
+        14,
+        15,
+        30
+      ],
+      "scene": {
+        "x": 204,
+        "y": 0,
+        "w": 1076,
+        "h": 520
+      },
+      "island": {
+        "x": 341,
+        "y": 109,
+        "w": 509,
+        "h": 334
+      },
+      "islandAboveDock": true,
+      "islandClearOfRail": true,
+      "fitHole": {
+        "x": 216,
+        "y": 68,
+        "w": 752,
+        "h": 426
+      }
+    },
+    {
+      "state": "roll",
+      "viewport": "1280x720",
+      "dock": {
+        "x": 304,
+        "y": 520,
+        "w": 672,
+        "h": 176
+      },
+      "slots": {
+        "hand": {
+          "x": 312,
+          "y": 528,
+          "w": 472,
+          "h": 80
+        },
+        "turn": {
+          "x": 792,
+          "y": 528,
+          "w": 176,
+          "h": 32
+        },
+        "aside": {
+          "x": 792,
+          "y": 564,
+          "w": 176,
+          "h": 44
+        },
+        "controls": {
+          "x": 312,
+          "y": 616,
+          "w": 656,
+          "h": 44
+        },
+        "meta": {
+          "x": 312,
+          "y": 668,
+          "w": 656,
+          "h": 20
+        }
+      },
+      "turnLine": "Roll the dice",
+      "turnFits": true,
+      "controls": [
+        {
+          "name": "Path",
+          "x": 312,
+          "y": 616,
+          "w": 86.8,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Outpost",
+          "x": 406.8,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Stronghold",
+          "x": 501.7,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Buy fortune",
+          "x": 596.6,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Trade",
+          "x": 691.4,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": true,
+          "primary": false
+        },
+        {
+          "name": "Fortunes",
+          "x": 786.3,
+          "y": 616,
+          "w": 86.9,
+          "h": 44,
+          "disabled": false,
+          "primary": false
+        },
+        {
+          "name": "End turn",
+          "x": 881.1,
+          "y": 616,
+          "w": 86.8,
+          "h": 44,
+          "disabled": false,
+          "primary": true
+        }
+      ],
+      "gaps": [
+        8,
+        8,
+        8,
+        7.9,
+        8,
+        7.9
+      ],
+      "answers": [],
+      "costs": [
+        {
+          "kind": "path",
+          "chips": 2,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "outpost",
+          "chips": 4,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "stronghold",
+          "chips": 2,
+          "short": 0,
+          "inside": true,
+          "why": null
+        },
+        {
+          "kind": "card",
+          "chips": 3,
+          "short": 0,
+          "inside": true,
+          "why": null
+        }
+      ],
+      "tabs": [],
+      "under44": [],
+      "fontSizes": [
+        12,
+        14,
+        15,
+        30
+      ],
+      "scene": {
+        "x": 204,
+        "y": 0,
+        "w": 1076,
+        "h": 520
+      },
+      "island": {
+        "x": 341,
+        "y": 109,
+        "w": 509,
+        "h": 334
+      },
+      "islandAboveDock": true,
+      "islandClearOfRail": true,
+      "fitHole": {
+        "x": 216,
+        "y": 68,
+        "w": 752,
+        "h": 426
+      }
+    },
+    {
+      "state": "own-turn",
+      "viewport": "390x844",
+      "mockMounted": false,
+      "hudBoxes": 13,
+      "unchanged": true
+    },
+    {
+      "state": "own-turn",
+      "viewport": "844x390",
+      "mockMounted": false,
+      "hudBoxes": 13,
+      "unchanged": true
+    }
+  ]
+}
