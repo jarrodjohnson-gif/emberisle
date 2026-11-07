@@ -76,6 +76,24 @@ export interface TurnExtensionState {
   result: { id: string; target: string; outcome: "passed" | "failed" | "cancelled" } | null;
 }
 
+// Lobby tic-tac-toe (#1263, README "Messages between client and host"): seat ids, and nine cells of "x", "o" or ".".
+export interface TttGame {
+  id: string;
+  x: string;
+  o: string;
+  board: string;
+  status: "invited" | "playing" | "won" | "draw";
+  turn: string | null;
+  winner: string | null;
+  line: number[] | null;
+}
+// `game` is null once the game closes, with why and which seat closed it (null at Start).
+export interface TttMsg {
+  game: TttGame | null;
+  reason?: "closed" | "declined" | "left" | "start";
+  by?: string | null;
+}
+
 export type ConnectionHealth = { status: "Reachable" | "Reconnecting" | "Offline"; rtt: number | null };
 
 export interface TableEvents {
@@ -103,6 +121,7 @@ export interface TableEvents {
   closed(keepSeat?: boolean): void;
   // Open tables on this host (#833); never includes private codes. Seatless `list` replies only.
   openTables(tables: OpenTableEntry[]): void;
+  ttt(msg: TttMsg): void;
 }
 
 export interface Me {
@@ -157,6 +176,8 @@ export interface TableClient {
   say(text: string): void;
   sound(id: string): void;
   react(emote: string, to?: string): void;
+  // Lobby tic-tac-toe: one of the five ttt messages, e.g. ttt("tttMove", { id, cell }).
+  ttt(type: "tttInvite" | "tttAnswer" | "tttMove" | "tttAgain" | "tttClose", fields: Record<string, unknown>): void;
   // The browser says the network or the tab is back: if a backoff timer is pending, dial now. Otherwise nothing.
   wake(): void;
   // Leave on purpose: the host frees a lobby seat at once. `leave: false` only closes, and the seat is held as a drop.
@@ -233,7 +254,7 @@ const LAST_CALL_MS = 1000;
 // Both action IDs and health challenges use 128 random bits, including on plain-HTTP LAN joins.
 const randomNonce = () => crypto.getRandomValues(new Uint8Array(16)).reduce((hex, b) => hex + b.toString(16).padStart(2, "0"), "");
 
-const ALLOWED_EVENTS = ["seats", "rolled", "chat", "react", "tradeOffer", "tradeDeclined", "tradeClosed"];
+const ALLOWED_EVENTS = ["seats", "rolled", "chat", "react", "tradeOffer", "tradeDeclined", "tradeClosed", "ttt"];
 
 // `giveUpMs` is only for proofs that cannot wait 10 minutes: it stands in for both holds until a welcome says otherwise.
 export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor, giveUpMs?: number): TableClient {
@@ -473,6 +494,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     say: (text) => send({ type: "chat", text }),
     sound: (id) => send({ type: "sound", id }),
     react: (emote, to) => send({ type: "react", emote, to }),
+    ttt: (type, fields) => send({ ...fields, type }),
     drop: () => ws.close(),
     wake: () => {
       if (!timer) return;

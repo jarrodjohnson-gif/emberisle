@@ -207,7 +207,7 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
 }
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
-import type { Bag, ChatLine, Legal, Me, Reaction, Seat, TableClient } from "@/lib/net/table";
+import type { Bag, ChatLine, Legal, Me, Reaction, Seat, TableClient, TttMsg } from "@/lib/net/table";
 import type { ProfileAttachment } from "@/lib/net/profiles";
 import { chunk } from "@/lib/lazy";
 import { PROTO } from "@/lib/net/proto";
@@ -368,6 +368,8 @@ interface GameStore {
   resync: boolean;
   // How many spectators the table has, from `seats {watching}` (#347).
   watching: number;
+  // This seat's lobby tic-tac-toe game, as the host last sent it (#1263); null after each welcome.
+  ttt: TttMsg | null;
   // Sit back down in the seat this browser held (localStorage), e.g. after a reload (#196).
   rejoinTable: () => boolean;
   setReady: (value: boolean) => void;
@@ -551,6 +553,7 @@ export const useGame = create<GameStore>((set, get) => ({
   synced: 0,
   resync: false,
   watching: 0,
+  ttt: null,
   pendingSteal: null,
   seatId: "",
   chat: [],
@@ -1258,7 +1261,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
           recovery = false;
           set({ restoring: false, screen: "lobby" });
         }, 1500);
-      set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
+      set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0, ttt: null });
     },
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
     reconnecting: (attempt) => {
@@ -1324,6 +1327,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       else if (swing) showBanner(set, swing);
     },
     log: (text) => set({ lobbyLog: text, gameLog: appendLog(get().gameLog, [text]) }),
+    ttt: (ttt) => set({ ttt }),
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       // #1245: a null `seconds` is an offer that holds until answered (no run-out).

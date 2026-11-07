@@ -75,6 +75,8 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
   const howTo = useGame(s => s.howTo);
   const setHowTo = useGame(s => s.setHowTo);
   const [games, setGames] = useState(false);
+  // #1263: a table-mate's tic-tac-toe invite is a badge on the tab, never a popup.
+  const invited = useGame(s => s.ttt?.game?.status === "invited" && s.ttt.game.o === s.seatId);
   const [open, setOpen] = useState(false);
   const ready = seats.find(s => s.id === seatId)?.ready ?? false;
   const canStart = isHost && seats.length >= 3 && seats.length <= 4 && seats.every(s => s.ready);
@@ -124,7 +126,7 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
           <div className="lobby-rules">
             <div className="lm">
               <button type="button" aria-pressed={!games} onClick={() => { setGames(false); setOpen(false); }}>Table</button>
-              <button type="button" aria-pressed={games} onClick={() => setGames(true)}><span>Play games</span></button>
+              <button type="button" aria-pressed={games} aria-label={invited ? "Play games, 1 invite" : undefined} onClick={() => setGames(true)}><span>Play games</span>{invited ? <b className="lb" aria-hidden="true">1</b> : null}</button>
             </div>
             <Button variant="outline" onPointerEnter={prefetchRules} onFocus={prefetchRules} onClick={e => setHowTo(true, e.currentTarget)}>Rules</Button>
             <div className="lobby-rule-status">

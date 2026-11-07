@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { useGame } from "@/lib/game/store";
+import { chunk, LazyBoundary } from "@/lib/lazy";
 
 type RufflePlayerElement = HTMLElement & {
   ruffle(): { load(options: Record<string, unknown>): Promise<void>; volume: number };
@@ -14,6 +15,9 @@ declare global {
     RufflePlayer?: RuffleGlobal;
   }
 }
+
+// #1263: tic-tac-toe has a chunk of its own, loaded with the shelf.
+const TicTacToe = chunk(() => import("@/components/game/LobbyTicTacToe")).pick((m) => m.TicTacToe);
 
 const STACKER_LOGO = `${import.meta.env.BASE_URL}images/sandwich-stacker-logo.png`;
 
@@ -39,10 +43,11 @@ function loadRuffle(base: string): Promise<void> {
 export function LobbyPlay({ onGame }: { onGame: (open: boolean) => void }) {
   const seats = useGame((s) => s.seats);
   const [stacker, setStacker] = useState(false);
+  const [board, setBoard] = useState(false);
   useEffect(() => {
-    onGame(stacker);
+    onGame(stacker || board);
     return () => onGame(false);
-  }, [stacker, onGame]);
+  }, [stacker, board, onGame]);
   const missing = 3 - seats.length;
   const readyCount = seats.filter((s) => s.ready).length;
   const status = missing > 0 ? `Need ${missing} more player${missing === 1 ? "" : "s"}` : readyCount === seats.length ? "Everyone is ready" : `${readyCount} of ${seats.length} ready`;
@@ -51,8 +56,9 @@ export function LobbyPlay({ onGame }: { onGame: (open: boolean) => void }) {
       <p className="lr">{seats.map((s) => s.name).join(" · ")} · {status}</p>
       {stacker ? <LobbyWaitBox onClose={() => setStacker(false)} /> : (
         <div className="ls">
-          <h2>While you wait</h2>
-          <div className="lt" role="group" aria-label="Sandwich Stacker"><img className="lw" src={STACKER_LOGO} alt="Sandwich Stacker" width="240" height="210" /><span><b aria-hidden="true">Sandwich Stacker</b><span>Solo</span></span><button type="button" onClick={() => setStacker(true)}>Play</button></div>
+          {board ? null : <><h2>While you wait</h2>
+          <div className="lt" role="group" aria-label="Sandwich Stacker"><img className="lw" src={STACKER_LOGO} alt="Sandwich Stacker" width="240" height="210" /><span><b aria-hidden="true">Sandwich Stacker</b><span>Solo</span></span><button type="button" onClick={() => setStacker(true)}>Play</button></div></>}
+          <LazyBoundary failed={null}><TicTacToe open={board} setOpen={setBoard} /></LazyBoundary>
         </div>
       )}
     </div>
