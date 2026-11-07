@@ -40,6 +40,8 @@ const observe = () => {
   window.__received = [];
   window.__held = [];
   window.__holdSession = false;
+  window.__holdOpen = false;
+  window.__heldOpen = [];
   window.__unhandled = [];
   window.addEventListener("unhandledrejection", (event) => window.__unhandled.push(String(event.reason)));
   const Native = window.WebSocket;
@@ -48,6 +50,11 @@ const observe = () => {
       super(...args);
       this.__sent = [];
       window.__profileSockets.push(this);
+      this.addEventListener("open", (event) => {
+        const handler = this.openHandler;
+        if (window.__holdOpen) window.__heldOpen.push(() => handler?.(event));
+        else handler?.(event);
+      });
       this.addEventListener("message", (event) => {
         const message = JSON.parse(event.data);
         window.__received.push({ url: this.url, message });
@@ -56,6 +63,8 @@ const observe = () => {
         else handler?.(event);
       });
     }
+    set onopen(handler) { this.openHandler = handler; }
+    get onopen() { return this.openHandler; }
     set onmessage(handler) { this.handler = handler; }
     get onmessage() { return this.handler; }
     send(raw) { const m = JSON.parse(raw); this.__sent.push(m); window.__wire.push({ url: this.url, message: m }); if (window.__dropLogout && m.type === "profileLogout") return; return super.send(raw); }
@@ -177,8 +186,12 @@ try {
     let closedFired = false;
     const hostileClient = window.table.connectTable(window.A, { closed: () => { closedFired = true; } });
     hostileClient.open({ name: "HostileCheck" });
-    await new Promise((r) => setTimeout(r, 60));
-    const tableWs = window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN && ws.__sent.some((m) => m.type === "hello" && m.name === "HostileCheck"));
+    let tableWs;
+    const deadline = performance.now() + 15000;
+    while (!(tableWs = window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN && ws.__sent.some((m) => m.type === "hello" && m.name === "HostileCheck")))) {
+      if (performance.now() > deadline) throw Error("HostileCheck hello was never sent");
+      await new Promise((r) => setTimeout(r, 10));
+    }
     tableWs.dispatchEvent(new MessageEvent("message", { data: JSON.stringify({ type: "closed" }) }));
     await new Promise((r) => setTimeout(r, 60));
     const wasFired = closedFired;
@@ -202,8 +215,12 @@ try {
       constructor: (p) => { constructorPayload = p; },
     });
     client.open({ name: "EventFilterCheck" });
-    await new Promise((r) => setTimeout(r, 60));
-    const sock = window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN && ws.__sent.some((m) => m.type === "hello" && m.name === "EventFilterCheck"));
+    let sock;
+    const deadline = performance.now() + 15000;
+    while (!(sock = window.__profileSockets.find((ws) => ws.url === window.A && ws.readyState === WebSocket.OPEN && ws.__sent.some((m) => m.type === "hello" && m.name === "EventFilterCheck")))) {
+      if (performance.now() > deadline) throw Error("EventFilterCheck hello was never sent");
+      await new Promise((r) => setTimeout(r, 10));
+    }
 
     const hostileTypes = ["reconnecting", "health", "closed", "constructor", "toString", "valueOf", "__proto__", "customEvent"];
     for (const type of hostileTypes) {
@@ -325,10 +342,18 @@ try {
     const client = window.profiles.createProfileClient(window.A);
     client.confirmHost(window.A);
     await client.login("ember-user", "8521");
-    window.signoutBeforeOpenTable = window.table.connectTable(window.A, { welcome: () => {} });
-    window.signoutBeforeOpenTable.open({ name: "AshSignoutBeforeOpen", profile: client });
-    await client.logout();
-    client.close();
+    // Hold the table socket's open event until the sign-out has finished. Logout is a round trip, so a socket that opened
+    // first would rightly send the credential; the order is fixed here instead of left to the network.
+    window.__holdOpen = true;
+    try {
+      window.signoutBeforeOpenTable = window.table.connectTable(window.A, { welcome: () => {} });
+      window.signoutBeforeOpenTable.open({ name: "AshSignoutBeforeOpen", profile: client });
+      await client.logout();
+      client.close();
+    } finally {
+      window.__holdOpen = false;
+      for (const release of window.__heldOpen.splice(0)) release();
+    }
   });
   await page.waitForFunction(() => window.__wire.some((f) => f.url === window.A && f.message.name === "AshSignoutBeforeOpen"));
   await page.evaluate(() => window.signoutBeforeOpenTable.close());
