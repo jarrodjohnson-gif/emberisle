@@ -137,15 +137,16 @@ try {
   await until(playing, "Music on resumes it");
   ok("the Music toggle stops and resumes it, and is stored");
 
-  // ---- The Table menu's row drives the same switch.
+  // ---- The Sound panel's Music and ambience mute drives the same switch.
   await page.getByRole("button", { name: "Table menu" }).first().click();
-  const row = page.getByTestId("music-toggle");
+  await page.getByTestId("sound-entry").click({ timeout: 5000 });
+  const row = page.getByTestId("sound-mute-music");
   await row.waitFor({ timeout: 5000 });
   await row.click();
-  assert.equal(await playing(), false, "the menu row switches it off");
+  assert.equal(await playing(), false, "the panel's mute switches it off");
   await row.click();
-  await until(playing, "the menu row switches it on");
-  ok("the Table menu's Music row switches it off and on");
+  await until(playing, "the panel's mute switches it on");
+  ok("the Sound panel's Music and ambience mute switches it off and on");
 
   // ---- The lobby counts, the win screen stops it, a rematch resumes it, the title keeps the same track (#1279).
   await set({ screen: "lobby" });

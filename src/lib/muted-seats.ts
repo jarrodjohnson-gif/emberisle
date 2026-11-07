@@ -1,4 +1,5 @@
 // Which seats this browser has muted at a table: a local preference kept in localStorage per table code (no message reaches the host).
+export const MUTE_EVENT = "emberisle:chat-mutes-changed";
 export const MUTE_KEY = "emberisle-chat-muted-";
 export const mutedByCode = new Map<string, string[]>();
 
