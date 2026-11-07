@@ -31,7 +31,7 @@ const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
-async function open(size, { skip = false, reducedMotion = "no-preference", hold = false, fail = false, slow = false, stall = 0, trace = false } = {}) {
+async function open(size, { skip = false, reducedMotion = "no-preference", hold = false, fail = false, slow = false, stall = 0, trace = false, early = false } = {}) {
   const ctx = await browser.newContext({ viewport: size, deviceScaleFactor: SHOTS ? 2 : 1, reducedMotion, hasTouch: size.width < 900, isMobile: false });
   const page = await ctx.newPage();
   const errors = [];
@@ -99,6 +99,33 @@ async function open(size, { skip = false, reducedMotion = "no-preference", hold 
         obs.disconnect();
       }).observe(document, { childList: true, subtree: true });
     }, stall);
+  }
+  if (early) {
+    // #1383: the first frame after Start carries a timestamp 16 ms before the click, as a frame that began before the
+    // click's handler ran. Each of the next 8 frames then records a 5x5 grid of the sky canvas's pixels.
+    await page.addInitScript(() => {
+      const raf = window.requestAnimationFrame.bind(window);
+      const out = (window.__early = { first: 0, frames: [] });
+      let click = 0;
+      addEventListener("click", (e) => {
+        if (!click && e.target?.textContent === "Start") click = performance.now();
+      }, true);
+      window.requestAnimationFrame = (cb) =>
+        raf((t) => {
+          if (!click || (out.frames.length >= 8 && out.frames.at(-1).t !== t)) return cb(t);
+          out.first ||= t;
+          cb(t === out.first ? click - 16 : t);
+          const sky = document.querySelector(".loading-sky");
+          if (!sky) return;
+          const g = sky.getContext("2d");
+          const grid = [];
+          for (let i = 0; i < 5; i++)
+            for (let j = 0; j < 5; j++) grid.push([...g.getImageData(Math.floor(((i + 0.5) * sky.width) / 5), Math.floor(((j + 0.5) * sky.height) / 5), 1, 1).data]);
+          const last = out.frames.at(-1);
+          if (last?.t === t) last.grid = grid;
+          else out.frames.push({ t, grid });
+        });
+    });
   }
   let release = () => {};
   if (hold) {
@@ -237,6 +264,22 @@ try {
     const ms = Date.now() - t0;
     check(ms < 1000, "reduced motion: with frames stalled 2.5 s as the title arrives, the loading card is still gone within a second of Start", { ms });
     check(errors.length === 0, "reduced motion with stalled frames: no browser errors", errors);
+    await ctx.close();
+  }
+
+  // #1383: a first push frame stamped before the Start click must not paint the whiteout over the whole sky.
+  {
+    const { ctx, page, errors } = await open({ width: 390, height: 844 }, { early: true });
+    await page.waitForFunction(() => document.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow") === "100", null, { timeout: 60_000 });
+    await start(page).click();
+    await page.waitForFunction(() => window.__early.frames.length >= 8, null, { timeout: 5000 });
+    const frames = await page.evaluate(() => window.__early.frames.map(({ grid }) => grid));
+    const wash = (p) => Math.abs(p[0] - 243) <= 2 && Math.abs(p[1] - 246) <= 2 && Math.abs(p[2] - 245) <= 2 && p[3] === 255;
+    const covered = frames.map((grid, i) => (grid.every(wash) ? i : -1)).filter((i) => i >= 0);
+    check(frames.length >= 8 && covered.length === 0, "a first push frame stamped 16 ms before the Start click: no frame is fully covered by the wash",
+      { frames: frames.length, covered, first: frames[0][0] });
+    await page.getByTestId("title-card").waitFor();
+    check(errors.length === 0, "early first frame: no browser errors", errors);
     await ctx.close();
   }
 
