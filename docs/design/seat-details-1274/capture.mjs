@@ -10,9 +10,9 @@ import { chromium } from "../../../scripts/proof-browser.mjs";
 import { createServer } from "vite";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
-const out = process.argv.includes("--save") ? path.join(dir, "pictures") : mkdtempSync(path.join(tmpdir(), "seat-details-1274-"));
-mkdirSync(out, { recursive: true });
-console.error(`pictures: ${out}`);
+const outDir = process.argv.includes("--save") ? path.join(dir, "pictures") : mkdtempSync(path.join(tmpdir(), "seat-details-1274-"));
+mkdirSync(outDir, { recursive: true });
+console.error(`pictures: ${outDir}`);
 const afterCss = readFileSync(path.join(dir, "after.css"), "utf8");
 const sizes = [[390, 844], [844, 390], [1280, 720]];
 
@@ -98,7 +98,7 @@ try {
       if (variant === "after") await page.addStyleTag({ content: afterCss });
       await page.waitForTimeout(200);
       const ids = await page.evaluate(() => window.__emberisle.getState().state.players.map((p) => p.id));
-      const shot = (name) => page.screenshot({ path: `${out}/${tag}-${name}-${variant}.jpg`, type: "jpeg", quality: 82 });
+      const shot = (name) => page.screenshot({ path: `${outDir}/${tag}-${name}-${variant}.jpg`, type: "jpeg", quality: 82 });
       const rec = { size: tag, variant, screens: {} };
       rec.screens.rail = await page.evaluate(measure);
       await shot("rail");
@@ -137,6 +137,6 @@ try {
   await vite.close();
 }
 out.errors = errors;
-writeFileSync(`${out}/measurements.json`, JSON.stringify(out, null, 2));
+writeFileSync(`${outDir}/measurements.json`, JSON.stringify(out, null, 2));
 console.log(JSON.stringify({ errors }));
 if (errors.length) process.exit(1);
