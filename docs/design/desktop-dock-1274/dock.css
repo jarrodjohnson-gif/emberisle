@@ -1,0 +1,51 @@
+/* Design mock for #1300: the 672 x 176 desktop dock. Only the game's own tokens from src/styles.css. Not game code. */
+
+/* Today's bottom stack and the header's turn line step aside; the mock dock holds both. */
+:root[data-mock-dock] div:has(> div > [data-hud-stack]),
+:root[data-mock-dock] .hud-header [data-testid="turn-banner"] { visibility: hidden !important; }
+
+/* 8 + 80 + 8 + 44 + 8 + 20 + 8 = 176 tall; 8 + 472 + 8 + 176 + 8 = 672 wide. Centred, 24 px off the bottom (decision 11). */
+.dd-dock {
+  position: fixed; z-index: 10; box-sizing: border-box;
+  left: calc(50% - 336px); bottom: max(24px, env(safe-area-inset-bottom));
+  width: 672px; height: 176px; padding: 8px;
+  display: grid; grid-template-columns: 472px 176px; grid-template-rows: 80px 44px 20px; gap: 8px;
+  background: var(--table); color: var(--ink);
+  border-radius: var(--radius-chip);
+  /* The edge is a ring, not a border, so it takes no room from the slots. */
+  box-shadow: 0 0 0 1px var(--control-line), var(--shadow-sheet);
+}
+
+/* Hand: the game's own five cards, 88 x 80, now 8 px apart. */
+.dd-hand { grid-column: 1; grid-row: 1; min-width: 0; }
+.dd-hand .goods-tray { --goods-lift: 4px; gap: 8px; padding: 0; justify-content: flex-start; }
+
+/* Turn line over one 44 px slot: the dice, or Yes and No when an offer comes in (option A). */
+.dd-side { grid-column: 2; grid-row: 1; display: grid; grid-template-rows: 32px 44px; gap: 4px; min-width: 0; }
+.dd-turn {
+  margin: 0; height: 32px; padding: 6px 12px; box-sizing: border-box;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 15px; line-height: 20px; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: var(--ground); border-radius: var(--radius-control);
+}
+.dd-turn-other { border-left: 4px solid; padding-left: 8px; }
+.dd-dot { width: 12px; height: 12px; box-shadow: 0 0 0 1.5px var(--ink); }
+.dd-aside { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.dd-aside > button { flex: 0 0 84px; }
+
+/* Seven equal controls, 8 px apart: (656 - 6 x 8) / 7 = 86.9 px each. */
+.dd-row.action-utilities { grid-column: 1 / 3; grid-row: 2; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; flex-wrap: nowrap; }
+.dd-ctl { width: 100%; min-width: 0; height: 44px; padding: 0 4px; gap: 6px; font-size: 14px; }
+/* 14 + 6 + 20 = 40 of the tile's 42: the 6 px gap holds the shortfall badge that hangs off a chip's top edge. */
+.dd-tile { flex-direction: column; gap: 6px; }
+.dd-name { font-size: 12px; line-height: 14px; font-weight: 500; white-space: nowrap; }
+.dd-why { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+.dd-ctl[aria-disabled="true"] { color: var(--muted); cursor: not-allowed; }
+/* Outpost's four chips need 86 px at the game's 4 px chip padding; 2 px brings them to 70 px inside the 79 px tile. */
+.dd-tile [data-testid^="cost-"] > span:first-child { padding: 0 2px; }
+
+/* Meta line: the seat's numbers, the last log line and the deck. */
+.dd-meta { grid-column: 1 / 3; grid-row: 3; display: flex; align-items: center; gap: 8px; min-width: 0; height: 20px; }
+.dd-log { flex: 1; min-width: 0; margin: 0; height: 20px; padding: 0 12px; font-size: 12px; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--ground); border-radius: var(--radius-control); }
+.dd-deck { flex: none; font-size: 12px; line-height: 20px; font-variant-numeric: tabular-nums; }
