@@ -1,7 +1,7 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { OpenModeToggle, HowTo, LoadingScreen, Lobby, online, OpenTables, SetupPipHints, sheets, WayfarerOptions } from "@/components/game/chunks";
+import { OpenModeToggle, HowTo, island, LoadingScreen, Lobby, online, OpenTables, SetupPipHints, sheets, WayfarerOptions } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
@@ -14,17 +14,18 @@ import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 import { useViewport } from "@/lib/viewport";
 
-const IslandCanvas = lazy(() => import("@/components/scene/IslandCanvas"));
-
-function ClientCanvas() {
-  const [ready, setReady] = useState(false);
-  useEffect(() => setReady(true), []);
-  if (!ready) return null;
-  return (
-    <Suspense fallback={null}>
-      <IslandCanvas />
-    </Suspense>
-  );
+// The island mounts once its chunk is in, never on the first pass. A failed download leaves the title standing and waits for
+// the next try (`tries`, bumped by the loading screen's Try again); a render fault still reaches the table's recovery.
+function ClientCanvas({ tries }: { tries: number }) {
+  const [Canvas, setCanvas] = useState<ComponentType | null>(null);
+  useEffect(() => {
+    let live = true;
+    island.load().then((m) => live && setCanvas(() => m.default), () => {});
+    return () => {
+      live = false;
+    };
+  }, [tries]);
+  return Canvas ? <Canvas /> : null;
 }
 
 export function EmberisleApp() {
@@ -35,9 +36,12 @@ export function EmberisleApp() {
   // A bot's turn waits while its own ask is open (#363); the offer's close wakes it again.
   const offerOpen = useGame((s) => s.offer !== null);
   // #1281: a page load that opens at the title opens on the loading screen ("load"), and the title card rises in at the end
-  // of the push ("arrive"). A reload into a held seat skips it. Automated browsers (the proofs) open on the title as before;
-  // the loading screen's own proof turns it on.
-  const [intro, setIntro] = useState(() => (screen === "title" && !restoring && !navigator.webdriver ? "load" : ""));
+  // of the push ("arrive"). A reload into a held seat skips it, and so does a page that sets `__emberisleSkipIntro` before it
+  // loads (the proofs, through scripts/proof-browser.mjs).
+  const [intro, setIntro] = useState(() =>
+    screen === "title" && !restoring && !(window as { __emberisleSkipIntro?: boolean }).__emberisleSkipIntro ? "load" : "",
+  );
+  const [tries, setTries] = useState(0);
   useTurnTitle();
   // #814, #1279: background music from the title through the lobby and play, after the first tap or key.
   // The end screen stays quiet, where end_music plays.
@@ -70,13 +74,13 @@ export function EmberisleApp() {
   return (
     <div data-game-shell className="relative h-dvh w-full overflow-hidden bg-studio">
       <TableRecoveryBoundary>
-        <ClientCanvas />
+        <ClientCanvas tries={tries} />
         {/* #488: the lobby (with chat) is online-only, so it is a lazy chunk; Host and Join prefetch it on hover or focus. */}
         {screen === "title" ? restoring ? <Restoring /> : (
           <>
             {intro ? (
               <LazyBoundary failed={<Gone then={() => setIntro("")} />}>
-                <LoadingScreen onArrive={() => setIntro("arrive")} onDone={() => setIntro("")} />
+                <LoadingScreen onArrive={() => setIntro("arrive")} onDone={() => setIntro("")} onRetry={() => setTries((n) => n + 1)} />
               </LazyBoundary>
             ) : null}
             {intro !== "load" ? <Title arrive={intro === "arrive"} /> : null}

@@ -3,7 +3,7 @@
 // camera through the clouds (2.4 s, the invite page's reveal) onto an aerial view of the island, where the title card rises
 // and the camera settles into the title's slow orbit. With reduced motion it is a cross-fade only.
 import { useEffect, useRef, useState } from "react";
-import { moments, online, sheets } from "@/components/game/chunks";
+import { island, moments, online, sheets } from "@/components/game/chunks";
 import { boot } from "@/lib/lazy";
 import "./loading.css";
 
@@ -116,13 +116,17 @@ function paint(g: CanvasRenderingContext2D, w: number, h: number, clouds: Cloud[
   g.globalAlpha = 1;
 }
 
-// `onArrive`: mount the title card now (it rises in by itself). `onDone`: the screen is gone.
-export function LoadingScreen({ onArrive, onDone }: { onArrive: () => void; onDone: () => void }) {
+// `onArrive`: mount the title card now (it rises in by itself). `onDone`: the screen is gone. `onRetry`: Try again was
+// pressed, so the app's canvas asks for the island again too.
+export function LoadingScreen({ onArrive, onDone, onRetry }: { onArrive: () => void; onDone: () => void; onRetry: () => void }) {
   const sky = useRef<HTMLCanvasElement>(null);
   const card = useRef<HTMLDivElement>(null);
   // One bit a step, set once that part is in.
   const [parts, setParts] = useState(0);
   const [waited, setWaited] = useState(false);
+  // A chunk did not download: Start stays closed and Try again asks for what is still missing.
+  const [failed, setFailed] = useState(false);
+  const retry = useRef(() => {});
   const started = useRef(0);
 
   useEffect(() => {
@@ -144,11 +148,19 @@ export function LoadingScreen({ onArrive, onDone }: { onArrive: () => void; onDo
     resize();
     addEventListener("resize", resize);
 
-    // The island's chunk is the same import the app's canvas waits on; the sheets, the lobby and the moments come along.
+    // The island's chunk is the same load the app's canvas waits on; the sheets, the lobby and the moments come along.
     let chunkIn = false;
-    let extrasIn = 0;
-    void import("@/components/scene/IslandCanvas").then(() => (chunkIn = true), () => (chunkIn = true));
-    for (const c of [sheets, online, moments]) void c.prefetch().then(() => extrasIn++);
+    const extras = new Set<object>();
+    const fetchAll = () => {
+      setFailed(false);
+      if (!chunkIn) island.load().then(() => (chunkIn = true), () => setFailed(true));
+      for (const c of [sheets, online, moments]) if (!extras.has(c)) c.load().then(() => extras.add(c), () => setFailed(true));
+    };
+    fetchAll();
+    retry.current = () => {
+      fetchAll();
+      onRetry();
+    };
 
     let frame = 0;
     let arrived = false;
@@ -156,7 +168,7 @@ export function LoadingScreen({ onArrive, onDone }: { onArrive: () => void; onDo
     const tick = (now: number) => {
       frame = requestAnimationFrame(tick);
       if (!started.current) {
-        setParts([chunkIn, boot.drawn, boot.scenes, boot.shore, extrasIn === 3].reduce((bits, ok, i) => bits | (ok ? 1 << i : 0), 0));
+        setParts([chunkIn, boot.drawn, boot.scenes, boot.shore, extras.size === 3].reduce((bits, ok, i) => bits | (ok ? 1 << i : 0), 0));
         if (!calm) {
           const secs = (now - t0) / 1000;
           paint(g, w, h, clouds, Math.sin(secs * 0.2) * 0.25, 0, 1, secs);
@@ -236,7 +248,16 @@ export function LoadingScreen({ onArrive, onDone }: { onArrive: () => void; onDo
             </div>
             <span className="loading-pct">{done}%</span>
           </div>
-          <p className="loading-status" role="status">{status}</p>
+          {failed ? (
+            <div className="loading-row">
+              <p className="loading-status loading-failed" role="alert">Couldn't load the game. Check your connection.</p>
+              <button type="button" className="loading-retry" onClick={() => retry.current()}>
+                Try again
+              </button>
+            </div>
+          ) : (
+            <p className="loading-status" role="status">{status}</p>
+          )}
         </div>
       </div>
     </>

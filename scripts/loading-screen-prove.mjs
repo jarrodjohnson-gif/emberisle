@@ -1,9 +1,11 @@
 // #1281: the startup loading screen, on the built page. A fresh visit opens on the loading card, not the title; the bar is
 // determinate and only moves forward as the island's real parts arrive (the island chunk is held here, so the bar waits on
 // it); Start before 100% shows its waiting line and nothing else; at 100% Start opens; tapping it pushes through the clouds
-// for 2.4 s and the title card rises in, with the 56 px wordmark; with reduced motion it is a short cross-fade. A browser
-// that reports itself automated (every other proof) opens on the title as before. Sizes: 320x568, 390x844, 844x390,
-// 1280x720.
+// for 2.4 s and the title card rises in, with the 56 px wordmark; with reduced motion it is a short cross-fade. A failed
+// island download shows an error and Try again with Start still closed, and Try again loads it once the network is back; a
+// slow connection fills the bar in steps with no error. A page with `__emberisleSkipIntro` set before load (every other
+// proof, through scripts/proof-browser.mjs) opens on the title as before. Sizes: 320x568, 390x844, 844x390, 1280x720.
+// This proof imports chromium from playwright itself, so its pages get the real screen.
 //   node scripts/loading-screen-prove.mjs            the proof (needs `npm run build`)
 //   node scripts/loading-screen-prove.mjs --shots    also writes the pictures to docs/proofs/1281/
 import assert from "node:assert/strict";
@@ -29,14 +31,13 @@ const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
-async function open(size, { human = true, reducedMotion = "no-preference", hold = false } = {}) {
+async function open(size, { skip = false, reducedMotion = "no-preference", hold = false, fail = false, slow = false } = {}) {
   const ctx = await browser.newContext({ viewport: size, deviceScaleFactor: SHOTS ? 2 : 1, reducedMotion, hasTouch: size.width < 900, isMobile: false });
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-  // A person's browser: navigator.webdriver is false.
-  if (human) await page.addInitScript(() => Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false }));
+  if (skip) await page.addInitScript(() => (window.__emberisleSkipIntro = true));
   let release = () => {};
   if (hold) {
     const gate = new Promise((r) => (release = r));
@@ -44,6 +45,19 @@ async function open(size, { human = true, reducedMotion = "no-preference", hold 
       await gate;
       await route.continue();
     });
+  }
+  if (fail) {
+    // Every request for the island chunk (the preload, the import and any retry under a fresh query) fails until released.
+    // The one-time stale-deploy reload (lazy.ts, proven elsewhere) is marked as spent, so this page shows the failure.
+    let down = true;
+    release = () => (down = false);
+    await page.addInitScript((url) => sessionStorage.setItem("emberisle-chunk-reloaded", JSON.stringify([url])), `${URL_}assets/${island}`);
+    await page.route(`**/assets/${island}*`, (route) => (down ? route.abort() : route.continue()));
+  }
+  if (slow) {
+    // A poor mobile link, 50 kB/s with 400 ms of latency: the island chunk alone (about 200 kB gzip) takes seconds.
+    const cdp = await ctx.newCDPSession(page);
+    await cdp.send("Network.emulateNetworkConditions", { offline: false, latency: 400, downloadThroughput: 50_000, uploadThroughput: 25_000 });
   }
   await page.goto(URL_, { waitUntil: "domcontentloaded" });
   return { ctx, page, errors, release };
@@ -129,11 +143,59 @@ try {
     await ctx.close();
   }
 
-  // Every other proof drives an automated browser: it opens straight on the title, as before this screen.
+  // A failed island download: an error and Try again, Start closed and inert; Try again loads it once the network is back.
   {
-    const { ctx, page } = await open({ width: 1280, height: 720 }, { human: false });
+    const { ctx, page, errors, release } = await open({ width: 390, height: 844 }, { fail: true });
+    const alert = page.getByRole("alert").filter({ hasText: "Couldn't load the game" });
+    await alert.waitFor({ timeout: 30_000 });
+    const retry = page.getByRole("button", { name: "Try again", exact: true });
+    const box = await retry.boundingBox();
+    check((await start(page).getAttribute("aria-disabled")) === "true" && (await pct(page)) < 100 && box.height >= 44,
+      "failed island download: an error and a 44 px Try again show, Start stays closed below 100%", { pct: await pct(page), retry: box.height });
+    await start(page).click({ force: true });
+    await page.waitForTimeout(300);
+    check((await page.getByTestId("title-card").count()) === 0 && (await start(page).getAttribute("aria-disabled")) === "true",
+      "failed island download: Start does nothing");
+    await retry.click();
+    await alert.waitFor({ timeout: 30_000 });
+    check((await start(page).getAttribute("aria-disabled")) === "true", "Try again while the network is still down fails again, Start still closed");
+    release();
+    await retry.click();
+    await page.waitForFunction(() => document.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow") === "100", null, { timeout: 60_000 });
+    check((await alert.count()) === 0 && (await start(page).getAttribute("aria-disabled")) === "false" && (await page.evaluate(() => !!window.__isle)),
+      "Try again after the network is back loads the island: the error goes, the island renders, Start opens");
+    await start(page).click();
     await page.getByTestId("title-card").waitFor();
-    check((await page.getByTestId("loading-card").count()) === 0, "an automated browser opens on the title with no loading card");
+    check(true, "the push runs to the title after a retried load");
+    const unexpected = errors.filter((e) => !/Failed to (load resource|fetch dynamically imported module)|IslandCanvas/.test(e));
+    check(unexpected.length === 0, "failed island download: no browser errors beyond the refused chunk", unexpected);
+    await ctx.close();
+  }
+
+  // A slow connection: the bar fills in steps over several seconds, no error shows, and Start opens at 100%.
+  {
+    const { ctx, page, errors } = await open({ width: 390, height: 844 }, { slow: true });
+    await page.getByTestId("loading-card").waitFor({ timeout: 60_000 });
+    const t0 = Date.now();
+    const seen = [await pct(page)];
+    while (seen.at(-1) < 100) {
+      assert.ok(Date.now() - t0 < 120_000, `slow connection: the bar reaches 100% within 120 s (last ${seen.at(-1)}%)`);
+      assert.equal(await page.getByRole("alert").count(), 0, "slow connection: no error while loading");
+      await page.waitForTimeout(200);
+      seen.push(await pct(page));
+    }
+    const steps = [...new Set(seen)];
+    check(steps[0] < 100 && steps.length >= 3 && steps.every((v, i) => i === 0 || v > steps[i - 1]) && (await start(page).getAttribute("aria-disabled")) === "false",
+      "slow connection: the card shows below 100%, the bar fills forward in steps with no error, and Start opens at 100%", { steps, ms: Date.now() - t0 });
+    check(errors.length === 0, "slow connection: no browser errors", errors);
+    await ctx.close();
+  }
+
+  // Every other proof sets the skip flag before load (scripts/proof-browser.mjs): it opens straight on the title.
+  {
+    const { ctx, page } = await open({ width: 1280, height: 720 }, { skip: true });
+    await page.getByTestId("title-card").waitFor();
+    check((await page.getByTestId("loading-card").count()) === 0, "a page with __emberisleSkipIntro opens on the title with no loading card");
     await ctx.close();
   }
 
@@ -141,6 +203,13 @@ try {
     // Frames of the push, in real time: one fresh load a frame, the picture taken that long after Start.
     for (const size of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1280, height: 720 }]) {
       const tag = `${size.width}x${size.height}`;
+      {
+        const { ctx, page } = await open(size, { fail: true });
+        await page.getByRole("alert").waitFor({ timeout: 30_000 });
+        await page.waitForTimeout(400);
+        await page.screenshot({ path: `${OUT}/${tag}-error.png` });
+        await ctx.close();
+      }
       for (const [ms, name] of [[0, "loading"], [700, "push-1-clouds"], [1700, "push-2-island"], [2350, "push-3-aerial"], [5000, "title"]]) {
         const { ctx, page, release } = await open(size, { hold: !ms });
         if (!ms) {

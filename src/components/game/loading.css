@@ -20,6 +20,12 @@
 .loading-fill { position: absolute; inset: 0 auto 0 0; background: #246d72; border-radius: 8px; transition: width 320ms var(--ease-out); }
 .loading-pct { width: 48px; text-align: right; font: 700 15px/24px Arial, Helvetica, sans-serif; font-variant-numeric: tabular-nums; }
 .loading-status { margin: 0; font-size: 12px; line-height: 16px; color: #536763; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.loading-failed { flex: 1; color: #263d3c; white-space: normal; }
+.loading-retry {
+  height: 44px; padding: 0 16px; border-radius: 12px; cursor: pointer; flex: none;
+  font: 700 15px/1 Arial, Helvetica, sans-serif; border: 1px solid #246d72; background: #fff; color: #246d72;
+}
+.loading-retry:focus-visible { outline: 2px solid #246d72; outline-offset: 2px; }
 
 @media (max-width: 767px) and (orientation: portrait) {
   .loading-card { left: 16px; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); width: auto; max-width: none; padding: 16px; }
