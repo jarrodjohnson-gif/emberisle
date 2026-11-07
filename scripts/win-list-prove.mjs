@@ -2,6 +2,8 @@
 // A finished four-player game with long names, buildings, both awards, hidden points, a tie and a zero total.
 // Every row opens by tap and keyboard, one at a time; the open row scrolls to the top of the list and fits the
 // list and the screen; every value matches the game state; nothing scrolls sideways; every result action stays reachable.
+// The list is its own chunk: a real game fetches it while the table plays (no empty first paint), a refused chunk leaves
+// the table with every total until Show scores tries again, and the desktop never asks for it.
 // With SHOTS=1 it writes the closed and one-open pictures in docs/proofs/748/ at device scale 2.
 import assert from "node:assert/strict";
 import { mkdirSync } from "node:fs";
@@ -65,22 +67,46 @@ try {
   const shot = (page, name) => page.screenshot({ path: `${SHOTS ?? "test-results"}/${SHOTS ? "" : "win-list-"}${name}.png` });
   const errors = [];
 
-  async function open(width, height, touch, insets, { spectator = false } = {}) {
+  // The list's own chunk (src/components/game/WinList.tsx, served as source by the dev server).
+  const LIST_CHUNK = /\/WinList\.tsx/;
+  // `live`: the table plays first, so the list chunk is fetched before the game ends, as in a real game.
+  // `block`: the list chunk cannot load; its console errors are expected, page errors still fail.
+  async function open(width, height, touch, insets, { spectator = false, live = false, block = false } = {}) {
     const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: "reduce", deviceScaleFactor: SHOTS ? 2 : 1 });
     const page = await context.newPage();
     const tag = `${width}x${height}${insets ? " insets" : ""}`;
     page.on("pageerror", (e) => errors.push(`${tag}: ${e.message}`));
-    page.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
+    if (!block) page.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
+    if (block) await page.route(LIST_CHUNK, (r) => r.abort());
+    const listLoads = [];
+    page.on("request", (r) => LIST_CHUNK.test(r.url()) && listLoads.push(r.url()));
     if (insets) await (await context.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets });
     await page.goto(`http://127.0.0.1:${port}/`);
     await page.waitForFunction(() => !!window.__emberisle);
-    await page.evaluate(({ game, spectator }) => {
+    const load = (game) => page.evaluate(({ game, spectator }) => {
       const s = window.__emberisle;
       s.setState({ spectator, isHost: !spectator, menuFor: null, chatOpen: false });
       s.getState().loadState(game, spectator ? "" : "p0", !spectator, "WLST");
-    }, { game: structuredClone(g), spectator });
+    }, { game, spectator });
+    if (live) {
+      const fetched = page.waitForResponse((r) => LIST_CHUNK.test(r.url()));
+      await load({ ...structuredClone(g), phase: "main", winner: null, winReason: undefined });
+      await fetched;
+      await page.waitForLoadState("networkidle");
+      // Record how many rows the dialog holds in the DOM update that first adds it, before the browser paints it.
+      await page.evaluate(() => {
+        window.__rowsAtFirstPaint = null;
+        new MutationObserver((_, o) => {
+          const screen = document.querySelector('[data-testid="win-screen"]');
+          if (!screen) return;
+          window.__rowsAtFirstPaint = screen.querySelectorAll('[data-testid="win-row"]').length;
+          o.disconnect();
+        }).observe(document.body, { childList: true, subtree: true });
+      });
+    }
+    await load(structuredClone(g));
     await page.getByTestId("win-menu").waitFor();
-    return { context, page, tag };
+    return { context, page, tag, listLoads };
   }
 
   // Geometry of the list, a row and the result actions, measured in the page.
@@ -103,8 +129,10 @@ try {
   for (const [width, height, touch, insets] of LIST) {
     const { context, page, tag } = await open(width, height, touch, insets);
     const safe = { top: insets?.top ?? 0, bottom: height - (insets?.bottom ?? 0), left: insets?.left ?? 0, right: width - (insets?.right ?? 0) };
-    assert.equal(await page.locator('[data-testid="win-table-wrap"] table').count(), 0, `${tag}: no table on the compact list`);
     const rows = page.getByTestId("win-row");
+    // Straight to the results, the list chunk may still be loading; the live case below proves a real game never waits.
+    await rows.first().waitFor();
+    assert.equal(await page.locator('[data-testid="win-table-wrap"] table').count(), 0, `${tag}: no table on the compact list`);
     assert.deepEqual(await rows.evaluateAll((els) => els.map((el) => el.dataset.player)), order, `${tag}: winner first, then highest total`);
 
     // Closed: totals match totalVP, nothing scrolls sideways, every total is whole inside the list.
@@ -189,6 +217,7 @@ try {
   // A spectator on a phone sees the list but no rematch or reaction.
   {
     const { context, page } = await open(390, 844, true, null, { spectator: true });
+    await page.getByTestId("win-row").first().waitFor();
     assert.equal(await page.getByTestId("win-row").count(), 4);
     assert.equal(await page.getByTestId("win-again").count(), 0, "spectator: no Play again");
     assert.equal(await page.getByTestId("win-react").count(), 0, "spectator: no React");
@@ -196,9 +225,37 @@ try {
     console.log("ok 390x844 spectator: list, no Play again or React");
   }
 
-  // Desktop with a mouse keeps the full table.
+  // A real game: the list chunk is fetched while the table plays, so the dialog's first paint already holds every row.
   {
-    const { context, page } = await open(1280, 720, false, null);
+    const { context, page } = await open(390, 844, true, null, { live: true });
+    assert.equal(await page.evaluate(() => window.__rowsAtFirstPaint), 4, "no flash: the list is in the dialog's first DOM update");
+    await context.close();
+    console.log("ok 390x844 live table: list chunk fetched before the end, all four rows in the dialog's first paint");
+  }
+
+  // The list chunk cannot load: the table stands in with every total; once it can, Show scores brings the list.
+  {
+    const { context, page } = await open(390, 844, true, null, { block: true });
+    const wrap = page.getByTestId("win-table-wrap");
+    await wrap.locator("table").waitFor();
+    assert.equal(await wrap.locator('[role="region"]').count(), 0, "failed chunk: no list");
+    assert.deepEqual(await page.locator('tr[data-testid="win-row"]').evaluateAll((els) => els.map((el) => [el.dataset.player, Number(el.querySelector('[data-testid="win-total"]').textContent)])), order.map((id) => [id, expected[id].total]), "failed chunk: the table shows every total");
+    await page.unroute(LIST_CHUNK);
+    await page.getByTestId("win-look").click();
+    await page.getByTestId("win-show").click();
+    await page.locator('button[data-testid="win-row"]').first().waitFor();
+    assert.equal(await page.locator('button[data-testid="win-row"]').count(), 4, "retry: Show scores brings the list");
+    assert.equal(await wrap.locator("table").count(), 0, "retry: the table is gone");
+    await page.locator('button[data-testid="win-row"][data-player="p2"]').tap();
+    assert.equal(await page.locator('[data-testid="win-hidden"]').nth(2).textContent(), "3", "retry: the list works");
+    await context.close();
+    console.log("ok 390x844 list chunk refused: table with every total, then Show scores loads the list");
+  }
+
+  // Desktop with a mouse keeps the full table, and never asks for the list chunk.
+  {
+    const { context, page, listLoads } = await open(1280, 720, false, null);
+    assert.deepEqual(listLoads, [], "desktop: the list chunk is not loaded");
     const wrap = page.getByTestId("win-table-wrap");
     assert.equal(await wrap.locator("table").count(), 1, "desktop: the table stays");
     assert.equal(await wrap.locator("thead th").count(), 7, "desktop: seven columns");

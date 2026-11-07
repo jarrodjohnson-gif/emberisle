@@ -82,6 +82,8 @@ const CEILINGS = [
   { name: "SoundSheet", gzipBytes: 2000 },
   // #669, 2026-11-07: the mute-list hook shared by the chat chunk and the Sound panel; measured 414 B gzip. New chunk only; the owner must OK this ceiling.
   { name: "use-muted-seats", gzipBytes: 500 },
+  // #748, 2026-11-07: the win screen's compact list on phones, loaded on phones as the table starts; measured 1,253 B gzip. New chunk only; the desk sets this ceiling.
+  { name: "WinList", gzipBytes: 1360 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
