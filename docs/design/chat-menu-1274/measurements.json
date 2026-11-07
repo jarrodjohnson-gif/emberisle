@@ -1,0 +1,1193 @@
+{
+  "chromium": "153.0.8010.12",
+  "results": [
+    {
+      "picture": "today-chat-320x568.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "320x568",
+      "box": {
+        "x": 0,
+        "y": 148,
+        "w": 320,
+        "h": 420
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [],
+      "minGap": 4,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 12,
+          "y": 160,
+          "w": 63.9,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 79.9,
+          "y": 160,
+          "w": 94.5,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        14,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "chat-320x568.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "320x568",
+      "box": {
+        "x": 0,
+        "y": 148,
+        "w": 320,
+        "h": 420
+      },
+      "inside": true,
+      "controls": 11,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 12,
+          "y": 160,
+          "w": 48.2,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 68.2,
+          "y": 160,
+          "w": 93.6,
+          "h": 44,
+          "lines": 2,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        15,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "sounds-320x568.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "320x568",
+      "box": {
+        "x": 0,
+        "y": 148,
+        "w": 320,
+        "h": 420
+      },
+      "inside": true,
+      "controls": 39,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "false",
+          "x": 12,
+          "y": 160,
+          "w": 47.7,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "true",
+          "x": 67.7,
+          "y": 160,
+          "w": 94.1,
+          "h": 44,
+          "lines": 2,
+          "cut": false
+        }
+      ],
+      "inputEdge": null,
+      "moreBelow": true,
+      "fontSizes": [
+        13,
+        15
+      ],
+      "unread": null
+    },
+    {
+      "picture": "failed-320x568.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "320x568",
+      "box": {
+        "x": 0,
+        "y": 148,
+        "w": 320,
+        "h": 420
+      },
+      "inside": true,
+      "controls": 11,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 12,
+          "y": 160,
+          "w": 48.2,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 68.2,
+          "y": 160,
+          "w": 93.6,
+          "h": 44,
+          "lines": 2,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        13,
+        15,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "empty-320x568.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "320x568",
+      "box": {
+        "x": 0,
+        "y": 148,
+        "w": 320,
+        "h": 420
+      },
+      "inside": true,
+      "controls": 11,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 12,
+          "y": 160,
+          "w": 48.2,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 68.2,
+          "y": 160,
+          "w": 93.6,
+          "h": 44,
+          "lines": 2,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        15,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "unread-320x568.png",
+      "which": "chat",
+      "open": false
+    },
+    {
+      "picture": "menu-320x568.png",
+      "which": "menu",
+      "open": true,
+      "viewport": "320x568",
+      "box": {
+        "x": 52,
+        "y": 64,
+        "w": 256,
+        "h": 488
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "How to play / Costs",
+      "tabs": [],
+      "inputEdge": null,
+      "moreBelow": true,
+      "fontSizes": [
+        12,
+        15
+      ],
+      "unread": {
+        "text": "3",
+        "x": 293,
+        "y": 55,
+        "w": 20,
+        "h": 20
+      }
+    },
+    {
+      "which": "layers (today)",
+      "viewport": "320x568",
+      "menuOpen": true,
+      "chatOpen": true,
+      "overlap": 103424,
+      "afterEscape": {
+        "menuOpen": false,
+        "chatOpen": true,
+        "focus": "Table menu"
+      },
+      "tap": {
+        "menuOpen": false,
+        "chatOpen": false
+      }
+    },
+    {
+      "picture": "today-chat-390x844.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "390x844",
+      "box": {
+        "x": 0,
+        "y": 424,
+        "w": 390,
+        "h": 420
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [],
+      "minGap": 4,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 12,
+          "y": 436,
+          "w": 63.9,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 79.9,
+          "y": 436,
+          "w": 150.3,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        14,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "chat-390x844.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "390x844",
+      "box": {
+        "x": 0,
+        "y": 424,
+        "w": 390,
+        "h": 420
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 12,
+          "y": 436,
+          "w": 48.2,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 68.2,
+          "y": 436,
+          "w": 142.3,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        15,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "sounds-390x844.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "390x844",
+      "box": {
+        "x": 0,
+        "y": 424,
+        "w": 390,
+        "h": 420
+      },
+      "inside": true,
+      "controls": 39,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "false",
+          "x": 12,
+          "y": 436,
+          "w": 47.7,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "true",
+          "x": 67.7,
+          "y": 436,
+          "w": 143.8,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        }
+      ],
+      "inputEdge": null,
+      "moreBelow": true,
+      "fontSizes": [
+        13,
+        15
+      ],
+      "unread": null
+    },
+    {
+      "picture": "failed-390x844.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "390x844",
+      "box": {
+        "x": 0,
+        "y": 424,
+        "w": 390,
+        "h": 420
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 12,
+          "y": 436,
+          "w": 48.2,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 68.2,
+          "y": 436,
+          "w": 142.3,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        13,
+        15,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "empty-390x844.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "390x844",
+      "box": {
+        "x": 0,
+        "y": 424,
+        "w": 390,
+        "h": 420
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 12,
+          "y": 436,
+          "w": 48.2,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 68.2,
+          "y": 436,
+          "w": 142.3,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        15,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "unread-390x844.png",
+      "which": "chat",
+      "open": false
+    },
+    {
+      "picture": "menu-390x844.png",
+      "which": "menu",
+      "open": true,
+      "viewport": "390x844",
+      "box": {
+        "x": 122,
+        "y": 64,
+        "w": 256,
+        "h": 604
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "How to play / Costs",
+      "tabs": [],
+      "inputEdge": null,
+      "moreBelow": false,
+      "fontSizes": [
+        12,
+        15
+      ],
+      "unread": {
+        "text": "3",
+        "x": 363,
+        "y": 55,
+        "w": 20,
+        "h": 20
+      }
+    },
+    {
+      "which": "layers (today)",
+      "viewport": "390x844",
+      "menuOpen": true,
+      "chatOpen": true,
+      "overlap": 75776,
+      "afterEscape": {
+        "menuOpen": false,
+        "chatOpen": true,
+        "focus": "Table menu"
+      },
+      "tap": {
+        "menuOpen": false,
+        "chatOpen": false
+      }
+    },
+    {
+      "picture": "today-chat-844x390.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "844x390",
+      "box": {
+        "x": 0,
+        "y": 120,
+        "w": 844,
+        "h": 270
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [],
+      "minGap": 4,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 12,
+          "y": 132,
+          "w": 63.9,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 79.9,
+          "y": 132,
+          "w": 150.3,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        14,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "chat-844x390.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "844x390",
+      "box": {
+        "x": 0,
+        "y": 120,
+        "w": 844,
+        "h": 270
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 12,
+          "y": 132,
+          "w": 48.2,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 68.2,
+          "y": 132,
+          "w": 142.3,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        15,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "sounds-844x390.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "844x390",
+      "box": {
+        "x": 0,
+        "y": 120,
+        "w": 844,
+        "h": 270
+      },
+      "inside": true,
+      "controls": 39,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "false",
+          "x": 12,
+          "y": 132,
+          "w": 47.7,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "true",
+          "x": 67.7,
+          "y": 132,
+          "w": 143.8,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        }
+      ],
+      "inputEdge": null,
+      "moreBelow": true,
+      "fontSizes": [
+        13,
+        15
+      ],
+      "unread": null
+    },
+    {
+      "picture": "failed-844x390.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "844x390",
+      "box": {
+        "x": 0,
+        "y": 120,
+        "w": 844,
+        "h": 270
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 12,
+          "y": 132,
+          "w": 48.2,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 68.2,
+          "y": 132,
+          "w": 142.3,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        13,
+        15,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "empty-844x390.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "844x390",
+      "box": {
+        "x": 0,
+        "y": 120,
+        "w": 844,
+        "h": 270
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 12,
+          "y": 132,
+          "w": 48.2,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 68.2,
+          "y": 132,
+          "w": 142.3,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        15,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "unread-844x390.png",
+      "which": "chat",
+      "open": false
+    },
+    {
+      "picture": "menu-844x390.png",
+      "which": "menu",
+      "open": true,
+      "viewport": "844x390",
+      "box": {
+        "x": 576,
+        "y": 64,
+        "w": 256,
+        "h": 310
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "How to play / Costs",
+      "tabs": [],
+      "inputEdge": null,
+      "moreBelow": true,
+      "fontSizes": [
+        12,
+        15
+      ],
+      "unread": {
+        "text": "3",
+        "x": 769,
+        "y": 7,
+        "w": 20,
+        "h": 20
+      }
+    },
+    {
+      "which": "layers (today)",
+      "viewport": "844x390",
+      "menuOpen": true,
+      "chatOpen": true,
+      "overlap": 65024,
+      "afterEscape": {
+        "menuOpen": false,
+        "chatOpen": true,
+        "focus": "Table menu"
+      },
+      "tap": {
+        "menuOpen": false,
+        "chatOpen": false
+      }
+    },
+    {
+      "picture": "today-chat-1280x720.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "1280x720",
+      "box": {
+        "x": 968,
+        "y": 64,
+        "w": 300,
+        "h": 312
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [
+        "Mute players 40x44",
+        "Minimize chat 40x44"
+      ],
+      "minGap": 4,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 976,
+          "y": 76,
+          "w": 43.9,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 1023.9,
+          "y": 76,
+          "w": 130.3,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        14,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "chat-1280x720.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "1280x720",
+      "box": {
+        "x": 948,
+        "y": 64,
+        "w": 320,
+        "h": 304
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 956,
+          "y": 72,
+          "w": 48.2,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 1012.2,
+          "y": 72,
+          "w": 142.3,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        15,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "chat-300-1280x720.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "1280x720",
+      "box": {
+        "x": 968,
+        "y": 64,
+        "w": 300,
+        "h": 304
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [
+        "React angry 40x44",
+        "React happy 40x44",
+        "React clap 40x44",
+        "React laugh 40x44",
+        "React fire 40x44",
+        "React sheep 40x44"
+      ],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 976,
+          "y": 72,
+          "w": 48.2,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 1032.2,
+          "y": 72,
+          "w": 123.8,
+          "h": 44,
+          "lines": 2,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        15,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "sounds-1280x720.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "1280x720",
+      "box": {
+        "x": 948,
+        "y": 64,
+        "w": 320,
+        "h": 360
+      },
+      "inside": true,
+      "controls": 39,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "false",
+          "x": 956,
+          "y": 72,
+          "w": 47.7,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "true",
+          "x": 1011.7,
+          "y": 72,
+          "w": 143.8,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        }
+      ],
+      "inputEdge": null,
+      "moreBelow": true,
+      "fontSizes": [
+        13,
+        15
+      ],
+      "unread": null
+    },
+    {
+      "picture": "failed-1280x720.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "1280x720",
+      "box": {
+        "x": 948,
+        "y": 64,
+        "w": 320,
+        "h": 348
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 956,
+          "y": 72,
+          "w": 48.2,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 1012.2,
+          "y": 72,
+          "w": 142.3,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        13,
+        15,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "empty-1280x720.png",
+      "which": "chat",
+      "open": true,
+      "viewport": "1280x720",
+      "box": {
+        "x": 948,
+        "y": 64,
+        "w": 320,
+        "h": 304
+      },
+      "inside": true,
+      "controls": 12,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Chat / Sounds & stickers",
+      "tabs": [
+        {
+          "name": "Chat",
+          "selected": "true",
+          "x": 956,
+          "y": 72,
+          "w": 48.2,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        },
+        {
+          "name": "Sounds & stickers",
+          "selected": "false",
+          "x": 1012.2,
+          "y": 72,
+          "w": 142.3,
+          "h": 44,
+          "lines": 1,
+          "cut": false
+        }
+      ],
+      "inputEdge": "rgb(120, 131, 122)",
+      "moreBelow": false,
+      "fontSizes": [
+        15,
+        24
+      ],
+      "unread": null
+    },
+    {
+      "picture": "unread-1280x720.png",
+      "which": "chat",
+      "open": false
+    },
+    {
+      "picture": "menu-1280x720.png",
+      "which": "menu",
+      "open": true,
+      "viewport": "1280x720",
+      "box": {
+        "x": 1012,
+        "y": 64,
+        "w": 256,
+        "h": 552
+      },
+      "inside": true,
+      "controls": 11,
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "How to play / Costs",
+      "tabs": [],
+      "inputEdge": null,
+      "moreBelow": false,
+      "fontSizes": [
+        12,
+        15
+      ],
+      "unread": {
+        "text": "3",
+        "x": 1205,
+        "y": 7,
+        "w": 20,
+        "h": 20
+      }
+    },
+    {
+      "which": "layers (today)",
+      "viewport": "1280x720",
+      "menuOpen": true,
+      "chatOpen": true,
+      "overlap": 77824,
+      "afterEscape": {
+        "menuOpen": false,
+        "chatOpen": true,
+        "focus": "Table menu"
+      },
+      "tap": {
+        "menuOpen": true,
+        "chatOpen": true
+      }
+    }
+  ]
+}
