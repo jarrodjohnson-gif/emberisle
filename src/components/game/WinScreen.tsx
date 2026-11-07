@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
-import { totalVP, victoryTarget } from "@/lib/game/rules";
+import { publicScoreBreakdown, totalVP, victoryTarget } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { useViewport } from "@/lib/viewport";
 import { useFocusTrap } from "@/lib/focus-trap";
@@ -34,6 +34,13 @@ function Panel() {
   const winner = state.players.find((p) => p.id === state.winner)!;
   const dialog = useRef<HTMLDivElement>(null);
   const chip = useRef<HTMLDivElement>(null);
+  const wrap = useRef<HTMLDivElement>(null);
+  // #748: on touch and narrow screens, one row per player; one opens at a time and scrolls to the top of the list.
+  const [open, setOpen] = useState<string | null>(null);
+  useEffect(() => {
+    const row = open && wrap.current?.querySelector(`[aria-controls="win-part-${open}"]`);
+    if (row) wrap.current!.scrollTop += row.getBoundingClientRect().top - wrap.current!.getBoundingClientRect().top;
+  }, [open]);
 
   // #379: Tab stays inside the dialog; "Look around" hands focus to the chip so the keyboard does not land on the body.
   useFocusTrap(dialog, !hidden, '[data-testid="win-menu"]');
@@ -63,6 +70,7 @@ function Panel() {
         path: state.longestRoad === p.id,
         army: state.largestArmy === p.id,
         hiddenVp: p.hidden.vp,
+        parts: publicScoreBreakdown(state, p.id),
         total: totalVP(state, p.id),
       };
     })
@@ -120,43 +128,88 @@ function Panel() {
       data-testid="win-screen"
       className="absolute inset-0 z-40 flex items-center justify-center bg-bg/60 p-safe"
     >
-      <div className="flex max-h-full w-full max-w-2xl flex-col rounded-sheet border border-border bg-surface p-5 text-center sm:p-6 short:py-2 short:px-4">
+      <div className={`flex max-h-full w-full max-w-2xl flex-col rounded-sheet border border-border bg-surface p-5 text-center sm:p-6 short:px-4 ${phone ? "short:py-1" : "short:py-2"}`}>
+        {/* #748: 480 px tall or less, the list needs room for four 44 px rows under the host's two-line actions (667x375 with insets). */}
+        <div className={phone ? "short:flex short:items-center short:justify-center short:gap-3" : undefined}>
         <div className="flex items-center justify-center gap-2.5">
           <SeatDot color={winner.color} className="size-4" />
           <p id="win-headline" data-testid="win-headline" className="font-display text-3xl short:text-lg text-fg">
             {winner.name} wins
           </p>
         </div>
-        <p className="win-total-hero mt-3 short:mt-0.5" data-testid="win-points">{winning.total}<span className="ml-2 text-body font-medium tracking-normal">points</span></p>
+        <p className={`win-total-hero mt-3 ${phone ? "short:mt-0" : "short:mt-0.5"}`} data-testid="win-points">{winning.total}<span className="ml-2 text-body font-medium tracking-normal">points</span></p>
+        </div>
         <p data-testid="win-action" className="mt-2 short:mt-0.5 text-sm short:text-xs text-muted">
           {action} · {reason?.points ?? winning.total} points, target {reason?.target ?? victoryTarget(state)}.
         </p>
-        <div className="win-equation" data-testid="win-reason">{contribution.map((part, i) => <span key={part}>{i > 0 ? "+ " : ""}{part}</span>)}</div>
-        <div data-testid="win-table-wrap" className="mt-4 short:mt-1.5 min-h-0 overflow-auto">
+        <div className={`win-equation ${phone ? "short:hidden!" : ""}`} data-testid="win-reason">{contribution.map((part, i) => <span key={part}>{i > 0 ? "+ " : ""}{part}</span>)}</div>
+        <div ref={wrap} data-testid="win-table-wrap" className={`mt-4 min-h-0 ${phone ? "overflow-y-auto overflow-x-hidden border-t border-border pt-2 text-left short:mt-1 short:pt-0" : "overflow-auto short:mt-1.5"}`}>
+          {phone ? (
+            <>
+              <p className="mb-1 text-caption text-muted short:hidden">Tap a player to see how they scored.</p>
+              <ul>
+                {rows.map((r) => {
+                  const id = r.p.id;
+                  const on = open === id;
+                  const pts = (n: number) => `${n} point${n === 1 ? "" : "s"}`;
+                  const lines: [string, string | number, number, string?][] = [
+                    ["Outposts", r.outposts, r.parts.outposts],
+                    ["Strongholds", r.strongholds, r.parts.strongholds],
+                    ["Longest path", r.path ? "Yes" : "No", r.parts.longestPath],
+                    ["Largest army", r.army ? "Yes" : "No", r.parts.largestArmy],
+                    ["Hidden points", r.hiddenVp, r.total - Object.values(r.parts).reduce((a, b) => a + b, 0), "win-hidden"],
+                  ];
+                  return (
+                    <li key={id} className="border-border not-first:border-t">
+                      <h3>
+                        <button
+                          type="button"
+                          data-testid="win-row"
+                          data-player={id}
+                          aria-expanded={on}
+                          aria-controls={`win-part-${id}`}
+                          onClick={() => setOpen(on ? null : id)}
+                          className="flex min-h-11 w-full items-center gap-2.5 pr-1.5 pl-2 text-left text-body text-fg focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sea-ink"
+                        >
+                          <SeatDot color={r.p.color} className="size-3 flex-none" />
+                          <span className={`min-w-0 flex-1 ${on ? "py-[11px]" : "truncate"}`}>{r.p.name}</span>
+                          <span data-testid="win-total" className="flex-none text-xl font-bold tabular-nums">{r.total}</span>
+                          <svg viewBox="0 0 20 20" aria-hidden="true" className={`size-5 flex-none text-muted ${on ? "rotate-180" : ""}`}>
+                            <path d="M5 7.5l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                      </h3>
+                      <div id={`win-part-${id}`} role="region" aria-label={`${r.p.name}'s score`} data-player={id} hidden={!on} className="pr-9 pb-2.5 pl-[30px]">
+                        <dl className="grid grid-cols-[1fr_auto_auto] gap-y-0.5 text-[13px] leading-5 text-muted">
+                          {lines.map(([label, count, n, testId]) => (
+                            <div key={label} className="contents">
+                              <dt>{label}</dt>
+                              <dd data-testid={testId} className="pl-4 text-right tabular-nums">{count}</dd>
+                              <dd className="pl-4 text-right font-semibold tabular-nums text-fg">{pts(n)}</dd>
+                            </div>
+                          ))}
+                          <div className="contents font-semibold text-fg [&>*]:border-t [&>*]:border-border [&>*]:pt-0.5">
+                            <dt>Total</dt>
+                            <dd />
+                            <dd className="pl-4 text-right tabular-nums">{pts(r.total)}</dd>
+                          </div>
+                        </dl>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          ) : (
           <table className="w-full min-w-0 border-collapse text-sm">
             <thead>
               <tr>
                 <th className={`${head} text-left whitespace-nowrap`}>Player</th>
-                <th className={head} title="Outposts">
-                  <span className="sm:hidden">Out</span>
-                  <span className="hidden sm:inline">Outposts</span>
-                </th>
-                <th className={head} title="Strongholds">
-                  <span className="sm:hidden">Str</span>
-                  <span className="hidden sm:inline">Strongholds</span>
-                </th>
-                <th className={head} title="Longest path">
-                  <span className="sm:hidden">Path</span>
-                  <span className="hidden sm:inline">Longest path</span>
-                </th>
-                <th className={head} title="Largest army">
-                  <span className="sm:hidden">Army</span>
-                  <span className="hidden sm:inline">Largest army</span>
-                </th>
-                <th className={head} title="Hidden">
-                  <span className="sm:hidden">Hid</span>
-                  <span className="hidden sm:inline">Hidden</span>
-                </th>
+                <th className={head}>Outposts</th>
+                <th className={head}>Strongholds</th>
+                <th className={head}>Longest path</th>
+                <th className={head}>Largest army</th>
+                <th className={head}>Hidden</th>
                 <th className={head}>Total</th>
               </tr>
             </thead>
@@ -171,7 +224,7 @@ function Panel() {
                   <td className={cell}>{r.strongholds}</td>
                   <td className={cell}>{r.path ? "✓" : ""}</td>
                   <td className={cell}>{r.army ? "✓" : ""}</td>
-                  <td className={cell}>{r.hiddenVp}</td>
+                  <td data-testid="win-hidden" className={cell}>{r.hiddenVp}</td>
                   <td data-testid="win-total" className={`${cell} font-medium`}>
                     {r.total}
                   </td>
@@ -179,13 +232,14 @@ function Panel() {
               ))}
             </tbody>
           </table>
+          )}
         </div>
         {waiting ? (
           <p data-testid="win-waiting" className="mt-4 text-sm text-zinc-600">
             Waiting for {hostName} to start another.
           </p>
         ) : null}
-        <div className="mt-5 short:mt-2 flex flex-wrap items-center gap-2">
+        <div className={`mt-5 ${phone ? "short:mt-1" : "short:mt-2"} flex flex-wrap items-center gap-2`}>
           {mode === "online" ? <VictoryTargetSelect label="Next game" value={target} onChange={isHost && !spectator ? setTarget : undefined} /> : null}
           {mode === "online" && !spectator ? (
             <Button
