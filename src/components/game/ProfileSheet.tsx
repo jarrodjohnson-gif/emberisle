@@ -2,18 +2,39 @@
 // profile, resume a remembered one and sign out, against the host this page plays on. The host is shown before anything is
 // sent and every credential request confirms it first; a signed-in session rides on the next Host or Join through the store's
 // `profile`, never in game state or a saved seat. Guest play never waits on this sheet.
-import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
+// #766 second slice: signed in, the player edits the profile's text and colours and changes the PIN. A login change and a
+// PIN change ask for the current PIN; a temporary PIN from a local reset must be changed before anything else. The two
+// forms live in their own chunk (ProfileForms), loaded when one opens; this sheet keeps the state and the requests.
+import { useEffect, useRef, useState, useSyncExternalStore, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from "react";
 import { Eye, EyeOff, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useFocusTrap } from "@/lib/focus-trap";
 import { useGame } from "@/lib/game/store";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
+import { ProfileForms, profileForms as forms } from "@/components/game/chunks";
 import { ProfileClientError, createProfileClient, profileStorageKey } from "@/lib/net/profiles";
 import { hostUrl } from "@/lib/net/table";
 import { play } from "@/lib/sound";
 
+
 type Client = ReturnType<typeof createProfileClient>;
+type Form = Record<"displayName" | "login" | "pin" | "newPin" | "pinConfirm" | "catchphrase" | "color" | "backupColor", string>;
+// What the sheet hands its forms chunk: its state and its fields. The forms send their own requests, so a wrong current PIN
+// can be refused beside that field.
+export interface FormsUi {
+  kind: "edit" | "pin";
+  c: Client;
+  form: Form;
+  setForm: Dispatch<SetStateAction<Form>>;
+  errors: Errors;
+  setErrors: (errors: Errors) => void;
+  busy: boolean;
+  setBusy: (busy: boolean) => void;
+  showPin: boolean;
+  setShowPin: (show: boolean) => void;
+  back: () => void;
+}
 // One client per page: it keeps the session in memory between openings so Host and Join can attach it.
 let client: Client | null = null;
 function profileClient() {
@@ -23,7 +44,8 @@ function profileClient() {
 const LOGIN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const PIN = /^\d{4}$/;
 const field = "h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg aria-[invalid=true]:border-accent-ink";
-type Errors = Partial<Record<"displayName" | "login" | "pin" | "pinConfirm" | "form", string>>;
+type Text = "displayName" | "login" | "pin" | "newPin" | "pinConfirm" | "catchphrase";
+export type Errors = Partial<Record<Text | "form", string>>;
 
 function remembered(host: string) {
   try { return localStorage.getItem(profileStorageKey(host)) !== null; } catch { return false; }
@@ -36,13 +58,15 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   useFocusTrap(root, true, '[aria-label="Close"]', opener);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
-  const [view, setView] = useState<"signin" | "create">("signin");
+  // Signed in, "signin" is the summary; "edit" and "pin" are its two forms.
+  const [view, setView] = useState<"signin" | "create" | "edit" | "pin">("signin");
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [showPin, setShowPin] = useState(false);
   const [keep, setKeep] = useState(true);
-  const [form, setForm] = useState(() => ({ displayName: useGame.getState().name.trim(), login: "", pin: "", pinConfirm: "", color: useGame.getState().color ?? PLAYER_COLORS[0] }));
+  const [form, setForm] = useState<Form>(() => ({ displayName: useGame.getState().name.trim(), login: "", pin: "", newPin: "", pinConfirm: "", catchphrase: "", color: useGame.getState().color ?? PLAYER_COLORS[0], backupColor: "" }));
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const mustChange = snap.profile?.pinMustChange === true;
 
   useEffect(() => {
     useGame.setState({ profile: c });
@@ -59,6 +83,12 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
 
   // A refused field takes the focus, so its message beside it is in view and read out.
   useEffect(() => root.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(), [errors]);
+
+  // A temporary PIN from a local reset opens Change PIN; nothing else is offered until it is changed.
+  useEffect(() => { if (mustChange) void open("pin"); }, [mustChange]);
+  // Signed in, fetch the forms quietly, so Edit profile and Change PIN open on the first press without a wait.
+  const signedIn = Boolean(snap.profile);
+  useEffect(() => { if (signedIn) void forms.prefetch(); }, [signedIn]);
 
   // Every request confirms the host shown above it, then reports a refusal beside the field it is about.
   const send = async (run: () => Promise<unknown>) => {
@@ -92,6 +122,14 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
         : c.login(login, form.pin, keep),
     );
   };
+  // Every switch between the summary and its forms drops the errors and every PIN typed so far.
+  const back = (to: typeof view = "signin") => {
+    setErrors({});
+    setForm((f) => ({ ...f, pin: "", newPin: "", pinConfirm: "" }));
+    setView(to);
+  };
+  // A form opens once its chunk is in. If it can't load, the summary says so and the same button tries the network again.
+  const open = (to: "edit" | "pin") => forms.load().then(() => back(to), () => setErrors({ form: "Couldn't load this form. Try again." }));
 
   const guest = (
     <Button variant="ghost" className="w-full" onClick={onClose} back>
@@ -104,16 +142,26 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
     <div className="sticky bottom-0 -mx-5 space-y-3 border-t border-border bg-surface px-5 pb-5 pt-3">{children}</div>
   );
   let body: ReactNode;
-  if (snap.profile) {
+  if (snap.profile && (view === "edit" || view === "pin")) {
+    // Only reached once `open` has loaded the forms chunk, so this never suspends.
+    body = <ProfileForms ui={{ kind: view, c, form, setForm, errors, setErrors, busy, setBusy, showPin, setShowPin, back }} />;
+  } else if (snap.profile) {
     body = (
       <>
         <p className="flex items-center gap-2 text-base text-fg">
           <SeatDot color={snap.profile.color} className="size-4" />
           <span>Signed in as <strong>{snap.profile.displayName}</strong></span>
         </p>
+        {snap.profile.catchphrase ? <p className="break-words text-sm text-fg">“{snap.profile.catchphrase}”</p> : null}
         <p className="text-sm text-muted">Login: {snap.profile.login}</p>
         <p className="text-sm text-muted">{snap.remembered ? "Remembered on this device." : "Not remembered on this device."}</p>
-        {snap.profile.pinMustChange ? <p role="alert" className="text-sm text-accent-ink">Change your PIN before continuing.</p> : null}
+        <div className="grid grid-cols-2 gap-2">
+          {(["edit", "pin"] as const).map((to) => (
+            <Button key={to} variant="secondary" data-opens={to} onClick={() => void open(to)}>
+              {to === "edit" ? "Edit profile" : "Change PIN"}
+            </Button>
+          ))}
+        </div>
         {formError}
         {actions(
           <>
