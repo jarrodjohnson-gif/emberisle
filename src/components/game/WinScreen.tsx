@@ -8,6 +8,7 @@ import { readViewport, useViewport } from "@/lib/viewport";
 import { LazyBoundary } from "@/lib/lazy";
 import { WinList, winList } from "@/components/game/chunks";
 import { useFocusTrap } from "@/lib/focus-trap";
+import { cancelForeground } from "@/lib/sound";
 import type { PlayerState } from "@/lib/game/types";
 
 export type Row = { p: PlayerState; outposts: number; strongholds: number; path: boolean; army: boolean; hiddenVp: number; total: number };
@@ -48,6 +49,8 @@ function Panel() {
   useFocusTrap(dialog, !hidden, '[data-testid="win-menu"]');
   useEffect(() => {
     if (hidden) {
+      // Hiding the results ends the outcome sting and the end music for good (docs/design/profiles.md, #1044).
+      cancelForeground();
       chip.current?.querySelector<HTMLElement>('[data-testid="win-show"]')?.focus();
       return;
     }

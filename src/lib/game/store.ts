@@ -80,13 +80,6 @@ export function takeMatchPointLine() {
   return line;
 }
 
-// End music: queued a moment after the win/lose sting at game over, once per game end. Leaving the end screen (the menu, a
-// rematch, a new game) cancels it. Only a live change into "over" starts it, so a reload into a finished game stays quiet.
-function stopEndMusic() {
-  stop("end_music");
-  stop("isaac_win");
-}
-
 // The board the start sting last played for, kept for the tab session so a reload mid-setup does not replay it.
 const START_KEY = "emberisle-start-sig";
 let startSig = "";
@@ -123,7 +116,10 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
   if (before && after.winner && !before.winner) {
     // The banner buzz is felt at once; only the choice of sting waits for the lazy trade-sound chunk.
     if (me && (mode === "hotseat" || after.winner === me)) haptics.buzz?.(HAPTIC_MS.win);
-    void tradeSounds.then(({ gameEnd }) => gameEnd(play, before, after, me, mode));
+    // End music: once per live game end, after the sting; a reload into a finished game stays quiet. Leaving the end screen
+    // (the menu, a rematch, a new game) cancels both, including while this chunk loads.
+    const scope = foregroundScope();
+    void tradeSounds.then(({ gameEnd }) => scope === foregroundScope() && gameEnd(before, after, me, mode));
   } else {
     for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me, victim)) {
       // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
@@ -139,15 +135,15 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
   }
   // A new game (the lobby's Start, a rematch): the sting plays once, for a seat; the first roll cuts it off.
   // Keyed on the board: a bot may already have rolled first (seq > 0), and a reconnect into setup must not replay it.
+  if (before?.phase === "over" && after.phase !== "over") cancelForeground();
   if (mode === "online" && me && (!before || before.phase === "over") && (after.phase === "rollOff" || after.phase === "setupSettle") && startedSig() !== gameSig(after)) {
     rememberStart(gameSig(after));
-    play("game_start");
+    playForeground("game_start", "start");
   }
-  if (before?.phase === "over" && after.phase !== "over") stopEndMusic();
   matchLine = null;
   if (before && before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain)) {
     const reached = claimMatchPoints(before, after);
-    for (const _ of reached) play("match_point");
+    if (reached[0]) playForeground("match_point", "match");
     if (reached[0]) matchLine = `${reached[0].name} reached ${publicVP(after, reached[0].id)} points — one to win`;
   }
   if (mode !== "hotseat" && after.current === me && after.phase !== "over" && (reconnect || (before && before.current !== me))) cue("your_turn");
@@ -213,7 +209,7 @@ import { chunk } from "@/lib/lazy";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
 import { HAPTIC_MS } from "@/lib/haptic-durations";
-import { haptics, play, playLater, resetTradePlease, stop, yourTurn, type SoundName } from "@/lib/sound";
+import { cancelForeground, foregroundScope, haptics, play, playForeground, resetTradePlease, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
@@ -616,7 +612,7 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   startAi: () => {
     resetTradePlease();
-    stopEndMusic();
+    cancelForeground();
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
     clearWake();
     clearKnocks();
@@ -645,11 +641,11 @@ export const useGame = create<GameStore>((set, get) => ({
       declined: [],
       tradeOutcome: null, tradeTaker: null,
     });
-    play("game_start");
+    playForeground("game_start", "start");
   },
   startHotseat: (count) => {
     resetTradePlease();
-    stopEndMusic();
+    cancelForeground();
     clearWake();
     clearKnocks();
     get().net?.close();
@@ -702,7 +698,7 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   goTitle: () => {
     resetTradePlease();
-    stopEndMusic();
+    cancelForeground();
     // Leaving on purpose frees the seat; only a drop keeps it. A watcher never held one, and the saved seat may be another table's.
     if (!get().spectator) rememberSeat(null);
     clearWake();
@@ -1279,7 +1275,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       // A muted seat's soundboard taps are as silent here as its chat line is hidden.
       if (line.sound) {
         const clip = line.sound.replace(/^(bong|plop|pluck)$/, "board_$1") as SoundName;
-        if (!readMutedSeats(get().code).includes(line.seat)) play(clip);
+        if (!readMutedSeats(get().code).includes(line.seat)) playForeground(clip, "board");
       } else if (line.seat !== seatId && document.activeElement?.id !== "chat-input") play("chat_recv");
     },
     react: (r) => {
@@ -1361,14 +1357,14 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
         return;
       }
       if (keepSeat) {
-        stopEndMusic();
+        cancelForeground();
 
         set({ announcement: null, restoring: false, error: "Your seat is open in another tab", toast: "Your seat is open in another tab", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
         return;
       }
       if (kind === "watch") {
         // A watcher holds nothing worth saving, and the seat secret in localStorage may belong to another table.
-        stopEndMusic();
+        cancelForeground();
 
         set({ announcement: null, error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null, spectator: false, watching: 0 });
         return;
@@ -1376,12 +1372,12 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       rememberSeat(null);
       if (pending) {
         const gone = get().restoring ? "Seat is gone." : null;
-        stopEndMusic();
+        cancelForeground();
 
         set({ announcement: null, restoring: false, error: gone, toast: gone, screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
         return;
       }
-      stopEndMusic();
+      cancelForeground();
 
       set({ announcement: null, error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
     },

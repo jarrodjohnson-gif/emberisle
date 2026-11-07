@@ -51,6 +51,7 @@
     "sounds-prove": "node scripts/sounds-prove.mjs",
     "audio-recovery-prove": "node scripts/audio-recovery-prove.mjs",
     "sound-mixer-prove": "node scripts/sound-mixer-prove.mjs",
+    "foreground-clip-prove": "node scripts/foreground-clip-prove.mjs",
     "sound-sheet-prove": "node scripts/sound-sheet-prove.mjs",
     "audio-level-prove": "node scripts/audio-level-prove.mjs",
     "your-turn-cue-prove": "node scripts/your-turn-cue-prove.mjs",

@@ -1,6 +1,6 @@
 import type { Bag, Seat } from "@/lib/net/table";
 import type { GameState } from "@/lib/game/types";
-import { playLater, playTradePlease, stop } from "./sound";
+import { playEndMusic, playForeground, playTradePlease } from "./sound";
 
 type Play = typeof import("./sound").play;
 
@@ -21,13 +21,9 @@ export function diggerBell(play: Play, before: Seat[], after: Seat[], me: string
   if (after.some((s) => isDiggler(s.name) && !was.has(s.id) && (before.length || s.id === me))) play("lucke_diggler");
 }
 
-export function gameEnd(cue: Play, before: GameState, after: GameState, me: string, mode: string) {
+export function gameEnd(before: GameState, after: GameState, me: string, mode: string) {
   const isaac = isDiggler(after.players.find((p) => p.id === after.winner)?.name);
   const lost = mode !== "hotseat" && me !== "" && !!after.winner && after.winner !== me;
-  cue(isaac ? "isaac_win" : lost ? "game_lose" : "win", 1);
-  if (mode !== "hotseat" && me && before.phase !== "over" && after.phase === "over" && after.winner && !isaac) {
-    stop("end_music");
-    stop("isaac_win");
-    playLater("end_music", 1, 1500);
-  }
+  playForeground(isaac ? "isaac_win" : lost ? "game_lose" : "win", "outcome");
+  if (mode !== "hotseat" && me && before.phase !== "over" && after.phase === "over" && after.winner && !isaac) playEndMusic(1500);
 }
