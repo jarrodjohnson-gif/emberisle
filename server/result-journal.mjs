@@ -111,13 +111,31 @@ export function openJournal(dir, { fault = () => {} } = {}) {
       inflight.delete(id);
     }
   }
+  // Step 6 (#890): once the game's receipt has committed, its pending file is removed, durably. From then on the receipt in
+  // the profile store fences that game id, so the host checks both.
+  async function done(id) {
+    if (!ids.has(id)) return false;
+    await fs.rm(path.join(dir, `${id}.json`), { force: true });
+    if (process.platform !== "win32") {
+      const d = await fs.open(dir, "r");
+      try {
+        await d.sync();
+      } finally {
+        await d.close();
+      }
+    }
+    ids.delete(id);
+    outcomes.delete(id);
+    return true;
+  }
   return {
     dir,
-    // A game id that is pending (or, once #890 lands, was pending): it must never resume from a nonterminal snapshot.
+    // A game id that is pending: it must never resume from a nonterminal snapshot. A recorded one is fenced by its receipt.
     has: (id) => ids.has(id) || corrupt.has(id),
     // A readable pending outcome is on disk for this game; a corrupt file is not one and is repaired from the room.
     ready: (id) => ids.has(id),
     put,
+    done,
     // The readable pending outcomes, oldest end first, for result recording to consume.
     pending: () => [...outcomes.values()].sort((a, b) => a.endedAt - b.endedAt || a.gameId.localeCompare(b.gameId)),
     get size() {
