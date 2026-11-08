@@ -1,0 +1,722 @@
+{
+  "chromium": "153.0.8010.12",
+  "browserErrors": [],
+  "results": {
+    "after": {
+      "430x932": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 398,
+          "h": 900
+        },
+        "header": [
+          {
+            "name": "Table code J R F R. Copy link",
+            "x": 29,
+            "y": 29,
+            "w": 89.6,
+            "h": 44
+          }
+        ],
+        "views": [
+          {
+            "name": "Table",
+            "x": 29,
+            "y": 81,
+            "w": 57.6,
+            "h": 44
+          },
+          {
+            "name": "Play games",
+            "x": 94.6,
+            "y": 81,
+            "w": 76,
+            "h": 44
+          },
+          {
+            "name": "Rules",
+            "x": 178.6,
+            "y": 81,
+            "w": 74,
+            "h": 44
+          }
+        ],
+        "chat": {
+          "x": 29,
+          "y": 253,
+          "w": 372,
+          "h": 546
+        },
+        "chatShare": 0.567,
+        "chatLog": 372,
+        "copies": null
+      },
+      "390x844": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 358,
+          "h": 812
+        },
+        "header": [
+          {
+            "name": "Table code F R L Z. Copy link",
+            "x": 29,
+            "y": 29,
+            "w": 89.4,
+            "h": 44
+          }
+        ],
+        "views": [
+          {
+            "name": "Table",
+            "x": 29,
+            "y": 81,
+            "w": 57.6,
+            "h": 44
+          },
+          {
+            "name": "Play games",
+            "x": 94.6,
+            "y": 81,
+            "w": 76,
+            "h": 44
+          },
+          {
+            "name": "Rules",
+            "x": 178.6,
+            "y": 81,
+            "w": 74,
+            "h": 44
+          }
+        ],
+        "chat": {
+          "x": 29,
+          "y": 253,
+          "w": 332,
+          "h": 458
+        },
+        "chatShare": 0.5231,
+        "chatLog": 284,
+        "copies": null
+      },
+      "375x812": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 343,
+          "h": 780
+        },
+        "header": [
+          {
+            "name": "Table code 4 3 J 9. Copy link",
+            "x": 25,
+            "y": 25,
+            "w": 91.3,
+            "h": 44
+          }
+        ],
+        "views": [
+          {
+            "name": "Table",
+            "x": 25,
+            "y": 77,
+            "w": 57.6,
+            "h": 44
+          },
+          {
+            "name": "Play games",
+            "x": 90.6,
+            "y": 77,
+            "w": 76,
+            "h": 44
+          },
+          {
+            "name": "Rules",
+            "x": 174.6,
+            "y": 77,
+            "w": 74,
+            "h": 44
+          }
+        ],
+        "chat": {
+          "x": 25,
+          "y": 249,
+          "w": 325,
+          "h": 434
+        },
+        "chatShare": 0.5272,
+        "chatLog": 260,
+        "copies": null
+      },
+      "820x1180": {
+        "card": {
+          "x": 40,
+          "y": 24,
+          "w": 560,
+          "h": 1132
+        },
+        "header": [
+          {
+            "name": "Table code K D Q U. Copy link",
+            "x": 61,
+            "y": 45,
+            "w": 112.6,
+            "h": 44
+          }
+        ],
+        "views": [
+          {
+            "name": "Table",
+            "x": 61,
+            "y": 97,
+            "w": 57.6,
+            "h": 44
+          },
+          {
+            "name": "Play games",
+            "x": 126.6,
+            "y": 97,
+            "w": 76,
+            "h": 44
+          },
+          {
+            "name": "Rules",
+            "x": 210.6,
+            "y": 97,
+            "w": 74,
+            "h": 44
+          }
+        ],
+        "chat": {
+          "x": 61,
+          "y": 269,
+          "w": 518,
+          "h": 762
+        },
+        "chatShare": 0.6227,
+        "chatLog": 588,
+        "copies": null
+      },
+      "844x390": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 812,
+          "h": 358
+        },
+        "header": [
+          {
+            "name": "Table code 3 P 7 V. Copy link",
+            "x": 25,
+            "y": 25,
+            "w": 103.4,
+            "h": 44
+          }
+        ],
+        "views": [
+          {
+            "name": "Table",
+            "x": 25,
+            "y": 77,
+            "w": 57.6,
+            "h": 44
+          },
+          {
+            "name": "Play games",
+            "x": 90.6,
+            "y": 77,
+            "w": 76,
+            "h": 44
+          },
+          {
+            "name": "Rules",
+            "x": 174.6,
+            "y": 77,
+            "w": 74,
+            "h": 44
+          }
+        ],
+        "chat": {
+          "x": 332.8,
+          "y": 25,
+          "w": 486.3,
+          "h": 288
+        },
+        "chatShare": 0.4817,
+        "chatLog": 114,
+        "copies": null
+      }
+    },
+    "copied": {
+      "430x932": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 398,
+          "h": 900
+        },
+        "header": [
+          {
+            "name": "Table code J R F R. Copy link",
+            "x": 29,
+            "y": 29,
+            "w": 89.6,
+            "h": 44
+          }
+        ],
+        "views": [
+          {
+            "name": "Table",
+            "x": 29,
+            "y": 81,
+            "w": 57.6,
+            "h": 44
+          },
+          {
+            "name": "Play games",
+            "x": 94.6,
+            "y": 81,
+            "w": 76,
+            "h": 44
+          },
+          {
+            "name": "Rules",
+            "x": 178.6,
+            "y": 81,
+            "w": 74,
+            "h": 44
+          }
+        ],
+        "chat": {
+          "x": 29,
+          "y": 253,
+          "w": 372,
+          "h": 546
+        },
+        "chatShare": 0.567,
+        "chatLog": 372,
+        "copies": "http://127.0.0.1:35509/?code=JRFR&host=ws%3A%2F%2F127.0.0.1%3A43215"
+      },
+      "390x844": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 358,
+          "h": 812
+        },
+        "header": [
+          {
+            "name": "Table code F R L Z. Copy link",
+            "x": 29,
+            "y": 29,
+            "w": 89.4,
+            "h": 44
+          }
+        ],
+        "views": [
+          {
+            "name": "Table",
+            "x": 29,
+            "y": 81,
+            "w": 57.6,
+            "h": 44
+          },
+          {
+            "name": "Play games",
+            "x": 94.6,
+            "y": 81,
+            "w": 76,
+            "h": 44
+          },
+          {
+            "name": "Rules",
+            "x": 178.6,
+            "y": 81,
+            "w": 74,
+            "h": 44
+          }
+        ],
+        "chat": {
+          "x": 29,
+          "y": 253,
+          "w": 332,
+          "h": 458
+        },
+        "chatShare": 0.5231,
+        "chatLog": 284,
+        "copies": "http://127.0.0.1:35509/?code=FRLZ&host=ws%3A%2F%2F127.0.0.1%3A43215"
+      },
+      "375x812": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 343,
+          "h": 780
+        },
+        "header": [
+          {
+            "name": "Table code 4 3 J 9. Copy link",
+            "x": 25,
+            "y": 25,
+            "w": 91.3,
+            "h": 44
+          }
+        ],
+        "views": [
+          {
+            "name": "Table",
+            "x": 25,
+            "y": 77,
+            "w": 57.6,
+            "h": 44
+          },
+          {
+            "name": "Play games",
+            "x": 90.6,
+            "y": 77,
+            "w": 76,
+            "h": 44
+          },
+          {
+            "name": "Rules",
+            "x": 174.6,
+            "y": 77,
+            "w": 74,
+            "h": 44
+          }
+        ],
+        "chat": {
+          "x": 25,
+          "y": 249,
+          "w": 325,
+          "h": 434
+        },
+        "chatShare": 0.5272,
+        "chatLog": 260,
+        "copies": "http://127.0.0.1:35509/?code=43J9&host=ws%3A%2F%2F127.0.0.1%3A43215"
+      },
+      "820x1180": {
+        "card": {
+          "x": 40,
+          "y": 24,
+          "w": 560,
+          "h": 1132
+        },
+        "header": [
+          {
+            "name": "Table code K D Q U. Copy link",
+            "x": 61,
+            "y": 45,
+            "w": 112.6,
+            "h": 44
+          }
+        ],
+        "views": [
+          {
+            "name": "Table",
+            "x": 61,
+            "y": 97,
+            "w": 57.6,
+            "h": 44
+          },
+          {
+            "name": "Play games",
+            "x": 126.6,
+            "y": 97,
+            "w": 76,
+            "h": 44
+          },
+          {
+            "name": "Rules",
+            "x": 210.6,
+            "y": 97,
+            "w": 74,
+            "h": 44
+          }
+        ],
+        "chat": {
+          "x": 61,
+          "y": 269,
+          "w": 518,
+          "h": 762
+        },
+        "chatShare": 0.6227,
+        "chatLog": 588,
+        "copies": "http://127.0.0.1:35509/?code=KDQU&host=ws%3A%2F%2F127.0.0.1%3A43215"
+      },
+      "844x390": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 812,
+          "h": 358
+        },
+        "header": [
+          {
+            "name": "Table code 3 P 7 V. Copy link",
+            "x": 25,
+            "y": 25,
+            "w": 103.4,
+            "h": 44
+          }
+        ],
+        "views": [
+          {
+            "name": "Table",
+            "x": 25,
+            "y": 77,
+            "w": 57.6,
+            "h": 44
+          },
+          {
+            "name": "Play games",
+            "x": 90.6,
+            "y": 77,
+            "w": 76,
+            "h": 44
+          },
+          {
+            "name": "Rules",
+            "x": 174.6,
+            "y": 77,
+            "w": 74,
+            "h": 44
+          }
+        ],
+        "chat": {
+          "x": 332.8,
+          "y": 25,
+          "w": 486.3,
+          "h": 288
+        },
+        "chatShare": 0.4817,
+        "chatLog": 114,
+        "copies": "http://127.0.0.1:35509/?code=3P7V&host=ws%3A%2F%2F127.0.0.1%3A43215"
+      }
+    },
+    "games": {
+      "430x932": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 398,
+          "h": 900
+        },
+        "header": [
+          {
+            "name": "Table code J R F R. Copy link",
+            "x": 29,
+            "y": 29,
+            "w": 89.6,
+            "h": 44
+          }
+        ],
+        "views": [
+          {
+            "name": "Table",
+            "x": 29,
+            "y": 81,
+            "w": 57.1,
+            "h": 44
+          },
+          {
+            "name": "Play games",
+            "x": 94.1,
+            "y": 81,
+            "w": 76,
+            "h": 44
+          },
+          {
+            "name": "Rules",
+            "x": 178.1,
+            "y": 81,
+            "w": 74,
+            "h": 44
+          }
+        ],
+        "chat": null,
+        "chatShare": null,
+        "chatLog": null,
+        "copies": "http://127.0.0.1:35509/?code=JRFR&host=ws%3A%2F%2F127.0.0.1%3A43215"
+      },
+      "390x844": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 358,
+          "h": 812
+        },
+        "header": [
+          {
+            "name": "Table code F R L Z. Copy link",
+            "x": 29,
+            "y": 29,
+            "w": 89.4,
+            "h": 44
+          }
+        ],
+        "views": [
+          {
+            "name": "Table",
+            "x": 29,
+            "y": 81,
+            "w": 57.1,
+            "h": 44
+          },
+          {
+            "name": "Play games",
+            "x": 94.1,
+            "y": 81,
+            "w": 76,
+            "h": 44
+          },
+          {
+            "name": "Rules",
+            "x": 178.1,
+            "y": 81,
+            "w": 74,
+            "h": 44
+          }
+        ],
+        "chat": null,
+        "chatShare": null,
+        "chatLog": null,
+        "copies": "http://127.0.0.1:35509/?code=FRLZ&host=ws%3A%2F%2F127.0.0.1%3A43215"
+      },
+      "375x812": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 343,
+          "h": 780
+        },
+        "header": [
+          {
+            "name": "Table code 4 3 J 9. Copy link",
+            "x": 25,
+            "y": 25,
+            "w": 91.3,
+            "h": 44
+          }
+        ],
+        "views": [
+          {
+            "name": "Table",
+            "x": 25,
+            "y": 77,
+            "w": 57.1,
+            "h": 44
+          },
+          {
+            "name": "Play games",
+            "x": 90.1,
+            "y": 77,
+            "w": 76,
+            "h": 44
+          },
+          {
+            "name": "Rules",
+            "x": 174.1,
+            "y": 77,
+            "w": 74,
+            "h": 44
+          }
+        ],
+        "chat": null,
+        "chatShare": null,
+        "chatLog": null,
+        "copies": "http://127.0.0.1:35509/?code=43J9&host=ws%3A%2F%2F127.0.0.1%3A43215"
+      },
+      "820x1180": {
+        "card": {
+          "x": 40,
+          "y": 24,
+          "w": 560,
+          "h": 1132
+        },
+        "header": [
+          {
+            "name": "Table code K D Q U. Copy link",
+            "x": 61,
+            "y": 45,
+            "w": 112.6,
+            "h": 44
+          }
+        ],
+        "views": [
+          {
+            "name": "Table",
+            "x": 61,
+            "y": 97,
+            "w": 57.1,
+            "h": 44
+          },
+          {
+            "name": "Play games",
+            "x": 126.1,
+            "y": 97,
+            "w": 76,
+            "h": 44
+          },
+          {
+            "name": "Rules",
+            "x": 210.1,
+            "y": 97,
+            "w": 74,
+            "h": 44
+          }
+        ],
+        "chat": null,
+        "chatShare": null,
+        "chatLog": null,
+        "copies": "http://127.0.0.1:35509/?code=KDQU&host=ws%3A%2F%2F127.0.0.1%3A43215"
+      },
+      "844x390": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 812,
+          "h": 358
+        },
+        "header": [
+          {
+            "name": "Table code 3 P 7 V. Copy link",
+            "x": 25,
+            "y": 25,
+            "w": 103.4,
+            "h": 44
+          }
+        ],
+        "views": [
+          {
+            "name": "Table",
+            "x": 25,
+            "y": 77,
+            "w": 57.1,
+            "h": 44
+          },
+          {
+            "name": "Play games",
+            "x": 90.1,
+            "y": 77,
+            "w": 76,
+            "h": 44
+          },
+          {
+            "name": "Rules",
+            "x": 174.1,
+            "y": 77,
+            "w": 74,
+            "h": 44
+          }
+        ],
+        "chat": null,
+        "chatShare": null,
+        "chatLog": null,
+        "copies": "http://127.0.0.1:35509/?code=3P7V&host=ws%3A%2F%2F127.0.0.1%3A43215"
+      }
+    }
+  }
+}
