@@ -277,8 +277,10 @@ for (const peer of rooms.TA06.slice(1)) {
 assert.equal(offerRoom.state.game.players.find((p) => p.id === "p0").goods, beforeP0Goods);
 assert.deepEqual(offerRoom.state.game.players.find((p) => p.id === "p1").resources, beforeP1);
 await stateBarrier(rooms.TA06.slice(1), offerRoom.state.game.seq);
-await new Promise((r) => setTimeout(r, 350));
-assert.equal(JSON.parse(readFileSync(path.join(dir, "TA06.json"), "utf8")).game.log.filter((line) => line === declineLine).length, 1);
+// The decline bumps no seq, so the barrier above cannot see its save; wait for the line on disk itself (#1306).
+const savedDeclines = () => JSON.parse(readFileSync(path.join(dir, "TA06.json"), "utf8")).game.log.filter((line) => line === declineLine).length;
+for (const end = Date.now() + 5000; savedDeclines() === 0 && Date.now() < end; ) await new Promise((r) => setTimeout(r, 10));
+assert.equal(savedDeclines(), 1);
 console.log("trade: a helpful offer to a legacy recovery bot was declined with no goods transferred");
 
 const defaults = readFileSync(new URL("./host.mjs", import.meta.url), "utf8");
