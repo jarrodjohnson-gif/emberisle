@@ -20,16 +20,19 @@
         "code": {
           "x": 29,
           "y": 29,
-          "w": 98.4,
+          "w": 92.4,
           "h": 44,
           "border": "1px",
           "paddingLeft": "12px",
-          "decoration": "none solid",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
           "text": {
             "x": 42,
-            "y": 35,
-            "w": 72.4,
-            "h": 32
+            "y": 37,
+            "w": 66.4,
+            "h": 28
           }
         },
         "status": {
@@ -42,16 +45,22 @@
           "inHeader": false,
           "caption": "Wayfarer on",
           "captionFits": true,
-          "connection": "Reachable · 22 ms",
+          "connection": "Reachable · 7 ms",
           "connectionFits": true,
           "worstCase": {
             "text": "Reconnecting · 2999 ms",
-            "fits": false,
-            "scrollWidth": 151,
-            "clientWidth": 140
+            "textWidth": 151.1,
+            "connectionBox": 136.4,
+            "statusBox": 140.4,
+            "connScrollOk": false,
+            "boxScrollOk": true,
+            "textInsideBox": false,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": false
           }
         },
-        "headerFreeX": 273.6,
+        "headerFreeX": 279.6,
         "rulesRow": {
           "box": {
             "x": 29,
@@ -106,16 +115,19 @@
         "code": {
           "x": 29,
           "y": 29,
-          "w": 88.5,
+          "w": 83.9,
           "h": 44,
           "border": "1px",
           "paddingLeft": "12px",
-          "decoration": "none solid",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
           "text": {
             "x": 42,
-            "y": 35,
-            "w": 62.5,
-            "h": 32
+            "y": 37,
+            "w": 57.9,
+            "h": 28
           }
         },
         "status": {
@@ -128,16 +140,22 @@
           "inHeader": false,
           "caption": "Wayfarer on",
           "captionFits": true,
-          "connection": "Reachable · 20 ms",
+          "connection": "Reachable · 25 ms",
           "connectionFits": false,
           "worstCase": {
             "text": "Reconnecting · 2999 ms",
-            "fits": false,
-            "scrollWidth": 151,
-            "clientWidth": 100
+            "textWidth": 151.1,
+            "connectionBox": 96.4,
+            "statusBox": 100.4,
+            "connScrollOk": false,
+            "boxScrollOk": true,
+            "textInsideBox": false,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": false
           }
         },
-        "headerFreeX": 243.5,
+        "headerFreeX": 248.1,
         "rulesRow": {
           "box": {
             "x": 29,
@@ -192,16 +210,19 @@
         "code": {
           "x": 25,
           "y": 25,
-          "w": 88.9,
+          "w": 85.7,
           "h": 44,
           "border": "1px",
           "paddingLeft": "12px",
-          "decoration": "none solid",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
           "text": {
             "x": 38,
-            "y": 31,
-            "w": 62.9,
-            "h": 32
+            "y": 33,
+            "w": 59.7,
+            "h": 28
           }
         },
         "status": {
@@ -213,17 +234,23 @@
           },
           "inHeader": false,
           "caption": "Wayfarer on",
-          "captionFits": true,
-          "connection": "Reachable · 17 ms",
+          "captionFits": false,
+          "connection": "Reachable · 12 ms",
           "connectionFits": false,
           "worstCase": {
             "text": "Reconnecting · 2999 ms",
-            "fits": false,
-            "scrollWidth": 151,
-            "clientWidth": 93
+            "textWidth": 151.1,
+            "connectionBox": 89.4,
+            "statusBox": 93.4,
+            "connScrollOk": false,
+            "boxScrollOk": true,
+            "textInsideBox": false,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": false
           }
         },
-        "headerFreeX": 236.1,
+        "headerFreeX": 239.3,
         "rulesRow": {
           "box": {
             "x": 25,
@@ -278,16 +305,19 @@
         "code": {
           "x": 61,
           "y": 45,
-          "w": 99,
+          "w": 108.6,
           "h": 44,
           "border": "1px",
           "paddingLeft": "12px",
-          "decoration": "none solid",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
           "text": {
             "x": 74,
-            "y": 49,
-            "w": 73,
-            "h": 36
+            "y": 50,
+            "w": 82.6,
+            "h": 34
           }
         },
         "status": {
@@ -300,16 +330,22 @@
           "inHeader": false,
           "caption": "Wayfarer on",
           "captionFits": true,
-          "connection": "Reachable · 18 ms",
+          "connection": "Reachable · 10 ms",
           "connectionFits": true,
           "worstCase": {
             "text": "Reconnecting · 2999 ms",
-            "fits": true,
-            "scrollWidth": 151,
-            "clientWidth": 151
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 286.4,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
           }
         },
-        "headerFreeX": 419,
+        "headerFreeX": 409.4,
         "rulesRow": {
           "box": {
             "x": 61,
@@ -364,16 +400,19 @@
         "code": {
           "x": 25,
           "y": 25,
-          "w": 103.9,
+          "w": 106.2,
           "h": 44,
           "border": "1px",
           "paddingLeft": "12px",
-          "decoration": "none solid",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
           "text": {
             "x": 38,
-            "y": 29,
-            "w": 77.9,
-            "h": 36
+            "y": 30,
+            "w": 80.2,
+            "h": 34
           }
         },
         "status": {
@@ -386,16 +425,22 @@
           "inHeader": false,
           "caption": "Wayfarer on",
           "captionFits": false,
-          "connection": "Reachable · 13 ms",
+          "connection": "Reachable · 31 ms",
           "connectionFits": false,
           "worstCase": {
             "text": "Reconnecting · 2999 ms",
-            "fits": false,
-            "scrollWidth": 151,
-            "clientWidth": 60
+            "textWidth": 151.1,
+            "connectionBox": 56.2,
+            "statusBox": 60.2,
+            "connScrollOk": false,
+            "boxScrollOk": true,
+            "textInsideBox": false,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": false
           }
         },
-        "headerFreeX": 187.9,
+        "headerFreeX": 185.6,
         "rulesRow": {
           "box": {
             "x": 25,
@@ -452,38 +497,47 @@
         "code": {
           "x": 29,
           "y": 29,
-          "w": 98.4,
+          "w": 92.4,
           "h": 44,
           "border": "1px",
           "paddingLeft": "12px",
-          "decoration": "none solid",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
           "text": {
             "x": 42,
-            "y": 35,
-            "w": 72.4,
-            "h": 32
+            "y": 37,
+            "w": 66.4,
+            "h": 28
           }
         },
         "status": {
           "box": {
-            "x": 287,
+            "x": 291.6,
             "y": 29,
-            "w": 114,
+            "w": 109.4,
             "h": 44
           },
           "inHeader": true,
           "caption": "Wayfarer on",
           "captionFits": true,
-          "connection": "Reachable · 22 ms",
+          "connection": "Reachable · 7 ms",
           "connectionFits": true,
           "worstCase": {
             "text": "Reconnecting · 2999 ms",
-            "fits": true,
-            "scrollWidth": 151,
-            "clientWidth": 151
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
           }
         },
-        "headerFreeX": 159.7,
+        "headerFreeX": 170.3,
         "rulesRow": {
           "box": {
             "x": 29,
@@ -538,38 +592,47 @@
         "code": {
           "x": 29,
           "y": 29,
-          "w": 88.5,
+          "w": 83.9,
           "h": 44,
           "border": "1px",
           "paddingLeft": "12px",
-          "decoration": "none solid",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
           "text": {
             "x": 42,
-            "y": 35,
-            "w": 62.5,
-            "h": 32
+            "y": 37,
+            "w": 57.9,
+            "h": 28
           }
         },
         "status": {
           "box": {
-            "x": 246.7,
+            "x": 243,
             "y": 29,
-            "w": 114.3,
+            "w": 118,
             "h": 44
           },
           "inHeader": true,
           "caption": "Wayfarer on",
           "captionFits": true,
-          "connection": "Reachable · 20 ms",
+          "connection": "Reachable · 25 ms",
           "connectionFits": true,
           "worstCase": {
             "text": "Reconnecting · 2999 ms",
-            "fits": true,
-            "scrollWidth": 151,
-            "clientWidth": 151
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
           }
         },
-        "headerFreeX": 129.2,
+        "headerFreeX": 130.1,
         "rulesRow": {
           "box": {
             "x": 29,
@@ -624,38 +687,47 @@
         "code": {
           "x": 25,
           "y": 25,
-          "w": 88.9,
+          "w": 85.7,
           "h": 44,
           "border": "1px",
           "paddingLeft": "12px",
-          "decoration": "none solid",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
           "text": {
             "x": 38,
-            "y": 31,
-            "w": 62.9,
-            "h": 32
+            "y": 33,
+            "w": 59.7,
+            "h": 28
           }
         },
         "status": {
           "box": {
-            "x": 239.2,
+            "x": 234.7,
             "y": 25,
-            "w": 110.8,
+            "w": 115.3,
             "h": 44
           },
           "inHeader": true,
           "caption": "Wayfarer on",
           "captionFits": true,
-          "connection": "Reachable · 17 ms",
+          "connection": "Reachable · 12 ms",
           "connectionFits": true,
           "worstCase": {
             "text": "Reconnecting · 2999 ms",
-            "fits": true,
-            "scrollWidth": 151,
-            "clientWidth": 151
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
           }
         },
-        "headerFreeX": 125.4,
+        "headerFreeX": 124,
         "rulesRow": {
           "box": {
             "x": 25,
@@ -710,38 +782,47 @@
         "code": {
           "x": 61,
           "y": 45,
-          "w": 99,
+          "w": 108.6,
           "h": 44,
           "border": "1px",
           "paddingLeft": "12px",
-          "decoration": "none solid",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
           "text": {
             "x": 74,
-            "y": 49,
-            "w": 73,
-            "h": 36
+            "y": 50,
+            "w": 82.6,
+            "h": 34
           }
         },
         "status": {
           "box": {
-            "x": 467.5,
+            "x": 463.3,
             "y": 45,
-            "w": 111.5,
+            "w": 115.7,
             "h": 44
           },
           "inHeader": true,
           "caption": "Wayfarer on",
           "captionFits": true,
-          "connection": "Reachable · 18 ms",
+          "connection": "Reachable · 10 ms",
           "connectionFits": true,
           "worstCase": {
             "text": "Reconnecting · 2999 ms",
-            "fits": true,
-            "scrollWidth": 151,
-            "clientWidth": 151
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
           }
         },
-        "headerFreeX": 307.4,
+        "headerFreeX": 293.7,
         "rulesRow": {
           "box": {
             "x": 61,
@@ -796,38 +877,47 @@
         "code": {
           "x": 25,
           "y": 25,
-          "w": 103.9,
+          "w": 106.2,
           "h": 44,
           "border": "1px",
           "paddingLeft": "12px",
-          "decoration": "none solid",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
           "text": {
             "x": 38,
-            "y": 29,
-            "w": 77.9,
-            "h": 36
+            "y": 30,
+            "w": 80.2,
+            "h": 34
           }
         },
         "status": {
           "box": {
-            "x": 205.3,
+            "x": 201.3,
             "y": 25,
-            "w": 111.5,
+            "w": 115.5,
             "h": 44
           },
           "inHeader": true,
           "caption": "Wayfarer on",
           "captionFits": true,
-          "connection": "Reachable · 13 ms",
+          "connection": "Reachable · 31 ms",
           "connectionFits": true,
           "worstCase": {
             "text": "Reconnecting · 2999 ms",
-            "fits": true,
-            "scrollWidth": 151,
-            "clientWidth": 151
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
           }
         },
-        "headerFreeX": 76.4,
+        "headerFreeX": 70.1,
         "rulesRow": {
           "box": {
             "x": 25,
@@ -884,38 +974,47 @@
         "code": {
           "x": 29,
           "y": 29,
-          "w": 88.4,
+          "w": 82.4,
           "h": 44,
           "border": "0px",
           "paddingLeft": "8px",
-          "decoration": "none solid",
+          "underline": {
+            "button": "underline dotted 6px",
+            "text": "none solid 6px"
+          },
           "text": {
             "x": 37,
-            "y": 35,
-            "w": 72.4,
-            "h": 32
+            "y": 37,
+            "w": 66.4,
+            "h": 28
           }
         },
         "status": {
           "box": {
-            "x": 287,
+            "x": 291.6,
             "y": 29,
-            "w": 114,
+            "w": 109.4,
             "h": 44
           },
           "inHeader": true,
           "caption": "Wayfarer on",
           "captionFits": true,
-          "connection": "Reachable · 22 ms",
+          "connection": "Reachable · 7 ms",
           "connectionFits": true,
           "worstCase": {
             "text": "Reconnecting · 2999 ms",
-            "fits": true,
-            "scrollWidth": 151,
-            "clientWidth": 151
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
           }
         },
-        "headerFreeX": 169.7,
+        "headerFreeX": 180.3,
         "rulesRow": {
           "box": {
             "x": 29,
@@ -970,38 +1069,47 @@
         "code": {
           "x": 29,
           "y": 29,
-          "w": 78.5,
+          "w": 73.9,
           "h": 44,
           "border": "0px",
           "paddingLeft": "8px",
-          "decoration": "none solid",
+          "underline": {
+            "button": "underline dotted 6px",
+            "text": "none solid 6px"
+          },
           "text": {
             "x": 37,
-            "y": 35,
-            "w": 62.5,
-            "h": 32
+            "y": 37,
+            "w": 57.9,
+            "h": 28
           }
         },
         "status": {
           "box": {
-            "x": 246.7,
+            "x": 243,
             "y": 29,
-            "w": 114.3,
+            "w": 118,
             "h": 44
           },
           "inHeader": true,
           "caption": "Wayfarer on",
           "captionFits": true,
-          "connection": "Reachable · 20 ms",
+          "connection": "Reachable · 25 ms",
           "connectionFits": true,
           "worstCase": {
             "text": "Reconnecting · 2999 ms",
-            "fits": true,
-            "scrollWidth": 151,
-            "clientWidth": 151
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
           }
         },
-        "headerFreeX": 139.2,
+        "headerFreeX": 140.1,
         "rulesRow": {
           "box": {
             "x": 29,
@@ -1056,38 +1164,47 @@
         "code": {
           "x": 25,
           "y": 25,
-          "w": 78.9,
+          "w": 75.7,
           "h": 44,
           "border": "0px",
           "paddingLeft": "8px",
-          "decoration": "none solid",
+          "underline": {
+            "button": "underline dotted 6px",
+            "text": "none solid 6px"
+          },
           "text": {
             "x": 33,
-            "y": 31,
-            "w": 62.9,
-            "h": 32
+            "y": 33,
+            "w": 59.7,
+            "h": 28
           }
         },
         "status": {
           "box": {
-            "x": 239.2,
+            "x": 234.7,
             "y": 25,
-            "w": 110.8,
+            "w": 115.3,
             "h": 44
           },
           "inHeader": true,
           "caption": "Wayfarer on",
           "captionFits": true,
-          "connection": "Reachable · 17 ms",
+          "connection": "Reachable · 12 ms",
           "connectionFits": true,
           "worstCase": {
             "text": "Reconnecting · 2999 ms",
-            "fits": true,
-            "scrollWidth": 151,
-            "clientWidth": 151
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
           }
         },
-        "headerFreeX": 135.4,
+        "headerFreeX": 134,
         "rulesRow": {
           "box": {
             "x": 25,
@@ -1142,38 +1259,47 @@
         "code": {
           "x": 61,
           "y": 45,
-          "w": 89,
+          "w": 98.6,
           "h": 44,
           "border": "0px",
           "paddingLeft": "8px",
-          "decoration": "none solid",
+          "underline": {
+            "button": "underline dotted 6px",
+            "text": "none solid 6px"
+          },
           "text": {
             "x": 69,
-            "y": 49,
-            "w": 73,
-            "h": 36
+            "y": 50,
+            "w": 82.6,
+            "h": 34
           }
         },
         "status": {
           "box": {
-            "x": 467.5,
+            "x": 463.3,
             "y": 45,
-            "w": 111.5,
+            "w": 115.7,
             "h": 44
           },
           "inHeader": true,
           "caption": "Wayfarer on",
           "captionFits": true,
-          "connection": "Reachable · 18 ms",
+          "connection": "Reachable · 10 ms",
           "connectionFits": true,
           "worstCase": {
             "text": "Reconnecting · 2999 ms",
-            "fits": true,
-            "scrollWidth": 151,
-            "clientWidth": 151
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
           }
         },
-        "headerFreeX": 317.4,
+        "headerFreeX": 303.7,
         "rulesRow": {
           "box": {
             "x": 61,
@@ -1228,38 +1354,47 @@
         "code": {
           "x": 25,
           "y": 25,
-          "w": 93.9,
+          "w": 96.2,
           "h": 44,
           "border": "0px",
           "paddingLeft": "8px",
-          "decoration": "none solid",
+          "underline": {
+            "button": "underline dotted 6px",
+            "text": "none solid 6px"
+          },
           "text": {
             "x": 33,
-            "y": 29,
-            "w": 77.9,
-            "h": 36
+            "y": 30,
+            "w": 80.2,
+            "h": 34
           }
         },
         "status": {
           "box": {
-            "x": 205.3,
+            "x": 201.3,
             "y": 25,
-            "w": 111.5,
+            "w": 115.5,
             "h": 44
           },
           "inHeader": true,
           "caption": "Wayfarer on",
           "captionFits": true,
-          "connection": "Reachable · 13 ms",
+          "connection": "Reachable · 31 ms",
           "connectionFits": true,
           "worstCase": {
             "text": "Reconnecting · 2999 ms",
-            "fits": true,
-            "scrollWidth": 151,
-            "clientWidth": 151
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
           }
         },
-        "headerFreeX": 86.4,
+        "headerFreeX": 80.1,
         "rulesRow": {
           "box": {
             "x": 25,
