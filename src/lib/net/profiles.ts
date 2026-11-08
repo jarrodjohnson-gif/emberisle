@@ -19,11 +19,11 @@ export interface ProfileFields {
 // #767: the owner's committed record, a page of their own history, and a page of the group Wins board. The host derives every
 // number from counted results; the client only shows them. Win rate is null before the first counted game.
 export interface ProfileRecord { games: number; wins: number; losses: number; winRate: number | null; streak: number; lastPlayed: number | null }
-export interface HistoryPlayer { name: string; color: string; kind: "human" | "bot"; points: number; won: boolean }
+interface HistoryPlayer { name: string; color: string; kind: "human" | "bot"; points: number; won: boolean }
 export interface HistoryRow { gameId: string; startedAt: number; endedAt: number; durationMs: number; victoryTarget: number | null; won: boolean; points: number; assisted: boolean; players: HistoryPlayer[] }
 export interface WinsRow { rank: number; displayName: string; games: number; wins: number; losses: number; winRate: number | null; streak: number; you: boolean }
-export type ProfileStatus = "idle" | "connecting" | "available" | "unsupported" | "offline" | "insecure";
-export interface ProfileSnapshot {
+type ProfileStatus = "idle" | "connecting" | "available" | "unsupported" | "offline" | "insecure";
+interface ProfileSnapshot {
   host: string;
   confirmed: boolean;
   status: ProfileStatus;
