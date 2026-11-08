@@ -4,15 +4,15 @@
 //   node docs/design/lobby-code-placement/capture.mjs <path to a #1451 checkout with node_modules> [out dir]
 // It writes <today|a|c>-<size>.png and measurements.json into the out dir (default: this folder).
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const src = path.resolve(process.argv[2] ?? "");
 if (!process.argv[2] || !existsSync(path.join(src, "src/components/game/lobby.css"))) throw new Error("usage: capture.mjs <#1451 checkout> [out dir]");
-const out = path.resolve(process.argv[3] ?? new URL(".", import.meta.url).pathname);
+const out = path.resolve(process.argv[3] ?? fileURLToPath(new URL(".", import.meta.url)));
 mkdirSync(out, { recursive: true });
 const { chromium } = await import(pathToFileURL(path.join(src, "scripts/proof-browser.mjs")));
 const { createServer } = createRequire(path.join(src, "package.json"))("vite");
@@ -85,10 +85,25 @@ function measure() {
     caption: caption.textContent, captionFits: fits(caption),
     connection: conn.textContent, connectionFits: fits(conn),
   };
-  // Worst case: the longest line the connection status can show.
+  // Worst case: the longest line the connection status can show, measured against the status box it sits in and the header,
+  // not against itself. "fits" means the text is not clipped by the box (scrollWidth <= clientWidth of both), the box stays inside
+  // the header, and the code button keeps its width.
   const saved = conn.textContent;
+  const box = document.querySelector(".lobby-rule-status");
+  const codeBefore = code.getBoundingClientRect().width;
   conn.textContent = "Reconnecting · 2999 ms";
-  status.worstCase = { text: conn.textContent, fits: fits(conn), scrollWidth: conn.scrollWidth, clientWidth: conn.clientWidth };
+  const cb = conn.getBoundingClientRect(), bb = box.getBoundingClientRect(), hbr = header.getBoundingClientRect();
+  const range = document.createRange();
+  range.selectNodeContents(conn);
+  const textW = range.getBoundingClientRect().width;
+  status.worstCase = {
+    text: conn.textContent, textWidth: +textW.toFixed(1), connectionBox: +cb.width.toFixed(1), statusBox: +bb.width.toFixed(1),
+    connScrollOk: conn.scrollWidth <= conn.clientWidth, boxScrollOk: box.scrollWidth <= box.clientWidth,
+    textInsideBox: textW <= bb.width + 0.5 && range.getBoundingClientRect().right <= bb.right + 0.5,
+    boxInsideHeader: bb.right <= hbr.right + 0.5 && bb.left >= hbr.left - 0.5,
+    codeKeptWidth: Math.abs(code.getBoundingClientRect().width - codeBefore) < 0.5,
+  };
+  status.worstCase.fits = status.worstCase.connScrollOk && status.worstCase.boxScrollOk && status.worstCase.textInsideBox && status.worstCase.boxInsideHeader && status.worstCase.codeKeptWidth;
   conn.textContent = saved;
   const cs = getComputedStyle(code);
   const ts = code.querySelector('[data-testid="table-code"]');
@@ -98,7 +113,7 @@ function measure() {
   return {
     card: r(card),
     header: r(header),
-    code: { ...r(code), border: cs.borderTopWidth, paddingLeft: cs.paddingLeft, decoration: getComputedStyle(ts).textDecorationLine + " " + getComputedStyle(ts).textDecorationStyle, text: r(ts) },
+    code: { ...r(code), border: cs.borderTopWidth, paddingLeft: cs.paddingLeft, underline: { button: [cs.textDecorationLine, cs.textDecorationStyle, cs.textUnderlineOffset].join(" "), text: [getComputedStyle(ts).textDecorationLine, getComputedStyle(ts).textDecorationStyle, getComputedStyle(ts).textUnderlineOffset].join(" ") }, text: r(ts) },
     status,
     headerFreeX: +(hb.width - kids.reduce((s, b) => s + b.width, 0)).toFixed(1),
     rulesRow: { box: r(rules), buttons: [...rules.querySelectorAll("button")].map((el) => ({ name: el.textContent.trim(), ...r(el) })) },
@@ -130,7 +145,7 @@ try {
       await page.waitForTimeout(250);
       const m = (results[state][tag] = await page.evaluate(measure));
       await page.screenshot({ path: `${out}/${state}-${tag}.png` });
-      console.log(`${state} ${tag}: code ${m.code.w}x${m.code.h}; status ${m.status.box.w}x${m.status.box.h} in header ${m.status.inHeader}; fits ${m.status.captionFits}/${m.status.connectionFits}, worst case ${m.status.worstCase.fits}`);
+      console.log(`${state} ${tag}: code ${m.code.w}x${m.code.h}; status ${m.status.box.w}x${m.status.box.h} in header ${m.status.inHeader}; fits ${m.status.captionFits}/${m.status.connectionFits}, worst case ${m.status.worstCase.fits} (text ${m.status.worstCase.textWidth}, box ${m.status.worstCase.statusBox}); underline ${m.code.underline.button} | ${m.code.underline.text}`);
     };
     await shot("today");
     await page.evaluate(moveStatus);
@@ -145,6 +160,7 @@ try {
   console.log(`chromium ${browser.version()}; browser errors ${errors.length}`);
   if (errors.length) console.log(errors.join("\n"));
 } finally {
+  rmSync(rooms, { recursive: true, force: true });
   await browser.close();
   await vite.close();
   host.kill();
