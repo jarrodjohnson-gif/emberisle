@@ -1,8 +1,5 @@
 /* #1429: the desktop dock (docs/design/desktop-dock-1274). 8 + 80 + 8 + 44 + 8 + 20 + 8 = 176 tall; 8 + 472 + 8 + 176 + 8 = 672
    wide. Centred by Hud.tsx, 24 px off the bottom edge. The edge is a 1 px ring, not a border, so it takes no room from the slots. */
-/* What comes and goes, above the dock and under the banner. */
-.desk-float { pointer-events: auto; margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; }
-.desk-float:empty { display: none; }
 .desk-dock {
   position: relative; box-sizing: border-box; width: 672px; height: 176px; padding: 8px;
   display: grid; grid-template-columns: 472px 176px; grid-template-rows: 80px 44px 20px; gap: 8px;

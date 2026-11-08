@@ -7,7 +7,7 @@ import {
   ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ChatControls, ChatDock, ChromeLanded, CostCard, DesktopDock, DiscardBar, FirstGameCoach, FortuneTray, HowTo, losses, MyNumbers, sheets, TakeFromBar, TradePanel, tradeToast, TradeToast, TurnMoment, WinScreen } from "@/components/game/chunks";
+import { ChatControls, ChatDock, ChromeLanded, CostCard, DiscardBar, FirstGameCoach, FortuneTray, HowTo, losses, MyNumbers, sheets, TakeFromBar, TradePanel, tradeToast, TradeToast, TurnMoment, WinScreen } from "@/components/game/chunks";
 import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
@@ -16,6 +16,7 @@ import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice, RollMoment } from "@/components/game/Dice";
 import { TableMenu } from "@/components/game/TableMenu";
 import { HandDock } from "@/components/game/Hand";
+import { DesktopDock } from "@/components/game/DesktopDock";
 import { PlaceChip } from "@/components/game/PlaceChip";
 import { SheetsFailed } from "@/components/game/SheetsFailed";
 import { TrayFailed } from "@/components/game/TrayFailed";
@@ -162,14 +163,7 @@ export function Hud() {
   const openMenu = useGame((s) => s.openMenu);
   // A watcher (docs/design/spectator.md): `me` below falls back to seat 0, so its hand bar is hidden by this flag, never by `localId`.
   const spectator = useGame((s) => s.spectator);
-  const { phone, portrait, dock: wide } = useViewport();
-  // #1429: the desktop dock's layout rides in the sheets chunk, which the title prefetches on idle. Until it is in memory, or
-  // if it cannot load, the table keeps today's stack, so End turn is always there.
-  const [dockUp, setDockUp] = useState(sheets.ready);
-  useEffect(() => {
-    if (wide && !dockUp) void sheets.prefetch().then(setDockUp);
-  }, [wide, dockUp]);
-  const dock = wide && dockUp;
+  const { phone, portrait, dock } = useViewport();
   // #422: a sideways phone stacks the HUD in a full-height left column, so the island fills the height beside it.
   const column = phone && !portrait;
   // #492: the sheets chunk is asked for again on each open and at the win (the boundary's key). When the ask made at the
@@ -569,15 +563,24 @@ export function Hud() {
             />
           </LazyBoundary>
           {dock ? (
-            <DesktopDock
-              float={<><PlaceChip column /><TurnCountdown header={timerHeader} />{winnerLine}{discardBar}{takeBar}</>}
-              hand={spectator ? null : <HandDock me={me} phase={state.phase} />}
-              turn={instruction}
-              aside={dice}
-              trade={tradeVisible ? <LazyBoundary failed={null}><TradeToast /></LazyBoundary> : null}
-              controls={<>{buildTiles(live)}<TradeButton idle={live ? undefined : idleWhy} />{fortunes}{mine && !spectator && /^roll/.test(state.phase) ? rollButton : endButton}</>}
-              meta={metaRow(true)}
-            />
+            <>
+              {/* What comes and goes floats above the dock, under the banner, so no slot in the dock ever moves. */}
+              <div className="pointer-events-auto mb-2 flex flex-col gap-1 empty:hidden">
+                <PlaceChip column />
+                <TurnCountdown header={timerHeader} />
+                {winnerLine}
+                {discardBar}
+                {takeBar}
+              </div>
+              <DesktopDock
+                hand={spectator ? null : <HandDock me={me} phase={state.phase} />}
+                turn={instruction}
+                aside={dice}
+                trade={tradeVisible ? <LazyBoundary failed={null}><TradeToast /></LazyBoundary> : null}
+                controls={<>{buildTiles(live)}<TradeButton idle={live ? undefined : idleWhy} />{fortunes}{mine && !spectator && /^roll/.test(state.phase) ? rollButton : endButton}</>}
+                meta={metaRow(true)}
+              />
+            </>
           ) : <div
             ref={stackRef}
             data-hud-stack

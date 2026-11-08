@@ -67,9 +67,7 @@ export function chunk<M>(load: () => Promise<M>) {
     if (pending?.status === "rejected") pending = undefined;
     return preload();
   };
-  // #1429: true once the module is in memory, so a caller can render it with no suspended frame or keep what it has.
-  const ready = () => pending?.status === "fulfilled";
-  return { prefetch, pick, load: loadModule, ready };
+  return { prefetch, pick, load: loadModule };
 }
 
 // #1281: the startup loading screen's real progress, set by the island as it comes up (first frame drawn, Hex Jelly scenes
