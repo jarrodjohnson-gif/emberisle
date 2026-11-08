@@ -141,6 +141,8 @@ export function openJournal(dir, { fault = () => {} } = {}) {
     has: (id) => ids.has(id) || corrupt.has(id),
     // A readable pending outcome is on disk for this game; a corrupt file is not one and is repaired from the room.
     ready: (id) => ids.has(id),
+    // The game ids whose files are kept for repair, so profile deletion (#1393) can redact them in place.
+    unreadable: () => [...corrupt],
     put,
     replace,
     done,
