@@ -63,6 +63,7 @@
     "classic-builder-prove": "node scripts/classic-builder-prove.mjs",
     "watch-ui-prove": "node --import ./server/register.mjs scripts/watch-ui-prove.mjs",
     "win-action-prove": "node --import ./server/register.mjs scripts/win-action-prove.mjs",
+    "win-long-names-prove": "node --import ./server/register.mjs scripts/win-long-names-prove.mjs",
     "win-list-prove": "node --import ./server/register.mjs scripts/win-list-prove.mjs",
     "ore-tokens-prove": "node scripts/ore-tokens-prove.mjs",
     "climber-prove": "node scripts/climber-prove.mjs",
