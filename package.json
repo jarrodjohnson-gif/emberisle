@@ -148,6 +148,7 @@
     "connection-health-prove": "node scripts/connection-health-prove.mjs",
     "profiles-client-prove": "node scripts/profiles-client-prove.mjs",
     "profiles-ui-prove": "node scripts/profiles-ui-prove.mjs",
+    "profile-records-prove": "node scripts/profile-records-prove.mjs",
     "hud-safe-area-prove": "node scripts/hud-safe-area-prove.mjs",
     "rotate-overlays-prove": "node scripts/rotate-overlays-prove.mjs",
     "make-icons": "node scripts/make-icons.mjs",
