@@ -125,6 +125,7 @@
     "title-prove": "node scripts/title-prove.mjs",
     "storage-blocked-prove": "node scripts/storage-blocked-prove.mjs",
     "howto-prove": "node scripts/howto-prove.mjs",
+    "help-sheets-prove": "node scripts/help-sheets-prove.mjs",
     "reflow-prove": "node scripts/reflow-prove.mjs",
     "rotate-prove": "node scripts/rotate-prove.mjs",
     "hole-prove": "node scripts/hole-prove.mjs",

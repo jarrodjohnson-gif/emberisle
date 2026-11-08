@@ -42,16 +42,16 @@ export function CostCard({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener("keydown", onKey, true);
   }, []);
   return (
-    <div className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-safe sm:items-center">
+    <div className="help-wash absolute inset-0 z-30 flex items-end justify-center sm:items-center">
       <div
         ref={root}
         role="dialog"
         aria-modal="true"
         aria-labelledby="costs-title"
         data-testid="cost-card"
-        className="max-h-[80dvh] w-full max-w-xs overflow-y-auto rounded-sheet sm:max-w-md bg-surface p-5 shadow-[0_8px_32px_rgb(28_25_21/0.18)]"
+        className="flex max-h-[80dvh] w-full max-w-md flex-col overflow-hidden rounded-sheet bg-surface shadow-[var(--shadow-sheet)]"
       >
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex shrink-0 items-center justify-between gap-3 px-4 pb-1 pt-4">
           <h2 id="costs-title" className="text-title">
             Costs
           </h2>
@@ -65,8 +65,14 @@ export function CostCard({ onClose }: { onClose: () => void }) {
             <X className="size-4" />
           </Button>
         </div>
-        {/* Two columns from 640 px wide, so a sideways phone's 312 px holds it without scrolling. */}
-        <div className="sm:grid sm:grid-cols-2 sm:gap-x-6">
+        {/* Two columns from 640 px wide, so a sideways phone's 312 px holds it without scrolling. Only this body scrolls; the
+            title row with Close and the win line stay put. Focusable so the keyboard can scroll it. */}
+        <div
+          role="region"
+          aria-label="Costs"
+          tabIndex={0}
+          className="help-scroll min-h-0 overflow-y-auto px-4 pt-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--ink)] sm:grid sm:grid-cols-2 sm:gap-x-6"
+        >
           <ul className="mt-2 flex flex-col gap-2">
             {(Object.keys(COST) as Price[]).map((kind) => (
               <li
@@ -90,7 +96,7 @@ export function CostCard({ onClose }: { onClose: () => void }) {
             ))}
           </ul>
         </div>
-        <p className="mt-3 text-body">{target} points claims the isle.</p>
+        <p className="shrink-0 px-4 pb-4 pt-3 text-body">{target} points claims the isle.</p>
       </div>
     </div>
   );
