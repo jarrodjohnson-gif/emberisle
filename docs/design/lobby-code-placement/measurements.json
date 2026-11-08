@@ -1,0 +1,1438 @@
+{
+  "base": "PR #1451 head",
+  "chromium": "153.0.8010.12",
+  "browserErrors": [],
+  "results": {
+    "today": {
+      "430x932": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 398,
+          "h": 900
+        },
+        "header": {
+          "x": 29,
+          "y": 29,
+          "w": 372,
+          "h": 44
+        },
+        "code": {
+          "x": 29,
+          "y": 29,
+          "w": 92.4,
+          "h": 44,
+          "border": "1px",
+          "paddingLeft": "12px",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
+          "text": {
+            "x": 42,
+            "y": 37,
+            "w": 66.4,
+            "h": 28
+          }
+        },
+        "status": {
+          "box": {
+            "x": 260.6,
+            "y": 81,
+            "w": 140.4,
+            "h": 44
+          },
+          "inHeader": false,
+          "caption": "Wayfarer on",
+          "captionFits": true,
+          "connection": "Reachable · 7 ms",
+          "connectionFits": true,
+          "worstCase": {
+            "text": "Reconnecting · 2999 ms",
+            "textWidth": 151.1,
+            "connectionBox": 136.4,
+            "statusBox": 140.4,
+            "connScrollOk": false,
+            "boxScrollOk": true,
+            "textInsideBox": false,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": false
+          }
+        },
+        "headerFreeX": 279.6,
+        "rulesRow": {
+          "box": {
+            "x": 29,
+            "y": 81,
+            "w": 372,
+            "h": 44
+          },
+          "buttons": [
+            {
+              "name": "Table",
+              "x": 29,
+              "y": 81,
+              "w": 57.6,
+              "h": 44
+            },
+            {
+              "name": "Play games",
+              "x": 94.6,
+              "y": 81,
+              "w": 76,
+              "h": 44
+            },
+            {
+              "name": "Rules",
+              "x": 178.6,
+              "y": 81,
+              "w": 74,
+              "h": 44
+            }
+          ]
+        },
+        "chat": {
+          "x": 29,
+          "y": 253,
+          "w": 372,
+          "h": 546
+        }
+      },
+      "390x844": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 358,
+          "h": 812
+        },
+        "header": {
+          "x": 29,
+          "y": 29,
+          "w": 332,
+          "h": 44
+        },
+        "code": {
+          "x": 29,
+          "y": 29,
+          "w": 83.9,
+          "h": 44,
+          "border": "1px",
+          "paddingLeft": "12px",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
+          "text": {
+            "x": 42,
+            "y": 37,
+            "w": 57.9,
+            "h": 28
+          }
+        },
+        "status": {
+          "box": {
+            "x": 260.6,
+            "y": 81,
+            "w": 100.4,
+            "h": 44
+          },
+          "inHeader": false,
+          "caption": "Wayfarer on",
+          "captionFits": true,
+          "connection": "Reachable · 25 ms",
+          "connectionFits": false,
+          "worstCase": {
+            "text": "Reconnecting · 2999 ms",
+            "textWidth": 151.1,
+            "connectionBox": 96.4,
+            "statusBox": 100.4,
+            "connScrollOk": false,
+            "boxScrollOk": true,
+            "textInsideBox": false,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": false
+          }
+        },
+        "headerFreeX": 248.1,
+        "rulesRow": {
+          "box": {
+            "x": 29,
+            "y": 81,
+            "w": 332,
+            "h": 44
+          },
+          "buttons": [
+            {
+              "name": "Table",
+              "x": 29,
+              "y": 81,
+              "w": 57.6,
+              "h": 44
+            },
+            {
+              "name": "Play games",
+              "x": 94.6,
+              "y": 81,
+              "w": 76,
+              "h": 44
+            },
+            {
+              "name": "Rules",
+              "x": 178.6,
+              "y": 81,
+              "w": 74,
+              "h": 44
+            }
+          ]
+        },
+        "chat": {
+          "x": 29,
+          "y": 253,
+          "w": 332,
+          "h": 458
+        }
+      },
+      "375x812": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 343,
+          "h": 780
+        },
+        "header": {
+          "x": 25,
+          "y": 25,
+          "w": 325,
+          "h": 44
+        },
+        "code": {
+          "x": 25,
+          "y": 25,
+          "w": 85.7,
+          "h": 44,
+          "border": "1px",
+          "paddingLeft": "12px",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
+          "text": {
+            "x": 38,
+            "y": 33,
+            "w": 59.7,
+            "h": 28
+          }
+        },
+        "status": {
+          "box": {
+            "x": 256.6,
+            "y": 77,
+            "w": 93.4,
+            "h": 44
+          },
+          "inHeader": false,
+          "caption": "Wayfarer on",
+          "captionFits": false,
+          "connection": "Reachable · 12 ms",
+          "connectionFits": false,
+          "worstCase": {
+            "text": "Reconnecting · 2999 ms",
+            "textWidth": 151.1,
+            "connectionBox": 89.4,
+            "statusBox": 93.4,
+            "connScrollOk": false,
+            "boxScrollOk": true,
+            "textInsideBox": false,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": false
+          }
+        },
+        "headerFreeX": 239.3,
+        "rulesRow": {
+          "box": {
+            "x": 25,
+            "y": 77,
+            "w": 325,
+            "h": 44
+          },
+          "buttons": [
+            {
+              "name": "Table",
+              "x": 25,
+              "y": 77,
+              "w": 57.6,
+              "h": 44
+            },
+            {
+              "name": "Play games",
+              "x": 90.6,
+              "y": 77,
+              "w": 76,
+              "h": 44
+            },
+            {
+              "name": "Rules",
+              "x": 174.6,
+              "y": 77,
+              "w": 74,
+              "h": 44
+            }
+          ]
+        },
+        "chat": {
+          "x": 25,
+          "y": 249,
+          "w": 325,
+          "h": 434
+        }
+      },
+      "820x1180": {
+        "card": {
+          "x": 40,
+          "y": 24,
+          "w": 560,
+          "h": 1132
+        },
+        "header": {
+          "x": 61,
+          "y": 45,
+          "w": 518,
+          "h": 44
+        },
+        "code": {
+          "x": 61,
+          "y": 45,
+          "w": 108.6,
+          "h": 44,
+          "border": "1px",
+          "paddingLeft": "12px",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
+          "text": {
+            "x": 74,
+            "y": 50,
+            "w": 82.6,
+            "h": 34
+          }
+        },
+        "status": {
+          "box": {
+            "x": 292.6,
+            "y": 97,
+            "w": 286.4,
+            "h": 44
+          },
+          "inHeader": false,
+          "caption": "Wayfarer on",
+          "captionFits": true,
+          "connection": "Reachable · 10 ms",
+          "connectionFits": true,
+          "worstCase": {
+            "text": "Reconnecting · 2999 ms",
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 286.4,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
+          }
+        },
+        "headerFreeX": 409.4,
+        "rulesRow": {
+          "box": {
+            "x": 61,
+            "y": 97,
+            "w": 518,
+            "h": 44
+          },
+          "buttons": [
+            {
+              "name": "Table",
+              "x": 61,
+              "y": 97,
+              "w": 57.6,
+              "h": 44
+            },
+            {
+              "name": "Play games",
+              "x": 126.6,
+              "y": 97,
+              "w": 76,
+              "h": 44
+            },
+            {
+              "name": "Rules",
+              "x": 210.6,
+              "y": 97,
+              "w": 74,
+              "h": 44
+            }
+          ]
+        },
+        "chat": {
+          "x": 61,
+          "y": 269,
+          "w": 518,
+          "h": 762
+        }
+      },
+      "844x390": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 812,
+          "h": 358
+        },
+        "header": {
+          "x": 25,
+          "y": 25,
+          "w": 291.8,
+          "h": 44
+        },
+        "code": {
+          "x": 25,
+          "y": 25,
+          "w": 106.2,
+          "h": 44,
+          "border": "1px",
+          "paddingLeft": "12px",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
+          "text": {
+            "x": 38,
+            "y": 30,
+            "w": 80.2,
+            "h": 34
+          }
+        },
+        "status": {
+          "box": {
+            "x": 256.6,
+            "y": 77,
+            "w": 60.2,
+            "h": 44
+          },
+          "inHeader": false,
+          "caption": "Wayfarer on",
+          "captionFits": false,
+          "connection": "Reachable · 31 ms",
+          "connectionFits": false,
+          "worstCase": {
+            "text": "Reconnecting · 2999 ms",
+            "textWidth": 151.1,
+            "connectionBox": 56.2,
+            "statusBox": 60.2,
+            "connScrollOk": false,
+            "boxScrollOk": true,
+            "textInsideBox": false,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": false
+          }
+        },
+        "headerFreeX": 185.6,
+        "rulesRow": {
+          "box": {
+            "x": 25,
+            "y": 77,
+            "w": 291.8,
+            "h": 44
+          },
+          "buttons": [
+            {
+              "name": "Table",
+              "x": 25,
+              "y": 77,
+              "w": 57.6,
+              "h": 44
+            },
+            {
+              "name": "Play games",
+              "x": 90.6,
+              "y": 77,
+              "w": 76,
+              "h": 44
+            },
+            {
+              "name": "Rules",
+              "x": 174.6,
+              "y": 77,
+              "w": 74,
+              "h": 44
+            }
+          ]
+        },
+        "chat": {
+          "x": 332.8,
+          "y": 25,
+          "w": 486.3,
+          "h": 288
+        }
+      }
+    },
+    "a": {
+      "430x932": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 398,
+          "h": 900
+        },
+        "header": {
+          "x": 29,
+          "y": 29,
+          "w": 372,
+          "h": 44
+        },
+        "code": {
+          "x": 29,
+          "y": 29,
+          "w": 92.4,
+          "h": 44,
+          "border": "1px",
+          "paddingLeft": "12px",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
+          "text": {
+            "x": 42,
+            "y": 37,
+            "w": 66.4,
+            "h": 28
+          }
+        },
+        "status": {
+          "box": {
+            "x": 291.6,
+            "y": 29,
+            "w": 109.4,
+            "h": 44
+          },
+          "inHeader": true,
+          "caption": "Wayfarer on",
+          "captionFits": true,
+          "connection": "Reachable · 7 ms",
+          "connectionFits": true,
+          "worstCase": {
+            "text": "Reconnecting · 2999 ms",
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
+          }
+        },
+        "headerFreeX": 170.3,
+        "rulesRow": {
+          "box": {
+            "x": 29,
+            "y": 81,
+            "w": 372,
+            "h": 44
+          },
+          "buttons": [
+            {
+              "name": "Table",
+              "x": 29,
+              "y": 81,
+              "w": 57.6,
+              "h": 44
+            },
+            {
+              "name": "Play games",
+              "x": 94.6,
+              "y": 81,
+              "w": 76,
+              "h": 44
+            },
+            {
+              "name": "Rules",
+              "x": 178.6,
+              "y": 81,
+              "w": 74,
+              "h": 44
+            }
+          ]
+        },
+        "chat": {
+          "x": 29,
+          "y": 253,
+          "w": 372,
+          "h": 546
+        }
+      },
+      "390x844": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 358,
+          "h": 812
+        },
+        "header": {
+          "x": 29,
+          "y": 29,
+          "w": 332,
+          "h": 44
+        },
+        "code": {
+          "x": 29,
+          "y": 29,
+          "w": 83.9,
+          "h": 44,
+          "border": "1px",
+          "paddingLeft": "12px",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
+          "text": {
+            "x": 42,
+            "y": 37,
+            "w": 57.9,
+            "h": 28
+          }
+        },
+        "status": {
+          "box": {
+            "x": 243,
+            "y": 29,
+            "w": 118,
+            "h": 44
+          },
+          "inHeader": true,
+          "caption": "Wayfarer on",
+          "captionFits": true,
+          "connection": "Reachable · 25 ms",
+          "connectionFits": true,
+          "worstCase": {
+            "text": "Reconnecting · 2999 ms",
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
+          }
+        },
+        "headerFreeX": 130.1,
+        "rulesRow": {
+          "box": {
+            "x": 29,
+            "y": 81,
+            "w": 332,
+            "h": 44
+          },
+          "buttons": [
+            {
+              "name": "Table",
+              "x": 29,
+              "y": 81,
+              "w": 57.6,
+              "h": 44
+            },
+            {
+              "name": "Play games",
+              "x": 94.6,
+              "y": 81,
+              "w": 76,
+              "h": 44
+            },
+            {
+              "name": "Rules",
+              "x": 178.6,
+              "y": 81,
+              "w": 74,
+              "h": 44
+            }
+          ]
+        },
+        "chat": {
+          "x": 29,
+          "y": 253,
+          "w": 332,
+          "h": 458
+        }
+      },
+      "375x812": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 343,
+          "h": 780
+        },
+        "header": {
+          "x": 25,
+          "y": 25,
+          "w": 325,
+          "h": 44
+        },
+        "code": {
+          "x": 25,
+          "y": 25,
+          "w": 85.7,
+          "h": 44,
+          "border": "1px",
+          "paddingLeft": "12px",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
+          "text": {
+            "x": 38,
+            "y": 33,
+            "w": 59.7,
+            "h": 28
+          }
+        },
+        "status": {
+          "box": {
+            "x": 234.7,
+            "y": 25,
+            "w": 115.3,
+            "h": 44
+          },
+          "inHeader": true,
+          "caption": "Wayfarer on",
+          "captionFits": true,
+          "connection": "Reachable · 12 ms",
+          "connectionFits": true,
+          "worstCase": {
+            "text": "Reconnecting · 2999 ms",
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
+          }
+        },
+        "headerFreeX": 124,
+        "rulesRow": {
+          "box": {
+            "x": 25,
+            "y": 77,
+            "w": 325,
+            "h": 44
+          },
+          "buttons": [
+            {
+              "name": "Table",
+              "x": 25,
+              "y": 77,
+              "w": 57.6,
+              "h": 44
+            },
+            {
+              "name": "Play games",
+              "x": 90.6,
+              "y": 77,
+              "w": 76,
+              "h": 44
+            },
+            {
+              "name": "Rules",
+              "x": 174.6,
+              "y": 77,
+              "w": 74,
+              "h": 44
+            }
+          ]
+        },
+        "chat": {
+          "x": 25,
+          "y": 249,
+          "w": 325,
+          "h": 434
+        }
+      },
+      "820x1180": {
+        "card": {
+          "x": 40,
+          "y": 24,
+          "w": 560,
+          "h": 1132
+        },
+        "header": {
+          "x": 61,
+          "y": 45,
+          "w": 518,
+          "h": 44
+        },
+        "code": {
+          "x": 61,
+          "y": 45,
+          "w": 108.6,
+          "h": 44,
+          "border": "1px",
+          "paddingLeft": "12px",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
+          "text": {
+            "x": 74,
+            "y": 50,
+            "w": 82.6,
+            "h": 34
+          }
+        },
+        "status": {
+          "box": {
+            "x": 463.3,
+            "y": 45,
+            "w": 115.7,
+            "h": 44
+          },
+          "inHeader": true,
+          "caption": "Wayfarer on",
+          "captionFits": true,
+          "connection": "Reachable · 10 ms",
+          "connectionFits": true,
+          "worstCase": {
+            "text": "Reconnecting · 2999 ms",
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
+          }
+        },
+        "headerFreeX": 293.7,
+        "rulesRow": {
+          "box": {
+            "x": 61,
+            "y": 97,
+            "w": 518,
+            "h": 44
+          },
+          "buttons": [
+            {
+              "name": "Table",
+              "x": 61,
+              "y": 97,
+              "w": 57.6,
+              "h": 44
+            },
+            {
+              "name": "Play games",
+              "x": 126.6,
+              "y": 97,
+              "w": 76,
+              "h": 44
+            },
+            {
+              "name": "Rules",
+              "x": 210.6,
+              "y": 97,
+              "w": 74,
+              "h": 44
+            }
+          ]
+        },
+        "chat": {
+          "x": 61,
+          "y": 269,
+          "w": 518,
+          "h": 762
+        }
+      },
+      "844x390": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 812,
+          "h": 358
+        },
+        "header": {
+          "x": 25,
+          "y": 25,
+          "w": 291.8,
+          "h": 44
+        },
+        "code": {
+          "x": 25,
+          "y": 25,
+          "w": 106.2,
+          "h": 44,
+          "border": "1px",
+          "paddingLeft": "12px",
+          "underline": {
+            "button": "none solid auto",
+            "text": "none solid auto"
+          },
+          "text": {
+            "x": 38,
+            "y": 30,
+            "w": 80.2,
+            "h": 34
+          }
+        },
+        "status": {
+          "box": {
+            "x": 201.3,
+            "y": 25,
+            "w": 115.5,
+            "h": 44
+          },
+          "inHeader": true,
+          "caption": "Wayfarer on",
+          "captionFits": true,
+          "connection": "Reachable · 31 ms",
+          "connectionFits": true,
+          "worstCase": {
+            "text": "Reconnecting · 2999 ms",
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
+          }
+        },
+        "headerFreeX": 70.1,
+        "rulesRow": {
+          "box": {
+            "x": 25,
+            "y": 77,
+            "w": 291.8,
+            "h": 44
+          },
+          "buttons": [
+            {
+              "name": "Table",
+              "x": 25,
+              "y": 77,
+              "w": 57.6,
+              "h": 44
+            },
+            {
+              "name": "Play games",
+              "x": 90.6,
+              "y": 77,
+              "w": 76,
+              "h": 44
+            },
+            {
+              "name": "Rules",
+              "x": 174.6,
+              "y": 77,
+              "w": 74,
+              "h": 44
+            }
+          ]
+        },
+        "chat": {
+          "x": 332.8,
+          "y": 25,
+          "w": 486.3,
+          "h": 288
+        }
+      }
+    },
+    "c": {
+      "430x932": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 398,
+          "h": 900
+        },
+        "header": {
+          "x": 29,
+          "y": 29,
+          "w": 372,
+          "h": 44
+        },
+        "code": {
+          "x": 29,
+          "y": 29,
+          "w": 82.4,
+          "h": 44,
+          "border": "0px",
+          "paddingLeft": "8px",
+          "underline": {
+            "button": "underline dotted 6px",
+            "text": "none solid 6px"
+          },
+          "text": {
+            "x": 37,
+            "y": 37,
+            "w": 66.4,
+            "h": 28
+          }
+        },
+        "status": {
+          "box": {
+            "x": 291.6,
+            "y": 29,
+            "w": 109.4,
+            "h": 44
+          },
+          "inHeader": true,
+          "caption": "Wayfarer on",
+          "captionFits": true,
+          "connection": "Reachable · 7 ms",
+          "connectionFits": true,
+          "worstCase": {
+            "text": "Reconnecting · 2999 ms",
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
+          }
+        },
+        "headerFreeX": 180.3,
+        "rulesRow": {
+          "box": {
+            "x": 29,
+            "y": 81,
+            "w": 372,
+            "h": 44
+          },
+          "buttons": [
+            {
+              "name": "Table",
+              "x": 29,
+              "y": 81,
+              "w": 57.6,
+              "h": 44
+            },
+            {
+              "name": "Play games",
+              "x": 94.6,
+              "y": 81,
+              "w": 76,
+              "h": 44
+            },
+            {
+              "name": "Rules",
+              "x": 178.6,
+              "y": 81,
+              "w": 74,
+              "h": 44
+            }
+          ]
+        },
+        "chat": {
+          "x": 29,
+          "y": 253,
+          "w": 372,
+          "h": 546
+        }
+      },
+      "390x844": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 358,
+          "h": 812
+        },
+        "header": {
+          "x": 29,
+          "y": 29,
+          "w": 332,
+          "h": 44
+        },
+        "code": {
+          "x": 29,
+          "y": 29,
+          "w": 73.9,
+          "h": 44,
+          "border": "0px",
+          "paddingLeft": "8px",
+          "underline": {
+            "button": "underline dotted 6px",
+            "text": "none solid 6px"
+          },
+          "text": {
+            "x": 37,
+            "y": 37,
+            "w": 57.9,
+            "h": 28
+          }
+        },
+        "status": {
+          "box": {
+            "x": 243,
+            "y": 29,
+            "w": 118,
+            "h": 44
+          },
+          "inHeader": true,
+          "caption": "Wayfarer on",
+          "captionFits": true,
+          "connection": "Reachable · 25 ms",
+          "connectionFits": true,
+          "worstCase": {
+            "text": "Reconnecting · 2999 ms",
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
+          }
+        },
+        "headerFreeX": 140.1,
+        "rulesRow": {
+          "box": {
+            "x": 29,
+            "y": 81,
+            "w": 332,
+            "h": 44
+          },
+          "buttons": [
+            {
+              "name": "Table",
+              "x": 29,
+              "y": 81,
+              "w": 57.6,
+              "h": 44
+            },
+            {
+              "name": "Play games",
+              "x": 94.6,
+              "y": 81,
+              "w": 76,
+              "h": 44
+            },
+            {
+              "name": "Rules",
+              "x": 178.6,
+              "y": 81,
+              "w": 74,
+              "h": 44
+            }
+          ]
+        },
+        "chat": {
+          "x": 29,
+          "y": 253,
+          "w": 332,
+          "h": 458
+        }
+      },
+      "375x812": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 343,
+          "h": 780
+        },
+        "header": {
+          "x": 25,
+          "y": 25,
+          "w": 325,
+          "h": 44
+        },
+        "code": {
+          "x": 25,
+          "y": 25,
+          "w": 75.7,
+          "h": 44,
+          "border": "0px",
+          "paddingLeft": "8px",
+          "underline": {
+            "button": "underline dotted 6px",
+            "text": "none solid 6px"
+          },
+          "text": {
+            "x": 33,
+            "y": 33,
+            "w": 59.7,
+            "h": 28
+          }
+        },
+        "status": {
+          "box": {
+            "x": 234.7,
+            "y": 25,
+            "w": 115.3,
+            "h": 44
+          },
+          "inHeader": true,
+          "caption": "Wayfarer on",
+          "captionFits": true,
+          "connection": "Reachable · 12 ms",
+          "connectionFits": true,
+          "worstCase": {
+            "text": "Reconnecting · 2999 ms",
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
+          }
+        },
+        "headerFreeX": 134,
+        "rulesRow": {
+          "box": {
+            "x": 25,
+            "y": 77,
+            "w": 325,
+            "h": 44
+          },
+          "buttons": [
+            {
+              "name": "Table",
+              "x": 25,
+              "y": 77,
+              "w": 57.6,
+              "h": 44
+            },
+            {
+              "name": "Play games",
+              "x": 90.6,
+              "y": 77,
+              "w": 76,
+              "h": 44
+            },
+            {
+              "name": "Rules",
+              "x": 174.6,
+              "y": 77,
+              "w": 74,
+              "h": 44
+            }
+          ]
+        },
+        "chat": {
+          "x": 25,
+          "y": 249,
+          "w": 325,
+          "h": 434
+        }
+      },
+      "820x1180": {
+        "card": {
+          "x": 40,
+          "y": 24,
+          "w": 560,
+          "h": 1132
+        },
+        "header": {
+          "x": 61,
+          "y": 45,
+          "w": 518,
+          "h": 44
+        },
+        "code": {
+          "x": 61,
+          "y": 45,
+          "w": 98.6,
+          "h": 44,
+          "border": "0px",
+          "paddingLeft": "8px",
+          "underline": {
+            "button": "underline dotted 6px",
+            "text": "none solid 6px"
+          },
+          "text": {
+            "x": 69,
+            "y": 50,
+            "w": 82.6,
+            "h": 34
+          }
+        },
+        "status": {
+          "box": {
+            "x": 463.3,
+            "y": 45,
+            "w": 115.7,
+            "h": 44
+          },
+          "inHeader": true,
+          "caption": "Wayfarer on",
+          "captionFits": true,
+          "connection": "Reachable · 10 ms",
+          "connectionFits": true,
+          "worstCase": {
+            "text": "Reconnecting · 2999 ms",
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
+          }
+        },
+        "headerFreeX": 303.7,
+        "rulesRow": {
+          "box": {
+            "x": 61,
+            "y": 97,
+            "w": 518,
+            "h": 44
+          },
+          "buttons": [
+            {
+              "name": "Table",
+              "x": 61,
+              "y": 97,
+              "w": 57.6,
+              "h": 44
+            },
+            {
+              "name": "Play games",
+              "x": 126.6,
+              "y": 97,
+              "w": 76,
+              "h": 44
+            },
+            {
+              "name": "Rules",
+              "x": 210.6,
+              "y": 97,
+              "w": 74,
+              "h": 44
+            }
+          ]
+        },
+        "chat": {
+          "x": 61,
+          "y": 269,
+          "w": 518,
+          "h": 762
+        }
+      },
+      "844x390": {
+        "card": {
+          "x": 16,
+          "y": 16,
+          "w": 812,
+          "h": 358
+        },
+        "header": {
+          "x": 25,
+          "y": 25,
+          "w": 291.8,
+          "h": 44
+        },
+        "code": {
+          "x": 25,
+          "y": 25,
+          "w": 96.2,
+          "h": 44,
+          "border": "0px",
+          "paddingLeft": "8px",
+          "underline": {
+            "button": "underline dotted 6px",
+            "text": "none solid 6px"
+          },
+          "text": {
+            "x": 33,
+            "y": 30,
+            "w": 80.2,
+            "h": 34
+          }
+        },
+        "status": {
+          "box": {
+            "x": 201.3,
+            "y": 25,
+            "w": 115.5,
+            "h": 44
+          },
+          "inHeader": true,
+          "caption": "Wayfarer on",
+          "captionFits": true,
+          "connection": "Reachable · 31 ms",
+          "connectionFits": true,
+          "worstCase": {
+            "text": "Reconnecting · 2999 ms",
+            "textWidth": 151.1,
+            "connectionBox": 151.1,
+            "statusBox": 155.1,
+            "connScrollOk": true,
+            "boxScrollOk": true,
+            "textInsideBox": true,
+            "boxInsideHeader": true,
+            "codeKeptWidth": true,
+            "fits": true
+          }
+        },
+        "headerFreeX": 80.1,
+        "rulesRow": {
+          "box": {
+            "x": 25,
+            "y": 77,
+            "w": 291.8,
+            "h": 44
+          },
+          "buttons": [
+            {
+              "name": "Table",
+              "x": 25,
+              "y": 77,
+              "w": 57.6,
+              "h": 44
+            },
+            {
+              "name": "Play games",
+              "x": 90.6,
+              "y": 77,
+              "w": 76,
+              "h": 44
+            },
+            {
+              "name": "Rules",
+              "x": 174.6,
+              "y": 77,
+              "w": 74,
+              "h": 44
+            }
+          ]
+        },
+        "chat": {
+          "x": 332.8,
+          "y": 25,
+          "w": 486.3,
+          "h": 288
+        }
+      }
+    }
+  }
+}
