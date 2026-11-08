@@ -61,11 +61,11 @@
       "after": {
         "wrap": {
           "x": 33,
-          "y": 333,
+          "y": 323,
           "w": 364,
-          "h": 334,
-          "scrollHeight": 333,
-          "clientHeight": 333
+          "h": 354,
+          "scrollHeight": 353,
+          "clientHeight": 353
         },
         "sidewaysScroll": false,
         "listScrolls": false,
@@ -90,9 +90,9 @@
         "awardsInDom": 4,
         "dice": {
           "x": 33,
-          "y": 547,
+          "y": 537,
           "w": 364,
-          "h": 118
+          "h": 138
         },
         "diceInView": true,
         "chipsOutsideOpenRow": 0
@@ -100,11 +100,11 @@
       "open": {
         "wrap": {
           "x": 33,
-          "y": 246,
+          "y": 236,
           "w": 364,
-          "h": 507,
-          "scrollHeight": 506,
-          "clientHeight": 506
+          "h": 527,
+          "scrollHeight": 526,
+          "clientHeight": 526
         },
         "sidewaysScroll": false,
         "listScrolls": false,
@@ -126,22 +126,22 @@
         "buttonsInView": true,
         "award": {
           "x": 63,
-          "y": 409,
+          "y": 399,
           "w": 298,
           "h": 24
         },
         "awardChip": {
           "x": 63,
-          "y": 409,
+          "y": 399,
           "w": 116,
           "h": 24
         },
         "awardsInDom": 4,
         "dice": {
           "x": 33,
-          "y": 633,
+          "y": 623,
           "w": 364,
-          "h": 118
+          "h": 138
         },
         "diceInView": true,
         "chipsOutsideOpenRow": 0
@@ -186,11 +186,11 @@
       "after": {
         "wrap": {
           "x": 33,
-          "y": 266,
+          "y": 256,
           "w": 324,
-          "h": 327,
-          "scrollHeight": 326,
-          "clientHeight": 326
+          "h": 347,
+          "scrollHeight": 346,
+          "clientHeight": 346
         },
         "sidewaysScroll": false,
         "listScrolls": false,
@@ -215,9 +215,9 @@
         "awardsInDom": 4,
         "dice": {
           "x": 33,
-          "y": 480,
+          "y": 470,
           "w": 324,
-          "h": 111
+          "h": 131
         },
         "diceInView": true,
         "chipsOutsideOpenRow": 0
@@ -228,7 +228,7 @@
           "y": 217,
           "w": 324,
           "h": 427,
-          "scrollHeight": 521,
+          "scrollHeight": 541,
           "clientHeight": 426
         },
         "sidewaysScroll": false,
@@ -251,22 +251,22 @@
         "buttonsInView": true,
         "award": {
           "x": 63,
-          "y": 285,
+          "y": 265,
           "w": 258,
           "h": 46
         },
         "awardChip": {
           "x": 63,
-          "y": 285,
+          "y": 265,
           "w": 116,
           "h": 24
         },
         "awardsInDom": 4,
         "dice": {
           "x": 33,
-          "y": 531,
+          "y": 511,
           "w": 324,
-          "h": 111
+          "h": 131
         },
         "diceInView": true,
         "chipsOutsideOpenRow": 0
@@ -311,11 +311,11 @@
       "after": {
         "wrap": {
           "x": 33,
-          "y": 262,
+          "y": 252,
           "w": 309,
-          "h": 324,
-          "scrollHeight": 323,
-          "clientHeight": 323
+          "h": 344,
+          "scrollHeight": 343,
+          "clientHeight": 343
         },
         "sidewaysScroll": false,
         "listScrolls": false,
@@ -340,9 +340,9 @@
         "awardsInDom": 4,
         "dice": {
           "x": 33,
-          "y": 476,
+          "y": 466,
           "w": 309,
-          "h": 108
+          "h": 128
         },
         "diceInView": true,
         "chipsOutsideOpenRow": 0
@@ -353,7 +353,7 @@
           "y": 237,
           "w": 309,
           "h": 375,
-          "scrollHeight": 518,
+          "scrollHeight": 538,
           "clientHeight": 374
         },
         "sidewaysScroll": false,
@@ -391,7 +391,7 @@
           "x": 33,
           "y": 527,
           "w": 309,
-          "h": 108
+          "h": 128
         },
         "diceInView": false,
         "chipsOutsideOpenRow": 0
@@ -724,8 +724,8 @@
       3
     ],
     "total": 113,
-    "line": "4 came up 17 times (about 9 expected).",
-    "sum": 4
+    "sum": null,
+    "line": "8 came up most, 21 times. 2 and 12 came up least, 3 times each."
   },
   "counters": {
     "Jarrod": {

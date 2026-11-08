@@ -43,11 +43,13 @@ From the final run of [capture.mjs](capture.mjs). Full numbers are in [measureme
 
 | Size | Dice strip height | Strip in view, rows closed | List scrolls, rows closed | List scrolls, Josh opened | Award line height |
 |---|---|---|---|---|---|
-| 430 × 932 | 118 px | yes | no | no | 24 px |
-| 390 × 844 | 111 px | yes | no | yes | 46 px (the fact wraps) |
-| 375 × 812 | 108 px | yes | no | yes | 46 px (the fact wraps) |
+| 430 × 932 | 138 px | yes | no | no | 24 px |
+| 390 × 844 | 131 px | yes | no | yes | 46 px (the fact wraps) |
+| 375 × 812 | 128 px | yes | no | yes | 46 px (the fact wraps) |
 | 820 × 1180 | 120 px | yes | no | no | 24 px |
-| 844 × 390 | 120 px | no, it starts under the fold | yes | yes | 24 px |
+| 844 × 390 | 120 px | partly: header and bar tops | yes, by 50 px | yes | 24 px |
+
+On phones held upright, the plain-facts sentence wraps to two lines, so the strip is 20 px taller there than with a one-line sentence.
 
 - Every row stays 44 px. Nothing scrolls sideways. Every result button stays on screen at every size. Browser errors: 0.
 - The chip is 24 px tall. It is never on screen while every row is closed.
