@@ -89,6 +89,9 @@ const CEILINGS = [
   // #1363, 2026-11-07: a sticker as the tray, seat bubble and chat log draw it (animated loop, reduced-motion still), loaded
   // with the first sticker; measured 949 B gzip. New chunk only; the desk sets this ceiling.
   { name: "Sticker", gzipBytes: 1050 },
+  // #1411, 2026-11-08: a guest's I'll play again and the win screen's count, loaded as an online table starts; measured
+  // 412 B gzip. New chunk only; the desk set this ceiling.
+  { name: "PlayAgain", gzipBytes: 450 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
