@@ -37,10 +37,10 @@
 }
 /* #1430: the code is the copy button, the same box as the other lobby buttons. A tap fades the code to a small "Copied" in
    the same spot and back; the button keeps its size, so nothing moves. */
-.lobby-layout .lobby-code { position: relative; max-width: 100%; padding: 0 12px; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: transparent; color: var(--ink); }
+.lobby-layout .lobby-code { position: relative; min-width: 72px; max-width: 100%; padding: 0 12px; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: transparent; color: var(--ink); }
 .lobby-code > span { transition: opacity 200ms ease; }
 .lobby-code > [data-testid="table-code"] { display: block; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 28px; line-height: 36px; letter-spacing: 1px; font-weight: 700; }
-.lobby-code > span:last-child { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--gain); }
+.lobby-code > span:last-child { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); white-space: nowrap; opacity: 0; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--gain); }
 .lobby-code[data-copied] > [data-testid="table-code"] { opacity: 0; }
 .lobby-code[data-copied] > span:last-child { opacity: 1; }
 .lobby-code:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
