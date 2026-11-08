@@ -2,6 +2,7 @@
 // (chunks.ts), fetched with the online table, so the win screen's sheets chunk stays inside its allowance.
 import { Button } from "@/components/ui/button";
 import { useGame } from "@/lib/game/store";
+import type { Seat } from "@/lib/net/table";
 
 // Only the host starts the next game; this says "count me in", and never starts, blocks or delays it.
 export function WantAgain() {
@@ -15,11 +16,11 @@ export function WantAgain() {
   );
 }
 
-// The win screen counts (its `yes`): the host, bots and every yes, of everyone not away.
-export function WantCount({ n, of }: { n: number; of: number }) {
+// `n` is the win screen's count of yes (the host, bots and every yes), out of every seat not away.
+export function WantCount({ n, seats }: { n: number; seats: Seat[] }) {
   return (
     <p role="status" className="sr-only">
-      {n} of {of} want another game
+      {n} of {seats.filter((x) => !x.away).length} want another game
     </p>
   );
 }

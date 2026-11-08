@@ -16,17 +16,15 @@ export type Row = { p: PlayerState; outposts: number; strongholds: number; path:
 
 // #1411 (design docs/design/play-again-1411, option A): the host and bots are always in; an away seat is left out of the next game.
 const yes = (x: Seat) => !x.away && (x.host || x.bot || x.again);
-function tagOf(x: Seat | undefined) {
-  if (!x || (!x.away && !yes(x))) return undefined;
-  return x.away ? (
+const tagOf = (x?: Seat) =>
+  x?.away ? (
     <span className="win-tag away">Away</span>
-  ) : (
+  ) : x && yes(x) ? (
     <span className="win-tag">
       <span aria-hidden="true">✓ Play again</span>
       <span className="sr-only">, wants to play again</span>
     </span>
-  );
-}
+  ) : undefined;
 
 // Build bible 4.7: the island stays visible. "Look around" hides the panel and leaves a small chip.
 export function WinScreen() {
@@ -219,7 +217,7 @@ function Panel() {
             Waiting for {hostName} to start another.
           </p>
         ) : null}
-        {mode === "online" ? <LazyBoundary failed={null}><WantCount n={seats.filter(yes).length} of={seats.filter((x) => !x.away).length} /></LazyBoundary> : null}
+        {mode === "online" ? <LazyBoundary failed={null}><WantCount n={seats.filter(yes).length} seats={seats} /></LazyBoundary> : null}
         <div className={`mt-5 ${phone ? "short:mt-1" : "short:mt-2"} flex flex-wrap items-center gap-2`}>
           {mode === "online" ? <VictoryTargetSelect label="Next game" value={target} onChange={isHost && !spectator ? setTarget : undefined} /> : null}
           {mode === "online" && !spectator ? (
