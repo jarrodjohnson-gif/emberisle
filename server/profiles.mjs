@@ -20,6 +20,8 @@ export const DAY_FAILS = 10;
 export const LIFETIME_FAILS = 30;
 export const DEVICE_MS = 90 * DAY_MS;
 export const DEVICE_MAX = 5;
+// Former logins one profile may keep reserved by renaming (#1069, owner decision 2026-11-06).
+export const RESERVED_PER_PROFILE = 5;
 // Failures against logins nobody holds are kept too (the same answer and the same work), but only this many names.
 const UNKNOWN_MAX = 1024;
 const FILE = "profiles.json";
@@ -144,6 +146,9 @@ export const HISTORY_PAGE = 20;
 
 // The receipt fingerprint: SHA-256 of the frozen outcome with its keys sorted, hashed once, before any redaction. A redacted
 // outcome carries that original hash, so a stale unredacted copy of the same game still matches its receipt.
+// The embedded hash is trusted unchecked. That is safe only because pending outcomes and room files are written by this host,
+// never sent by a client. A hand-edited one is not trusted for a recorded game: it differs from the receipt, so recording
+// refuses it as a conflict and nothing changes.
 function canonical(v) {
   if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
   if (v !== null && typeof v === "object") return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonical(v[k])}`).join(",")}}`;
@@ -169,6 +174,30 @@ export function redactOutcome(o, gone) {
   const out = structuredClone(o);
   out.fingerprint = fingerprint(o);
   return redactRows(out.players, gone) ? out : null;
+}
+// A file kept only for repair by hand (#1393), a fenced room or an unreadable pending outcome, as text. Every object in it
+// that names a deleted profile loses its id and name, wherever it sits. If a deleted profile's id is still in the text,
+// because it does not parse or holds the id somewhere else, the whole text is replaced. Returns the new text, or null when
+// nothing names a deleted profile.
+export function redactText(text, gone) {
+  let out = null;
+  try {
+    const v = JSON.parse(text);
+    let changed = false;
+    const walk = (x) => {
+      if (x === null || typeof x !== "object") return;
+      if (typeof x.profileId === "string" && gone(x.profileId)) {
+        x.profileId = null;
+        if ("name" in x) x.name = DELETED_NAME;
+        changed = true;
+      }
+      for (const y of Object.values(x)) walk(y);
+    };
+    walk(v);
+    if (changed) out = JSON.stringify(v);
+  } catch {}
+  if ((out ?? text).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g)?.some(gone)) return JSON.stringify({ redacted: "this file named a deleted profile" });
+  return out;
 }
 
 // "Which results count": an eligible game credits its starting humans that were bound to a profile. Guests and original bots
@@ -651,11 +680,16 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
       if (p.pinMustChange) return { error: "mustChangePin" };
       if (held && p.guard.lifetime >= LIFETIME_FAILS) return { error: "signInFailed" };
       if (held && !held.ok) { fail(p.guard, at, true); return { error: "signInFailed" }; }
-      if (isRename && (has(d.logins, newLogin) || has(d.reservedLogins, newLogin))) return { error: "loginTaken" };
+      // #1069: renaming back to one of this profile's own former logins releases that reservation. Any other rename adds one,
+      // and is refused once the profile holds RESERVED_PER_PROFILE; no old reservation is ever evicted to make room.
+      const reclaim = isRename && own(d.reservedLogins, newLogin) === id;
+      if (isRename && !reclaim && (has(d.logins, newLogin) || has(d.reservedLogins, newLogin))) return { error: "loginTaken" };
+      if (isRename && !reclaim && Object.values(d.reservedLogins).filter((v) => v === id).length >= RESERVED_PER_PROFILE) return { error: "loginLimit" };
       const edited = structuredClone(p);
       try { _applyEditFields(edited, f, colors); }
       catch (e) { if (e instanceof ProfileError) return { error: e.code }; throw e; }
       if (isRename) {
+        if (reclaim) delete d.reservedLogins[newLogin];
         d.reservedLogins[p.login] = id;
         delete d.logins[p.login];
         edited.login = newLogin;
