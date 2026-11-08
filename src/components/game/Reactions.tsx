@@ -82,7 +82,8 @@ export function SoundsTab({ dense }: { dense?: boolean }) {
                 onPointerDown={() => play("ui_click")}
                 onClick={() => sendReaction(id)}
               >
-                <Emote emote={id} once className={dense ? "size-6" : "size-8"} />
+                {/* #1363: owner on #1364, "a little bigger": 36 px (28 px dense) in the unchanged 44 px (32 px) button. */}
+                <Emote emote={id} once className={dense ? "size-7" : "size-9"} />
               </button>
             ))}
           </div>

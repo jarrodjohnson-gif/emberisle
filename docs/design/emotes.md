@@ -96,7 +96,8 @@ clips are the only reactions that play a sound for the table (Decision 3).
     the page.
   - Vite inlines files under 4 KB into the JS chunk (the default `assetsInlineLimit`). This only matters if
     `size-prove`'s budget gets tight.
-- **Display:** 32 px inside the tray, as today. 48 px when floating over a seat. On a 440 px wide phone, 6 per row
+- **Display:** 36 px inside the 44 px tray button (28 px in the dense 32 px one), a little bigger than the first 32 px at
+  the owner's ask on #1364 (#1363). 48 px when floating over a seat. On a 440 px wide phone, 6 per row
   is about 300 px, which fits. Art must stay readable at 32 px.
 - **Motion** (#1363): an animated sticker plays while it is on screen, in the seat bubble and the chat log. In the tray
   it plays one loop each time the tray opens, then rests on its first frame. With reduced motion it shows its first
