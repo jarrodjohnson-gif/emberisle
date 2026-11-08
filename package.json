@@ -123,6 +123,7 @@
     "chrome-prove": "node scripts/chrome-prove.mjs",
     "issue-1274-proposal-prove": "node docs/design/issue-1274/capture.mjs",
     "contrast-prove": "node scripts/contrast-prove.mjs",
+    "button-system-prove": "node scripts/button-system-prove.mjs",
     "title-prove": "node scripts/title-prove.mjs",
     "storage-blocked-prove": "node scripts/storage-blocked-prove.mjs",
     "howto-prove": "node scripts/howto-prove.mjs",
