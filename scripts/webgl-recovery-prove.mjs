@@ -69,7 +69,7 @@ try {
     await page.getByTestId("table-recovery").waitFor();
     assert.match(
       await page.getByTestId("table-recovery").innerText(),
-      /Your table hit a snag/,
+      /Something went wrong/,
       "table recovery boundary caught render error",
     );
 

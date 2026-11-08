@@ -7,7 +7,7 @@
 // - How to play opens its dialog and closing that puts the focus back on the menu button; the Sound panel and the haptics toggle
 //   flip and keep the sheet open; Escape closes the sheet and refocuses the button; Enter on the button opens it; a tap
 //   outside closes it;
-// - online (a faked socket): the sheet shows the watcher count and "Copy table code" (copied where the clipboard works, the
+// - online (a faked socket): the sheet shows the watcher count and "Copy code" (copied where the clipboard works, the
 //   select-and-copy field where it does not, as on CI; both are run), Leave table asks first (Stay, Escape
 //   and the 5 s auto-cancel return to the rows with the focus on Leave table), then leaves; hotseat Leave table goes
 //   straight to the title.
@@ -182,7 +182,7 @@ try {
     await trigger.click();
     await menu.waitFor();
     assert.equal(await menu.getByTestId("watching-count").textContent().then((t) => t.trim()), "2", `${v.tag}: the watcher count is in the menu`);
-    await menu.getByRole("button", { name: "Copy table code K7QP" }).click();
+    await menu.getByRole("button", { name: "Copy code K7QP" }).click();
     const copied = v.noClipboard ? "fallback" : "copied";
     const clipboard = await page.evaluate(() => navigator.clipboard?.writeText("probe").then(() => "writes", (e) => `rejects: ${e}`) ?? "missing");
     assert.equal(clipboard, v.noClipboard ? "missing" : "writes", `${v.tag}: navigator.clipboard is ${clipboard}`);
@@ -193,7 +193,7 @@ try {
       // A failed copy is forgotten when the menu closes (Escape, then an outside tap): the next open shows no field and
       // opens on How to play.
       const reopen = async (how) => {
-        await menu.getByRole("button", { name: "Copy table code K7QP" }).click();
+        await menu.getByRole("button", { name: "Copy code K7QP" }).click();
         await menu.getByTestId("copy-fallback").waitFor();
         if (how === "escape") await page.keyboard.press("Escape");
         // Left of the 256 px sheet on a narrow phone, where the taller sheet's copy field now reaches the middle.

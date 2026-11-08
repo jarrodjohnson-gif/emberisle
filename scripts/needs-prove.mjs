@@ -50,7 +50,7 @@ try{
  const a=await tab('p0',true),b=await tab('p1',false);
  const before=await a.evaluate(()=>window.__isle.insets());
  await a.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
- await a.getByRole('heading',{name:'You need',exact:true}).waitFor();
+ await a.getByRole('heading',{name:'Need',exact:true}).waitFor();
  assert.equal(await a.getByRole('button',{name:/^Need (Wood|Brick|Sheep|Wheat|Stone)$/}).count(),5);
  const started=Date.now();await a.getByRole('button',{name:'Need Stone',exact:true}).click();
  const chip=b.getByTestId('rail-p0').getByTestId('seat-needs');await chip.waitFor({timeout:1000});
@@ -94,7 +94,7 @@ try{
  await peerNeeds.waitFor({state:'detached'});await b.keyboard.press('Escape');
  // Empty row: closing the picker shows the one sentence of the feature, then reopen for the next step.
  // The picker is always in the window: the heading and its one hint line replace the old closed-row sentence.
- await a.getByRole('heading',{name:'You need',exact:true}).waitFor();assert.equal(await a.locator('.need-hint').textContent(),'Tap up to two. Not part of the offer; other players see it.');assert.equal(await a.getByTestId('own-needs').count(),0,'no separate own chips line');assert.equal(await a.getByRole('button',{name:'Need',exact:true}).count(),0,'no Need toggle button');
+ await a.getByRole('heading',{name:'Need',exact:true}).waitFor();assert.equal(await a.locator('.need-hint').textContent(),'Tap up to two. Not part of the offer; other players see it.');assert.equal(await a.getByTestId('own-needs').count(),0,'no separate own chips line');assert.equal(await a.getByRole('button',{name:'Need',exact:true}).count(),0,'no Need toggle button');
  await a.getByRole('button',{name:'Need Stone',exact:true}).click();await chip.waitFor();
  mkdirSync('test-results',{recursive:true});await a.screenshot({path:'test-results/needs-picker-phone.png'});
  await a.getByRole('button',{name:'Close',exact:true}).click();
@@ -109,7 +109,7 @@ try{
  console.log('ok real table trade: received requested Stone clears the public need on the other client');
  await a.waitForFunction(()=>window.__emberisle.getState().seats.find(s=>s.player==='p0')?.needs?.length===0);
  await a.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
- await a.getByRole('heading',{name:'You need',exact:true}).waitFor();
+ await a.getByRole('heading',{name:'Need',exact:true}).waitFor();
  // Hold real host seat echoes so unrelated messages cannot hide an optimistic-draft reset.
  await a.evaluate(()=>{window.__holdNeedSeats=true;});
  await a.getByRole('button',{name:'Need Stone',exact:true}).click();

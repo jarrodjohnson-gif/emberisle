@@ -259,7 +259,7 @@ try {
       console.log(`armed ${mode}, tap ${label}: "${got.error}"`);
       if (got.error !== want || got.state !== before) throw new Error(`${label}: error "${got.error}", state changed ${got.state !== before}`);
     };
-    await tryPick("outpost", "pickVertex", bad.close, "Too close — leave one corner between buildings.", "a corner beside our outpost");
+    await tryPick("outpost", "pickVertex", bad.close, "Too close. Leave a corner between buildings.", "a corner beside our outpost");
     await tryPick("outpost", "pickVertex", bad.theirs, "That corner is taken.", "a built corner");
     await tryPick("stronghold", "pickVertex", bad.theirs, "Upgrade one of your own outposts.", "another seat's outpost");
     await tryPick("path", "pickEdge", bad.edgeTaken, "That edge already has a path.", "a built edge");
