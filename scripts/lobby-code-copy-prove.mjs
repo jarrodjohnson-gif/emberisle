@@ -212,17 +212,19 @@ try {
   await moving.getByTestId("lobby-card").waitFor();
   const fade = await moving.locator(".lobby-code > span").evaluateAll((spans) => spans.map((s) => [getComputedStyle(s).transitionProperty, getComputedStyle(s).transitionDuration]));
   assert.deepEqual(fade, [["opacity", "0.2s"], ["opacity", "0.2s"]], "motion on: the code and \"Copied\" cross-fade over 200 ms");
-  // Sample the code's opacity every frame for half a second from the tap.
-  await moving.getByTestId("table-code").evaluate((el) => {
-    window.__fade = [];
-    const end = performance.now() + 500;
-    const step = () => { window.__fade.push(Number(getComputedStyle(el).opacity)); if (performance.now() < end) requestAnimationFrame(step); };
-    requestAnimationFrame(step);
-  });
-  await moving.locator(".lobby-code").click();
-  await moving.waitForTimeout(600);
-  const fadeSteps = await moving.evaluate(() => window.__fade);
-  assert.ok(fadeSteps.some((o) => o > 0 && o < 1) && fadeSteps.at(-1) === 0, `motion on: the code passes through part opacity on its way to 0 (${fadeSteps.join(",")})`);
+  // The tap starts a real opacity transition on both halves, read the moment "Copied" is set (frame timing in headless
+  // Chromium is too coarse to sample a 200 ms fade).
+  const running = await moving.locator(".lobby-code").evaluate((button) => new Promise((resolve) => {
+    new MutationObserver((_, observer) => {
+      if (!button.hasAttribute("data-copied")) return;
+      observer.disconnect();
+      resolve([...button.children].map((span) => { getComputedStyle(span).opacity; return span.getAnimations().map((a) => [a.transitionProperty, a.effect.getTiming().duration]); }));
+    }).observe(button, { attributes: true });
+    button.click();
+  }));
+  assert.deepEqual(running, [[["opacity", 200]], [["opacity", 200]]], `motion on: the code and "Copied" each start a 200 ms opacity fade ${JSON.stringify(running)}`);
+  await moving.waitForFunction(() => [...document.querySelector(".lobby-code").children].every((s) => s.getAnimations().length === 0));
+  assert.deepEqual(await moving.locator(".lobby-code > span").evaluateAll((spans) => spans.map((s) => getComputedStyle(s).opacity)), ["0", "1"], "motion on: the fade ends on \"Copied\"");
   await moving.context().close();
   const still = await client("Jarrod", { width: 390, height: 844 });
   await still.evaluate(() => window.__emberisle.getState().hostTable());

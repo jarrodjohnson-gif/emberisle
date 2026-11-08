@@ -42,7 +42,7 @@
 .lobby-code > [data-testid="table-code"] { display: block; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 28px; line-height: 36px; letter-spacing: 1px; font-weight: 700; }
 .lobby-code > span:last-child { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--gain); }
 .lobby-code[data-copied] > [data-testid="table-code"] { opacity: 0; }
-.lobby-code[data-copied] > span[aria-hidden] { opacity: 1; }
+.lobby-code[data-copied] > span:last-child { opacity: 1; }
 .lobby-code:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
   .lobby-code > span { transition: none; }
