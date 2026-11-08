@@ -90,7 +90,7 @@ export function CostCard({ onClose }: { onClose: () => void }) {
             ))}
           </ul>
         </div>
-        <p className="mt-3 text-body">{target} points claims the isle.</p>
+        <p className="mt-3 text-body">Win at {target} points.</p>
       </div>
     </div>
   );
