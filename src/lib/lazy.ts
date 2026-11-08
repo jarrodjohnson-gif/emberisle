@@ -23,7 +23,7 @@ export function withChunkRecovery<M>(load: () => Promise<M>, owns: (url: string)
 // The boundary that catches a chunk's failure forgets it, so the next mount asks the network: keyed by the error thrown.
 const caught = new WeakMap<object, () => void>();
 
-export function chunk<M>(load: () => Promise<M>) {
+export function chunk<M>(load: () => Promise<M>, recover?: RegExp) {
   let pending: Tracked<M> | undefined;
   // The browser remembers a module that failed to fetch for the life of the page, so a plain retry of the same URL fails at
   // once without touching the network. The failure names the URL (Chromium and Firefox do; Safari does not, and there the
@@ -75,7 +75,17 @@ export function chunk<M>(load: () => Promise<M>) {
   // Non-React callers share the same cache and failed-URL retry as the UI.
   const loadModule = () => {
     if (pending?.status === "rejected") pending = undefined;
-    return preload();
+    if (!recover) return preload();
+    // Only opt-in non-React loads own stale-chunk recovery. Match this build's exact preload path;
+    // retry queries may change, but another asset or another origin stays outside this request.
+    return withChunkRecovery(preload, (url) => {
+      try {
+        const asset = new URL(url, location.href);
+        return asset.origin === location.origin && recover.test(asset.pathname) &&
+          [...document.querySelectorAll<HTMLLinkElement>('link[rel="modulepreload"],link[rel="preload"][as="script"]')]
+            .some((link) => new URL(link.href).pathname === asset.pathname);
+      } catch { return false; }
+    });
   };
   return { prefetch, pick, load: loadModule };
 }

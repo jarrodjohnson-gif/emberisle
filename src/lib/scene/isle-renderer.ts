@@ -36,7 +36,7 @@ import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game
 import { LAND_MS } from "@/lib/scene/landing";
 import { LandingDust } from "@/lib/scene/landing-dust";
 import { hashStr } from "@/lib/utils";
-import { boot, chunk, withChunkRecovery } from "@/lib/lazy";
+import { boot, chunk } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
 import { BLOCK_H, ROBBER_HEX_DIM, robberHexDim, setRobberHexDim, TILE_Y } from "@/lib/scene/jelly-dims";
 export { ROBBER_HEX_DIM, robberHexDim };
@@ -62,23 +62,10 @@ export function topOf(_terrain: Terrain) {
 // in whole (the owner, 2026-10-16: wait for it, no pop-in). A failed load leaves the slabs (the board still plays) and tries
 // again a few seconds on (five times at most), under a fresh query: the browser remembers a module that failed for the life of the page (lazy.ts).
 const landModules = {
-  jelly: chunk(() => import("@/lib/scene/jelly-board")),
-  classic: chunk(() => import("@/lib/scene/classic-board")),
+  jelly: chunk(() => import("@/lib/scene/jelly-board"), /\/(jelly-board|hex-jelly)-[\w-]+\.js$/),
+  classic: chunk(() => import("@/lib/scene/classic-board"), /\/classic-board-[\w-]+\.js$/),
 };
-const loadLand = (look: LandLook): Promise<typeof import("@/lib/scene/jelly-board") | typeof import("@/lib/scene/classic-board")> =>
-  withChunkRecovery<typeof import("@/lib/scene/jelly-board") | typeof import("@/lib/scene/classic-board")>(
-    () => landModules[look].load(),
-    (url) => {
-      try {
-        const asset = new URL(url, location.href);
-        const names = look === "classic" ? /\/classic-board-[\w-]+\.js$/ : /\/(jelly-board|hex-jelly)-[\w-]+\.js$/;
-        // Vite's preload links identify this build's exact entry/dependency URLs; retries only change the query.
-        return asset.origin === location.origin && names.test(asset.pathname) &&
-          [...document.querySelectorAll<HTMLLinkElement>('link[rel="modulepreload"],link[rel="preload"][as="script"]')]
-            .some((link) => new URL(link.href).pathname === asset.pathname);
-      } catch { return false; }
-    },
-  );
+const loadLand = (look: LandLook) => landModules[look].load();
 const JELLY_RETRY_MS = 4000;
 // The jelly pieces (#638, pieces-jelly-prompt.md); ?pieces=slab keeps the slab pieces (for the classic look, #641).
 const JELLY_PIECES = (() => {
