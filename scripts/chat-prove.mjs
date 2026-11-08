@@ -1039,6 +1039,13 @@ try {
   check(await chatOpen(), "Enter with focus on the page still opens the chat and focuses the input");
   await a.page.getByPlaceholder("Say something…").press("Escape");
   await a.page.getByRole("button", { name: "Open chat" }).waitFor();
+  // #1449 item 17: with a placement pending, Enter confirms it (PlaceChip) and the chat stays closed.
+  await a.page.evaluate(() => window.__emberisle.getState().setPendingPlace({ kind: "hex", id: "h0" }));
+  await a.page.getByTestId("place-chip").waitFor();
+  await a.page.evaluate(() => document.activeElement?.blur());
+  await a.page.keyboard.press("Enter");
+  await a.page.getByTestId("place-chip").waitFor({ state: "detached", timeout: 5000 });
+  check((await chatOpen()) === false && (await a.page.evaluate(() => window.__emberisle.getState().pendingPlace)) === null, "Enter with a placement pending confirms it and leaves the chat closed");
 
   // 5. Phone: the open dock is a bottom sheet, and the tap that closes it does not reach the board.
   await phone.page.getByRole("button", { name: "Open chat" }).waitFor();
