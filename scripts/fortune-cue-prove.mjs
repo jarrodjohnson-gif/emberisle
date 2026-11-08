@@ -58,7 +58,8 @@ try {
         }, { hidden, bought, newTurn, ore, phase, playedCard });
       const button = page.getByTestId("fortunes-button");
       const glow = page.getByTestId("fortune-cue-glow");
-      const label = async () => (await button.textContent()).trim();
+      // #1429: the desktop dock draws "<label>" over "N held" (docs/design/desktop-dock-1274); read as "<label> · N" to compare.
+      const label = () => button.evaluate((el) => { const n = el.querySelector(".desk-name"), w = el.querySelector(".desk-why")?.textContent ?? ""; return n && / held$/.test(w) ? `${n.textContent} · ${w.replace(/ held$/, "")}` : el.textContent.trim(); });
       const noBadge = () => button.evaluate((el) => ({ attr: el.dataset.playable ?? null, content: getComputedStyle(el, "::after").content }));
       const mark = () => glow.evaluate(async (el) => { el.__cue = (el.__cue ?? 0) + 1; await Promise.all(el.getAnimations().map((a) => a.ready)); return el.getAnimations().map((a) => a.startTime); });
       const marked = () => glow.evaluate((el) => ({ cue: el.__cue ?? 0, starts: el.getAnimations().map((a) => a.startTime) }));

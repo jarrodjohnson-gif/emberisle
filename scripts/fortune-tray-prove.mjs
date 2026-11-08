@@ -53,6 +53,9 @@ const errors = [];
 let code = 0;
 try {
   for (const v of VIEWS) {
+    // #1429: a wide screen with a mouse has the desktop dock: Fortunes reads "<label>" over "N held" and never leaves its
+    // place, the buy tile reads "Buy fortune", and the deck count is the meta line's "Deck N" (docs/design/desktop-dock-1274).
+    const dock = !v.touch;
     const ctx = await browser.newContext({ viewport: { width: v.width, height: v.height }, hasTouch: !!v.touch, isMobile: !!v.touch });
     const page = await ctx.newPage();
     page.on("console", (m) => m.type() === "error" && errors.push(`${v.tag}: ${m.text()}`));
@@ -106,10 +109,10 @@ try {
         stale: [...bar.querySelectorAll("button")].map((b) => b.textContent.trim()).filter((t) => /knight|Wayfarer card|Path fortune|Plenty|Monopoly/.test(t)),
       };
     });
-    assert.deepEqual(row.fortunes, ["Play fortune · 6"], `${v.tag}: one fortunes button with the number held, got ${JSON.stringify(row.fortunes)}`);
+    assert.deepEqual(row.fortunes, [dock ? "Play fortune6 held" : "Play fortune · 6"], `${v.tag}: one fortunes button with the number held, got ${JSON.stringify(row.fortunes)}`);
     // #776: the deck count sits on the Fortune buy tile and in its label.
-    assert.equal(await page.getByTestId("deck-left").textContent(), `${row.deck} left`, `${v.tag}: the buy tile shows the deck count`);
-    assert.equal(await page.getByTestId("build-card").getAttribute("aria-label"), `Fortune, ${row.deck} left in deck`, `${v.tag}: the buy tile's label says how many are left`);
+    assert.equal(await page.getByTestId(dock ? "deck-count" : "deck-left").textContent(), dock ? `Deck ${row.deck}` : `${row.deck} left`, `${v.tag}: the buy tile shows the deck count`);
+    assert.equal(await page.getByTestId("build-card").getAttribute("aria-label"), `${dock ? "Buy fortune" : "Fortune"}, ${row.deck} left in deck`, `${v.tag}: the buy tile's label says how many are left`);
     assert.equal(row.selects, 0, `${v.tag}: no <select> on the page`);
     assert.deepEqual(row.stale, [], `${v.tag}: no per-fortune buttons left in the row`);
     // The row's buttons are 44 px on a phone, as the other build buttons are (the desktop row is 32 px under a fine pointer).
@@ -326,8 +329,8 @@ try {
     await page.getByTestId("plenty-chip-wool").click();
     await page.getByTestId("fortune-play-plenty").click();
     await closed();
-    assert.equal(await button.count(), 0, `${v.tag}: no My fortunes button with no held fortunes`);
-    assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), "Trade", `${v.tag}: focus falls to Trade`);
+    assert.equal(dock ? await button.getAttribute("aria-disabled") : await button.count(), dock ? "true" : 0, `${v.tag}: no My fortunes button with no held fortunes (the dock greys it in place)`);
+    assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), dock ? "Fortunes0 held" : "Trade", `${v.tag}: focus falls to Trade (the dock keeps it on Fortunes)`);
     await craft({ plenty: 1 }, {}, { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 });
     await open();
 
