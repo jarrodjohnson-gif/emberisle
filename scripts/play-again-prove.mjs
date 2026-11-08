@@ -122,12 +122,25 @@ try {
     throw Error(`${label}: ${JSON.stringify(await look(page))}`);
   }
   const tagsAre = (want) => (v) => JSON.stringify(v.tags) === JSON.stringify(want);
-  // What a screen reader hears for a player's row: the phone row is a button, the desktop row a table row.
-  // A miss fails with the list's accessibility tree, so the message shows what was read.
-  async function heard(s, touch, re, n, label) {
-    const got = await s.page.getByRole(touch ? "button" : "row", { name: re }).count();
-    if (got !== n) assert.fail(`${label}: ${got} rows named ${re}, want ${n}\n${await s.page.getByTestId("win-table-wrap").ariaSnapshot()}`);
+  // What a screen reader hears for each player, read from Chromium's accessibility tree: the phone row's button, or the
+  // desktop table's name cell (a table is read cell by cell).
+  async function heard(s) {
+    const cdp = await s.page.context().newCDPSession(s.page);
+    const { root } = await cdp.send("DOM.getDocument", { depth: 0 });
+    const names = {};
+    for (const id of ["p0", "p1", "p2", "p3"]) {
+      const row = `[data-testid="win-row"][data-player="${id}"]`;
+      const { nodeId } = await cdp.send("DOM.querySelector", { nodeId: root.nodeId, selector: `button${row}, tr${row} > td:first-child` });
+      const { nodes } = await cdp.send("Accessibility.getPartialAXTree", { nodeId, fetchRelatives: false });
+      names[id] = nodes[0].name?.value;
+    }
+    await cdp.detach();
+    return names;
   }
+  // The name each row should read: the player, what its tag says, then (on the phone row) the total.
+  const TOTALS = { p0: 11, p1: 9, p2: 9, p3: 0 };
+  const SAID = { yes: " , wants to play again", away: " Away", none: "" };
+  const expectNames = (touch, tags) => Object.fromEntries(Object.entries(tags).map(([id, t]) => [id, `${NAMES[Number(id[1])]}${SAID[t]}${touch ? ` ${TOTALS[id]}` : ""}`]));
 
   for (const [width, height, touch, insets] of LIST) {
     const size = `${width}x${height}${insets ? " insets" : ""}`;
@@ -151,9 +164,7 @@ try {
     for (const s of screens) {
       const v = await until(s.page, tagsAre(start), `${s.tag}: host and bot tags`);
       assert.equal(v.count, "2 of 4 want another game", `${s.tag}: count`);
-      await heard(s, touch, /^Bartholomew Featherstonehaugh\s*, wants to play again\s*11$/, 1, `${s.tag}: the host's row name`);
-      await heard(s, touch, /✓/, 0, `${s.tag}: the visible tick is not read out`);
-      await heard(s, touch, /^Maximilian Oppenheimer III\s*9$/, 1, `${s.tag}: Maximilian's row before he says yes`);
+      assert.deepEqual(await heard(s), expectNames(touch, { p0: "yes", p1: "none", p2: "none", p3: "yes" }), `${s.tag}: row names`);
     }
     const before = await look(guest.page);
     assert.equal(before.waiting, "Waiting for Bartholomew Featherstonehaugh to start another.", `${size}: the waiting line is unchanged`);
@@ -172,7 +183,7 @@ try {
     for (const s of screens) {
       const v = await until(s.page, tagsAre(all), `${s.tag}: Maximilian's tag`);
       assert.equal(v.count, "4 of 4 want another game");
-      await heard(s, touch, /^Maximilian Oppenheimer III\s*, wants to play again\s*9$/, 1, `${s.tag}: Maximilian's row name`);
+      assert.deepEqual(await heard(s), expectNames(touch, { p0: "yes", p1: "yes", p2: "yes", p3: "yes" }), `${s.tag}: row names`);
       assert.deepEqual(v.cut, [], `${s.tag}: no tag is cut or over the total`);
       assert.ok(v.under, `${s.tag}: on the table the tag sits under the name`);
       // The desktop table already runs past its edge with these names (#748); below it is proved no wider with the tags.
@@ -215,7 +226,7 @@ try {
     for (const s of screens) {
       const v = await until(s.page, tagsAre({ ...start, p1: "Away" }), `${s.tag}: away`);
       assert.equal(v.count, "2 of 3 want another game");
-      await heard(s, touch, /^Guinevere Wigglesworth-Smythe\s*Away\s*9$/, 1, `${s.tag}: Guinevere's row name`);
+      assert.deepEqual(await heard(s), expectNames(touch, { p0: "yes", p1: "away", p2: "none", p3: "yes" }), `${s.tag}: row names`);
     }
     await guest.page.screenshot({ path: `test-results/play-again-away-${width}x${height}.png` });
     guin = await guinevere();
