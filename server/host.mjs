@@ -15,7 +15,7 @@ import { PROTO } from "../src/lib/net/proto.ts";
 import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
 import { PROFILE_TYPES, profileGate, profileHandler, seatCredential, seatProfile, tableCard, watchRefusal } from "./profile-protocol.mjs";
-import { fingerprint, openProfiles, ProfileError, redactOutcome, redactRows, UUID } from "./profiles.mjs";
+import { fingerprint, openProfiles, ProfileError, redactOutcome, redactRows, redactText, UUID } from "./profiles.mjs";
 import { advanceRoomNeeds, restoredNeed, validNeeds } from "./needs.mjs";
 import { getOpenTables, maybeReleaseOpenSlot, registerOpenTable, unregisterOpenTable } from "./open-table.mjs";
 import { OUTCOME_V, isTime, openJournal, validOutcome, writeDurable } from "./result-journal.mjs";
@@ -154,7 +154,7 @@ const RESULTS = path.resolve(process.env.RESULTS_DIR ?? fileURLToPath(new URL(".
 // Proof-only fault points (#889). RESULT_FAULT="room-before:fail:2,journal-after:exit" fails that commit point N times
 // (default once), or kills the host there with no exit flush, as a crash or power cut would. The points are start-, room-
 // and journal-, each -before or -after its durable write, receipt-, before or after the profile store's result
-// transaction (#890), and redact-, before or after each startup rewrite of a pending outcome or room for a deleted profile (#891).
+// transaction (#890), and redact-, before or after each startup rewrite of a pending outcome, room or file kept for repair for a deleted profile (#891, #1393).
 const FAULTS = new Map(
   String(process.env.RESULT_FAULT ?? "")
     .split(",")
@@ -482,7 +482,7 @@ function savedRoster(saved) {
 async function load() {
   let names;
   try {
-    names = readdirSync(ROOMS).filter((n) => n.endsWith(".json"));
+    names = readdirSync(ROOMS);
   } catch {
     names = [];
   }
@@ -491,7 +491,26 @@ async function load() {
   // Profile deletion (#891) left these for the host: before anything is recorded or served, each pending outcome naming a
   // deleted profile is rewritten without it, one durable file at a time. An interrupted pass resumes on the next start.
   const gone = profiles.tombstoned;
+  if (!profiles.ready) console.error(`profiles: store unavailable (${profiles.reason}); pending outcomes and saved rooms keep any deleted profile until a start with the store available redacts them`);
   let redacted = 0;
+  // Files kept only for repair by hand (#1393) are redacted too. A fenced room keeps its suffix, so it never plays again, and
+  // an unreadable pending outcome keeps its name, so it still fences its game.
+  for (const [dir, name] of [...journal.unreadable().map((id) => [journal.dir, `${id}.json`]), ...names.filter((n) => n.endsWith(".json.fenced")).map((n) => [ROOMS, n])]) {
+    let text;
+    try {
+      text = readFileSync(path.join(dir, name), "utf8");
+    } catch (err) {
+      console.error(`profiles: cannot read ${name} to redact deleted profiles (${err.message})`);
+      continue;
+    }
+    const clean = redactText(text, gone);
+    if (clean === null) continue;
+    fault("redact-before");
+    await writeDurable(dir, name, clean);
+    redacted++;
+    console.log(`profiles: redacted a deleted profile from ${name}, kept for repair`);
+    fault("redact-after");
+  }
   for (const o of journal.pending()) {
     const clean = redactOutcome(o, gone);
     if (!clean) continue;
@@ -501,7 +520,7 @@ async function load() {
     console.log(`profiles: redacted a deleted profile from the pending outcome of game ${o.gameId}`);
     fault("redact-after");
   }
-  for (const name of names) {
+  for (const name of names.filter((n) => n.endsWith(".json"))) {
     const file = path.join(ROOMS, name);
     let saved;
     try {

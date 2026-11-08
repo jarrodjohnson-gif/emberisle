@@ -170,6 +170,7 @@
     "result-journal-prove": "node --import ./server/register.mjs server/result-journal-prove.mjs",
     "profile-results-prove": "node --import ./server/register.mjs server/profile-results-prove.mjs",
     "profile-deletion-prove": "node --import ./server/register.mjs server/profile-deletion-prove.mjs",
+    "profile-rename-cap-prove": "node --import ./server/register.mjs server/profile-rename-cap-prove.mjs",
     "trade-hold-prove": "node --import ./server/register.mjs server/trade-hold-prove.mjs",
     "seat-secret-log-prove": "node --import ./server/register.mjs server/seat-secret-log-prove.mjs",
     "preseat-prove": "node --import ./server/register.mjs server/preseat-prove.mjs",

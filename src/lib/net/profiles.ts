@@ -46,6 +46,7 @@ const messages: Record<string, string> = {
   busy: "The host is busy. Try again in a moment.",
   invalid: "Check the highlighted fields.",
   loginTaken: "Choose another login.",
+  loginLimit: "You have changed your login too often. You can switch back to an old one.",
   signInFailed: "Couldn't sign in. Check your login and PIN, or try again later.",
   signedOut: "Signed out on this device. Sign in again.",
   slowDown: "Slow down.",
