@@ -20,20 +20,21 @@ Sizes: 430 x 932, 390 x 844, 375 x 812, 820 x 1180, 844 x 390.
 
 ## Measurements
 
-Room for the status is the header width minus the code and one 8 px gap. Today's status is the box it gets at the end of the Table row. "Reachable" is the connection line.
+Room for the status is the header width minus the code and one 8 px gap. Today's status box is what it gets at the end of the Table row.
 
-| Size | Today: status width | Today: connection line | A: room for status | C: room for status | Code box A / C |
+| Size | Today: status box | Today: connection line | A: room for status | C: room for status | Code box A / C |
 |---|---|---|---|---|---|
-| 430 x 932 | 140 px | fits | 266 px | 276 px | 98 x 44 / 88 x 44 |
-| 390 x 844 | 100 px | **cut off** | 236 px | 246 px | 88 x 44 / 78 x 44 |
-| 375 x 812 | 93 px | **cut off** | 228 px | 238 px | 89 x 44 / 79 x 44 |
-| 820 x 1180 | 286 px | fits | 411 px | 421 px | 99 x 44 / 89 x 44 |
-| 844 x 390 | 60 px | **both lines cut off** | 180 px | 190 px | 104 x 44 / 94 x 44 |
+| 430 x 932 | 140 px | fits | 272 px | 282 px | 92 x 44 / 82 x 44 |
+| 390 x 844 | 100 px | **cut off** | 240 px | 250 px | 84 x 44 / 74 x 44 |
+| 375 x 812 | 93 px | **both lines cut off** | 231 px | 241 px | 86 x 44 / 76 x 44 |
+| 820 x 1180 | 286 px | fits | 401 px | 411 px | 109 x 44 / 99 x 44 |
+| 844 x 390 | 60 px | **both lines cut off** | 178 px | 188 px | 106 x 44 / 96 x 44 |
 
-- The longest connection line ("Reconnecting · 2999 ms") needs 151 px. It fits in A and C at all five sizes (the injected text was measured, `worstCase` in the JSON). Today it does not fit at 390, 375 or 844 x 390.
-- Tap target: the code stays a 44 px tall button in C. Width is the text plus 8 px each side, 78 px at the narrowest (min 72 px). The 44 px height and the 44 px minimum width hold at every size. The header row stays 44 px, so no row grows or moves; the chat panel is the same size in all three (for example 458 px tall at 390 x 844, 486 x 288 sideways).
-- Row 2 is Table 58, Play games 76, Rules 74 px, all 44 tall, in all three.
-- Sideways, the header is the left column (292 px). Code plus status share it; the chat still runs from the top.
+- **Worst case, measured against the box.** The longest line ("Reconnecting · 2999 ms") has a text width of 151 px. The check injects that text and measures it against the status box it sits in and the header, not against itself. It counts as fitting only if the text is inside the box (box 155 px wide, no scroll overflow in the line or the box), the box stays inside the header, and the code button keeps its width. In A and C it passes at all five sizes (`worstCase` in the JSON; the status box grows from its resting 109 to 118 px to 155 px, and the least room is 178 px at 844 x 390). Today the same check fails at 430, 390, 375 and 844 x 390, where the box is 140, 100, 93 and 60 px. It passes today only at 820 x 1180 (box 286 px).
+- **Underline, measured.** In C the code button computes `text-decoration: underline dotted` with `text-underline-offset: 6px`. The code text inside it inherits the offset and is painted underlined (see the pictures). In A it is `none` with an `auto` offset.
+- **Tap target.** The code stays a 44 px tall button in C. Width is the text plus 8 px each side, 74 px at the narrowest, above the 72 px minimum and the 44 px minimum. The header row stays 44 px, so no row grows or moves. The chat panel is the same size in all three states (for example 332 x 458 at 390 x 844, 486 x 288 sideways).
+- **Row 2.** Table 58, Play games 76 and Rules 74 px, all 44 tall, in all three.
+- **Sideways.** The header is the left column (292 px). Code plus status share it; the chat still runs from the top.
 
 ## The spec rows (what a builder would do)
 
