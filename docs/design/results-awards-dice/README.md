@@ -8,7 +8,7 @@ One packet covers both issues, so the results screen is designed once.
 
 - **Awards:** every player who lost gets one funny, earned title, like "Trade broker · 3 trades with the table". The winner gets one only if a title is left over.
 - The title sits **inside the player's opened row**, above the score breakdown. With every row closed, nothing new shows.
-- **Dice story:** one calm strip under the list. It shows how often each sum from 2 to 12 came up, with a faint dashed line for the odds, and one sentence such as "9 came up 15 times (about 10 expected)."
+- **Dice story:** one calm strip under the list. It shows how often each sum from 2 to 12 came up, with a faint dashed line for the odds, and one sentence such as "4 came up 17 times (about 9 expected)."
 - Both show only on the results screen. Nothing is shown during play. Hidden counts stay hidden until the win.
 - Both load as **one new small download**, about 1.3 to 1.5 kB, so the results list itself does not grow.
 
@@ -16,7 +16,39 @@ One packet covers both issues, so the results screen is designed once.
 
 The pictures come from a real game. The real rules and the real bots played it to the end. The real host then ran the winning move, and the browser joined as Jarrod through that host. See [How it was made](#how-it-was-made).
 
-RESULTS_TABLE
+Jarrod won 10 points to Maya 7, Josh 6 and Bartholomew 6, after 113 rolls. The "open" pictures open Josh, a last-place player.
+
+| Size | Today | Proposal, rows closed | Josh opened |
+|---|---|---|---|
+| Big phone upright 430 × 932 | [before](before-430x932.png) | [after](after-430x932.png) | [open](open-430x932.png) |
+| Phone upright 390 × 844 | [before](before-390x844.png) | [after](after-390x844.png) | [open](open-390x844.png) |
+| Small phone upright 375 × 812 | [before](before-375x812.png) | [after](after-375x812.png) | [open](open-375x812.png) |
+| iPad upright 820 × 1180 | [before](before-820x1180.png) | [after](after-820x1180.png) | [open](open-820x1180.png) |
+| Phone sideways 844 × 390 | [before](before-844x390.png) | [after](after-844x390.png) | [open](open-844x390.png), [scrolled down](open-scrolled-844x390.png) |
+
+| Phone upright, today | Proposal, rows closed | Josh opened |
+|---|---|---|
+| ![today](before-390x844.png) | ![proposal](after-390x844.png) | ![opened](open-390x844.png) |
+
+| Phone sideways, proposal | Josh opened, scrolled down |
+|---|---|
+| ![proposal](after-844x390.png) | ![scrolled](open-scrolled-844x390.png) |
+
+### What the numbers say
+
+From the final run of [capture.mjs](capture.mjs). Full numbers are in [measurements.json](measurements.json).
+
+| Size | Dice strip height | Strip in view, rows closed | List scrolls, rows closed | List scrolls, Josh opened | Award line height |
+|---|---|---|---|---|---|
+| 430 × 932 | 118 px | yes | no | no | 24 px |
+| 390 × 844 | 111 px | yes | no | yes | 46 px (the fact wraps) |
+| 375 × 812 | 108 px | yes | no | yes | 46 px (the fact wraps) |
+| 820 × 1180 | 120 px | yes | no | no | 24 px |
+| 844 × 390 | 120 px | no, it starts under the fold | yes | yes | 24 px |
+
+- Every row stays 44 px. Nothing scrolls sideways. Every result button stays on screen at every size. Browser errors: 0.
+- The chip is 24 px tall. It is never on screen while every row is closed.
+- On the sideways phone the strip sits under the four rows, and its top shows. The list already scrolls there once a row opens (#748). The strip adds about 120 px of scrolling. It never covers the buttons.
 
 ## The design
 
@@ -69,9 +101,18 @@ How the titles are handed out:
 4. **The winner last.** The winner gets the first title nobody holds whose threshold they reach. If none is left, the winner gets no chip. The win is their moment.
 5. So each player holds at most one title, and every loser holds exactly one.
 
-A title means "best among those without one yet", not "best at the table". The fact line always shows the player's own true number. In the pictured game, Josh is Trade broker with 3 trades, and the winner made 7. The other choice is in [Questions](#questions-for-jarrod).
+A title means "best among those without one yet", not "best at the table". The fact line always shows the player's own true number. In the pictured game, Maya is "Hit by 7s" with 8 goods thrown away, while the winner threw away 13. The other choice is in [Questions](#questions-for-jarrod).
 
-AWARDS_SEEN
+### The awards in the pictured game
+
+| Player | Points | Award |
+|---|---|---|
+| Jarrod (won) | 10 | Ore baron · 63 ore from rolls |
+| Maya | 7 | Hit by 7s · threw away 8 goods on 7s |
+| Josh | 6 | Trade broker · 2 trades with the table |
+| Bartholomew | 6 | Wayfarer's favourite · lost 13 goods to steals |
+
+Every count is in `counters` in [measurements.json](measurements.json). On five more bot games, run while tuning, every player got a different title from the main list. "Dry spell" and "Good sport" were never needed. Shorter human games will reach them more often.
 
 ## What the host records
 
@@ -138,7 +179,7 @@ No existing test line changes.
 - [play.mjs](play.mjs) plays a whole four-seat game with the real `rules.ts` and the real bot brain in `ai.ts`, including table trades. It counts the proposed facts around each action, outside `rules.ts`. The dice are the real crypto dice.
 - [capture.mjs](capture.mjs) saves that game in [game.json](game.json): the state one move before the win, and the winning move.
 - It writes the room for the **real host** (`server/host.mjs`), connects four seats and a watcher over real sockets, and sends the winning move from the winner's socket. It checks that every view at the win carries every seat's counts and `rollSums`.
-- The browser then joins as seat p0 (Jarrod, the host) through that host, at device scale 2, with touch.
+- The browser then joins as seat p0 (Jarrod, the host) through that host, at device scale 2, with touch. Chromium 153.0.8010.12.
 - "Before" pictures are the real results screen, untouched.
 - **"After" and "open" pictures are a mock.** [mock.css](mock.css) and a little DOM add the chip to each row's region and the strip under the list. They are built in the page from the store's real state, using [awards.mjs](awards.mjs).
 - The run fails if: the list or rows are missing, a row is under 44 px, the list scrolls sideways, a result button leaves the screen, a chip shows with every row closed or outside the opened row, or the opened row has no chip.
