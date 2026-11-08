@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-export type CopyState<K extends string> = { what: K; text: string; ok: boolean } | null;
+type CopyState<K extends string> = { what: K; text: string; ok: boolean } | null;
 
 export function useCopy<K extends string>() {
   const [state, setState] = useState<CopyState<K>>(null);

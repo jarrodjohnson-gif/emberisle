@@ -222,7 +222,7 @@ const tradeSounds = import("../trade-sound");
 
 // The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when a bot's offer runs out
 // (20 s); it is null for a person's offer, which holds until it is answered (#1245).
-export interface OpenOffer {
+interface OpenOffer {
   tradeId: string;
   from: string;
   fromName: string;

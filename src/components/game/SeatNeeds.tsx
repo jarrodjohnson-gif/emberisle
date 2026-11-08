@@ -7,7 +7,7 @@ import { SeatDot } from '@/components/game/SeatDot';
 import { useGame } from '@/lib/game/store';
 import { RESOURCES, RESOURCE_LABEL } from '@/lib/game/types';
 
-export function useNeeds() {
+function useNeeds() {
   const mode = useGame(s => s.mode), seats = useGame(s => s.seats), local = useLocalNeeds();
   return mode === 'online'
     ? Object.fromEntries(seats.filter(s => s.player).map(s => [s.player!, s.needs ?? []]))

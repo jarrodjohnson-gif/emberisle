@@ -12,7 +12,7 @@ export function Lobby() {
 }
 
 // Fits host-issued code text; the view owns observation and cleanup.
-export function fitLobbyCode(el: HTMLElement, code: string) {
+function fitLobbyCode(el: HTMLElement, code: string) {
   if (el.textContent !== code) return;
   el.style.fontSize = "";
   const style = getComputedStyle(el);
