@@ -138,6 +138,8 @@ function Title({ arrive }: { arrive: boolean }) {
   const setHowTo = useGame.getState().setHowTo;
   const howTo = useGame((s) => s.howTo);
   const [join, setJoin] = useState("");
+  // #1449: Join or Watch with fewer than four characters says why nothing was sent, until the field changes.
+  const [shortCode, setShortCode] = useState(false);
   const [openMode, setOpenMode] = useState(false);
   // #766: the Profile sheet is open while this holds the button that opened it, where focus returns on close.
   const [profileOpener, setProfileOpener] = useState<HTMLElement | null>(null);
@@ -286,7 +288,7 @@ function Title({ arrive }: { arrive: boolean }) {
                 className="flex min-w-[11rem] flex-1 gap-2"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  if (join.length !== 4) return;
+                  if (join.length !== 4) return setShortCode(true);
                   // Enter does what the primary button does.
                   if (watchLink) watchTable(join);
                   else useGame.getState().joinTable(join);
@@ -294,7 +296,10 @@ function Title({ arrive }: { arrive: boolean }) {
               >
                 <input
                   value={join}
-                  onChange={(e) => setJoin(e.target.value.toUpperCase())}
+                  onChange={(e) => {
+                    setJoin(e.target.value.toUpperCase());
+                    setShortCode(false);
+                  }}
                   placeholder="Code"
                   aria-label="Join code"
                   aria-describedby="code-help"
@@ -318,6 +323,7 @@ function Title({ arrive }: { arrive: boolean }) {
                 onFocus={online.prefetch}
                 onClick={() => {
                   if (join.length === 4) watchTable(join);
+                  else setShortCode(true);
                 }}
               >
                 Watch
@@ -327,9 +333,9 @@ function Title({ arrive }: { arrive: boolean }) {
             <p className="sr-only" aria-live="polite" data-testid="watch-announce">
               {showWatch ? "Watch available" : ""}
             </p>
-            {error ? (
+            {shortCode || error ? (
               <p role="alert" className="text-sm text-accent-ink">
-                {error}
+                {shortCode ? "Enter the 4-letter code." : error}
               </p>
             ) : null}
             <LazyBoundary failed={null}>
