@@ -76,6 +76,8 @@ const CEILINGS = [
   // 292 B. Ceilings decided by Opus per q-size-standing (PR #1401 review).
   { name: "ProfileForms", gzipBytes: 2350 },
   { name: "eye-off", gzipBytes: 310 },
+  // #767, 2026-11-07: the Profile sheet's Wins and Your games views; measured 2,248 B. New chunk, per q-size-standing.
+  { name: "ProfileRecords", gzipBytes: 2350 },
   // #1281, 2026-11-07: startup loading screen, preloaded beside index; measured 2,420 B gzip. Decided per q-size-standing; paired trim to follow.
   { name: "LoadingScreen", gzipBytes: 2600 },
   // #669, 2026-11-07: the Sound panel in the Table menu, loaded as the menu opens; measured 1,872 B gzip. New chunk only; the owner must OK this ceiling.

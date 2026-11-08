@@ -106,7 +106,7 @@ export interface TableEvents {
   seats(msg: { code: string; seats: Seat[] | PeekSeat[]; watching?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode }): void;
   // `you` is null on a watcher's state. `turnDeadline` is the host's clock (epoch ms) for the seat `turnPlayer`;
   // `serverNow` is the host's clock as it sent this.
-  state(msg: { you: string | null; game: GameState; legal: Legal; actionStamp?: ActionStamp; turnDeadline?: number | null; turnPlayer?: string | null; serverNow?: number }): void;
+  state(msg: { you: string | null; game: GameState; legal: Legal; actionStamp?: ActionStamp; turnDeadline?: number | null; turnPlayer?: string | null; serverNow?: number; result?: unknown }): void;
   rolled(msg: { dice: [number, number]; sum: number; gains: Gain[]; short: Resource[] }): void;
   chat(line: ChatLine): void;
   react(r: Reaction): void;

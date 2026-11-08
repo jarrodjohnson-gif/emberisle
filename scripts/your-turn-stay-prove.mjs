@@ -77,10 +77,23 @@ function recorders() {
         animation: css.animationName, duration: css.transitionDuration, easing: css.transitionTimingFunction };
       exiting.set(el, entry);
       window.__exits.push(entry);
-      setTimeout(() => { if (el.isConnected) { const mid = getComputedStyle(el); entry.mid = { opacity: Number(mid.opacity), transform: mid.transform, target: el.style.transform }; } }, 80);
     }
     for (const [el, entry] of exiting) if (!el.isConnected) { entry.gone = performance.now(); exiting.delete(el); }
   }).observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-leaving"] });
+  // The fade starts a frame after data-leaving is set, so a timer from that moment can land before it began or after it ended on a
+  // loaded runner. Sample the transition itself: when it runs, put it at 80 ms of its 160, read the frame, then let it carry on.
+  document.addEventListener("transitionrun", (e) => {
+    const el = e.target;
+    const entry = exiting.get(el);
+    if (!entry) return;
+    (entry.runs ??= []).push(e.propertyName);
+    if (entry.mid) return;
+    const fades = el.getAnimations().filter((a) => a.transitionProperty);
+    for (const a of fades) { a.pause(); a.currentTime = 80; }
+    const mid = getComputedStyle(el);
+    entry.mid = { opacity: Number(mid.opacity), transform: mid.transform, target: el.style.transform };
+    for (const a of fades) a.play();
+  }, true);
   const OBSTACLES = 'header > div, [data-testid="seat-strip"] > *, [data-testid^="rail-"], [data-hud-stack], [data-testid="banner"], [data-testid="turn-banner"], .hud-utilities, [data-testid="resource-flash"]';
   const box = (el) => {
     const r = el.getBoundingClientRect();
@@ -234,9 +247,12 @@ async function online(me, { cap = false } = {}) {
   const sent = { welcomes: 0 };
   let states = [];
   let sockets = [];
+  const requested = [];
   const { ctx, page, tag } = await open(view, {
     path: "/?host=ws://127.0.0.1:9",
     before: async (ctx, page) => {
+      page.on("request", (r) => r.url().includes("/src/components/game/moments.ts") && requested.push(r.url()));
+      if (process.env.YT_DELAY_MOMENTS && me === "p0") await page.route("**/src/components/game/moments.ts*", async (route) => { await new Promise((r) => setTimeout(r, Number(process.env.YT_DELAY_MOMENTS))); await route.continue(); });
       await ctx.addInitScript(() => localStorage.setItem("emberisle-seat", JSON.stringify({ code: "ABCD", secret: "s3cret" })));
       await page.routeWebSocket("ws://127.0.0.1:9/", (ws) => {
         sockets.push(ws);
@@ -270,7 +286,33 @@ async function online(me, { cap = false } = {}) {
       check(now.mounts === n0 && now.up === 0, `${tg} ${label}: no moment`, now);
     };
     const gone = (ms = 1000) => page.waitForFunction(() => !document.querySelector('[data-testid="turn-moment"]'), null, { timeout: ms });
-    const shows = (n) => page.waitForFunction((n) => window.__yt.length === n && document.querySelector('[data-testid="turn-moment"]'), n, { timeout: STEP_MS });
+    const shows = async (n) => {
+      try {
+        await page.waitForFunction((n) => window.__yt.length === n && document.querySelector('[data-testid="turn-moment"]'), n, { timeout: STEP_MS });
+      } catch (e) {
+        console.log(`shows(${n}) timed out`, JSON.stringify(await page.evaluate(() => {
+          const g = window.__emberisle.getState();
+          return { yt: window.__yt.length, element: !!document.querySelector('[data-testid="turn-moment"]'), seq: g.state?.seq, phase: g.state?.phase,
+            current: g.state?.current, localId: g.localId, synced: g.synced, spectator: g.spectator };
+        })), JSON.stringify({ momentsRequested: requested }));
+        throw e;
+      }
+    };
+    // TurnMoment is lazy (the moments chunk) and takes the first move it sees as its baseline, so the turn must not arrive before the
+    // chunk is in and the component has mounted: a turn that lands first is the baseline and shows nothing.
+    const momentsMounted = async () => {
+      await page.evaluate(async () => {
+        await import("/src/components/game/moments.ts");
+        for (let i = 0; i < 3; i++) await new Promise((r) => requestAnimationFrame(r));
+      });
+    };
+    // The entry fade (turn-stay-in) has finished, so an exit starts from the full pill: ended mid-entry it freezes at the fade's
+    // current opacity, which is near 0 on a loaded runner and leaves no opacity to fade.
+    const settled = () => page.waitForFunction(() => {
+      const el = document.querySelector('[data-testid="turn-moment"]');
+      const entry = el?.getAnimations().find((a) => a.animationName === "turn-stay-in");
+      return entry?.playState === "finished";
+    }, null, { timeout: STEP_MS });
     const faded = async (label) => {
       const exit = await page.evaluate(() => window.__exits.at(-1));
       check(exit?.gone - exit?.at >= 140 && exit?.gone - exit?.at < 1000 && exit?.pointer === "none" && exit?.hidden === "true" && exit?.animation === "none" && exit?.duration.split(", ").every(v => v === "0.16s") && exit?.easing === "cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)" && exit?.mid?.target === "scale(0.97)" && exit?.mid?.opacity > 0 && exit?.mid?.opacity < 1, `${tg} ${label}: pointer-transparent 160 ms fade`, exit);
@@ -289,6 +331,7 @@ async function online(me, { cap = false } = {}) {
     await stays("a bot's turn", 0);
 
     // The turn arrives: one moment, with the seat's dot, and it stays.
+    await momentsMounted();
     push(at({ turn: 3, phase: "roll", current: me }));
     await shows(1);
     await page.waitForFunction(() => window.__yt[0]?.bg, null, { timeout: STEP_MS });
@@ -334,12 +377,14 @@ async function online(me, { cap = false } = {}) {
     // The person acting ends it (Roll), and so does the turn passing on.
     push(at({ turn: 5, phase: "roll", current: me }));
     await shows(3);
+    await settled();
     push(at({ turn: 5, phase: "main", current: me }));
     await gone();
     check(true, `${tg} the person rolling ends it`);
     await faded("roll");
     push(at({ turn: 6, phase: "roll", current: me }));
     await shows(4);
+    await settled();
     push(at({ turn: 6, phase: "main", current: notMe }));
     await gone();
     check(true, `${tg} the turn passing on ends it`);

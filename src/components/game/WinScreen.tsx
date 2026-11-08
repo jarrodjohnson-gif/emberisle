@@ -10,7 +10,8 @@ import { WinList, winList } from "@/components/game/chunks";
 import { useFocusTrap } from "@/lib/focus-trap";
 import type { PlayerState } from "@/lib/game/types";
 
-export type Row = { p: PlayerState; outposts: number; strongholds: number; path: boolean; army: boolean; hiddenVp: number; total: number };
+// `note` is the row's profile line (#767), only when a seat in this game started bound to a profile.
+export type Row = { p: PlayerState; outposts: number; strongholds: number; path: boolean; army: boolean; hiddenVp: number; total: number; note?: string };
 
 // Build bible 4.7: the island stays visible. "Look around" hides the panel and leaves a small chip.
 export function WinScreen() {
@@ -33,6 +34,8 @@ function Panel() {
   const [resting, setResting] = useState(false);
   const mode = useGame((s) => s.mode);
   const spectator = useGame((s) => s.spectator);
+  // #767: the host's committed profile totals for this game. Never counted here, so a repeated state cannot add a win.
+  const result = useGame((s) => (s.mode === "online" ? s.gameResult : null));
   // The lobby's host test (EmberisleApp), so a handed-off host gets the button.
   const isHost = useGame((s) => s.seats.find((x) => x.id === s.seatId)?.host ?? s.isHost);
   const hostName = useGame((s) => s.seats.find((x) => x.host)?.name);
@@ -73,6 +76,13 @@ function Panel() {
         army: state.largestArmy === p.id,
         hiddenVp: p.hidden.vp,
         total: totalVP(state, p.id),
+        note: !result?.tracked
+          ? undefined
+          : !Object.hasOwn(result.wins, p.id)
+            ? "Not tracked"
+            : result.wins[p.id] === null
+              ? "Saving record…"
+              : `${result.wins[p.id]} profile win${result.wins[p.id] === 1 ? "" : "s"}`,
       };
     })
     .sort((a, b) => Number(b.p.id === winner.id) - Number(a.p.id === winner.id) || b.total - a.total);
@@ -140,6 +150,7 @@ function Panel() {
                   <td className="px-1 py-2 short:py-0.5 short:px-1 text-left font-medium sm:px-2 whitespace-nowrap short:text-xs">
                     <SeatDot color={r.p.color} className="mr-1.5 size-3 align-[-2px]" />
                     {r.p.name}
+                    {r.note ? <span data-testid="win-profile" className="block pl-[18px] text-xs font-normal text-muted">{r.note}</span> : null}
                   </td>
                   <td className={cell}>{r.outposts}</td>
                   <td className={cell}>{r.strongholds}</td>
@@ -177,6 +188,7 @@ function Panel() {
         <p data-testid="win-action" className="mt-2 short:mt-0.5 text-sm short:text-xs text-muted">
           {action} · {reason?.points ?? winning.total} points, target {reason?.target ?? victoryTarget(state)}.
         </p>
+        {result && !result.tracked ? <p data-testid="win-untracked" className="mt-1 text-sm short:text-xs text-muted">This game isn't tracked.</p> : null}
         <div className={`win-equation ${phone ? "short:hidden!" : ""}`} data-testid="win-reason">{contribution.map((part, i) => <span key={part}>{i > 0 ? "+ " : ""}{part}</span>)}</div>
         <div data-testid="win-table-wrap" className={`mt-4 min-h-0 overflow-auto ${phone ? "border-t border-border pt-2 text-left short:mt-1 short:pt-0" : "short:mt-1.5"}`}>
           {phone ? <LazyBoundary failed={table}><WinList rows={rows} /></LazyBoundary> : table}

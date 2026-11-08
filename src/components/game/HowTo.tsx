@@ -49,11 +49,11 @@ export function HowTo({ onClose }: { onClose: () => void }) {
       aria-modal="true"
       aria-labelledby="howto-title"
       ref={dialogRef}
-      className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-safe sm:items-center"
+      className="help-wash absolute inset-0 z-30 flex items-end justify-center sm:items-center"
     >
-      <div className="flex max-h-[80dvh] w-full max-w-md flex-col rounded-sheet border border-white/50 bg-surface">
-        <div className="flex shrink-0 items-start justify-between gap-3 px-5 pb-1 pt-5">
-          <h2 id="howto-title" className="font-display text-2xl">How to play</h2>
+      <div className="flex max-h-[80dvh] w-full max-w-md flex-col rounded-sheet bg-surface shadow-[var(--shadow-sheet)]">
+        <div className="flex shrink-0 items-center justify-between gap-3 px-4 pb-1 pt-4">
+          <h2 id="howto-title" className="text-title">How to play</h2>
           <Button ref={closeRef} variant="ghost" size="icon" className={phone ? "size-11" : undefined} onClick={onClose} aria-label="Close" back>
             <X className="size-4" />
           </Button>
@@ -63,7 +63,7 @@ export function HowTo({ onClose }: { onClose: () => void }) {
           role="region"
           aria-label="Rules and setup"
           tabIndex={0}
-          className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-sheet px-5 pb-5 pt-3 text-sm leading-relaxed text-zinc-600 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--ink)]"
+          className="help-scroll min-h-0 flex-1 space-y-3 overflow-y-auto rounded-sheet px-4 pb-4 pt-2 text-[0.9375rem] leading-[1.375rem] text-fg focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--ink)]"
         >
           <p>Win at {target} points.</p>
           <p>Each turn: roll. Matching numbers pay goods from tiles you touch. {wayfarerRules(mode)}</p>

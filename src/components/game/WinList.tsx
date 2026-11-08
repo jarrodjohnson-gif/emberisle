@@ -45,7 +45,10 @@ export function WinList({ rows }: { rows: Row[] }) {
                   className="flex min-h-11 w-full items-center gap-2.5 pr-1.5 pl-2 text-left text-body text-fg focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sea-ink"
                 >
                   <SeatDot color={r.p.color} className="size-3 flex-none" />
-                  <span className={`min-w-0 flex-1 ${on ? "py-[11px]" : "truncate"}`}>{r.p.name}</span>
+                  <span className={`min-w-0 flex-1 ${on ? "py-[11px]" : "truncate"}`}>
+                    {r.p.name}
+                    {r.note ? <span data-testid="win-profile" className="block truncate text-caption text-muted">{r.note}</span> : null}
+                  </span>
                   <span data-testid="win-total" className="flex-none text-xl font-bold tabular-nums">{r.total}</span>
                   <svg viewBox="0 0 20 20" aria-hidden="true" className={`size-5 flex-none text-muted ${on ? "rotate-180" : ""}`}>
                     <path d="M5 7.5l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
