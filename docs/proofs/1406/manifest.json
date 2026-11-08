@@ -1,0 +1,17 @@
+{
+  "base": "b30170a21d57799191fe85c2ee377284c29abdc8",
+  "runtimeCommit": "e5d9b5dfb1cdf1f75a3b88c9ed52bb7c13b85b60",
+  "note": "Production long-name runs used identical source/proof bytes before their commit; hashes establish the tested files. Existing regression runs use the frozen runtime commit.",
+  "sourceFiles": {
+    "src/components/game/WinScreen.tsx": "33bf6a95a182dfb1dfb45ec4fa027bf9616e2ef055bfec43296108cc69d24e62",
+    "scripts/win-long-names-prove.mjs": "6777779ebc98d41b5dcf060c6d048874b8765e65ef81ea873b848876209e80d7",
+    "package.json": "e173ecd9900896c0a21f86c2b152d4d7806509d0f0fe043c06adfd3182ca7a6d",
+    ".github/workflows/ci.yml": "fd430d77e8ab8728123cafdfc9b20ef96ccc9a0d6e8f1e32e498085d7e82ee00"
+  },
+  "pictures": {
+    "after/844x390.png": "c998725b6d42c4f7f7a12cf073deb2ac757b02f877de099549e342f8357e2611",
+    "after/1280x720.png": "5a1310fbdf15a2a1b58d3dada0df6c45a96e2072aee243754d59206ff2ae12da",
+    "after/1024x768.png": "c62c479716cfa565e9f4df46cf2516ace2081d063e46db30acf3c99e8b754bf8",
+    "before/1280x720.png": "2ffd9558e6553435ecdae1504460aaa66b467065ee032347cb6508f57b74bb44"
+  }
+}
