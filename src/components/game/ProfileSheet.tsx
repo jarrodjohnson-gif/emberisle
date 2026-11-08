@@ -247,7 +247,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
           ) : null}
           <label className="flex min-h-11 items-center gap-3 text-sm text-fg">
             <input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} className="size-5 accent-[var(--ink)]" />
-            Remember me on this device
+            Remember me
           </label>
           {formError}
           {actions(
@@ -257,7 +257,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
           )}
         </form>
         <Button variant="secondary" className="w-full" onClick={() => { setErrors({}); setView(create ? "signin" : "create"); }}>
-          {create ? "I have a profile" : "Create profile"}
+          {create ? "Sign in instead" : "Create profile"}
         </Button>
         {guest}
       </>
