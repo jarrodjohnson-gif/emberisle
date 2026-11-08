@@ -68,6 +68,11 @@ try {
   if (names.length !== start.hi.vertices.length) throw new Error(`outpost buttons ${names.length} vs glow ${start.hi.vertices.length}`);
   if (new Set(names).size !== names.length) throw new Error(`two outpost buttons share a name: ${names.filter((n, i) => names.indexOf(n) !== i)}`);
   if (!names.every((n) => /^Corner: /.test(n))) throw new Error(`corner names: ${names.slice(0, 3)}`);
+  // #1449: a screen reader hears the game's words (forest, wood dock), never the code's keys (timber, harbor).
+  const CODE_WORDS = /\b(timber|clay|wool|grain|ore|waste|harbor|centre)\b|\(/;
+  if (names.some((n) => CODE_WORDS.test(n))) throw new Error(`corner names use code keys: ${names.filter((n) => CODE_WORDS.test(n)).slice(0, 3)}`);
+  if (!names.some((n) => / dock\b/.test(n))) throw new Error(`no corner names its dock: ${names.slice(0, 3)}`);
+  console.log(`setupSettle: game words only, e.g. "${names.find((n) => / dock\b/.test(n))}"`);
   if (box.width < 100 || box.height < 40) throw new Error(`the focused list is not visible: ${JSON.stringify(box)}`);
   mkdirSync("test-results", { recursive: true });
   await page.screenshot({ path: "test-results/keyboard-place-prove.png" });
@@ -360,6 +365,7 @@ try {
   if (hexNames.length !== robber.glow || new Set(hexNames).size !== hexNames.length || moved.hex !== hexB || moved.hex === robber.from) {
     throw new Error(`wayfarer: ${JSON.stringify({ hexNames, robber, moved })}`);
   }
+  if (hexNames.some((n) => CODE_WORDS.test(n))) throw new Error(`hex names use code keys: ${hexNames.filter((n) => CODE_WORDS.test(n))}`);
   // #437: a page that starts under reduced motion holds every mark at its base glow. The first page is parked so software GL has the CPU.
   await page.goto("about:blank");
   const still = await browser.newPage({ viewport: { width: 1280, height: 720 }, reducedMotion: "reduce" });
