@@ -218,7 +218,8 @@ body {
 .turn-instruction-move::before { background: #fff; }
 .goods-tray { background: transparent; }
 .hud-actions { display: flex; align-items: center; gap: 4px; padding: 4px; background: var(--table); border-radius: var(--radius-control); }
-.build-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; flex: 1; min-width: 0; }
+/* #1418: a tile is never narrower than its own caption; while there is room all four stay equal. */
+.build-grid { display: grid; grid-template-columns: repeat(4, minmax(min-content, 1fr)); gap: 4px; flex: 1; min-width: 0; }
 .build-tile { width: 100%; background: var(--table-raised); color: var(--table-ink); border-color: var(--table-line); }
 .build-tile[aria-disabled='true'] { color: var(--table-muted); }
 .build-tile [class*='text-muted'] { color: var(--table-muted); }
@@ -293,6 +294,8 @@ body {
   .trade-summary { min-height: 24px; }
 }
 .hud-stack .action-utilities, .end-footer { flex-shrink: 0; }
+/* #1418: Trade, the dice and End turn share the 260 px column's footer; at 15 px / 600 the buttons take 6 px sides to fit. */
+.end-footer > button { padding-left: 6px; padding-right: 6px; }
 .trade-above-chat { position: fixed; bottom: calc(var(--chat-sheet-height) + var(--keyboard-inset, 0px) + 8px); left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); z-index: 40; }
 .build-tile [data-testid^='cost-'] > span:first-child { height: 16px; padding-left: 1.5px; padding-right: 1.5px; }
 .build-tile [data-testid^='cost-'] svg { width: 9px; height: 9px; }
