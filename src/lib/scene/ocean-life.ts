@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { hashStr, mulberry32 } from "@/lib/utils";
 
-export type OceanSpecies = "dolphin" | "turtle" | "whale";
+type OceanSpecies = "dolphin" | "turtle" | "whale";
 type Lane = { angle: number; arc: number; direction: number };
 type Visit = Lane & { species: OceanSpecies; age: number; duration: number; radius: number };
 type Creature = { root: THREE.Group; tail?: THREE.Mesh; fins?: THREE.Mesh[]; breath?: THREE.Mesh; wake: THREE.Mesh };

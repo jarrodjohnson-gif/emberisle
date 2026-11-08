@@ -2,7 +2,7 @@
 // Software GL draws only one or two real frames a second here, so the proof swaps the composer's draw for a no-op
 // and counts what the loop decides to render (window.__isle.renders) at the browser's own frame rate.
 import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8098;

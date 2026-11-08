@@ -2,10 +2,12 @@
 // one chat button opens one panel with two tabs, Chat (the log, the six emoji, the composer) and Sounds & stickers.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MessageSquare, Volume2, VolumeX } from "lucide-react";
+import { SeatDot } from "@/components/game/SeatDot";
 import { EmojiRow, Emote, setTab, SoundsTab, useMutedSeats, useTalk, type ChatTab, type ReactLine } from "@/components/game/talk";
 import { useGame, type GameLogLine } from "@/lib/game/store";
 import type { ChatLine } from "@/lib/net/table";
 import { LazyBoundary } from "@/lib/lazy";
+import { OPEN_SOUND_EVENT } from "@/lib/sound-settings";
 import { cn } from "@/lib/utils";
 import { useViewport } from "@/lib/viewport";
 
@@ -42,7 +44,7 @@ function Line({ line, me }: { line: ChatLine; me: string }) {
   if (line.sound) {
     return (
       <li data-testid="sound-line" className="flex items-center break-words text-sm leading-snug text-zinc-700">
-        <span className="mr-1 inline-block size-2 shrink-0 rounded-full" style={{ background: line.color }} />
+        <SeatDot color={line.color} className="mr-1 size-2" />
         <span className="mr-1 font-medium">{line.name}</span>
         <Volume2 aria-hidden="true" className="mr-0.5 size-3.5 shrink-0" />
         {line.text.replace(/^🔊\s*/, "")}
@@ -51,7 +53,7 @@ function Line({ line, me }: { line: ChatLine; me: string }) {
   }
   return (
     <li className="break-words text-sm leading-snug text-zinc-900">
-      <span className="mr-1 inline-block size-2 rounded-full align-baseline" style={{ background: line.color }} />
+      <SeatDot color={line.color} className="mr-1 size-2 align-baseline" />
       <span className="mr-1 font-medium text-zinc-700">
         {line.name}
       </span>
@@ -64,7 +66,7 @@ function Line({ line, me }: { line: ChatLine; me: string }) {
 function ReactRow({ line, count }: { line: ReactLine; count: number }) {
   return (
     <li data-testid="react-line" data-emote={line.emote} className="flex items-center text-sm leading-snug text-zinc-700">
-      <span className="mr-1 inline-block size-2 shrink-0 rounded-full" style={{ background: line.color }} />
+      <SeatDot color={line.color} className="mr-1 size-2" />
       <span className="mr-1 font-medium">{line.name}</span>
       <Emote emote={line.emote} className="inline-flex size-5 shrink-0 items-center justify-center text-base leading-none" />
       {count > 1 ? <span className="ml-1 text-caption font-semibold tabular-nums">×{count}</span> : null}
@@ -328,6 +330,17 @@ function MuteMenu({ above = false }: { above?: boolean }) {
               </button>
             );
           })}
+          <button
+            type="button"
+            data-testid="chat-mute-sound"
+            onClick={() => {
+              setOpen(false);
+              window.dispatchEvent(new Event(OPEN_SOUND_EVENT));
+            }}
+            className="h-11 shrink-0 cursor-pointer rounded-control bg-glass px-3 text-left text-sm text-zinc-700 hover:text-zinc-900"
+          >
+            Sound settings
+          </button>
         </div>
       ) : null}
     </div>

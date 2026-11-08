@@ -1,0 +1,116 @@
+/* Design mock for #1304: chat and Table menu control consistency. Layered over the running game by capture.mjs.
+   Only the game's own tokens from src/styles.css. Not game code. Every rule is scoped to :root[data-mock-chat]. */
+
+/* 1. One control box, the same as the lobby's (#1303): 44 px, white, a 1 px control-line edge, 8 px corners, ink text. */
+:root[data-mock-chat] :is(
+  button[aria-label^="Open chat"], button[aria-label="Table menu"], [data-testid="chat-mute-toggle"],
+  button[aria-label="Minimize chat"], [data-testid^="chat-mute-seat-"], [role="tablist"][aria-label="Chat panel"] [role="tab"]
+) {
+  box-sizing: border-box; min-width: 44px; min-height: 44px;
+  border: 1px solid var(--control-line); border-radius: var(--radius-control);
+  background: var(--paper); color: var(--ink); backdrop-filter: none;
+}
+:root[data-mock-chat] :is(button, input, [role="tab"]):focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+
+/* 2. Surfaces: white, no blur. The desktop panel grows from 300 to 320 px so two boxed tabs, Mute and Minimize fit on one line. */
+:root[data-mock-chat] section[aria-label="Table chat"]:not([data-testid="chat-sheet"]) {
+  width: 320px; padding: 8px; gap: 8px; background: var(--paper); backdrop-filter: none;
+  border-radius: var(--radius-chip); box-shadow: 0 0 0 1px var(--line), var(--shadow-sheet);
+}
+:root[data-mock-chat] [data-testid="chat-sheet"] { gap: 8px; background: var(--paper); backdrop-filter: none; box-shadow: 0 -1px 0 var(--line), var(--shadow-sheet); }
+
+/* 3. Tabs: the lobby's tab look. Picked: white, ink text, a 3 px ink bar. Other: grey text. A long label takes two lines,
+   never "…". The icons go, so both labels fit beside Mute and Minimize. */
+:root[data-mock-chat] div:has(> [role="tablist"][aria-label="Chat panel"]),
+:root[data-mock-chat] [role="tablist"][aria-label="Chat panel"],
+:root[data-mock-chat] div:has(> div > [data-testid="chat-mute-toggle"]) { gap: 8px; }
+:root[data-mock-chat] [role="tablist"][aria-label="Chat panel"] [role="tab"] {
+  height: auto; padding: 0 6px; justify-content: center; text-align: center;
+  font-size: 15px; line-height: 18px; font-weight: 500; color: var(--muted); text-decoration: none;
+}
+:root[data-mock-chat] [role="tablist"][aria-label="Chat panel"] [role="tab"] > svg { display: none; }
+:root[data-mock-chat] [role="tablist"][aria-label="Chat panel"] [role="tab"] > span { overflow: visible; white-space: normal; text-overflow: clip; }
+:root[data-mock-chat] [role="tablist"][aria-label="Chat panel"] [role="tab"][aria-selected="true"] {
+  color: var(--ink); font-weight: 600; box-shadow: inset 0 -3px 0 var(--ink);
+}
+:root[data-mock-chat] button[aria-label="Minimize chat"] { padding: 0 12px; }
+
+/* Option B for the desktop panel, drawn for comparison: 300 px as today, so the tabs lose their boxes and keep today's
+   underline; everything else as above. */
+:root[data-mock-chat="300"] section[aria-label="Table chat"]:not([data-testid="chat-sheet"]) { width: 300px; }
+:root[data-mock-chat="300"] [role="tablist"][aria-label="Chat panel"] [role="tab"] { border-color: transparent; background: transparent; box-shadow: none; }
+:root[data-mock-chat="300"] [role="tablist"][aria-label="Chat panel"] [role="tab"][aria-selected="true"] { box-shadow: none; text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px; }
+
+/* 4. The field: white with the same edge, 15 px text (16 px on a touch screen, so iOS does not zoom), grey placeholder. */
+:root[data-mock-chat] #chat-input {
+  border: 1px solid var(--control-line); background: var(--paper); color: var(--ink);
+  padding: 0 12px; font-size: 15px;
+}
+@media (pointer: coarse) { :root[data-mock-chat] #chat-input { font-size: 16px; } }
+:root[data-mock-chat] #chat-input::placeholder { color: var(--muted); }
+:root[data-mock-chat] div:has(> #chat-input) { gap: 8px; }
+/* Send keeps today's ink fill (decision 4C); its label and Close's are 15 px like every other control. */
+:root[data-mock-chat] :is(#chat-input + button, button[aria-label="Minimize chat"]) { font-size: 15px; }
+
+/* 5. The log: 15 px lines. When nothing has been said, one grey line says so. */
+:root[data-mock-chat] [data-testid="chat-log"] > li { font-size: 15px; line-height: 20px; }
+:root[data-mock-chat] [data-testid="chat-log"]:not(:has(li))::before {
+  content: "No messages yet"; margin: auto; font-size: 13px; line-height: 18px; color: var(--muted);
+}
+
+/* 6. Emoji: no box (they are pictures), 8 px apart. On a 320 px phone they scroll as one row, half of the sixth showing. */
+:root[data-mock-chat] [data-testid="emoji-row"] { gap: 8px; }
+@media (max-width: 360px) and (orientation: portrait) {
+  :root[data-mock-chat] [data-testid="emoji-row"] { display: flex; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
+  :root[data-mock-chat] [data-testid="emoji-row"] > button { flex: 0 0 44px; scroll-snap-align: start; }
+}
+
+/* 7. Sounds & stickers: sound chips and quick lines get the box with chip corners (12 px); stickers stay pictures.
+   Everything 8 px apart. While more lies below, the bottom 24 px fades (capture.mjs sets data-more). */
+:root[data-mock-chat] [data-testid="sounds-tab"] { gap: 8px; }
+:root[data-mock-chat] :is([data-testid="soundboard"], [data-testid="presets"], [data-testid="stickers"]) { gap: 8px; margin-top: 0; }
+:root[data-mock-chat] :is([data-testid="soundboard"], [data-testid="presets"]) button {
+  min-height: 44px; padding: 0 12px; border: 1px solid var(--control-line); border-radius: var(--radius-chip);
+  background: var(--paper); color: var(--ink); font-size: 15px;
+}
+:root[data-mock-chat] [data-testid="sounds-tab"] > p { font-size: 13px; line-height: 18px; color: var(--muted); }
+:root[data-mock-chat] [data-more="true"] { mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent); }
+
+/* 8. Unread: the danger red, a 2 px white ring so it never melts into the button's edge, 12 px bold, "9+" past nine. */
+:root[data-mock-chat] [data-testid="chat-unread"] {
+  top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px;
+  background: var(--color-danger); box-shadow: 0 0 0 2px var(--paper); font-size: 12px; line-height: 20px; font-weight: 700;
+}
+
+/* 9. A send that failed: the words stay in the field and one line says so (capture.mjs adds it; see README). */
+.cm-failed { margin: 0; font-size: 13px; line-height: 18px; color: var(--color-danger); }
+
+/* 10. Table menu: a white sheet, 20 px corners. Every row is a 44 px target on the mist ground, 8 px apart, so each row
+   reads as tappable. The Water and View pairs use the tab look: the picked one white with the ink bar. */
+:root[data-mock-chat] [data-testid="table-menu"] {
+  gap: 8px; padding: 8px; border-radius: var(--radius-sheet); background: var(--paper);
+  box-shadow: 0 0 0 1px var(--line), var(--shadow-sheet);
+}
+:root[data-mock-chat] [data-testid="table-menu"] > :is(button, [role="group"]) {
+  min-height: 44px; border-radius: var(--radius-control); background: var(--ground); flex: none; font-size: 15px;
+}
+/* The pair does not fit beside its label in 240 px ("Overhead" ran past the sheet), so the label takes a line of its
+   own and the two choices split the row below it, 8 px apart. */
+:root[data-mock-chat] [data-testid="table-menu"] > [role="group"] { height: auto; flex-wrap: wrap; row-gap: 4px; padding: 8px 8px 8px 12px; }
+:root[data-mock-chat] [data-testid="table-menu"] > [role="group"] > span { flex: 1 0 100%; gap: 8px; margin-left: 0; }
+:root[data-mock-chat] [data-testid="table-menu"] > [role="group"] button {
+  flex: 1 1 0; min-width: 0; height: 44px;
+  padding: 0 8px; border: 1px solid var(--control-line); border-radius: var(--radius-control);
+  background: transparent; color: var(--muted); font-size: 15px; font-weight: 500;
+}
+:root[data-mock-chat] [data-testid="table-menu"] > [role="group"] button[aria-pressed="true"] {
+  background: var(--paper); color: var(--ink); font-weight: 600; box-shadow: inset 0 -3px 0 var(--ink);
+}
+:root[data-mock-chat] [data-testid="table-menu"] [data-testid="build-version"] { font-size: 12px; }
+
+/* 11. One layer at a time (the "proposed layers" pictures). Seat bubbles draw under the menu and every sheet (z 10, not
+   30). The top row (the menu button) sits above the phone chat's backdrop, so one tap on the menu button reaches it.
+   The rest of the rule, opening one closes the other, is behaviour; capture.mjs adds it to the page for those pictures. */
+:root[data-mock-layers] .seat-bubble { z-index: 10; }
+:root[data-mock-layers] .hud-header { z-index: 25; }
+:root[data-mock-layers] .hud-header:has(#table-menu) { z-index: 35; }

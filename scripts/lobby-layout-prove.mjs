@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const out = process.env.LOBBY_LAYOUT_OUT || "docs/proofs/1103";

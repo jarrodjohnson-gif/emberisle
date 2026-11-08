@@ -10,7 +10,7 @@
 // Run: npm run contrast-prove
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const cpuThrottle = Number(process.env.CONTRAST_PROVE_CPU_THROTTLE || 1);
@@ -75,6 +75,8 @@ try {
       bg: px(root.getPropertyValue("--color-bg").trim()),
       accentInk: px(root.getPropertyValue("--color-accent-ink").trim()),
       accent: px(root.getPropertyValue("--color-accent").trim()),
+      controlLine: px(root.getPropertyValue("--control-line").trim()),
+      ground: px(root.getPropertyValue("--ground").trim()),
     };
   });
   // The error line only appears after a failed join, so take its colour from the token the source names.
@@ -101,6 +103,12 @@ try {
   for (const [name, r] of checks) {
     console.log(`${r.toFixed(2)}:1  ${name}`);
     if (r < MIN) bad.push(`${name} is ${r.toFixed(2)}:1`);
+  }
+  // #1417: the seat-dot ring (--control-line) is a non-text edge, so it needs 3:1 on white and on mist (--ground).
+  for (const [name, bg] of [["white", [255, 255, 255]], ["mist (--ground)", read.ground]]) {
+    const r = ratio(read.controlLine, bg);
+    console.log(`${r.toFixed(2)}:1  seat-dot ring rgb(${read.controlLine}) on ${name} (needs 3:1)`);
+    if (r < 3) bad.push(`seat-dot ring on ${name} is ${r.toFixed(2)}:1`);
   }
   // The source must use the ink tokens where the error line and eyebrows are drawn.
   const app = readFileSync("src/components/game/EmberisleApp.tsx", "utf8");

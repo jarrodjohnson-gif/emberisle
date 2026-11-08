@@ -16,7 +16,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { preview } from "vite";
 
 const { chunkUrl } = await import("../src/lib/lazy.ts");

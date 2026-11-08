@@ -1,7 +1,7 @@
 // #826: the owner's blocked hex/token palette is 75% dimmed to black with readable light ink; the Wastes stay plain;
 // moving him clears the old hex. Run: node scripts/robber-hex-prove.mjs
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;

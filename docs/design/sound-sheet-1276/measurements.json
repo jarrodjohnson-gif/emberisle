@@ -1,0 +1,335 @@
+{
+  "chromium": "153.0.8010.12",
+  "results": [
+    {
+      "option": "a",
+      "hole": {
+        "top": 64,
+        "bottom": 176,
+        "left": 386
+      },
+      "viewport": "390x844",
+      "sheet": {
+        "x": 12,
+        "y": 64,
+        "w": 366,
+        "h": 601
+      },
+      "inside": true,
+      "hiddenBelow": 0,
+      "controls": 15,
+      "under44": [],
+      "sliderHit": [
+        44,
+        44,
+        44,
+        44,
+        44
+      ],
+      "fontSizes": [
+        12,
+        15,
+        20
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "w": 390,
+        "h": 844
+      },
+      "mapMoved": false
+    },
+    {
+      "option": "b",
+      "hole": {
+        "top": 64,
+        "bottom": 176,
+        "left": 386
+      },
+      "viewport": "390x844",
+      "sheet": {
+        "x": 0,
+        "y": 92,
+        "w": 390,
+        "h": 752
+      },
+      "inside": true,
+      "hiddenBelow": 0,
+      "controls": 14,
+      "under44": [],
+      "sliderHit": [
+        44,
+        44,
+        44,
+        44,
+        44
+      ],
+      "fontSizes": [
+        12,
+        15,
+        20
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "w": 390,
+        "h": 844
+      },
+      "mapMoved": false
+    },
+    {
+      "option": "c",
+      "hole": {
+        "top": 64,
+        "bottom": 176,
+        "left": 386
+      },
+      "viewport": "390x844",
+      "sheet": {
+        "x": 12,
+        "y": 64,
+        "w": 366,
+        "h": 551
+      },
+      "inside": true,
+      "hiddenBelow": 0,
+      "controls": 15,
+      "under44": [],
+      "sliderHit": [
+        44,
+        44
+      ],
+      "fontSizes": [
+        15,
+        20
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "w": 390,
+        "h": 844
+      },
+      "mapMoved": false
+    },
+    {
+      "option": "a",
+      "hole": {
+        "top": 64,
+        "bottom": 176,
+        "left": 280
+      },
+      "viewport": "844x390",
+      "sheet": {
+        "x": 280,
+        "y": 64,
+        "w": 552,
+        "h": 314
+      },
+      "inside": true,
+      "hiddenBelow": 22,
+      "controls": 15,
+      "under44": [],
+      "sliderHit": [
+        44,
+        44,
+        44,
+        44,
+        44
+      ],
+      "fontSizes": [
+        12,
+        15,
+        20
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "w": 844,
+        "h": 390
+      },
+      "mapMoved": false
+    },
+    {
+      "option": "b",
+      "hole": {
+        "top": 64,
+        "bottom": 176,
+        "left": 280
+      },
+      "viewport": "844x390",
+      "sheet": {
+        "x": 12,
+        "y": 19,
+        "w": 820,
+        "h": 352
+      },
+      "inside": true,
+      "hiddenBelow": 0,
+      "controls": 14,
+      "under44": [],
+      "sliderHit": [
+        44,
+        44,
+        44,
+        44,
+        44
+      ],
+      "fontSizes": [
+        12,
+        15,
+        20
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "w": 844,
+        "h": 390
+      },
+      "mapMoved": false
+    },
+    {
+      "option": "c",
+      "hole": {
+        "top": 64,
+        "bottom": 176,
+        "left": 280
+      },
+      "viewport": "844x390",
+      "sheet": {
+        "x": 272,
+        "y": 64,
+        "w": 560,
+        "h": 314
+      },
+      "inside": true,
+      "hiddenBelow": 16,
+      "controls": 15,
+      "under44": [],
+      "sliderHit": [
+        44,
+        44
+      ],
+      "fontSizes": [
+        15,
+        20
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "w": 844,
+        "h": 390
+      },
+      "mapMoved": false
+    },
+    {
+      "option": "a",
+      "hole": {
+        "top": 64,
+        "bottom": 710,
+        "left": 1008
+      },
+      "viewport": "1280x720",
+      "sheet": {
+        "x": 908,
+        "y": 64,
+        "w": 360,
+        "h": 601
+      },
+      "inside": true,
+      "hiddenBelow": 0,
+      "controls": 15,
+      "under44": [],
+      "sliderHit": [
+        44,
+        44,
+        44,
+        44,
+        44
+      ],
+      "fontSizes": [
+        12,
+        15,
+        20
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "w": 1280,
+        "h": 720
+      },
+      "mapMoved": false
+    },
+    {
+      "option": "b",
+      "hole": {
+        "top": 64,
+        "bottom": 710,
+        "left": 1008
+      },
+      "viewport": "1280x720",
+      "sheet": {
+        "x": 200,
+        "y": 186,
+        "w": 880,
+        "h": 348
+      },
+      "inside": true,
+      "hiddenBelow": 0,
+      "controls": 14,
+      "under44": [],
+      "sliderHit": [
+        44,
+        44,
+        44,
+        44,
+        44
+      ],
+      "fontSizes": [
+        12,
+        15,
+        20
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "w": 1280,
+        "h": 720
+      },
+      "mapMoved": false
+    },
+    {
+      "option": "c",
+      "hole": {
+        "top": 64,
+        "bottom": 710,
+        "left": 1008
+      },
+      "viewport": "1280x720",
+      "sheet": {
+        "x": 928,
+        "y": 64,
+        "w": 340,
+        "h": 559
+      },
+      "inside": true,
+      "hiddenBelow": 0,
+      "controls": 15,
+      "under44": [],
+      "sliderHit": [
+        44,
+        44
+      ],
+      "fontSizes": [
+        15,
+        20
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "w": 1280,
+        "h": 720
+      },
+      "mapMoved": false
+    }
+  ]
+}

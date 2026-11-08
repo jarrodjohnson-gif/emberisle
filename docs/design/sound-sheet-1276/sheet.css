@@ -1,0 +1,134 @@
+/* #1276 Sound sheet mocks. Only the game's own tokens (src/styles.css): white cards (--paper) on mist (--ground), ink text,
+   one ink fill for "on" and the filled part of a slider, 8 px gaps, 44 px targets, 20 px sheet corners, no blur.
+   Sizes: phone upright is the default; phone sideways is max-height 480 px landscape; desktop is 1000 px wide and up.
+   capture.mjs sets --mock-top (under the header), --mock-bottom (above the dock) and --mock-left (right of the
+   sideways dock) from the real HUD, so A and C sit in the hole the HUD leaves. No option moves the map. */
+
+.ss {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  box-sizing: border-box;
+  background: var(--ground);
+  color: var(--ink);
+  border-radius: var(--radius-sheet);
+  box-shadow: var(--shadow-sheet);
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  font-weight: var(--text-body--font-weight);
+}
+.ss *, .ss *::before, .ss *::after { box-sizing: border-box; }
+:where(.ss) button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; padding: 0; margin: 0; }
+.ss button:focus-visible, .ss input:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+.ss svg { flex: none; }
+
+.ss-head { display: flex; align-items: center; gap: 8px; min-height: 44px; flex: none; }
+.ss-head h2 { margin: 0 auto 0 0; font-size: var(--text-title); line-height: var(--text-title--line-height); font-weight: 600; letter-spacing: -0.01em; }
+.ss-head:not(:has(.ss-icon:first-child)) h2 { padding-left: 8px; }
+.ss-icon { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: var(--radius-control); }
+.ss-icon:hover { background: var(--paper); }
+
+.ss-body { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
+.ss-card { background: var(--paper); border-radius: var(--radius-chip); padding: 8px; display: flex; flex-direction: column; gap: 4px; flex: none; }
+.ss-card h3 { margin: 0; padding: 0 4px; font-size: var(--text-body); line-height: 20px; font-weight: 600; }
+.ss-note { margin: 0; padding: 0 4px; font-size: var(--text-caption); line-height: var(--text-caption--line-height); color: var(--muted); }
+.ss-strong, .ss-strong > .ss-label { font-weight: 600; }
+
+/* A slider row: label on its own line, then mute, slider and level. */
+.ss-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; grid-template-areas: "label label label" "mute range val"; column-gap: 8px; align-items: center; }
+.ss-row .ss-label { grid-area: label; padding: 0 4px; line-height: 20px; }
+.ss-row .ss-mute { grid-area: mute; }
+.ss-row .ss-range { grid-area: range; }
+.ss-row .ss-val { grid-area: val; }
+.ss-master { border-bottom: 1px solid var(--line); }
+.ss-master .ss-label { font-weight: 600; }
+.ss-sub { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "label switch"; min-height: 44px; padding-left: 52px; }
+.ss-sub .ss-label { padding: 0; }
+.ss-label small { display: block; font-size: var(--text-caption); line-height: var(--text-caption--line-height); color: var(--muted); font-weight: 500; }
+.ss-val { font-variant-numeric: tabular-nums; text-align: right; color: var(--muted); }
+
+/* Mute: a 44 px square; pressed (muted) it takes the one ink fill. */
+.ss-mute { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex: none; border-radius: var(--radius-control); background: var(--ground); }
+.ss-mute[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+/* Slider: 44 px tall hit area, a 4 px track; the filled part is ink, or line grey while its row is muted. */
+.ss-range { -webkit-appearance: none; appearance: none; width: 100%; height: 44px; margin: 0; background: transparent; --fill: var(--ink); }
+.ss-range[data-off] { --fill: var(--control-line); }
+.ss-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--fill) var(--v), var(--line) var(--v)); }
+.ss-range::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; margin-top: -10px; border-radius: 50%; background: var(--paper); border: 2px solid var(--fill); box-shadow: var(--shadow-control); }
+
+/* Switch: 44 px tall hit area around a 48x28 track. */
+.ss-switch { grid-area: switch; display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 44px; flex: none; }
+.ss-switch span { position: relative; width: 48px; height: 28px; border-radius: 14px; background: var(--line); transition: background var(--duration-quick) var(--ease-out); }
+.ss-switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--paper); box-shadow: var(--shadow-control); transition: transform var(--duration-quick) var(--ease-out); }
+.ss-switch[aria-checked="true"] span { background: var(--ink); }
+.ss-switch[aria-checked="true"] span::after { transform: translateX(20px); }
+
+.ss-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgb(38 61 60 / 0.25); }
+
+/* ---------- A: the Table menu's spot ---------- */
+.ss-a { top: var(--mock-top); left: 12px; right: 12px; max-height: calc(100dvh - var(--mock-top) - var(--mock-bottom)); }
+.ss-a .ss-seats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px 8px; }
+.ss-a .ss-seat { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ss-a .ss-seat .ss-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (orientation: landscape) and (max-height: 480px) {
+  .ss-a { left: var(--mock-left); max-height: calc(100dvh - var(--mock-top) - 12px); }
+  .ss-a .ss-body { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); grid-template-rows: auto 1fr; align-items: start; }
+  .ss-a .ss-mix { grid-row: 1 / 3; }
+  .ss-a .ss-mix .ss-row { grid-template-columns: 44px 5.5rem minmax(0, 1fr) 40px; grid-template-areas: "mute label range val"; }
+  .ss-a .ss-mix .ss-label { line-height: 18px; padding: 0; }
+  .ss-a .ss-note { display: none; }
+  .ss-a .ss-sub { padding-left: 4px; }
+}
+@media (min-width: 1000px) and (min-height: 481px) {
+  .ss-a { left: auto; width: 360px; max-height: calc(100dvh - var(--mock-top) - 12px); }
+}
+
+/* ---------- B: a bottom sheet upright; a centred three-column window otherwise ---------- */
+.ss-b { left: 0; right: 0; bottom: 0; max-height: calc(100dvh - var(--mock-top)); border-radius: var(--radius-sheet) var(--radius-sheet) 0 0; padding: 4px 12px max(12px, env(safe-area-inset-bottom)); }
+.ss-grab { width: 40px; height: 4px; border-radius: 2px; background: var(--control-line); margin: 4px auto 0; flex: none; }
+.ss-b .ss-card { padding: 8px 8px 8px 12px; }
+.ss-b .ss-row .ss-label { padding: 4px 0 0; }
+.ss-b .ss-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.ss .ss-chip { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid var(--control-line); background: var(--paper); font-weight: 600; }
+.ss .ss-chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.ss-chip-state { display: inline-flex; align-items: center; gap: 4px; font-weight: 500; font-size: var(--text-caption); }
+.ss-chip-state svg { width: 16px; height: 16px; }
+@media (orientation: landscape) and (max-height: 480px), (min-width: 1000px) and (min-height: 481px) {
+  .ss-b { left: 0; right: 0; bottom: auto; top: 50%; transform: translateY(-50%); margin: 0 auto; width: min(880px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); border-radius: var(--radius-sheet); padding: 8px 12px 12px; }
+  .ss-b .ss-grab { display: none; }
+  .ss-b .ss-body { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: auto 1fr; align-items: start; }
+  .ss-b .ss-all { grid-column: 1; grid-row: 1; }
+  .ss-b .ss-players { grid-column: 1; grid-row: 2; }
+  .ss-b .ss-kinds { grid-column: 2; grid-row: 1 / 3; }
+  .ss-b .ss-music { grid-column: 3; grid-row: 1 / 3; }
+}
+
+/* ---------- C: switches first ---------- */
+.ss-c { top: var(--mock-top); left: 12px; right: 12px; max-height: calc(100dvh - var(--mock-top) - var(--mock-bottom)); }
+.ss-line { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.ss-c .ss-label { margin-right: auto; padding-left: 4px; }
+.ss .ss-expand { flex: 1; display: flex; align-items: center; gap: 8px; min-height: 44px; border-radius: var(--radius-control); padding: 4px 4px 4px 0; text-align: left; }
+.ss .ss-expand:hover { background: var(--ground); }
+.ss-expand svg { width: 16px; height: 16px; color: var(--muted); }
+.ss-c .ss-val { min-width: 36px; }
+.ss-c .ss-slide { padding: 0 4px; }
+.ss-c .ss-kinds { gap: 0; }
+.ss-c .ss-open + .ss-slide { margin-top: -8px; }
+.ss-c .ss-sub { display: flex; padding-left: 20px; }
+.ss-c .ss-kinds > .ss-line + .ss-line:not(.ss-slide) { border-top: 1px solid var(--line); }
+@media (orientation: landscape) and (max-height: 480px) {
+  .ss-c { left: auto; width: 560px; max-height: calc(100dvh - var(--mock-top) - 12px); }
+  .ss-c .ss-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto auto 1fr; align-items: start; }
+  .ss-c .ss-all { grid-column: 1; grid-row: 1; }
+  .ss-c .ss-music { grid-column: 1; grid-row: 2 / 4; }
+  .ss-c .ss-kinds:not(.ss-music) { grid-column: 2; grid-row: 1 / 3; }
+  .ss-c .ss-players { grid-column: 2; grid-row: 3; }
+}
+@media (min-width: 1000px) and (min-height: 481px) {
+  .ss-c { left: auto; width: 340px; max-height: calc(100dvh - var(--mock-top) - 12px); }
+}

@@ -1,7 +1,7 @@
 // #831 B: one shared draft exposes exact table and bank quotes; each action settles its own receipt.
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { createGame } from "../src/lib/game/board.ts";
 import { chooseBotAction } from "../src/lib/game/ai.ts";

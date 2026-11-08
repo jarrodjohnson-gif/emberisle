@@ -7,7 +7,7 @@ import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const out = process.env.LOBBY_PROOF_OUT || "docs/proofs/1262";
@@ -237,7 +237,7 @@ try {
   assert.equal(await desk.locator(".lt").getByText("Solo", { exact: true }).count(), 1);
   assert.equal(await desk.locator(".lt button").count(), 1);
   assert.equal(await desk.getByText("Trivia").count(), 0);
-  assert.equal(await desk.getByText("Tic-tac-toe").count(), 0);
+  assert.equal(await desk.getByTestId("ttt-tile").getByText("Tic-tac-toe", { exact: true }).count(), 1);
   assert.equal(await desk.getByTestId("lobby-players").count(), 0);
   assert.equal(await desk.getByTestId("lobby-chat").count(), 0);
   assert.equal(await desk.locator(".lr").count(), 1);

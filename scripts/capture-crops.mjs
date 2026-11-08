@@ -1,5 +1,5 @@
 import { createServer } from "vite";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { existsSync, mkdirSync } from "node:fs";
 
 const vite = await createServer({ server: { host: "127.0.0.1", port: 18752, strictPort: true }, logLevel: "error" });

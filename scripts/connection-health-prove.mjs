@@ -32,7 +32,7 @@ if (process.argv.includes("--host-fixture")) {
   await import("../server/register.mjs");
   await import("../server/host.mjs");
 } else {
-  const { chromium } = await import("playwright");
+  const { chromium } = await import("./proof-browser.mjs");
   const { createServer, build, preview } = await import("vite");
   const resultsDir = fileURLToPath(new URL("../test-results/", import.meta.url));
   mkdirSync(resultsDir, { recursive: true });

@@ -4,7 +4,7 @@
 // #558: a tap on a spot the armed build cannot use shows the rule it broke on the HUD's error line (rules.ts settleError and the
 // built-edge line; "Path must connect to you." stays for a disconnected path) and leaves the state untouched.
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 // CI renders the island with software GL, where one frame can take seconds; a step gets this long to show.
@@ -207,7 +207,7 @@ try {
   const ARMED = {
     Path: "Place a path · Esc cancels",
     Outpost: "Place an outpost · Esc cancels",
-    Stronghold: "Build a stronghold · Esc cancels",
+    Stronghold: "Pick a home to upgrade · Esc cancels",
   };
   const arm = async (name, heading) => {
     await page.getByRole("button", { name, exact: true }).focus({ timeout: STEP_MS });

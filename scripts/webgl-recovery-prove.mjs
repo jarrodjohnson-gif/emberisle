@@ -1,7 +1,7 @@
 // #1137: TableRecoveryBoundary logs errors with componentStack, and WebGL creation failure falls back gracefully so the table stays playable.
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8460;

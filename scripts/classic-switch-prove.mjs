@@ -2,7 +2,7 @@
 // Delays wrap the real builders/compile; every positive case still constructs and publishes the production appearance.
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer, preview } from "vite";
 import { execFileSync } from "node:child_process";
 

@@ -1,8 +1,8 @@
 // #814: the gameplay background music (docs/design/sound.md, "Game music"). Headless Chromium on the practice table, with real
 // audio elements (every `new Audio` is recorded so the proof can read the track's paused, volume, loop and currentTime).
 // - nothing is requested or played before the first press or key, even on the play screen;
-// - after it the track plays at 0.25, loops (seek to the end, it wraps and keeps playing) and the lobby counts as a play screen;
-// - game_start ducks it to 30% (0.075) and its end, and a cut-off sting, restore 0.25;
+// - after it the track plays at 0.12, loops (seek to the end, it wraps and keeps playing) and the lobby counts as a play screen;
+// - game_start ducks it to 30% (0.036) and its end, and a cut-off sting, restore 0.12;
 // - mute stops it and unmuting resumes it, the same for a watcher; the Music toggle stops and resumes it and is remembered;
 // - the win screen stops it (a rematch brings it back). Returning to the title keeps the same track playing (#1279).
 // - on a fresh title, one tap starts it; the lobby keeps that same element; Music off never creates it; the title's
@@ -12,7 +12,7 @@
 // Zero console errors. Run: npm run music-prove
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8121;
@@ -49,6 +49,8 @@ try {
     const Real = window.Audio;
     window.Audio = function (src) {
       const a = new Real(src);
+      a.__pauses = 0;
+      a.addEventListener("pause", () => a.__pauses++);
       window.__audios.push(a);
       return a;
     };
@@ -59,7 +61,7 @@ try {
   const track = () =>
     page.evaluate((f) => {
       const a = window.__audios.find((x) => x.src.endsWith(f));
-      return a && { paused: a.paused, volume: a.volume, loop: a.loop, t: a.currentTime, d: a.duration, ended: a.ended };
+      return a && { paused: a.paused, volume: a.volume, loop: a.loop, t: a.currentTime, d: a.duration, ended: a.ended, pauses: a.__pauses, id: window.__audios.indexOf(a) };
     }, TRACK);
   const sound = (fn, arg) => page.evaluate(async ([f, a]) => { const m = await import("/src/lib/sound.ts"); return new Function("m", "a", `return (${f})(m, a)`)(m, a); }, [fn.toString(), arg]);
   const set = (patch) => page.evaluate((p) => window.__emberisle.setState(p), patch);
@@ -77,7 +79,7 @@ try {
   await page.keyboard.press("Shift");
   await until(playing, "the track plays after the first key");
   let t = await track();
-  assert.equal(t.volume, 0.25, "volume 0.25");
+  assert.equal(t.volume, 0.12, "volume 0.12");
   assert.equal(t.loop, true, "loop on");
   const t0 = (await track()).t;
   await until(async () => (await track()).t > t0 + 0.3, "currentTime advances");
@@ -91,17 +93,28 @@ try {
   await sound((m) => m.play("game_start", 0.5));
   await until(async () => (await track()).volume < 0.1, "ducked while game_start plays");
   t = await track();
-  assert.ok(Math.abs(t.volume - 0.075) < 1e-9, `ducked to 30% (0.075), got ${t.volume}`);
+  assert.ok(Math.abs(t.volume - 0.036) < 1e-9, `ducked to 30% (0.036), got ${t.volume}`);
   assert.ok(!t.paused, "still playing while ducked");
   ok(`game_start ducks it to ${t.volume}`);
-  await until(async () => (await track()).volume === 0.25, "restored after game_start ends", 30_000);
-  ok("the volume is back to 0.25 when game_start ends");
+  await until(async () => (await track()).volume === 0.12, "restored after game_start ends", 30_000);
+  ok("the volume is back to 0.12 when game_start ends");
   await sleep(300);
   await sound((m) => m.play("game_lose", 0.5));
   await until(async () => (await track()).volume < 0.1, "ducked while game_lose plays");
   await sound((m) => m.stop("game_lose"));
-  await until(async () => (await track()).volume === 0.25, "restored when the sting is cut off");
+  await until(async () => (await track()).volume === 0.12, "restored when the sting is cut off");
   ok("a cut-off sting restores it too");
+
+  // #1284: changing the background bed never changes the stings' own default gains.
+  for (const name of ["game_start", "match_point", "game_lose", "end_music"]) {
+    await sound((m, name) => m.play(name), name);
+    await until(() => page.evaluate((name) => window.__audios.some((a) => a.src.includes(name) && !a.paused), name), `${name} starts`);
+    assert.equal(await page.evaluate((name) => window.__audios.find((a) => a.src.includes(name)).volume, name), 1, `${name} keeps its default gain`);
+    assert.ok(Math.abs((await track()).volume - 0.036) < 1e-9, `${name} ducks the background to 0.036`);
+    await sound((m, name) => m.stop(name), name);
+    await until(async () => (await track()).volume === 0.12, `${name} restores the background`);
+  }
+  ok("all four stings keep gain 1 and duck only the background bed");
 
   // ---- Mute, and the Music toggle.
   await sound((m) => m.setMuted(true));
@@ -124,21 +137,31 @@ try {
   await until(playing, "Music on resumes it");
   ok("the Music toggle stops and resumes it, and is stored");
 
-  // ---- The Table menu's row drives the same switch.
+  // ---- The Sound panel's Music and ambience mute drives the same switch.
   await page.getByRole("button", { name: "Table menu" }).first().click();
-  const row = page.getByTestId("music-toggle");
+  await page.getByTestId("sound-entry").click({ timeout: 5000 });
+  const row = page.getByTestId("sound-mute-music");
   await row.waitFor({ timeout: 5000 });
   await row.click();
-  assert.equal(await playing(), false, "the menu row switches it off");
+  assert.equal(await playing(), false, "the panel's mute switches it off");
   await row.click();
-  await until(playing, "the menu row switches it on");
-  ok("the Table menu's Music row switches it off and on");
+  await until(playing, "the panel's mute switches it on");
+  ok("the Sound panel's Music and ambience mute switches it off and on");
 
   // ---- The lobby counts, the win screen stops it, a rematch resumes it, the title keeps the same track (#1279).
   await set({ screen: "lobby" });
   await sleep(300);
   assert.equal(await playing(), true, "plays in the lobby");
+  assert.equal((await track()).volume, 0.12, "lobby background volume 0.12");
+  const lobbyTrack = await track();
   await set({ screen: "play" });
+  await until(async () => (await track()).t > lobbyTrack.t + 0.1, "clock advances across lobby to game");
+  const gameTrack = await track();
+  assert.equal(gameTrack.volume, 0.12, "game background volume 0.12");
+  assert.equal(gameTrack.id, lobbyTrack.id, "lobby and game keep one track element");
+  assert.equal(gameTrack.pauses, lobbyTrack.pauses, "lobby to game never pauses the track");
+  assert.equal(await page.evaluate((f) => window.__audios.filter((a) => a.src.endsWith(f)).length, TRACK), 1, "one background element across lobby and game");
+  ok("lobby and game keep volume 0.12 on one advancing, uninterrupted track");
   const phase = await page.evaluate(() => window.__emberisle.getState().state.phase);
   await page.evaluate(() => { const s = window.__emberisle.getState().state; window.__phase = s.phase; window.__emberisle.setState({ state: { ...s, phase: "over", winner: s.players[0].id } }); });
   await until(async () => !(await playing()), "stopped at the win screen");

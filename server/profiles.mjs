@@ -20,6 +20,8 @@ export const DAY_FAILS = 10;
 export const LIFETIME_FAILS = 30;
 export const DEVICE_MS = 90 * DAY_MS;
 export const DEVICE_MAX = 5;
+// Former logins one profile may keep reserved by renaming (#1069, owner decision 2026-11-06).
+export const RESERVED_PER_PROFILE = 5;
 // Failures against logins nobody holds are kept too (the same answer and the same work), but only this many names.
 const UNKNOWN_MAX = 1024;
 const FILE = "profiles.json";
@@ -88,6 +90,28 @@ function validGuard(g) {
   return plain(g) && Array.isArray(g.times) && g.times.every(isTime) && plain(g.pending) && Object.values(g.pending).every(isTime) && Number.isSafeInteger(g.lifetime) && g.lifetime >= 0;
 }
 
+// Completed results (#890, profiles.md "Host storage and completed results"). Optional: a store that has recorded nothing
+// has none of these maps. `receipts` holds each game's immutable fingerprint, `results` its display rows, and `records` each
+// profile's ordered result references with the aggregates committed alongside them.
+const HEX64 = /^[0-9a-f]{64}$/;
+const count = (n) => Number.isSafeInteger(n) && n >= 0;
+function validResults(doc) {
+  const { receipts = {}, results = {}, records = {} } = doc;
+  if (!plain(receipts) || !plain(results) || !plain(records)) return false;
+  for (const [id, r] of Object.entries(receipts)) if (!UUID.test(id) || !plain(r) || !HEX64.test(r.fingerprint) || !isTime(r.at) || !has(results, id)) return false;
+  const row = (p) => plain(p) && (p.profileId === null || (typeof p.profileId === "string" && UUID.test(p.profileId))) && typeof p.name === "string" && typeof p.color === "string" && (p.kind === "human" || p.kind === "bot") && Number.isSafeInteger(p.points) && typeof p.won === "boolean" && typeof p.assisted === "boolean";
+  for (const [id, r] of Object.entries(results)) {
+    if (!UUID.test(id) || !plain(r) || r.gameId !== id || !has(receipts, id) || !isTime(r.startedAt) || !isTime(r.endedAt) || !(r.victoryTarget === null || count(r.victoryTarget))) return false;
+    if (!Array.isArray(r.players) || !r.players.every(row)) return false;
+  }
+  for (const [id, r] of Object.entries(records)) {
+    if (!UUID.test(id) || !plain(r) || !Array.isArray(r.history) || new Set(r.history).size !== r.history.length) return false;
+    if (!r.history.every((g) => typeof g === "string" && has(results, g) && results[g].players.some((p) => p.profileId === id))) return false;
+    if (!["games", "wins", "losses", "streak"].every((k) => count(r[k])) || !(r.lastPlayed === null || isTime(r.lastPlayed))) return false;
+  }
+  return true;
+}
+
 // A store this host did not write, or cannot read, is refused whole: profiles go dark, guests still play, and the file is
 // left as it was for repair. An empty leaderboard is never a fallback.
 export function validDoc(doc, colors) {
@@ -113,7 +137,107 @@ export function validDoc(doc, colors) {
     if (!/^[0-9a-f]{64}$/.test(d) || !plain(dev) || !has(doc.profiles, dev.profileId) || !isTime(dev.createdAt) || !isTime(dev.expiresAt)) return false;
   }
   for (const [login, g] of Object.entries(doc.unknownLogins)) if (!LOGIN.test(login) || has(doc.logins, login) || !validGuard(g)) return false;
-  return true;
+  return validResults(doc);
+}
+
+// The counting policy this host knows (host.mjs COUNT_POLICY); an outcome frozen under any other is refused, not guessed at.
+const RESULT_POLICY = 1;
+export const HISTORY_PAGE = 20;
+
+// The receipt fingerprint: SHA-256 of the frozen outcome with its keys sorted, hashed once, before any redaction. A redacted
+// outcome carries that original hash, so a stale unredacted copy of the same game still matches its receipt.
+// The embedded hash is trusted unchecked. That is safe only because pending outcomes and room files are written by this host,
+// never sent by a client. A hand-edited one is not trusted for a recorded game: it differs from the receipt, so recording
+// refuses it as a conflict and nothing changes.
+function canonical(v) {
+  if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
+  if (v !== null && typeof v === "object") return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonical(v[k])}`).join(",")}}`;
+  return JSON.stringify(v);
+}
+export const fingerprint = (outcome) => (typeof outcome.fingerprint === "string" && HEX64.test(outcome.fingerprint) ? outcome.fingerprint : createHash("sha256").update(canonical(outcome)).digest("hex"));
+
+// Profile deletion (#891, profiles.md "Host administration and privacy"): a deleted profile's display row keeps its colour,
+// kind, points and result for the other players, and loses its profile id and name. `gone(id)` says whether id is deleted.
+export const DELETED_NAME = "Deleted player";
+export function redactRows(rows, gone) {
+  let changed = false;
+  for (const p of rows) {
+    if (typeof p?.profileId !== "string" || !gone(p.profileId)) continue;
+    p.profileId = null;
+    p.name = DELETED_NAME;
+    changed = true;
+  }
+  return changed;
+}
+// A redacted copy of a frozen outcome, fingerprinted first, or null when it names no deleted profile.
+export function redactOutcome(o, gone) {
+  const out = structuredClone(o);
+  out.fingerprint = fingerprint(o);
+  return redactRows(out.players, gone) ? out : null;
+}
+// A file kept only for repair by hand (#1393), a fenced room or an unreadable pending outcome, as text. Every object in it
+// that names a deleted profile loses its id and name, wherever it sits. If a deleted profile's id is still in the text,
+// because it does not parse or holds the id somewhere else, the whole text is replaced. Returns the new text, or null when
+// nothing names a deleted profile.
+export function redactText(text, gone) {
+  let out = null;
+  try {
+    const v = JSON.parse(text);
+    let changed = false;
+    const walk = (x) => {
+      if (x === null || typeof x !== "object") return;
+      if (typeof x.profileId === "string" && gone(x.profileId)) {
+        x.profileId = null;
+        if ("name" in x) x.name = DELETED_NAME;
+        changed = true;
+      }
+      for (const y of Object.values(x)) walk(y);
+    };
+    walk(v);
+    if (changed) out = JSON.stringify(v);
+  } catch {}
+  if ((out ?? text).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g)?.some(gone)) return JSON.stringify({ redacted: "this file named a deleted profile" });
+  return out;
+}
+
+// "Which results count": an eligible game credits its starting humans that were bound to a profile. Guests and original bots
+// get nothing; a seat the bot finished for keeps its human row and is marked assisted.
+const credited = (o) => (o.eligible === true ? o.players.filter((p) => p.kind === "human" && typeof p.profileId === "string") : []);
+
+// Streaks follow host completion time, then game id for equal times, so a late older result lands in its place.
+function tally(r, results, profileId) {
+  r.history.sort((a, b) => results[a].endedAt - results[b].endedAt || (a < b ? -1 : a > b ? 1 : 0));
+  const won = (g) => results[g].players.some((p) => p.profileId === profileId && p.won);
+  r.games = r.history.length;
+  r.wins = r.history.filter(won).length;
+  r.losses = r.games - r.wins;
+  let streak = 0;
+  for (let i = r.history.length - 1; i >= 0 && won(r.history[i]); i--) streak++;
+  r.streak = streak;
+  r.lastPlayed = r.games ? results[r.history.at(-1)].endedAt : null;
+}
+
+// The owner's aggregates. Win rate is derived, one decimal, and null before the first counted game.
+function recordView(r) {
+  const games = r?.games ?? 0;
+  const wins = r?.wins ?? 0;
+  return { games, wins, losses: r?.losses ?? 0, winRate: games ? Math.round((1000 * wins) / games) / 10 : null, streak: r?.streak ?? 0, lastPlayed: r?.lastPlayed ?? null };
+}
+
+// One row of the owner's history: final scores and starting names only. No profile ids, seats, pids, seeds or secrets.
+function historyRow(res, profileId) {
+  const mine = res.players.find((p) => p.profileId === profileId);
+  return {
+    gameId: res.gameId,
+    startedAt: res.startedAt,
+    endedAt: res.endedAt,
+    durationMs: res.endedAt - res.startedAt,
+    victoryTarget: res.victoryTarget,
+    won: mine.won,
+    points: mine.points,
+    assisted: mine.assisted,
+    players: res.players.map((p) => ({ name: p.name, color: p.color, kind: p.kind, points: p.points, won: p.won })),
+  };
 }
 
 // Apply validated text/colour fields to a profile record inside a mutate callback. Login renames are handled separately.
@@ -262,8 +386,10 @@ function prune(doc, now) {
 }
 
 // Opens the store at `dir`. Always returns a store; `store.ready` is false (and every call refuses) when the directory is held
-// by another host, unreadable, or holds a schema this host does not know.
-export function openProfiles(dir, { colors, clock = Date.now } = {}) {
+// by another host, unreadable, or holds a schema this host does not know. `fault(point)` lets a proof fail or kill the host
+// at "receipt-before" (inside the result transaction, before its write) and "receipt-after" (once it has committed), and
+// likewise at "delete-before" and "delete-after" around the deletion transaction (#891).
+export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} } = {}) {
   let doc = null;
   let reason = null;
   try {
@@ -554,11 +680,16 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
       if (p.pinMustChange) return { error: "mustChangePin" };
       if (held && p.guard.lifetime >= LIFETIME_FAILS) return { error: "signInFailed" };
       if (held && !held.ok) { fail(p.guard, at, true); return { error: "signInFailed" }; }
-      if (isRename && (has(d.logins, newLogin) || has(d.reservedLogins, newLogin))) return { error: "loginTaken" };
+      // #1069: renaming back to one of this profile's own former logins releases that reservation. Any other rename adds one,
+      // and is refused once the profile holds RESERVED_PER_PROFILE; no old reservation is ever evicted to make room.
+      const reclaim = isRename && own(d.reservedLogins, newLogin) === id;
+      if (isRename && !reclaim && (has(d.logins, newLogin) || has(d.reservedLogins, newLogin))) return { error: "loginTaken" };
+      if (isRename && !reclaim && Object.values(d.reservedLogins).filter((v) => v === id).length >= RESERVED_PER_PROFILE) return { error: "loginLimit" };
       const edited = structuredClone(p);
       try { _applyEditFields(edited, f, colors); }
       catch (e) { if (e instanceof ProfileError) return { error: e.code }; throw e; }
       if (isRename) {
+        if (reclaim) delete d.reservedLogins[newLogin];
         d.reservedLogins[p.login] = id;
         delete d.logins[p.login];
         edited.login = newLogin;
@@ -639,6 +770,126 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
     });
   }
 
+  // Local admin only (#891): what deleting this profile touches, for the owner to check before confirming.
+  function deletionPreview(profileId) {
+    if (!doc) throw new ProfileError("unavailable");
+    if (typeof profileId !== "string" || !has(doc.profiles, profileId)) throw new ProfileError("notFound");
+    const p = doc.profiles[profileId];
+    return {
+      profileId,
+      displayName: p.displayName,
+      login: p.login,
+      createdAt: p.createdAt,
+      devices: Object.values(doc.devices).filter((v) => v.profileId === profileId).length,
+      games: recordOf(profileId)?.games ?? 0,
+      resultRows: Object.values(doc.results ?? {}).filter((r) => r.players.some((x) => x.profileId === profileId)).length,
+      winSongId: p.winSongId,
+      mediaKey: p.mediaKey,
+    };
+  }
+
+  // Local admin only (#891): one serialized transaction, so it never interleaves with a result commit. The UUID tombstone,
+  // device revocation and login reservation land in the same durable write as the redaction of every stored result row,
+  // so no restart sees a half-deleted store. Receipts and the other players' rows and records are not touched. Pending
+  // outcomes and saved rooms live outside this store; the host redacts them against the tombstone before it serves anything.
+  async function deleteProfile(profileId) {
+    if (!doc) throw new ProfileError("unavailable");
+    if (typeof profileId !== "string" || !has(doc.profiles, profileId)) throw new ProfileError("notFound");
+    const out = await mutate((d, now) => {
+      const p = own(d.profiles, profileId);
+      if (!p) throw new ProfileError("notFound");
+      d.tombstones[profileId] = now;
+      for (const k of Object.keys(d.devices)) if (d.devices[k].profileId === profileId) delete d.devices[k];
+      delete d.logins[p.login];
+      d.reservedLogins[p.login] = profileId;
+      delete d.profiles[profileId];
+      if (d.records) delete d.records[profileId];
+      let rows = 0;
+      for (const r of Object.values(d.results ?? {})) if (redactRows(r.players, (id) => id === profileId)) rows++;
+      fault("delete-before");
+      return { resultRows: rows };
+    });
+    fault("delete-after");
+    return out;
+  }
+
+  // Steps 5 and 6 of "Exactly-once recording": one serialized transaction inserts the game's unique receipt, its result rows
+  // and every credited profile's aggregates, or nothing at all. The live store, and so every query, changes only once that
+  // is durable. Returns "excluded" for a game that credits no profile (nothing is written), "duplicate" when the receipt
+  // already holds this fingerprint, and "committed". A different fingerprint for a recorded game is ProfileError("conflict")
+  // and changes nothing; an unknown policy or a profile bound twice in one game is ProfileError("invalid").
+  // A profile that no longer exists gets no attribution; its row keeps no profile id. A deleted one (#891) loses its name too,
+  // so a stale outcome replayed after deletion cannot bring it back.
+  async function recordOutcome(o) {
+    if (o.policy !== RESULT_POLICY) throw new ProfileError("invalid");
+    const rows = credited(o);
+    if (!rows.length) return "excluded";
+    if (new Set(rows.map((p) => p.profileId)).size !== rows.length) throw new ProfileError("invalid");
+    if (!doc) throw new ProfileError("unavailable");
+    const fp = fingerprint(o);
+    const seen = (d) => (d.receipts && has(d.receipts, o.gameId) ? d.receipts[o.gameId] : null);
+    if (seen(doc)) {
+      if (seen(doc).fingerprint !== fp) throw new ProfileError("conflict");
+      return "duplicate";
+    }
+    const out = await mutate((d, now) => {
+      if (seen(d)) {
+        if (seen(d).fingerprint !== fp) throw new ProfileError("conflict");
+        return "duplicate";
+      }
+      const live = new Set(rows.map((p) => p.profileId).filter((id) => has(d.profiles, id)));
+      d.receipts ??= {};
+      d.results ??= {};
+      d.records ??= {};
+      d.receipts[o.gameId] = { fingerprint: fp, at: now };
+      d.results[o.gameId] = {
+        gameId: o.gameId,
+        startedAt: o.startedAt,
+        endedAt: o.endedAt,
+        victoryTarget: Number.isSafeInteger(o.victoryTarget) ? o.victoryTarget : null,
+        players: o.players.map((p) => ({
+          profileId: rows.includes(p) && live.has(p.profileId) ? p.profileId : null,
+          name: typeof p.profileId === "string" && has(d.tombstones, p.profileId) ? DELETED_NAME : p.name,
+          color: p.color,
+          kind: p.kind,
+          points: p.points,
+          won: p.won,
+          assisted: p.assisted,
+        })),
+      };
+      for (const id of live) {
+        const r = has(d.records, id) ? d.records[id] : (d.records[id] = { games: 0, wins: 0, losses: 0, streak: 0, lastPlayed: null, history: [] });
+        r.history.push(o.gameId);
+        tally(r, d.results, id);
+      }
+      fault("receipt-before");
+      return "committed";
+    });
+    if (out === "committed") fault("receipt-after");
+    return out;
+  }
+
+  // Owner-only reads (#890): the credential's own profile, never another's, and only from the committed store.
+  function owner(token) {
+    if (!doc) throw new ProfileError("unavailable");
+    const id = validate(token);
+    if (!id) throw new ProfileError("signedOut");
+    if (doc.profiles[id].pinMustChange) throw new ProfileError("mustChangePin");
+    return id;
+  }
+  const recordOf = (id) => (doc.records && has(doc.records, id) ? doc.records[id] : null);
+
+  // Newest first, HISTORY_PAGE rows a page. `before` is the last game id of the previous page; `next` is null on the last.
+  function ownHistory(token, before) {
+    const id = owner(token);
+    if (!(before === undefined || before === null || (typeof before === "string" && UUID.test(before)))) throw new ProfileError("invalid");
+    const list = recordOf(id)?.history ?? [];
+    const end = before ? list.indexOf(before) : list.length;
+    if (end < 0) throw new ProfileError("invalid");
+    const page = list.slice(Math.max(0, end - HISTORY_PAGE), end).reverse();
+    return { rows: page.map((g) => historyRow(doc.results[g], id)), next: end > HISTORY_PAGE ? page.at(-1) : null };
+  }
+
   return {
     get ready() {
       return Boolean(doc);
@@ -661,5 +912,14 @@ export function openProfiles(dir, { colors, clock = Date.now } = {}) {
     mutate,
     claimHash: claim,
     verifier,
+    recordOutcome,
+    ownRecord: (token) => recordView(recordOf(owner(token))),
+    ownHistory,
+    // A recorded game's receipt, or null: the host fences a stale snapshot of any game that has one.
+    receipt: (id) => (doc?.receipts && typeof id === "string" && has(doc.receipts, id) ? { fingerprint: doc.receipts[id].fingerprint } : null),
+    deletionPreview,
+    deleteProfile,
+    // Whether id was deleted (#891). Internal only: tombstones never reach a public projection.
+    tombstoned: (id) => Boolean(doc && typeof id === "string" && has(doc.tombstones, id)),
   };
 }

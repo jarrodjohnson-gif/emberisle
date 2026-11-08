@@ -170,7 +170,8 @@ function pump() {
 let extraFiles: Partial<Record<ExtraSoundName, string>> | null = null;
 function start(name: SoundName, volume: number, category: SoundCategory) {
   const gain = volume * categoryGain(category);
-  if (muted || !gain) return;
+  // Music off (the saved switch) silences the stings too, not only the track.
+  if (muted || !gain || (category === "music" && !bgOn)) return;
   const file = FILES[name as keyof typeof FILES] ?? extraFiles?.[name as ExtraSoundName];
   if (!file) {
     if (extraFiles) return;
@@ -266,7 +267,7 @@ export function yourTurn() {
 // start, after the first gesture, never before, and is not part of any JS chunk. It plays while the screen wants it (the
 // title, the lobby and play, not the end screen), unless muted or switched off; it dips under the stings.
 const MUSIC_FILE = "old_tower_inn_loop.mp3";
-export const BG_VOLUME = 0.25;
+export const BG_VOLUME = 0.12;
 const BG_DUCK = 0.3;
 const DUCKERS: ReadonlySet<SoundName> = new Set<SoundName>(["game_start", "match_point", "game_lose", "end_music"]);
 const MUSIC_KEY = "emberisle-music";
