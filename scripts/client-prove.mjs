@@ -617,8 +617,8 @@ try {
     )
   ).jsonValue();
   await page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: { writeText: () => Promise.resolve() }, configurable: true }));
-  await page.getByRole("button", { name: "Copy", exact: true }).click();
-  await page.getByRole("button", { name: "Copied" }).waitFor({ timeout: 3000 });
+  await page.getByRole("button", { name: "Copy link" }).click();
+  await page.locator(".lobby-code[data-copied]").waitFor({ timeout: 3000 });
   const clip = { live: await page.getByTestId("copy-status").textContent(), field: await page.getByTestId("copy-fallback").count() };
   console.log("copy fallback:", JSON.stringify({ noClip, clip }));
   if (!noClip.value.includes("?code=ABCD") || !noClip.readOnly || !noClip.selected || noClip.live !== "Select and copy" || noClip.polite !== "polite") {
