@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { wayfarerRules } from "@/lib/game/fortunes";
 import { victoryTarget } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
+import { useBackdropClose } from "@/lib/backdrop-close";
 import { play } from "@/lib/sound";
 import { SetupReference } from "@/components/game/chunks";
 import { useViewport } from "@/lib/viewport";
 
-// A modal dialog: focus goes to Close on open and back to whatever opened it on close; Escape closes it (see useEscapeDisarm for the order).
+// A modal dialog: focus goes to Close on open and back to whatever opened it on close; Escape and a tap on the backdrop
+// close it (see useEscapeDisarm for the order).
 export function HowTo({ onClose }: { onClose: () => void }) {
   const phone = useViewport().phone;
   const mode = useGame(s => s.state?.wayfarerMode ?? "on");
@@ -17,6 +19,7 @@ export function HowTo({ onClose }: { onClose: () => void }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const backdrop = useBackdropClose(onClose);
   useEffect(() => {
     // Safari never focuses a button on click, so the opener comes from the store; activeElement is the fallback.
     const opener = useGame.getState().howToOpener ?? (document.activeElement as HTMLElement | null);
@@ -50,6 +53,7 @@ export function HowTo({ onClose }: { onClose: () => void }) {
       aria-labelledby="howto-title"
       ref={dialogRef}
       className="help-wash absolute inset-0 z-30 flex items-end justify-center sm:items-center"
+      {...backdrop}
     >
       <div className="flex max-h-[80dvh] w-full max-w-md flex-col rounded-sheet bg-surface shadow-[var(--shadow-sheet)]">
         <div className="flex shrink-0 items-center justify-between gap-3 px-4 pb-1 pt-4">
