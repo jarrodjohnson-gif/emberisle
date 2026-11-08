@@ -942,7 +942,7 @@ try {
     return { inRail: menu.left >= aside.left - 1 && menu.right <= aside.right + 1, under: menu.top >= card.bottom, pushed: !below || below.top >= menu.bottom };
   }, bId);
   check(geo.inRail && geo.under && geo.pushed, "menu: sits in the rail column under the card and pushes the cards below it down");
-  check((await menu.getByRole("button", { name: /Offer a trade/ }).count()) === 0, "menu: no Offer a trade row outside your main phase");
+  check((await menu.getByRole("button", { name: "Trade…", exact: true }).count()) === 0, "menu: no Trade row outside your main phase");
   await shot(a, "menu-open.jpg");
   // #899: the menu's lone sticker is gone; reactions come only from the chat panel.
   check((await menu.getByTestId("menu-emotes").count()) === 0 && (await menu.getByRole("button", { name: /^React / }).count()) === 0, "menu: no sticker or reaction buttons; reactions come only from the chat panel");
@@ -964,7 +964,7 @@ try {
   await menu.waitFor({ state: "detached" });
   check(true, "menu: a click outside closes it");
   await card.click();
-  await menu.getByRole("button", { name: "Mention @Tide in chat" }).click();
+  await menu.getByRole("button", { name: "Mention @Tide" }).click();
   await menu.waitFor({ state: "detached" });
   await a.page.getByPlaceholder("Say something…").waitFor();
   check((await a.page.getByPlaceholder("Say something…").inputValue()) === "@Tide ", 'menu: Mention puts "@Tide " in the input');
@@ -1114,7 +1114,7 @@ try {
   check(pGeo.under && pGeo.onScreen, "phone: the menu opens downward from the strip, on screen");
   check(pGeo.items > 0 && pGeo.small === 0, `phone: all ${pGeo.items} menu items are at least 44 px on both axes`);
   await shot(phone, "chat-phone-menu.jpg");
-  await pMenu.getByRole("button", { name: "Mention @Ember in chat" }).tap();
+  await pMenu.getByRole("button", { name: "Mention @Ember" }).tap();
   await pMenu.waitFor({ state: "detached" });
   await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
   check((await phone.page.getByPlaceholder("Say something…").inputValue()) === "@Ember ", 'phone: Mention opens the sheet with "@Ember "');

@@ -251,7 +251,7 @@ try {
   await openSheet(two);
   await sheet(two).getByLabel("Login").fill("ember-user");
   await sheet(two).getByLabel("PIN", { exact: true }).fill("0000");
-  await sheet(two).getByLabel("Remember me on this device").uncheck();
+  await sheet(two).getByLabel("Remember me").uncheck();
   await sheet(two).getByRole("button", { name: "Sign in", exact: true }).click();
   await sheet(two).getByRole("alert").filter({ hasText: "Couldn't sign in" }).waitFor();
   await sheet(two).getByLabel("PIN", { exact: true }).fill("4821");
@@ -446,7 +446,7 @@ try {
   await openSheet(kelpie);
   await sheet(kelpie).getByLabel("Login").fill("coral-user");
   await sheet(kelpie).getByLabel("PIN", { exact: true }).fill("2468");
-  await sheet(kelpie).getByLabel("Remember me on this device").uncheck();
+  await sheet(kelpie).getByLabel("Remember me").uncheck();
   await sheet(kelpie).getByRole("button", { name: "Sign in", exact: true }).click();
   await sheet(kelpie).getByRole("alert").filter({ hasText: "Couldn't sign in" }).waitFor();
   await sheet(kelpie).getByLabel("Login").fill("reef-user");

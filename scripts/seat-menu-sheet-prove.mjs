@@ -166,13 +166,13 @@ try {
 
     // Own seat on its main turn: the bank trade row is the first row and takes focus.
     const own = await open("p0", "own seat");
-    assert.equal(own.focus, "Trade with the bank or a dock…", `${tag} own seat: focus on the first row`);
+    assert.equal(own.focus, "Trade…", `${tag} own seat: focus on the first row`);
     await page.screenshot({ path: `test-results/seat-menu-sheet-${tag}-own.png` });
     if (phone) {
       await page.keyboard.press("Shift+Tab");
       assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("aria-label")), "Close", `${tag} own seat: Shift+Tab from the first row reaches Close`);
       await page.keyboard.press("Tab");
-      assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), "Trade with the bank or a dock…", `${tag} own seat: Tab from Close comes back to the first row`);
+      assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), "Trade…", `${tag} own seat: Tab from Close comes back to the first row`);
     }
     await shut("Escape", "p0", "own seat");
 
@@ -197,11 +197,11 @@ try {
     await page.evaluate(() => window.__emberisle.setState({ mode: "online" }));
     await page.waitForTimeout(1000);
     const ownOnline = await open("p0", "own seat online");
-    for (const row of ["Trade with the bank or a dock…", "Open chat"]) assert.ok(ownOnline.buttons.some((b) => b.name === row), `${tag}: "${row}" on the own seat online`);
+    for (const row of ["Trade…", "Open chat"]) assert.ok(ownOnline.buttons.some((b) => b.name === row), `${tag}: "${row}" on the own seat online`);
     await page.screenshot({ path: `test-results/seat-menu-sheet-${tag}-own-online.png` });
     await shut("Escape", "p0", "own seat online");
     const oppOnline = await open("p2", "opponent online");
-    for (const row of ["Offer a trade…", "Mention @Mira in chat"]) assert.ok(oppOnline.buttons.some((b) => b.name === row), `${tag}: "${row}" on an opponent online`);
+    for (const row of ["Trade…", "Mention @Mira"]) assert.ok(oppOnline.buttons.some((b) => b.name === row), `${tag}: "${row}" on an opponent online`);
     await shut("Escape", "p2", "opponent online");
 
     console.log(`ok ${tag}${phone ? ` (insets ${JSON.stringify(insets)})` : ""}: no reminder on the seats; reminder last in every ledger; ${phone ? `no seat moves; sheet ${JSON.stringify(own.box)} own, ${JSON.stringify(ownOnline.box)} online, inside the safe area, rows and Close >= 44 px` : "rail menu unchanged"}; focus, Escape, Close, tap outside and the card work; watcher has no actions; all four trade routes`);
