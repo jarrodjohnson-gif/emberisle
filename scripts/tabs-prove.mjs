@@ -288,8 +288,17 @@ try {
   const bannerB = await b.page.getByTestId("turn-banner").elementHandle();
   offlineTab = "Tide";
   await b.page.context().setOffline(true);
-  await b.page.evaluate(() => window.__emberisle.getState().net.drop());
-  const sawReconnecting = await until(async () => ((await me(b)).error?.startsWith("Reconnecting") ? true : null), "tab B notices the drop", 20_000);
+  // #1442: the host is stopped through the drop, so it cannot answer tab B's close. A busy runner can hold that
+  // answer past this 20 s window (Chromium waits up to 60 s for it), and a lost network never answers at all:
+  // the tab must notice the drop on its own.
+  host.kill("SIGSTOP");
+  let sawReconnecting;
+  try {
+    await b.page.evaluate(() => window.__emberisle.getState().net.drop());
+    sawReconnecting = await until(async () => ((await me(b)).error?.startsWith("Reconnecting") ? true : null), "tab B notices the drop", 20_000);
+  } finally {
+    host.kill("SIGCONT");
+  }
   await new Promise((r) => setTimeout(r, 3000));
   await b.page.context().setOffline(false);
   const afterB = await until(async () => {

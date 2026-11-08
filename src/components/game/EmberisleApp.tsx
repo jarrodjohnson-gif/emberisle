@@ -274,8 +274,8 @@ function Title({ arrive }: { arrive: boolean }) {
             </div>
             {/* #488: a pointer or focus on Host or Join fetches the online chunk (lobby and chat) before either is pressed. */}
             <div className="flex flex-wrap gap-x-2" onPointerEnter={online.prefetch} onFocus={online.prefetch}>
-              <div className="relative flex flex-1 overflow-hidden rounded-control border border-control-line">
-                <Button size="lg" variant="secondary" className="mr-11 min-w-0 flex-1 rounded-none border-0 px-3"
+              <div className="relative flex min-w-max flex-1 overflow-hidden rounded-control border border-control-line">
+                <Button size="lg" variant="secondary" className="mr-11 flex-1 whitespace-nowrap rounded-none border-0 px-2"
                   onClick={() => useGame.getState().hostTable(openMode ? "open" : undefined)}>
                   Host a table
                 </Button>
@@ -285,7 +285,7 @@ function Title({ arrive }: { arrive: boolean }) {
               </div>
               <form
                 aria-label="Join code"
-                className="flex min-w-[11rem] flex-1 gap-2"
+                className="flex flex-1 gap-2"
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (join.length !== 4) return setShortCode(true);
@@ -308,7 +308,7 @@ function Title({ arrive }: { arrive: boolean }) {
                   maxLength={4}
                   className="h-12 w-0 min-w-[4.5rem] flex-1 rounded-[12px] border border-border bg-surface px-3 tracking-[0.3em]"
                 />
-                <Button size="lg" variant="secondary" type="submit">
+                <Button size="lg" variant="secondary" type="submit" className="px-2">
                   Join
                 </Button>
               </form>
@@ -341,7 +341,9 @@ function Title({ arrive }: { arrive: boolean }) {
             <LazyBoundary failed={null}>
               <OpenTables />
             </LazyBoundary>
-            <div className="flex flex-wrap items-center justify-center">
+            {/* #1418: the quiet row may use the card's side padding (its buttons have no fill), so at 15 px / 600 the sound
+                button keeps its place beside How to play and a short window (1280x500) gains no line. */}
+            <div className="-mx-5 flex flex-wrap items-center justify-center">
               <Button variant="ghost" className="px-3" title="Pass one device around" onClick={() => useGame.getState().startHotseat(4)}>
                 Four seats, one table
               </Button>
