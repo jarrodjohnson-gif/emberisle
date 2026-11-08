@@ -193,20 +193,20 @@ try {
   await tide.setViewportSize({ width: 390, height: 844 });
   console.log("ok  844x390: picture saved");
 
-  // Play again: Tide goes first. Close keeps the game; Quit ends it for both.
+  // Play again: Tide goes first. Hide keeps the game; Quit ends it for both.
   await tide.getByRole("button", { name: "Play again" }).click();
   for (const page of [ember, tide]) await page.waitForFunction(() => window.__emberisle.getState().ttt?.game?.status === "playing");
   assert.equal(await turn(tide).textContent(), "Your turn");
   await cell(tide, 4).click();
   await ember.waitForFunction(() => window.__emberisle.getState().ttt?.game?.board[4] === "o");
-  await ember.getByRole("button", { name: "Close", exact: true }).click();
+  await ember.getByRole("button", { name: "Hide", exact: true }).click();
   assert.equal(await line(ember).textContent(), "You and Tide");
   await tile(ember).getByRole("button", { name: "Open" }).click();
-  assert.equal(await cell(ember, 4).textContent(), "O", "Close kept the game");
+  assert.equal(await cell(ember, 4).textContent(), "O", "Hide kept the game");
   await tide.getByRole("button", { name: "Quit game" }).click();
   await ember.getByTestId("ttt").waitFor({ state: "detached" });
   assert.equal(await line(ember).textContent(), "Tide closed the game.");
-  console.log("ok  Play again with Tide first, Close keeps the game, Quit closes it for both");
+  console.log("ok  Play again with Tide first, Hide keeps the game, Quit closes it for both");
 
   // A decline.
   await tile(ember).getByRole("button", { name: "Play", exact: true }).click();
