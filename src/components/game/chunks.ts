@@ -40,6 +40,10 @@ export const WinScreen = sheets.pick((m) => m.WinScreen);
 // #748: the win screen's compact list on touch and narrow screens; the win screen fetches it on phones as the table starts.
 export const winList = chunk(() => import("@/components/game/WinList"));
 export const WinList = winList.pick((m) => m.WinList);
+// #1411: a guest's I'll play again and the win screen's count; the win screen fetches it as an online table starts.
+export const playAgain = chunk(() => import("@/components/game/PlayAgain"));
+export const WantAgain = playAgain.pick((m) => m.WantAgain);
+export const WantCount = playAgain.pick((m) => m.WantCount);
 
 // The island behind every screen (#543 preloads it). #1281: one load through the chunk loader, shared by the canvas and the
 // loading screen, so a failed download is retried under a fresh URL by Try again instead of leaving the screen stuck.

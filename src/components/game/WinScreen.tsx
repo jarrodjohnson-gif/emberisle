@@ -6,7 +6,7 @@ import { totalVP, victoryTarget } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { readViewport, useViewport } from "@/lib/viewport";
 import { LazyBoundary } from "@/lib/lazy";
-import { WinList, winList } from "@/components/game/chunks";
+import { playAgain, WantAgain, WantCount, WinList, winList } from "@/components/game/chunks";
 import { useFocusTrap } from "@/lib/focus-trap";
 import type { PlayerState } from "@/lib/game/types";
 import type { Seat } from "@/lib/net/table";
@@ -32,6 +32,8 @@ export function WinScreen() {
   // #748: the phone list is its own chunk; fetch it while the table plays, so it is in memory before the game ends.
   useEffect(() => {
     if (readViewport().phone) void winList.prefetch();
+    // #1411: the guest's I'll play again and the count, in memory before the game ends.
+    if (useGame.getState().mode === "online") void playAgain.prefetch();
   }, []);
   const winnerId = useGame((s) => s.state?.phase === "over" ? s.state.winner : null);
   return winnerId ? <Panel key={winnerId} /> : null;
@@ -52,8 +54,6 @@ function Panel() {
   const isHost = useGame((s) => s.seats.find((x) => x.id === s.seatId)?.host ?? s.isHost);
   const hostName = useGame((s) => s.seats.find((x) => x.host)?.name);
   const seats = useGame((s) => s.seats);
-  const wanted = useGame((s) => Boolean(s.seats.find((x) => x.id === s.seatId)?.again));
-  const wantAgain = useGame((s) => s.wantAgain);
   // docs/design/rematch.md: the online host and hotseat start another; practice has no table to keep.
   const canAgain = mode === "hotseat" || (mode === "online" && isHost);
   const waiting = mode === "online" && !isHost && !spectator && hostName;
@@ -207,11 +207,7 @@ function Panel() {
             Waiting for {hostName} to start another.
           </p>
         ) : null}
-        {mode === "online" ? (
-          <p role="status" className="sr-only">
-            {seats.filter(yes).length} of {seats.filter((x) => !x.away).length} want another game
-          </p>
-        ) : null}
+        {mode === "online" ? <LazyBoundary failed={null}><WantCount n={seats.filter(yes).length} of={seats.filter((x) => !x.away).length} /></LazyBoundary> : null}
         <div className={`mt-5 ${phone ? "short:mt-1" : "short:mt-2"} flex flex-wrap items-center gap-2`}>
           {mode === "online" ? <VictoryTargetSelect label="Next game" value={target} onChange={isHost && !spectator ? setTarget : undefined} /> : null}
           {mode === "online" && !spectator ? (
@@ -238,12 +234,7 @@ function Panel() {
             </Button>
           ) : null}
           {/* #1411: every other seated player says "I'll play again"; only the host starts the next game. */}
-          {waiting ? (
-            <Button variant={wanted ? "secondary" : "default"} aria-pressed={wanted} className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-want" onClick={() => wantAgain(!wanted)}>
-              {wanted ? <span aria-hidden="true">✓</span> : null}
-              I'll play again
-            </Button>
-          ) : null}
+          {waiting ? <LazyBoundary failed={null}><WantAgain /></LazyBoundary> : null}
           <Button variant={canAgain || waiting ? "secondary" : "default"} className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-menu" onClick={goTitle}>
             Back to menu
           </Button>
