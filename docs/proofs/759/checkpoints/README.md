@@ -82,3 +82,7 @@ It reduced old-head Canvas201928 to201801 B, saving127 B, leaving358 B over the 
 Its generic-union typecheck failed; the full failure is retained in nov8/reverted-recovery-candidate-types-failed.log.
 No candidate code, new chunk, budget edit or test change was retained.
 Node22.23.4, Playwright1.63.0 and its default Chromium1243 ran without an executable override.
+
+Current-main integration source fbd4dd6 completed loading-screen, chunk-fail and client regressions with exit0.
+The loading-screen proof exercised normal/reduced-motion startup, stalled frames, failed IslandCanvas and explicit recovery.
+The original assertions and deadlines stayed unchanged. Raw logs are under nov8/fbd4dd6-*.
