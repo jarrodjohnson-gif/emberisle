@@ -54,3 +54,31 @@ Source587b1af passed all ninth assertions plus actual production request disposa
 
 Sourcec00b0d2740573416b8597adcc92fb1586ebced4c passed the complete focused proof, including actual production playable hotseat captures at1280x720,390x844,844x390. Metadata verifies titleMode=false, full Classic40draws/217166triangles,30coast edges and matching canvas/viewport dimensions after refit and three rendered frames. Desktop used diorama; the existing mobile policy selected overhead. Pictures are in ../pictures/: play-* preserves HUD; scene-* is a labelled supplemental scene with UI visibility hidden only for capture. The earlier title captures remain distinct. No picture constitutes owner beach/ramp acceptance.
 First existing chunk-fail regression did not reach the browser: server startup exited with unsettled top-level await because this worktree lacked server/node_modules. Its output is retained; server npm ci completed before retry.
+
+## November 8 recovery and current-main integration
+
+The old /tmp worktree and uncommitted regression logs did not survive the environment restart.
+Recovered source cbdd04d passed fresh tokens, idle, board-look and Classic-builder proofs in serial order.
+The raw outputs are under nov8/cbdd04d-*.log.
+No result is inferred from the interrupted November 6 batch.
+
+Merged canonical main03b8c88247ff5a2e18485fb41da2f554822c5d73 normally, producing sourcefbd4dd6ec429381c8af4bcf851c584bf32b79092.
+Resolution preserves main's boot progress, first-draw completion, shore completion and exhausted-load completion.
+The focused proof uses main's shared proof-browser setup, preserving every assertion.
+The actual intro remains covered separately by loading-screen-prove.
+Frozen focused lifecycle and actual production import recovery passed on fbd4dd6.
+Controlled capability/events remain labelled; no native-KHR hardware coverage is claimed.
+Types, production build and registration200 passed on that source.
+
+Fresh current-main production sizes: Canvas202208 versus201019 B, +1189/663 B, FAIL526 B over.
+Jelly8373 versus8182 B, +191/200 PASS; index124734 versus124686 B, +48/400 PASS.
+Classic18050/19500 B PASS. No ceiling or allowance changed.
+Loading-screen, chunk-fail and client regressions are pending at this checkpoint.
+Old-head passes do not establish those current-head regressions.
+Owner beach/ramp picture acceptance remains outstanding.
+
+One bounded recovery-helper relocation was measured and reverted before the merge.
+It reduced old-head Canvas201928 to201801 B, saving127 B, leaving358 B over the old allowance.
+Its generic-union typecheck failed; the full failure is retained in nov8/reverted-recovery-candidate-types-failed.log.
+No candidate code, new chunk, budget edit or test change was retained.
+Node22.23.4, Playwright1.63.0 and its default Chromium1243 ran without an executable override.
