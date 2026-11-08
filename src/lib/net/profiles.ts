@@ -1,4 +1,6 @@
 // #766(a): private, seatless profile requests. A sheet must show and confirm host before authenticating.
+import { TOKEN } from "@/lib/net/proto";
+
 export interface ProfileOwner {
   profileId: string;
   displayName: string;
@@ -16,8 +18,8 @@ export interface ProfileFields {
   backupColor?: string | null;
   catchphrase?: string;
 }
-export type ProfileStatus = "idle" | "connecting" | "available" | "unsupported" | "offline" | "insecure";
-export interface ProfileSnapshot {
+type ProfileStatus = "idle" | "connecting" | "available" | "unsupported" | "offline" | "insecure";
+interface ProfileSnapshot {
   host: string;
   confirmed: boolean;
   status: ProfileStatus;
@@ -29,7 +31,6 @@ export interface ProfileSnapshot {
 export interface ProfileAttachment { credentialForHost(host: string): string | null }
 type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 type Reply = { type?: string; id?: number; [key: string]: unknown };
-const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]"]);
 const messages: Record<string, string> = {
   confirmHost: "Confirm the selected host before signing in.",

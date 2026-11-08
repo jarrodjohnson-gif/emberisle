@@ -503,6 +503,8 @@ jobs:
         run: npm run chat-text-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run sticker-tray-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+        run: npm run sticker-motion-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run react-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
@@ -645,6 +647,8 @@ jobs:
         run: npm run dock-piles-visibility-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
         run: npm run seat-rail-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
+        run: npm run seat-dot-ring-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
         run: npm run longest-army-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'

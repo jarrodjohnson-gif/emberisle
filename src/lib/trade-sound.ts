@@ -5,7 +5,7 @@ import { playLater, playTradePlease, stop } from "./sound";
 type Play = typeof import("./sound").play;
 
 const isDiggler = (name = "") => /luck(e|y|ie)?digg?ler|pickle|isa+c/.test(name.toLowerCase().replace(/[^a-z]/g, ""));
-export const isDaking = (name = "") => name.trim().toLowerCase() === "daking";
+const isDaking = (name = "") => name.trim().toLowerCase() === "daking";
 
 export function offerChime(play: Play, from: string, fromName: string, me: string, give: Bag, want: Bag) {
   const timber = give.timber ?? 0;

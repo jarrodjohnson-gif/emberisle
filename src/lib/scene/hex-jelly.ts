@@ -333,7 +333,7 @@ const POOL_LEVEL = -0.014;
 
 // The ground's height over the pad at a hex-local point: the landform, held flat on the pad, the corner discs and the edge band;
 // then the stream's channel and the pool's bowl cut into it (they may come nearer the pad and the rim, never into a corner).
-export function heightAt(L: Layout, x: number, z: number) {
+function heightAt(L: Layout, x: number, z: number) {
   let raw = 0.018 * fbm(x * 3, z * 3, L.seed);
   for (const p of L.spots) raw += bump(x, z, p);
   for (const g of L.ridges) {

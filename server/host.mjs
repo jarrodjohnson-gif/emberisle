@@ -11,7 +11,7 @@ import { chooseBotAction, chooseRecoveryAction, chooseTradeAsk, logBotAction, sh
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, totalVP, validBag } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
-import { PROTO } from "../src/lib/net/proto.ts";
+import { JOIN_CODE, PROTO } from "../src/lib/net/proto.ts";
 import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
 import { PROFILE_TYPES, profileGate, profileHandler, seatCredential, seatProfile, tableCard, watchRefusal } from "./profile-protocol.mjs";
@@ -1923,14 +1923,12 @@ function handle(ws, raw) {
   return play(ws, room, msg);
 }
 
-const CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
-
 // Answers which seats a lobby holds, without sitting down (docs/design/color-peek.md). The asker has no seat, so it gets
 // what dims the swatches and nothing more: no names or pictures for whoever holds the code (G10). Those come with the
 // `seats` broadcast after sitting down.
 function peek(ws, msg) {
   const code = typeof msg.code === "string" ? msg.code.toUpperCase() : "";
-  if (!CODE.test(code)) return;
+  if (!JOIN_CODE.test(code)) return;
   const room = rooms.get(code);
   const seats = room && !room.game ? room.seats.map((s) => ({ id: s.id, color: s.color, ready: s.ready })) : [];
   send(ws, { type: "seats", code, seats });
