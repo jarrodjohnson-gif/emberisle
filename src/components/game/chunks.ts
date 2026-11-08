@@ -30,6 +30,9 @@ export const ProfileSheet = profileSheet.pick((m) => m.ProfileSheet);
 // #766 slice 2: its Edit profile and Change PIN forms load when the sheet opens one of them.
 export const profileForms = chunk(() => import("@/components/game/ProfileForms"));
 export const ProfileForms = profileForms.pick((m) => m.ProfileForms);
+// #767: its Wins and History views load when the sheet opens one of them.
+export const profileRecords = chunk(() => import("@/components/game/ProfileRecords"));
+export const ProfileRecords = profileRecords.pick((m) => m.ProfileRecords);
 
 export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);

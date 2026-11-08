@@ -12,7 +12,7 @@ import { SeatDot } from "@/components/game/SeatDot";
 import { useFocusTrap } from "@/lib/focus-trap";
 import { useGame } from "@/lib/game/store";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
-import { ProfileForms, profileForms as forms } from "@/components/game/chunks";
+import { ProfileForms, ProfileRecords, profileForms as forms, profileRecords as records } from "@/components/game/chunks";
 import { ProfileClientError, createProfileClient, profileStorageKey } from "@/lib/net/profiles";
 import { LOGIN } from "@/lib/net/proto";
 import { hostUrl } from "@/lib/net/table";
@@ -58,8 +58,8 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   useFocusTrap(root, true, '[aria-label="Close"]', opener);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
-  // Signed in, "signin" is the summary; "edit" and "pin" are its two forms.
-  const [view, setView] = useState<"signin" | "create" | "edit" | "pin">("signin");
+  // Signed in, "signin" is the summary; "edit" and "pin" are its two forms, "wins" and "history" its records (#767).
+  const [view, setView] = useState<"signin" | "create" | "edit" | "pin" | "wins" | "history">("signin");
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [showPin, setShowPin] = useState(false);
@@ -88,7 +88,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   useEffect(() => { if (mustChange) void open("pin"); }, [mustChange]);
   // Signed in, fetch the forms quietly, so Edit profile and Change PIN open on the first press without a wait.
   const signedIn = Boolean(snap.profile);
-  useEffect(() => { if (signedIn) void forms.prefetch(); }, [signedIn]);
+  useEffect(() => { if (signedIn) { void forms.prefetch(); void records.prefetch(); } }, [signedIn]);
 
   // Every request confirms the host shown above it, then reports a refusal beside the field it is about.
   const send = async (run: () => Promise<unknown>) => {
@@ -129,7 +129,10 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
     setView(to);
   };
   // A form opens once its chunk is in. If it can't load, the summary says so and the same button tries the network again.
-  const open = (to: "edit" | "pin") => forms.load().then(() => back(to), () => setErrors({ form: "Couldn't load this form. Try again." }));
+  const open = (to: "edit" | "pin" | "wins" | "history") => {
+    const isForm = to === "edit" || to === "pin";
+    return (isForm ? forms : records).load().then(() => back(to), () => setErrors({ form: isForm ? "Couldn't load this form. Try again." : "Couldn't load your records. Try again." }));
+  };
 
   const guest = (
     <Button variant="ghost" className="w-full" onClick={onClose} back>
@@ -145,6 +148,9 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   if (snap.profile && (view === "edit" || view === "pin")) {
     // Only reached once `open` has loaded the forms chunk, so this never suspends.
     body = <ProfileForms ui={{ kind: view, c, form, setForm, errors, setErrors, busy, setBusy, showPin, setShowPin, back }} />;
+  } else if (snap.profile && (view === "wins" || view === "history")) {
+    // Only reached once `open` has loaded the records chunk, so this never suspends.
+    body = <ProfileRecords c={c} kind={view} back={() => back()} />;
   } else if (snap.profile) {
     body = (
       <>
@@ -156,9 +162,9 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
         <p className="text-sm text-muted">Login: {snap.profile.login}</p>
         <p className="text-sm text-muted">{snap.remembered ? "Remembered on this device." : "Not remembered on this device."}</p>
         <div className="grid grid-cols-2 gap-2">
-          {(["edit", "pin"] as const).map((to) => (
+          {(["wins", "history", "edit", "pin"] as const).map((to) => (
             <Button key={to} variant="secondary" data-opens={to} onClick={() => void open(to)}>
-              {to === "edit" ? "Edit profile" : "Change PIN"}
+              {{ wins: "Wins", history: "Your games", edit: "Edit profile", pin: "Change PIN" }[to]}
             </Button>
           ))}
         </div>

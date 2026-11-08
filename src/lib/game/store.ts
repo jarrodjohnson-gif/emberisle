@@ -234,6 +234,18 @@ interface OpenOffer {
 // The client is needed only for discovery or an explicit online journey.
 const tableModule = chunk(() => import("@/lib/net/table"));
 
+// #767: a finished game's profile result as the host sent it. `wins` is keyed by player id for each seat that started bound to
+// a profile that still exists: its committed total, or null while the host is still saving it. Empty when every such profile
+// was deleted, so each row reads "Not tracked". Anything malformed is dropped, never guessed.
+export type GameResult = { tracked: boolean; wins: Record<string, number | null> };
+function gameResult(r: unknown): GameResult | null {
+  const v = r as Partial<GameResult> | null;
+  if (!v || typeof v !== "object" || typeof v.tracked !== "boolean" || !v.wins || typeof v.wins !== "object") return null;
+  const wins = Object.entries(v.wins);
+  if (!wins.every(([, n]) => n === null || (Number.isSafeInteger(n) && (n as number) >= 0))) return null;
+  return { tracked: v.tracked, wins: Object.fromEntries(wins) };
+}
+
 // The window listeners that wake a backing-off table; one connection at a time, so one remover.
 let stopWake: (() => void) | null = null;
 function clearWake() {
@@ -298,6 +310,8 @@ interface GameStore {
   // #766: the title's profile client, set when its sheet first opens. It gives Host and Join a credential only for its own
   // confirmed host, at the moment of sending; nothing of it reaches game state or the saved seat.
   profile: ProfileAttachment | null;
+  // #767: the host's word on a finished online game's profile result, or null (no profiled seat, or not over).
+  gameResult: GameResult | null;
   toast: string | null;
   // One line everyone reads for a moment: the roll and who got what, or an award changing hands (#188).
   banner: string | null;
@@ -538,6 +552,7 @@ export const useGame = create<GameStore>((set, get) => ({
   costs: false,
   costsOpener: null,
   profile: null,
+  gameResult: null,
   toast: null,
   banner: null,
   net: null,
@@ -1301,7 +1316,8 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     },
     // Dice and gain floats present the roll; its words live only in the persistent log.
     rolled: () => {},
-    state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow }) => {
+    state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow, result }) => {
+      set({ gameResult: game.phase === "over" ? gameResult(result) : null });
       // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
       const me = you ?? "";
       const rollOff = rollOffLine(get().state, game);

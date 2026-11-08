@@ -286,6 +286,26 @@ function freezeOutcome(game, roster, assisted, endedAt) {
   };
 }
 
+// What a table sees of a finished game's profile result (#767, profiles.md "Profile and Wins surfaces"), keyed by game player
+// id for each starting seat that was bound to a profile. An untracked game (legacy, invalid or not eligible) says so. A tracked
+// one gives each profile's committed win total once the profile store holds this game's receipt, and null while it is saving.
+// Read from the store, never counted here, so a repeated push cannot add a win. No profiled seat, no field. A deleted
+// profile (#891) is left out, so its row ends as "Not tracked", never "Saving record…" for good.
+function resultOf(room) {
+  if (room.game?.phase !== "over" || !room.roster) return undefined;
+  const rows = room.roster.players.filter((p) => p.profileId);
+  if (!rows.length) return undefined;
+  const tracked = room.roster.eligible && room.outcome?.gameId === room.roster.gameId;
+  const recorded = tracked && Boolean(profiles.receipt(room.roster.gameId));
+  const wins = {};
+  for (const p of rows) {
+    if (profiles.tombstoned(p.profileId)) continue;
+    const n = recorded ? profiles.committedWins(p.profileId) : null;
+    if (!recorded || n !== null) wins[p.pid] = n;
+  }
+  return { tracked, wins };
+}
+
 // A saved outcome that is not this roster's is dropped; the load freezes a fresh one from the terminal snapshot instead.
 function loadOutcome(o, roster) {
   return o && roster && validOutcome(o) && o.gameId === roster.gameId ? o : null;
@@ -866,6 +886,7 @@ function pushState(room) {
   // whose clock is off still land on the host's moment.
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
   const turnDeadline = soonest?.turnDeadline ?? null;
+  const result = resultOf(room);
   save(room);
   // The one terminal gate (#889): every route to the win (a move, a timer, a bot, takeover, rejoin) publishes through here,
   // and a finished tracked game goes out only once its final room and its pending outcome are both durable.
@@ -885,10 +906,11 @@ function pushState(room) {
       turnDeadline,
       turnPlayer: soonest?.pid ?? null,
       serverNow: Date.now(),
+      result,
     });
   }
   if (!room.watchers.size) return;
-  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
+  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now(), result });
   for (const ws of room.watchers) if (ws.readyState === ws.OPEN) ws.send(raw);
 }
 
@@ -948,7 +970,10 @@ async function recordAttempt(o) {
   const id = o.gameId;
   try {
     const out = await profiles.recordOutcome(o);
+    // Nothing credited: resultOf already left out every deleted profile, so the table's line has nothing to wait for.
     if (out === "excluded") return true;
+    // The table's win screen swaps "Saving record…" for the committed totals.
+    for (const room of rooms.values()) if (room.roster?.gameId === id && room.game?.phase === "over") pushState(room);
     await journal.done(id);
     console.log(out === "duplicate" ? `results: game ${id} was already recorded; its pending outcome is cleared` : `results: recorded game ${id}`);
     return true;
