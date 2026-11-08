@@ -219,14 +219,19 @@ for (const viewport of SIZES) {
   await page.waitForFunction(() => [...document.querySelectorAll('[data-testid="stickers"] img')].every((i) => i.getAttribute("src")));
   const statics = await tray.locator("img").evaluateAll((els, moving) => els.filter((i) => !moving.includes(i.alt)).map((i) => ({ id: i.alt, still: i.hasAttribute("data-still"), src: i.getAttribute("src") ?? "" })), animated);
   check(statics.length > 0 && statics.every((s) => !s.still && !s.src.startsWith("data:")), `${size}: reduced motion, the ${statics.length} static stickers keep their own file`);
+  const trayBox = await page.locator(trayImg(TEST)).evaluate((i) => `${Math.round(i.getBoundingClientRect().width)}x${Math.round(i.getBoundingClientRect().height)}`);
+  console.log(`${size}: the tray draws each sticker in a ${trayBox} px box`);
   await tray.scrollIntoViewIfNeeded();
   await page.screenshot({ path: path.join(SHOTS, `calm-tray-${size}.png`) });
-  if (size === "390x844") {
+  {
     await tray.getByRole("button", { name: `React ${TEST}`, exact: true }).click();
     const bubble = `[data-testid="reaction"][data-emote="${TEST}"] img`;
     await page.waitForFunction((sel) => { const i = document.querySelector(sel); return i?.hasAttribute("data-still") && i.complete && i.naturalWidth > 0; }, bubble, { polling: "raf" });
     const offBubble = await page.evaluate(offFrame0, [bubble, TEST]);
     check(offBubble <= 2, `${size}: reduced motion, the seat bubble shows ${TEST} as a still of frame 0 (difference ${offBubble})`);
+    const box = await page.locator(bubble).evaluate((i) => `${Math.round(i.getBoundingClientRect().width)}x${Math.round(i.getBoundingClientRect().height)}`);
+    console.log(`${size}: the seat bubble draws the sticker in a ${box} px box`);
+    await page.screenshot({ path: path.join(SHOTS, `calm-bubble-${size}.png`) });
     await page.getByRole("tab", { name: "Chat", exact: true }).click();
     const line = `[data-testid="react-line"][data-emote="${TEST}"] img`;
     await page.waitForFunction((sel) => { const i = document.querySelector(sel); return i?.hasAttribute("data-still") && i.complete && i.naturalWidth > 0; }, line);
