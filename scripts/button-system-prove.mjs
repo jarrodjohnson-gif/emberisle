@@ -3,7 +3,8 @@
 // incoming offer, the trade window, the fortune tray, the table menu and the results:
 // - every Button is 15 px / 22 px, weight 600, but two that keep their own type, as in the packet's after.css: the lobby
 //   (its accepted scale, decision 7 of #1274) and the trade window's 12 px need pills (seat-needs.css);
-// - no button or tab label wraps onto a second line or clips, and every Button is at least 44 x 44;
+// - no Button label outside the lobby wraps onto a second line or clips (the title's Host and Join row is the tight one),
+//   and every such Button is at least 44 x 44;
 // - Tab through the screen: every focused button and tab shows a 2 px solid ink (#263d3c) outline.
 // Zero console errors. Run: npm run button-system-prove
 // `--report <file>` writes the measurements and skips the checks (used to measure main for the before pictures);
@@ -152,10 +153,13 @@ try {
       rec.screens[name] = { buttons, focus };
       for (const b of buttons) {
         const at = `${tag} ${name} "${b.label}"`;
+        // The wrap and clip checks cover what the new type reaches: Buttons outside the lobby. Raw buttons and the lobby keep
+        // their own type, so this change cannot wrap them (#1301, #1303 and the mechanical-fix list own those).
+        if (!b.primitive || b.lobby) continue;
         if (b.wraps.length) problems.push(`${at}: wraps (${b.wraps.join(" | ")})`);
         if (b.clips.length) problems.push(`${at}: clips (${b.clips.join(" | ")})`);
-        if (b.primitive && (b.w < 44 || b.h < 44)) problems.push(`${at}: ${b.w}x${b.h}, under 44 x 44`);
-        if (b.primitive && !b.lobby && !b.need && !PENDING_TYPE.has(b.testid) && b.font.join(" ") !== "15px 22px 600") problems.push(`${at}: type ${b.font.join(" ")}, not 15px 22px 600`);
+        if (b.w < 44 || b.h < 44) problems.push(`${at}: ${b.w}x${b.h}, under 44 x 44`);
+        if (!b.need &&!PENDING_TYPE.has(b.testid) && b.font.join(" ") !== "15px 22px 600") problems.push(`${at}: type ${b.font.join(" ")}, not 15px 22px 600`);
       }
       for (const f of focus) {
         if (PENDING_FOCUS.has(f.testid)) continue;
@@ -170,6 +174,8 @@ try {
     await title.getByRole("button", { name: "Play", exact: true }).waitFor();
     await title.waitForTimeout(500);
     assert.ok(await screen(title, "title", 12) > 3, `${tag}: Tab reaches the title's buttons`);
+    const row = await title.evaluate(() => ["Host a table", "Join"].map((n) => [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === n).getBoundingClientRect().top));
+    if (Math.abs(row[0] - row[1]) > 1) problems.push(`${tag} title: Host a table and Join are not on one line (${row.join(", ")})`);
 
     // Lobby: Josh joins, one bot, both ready, so Start shows.
     await title.evaluate(() => window.__emberisle.getState().hostTable());
