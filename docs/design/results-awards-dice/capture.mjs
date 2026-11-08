@@ -5,7 +5,8 @@
 // added to the real list, from the real store state that came over the socket.
 // No src/ file changes. Not a CI proof. Run from the repo root, one browser at a time:
 //   flock /tmp/claude-0/emberisle-browser.lock node --import ./server/register.mjs docs/design/results-awards-dice/capture.mjs [--save] [--new]
-// --save writes the pictures here. --new plays a fresh game instead of reusing game.json.
+// --save writes the pictures here. --keep keeps the temp folder of a run without --save. --new plays a fresh game
+// instead of reusing game.json. --only=WxH runs one size. A failed wait saves fail-WxH.png in the pictures folder.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -21,8 +22,10 @@ import { diceLine, islandAwards } from "./awards.mjs";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const save = process.argv.includes("--save");
+// Without --save the pictures go to a temp folder that is deleted at the end, unless --keep is given.
+const keep = process.argv.includes("--keep");
 const out = save ? dir : mkdtempSync(path.join(tmpdir(), "results-awards-dice-"));
-console.error(`pictures: ${out}`);
+console.error(`pictures: ${out}${save || keep ? "" : " (deleted at the end; add --keep to keep it)"}`);
 const css = readFileSync(path.join(dir, "mock.css"), "utf8");
 const fail = (msg) => { throw new Error(msg); };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -134,6 +137,7 @@ try {
     }
     const sums = state.rollSums;
     const d = diceLine(sums);
+    if (!d) return; // No rollSums or no rolls: no strip.
     const W = 330, H = 44, bw = 22, gap = (W - 11 * bw) / 10, max = Math.max(...sums, ...sums.map((_, i) => d.total * chance(i + 2)));
     const x = (i) => i * (bw + gap);
     const bars = sums.map((k, i) => { const h = Math.max(1, (k / max) * H); return `<rect class="bar${d.sum === i + 2 ? " hot" : ""}" x="${x(i)}" y="${H - h}" width="${bw}" height="${h}" rx="3"/>`; }).join("");
@@ -184,7 +188,7 @@ try {
     try {
       await page.getByTestId("win-screen").waitFor({ timeout: 120000 });
     } catch (e) {
-      await page.screenshot({ path: path.join(tmpdir(), `awards-fail-${tag}.png`) });
+      await page.screenshot({ path: path.join(out, `fail-${tag}.png`) });
       console.error(await page.evaluate(() => JSON.stringify({ text: document.body.innerText.slice(0, 400), phase: window.__emberisle?.getState().state?.phase, mode: window.__emberisle?.getState().mode })));
       throw e;
     }
@@ -226,14 +230,15 @@ try {
     console.log(tag, JSON.stringify({ after: rec.after, open: rec.open }));
     await context.close();
   }
+  result.errors = errors;
+  writeFileSync(path.join(out, "measurements.json"), `${JSON.stringify(result, null, 2)}\n`);
 } finally {
   await browser?.close();
   await vite?.close();
   for (const ws of sockets) ws.terminate();
   host.kill("SIGKILL");
   rmSync(rooms, { recursive: true, force: true });
+  if (!save && !keep) rmSync(out, { recursive: true, force: true });
 }
-result.errors = errors;
-writeFileSync(path.join(out, "measurements.json"), `${JSON.stringify(result, null, 2)}\n`);
 console.log(JSON.stringify({ errors }));
 if (errors.length) process.exit(1);
