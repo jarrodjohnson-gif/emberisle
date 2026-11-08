@@ -1,0 +1,118 @@
+{
+  "source": "playable board plus labelled UI-hidden supplemental scene",
+  "ownerAccepted": false,
+  "frames": [
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "canvas": [
+        1280,
+        720
+      ],
+      "titleMode": false,
+      "status": {
+        "requested": "classic",
+        "displayed": "classic",
+        "loading": false,
+        "error": null,
+        "quality": "full",
+        "ready": true
+      },
+      "stats": {
+        "quality": "full",
+        "drawCalls": 40,
+        "triangles": 210116,
+        "objects": {
+          "meshes": 40,
+          "geometries": 40,
+          "materials": 20
+        },
+        "rings": 18,
+        "hexes": 19
+      },
+      "coastEdges": 30,
+      "renders": 13,
+      "view": "diorama"
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "canvas": [
+        390,
+        844
+      ],
+      "titleMode": false,
+      "status": {
+        "requested": "classic",
+        "displayed": "classic",
+        "loading": false,
+        "error": null,
+        "quality": "full",
+        "ready": true
+      },
+      "stats": {
+        "quality": "full",
+        "drawCalls": 40,
+        "triangles": 210116,
+        "objects": {
+          "meshes": 40,
+          "geometries": 40,
+          "materials": 20
+        },
+        "rings": 18,
+        "hexes": 19
+      },
+      "coastEdges": 30,
+      "renders": 18,
+      "view": "overhead"
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "canvas": [
+        844,
+        390
+      ],
+      "titleMode": false,
+      "status": {
+        "requested": "classic",
+        "displayed": "classic",
+        "loading": false,
+        "error": null,
+        "quality": "full",
+        "ready": true
+      },
+      "stats": {
+        "quality": "full",
+        "drawCalls": 40,
+        "triangles": 210116,
+        "objects": {
+          "meshes": 40,
+          "geometries": 40,
+          "materials": 20
+        },
+        "rings": 18,
+        "hexes": 19
+      },
+      "coastEdges": 30,
+      "renders": 23,
+      "view": "overhead"
+    }
+  ],
+  "testedSource": "c9e8ee766f87b97014c040313feeb08bae186f28",
+  "canonicalBase": "b30170a21d57799191fe85c2ee377284c29abdc8",
+  "files": {
+    "classic-switch-production-scene-1280x720.png": "8f5c34e19e2b550c57cf5138d7f3219f2764c633719c88546361b1f4efb5846e",
+    "classic-switch-production-play-390x844.png": "3ea7f10a0c54d2ec8d8b7c0e8d2a57018cdceae8b9a7c6ba22c77f2f1c5c76a1",
+    "classic-switch-production-play-844x390.png": "16c2870f5b2ca4f5e2074adf3cf54c65108791704dac5cba301309d18f72ae51",
+    "classic-switch-production-scene-390x844.png": "41bfc629c9fa725da662225f3412bb1be2a2c4d5baa93bba2f1941ae50aa1107",
+    "classic-switch-production-play-1280x720.png": "523c51c5105f00f9fc8317b7a78c8e7dad02c3c50e63cfc6ce9461633fc89165",
+    "classic-switch-production-scene-844x390.png": "826fa4dd2aa806dd5b9a6c75d347273ba8f483c9e0e09a8f5df29ffde101bdd7"
+  }
+}

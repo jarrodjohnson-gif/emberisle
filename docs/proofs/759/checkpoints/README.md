@@ -86,3 +86,29 @@ Node22.23.4, Playwright1.63.0 and its default Chromium1243 ran without an execut
 Current-main integration source fbd4dd6 completed loading-screen, chunk-fail and client regressions with exit0.
 The loading-screen proof exercised normal/reduced-motion startup, stalled frames, failed IslandCanvas and explicit recovery.
 The original assertions and deadlines stayed unchanged. Raw logs are under nov8/fbd4dd6-*.
+
+## Retained recovery factoring and final frozen proof
+
+Source c9e8ee766f87b97014c040313feeb08bae186f28 normally merges mainb30170a21d57799191fe85c2ee377284c29abdc8.
+Optional preload recovery now lives with chunk.load ownership; only the two land modules opt in.
+The exact path, same-origin, per-request lifetime and finally cleanup policy remain unchanged.
+Existing essential UI loads and the #1429 ready() reservation remain untouched.
+Fresh scope expansion6717968386 preceded this change.
+
+Frozen current-source classic-switch-prove and chunk-fail-prove both exited0.
+The focused proof includes actual production failures, retry2 recovery, pending-disposal ownership and essential recovery routing.
+Fresh production playable pictures and their hashes/source metadata are under ../pictures/nov8/.
+I inspected the390x844 normal-HUD picture: the Classic board and shore are visibly present.
+Inspection is not Jarrod's beach/ramp acceptance, which remains outstanding.
+
+Actual post-commit production smoke sizes: Canvas202045 B/base201023 B, +1022/663, FAIL359 B over.
+index124871/base124739 B, +132/400 PASS; Jelly8375/base8181 B, +194/200 PASS; Classic18050/19500 PASS.
+The pre-commit build of identical executable source measured Canvas202043 (+1020/663), index+129, Jelly+192.
+Build SHA/time change hashed import names, so these valid builds differ by a few gzip bytes.
+No ceiling or allowance changed. The retained factoring recovered about167-169 B from Canvas.
+A shadow-only async rewrite typechecked but increased Canvas6 B versus its same-root control, so it was rejected.
+The shadow has no git metadata; its index numbers are not production acceptance evidence.
+
+Question6717986252 asks the desk how to close the remaining growth gap.
+Architecture and allowance changes are paused pending its answer; independent proofs/evidence continue.
+No new chunk, unrelated GLSL edit, weakened assertion or manual CI retry was introduced.
