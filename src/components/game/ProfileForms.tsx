@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
 import type { ProfileFields, ProfileOwner } from "@/lib/net/profiles";
+import { LOGIN } from "@/lib/net/proto";
 import type { Errors, FormsUi } from "@/components/game/ProfileSheet";
 
-const LOGIN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const PIN = /^\d{4}$/;
 const field = "h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg aria-[invalid=true]:border-accent-ink";
 type Text = "displayName" | "login" | "pin" | "newPin" | "pinConfirm" | "catchphrase";

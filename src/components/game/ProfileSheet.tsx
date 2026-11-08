@@ -14,6 +14,7 @@ import { useGame } from "@/lib/game/store";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
 import { ProfileForms, ProfileRecords, profileForms as forms, profileRecords as records } from "@/components/game/chunks";
 import { ProfileClientError, createProfileClient, profileStorageKey } from "@/lib/net/profiles";
+import { LOGIN } from "@/lib/net/proto";
 import { hostUrl } from "@/lib/net/table";
 import { play } from "@/lib/sound";
 
@@ -41,7 +42,6 @@ function profileClient() {
   return (client ??= createProfileClient(hostUrl(location), { development: true }));
 }
 
-const LOGIN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const PIN = /^\d{4}$/;
 const field = "h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg aria-[invalid=true]:border-accent-ink";
 type Text = "displayName" | "login" | "pin" | "newPin" | "pinConfirm" | "catchphrase";

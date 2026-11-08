@@ -4,6 +4,7 @@ import { createHash, randomBytes, randomInt, randomUUID, scrypt, timingSafeEqual
 import { closeSync, fsyncSync, lstatSync, mkdirSync, mkdtempSync, openSync, readFileSync, readdirSync, renameSync, rmdirSync, rmSync, unlinkSync, writeSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { LOGIN, TOKEN } from "../src/lib/net/proto.ts";
 import { isProfileSongId } from "../src/lib/profile-songs.ts";
 
 export const SCHEMA = 1;
@@ -26,9 +27,6 @@ export const RESERVED_PER_PROFILE = 5;
 const UNKNOWN_MAX = 1024;
 const FILE = "profiles.json";
 const LOCK = "writer.lock";
-
-export const LOGIN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 
 export class ProfileError extends Error {
   constructor(code) {
