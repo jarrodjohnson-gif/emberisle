@@ -85,7 +85,9 @@ function recorders() {
   document.addEventListener("transitionrun", (e) => {
     const el = e.target;
     const entry = exiting.get(el);
-    if (!entry || entry.mid || e.propertyName !== "opacity") return;
+    if (!entry) return;
+    (entry.runs ??= []).push(e.propertyName);
+    if (entry.mid) return;
     const fades = el.getAnimations().filter((a) => a.transitionProperty);
     for (const a of fades) { a.pause(); a.currentTime = 80; }
     const mid = getComputedStyle(el);
@@ -284,7 +286,26 @@ async function online(me, { cap = false } = {}) {
       check(now.mounts === n0 && now.up === 0, `${tg} ${label}: no moment`, now);
     };
     const gone = (ms = 1000) => page.waitForFunction(() => !document.querySelector('[data-testid="turn-moment"]'), null, { timeout: ms });
-    const shows = (n) => page.waitForFunction((n) => window.__yt.length === n && document.querySelector('[data-testid="turn-moment"]'), n, { timeout: STEP_MS });
+    const shows = async (n) => {
+      try {
+        await page.waitForFunction((n) => window.__yt.length === n && document.querySelector('[data-testid="turn-moment"]'), n, { timeout: STEP_MS });
+      } catch (e) {
+        console.log(`shows(${n}) timed out`, JSON.stringify(await page.evaluate(() => {
+          const g = window.__emberisle.getState();
+          return { yt: window.__yt.length, element: !!document.querySelector('[data-testid="turn-moment"]'), seq: g.state?.seq, phase: g.state?.phase,
+            current: g.state?.current, localId: g.localId, synced: g.synced, spectator: g.spectator };
+        })), JSON.stringify({ momentsRequested: requested }));
+        throw e;
+      }
+    };
+    // TurnMoment is lazy (the moments chunk) and takes the first move it sees as its baseline, so the turn must not arrive before the
+    // chunk is in and the component has mounted: a turn that lands first is the baseline and shows nothing.
+    const momentsMounted = async () => {
+      await page.evaluate(async () => {
+        await import("/src/components/game/moments.ts");
+        for (let i = 0; i < 3; i++) await new Promise((r) => requestAnimationFrame(r));
+      });
+    };
     // The entry fade (turn-stay-in) has finished, so an exit starts from the full pill: ended mid-entry it freezes at the fade's
     // current opacity, which is near 0 on a loaded runner and leaves no opacity to fade.
     const settled = () => page.waitForFunction(() => {
@@ -310,6 +331,7 @@ async function online(me, { cap = false } = {}) {
     await stays("a bot's turn", 0);
 
     // The turn arrives: one moment, with the seat's dot, and it stays.
+    await momentsMounted();
     push(at({ turn: 3, phase: "roll", current: me }));
     await shows(1);
     await page.waitForFunction(() => window.__yt[0]?.bg, null, { timeout: STEP_MS });
