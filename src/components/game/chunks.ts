@@ -33,6 +33,7 @@ export const ProfileForms = profileForms.pick((m) => m.ProfileForms);
 
 export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);
+export const DesktopDock = sheets.pick((m) => m.DesktopDock);
 export const FortuneTray = sheets.pick((m) => m.FortuneTray);
 export const HowTo = sheets.pick((m) => m.HowTo);
 export const TradePanel = sheets.pick((m) => m.TradePanel);
