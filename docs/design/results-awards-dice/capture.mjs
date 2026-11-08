@@ -86,6 +86,9 @@ try {
     if (!g.rollSums || g.rollSums.length !== 11) fail("rollSums missing at the win");
     if (g.players.some((p) => !p.tally || typeof p.goodsLost !== "number")) fail("a seat's counters are missing at the win");
   }
+  // Free the seats: the host refuses a second connection to a seat ("Your seat is open in another tab").
+  for (const ws of sockets) ws.close();
+  await wait(300);
   const end = ends[0];
   result.host.winReason = end.winReason;
   result.totals = Object.fromEntries(end.players.map((p) => [p.name, totalVP(end, p.id)]));
