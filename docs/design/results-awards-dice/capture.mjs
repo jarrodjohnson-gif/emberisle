@@ -27,7 +27,8 @@ const css = readFileSync(path.join(dir, "mock.css"), "utf8");
 const fail = (msg) => { throw new Error(msg); };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const SIZES = [[430, 932], [390, 844], [375, 812], [820, 1180], [844, 390]];
+const only = process.argv.find((a) => a.startsWith("--only="))?.slice(7);
+const SIZES = [[430, 932], [390, 844], [375, 812], [820, 1180], [844, 390]].filter(([w, h]) => !only || only === `${w}x${h}`);
 const gameFile = path.join(dir, "game.json");
 let game;
 if (existsSync(gameFile) && !process.argv.includes("--new")) game = JSON.parse(readFileSync(gameFile, "utf8"));
@@ -177,7 +178,13 @@ try {
     const page = await context.newPage();
     page.on("pageerror", (e) => errors.push(`${tag}: ${e.message}`));
     await page.goto(url);
-    await page.getByTestId("win-screen").waitFor();
+    try {
+      await page.getByTestId("win-screen").waitFor({ timeout: 120000 });
+    } catch (e) {
+      await page.screenshot({ path: path.join(tmpdir(), `awards-fail-${tag}.png`) });
+      console.error(await page.evaluate(() => JSON.stringify({ text: document.body.innerText.slice(0, 400), phase: window.__emberisle?.getState().state?.phase, mode: window.__emberisle?.getState().mode })));
+      throw e;
+    }
     await page.locator('[data-testid="win-row"]').first().waitFor();
     await page.waitForTimeout(2000);
     const shot = (name) => page.screenshot({ path: path.join(out, `${name}-${tag}.png`) });
