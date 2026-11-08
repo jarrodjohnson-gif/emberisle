@@ -98,7 +98,7 @@ type Bubble =
 
 // Where the bubble hangs. Rail: to the right of the desktop card, over the sea. Strip: under the phone cell, below the hidden
 // points hint. Lobby: in the row, between the name and the status, so it can never sit on the name (#847).
-export type BubbleAt = "rail" | "strip" | "lobby";
+type BubbleAt = "rail" | "strip" | "lobby";
 const PLACE: Record<BubbleAt, string> = {
   rail: "absolute left-full top-1/2 z-30 ml-2 -translate-y-1/2",
   strip: "absolute left-1/2 top-full z-30 mt-4 -translate-x-1/2",

@@ -3,7 +3,7 @@ import { useEffect, type RefObject } from "react";
 
 const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
-export function focusableIn(root: HTMLElement | null): HTMLElement[] {
+function focusableIn(root: HTMLElement | null): HTMLElement[] {
   return [...(root?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])].filter((el) => !el.hasAttribute("disabled") && el.tabIndex >= 0);
 }
 
