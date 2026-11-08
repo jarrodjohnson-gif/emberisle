@@ -5,6 +5,7 @@
 // suspends on the shared load; a failed load reaches the LazyBoundary around it and is forgotten there (or a second later
 // if only a prefetch asked), so the next open or mount tries the network again.
 import { Component, createElement, Suspense, use, type ComponentType, type ReactNode } from "react";
+import { JOIN_CODE } from "@/lib/net/proto";
 
 // A promise React's `use` can read without suspending once it has settled: it carries its own status, as React's thenable
 // protocol allows, so a loaded chunk renders synchronously on every later pass (React must see `use` called on each pass).
@@ -132,7 +133,7 @@ function typing() {
   return el instanceof HTMLInputElement && !/^(button|submit|reset|checkbox|radio|range|color|file|image)$/.test(el.type);
 }
 
-export const JOIN_CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
+export { JOIN_CODE };
 
 // The focus change that releases a held reload can be the press on Join or Host, which the reload then swallows. The join
 // field's value rides the reload in the URL (as a join link does) so the field refills: a valid code replaces whatever link
