@@ -864,7 +864,3 @@ export function playable(p: PlayerState, k: DevKind) {
 export function hiddenCount(p: PlayerState) {
   return (Object.keys(p.hidden) as DevKind[]).reduce((n, k) => n + p.hidden[k], 0);
 }
-
-export function pipColor(n: number) {
-  return n === 6 || n === 8 ? "#c45c3e" : "#1a1a18";
-}

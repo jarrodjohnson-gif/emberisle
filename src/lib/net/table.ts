@@ -20,7 +20,7 @@ export interface Seat {
 }
 
 // What a peek answers (G10): enough to dim taken swatches, no names or pictures.
-export type PeekSeat = Pick<Seat, "id" | "color" | "ready">;
+type PeekSeat = Pick<Seat, "id" | "color" | "ready">;
 
 export interface Legal {
   outpost: string[];
@@ -39,7 +39,7 @@ export interface Gain {
   amount: number;
 }
 
-export interface ActionStamp {
+interface ActionStamp {
   turn: number;
   baseSeq: number;
   connection: string;
@@ -68,7 +68,7 @@ export interface Reaction {
 // An ask-the-table offer (README "Messages between client and host"). Bags are resource counts, empty when absent.
 export type Bag = Partial<Record<Resource, number>>;
 
-export interface TurnExtensionState {
+interface TurnExtensionState {
   target: string | null;
   key: string | null;
   used: boolean;
@@ -77,7 +77,7 @@ export interface TurnExtensionState {
 }
 
 // Lobby tic-tac-toe (#1263, README "Messages between client and host"): seat ids, and nine cells of "x", "o" or ".".
-export interface TttGame {
+interface TttGame {
   id: string;
   x: string;
   o: string;

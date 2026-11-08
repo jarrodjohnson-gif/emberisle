@@ -10,7 +10,7 @@ export const MY_NUMBER_GLOW_MS = 1200;
 // "My numbers" (#643, the owner: "showing what numbers you currently have settlements on"): each number the seat's outposts and
 // strongholds touch, with one good per paying building (a stronghold twice), most likely first; ties by the lower number.
 // From the public board only, so it is the same for every seat that looks.
-export function myNumbers(state: GameState, playerId: string): { n: number; goods: Resource[] }[] {
+function myNumbers(state: GameState, playerId: string): { n: number; goods: Resource[] }[] {
   const hexes = new Map(state.hexes.map((h) => [h.id, h]));
   const by = new Map<number, Resource[]>();
   for (const v of state.vertices) {

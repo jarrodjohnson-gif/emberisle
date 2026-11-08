@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 const KEY = "emberisle-sea-sounds";
 const listeners = new Set<() => void>();
 let sea = (() => { try { return localStorage.getItem(KEY) !== "0"; } catch { return true; } })();
-export const getSeaSounds = () => sea;
+const getSeaSounds = () => sea;
 export function setSeaSounds(on: boolean) {
   sea = on;
   try { if (on) localStorage.removeItem(KEY); else localStorage.setItem(KEY, "0"); } catch { /* the in-memory choice still works */ }

@@ -19,7 +19,7 @@ const SIZE = {
   icon: "size-11 p-0",
 } as const;
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: keyof typeof VARIANT;
   size?: keyof typeof SIZE;
   // Close and Cancel press with ui_back instead of ui_click.
