@@ -198,8 +198,8 @@ export function TradeToast() {
           </div>
           {answering ? (
             <div className="trade-answers flex items-center gap-1">
-              <Button className="trade-yes h-11 min-w-16 flex-1" onClick={() => answerTrade(true)}>Yes</Button>
               <Button variant="secondary" className="trade-no h-11 min-w-16 flex-1" onClick={() => answerTrade(false)}>No</Button>
+              <Button className="trade-yes h-11 min-w-16 flex-1" onClick={() => answerTrade(true)}>Yes</Button>
             </div>
           ) : null}
           {asker && !spectator ? (

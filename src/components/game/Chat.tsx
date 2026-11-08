@@ -482,7 +482,9 @@ export function ChatDock() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Enter" || useGame.getState().mode !== "online") return;
+      const s = useGame.getState();
+      // A pending placement owns Enter (PlaceChip confirms it); the chat waits.
+      if (e.key !== "Enter" || s.mode !== "online" || s.pendingPlace) return;
       const t = e.target as HTMLElement | null;
       if (t?.closest("button, a, [role=button], [role=radio], input, select, textarea")) return;
       e.preventDefault();

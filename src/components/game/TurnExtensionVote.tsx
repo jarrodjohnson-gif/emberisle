@@ -32,8 +32,8 @@ export function TurnExtensionVote() {
       <p role="status" className="min-w-0 flex-1 truncate" title={`Give ${name(vote.target)} 60 seconds more?`}>{name(vote.target)} +60s?</p>
       <span className="shrink-0 tabular-nums">{seconds}s</span>
       {canVote ? <>
-        <button aria-label="Yes, more time" className={button} disabled={!seconds} onClick={() => net.answerTurnExtension(vote.id, true)}>Yes</button>
         <button className={button} disabled={!seconds} onClick={() => net.answerTurnExtension(vote.id, false)}>No</button>
+        <button aria-label="Yes, more time" className={button} disabled={!seconds} onClick={() => net.answerTurnExtension(vote.id, true)}>Yes</button>
       </> : <span className="min-w-0 truncate" title={vote.target === localId ? "The other players decide." : "Waiting for the other players."}>{vote.target === localId ? "Others decide" : "Voted"}</span>}
       <span className="sr-only">{vote.yes.filter((id) => vote.voters.includes(id)).length} of {vote.voters.length} voted yes.</span>
     </section>
