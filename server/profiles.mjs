@@ -144,6 +144,9 @@ export const HISTORY_PAGE = 20;
 
 // The receipt fingerprint: SHA-256 of the frozen outcome with its keys sorted, hashed once, before any redaction. A redacted
 // outcome carries that original hash, so a stale unredacted copy of the same game still matches its receipt.
+// The embedded hash is trusted unchecked. That is safe only because pending outcomes and room files are written by this host,
+// never sent by a client. A hand-edited one is not trusted for a recorded game: it differs from the receipt, so recording
+// refuses it as a conflict and nothing changes.
 function canonical(v) {
   if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
   if (v !== null && typeof v === "object") return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonical(v[k])}`).join(",")}}`;
@@ -169,6 +172,30 @@ export function redactOutcome(o, gone) {
   const out = structuredClone(o);
   out.fingerprint = fingerprint(o);
   return redactRows(out.players, gone) ? out : null;
+}
+// A file kept only for repair by hand (#1393), a fenced room or an unreadable pending outcome, as text. Every object in it
+// that names a deleted profile loses its id and name, wherever it sits. If a deleted profile's id is still in the text,
+// because it does not parse or holds the id somewhere else, the whole text is replaced. Returns the new text, or null when
+// nothing names a deleted profile.
+export function redactText(text, gone) {
+  let out = null;
+  try {
+    const v = JSON.parse(text);
+    let changed = false;
+    const walk = (x) => {
+      if (x === null || typeof x !== "object") return;
+      if (typeof x.profileId === "string" && gone(x.profileId)) {
+        x.profileId = null;
+        if ("name" in x) x.name = DELETED_NAME;
+        changed = true;
+      }
+      for (const y of Object.values(x)) walk(y);
+    };
+    walk(v);
+    if (changed) out = JSON.stringify(v);
+  } catch {}
+  if ((out ?? text).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g)?.some(gone)) return JSON.stringify({ redacted: "this file named a deleted profile" });
+  return out;
 }
 
 // "Which results count": an eligible game credits its starting humans that were bound to a profile. Guests and original bots
