@@ -42,6 +42,14 @@ try {
       if (name === "howto") await dialog.locator("figure").nth(2).waitFor();
       await page.waitForTimeout(300);
       await page.screenshot({ path: path.join(out, `${tag}-${name}-${label}.jpg`), type: "jpeg", quality: 80 });
+      // The short screen's Costs body, focused from the keyboard: its focus ring, scrolled one Page Down.
+      if (label === "after" && name === "costs" && tag === "320x400") {
+        await page.keyboard.press("Tab");
+        await page.waitForTimeout(100);
+        await page.keyboard.press("PageDown");
+        await page.waitForTimeout(300);
+        await page.screenshot({ path: path.join(out, `${tag}-${name}-${label}-focus.jpg`), type: "jpeg", quality: 80 });
+      }
       await page.keyboard.press("Escape");
       await dialog.waitFor({ state: "detached" });
     }

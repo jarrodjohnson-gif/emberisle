@@ -6,10 +6,12 @@
 //   sits 16 px from the left, right and bottom edges;
 // - the sheet: white, opaque, 20 px corners, the --shadow-sheet shadow, no border, 448 px wide at most, the same on both;
 // - the title: 20 px / 26 px, weight 600, the UI face; the title row's 16 px padding; the body's 16 px sides;
-// - Close: 44 x 44, focused on open, on screen. Tab pressed more times than the sheet has stops stays inside; Escape
-//   closes, focus returns to the Table menu button and state.seq is unchanged.
+// - Close: 44 x 44, focused on open, on screen. Each sheet has two Tab stops, Close and its scrolling body (a labelled
+//   region). Tab pressed more times than that stays inside; Escape closes, focus returns to the Table menu button and
+//   state.seq is unchanged.
 // At 320x400 the Costs body overflows: the card itself does not scroll, the body does with a thin scrollbar, and the title
-// row and Close keep their place and take the tap at both ends of the scroll. Zero console errors.
+// row and Close keep their place and take the tap at both ends of the scroll. Tab reaches the body and Page Down scrolls
+// it from the keyboard (WCAG 2.1.1). Zero console errors.
 // Run: npm run help-sheets-prove
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
@@ -25,7 +27,7 @@ const browser = await chromium.launch({
 });
 const SHEETS = [
   { row: "How to play", sheet: '[aria-labelledby="howto-title"] > div', wash: '[aria-labelledby="howto-title"]', title: "#howto-title", body: '[role="region"]' },
-  { row: "Costs", sheet: '[data-testid="cost-card"]', wash: 'div:has(> [data-testid="cost-card"])', title: "#costs-title", body: ':scope > div:nth-child(2)' },
+  { row: "Costs", sheet: '[data-testid="cost-card"]', wash: 'div:has(> [data-testid="cost-card"])', title: "#costs-title", body: '[role="region"]' },
 ];
 const SIZES = [[320, 568], [390, 844], [430, 932], [375, 812], [820, 1180], [844, 390], [1280, 720]];
 const errors = [];
@@ -83,6 +85,7 @@ const open = async (page, s) => {
 // Focus on open was read before this; here Tab stays inside, Escape closes, focus returns, and the game does not move.
 const keys = async (page, s, tag) => {
   const stops = await page.locator(s.sheet).evaluate((el) => el.querySelectorAll('button, [tabindex="0"]').length);
+  assert.equal(stops, 2, `${tag}: two Tab stops, Close and the scrolling body`);
   for (let i = 0; i < stops + 3; i++) {
     await page.keyboard.press("Tab");
     assert.ok(await page.locator(s.sheet).evaluate((el) => el.contains(document.activeElement)), `${tag}: Tab ${i + 1} stays inside the sheet`);
@@ -179,8 +182,23 @@ try {
     assert.deepEqual(got.bottom, got.top, `${tag}: the title row and Close keep their place while the body scrolls`);
     assert.ok(got.top.onScreen && got.top.takesTap, `${tag}: Close is on screen and takes the tap ${JSON.stringify(got)}`);
     assert.ok(await page.evaluate(() => document.activeElement?.getAttribute("aria-label") === "Close"), `${tag}: Close has the focus on open`);
+    // The keyboard reaches the hidden worth rows: Tab to the body, then Page Down scrolls it.
+    const region = page.locator(s.sheet).getByRole("region", { name: "Costs" });
+    await page.keyboard.press("Tab");
+    assert.ok(await region.evaluate((el) => document.activeElement === el), `${tag}: Tab moves the focus from Close to the scrolling body`);
+    // DOM focus updates before Chromium commits its keyboard scroll target; let the focused region paint first (as howto-prove).
+    await region.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    let keyScrolled = 0;
+    for (let attempt = 0; attempt < 5 && !keyScrolled; attempt++) {
+      await page.keyboard.press("PageDown");
+      await page.waitForFunction(() => document.querySelector('[data-testid="cost-card"] [role="region"]').scrollTop > 0, null, { timeout: 1000 }).catch(() => {});
+      keyScrolled = await region.evaluate((el) => el.scrollTop);
+    }
+    assert.ok(keyScrolled > 0, `${tag}: Page Down scrolls the body from the keyboard`);
+    assert.ok(await page.evaluate(() => document.activeElement?.getAttribute("aria-label") === "Costs"), `${tag}: the body keeps the focus while it scrolls`);
+    await region.evaluate((el) => { el.scrollTop = 0; });
     const stops = await keys(page, s, tag);
-    console.log(`${tag}: body hides ${got.hidden} px and scrolls ${got.scrolled}; title at ${got.top.title}, Close at ${got.top.close} at both ends; thin scrollbar; ${stops} stops, Escape returns focus, seq unchanged`);
+    console.log(`${tag}: body hides ${got.hidden} px and scrolls ${got.scrolled}; title at ${got.top.title}, Close at ${got.top.close} at both ends; thin scrollbar; Tab reaches the body, Page Down scrolls it ${keyScrolled} px; ${stops} stops, Escape returns focus, seq unchanged`);
     await context.close();
   }
   assert.deepEqual(errors, [], "no console errors");

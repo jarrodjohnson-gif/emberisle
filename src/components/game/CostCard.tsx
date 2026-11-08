@@ -66,8 +66,13 @@ export function CostCard({ onClose }: { onClose: () => void }) {
           </Button>
         </div>
         {/* Two columns from 640 px wide, so a sideways phone's 312 px holds it without scrolling. Only this body scrolls; the
-            title row with Close and the win line stay put. */}
-        <div className="help-scroll min-h-0 overflow-y-auto px-4 pt-2 sm:grid sm:grid-cols-2 sm:gap-x-6">
+            title row with Close and the win line stay put. Focusable so the keyboard can scroll it. */}
+        <div
+          role="region"
+          aria-label="Costs"
+          tabIndex={0}
+          className="help-scroll min-h-0 overflow-y-auto px-4 pt-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--ink)] sm:grid sm:grid-cols-2 sm:gap-x-6"
+        >
           <ul className="mt-2 flex flex-col gap-2">
             {(Object.keys(COST) as Price[]).map((kind) => (
               <li
