@@ -37,7 +37,12 @@ async function toMySetup(page) {
         { timeout: STEP_MS },
       )
     ).jsonValue();
-    if (next === "mine") return page.evaluate(() => window.__emberisle.setState({ runBots: () => {} }));
+    if (next === "mine") {
+      await page.evaluate(() => window.__emberisle.setState({ runBots: () => {} }));
+      await page.waitForFunction(() => (window.__isle?.landings?.length ?? 0) === 0, null, { timeout: STEP_MS });
+      await page.waitForTimeout(300);
+      return;
+    }
     await page.evaluate(() => window.__emberisle.getState().dispatch({ type: "roll" }));
     await page.waitForFunction(() => {
       const s = window.__emberisle.getState();
@@ -166,7 +171,8 @@ async function runMotionSuite(page, label) {
   assert.ok(outpostSounds.count >= 1, `${label} outpost: sound event recorded (${outpostSounds.count})`);
   assert.ok(outpostSounds.dt >= 250, `${label} outpost: sound at ${outpostSounds.dt?.toFixed(0)}ms (>= 250ms expected)`);
   await page.waitForFunction(() => window.__sentinelT !== null, null, { timeout: 5000 });
-  assert.ok(outpostSounds.t <= (await page.evaluate(() => window.__sentinelT)), `${label} outpost: sound fires before a same-delay timer set right after the pick`);
+  const sentinelOutpostT = await page.evaluate(() => window.__sentinelT);
+  assert.ok(outpostSounds.t <= sentinelOutpostT, `${label} outpost: sound at ${outpostSounds.t?.toFixed(1)}ms fires before or at same-delay timer (${sentinelOutpostT?.toFixed(1)}ms)`);
   console.log(`${label} outpost: sound at ${outpostSounds.dt?.toFixed(0)}ms, dust aligned`);
 
   // Place a path.
@@ -224,7 +230,8 @@ async function runMotionSuite(page, label) {
   assert.ok(pathSounds.count >= 1, `${label} path: sound event recorded (${pathSounds.count})`);
   assert.ok(pathSounds.dt >= 190, `${label} path: sound at ${pathSounds.dt?.toFixed(0)}ms (>= 190ms expected)`);
   await page.waitForFunction(() => window.__sentinelT !== null, null, { timeout: 5000 });
-  assert.ok(pathSounds.t <= (await page.evaluate(() => window.__sentinelT)), `${label} path: sound fires before a same-delay timer set right after the pick`);
+  const sentinelPathT = await page.evaluate(() => window.__sentinelT);
+  assert.ok(pathSounds.t <= sentinelPathT, `${label} path: sound at ${pathSounds.t?.toFixed(1)}ms fires before or at same-delay timer (${sentinelPathT?.toFixed(1)}ms)`);
   console.log(`${label} path: grow + squash + dust + sound at ${pathSounds.dt?.toFixed(0)}ms verified`);
 
   // Stronghold: upgrade from outpost.
