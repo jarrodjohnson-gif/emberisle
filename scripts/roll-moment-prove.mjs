@@ -244,12 +244,15 @@ async function settleChecks(page, tag, { applied, dice }, { reduced = false } = 
   check(Math.abs(m.centreY - m.vh / 2) <= m.vh * 0.1, `${tag}: centred vertically (${m.centreY.toFixed(0)} of ${m.vh}, ±10 %)`);
   check(m.fontSize >= 48, `${tag}: the sum is ${m.fontSize}px (≥ 48)`);
   check(m.sumColor === (sum === 7 ? "rgb(179, 38, 30)" : "rgb(38, 61, 60)"), `${tag}: the sum is ${sum === 7 ? "danger on a 7" : "ink"} (${m.sumColor})`);
-  check(m.rowHidden === true && m.shown.includes("roll-sum") && m.shown.every((id) => id === "roll-sum" || id === "log-roll-sum"), `${tag}: while it is up the roll is the centre sum and the chip (${JSON.stringify(m.shown)})`);
+  // #954: the chip's roll sum is not a second dice readout. The checks below still mean the centre sum, then the dice row.
+  m.shown = m.shown.filter((id) => id !== "log-roll-sum");
+  late.shown = late.shown.filter((id) => id !== "log-roll-sum");
+  check(m.rowHidden === true && m.shown.length === 1 && m.shown[0] === "roll-sum", `${tag}: while it is up the roll is on screen once (${JSON.stringify(m.shown)})`);
   check(!late.moment && gone - stall.gone <= 1400, `${tag}: gone by 1400 ms of the roll being applied (${gone.toFixed(0)} ms, ${stall.gone.toFixed(0)} of them stalled)`);
   check(late.rowVisible && late.row.join() === dice.join(), `${tag}: the resting row shows the same faces (${late.row})`);
-  check(late.shown.includes("dice-row") && late.shown.every((id) => id === "dice-row" || id === "log-roll-sum"), `${tag}: afterwards the sum is the resting row and the chip (${JSON.stringify(late.shown)})`);
-  check(!late.banner && / — .+'s roll[;.]/.test(late.log ?? ""), `${tag}: the log keeps the goods line and there is no duplicate goods banner`);
-  check(/^.+ rolled \d+!$/.test((late.chip ?? "").replace(/\s+/g, " ").trim()), `${tag}: the HUD chip shows the roll line (${JSON.stringify(late.chip)})`);
+  check(late.shown.length === 1 && late.shown[0] === "dice-row", `${tag}: afterwards the sum is on screen once, in the row (${JSON.stringify(late.shown)})`);
+  check(!late.banner && / — .+'s roll[;.]/.test(late.log ?? ""), `${tag}: one persistent roll event and no duplicate goods banner`);
+  check(/^.+ rolled \d+!$/.test((late.chip ?? "").replace(/\s+/g, " ").trim()) && / — .+'s roll[;.]/.test(late.log ?? ""), `${tag}: the HUD chip shows the roll line while the log's newest line stays the goods line (${JSON.stringify(late.chip)})`);
   if (reduced) {
     check(flights.length === 0, `${tag}: reduced motion, no flight (${flights.length})`);
     check(m.animation === "none", `${tag}: reduced motion, no entry animation (${m.animation})`);
