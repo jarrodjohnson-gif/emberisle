@@ -57,6 +57,7 @@
     "your-turn-cue-prove": "node scripts/your-turn-cue-prove.mjs",
     "music-prove": "node scripts/music-prove.mjs",
     "ambience-loop-prove": "node scripts/ambience-loop-prove.mjs",
+    "ambience-prove": "node scripts/ambience-prove.mjs",
     "practice-trade-prove": "node --import ./server/register.mjs scripts/practice-trade-prove.mjs",
     "lazy-hud-prove": "node --import ./server/register.mjs scripts/lazy-hud-prove.mjs",
     "pieces-prove": "node --import ./server/register.mjs scripts/pieces-prove.mjs",

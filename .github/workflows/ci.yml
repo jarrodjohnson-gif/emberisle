@@ -568,6 +568,8 @@ jobs:
         run: npm run your-turn-cue-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run music-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run ambience-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run ore-tokens-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
