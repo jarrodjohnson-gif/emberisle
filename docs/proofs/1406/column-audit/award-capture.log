@@ -1,0 +1,108 @@
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 2040 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/minigames/ruffle/package.json                              0.41 kB │ gzip:     0.27 kB
+dist/minigames/ruffle/LICENSE_MIT                               1.09 kB
+dist/assets/dark-smile-BKg7DRWn.webp                            1.28 kB
+dist/assets/shrek-smirk-Do0Xo01U.webp                           2.25 kB
+dist/minigames/ruffle/README.md                                 2.32 kB
+dist/index.html                                                 2.61 kB │ gzip:     1.29 kB
+dist/assets/mike-sully-Ct202qR2.webp                            2.79 kB
+dist/assets/wide-eyes-BDiZHgYT.webp                             2.84 kB
+dist/assets/side-eye-CGXmLOil.webp                              2.86 kB
+dist/assets/goggles-guy-BssxYY7b.webp                           2.99 kB
+dist/assets/memoji-scheme-BM7oeLzb.webp                         3.05 kB
+dist/assets/leo-laugh-fpWzArdY.webp                             3.45 kB
+dist/assets/old-grump-BBGe0_6b.webp                             4.17 kB
+dist/assets/banana-guy-CzQ5EppE.webp                            4.18 kB
+dist/assets/monkey-pet-BowYolk9.webp                            4.47 kB
+dist/assets/glasses-glance-BnJIj4mf.webp                        5.81 kB
+dist/assets/daffy-shock-DVzTkIuj.webp                           6.32 kB
+dist/assets/ben-10-BZkFZeMq.webp                                6.80 kB
+dist/minigames/ruffle/LICENSE_APACHE                            9.72 kB
+dist/assets/sponge-thumbs-vsqILehC.webp                        47.96 kB
+dist/minigames/ruffle/core.ruffle.16d61072ac7fdc4d5013.js     108.32 kB
+dist/minigames/ruffle/core.ruffle.994eeef0a471a88cd0e3.js     114.74 kB
+dist/minigames/sandwichStacker.swf                            183.73 kB
+dist/minigames/ruffle/ruffle.js                               465.88 kB
+dist/minigames/ruffle/878d548199cddef07035.wasm            14,227.88 kB │ gzip: 5,069.32 kB
+dist/minigames/ruffle/172de42e6619eac8f371.wasm            14,302.75 kB │ gzip: 5,092.28 kB
+dist/assets/SeatNeeds-G8kOjkPo.css                              0.91 kB │ gzip:     0.47 kB
+dist/assets/LoadingScreen-DCoOnwZ-.css                          2.34 kB │ gzip:     0.94 kB
+dist/assets/trade-panel-DtPN9ISX.css                            7.80 kB │ gzip:     1.96 kB
+dist/assets/LobbyView-j3r7Zzlb.css                             15.57 kB │ gzip:     3.30 kB
+dist/assets/index-CYM1on18.css                                 77.63 kB │ gzip:    16.18 kB
+dist/assets/x-ect1AdhO.js                                       0.18 kB │ gzip:     0.16 kB
+dist/assets/eye-off-DEeDRCO3.js                                 0.45 kB │ gzip:     0.29 kB
+dist/assets/sound-extra-DafKjM_2.js                             0.48 kB │ gzip:     0.22 kB
+dist/assets/PlayAgain-DFKl-yoo.js                               0.59 kB │ gzip:     0.41 kB
+dist/assets/use-muted-seats-DswAMry2.js                         0.70 kB │ gzip:     0.41 kB
+dist/assets/WayfarerOptions-CZq-FBoU.js                         0.80 kB │ gzip:     0.48 kB
+dist/assets/trade-sound-BsC4kuU5.js                             0.87 kB │ gzip:     0.52 kB
+dist/assets/focus-trap-CeBYeDC-.js                              0.88 kB │ gzip:     0.53 kB
+dist/assets/HandRates-Dqw74NZh.js                               1.01 kB │ gzip:     0.64 kB
+dist/assets/VictoryTargetSelect-PkGY6HBp.js                     1.02 kB │ gzip:     0.61 kB
+dist/assets/emotes-DW1f4G6o.js                                  1.24 kB │ gzip:     0.46 kB
+dist/assets/Sticker-tCwhLa0J.js                                 1.65 kB │ gzip:     0.94 kB
+dist/assets/TradeResource-ExkSMz9R.js                           1.79 kB │ gzip:     0.83 kB
+dist/assets/haptics-ink0cc2S.js                                 1.80 kB │ gzip:     1.06 kB
+dist/assets/DockInspection-CYmG2zcK.js                          2.03 kB │ gzip:     1.03 kB
+dist/assets/TurnExtensionVote-7qQdmVi5.js                       2.67 kB │ gzip:     1.20 kB
+dist/assets/OpenTables-DYM226zN.js                              2.70 kB │ gzip:     1.24 kB
+dist/assets/losses-C7h7AiJO.js                                  2.70 kB │ gzip:     1.42 kB
+dist/assets/WinList-BvXyF6m1.js                                 2.87 kB │ gzip:     1.30 kB
+dist/assets/LobbyTicTacToe-Ch0IvEaO.js                          3.50 kB │ gzip:     1.39 kB
+dist/assets/SeatNeeds-BzlAQOTw.js                               4.14 kB │ gzip:     1.69 kB
+dist/assets/SoundSheet-BVVsYE6_.js                              4.59 kB │ gzip:     1.86 kB
+dist/assets/LobbyWaitBox-CN-g4E3T.js                            4.85 kB │ gzip:     2.03 kB
+dist/assets/ProfileForms-Bg0HiivN.js                            4.87 kB │ gzip:     2.16 kB
+dist/assets/SetupReference-TMDn-KFK.js                          4.92 kB │ gzip:     1.85 kB
+dist/assets/table-BYv_klcw.js                                   4.92 kB │ gzip:     2.19 kB
+dist/assets/LoadingScreen-C6vFD_xi.js                           4.92 kB │ gzip:     2.40 kB
+dist/assets/ProfileRecords-BRcVfB9N.js                          5.62 kB │ gzip:     2.25 kB
+dist/assets/Reactions-CdH3CXz0.js                               6.04 kB │ gzip:     2.49 kB
+dist/assets/LobbyView-L_LmEEvN.js                               6.25 kB │ gzip:     2.49 kB
+dist/assets/TradeToast-C-IVWMmU.js                              6.49 kB │ gzip:     2.67 kB
+dist/assets/ProfileRecovery-B6Mz4Pfw.js                         7.94 kB │ gzip:     3.03 kB
+dist/assets/moments-pCVjaEXC.js                                10.16 kB │ gzip:     4.32 kB
+dist/assets/ProfileSheet-B8FC3uTS.js                           15.73 kB │ gzip:     5.97 kB
+dist/assets/online-CBxZyDxN.js                                 18.05 kB │ gzip:     6.43 kB
+dist/assets/jelly-board-DzNu-Cu7.js                            21.20 kB │ gzip:     8.23 kB
+dist/assets/sheets-DPcV0POj.js                                 23.02 kB │ gzip:     7.52 kB
+dist/assets/harbor-jelly-G8kCOaqN.js                           27.12 kB │ gzip:    10.82 kB
+dist/assets/hex-jelly-DfnYexdJ.js                             136.96 kB │ gzip:    47.48 kB
+dist/assets/index-Cdr6i6rj.js                                 397.26 kB │ gzip:   126.40 kB
+dist/assets/IslandCanvas-B4v9PY3u.js                          763.67 kB │ gzip:   202.46 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 3.66s
+[33m[PLUGIN_TIMINGS] [0mJavaScript callbacks ran for 2.5s of this 3.6s build (70%).
+2 callbacks are listed without a time. Their calls overlapped, so the time inside one call includes work from other calls. To find their cost, profile the build with `node --cpu-prof`:
+  - plugin vite:asset load (15 calls)
+  - plugin @tailwindcss/vite:generate:build transform (7 calls)
+See https://rolldown.rs/reference/InputOptions.checks#bundlertimings for more details.
+
+{"width":1280,"height":720,"stage":"main8","client":622,"scroll":670,"card":672,"table":670.203125,"fonts":["14px","14px","14px","14px","14px","14px","14px"],"columns":[{"text":"Player","width":255.953125,"height":47.90625},{"text":"Outposts","width":74.390625,"height":47.90625},{"text":"Strongholds","width":99.5625,"height":47.90625},{"text":"Longest path","width":66.703125,"height":47.90625},{"text":"Largest army","width":63.84375,"height":47.90625},{"text":"Hidden","width":60.078125,"height":47.90625},{"text":"Total","width":49.671875,"height":47.90625}]}
+{"width":1280,"height":720,"stage":"awards1","client":622,"scroll":670,"card":672,"table":670.203125,"fonts":["14px","14px","14px","14px","14px","14px","14px"],"columns":[{"text":"Player","width":255.953125,"height":47.90625},{"text":"Outposts","width":74.390625,"height":47.90625},{"text":"Strongholds","width":99.5625,"height":47.90625},{"text":"Longest path","width":66.703125,"height":47.90625},{"text":"Largest army","width":63.84375,"height":47.90625},{"text":"Hidden","width":60.078125,"height":47.90625},{"text":"Total","width":49.671875,"height":47.90625}]}
+{"width":1280,"height":720,"stage":"awards64","client":622,"scroll":668,"card":672,"table":667.5,"fonts":["14px","14px","14px","14px","14px","14px","14px"],"columns":[{"text":"Player","width":255.953125,"height":47.90625},{"text":"Outposts","width":74.390625,"height":47.90625},{"text":"Strongholds","width":99.5625,"height":47.90625},{"text":"Longest path","width":64,"height":47.90625},{"text":"Largest army","width":63.84375,"height":47.90625},{"text":"Hidden","width":60.078125,"height":47.90625},{"text":"Total","width":49.671875,"height":47.90625}]}
+{"width":1280,"height":720,"stage":"dejavu-main8","client":622,"scroll":701,"card":672,"table":701.484375,"fonts":["14px","14px","14px","14px","14px","14px","14px"],"columns":[{"text":"Player","width":267.609375,"height":47.90625},{"text":"Outposts","width":77.609375,"height":47.90625},{"text":"Strongholds","width":104.296875,"height":47.90625},{"text":"Longest path","width":69.734375,"height":47.90625},{"text":"Largest army","width":68.65625,"height":47.90625},{"text":"Hidden","width":61.296875,"height":47.90625},{"text":"Total","width":52.28125,"height":47.90625}]}
+{"width":1280,"height":720,"stage":"dejavu-awards1","client":622,"scroll":701,"card":672,"table":701.484375,"fonts":["14px","14px","14px","14px","14px","14px","14px"],"columns":[{"text":"Player","width":267.609375,"height":47.90625},{"text":"Outposts","width":77.609375,"height":47.90625},{"text":"Strongholds","width":104.296875,"height":47.90625},{"text":"Longest path","width":69.734375,"height":47.90625},{"text":"Largest army","width":68.65625,"height":47.90625},{"text":"Hidden","width":61.296875,"height":47.90625},{"text":"Total","width":52.28125,"height":47.90625}]}
+{"width":1280,"height":720,"stage":"dejavu-awards64","client":622,"scroll":691,"card":672,"table":691.09375,"fonts":["14px","14px","14px","14px","14px","14px","14px"],"columns":[{"text":"Player","width":267.609375,"height":47.90625},{"text":"Outposts","width":77.609375,"height":47.90625},{"text":"Strongholds","width":104.296875,"height":47.90625},{"text":"Longest path","width":64,"height":47.90625},{"text":"Largest army","width":64,"height":47.90625},{"text":"Hidden","width":61.296875,"height":47.90625},{"text":"Total","width":52.28125,"height":47.90625}]}
+{"width":1024,"height":768,"stage":"main8","client":622,"scroll":670,"card":672,"table":670.203125,"fonts":["14px","14px","14px","14px","14px","14px","14px"],"columns":[{"text":"Player","width":255.953125,"height":47.90625},{"text":"Outposts","width":74.390625,"height":47.90625},{"text":"Strongholds","width":99.5625,"height":47.90625},{"text":"Longest path","width":66.703125,"height":47.90625},{"text":"Largest army","width":63.84375,"height":47.90625},{"text":"Hidden","width":60.078125,"height":47.90625},{"text":"Total","width":49.671875,"height":47.90625}]}
+{"width":1024,"height":768,"stage":"awards1","client":622,"scroll":670,"card":672,"table":670.203125,"fonts":["14px","14px","14px","14px","14px","14px","14px"],"columns":[{"text":"Player","width":255.953125,"height":47.90625},{"text":"Outposts","width":74.390625,"height":47.90625},{"text":"Strongholds","width":99.5625,"height":47.90625},{"text":"Longest path","width":66.703125,"height":47.90625},{"text":"Largest army","width":63.84375,"height":47.90625},{"text":"Hidden","width":60.078125,"height":47.90625},{"text":"Total","width":49.671875,"height":47.90625}]}
+{"width":1024,"height":768,"stage":"awards64","client":622,"scroll":668,"card":672,"table":667.5,"fonts":["14px","14px","14px","14px","14px","14px","14px"],"columns":[{"text":"Player","width":255.953125,"height":47.90625},{"text":"Outposts","width":74.390625,"height":47.90625},{"text":"Strongholds","width":99.5625,"height":47.90625},{"text":"Longest path","width":64,"height":47.90625},{"text":"Largest army","width":63.84375,"height":47.90625},{"text":"Hidden","width":60.078125,"height":47.90625},{"text":"Total","width":49.671875,"height":47.90625}]}
+{"width":1024,"height":768,"stage":"dejavu-main8","client":622,"scroll":701,"card":672,"table":701.484375,"fonts":["14px","14px","14px","14px","14px","14px","14px"],"columns":[{"text":"Player","width":267.609375,"height":47.90625},{"text":"Outposts","width":77.609375,"height":47.90625},{"text":"Strongholds","width":104.296875,"height":47.90625},{"text":"Longest path","width":69.734375,"height":47.90625},{"text":"Largest army","width":68.65625,"height":47.90625},{"text":"Hidden","width":61.296875,"height":47.90625},{"text":"Total","width":52.28125,"height":47.90625}]}
+{"width":1024,"height":768,"stage":"dejavu-awards1","client":622,"scroll":701,"card":672,"table":701.484375,"fonts":["14px","14px","14px","14px","14px","14px","14px"],"columns":[{"text":"Player","width":267.609375,"height":47.90625},{"text":"Outposts","width":77.609375,"height":47.90625},{"text":"Strongholds","width":104.296875,"height":47.90625},{"text":"Longest path","width":69.734375,"height":47.90625},{"text":"Largest army","width":68.65625,"height":47.90625},{"text":"Hidden","width":61.296875,"height":47.90625},{"text":"Total","width":52.28125,"height":47.90625}]}
+{"width":1024,"height":768,"stage":"dejavu-awards64","client":622,"scroll":691,"card":672,"table":691.09375,"fonts":["14px","14px","14px","14px","14px","14px","14px"],"columns":[{"text":"Player","width":267.609375,"height":47.90625},{"text":"Outposts","width":77.609375,"height":47.90625},{"text":"Strongholds","width":104.296875,"height":47.90625},{"text":"Longest path","width":64,"height":47.90625},{"text":"Largest army","width":64,"height":47.90625},{"text":"Hidden","width":61.296875,"height":47.90625},{"text":"Total","width":52.28125,"height":47.90625}]}
+{"width":844,"height":390,"stage":"main8","client":638,"scroll":638,"card":672,"table":638,"fonts":["12px","12px","12px","12px","12px","12px","12px"],"columns":[{"text":"Player","width":216.25,"height":35.90625},{"text":"Outposts","width":66.390625,"height":35.90625},{"text":"Strongholds","width":91.5625,"height":35.90625},{"text":"Longest path","width":84.984375,"height":35.90625},{"text":"Largest army","width":85.046875,"height":35.90625},{"text":"Hidden","width":52.078125,"height":35.90625},{"text":"Total","width":41.6875,"height":35.90625}]}
+{"width":844,"height":390,"stage":"awards1","client":638,"scroll":638,"card":672,"table":638,"fonts":["12px","12px","12px","12px","12px","12px","12px"],"columns":[{"text":"Player","width":241.890625,"height":35.90625},{"text":"Outposts","width":74.25,"height":35.90625},{"text":"Strongholds","width":102.421875,"height":35.90625},{"text":"Longest path","width":58.703125,"height":35.90625},{"text":"Largest army","width":55.84375,"height":35.90625},{"text":"Hidden","width":58.25,"height":35.90625},{"text":"Total","width":46.640625,"height":35.90625}]}
+{"width":844,"height":390,"stage":"awards64","client":638,"scroll":638,"card":672,"table":638,"fonts":["12px","12px","12px","12px","12px","12px","12px"],"columns":[{"text":"Player","width":235.671875,"height":35.90625},{"text":"Outposts","width":72.34375,"height":35.90625},{"text":"Strongholds","width":99.78125,"height":35.90625},{"text":"Longest path","width":64,"height":35.90625},{"text":"Largest army","width":64,"height":35.90625},{"text":"Hidden","width":56.75,"height":35.90625},{"text":"Total","width":45.453125,"height":35.90625}]}
+{"width":844,"height":390,"stage":"dejavu-main8","client":638,"scroll":638,"card":672,"table":638,"fonts":["12px","12px","12px","12px","12px","12px","12px"],"columns":[{"text":"Player","width":226.234375,"height":35.90625},{"text":"Outposts","width":69.609375,"height":35.90625},{"text":"Strongholds","width":96.296875,"height":35.90625},{"text":"Longest path","width":73.953125,"height":35.90625},{"text":"Largest army","width":74.3125,"height":35.90625},{"text":"Hidden","width":53.296875,"height":35.90625},{"text":"Total","width":44.296875,"height":35.90625}]}
+{"width":844,"height":390,"stage":"dejavu-awards1","client":638,"scroll":638,"card":672,"table":638,"fonts":["12px","12px","12px","12px","12px","12px","12px"],"columns":[{"text":"Player","width":238.1875,"height":35.90625},{"text":"Outposts","width":73.28125,"height":35.90625},{"text":"Strongholds","width":101.375,"height":35.90625},{"text":"Longest path","width":61.734375,"height":35.90625},{"text":"Largest army","width":60.65625,"height":35.90625},{"text":"Hidden","width":56.109375,"height":35.90625},{"text":"Total","width":46.65625,"height":35.90625}]}
+{"width":844,"height":390,"stage":"dejavu-awards64","client":638,"scroll":638,"card":672,"table":638,"fonts":["12px","12px","12px","12px","12px","12px","12px"],"columns":[{"text":"Player","width":235.59375,"height":35.90625},{"text":"Outposts","width":72.484375,"height":35.90625},{"text":"Strongholds","width":100.28125,"height":35.90625},{"text":"Longest path","width":64,"height":35.90625},{"text":"Largest army","width":64,"height":35.90625},{"text":"Hidden","width":55.5,"height":35.90625},{"text":"Total","width":46.140625,"height":35.90625}]}

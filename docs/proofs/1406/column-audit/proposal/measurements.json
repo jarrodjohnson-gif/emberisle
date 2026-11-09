@@ -1,0 +1,332 @@
+[
+  {
+    "width": 1280,
+    "height": 720,
+    "stage": "proposal",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ],
+    "columns": [
+      {
+        "text": "Player",
+        "width": 257.34375,
+        "height": 47.90625
+      },
+      {
+        "text": "Outposts",
+        "width": 65.8125,
+        "height": 47.90625
+      },
+      {
+        "text": "Strongholds",
+        "width": 92.359375,
+        "height": 47.90625
+      },
+      {
+        "text": "Longest path",
+        "width": 58,
+        "height": 47.90625
+      },
+      {
+        "text": "Largest army",
+        "width": 58,
+        "height": 47.90625
+      },
+      {
+        "text": "Hidden",
+        "width": 50.703125,
+        "height": 47.90625
+      },
+      {
+        "text": "Total",
+        "width": 39.78125,
+        "height": 47.90625
+      }
+    ]
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "stage": "dejavu-proposal",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ],
+    "columns": [
+      {
+        "text": "Player",
+        "width": 257.078125,
+        "height": 47.90625
+      },
+      {
+        "text": "Outposts",
+        "width": 65.984375,
+        "height": 47.90625
+      },
+      {
+        "text": "Strongholds",
+        "width": 92.828125,
+        "height": 47.90625
+      },
+      {
+        "text": "Longest path",
+        "width": 58,
+        "height": 47.90625
+      },
+      {
+        "text": "Largest army",
+        "width": 58,
+        "height": 47.90625
+      },
+      {
+        "text": "Hidden",
+        "width": 49.578125,
+        "height": 47.90625
+      },
+      {
+        "text": "Total",
+        "width": 40.53125,
+        "height": 47.90625
+      }
+    ]
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "stage": "proposal",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ],
+    "columns": [
+      {
+        "text": "Player",
+        "width": 257.34375,
+        "height": 47.90625
+      },
+      {
+        "text": "Outposts",
+        "width": 65.8125,
+        "height": 47.90625
+      },
+      {
+        "text": "Strongholds",
+        "width": 92.359375,
+        "height": 47.90625
+      },
+      {
+        "text": "Longest path",
+        "width": 58,
+        "height": 47.90625
+      },
+      {
+        "text": "Largest army",
+        "width": 58,
+        "height": 47.90625
+      },
+      {
+        "text": "Hidden",
+        "width": 50.703125,
+        "height": 47.90625
+      },
+      {
+        "text": "Total",
+        "width": 39.78125,
+        "height": 47.90625
+      }
+    ]
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "stage": "dejavu-proposal",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ],
+    "columns": [
+      {
+        "text": "Player",
+        "width": 257.078125,
+        "height": 47.90625
+      },
+      {
+        "text": "Outposts",
+        "width": 65.984375,
+        "height": 47.90625
+      },
+      {
+        "text": "Strongholds",
+        "width": 92.828125,
+        "height": 47.90625
+      },
+      {
+        "text": "Longest path",
+        "width": 58,
+        "height": 47.90625
+      },
+      {
+        "text": "Largest army",
+        "width": 58,
+        "height": 47.90625
+      },
+      {
+        "text": "Hidden",
+        "width": 49.578125,
+        "height": 47.90625
+      },
+      {
+        "text": "Total",
+        "width": 40.53125,
+        "height": 47.90625
+      }
+    ]
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "stage": "proposal",
+    "client": 638,
+    "scroll": 638,
+    "card": 672,
+    "table": 638,
+    "fonts": [
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px"
+    ],
+    "columns": [
+      {
+        "text": "Player",
+        "width": 235.671875,
+        "height": 35.90625
+      },
+      {
+        "text": "Outposts",
+        "width": 72.34375,
+        "height": 35.90625
+      },
+      {
+        "text": "Strongholds",
+        "width": 99.78125,
+        "height": 35.90625
+      },
+      {
+        "text": "Longest path",
+        "width": 64,
+        "height": 35.90625
+      },
+      {
+        "text": "Largest army",
+        "width": 64,
+        "height": 35.90625
+      },
+      {
+        "text": "Hidden",
+        "width": 56.75,
+        "height": 35.90625
+      },
+      {
+        "text": "Total",
+        "width": 45.453125,
+        "height": 35.90625
+      }
+    ]
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "stage": "dejavu-proposal",
+    "client": 638,
+    "scroll": 638,
+    "card": 672,
+    "table": 638,
+    "fonts": [
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px"
+    ],
+    "columns": [
+      {
+        "text": "Player",
+        "width": 235.59375,
+        "height": 35.90625
+      },
+      {
+        "text": "Outposts",
+        "width": 72.484375,
+        "height": 35.90625
+      },
+      {
+        "text": "Strongholds",
+        "width": 100.28125,
+        "height": 35.90625
+      },
+      {
+        "text": "Longest path",
+        "width": 64,
+        "height": 35.90625
+      },
+      {
+        "text": "Largest army",
+        "width": 64,
+        "height": 35.90625
+      },
+      {
+        "text": "Hidden",
+        "width": 55.5,
+        "height": 35.90625
+      },
+      {
+        "text": "Total",
+        "width": 46.140625,
+        "height": 35.90625
+      }
+    ]
+  }
+]

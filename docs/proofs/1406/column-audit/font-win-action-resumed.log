@@ -1,0 +1,6 @@
+
+> win-action-prove
+> node --import ./server/register.mjs scripts/win-action-prove.mjs
+
+ok 390x844: five winning triggers, seven-/ten-point targets and overshoot, persisted restart and browser reload
+ok 440x956: five winning triggers, seven-/ten-point targets and overshoot, persisted restart and browser reload

@@ -1,0 +1,53 @@
+// #1406: the real built desktop results table keeps all seven columns visible with four long names.
+// Uses the production WinScreen and computed game scores; no CSS overrides or shortened fixture names.
+import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
+import { preview } from "vite";
+import { createGame } from "../src/lib/game/board.ts";
+import { totalVP } from "../src/lib/game/rules.ts";
+
+const game = createGame({ humans: [
+  { name: "Bartholomew Featherstonehaugh" },
+  { name: "Guinevere Wigglesworth-Smythe" },
+  { name: "Maximilian Oppenheimer III" },
+  { name: "Cordelia Fitzgerald-Hartwell" },
+], bots: 0, seed: 1406 });
+game.rollOff = null;
+game.phase = "over";
+game.current = game.winner = "p0";
+game.victoryTarget = 10;
+for (let i = 0; i < 4; ++i) game.vertices[i].building = { playerId: "p0", kind: "stronghold" };
+game.players.forEach((p, i) => { p.hidden.vp = [2, 3, 1, 0][i]; });
+game.winReason = { trigger: "pointFortune", points: totalVP(game, "p0"), target: 10 };
+const expected = Object.fromEntries(game.players.map((p) => [p.id, { name: p.name, total: totalVP(game, p.id) }]));
+const out = "/workspace/work/resume-nov9/1406-award-columns";
+mkdirSync(out, { recursive: true });
+execFileSync(process.execPath, ["node_modules/vite/bin/vite.js", "build"], { env: { ...process.env, NODE_ENV: "production" }, stdio: "inherit" });
+const server = await preview({ preview: { host: "127.0.0.1", port: Number(process.env.VITE_PORT) || 18552, strictPort: true }, logLevel: "error" });
+const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
+const measurements=[];
+try {
+ for(const [width,height] of [[1280,720],[1024,768],[844,390]]) {
+  const context=await browser.newContext({viewport:{width,height},hasTouch:false,reducedMotion:"reduce"});
+  const page=await context.newPage();await page.goto(`http://127.0.0.1:${server.config.preview.port}/`);await page.waitForFunction(()=>!!window.__emberisle);
+  await page.evaluate(game=>{const store=window.__emberisle;store.setState({spectator:false,isHost:true,menuFor:null,chatOpen:false});store.getState().loadState(game,"p0",true,"LONG");},game);
+  await page.getByTestId("win-screen").waitFor();await page.waitForFunction(()=>window.__isle?.landReady);
+  for(const stage of ["main8","awards1","awards64","dejavu-main8","dejavu-awards1","dejavu-awards64"]) {
+   await page.evaluate(stage=>{
+    const screen=document.querySelector('[data-testid="win-screen"]');
+    screen.style.fontFamily=stage.startsWith("dejavu")?'"DejaVu Sans"':"";
+    for(const e of screen.querySelectorAll("th,td")) {e.style.paddingInline=innerHeight<=480?"4px":"8px";e.style.width="";e.style.maxWidth="";}
+    for(const e of screen.querySelectorAll("th:nth-child(4),th:nth-child(5),td:nth-child(4),td:nth-child(5)")) {
+     if(stage.includes("awards1"))e.style.width="1px";
+     if(stage.includes("awards64")){e.style.width="64px";e.style.maxWidth="64px";}
+    }
+   },stage);
+   const m=await page.getByTestId("win-table-wrap").evaluate(w=>({client:w.clientWidth,scroll:w.scrollWidth,card:w.parentElement.getBoundingClientRect().width,table:w.querySelector("table").getBoundingClientRect().width,fonts:[...w.querySelectorAll("td")].slice(0,7).map(e=>getComputedStyle(e).fontSize),columns:[...w.querySelectorAll("th")].map(e=>({text:e.textContent,width:e.getBoundingClientRect().width,height:e.getBoundingClientRect().height}))}));
+   measurements.push({width,height,stage,...m});console.log(JSON.stringify(measurements.at(-1)));await page.screenshot({path:`${out}/${width}x${height}-${stage}.png`});
+  }
+  await context.close();
+ }
+ writeFileSync(`${out}/measurements.json`,JSON.stringify(measurements,null,2));
+} finally {await browser.close();await server.close();}

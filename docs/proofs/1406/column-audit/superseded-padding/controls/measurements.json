@@ -1,0 +1,164 @@
+[
+  {
+    "width": 1280,
+    "height": 720,
+    "stage": "original",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "stage": "dejavu4",
+    "client": 622,
+    "scroll": 645,
+    "card": 672,
+    "table": 645.484375,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "stage": "dejavu2",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "stage": "original",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "stage": "dejavu4",
+    "client": 622,
+    "scroll": 645,
+    "card": 672,
+    "table": 645.484375,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "stage": "dejavu2",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "stage": "original",
+    "client": 638,
+    "scroll": 638,
+    "card": 672,
+    "table": 638,
+    "fonts": [
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px"
+    ]
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "stage": "dejavu4",
+    "client": 638,
+    "scroll": 638,
+    "card": 672,
+    "table": 638,
+    "fonts": [
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px"
+    ]
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "stage": "dejavu2",
+    "client": 638,
+    "scroll": 638,
+    "card": 672,
+    "table": 638,
+    "fonts": [
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px"
+    ]
+  }
+]
