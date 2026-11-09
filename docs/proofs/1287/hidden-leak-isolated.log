@@ -1,0 +1,4 @@
+results: 0 pending outcome(s) kept for recording, 0 repaired from rooms, 0 room(s) fenced
+FAIL deterministic opponent hidden fortunes leaked {"you":"p0","hidden":{"knight":1,"road":2,"plenty":3,"monopoly":4,"vp":5}}
+
+FAIL deterministic hidden-fortune projection 1

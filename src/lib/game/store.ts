@@ -207,30 +207,44 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
 }
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
-import type { Bag, ChatLine, Legal, Me, Reaction, Seat, TableClient } from "@/lib/net/table";
+import type { Bag, ChatLine, Legal, Me, Reaction, Seat, TableClient, TttMsg } from "@/lib/net/table";
+import type { ProfileAttachment } from "@/lib/net/profiles";
 import { chunk } from "@/lib/lazy";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
 import { HAPTIC_MS } from "@/lib/haptic-durations";
-import { haptics, play, playLater, stop, yourTurn, type SoundName } from "@/lib/sound";
+import { haptics, play, playLater, resetTradePlease, stop, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
 
 const tradeSounds = import("../trade-sound");
 
-// The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when the host's 20 s run out.
-export interface OpenOffer {
+// The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when a bot's offer runs out
+// (20 s); it is null for a person's offer, which holds until it is answered (#1245).
+interface OpenOffer {
   tradeId: string;
   from: string;
   fromName: string;
   give: Bag;
   want: Bag;
-  until: number;
+  until: number | null;
 }
 
 // The client is needed only for discovery or an explicit online journey.
 const tableModule = chunk(() => import("@/lib/net/table"));
+
+// #767: a finished game's profile result as the host sent it. `wins` is keyed by player id for each seat that started bound to
+// a profile that still exists: its committed total, or null while the host is still saving it. Empty when every such profile
+// was deleted, so each row reads "Not tracked". Anything malformed is dropped, never guessed.
+export type GameResult = { tracked: boolean; wins: Record<string, number | null> };
+function gameResult(r: unknown): GameResult | null {
+  const v = r as Partial<GameResult> | null;
+  if (!v || typeof v !== "object" || typeof v.tracked !== "boolean" || !v.wins || typeof v.wins !== "object") return null;
+  const wins = Object.entries(v.wins);
+  if (!wins.every(([, n]) => n === null || (Number.isSafeInteger(n) && (n as number) >= 0))) return null;
+  return { tracked: v.tracked, wins: Object.fromEntries(wins) };
+}
 
 // The window listeners that wake a backing-off table; one connection at a time, so one remover.
 let stopWake: (() => void) | null = null;
@@ -241,7 +255,8 @@ function clearWake() {
 let outcomeTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Practice runs the ask-the-table offer here, as host.mjs does online (#363): a bot answers BOT_ANSWER_MS to twice that
-// after the ask, and an offer nobody takes closes after OFFER_MS. The timers belong to the open offer.
+// after the ask. A bot's offer nobody takes closes after OFFER_MS; a person's holds until answered (#1245). The timers
+// belong to the open offer.
 const BOT_ANSWER_MS = 1000;
 const OFFER_MS = 20000;
 // People first (#850), as host.mjs: a bot's Yes waits this long, or until every person asked has said No.
@@ -277,6 +292,10 @@ interface GameStore {
   error: string | null;
   // Bumped on every refused move, so the same error twice is announced twice (#380).
   errorSeq: number;
+  // Need refusals only; monotonic for this store lifetime, so unrelated errors never discard an in-flight selection.
+  needError: number;
+  // Nonpersisted settlement identity for local Need clearing; narration and ordinary gains never advance it.
+  localTrade: number;
   // Said to a screen reader (and sounded) without a line on screen: a short build's tap is answered by its chip (#535).
   announcement: string | null;
   buildMode: BuildMode;
@@ -288,6 +307,11 @@ interface GameStore {
   // The Costs card (the building-costs card that comes with the board game), opened from the Table menu.
   costs: boolean;
   costsOpener: HTMLElement | null;
+  // #766: the title's profile client, set when its sheet first opens. It gives Host and Join a credential only for its own
+  // confirmed host, at the moment of sending; nothing of it reaches game state or the saved seat.
+  profile: ProfileAttachment | null;
+  // #767: the host's word on a finished online game's profile result, or null (no profiled seat, or not over).
+  gameResult: GameResult | null;
   toast: string | null;
   // One line everyone reads for a moment: the roll and who got what, or an award changing hands (#188).
   banner: string | null;
@@ -358,6 +382,8 @@ interface GameStore {
   resync: boolean;
   // How many spectators the table has, from `seats {watching}` (#347).
   watching: number;
+  // This seat's lobby tic-tac-toe game, as the host last sent it (#1263); null after each welcome.
+  ttt: TttMsg | null;
   // Sit back down in the seat this browser held (localStorage), e.g. after a reload (#196).
   rejoinTable: () => boolean;
   setReady: (value: boolean) => void;
@@ -369,6 +395,8 @@ interface GameStore {
   startTable: () => void;
   // A rematch (#266): online the host asks for it; hotseat deals it here, the last winner first.
   playAgain: () => void;
+  // #1411: an online player who is not the host says they want another game, or takes it back.
+  wantAgain: (value: boolean) => void;
   // Table chat (docs/design/chat.md)
   // This tab's seat id (s0...), from welcome. localId is the player id once the game starts.
   seatId: string;
@@ -411,6 +439,8 @@ interface GameStore {
   chromeLanded: () => void;
   askTable: (give: Bag, want: Bag) => void;
   answerTrade: (yes: boolean) => void;
+  // The asker takes back its own open offer (#1245).
+  cancelTrade: () => void;
   // The player whose action menu is open in the HUD rail or seat strip (docs/design/chat.md "The player action menu").
   menuFor: string | null;
   openMenu: (id: string | null) => void;
@@ -480,7 +510,11 @@ const NAME_MAX = 16;
 const NAME_KEY = "emberisle-name";
 function savedName() {
   if (typeof window === "undefined") return "Ember";
-  return localStorage.getItem(NAME_KEY) || "Ember";
+  try {
+    return localStorage.getItem(NAME_KEY) || "Ember";
+  } catch {
+    return "Ember";
+  }
 }
 
 // null (not a default swatch) until the player actively picks one, so a fresh tab sends no `color`
@@ -488,8 +522,12 @@ function savedName() {
 // touch the picker would both request the same default color and the second would be rejected.
 function savedColor(): string | null {
   if (typeof window === "undefined") return null;
-  const saved = localStorage.getItem("emberisle-color");
-  return saved && (PLAYER_COLORS as readonly string[]).includes(saved) ? saved : null;
+  try {
+    const saved = localStorage.getItem("emberisle-color");
+    return saved && (PLAYER_COLORS as readonly string[]).includes(saved) ? saved : null;
+  } catch {
+    return null;
+  }
 }
 
 export const useGame = create<GameStore>((set, get) => ({
@@ -505,12 +543,16 @@ export const useGame = create<GameStore>((set, get) => ({
   error: null,
   announcement: null,
   errorSeq: 0,
+  needError: 0,
+  localTrade: 0,
   buildMode: "none",
   roadPicks: [],
   howTo: false,
   howToOpener: null,
   costs: false,
   costsOpener: null,
+  profile: null,
+  gameResult: null,
   toast: null,
   banner: null,
   net: null,
@@ -528,6 +570,7 @@ export const useGame = create<GameStore>((set, get) => ({
   synced: 0,
   resync: false,
   watching: 0,
+  ttt: null,
   pendingSteal: null,
   seatId: "",
   chat: [],
@@ -549,17 +592,35 @@ export const useGame = create<GameStore>((set, get) => ({
   menuFor: null,
   setName: (n) => {
     const name = Array.from(n).slice(0, NAME_MAX).join("");
-    if (name.trim() && typeof window !== "undefined") localStorage.setItem(NAME_KEY, name.trim());
+    if (name.trim() && typeof window !== "undefined") {
+      try {
+        localStorage.setItem(NAME_KEY, name.trim());
+      } catch {
+        // storage can be blocked; name is still set in state
+      }
+    }
     set({ name });
   },
   commitName: () => {
     const name = get().name.trim() || "Ember";
-    if (typeof window !== "undefined") localStorage.setItem(NAME_KEY, name);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(NAME_KEY, name);
+      } catch {
+        // storage can be blocked; name is still set in state
+      }
+    }
     set({ name });
     return name;
   },
   setColor: (c) => {
-    if (typeof window !== "undefined") localStorage.setItem("emberisle-color", c);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("emberisle-color", c);
+      } catch {
+        // storage can be blocked; color is still set in state
+      }
+    }
     set({ color: c });
   },
   setHowTo: (v, opener) => set({ howTo: v, howToOpener: v ? (opener ?? null) : null }),
@@ -571,6 +632,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (get().screen === "title" && ["on", "off"].includes(mode)) set({ wayfarerChoices: { ...get().wayfarerChoices, [context]: mode } });
   },
   startAi: () => {
+    resetTradePlease();
     stopEndMusic();
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
     clearWake();
@@ -603,6 +665,7 @@ export const useGame = create<GameStore>((set, get) => ({
     play("game_start");
   },
   startHotseat: (count) => {
+    resetTradePlease();
     stopEndMusic();
     clearWake();
     clearKnocks();
@@ -635,6 +698,7 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   restoring: typeof window !== "undefined" && inPlayAtSavedSeat(),
   loadState: (s, localId, host, table) => {
+    if (!get().state || (get().state?.phase === "over" && s.phase !== "over") || (table && table !== get().table)) resetTradePlease();
     // A push that leaves the turn alone (a seat rejoining) keeps an open picker, with the host's fresh victims (#1110).
     const { pendingSteal: ps, state: was, legal } = get();
     const targets = ps && was && s.phase === was.phase && s.current === was.current ? (legal?.steal[ps.hexId] ?? []) : [];
@@ -654,6 +718,7 @@ export const useGame = create<GameStore>((set, get) => ({
     });
   },
   goTitle: () => {
+    resetTradePlease();
     stopEndMusic();
     // Leaving on purpose frees the seat; only a drop keeps it. A watcher never held one, and the saved seat may be another table's.
     if (!get().spectator) rememberSeat(null);
@@ -719,7 +784,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const nextState = automated
       ? logBotAction(state, res.state, action, actor, state.players.find((p) => p.id === actor)?.name.replace(/ \(bot\)$/i, "") ?? actor)
       : res.state;
-    set({ state: nextState, gameLog: appendLog(get().gameLog, newLog(state.log, nextState.log)), error: null, announcement: null, toast: null, buildMode: "none", roadPicks: [] });
+    set({ state: nextState, localTrade: get().localTrade + Number(action.type === "bankTrade" || (action.type === "respondTrade" && action.accept)), gameLog: appendLog(get().gameLog, newLog(state.log, nextState.log)), error: null, announcement: null, toast: null, buildMode: "none", roadPicks: [] });
     hear(state, nextState, localId, mode);
     // An offer lives only while its asker still has the turn in `main` and still holds the offered goods (as host.mjs play).
     const open = get().offer;
@@ -918,7 +983,13 @@ export const useGame = create<GameStore>((set, get) => ({
     const name = Array.from(n.trim()).slice(0, NAME_MAX).join("");
     if (!name) return;
     set({ name });
-    if (typeof window !== "undefined") localStorage.setItem(NAME_KEY, name);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(NAME_KEY, name);
+      } catch {
+        // storage can be blocked; name is still set in state
+      }
+    }
     get().net?.rename(name);
   },
   addBot: () => {
@@ -930,11 +1001,15 @@ export const useGame = create<GameStore>((set, get) => ({
   startTable: () => {
     if (!get().spectator) get().net?.start();
   },
+  wantAgain: (value) => {
+    if (!get().spectator) get().net?.wantAgain(value);
+  },
   playAgain: () => {
     const { mode, state, net, spectator } = get();
     if (spectator) return;
     if (mode === "online") return net?.again();
     if (mode !== "hotseat" || state?.phase !== "over") return;
+    resetTradePlease();
     const winner = state.players.find((p) => p.id === state.winner)!;
     const ordered = [winner, ...state.players.filter((p) => p !== winner)];
     const next = createGame({ humans: ordered.map((p) => ({ name: p.name })), bots: 0, winnerFirst: true, wayfarerMode: state.wayfarerMode ?? "on" });
@@ -1025,6 +1100,12 @@ export const useGame = create<GameStore>((set, get) => ({
       play("ui_error");
     }
   },
+  cancelTrade: () => {
+    const { offer, net, spectator, mode, localId } = get();
+    if (!offer || spectator || offer.from !== localId) return;
+    if (mode === "online") return net?.cancel(offer.tradeId);
+    endOffer(set, get, null);
+  },
   openMenu: (id) => {
     set({ menuFor: id });
   },
@@ -1057,10 +1138,12 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const state = get().state!;
   const tradeId = `t${state.seq}-${++offerSeq}`;
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
-  set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null, tradeTaker: null });
+  // #1245 (owner q-trade-hold B): only a bot's offer runs out; a person's holds until answered (host.mjs openOffer).
+  const runOut = state.players.find((p) => p.id === from)?.kind === "bot";
+  set({ offer: { tradeId, from, fromName, give, want, until: runOut ? Date.now() + OFFER_MS : null }, declined: [], tradeOutcome: null, tradeTaker: null });
   const me = get().localId;
   void tradeSounds.then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
-  offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
+  if (runOut) offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
     const answer = () => {
@@ -1115,7 +1198,7 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
   const accepted = applyAction(offered.state, actor, { type: "respondTrade", accept: true });
   if (accepted.error) return accepted.error;
   const tradeLines = newLog(state.log, accepted.state.log).filter((line) => !line.includes(" offers a trade to "));
-  set({ state: { ...accepted.state, log: [...state.log, ...tradeLines].slice(-200) }, gameLog: appendLog(gameLog, tradeLines) });
+  set({ state: { ...accepted.state, log: [...state.log, ...tradeLines].slice(-200) }, localTrade: get().localTrade + 1, gameLog: appendLog(gameLog, tradeLines) });
   endOffer(set, get, actor);
   return null;
 }
@@ -1130,7 +1213,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
   // Not a leave: a rejoin after a crash dials the same seat, which the host must still be holding.
   get().net?.close(false);
   const selectedHost = new URL(window.location.href);
-  const selectedMe: Me = { name: get().name.trim() || "Ember", color: get().color ?? undefined };
+  const selectedMe: Me = { name: get().name.trim() || "Ember", color: get().color ?? undefined, profile: get().profile ?? undefined };
   let cancelled = false;
   let removeListeners = () => {};
   let restoreTimer: ReturnType<typeof setTimeout> | undefined;
@@ -1198,7 +1281,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
           recovery = false;
           set({ restoring: false, screen: "lobby" });
         }, 1500);
-      set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
+      set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0, ttt: null });
     },
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
     reconnecting: (attempt) => {
@@ -1233,7 +1316,8 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     },
     // Dice and gain floats present the roll; its words live only in the persistent log.
     rolled: () => {},
-    state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow }) => {
+    state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow, result }) => {
+      set({ gameResult: game.phase === "over" ? gameResult(result) : null });
       // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
       const me = you ?? "";
       const rollOff = rollOffLine(get().state, game);
@@ -1264,9 +1348,11 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       else if (swing) showBanner(set, swing);
     },
     log: (text) => set({ lobbyLog: text, gameLog: appendLog(get().gameLog, [text]) }),
+    ttt: (ttt) => set({ ttt }),
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
-      set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
+      // #1245: a null `seconds` is an offer that holds until answered (no run-out).
+      set({ offer: { tradeId, from, fromName, give, want, until: seconds === null ? null : Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
       const me = get().localId;
       void tradeSounds.then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
     },
@@ -1277,9 +1363,9 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     tradeClosed: ({ tradeId, taker }) => {
       if (get().offer?.tradeId === tradeId) endOffer(set, get, taker ?? null);
     },
-    error: (message) => {
+    error: (message, request) => {
       if (!pending && kind !== "peek") {
-        set({ announcement: null, error: message, toast: message, errorSeq: get().errorSeq + 1 });
+        set({ announcement: null, error: message, toast: message, errorSeq: get().errorSeq + 1, needError: get().needError + Number(request === "need") });
         play("ui_error");
       }
       // A refused join leaves an unseated socket the host never closes; drop it so the next peek can open its own.

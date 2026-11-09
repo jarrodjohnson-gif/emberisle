@@ -11,8 +11,7 @@
 //   Two seats whose three letters match ("Ember", "Emberly") still read differently.
 // - #419: on that touch screen an armed Path's banner ends "tap Path again to cancel", and a second tap restores it.
 // Zero console errors. Run: npm run reflow-prove
-import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8100;
@@ -30,7 +29,6 @@ const VIEWPORTS = [
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];

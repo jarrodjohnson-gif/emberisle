@@ -1,8 +1,7 @@
 // #331: with nothing moving the board renders at about 12 fps; a drag or a state push brings back full rate.
 // Software GL draws only one or two real frames a second here, so the proof swaps the composer's draw for a no-op
 // and counts what the loop decides to render (window.__isle.renders) at the browser's own frame rate.
-import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8098;
@@ -17,7 +16,6 @@ const check = (name, ok, detail) => {
 };
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 try {

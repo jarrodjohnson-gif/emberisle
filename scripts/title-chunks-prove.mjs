@@ -2,10 +2,10 @@
 // All normal layout, discovery, settings and chunk-retry assertions remain in their existing proofs.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { preview } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8491;
@@ -38,8 +38,7 @@ function check(ok, label, data) {
 try {
   await started; clearTimeout(startup);
   vite = await preview({ preview: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
-  browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ||
-    (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
+  browser = await chromium.launch({
     args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
   });
   async function controlled(name, fail, run) {

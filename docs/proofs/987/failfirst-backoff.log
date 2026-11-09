@@ -1,0 +1,41 @@
+
+> open-table-prove
+> node --import ./server/register.mjs scripts/open-table-prove.mjs
+
+ok open-mode-toggle selects Open +1.3s
+ok Jarrod sees the lobby after hosting an Open table +1.8s
+ok 390x844 open-table row and Join fully visible (got {"ok":true,"entry":{"x":33,"y":741.8125,"width":324,"height":58,"top":741.8125,"right":357,"bottom":799.8125,"left":33},"join":{"x":295.4375,"y":748.8125,"width":50.5625,"height":44,"top":748.8125,"right":346,"bottom":792.8125,"left":295.4375},"card":{"x":12,"y":367.8125,"width":366,"height":464.1875,"top":367.8125,"right":378,"bottom":832,"left":12}}) +2.9s
+ok private-code helper uses the approved text +2.9s
+ok code input is described by the private-table helper +2.9s
+ok open-table heading uses the approved text +2.9s
+ok listed Join has the table's accessible name +2.9s
+ok listed Join has a 44px tap height +3.0s
+ok open table entry shows Jarrod's table (got "Jarrod's table
+
+1/4 seated
+
+Join") +4.3s
+ok Joshua joined the open table without typing a code +4.8s
+ok private host got a code (got PNDY) +6.2s
+ok observer sees exactly 1 open table, got 1 +7.7s
+ok open entry is Jarrod's, got "Jarrod's table
+
+2/4 seated
+
+Join" +7.7s
+ok private host name Sidecar not exposed, got "Jarrod's table
+
+2/4 seated
+
+Join" +7.7s
+ok private code PNDY not exposed, got "Jarrod's table
+
+2/4 seated
+
+Join" +7.7s
+ok no console errors (found: ) +7.7s
+FAIL bounded offline backoff: 0 redials during 3.5 seconds offline
+host log:
+profiles: store unavailable (locked); guests can still play
+profiles: lock refused at /workspace/emberisle/work/p2-discovery987/server/profiles/writer.lock; stop every host using this store, then remove this lock path and retry
+host listening 42393

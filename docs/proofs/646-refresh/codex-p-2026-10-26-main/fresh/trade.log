@@ -1,0 +1,23 @@
+$ npm run trade-prove
+
+> trade-prove
+> node scripts/trade-prove.mjs
+
+#425: Host a table -> /audio/click_001.wav once
+table 77P8: setup done, seq 15
+Ember gives 1 wool, wants 1 ore; Pine says no, Tide says yes
+#425: Escape on the trade panel -> /audio/back_001.wav once
+#378: Enter on Trade -> dialog "Trade", focus on "Close"; 14 Tabs + 3 Shift+Tabs stayed inside (9 stops); Escape -> focus on Trade
+#609/#1107: offer of wool for ore heard as ["trade_offer.wav@1"] on the other seats and [] on the asker
+toast on Tide and Pine: "Ember offers 1 sheep for 1 stone"; asker sees "Waiting…"
+#366: Tide and Pine see an alertdialog named "Ember offers 1 sheep for 1 stone", focus untouched, countdown aria-hidden
+Pine declined: asker sees "Pine declined", offer still open for Tide
+#609: trade_yes plays in full for the asker and taker, at half volume for the bystander
+Tide took it: 1 wool -> Tide, 1 ore -> Ember, hands and goods counts agree on all 3 tabs
+#366: "Ember offers 1 stone for 3 sheep": Yes on Tide and Pine is aria-disabled, focusable, described by "Need … more sheep"
+#366: Enter on Tide's aria-disabled Yes sent nothing; Escape in Pine's toast answered No
+#609: trade_no plays for the asker only
+#366: Tide's polite line said only "5 seconds left"
+second offer ran out after 20 s left on the clock: hands unchanged, toast closed on all 3 tabs
+#1107: trade clips follow precedence, reach all seats, plain chime excludes the asker, and corn_no needs every explicit No
+trade prove ok

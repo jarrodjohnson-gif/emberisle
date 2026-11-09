@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
-const out = "docs/proofs/1103";
+const out = process.env.LOBBY_LAYOUT_OUT || "docs/proofs/1103";
 mkdirSync(out, { recursive: true });
 const rooms = mkdtempSync(path.join(tmpdir(), "emberisle-1103-rooms-"));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
@@ -25,7 +25,6 @@ const vite = await createServer({ server: { host: "127.0.0.1", port: 0 }, logLev
 await vite.listen();
 const url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${hostPort}`;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -55,11 +54,21 @@ async function geometry(page, minimum) {
     const people = document.querySelector('[data-testid="lobby-players"]');
     const chat = document.querySelector('[data-testid="lobby-chat"]');
     const controls = [...card.querySelectorAll("button, input")].filter(el => el.getBoundingClientRect().width > 0);
+    // #1220: at 320 px the emoji are one sideways-scrolling row; a control in it is measured where scrolling shows it.
+    const reach = el => {
+      const row = el.closest('[data-testid="emoji-row"]');
+      if (!row || row.scrollWidth <= row.clientWidth) return { scrolled: false, reach: rect(el) };
+      const left = row.scrollLeft;
+      el.scrollIntoView({ block: "nearest", inline: "nearest" });
+      const r = rect(el);
+      row.scrollLeft = left;
+      return { scrolled: true, reach: r };
+    };
     return {
       card: rect(card), chat: rect(chat),
       overflow: [card.scrollWidth - card.clientWidth, card.scrollHeight - card.clientHeight, people.scrollWidth - people.clientWidth, people.scrollHeight - people.clientHeight],
       seats: [...people.children].map(rect),
-      controls: controls.map(el => ({ label: el.getAttribute("aria-label") || el.textContent || el.placeholder, ...rect(el) })),
+      controls: controls.map(el => ({ label: el.getAttribute("aria-label") || el.textContent || el.placeholder, ...rect(el), ...reach(el) })),
       background: getComputedStyle(card).backgroundColor,
     };
   });
@@ -72,7 +81,7 @@ async function geometry(page, minimum) {
   assert.ok(share >= minimum, `chat share ${share} >= ${minimum}`);
   for (const c of data.controls) {
     assert.ok(c.width >= 44 && c.height >= 44, `${c.label}: target ${c.width}x${c.height}`);
-    assert.ok(c.x >= data.card.x && c.right <= data.card.right && c.y >= data.card.y && c.bottom <= data.card.bottom, `${c.label}: inside card`);
+    assert.ok(c.reach.x >= data.card.x && c.reach.right <= data.card.right && c.reach.y >= data.card.y && c.reach.bottom <= data.card.bottom, `${c.label}: inside card${c.scrolled ? " once scrolled into view" : ""}`);
   }
   for (let i = 0; i < data.controls.length; i++) for (const b of data.controls.slice(i + 1)) {
     const a = data.controls[i];
@@ -159,11 +168,13 @@ async function centred(page, label) {
       labels, seats,
       emoji: { left: emoji[0].left - row.left, right: row.right - emoji.at(-1).right, gaps: emoji.slice(1).map((r, i) => r.left - emoji[i].right), centres: emoji.map(r => (r.top + r.bottom) / 2), rowLeft: row.left - chat.left, rowRight: chat.right - row.right },
       codeDy: (ct.t + ct.b) / 2 - (header.top + header.bottom) / 2,
+      headerDiagnostic: { code: code.textContent, font: getComputedStyle(code).font, header: header.toJSON(), codeBox: box(code).toJSON(), buttons: [...card.querySelectorAll('.lobby-header button')].map(el => ({ text: el.textContent, font: getComputedStyle(el).font, box: box(el).toJSON() })) },
       foot, inputDy: (input.top + input.bottom) / 2 - (send.top + send.bottom) / 2,
     };
   });
   for (const l of m.labels) {
     assert.ok(Math.abs(l.dx) <= 1 && Math.abs(l.dy) <= 1, `${label}: "${l.name}" label centred in its button (dx ${l.dx.toFixed(2)}, dy ${l.dy.toFixed(2)})`);
+    if (!l.icon && (l.padL < 8 || l.padR < 8)) console.error(`header diagnostic: ${JSON.stringify(m.headerDiagnostic)}`);
     if (!l.icon) assert.ok(l.padL >= 8 && l.padR >= 8, `${label}: "${l.name}" has at least 8 px between text and button edge (${l.padL.toFixed(1)} / ${l.padR.toFixed(1)})`);
   }
   const filled = m.seats.filter(s => s.hasStatus);
@@ -179,6 +190,115 @@ async function centred(page, label) {
   assert.ok(Math.abs(m.codeDy) <= 1, `${label}: table code centred in the header row (${m.codeDy.toFixed(2)})`);
   assert.ok(Math.max(...m.foot) - Math.min(...m.foot) <= 1, `${label}: footer buttons on one centre line`);
   assert.ok(Math.abs(m.inputDy) <= 1, `${label}: chat input and Send share a centre line`);
+}
+// #1220 rows 20 and 21: the card clears notch-sized insets (emulated over CDP; plain Chromium reports 0).
+async function safeArea(page, label, expected) {
+  const insets = { top: 47, right: 21, bottom: 34, left: 59 };
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets });
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const edges = await page.getByTestId("lobby-card").evaluate(el => { const r = el.getBoundingClientRect(); return { top: r.top, right: innerWidth - r.right, bottom: innerHeight - r.bottom, left: r.left }; });
+    for (const [side, value] of Object.entries(expected)) assert.ok(Math.abs(edges[side] - value) <= .5, `${label}: card ${side} edge at ${value} px with a ${insets[side]} px safe area (${edges[side]})`);
+    console.log(`${label}: card clears the safe area (${Object.keys(expected).join(", ")})`);
+  } finally {
+    await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 0, right: 0, bottom: 0, left: 0 } });
+    await cdp.detach();
+  }
+}
+const fitResults = [];
+async function codeFits(page, label) {
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  const m = await page.getByTestId("table-code").evaluate(el => {
+    const range = document.createRange(); range.selectNodeContents(el);
+    const text = range.getBoundingClientRect(), box = el.getBoundingClientRect();
+    const style = getComputedStyle(el);
+    const m = { code: el.textContent, font: parseFloat(style.fontSize), fontStyle: style.font, letterSpacing: style.letterSpacing, clientWidth: el.clientWidth, scrollWidth: el.scrollWidth, viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio }, textLeft: text.left, textRight: text.right, left: box.left, right: box.right,
+      focus: document.activeElement === window.__codeFocus,
+      buttons: [...document.querySelectorAll(".lobby-header button")].map(button => {
+        const r = document.createRange(); r.selectNodeContents(button);
+        const t = r.getBoundingClientRect(), b = button.getBoundingClientRect();
+        return { text: button.textContent, font: parseFloat(getComputedStyle(button).fontSize), width: b.width, height: b.height, left: t.left - b.left, right: b.right - t.right };
+      }) };
+    if (m.font < Math.max(...m.buttons.map(button => button.font))) {
+      let clone;
+      try {
+        clone = el.cloneNode(true);
+        clone.removeAttribute("data-testid");
+        Object.assign(clone.style, { position: "fixed", visibility: "hidden", width: "max-content", maxWidth: "none", margin: "0", padding: "0", font: style.font, fontSize: `${Math.max(...m.buttons.map(button => button.font))}px`, letterSpacing: style.letterSpacing, whiteSpace: "nowrap" });
+        document.body.append(clone);
+        const r = document.createRange(); r.selectNodeContents(clone);
+        m.labelFontWidth = r.getBoundingClientRect().width;
+      } catch (error) { m.diagnosticError = String(error); }
+      finally { clone?.remove(); }
+    }
+    return m;
+  });
+  assert.ok(m.textLeft >= m.left - .1 && m.textRight <= m.right + .1,
+    `${label}: complete code visible without ellipsis ${JSON.stringify(m)}`);
+  try {
+    assert.ok(m.font >= Math.max(...m.buttons.map(button => button.font)), `${label}: code remains at least as large as its control labels`);
+  } catch (error) {
+    console.error(`code readability diagnostic: ${JSON.stringify(m)}`);
+    let timer;
+    try {
+      await Promise.race([(async () => {
+        const session = await page.context().newCDPSession(page);
+        try {
+          await session.send("DOM.enable"); await session.send("CSS.enable");
+          const { root } = await session.send("DOM.getDocument");
+          const { nodeId } = await session.send("DOM.querySelector", { nodeId: root.nodeId, selector: '[data-testid="table-code"]' });
+          console.error(`code resolved fonts: ${JSON.stringify(await session.send("CSS.getPlatformFontsForNode", { nodeId }))}`);
+        } finally { await session.detach(); }
+      })(), new Promise(resolve => { timer = setTimeout(resolve, 1000); })]);
+    } catch (diagnosticError) { console.error(`code font diagnostic failed: ${String(diagnosticError)}`); }
+    finally { clearTimeout(timer); throw error; }
+  }
+  assert.ok(m.focus, `${label}: resizing does not move focus`);
+  for (const button of m.buttons) {
+    assert.ok(button.width >= 44 && button.height >= 44, `${label}: ${button.text} retains its 44px target`);
+    assert.ok(button.left >= 8 && button.right >= 8, `${label}: ${button.text} retains 8px text padding`);
+  }
+  fitResults.push({ label, ...m });
+}
+async function supportedCodeFits(page, label) {
+  const code = await page.evaluate(() => window.__emberisle.getState().code);
+  const viewport = page.viewportSize();
+  try {
+    for (const value of [code, "APWG", "WWWW", "MMMM"]) {
+      await page.locator(".lobby-code:not([data-copied])").waitFor();
+      await page.getByRole("button", { name: /^Table code .+\. Copy link$/ }).waitFor();
+      await page.locator(".lobby-header button").first().focus();
+      await page.evaluate(value => { window.__codeFocus = document.activeElement; window.__emberisle.setState({ code: value }); }, value);
+      await page.waitForFunction(value => document.querySelector('[data-testid="table-code"]').textContent === value, value);
+      await codeFits(page, `${label} ${value} ready`);
+      await page.locator(".lobby-code").click();
+      await page.locator(".lobby-code[data-copied]").waitFor();
+      await page.evaluate(() => { window.__codeFocus = document.activeElement; });
+      await codeFits(page, `${label} ${value} code → Copied`);
+    }
+    await page.evaluate(() => window.__emberisle.setState({ code: "WWWW" }));
+    await page.locator(".lobby-code").click();
+    await page.locator(".lobby-code[data-copied]").waitFor();
+    await page.evaluate(() => { window.__codeFocus = document.activeElement; });
+    await codeFits(page, `${label} before responsive change`);
+    const beforeFont = await page.getByTestId("table-code").evaluate(el => parseFloat(getComputedStyle(el).fontSize));
+    const changed = viewport.width === 320 ? { width: 390, height: 844 } : { width: 320, height: 568 };
+    await page.setViewportSize(changed);
+    await codeFits(page, `${label} shrinks/grows to ${changed.width}`);
+    const changedFont = await page.getByTestId("table-code").evaluate(el => parseFloat(getComputedStyle(el).fontSize));
+    assert.ok(viewport.width === 320 ? changedFont > beforeFont : changedFont < beforeFont, `${label}: the font responds to the actual viewport width`);
+    await page.setViewportSize(viewport);
+    await codeFits(page, `${label} restores width`);
+    const restoredFont = await page.getByTestId("table-code").evaluate(el => parseFloat(getComputedStyle(el).fontSize));
+    assert.ok(Math.abs(restoredFont - beforeFont) <= .1, `${label}: growth restores the original fitted font`);
+  } finally {
+    await page.setViewportSize(viewport);
+    await page.evaluate(value => window.__emberisle.setState({ code: value }), code);
+    await page.locator(".lobby-code:not([data-copied])").waitFor();
+    await page.getByRole("button", { name: /^Table code .+\. Copy link$/ }).waitFor();
+  }
+  console.log(`${label}: valid codes fully visible; code/Copied, 44px targets, 8px padding, focus and responsive fits passed`);
 }
 try {
   for (const [width, height, minimum] of [[390, 844, .52], [844, 390, .39], [1280, 720, .40]]) {
@@ -196,10 +316,12 @@ try {
     await page.getByTestId("add-bot").first().click();
     await page.waitForFunction(() => window.__emberisle.getState().seats.length === 4);
     await page.evaluate(() => document.fonts.ready);
-    for (const label of ["Copy", "Copy link", "Invite", "Rules", "Ready", "Leave the table"]) {
+    for (const label of [`Table code ${[...code].join(" ")}. Copy link`, "Rules", "Ready", "Leave the table"]) {
       assert.equal(await page.getByRole("button", { name: label, exact: true }).count(), 1, label);
     }
-    assert.equal(await page.getByRole("tab").count(), 2);
+    for (const gone of ["Copy", "Copy link", "Invite"]) assert.equal(await page.getByRole("button", { name: gone, exact: true }).count(), 0, `${gone} is gone`);
+    assert.equal(await page.getByTestId("lobby-chat").getByRole("tab").count(), 2);
+    assert.equal(await page.getByRole("tablist", { name: "Lobby" }).getByRole("tab").count(), 2);
     assert.equal(await page.getByTestId("emoji-row").locator("button").count(), 6);
     assert.equal(await page.getByRole("button", { name: "Start", exact: true }).count(), 0, "host sees no Start until everyone is ready");
     assert.equal(await guest.getByRole("button", { name: "Start", exact: true }).count(), 0, "guest cannot start");
@@ -208,13 +330,35 @@ try {
     const data = await geometry(page, minimum);
     await renameTappable(page, `${width}x${height}`);
     await centred(page, `${width}x${height}`);
-    await page.getByRole("button", { name: "Copy", exact: true }).click();
-    await page.waitForFunction(code => window.__copies.includes(code), code);
-    await page.getByRole("button", { name: "Copy link", exact: true }).click();
+    if (width === 1280) await safeArea(page, `${width}x${height}`, { top: 47, bottom: 34, left: 59 });
+    if (width === 844) {
+      await page.setViewportSize({ width: 667, height: 375 });
+      try {
+        await safeArea(page, "667x375", { top: 47, right: 21, bottom: 34, left: 59 });
+      } finally {
+        await page.setViewportSize({ width, height });
+      }
+    }
+    if (width === 390) await supportedCodeFits(page, `${width}x${height}`);
+    if (width === 390) {
+      // Actual hosted fallback font; retain the native cases and run the same assertions.
+      const font = await page.addStyleTag({ content: '.lobby-header [data-testid="table-code"], .lobby-header button { font-family: "DejaVu Sans", sans-serif !important; }' });
+      try {
+        await page.evaluate(() => document.fonts.ready);
+        await supportedCodeFits(page, `${width}x${height} DejaVu Sans`);
+      } finally {
+        await font.evaluate(el => el.remove());
+      }
+    }
+    await page.locator(".lobby-code:not([data-copied])").waitFor();
+    await page.getByRole("button", { name: `Table code ${[...code].join(" ")}. Copy link`, exact: true }).click();
+    await page.waitForFunction(code => window.__copies.at(-1).includes(`?code=${code}`), code);
     await page.waitForFunction(() => window.__copies.some(s => s.includes("?code=")));
     await page.evaluate(() => Object.defineProperty(navigator, "share", { configurable: true, value: async data => { window.__invitation = data; } }));
-    await page.getByRole("button", { name: "Invite", exact: true }).click();
-    assert.ok((await page.evaluate(() => window.__invitation.url)).includes(`code=${code}`));
+    const copies = await page.evaluate(() => window.__copies.length);
+    await page.locator(".lobby-code").click();
+    await page.waitForFunction(n => window.__copies.length > n, copies);
+    assert.ok((await page.evaluate(() => window.__copies.at(-1))).includes(`code=${code}`) && await page.evaluate(() => window.__invitation === undefined), "the code copies the join link and never opens a share sheet");
     await page.getByRole("button", { name: "Rules", exact: true }).click();
     await page.getByRole("dialog").waitFor();
     await page.getByRole("button", { name: "Close", exact: true }).click();
@@ -226,9 +370,14 @@ try {
     await page.getByRole("button", { name: "Send", exact: true }).click();
     await guest.getByTestId("chat-log").getByText("One more and we're ready.", { exact: false }).waitFor();
     assert.equal(await page.locator("#chat-input").inputValue(), "");
-    await page.getByTestId("emoji-row").locator("button").first().click();
-    await guest.getByTestId("react-line").waitFor();
-    await clearOfName(page, "reaction");
+    // A reaction lasts two seconds; start measuring it before waiting for the guest's chat echo.
+    await Promise.all([
+      clearOfName(page, "reaction"),
+      (async () => {
+        await page.getByTestId("emoji-row").locator("button").first().click();
+        await guest.getByTestId("react-line").waitFor();
+      })(),
+    ]);
     await page.getByRole("tab", { name: "Sounds & stickers" }).click();
     await page.getByTestId("sounds-tab").waitFor();
     assert.ok(await page.getByTestId("soundboard").locator("button").count() > 0);
@@ -248,11 +397,11 @@ try {
     await page.waitForFunction(() => window.__emberisle.getState().screen === "play");
     await guest.waitForFunction(() => window.__emberisle.getState().screen === "play");
     results.push({ viewport: `${width}x${height}`, ...data });
-    console.log(`${width}x${height}: chat ${(data.share * 100).toFixed(2)}%; two columns; 44px targets / 8px gaps; no card/people scroll; copy/invite/rules/target/chat/reaction/ready/start passed`);
+    console.log(`${width}x${height}: chat ${(data.share * 100).toFixed(2)}%; two columns; 44px targets / 8px gaps; no card/people scroll; copy/rules/target/chat/reaction/ready/start passed`);
     await page.context().close();
     await guest.context().close();
   }
-  for (const [width, height] of [[375, 667], [390, 640], [320, 568]]) {
+  for (const [width, height] of [[375, 667], [390, 640], [320, 568], [430, 932], [375, 812]]) {
     const page = await client("Jarrod", { width, height }, true);
     await page.evaluate(() => window.__emberisle.getState().hostTable());
     await page.getByTestId("lobby-card").waitFor();
@@ -267,10 +416,35 @@ try {
     await emptySeatsFit(page, `${width}x${height}`);
     const data = await geometry(page, 0);
     results.push({ viewport: `${width}x${height}`, ...data });
+    if (width === 320) {
+      // #1220 row 22: one emoji row leaves room for two 22 px chat lines.
+      const log = await page.getByTestId("chat-log").evaluate(el => el.clientHeight);
+      assert.ok(log >= 44, `${width}x${height}: chat log shows two lines (${log} px)`);
+    }
     if (width === 375) await centred(page, `${width}x${height}`);
-    await page.getByTestId("emoji-row").locator("button").first().click();
-    await guest.getByTestId("react-line").waitFor();
-    await clearOfName(page, "reaction");
+    if (width !== 390) await supportedCodeFits(page, `${width}x${height}`);
+    try {
+      for (const stress of ["WWWW", "MMMM"]) {
+        await page.getByTestId("table-code").evaluate((el, value) => { el.textContent = value; el.style.fontSize = "32px"; }, stress);
+        if (width === 375 && stress === "WWWW") await centred(page, `${width}x${height} wide-font stress`);
+        const padding = await page.locator(".lobby-header button").evaluateAll(buttons => buttons.map(el => {
+          const range = document.createRange(); range.selectNodeContents(el);
+          const text = range.getBoundingClientRect(), box = el.getBoundingClientRect();
+          return { name: el.textContent.trim(), left: text.left - box.left, right: box.right - text.right };
+        }));
+        for (const button of padding) assert.ok(button.left >= 8 && button.right >= 8,
+          `${width}x${height} ${stress}: ${button.name} text padding ${button.left}/${button.right}`);
+      }
+    } finally {
+      await page.getByTestId("table-code").evaluate((el, value) => { el.textContent = value; el.style.fontSize = ""; }, code);
+    }
+    await Promise.all([
+      clearOfName(page, "reaction"),
+      (async () => {
+        await page.getByTestId("emoji-row").locator("button").first().click();
+        await guest.getByTestId("react-line").waitFor();
+      })(),
+    ]);
     await page.getByRole("tab", { name: "Sounds & stickers" }).click();
     await guest.getByRole("tab", { name: "Sounds & stickers" }).click();
     await guest.getByRole("button", { name: "Play sound Wololo", exact: true }).click();
@@ -280,8 +454,9 @@ try {
     await guest.context().close();
   }
   assert.deepEqual(errors, [], "zero browser errors");
+  writeFileSync(`${out}/code-fit.json`, JSON.stringify(fitResults, null, 2) + "\n");
   writeFileSync(`${out}/measurements.json`, JSON.stringify(results, null, 2) + "\n");
-  console.log("lobby-layout-prove: ok; real host, two clients, six viewports; zero browser errors");
+  console.log("lobby-layout-prove: ok; real host, two clients, eight viewports; zero browser errors");
 } finally {
   await browser.close();
   await vite.close();

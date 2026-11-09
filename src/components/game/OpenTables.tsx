@@ -2,10 +2,14 @@
 // Lives in its own lazy chunk so the first-load index stays inside the growth allowance.
 // The list rides the WebSocket `{type:"list"}` → `openTables` path — no HTTP /tables poll.
 import { useEffect, useState } from "react";
-import { Globe, Lock } from "lucide-react";
+import { createLucideIcon } from "lucide-react";
 import { useGame } from "@/lib/game/store";
 import { connectTable, hostUrl, type OpenTableEntry } from "@/lib/net/table";
 import { Button } from "@/components/ui/button";
+
+// Same globe and lock marks, with short keys so the list warning stays quiet and the chunk stays under its ceiling.
+const Globe = createLucideIcon("g", [["circle", { cx: "12", cy: "12", r: "10", key: "a" }], ["path", { d: "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20", key: "b" }], ["path", { d: "M2 12h20", key: "c" }]]);
+const Lock = createLucideIcon("l", [["rect", { width: "18", height: "11", x: "3", y: "11", rx: "2", ry: "2", key: "a" }], ["path", { d: "M7 11V7a5 5 0 0 1 10 0v4", key: "b" }]]);
 
 // Only the rules host marks its served HTML. Static root builds also support offline play.
 function hostExpected(): boolean {
@@ -21,23 +25,33 @@ export function OpenTables() {
     if (!hostExpected()) return;
     let alive = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const client = connectTable(hostUrl(location), {
-      openTables: (tables) => {
-        if (alive) setOpenTables(tables);
-      },
-      closed: () => {
-        // Seatless dial failed or dropped: clear the list and stop. No redial without a seat.
-        if (!alive) return;
-        setOpenTables([]);
-        clearTimeout(timer);
-      },
-    });
+    let client: ReturnType<typeof connectTable>;
+    let attempt = 0;
     const refresh = () => {
       if (!alive) return;
       client.list();
       timer = setTimeout(refresh, 5000);
     };
-    refresh();
+    const dial = () => {
+      if (!alive) return;
+      client = connectTable(hostUrl(location), {
+        openTables: (tables) => {
+          if (!alive) return;
+          attempt = 0;
+          setOpenTables(tables);
+        },
+        closed: () => {
+          if (!alive) return;
+          setOpenTables([]);
+          clearTimeout(timer);
+          // Discovery has no seat to rejoin. Redial only this seatless list client,
+          // using the network client's 1/2/4/8/15-second backoff convention.
+          timer = setTimeout(dial, Math.min(1000 * 2 ** Math.min(attempt++, 4), 15000));
+        },
+      });
+      refresh();
+    };
+    dial();
     return () => {
       alive = false;
       clearTimeout(timer);
@@ -90,18 +104,17 @@ export function OpenModeToggle({ openMode, setOpenMode }: {
   openMode: boolean;
   setOpenMode: (toggle: (old: boolean) => boolean) => void;
 }) {
-  const VisibilityIcon = openMode ? Globe : Lock;
   return (
     <Button
       variant="ghost"
       className="absolute right-0 top-0 w-11 rounded-none border-l border-control-line px-0"
       aria-pressed={openMode}
       title={openMode ? "Anyone can join" : "Code needed"}
-      aria-label={openMode ? "Open to anyone" : "Private, code needed"}
+      aria-label="Open table"
       data-testid="open-mode-toggle"
       onClick={() => setOpenMode((m) => !m)}
     >
-      <VisibilityIcon size={16} aria-hidden />
+      {openMode ? <Globe size={16} aria-hidden /> : <Lock size={16} aria-hidden />}
     </Button>
   );
 }

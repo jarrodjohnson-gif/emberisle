@@ -1,19 +1,24 @@
 // #163: three headless tabs on the rules host trade through the browser's trade panel and toast.
 // Tab 1 asks the table through the panel; tab 3 says No (the offer stays open), tab 2 says Yes, and every tab's state
-// shows the goods moved. A second ask gets a No and then runs out its 20 s: the goods stay put and the toast closes
-// everywhere. Zero console errors.
-// #366: every non-asker's toast is an alertdialog named by the offer line that does not take focus; a Yes it cannot pay
-// for stays focusable with aria-disabled and is described by the "Need …" line, and refuses Enter; Escape answers No; the
-// countdown is hidden from screen readers but a polite line says "5 seconds left".
+// shows the goods moved. A second ask gets a No and holds past the old 20 s run-out until the asker's Cancel: the goods
+// stay put and the toast closes everywhere (#1245: a person's offer holds until answered). Zero console errors.
+// #366 / #537: every non-asker's toast is a named region for the offer (or compact demand) that does not take focus.
+// A seat that can pay sees Yes/No; a seat that cannot (#537) sees only "X is looking for …" with Dismiss — no Accept.
+// Escape answers No / Dismiss. A person's offer shows no countdown (#1245); a bot's still does, hidden from screen
+// readers, with a polite line that says "5 seconds left".
+// Step 4 is the hold lifecycle: a second ask nobody takes is still open past the old 20 s and ends at the asker's Cancel
+// (C answers with Escape, the asker alone hears the No, hands unchanged). Steps 5 and 6 are #537: B has none of the goods asked for and sees the compact demand,
+// C can pay and sees the normal offer; changing B's hand flips its toast without a new offer; Dismiss from B and No from C
+// close the offer on all three tabs within 500 ms, at normal motion and again under reduced motion (no skip path).
 // #378: the asker's panel is a modal dialog named "Trade": focus moves in on open, 14 Tabs and 3 Shift+Tabs never leave
 // it, and Escape (or the ask itself) puts focus back on the Trade button.
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { RESOURCE_LABEL } from "../src/lib/game/types.ts";
 
@@ -37,9 +42,7 @@ const hostPort = await new Promise((resolve) =>
 );
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
-});
+const browser = await chromium.launch();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const errors = [];
@@ -55,6 +58,7 @@ async function tab(name) {
   await page.addInitScript(() => {
     window.__plays = [];
     window.__heard = [];
+    window.__media = new Map();
     window.__sockets = [];
     const NativeWebSocket = window.WebSocket;
     window.WebSocket = new Proxy(NativeWebSocket, {
@@ -68,6 +72,7 @@ async function tab(name) {
     HTMLMediaElement.prototype.play = function () {
       // #814: the background music is music-prove's, not a table sound.
       if (this.src.endsWith("/old_tower_inn_loop.mp3")) return play.call(this);
+      window.__media.set(new URL(this.src).pathname.replace("/audio/", ""), this);
       window.__plays.push(new URL(this.src).pathname);
       window.__heard.push(`${new URL(this.src).pathname.replace("/audio/", "")}@${this.volume}`);
       return play.call(this);
@@ -121,12 +126,13 @@ async function synced(tabs, seq, what, ms) {
 
 // #609: the clips this tab started since `forget`, as "file@volume", without the UI clicks.
 const forget = (tabs) => Promise.all(tabs.map((t) => t.page.evaluate(() => (window.__heard = []))));
-const trades = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|confirmation_001|error_002|three_wood|daking_wood|sheep_for_wood|stone_for_wood|corn_no)/.test(h)));
+const trades = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|confirmation_001|error_002|three_wood|daking_wood|sheep_for_wood|stone_for_wood|sb_only_wood|sb_sheep_please|sb_grain_please|sb_brick_please|corn_no)/.test(h)));
 // #1107: what a seat hears when an offer of 1 `gives` for `wants` arrives, from fixed expectations (the precedence itself is proved
 // with explicit give/want bags in hearOffer below). Sheep or stone for wood plays its own clip on every seat, the asker included;
 // any other pair is the plain chime on the other seats and silent on the asker.
 const OFFER_CLIP = { "wool>timber": "sheep_for_wood.mp3@1", "ore>timber": "stone_for_wood.mp3@1" };
-const offerHeard = (gives, wants, asker) => (OFFER_CLIP[`${gives}>${wants}`] ? [OFFER_CLIP[`${gives}>${wants}`]] : asker ? [] : ["trade_offer.wav@1"]);
+const PLEASE_CLIP = { timber: "sb_only_wood.mp3@1", wool: "sb_sheep_please.mp3@1", grain: "sb_grain_please.mp3@1", clay: "sb_brick_please.mp3@1" };
+const offerHeard = (gives, wants, asker) => OFFER_CLIP[`${gives}>${wants}`] ? [OFFER_CLIP[`${gives}>${wants}`]] : PLEASE_CLIP[wants] ? [PLEASE_CLIP[wants]] : asker ? [] : ["trade_offer.wav@1"];
 const act = (t, fn, arg) => t.page.evaluate(([f, a]) => window.__emberisle.getState()[f](...[].concat(a)), [fn, arg]);
 const total = (hand) => RES.reduce((n, r) => n + hand[r], 0);
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -288,50 +294,64 @@ try {
   const afterAsk = await focusIs(A);
   if (afterAsk.label !== "Trade") throw new Error(`#378: the ask closed the panel but focus went to "${afterAsk.label}", not the Trade button`);
   const line = `${A.name} offers 1 ${RESOURCE_LABEL[give].toLowerCase()} for 1 ${RESOURCE_LABEL[want].toLowerCase()}`;
+  const demand1 = `${A.name} is looking for 1 ${RESOURCE_LABEL[want].toLowerCase()}`;
   for (const t of [B, C]) {
     const v = vs[tabs.indexOf(t)];
-    if (!v.toast.includes(line)) throw new Error(`${t.name} toast: "${v.toast}"`);
-    const secs = Number((await t.page.getByTestId("trade-countdown").textContent()).replace(/\D/g, ""));
-    if (secs < 1 || secs > 20) throw new Error(`${t.name} toast has no countdown: "${v.toast}"`);
+    // #537: a seat short of the ask sees compact demand, not the full "offers" line.
+    const expect = (v.mine[want] ?? 0) < 1 ? demand1 : line;
+    if (!v.toast.includes(expect)) throw new Error(`${t.name} toast: "${v.toast}"`);
+    if (await t.page.getByTestId("trade-countdown").count()) throw new Error(`${t.name} toast shows a countdown on a person's offer (#1245): "${v.toast}"`);
   }
   if (!vs[i].toast.includes(`You offer 1 ${RESOURCE_LABEL[give].toLowerCase()} for 1 ${RESOURCE_LABEL[want].toLowerCase()}`) || !vs[i].toast.includes("Waiting")) throw new Error(`asker toast: "${vs[i].toast}"`);
   const tradeId = vs[0].offer.tradeId;
-  console.log(`toast on ${B.name} and ${C.name}: "${line}"; asker sees "Waiting…"`);
+  console.log(`toast on ${B.name} and ${C.name}: full or compact per hand; asker sees "Waiting…"`);
 
-  // #366: the offer is an alertdialog named by its line that leaves focus alone. A Yes that cannot be paid for is
-  // aria-disabled (not disabled), stays focusable, and is described by the "Need …" line.
+  // #366 / #537: the offer is a region that leaves focus alone. A seat that can pay gets Yes/No; a short seat gets
+  // the compact demand (#537) with Dismiss only.
   const answerable = async (t, v, line, r, n) => {
     const got = await t.page.getByTestId("trade-toast").evaluate((el) => {
       const yes = [...el.querySelectorAll("button")].find((b) => b.textContent.trim() === "Yes");
+      // #537: a short seat has no Yes; its Dismiss is the one control, and it must stay reachable by Tab just the same.
+      const control = yes ?? el.querySelector('[data-testid="trade-dismiss"]');
       const text = (ids) => (ids ?? "").split(/\s+/).filter(Boolean).map((id) => document.getElementById(id)?.textContent ?? "").join(" ");
       const focusInside = el.contains(document.activeElement);
-      yes.focus();
+      control.focus();
       const out = {
         role: el.getAttribute("role"),
         focusInside,
-        ariaDisabled: yes.getAttribute("aria-disabled"),
-        disabled: yes.hasAttribute("disabled"),
-        describedBy: text(yes.getAttribute("aria-describedby")),
-        focusable: document.activeElement === yes && yes.tabIndex >= 0,
+        compact: el.getAttribute("data-compact") === "true",
+        hasYes: Boolean(yes),
+        hasDismiss: Boolean(el.querySelector('[data-testid="trade-dismiss"]')),
+        demand: el.querySelector('[data-testid="trade-demand"]')?.textContent?.trim() ?? null,
+        ariaDisabled: control.getAttribute("aria-disabled"),
+        disabled: control.hasAttribute("disabled"),
+        describedBy: text(control.getAttribute("aria-describedby")),
+        focusable: document.activeElement === control && control.tabIndex >= 0,
         countdownHidden: el.querySelector('[data-testid="trade-countdown"]')?.getAttribute("aria-hidden"),
       };
-      yes.blur();
+      control.blur();
       return out;
     });
     const where = `${t.name} (${JSON.stringify(got)})`;
     if (got.role !== "region") throw new Error(`${where}: the offer is not an alertdialog`);
-    if ((await t.page.getByRole("region", { name: line, exact: true }).count()) !== 1) throw new Error(`${where}: alertdialog not named "${line}"`);
     if (got.focusInside) throw new Error(`${where}: the offer took focus`);
-    if (got.countdownHidden !== "true") throw new Error(`${where}: the ticking countdown is not aria-hidden`);
+    if (got.countdownHidden !== undefined) throw new Error(`${where}: a person's offer shows a countdown (#1245)`);
     if (got.disabled) throw new Error(`${where}: Yes uses disabled, so Tab cannot reach it`);
     if (!got.focusable) throw new Error(`${where}: Yes is not focusable`);
     const short = n - v.mine[r];
     if (short <= 0) {
+      if (got.compact || got.hasDismiss || !got.hasYes) throw new Error(`${where}: can pay but saw compact/Dismiss or no Yes`);
+      if ((await t.page.getByRole("region", { name: line, exact: true }).count()) !== 1) throw new Error(`${where}: alertdialog not named "${line}"`);
       if (got.ariaDisabled !== null || got.describedBy) throw new Error(`${where}: Yes is marked disabled but can pay`);
       return false;
     }
-    if (got.ariaDisabled !== "true") throw new Error(`${where}: Yes is not aria-disabled though it cannot pay`);
-    if (got.describedBy !== `Need ${short} more ${RESOURCE_LABEL[r].toLowerCase()}`) throw new Error(`${where}: Yes is not described by "Need ${short} more ${RESOURCE_LABEL[r].toLowerCase()}"`);
+    // #537: cannot pay -> compact demand with Dismiss and no Accept. Its reason is hidden text on Dismiss (owner decision, PR #824).
+    const demand = `${A.name} is looking for ${n} ${RESOURCE_LABEL[r].toLowerCase()}`;
+    if (!got.compact || !got.hasDismiss || got.hasYes) throw new Error(`${where}: short seat must be compact with Dismiss and no Yes`);
+    if (got.demand !== demand) throw new Error(`${where}: demand was "${got.demand}", want "${demand}"`);
+    if ((await t.page.getByRole("region", { name: demand, exact: true }).count()) !== 1) throw new Error(`${where}: region not named "${demand}"`);
+    if (got.ariaDisabled !== null) throw new Error(`${where}: Dismiss is marked disabled`);
+    if (got.describedBy !== `You need ${short} more ${RESOURCE_LABEL[r].toLowerCase()} to accept`) throw new Error(`${where}: Dismiss is not described by "You need ${short} more ${RESOURCE_LABEL[r].toLowerCase()} to accept"`);
     return true;
   };
   for (const t of [B, C]) await answerable(t, vs[tabs.indexOf(t)], line, want, 1);
@@ -341,15 +361,20 @@ try {
     role: el.getAttribute("role"),
   }));
   if (askerView.live || askerView.hidden !== null || askerView.role !== "region") throw new Error(`asker's toast changed: ${JSON.stringify(askerView)}`);
-  console.log(`#366: ${B.name} and ${C.name} see an alertdialog named "${line}", focus untouched, countdown aria-hidden`);
+  console.log(`#366 / #537: ${B.name} and ${C.name} see a named offer region (full or compact), focus untouched`);
 
-  // 2. C says No: everyone sees it, C's toast goes, the offer stays open for B.
+  // 2. C declines (No, or Dismiss when short of the ask): everyone sees it, C's toast goes, the offer stays open for B.
   const before = vs;
-  await C.page.getByRole("button", { name: "No", exact: true }).click();
+  const cToast = C.page.getByTestId("trade-toast");
+  if ((await cToast.getAttribute("data-compact")) === "true") await cToast.getByTestId("trade-dismiss").click();
+  else await cToast.getByRole("button", { name: "No", exact: true }).click();
   vs = await until(async () => {
     const vs = await views(tabs);
     return vs.every((v) => v.declined.includes(before[k].you)) ? vs : null;
   }, "the decline reaches every tab");
+  // #537: the card fades for 150 ms before it leaves; the check below reads it once the fade is over.
+  await until(async () => ((await C.page.getByTestId("trade-toast").count()) === 0 ? true : null), `${C.name}'s card leaves after the fade`, 2_000);
+  vs = await views(tabs);
   if (vs[k].toast !== null) throw new Error(`${C.name} still has a toast after No: "${vs[k].toast}"`);
   if (!vs[i].toast.includes(`${C.name} declined`)) throw new Error(`asker toast after No: "${vs[i].toast}"`);
   if (!vs[j].toast || vs.some((v) => !v.offer || v.offer.tradeId !== tradeId)) throw new Error("the offer closed on a single No");
@@ -358,6 +383,9 @@ try {
   await forget(tabs);
   // 3. B says Yes (Enter on the focused button, the spy's positive control for #366): the goods move in every tab's next state.
   await spyAnswers(B);
+  // #1449 item 8: the confirming answer is last, as in the more-time vote.
+  const order = await B.page.getByTestId("trade-toast").locator(".trade-answers button").allTextContents();
+  if (!same(order, ["No", "Yes"])) throw new Error(`${B.name}'s answers read ${JSON.stringify(order)}, not No then Yes`);
   await B.page.getByTestId("trade-toast").getByRole("button", { name: "Yes", exact: true }).focus();
   await B.page.keyboard.press("Enter");
   const yesSent = await B.page.evaluate(() => window.__answers);
@@ -381,10 +409,11 @@ try {
   await until(async () => (await views(tabs)).every((v) => v.toast === null) || null, "toasts gone after the yes");
   console.log(`${B.name} took it: 1 ${give} -> ${B.name}, 1 ${want} -> ${A.name}, hands and goods counts agree on all 3 tabs`);
 
-  // 4. Ask again, the other way round (the asker now holds the card it got); C says No; nobody else answers, so the
-  // host's 20 s run out. Nothing moves, every toast closes.
+  // 4. #1245: the hold lifecycle, with #537's compact seats. Ask again, the other way round (the asker now holds the card
+  // it got), for one more than either other tab holds, so both are short and see compact demand: Dismiss, no Yes. C
+  // answers with Escape; nobody else does, so the offer holds past the old 20 s until the asker's Cancel. Nothing moves,
+  // every toast closes.
   if (vs[0].phase !== "main" || vs[0].current !== vs[i].you) throw new Error("the asker lost the turn");
-  // It asks for one more than either other tab holds, so both see an aria-disabled Yes with its reason (#366).
   const n2 = Math.max(vs[j].mine[give], vs[k].mine[give]) + 1;
   await forget(tabs);
   const again = await ask(want, give, n2);
@@ -394,53 +423,258 @@ try {
   for (const t of [B, C]) {
     if (!(await answerable(t, again[tabs.indexOf(t)], line2, give, n2))) throw new Error(`${t.name} can pay ${n2} ${RESOURCE_LABEL[give].toLowerCase()}`);
   }
-  console.log(`#366: "${line2}": Yes on ${B.name} and ${C.name} is aria-disabled, focusable, described by "Need … more ${RESOURCE_LABEL[give].toLowerCase()}"`);
-  // Enter on B's aria-disabled Yes sends nothing; Escape inside C's toast answers No.
+  // #537: a short seat has nothing to accept with, and the host would refuse it anyway.
+  for (const t of [B, C]) {
+    const accepts = await t.page.getByTestId("trade-toast").getByRole("button", { name: /^(yes|accept)/i }).count();
+    if (accepts) throw new Error(`${t.name} is short of ${n2} ${RESOURCE_LABEL[give].toLowerCase()} but its toast has an Accept`);
+  }
+  console.log(`#537: "${A.name} is looking for ${n2} ${RESOURCE_LABEL[give].toLowerCase()}" is compact on ${B.name} and ${C.name}: Dismiss, no Yes`);
+  // B sends nothing from here to the Cancel. A person's offer has no clock, so B has no polite countdown line (#1245).
   await spyAnswers(B);
-  // Every text B's polite line takes, from ~20 s left until the toast closes (a MutationObserver misses no 1 s window).
-  await B.page.evaluate(() => {
-    const live = document.querySelector('[data-testid="trade-countdown-live"]');
-    window.__said = [live.textContent];
-    new MutationObserver(() => window.__said.push(live.textContent)).observe(live, { childList: true, characterData: true, subtree: true });
-  });
-  await B.page.getByTestId("trade-toast").getByRole("button", { name: "Yes", exact: true }).focus();
-  await B.page.keyboard.press("Enter");
-  const sent = await B.page.evaluate(() => window.__answers);
-  if (sent.length) throw new Error(`${B.name}'s aria-disabled Yes answered: ${JSON.stringify(sent)}`);
-  await C.page.getByTestId("trade-toast").getByRole("button", { name: "Yes", exact: true }).focus();
+  if (await B.page.getByTestId("trade-countdown-live").count()) throw new Error(`${B.name} has a polite countdown line on a person's offer`);
+  // Escape inside C's compact toast answers: the same decline as Dismiss.
+  await C.page.getByTestId("trade-dismiss").focus();
   await C.page.keyboard.press("Escape");
   await until(async () => (await views(tabs)).every((v) => v.declined.includes(again[k].you)) || null, "second decline (Escape)");
-  console.log(`#366: Enter on ${B.name}'s aria-disabled Yes sent nothing; Escape in ${C.name}'s toast answered No`);
-  const left = Number((await A.page.getByTestId("trade-countdown").textContent()).replace(/\D/g, ""));
-  if (left < 15 || left > 20) throw new Error(`countdown reads ${left} s right after the ask`);
+  console.log(`#366: Escape in ${C.name}'s compact toast answered No; ${B.name} has no Accept and answers nothing`);
+  if (await A.page.getByTestId("trade-countdown").count()) throw new Error("the asker's toast shows a countdown on a person's offer");
+  // Past the old 20 s run-out the offer is still open on every tab.
+  await sleep(25_000);
+  const held = await views(tabs);
+  if (!held.every((v) => v.offer?.tradeId === tradeId2)) throw new Error(`the offer did not hold past 20 s: ${JSON.stringify(held.map((v) => v.offer?.tradeId ?? null))}`);
+  console.log("#1245: the second offer is still open on all 3 tabs 25 s after the ask");
+  await A.page.getByTestId("trade-toast").getByTestId("trade-cancel").click();
   vs = await until(async () => {
     const vs = await views(tabs);
     return vs.every((v) => !v.offer && v.toast === null) ? vs : null;
-  }, "the offer times out and every toast closes", 30_000);
+  }, "the asker's Cancel closes the offer and every toast", 30_000);
+  const bSent = await B.page.evaluate(() => window.__answers);
+  if (bSent.length) throw new Error(`${B.name} answered ${JSON.stringify(bSent)} on the offer it let run out`);
   // #609: nobody took it, so only the asker hears the No.
   await sleep(500);
   if (!same(await trades(A), [...offerHeard(want, give, true), "error_002.wav@1"])) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for the expiry`);
   for (const t of [B, C]) if (!same(await trades(t), offerHeard(want, give, false))) throw new Error(`${t.name} heard ${JSON.stringify(await trades(t))} for the expiry`);
   console.log("#609: trade_no plays for the asker only");
-  // The polite line stays silent while the clock ticks and says "5 seconds left" once, at 5 s.
+  // #366 on a bot's offer, which keeps its run-out: the host sends it with seconds. Injected into B's socket as the host
+  // would send it (6 s here), the polite line stays silent while the clock ticks and says "5 seconds left" once, at 5 s.
+  // The client reads only `seconds`, so the asker's id stands in for a bot's; these three tabs are all people.
+  const botId = again[i].you;
+  await B.page.evaluate(([from]) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "tradeOffer", tradeId: "bot-clock", from, give: { grain: 1 }, want: { wool: 1 }, seconds: 6 }) }), [botId]);
+  await B.page.getByTestId("trade-countdown-live").waitFor({ state: "attached" });
+  // The ticking countdown on a bot's offer is hidden from screen readers and reads what is left of its window.
+  const botClock = await B.page.getByTestId("trade-countdown").evaluate((el) => ({ hidden: el.getAttribute("aria-hidden"), secs: Number(el.textContent.replace(/\D/g, "")) }));
+  if (botClock.hidden !== "true") throw new Error(`${B.name}: the ticking countdown on a bot's offer is not aria-hidden (${JSON.stringify(botClock)})`);
+  if (botClock.secs < 1 || botClock.secs > 6) throw new Error(`${B.name}: a 6 s bot offer's countdown reads ${botClock.secs} s`);
+  await B.page.evaluate(() => {
+    const live = document.querySelector('[data-testid="trade-countdown-live"]');
+    window.__said = [live.textContent];
+    new MutationObserver(() => window.__said.push(live.textContent)).observe(live, { childList: true, characterData: true, subtree: true });
+  });
+  await sleep(6_500);
+  await B.page.evaluate(() => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "tradeClosed", tradeId: "bot-clock" }) }));
   const heard = [...new Set((await B.page.evaluate(() => window.__said)).filter(Boolean))];
   if (!same(heard, ["5 seconds left"])) throw new Error(`${B.name}'s polite countdown line said ${JSON.stringify(heard)}`);
-  console.log(`#366: ${B.name}'s polite line said only "5 seconds left"`);
+  console.log(`#366: on a bot's offer, ${B.name}'s polite line said only "5 seconds left"`);
   if (vs[0].seq !== again[0].seq) throw new Error("the timeout changed the game");
   for (const n of [0, 1, 2]) if (!same(vs[n].mine, again[n].mine)) throw new Error(`${tabs[n].name}'s hand changed on a timeout`);
-  console.log(`second offer ran out after ${left} s left on the clock: hands unchanged, toast closed on all 3 tabs`);
+  console.log("second offer ended at the asker's Cancel: hands unchanged, toast closed on all 3 tabs");
 
+  // 5. #537: A asks for 2 of a good (and offers 1 of the card it holds). B has none, so B sees the compact demand with
+  // Dismiss and no Accept; C can pay and sees the normal offer. Affordance follows the seat's own hand, so changing a hand
+  // updates its toast without another offer. Declining from B's compact signal and C's normal offer closes the offer on
+  // A, B and C within 500 ms, not at the 20 s timeout.
+  const offerRes = want;
+  const need = want === "ore" ? "timber" : "ore";
+  const needLabel = RESOURCE_LABEL[need].toLowerCase();
+  const demand = `${A.name} is looking for 2 ${needLabel}`;
+  const line3 = `${A.name} offers 1 ${RESOURCE_LABEL[offerRes].toLowerCase()} for 2 ${needLabel}`;
+  // Sets this tab's own count of `need`, the way a state from the host would: the toast reads it from the store.
+  const setLocal = (t, count) =>
+    t.page.evaluate(({ res, n }) => {
+      const store = window.__emberisle;
+      const state = structuredClone(store.getState().state);
+      const me = state.players.find((p) => p.id === store.getState().localId);
+      me.resources = { ...me.resources, [res]: n };
+      me.goods = Object.values(me.resources).reduce((sum, x) => sum + x, 0);
+      store.setState({ state });
+    }, { res: need, n: count });
+  // The toast's data-compact, read without waiting for a toast to exist.
+  const compactOf = (t) => t.page.evaluate(() => document.querySelector('[data-testid="trade-toast"]')?.getAttribute("data-compact") ?? null);
+  const fadeOf = (t) => t.page.evaluate(() => document.querySelector('[data-testid="trade-toast"]')?.getAttribute("data-fade-ms") ?? null);
+  // The last decline closes the offer on every tab within 500 ms. Each page stamps (Date.now, one clock) when its store
+  // dropped the offer and its toast left the DOM, so the number reads the app, not this script's polling.
+  const watchClear = (t) =>
+    t.page.evaluate(() => {
+      if (!window.__watchClear) {
+        const store = window.__emberisle;
+        window.__watchClear = () => {
+          const clear = !store.getState().offer && !document.querySelector('[data-testid="trade-toast"]');
+          if (!clear) window.__clearedAt = null;
+          else window.__clearedAt ??= Date.now();
+        };
+        store.subscribe(window.__watchClear);
+        new MutationObserver(window.__watchClear).observe(document.body, { childList: true, subtree: true });
+      }
+      window.__clearedAt = null;
+      window.__watchClear();
+    });
+  const clearedAt = (t) => t.page.evaluate(() => window.__clearedAt ?? null);
+  const lastDecline = async (click, what) => {
+    await Promise.all(tabs.map(watchClear));
+    const t0 = Date.now();
+    await click();
+    const at = await until(async () => {
+      const all = await Promise.all(tabs.map(clearedAt));
+      return all.every((x) => x !== null) ? all : null;
+    }, `#537 (${what}): the fully declined offer closes on every tab, not at the timeout`, 5_000);
+    const ms = Math.max(...at) - t0;
+    if (ms > 500) throw new Error(`#537 (${what}): the fully declined offer took ${ms} ms to close on every tab (> 500)`);
+    const closed = await views(tabs);
+    if (closed.some((v) => v.offer)) throw new Error(`#537 (${what}): a tab still holds the offer`);
+    return ms;
+  };
+  // #537: when the outcome line clears (2.5 s on), no copy of the old offer card may come back for any seat. The watchers go in
+  // right after the last decline, while the outcome line is still showing, and report any trade-toast that is added.
+  const noGhostCard = async (what) => {
+    await Promise.all(tabs.map((t) => t.page.evaluate(() => {
+      window.__ghost = [];
+      window.__sawOutcome = Boolean(document.querySelector('[data-testid="trade-outcome"]'));
+      new MutationObserver((records) => {
+        if (document.querySelector('[data-testid="trade-outcome"]')) window.__sawOutcome = true;
+        for (const r of records) for (const n of r.addedNodes) if (n.nodeType === 1 && (n.matches?.('[data-testid="trade-toast"]') || n.querySelector?.('[data-testid="trade-toast"]'))) window.__ghost.push(performance.now());
+      }).observe(document.body, { childList: true, subtree: true });
+    })));
+    await until(async () => {
+      const gone = await Promise.all(tabs.map((t) => t.page.evaluate(() => !document.querySelector('[data-testid="trade-outcome"]'))));
+      return gone.every(Boolean) ? true : null;
+    }, `#537 (${what}): the outcome line clears on every tab`, 6_000);
+    await sleep(500);
+    const seen = await Promise.all(tabs.map((t) => t.page.evaluate(() => ({ ghost: window.__ghost.length, outcome: window.__sawOutcome }))));
+    if (!seen.some((x) => x.outcome)) throw new Error(`#537 (${what}): no seat showed an outcome line, so the ghost check proved nothing`);
+    if (seen.some((x) => x.ghost)) throw new Error(`#537 (${what}): an offer card came back after the outcome line cleared: ${JSON.stringify(seen)}`);
+    console.log(`#537 (${what}): no stale offer card appears when the outcome line clears`);
+  };
+  // A holds the card it is offering, and still has the turn, so it can ask again.
+  const canAskAgain = (what) => {
+    if (vs[0].phase !== "main" || vs[0].current !== vs[i].you || (vs[i].mine[offerRes] ?? 0) < 1) {
+      throw new Error(`#537 (${what}): the asker cannot ask again (phase ${vs[0].phase}, holds ${vs[i].mine[offerRes]} ${offerRes})`);
+    }
+  };
+  // B short, C able, then the ask: B must see the compact demand and C the normal offer within 2 s of it.
+  const askShortAndAble = async (what) => {
+    await forget(tabs);
+    await setLocal(B, 0);
+    await setLocal(C, 2);
+    const got = await ask(offerRes, need, 2);
+    await until(async () => ((await compactOf(B)) === "true" && (await compactOf(C)) === null ? true : null), `#537 (${what}): B sees the compact demand and C the normal offer`, 2_000);
+    return got;
+  };
+
+  canAskAgain("normal motion");
+  const third = await askShortAndAble("normal motion");
+  const tradeId3 = third[0].offer.tradeId;
+  if (tradeId3 === tradeId2) throw new Error("third ask reused the tradeId");
+  const afterPin = await views(tabs);
+  if (!(await answerable(B, afterPin[tabs.indexOf(B)], line3, need, 2))) throw new Error(`${B.name} should be short of ${needLabel}`);
+  if (await answerable(C, afterPin[tabs.indexOf(C)], line3, need, 2)) throw new Error(`${C.name} should be able to pay 2 ${needLabel}`);
+  if ((await fadeOf(B)) !== "150") throw new Error(`#537: the dismiss fade is ${await fadeOf(B)} ms, want 150`);
+  console.log(`#537: ${B.name} sees compact "${demand}"; ${C.name} sees full offer "${line3}"`);
+  // #537 / owner decision on PR #824: the compact signal keeps its reason for keyboard and screen-reader users. B has 0 of
+  // the good and the ask wants 2, so the hidden reason names exactly that; C can pay and gets no reason at all.
+  const why = await B.page.evaluate(() => {
+    const el = document.querySelector('[data-testid="trade-why"]');
+    const dismiss = document.querySelector('[data-testid="trade-dismiss"]');
+    const toast = document.querySelector('[data-testid="trade-toast"]');
+    const box = el?.getBoundingClientRect();
+    return { text: el?.textContent ?? null, id: el?.id ?? null, dismissRef: dismiss?.getAttribute("aria-describedby") ?? null, toastRef: toast?.getAttribute("aria-describedby") ?? null, tiny: box ? box.width <= 1 && box.height <= 1 : null };
+  });
+  if (why.text !== `You need 2 more ${needLabel} to accept`) throw new Error(`#537: ${B.name}'s hidden reason reads ${JSON.stringify(why.text)}`);
+  if (!why.id || why.dismissRef !== why.id || why.toastRef !== why.id) throw new Error(`#537: the reason is not tied to Dismiss and the toast: ${JSON.stringify(why)}`);
+  if (!why.tiny) throw new Error(`#537: the reason is visible on screen: ${JSON.stringify(why)}`);
+  if (await C.page.getByTestId("trade-why").count()) throw new Error(`#537: ${C.name} can pay but has an unaffordable reason`);
+  console.log(`#537: ${B.name}'s Dismiss and toast are described by the hidden "${why.text}"; ${C.name} has none`);
+
+  // Change B's hand: the compact signal flips to the normal Yes/No with no new offer, and back.
+  await setLocal(B, 2);
+  await until(async () => {
+    const yes = await B.page.getByTestId("trade-toast").getByRole("button", { name: "Yes", exact: true }).count();
+    return (await compactOf(B)) === null && yes === 1 ? true : null;
+  }, `#537: B's toast upgrades when ${needLabel} arrives`);
+  if ((await view(B)).offer?.tradeId !== tradeId3) throw new Error("#537: the upgrade needed another offer");
+  if (await B.page.getByTestId("trade-why").count()) throw new Error("#537: the reason stayed after B could pay");
+  console.log(`#537: giving ${B.name} 2 ${needLabel} flips compact to full Yes/No without a new offer`);
+  await setLocal(B, 0);
+  await until(async () => ((await compactOf(B)) === "true" ? true : null), "#537: B compact again");
+
+  // B dismisses from the compact signal (Enter on the focused Dismiss sends a No): the offer stays open for C.
+  await spyAnswers(B);
+  await B.page.getByTestId("trade-dismiss").focus();
+  // The card must stay mounted and fade: sample every frame from the Enter until it leaves the DOM.
+  await B.page.evaluate(() => {
+    window.__fade = [];
+    const sample = () => {
+      const el = document.querySelector('[data-testid="trade-toast"]');
+      if (el) window.__fade.push({ leaving: el.getAttribute("data-leaving") === "true", opacity: Number(getComputedStyle(el).opacity), inert: el.hasAttribute("inert") });
+      if (el || window.__fade.length < 2) requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
+  await B.page.keyboard.press("Enter");
+  await until(async () => ((await B.page.getByTestId("trade-toast").count()) === 0 ? true : null), "#537: B's card leaves after the fade", 2_000);
+  const fade = await B.page.evaluate(() => window.__fade);
+  const leavingFrames = fade.filter((f) => f.leaving);
+  if (leavingFrames.length < 2) throw new Error(`#537: the 150 ms dismiss fade never ran: ${JSON.stringify(fade)}`);
+  if (!leavingFrames.some((f) => f.opacity > 0 && f.opacity < 1)) throw new Error(`#537: opacity never took a value between 0 and 1 while fading: ${JSON.stringify(leavingFrames)}`);
+  if (!leavingFrames.every((f) => f.inert)) throw new Error(`#537: a fading card was still operable: ${JSON.stringify(leavingFrames)}`);
+  console.log(`#537: Dismiss fades the card over ${leavingFrames.length} frames (opacity ${leavingFrames[0].opacity.toFixed(2)} to ${leavingFrames.at(-1).opacity.toFixed(2)}), inert while it goes`);
+  const dismissSent = await B.page.evaluate(() => window.__answers);
+  if (!same(dismissSent, [[tradeId3, false]])) throw new Error(`#537: ${B.name}'s Enter on Dismiss sent ${JSON.stringify(dismissSent)}`);
+  vs = await until(async () => {
+    const next = await views(tabs);
+    return next.every((v) => v.declined.includes(third[j].you)) ? next : null;
+  }, "#537: B's dismiss reaches every tab");
+  if (vs.some((v) => !v.offer || v.offer.tradeId !== tradeId3)) throw new Error("#537: the offer closed on B's dismiss alone");
+  if (!(await C.page.getByTestId("trade-toast").count())) throw new Error(`#537: ${C.name}'s offer went when only ${B.name} declined`);
+  // C declines from the normal offer: A, B and C close it within 500 ms.
+  const normalMs = await lastDecline(() => C.page.getByTestId("trade-toast").getByRole("button", { name: "No", exact: true }).click(), "normal motion");
+  console.log(`#537: both declined, the offer is gone on all 3 tabs in ${normalMs} ms`);
+  await noGhostCard("normal motion");
+
+  // 6. #537 again under reduced motion: the dismiss does not fade (0 ms) and the fully declined offer is gone at once. The
+  // asker can always ask again here; if it cannot, this fails rather than skips.
+  for (const t of tabs) await t.page.emulateMedia({ reducedMotion: "reduce" });
+  vs = await views(tabs);
+  canAskAgain("reduced motion");
+  const fourth = await askShortAndAble("reduced motion");
+  const tradeId4 = fourth[0].offer.tradeId;
+  if (tradeId4 === tradeId3) throw new Error("fourth ask reused the tradeId");
+  for (const t of [B, C]) {
+    const fade = await fadeOf(t);
+    if (fade !== "0") throw new Error(`#537: reduced motion left ${t.name}'s toast with data-fade-ms ${fade}, want 0`);
+  }
+  const t0 = Date.now();
+  await B.page.getByTestId("trade-dismiss").click();
+  await until(async () => ((await B.page.getByTestId("trade-toast").count()) === 0 ? true : null), "#537: B's compact signal is gone after Dismiss", 2_000);
+  // The fade is 0 ms; the allowance covers a React unmount and the click's round trip on a slow runner.
+  if (Date.now() - t0 > 250) throw new Error(`#537: reduced motion dismiss took ${Date.now() - t0} ms`);
+  await until(async () => (await views(tabs)).every((v) => v.declined.includes(fourth[j].you)) || null, "#537: B's dismiss reaches every tab under reduced motion");
+  const calmMs = await lastDecline(() => C.page.getByTestId("trade-toast").getByRole("button", { name: "No", exact: true }).click(), "reduced motion");
+  console.log(`#537: reduced motion: dismiss at once, both declined, the offer is gone on all 3 tabs in ${calmMs} ms`);
+  await noGhostCard("reduced motion");
+
+  // Step 6's last decline plays corn_no on every seat a moment after the offer closes; let it land before #1107 listens.
+  await sleep(2000);
   const dakingId = vs[tabs.indexOf(A)].you;
   await Promise.all(tabs.map((t) => t.page.evaluate((id) => {
     const store = window.__emberisle;
     const state = store.getState().state;
     store.setState({ state: { ...state, players: state.players.map((p) => p.id === id ? { ...p, name: "Daking" } : p) } });
   }, dakingId)));
-  const issueTradeSounds = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|three_wood|daking_wood|sheep_for_wood|stone_for_wood|corn_no|error_002)\./.test(h)));
+  const issueTradeSounds = (t) => t.page.evaluate(() => window.__heard.filter((h) => /^(trade_offer|three_wood|daking_wood|sheep_for_wood|stone_for_wood|sb_only_wood|sb_sheep_please|sb_grain_please|sb_brick_please|corn_no|error_002)\./.test(h)));
   const sendTableEvent = async (event) => Promise.all(tabs.map((t) => t.page.evaluate((msg) => window.__sockets.at(-1).onmessage({ data: JSON.stringify(msg) }), event)));
-  const hearOffer = async (tradeId, give, want) => {
+  const hearOffer = async (tradeId, give, want, from = dakingId) => {
     await forget(tabs);
-    await sendTableEvent({ type: "tradeOffer", tradeId, from: dakingId, give, want, seconds: 20 });
+    await sendTableEvent({ type: "tradeOffer", tradeId, from, give, want, seconds: 20 });
     await sleep(300);
     return Promise.all(tabs.map(issueTradeSounds));
   };
@@ -463,7 +697,44 @@ try {
   for (const got of clip) assert.deepEqual(got, ["sheep_for_wood.mp3@1"], "sheep for timber reaches every seat, including the asker");
   clip = await hearOffer("new-stone-for-wood", { ore: 1 }, { timber: 1 });
   for (const got of clip) assert.deepEqual(got, ["stone_for_wood.mp3@1"], "stone for timber reaches every seat, including the asker");
-  clip = await hearOffer("new-plain-offer", { grain: 1 }, { wool: 1 });
+  const politeCases = [
+    ["please-sheep", { clay: 1 }, { wool: 1 }, "sb_sheep_please.mp3@1"],
+    ["please-grain", { clay: 1 }, { grain: 1 }, "sb_grain_please.mp3@1"],
+    ["please-brick", { wool: 1 }, { clay: 1 }, "sb_brick_please.mp3@1"],
+    ["please-wood", { clay: 1 }, { timber: 1 }, "sb_only_wood.mp3@1"],
+  ];
+  for (const [id, give, want, expected] of politeCases) {
+    clip = await hearOffer(id, give, want);
+    for (const got of clip) assert.deepEqual(got, [expected], `${id}: the same requested-good clip reaches every seat, including the asker`);
+  }
+  clip = await hearOffer("please-two-goods", { clay: 1 }, { wool: 1, grain: 1 });
+  assert.deepEqual(clip[tabs.indexOf(A)], [], "multi-resource request keeps the usual asker silence");
+  for (const t of [B, C]) assert.deepEqual(clip[tabs.indexOf(t)], ["trade_offer.wav@1"], "multi-resource request uses the plain trade chime");
+  const tabBotId = vs[tabs.indexOf(C)].you;
+  await Promise.all(tabs.map((t) => t.page.evaluate((id) => {
+    const state = window.__emberisle.getState().state;
+    window.__emberisle.setState({ state: { ...state, players: state.players.map((p) => p.id === id ? { ...p, kind: "bot", name: "Tide bot" } : p) } });
+  }, tabBotId)));
+  clip = await hearOffer("please-bot-ask", { timber: 1 }, { wool: 1 }, tabBotId);
+  for (const got of clip) assert.deepEqual(got, ["sb_sheep_please.mp3@1"], "bot asks use the same resource clip on every seat");
+  clip = await hearOffer("please-repeat-first", { clay: 1 }, { wool: 1 }, vs[tabs.indexOf(B)].you);
+  for (const got of clip) assert.deepEqual(got, ["sb_sheep_please.mp3@1"], "first ask plays its please clip");
+  await forget(tabs);
+  await sendTableEvent({ type: "tradeOffer", tradeId: "please-repeat-within-three-seconds", from: vs[tabs.indexOf(B)].you, give: { clay: 1 }, want: { wool: 1 }, seconds: 20 });
+  await sleep(250);
+  assert.deepEqual(await Promise.all(tabs.map(issueTradeSounds)), [[], [], []], "a repeat ask for the same resource within 3 s does not replay the please clip");
+  await sleep(3100);
+  clip = await hearOffer("please-repeat-after-three-seconds", { clay: 1 }, { wool: 1 }, vs[tabs.indexOf(B)].you);
+  for (const got of clip) assert.deepEqual(got, ["sb_sheep_please.mp3@1"], "the same sender's ask plays again after 3 s");
+  clip = await hearOffer("please-alternate-sender", { clay: 1 }, { grain: 1 });
+  for (const got of clip) assert.deepEqual(got, ["sb_grain_please.mp3@1"], "another sender's different please clip plays independently");
+  clip = await hearOffer("please-repeat-after-other-sender", { clay: 1 }, { wool: 1 }, vs[tabs.indexOf(B)].you);
+  assert.deepEqual(clip, [[], [], []], "another sender/clip does not erase the first sender's repeat suppression");
+  clip = await hearOffer("please-alternate-resource", { clay: 1 }, { grain: 1 }, vs[tabs.indexOf(B)].you);
+  for (const got of clip) assert.deepEqual(got, ["sb_grain_please.mp3@1"], "the same sender's different resource has its own repeat key");
+  clip = await hearOffer("please-repeat-after-other-resource", { clay: 1 }, { wool: 1 }, vs[tabs.indexOf(B)].you);
+  assert.deepEqual(clip, [[], [], []], "alternating resources does not erase the sender's first repeat key");
+  clip = await hearOffer("new-plain-offer", { grain: 1 }, { ore: 1 });
   assert.deepEqual(clip[tabs.indexOf(A)], [], "the asker does not hear the plain offer chime");
   for (const t of [B, C]) assert.deepEqual(clip[tabs.indexOf(t)], ["trade_offer.wav@1"], "other seats hear the plain offer chime");
 
@@ -483,6 +754,75 @@ try {
   await sleep(300);
   for (const got of await Promise.all(tabs.map(issueTradeSounds))) assert.ok(!got.some((h) => h.startsWith("corn_no.")), "timeout without all explicit No answers does not play corn_no");
   console.log("#1107: trade clips follow precedence, reach all seats, plain chime excludes the asker, and corn_no needs every explicit No");
+
+  // Native playback through the real trade and host soundboard paths uses the context's group and gain.
+  const mix = async (settings) => Promise.all(tabs.map((t) => t.page.evaluate(async (values) => {
+    const mixer = await import("/src/lib/sound-settings.ts");
+    for (const [category, volume, muted] of values) {
+      if (category === "master") mixer.setMasterVolume(volume);
+      else { mixer.setCategoryVolume(category, volume); mixer.setCategoryMuted(category, muted); }
+    }
+  }, settings)));
+  const volumes = (file) => Promise.all(tabs.map((t) => t.page.evaluate((name) => window.__media.get(name)?.volume, file)));
+  for (const [id, give, want, expected] of politeCases) {
+    await sleep(3100); // Keep the real host's three-second soundboard pace and expire previous please keys.
+    const file = expected.split("@")[0];
+    await mix([["master", 0.5], ["game", 0.4, false], ["memes", 0.8, true]]);
+    clip = await hearOffer(`${id}-board-context`, give, want);
+    for (const got of clip) assert.deepEqual(got, [`${file}@0.2`], `${id}: automatic trade uses board gain even with Memes muted`);
+    await Promise.all(tabs.map((t) => t.page.evaluate((name) => { window.__tradeMedia = window.__media.get(name); }, file)));
+    await mix([["memes", 0.6, false]]);
+    assert.deepEqual(await volumes(file), [0.2, 0.2, 0.2], `${id}: changing Memes cannot reclassify an active trade clip`);
+    await mix([["game", 0.6, false]]);
+    for (const volume of await volumes(file)) assert.ok(Math.abs(volume - 0.3) < 1e-9, `${id}: active trade follows the board gain`);
+    await mix([["game", 0.4, false], ["memes", 0.8, true]]);
+    await forget(tabs);
+    await Promise.all(tabs.map((t) => t.page.evaluate(async (name) => (await import("/src/lib/sound.ts")).play(name), file.replace(".mp3", ""))));
+    await sleep(200);
+    assert.deepEqual(await Promise.all(tabs.map(issueTradeSounds)), [[], [], []], `${id}: ordinary soundboard playback is silent with Memes muted`);
+    await mix([["game", 0.4, true], ["memes", 0.8, false]]);
+    await forget(tabs);
+    await A.page.evaluate((name) => window.__emberisle.getState().sendSound(name), file.replace(".mp3", ""));
+    await sleep(400);
+    for (const got of await Promise.all(tabs.map(issueTradeSounds))) assert.deepEqual(got, [`${file}@0.4`], `${id}: the host soundboard tap plays once on every seat using Memes gain with board muted`);
+    for (const t of tabs) assert.equal(await t.page.evaluate((name) => window.__media.get(name) !== window.__tradeMedia, file), true, `${id}: trade and soundboard keep distinct audio instances for the same file`);
+    await mix([["game", 0.2, false]]);
+    assert.deepEqual(await volumes(file), [0.4, 0.4, 0.4], `${id}: changing board gain cannot reclassify an active soundboard clip`);
+    for (const t of tabs) assert.equal(await t.page.evaluate(() => window.__tradeMedia.volume), 0.1, `${id}: the earlier trade instance still follows board gain while the soundboard instance follows Memes`);
+    await mix([["game", 0.4, true]]);
+    clip = await hearOffer(`${id}-board-muted`, give, want, vs[tabs.indexOf(B)].you);
+    assert.deepEqual(clip, [[], [], []], `${id}: board mute silences automatic trade even with Memes on`);
+    console.log(`#1132 ${id}: native board@0.2 with Memes muted; active gain follows context; host soundboard@0.4 with board muted; board mute silences trade`);
+  }
+  await mix([["master", 1], ["game", 1, false], ["memes", 1, false]]);
+  const lifecycle = await A.page.evaluate(async () => {
+    const sound = await import("/src/lib/sound.ts");
+    const store = window.__emberisle;
+    let calls = 0;
+    const ask = () => sound.playTradePlease(() => calls++, "lifecycle-sender", { wool: 1 });
+    store.getState().goTitle(); ask(); ask();
+    const leave = calls;
+    store.getState().startAi(); ask();
+    const start = calls;
+    const current = store.getState();
+    store.getState().loadState(current.state, current.localId, true); ask();
+    const ordinaryPush = calls;
+    store.getState().startHotseat(3); ask();
+    const hotseat = calls;
+    store.setState({ state: { ...store.getState().state, phase: "over", winner: "p0" } });
+    store.getState().playAgain(); ask();
+    const rematch = calls;
+    const next = store.getState().state;
+    store.setState({ state: { ...next, phase: "over", winner: "p0" } });
+    store.getState().loadState(next, "p0", true, "NEXT"); ask();
+    const onlineRematch = calls;
+    store.getState().loadState(next, "p0", true, "NEXT"); ask();
+    return { leave, start, ordinaryPush, hotseat, rematch, onlineRematch, unchangedTable: calls };
+  });
+  assert.deepEqual(lifecycle, { leave: 1, start: 2, ordinaryPush: 2, hotseat: 3, rematch: 4, onlineRematch: 5, unchangedTable: 5 }, "actual leave/new-game/rematch lifecycle resets repeat keys while ordinary host pushes keep suppression");
+  console.log("#1132: native context instances stay independent; actual store lifecycle clears repeat keys, ordinary pushes keep them");
+
+
 
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   console.log("trade prove ok");

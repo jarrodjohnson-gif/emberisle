@@ -1,0 +1,22 @@
+
+> needs-prove
+> node --import ./server/register.mjs scripts/needs-prove.mjs
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: an unrelated announcement preserves the delayed Need draft
+
+'false' !== 'true'
+
+    at file:///workspace/emberisle/work/p-needs-layout873/scripts/needs-prove.mjs:60:9 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 'false',
+  expected: 'true',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

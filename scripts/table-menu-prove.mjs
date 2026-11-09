@@ -1,20 +1,20 @@
 // #442: the table's top chrome is one menu button. In hotseat at 1280x720, 390x844 (touch) and 844x390 (touch):
 // - no visible element on the table says "Emberisle", and the only button in the top 64 px (the seat strip aside, on a
 //   sideways phone) is the 44 px "Table menu" button, top-right;
-// - it opens a sheet with the turn number, How to play, Table sounds, Haptics (#542, when coarse and vibrate exists), Water
+// - it opens a sheet with the turn number, How to play, Sound, Haptics (#542, when coarse and vibrate exists), Water
 //   (Crystal / Simple), View (Diorama / Overhead, #597) and Leave table, focus moving to the first row; at 1280x720 Water
 //   flips the sea's path both ways and the choice survives a reload (crystal-water.md);
-// - How to play opens its dialog and closing that puts the focus back on the menu button; the sound and haptics toggles
+// - How to play opens its dialog and closing that puts the focus back on the menu button; the Sound panel and the haptics toggle
 //   flip and keep the sheet open; Escape closes the sheet and refocuses the button; Enter on the button opens it; a tap
 //   outside closes it;
-// - online (a faked socket): the sheet shows the watcher count and "Copy table code" (copied where the clipboard works, the
+// - online (a faked socket): the sheet shows the watcher count and "Copy code" (copied where the clipboard works, the
 //   select-and-copy field where it does not, as on CI; both are run), Leave table asks first (Stay, Escape
-//   and the 5 s auto-cancel return to the rows with the focus on Leave table), then leaves; hotseat Leave table goes
-//   straight to the title.
+//   and the 5 s auto-cancel return to the rows with the focus on Leave table), then leaves; hotseat Leave table asks
+//   "Leave the table? The game ends." the same way (#1449), and practice Leave table goes straight to the title.
 // Zero console errors. Run: npm run table-menu-prove
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8107;
@@ -28,7 +28,6 @@ mkdirSync("test-results", { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -81,16 +80,16 @@ try {
     const expected = [
       "How to play",
       "Costs",
-      "Table sounds on",
-      "Music on",
+      "Sound100%›",
       ...(hasHaptics ? ["Haptics on"] : []),
       "Crystal",
       "Simple",
       "Diorama",
       "Overhead",
+      "Report a bug",
       "Leave table",
     ];
-    assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Costs", "Table sounds on", "Music on", "Crystal", "Simple", "Diorama", "Overhead", "Leave table"], `${v.tag}: menu rows`);
+    assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Costs", "Sound100%›", "Crystal", "Simple", "Diorama", "Overhead", "Report a bug", "Leave table"], `${v.tag}: menu rows`);
     assert.deepEqual(allRows.map((t) => t.trim()), expected, `${v.tag}: complete menu including haptics`);
     assert.match(await menu.textContent(), /Turn 1/, `${v.tag}: the turn number moved into the menu`);
     assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), "How to play", `${v.tag}: focus moves to the first row`);
@@ -112,15 +111,22 @@ try {
     await howTo.waitFor({ state: "detached" });
     assert.ok(await trigger.evaluate((el) => document.activeElement === el), `${v.tag}: closing How to play returns the focus to the menu button`);
 
-    // Sound: the toggle flips and the sheet stays open.
+    // Sound (#669): the row opens the Sound panel (sound-sheet-prove covers the panel); All sound's mute flips, the row reads Off, and Back returns to the rows.
     await trigger.click();
     await menu.waitFor();
-    await menu.getByRole("button", { name: "Table sounds on" }).click();
-    await menu.getByRole("button", { name: "Table sounds off" }).waitFor();
+    await menu.getByTestId("sound-entry").click();
+    const sound = page.getByRole("dialog", { name: "Sound" });
+    await sound.getByRole("button", { name: "Mute All sound" }).click();
+    await sound.getByRole("button", { name: "Unmute All sound" }).waitFor();
     assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-muted")), "1", `${v.tag}: muting is remembered`);
-    await menu.getByRole("button", { name: "Table sounds off" }).click();
-    await menu.getByRole("button", { name: "Table sounds on" }).waitFor();
+    await sound.getByRole("button", { name: "Back to Table menu" }).click();
+    assert.match(await menu.getByTestId("sound-entry").textContent(), /Off/, `${v.tag}: the Sound row reads Off while muted`);
+    await menu.getByTestId("sound-entry").click();
+    await sound.getByRole("button", { name: "Unmute All sound" }).click();
+    await sound.getByRole("button", { name: "Mute All sound" }).waitFor();
     assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-muted")), null, `${v.tag}: unmuting clears it`);
+    await sound.getByRole("button", { name: "Back to Table menu" }).click();
+    await menu.getByTestId("sound-entry").waitFor();
 
     // Haptics (#542): flip off/on; the sheet stays open; the choice is remembered.
     if (hasHaptics) {
@@ -133,6 +139,20 @@ try {
     }
 
     if (!hasHaptics) assert.equal(await menu.getByTestId("haptics-toggle").count(), 0, `${v.tag}: unsupported Haptics row is absent`);
+
+    // Report a bug (#912): a 44 px row that opens the prefilled GitHub issue in a new tab, with the game left where it is.
+    const report = menu.getByRole("button", { name: "Report a bug" });
+    assert.equal(Math.round((await report.boundingBox()).height), 44, `${v.tag}: Report a bug is a 44 px row`);
+    await page.evaluate(() => { window.__opened = []; window.open = (...a) => (window.__opened.push(a), null); });
+    await report.click();
+    const [openedUrl, target, features] = (await page.evaluate(() => window.__opened))[0] ?? [];
+    const issue = new URL(openedUrl);
+    assert.equal(issue.origin + issue.pathname, "https://github.com/jarrodjohnson-gif/emberisle/issues/new", `${v.tag}: report link goes to the new-issue page`);
+    const gs = await page.evaluate(() => { const s = window.__emberisle.getState().state; return { seed: s.seed, seq: s.seq }; });
+    assert.match(issue.searchParams.get("body"), new RegExp(`^Build: .+\\nSeed: ${gs.seed}\\nSeq: ${gs.seq}\\nViewport: ${v.width}x${v.height}\\n`), `${v.tag}: report body`);
+    assert.equal(target, "_blank", `${v.tag}: report opens a new tab`);
+    assert.match(features, /noopener/, `${v.tag}: report link is noopener`);
+    assert.equal(await page.evaluate(() => window.__emberisle.getState().screen), "play", `${v.tag}: the game stays at the table`);
 
     // Escape closes and refocuses the button; Enter on the button opens; a pointer outside closes.
     await page.keyboard.press("Escape");
@@ -161,7 +181,7 @@ try {
     await trigger.click();
     await menu.waitFor();
     assert.equal(await menu.getByTestId("watching-count").textContent().then((t) => t.trim()), "2", `${v.tag}: the watcher count is in the menu`);
-    await menu.getByRole("button", { name: "Copy table code K7QP" }).click();
+    await menu.getByRole("button", { name: "Copy code K7QP" }).click();
     const copied = v.noClipboard ? "fallback" : "copied";
     const clipboard = await page.evaluate(() => navigator.clipboard?.writeText("probe").then(() => "writes", (e) => `rejects: ${e}`) ?? "missing");
     assert.equal(clipboard, v.noClipboard ? "missing" : "writes", `${v.tag}: navigator.clipboard is ${clipboard}`);
@@ -172,7 +192,7 @@ try {
       // A failed copy is forgotten when the menu closes (Escape, then an outside tap): the next open shows no field and
       // opens on How to play.
       const reopen = async (how) => {
-        await menu.getByRole("button", { name: "Copy table code K7QP" }).click();
+        await menu.getByRole("button", { name: "Copy code K7QP" }).click();
         await menu.getByTestId("copy-fallback").waitFor();
         if (how === "escape") await page.keyboard.press("Escape");
         // Left of the 256 px sheet on a narrow phone, where the taller sheet's copy field now reaches the middle.
@@ -216,12 +236,27 @@ try {
       await confirmBox.getByRole("button", { name: "Leave", exact: true }).click({ timeout: 5000 }).catch((e) => console.log(`${v.tag}: Leave click retried: ${String(e).split("\n")[0]}`));
     }
 
-    // Hotseat: Leave table is one press.
+    // #1449: hotseat Leave table asks too (the game ends, nothing is saved); Stay keeps the game, Leave goes to the title.
     await page.evaluate(() => window.__emberisle.getState().startHotseat(4));
     await trigger.click();
     await menu.getByRole("button", { name: "Leave table" }).click();
+    await confirmBox.waitFor();
+    assert.match(await confirmBox.textContent(), /Leave the table\? The game ends\./, `${v.tag}: hotseat Leave asks first`);
+    await confirmBox.getByRole("button", { name: "Stay" }).click();
+    await confirmBox.waitFor({ state: "detached" });
+    assert.equal(await page.evaluate(() => window.__emberisle.getState().screen), "play", `${v.tag}: hotseat Stay keeps the game`);
+    for (let tries = 0; (await page.evaluate(() => window.__emberisle.getState().screen)) !== "title"; tries++) {
+      assert.ok(tries < 5, `${v.tag}: hotseat Leave never left the table`);
+      if (!(await confirmBox.count())) await menu.getByRole("button", { name: "Leave table" }).click();
+      await confirmBox.getByRole("button", { name: "Leave", exact: true }).click({ timeout: 5000 }).catch((e) => console.log(`${v.tag}: hotseat Leave click retried: ${String(e).split("\n")[0]}`));
+    }
+    // Practice keeps its one press.
+    await page.evaluate(() => window.__emberisle.getState().startAi());
+    await trigger.click();
+    await menu.getByRole("button", { name: "Leave table" }).click();
     await page.waitForFunction(() => window.__emberisle.getState().screen === "title");
-    assert.equal(await confirmBox.count(), 0, `${v.tag}: hotseat Leave asked for confirmation`);
+    assert.equal(await confirmBox.count(), 0, `${v.tag}: practice Leave asked for confirmation`);
+    console.log(`${v.tag}: hotseat Leave table asks "Leave the table? The game ends.", Stay stays, Leave leaves; practice leaves on one press`);
     if (v.tag === "1280x720") {
       // Water: each chip switches the sea in place, as a saved choice, and the last one is still chosen after a reload.
       const water = () => page.evaluate(() => ({ ...window.__emberisle.water, saved: localStorage.getItem("emberisle-water") }));
@@ -241,7 +276,7 @@ try {
       assert.ok(kept.path === "simple" && kept.source === "saved", `${v.tag}: the Water choice survives a reload: ${JSON.stringify(kept)}`);
       console.log(`${v.tag}: Water flips the sea crystal <-> simple in place and keeps the choice across a reload`);
     }
-    console.log(`${v.tag}: one ${b.w}x${b.h} menu button top-right, no wordmark; rows ${allRows.length}; How to play, sounds, code (${copied}), Leave (asks online, one press in hotseat) all work; Escape and Close refocus the button`);
+    console.log(`${v.tag}: one ${b.w}x${b.h} menu button top-right, no wordmark; rows ${allRows.length}; How to play, sounds, code (${copied}), Leave (asks online and in hotseat) all work; Escape and Close refocus the button`);
     await ctx.close();
   }
   assert.deepEqual(errors, [], "console errors");

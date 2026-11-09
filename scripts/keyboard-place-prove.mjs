@@ -3,8 +3,8 @@
 // #419: an armed Path, Outpost or Stronghold turns the turn banner into what to pick and "Esc cancels"; Escape restores it.
 // #558: a tap on a spot the armed build cannot use shows the rule it broke on the HUD's error line (rules.ts settleError and the
 // built-edge line; "Path must connect to you." stays for a disconnected path) and leaves the state untouched.
-import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 // CI renders the island with software GL, where one frame can take seconds; a step gets this long to show.
@@ -17,7 +17,6 @@ await vite.listen();
 const errors = [];
 let code = 0;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 try {
@@ -68,6 +67,11 @@ try {
   if (names.length !== start.hi.vertices.length) throw new Error(`outpost buttons ${names.length} vs glow ${start.hi.vertices.length}`);
   if (new Set(names).size !== names.length) throw new Error(`two outpost buttons share a name: ${names.filter((n, i) => names.indexOf(n) !== i)}`);
   if (!names.every((n) => /^Corner: /.test(n))) throw new Error(`corner names: ${names.slice(0, 3)}`);
+  // #1449: a screen reader hears the game's words (forest, wood dock), never the code's keys (timber, harbor).
+  const CODE_WORDS = /\b(timber|clay|wool|grain|ore|waste|harbor|centre)\b|\(/;
+  if (names.some((n) => CODE_WORDS.test(n))) throw new Error(`corner names use code keys: ${names.filter((n) => CODE_WORDS.test(n)).slice(0, 3)}`);
+  if (!names.some((n) => / dock\b/.test(n))) throw new Error(`no corner names its dock: ${names.slice(0, 3)}`);
+  console.log(`setupSettle: game words only, e.g. "${names.find((n) => / dock\b/.test(n))}"`);
   if (box.width < 100 || box.height < 40) throw new Error(`the focused list is not visible: ${JSON.stringify(box)}`);
   mkdirSync("test-results", { recursive: true });
   await page.screenshot({ path: "test-results/keyboard-place-prove.png" });
@@ -207,7 +211,7 @@ try {
   const ARMED = {
     Path: "Place a path · Esc cancels",
     Outpost: "Place an outpost · Esc cancels",
-    Stronghold: "Build a stronghold · Esc cancels",
+    Stronghold: "Pick a home to upgrade · Esc cancels",
   };
   const arm = async (name, heading) => {
     await page.getByRole("button", { name, exact: true }).focus({ timeout: STEP_MS });
@@ -259,7 +263,7 @@ try {
       console.log(`armed ${mode}, tap ${label}: "${got.error}"`);
       if (got.error !== want || got.state !== before) throw new Error(`${label}: error "${got.error}", state changed ${got.state !== before}`);
     };
-    await tryPick("outpost", "pickVertex", bad.close, "Too close — leave one corner between buildings.", "a corner beside our outpost");
+    await tryPick("outpost", "pickVertex", bad.close, "Too close. Leave a corner between buildings.", "a corner beside our outpost");
     await tryPick("outpost", "pickVertex", bad.theirs, "That corner is taken.", "a built corner");
     await tryPick("stronghold", "pickVertex", bad.theirs, "Upgrade one of your own outposts.", "another seat's outpost");
     await tryPick("path", "pickEdge", bad.edgeTaken, "That edge already has a path.", "a built edge");
@@ -360,6 +364,7 @@ try {
   if (hexNames.length !== robber.glow || new Set(hexNames).size !== hexNames.length || moved.hex !== hexB || moved.hex === robber.from) {
     throw new Error(`wayfarer: ${JSON.stringify({ hexNames, robber, moved })}`);
   }
+  if (hexNames.some((n) => CODE_WORDS.test(n))) throw new Error(`hex names use code keys: ${hexNames.filter((n) => CODE_WORDS.test(n))}`);
   // #437: a page that starts under reduced motion holds every mark at its base glow. The first page is parked so software GL has the CPU.
   await page.goto("about:blank");
   const still = await browser.newPage({ viewport: { width: 1280, height: 720 }, reducedMotion: "reduce" });

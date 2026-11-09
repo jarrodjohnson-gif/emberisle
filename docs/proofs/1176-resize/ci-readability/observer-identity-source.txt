@@ -1,0 +1,17 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+const source=readFileSync('/workspace/emberisle/work/p1181-sol/scripts/lobby-layout-prove.mjs','utf8');
+const start=source.indexOf('  try {\n    assert.ok(m.font'),end=source.indexOf('\n  assert.ok(m.focus',start);assert.ok(start>0&&end>start);
+const block=source.slice(start,end),results=[];
+for(const mode of ['fulfilled','rejected','timed-out']){
+ let original;
+ const assertions={ok(...args){try{assert.ok(...args);}catch(error){original=error;throw error;}}};
+ const session={async send(method){if(method==='DOM.getDocument')return{root:{nodeId:1}};if(method==='DOM.querySelector')return{nodeId:2};return{fonts:[]};},async detach(){}};
+ const page={context:()=>({newCDPSession:()=>mode==='fulfilled'?Promise.resolve(session):mode==='rejected'?Promise.reject(Error('observer refused')):new Promise(()=>{})})};
+ const run=vm.runInNewContext(`(async()=>{${block}\n})()`,{assert:assertions,m:{font:14,buttons:[{font:15}]},label:'fixture',page,console:{error(){}},setTimeout,clearTimeout});
+ let caught;try{await run;}catch(error){caught=error;}
+ assert.equal(caught,original,mode+': exact original assertion error rethrown');assert.match(caught.message,/code remains at least as large/);
+ results.push({mode,originalErrorIdentity:true});console.log('PASS',mode,'diagnostic rethrows exact original assertion');
+}
+writeFileSync('/tmp/sol-1181-owner/observer-identity.json',JSON.stringify(results,null,2));
