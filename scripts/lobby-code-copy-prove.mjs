@@ -166,7 +166,7 @@ async function sideways(page, tag) {
   near(header.right, rules.right, `${tag}: the header keeps to the left column`);
   near(chat.y, header.y, `${tag}: the chat starts at the top of the card`);
   assert.ok(chat.x >= header.right + 8, `${tag}: the chat sits right of the header`);
-  near(chat.bottom, players.bottom, `${tag}: the chat runs down to the end of the seats`);
+  near(chat.bottom, rules.bottom, `${tag}: the chat runs down to the end of the view row`);
   await page.getByRole("tab", { name: "Play games" }).click();
   near((await box(page, ".ly")).y, header.y, `${tag}: Play games also starts at the top of the card`);
   await page.getByRole("tab", { name: "Table", exact: true }).click();
