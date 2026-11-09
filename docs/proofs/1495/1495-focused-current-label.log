@@ -1,0 +1,16 @@
+MUTE_DIAG {"ms":840.6000000089407,"name":"reaction-store","details":[]}
+MUTE_DIAG {"ms":917.7000000029802,"name":"fire-dom","details":[]}
+MUTE_DIAG {"ms":1171.2000000029802,"name":"mute-button-click","details":"Mute players"}
+MUTE_DIAG {"ms":1523.6000000089407,"name":"mute-button-click","details":"Mute player Pine"}
+ok mute: Pine is muted in this chat dock +26.1s
+ok chat polish 1280x720 mute panel: 4 controls, 4 texts, minimum 10.43:1, glass over black rgb(255,255,255)
+ok mute: Pine's chat line is hidden only in Ember's view +26.3s
+MUTE_DIAG {"ms":1897.1000000089407,"name":"mute-button-click","details":"Unmute player Pine"}
+ok mute: unmuting Pine restores the earlier chat line +26.4s
+MUTE_DIAG {"ms":1983.6000000089407,"name":"mute-button-click","details":"Mute player Pine"}
+MUTE_DIAG {"ms":2223.2999999970198,"name":"reaction-store","details":[{"type":"react","seat":"s2","player":"p2","emote":"🔥","to":null,"at":1794266835007}]}
+ok mute: Pine's reaction bubble and its log line are hidden only in Ember's view +26.9s
+MUTE_DIAG {"ms":2471,"name":"mute-button-click","details":"Unmute player Pine"}
+MUTE_DIAG {"ms":2492.5,"name":"fire-dom","details":[{"parent":"rail-p2","visible":true}]}
+ok mute: unmuting Pine restores the active reaction and its log line +27.0s
+controlled mute diagnostic complete; not the full chat proof

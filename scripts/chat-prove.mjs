@@ -764,7 +764,6 @@ try {
   await a.page.getByRole("button", { name: "Mute player Pine", exact: true }).click();
   await openChat(c);
   await c.page.getByTestId("emoji-row").getByRole("button", { name: "React fire", exact: true }).click();
-  await closeChat(c);
   await a.page.waitForFunction(({ seat, emote }) => window.__emberisle.getState().reactions.some((r) => r.seat === seat && r.emote === emote), { seat: mutedSeat, emote: "🔥" });
   const mutedFloat = a.page.locator(`[data-testid="rail-${mutedPlayer}"] [data-testid="reaction"][data-emote="🔥"]`);
   const mutedReactLine = a.page.getByTestId("chat-log").locator('[data-testid="react-line"][data-emote="🔥"]').filter({ hasText: "Pine" });
@@ -773,6 +772,10 @@ try {
   await mutedFloat.waitFor({ timeout: 1500 });
   await mutedReactLine.first().waitFor({ timeout: 1500 });
   check(true, "mute: unmuting Pine restores the active reaction and its log line");
+
+  // The receiver must observe restoration during the original 2s reaction lifetime.
+  // Closing the sender first can spend that lifetime waiting for unrelated UI (#1495).
+  await closeChat(c);
 
   await a.page.getByRole("button", { name: "Mute player Pine", exact: true }).click();
   await a.page.getByRole("button", { name: "Close chat" }).click();
