@@ -109,7 +109,7 @@ try {
   const buttons = await dialog.getByRole("button").allTextContents();
   const want = `${bot} offers 1 ${RESOURCE_LABEL[Object.keys(askC.give)[0]].toLowerCase()} for 1 ${RESOURCE_LABEL[Object.keys(askC.want)[0]].toLowerCase()}`;
   console.log(`bot asks: "${line}" [${buttons.join(" / ")}]`);
-  if (line !== want || buttons.join(",") !== "Yes,No") throw new Error(`the bot's ask reads ${JSON.stringify({ line, buttons })}, wanted "${want}" + Yes/No`);
+  if (line !== want || buttons.join(",") !== "No,Yes") throw new Error(`the bot's ask reads ${JSON.stringify({ line, buttons })}, wanted "${want}" + No/Yes`);
   const waiting = await page.evaluate(() => {
     const s = window.__emberisle.getState();
     return { current: s.state.current, phase: s.state.phase, seq: s.state.seq };
