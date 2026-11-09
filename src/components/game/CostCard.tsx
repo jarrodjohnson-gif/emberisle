@@ -1,10 +1,12 @@
 // Jarrod (playtest): "a quick reference card that in-game board comes with." One small sheet: each build with its cost
 // chips, what the pieces and the two awards are worth, and the win line, all read from COST and POINTS. Opened from the
-// Table menu; focus lands on Close and goes back to the opener; Escape closes (see useEscapeDisarm for the order).
+// Table menu; focus lands on Close and goes back to the opener; Escape and a tap on the backdrop close it (see
+// useEscapeDisarm for the order).
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CostChips, PRICE_NAME, priceLabel, type Price } from "@/components/game/BuildCost";
+import { useBackdropClose } from "@/lib/backdrop-close";
 import { useFocusTrap } from "@/lib/focus-trap";
 import { victoryTarget } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
@@ -29,6 +31,7 @@ export function CostCard({ onClose }: { onClose: () => void }) {
   const target = useGame((s) => victoryTarget(s.state ?? {}));
   const root = useRef<HTMLDivElement>(null);
   useFocusTrap(root, true, undefined, opener);
+  const backdrop = useBackdropClose(onClose);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   useEffect(() => {
@@ -42,7 +45,7 @@ export function CostCard({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener("keydown", onKey, true);
   }, []);
   return (
-    <div className="help-wash absolute inset-0 z-30 flex items-end justify-center sm:items-center">
+    <div className="help-wash absolute inset-0 z-30 flex items-end justify-center sm:items-center" {...backdrop}>
       <div
         ref={root}
         role="dialog"
@@ -96,7 +99,7 @@ export function CostCard({ onClose }: { onClose: () => void }) {
             ))}
           </ul>
         </div>
-        <p className="shrink-0 px-4 pb-4 pt-3 text-body">{target} points claims the isle.</p>
+        <p className="shrink-0 px-4 pb-4 pt-3 text-body">Win at {target} points.</p>
       </div>
     </div>
   );

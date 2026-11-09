@@ -12,7 +12,7 @@
 // Run: npm run profiles-ui-prove
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { createServer as httpServer } from "node:http";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -101,7 +101,6 @@ try {
   const A = `${wss}/a`, B = `${wss}/b`;
   const at = (hostUrl) => `${origin}/?host=${encodeURIComponent(hostUrl)}`;
   browser = await chromium.launch({
-    executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
     args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
   });
   const errors = [];
@@ -251,7 +250,7 @@ try {
   await openSheet(two);
   await sheet(two).getByLabel("Login").fill("ember-user");
   await sheet(two).getByLabel("PIN", { exact: true }).fill("0000");
-  await sheet(two).getByLabel("Remember me on this device").uncheck();
+  await sheet(two).getByLabel("Remember me").uncheck();
   await sheet(two).getByRole("button", { name: "Sign in", exact: true }).click();
   await sheet(two).getByRole("alert").filter({ hasText: "Couldn't sign in" }).waitFor();
   await sheet(two).getByLabel("PIN", { exact: true }).fill("4821");
@@ -446,7 +445,7 @@ try {
   await openSheet(kelpie);
   await sheet(kelpie).getByLabel("Login").fill("coral-user");
   await sheet(kelpie).getByLabel("PIN", { exact: true }).fill("2468");
-  await sheet(kelpie).getByLabel("Remember me on this device").uncheck();
+  await sheet(kelpie).getByLabel("Remember me").uncheck();
   await sheet(kelpie).getByRole("button", { name: "Sign in", exact: true }).click();
   await sheet(kelpie).getByRole("alert").filter({ hasText: "Couldn't sign in" }).waitFor();
   await sheet(kelpie).getByLabel("Login").fill("reef-user");

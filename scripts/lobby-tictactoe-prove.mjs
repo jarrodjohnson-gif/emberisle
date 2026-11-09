@@ -4,7 +4,7 @@
 // leaving the game open, and Start closing it. Pictures at 1280x720, 390x844 and 844x390: docs/proofs/1263/.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync } from "node:fs";
+import { mkdirSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
@@ -30,7 +30,6 @@ const vite = await createServer({ server: { host: "127.0.0.1", port: 0 }, logLev
 await vite.listen();
 const url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${hostPort}`;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const problems = [];
@@ -134,7 +133,7 @@ try {
   await ember.waitForFunction(() => window.__emberisle.getState().seats.length === 3);
 
   // The shelf: a table-mate is there, so the tile says so; the picker lists people only, never the bot.
-  await ember.getByRole("button", { name: "Play games" }).click();
+  await ember.getByRole("tab", { name: "Play games" }).click();
   await tile(ember).waitFor();
   assert.equal(await line(ember).textContent(), "With a table-mate");
   await tile(ember).getByRole("button", { name: "Play", exact: true }).click();
@@ -149,12 +148,12 @@ try {
   console.log("ok  1280x720: the tile names a table-mate, the picker lists Tide only, and the invite waits");
 
   // Tide's tab carries the badge; no popup opens. Tide takes the invite and both boards open.
-  await tide.getByRole("button", { name: "Play games, 1 invite" }).waitFor();
+  await tide.getByRole("tab", { name: "Play games, 1 invite" }).waitFor();
   assert.equal(await tide.locator(".lb").textContent(), "1");
   assert.equal(await tide.getByTestId("ttt").count(), 0, "an invite never opens a board by itself");
   await contrast(tide, "badge 390");
   await tide.screenshot({ path: `${out}/390x844-badge.png` });
-  await tide.getByRole("button", { name: "Play games, 1 invite" }).click();
+  await tide.getByRole("tab", { name: "Play games, 1 invite" }).click();
   assert.equal(await line(tide).textContent(), "Ember wants to play");
   await contrast(tide, "invited 390");
   await tide.screenshot({ path: `${out}/390x844-invited.png` });
@@ -193,20 +192,20 @@ try {
   await tide.setViewportSize({ width: 390, height: 844 });
   console.log("ok  844x390: picture saved");
 
-  // Play again: Tide goes first. Close keeps the game; Quit ends it for both.
+  // Play again: Tide goes first. Hide keeps the game; Quit ends it for both.
   await tide.getByRole("button", { name: "Play again" }).click();
   for (const page of [ember, tide]) await page.waitForFunction(() => window.__emberisle.getState().ttt?.game?.status === "playing");
   assert.equal(await turn(tide).textContent(), "Your turn");
   await cell(tide, 4).click();
   await ember.waitForFunction(() => window.__emberisle.getState().ttt?.game?.board[4] === "o");
-  await ember.getByRole("button", { name: "Close", exact: true }).click();
+  await ember.getByRole("button", { name: "Hide", exact: true }).click();
   assert.equal(await line(ember).textContent(), "You and Tide");
   await tile(ember).getByRole("button", { name: "Open" }).click();
-  assert.equal(await cell(ember, 4).textContent(), "O", "Close kept the game");
+  assert.equal(await cell(ember, 4).textContent(), "O", "Hide kept the game");
   await tide.getByRole("button", { name: "Quit game" }).click();
   await ember.getByTestId("ttt").waitFor({ state: "detached" });
   assert.equal(await line(ember).textContent(), "Tide closed the game.");
-  console.log("ok  Play again with Tide first, Close keeps the game, Quit closes it for both");
+  console.log("ok  Play again with Tide first, Hide keeps the game, Quit closes it for both");
 
   // A decline.
   await tile(ember).getByRole("button", { name: "Play", exact: true }).click();

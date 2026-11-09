@@ -1,7 +1,7 @@
 // #766(a): real profile host, real browser and TLS tunnel hop. No profile sheet or private product test hooks.
 import assert from "node:assert/strict";
 import { spawn, execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -97,7 +97,7 @@ try {
   const secure = await fixture({ "/a": proxy(a.port, true), "/b": proxy(b.port, true), "/legacy": proxy(legacyServer.address().port) }, { key: readFileSync(path.join(dir, "key.pem")), cert: readFileSync(path.join(dir, "cert.pem")) });
   const plain = await fixture({ "/dev": proxy(dev.port), "/production": proxy(a.port) });
   const A = secure.replace("https:", "wss:") + "/a", B = secure.replace("https:", "wss:") + "/b";
-  browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined) });
+  browser = await chromium.launch();
   const errors = [];
   const context = await browser.newContext({ ignoreHTTPSErrors: true });
   await context.addInitScript(observe);

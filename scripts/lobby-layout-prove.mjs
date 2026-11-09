@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
@@ -25,7 +25,6 @@ const vite = await createServer({ server: { host: "127.0.0.1", port: 0 }, logLev
 await vite.listen();
 const url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${hostPort}`;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -169,7 +168,7 @@ async function centred(page, label) {
       labels, seats,
       emoji: { left: emoji[0].left - row.left, right: row.right - emoji.at(-1).right, gaps: emoji.slice(1).map((r, i) => r.left - emoji[i].right), centres: emoji.map(r => (r.top + r.bottom) / 2), rowLeft: row.left - chat.left, rowRight: chat.right - row.right },
       codeDy: (ct.t + ct.b) / 2 - (header.top + header.bottom) / 2,
-      headerDiagnostic: { code: code.textContent, font: getComputedStyle(code).font, header: header.toJSON(), codeBox: box(code).toJSON(), buttons: [...card.querySelectorAll('.lobby-copy-controls button')].map(el => ({ text: el.textContent, font: getComputedStyle(el).font, box: box(el).toJSON() })) },
+      headerDiagnostic: { code: code.textContent, font: getComputedStyle(code).font, header: header.toJSON(), codeBox: box(code).toJSON(), buttons: [...card.querySelectorAll('.lobby-header button')].map(el => ({ text: el.textContent, font: getComputedStyle(el).font, box: box(el).toJSON() })) },
       foot, inputDy: (input.top + input.bottom) / 2 - (send.top + send.bottom) / 2,
     };
   });
@@ -216,7 +215,7 @@ async function codeFits(page, label) {
     const style = getComputedStyle(el);
     const m = { code: el.textContent, font: parseFloat(style.fontSize), fontStyle: style.font, letterSpacing: style.letterSpacing, clientWidth: el.clientWidth, scrollWidth: el.scrollWidth, viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio }, textLeft: text.left, textRight: text.right, left: box.left, right: box.right,
       focus: document.activeElement === window.__codeFocus,
-      buttons: [...document.querySelectorAll(".lobby-copy-controls button")].map(button => {
+      buttons: [...document.querySelectorAll(".lobby-header button")].map(button => {
         const r = document.createRange(); r.selectNodeContents(button);
         const t = r.getBoundingClientRect(), b = button.getBoundingClientRect();
         return { text: button.textContent, font: parseFloat(getComputedStyle(button).fontSize), width: b.width, height: b.height, left: t.left - b.left, right: b.right - t.right };
@@ -267,22 +266,20 @@ async function supportedCodeFits(page, label) {
   const viewport = page.viewportSize();
   try {
     for (const value of [code, "APWG", "WWWW", "MMMM"]) {
-      await page.getByRole("button", { name: "Copy", exact: true }).waitFor();
-      await page.getByRole("button", { name: "Copy link", exact: true }).waitFor();
-      await page.locator(".lobby-copy-controls button").first().focus();
+      await page.locator(".lobby-code:not([data-copied])").waitFor();
+      await page.getByRole("button", { name: /^Table code .+\. Copy link$/ }).waitFor();
+      await page.locator(".lobby-header button").first().focus();
       await page.evaluate(value => { window.__codeFocus = document.activeElement; window.__emberisle.setState({ code: value }); }, value);
       await page.waitForFunction(value => document.querySelector('[data-testid="table-code"]').textContent === value, value);
       await codeFits(page, `${label} ${value} ready`);
-      for (const button of ["Copy", "Copy link"]) {
-        await page.getByRole("button", { name: button, exact: true }).click();
-        await page.getByRole("button", { name: "Copied", exact: true }).waitFor();
-        await page.evaluate(() => { window.__codeFocus = document.activeElement; });
-        await codeFits(page, `${label} ${value} ${button} → Copied`);
-      }
+      await page.locator(".lobby-code").click();
+      await page.locator(".lobby-code[data-copied]").waitFor();
+      await page.evaluate(() => { window.__codeFocus = document.activeElement; });
+      await codeFits(page, `${label} ${value} code → Copied`);
     }
     await page.evaluate(() => window.__emberisle.setState({ code: "WWWW" }));
-    await page.getByRole("button", { name: "Copy", exact: true }).click();
-    await page.getByRole("button", { name: "Copied", exact: true }).waitFor();
+    await page.locator(".lobby-code").click();
+    await page.locator(".lobby-code[data-copied]").waitFor();
     await page.evaluate(() => { window.__codeFocus = document.activeElement; });
     await codeFits(page, `${label} before responsive change`);
     const beforeFont = await page.getByTestId("table-code").evaluate(el => parseFloat(getComputedStyle(el).fontSize));
@@ -298,10 +295,10 @@ async function supportedCodeFits(page, label) {
   } finally {
     await page.setViewportSize(viewport);
     await page.evaluate(value => window.__emberisle.setState({ code: value }), code);
-    await page.getByRole("button", { name: "Copy", exact: true }).waitFor();
-    await page.getByRole("button", { name: "Copy link", exact: true }).waitFor();
+    await page.locator(".lobby-code:not([data-copied])").waitFor();
+    await page.getByRole("button", { name: /^Table code .+\. Copy link$/ }).waitFor();
   }
-  console.log(`${label}: valid codes fully visible; Copy/Copied, 44px targets, 8px padding, focus and responsive fits passed`);
+  console.log(`${label}: valid codes fully visible; code/Copied, 44px targets, 8px padding, focus and responsive fits passed`);
 }
 try {
   for (const [width, height, minimum] of [[390, 844, .52], [844, 390, .39], [1280, 720, .40]]) {
@@ -319,10 +316,12 @@ try {
     await page.getByTestId("add-bot").first().click();
     await page.waitForFunction(() => window.__emberisle.getState().seats.length === 4);
     await page.evaluate(() => document.fonts.ready);
-    for (const label of ["Copy", "Copy link", "Invite", "Rules", "Ready", "Leave the table"]) {
+    for (const label of [`Table code ${[...code].join(" ")}. Copy link`, "Rules", "Ready", "Leave the table"]) {
       assert.equal(await page.getByRole("button", { name: label, exact: true }).count(), 1, label);
     }
-    assert.equal(await page.getByRole("tab").count(), 2);
+    for (const gone of ["Copy", "Copy link", "Invite"]) assert.equal(await page.getByRole("button", { name: gone, exact: true }).count(), 0, `${gone} is gone`);
+    assert.equal(await page.getByTestId("lobby-chat").getByRole("tab").count(), 2);
+    assert.equal(await page.getByRole("tablist", { name: "Lobby" }).getByRole("tab").count(), 2);
     assert.equal(await page.getByTestId("emoji-row").locator("button").count(), 6);
     assert.equal(await page.getByRole("button", { name: "Start", exact: true }).count(), 0, "host sees no Start until everyone is ready");
     assert.equal(await guest.getByRole("button", { name: "Start", exact: true }).count(), 0, "guest cannot start");
@@ -343,7 +342,7 @@ try {
     if (width === 390) await supportedCodeFits(page, `${width}x${height}`);
     if (width === 390) {
       // Actual hosted fallback font; retain the native cases and run the same assertions.
-      const font = await page.addStyleTag({ content: '.lobby-header p, .lobby-copy-controls button { font-family: "DejaVu Sans", sans-serif !important; }' });
+      const font = await page.addStyleTag({ content: '.lobby-header [data-testid="table-code"], .lobby-header button { font-family: "DejaVu Sans", sans-serif !important; }' });
       try {
         await page.evaluate(() => document.fonts.ready);
         await supportedCodeFits(page, `${width}x${height} DejaVu Sans`);
@@ -351,13 +350,15 @@ try {
         await font.evaluate(el => el.remove());
       }
     }
-    await page.getByRole("button", { name: "Copy", exact: true }).click();
-    await page.waitForFunction(code => window.__copies.includes(code), code);
-    await page.getByRole("button", { name: "Copy link", exact: true }).click();
+    await page.locator(".lobby-code:not([data-copied])").waitFor();
+    await page.getByRole("button", { name: `Table code ${[...code].join(" ")}. Copy link`, exact: true }).click();
+    await page.waitForFunction(code => window.__copies.at(-1).includes(`?code=${code}`), code);
     await page.waitForFunction(() => window.__copies.some(s => s.includes("?code=")));
     await page.evaluate(() => Object.defineProperty(navigator, "share", { configurable: true, value: async data => { window.__invitation = data; } }));
-    await page.getByRole("button", { name: "Invite", exact: true }).click();
-    assert.ok((await page.evaluate(() => window.__invitation.url)).includes(`code=${code}`));
+    const copies = await page.evaluate(() => window.__copies.length);
+    await page.locator(".lobby-code").click();
+    await page.waitForFunction(n => window.__copies.length > n, copies);
+    assert.ok((await page.evaluate(() => window.__copies.at(-1))).includes(`code=${code}`) && await page.evaluate(() => window.__invitation === undefined), "the code copies the join link and never opens a share sheet");
     await page.getByRole("button", { name: "Rules", exact: true }).click();
     await page.getByRole("dialog").waitFor();
     await page.getByRole("button", { name: "Close", exact: true }).click();
@@ -396,7 +397,7 @@ try {
     await page.waitForFunction(() => window.__emberisle.getState().screen === "play");
     await guest.waitForFunction(() => window.__emberisle.getState().screen === "play");
     results.push({ viewport: `${width}x${height}`, ...data });
-    console.log(`${width}x${height}: chat ${(data.share * 100).toFixed(2)}%; two columns; 44px targets / 8px gaps; no card/people scroll; copy/invite/rules/target/chat/reaction/ready/start passed`);
+    console.log(`${width}x${height}: chat ${(data.share * 100).toFixed(2)}%; two columns; 44px targets / 8px gaps; no card/people scroll; copy/rules/target/chat/reaction/ready/start passed`);
     await page.context().close();
     await guest.context().close();
   }
@@ -426,7 +427,7 @@ try {
       for (const stress of ["WWWW", "MMMM"]) {
         await page.getByTestId("table-code").evaluate((el, value) => { el.textContent = value; el.style.fontSize = "32px"; }, stress);
         if (width === 375 && stress === "WWWW") await centred(page, `${width}x${height} wide-font stress`);
-        const padding = await page.locator(".lobby-copy-controls button").evaluateAll(buttons => buttons.map(el => {
+        const padding = await page.locator(".lobby-header button").evaluateAll(buttons => buttons.map(el => {
           const range = document.createRange(); range.selectNodeContents(el);
           const text = range.getBoundingClientRect(), box = el.getBoundingClientRect();
           return { name: el.textContent.trim(), left: text.left - box.left, right: box.right - text.right };

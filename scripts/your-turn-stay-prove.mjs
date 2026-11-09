@@ -18,7 +18,7 @@
 // - Hotseat: only "<name>'s turn" on rolls (nothing in the roll-off or setup), timed, gone within 2.5 s untouched.
 // Zero console errors. Run: npm run your-turn-stay-prove (ONLY=online, practice, reduced or hotseat runs one part; SHOTS=1 writes
 // docs/proofs/1140). Port from VITE_PORT, default 8485.
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -39,7 +39,6 @@ if (SHOTS) mkdirSync(SHOT_DIR, { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];

@@ -2,7 +2,6 @@
 // The six checks in docs/design/tokens.md, and (#597) a seventh: in the diorama view (the default on a landscape canvas at least 900 px wide)
 // every token faces the camera at its own size (#599), at most 30 % of a hex's width, overlaps no other on screen and is not hidden
 // by the scenery, and its numeral is at least 11 px tall and its pips 2 px across, at 1280x720 and 960x680.
-import { existsSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -70,7 +69,6 @@ const readScene = (demoBoard) => {
 };
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 try {

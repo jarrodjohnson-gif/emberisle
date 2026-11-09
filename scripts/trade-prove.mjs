@@ -15,7 +15,7 @@
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
@@ -42,9 +42,7 @@ const hostPort = await new Promise((resolve) =>
 );
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
-});
+const browser = await chromium.launch();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const errors = [];
@@ -385,6 +383,9 @@ try {
   await forget(tabs);
   // 3. B says Yes (Enter on the focused button, the spy's positive control for #366): the goods move in every tab's next state.
   await spyAnswers(B);
+  // #1449 item 8: the confirming answer is last, as in the more-time vote.
+  const order = await B.page.getByTestId("trade-toast").locator(".trade-answers button").allTextContents();
+  if (!same(order, ["No", "Yes"])) throw new Error(`${B.name}'s answers read ${JSON.stringify(order)}, not No then Yes`);
   await B.page.getByTestId("trade-toast").getByRole("button", { name: "Yes", exact: true }).focus();
   await B.page.keyboard.press("Enter");
   const yesSent = await B.page.evaluate(() => window.__answers);

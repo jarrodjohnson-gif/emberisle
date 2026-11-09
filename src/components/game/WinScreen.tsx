@@ -26,7 +26,7 @@ const tagOf = (x?: Seat) =>
     </span>
   ) : undefined;
 
-// Build bible 4.7: the island stays visible. "Look around" hides the panel and leaves a small chip.
+// Build bible 4.7: the island stays visible. "Hide scores" hides the panel and leaves a small chip.
 export function WinScreen() {
   // #748: the phone list is its own chunk; fetch it while the table plays, so it is in memory before the game ends.
   useEffect(() => {
@@ -64,7 +64,7 @@ function Panel() {
   const dialog = useRef<HTMLDivElement>(null);
   const chip = useRef<HTMLDivElement>(null);
 
-  // #379: Tab stays inside the dialog; "Look around" hands focus to the chip so the keyboard does not land on the body.
+  // #379: Tab stays inside the dialog; "Hide scores" hands focus to the chip so the keyboard does not land on the body.
   useFocusTrap(dialog, !hidden, '[data-testid="win-menu"]');
   useEffect(() => {
     if (hidden) {
@@ -236,7 +236,7 @@ function Panel() {
             </Button>
           ) : null}
           <Button variant="secondary" className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-look" onClick={() => setHidden(true)}>
-            Look around
+            Hide scores
           </Button>
           {canAgain ? (
             <Button className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-again" onClick={playAgain}>
