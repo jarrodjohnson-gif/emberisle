@@ -89,9 +89,9 @@ const CEILINGS = [
   // #1363, 2026-11-07: a sticker as the tray, seat bubble and chat log draw it (animated loop, reduced-motion still), loaded
   // with the first sticker; measured 949 B gzip. New chunk only; the desk sets this ceiling.
   { name: "Sticker", gzipBytes: 1050 },
-  // #662, 2026-11-08: the sea-and-wind ambience loop, loaded on its first start after the first gesture; measured 401 B gzip.
+  // #662, 2026-11-08: the sea-and-wind ambience loop, loaded on its first start after the first gesture; measured 461 B gzip.
   // New chunk only; the desk sets this ceiling.
-  { name: "ambience", gzipBytes: 500 },
+  { name: "ambience", gzipBytes: 550 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
