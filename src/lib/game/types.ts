@@ -123,7 +123,7 @@ export interface GameState {
   dice: [number, number] | null;
   // Pre-setup roll-off (docs/design/first-player.md): the die on each seat, and who still rolls this round.
   // `first` is a rematch's last winner (#266): it places first without rolling, and the rest roll off behind it.
-  rollOff: { rolls: Record<string, number>; pending: string[]; first?: string } | null;
+  rollOff: { rolls: Record<string, number>; pending: string[]; first?: string; tied?: string[]; settled?: string[] } | null;
   setupIndex: number;
   lastSetupVertex: string | null;
   longestRoad: string | null;

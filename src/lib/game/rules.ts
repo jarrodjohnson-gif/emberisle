@@ -133,7 +133,7 @@ export function settleError(state: GameState, pid: string, vid: string, setup: b
   const v = vertex(state, vid);
   if (!v) return "Illegal outpost.";
   if (v.building) return "That corner is taken.";
-  if (!distanceOk(state, vid)) return "Too close — leave one corner between buildings.";
+  if (!distanceOk(state, vid)) return "Too close. Leave a corner between buildings.";
   if (!setup && !state.edges.some((e) => e.path === pid && (e.va === vid || e.vb === vid))) return "Outpost must touch your path.";
   return null;
 }
@@ -299,14 +299,9 @@ function names(list: PlayerState[]) {
   return n.length < 3 ? n.join(" and ") : `${n.slice(0, -1).join(", ")}, and ${n.at(-1)}`;
 }
 
-type RollOffState = NonNullable<GameState["rollOff"]> & {
-  tied?: string[];
-  settled?: string[];
-};
-
 // The pre-setup roll-off (docs/design/first-player.md). Never touches state.rng.
 function rollOffRoll(state: GameState, me: PlayerState) {
-  const ro = state.rollOff as RollOffState;
+  const ro = state.rollOff!;
   const die = rollDie();
   ro.rolls[me.id] = die;
   ro.pending.shift();

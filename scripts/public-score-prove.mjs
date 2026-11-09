@@ -59,18 +59,18 @@ try{
   await page.waitForFunction(()=>window.__emberisle);
   const load=async(view,i)=>page.evaluate(({view,i})=>{const store=window.__emberisle;store.setState({spectator:i===4,menuFor:null,chatOpen:false,code:'PSAA',seatId:`s${i}`});store.getState().loadState(view.game,view.you??'',i===0,'PSAA');},{view,i});
   for(let i=0;i<ids.length;i++){
-   await load(stages.before[i],i);await page.getByTestId('hidden-point-hint').waitFor();
-   const text=await page.getByTestId('hidden-point-hint').textContent();hint??=text;assert.equal(text,hint);
+   await load(stages.before[i],i);await page.locator('[data-menu-trigger="p0"]').waitFor();assert.equal(await page.getByTestId('hidden-point-hint').count(),0,'no reminder on the rail or strip');
    const beforeHole=await page.evaluate(()=>window.__isle?.insets());
    for(let p=0;p<4;p++){
     await page.locator(`[data-menu-trigger="p${p}"]`).click();
     const menu=page.getByTestId('player-menu');await menu.getByTestId('score-breakdown').waitFor();
     await whiteSurface(menu,`${width} player menu`);
+    const text=await menu.getByTestId('hidden-point-hint').textContent();hint??=text;assert.equal(text,hint);
     const parts=await menu.locator('[data-component]').evaluateAll(nodes=>Object.fromEntries(nodes.map(n=>[n.dataset.component,Number(n.dataset.points)])));
     assert.deepEqual(parts,expected[p].parts);assert.equal(Object.values(parts).reduce((n,k)=>n+k,0),expected[p].public);
     if(i===p){assert.equal(await menu.getByTestId('private-points').textContent(),String(expected[p].hidden));assert.equal(await menu.getByTestId('private-total').textContent(),String(expected[p].public+expected[p].hidden));}
     else{assert.equal(await menu.getByTestId('private-points').count(),0);assert.equal(await menu.getByTestId('private-total').count(),0);assert.doesNotMatch(await menu.getByTestId('menu-facts').textContent(),/Your fortunes|points ×/);}
-    if(i===4)assert.equal(await menu.getByRole('button').count(),0);
+    if(i===4)assert.deepEqual(await menu.getByRole('button').evaluateAll(b=>b.map(x=>x.getAttribute('aria-label'))),width<1000?['Close']:[]);
     await page.keyboard.press('Escape');
    }
    // An already-open detail recomputes when the host broadcasts a score change.
@@ -79,7 +79,7 @@ try{
    await page.waitForFunction(()=>document.querySelector('[data-component="outposts"]')?.dataset.points==='1');
    assert.equal(await page.locator('[data-component="strongholds"]').getAttribute('data-points'),'6');
    await page.keyboard.press('Escape');
-   await load(stages.zero[i],i);assert.equal(await page.getByTestId('hidden-point-hint').textContent(),hint);
+   await load(stages.zero[i],i);await page.locator('[data-menu-trigger="p0"]').click();assert.equal(await page.getByTestId('player-menu').getByTestId('hidden-point-hint').textContent(),hint);await page.keyboard.press('Escape');
    await load(stages.over[i],i);await page.getByTestId('win-screen').waitFor();
    await whiteSurface(page.getByTestId('win-screen').locator(':scope > div'),`${width} scores`);
    assert.equal(await page.getByTestId('win-screen').evaluate(el=>getComputedStyle(el).backdropFilter),'none',`${width}: score backdrop has no blur`);

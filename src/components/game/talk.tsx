@@ -158,11 +158,15 @@ export function EmojiRow({ keys, dense }: { keys?: boolean; dense?: boolean }) {
   );
 }
 
-export function Emote({ emote, className }: { emote: string; className?: string }) {
+type StickerModule = typeof import("@/components/game/Sticker");
+let sticker: Promise<StickerModule> | null = null;
+
+// `once`: the tray's copy, which stops after one loop (#1363).
+export function Emote({ emote, className, once }: { emote: string; className?: string; once?: boolean }) {
   const emoji = QUICK_REACTIONS.find((item) => item.emoji === emote);
-  const [stickers, setStickers] = useState<Record<string, string>>({});
+  const [loaded, setLoaded] = useState<StickerModule>();
   useEffect(() => {
-    if (!emoji) void loadEmotes().then(setStickers);
+    if (!emoji) void (sticker ??= import("@/components/game/Sticker")).then(setLoaded);
   }, [emoji]);
   if (emoji)
     return (
@@ -170,5 +174,5 @@ export function Emote({ emote, className }: { emote: string; className?: string 
         {emoji.emoji}
       </span>
     );
-  return Object.hasOwn(stickers, emote) ? <img src={stickers[emote]} alt={emote} className={cn("object-contain", className)} /> : null;
+  return loaded ? <loaded.Sticker id={emote} once={once} className={className} /> : null;
 }

@@ -3,7 +3,6 @@
 // groundAt correct with rotation, clearance covers all kinds, board builds and renders.
 // Run: npm run hex-variety-prove
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -13,7 +12,6 @@ const STEP_MS = 90_000;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 

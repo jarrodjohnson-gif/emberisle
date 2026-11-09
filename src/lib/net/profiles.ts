@@ -18,6 +18,12 @@ export interface ProfileFields {
   backupColor?: string | null;
   catchphrase?: string;
 }
+// #767: the owner's committed record, a page of their own history, and a page of the group Wins board. The host derives every
+// number from counted results; the client only shows them. Win rate is null before the first counted game.
+export interface ProfileRecord { games: number; wins: number; losses: number; winRate: number | null; streak: number; lastPlayed: number | null }
+interface HistoryPlayer { name: string; color: string; kind: "human" | "bot"; points: number; won: boolean }
+export interface HistoryRow { gameId: string; startedAt: number; endedAt: number; durationMs: number; victoryTarget: number | null; won: boolean; points: number; assisted: boolean; players: HistoryPlayer[] }
+export interface WinsRow { rank: number; displayName: string; games: number; wins: number; losses: number; winRate: number | null; streak: number; you: boolean }
 type ProfileStatus = "idle" | "connecting" | "available" | "unsupported" | "offline" | "insecure";
 interface ProfileSnapshot {
   host: string;
@@ -195,6 +201,21 @@ export function createProfileClient(initialHost: string, options: {
       throw error;
     }
   };
+  // An owner-only read. Its reply is dropped if the host or the signed-in profile changed while it was out.
+  const query = async (type: "profileRecord" | "profileHistory" | "profileWins", fields: Record<string, unknown> = {}) => {
+    const ownGeneration = await authorized();
+    const owner = snapshot.profile?.profileId;
+    if (!owner || !credential || expiresAt <= Date.now()) throw new ProfileClientError("signedOut");
+    try {
+      const reply = await request(type, { ...fields, credential });
+      if (ownGeneration !== generation || snapshot.profile?.profileId !== owner) throw new ProfileClientError("hostChanged");
+      if (reply.type !== type) throw new ProfileClientError("unavailable");
+      return reply;
+    } catch (error) {
+      if (ownGeneration === generation && error instanceof ProfileClientError && error.code === "signedOut") { removeRemembered(); forgetSession(); }
+      throw error;
+    }
+  };
   const fieldsOf = (f: Partial<ProfileFields>) => Object.fromEntries(["displayName", "login", "color", "backupColor", "catchphrase"].filter((key) => Object.hasOwn(f, key)).map((key) => [key, f[key as keyof ProfileFields]]));
   return {
     getSnapshot: () => snapshot,
@@ -227,6 +248,8 @@ export function createProfileClient(initialHost: string, options: {
     },
     edit: (fields: Partial<ProfileFields> & { pin?: string }) => sessionRequest("profileEdit", { ...fieldsOf(fields), ...(fields.pin === undefined ? {} : { pin: fields.pin }) }, snapshot.remembered, true),
     changePin: (currentPin: string, newPin: string, newPinConfirm: string) => sessionRequest("profileChangePin", { currentPin, newPin, newPinConfirm }, snapshot.remembered, true),
+    // profileRecord, profileHistory or profileWins; the records view checks the reply's shape.
+    query,
     async logout() {
       const ownHost = snapshot.host;
       const ownCredential = credential;

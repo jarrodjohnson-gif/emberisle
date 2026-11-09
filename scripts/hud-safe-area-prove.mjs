@@ -19,7 +19,7 @@
 // Run: npm run hud-safe-area-prove. Port from VITE_PORT, default 8475. Screenshots to test-results/hud-safe-*.png.
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
@@ -59,7 +59,6 @@ await vite.listen();
 const URL_ = `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`;
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 

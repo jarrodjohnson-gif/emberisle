@@ -15,7 +15,7 @@
 // - no seat overlaps the Table menu button or the Watching chip, and every seat is inside the viewport.
 // Zero console errors. Saves test-results/seat-rail-<size>.png. Run: npm run seat-rail-prove
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -31,7 +31,6 @@ mkdirSync("test-results", { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -220,7 +219,7 @@ try {
     const aFacts = await factsOf(mid.a);
     const line = (await lines()).find((l) => l.id === `${v.seat}-${mid.a}`);
     const fromLine = [3, 0, Number(line.vp.match(/\d+/)[0])];
-    assert.deepEqual([aFacts["Cards in hand"], aFacts["Fortunes held"], aFacts["Points shown"]].map(Number), fromLine, `${v.tag}: facts ${JSON.stringify(aFacts)} match the line`);
+    assert.deepEqual([aFacts["Goods"], aFacts["Fortunes"], aFacts["Points"]].map(Number), fromLine, `${v.tag}: facts ${JSON.stringify(aFacts)} match the line`);
     assert.equal(aFacts["Your fortunes"], undefined, `${v.tag}: another seat's facts list no fortunes by kind`);
     const myFacts = await factsOf(mid.me);
     assert.equal(myFacts["Your fortunes"], "wayfarer ×1 · points ×2 (1 new)", `${v.tag}: your facts list your fortunes by kind, got ${JSON.stringify(myFacts)}`);
@@ -231,9 +230,9 @@ try {
     const dropped = (await lines()).find((l) => l.id === `${v.seat}-${mid.b}`);
     assert.ok(dropped.away && dropped.away.w >= 12 && dropped.h <= 44 && dropped.spill === 0, `${v.tag}: the dropped seat shows a marker ${JSON.stringify(dropped.away)}`);
     noClip(await lines(), "away");
-    assert.equal(dropped.away.word, wide, `${v.tag}: the word "reconnecting…" shows where the cell is wide ${JSON.stringify(dropped.away)}`);
+    assert.equal(dropped.away.word, wide, `${v.tag}: the word "Away" shows where the cell is wide ${JSON.stringify(dropped.away)}`);
     assert.ok((await lines()).filter((l) => l.id !== `${v.seat}-${mid.b}`).every((l) => l.away === null), `${v.tag}: no marker on a seated seat`);
-    assert.equal((await factsOf(mid.b))["Connection"], "reconnecting…", `${v.tag}: the dropped seat's facts say so`);
+    assert.equal((await factsOf(mid.b))["Connection"], "Away", `${v.tag}: the dropped seat's facts say so`);
     await page.evaluate(() => window.__emberisle.setState({ seats: [] }));
 
     // Nothing in the seats overlaps the menu button or the Watching chip (shown by flagging the store a watcher).

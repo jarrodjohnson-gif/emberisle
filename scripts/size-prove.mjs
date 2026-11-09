@@ -76,6 +76,8 @@ const CEILINGS = [
   // 292 B. Ceilings decided by Opus per q-size-standing (PR #1401 review).
   { name: "ProfileForms", gzipBytes: 2350 },
   { name: "eye-off", gzipBytes: 310 },
+  // #767, 2026-11-07: the Profile sheet's Wins and Your games views; measured 2,248 B. New chunk, per q-size-standing.
+  { name: "ProfileRecords", gzipBytes: 2350 },
   // #1281, 2026-11-07: startup loading screen, preloaded beside index; measured 2,420 B gzip. Decided per q-size-standing; paired trim to follow.
   { name: "LoadingScreen", gzipBytes: 2600 },
   // #669, 2026-11-07: the Sound panel in the Table menu, loaded as the menu opens; measured 1,872 B gzip. New chunk only; the owner must OK this ceiling.
@@ -84,6 +86,9 @@ const CEILINGS = [
   { name: "use-muted-seats", gzipBytes: 500 },
   // #748, 2026-11-07: the win screen's compact list on phones, loaded on phones as the table starts; measured 1,253 B gzip. New chunk only; the desk sets this ceiling.
   { name: "WinList", gzipBytes: 1360 },
+  // #1363, 2026-11-07: a sticker as the tray, seat bubble and chat log draw it (animated loop, reduced-motion still), loaded
+  // with the first sticker; measured 949 B gzip. New chunk only; the desk sets this ceiling.
+  { name: "Sticker", gzipBytes: 1050 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.

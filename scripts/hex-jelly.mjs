@@ -1,7 +1,7 @@
 // Screenshots the Hex Jelly studio (docs/design/hex-jelly-prompt.md): test-results/jelly-<kind>-<seed>.png for each kind and
 // seed asked, 1024x768, frozen at --t seconds. Headless Chromium here is SwiftShader. Run: node scripts/hex-jelly.mjs [timber]
 // [--seeds 7,11,23] [--t 2.05] [--focus pool,camp] [--q ring=1&az=200]; --lineup for the size ladder (jelly-lineup.png)
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -24,7 +24,6 @@ const PORT = Number(process.env.VITE_PORT) || 8132;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 mkdirSync("test-results", { recursive: true });
