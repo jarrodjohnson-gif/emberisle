@@ -1,5 +1,5 @@
 // #348: the spectator view in the browser (docs/design/spectator.md). Two headless tabs and one src/lib/net/table.ts
-// client seat a table; a third tab's Watch sends nothing under 4 characters and is refused on the lobby ("Not started
+// client seat a table; a third tab's Watch sends nothing under 4 characters (Join there shows "Enter the 4-letter code.", #1449) and is refused on the lobby ("Not started
 // yet."), then watches after the start
 // through a ?watch=CODE link. It sees the board with no glow, the Watching badge, no hand bar, no action buttons, a
 // read-only dock and the "Watching — Emberisle" title, while every seat shows the eye count "1". An injected intent is
@@ -260,6 +260,13 @@ try {
   await w.page.getByPlaceholder(/code/i).fill(tableCode.slice(0, 3));
   // #444: Watch only shows once the field holds a whole code, so under 4 there is nothing to press.
   if (await w.page.getByRole("button", { name: "Watch", exact: true }).count()) throw new Error("Watch shows with a 3-character code");
+  // #1449: Join under 4 characters says why in the alert line and sends nothing (errorSeq below); typing clears the line.
+  await w.page.getByRole("button", { name: "Join", exact: true }).click();
+  await until(async () => (await view(w)).alert === "Enter the 4-letter code.", 'the short-code hint "Enter the 4-letter code."');
+  if ((await view(w)).screen !== "title") throw new Error("a 3-character Join left the Title");
+  await w.page.getByPlaceholder(/code/i).fill(tableCode.slice(0, 2));
+  await until(async () => (await view(w)).alert === null, "typing clears the short-code hint");
+  console.log('3-character Join: "Enter the 4-letter code." in the alert line, cleared by typing');
   await w.page.getByPlaceholder(/code/i).fill(tableCode);
   await w.page.getByRole("button", { name: "Watch", exact: true }).click();
   await until(async () => (await view(w)).alert === "Not started yet.", 'the lobby refusal "Not started yet."');

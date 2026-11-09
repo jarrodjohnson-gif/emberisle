@@ -579,6 +579,8 @@ jobs:
         run: npm run howto-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
         run: npm run help-sheets-prove
+      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+        run: npm run backdrop-close-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
         run: npm run title-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
