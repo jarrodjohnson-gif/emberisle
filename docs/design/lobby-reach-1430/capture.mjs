@@ -2,7 +2,7 @@
 // It drives the real lobby on the current checkout (a real host, a guest, a bot, an empty seat, one chat line), measures where
 // every control sits as a distance from the bottom edge, then injects throwaway CSS and one DOM move to show options A, B and C.
 // Run from the repo root, one browser at a time:
-//   flock /tmp/claude-0/emberisle-browser.lock node docs/design/lobby-reach-1430/capture.mjs [out dir]
+//   flock <lock file> node docs/design/lobby-reach-1430/capture.mjs [out dir]
 // It writes <today|a|b|c>-<size>.png, <state>-start-390x844.png, compare-<size>.png, zones-390x844.png and measurements.json.
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";

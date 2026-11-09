@@ -1,17 +1,17 @@
 # Lobby reach: bring the controls down to the thumb (Part of #1430)
 
-**Mock and audit only. No game code changes.** Author: Fable 5.1, 2026-11-09. Base: `main` at `2f0c2932`.
+**Mock and audit only. No game code changes.** Author: Fable 5.1, 2026-11-09. Measured on `main` at `2f0c2932` (a docs-only PR; later merges do not change these numbers).
 
-The owner answered the card `q1430-wasted-space` with: "The top seems really far to reach." His players hold a phone upright, or an iPad upright. One hand holds the phone, and the thumb does the tapping. Today the code, the view row and the seat buttons sit at the top. That is a long stretch. This mock measures the stretch and shows three ways to shorten it.
+The owner answered Desk Decisions card `q1430-wasted-space` with D, on 2026-11-09 at 04:03 UTC: "The top seems really far to reach." The code placement comes from card `q1430-code-placement`, owner answer C (underlined text code), 2026-11-08. His players hold a phone upright, or an iPad upright. One hand holds the phone, and the thumb does the tapping. Today the code, the view row and the seat buttons sit at the top. That is a long stretch. This mock measures the stretch and shows three ways to shorten it.
 
 ## What stands
 
 Every earlier owner answer is kept in all three options.
 
-- A tap on the code copies the join link. No copy icon, no extra word.
+- A tap on the code copies the join link. There is no copy icon and no label beside the code. The Copied fade stays.
 - The code is underlined title text at the left of the header. The Wayfarer and connection lines sit at its right (`q1430-code-placement`, option C, PR #1456).
 - Table and Play games are two boxes 8 px apart. Rules is a third box.
-- No cream. The chat keeps its 14 px lines and its floors. Every target is 44 px, and every gap is 8 px.
+- No cream. The chat log is 16 px here, above the 14 px floor. The chat keeps its other floors. Every target is 44 px, and every gap is 8 px.
 - The lobby text sizes from PR #1388 do not change.
 
 ## How the pictures were made
@@ -45,10 +45,9 @@ Start showing, three seats and one empty seat. The host taps column is a judgeme
 
 What this says:
 
-- Upright, 9 of 17 controls sit in the hard band on a 430 phone and on the iPad. On the iPad the code is 1,091 px from the bottom edge.
+- Upright, 9 of 17 controls sit in the hard band at 430 and on the iPad. At 390 and 375 it is 7. On the iPad the code is 1,091 px from the bottom edge.
 - The chat, Ready and Start are already where the thumb is. The owner's players use them most.
 - The reach problem is the two top rows and the seat buttons. The view row is tapped a few times per table. Add bot is tapped up to three times, by the host only.
-- Sideways, the screen is 390 px tall, so nothing is far. The view row still sits in the top band.
 
 ## 2. Which controls the host needs most
 
@@ -58,13 +57,13 @@ So the frequent controls that are far today are the view row and Add bot. The co
 
 ## 3. Three options
 
-All three share the same base: the header holds the code and the status (PR #1456, option C). The view row leaves the top and fills its row as three equal boxes, like a tab bar. The chat panel keeps its size in every option, so the chat floors do not move.
+All three share the same base: the header holds the code and the status (PR #1456, option C). The view row leaves the top and fills its row as three equal boxes. The chat panel keeps its size in every option, so the chat floors do not move.
 
 | Option | What moves | One line |
 |---|---|---|
-| **A (recommended)** | The view row drops to just above the "2 of 3 ready" row | The tabs come to the thumb, the chat stays where it is |
+| **A (recommended)** | The view row drops to just above the "2 of 3 ready" row | The view row comes to the thumb, the chat stays where it is |
 | **B** | A, and the seats move under the chat | Every host control but the code sits in the bottom half, the chat input rises to mid screen |
-| **C** | The view row sits on the card's bottom edge, under Ready and Start | An iOS tab bar, with Start one row up |
+| **C** | The view row sits on the card's bottom edge, under Ready and Start | The view row at the very bottom, with Start one row up |
 
 ### Pictures
 
@@ -85,13 +84,13 @@ Single pictures: `today-`, `a-`, `b-` and `c-<size>.png`, plus `<state>-start-39
 
 Rows, top to bottom: header (code and status), seats, chat, view row, summary with Win at, Ready and Start.
 
-- The tabs and Rules move from 719 px to 133 px from the bottom at 390 x 844. From hard to easy at every upright size.
+- The view row (Table, Play games, Rules) moves from 719 px to 133 px from the bottom at 390 x 844. From hard to easy at every upright size.
 - The chat input moves up 52 px, to 194 px from the bottom. It stays in the easy band at every upright size.
 - Add bot stays at the top, 655 px from the bottom at 390. It moves up 52 px, because the view row left row 2.
 - Start stays on the bottom edge, as today. Every player already knows where Ready and Start are.
-- Easy band: 8 of 17 controls today, 11 with A, at 430, 390, 375 and 820. Hard band: 9 today, 6 with A.
+- Easy band: 8 of 17 controls today, 11 with A, at 430, 390, 375 and 820. Hard band: 7 today at 390 and 375, 9 at 430 and 820, and 6 with A at all four.
 
-Why A first: the chat is tapped most, and A keeps it where it is. Apple puts a view switcher at the bottom edge of the thumb's reach, not at the top. The view row reads as a tab bar for the content above it.
+Why A first: the chat is tapped most, and A keeps it where it is. A bottom row of view buttons is a common phone pattern. It reads as a switch for the content above it.
 
 ### B: A, and the seats under the chat
 
@@ -109,16 +108,16 @@ Pick B if Add bot matters more than the chat input. Only the host taps Add bot, 
 
 Rows: header, seats, chat, summary, Ready and Start, view row.
 
-- The tabs sit 29 px from the bottom edge at 390, as an iOS tab bar does.
+- The view row sits 29 px from the bottom edge at 390.
 - Ready, Start and Leave move up one row, to 81 px from the bottom. Win at moves to 133 px. All still easy.
 - Everything else is as in A. The band counts are the same as A.
-- The cost: Start leaves the bottom edge. The row every player taps once per game moves up 52 px for a row tapped a few times. The summary, Ready and tabs also read as three stacked rows with no content between them.
+- The cost: Start leaves the bottom edge. The row every player taps once per game moves up 52 px for a row tapped a few times. The summary, Ready and view row also read as three stacked rows with no content between them.
 
 ### Sideways (844 x 390)
 
 Every option is the same sideways. The view row moves to the bottom of the left column, right above Ready. It takes the 72 px hole under the seats that the earlier audit found. The chat keeps the right column from top to bottom, 486 x 288 as today.
 
-- Tabs and Rules: 269 px (hard) today, 77 px (easy) in A, B and C.
+- View row: 269 px (hard) today, 77 px (easy) in A, B and C.
 - Add bot: 153 px today, 205 px with the move (both stretch). Your name: 217 px today, 269 px (hard).
 - Play games wraps to two lines, as today, because each box is 92 px wide. The 44 px box holds both lines.
 - 667 x 375 was not measured. Its left column is 263 px, so the three boxes would be 82 px each. The builder measures it.
@@ -195,7 +194,9 @@ Size: 0 B of JS for the CSS rows. The two JSX moves (status and view row) add no
 - `lobby-wait-box-prove.mjs:205` and `lobby-tictactoe-prove.mjs:109` (game above `lobby-actions`): pass in A, B and C. The `.ly` block always ends above the actions row.
 - `connection-health-prove.mjs:341` to `366` wants the status inside the lobby at 320, 390, 667 x 375 and 844 x 390. PR #1456 measured the header move at four of its sizes. Re-run it after step 4.
 - `chat-prove.mjs:509` and `:561` (card margins, four whole lines): pass, the card and the chat panel are unchanged.
-- Add to `lobby-code-copy-prove`, at 390 x 844 and 820 x 1180: the view row starts below the chat panel (A, B) or below `lobby-actions` (C). Sideways: the view row ends 8 px above `lobby-actions`.
+- Add to `lobby-code-copy-prove` at 390 x 844 and 820 x 1180: the view row starts below the chat panel (A, B).
+- In C, the view row starts below `lobby-actions`.
+- Add one more check sideways: the view row ends 8 px above `lobby-actions`.
 
 ## 7. Things to look at
 
@@ -203,5 +204,5 @@ Size: 0 B of JS for the CSS rows. The two JSX moves (status and view row) add no
 - 320 x 568, 390 x 640 and 667 x 375 were not measured. Steps 3 and 4 cover them, and the builder measures.
 - With the view row at the bottom, the top of the card holds the header and the seats only. The chat log keeps its height at every size, because every row keeps its height. The wasted space audit on #1430 (comment 6718930663) covers that separately.
 - In B, the seats sit between the chat input and the summary. A seat bubble (a reaction) then appears mid screen, not at the top.
-- In C, the tabs touch the bottom edge of the card. On a phone with a home indicator the card already keeps `env(safe-area-inset-bottom)`, so nothing is covered.
+- In C, the view row touches the bottom edge of the card. On a phone with a home indicator the card already keeps `env(safe-area-inset-bottom)`, so nothing is covered.
 - The equal thirds for the view row is a look choice. The alternative is today's widths, left aligned, with about 160 px empty at the right at 390. The pictures show the equal thirds.
