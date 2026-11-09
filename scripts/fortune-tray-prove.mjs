@@ -325,8 +325,19 @@ try {
     await page.getByTestId("plenty-chip-wool").click();
     await page.getByTestId("fortune-play-plenty").click();
     await closed();
-    assert.deepEqual(v.touch ? await button.evaluate((el) => { const box = (e) => { const r = e?.getBoundingClientRect(); return r && [r.x, r.y, r.width, r.height].join(); }; return { n: document.querySelectorAll('[data-testid="fortunes-button"]').length, off: el.getAttribute("aria-disabled"), inSlot: box(el) === box(el.closest('[data-slot="fortunes"]')) }; }) : await button.count(), v.touch ? { n: 1, off: "true", inSlot: true } : 0, `${v.tag}: no held fortunes: no button (desktop); the dock's button greyed, filling its slot (phone)`);
-    assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), v.touch ? "Fortunes · 0" : "Trade", `${v.tag}: focus falls to Trade (desktop), stays on the greyed Fortunes (phone)`);
+    if (v.touch) {
+      const slot = await button.evaluate((el) => {
+        const box = (e) => { const r = e?.getBoundingClientRect(); return r && [r.x, r.y, r.width, r.height].join(); };
+        return { n: document.querySelectorAll('[data-testid="fortunes-button"]').length, off: el.getAttribute("aria-disabled"), inSlot: box(el) === box(el.closest('[data-slot="fortunes"]')) };
+      });
+      assert.equal(slot.n, 1, `${v.tag}: one Fortunes button with no held fortunes`);
+      assert.equal(slot.off, "true", `${v.tag}: the dock's Fortunes button is greyed`);
+      assert.equal(slot.inSlot, true, `${v.tag}: the greyed Fortunes button fills its slot`);
+      assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), "Fortunes · 0", `${v.tag}: focus stays on the greyed Fortunes`);
+    } else {
+    assert.equal(await button.count(), 0, `${v.tag}: no My fortunes button with no held fortunes`);
+    assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), "Trade", `${v.tag}: focus falls to Trade`);
+    }
     await craft({ plenty: 1 }, {}, { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 });
     await open();
 

@@ -1342,7 +1342,7 @@ try {
   const originalViewports = new Map([ownTab, otherTab].map((t) => [t, t.page.viewportSize()]));
   await phoneLayout(ownTab, true, true);
   await phoneLayout(otherTab, false);
-  check(dockFailures.length === 0, `chat dock: fixed phone controls at 390x844, 360x640 and 844x390, own and another seat's turn${dockFailures.length ? `\n${dockFailures.join("\n")}` : ""}`);
+  check(dockFailures.length === 0, `chat dock: top-row buttons at 390x844, 360x640 and 844x390, own and another seat's turn${dockFailures.length ? `\n${dockFailures.join("\n")}` : ""}`);
   for (const [t, viewport] of originalViewports) {
     if (viewport) await t.page.setViewportSize(viewport);
   }
@@ -1523,7 +1523,10 @@ try {
         const points = [...document.querySelectorAll('[data-testid="seat-vp"]')].filter((el) => el.getClientRects().length);
         return { sheet: sheet.top, strip: strip.bottom, clear: !overlap, inside: sheet.left >= 0 && sheet.top >= 0 && sheet.right <= innerWidth && sheet.bottom <= innerHeight, seats: points.length, expected: window.__emberisle.getState().state.players.length, uncovered: points.every((el) => { const b = el.getBoundingClientRect(); const hit = document.elementsFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2).find((e) => e.getAttribute("data-testid") !== "chat-backdrop"); return b.width > 0 && b.height > 0 && !!hit && el.contains(hit); }) };
       });
-      check(w > h ? g.clear && g.inside && g.seats === g.expected && g.uncovered : g.sheet >= g.strip + 56, `phone game ${w}x${h} ${tab} tab: the sheet leaves the seat strip and its bubble band clear ${JSON.stringify(g)}`);
+      if (w > h) check(g.clear && g.inside && g.seats === g.expected && g.uncovered, `phone game ${w}x${h} ${tab} tab: sideways, the sheet stays clear of the seat strip and its bubble band, inside the viewport, with every seat uncovered ${JSON.stringify(g)}`);
+      else {
+      check(g.sheet >= g.strip + 56, `phone game ${w}x${h} ${tab} tab: the sheet (top ${Math.round(g.sheet)}) leaves the seat strip (bottom ${Math.round(g.strip)}) and its bubble band clear`);
+      }
     }
     check((await phone.page.getByRole("button", { name: "Close chat" }).textContent()).trim() === "Close", `phone game ${v.size}: the sheet has a labelled Close`);
   }

@@ -135,14 +135,23 @@ async function run(v, reduced) {
 
   // Roll-off: nothing held; the phone keeps its five zero cards, while desktop keeps its hidden hand.
   assert.equal((await game(page)).phase, "rollOff", `${tag}: starts in the roll-off`);
-  assert.equal(await tiles(page), v.touch ? 5 : 0, `${tag}: roll-off hand tiles`);
-  assert.equal(await page.getByTestId("hand-dock").count(), v.touch ? 1 : 0, `${tag}: roll-off dock`);
-  if (v.touch) await phoneHand();
+  if (v.touch) {
+    assert.equal(await tiles(page), 5, `${tag}: roll-off keeps five phone hand tiles`);
+    assert.equal(await page.getByTestId("hand-dock").count(), 1, `${tag}: roll-off keeps the phone hand dock`);
+    await phoneHand();
+  } else {
+  assert.equal(await tiles(page), 0, `${tag}: roll-off hand tiles`);
+  assert.equal(await page.getByTestId("hand-dock").count(), 0, `${tag}: roll-off dock`);
+  }
   for (let i = 0; i < 40 && (await game(page)).phase === "rollOff"; i++) await act(page, { type: "roll" });
   assert.equal((await game(page)).phase, "setupSettle", `${tag}: roll-off done`);
   await page.waitForTimeout(300);
-  assert.equal(await tiles(page), v.touch ? 5 : 0, `${tag}: first setupSettle hand tiles`);
-  if (v.touch) await phoneHand();
+  if (v.touch) {
+    assert.equal(await tiles(page), 5, `${tag}: first setupSettle keeps five phone hand tiles`);
+    await phoneHand();
+  } else {
+  assert.equal(await tiles(page), 0, `${tag}: first setupSettle hand tiles`);
+  }
   const bare = await bannerBottom(page);
   const isleBare = await island(page);
 
@@ -161,8 +170,12 @@ async function run(v, reduced) {
     const spots = rules.legalSettle(st, me, true);
     const paying = (id) => st.vertices.find((x) => x.id === id).hexes.some((h) => st.hexes.find((x) => x.id === h).terrain !== "waste");
     const vertexId = (second && spots.find(paying)) || spots[0];
-    assert.equal(await tiles(page), v.touch ? 5 : 0, `${tag}: setup step ${st.setupIndex} hand tiles before the outpost`);
-    if (v.touch) await phoneHand();
+    if (v.touch) {
+      assert.equal(await tiles(page), 5, `${tag}: setup step ${st.setupIndex} keeps five phone hand tiles before the outpost`);
+      await phoneHand();
+    } else {
+    assert.equal(await tiles(page), 0, `${tag}: setup step ${st.setupIndex} hand tiles before the outpost`);
+    }
     if (second) {
       const mid = await probe(page, () => act(page, { type: "setupSettle", vertexId }), dockUp);
       shown = { mid, me, held: (await game(page)).players.find((p) => p.id === me) };
@@ -175,7 +188,9 @@ async function run(v, reduced) {
   const full = await bannerBottom(page);
   const dockH = await page.getByTestId("hand-dock").evaluate((e) => e.getBoundingClientRect().height);
   if (v.touch) { assert.equal(full, bare, `${tag}: the dock never shifts when goods arrive`); await phoneHand(); }
-  else assert.ok(bare - full >= dockH * 0.8 && bare - full <= dockH + 10, `${tag}: the hole shrinks by about the hand (${dockH}): ${bare} -> ${full}`);
+  else {
+  assert.ok(bare - full >= dockH * 0.8 && bare - full <= dockH + 10, `${tag}: the hole shrinks by about the hand (${dockH}): ${bare} -> ${full}`);
+  }
   const isleFull = await island(page);
   // #625: the hand overlays the board and the map is fitted to a declared hole, so the hand arriving moves nothing.
   assert.ok(isleBare.bottom === isleFull.bottom && Math.abs(isleBare.min - isleFull.min) <= 1 && Math.abs(isleBare.max - isleFull.max) <= 1, `${tag}: the hole and the island stay put when the hand arrives (${JSON.stringify(isleBare)} -> ${JSON.stringify(isleFull)})`);
@@ -186,7 +201,8 @@ async function run(v, reduced) {
   if (v.touch) {
     assert.equal(m, null, `${tag}: persistent phone hand has no mount animation`);
     assert.deepEqual(await page.getByTestId("hand-dock").evaluate((el) => ({ opacity: getComputedStyle(el).opacity, animations: el.getAnimations().filter((a) => a.animationName?.startsWith("hand-")).length, height: el.getBoundingClientRect().height })), { opacity: "1", animations: 0, height: dockH }, `${tag}: phone hand stays opaque at its full height`);
-  } else if (reduced) assert.ok(m === null || m.duration <= 1, `${tag}: reduced motion makes it instant (${JSON.stringify(m)})`);
+  } else {
+  if (reduced) assert.ok(m === null || m.duration <= 1, `${tag}: reduced motion makes it instant (${JSON.stringify(m)})`);
   else {
     assert.ok(m, `${tag}: the hand rises in with an animation`);
     assert.equal(m.name, "hand-in", `${tag}: animation name`);
@@ -195,6 +211,7 @@ async function run(v, reduced) {
     assert.deepEqual(m.props, ["opacity", "transform"], `${tag}: the keyframes animate opacity and transform only`);
     assert.ok(m.opacity > 0 && m.opacity < 1, `${tag}: midpoint opacity ${m.opacity}`);
     assert.ok(Math.abs(m.h - dockH) <= 1, `${tag}: the hand is already at its full height mid-animation (${m.h} vs ${dockH})`);
+  }
   }
 
   // Spending down to nothing keeps the hand: it is on the table once held.
@@ -220,9 +237,13 @@ async function run(v, reduced) {
     st.seq += 1;
     g.setState({ state: st });
   });
-  if (v.touch) await phoneHand();
-  else await page.waitForFunction(() => !document.querySelector('[data-testid="hand-dock"]'), null, { timeout: STEP_MS });
-  assert.equal(await tiles(page), v.touch ? 5 : 0, `${tag}: a seat that never held a good keeps only the phone's fixed hand`);
+  if (v.touch) {
+    await phoneHand();
+    assert.equal(await tiles(page), 5, `${tag}: a seat that never held a good keeps the phone's five zero cards`);
+  } else {
+  await page.waitForFunction(() => !document.querySelector('[data-testid="hand-dock"]'), null, { timeout: STEP_MS });
+  assert.equal(await tiles(page), 0, `${tag}: a seat that never held a good has no hand`);
+  }
   const isleGone = await island(page);
   assert.ok(isleGone.bottom === isleFull.bottom && Math.abs(isleGone.min - isleFull.min) <= 1 && Math.abs(isleGone.max - isleFull.max) <= 1, `${tag}: the hole and the island stay put when the hand leaves (${JSON.stringify(isleGone)} vs ${JSON.stringify(isleFull)})`);
   await stillFitted(page, tag, "hand left");
@@ -248,9 +269,13 @@ async function run(v, reduced) {
     st.seq += 1;
     g.setState({ state: st });
   });
-  if (v.touch) await phoneHand();
-  else await page.waitForFunction(() => !document.querySelector('[data-testid="hand-dock"]'), null, { timeout: STEP_MS });
-  assert.equal(await tiles(page), v.touch ? 5 : 0, `${tag}: fresh setup preserves only the phone's fixed zero hand`);
+  if (v.touch) {
+    await phoneHand();
+    assert.equal(await tiles(page), 5, `${tag}: fresh setup keeps the phone's five zero cards`);
+  } else {
+  await page.waitForFunction(() => !document.querySelector('[data-testid="hand-dock"]'), null, { timeout: STEP_MS });
+  assert.equal(await tiles(page), 0, `${tag}: a seat that held goods earlier has no hand in a fresh setup with none`);
+  }
 
   // #481 item 7: a +N flash on a tile (pointer-events: none overlays) does not change what the island is fitted to.
   await page.evaluate(() => {

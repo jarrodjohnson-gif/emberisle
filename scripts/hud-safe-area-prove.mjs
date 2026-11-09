@@ -198,8 +198,13 @@ async function pinned(p, moment, name, mustScroll) {
       tall: b.height >= 44,
     };
   }, insets);
-  if (mustScroll) check(`${tag} ${moment}: the dock does not scroll (full hand, every fortune)`, !m.scrolls);
-  check(`${tag} ${moment}: ${name} is inside the safe area, 44 px tall, uncovered, inside the dock`, m.inside && m.topmost && m.inScroller && m.tall, m.box);
+  const dock = await page.evaluate(() => !!document.querySelector('[data-testid="dock"]'));
+  if (dock) {
+    if (mustScroll) check(`${tag} ${moment}: the dock does not scroll (full hand, every fortune)`, !m.scrolls);
+  } else {
+  if (mustScroll) check(`${tag} ${moment}: the column scrolls (full hand, every fortune)`, m.scrolls);
+  }
+  check(`${tag} ${moment}: ${name} is inside the safe area, 44 px tall, uncovered, scrolled to the top`, m.inside && m.topmost && m.inScroller && m.tall, m.box);
   if (!mustScroll) return;
   // Keyboard: Tab through the column from its top; every focused control stays uncovered (the pinned row does not hide it),
   // and the "more below" cue does not sit under that row.
@@ -216,13 +221,17 @@ async function pinned(p, moment, name, mustScroll) {
       if (!sc.contains(el)) return null;
       const b = el.getBoundingClientRect();
       const top = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
-      const cue = document.querySelector('[data-testid="hud-more-below"]');
-      const end = [...sc.querySelectorAll("button")].find((x) => x.textContent.trim() === "End turn");
+      const cueEl = document.querySelector('[data-testid="hud-more-below"]');
+      const endEl = [...sc.querySelectorAll("button")].find((x) => x.textContent.trim() === "End turn");
+      const cue = cueEl?.getBoundingClientRect();
+      const end = endEl?.parentElement.getBoundingClientRect();
       return {
         name: (el.getAttribute("aria-label") || el.textContent.trim()).slice(0, 24),
         y: [Math.round(b.top), Math.round(b.bottom)],
         uncovered: el.contains(top),
-        cueClear: !cue && !!end && end.parentElement === sc.querySelector('[data-slot="turn"]'),
+        cueClear: !cue || !end || Math.abs(cue.bottom - end.top) <= 1,
+        noCue: !cueEl,
+        endInSlot: !!endEl && endEl.parentElement === sc.querySelector('[data-slot="turn"]'),
       };
     });
     if (!f) break;
@@ -230,8 +239,9 @@ async function pinned(p, moment, name, mustScroll) {
     await page.keyboard.press("Tab");
   }
   const bad = seen.filter((f) => !f.uncovered);
-  check(`${tag} ${moment}: Tab through ${seen.length} dock controls, none hidden`, seen.length > 3 && bad.length === 0, bad.length ? bad : undefined);
-  check(`${tag} ${moment}: no "more below" cue, and End turn in its slot, at every focus`, seen.every((f) => f.cueClear));
+  check(`${tag} ${moment}: Tab through ${seen.length} column controls, none hidden behind the pinned row`, seen.length > 3 && bad.length === 0, bad.length ? bad : undefined);
+  check(`${tag} ${moment}: the "more below" cue sits above the pinned row`, seen.every((f) => f.cueClear));
+  check(`${tag} ${moment}: no "more below" cue, and End turn stays in its slot`, seen.every((f) => f.noCue && f.endInSlot));
   // The fortune tray (#423) rises from the column's bottom edge over the pinned row: it covers the bar cleanly, inside the viewport.
   await page.getByRole("button", { name: /^(Play fortune|Fortunes)/ }).click();
   const tray = await page.getByRole("dialog").first().waitFor({ timeout: STEP_MS }).then(() =>

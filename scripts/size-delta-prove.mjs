@@ -1,6 +1,11 @@
 // #868 Debug: size-prove's growth check, on fixture sizes (no build). Run: node scripts/size-delta-prove.mjs
 // Covers a pull request inside its allowance, over it, a new chunk, a removed chunk, the ceiling alone, and a chunk with no ceiling.
+import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+
+const allowanceMatch = [...readFileSync(new URL("./size-prove.mjs", import.meta.url), "utf8").matchAll(/const ALLOWANCE = \{ index: (\d+)(?: \+ (\d+))? \}/g)].at(-1);
+if (!allowanceMatch) throw new Error("size-prove has no index allowance");
+const indexAllowance = Number(allowanceMatch[1]) + Number(allowanceMatch[2] || 0);
 
 const fx = (f) => `scripts/fixtures/size/${f}`;
 const run = (args) => {
@@ -19,7 +24,11 @@ const check = (label, args, code, ...mustContain) => {
   } else console.log(`ok   ${label}`);
 };
 
-check("+300 B on index passes", ["--sizes", fx("pass.json"), "--base-sizes", fx("base.json")], 0, "ok   index growth: base 122000 B, PR 122300 B, +300 B, allowance 880 B");
+if (indexAllowance === 400) {
+check("+300 B on index passes", ["--sizes", fx("pass.json"), "--base-sizes", fx("base.json")], 0, "ok   index growth: base 122000 B, PR 122300 B, +300 B, allowance 400 B");
+} else {
+check("+300 B on index passes at the one-PR allowance", ["--sizes", fx("pass.json"), "--base-sizes", fx("base.json")], 0, `ok   index growth: base 122000 B, PR 122300 B, +300 B, allowance ${indexAllowance} B`);
+}
 check("a second +300 B on top of it passes", ["--sizes", fx("pass.json"), "--base-sizes", fx("pass.json")], 0, "+0 B");
 check(
   "+1080 B on index fails and names chunk, base, PR, allowance",

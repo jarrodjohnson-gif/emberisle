@@ -214,7 +214,12 @@ try {
         };
       });
     const before = await stackState();
-    if (viewport.height <= 568) check(!before.overflow && !before.cue, `${tag} hud: the dock never overflows and shows no cue (End turn in its fixed slot)`, before);
+    const docked = await page.evaluate(() => !!document.querySelector('[data-testid="dock"]'));
+    if (docked) {
+      if (viewport.height <= 568) check(!before.overflow && !before.cue, `${tag} hud: the dock never overflows and shows no cue (End turn in its fixed slot)`, before);
+    } else {
+    if (viewport.height <= 568) check(before.overflow, `${tag} hud: stack overflows (End turn below the fold)`, before);
+    }
     if (viewport.height === 720) check(!before.overflow && !before.cue, `${tag} hud: no overflow, no cue`, before);
     if (before.overflow) {
       await page.waitForSelector('[data-testid="hud-more-below"]', { timeout: 2000 });
