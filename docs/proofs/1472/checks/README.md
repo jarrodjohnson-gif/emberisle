@@ -1,0 +1,3 @@
+Frozen source cb35b9bf59b629e29bd41f2b7a0da6100900fc69, Node22.23.4 and repository-pinned browser tooling. Browser proofs serial under /tmp/emberisle-team-browser.lock.
+
+PASS: eight-viewport lobby-layout on padding source, lobby-code-copy, connection-health, lobby-wait-box, client. FAIL: chat unchanged mute/unmute fire reaction wait1500ms; install table-code timeout with WebSocket localhost8787 refused after connection-health in-process dist build. These failures remain unresolved; no passing retry is claimed as a fix. Canonical chat comparison and clean production artifact install check are pending. Initial320px label overflow retained; padding8 layout passes. Narrow-landscape Question6738972238 remains unanswered. No deadlines/assertions/budgets changed.

@@ -1,0 +1,18 @@
+
+> install-prove
+> node scripts/install-prove.mjs
+
+ok   host: meta tags, manifest (start_url http://127.0.0.1:40239/, scope http://127.0.0.1:40239/) and 4 icons
+ok   vite preview: meta tags, manifest (start_url http://127.0.0.1:8110/, scope http://127.0.0.1:8110/) and 4 icons
+ok   390x844: Play and the title card inside the safe area; the page cannot scroll or bounce
+FAIL locator.textContent: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByTestId('table-code')[22m
+
+390x844: WebSocket connection to 'ws://127.0.0.1:8787/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+390x844: WebSocket connection to 'ws://127.0.0.1:8787/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+390x844: WebSocket connection to 'ws://127.0.0.1:8787/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+390x844: WebSocket connection to 'ws://127.0.0.1:8787/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+390x844: WebSocket connection to 'ws://127.0.0.1:8787/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+390x844: WebSocket connection to 'ws://127.0.0.1:8787/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+390x844: WebSocket connection to 'ws://127.0.0.1:8787/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED

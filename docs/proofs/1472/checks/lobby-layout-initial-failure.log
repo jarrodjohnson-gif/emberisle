@@ -1,0 +1,30 @@
+
+> lobby-layout-prove
+> node scripts/lobby-layout-prove.mjs
+
+390x844: valid codes fully visible; code/Copied, 44px targets, 8px padding, focus and responsive fits passed
+390x844 DejaVu Sans: valid codes fully visible; code/Copied, 44px targets, 8px padding, focus and responsive fits passed
+390x844: chat 52.31%; two columns; 44px targets / 8px gaps; no card/people scroll; copy/rules/target/chat/reaction/ready/start passed
+667x375: card clears the safe area (top, right, bottom, left)
+844x390: chat 48.17%; two columns; 44px targets / 8px gaps; no card/people scroll; copy/rules/target/chat/reaction/ready/start passed
+1280x720: card clears the safe area (top, bottom, left)
+1280x720: chat 41.57%; two columns; 44px targets / 8px gaps; no card/people scroll; copy/rules/target/chat/reaction/ready/start passed
+375x667: valid codes fully visible; code/Copied, 44px targets, 8px padding, focus and responsive fits passed
+375x667: rename button tappable; bubbles clear of the name and status
+390x640: rename button tappable; bubbles clear of the name and status
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: 320x568: How to play fits its row on one line: {"lines":1,"lineHeight":20,"textHeight":20,"inside":false,"scroll":true}
+    at howToPlayFits (file:///workspace/work/1472/scripts/lobby-layout-prove.mjs:319:10)
+    at async file:///workspace/work/1472/scripts/lobby-layout-prove.mjs:444:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.4
