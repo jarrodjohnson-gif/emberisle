@@ -2,7 +2,7 @@
 
 **Mock and audit only. No game code changes.** Author: Fable 5.1, 2026-11-09. Measured on `main` at `2f0c2932` (a docs-only PR; later merges do not change these numbers).
 
-On Desk Decisions card `q1430-wasted-space` the owner chose D, "something else", on 2026-11-09 at 04:03 UTC. The note said: "The top seems really far to reach." The code placement comes from card `q1430-code-placement`, owner answer C (underlined text code), 2026-11-08. His players hold a phone upright, or an iPad upright. One hand holds the phone, and the thumb does the tapping. Today the code, the view row and the seat buttons sit at the top. That is a long stretch. This mock measures the stretch and shows three ways to shorten it. After this mock the owner chose D again on card `q1470-lobby-reach`, 2026-11-09 at 04:23 UTC: "Chat stays in middle, names stay up top since you don't click on em". The desk reads that as option A.
+On Desk Decisions card `q1430-wasted-space` the owner chose D, "something else", on 2026-11-09 at 04:03 UTC. The note said: "The top seems really far to reach." The code placement comes from card `q1430-code-placement`. There the owner chose C, the underlined text code, on 2026-11-08. His players hold a phone upright, or an iPad upright. One hand holds the phone, and the thumb does the tapping. Today the code, the view row and the seat buttons sit at the top. That is a long stretch. This mock measures the stretch and shows three ways to shorten it. The owner then chose D on card `q1470-lobby-reach`, 2026-11-09 at 04:23 UTC. The note said: "Chat stays in middle, names stay up top since you don't click on em". The desk reads that as option A.
 
 ## What stands
 
@@ -84,7 +84,7 @@ Single pictures: `today-`, `a-`, `b-` and `c-<size>.png`, plus `<state>-start-39
 
 Rows, top to bottom: header (code and status), seats, chat, view row, summary with Win at, Ready and Start.
 
-- The view row (Table, Play games, Rules) moves from 719 px to 133 px from the bottom at 390 x 844. That takes it from hard to easy at every upright size.
+- The view row (Table, Play games, Rules) moves from 719 px to 133 px up from the bottom edge. That is at 390 x 844. That takes it from hard to easy at every upright size.
 - The chat input moves up 52 px, to 194 px from the bottom. It stays in the easy band at every upright size.
 - Add bot stays at the top, 655 px from the bottom at 390. It moves up 52 px, because the view row left row 2.
 - Start stays on the bottom edge, as today. Every player already knows where Ready and Start are.
