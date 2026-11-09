@@ -1,0 +1,10 @@
+file:///workspace/work/1493/scripts/connection-health-prove.mjs:71
+      const deadline = setTimeout(() => reject(Error("host startup timeout")), 10000);
+                                               ^
+
+Error: host startup timeout
+    at Timeout._onTimeout (file:///workspace/work/1493/scripts/connection-health-prove.mjs:71:48)
+    at listOnTimeout (node:internal/timers:585:17)
+    at process.processTimers (node:internal/timers:521:7)
+
+Node.js v22.23.4

@@ -1,0 +1,2 @@
+{"control":"original exact API sequence, blank page; no intervening evaluation","failures":0,"trials":20}
+{"control":"direct pause exact API sequence, blank page","passes":20,"trials":20}
