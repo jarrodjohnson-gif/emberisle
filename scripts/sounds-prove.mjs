@@ -723,7 +723,7 @@ try {
     };
     return { joined, renamed, rejoined: window.__plays.map((x) => x.file), debug };
   });
-  assert.deepEqual(bell.joined, ["lucke_diggler.mp3"], `a new matching lobby seat rings once (debug: ${JSON.stringify(bell.debug)})`);
+  assert.deepEqual(bell.joined, ["lucke_diggler.mp3"], "a new matching lobby seat rings once");
   assert.deepEqual(bell.renamed, ["lucke_diggler.mp3"], "a lobby rename to a matching name rings once");
   assert.deepEqual(bell.rejoined, [], "the same matching seats on a later seats update do not ring again");
   ok("Isaac's bell rings for a new matching seat and lobby rename, not a repeated seat update");
