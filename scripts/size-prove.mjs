@@ -78,6 +78,9 @@ const CEILINGS = [
   { name: "eye-off", gzipBytes: 310 },
   // #767, 2026-11-07: the Profile sheet's Wins and Your games views; measured 2,248 B. New chunk, per q-size-standing.
   { name: "ProfileRecords", gzipBytes: 2350 },
+  // #1437, 2026-11-09: the Profile sheet's recovery code screens (Save your recovery code, Forgot your PIN, New recovery
+  // code, the sign-in link and the summary row); measured 3,028 B gzip. New chunk only; proposed, the desk sets this ceiling.
+  { name: "ProfileRecovery", gzipBytes: 3200 },
   // #1281, 2026-11-07: startup loading screen, preloaded beside index; measured 2,420 B gzip. Decided per q-size-standing; paired trim to follow.
   { name: "LoadingScreen", gzipBytes: 2600 },
   // #669, 2026-11-07: the Sound panel in the Table menu, loaded as the menu opens; measured 1,872 B gzip. New chunk only; the owner must OK this ceiling.
