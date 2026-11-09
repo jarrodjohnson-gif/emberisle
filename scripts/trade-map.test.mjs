@@ -1,7 +1,7 @@
 // #536: browser proof of exact trade previews, live hands, directional motion, and one-step settlement.
 // Run: CHROMIUM_PATH=/usr/bin/chromium node --import ./server/register.mjs scripts/trade-map.test.mjs
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { createGame } from "../src/lib/game/board.ts";
@@ -27,7 +27,6 @@ for (const r of RESOURCES) base.bank[r] = 19 - base.players.reduce((n, p) => n +
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];

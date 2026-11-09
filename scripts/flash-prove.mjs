@@ -4,7 +4,6 @@
 // and whose resource a hand actually gained (read from the hand diff, not from the renderer's own rule). The rng is searched with
 // the rules' own applyAction so a roll can be steered into a bank-short roll and a wayfarer-blocked one. Negatives: a state that
 // already has dice, met on first load or after a jump of several seqs, never flashes. Under reduced motion the glow is a step.
-import { existsSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -18,7 +17,6 @@ await vite.listen();
 const errors = [];
 let code = 0;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 

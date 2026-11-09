@@ -6,7 +6,7 @@
 // #410: with the bank out of ore, the fortune tray's ore chip is greyed out (aria-disabled, described) and it cannot be picked (#423).
 // #430: while p2 owes that discard on p0's turn the banner reads "{p2} — discard 4", not "{p2}'s turn", and p0's turn after.
 // #412: a pick the bank empties while the tray is open is dropped and Play waits; an empty bank turns Plenty off.
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { rollOffOrderOk } from "./roll-off-oracle.mjs";
@@ -21,7 +21,6 @@ await vite.listen();
 const errors = [];
 let code = 0;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 try {
