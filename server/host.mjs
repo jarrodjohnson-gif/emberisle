@@ -477,11 +477,49 @@ function savedRoster(saved) {
   }
 }
 
+function alive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    return e.code === "EPERM";
+  }
+}
+
+// Remove orphan temp files left by an earlier process before reconciliation, redaction or listening (#1474).
+function sweepOrphans() {
+  let swept = 0;
+  for (const dir of [ROOMS, RESULTS, PROFILES]) {
+    let list;
+    try {
+      list = readdirSync(dir);
+    } catch {
+      continue;
+    }
+    for (const name of list) {
+      if (!name.endsWith(".tmp")) continue;
+      const m = name.match(/\.(\d+)\.[0-9a-zA-Z]+\.tmp$/);
+      if (m) {
+        const pid = Number(m[1]);
+        if (pid === process.pid || alive(pid)) continue;
+      }
+      try {
+        rmSync(path.join(dir, name), { force: true });
+        swept++;
+      } catch (err) {
+        console.error(`cannot remove orphan ${name}: ${err.message}`);
+      }
+    }
+  }
+  if (swept) console.log(`storage: swept ${swept} orphan temp file(s)`);
+}
+
 // Rebuild every saved room. Nobody is connected yet, so each seat is held as if it had just dropped.
 // Startup reconciliation (#889) comes first for each file, before expiry, any shape check, play or listen: a terminal room
 // whose pending outcome never reached disk gets one now, frozen from that snapshot, and a nonterminal room for a game that
 // already finished is fenced from play and kept aside for repair. A failed repair write stops the host before it listens.
 async function load() {
+  sweepOrphans();
   let names;
   try {
     names = readdirSync(ROOMS);

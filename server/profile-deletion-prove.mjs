@@ -306,6 +306,8 @@ try {
   });
 
   await scenario("startup redaction is interrupted at each durable boundary and completes before listening", async () => {
+    const planted = path.join(d.results, ".x.json.123.abc.tmp");
+    writeFileSync(planted, JSON.stringify({ tombstoned: A.id }));
     const files = () => [readFileSync(pendingFile(d, PEND), "utf8"), ...["DONE", "PEND", "LIVE"].map((c) => readFileSync(roomFile(d, c), "utf8"))];
     const before = files();
     let h = start(d, { RESULT_FAULT: "redact-before:exit" });
@@ -333,7 +335,17 @@ try {
     assert.deepEqual([s.records[P.Brook.id].games, s.records[P.Brook.id].wins], [2, 2], "the other player is credited");
     assert.deepEqual(s.records[P.Cove.id], was.records[P.Cove.id]);
     assert(!Object.hasOwn(s.records, A.id), "the deleted profile gained no result");
+    assert(!existsSync(planted), "a planted .x.json.123.abc.tmp holding a tombstoned uuid is removed at startup");
     const text = rowsText(d);
+    for (const x of [A.id, "Ashling", A.login, A.catchphrase]) {
+      if (text.includes(x)) {
+        for (const dir of [d.rooms, d.results, d.profiles]) {
+          for (const f of existsSync(dir) ? readdirSync(dir) : []) {
+            if (readFileSync(path.join(dir, f), "utf8").includes(x)) console.error(`match ${x} in ${path.join(dir, f)}`);
+          }
+        }
+      }
+    }
     for (const x of [A.id, "Ashling", A.login, A.catchphrase]) assert(!text.includes(x), `no stored, pending or frozen row carries ${x}`);
   });
 
@@ -406,6 +418,15 @@ try {
     assert(!Object.hasOwn(s.profiles, A.id) && !Object.hasOwn(s.records, A.id) && !Object.hasOwn(s.logins, A.login), "the deleted profile did not return");
     assert(!readFileSync(roomFile(d, "LIVE") + ".fenced", "utf8").includes(A.id), "the fenced snapshot was redacted before it was set aside");
     const text = rowsText(d);
+    for (const x of [A.id, "Ashling"]) {
+      if (text.includes(x)) {
+        for (const dir of [d.rooms, d.results, d.profiles]) {
+          for (const f of existsSync(dir) ? readdirSync(dir) : []) {
+            if (readFileSync(path.join(dir, f), "utf8").includes(x)) console.error(`match ${x} in ${path.join(dir, f)}`);
+          }
+        }
+      }
+    }
     for (const x of [A.id, "Ashling"]) assert(!text.includes(x), `no row carries ${x} after the replay`);
     assert.equal(Object.values(s.profiles).filter((p) => p.mediaKey !== null).length, 0, "no profile inherited the media binding");
   });
@@ -473,6 +494,8 @@ try {
     await h.stop();
     assert(!existsSync(roomFile(d, "FENC")) && !existsSync(roomFile(d, "OLDF")));
     assert.deepEqual(kept.map((f) => readFileSync(f, "utf8")), after, "nothing changed on the third start");
+    const tmps = [d.rooms, d.results, d.profiles].flatMap((dir) => (existsSync(dir) ? readdirSync(dir).filter((n) => n.endsWith(".tmp")) : []));
+    assert.deepEqual(tmps, [], "after the final start the three folders hold no hidden .tmp file");
   });
 
   await scenario("on the store: interrupted, repeated and stale deletions", async () => {
