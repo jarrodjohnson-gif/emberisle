@@ -134,7 +134,7 @@ try {
   await ember.waitForFunction(() => window.__emberisle.getState().seats.length === 3);
 
   // The shelf: a table-mate is there, so the tile says so; the picker lists people only, never the bot.
-  await ember.getByRole("button", { name: "Play games" }).click();
+  await ember.getByRole("tab", { name: "Play games" }).click();
   await tile(ember).waitFor();
   assert.equal(await line(ember).textContent(), "With a table-mate");
   await tile(ember).getByRole("button", { name: "Play", exact: true }).click();
@@ -149,12 +149,12 @@ try {
   console.log("ok  1280x720: the tile names a table-mate, the picker lists Tide only, and the invite waits");
 
   // Tide's tab carries the badge; no popup opens. Tide takes the invite and both boards open.
-  await tide.getByRole("button", { name: "Play games, 1 invite" }).waitFor();
+  await tide.getByRole("tab", { name: "Play games, 1 invite" }).waitFor();
   assert.equal(await tide.locator(".lb").textContent(), "1");
   assert.equal(await tide.getByTestId("ttt").count(), 0, "an invite never opens a board by itself");
   await contrast(tide, "badge 390");
   await tide.screenshot({ path: `${out}/390x844-badge.png` });
-  await tide.getByRole("button", { name: "Play games, 1 invite" }).click();
+  await tide.getByRole("tab", { name: "Play games, 1 invite" }).click();
   assert.equal(await line(tide).textContent(), "Ember wants to play");
   await contrast(tide, "invited 390");
   await tide.screenshot({ path: `${out}/390x844-invited.png` });
