@@ -233,6 +233,7 @@ try {
   await sheet(one).getByText("Signed in as").waitFor();
 
   // #1477: the signed-in summary has one visible close control; Escape remains available.
+  mkdirSync("test-results", { recursive: true });
   for (const [width, height] of [[390, 844], [1280, 720]]) {
     await one.setViewportSize({ width, height });
     const close = sheet(one).getByRole("button", { name: "Close", exact: true });
@@ -240,9 +241,10 @@ try {
     assert.equal(await close.isVisible(), true, `${width}x${height}: Close is visible`);
     assert.equal(await sheet(one).getByRole("button", { name: "Done", exact: true }).count(), 0, "the signed-in summary has no duplicate Done");
     assert.equal(await sheet(one).getByRole("button", { name: "Continue as guest", exact: true }).count(), 0, "Continue as guest stays on the signed-out view");
+    await one.screenshot({ path: `test-results/profile-single-close-${width}x${height}.png` });
     if (width === 390) await close.click(); else await one.keyboard.press("Escape");
     await sheet(one).waitFor({ state: "hidden" });
-    await one.waitForFunction(() => document.activeElement?.textContent.trim() === "Profile");
+    await one.waitForFunction(el => document.activeElement === el, await one.getByRole("button", { name: "Profile", exact: true }).elementHandle());
     assert.equal(await one.getByRole("button", { name: "Profile", exact: true }).evaluate(el => document.activeElement === el), true, "close returns focus to Profile");
     await openSheet(one);
     await sheet(one).getByText("Signed in as").waitFor();
