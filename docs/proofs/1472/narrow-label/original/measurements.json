@@ -1,0 +1,190 @@
+[
+  {
+    "tag": "320x568",
+    "before": {
+      "button": {
+        "left": 174.484375,
+        "right": 297.046875,
+        "width": 122.5625
+      },
+      "row": {
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "padding": [
+        "16px",
+        "16px"
+      ],
+      "lines": 1,
+      "text": {
+        "left": 191.484375,
+        "right": 280.046875
+      },
+      "fits": false
+    },
+    "padding8": {
+      "button": {
+        "left": 174.484375,
+        "right": 281.046875,
+        "width": 106.5625
+      },
+      "row": {
+        "left": 25,
+        "right": 295,
+        "width": 270
+      },
+      "padding": [
+        "8px",
+        "8px"
+      ],
+      "lines": 1,
+      "text": {
+        "left": 183.484375,
+        "right": 272.046875
+      },
+      "fits": true
+    }
+  },
+  {
+    "tag": "667x375",
+    "before": {
+      "button": {
+        "left": 166.484375,
+        "right": 289.046875,
+        "width": 122.5625
+      },
+      "row": {
+        "left": 17,
+        "right": 279.5,
+        "width": 262.5
+      },
+      "padding": [
+        "16px",
+        "16px"
+      ],
+      "lines": 1,
+      "text": {
+        "left": 183.484375,
+        "right": 272.046875
+      },
+      "fits": false
+    },
+    "padding8": {
+      "button": {
+        "left": 166.484375,
+        "right": 273.046875,
+        "width": 106.5625
+      },
+      "row": {
+        "left": 17,
+        "right": 279.5,
+        "width": 262.5
+      },
+      "padding": [
+        "8px",
+        "8px"
+      ],
+      "lines": 1,
+      "text": {
+        "left": 175.484375,
+        "right": 264.046875
+      },
+      "fits": true
+    }
+  },
+  {
+    "tag": "667x375-insets",
+    "before": {
+      "button": {
+        "left": 205.484375,
+        "right": 328.046875,
+        "width": 122.5625
+      },
+      "row": {
+        "left": 56,
+        "right": 285.734375,
+        "width": 229.734375
+      },
+      "padding": [
+        "16px",
+        "16px"
+      ],
+      "lines": 1,
+      "text": {
+        "left": 222.484375,
+        "right": 311.046875
+      },
+      "fits": false
+    },
+    "padding8": {
+      "button": {
+        "left": 205.484375,
+        "right": 312.046875,
+        "width": 106.5625
+      },
+      "row": {
+        "left": 56,
+        "right": 285.734375,
+        "width": 229.734375
+      },
+      "padding": [
+        "8px",
+        "8px"
+      ],
+      "lines": 1,
+      "text": {
+        "left": 214.484375,
+        "right": 303.046875
+      },
+      "fits": false
+    }
+  },
+  {
+    "tag": "844x390",
+    "before": {
+      "button": {
+        "left": 174.484375,
+        "right": 297.046875,
+        "width": 122.5625
+      },
+      "row": {
+        "left": 25,
+        "right": 316.75,
+        "width": 291.75
+      },
+      "padding": [
+        "16px",
+        "16px"
+      ],
+      "lines": 1,
+      "text": {
+        "left": 191.484375,
+        "right": 280.046875
+      },
+      "fits": true
+    },
+    "padding8": {
+      "button": {
+        "left": 174.484375,
+        "right": 281.046875,
+        "width": 106.5625
+      },
+      "row": {
+        "left": 25,
+        "right": 316.75,
+        "width": 291.75
+      },
+      "padding": [
+        "8px",
+        "8px"
+      ],
+      "lines": 1,
+      "text": {
+        "left": 183.484375,
+        "right": 272.046875
+      },
+      "fits": true
+    }
+  }
+]
