@@ -310,7 +310,7 @@ try {
   await phone.getByRole("button", { name: "Ready", exact: true }).click();
   assert.equal(await ruffleCount(phone), 1, "Ready does not close the phone game");
   await phone.screenshot({ path: `${out}/390x844.png` });
-  await phone.getByRole("button", { name: "Leave the table" }).click();
+  await phone.getByRole("button", { name: "Leave table" }).click();
   await phone.getByTestId("title-card").waitFor();
   assert.equal(await ruffleCount(phone), 0, "leaving removes the player");
   await phone.context().close();
