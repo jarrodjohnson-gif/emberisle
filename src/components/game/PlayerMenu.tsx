@@ -91,13 +91,13 @@ export function PlayerMenu({ player: p, className, sheet }: { player: PlayerStat
 
   // #443: your own fortunes by kind and a dropped seat's state are facts here, one tap from the seat line.
   const facts: [string, number | string][] = [
-    ["Cards in hand", cards(p)],
-    ["Fortunes held", p.fortunes ?? hiddenCount(p)],
-    ["Points shown", publicVP(state, p.id)],
+    ["Goods", cards(p)],
+    ["Fortunes", p.fortunes ?? hiddenCount(p)],
+    ["Points", publicVP(state, p.id)],
     ["Wayfarers played", p.knightsPlayed],
   ];
   if (own && hiddenCount(p) > 0) facts.push(["Your fortunes", fortuneBreakdown(p)]);
-  if (seatAway(seats, p)) facts.push(["Connection", "reconnecting…"]);
+  if (seatAway(seats, p)) facts.push(["Connection", "Away"]);
 
   return (
     <div
@@ -162,7 +162,7 @@ export function PlayerMenu({ player: p, className, sheet }: { player: PlayerStat
             close();
           }}
         >
-          <Landmark className="size-4 shrink-0 text-zinc-600" /> Trade with the bank or a dock…
+          <Landmark className="size-4 shrink-0 text-zinc-600" /> Trade…
         </button>
       ) : null}
       {!own && online && myMain ? (
@@ -174,7 +174,7 @@ export function PlayerMenu({ player: p, className, sheet }: { player: PlayerStat
             close();
           }}
         >
-          <Handshake className="size-4 shrink-0 text-zinc-600" /> Offer a trade…
+          <Handshake className="size-4 shrink-0 text-zinc-600" /> Trade…
         </button>
       ) : null}
       {!own && online ? (
@@ -188,7 +188,7 @@ export function PlayerMenu({ player: p, className, sheet }: { player: PlayerStat
             close();
           }}
         >
-          <AtSign className="size-4 shrink-0 text-zinc-600" /> Mention @{p.name} in chat
+          <AtSign className="size-4 shrink-0 text-zinc-600" /> Mention @{p.name}
         </button>
       ) : null}
       {own && online ? (

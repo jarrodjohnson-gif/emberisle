@@ -17,6 +17,8 @@ export interface Seat {
   bot?: boolean;
   player?: string | null;
   needs?: Resource[];
+  // #1411: the player said they want another game. Only once a game is over; the next game clears it.
+  again?: boolean;
 }
 
 // What a peek answers (G10): enough to dim taken swatches, no names or pictures.
@@ -163,6 +165,8 @@ export interface TableClient {
   removeBot(id: string): void;
   // A rematch at the same table (#266). Host only, once the game is over.
   again(): void;
+  // #1411: say "I'll play again" (or take it back) on the results screen. It never starts the next game.
+  wantAgain(value: boolean): void;
   act(action: Action): boolean;
   // Ask-the-table trades are host-run (not rules Actions): offer `give` for `want` to every other seat, and answer one.
   ask(give: Bag, want: Bag): void;
@@ -473,6 +477,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     addBot: () => send({ type: "addBot" }),
     removeBot: (id) => send({ type: "removeBot", id }),
     again: () => send({ type: "again" }),
+    wantAgain: (value) => send({ type: "wantAgain", value }),
     act: (action) => {
       const i = toIntent(action);
       return i ? act(i) : false;

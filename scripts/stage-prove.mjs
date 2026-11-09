@@ -1,6 +1,5 @@
 // Real useStage hook in a React/DOM fixture matching #1096's observed phone geometry.
 // Sample the first RAF after shell refits; no timer or retry can hide stale placement.
-import { existsSync } from 'node:fs';
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from 'vite';
 
@@ -49,8 +48,7 @@ function check(ok, label, data) {
 }
 try {
   await vite.listen();
-  browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ||
-    (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined) });
+  browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('http://127.0.0.1:' + PORT + '/stage-probe');

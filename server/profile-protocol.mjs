@@ -3,8 +3,9 @@
 import { allow } from "./chat.mjs";
 import { ProfileError, publicCard, seatView } from "./profiles.mjs";
 
-export const CAPS = ["profilesV1"];
-export const PROFILE_TYPES = new Set(["profileHello", "profileCreate", "profileLogin", "profileResume", "profileLogout", "profileEdit", "profileChangePin", "profileRecord", "profileHistory", "profileWins"]);
+// recoveryV1 (#1437): profileRecover and profileNewCode. Profile frames are versioned by caps, never by PROTO.
+export const CAPS = ["profilesV1", "recoveryV1"];
+export const PROFILE_TYPES = new Set(["profileHello", "profileCreate", "profileLogin", "profileResume", "profileLogout", "profileEdit", "profileChangePin", "profileRecord", "profileHistory", "profileWins", "profileRecover", "profileNewCode"]);
 
 // What a refused request says. Sign-in failures share one message: a wrong PIN, an unknown login and a spent budget look alike.
 const MESSAGES = {
@@ -22,10 +23,14 @@ const MESSAGES = {
   pinLocked: "PIN changes are locked. Contact the host for a verified local reset.",
   mustChangePin: "Change your PIN before continuing.",
   notFound: "Profile not found.",
+  // A wrong code, an unknown or former login, a profile with no code, a spent budget and a locked code all read alike.
+  recoverFailed: "Couldn't use that code. Check your login and code, or try again later.",
 };
 
 const AUTH_PER_MIN = 20;
 const CREATE_PER_HOUR = 3;
+// Recovery code tries per address (#1437), right or wrong, inside the 20 a minute. In memory only, like the others.
+const RECOVER_PER_HOUR = 5;
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
 const IDLE_MS = 10 * 60 * 1000;
@@ -96,12 +101,16 @@ function session(id, out, withCredential) {
   // pinMustChange is omitted when false to keep the stable profile projection for existing clients.
   if (p.pinMustChange) msg.profile.pinMustChange = true;
   if (withCredential) msg.credential = out.token;
+  // #1437: beside `profile`, not in it. The code itself rides only on the reply that made it.
+  msg.recoverySetAt = out.recoverySetAt ?? null;
+  if (typeof out.recoveryCode === "string") msg.recoveryCode = out.recoveryCode;
   return msg;
 }
 
 export function profileHandler(store, send) {
   const authOk = windowed(AUTH_PER_MIN, MINUTE);
   const createOk = windowed(CREATE_PER_HOUR, HOUR);
+  const recoverOk = windowed(RECOVER_PER_HOUR, HOUR);
   const refuse = (ws, id, code) => send(ws, { type: "profileError", id, code, message: MESSAGES[code] ?? MESSAGES.unavailable });
 
   async function run(ws, msg, id) {
@@ -124,8 +133,16 @@ export function profileHandler(store, send) {
         color: msg.color,
         backupColor: msg.backupColor,
         catchphrase: msg.catchphrase,
-      });
+      }, { recovery: true });
       return send(ws, session(id, out, true));
+    }
+    if (msg.type === "profileRecover") {
+      if (!recoverOk(ws.ipKey, now)) return refuse(ws, id, "slowDown");
+      return send(ws, session(id, await store.recover(msg.login, msg.code, msg.newPin, msg.newPinConfirm), true));
+    }
+    if (msg.type === "profileNewCode") {
+      const out = await store.newRecoveryCode(msg.credential, msg.pin);
+      return send(ws, { type: "profileRecoveryCode", id, code: out.code, setAt: out.setAt });
     }
     if (msg.type === "profileLogin") return send(ws, session(id, await store.login(msg.login, msg.pin), true));
     if (msg.type === "profileResume") return send(ws, session(id, store.resume(msg.credential), false));

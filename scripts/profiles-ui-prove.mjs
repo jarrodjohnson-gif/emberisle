@@ -12,7 +12,7 @@
 // Run: npm run profiles-ui-prove
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { createServer as httpServer } from "node:http";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -101,7 +101,6 @@ try {
   const A = `${wss}/a`, B = `${wss}/b`;
   const at = (hostUrl) => `${origin}/?host=${encodeURIComponent(hostUrl)}`;
   browser = await chromium.launch({
-    executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
     args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
   });
   const errors = [];
@@ -128,6 +127,11 @@ try {
     await sheet(page).waitFor();
   };
   const wire = (page) => page.evaluate(() => window.__wire);
+  // #1437: Create, and the change of a temporary PIN, first show "Save your recovery code": tick "I've written it down", press Done.
+  const saveCode = async (page) => {
+    await sheet(page).getByLabel("I've written it down").check();
+    await sheet(page).getByRole("button", { name: "Done" }).click();
+  };
 
   // Layout, focus and guest controls at the five sizes.
   const sizes = [
@@ -225,6 +229,7 @@ try {
   await sheet(one).getByLabel("Confirm PIN").fill("4821");
   await sheet(one).getByRole("radio", { name: "Tide" }).click();
   await sheet(one).getByRole("button", { name: "Create profile" }).last().click();
+  await saveCode(one);
   await sheet(one).getByText("Signed in as").waitFor();
   assert.match(await sheet(one).innerText(), /Remembered on this device/);
   const session = (await wire(one)).map((f) => ({ ...f, m: JSON.parse(f.raw) })).find((f) => f.m.type === "profileSession");
@@ -251,7 +256,7 @@ try {
   await openSheet(two);
   await sheet(two).getByLabel("Login").fill("ember-user");
   await sheet(two).getByLabel("PIN", { exact: true }).fill("0000");
-  await sheet(two).getByLabel("Remember me on this device").uncheck();
+  await sheet(two).getByLabel("Remember me").uncheck();
   await sheet(two).getByRole("button", { name: "Sign in", exact: true }).click();
   await sheet(two).getByRole("alert").filter({ hasText: "Couldn't sign in" }).waitFor();
   await sheet(two).getByLabel("PIN", { exact: true }).fill("4821");
@@ -320,6 +325,7 @@ try {
   await sheet(blocked).getByLabel("PIN", { exact: true }).fill("7390");
   await sheet(blocked).getByLabel("Confirm PIN").fill("7390");
   await sheet(blocked).getByRole("button", { name: "Create profile" }).last().click();
+  await saveCode(blocked);
   await sheet(blocked).getByText("Not remembered on this device.").waitFor();
   await sheet(blocked).getByRole("button", { name: "Done" }).click();
   assert.ok(await blocked.getByRole("button", { name: "Play", exact: true }).isEnabled());
@@ -386,6 +392,7 @@ try {
   // Blocked before signing in: the sheet prefetches the forms once signed in, and that quiet prefetch fails too.
   await coral.route(/ProfileForms\.tsx/, (route) => route.abort("connectionrefused"));
   await sheet(coral).getByRole("button", { name: "Create profile" }).last().click();
+  await saveCode(coral);
   await sheet(coral).getByText("Signed in as").waitFor();
   await shots(coral, "signed-in-edit-buttons");
   await coral.setViewportSize({ width: 440, height: 956 });
@@ -446,7 +453,7 @@ try {
   await openSheet(kelpie);
   await sheet(kelpie).getByLabel("Login").fill("coral-user");
   await sheet(kelpie).getByLabel("PIN", { exact: true }).fill("2468");
-  await sheet(kelpie).getByLabel("Remember me on this device").uncheck();
+  await sheet(kelpie).getByLabel("Remember me").uncheck();
   await sheet(kelpie).getByRole("button", { name: "Sign in", exact: true }).click();
   await sheet(kelpie).getByRole("alert").filter({ hasText: "Couldn't sign in" }).waitFor();
   await sheet(kelpie).getByLabel("Login").fill("reef-user");
@@ -546,6 +553,7 @@ try {
   await forced.getByLabel("New PIN", { exact: true }).fill("8080");
   await forced.getByLabel("Confirm new PIN").fill("8080");
   await forced.getByRole("button", { name: "Save PIN" }).click();
+  await saveCode(kelp);
   await sheet(kelp).getByText("Signed in as Kelp").waitFor();
   assert.ok(await kelp.evaluate((host) => window.__emberisle.getState().profile.credentialForHost(host), C), "after the change a table gets the credential");
   await sheet(kelp).getByRole("button", { name: "Done" }).click();

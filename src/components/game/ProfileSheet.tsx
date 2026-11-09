@@ -5,14 +5,19 @@
 // #766 second slice: signed in, the player edits the profile's text and colours and changes the PIN. A login change and a
 // PIN change ask for the current PIN; a temporary PIN from a local reset must be changed before anything else. The two
 // forms live in their own chunk (ProfileForms), loaded when one opens; this sheet keeps the state and the requests.
+// #1437: the recovery code's screens live in ProfileRecovery. Create profile, and the change of a temporary PIN, wait for
+// that chunk before they ask the host; the client holds a code just made in page memory until Done, so a chunk that fails
+// to load never loses it, and while it holds one "Save your recovery code" replaces everything else.
 import { useEffect, useRef, useState, useSyncExternalStore, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from "react";
 import { Eye, EyeOff, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
+import { useBackdropClose } from "@/lib/backdrop-close";
 import { useFocusTrap } from "@/lib/focus-trap";
 import { useGame } from "@/lib/game/store";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
-import { ProfileForms, ProfileRecords, profileForms as forms, profileRecords as records } from "@/components/game/chunks";
+import { ProfileForms, ProfileRecords, ProfileRecovery, profileForms as forms, profileRecords as records, profileRecovery as recovery } from "@/components/game/chunks";
+import { LazyBoundary } from "@/lib/lazy";
 import { ProfileClientError, createProfileClient, profileStorageKey } from "@/lib/net/profiles";
 import { LOGIN } from "@/lib/net/proto";
 import { hostUrl } from "@/lib/net/table";
@@ -36,6 +41,16 @@ export interface FormsUi {
   setShowPin: (show: boolean) => void;
   back: () => void;
 }
+// What the sheet hands the recovery chunk (#1437): which screen, the client, and the view switch.
+export interface RecoveryUi {
+  kind: "link" | "row" | "save" | "code" | "recover";
+  c: Client;
+  go: (to: "signin" | "code" | "recover") => void;
+  keep: boolean;
+  setKeep: (keep: boolean) => void;
+  showPin: boolean;
+  setShowPin: (show: boolean) => void;
+}
 // One client per page: it keeps the session in memory between openings so Host and Join can attach it.
 let client: Client | null = null;
 function profileClient() {
@@ -56,10 +71,11 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   const snap = useSyncExternalStore(c.subscribe, c.getSnapshot);
   const root = useRef<HTMLDivElement>(null);
   useFocusTrap(root, true, '[aria-label="Close"]', opener);
+  const backdrop = useBackdropClose(onClose);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   // Signed in, "signin" is the summary; "edit" and "pin" are its two forms, "wins" and "history" its records (#767).
-  const [view, setView] = useState<"signin" | "create" | "edit" | "pin" | "wins" | "history">("signin");
+  const [view, setView] = useState<"signin" | "create" | "edit" | "pin" | "wins" | "history" | "code" | "recover">("signin");
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [showPin, setShowPin] = useState(false);
@@ -85,6 +101,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   useEffect(() => root.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(), [errors]);
 
   // A temporary PIN from a local reset opens Change PIN; nothing else is offered until it is changed.
+  // Changing it answers with a new recovery code, so the form opens only once the recovery chunk is in too (see `open`).
   useEffect(() => { if (mustChange) void open("pin"); }, [mustChange]);
   // Signed in, fetch the forms quietly, so Edit profile and Change PIN open on the first press without a wait.
   const signedIn = Boolean(snap.profile);
@@ -118,7 +135,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
     if (Object.keys(bad).length) return setErrors(bad);
     void send(() =>
       view === "create"
-        ? c.create({ displayName: form.displayName.trim(), login, color: form.color, pin: form.pin, pinConfirm: form.pinConfirm }, keep)
+        ? recovery.load().then(() => c.create({ displayName: form.displayName.trim(), login, color: form.color, pin: form.pin, pinConfirm: form.pinConfirm }, keep))
         : c.login(login, form.pin, keep),
     );
   };
@@ -129,9 +146,10 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
     setView(to);
   };
   // A form opens once its chunk is in. If it can't load, the summary says so and the same button tries the network again.
+  // While a temporary PIN waits, the recovery chunk must be in as well: the change's reply carries a new code (#1437).
   const open = (to: "edit" | "pin" | "wins" | "history") => {
     const isForm = to === "edit" || to === "pin";
-    return (isForm ? forms : records).load().then(() => back(to), () => setErrors({ form: isForm ? "Couldn't load this form. Try again." : "Couldn't load your records. Try again." }));
+    return Promise.all([(isForm ? forms : records).load(), mustChange && recovery.load()]).then(() => back(to), () => setErrors({ form: isForm ? "Couldn't load this form. Try again." : "Couldn't load your records. Try again." }));
   };
 
   const guest = (
@@ -144,8 +162,14 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   const actions = (children: ReactNode) => (
     <div className="sticky bottom-0 -mx-5 space-y-3 border-t border-border bg-surface px-5 pb-5 pt-3">{children}</div>
   );
+  // Every recovery screen sits in its own boundary: a chunk that fails to load leaves the rest of the sheet working, and the
+  // client still holds any new code for the next opening.
+  const rc = (kind: RecoveryUi["kind"]) => <LazyBoundary failed={null}><ProfileRecovery ui={{ kind, c, go: back, keep, setKeep, showPin, setShowPin }} /></LazyBoundary>;
   let body: ReactNode;
-  if (snap.profile && (view === "edit" || view === "pin")) {
+  // The code and recover views open from the row and the link, which the recovery chunk draws, so they never suspend.
+  // A held code's save screen comes first.
+  if (snap.profile && (snap.code || view === "code")) body = rc(snap.code ? "save" : "code");
+  else if (snap.profile && (view === "edit" || view === "pin")) {
     // Only reached once `open` has loaded the forms chunk, so this never suspends.
     body = <ProfileForms ui={{ kind: view, c, form, setForm, errors, setErrors, busy, setBusy, showPin, setShowPin, back }} />;
   } else if (snap.profile && (view === "wins" || view === "history")) {
@@ -168,6 +192,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
             </Button>
           ))}
         </div>
+        {rc("row")}
         {formError}
         {actions(
           <>
@@ -191,6 +216,9 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
         {guest}
       </>
     );
+  } else if (view === "recover") {
+    // Signed out, on an available host.
+    body = rc("recover");
   } else {
     const create = view === "create";
     const input = (k: "displayName" | "login" | "pin" | "pinConfirm", label: string, extra: object) => (
@@ -226,6 +254,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
             {showPin ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             {showPin ? "Hide PIN" : "Show PIN"}
           </Button>
+          {create ? null : rc("link")}
           {create ? (
             <div role="radiogroup" aria-label="Favourite colour" className="flex gap-2">
               {PLAYER_COLORS.map((col, i) => (
@@ -247,7 +276,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
           ) : null}
           <label className="flex min-h-11 items-center gap-3 text-sm text-fg">
             <input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} className="size-5 accent-[var(--ink)]" />
-            Remember me on this device
+            Remember me
           </label>
           {formError}
           {actions(
@@ -257,7 +286,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
           )}
         </form>
         <Button variant="secondary" className="w-full" onClick={() => { setErrors({}); setView(create ? "signin" : "create"); }}>
-          {create ? "I have a profile" : "Create profile"}
+          {create ? "Sign in instead" : "Create profile"}
         </Button>
         {guest}
       </>
@@ -265,7 +294,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   }
 
   return (
-    <div className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-safe sm:items-center">
+    <div className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-safe sm:items-center" {...backdrop}>
       <div
         ref={root}
         role="dialog"

@@ -133,7 +133,7 @@ export function settleError(state: GameState, pid: string, vid: string, setup: b
   const v = vertex(state, vid);
   if (!v) return "Illegal outpost.";
   if (v.building) return "That corner is taken.";
-  if (!distanceOk(state, vid)) return "Too close — leave one corner between buildings.";
+  if (!distanceOk(state, vid)) return "Too close. Leave a corner between buildings.";
   if (!setup && !state.edges.some((e) => e.path === pid && (e.va === vid || e.vb === vid))) return "Outpost must touch your path.";
   return null;
 }
