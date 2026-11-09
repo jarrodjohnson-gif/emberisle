@@ -508,7 +508,7 @@ export function ChatDock() {
   const minimize = (
     <button
       type="button"
-      aria-label="Minimize chat"
+      aria-label="Close chat"
       onClick={() => setOpen(false)}
       className={cn("flex h-11 min-w-10 cursor-pointer items-center justify-center gap-1 rounded-control bg-glass text-zinc-700 hover:text-zinc-900", phone && open && "px-3 text-sm")}
     >

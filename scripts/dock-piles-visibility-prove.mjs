@@ -22,7 +22,7 @@ try {
 
   mkdirSync("test-results", { recursive: true });
 
-  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1, reducedMotion: "reduce" });
   const page = await context.newPage();
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => {
@@ -65,6 +65,7 @@ try {
     await page.evaluate(() => {
       const isle = window.__isle;
       isle.shore.update = () => {};
+      isle.clock.update = () => {};
       const canvas = document.createElement("canvas");
       const gl = isle.renderer.domElement;
       const draw = isle.composer.render.bind(isle.composer);
@@ -83,9 +84,13 @@ try {
         const isle = window.__isle;
         const start = isle.renders;
         const deadline = performance.now() + 60000;
-        isle.wake();
         await new Promise((resolve, reject) => {
-          const poll = () => (isle.renders >= start + 2 ? resolve() : performance.now() > deadline ? reject(Error("cargo frame did not draw")) : requestAnimationFrame(poll));
+          const poll = () => {
+            isle.wake();
+            if (isle.renders >= start + 2) resolve();
+            else if (performance.now() > deadline) reject(Error("cargo frame did not draw"));
+            else requestAnimationFrame(poll);
+          };
           poll();
         });
       });
