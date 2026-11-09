@@ -15,7 +15,7 @@
 //  8. On the store: an interrupted transaction changes nothing, a second deletion is refused, a stale outcome is redacted, and
 //     a hand-edited fingerprint is refused. Curated repository assets are byte-identical throughout.
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -221,6 +221,21 @@ function rowsText(d) {
   return JSON.stringify({ rooms, pending, results: s.results, records: s.records, receipts: s.receipts });
 }
 
+function assertAbsent(d, terms, message) {
+  const text = rowsText(d);
+  for (const x of terms) {
+    if (text.includes(x)) {
+      for (const dir of [d.rooms, d.results, d.profiles]) {
+        for (const f of existsSync(dir) ? readdirSync(dir) : []) {
+          const full = path.join(dir, f);
+          if (readFileSync(full, "utf8").includes(x)) console.error(`match ${x} in ${full}`);
+        }
+      }
+    }
+    assert(!text.includes(x), `${message}: ${x}`);
+  }
+}
+
 const done = [];
 async function scenario(name, fn) {
   const t = Date.now();
@@ -306,7 +321,8 @@ try {
   });
 
   await scenario("startup redaction is interrupted at each durable boundary and completes before listening", async () => {
-    const planted = path.join(d.results, ".x.json.123.abc.tmp");
+    const deadPid = spawnSync(process.execPath, ["-e", ""]).pid;
+    const planted = path.join(d.results, `.x.json.${deadPid}.abc.tmp`);
     writeFileSync(planted, JSON.stringify({ tombstoned: A.id }));
     const files = () => [readFileSync(pendingFile(d, PEND), "utf8"), ...["DONE", "PEND", "LIVE"].map((c) => readFileSync(roomFile(d, c), "utf8"))];
     const before = files();
@@ -335,18 +351,8 @@ try {
     assert.deepEqual([s.records[P.Brook.id].games, s.records[P.Brook.id].wins], [2, 2], "the other player is credited");
     assert.deepEqual(s.records[P.Cove.id], was.records[P.Cove.id]);
     assert(!Object.hasOwn(s.records, A.id), "the deleted profile gained no result");
-    assert(!existsSync(planted), "a planted .x.json.123.abc.tmp holding a tombstoned uuid is removed at startup");
-    const text = rowsText(d);
-    for (const x of [A.id, "Ashling", A.login, A.catchphrase]) {
-      if (text.includes(x)) {
-        for (const dir of [d.rooms, d.results, d.profiles]) {
-          for (const f of existsSync(dir) ? readdirSync(dir) : []) {
-            if (readFileSync(path.join(dir, f), "utf8").includes(x)) console.error(`match ${x} in ${path.join(dir, f)}`);
-          }
-        }
-      }
-    }
-    for (const x of [A.id, "Ashling", A.login, A.catchphrase]) assert(!text.includes(x), `no stored, pending or frozen row carries ${x}`);
+    assert(!existsSync(planted), "a planted orphan .tmp holding a tombstoned uuid is removed at startup");
+    assertAbsent(d, [A.id, "Ashling", A.login, A.catchphrase], "no stored, pending or frozen row carries");
   });
 
   await scenario("credentials are revoked, the active game plays on, and public projections carry no deleted identity", async () => {
@@ -417,17 +423,7 @@ try {
     assert.equal(s.records[P.Brook.id].games, before.records[P.Brook.id].games + 1, "only the live profile gains the stale finished game");
     assert(!Object.hasOwn(s.profiles, A.id) && !Object.hasOwn(s.records, A.id) && !Object.hasOwn(s.logins, A.login), "the deleted profile did not return");
     assert(!readFileSync(roomFile(d, "LIVE") + ".fenced", "utf8").includes(A.id), "the fenced snapshot was redacted before it was set aside");
-    const text = rowsText(d);
-    for (const x of [A.id, "Ashling"]) {
-      if (text.includes(x)) {
-        for (const dir of [d.rooms, d.results, d.profiles]) {
-          for (const f of existsSync(dir) ? readdirSync(dir) : []) {
-            if (readFileSync(path.join(dir, f), "utf8").includes(x)) console.error(`match ${x} in ${path.join(dir, f)}`);
-          }
-        }
-      }
-    }
-    for (const x of [A.id, "Ashling"]) assert(!text.includes(x), `no row carries ${x} after the replay`);
+    assertAbsent(d, [A.id, "Ashling"], "no row carries after the replay");
     assert.equal(Object.values(s.profiles).filter((p) => p.mediaKey !== null).length, 0, "no profile inherited the media binding");
   });
 
