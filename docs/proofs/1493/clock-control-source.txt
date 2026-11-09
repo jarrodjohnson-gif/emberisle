@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import { chromium } from './scripts/proof-browser.mjs';
+const browser=await chromium.launch({headless:true});
+try {
+ for(const delay of [0,25,100]) {
+  let oldFailures=0;
+  for(let i=0;i<10;i++) {
+   const p=await browser.newPage();await p.goto('about:blank');
+   await p.clock.install(); const target=new Date();
+   await p.evaluate(ms=>{const end=performance.now()+ms;while(performance.now()<end){}},delay);
+   try {await p.clock.pauseAt(target)}catch(e){assert.match(e.message,/Cannot fast-forward to the past/);oldFailures++}
+   await p.close();
+   const q=await browser.newPage();await q.goto('about:blank');const frozen=new Date();
+   await q.evaluate(ms=>{const end=performance.now()+ms;while(performance.now()<end){}},delay);
+   await q.clock.pauseAt(frozen);
+   assert.equal(await q.evaluate(()=>Date.now()),+frozen);
+   await q.evaluate(()=>{window.fired=0;setTimeout(()=>window.fired++,137)});
+   await q.clock.fastForward(136);assert.equal(await q.evaluate(()=>window.fired),0);
+   await q.clock.fastForward(1);assert.equal(await q.evaluate(()=>window.fired),1);
+   assert.equal(await q.evaluate(()=>Date.now()),+frozen+137);await q.close();
+  }
+  console.log(JSON.stringify({controlledBrowserDelayMs:delay,oldFailures,outOf:10,directPausePasses:10}));
+ }
+}finally{await browser.close()}

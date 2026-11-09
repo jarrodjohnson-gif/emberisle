@@ -107,7 +107,8 @@ if (process.argv.includes("--host-fixture")) {
     });
     await page.goto(`http://127.0.0.1:8113/?host=ws://127.0.0.1:${port}`);
     await page.waitForFunction(() => window.__emberisle);
-    await page.clock.install();
+    // pauseAt installs the clock itself. A separate install starts real-time ticking,
+    // so a later Node timestamp can already be in the browser clock's past (#1493).
     await page.clock.pauseAt(new Date());
     // Exercise the transport without the store: a duplicate welcome cannot cancel a pending challenge's timeout.
     await page.evaluate(async () => {

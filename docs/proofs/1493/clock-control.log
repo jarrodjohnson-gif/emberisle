@@ -1,0 +1,3 @@
+{"controlledBrowserDelayMs":0,"oldFailures":10,"outOf":10,"directPausePasses":10}
+{"controlledBrowserDelayMs":25,"oldFailures":10,"outOf":10,"directPausePasses":10}
+{"controlledBrowserDelayMs":100,"oldFailures":10,"outOf":10,"directPausePasses":10}
