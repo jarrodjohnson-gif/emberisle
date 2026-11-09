@@ -6,7 +6,7 @@
 // - Each slider changes the volume of a clip of its own kind (measured through the Audio stub), and only that kind; a kind's mute
 //   silences only that kind; All sound scales and silences everything; letting go of a slider plays a clip of its kind, and
 //   pressing and dragging does not.
-// - Sea sounds is a saved switch (#1163; playback is #662's). Muted players mutes one seat for this device, and the chat's
+// - Sea sounds is a saved switch and a saved volume (#1163; playback is #662's). Muted players mutes one seat for this device, and the chat's
 //   Mute players list has a shortcut here.
 // - Settings survive a reload. Zero console errors.
 // Run: npm run sound-sheet-prove. Pictures go to test-results/, or to $PIC_DIR (docs/proofs/669 for the PR).
@@ -261,12 +261,31 @@ try {
       assert.equal(await page.evaluate(async () => (await import("/src/lib/sound.ts")).isMusicOn()), true, "the music switch is on again");
       assert.equal((await stored()).music.muted, false, "and its kind is unmuted");
 
-      // Sea sounds (#1163): on to begin with, saved when switched.
+      // Sea sounds (#1163): on at 100% to begin with. Off is saved, and the volume is its own saved tenth.
       const sea = sheet.getByRole("switch", { name: "Sea sounds" });
+      const seaSlider = sheet.getByTestId("sound-slider-sea");
+      const seaVal = () => sheet.getByTestId("sound-row-sea").locator(".ss-val").textContent();
       assert.equal(await sea.getAttribute("aria-checked"), "true", "Sea sounds starts on");
+      assert.equal(await seaSlider.inputValue(), "100", "Sea sounds volume starts at 100%");
+      assert.equal(await seaVal(), "100%", "Sea sounds shows 100%");
       await sea.click();
       assert.equal(await sea.getAttribute("aria-checked"), "false", "Sea sounds switches off");
       assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-sea-sounds")), "0", "Sea sounds off is saved");
+      assert.equal(await seaVal(), "Off", "Sea sounds off reads Off and keeps its level");
+      assert.equal(await seaSlider.inputValue(), "100", "the level is still 100 while off");
+      await seaSlider.fill("50");
+      assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-sea-volume")), "5", "Sea sounds 50% is saved as the tenth 5");
+      assert.equal(await seaVal(), "Off", "off still reads Off at the new level");
+      await sea.click();
+      assert.equal(await seaVal(), "50%", "Sea sounds on shows the saved level");
+      await seaSlider.focus();
+      await page.keyboard.press("ArrowLeft");
+      assert.equal(await seaSlider.inputValue(), "40", "ArrowLeft steps Sea sounds down by 10");
+      assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-sea-volume")), "4", "the key step is saved");
+      await page.keyboard.press("ArrowRight");
+      assert.equal(await seaSlider.inputValue(), "50", "ArrowRight steps Sea sounds back up");
+      await seaSlider.fill("100");
+      assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-sea-volume")), null, "100% clears the saved volume");
 
       // Muted players: Josh and the bot are listed, not me; muting one mutes only that seat, for this table code.
       const seatNames = await sheet.getByTestId("sound-players").locator(".ss-name").allTextContents();
@@ -297,6 +316,7 @@ try {
       sessionStorage.setItem("seeded", "1");
       localStorage.setItem("emberisle-sound-mix", JSON.stringify({ master: 0.7, game: { volume: 1, muted: false }, touch: { volume: 1, muted: true }, memes: { volume: 0.3, muted: false }, music: { volume: 1, muted: false } }));
       localStorage.setItem("emberisle-sea-sounds", "0");
+      localStorage.setItem("emberisle-sea-volume", "5");
       localStorage.setItem("emberisle-chat-muted-K7QP", JSON.stringify(["josh"]));
     });
     const page = await open(ctx, v);
@@ -317,7 +337,7 @@ try {
         pressed: Object.fromEntries([...el.querySelectorAll("[data-testid^=sound-mute-],[data-testid^=sound-seat-]")].map((b) => [b.dataset.testid, b.getAttribute("aria-pressed")])),
         sea: el.querySelector("[role=switch]").getAttribute("aria-checked"),
       }));
-      assert.deepEqual(state.sliders, { master: "70", game: "100", touch: "100", memes: "30", music: "100" }, `${round}: the levels are kept`);
+      assert.deepEqual(state.sliders, { master: "70", game: "100", touch: "100", memes: "30", music: "100", sea: "50" }, `${round}: the levels are kept`);
       assert.equal(state.pressed["sound-mute-touch"], "true", `${round}: Board touch stays muted`);
       assert.equal(state.pressed["sound-mute-game"], "false", `${round}: Game sounds is not muted`);
       assert.equal(state.pressed["sound-seat-josh"], "true", `${round}: Josh stays muted`);
