@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { chromium } from 'playwright';
+import { chromium } from './proof-browser.mjs';
 import { createServer } from 'vite';
 import { createGame } from '../src/lib/game/board.ts';
 import { publicSeatChanges } from '../src/components/game/seat-public-gains.ts';
@@ -83,6 +83,11 @@ try {
  const baseline=await jarrod.evaluate(()=>window.__isle.insets());
  await jarrod.evaluate(()=>window.__emberisle.getState().dispatch({type:'roll'}));
  await cue.waitFor();assert.equal(await cue.getAttribute('aria-label'),'Joshua: +2 Wheat');
+ const rollPill=await cue.getByTestId('seat-public-pill').evaluate(el=>{const s=getComputedStyle(el);return{sign:el.getAttribute('data-sign'),bg:s.backgroundColor,fg:s.color,shadow:s.boxShadow};});
+ assert.equal(rollPill.sign,'+');
+ assert.equal(rollPill.bg,'rgb(255, 255, 255)');
+ assert.equal(rollPill.fg,'rgb(38, 61, 60)');
+ assert.match(rollPill.shadow,/rgb\(16, 86, 42\)/);
  const started=Date.now();
  assert.equal(await jarrod.getByTestId('rail-p0').getByTestId('seat-public-gains').count(),0);
  assert.equal(await jarrod.evaluate(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p1').resources),undefined,'other hand stays hidden');
@@ -97,6 +102,8 @@ try {
  await joshua.evaluate(()=>window.__emberisle.getState().answerTrade(true));
  const phoneCue=jarrod.getByTestId('seat-p1').getByTestId('seat-public-gains');
  await phoneCue.waitFor();assert.equal(await phoneCue.getAttribute('aria-label'),'Joshua: +1 Wood, −1 Wheat');
+ const tradePills=await phoneCue.getByTestId('seat-public-pill').evaluateAll(els=>els.map(el=>{const s=getComputedStyle(el);return{sign:el.getAttribute('data-sign'),bg:s.backgroundColor,fg:s.color};}));
+ assert.deepEqual(tradePills,[{sign:'+',bg:'rgb(255, 255, 255)',fg:'rgb(38, 61, 60)'},{sign:'-',bg:'rgb(138, 34, 25)',fg:'rgb(255, 255, 255)'}]);
  const box=await phoneCue.boundingBox(),anchor=await jarrod.getByTestId('seat-p1').boundingBox();
  assert.deepEqual(box,anchor);assert.equal(await phoneCue.evaluate(el=>el.getAnimations({subtree:true}).length),0);
  await jarrod.screenshot({path:'test-results/seat-gains-phone.png'});

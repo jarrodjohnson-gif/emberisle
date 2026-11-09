@@ -1,0 +1,46 @@
+/* #827: the other-seat cue is the #1242 goods pill (hand-motion.css .goods-tab). A gain is that light
+   pill with one green outline, not a per-good colour. A loss is the same red pill. The seat is not a
+   goods card, so the pills sit in the seat instead of hanging above it. The fade is the goods cue. */
+@keyframes goods-cue {
+  0% { opacity: 0; }
+  4%, 83.3334% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.seat-public-gains {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  padding: 0 4px;
+  pointer-events: none;
+}
+.seat-public-pill {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 40px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font: 700 14px/24px var(--font-numeral);
+  font-variant-numeric: tabular-nums;
+  background: var(--color-raised);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--gain), 0 2px 6px rgb(24 51 45 / 0.25);
+  animation: goods-cue 3000ms var(--ease-out) both;
+}
+.seat-public-pill[data-sign="-"] {
+  background: var(--loss);
+  color: #fff;
+  box-shadow: inset 0 0 0 1.5px var(--loss), 0 2px 6px rgb(24 51 45 / 0.25);
+}
+.seat-public-pill > svg { display: block; width: 1em; height: 1em; }
+@media (min-width: 1280px) and (pointer: fine) and (min-height: 481px) {
+  .seat-public-pill { min-width: 50px; height: 28px; padding: 0 10px; font-size: 17.5px; line-height: 28px; }
+}

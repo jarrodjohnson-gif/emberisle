@@ -5,8 +5,10 @@ import { ClaySymbol, GrainSymbol, OreSymbol, TimberSymbol, WoolSymbol } from '@/
 import { publicSeatChanges, type SeatChange } from '@/components/game/seat-public-gains';
 import { useGame } from '@/lib/game/store';
 import { RESOURCES, RESOURCE_LABEL } from '@/lib/game/types';
+import './seat-public-gains.css';
 
 const SYMBOLS = { timber: TimberSymbol, clay: ClaySymbol, wool: WoolSymbol, grain: GrainSymbol, ore: OreSymbol };
+// The goods-cue fade is 3 s. The seat cue still clears at 2.5 s, which is what #827 and the proof require.
 const HOLD_MS = 2500;
 
 // Shared transient state survives switching between the rail and strip during rotation.
@@ -50,18 +52,14 @@ export function SeatPublicGains({ scope }: { scope: 'rail' | 'seat' }) {
     const label = active.map(r => `${change.goods[r]! > 0 ? '+' : '−'}${Math.abs(change.goods[r]!)} ${RESOURCE_LABEL[r]}`).join(', ');
     return createPortal(
       <span data-testid="seat-public-gains" data-player={change.player} role="status" aria-label={`${name}: ${label}`}
-        className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-center rounded-[inherit] px-1 text-[12px] font-semibold tabular-nums"
-        style={{ background: 'var(--table)', color: 'var(--ink)', lineHeight: '14px' }}>
-        <span className="block truncate" aria-hidden="true">{name}</span>
-        <span className="flex flex-wrap justify-end gap-x-1">
+        className="seat-public-gains">
         {active.map(resource => {
           const n = change.goods[resource]!, Icon = SYMBOLS[resource];
-          return <span key={resource} className="inline-flex items-center whitespace-nowrap"
-            style={{ color: n > 0 ? '#15803d' : '#b91c1c' }} aria-hidden="true">
-            {n > 0 ? '+' : '−'}{Math.abs(n)}<Icon width={12} height={12} />
+          return <span key={resource} data-testid="seat-public-pill" data-sign={n > 0 ? '+' : '-'} data-resource={resource}
+            className="seat-public-pill" aria-hidden="true">
+            {n > 0 ? '+' : '−'}{Math.abs(n)}<Icon width={14} height={14} />
           </span>;
         })}
-        </span>
       </span>, anchor, `${scope}-${change.player}`,
     );
   });
