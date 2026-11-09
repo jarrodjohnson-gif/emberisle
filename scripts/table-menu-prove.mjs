@@ -23,6 +23,21 @@ const VIEWS = [
   { tag: "390x844", width: 390, height: 844, touch: true, noClipboard: true },
   { tag: "844x390", width: 844, height: 390, touch: true },
 ];
+// #1501: every control sits inside the menu panel, including the phone where Overhead used to pass the right edge.
+// A row below the fold may scroll; it still belongs to the menu. One that runs past the side does not.
+const FIT = [
+  { tag: "320x568", width: 320, height: 568 },
+  { tag: "375x812", width: 375, height: 812 },
+  { tag: "390x844", width: 390, height: 844 },
+  { tag: "430x932", width: 430, height: 932 },
+  { tag: "820x1180", width: 820, height: 1180 },
+  { tag: "844x390", width: 844, height: 390 },
+];
+
+function check(ok, label, detail) {
+  if (!ok) assert.fail(detail ? `${label}: ${detail}` : label);
+  console.log(`ok  ${label}`);
+}
 
 mkdirSync("test-results", { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
@@ -33,6 +48,42 @@ const browser = await chromium.launch({
 const errors = [];
 let code = 0;
 try {
+  for (const v of FIT) {
+    const ctx = await browser.newContext({ viewport: { width: v.width, height: v.height }, hasTouch: true, isMobile: true });
+    const page = await ctx.newPage();
+    page.on("pageerror", (e) => errors.push(`${v.tag} fit: ${e}`));
+    await page.goto(`http://127.0.0.1:${PORT}/`);
+    await page.waitForFunction(() => window.__emberisle);
+    await page.evaluate(() => window.__emberisle.getState().startHotseat(4));
+    const trigger = page.getByRole("button", { name: "Table menu" });
+    await trigger.waitFor();
+    await trigger.click();
+    const menu = page.getByRole("dialog", { name: "Table menu" });
+    await menu.waitFor();
+    const outside = await menu.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      const eps = 1;
+      const contentTop = box.top - el.scrollTop;
+      const contentBottom = contentTop + el.scrollHeight;
+      const controls = [...el.querySelectorAll("button, [role='group'], input, a")];
+      const bad = [];
+      for (const control of controls) {
+        const r = control.getBoundingClientRect();
+        if (r.width === 0 && r.height === 0) continue;
+        const range = document.createRange();
+        range.selectNodeContents(control);
+        const text = range.getBoundingClientRect();
+        const name = (control.getAttribute("aria-label") || control.textContent || "").trim().replace(/\s+/g, " ").slice(0, 60);
+        const pastSide = r.left < box.left - eps || r.right > box.right + eps || (text.width > 0 && (text.left < box.left - eps || text.right > box.right + eps));
+        const pastEnd = r.top < contentTop - eps || r.bottom > contentBottom + eps;
+        const clipped = control.scrollWidth > control.clientWidth + 1 || control.scrollHeight > control.clientHeight + 1;
+        if (pastSide || pastEnd || clipped) bad.push({ name, pastSide, pastEnd, clipped, right: Math.round((r.right - box.right) * 10) / 10 });
+      }
+      return bad;
+    });
+    check(outside.length === 0, `${v.tag}: every control sits inside the menu`, JSON.stringify(outside));
+    await ctx.close();
+  }
   for (const v of VIEWS) {
     // The clipboard path is granted explicitly (a headless runner has no clipboard otherwise); the no-clipboard path removes it.
     const ctx = await browser.newContext({

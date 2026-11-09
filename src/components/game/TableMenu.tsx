@@ -214,24 +214,32 @@ export function TableMenu() {
                 </span>
               </Button>
               {haptics.row}
-              {/* The sea's look; the choice is remembered and overrides the GPU probe (docs/design/crystal-water.md). */}
-              <div role="group" aria-label="Water" data-testid="water-toggle" className="flex h-11 items-center gap-2 px-3 text-body">
-                <Waves className={ICON} /> Water
-                <span className="ml-auto flex gap-1">
+              {/* The sea's look; the choice is remembered and overrides the GPU probe (docs/design/crystal-water.md).
+                  The label sits under the icon, same as View, so the choices share the row (#1501). */}
+              <div role="group" aria-label="Water" data-testid="water-toggle" className="flex h-11 min-w-0 items-center gap-0.5 text-body">
+                <span className="flex shrink-0 flex-col items-center leading-none">
+                  <Waves className={ICON} />
+                  Water
+                </span>
+                <span className="flex min-w-0 flex-1 gap-0.5">
                   {(["crystal", "simple"] as const).map((p) => (
-                    <Button key={p} size="sm" variant={water === p ? "default" : "ghost"} aria-pressed={water === p} onClick={() => setWaterChoice(p)}>
+                    <Button key={p} size="sm" variant={water === p ? "default" : "ghost"} aria-pressed={water === p} className="min-w-11 flex-1 px-1.5" onClick={() => setWaterChoice(p)}>
                       {p === "crystal" ? "Crystal" : "Simple"}
                     </Button>
                   ))}
                 </span>
               </div>
               {/* The camera in play (#597): the tilted diorama or the overhead board; remembered like the water. Unchosen, it shows
-                  the renderer's default for the screen's shape. */}
-              <div role="group" aria-label="View" data-testid="view-toggle" className="flex h-11 items-center gap-2 px-3 text-body">
-                <Box className={ICON} /> View
-                <span className="ml-auto flex gap-1">
+                  the renderer's default for the screen's shape. #1501: the label sits under the icon so the two choices share
+                  the row and stay inside the panel at phone width. Text stays 15 px; each choice stays at least 44 px. */}
+              <div role="group" aria-label="View" data-testid="view-toggle" className="flex h-11 min-w-0 items-center gap-0.5 text-body">
+                <span className="flex shrink-0 flex-col items-center leading-none">
+                  <Box className={ICON} />
+                  View
+                </span>
+                <span className="flex min-w-0 flex-1 gap-0.5">
                   {(["diorama", "overhead"] as const).map((v) => (
-                    <Button key={v} size="sm" variant={view === v ? "default" : "ghost"} aria-pressed={view === v} onClick={() => setViewChoice(v)}>
+                    <Button key={v} size="sm" variant={view === v ? "default" : "ghost"} aria-pressed={view === v} className="min-w-11 flex-1 px-1.5" onClick={() => setViewChoice(v)}>
                       {v === "diorama" ? "Diorama" : "Overhead"}
                     </Button>
                   ))}
