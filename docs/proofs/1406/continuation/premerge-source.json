@@ -1,0 +1,7 @@
+{
+  "src/components/game/WinScreen.tsx": "33bf6a95a182dfb1dfb45ec4fa027bf9616e2ef055bfec43296108cc69d24e62",
+  "scripts/win-action-prove.mjs": "eade31ed83468b53286c2301f04a965ba82a408405a01821aaa831f97e9c6e56",
+  "scripts/win-list-prove.mjs": "3bf99eac29399131a933eca12a703366128d5b46dafd7a476e763fffc04ad5ce",
+  "scripts/win-long-names-prove.mjs": "6777779ebc98d41b5dcf060c6d048874b8765e65ef81ea873b848876209e80d7",
+  "package-lock.json": "afc604fefb7b57004ef48b587ed9e54f30291bc44100a98e81d5f62eaa1ca4de"
+}

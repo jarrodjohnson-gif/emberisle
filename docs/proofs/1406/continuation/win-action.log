@@ -1,0 +1,22 @@
+
+> win-action-prove
+> node --import ./server/register.mjs scripts/win-action-prove.mjs
+
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+0 !== 4
+
+    at file:///workspace/work/1406/scripts/win-action-prove.mjs:102:62 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 0,
+  expected: 4,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.4
