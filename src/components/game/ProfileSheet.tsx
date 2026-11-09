@@ -5,6 +5,9 @@
 // #766 second slice: signed in, the player edits the profile's text and colours and changes the PIN. A login change and a
 // PIN change ask for the current PIN; a temporary PIN from a local reset must be changed before anything else. The two
 // forms live in their own chunk (ProfileForms), loaded when one opens; this sheet keeps the state and the requests.
+// #1437: the recovery code's screens live in ProfileRecovery. Create profile waits for that chunk before it asks the host;
+// the client holds a code just made in page memory until Done, so a chunk that fails to load never loses it, and while it
+// holds one "Save your recovery code" replaces everything else.
 import { useEffect, useRef, useState, useSyncExternalStore, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from "react";
 import { Eye, EyeOff, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +15,8 @@ import { SeatDot } from "@/components/game/SeatDot";
 import { useFocusTrap } from "@/lib/focus-trap";
 import { useGame } from "@/lib/game/store";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
-import { ProfileForms, ProfileRecords, profileForms as forms, profileRecords as records } from "@/components/game/chunks";
+import { ProfileForms, ProfileRecords, ProfileRecovery, profileForms as forms, profileRecords as records, profileRecovery as recovery } from "@/components/game/chunks";
+import { LazyBoundary } from "@/lib/lazy";
 import { ProfileClientError, createProfileClient, profileStorageKey } from "@/lib/net/profiles";
 import { LOGIN } from "@/lib/net/proto";
 import { hostUrl } from "@/lib/net/table";
@@ -35,6 +39,16 @@ export interface FormsUi {
   showPin: boolean;
   setShowPin: (show: boolean) => void;
   back: () => void;
+}
+// What the sheet hands the recovery chunk (#1437): which screen, the client, and the view switch.
+export interface RecoveryUi {
+  kind: "link" | "row" | "save" | "code" | "recover";
+  c: Client;
+  go: (to: "signin" | "code" | "recover") => void;
+  keep: boolean;
+  setKeep: (keep: boolean) => void;
+  showPin: boolean;
+  setShowPin: (show: boolean) => void;
 }
 // One client per page: it keeps the session in memory between openings so Host and Join can attach it.
 let client: Client | null = null;
@@ -59,7 +73,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   // Signed in, "signin" is the summary; "edit" and "pin" are its two forms, "wins" and "history" its records (#767).
-  const [view, setView] = useState<"signin" | "create" | "edit" | "pin" | "wins" | "history">("signin");
+  const [view, setView] = useState<"signin" | "create" | "edit" | "pin" | "wins" | "history" | "code" | "recover">("signin");
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [showPin, setShowPin] = useState(false);
@@ -85,7 +99,9 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   useEffect(() => root.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(), [errors]);
 
   // A temporary PIN from a local reset opens Change PIN; nothing else is offered until it is changed.
-  useEffect(() => { if (mustChange) void open("pin"); }, [mustChange]);
+  // Changing it answers with a new recovery code: fetch the recovery chunk too. The client keeps the code until Done, so even
+  // a failed load loses nothing; the save screen shows on the next opening.
+  useEffect(() => { if (mustChange) { void recovery.prefetch(); void open("pin"); } }, [mustChange]);
   // Signed in, fetch the forms quietly, so Edit profile and Change PIN open on the first press without a wait.
   const signedIn = Boolean(snap.profile);
   useEffect(() => { if (signedIn) { void forms.prefetch(); void records.prefetch(); } }, [signedIn]);
@@ -116,9 +132,9 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
     if (!PIN.test(form.pin)) bad.pin = "Enter four digits.";
     if (view === "create" && form.pinConfirm !== form.pin) bad.pinConfirm = "The PINs don't match.";
     if (Object.keys(bad).length) return setErrors(bad);
-    void send(() =>
+    void send(async () =>
       view === "create"
-        ? c.create({ displayName: form.displayName.trim(), login, color: form.color, pin: form.pin, pinConfirm: form.pinConfirm }, keep)
+        ? (await recovery.load(), c.create({ displayName: form.displayName.trim(), login, color: form.color, pin: form.pin, pinConfirm: form.pinConfirm }, keep))
         : c.login(login, form.pin, keep),
     );
   };
@@ -144,8 +160,14 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   const actions = (children: ReactNode) => (
     <div className="sticky bottom-0 -mx-5 space-y-3 border-t border-border bg-surface px-5 pb-5 pt-3">{children}</div>
   );
+  const rc = (kind: RecoveryUi["kind"]) => <ProfileRecovery ui={{ kind, c, go: back, keep, setKeep, showPin, setShowPin }} />;
   let body: ReactNode;
-  if (snap.profile && (view === "edit" || view === "pin")) {
+  // Only reached with the recovery chunk loaded: a code comes only after it is in, and the code and recover views open
+  // from the row and the link, which it draws.
+  if (snap.profile && snap.code) body = rc("save");
+  else if (snap.profile && view === "code") body = rc("code");
+  else if (!snap.profile && view === "recover" && snap.status === "available") body = rc("recover");
+  else if (snap.profile && (view === "edit" || view === "pin")) {
     // Only reached once `open` has loaded the forms chunk, so this never suspends.
     body = <ProfileForms ui={{ kind: view, c, form, setForm, errors, setErrors, busy, setBusy, showPin, setShowPin, back }} />;
   } else if (snap.profile && (view === "wins" || view === "history")) {
@@ -168,6 +190,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
             </Button>
           ))}
         </div>
+        <LazyBoundary failed={null}>{rc("row")}</LazyBoundary>
         {formError}
         {actions(
           <>
@@ -226,6 +249,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
             {showPin ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             {showPin ? "Hide PIN" : "Show PIN"}
           </Button>
+          {create ? null : <LazyBoundary failed={null}>{rc("link")}</LazyBoundary>}
           {create ? (
             <div role="radiogroup" aria-label="Favourite colour" className="flex gap-2">
               {PLAYER_COLORS.map((col, i) => (
