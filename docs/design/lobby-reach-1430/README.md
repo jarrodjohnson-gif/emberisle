@@ -2,7 +2,7 @@
 
 **Mock and audit only. No game code changes.** Author: Fable 5.1, 2026-11-09. Measured on `main` at `2f0c2932` (a docs-only PR; later merges do not change these numbers).
 
-The owner answered Desk Decisions card `q1430-wasted-space` with D, on 2026-11-09 at 04:03 UTC: "The top seems really far to reach." The code placement comes from card `q1430-code-placement`, owner answer C (underlined text code), 2026-11-08. His players hold a phone upright, or an iPad upright. One hand holds the phone, and the thumb does the tapping. Today the code, the view row and the seat buttons sit at the top. That is a long stretch. This mock measures the stretch and shows three ways to shorten it.
+On Desk Decisions card `q1430-wasted-space` the owner chose D, "something else", on 2026-11-09 at 04:03 UTC. The note said: "The top seems really far to reach." The code placement comes from card `q1430-code-placement`, owner answer C (underlined text code), 2026-11-08. His players hold a phone upright, or an iPad upright. One hand holds the phone, and the thumb does the tapping. Today the code, the view row and the seat buttons sit at the top. That is a long stretch. This mock measures the stretch and shows three ways to shorten it. After this mock the owner chose D again on card `q1470-lobby-reach`, 2026-11-09 at 04:23 UTC: "Chat stays in middle, names stay up top since you don't click on em". The desk reads that as option A.
 
 ## What stands
 
@@ -84,7 +84,7 @@ Single pictures: `today-`, `a-`, `b-` and `c-<size>.png`, plus `<state>-start-39
 
 Rows, top to bottom: header (code and status), seats, chat, view row, summary with Win at, Ready and Start.
 
-- The view row (Table, Play games, Rules) moves from 719 px to 133 px from the bottom at 390 x 844. From hard to easy at every upright size.
+- The view row (Table, Play games, Rules) moves from 719 px to 133 px from the bottom at 390 x 844. That takes it from hard to easy at every upright size.
 - The chat input moves up 52 px, to 194 px from the bottom. It stays in the easy band at every upright size.
 - Add bot stays at the top, 655 px from the bottom at 390. It moves up 52 px, because the view row left row 2.
 - Start stays on the bottom edge, as today. Every player already knows where Ready and Start are.
@@ -174,7 +174,7 @@ Shared by every option, `src/components/game/lobby.css` and `LobbyView.tsx`:
 2. The view row fills its width: `.lobby-rules { display: grid; grid-template-columns: calc((100% - 16px) * 2 / 3 + 8px) minmax(0, 1fr); gap: 8px }`. `.lm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) }`. Drop the 76 px width and the 60 px span cap in the `max-width: 900px` block.
 3. Sideways (`max-height: 600px and landscape`): `grid-template-rows: 44px 112px minmax(0, 1fr) 44px`. Seats in row 2, `.lobby-rules { grid-row: 3; align-self: end }`, chat and `.ly` rows 1 to 3, actions row 4.
 4. The 320 x 568 and 390 x 640 block (`max-height: 700px and portrait`) sets its own rows. Reorder it the same way, then measure at 320 x 568.
-5. Keyboard order. The DOM order stays code, tabs, Rules, seats, chat, Ready. With the row at the bottom, Tab would jump from Rules up to the seats. Better: move the `.lobby-rules` block in `LobbyView.tsx` to just before `.lobby-actions` (A and B) or after it (C). It is a JSX move with no new strings. LobbyView is at about 2,480 B of its 2,500 B ceiling, so measure. If it does not fit, keep the CSS order and say so in the PR.
+5. Keyboard order. The DOM order stays code, view row, Rules, seats, chat, Ready. With the row at the bottom, Tab would jump from Rules up to the seats. Better: move the `.lobby-rules` block in `LobbyView.tsx` to just before `.lobby-actions` (A and B) or after it (C). It is a JSX move with no new strings. LobbyView is at about 2,480 B of its 2,500 B ceiling, so measure. If it does not fit, keep the CSS order and say so in the PR.
 6. `.lobby-copy-fallback { top: 60px }` now lies over the seats, not the view row. It is a transient panel. No change.
 
 A only, the base grid: `grid-template-rows: 44px 112px minmax(0, 1fr) 44px 96px`. `.lobby-players { grid-row: 2 }`, `.lobby-chat-panel { grid-row: 3 }`, `.ly { grid-row: 2 / 4 }`, `.lobby-rules { grid-row: 4 }`, `.lobby-actions { grid-row: 5 }`.
@@ -194,7 +194,7 @@ Size: 0 B of JS for the CSS rows. The two JSX moves (status and view row) add no
 - `lobby-wait-box-prove.mjs:205` and `lobby-tictactoe-prove.mjs:109` (game above `lobby-actions`): pass in A, B and C. The `.ly` block always ends above the actions row.
 - `connection-health-prove.mjs:341` to `366` wants the status inside the lobby at 320, 390, 667 x 375 and 844 x 390. PR #1456 measured the header move at four of its sizes. Re-run it after step 4.
 - `chat-prove.mjs:509` and `:561` (card margins, four whole lines): pass, the card and the chat panel are unchanged.
-- Add to `lobby-code-copy-prove` at 390 x 844 and 820 x 1180: the view row starts below the chat panel (A, B).
+- Add a line to `lobby-code-copy-prove` at 390 x 844 and 820 x 1180. In A and B the view row starts below the chat panel.
 - In C, the view row starts below `lobby-actions`.
 - Add one more check sideways: the view row ends 8 px above `lobby-actions`.
 
