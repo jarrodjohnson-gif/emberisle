@@ -123,19 +123,12 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
               <span ref={codeElement} data-testid="table-code" className="font-display">{code}</span>
               <span>Copied</span>
             </button>
-          </div>
-          {copied && !copied.ok ? <div className="lobby-copy-fallback"><CopyFallback state={copied} label="Join link" /></div> : <CopyFallback state={copied} label="Join link" />}
-          <div className="lobby-rules">
-            <div className="lm" role="tablist" aria-label="Lobby" onKeyDown={tabKey}>
-              <button type="button" role="tab" aria-selected={!games} tabIndex={games ? -1 : 0} onClick={() => pick(false)}>Table</button>
-              <button type="button" role="tab" aria-selected={games} tabIndex={games ? 0 : -1} aria-label={invited ? "Play games, 1 invite" : undefined} onClick={() => pick(true)}><span>Play games</span>{invited ? <b className="lb" aria-hidden="true">1</b> : null}</button>
-            </div>
-            <Button variant="outline" onPointerEnter={prefetchRules} onFocus={prefetchRules} onClick={e => setHowTo(true, e.currentTarget)}>Rules</Button>
             <div className="lobby-rule-status">
               <span data-testid="lobby-caption" className="max-w-full truncate">Wayfarer {rule}</span>
               <ConnectionStatus />
             </div>
           </div>
+          {copied && !copied.ok ? <div className="lobby-copy-fallback"><CopyFallback state={copied} label="Join link" /></div> : <CopyFallback state={copied} label="Join link" />}
           {games ? <LazyBoundary failed={<button type="button" onClick={() => setGames(false)}>Close</button>}><Play onGame={setOpen} /></LazyBoundary> : (
           <>
           <ul data-testid="lobby-players" className="lobby-players">
@@ -161,6 +154,14 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
           </div>
           </>
           )}
+          {/* #1430 reach, option A: the view row sits just above the summary, near the thumb, and comes after the chat in Tab order. */}
+          <div className="lobby-rules">
+            <div className="lm" role="tablist" aria-label="Lobby" onKeyDown={tabKey}>
+              <button type="button" role="tab" aria-selected={!games} tabIndex={games ? -1 : 0} onClick={() => pick(false)}>Table</button>
+              <button type="button" role="tab" aria-selected={games} tabIndex={games ? 0 : -1} aria-label={invited ? "Play games, 1 invite" : undefined} onClick={() => pick(true)}><span>Play games</span>{invited ? <b className="lb" aria-hidden="true">1</b> : null}</button>
+            </div>
+            <Button variant="outline" onPointerEnter={prefetchRules} onFocus={prefetchRules} onClick={e => setHowTo(true, e.currentTarget)}>Rules</Button>
+          </div>
           <div data-testid="lobby-actions" className="lobby-actions">
             <div className="lobby-summary">
               <p data-testid="lobby-status" aria-live="polite">{error ?? status}</p>

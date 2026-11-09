@@ -8,7 +8,8 @@
 }
 .lobby-layout .lobby-layout-cover {
   display: grid;
-  grid-template: 44px 44px 112px minmax(0, 1fr) 96px / minmax(0, 1fr);
+  /* #1430 reach, option A (owner, 2026-11-09): header, seats, chat, then the view row just above the summary, near the thumb. */
+  grid-template: 44px 112px minmax(0, 1fr) 44px 96px / minmax(0, 1fr);
   gap: 8px;
   height: 100%;
   padding: 20px;
@@ -18,11 +19,11 @@
   color: #263b3b;
 }
 .lobby-header { grid-row: 1; }
-.lobby-rules { grid-row: 2; }
-.lobby-players { grid-row: 3; }
-.lobby-chat-panel { grid-row: 4; }
+.lobby-players { grid-row: 2; }
+.lobby-chat-panel { grid-row: 3; }
+.lobby-rules { grid-row: 4; }
 .lobby-actions { grid-row: 5; }
-.lobby-layout .ly { grid-row: 3 / 5; }
+.lobby-layout .ly { grid-row: 2 / 4; }
 .lobby-layout button, .lobby-layout input, .lobby-layout [role="tab"] {
   min-height: 44px;
   min-width: 44px;
@@ -30,15 +31,18 @@
 .lobby-layout button:not([data-emote]), .lobby-layout input, .lobby-layout [role="tab"] { font-size: 15px; font-weight: 600; }
 .lobby-layout input { font-size: 17px !important; }
 .lobby-layout button, .lobby-layout [role="tab"] { display: inline-flex; align-items: center; justify-content: center; line-height: 20px; text-align: center; }
-.lobby-header, .lobby-rules, .lobby-action-buttons, .lobby-summary {
+.lobby-header, .lobby-action-buttons, .lobby-summary {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
 }
-/* #1430: the code is the copy button, the same box as the other lobby buttons. A tap fades the code to a small "Copied" in
-   the same spot and back; the button keeps its size, so nothing moves. */
-.lobby-layout .lobby-code { position: relative; min-width: 72px; max-width: 100%; padding: 0 12px; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: transparent; color: var(--ink); }
+/* #1430: the code is the copy button: underlined title text with no box (q1430-code-placement, option C). A tap fades the
+   code to a small "Copied" in the same spot and back; the button keeps its size, so nothing moves. The Wayfarer and
+   connection lines sit at its right, in the header. */
+.lobby-header { justify-content: space-between; }
+.lobby-layout .lobby-code { position: relative; flex: none; min-width: 72px; max-width: 100%; padding: 0 8px; border: 0; background: transparent; color: var(--ink); text-decoration: underline dotted; text-underline-offset: 6px; }
+.lobby-header > .lobby-rule-status { flex: 0 1 auto; min-width: 0; margin-left: auto; overflow: hidden; }
 .lobby-code > span { transition: opacity 200ms ease; }
 .lobby-code > [data-testid="table-code"] { display: block; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 28px; line-height: 34px; letter-spacing: 1px; font-weight: 700; }
 .lobby-code > span:last-child { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); white-space: nowrap; opacity: 0; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--gain); }
@@ -48,11 +52,10 @@
 @media (prefers-reduced-motion: reduce) {
   .lobby-code > span { transition: none; }
 }
-.lobby-rules > * { flex: 1 1 0; }
-.lobby-rules > .lm, .lobby-rules > button { flex: 0 0 auto; }
-.lobby-rules > .lobby-rule-status { min-width: 0; overflow: hidden; }
-.lobby-layout .lm { display: flex; align-items: center; gap: 8px; height: 44px; }
-.lobby-layout .lm button { flex: 0 0 auto; height: 44px; padding: 0 8px; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: transparent; color: var(--muted); font-weight: 500; }
+/* #1430 reach: the view row fills its width as three equal boxes, Table and Play games 8 px apart, then Rules. */
+.lobby-rules { display: grid; grid-template-columns: calc((100% - 16px) * 2 / 3 + 8px) minmax(0, 1fr); gap: 8px; align-items: center; min-width: 0; }
+.lobby-layout .lm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; gap: 8px; height: 44px; }
+.lobby-layout .lm button { height: 44px; padding: 0 8px; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: transparent; color: var(--muted); font-weight: 500; }
 /* #1430: two boxes 8 px apart; the picked one is white with ink text and a 3 px ink bar along its bottom edge. */
 .lobby-layout .lm button[aria-selected="true"] { background: var(--paper); color: var(--ink); font-weight: 600; box-shadow: inset 0 -3px 0 var(--ink); }
 .lobby-layout .lm button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
@@ -148,21 +151,22 @@
 @media (max-height: 600px) and (orientation: landscape) {
   .lobby-layout { inset: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); width: auto; }
   .lobby-layout .lobby-layout-cover {
-    grid-template: 44px 44px minmax(0, 1fr) 44px / minmax(0, 36fr) minmax(0, 60fr);
+    grid-template: 44px 112px minmax(0, 1fr) 44px / minmax(0, 36fr) minmax(0, 60fr);
     padding: 8px;
     column-gap: 16px;
   }
-  /* #1430: with the share buttons gone the header keeps to the left column, and the chat (or Play games) runs from the top. */
+  /* #1430: with the share buttons gone the header keeps to the left column, and the chat (or Play games) runs from the top.
+     Reach: the seats sit under the header and the view row at the foot of the left column, right above Ready. */
   .lobby-header { grid-column: 1; }
-  .lobby-rules { grid-column: 1; grid-row: 2; }
-  .lobby-players { grid-column: 1; grid-row: 3; align-content: start; }
+  .lobby-players { grid-column: 1; grid-row: 2; align-content: start; }
+  .lobby-rules { grid-column: 1; grid-row: 3; align-self: end; }
   .lobby-chat-panel { grid-column: 2; grid-row: 1 / 4; }
   .lobby-layout .ly { grid-column: 2; grid-row: 1 / 4; }
   .lobby-actions { grid-column: 1 / -1; grid-row: 4; display: grid; grid-template-columns: minmax(0, 36fr) minmax(0, 60fr); column-gap: 16px; }
   .lobby-chat-panel [data-testid="chat-log"] { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12px); mask-image: linear-gradient(to bottom, transparent 0, #000 12px); }
 }
 @media (max-height: 700px) and (orientation: portrait) {
-  .lobby-layout .lobby-layout-cover { grid-template-rows: 44px 44px 96px minmax(148px, 1fr) 96px; overflow-y: auto; }
+  .lobby-layout .lobby-layout-cover { grid-template-rows: 44px 96px minmax(148px, 1fr) 44px 96px; overflow-y: auto; }
   .lobby-players { grid-template-rows: repeat(2, 44px); }
   .lobby-player { grid-template-rows: 22px 18px; --seat-row: 22px; --seat-pad: 1px; }
   .lobby-player .lobby-bubble [data-seat-bubble="react"] .size-8 { width: 22px; height: 22px; font-size: 18px; line-height: 22px; }
@@ -185,7 +189,7 @@
   .lobby-code > [data-testid="table-code"] { font-size: 18px; line-height: 28px; letter-spacing: 0; }
   .lobby-chat-panel [data-testid="emoji-row"] { display: flex; gap: 12px; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
   .lobby-chat-panel [data-testid="emoji-row"] > button { flex: 0 0 44px; scroll-snap-align: start; }
-  .lobby-layout .lobby-layout-cover { grid-template-rows: 44px 44px 96px minmax(218px, 1fr) 96px; padding: 8px; }
+  .lobby-layout .lobby-layout-cover { grid-template-rows: 44px 96px minmax(218px, 1fr) 44px 96px; padding: 8px; }
 }
 /* names share one box per seat so the own (editable) name lines up with the others; its 44 px hit area starts at the seat's outer top edge, is centred on the same text, and overlaps the non-interactive status line */
 .lobby-player > .lobby-name { height: var(--seat-row); align-self: start; }
@@ -220,8 +224,8 @@
   .lobby-layout .lobby-layout-cover { padding: 8px; }
 }
 @media (max-width: 900px) {
-  .lobby-layout .lm button:last-child { width: 76px; white-space: normal; }
-  .lobby-layout .lm button:last-child span { display: block; max-width: 60px; line-height: 20px; text-align: center; }
+  .lobby-layout .lm button:last-child { white-space: normal; }
+  .lobby-layout .lm button:last-child span { display: block; line-height: 20px; text-align: center; }
 }
 /* #1262: an open game may use the phone's top inset. Table stays on the usual inset, and Close drops the card back. */
 @media (max-width: 600px) and (orientation: portrait) {
