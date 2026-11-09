@@ -7,13 +7,13 @@
 // - How to play opens its dialog and closing that puts the focus back on the menu button; the Sound panel and the haptics toggle
 //   flip and keep the sheet open; Escape closes the sheet and refocuses the button; Enter on the button opens it; a tap
 //   outside closes it;
-// - online (a faked socket): the sheet shows the watcher count and "Copy table code" (copied where the clipboard works, the
+// - online (a faked socket): the sheet shows the watcher count and "Copy code" (copied where the clipboard works, the
 //   select-and-copy field where it does not, as on CI; both are run), Leave table asks first (Stay, Escape
-//   and the 5 s auto-cancel return to the rows with the focus on Leave table), then leaves; hotseat Leave table goes
-//   straight to the title.
+//   and the 5 s auto-cancel return to the rows with the focus on Leave table), then leaves; hotseat Leave table asks
+//   "Leave the table? The game ends." the same way (#1449), and practice Leave table goes straight to the title.
 // Zero console errors. Run: npm run table-menu-prove
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -28,7 +28,6 @@ mkdirSync("test-results", { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -182,7 +181,7 @@ try {
     await trigger.click();
     await menu.waitFor();
     assert.equal(await menu.getByTestId("watching-count").textContent().then((t) => t.trim()), "2", `${v.tag}: the watcher count is in the menu`);
-    await menu.getByRole("button", { name: "Copy table code K7QP" }).click();
+    await menu.getByRole("button", { name: "Copy code K7QP" }).click();
     const copied = v.noClipboard ? "fallback" : "copied";
     const clipboard = await page.evaluate(() => navigator.clipboard?.writeText("probe").then(() => "writes", (e) => `rejects: ${e}`) ?? "missing");
     assert.equal(clipboard, v.noClipboard ? "missing" : "writes", `${v.tag}: navigator.clipboard is ${clipboard}`);
@@ -193,7 +192,7 @@ try {
       // A failed copy is forgotten when the menu closes (Escape, then an outside tap): the next open shows no field and
       // opens on How to play.
       const reopen = async (how) => {
-        await menu.getByRole("button", { name: "Copy table code K7QP" }).click();
+        await menu.getByRole("button", { name: "Copy code K7QP" }).click();
         await menu.getByTestId("copy-fallback").waitFor();
         if (how === "escape") await page.keyboard.press("Escape");
         // Left of the 256 px sheet on a narrow phone, where the taller sheet's copy field now reaches the middle.
@@ -237,12 +236,27 @@ try {
       await confirmBox.getByRole("button", { name: "Leave", exact: true }).click({ timeout: 5000 }).catch((e) => console.log(`${v.tag}: Leave click retried: ${String(e).split("\n")[0]}`));
     }
 
-    // Hotseat: Leave table is one press.
+    // #1449: hotseat Leave table asks too (the game ends, nothing is saved); Stay keeps the game, Leave goes to the title.
     await page.evaluate(() => window.__emberisle.getState().startHotseat(4));
     await trigger.click();
     await menu.getByRole("button", { name: "Leave table" }).click();
+    await confirmBox.waitFor();
+    assert.match(await confirmBox.textContent(), /Leave the table\? The game ends\./, `${v.tag}: hotseat Leave asks first`);
+    await confirmBox.getByRole("button", { name: "Stay" }).click();
+    await confirmBox.waitFor({ state: "detached" });
+    assert.equal(await page.evaluate(() => window.__emberisle.getState().screen), "play", `${v.tag}: hotseat Stay keeps the game`);
+    for (let tries = 0; (await page.evaluate(() => window.__emberisle.getState().screen)) !== "title"; tries++) {
+      assert.ok(tries < 5, `${v.tag}: hotseat Leave never left the table`);
+      if (!(await confirmBox.count())) await menu.getByRole("button", { name: "Leave table" }).click();
+      await confirmBox.getByRole("button", { name: "Leave", exact: true }).click({ timeout: 5000 }).catch((e) => console.log(`${v.tag}: hotseat Leave click retried: ${String(e).split("\n")[0]}`));
+    }
+    // Practice keeps its one press.
+    await page.evaluate(() => window.__emberisle.getState().startAi());
+    await trigger.click();
+    await menu.getByRole("button", { name: "Leave table" }).click();
     await page.waitForFunction(() => window.__emberisle.getState().screen === "title");
-    assert.equal(await confirmBox.count(), 0, `${v.tag}: hotseat Leave asked for confirmation`);
+    assert.equal(await confirmBox.count(), 0, `${v.tag}: practice Leave asked for confirmation`);
+    console.log(`${v.tag}: hotseat Leave table asks "Leave the table? The game ends.", Stay stays, Leave leaves; practice leaves on one press`);
     if (v.tag === "1280x720") {
       // Water: each chip switches the sea in place, as a saved choice, and the last one is still chosen after a reload.
       const water = () => page.evaluate(() => ({ ...window.__emberisle.water, saved: localStorage.getItem("emberisle-water") }));
@@ -262,7 +276,7 @@ try {
       assert.ok(kept.path === "simple" && kept.source === "saved", `${v.tag}: the Water choice survives a reload: ${JSON.stringify(kept)}`);
       console.log(`${v.tag}: Water flips the sea crystal <-> simple in place and keeps the choice across a reload`);
     }
-    console.log(`${v.tag}: one ${b.w}x${b.h} menu button top-right, no wordmark; rows ${allRows.length}; How to play, sounds, code (${copied}), Leave (asks online, one press in hotseat) all work; Escape and Close refocus the button`);
+    console.log(`${v.tag}: one ${b.w}x${b.h} menu button top-right, no wordmark; rows ${allRows.length}; How to play, sounds, code (${copied}), Leave (asks online and in hotseat) all work; Escape and Close refocus the button`);
     await ctx.close();
   }
   assert.deepEqual(errors, [], "console errors");

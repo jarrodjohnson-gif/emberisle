@@ -239,7 +239,7 @@ export function ChatBox({ rows, minRows = 0, game, dense, narrow, onEscape, acti
           {spectator ? (
             // Read-only (docs/design/spectator.md): the log stays; the emoji and input are this one line.
             <p data-testid="chat-readonly" className="shrink-0 text-xs text-zinc-700">
-              Watching — chat is read-only
+              Watching. Chat is read-only.
             </p>
           ) : (
             <>
@@ -339,7 +339,7 @@ function MuteMenu({ above = false }: { above?: boolean }) {
             }}
             className="h-11 shrink-0 cursor-pointer rounded-control bg-glass px-3 text-left text-sm text-zinc-700 hover:text-zinc-900"
           >
-            Sound settings
+            Sound
           </button>
         </div>
       ) : null}
@@ -482,7 +482,9 @@ export function ChatDock() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Enter" || useGame.getState().mode !== "online") return;
+      const s = useGame.getState();
+      // A pending placement owns Enter (PlaceChip confirms it); the chat waits.
+      if (e.key !== "Enter" || s.mode !== "online" || s.pendingPlace) return;
       const t = e.target as HTMLElement | null;
       if (t?.closest("button, a, [role=button], [role=radio], input, select, textarea")) return;
       e.preventDefault();

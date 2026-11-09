@@ -1,7 +1,7 @@
 // #640: harbor corner access — one continuous boardwalk from each pier to each of its two corners, ramping up to the hex surface.
 // Nothing tall (> 0.36) within 0.14 of a corner.
 // Run: npm run harbor-access-prove
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -31,7 +31,6 @@ const check = (name, ok, detail) => {
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 mkdirSync("test-results", { recursive: true });

@@ -7,7 +7,7 @@
 // 5. Network failure for losses chunk renders visible alert with Try again.
 // 6. Tapping Try again recovers once the network failure clears.
 // Run: npm run lazy-hud-prove
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
@@ -42,7 +42,6 @@ const check = (name, ok, detail) => {
 };
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
