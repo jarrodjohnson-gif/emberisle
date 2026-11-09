@@ -26,7 +26,7 @@ The issue column lists numbers named in each script's opening comment.
 | `make-sounds.mjs` | `node scripts/make-sounds.mjs` | Generates and levels table clips in `public/audio/`; needs ffmpeg. | No | #609, #616, #1073 |
 | `mobile-shots.mjs` | `node scripts/mobile-shots.mjs` | Writes phone screenshots under `test-results/mobile/` and checks the placement flow. | No | #175 |
 | `named-tunnel.mjs` | `node scripts/named-tunnel.mjs --setup HOSTNAME TUNNEL-UUID [PORT] [CREDENTIALS-FILE]`; `node scripts/named-tunnel.mjs --run` | Saves `.emberisle-tunnel/config.yml` and `settings.json`, or starts the saved tunnel. | No | #746 |
-| `named-tunnel.test.mjs` | `node --test scripts/named-tunnel.test.mjs` | Tests tunnel setup using temporary files and stub commands; needs no Cloudflare account. | No | #746 |
+| `named-tunnel.test.mjs` | `npm run named-tunnel-test` | Tests tunnel setup using temporary files and stub commands; needs no Cloudflare account. | Yes: `ci.yml` (`npm run named-tunnel-test`) | #746 |
 | `next-up.mjs` | `node scripts/next-up.mjs` | Updates the labelled GitHub queue issue body; requires the workflow environment. | Yes: `next-up.yml` | #858 |
 | `night.mjs` | `node scripts/night.mjs` | Builds `dist/`, starts the rules host, and prints the join line. | Yes: `night-prove` (`npm run night-prove`) | #87, #321 |
 | `orphan-check.mjs` | `npm run orphan-check` | Terminates two proofs and checks for leftover host processes; writes no report. | No, deliberately | #242 |
