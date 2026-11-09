@@ -271,6 +271,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-rename-cap-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-recovery-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run server-needs-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
@@ -426,6 +428,8 @@ jobs:
         run: npm run profiles-client-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run profiles-ui-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run profile-recovery-ui-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run profile-records-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'

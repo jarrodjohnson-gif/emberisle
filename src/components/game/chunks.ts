@@ -33,6 +33,9 @@ export const ProfileForms = profileForms.pick((m) => m.ProfileForms);
 // #767: its Wins and History views load when the sheet opens one of them.
 export const profileRecords = chunk(() => import("@/components/game/ProfileRecords"));
 export const ProfileRecords = profileRecords.pick((m) => m.ProfileRecords);
+// #1437: its recovery code screens; fetched as the sheet opens, and waited for before a request that answers with a code.
+export const profileRecovery = chunk(() => import("@/components/game/ProfileRecovery"));
+export const ProfileRecovery = profileRecovery.pick((m) => m.ProfileRecovery);
 
 export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);

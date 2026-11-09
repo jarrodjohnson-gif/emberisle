@@ -25,6 +25,11 @@ export const DEVICE_MAX = 5;
 export const RESERVED_PER_PROFILE = 5;
 // Failures against logins nobody holds are kept too (the same answer and the same work), but only this many names.
 const UNKNOWN_MAX = 1024;
+// The permanent recovery code (#1437, docs/design/recovery-code-1070): six symbols from these thirty, never 0, O, 1, I, L
+// or U. Its own budget beside the PIN's: three wrong in 15 minutes then a 15-minute wait, five a rolling day, ten per code.
+export const CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTVWXYZ";
+export const CODE_LIMITS = { window: 3, day: 5, life: 10 };
+const PIN_LIMITS = { window: WINDOW_FAILS, day: DAY_FAILS, life: LIFETIME_FAILS };
 const FILE = "profiles.json";
 const LOCK = "writer.lock";
 
@@ -48,6 +53,13 @@ export function normLogin(raw) {
 }
 
 export const validPin = (pin) => typeof pin === "string" && /^[0-9]{4}$/.test(pin);
+// A typed code: lower case works, spaces and dashes are dropped. Anything outside the thirty symbols is refused.
+export function normCode(raw) {
+  if (typeof raw !== "string" || raw.length > 32) return null;
+  const code = raw.replace(/[\s-]/g, "").toUpperCase();
+  return /^[2-9A-HJKMNP-TV-Z]{6}$/.test(code) ? code : null;
+}
+const newCode = () => Array.from({ length: 6 }, () => CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]).join("");
 export const digest = (token) => createHash("sha256").update(token).digest("hex");
 
 // Only the owner sees this, and only these fields. Verifiers, devices, budgets and media bindings never leave the store.
@@ -87,6 +99,7 @@ export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
 function validGuard(g) {
   return plain(g) && Array.isArray(g.times) && g.times.every(isTime) && plain(g.pending) && Object.values(g.pending).every(isTime) && Number.isSafeInteger(g.lifetime) && g.lifetime >= 0;
 }
+const validVerifier = (v) => plain(v) && v.alg === "scrypt" && Number.isSafeInteger(v.N) && Number.isSafeInteger(v.r) && Number.isSafeInteger(v.p) && isStr(v.salt, 64) && isStr(v.hash, 64);
 
 // Completed results (#890, profiles.md "Host storage and completed results"). Optional: a store that has recorded nothing
 // has none of these maps. `receipts` holds each game's immutable fingerprint, `results` its display rows, and `records` each
@@ -127,6 +140,9 @@ export function validDoc(doc, colors) {
     if (p.pinMustChange !== undefined && typeof p.pinMustChange !== "boolean") return false;
     if (p.tempPinExpiresAt !== undefined && p.tempPinExpiresAt !== null && !isTime(p.tempPinExpiresAt)) return false;
     if (p.pinMustChange && !isTime(p.tempPinExpiresAt)) return false;
+    // #1437: the recovery code's verifier and its own budget, both optional (absent before this feature).
+    if (p.recovery !== undefined && !(validVerifier(p.recovery) && isTime(p.recovery.at))) return false;
+    if (p.recoveryGuard !== undefined && !validGuard(p.recoveryGuard)) return false;
   }
   for (const [login, id] of Object.entries(doc.logins)) if (!LOGIN.test(login) || own(doc.profiles, id)?.login !== login) return false;
   for (const [login, id] of Object.entries(doc.reservedLogins)) if (!LOGIN.test(login) || !UUID.test(id) || has(doc.logins, login)) return false;
@@ -135,6 +151,9 @@ export function validDoc(doc, colors) {
     if (!/^[0-9a-f]{64}$/.test(d) || !plain(dev) || !has(doc.profiles, dev.profileId) || !isTime(dev.createdAt) || !isTime(dev.expiresAt)) return false;
   }
   for (const [login, g] of Object.entries(doc.unknownLogins)) if (!LOGIN.test(login) || has(doc.logins, login) || !validGuard(g)) return false;
+  // Code budgets for unknown logins, and for profiles that have no code yet (so a held login is allowed here).
+  const ur = doc.unknownRecovery ?? {};
+  if (!plain(ur) || !Object.entries(ur).every(([login, g]) => LOGIN.test(login) && validGuard(g))) return false;
   return validResults(doc);
 }
 
@@ -356,16 +375,17 @@ async function writeDurable(dir, name, text) {
 }
 
 // When the 15-minute window, the day or the lifetime budget refuses another PIN attempt. Reserved attempts count as failures.
-function refused(g, now, lifetime) {
+// `L` is the PIN's limits unless a recovery code passes its own (CODE_LIMITS).
+function refused(g, now, lifetime, L = PIN_LIMITS) {
   const held = Object.keys(g.pending).length;
-  if (lifetime && g.lifetime + held >= LIFETIME_FAILS) return true;
+  if (lifetime && g.lifetime + held >= L.life) return true;
   const day = g.times.filter((t) => now - t < DAY_MS).length;
-  if (day + held >= DAY_FAILS) return true;
+  if (day + held >= L.day) return true;
   const recent = g.times.filter((t) => now - t < WINDOW_MS).length;
-  if (recent + held >= WINDOW_FAILS) return true;
-  // The fifth failure inside 15 minutes starts a 15-minute cooldown from that failure.
+  if (recent + held >= L.window) return true;
+  // The fifth failure inside 15 minutes (the third, for a code) starts a 15-minute cooldown from that failure.
   const t = [...g.times].sort((a, b) => a - b);
-  for (let i = WINDOW_FAILS - 1; i < t.length; i++) if (t[i] - t[i - WINDOW_FAILS + 1] < WINDOW_MS && now < t[i] + WINDOW_MS) return true;
+  for (let i = L.window - 1; i < t.length; i++) if (t[i] - t[i - L.window + 1] < WINDOW_MS && now < t[i] + WINDOW_MS) return true;
   return false;
 }
 
@@ -380,6 +400,12 @@ function prune(doc, now) {
   for (const [login, g] of Object.entries(doc.unknownLogins)) {
     g.times = g.times.filter((t) => now - t < DAY_MS);
     if (!g.times.length && !Object.keys(g.pending).length) delete doc.unknownLogins[login];
+  }
+  // Code budgets keep their life count: an unknown login's entry goes only once it holds nothing at all.
+  for (const p of Object.values(doc.profiles)) if (p.recoveryGuard) p.recoveryGuard.times = p.recoveryGuard.times.filter((t) => now - t < DAY_MS);
+  for (const [login, g] of Object.entries(doc.unknownRecovery ?? {})) {
+    g.times = g.times.filter((t) => now - t < DAY_MS);
+    if (!g.times.length && !Object.keys(g.pending).length && !g.lifetime) delete doc.unknownRecovery[login];
   }
 }
 
@@ -441,11 +467,14 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
 
   // A crash between reserving an attempt and recording its result leaves the reservation: count it as the failure it may have been.
   if (doc) {
-    const stale = [...Object.values(doc.profiles).map((p) => [p.guard, true]), ...Object.values(doc.unknownLogins).map((g) => [g, false])];
+    // Code tries count for life against unknown logins too (#1437), so both kinds of code budget recover as life failures.
+    const codeGuards = (d) => [...Object.values(d.profiles).flatMap((p) => (p.recoveryGuard ? [p.recoveryGuard] : [])), ...Object.values(d.unknownRecovery ?? {})];
+    const stale = [...Object.values(doc.profiles).map((p) => [p.guard, true]), ...Object.values(doc.unknownLogins).map((g) => [g, false]), ...codeGuards(doc).map((g) => [g, true])];
     if (stale.some(([g]) => Object.keys(g.pending).length)) {
       mutate((d) => {
         for (const p of Object.values(d.profiles)) for (const [rid, at] of Object.entries(p.guard.pending)) (fail(p.guard, at, true), delete p.guard.pending[rid]);
         for (const g of Object.values(d.unknownLogins)) for (const [rid, at] of Object.entries(g.pending)) (fail(g, at, false), delete g.pending[rid]);
+        for (const g of codeGuards(d)) for (const [rid, at] of Object.entries(g.pending)) (fail(g, at, true), delete g.pending[rid]);
       }).catch(() => {});
     }
   }
@@ -454,7 +483,8 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
   let load = 0;
   const waiting = [];
   let running = false;
-  const claim = () => (load < 1 + HASH_QUEUE ? (load++, true) : false);
+  // A creation with a recovery code, and a recovery, claim two places at once (#1437).
+  const claim = (n = 1) => (load + n <= 1 + HASH_QUEUE ? ((load += n), true) : false);
   function derive(pin, salt, params) {
     return new Promise((resolve, reject) => {
       waiting.push({ pin, salt, params, resolve, reject });
@@ -499,7 +529,9 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
 
   const creating = new Set();
 
-  async function create(f) {
+  // `recovery`: also make the profile's recovery code (#1437), which the reply carries once. The profile connection always
+  // asks for one; a store-level create without it stands for a profile made before the feature.
+  async function create(f, { recovery = false } = {}) {
     if (!doc) throw new ProfileError("unavailable");
     const displayName = cleanLine(f.displayName, 16);
     const login = normLogin(f.login);
@@ -511,17 +543,20 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
     backupColor ??= colors.find((c) => c !== color);
     // The login is held from here, so a second creation racing this one is refused now, not after both have hashed.
     if (creating.has(login) || has(doc.logins, login) || has(doc.reservedLogins, login)) throw new ProfileError("loginTaken");
-    if (!claim()) throw new ProfileError("busy");
+    if (!claim(recovery ? 2 : 1)) throw new ProfileError("busy");
     creating.add(login);
     try {
-      const pin = await verifier(f.pin);
+      const code = recovery ? newCode() : null;
+      const [pin, codeVerifier] = await Promise.all([verifier(f.pin), code ? verifier(code) : null]);
       return await mutate((d, now) => {
         if (has(d.logins, login) || has(d.reservedLogins, login)) throw new ProfileError("loginTaken");
         const id = randomUUID();
         delete d.unknownLogins[login];
+        if (d.unknownRecovery) delete d.unknownRecovery[login];
         d.profiles[id] = { id, displayName, login, color, backupColor, catchphrase, winSongId: null, mediaKey: null, createdAt: now, updatedAt: now, pin, guard: newGuard() };
+        if (codeVerifier) Object.assign(d.profiles[id], { recovery: { ...codeVerifier, at: now }, recoveryGuard: newGuard() });
         d.logins[login] = id;
-        return { profile: ownerView(d.profiles[id]), ...issue(d, id, now) };
+        return { profile: ownerView(d.profiles[id]), ...issue(d, id, now), recoverySetAt: codeVerifier ? now : null, ...(code ? { recoveryCode: code } : {}) };
       });
     } finally {
       creating.delete(login);
@@ -590,7 +625,7 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
         return null;
       }
       if (upgraded) p.pin = upgraded;
-      return { profile: ownerView(p), ...issue(d, p.id, now) };
+      return { profile: ownerView(p), ...issue(d, p.id, now), recoverySetAt: setAt(p) };
     });
     if (!out) throw new ProfileError("signInFailed");
     return out;
@@ -610,7 +645,7 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
     if (!id) throw new ProfileError("signedOut");
     const p = doc.profiles[id];
     if (p.pinMustChange && p.tempPinExpiresAt <= clock()) throw new ProfileError("signInFailed");
-    return { profile: ownerView(p), expiresAt: doc.devices[digest(token)].expiresAt };
+    return { profile: ownerView(p), expiresAt: doc.devices[digest(token)].expiresAt, recoverySetAt: setAt(p) };
   }
 
   // Revokes this one credential. Other devices and every seat secret are untouched.
@@ -629,6 +664,8 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
     return out;
   };
   const samePin = (p, held) => p.pin.hash === held.pin.hash && p.pin.salt === held.pin.salt;
+  // When the profile's recovery code was made, or null. Only the owner's own session carries it.
+  const setAt = (p) => p.recovery?.at ?? null;
   async function reserveEdit(token, id) {
     return mutate((d, now) => {
       prune(d, now);
@@ -695,7 +732,7 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
       }
       edited.updatedAt = now;
       d.profiles[id] = edited;
-      return { profile: ownerView(edited), expiresAt: d.devices[digest(token)].expiresAt };
+      return { profile: ownerView(edited), expiresAt: d.devices[digest(token)].expiresAt, recoverySetAt: setAt(edited) };
     }));
   }
 
@@ -706,11 +743,14 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
     if (!id) throw new ProfileError("signedOut");
     if (!validPin(currentPin) || !validPin(newPin) || newPin !== newPinConfirm) throw new ProfileError("invalid");
     if (doc.profiles[id].guard.lifetime >= LIFETIME_FAILS) throw new ProfileError("pinLocked");
+    // After a local reset the profile has no code: changing the temporary PIN makes a new one (#1437, question 4).
+    const code = doc.profiles[id].pinMustChange ? newCode() : null;
     const held = await editAttempt(token, id, currentPin);
     let newVerifier = null;
+    let codeVerifier = null;
     let hashBusy = false;
     if (held.ok) {
-      if (claim()) newVerifier = await verifier(newPin).catch(() => null);
+      if (claim(code ? 2 : 1)) [newVerifier, codeVerifier] = await Promise.all([verifier(newPin).catch(() => null), code ? verifier(code).catch(() => null) : null]);
       else hashBusy = true;
     }
     return editResult(await mutate((d, now) => {
@@ -726,12 +766,133 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
       }
       if (hashBusy) return { error: "busy" };
       if (!newVerifier) return { error: "unavailable" };
+      const minted = Boolean(code && p.pinMustChange);
+      if (minted && !codeVerifier) return { error: "unavailable" };
+      if (minted) mint(d, p, codeVerifier, now);
       p.pin = newVerifier;
       p.pinMustChange = false;
       p.tempPinExpiresAt = null;
       p.updatedAt = now;
       for (const k of Object.keys(d.devices)) if (d.devices[k].profileId === id) delete d.devices[k];
-      return { profile: ownerView(p), ...issue(d, id, now) };
+      return { profile: ownerView(p), ...issue(d, id, now), recoverySetAt: setAt(p), ...(minted ? { recoveryCode: code } : {}) };
+    }));
+  }
+
+  // A new code replaces the old one at once and starts fresh counters: ten tries per code. Code tries this profile took
+  // while it had no code (counted like an unknown login's) go with it.
+  function mint(d, p, v, now) {
+    p.recovery = { ...v, at: now };
+    p.recoveryGuard = newGuard();
+    if (d.unknownRecovery) delete d.unknownRecovery[p.login];
+  }
+
+  // New recovery code (#1437): the signed-in owner, with the current PIN. A wrong PIN counts against the PIN budget, as on
+  // Change PIN, so a stolen remembered device can't mint a code. Refused under a PIN life lock and while a temporary PIN
+  // waits to be changed (that change makes the code).
+  async function newRecoveryCode(token, pinText) {
+    if (!doc) throw new ProfileError("unavailable");
+    const id = validate(token);
+    if (!id) throw new ProfileError("signedOut");
+    if (!validPin(pinText)) throw new ProfileError("invalid");
+    if (doc.profiles[id].pinMustChange) throw new ProfileError("mustChangePin");
+    if (doc.profiles[id].guard.lifetime >= LIFETIME_FAILS) throw new ProfileError("pinLocked");
+    const held = await editAttempt(token, id, pinText);
+    const code = newCode();
+    let codeVerifier = null;
+    let hashBusy = false;
+    if (held.ok) {
+      if (claim()) codeVerifier = await verifier(code).catch(() => null);
+      else hashBusy = true;
+    }
+    return editResult(await mutate((d, now) => {
+      const p = d.profiles[id];
+      if (!p) return { error: "signedOut" };
+      const at = p.guard.pending[held.rid];
+      delete p.guard.pending[held.rid];
+      if (validate(token) !== id || at === undefined || !samePin(p, held)) return { error: "signedOut" };
+      if (p.guard.lifetime >= LIFETIME_FAILS) return { error: "pinLocked" };
+      if (!held.ok) {
+        fail(p.guard, at, true);
+        return { error: "signInFailed" };
+      }
+      if (p.pinMustChange) return { error: "mustChangePin" };
+      if (hashBusy) return { error: "busy" };
+      if (!codeVerifier) return { error: "unavailable" };
+      mint(d, p, codeVerifier, now);
+      p.updatedAt = now;
+      return { code, setAt: now };
+    }));
+  }
+
+  // Forgot your PIN (#1437): the login, its profile's code and a new PIN. Refusals must look and take the same time, so
+  // nobody learns which logins are real or have a code:
+  //   1. The new PIN's format and confirmation are checked first. A bad one costs no code try and says nothing of the code.
+  //   2. A spent or locked budget still runs one hash, against the dummy, then answers like a wrong code.
+  //   3. Unknown logins, and profiles with no code yet, count against unknownRecovery[login] with the same 3, 5 and 10.
+  // A right code sets the new PIN, signs every other device out and signs this one in. The code stays. It never refills the
+  // PIN budget or clears a PIN lock: under a PIN life lock a right code is refused with pinLocked, so only its holder learns
+  // of the lock.
+  async function recover(rawLogin, rawCode, newPin, newPinConfirm) {
+    if (!doc) throw new ProfileError("unavailable");
+    const name = normLogin(rawLogin);
+    const code = normCode(rawCode);
+    if (!name || !code || !validPin(newPin) || newPin !== newPinConfirm) throw new ProfileError("invalid");
+    // Two places: the code check, then the new PIN's verifier (given back at once when the code is wrong).
+    if (!claim(2)) throw new ProfileError("busy");
+    let held;
+    try {
+      held = await mutate((d, now) => {
+        prune(d, now);
+        const id = own(d.logins, name) ?? null;
+        const p = id ? d.profiles[id] : null;
+        let g;
+        if (p?.recovery) g = p.recoveryGuard ??= newGuard();
+        else {
+          const u = (d.unknownRecovery ??= {});
+          const keys = Object.keys(u);
+          if (!has(u, name) && keys.length >= UNKNOWN_MAX) delete u[keys[0]];
+          if (!has(u, name)) u[name] = newGuard();
+          g = u[name];
+        }
+        if (refused(g, now, true, CODE_LIMITS)) return { id: null, rid: null, v: dummy };
+        const rid = randomUUID();
+        g.pending[rid] = now;
+        return p?.recovery ? { id, rid, v: p.recovery } : { id: null, rid, v: dummy };
+      });
+    } catch (e) {
+      load -= 2;
+      throw e;
+    }
+    let ok = false;
+    try {
+      const key = await derive(code, Buffer.from(held.v.salt, "base64"), held.v);
+      const want = Buffer.from(held.v.hash, "base64");
+      ok = Boolean(held.id) && key.length === want.length && timingSafeEqual(key, want);
+    } catch (e) {
+      console.error("profiles: hash failed:", e.message);
+    }
+    let fresh = null;
+    if (ok) fresh = await verifier(newPin).catch(() => null);
+    else load--;
+    // The failure is committed before it is answered. Hashing ran outside this write, so check again that the login still
+    // names this profile and that its code is still the one tested (as samePin does for PINs); else nothing is saved.
+    return editResult(await mutate((d, now) => {
+      const p = held.id ? own(d.profiles, held.id) : null;
+      const g = held.id ? p?.recoveryGuard : own(d.unknownRecovery ?? {}, name);
+      const at = held.rid ? g?.pending[held.rid] : undefined;
+      if (at !== undefined) {
+        delete g.pending[held.rid];
+        if (!ok) fail(g, at, true);
+      }
+      if (!ok || !p || at === undefined || own(d.logins, name) !== p.id || p.recovery?.salt !== held.v.salt || p.recovery?.hash !== held.v.hash) return { error: "recoverFailed" };
+      if (p.guard.lifetime >= LIFETIME_FAILS) return { error: "pinLocked" };
+      if (!fresh) return { error: "unavailable" };
+      p.pin = fresh;
+      p.pinMustChange = false;
+      p.tempPinExpiresAt = null;
+      p.updatedAt = now;
+      for (const k of Object.keys(d.devices)) if (d.devices[k].profileId === p.id) delete d.devices[k];
+      return { profile: ownerView(p), ...issue(d, p.id, now), recoverySetAt: p.recovery.at };
     }));
   }
 
@@ -757,6 +918,10 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
       if (!p) throw new ProfileError("notFound");
       // Clear all failure budgets and the lifetime lock.
       p.guard = newGuard();
+      // Delete the recovery code and its counters (#1437); changing the temporary PIN makes a new one.
+      delete p.recovery;
+      delete p.recoveryGuard;
+      if (d.unknownRecovery) delete d.unknownRecovery[p.login];
       // Revoke all devices.
       for (const k of Object.keys(d.devices)) if (d.devices[k].profileId === profileId) delete d.devices[k];
       // Set temp PIN and require change before ordinary access.
@@ -923,6 +1088,8 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
     logout,
     profileEdit,
     profileChangePin,
+    newRecoveryCode,
+    recover,
     localResetPin,
     // For the next profile children (#763, #764): credential checks, private reads and serialized durable writes.
     validate,
