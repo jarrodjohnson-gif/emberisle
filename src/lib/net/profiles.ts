@@ -195,8 +195,8 @@ export function createProfileClient(initialHost: string, options: {
       !(p.backupColor === null || typeof p.backupColor === "string") || typeof p.catchphrase !== "string" || !(p.winSongId === null || typeof p.winSongId === "string")) throw new ProfileClientError("unavailable");
     credential = token; expiresAt = reply.expiresAt;
     const profile: ProfileOwner = { profileId: p.profileId, displayName: p.displayName, login: p.login, color: p.color, backupColor: p.backupColor, catchphrase: p.catchphrase, winSongId: p.winSongId, ...(p.pinMustChange === true ? { pinMustChange: true } : {}) };
-    // #1437: only the reply that made a code carries it; the save screen is the only view while one is held.
-    update({ profile: Object.freeze(profile), setAt: reply.recoverySetAt as number | null, code: reply.recoveryCode as string | undefined }); remember(keep);
+    // #1437: only the reply that made a code sets it; a later reply without one keeps it. Done or sign-out drops it.
+    update({ profile: Object.freeze(profile), setAt: reply.recoverySetAt as number | null, ...(typeof reply.recoveryCode === "string" ? { code: reply.recoveryCode } : {}) }); remember(keep);
     return snapshot.profile!;
   };
   const sessionRequest = async (type: string, fields: Record<string, unknown>, keep: boolean, needsCredential: boolean) => {

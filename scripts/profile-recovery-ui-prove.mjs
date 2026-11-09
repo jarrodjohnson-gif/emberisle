@@ -9,8 +9,9 @@
 //   Every screen keeps the sheet on screen, its main button visible and every control at least 44 px; the page never
 //   scrolls sideways.
 // Then: a profile made before the feature says "No recovery code yet." and gets one with its PIN; a host without recoveryV1
-// shows no link; Copy puts the code on the clipboard; codes appear only in the frames that make or use them, never in
-// storage. With SHOTS=1 it writes the pictures in docs/proofs/1437/ at device scale 2.
+// shows no link; Copy puts the code on the clipboard; a later reply without a code keeps the held one; codes appear only in
+// the frames that make or use them, never in storage. With SHOTS=1 it writes the pictures in docs/proofs/1437/ at device
+// scale 2.
 // Run: npm run profile-recovery-ui-prove
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
@@ -264,9 +265,16 @@ try {
     await openSheet(page);
     await sheet(page).getByRole("heading", { name: "Save your recovery code" }).waitFor();
     assert.equal(await codeOf(page), `${code.slice(0, 3)}-${code.slice(3)}`, "the same code shows again until Done");
+    // A later session reply that carries no code (an edit, a resume) leaves the held code and its save screen in place.
+    await page.evaluate(async () => { const c = window.__emberisle.getState().profile; await c.edit({ catchphrase: "Still here" }); await c.resume(); });
+    const later = (await frames(page)).filter((f) => f.dir === "in" && f.m.type === "profileSession").slice(1).map((f) => f.m);
+    assert.deepEqual(later.map((m) => [m.profile.catchphrase, "recoveryCode" in m]), [["Still here", false], ["Still here", false]], "an edit and a resume answer without a code");
+    await sheet(page).getByRole("heading", { name: "Save your recovery code" }).waitFor();
+    assert.equal(await codeOf(page), `${code.slice(0, 3)}-${code.slice(3)}`, "a reply without a code keeps the held code on the save screen");
     await tickAndDone(page);
     await page.context().close();
     ok("Copy puts the code on the clipboard; closing the sheet before Done shows the same save screen again on the next opening");
+    ok("an edit or resume reply without a code keeps the held code on the save screen until Done");
   }
 
   // A profile made before the feature has no code: the summary says so and Get a recovery code makes one with the PIN.
