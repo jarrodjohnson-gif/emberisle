@@ -19,5 +19,5 @@ Hosted CI follow-up: profile-recovery-ui-prove also names the removed summary co
 
 | File and original line | Old | New | Why |
 |---|---|---|---|
-| scripts/profile-recovery-ui-prove.mjs:132 | `find((b) => b.textContent.trim() === main)` | `find((b) => main === "Close" ? b.getAttribute("aria-label") === main : b.textContent.trim() === main)` | The approved icon-only Close uses its exact accessible label; all other primary controls still match exact text. Every geometry and44px check remains. |
-| scripts/profile-recovery-ui-prove.mjs:198 | `fits(page, "Done", summary)` | `fits(page, "Close", summary)` | Replace only obsolete signed-in summary control; recovery save Done remains. |
+| scripts/profile-recovery-ui-prove.mjs:132 | `` const button = [...d.querySelectorAll("button")].find((b) => b.textContent.trim() === main); `` | `` const button = [...d.querySelectorAll("button")].find((b) => main === "Close" ? b.getAttribute("aria-label") === main : b.textContent.trim() === main); `` | The approved icon-only Close uses its exact accessible label; all other primary controls still match exact text. Every geometry and44px check remains. |
+| scripts/profile-recovery-ui-prove.mjs:198 | `` await fits(page, "Done", `${size.name} summary`); `` | `` await fits(page, "Close", `${size.name} summary`); `` | Replace only obsolete signed-in summary control; recovery save Done remains. |

@@ -15,3 +15,5 @@ Node22.23.4, locked Playwright1.63.0, default Chromium1243 via shared helper; te
 The pictures show the actual signed-in summary at the two required viewports. They are browser fixtures, not owner acceptance.
 No auth/recovery policy, test deadline, allowance, ceiling or dependency lock changed.
 Fresh exact-head CI and independent Claude review remain required. No merge or manual retry.
+
+Hosted follow-up: a3 job129147757670 fails old summary Done geometry target. Separate equivalent commit e3c6198cfbad99e3303ba1ce51f57fe397ed0a47 matches approved icon-only Close by exact aria-label for summary only, preserving save-screen Done and every geometry/44px assertion. Complete profile-recovery-ui proof PASS on e3c6198c, four viewports plus recovery/temporaryPIN/privacy flows. Registration and exact-base advisory guard PASS, none loosened. Eight exact old/new rows in assertion-replacements.md. This follow-up and evidence are LOCAL ONLY after GitHub HTTP401 Bad credentials; no publish, retry or alternate credentials/routes attempted. Prior hosted failure remains recorded, fresh hosted follow-up verification pending.
