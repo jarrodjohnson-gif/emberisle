@@ -701,7 +701,8 @@ export function viewFor(game, you) {
 
 // Goods lost to successful steals (#550) stay on the host until the win: no view carries them, not even the seat's own.
 // At the win every seat and watcher gets the count with the final state, a 0 for a seat that lost nothing.
-function withoutLoss({ goodsLost, ...rest }) {
+// #1452: so do the results screen's award counts (`tally`); the final state carries each seat's, when it has any.
+function withoutLoss({ goodsLost, tally, ...rest }) {
   return rest;
 }
 

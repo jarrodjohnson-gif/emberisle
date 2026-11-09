@@ -256,6 +256,23 @@ body {
 .lobby-cover { box-shadow: var(--shadow-sheet); background: var(--paper); }
 .win-equation { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; margin-top: 12px; font-size: 13px; color: var(--muted); }
 .win-total-hero { font-family: var(--font-numeral); font-size: 56px; line-height: 60px; font-weight: 800; letter-spacing: -2px; }
+/* #1452: the award chip at the top of an opened results row, its fact beside it; it wraps under the chip on a narrow phone. */
+.win-award { margin: 0 0 6px; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font-size: 13px; line-height: 20px; color: var(--color-muted); }
+.win-award-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 24px; padding: 2px 10px 2px 7px; border-radius: 999px;
+  background: color-mix(in srgb, var(--color-sea) 12%, var(--color-surface)); color: var(--color-sea-ink); font-weight: 600; white-space: nowrap; }
+.win-award-chip::before { content: ""; width: 14px; height: 14px; flex: none; background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='6'/%3E%3Cpath d='M15.48 12.89 17 22l-5-3-5 3 1.52-9.11'/%3E%3C/svg%3E") center / contain no-repeat; }
+/* #1452: the award under a name in the desktop table, like the profile line (#767). */
+.win-award-line { display: block; padding-left: 18px; font-size: 12px; line-height: 16px; font-weight: 400; white-space: normal; color: var(--color-muted); }
+/* #1453: the dice strip under the results list, inside its scrolling area. Pale bars; only an unusual sum is sea ink. */
+.win-dice { margin: 6px 0 2px; padding: 10px 8px 4px; border-top: 1px solid var(--color-border); text-align: left; }
+.win-dice figcaption { display: flex; justify-content: space-between; font-size: 12px; line-height: 16px; color: var(--color-muted); }
+.win-dice svg { display: block; width: 100%; max-width: 360px; height: auto; margin: 4px auto 0; overflow: visible; }
+.win-dice rect { fill: color-mix(in srgb, var(--color-muted) 30%, var(--color-surface)); }
+.win-dice rect.hot { fill: var(--color-sea-ink); }
+.win-dice polyline { fill: none; stroke: var(--color-fg); stroke-opacity: 0.28; stroke-width: 1.5; stroke-dasharray: 3 3; }
+.win-dice text { font-size: 10px; fill: var(--color-muted); text-anchor: middle; }
+.win-dice p { margin: 2px 0 0; text-align: center; font-size: 13px; line-height: 20px; color: var(--color-fg); }
 @media (max-height: 480px) {
   .win-total-hero { font-size: 26px; line-height: 28px; }
   .win-equation { margin-top: 2px; font-size: 11px; gap: 2px 6px; }

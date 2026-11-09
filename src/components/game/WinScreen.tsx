@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
@@ -6,18 +6,22 @@ import { totalVP, victoryTarget } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { readViewport, useViewport } from "@/lib/viewport";
 import { LazyBoundary } from "@/lib/lazy";
-import { WinList, winList } from "@/components/game/chunks";
+import { Award, DiceStrip, resultsStory, WinList, winList } from "@/components/game/chunks";
 import { useFocusTrap } from "@/lib/focus-trap";
 import type { PlayerState } from "@/lib/game/types";
 
-// `note` is the row's profile line (#767), only when a seat in this game started bound to a profile.
-export type Row = { p: PlayerState; outposts: number; strongholds: number; path: boolean; army: boolean; hiddenVp: number; total: number; note?: string };
+// `note` is the row's profile line (#767), only when a seat in this game started bound to a profile. `award` is the
+// player's island award (#1452), from its own lazy chunk.
+export type Row = { p: PlayerState; outposts: number; strongholds: number; path: boolean; army: boolean; hiddenVp: number; total: number; note?: string; award?: ReactNode };
+// #1452 and #1453: a part of the results story; if its chunk cannot load, the results show without it.
+const story = (el: ReactNode) => <LazyBoundary failed={null}>{el}</LazyBoundary>;
 
 // Build bible 4.7: the island stays visible. "Hide scores" hides the panel and leaves a small chip.
 export function WinScreen() {
   // #748: the phone list is its own chunk; fetch it while the table plays, so it is in memory before the game ends.
   useEffect(() => {
     if (readViewport().phone) void winList.prefetch();
+    void resultsStory.prefetch();
   }, []);
   const winnerId = useGame((s) => s.state?.phase === "over" ? s.state.winner : null);
   return winnerId ? <Panel key={winnerId} /> : null;
@@ -76,6 +80,7 @@ function Panel() {
         army: state.largestArmy === p.id,
         hiddenVp: p.hidden.vp,
         total: totalVP(state, p.id),
+        award: story(<Award id={p.id} line={!phone} />),
         note: !result?.tracked
           ? undefined
           : !Object.hasOwn(result.wins, p.id)
@@ -151,6 +156,7 @@ function Panel() {
                     <SeatDot color={r.p.color} className="mr-1.5 size-3 align-[-2px]" />
                     {r.p.name}
                     {r.note ? <span data-testid="win-profile" className="block pl-[18px] text-xs font-normal text-muted">{r.note}</span> : null}
+                    {r.award}
                   </td>
                   <td className={cell}>{r.outposts}</td>
                   <td className={cell}>{r.strongholds}</td>
@@ -192,6 +198,7 @@ function Panel() {
         <div className={`win-equation ${phone ? "short:hidden!" : ""}`} data-testid="win-reason">{contribution.map((part, i) => <span key={part}>{i > 0 ? "+ " : ""}{part}</span>)}</div>
         <div data-testid="win-table-wrap" className={`mt-4 min-h-0 overflow-auto ${phone ? "border-t border-border pt-2 text-left short:mt-1 short:pt-0" : "short:mt-1.5"}`}>
           {phone ? <LazyBoundary failed={table}><WinList rows={rows} /></LazyBoundary> : table}
+          {story(<DiceStrip />)}
         </div>
         {waiting ? (
           <p data-testid="win-waiting" className="mt-4 text-sm text-zinc-600">
