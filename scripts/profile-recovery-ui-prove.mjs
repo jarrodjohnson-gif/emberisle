@@ -9,9 +9,9 @@
 //   Every screen keeps the sheet on screen, its main button visible and every control at least 44 px; the page never
 //   scrolls sideways.
 // Then: a profile made before the feature says "No recovery code yet." and gets one with its PIN; a host without recoveryV1
-// shows no link; Copy puts the code on the clipboard; a later reply without a code keeps the held one; codes appear only in
-// the frames that make or use them, never in storage. With SHOTS=1 it writes the pictures in docs/proofs/1437/ at device
-// scale 2.
+// shows no link; Copy puts the code on the clipboard; a later reply without a code keeps the held one; a temporary PIN's
+// Change PIN waits for the recovery chunk, so its new code is shown; codes appear only in the frames that make or use them,
+// never in storage. With SHOTS=1 it writes the pictures in docs/proofs/1437/ at device scale 2.
 // Run: npm run profile-recovery-ui-prove
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
@@ -42,6 +42,15 @@ try {
     await store.create({ displayName: "Elder", login: "elder-user", pin: "6060", pinConfirm: "6060", color: PLAYER_COLORS[2] });
     process.exit(0);
   `], { cwd: new URL("../server/", import.meta.url), env: { ...process.env, PROFILES_DIR: path.join(dir, "profiles") } });
+  // A profile a local reset left on a temporary PIN (the store's own reset, as the admin command runs it).
+  const tempPin = JSON.parse(execFileSync(process.execPath, ["--import", "./register.mjs", "--input-type=module", "-e", `
+    import { openProfiles } from "./profiles.mjs";
+    import { PLAYER_COLORS } from "../src/lib/game/types.ts";
+    const store = openProfiles(process.env.PROFILES_DIR, { colors: PLAYER_COLORS });
+    const made = await store.create({ displayName: "Tide", login: "tide-user", pin: "7070", pinConfirm: "7070", color: PLAYER_COLORS[1] });
+    process.stdout.write(JSON.stringify((await store.localResetPin(made.profile.profileId)).tempPin));
+    process.exit(0);
+  `], { cwd: new URL("../server/", import.meta.url), env: { ...process.env, PROFILES_DIR: path.join(dir, "profiles") }, encoding: "utf8" }));
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL("../server/", import.meta.url),
     env: { ...process.env, PORT: "0", ROOMS_DIR: path.join(dir, "rooms"), PROFILES_DIR: path.join(dir, "profiles"), PROFILES_DEV: "", SAVE_MS: "20" },
@@ -66,6 +75,7 @@ try {
   const tunnel = (ip) => ({ target: `ws://127.0.0.1:${port}`, ws: true, changeOrigin: false, headers: { "cf-connecting-ip": ip, "x-forwarded-proto": "https" } });
   const proxy = { "^/old(?:[/?]|$)": { target: `ws://127.0.0.1:${oldHost.address().port}`, ws: true } };
   for (let i = 0; i < 6; i++) proxy[`^/h${i}(?:[/?]|$)`] = tunnel(`198.51.100.${40 + i}`);
+  proxy["^/h6(?:[/?]|$)"] = tunnel("198.51.100.46");
   vite = await createServer({
     root: root.pathname, logLevel: "silent",
     server: { host: "127.0.0.1", port: 0, hmr: false, https: { key: readFileSync(path.join(dir, "key.pem")), cert: readFileSync(path.join(dir, "cert.pem")) }, proxy },
@@ -298,6 +308,41 @@ try {
     await sheet(page).getByRole("button", { name: "New recovery code" }).waitFor();
     await page.context().close();
     ok("a profile with no code says so, and Get a recovery code makes one with its PIN");
+  }
+
+  // A temporary PIN's change answers with a new code, so Change PIN opens only once the recovery chunk is in. With that chunk
+  // blocked, the summary says the form couldn't load and no PIN change is sent; once it loads, the change shows the code.
+  {
+    const before = errors.length;
+    const page = await open({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }, "h6");
+    await page.route(/ProfileRecovery\.tsx/, (route) => route.abort("connectionrefused"));
+    await openSheet(page);
+    await sheet(page).getByLabel("Login").fill("tide-user");
+    await sheet(page).getByLabel("PIN", { exact: true }).fill(tempPin);
+    await sheet(page).getByRole("button", { name: "Sign in", exact: true }).click();
+    await sheet(page).getByRole("alert").filter({ hasText: "Couldn't load this form. Try again." }).waitFor();
+    assert.equal(await sheet(page).getByRole("form", { name: "Change PIN" }).count(), 0, "Change PIN waits for the recovery chunk");
+    assert.equal((await sent(page, "profileChangePin")).length, 0, "no PIN change is sent while the recovery chunk is down");
+    await page.unroute(/ProfileRecovery\.tsx/);
+    await sheet(page).getByRole("button", { name: "Change PIN" }).click();
+    const forced = sheet(page).getByRole("form", { name: "Change PIN" });
+    await forced.waitFor();
+    await forced.getByLabel("Current PIN").fill(tempPin);
+    await forced.getByLabel("New PIN", { exact: true }).fill("9191");
+    await forced.getByLabel("Confirm new PIN").fill("9191");
+    await forced.getByRole("button", { name: "Save PIN" }).click();
+    await sheet(page).getByRole("heading", { name: "Save your recovery code" }).waitFor();
+    const minted = (await frames(page)).filter((f) => f.dir === "in" && f.m.type === "profileSession").at(-1).m.recoveryCode;
+    assert.match(minted, CODE, "the PIN change's reply carries a new code");
+    allCodes.push(minted);
+    assert.equal(await codeOf(page), `${minted.slice(0, 3)}-${minted.slice(3)}`, "the save screen shows the PIN change's code");
+    await tickAndDone(page);
+    await sheet(page).getByText("Signed in as Tide").waitFor();
+    await page.context().close();
+    // The blocked chunk's own load failures, which React reports as it hands them to the sheet's boundaries, are expected here.
+    const blocked = /Failed to fetch dynamically imported module: \S+\/ProfileRecovery\.tsx(\?retry=\d+)? The above error occurred in the <Lazy> component/;
+    errors.push(...errors.splice(before).filter((e) => !blocked.test(e)));
+    ok("a temporary PIN's Change PIN waits for the recovery chunk, so the new code it answers with is always shown");
   }
 
   // A host without recoveryV1 shows no link, and its sign in still works as before.

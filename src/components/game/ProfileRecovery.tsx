@@ -127,7 +127,7 @@ export function ProfileRecovery({ ui }: { ui: RecoveryUi }) {
           I've written it down
         </label>
         {actions(
-          <Button size="lg" variant="primary" className="w-full" disabled={!written} onClick={() => { c.code(null); go("signin"); }}>
+          <Button size="lg" variant="primary" className="w-full" disabled={!written} onClick={() => { c.code(null, c.getSnapshot().setAt); go("signin"); }}>
             Done
           </Button>,
         )}

@@ -196,7 +196,7 @@ export function createProfileClient(initialHost: string, options: {
     credential = token; expiresAt = reply.expiresAt;
     const profile: ProfileOwner = { profileId: p.profileId, displayName: p.displayName, login: p.login, color: p.color, backupColor: p.backupColor, catchphrase: p.catchphrase, winSongId: p.winSongId, ...(p.pinMustChange === true ? { pinMustChange: true } : {}) };
     // #1437: only the reply that made a code sets it; a later reply without one keeps it. Done or sign-out drops it.
-    update({ profile: Object.freeze(profile), setAt: reply.recoverySetAt as number | null, ...(typeof reply.recoveryCode === "string" ? { code: reply.recoveryCode } : {}) }); remember(keep);
+    update({ profile: Object.freeze(profile), setAt: reply.recoverySetAt as number | null, code: (reply.recoveryCode as string | undefined) ?? snapshot.code }); remember(keep);
     return snapshot.profile!;
   };
   const sessionRequest = async (type: string, fields: Record<string, unknown>, keep: boolean, needsCredential: boolean) => {
@@ -260,7 +260,7 @@ export function createProfileClient(initialHost: string, options: {
     // #1437, for the recovery chunk: a request answered by a profileSession (profileRecover signs in with one), and the code
     // "Save your recovery code" shows (from New recovery code), which Done drops with null.
     session: sessionRequest,
-    code: (code: string | null, setAt = snapshot.setAt) => update({ code, setAt }),
+    code: (code: string | null, setAt: number | null | undefined) => update({ code, setAt }),
     async logout() {
       const ownHost = snapshot.host;
       const ownCredential = credential;
