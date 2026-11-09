@@ -79,7 +79,7 @@ const CEILINGS = [
   // #767, 2026-11-07: the Profile sheet's Wins and Your games views; measured 2,248 B. New chunk, per q-size-standing.
   { name: "ProfileRecords", gzipBytes: 2350 },
   // #1437, 2026-11-09: the Profile sheet's recovery code screens (Save your recovery code, Forgot your PIN, New recovery
-  // code, the sign-in link and the summary row); measured 3,035 B gzip. New chunk only; the desk set this ceiling (2026-11-09).
+  // code, the sign-in link and the summary row); measured 3,029 B gzip. New chunk only; the desk set this ceiling (2026-11-09).
   { name: "ProfileRecovery", gzipBytes: 3200 },
   // #1281, 2026-11-07: startup loading screen, preloaded beside index; measured 2,420 B gzip. Decided per q-size-standing; paired trim to follow.
   { name: "LoadingScreen", gzipBytes: 2600 },
