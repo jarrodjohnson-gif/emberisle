@@ -539,6 +539,9 @@ jobs:
         run: npm run landing-dust-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'scene-water'
         run: npm run classic-builder-prove
+      - name: Classic appearance switching
+        if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'scene-life'
+        run: npm run classic-switch-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
         run: npm run idle-prove
       - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'

@@ -321,3 +321,8 @@ export class ClassicBoard implements LandAppearance {
     this.kit = null;
   }
 }
+
+// Same lazy-factory boundary as Jelly, with Classic's independent deterministic seed and quality.
+export function createAppearance(hexes: readonly LandHex[], key: string, pause: () => Promise<boolean>, lite: boolean, _holdAge: () => boolean) {
+  return ClassicBoard.create(hexes, hashStr(key), pause, lite ? "lite" : "full");
+}

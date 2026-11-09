@@ -1,0 +1,75 @@
+
+> loading-screen-prove
+> node scripts/loading-screen-prove.mjs
+
+ok  320x568: a fresh visit opens on the loading card, not the title
+ok  320x568: while the island is held the bar waits below 100% and Start is closed {"held":7}
+ok  320x568: Start before 100% shows its waiting line and nothing else happens
+ok  320x568: the bar fills forward in real steps [7,62,72,100]
+ok  320x568: at 100% Start opens
+ok  320x568: the status line says it is ready
+ok  320x568: the card sits inside the screen (16 px in), Start is at least 44 px tall, the wordmark is 56 px {"card":[16,326,304,552],"btn":48,"font":"56px","w":320,"h":568}
+ok  320x568: Start pushes through the clouds and the title card arrives near the end of the 2.4 s push {"ms":2311}
+ok  320x568: the clouds and the loading card are gone once the camera settles
+ok  320x568: the title wordmark is 56 px "56px"
+ok  320x568: Play still starts a game after the loading screen
+ok  320x568: no browser errors []
+ok  390x844: a fresh visit opens on the loading card, not the title
+ok  390x844: while the island is held the bar waits below 100% and Start is closed {"held":7}
+ok  390x844: Start before 100% shows its waiting line and nothing else happens
+ok  390x844: the bar fills forward in real steps [7,62,72,100]
+ok  390x844: at 100% Start opens
+ok  390x844: the status line says it is ready
+ok  390x844: the card sits inside the screen (16 px in), Start is at least 44 px tall, the wordmark is 56 px {"card":[16,602,374,828],"btn":48,"font":"56px","w":390,"h":844}
+ok  390x844: Start pushes through the clouds and the title card arrives near the end of the 2.4 s push {"ms":2335}
+ok  390x844: the clouds and the loading card are gone once the camera settles
+ok  390x844: the title wordmark is 56 px "56px"
+ok  390x844: Play still starts a game after the loading screen
+ok  390x844: no browser errors []
+ok  844x390: a fresh visit opens on the loading card, not the title
+ok  844x390: while the island is held the bar waits below 100% and Start is closed {"held":7}
+ok  844x390: Start before 100% shows its waiting line and nothing else happens
+ok  844x390: the bar fills forward in real steps [7,72,100]
+ok  844x390: at 100% Start opens
+ok  844x390: the status line says it is ready
+ok  844x390: the card sits inside the screen (16 px in), Start is at least 44 px tall, the wordmark is 56 px {"card":[16,164,368,374],"btn":48,"font":"56px","w":844,"h":390}
+ok  844x390: Start pushes through the clouds and the title card arrives near the end of the 2.4 s push {"ms":2309}
+ok  844x390: the clouds and the loading card are gone once the camera settles
+ok  844x390: the title wordmark is 56 px "56px"
+ok  844x390: Play still starts a game after the loading screen
+ok  844x390: no browser errors []
+ok  1280x720: a fresh visit opens on the loading card, not the title
+ok  1280x720: while the island is held the bar waits below 100% and Start is closed {"held":7}
+ok  1280x720: Start before 100% shows its waiting line and nothing else happens
+ok  1280x720: the bar fills forward in real steps [7,62,72,100]
+ok  1280x720: at 100% Start opens
+ok  1280x720: the status line says it is ready
+ok  1280x720: the card sits inside the screen (16 px in), Start is at least 44 px tall, the wordmark is 56 px {"card":[40,438,472,680],"btn":48,"font":"56px","w":1280,"h":720}
+ok  1280x720: Start pushes through the clouds and the title card arrives near the end of the 2.4 s push {"ms":2308}
+ok  1280x720: the clouds and the loading card are gone once the camera settles
+ok  1280x720: the title wordmark is 56 px "56px"
+ok  1280x720: Play still starts a game after the loading screen
+ok  1280x720: no browser errors []
+ok  reduced motion: a cross-fade only (the card never moves) and the title is up in under a second {"ms":477}
+     reduced motion trace (ms from navigation; long tasks as ms-from-Start+duration): {"ms":477,"at100":1691,"start":1751,"long":[],"title":212,"gone":404,"timers":[41,143,244,344,445],"frames":[8,25,42,58,75,92,108,125,142,158,175,192,208,225,242,258,275,292,308,325,342,358,375,392,408,425,442,458],"hidden":"visible","draws":4,"programs":"20->20"}
+ok  reduced motion: no browser errors []
+ok  reduced motion: with frames stalled 2.5 s as the title arrives, the loading card is still gone within a second of Start {"ms":479}
+ok  reduced motion with stalled frames: no browser errors []
+ok  a first push frame stamped 16 ms before the Start click: no frame is fully covered by the wash {"frames":8,"covered":[],"first":[244,249,250,255]}
+ok  early first frame: no browser errors []
+ok  reduced motion, CPU 6x, Start tapped 25 ms after 100% (run 1 of 3): the title is up and the loading card gone within a second {"ms":460}
+ok  reduced motion, CPU 6x, instant Start (run 1 of 3): no browser errors []
+ok  reduced motion, CPU 6x, Start tapped 33 ms after 100% (run 2 of 3): the title is up and the loading card gone within a second {"ms":454}
+ok  reduced motion, CPU 6x, instant Start (run 2 of 3): no browser errors []
+ok  reduced motion, CPU 6x, Start tapped 33 ms after 100% (run 3 of 3): the title is up and the loading card gone within a second {"ms":535}
+ok  reduced motion, CPU 6x, instant Start (run 3 of 3): no browser errors []
+ok  failed island download: an error and a 44 px Try again show, Start stays closed below 100% {"pct":7,"retry":44}
+ok  failed island download: Start does nothing
+ok  Try again while the network is still down fails again, Start still closed
+ok  Try again after the network is back loads the island: the error goes, the island renders, Start opens
+ok  the push runs to the title after a retried load
+ok  failed island download: no browser errors beyond the refused chunk []
+ok  slow connection: the card shows below 100%, the bar fills forward in steps with no error, and Start opens at 100% {"steps":[0,55,72,100],"ms":7231}
+ok  slow connection: no browser errors []
+ok  a page with __emberisleSkipIntro opens on the title with no loading card
+loading-screen-prove: ok

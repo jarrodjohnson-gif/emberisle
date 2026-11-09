@@ -1,4 +1,6 @@
+import type { LandAppearance, LandStats, VisibilityContext, LandHex } from "@/lib/scene/land-appearance";
 import * as THREE from "three";
+import { hashStr } from "@/lib/utils";
 import { type Terrain } from "@/lib/game/types";
 import { rng32, setBoardDetail, tileSteps, type Tile } from "@/lib/scene/hex-jelly";
 import { BLOCK_H, ROBBER_HEX_DIM, robberHexDim, setRobberHexDim as setDim } from "@/lib/scene/jelly-dims";
@@ -32,7 +34,7 @@ export function setRobberHexDim(dim: number) {
 }
 
 export type JellyHex = { id: string; terrain: Terrain; x: number; z: number; y: number };
-export type JellyStats = { lite: boolean; drawCalls: number; triangles: number; kinds: number; batches: number; bakes: number; sprites: number };
+export type JellyStats = LandStats & { lite: boolean; drawCalls: number; triangles: number; kinds: number; batches: number; bakes: number; sprites: number };
 export type OcclusionHit = { point: { x: number; y: number; z: number }; kind: Terrain; seed: number };
 
 type Batch = {
@@ -352,7 +354,8 @@ class SpriteBatch {
   }
 }
 
-export class JellyBoard {
+export class JellyBoard implements LandAppearance {
+  private holdAge = () => false;
   readonly group = new THREE.Group();
   private kinds: Kind[] = [];
   private batches = new Map<string, Batch>();
@@ -376,8 +379,9 @@ export class JellyBoard {
   // Build the scenes for these hexes, one per kind from its seed, and batch them; deterministic for the same hexes and seeds.
   // `pause` runs between kinds (a scene takes about a tenth of a second to build), so no one task holds the page for long; it
   // answers false when the board is no longer wanted, and the build stops there.
-  static async create(hexes: JellyHex[], seedOf: (kind: Terrain) => number, pause: () => Promise<boolean>, lite = false) {
+  static async create(hexes: JellyHex[], seedOf: (kind: Terrain) => number, pause: () => Promise<boolean>, lite = false, holdAge = () => false) {
     const b = new JellyBoard();
+    b.holdAge = holdAge;
     b.lite = lite;
     try {
       return await b.build(hexes, seedOf, pause);
@@ -824,12 +828,12 @@ export class JellyBoard {
   // Proofs: put every board story at this age (seconds) and rewrite every instance.
   setAge(seconds: number) {
     this.t0 = 0;
-    this.update(Math.max(0, seconds), true, false);
+    this.update(Math.max(0, seconds), true, false, false);
   }
 
   // Advance every scene to time t (seconds) and copy what moved to its instances. `all` rewrites every instance; `snap` lands
   // the dulling at once (reduced motion). `holdAge` keeps stories at age 0 (title and lobby: the match has not started).
-  update(t: number, all = false, snap = false, holdAge = false) {
+  update(t: number, all = false, snap = false, holdAge = this.holdAge()) {
     const dt = Math.max(0, t - this.t);
     this.t = t;
     // The board's age: a story that starts with the match (the ore's climber) counts from the first live play frame. Not from
@@ -1054,6 +1058,9 @@ export class JellyBoard {
     return closest;
   }
 
+  // Jelly's existing clearance contract is camera-independent.
+  setVisibilityContext(_context: VisibilityContext) {}
+
   stats(): JellyStats {
     let triangles = 0;
     for (const b of this.batches.values()) {
@@ -1063,7 +1070,16 @@ export class JellyBoard {
     }
     for (const m of this.bakes) triangles += m.userData.tris as number;
     for (const sb of this.sprites) triangles += 2 * sb.count;
-    return { lite: this.lite, drawCalls: this.batches.size + this.bakes.length + this.sprites.length, triangles: Math.round(triangles), kinds: this.kinds.length, batches: this.batches.size, bakes: this.bakes.length, sprites: this.sprites.length };
+    const geometries = new Set(), materials = new Set();
+    let meshes = 0;
+    // Every published child is a batched, baked or sprite mesh; builders attach no nested groups here.
+    for (const child of this.group.children) {
+      const mesh = child as THREE.Mesh;
+      ++meshes;
+      geometries.add(mesh.geometry);
+      for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(material);
+    }
+    return { quality: this.lite ? "lite" : "full", objects: { meshes, geometries: geometries.size, materials: materials.size }, lite: this.lite, drawCalls: this.batches.size + this.bakes.length + this.sprites.length, triangles: Math.round(triangles), kinds: this.kinds.length, batches: this.batches.size, bakes: this.bakes.length, sprites: this.sprites.length };
   }
 
   dispose() {
@@ -1092,4 +1108,9 @@ export class JellyBoard {
     this.kinds = [];
     this.byHex.clear();
   }
+}
+
+// Uniform lazy-factory boundary; the renderer does not need either builder's seed or quality conventions.
+export function createAppearance(hexes: readonly LandHex[], key: string, pause: () => Promise<boolean>, lite: boolean, holdAge: () => boolean) {
+  return JellyBoard.create([...hexes], (kind) => hashStr(`${key}|${kind}`), pause, lite, holdAge);
 }
