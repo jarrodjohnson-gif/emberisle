@@ -1,0 +1,65 @@
+diff --git a/scripts/win-long-names-prove.mjs b/scripts/win-long-names-prove.mjs
+index 686cd1c0..5e1bab89 100644
+--- a/scripts/win-long-names-prove.mjs
++++ b/scripts/win-long-names-prove.mjs
+@@ -1,5 +1,6 @@
+ // #1406: the real built desktop results table keeps all seven columns visible with four long names.
+-// Uses the production WinScreen and computed game scores; no CSS overrides or shortened fixture names.
++// Uses production WinScreen and computed scores without geometry overrides or shortened names.
++// Default cases retain app styles; additive controlled DejaVu Sans cases reproduce CI font metrics.
+ import assert from "node:assert/strict";
+ import { execFileSync } from "node:child_process";
+ import { mkdirSync, writeFileSync } from "node:fs";
+@@ -29,7 +30,7 @@ const server = await preview({ preview: { host: "127.0.0.1", port: Number(proces
+ const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
+ const measurements = [];
+ try {
+-  for (const [width, height] of [[1280, 720], [1024, 768], [844, 390]]) {
++  for (const [width, height, font] of [[1280, 720], [1024, 768], [844, 390], [1280, 720, "DejaVu Sans"], [1024, 768, "DejaVu Sans"], [844, 390, "DejaVu Sans"]]) {
+     const context = await browser.newContext({ viewport: { width, height }, hasTouch: false, reducedMotion: "reduce" });
+     const page = await context.newPage();
+     const errors = [], requests = [];
+@@ -44,6 +45,7 @@ try {
+     }, game);
+     await page.getByTestId("win-screen").waitFor();
+     await page.waitForFunction(() => window.__isle?.landReady);
++    if (font) await page.getByTestId("win-screen").evaluate((screen, font) => { screen.style.fontFamily = `"${font}"`; }, font);
+     const result = await page.getByTestId("win-table-wrap").evaluate((wrap) => {
+       const bounds = (el) => { const r = el.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }; };
+       return {
+@@ -55,9 +57,10 @@ try {
+         })),
+       };
+     });
++    result.fontControl = font ?? "application default";
+     measurements.push(result);
+     writeFileSync(`${out}/measurements.json`, JSON.stringify(measurements, null, 2));
+-    await page.screenshot({ path: `${out}/${width}x${height}.png` });
++    await page.screenshot({ path: `${out}/${width}x${height}${font ? "-dejavu" : ""}.png` });
+     console.log(`measured ${width}x${height}: ${JSON.stringify(result)}`);
+     assert.equal(result.headers.length, 7, "all seven desktop columns remain present");
+     assert.deepEqual(result.headers.map((h) => h.text), ["Player", "Outposts", "Strongholds", "Longest path", "Largest army", "Hidden", "Total"]);
+diff --git a/src/components/game/WinScreen.tsx b/src/components/game/WinScreen.tsx
+index b3ec22bf..b05b2c69 100644
+--- a/src/components/game/WinScreen.tsx
++++ b/src/components/game/WinScreen.tsx
+@@ -146,8 +146,8 @@ function Panel() {
+     turnStart: "Started their turn with winning points",
+     points: "Reached the winning score",
+   }[reason?.trigger ?? "points"];
+-  const head = "px-1 py-2 short:py-0.5 short:px-1 text-right text-[11px] font-medium uppercase tracking-wide text-zinc-600";
+-  const cell = "px-1 py-2 short:py-0.5 short:px-1 text-right tabular-nums whitespace-nowrap short:text-xs";
++  const head = "px-1 py-2 short:py-0.5 short:px-1 sm:px-0.5 text-right text-[11px] font-medium uppercase tracking-wide text-zinc-600";
++  const cell = "px-1 py-2 short:py-0.5 short:px-1 sm:px-0.5 text-right tabular-nums whitespace-nowrap short:text-xs";
+   // The desktop table, and the phone list's stand-in if its chunk cannot load (the next mount tries it again).
+   const table = (
+           <table className="w-full min-w-0 border-collapse text-sm">
+@@ -165,7 +165,7 @@ function Panel() {
+             <tbody>
+               {rows.map((r) => (
+                 <tr key={r.p.id} data-testid="win-row" data-player={r.p.id} className="border-t border-border">
+-                  <td className="px-1 py-2 short:py-0.5 short:px-1 text-left font-medium whitespace-nowrap short:text-xs">
++                  <td className="px-1 py-2 short:py-0.5 short:px-1 text-left font-medium sm:px-0.5 whitespace-nowrap short:text-xs">
+                     <SeatDot color={r.p.color} className="mr-1.5 size-3 align-[-2px]" />
+                     {r.p.name}
+                     {r.tag}
