@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
@@ -6,18 +6,33 @@ import { totalVP, victoryTarget } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { readViewport, useViewport } from "@/lib/viewport";
 import { LazyBoundary } from "@/lib/lazy";
-import { WinList, winList } from "@/components/game/chunks";
+import { playAgain, WantAgain, WantCount, WinList, winList } from "@/components/game/chunks";
 import { useFocusTrap } from "@/lib/focus-trap";
 import type { PlayerState } from "@/lib/game/types";
+import type { Seat } from "@/lib/net/table";
 
-// `note` is the row's profile line (#767), only when a seat in this game started bound to a profile.
-export type Row = { p: PlayerState; outposts: number; strongholds: number; path: boolean; army: boolean; hiddenVp: number; total: number; note?: string };
+// `note` is the row's profile line (#767), only when a seat in this game started bound to a profile; `tag` says who wants to play again (#1411).
+export type Row = { p: PlayerState; outposts: number; strongholds: number; path: boolean; army: boolean; hiddenVp: number; total: number; note?: string; tag?: ReactNode };
+
+// #1411 (design docs/design/play-again-1411, option A): the host and bots are always in; an away seat is left out of the next game.
+const yes = (x: Seat) => !x.away && (x.host || x.bot || x.again);
+const tagOf = (x?: Seat) =>
+  x?.away ? (
+    <span className="win-tag away">Away</span>
+  ) : x && yes(x) ? (
+    <span className="win-tag">
+      <span aria-hidden="true">✓ Play again</span>
+      <span className="sr-only">, wants to play again</span>
+    </span>
+  ) : undefined;
 
 // Build bible 4.7: the island stays visible. "Hide scores" hides the panel and leaves a small chip.
 export function WinScreen() {
   // #748: the phone list is its own chunk; fetch it while the table plays, so it is in memory before the game ends.
   useEffect(() => {
     if (readViewport().phone) void winList.prefetch();
+    // #1411: the guest's I'll play again and the count, in memory before the game ends.
+    if (useGame.getState().mode === "online") void playAgain.prefetch();
   }, []);
   const winnerId = useGame((s) => s.state?.phase === "over" ? s.state.winner : null);
   return winnerId ? <Panel key={winnerId} /> : null;
@@ -39,9 +54,11 @@ function Panel() {
   // The lobby's host test (EmberisleApp), so a handed-off host gets the button.
   const isHost = useGame((s) => s.seats.find((x) => x.id === s.seatId)?.host ?? s.isHost);
   const hostName = useGame((s) => s.seats.find((x) => x.host)?.name);
+  const seats = useGame((s) => s.seats);
   // docs/design/rematch.md: the online host and hotseat start another; practice has no table to keep.
   const canAgain = mode === "hotseat" || (mode === "online" && isHost);
   const waiting = mode === "online" && !isHost && !spectator && hostName;
+  const seatOf = (id: string) => (mode === "online" ? seats.find((x) => x.player === id) : undefined);
   const [hidden, setHidden] = useState(false);
   const winner = state.players.find((p) => p.id === state.winner)!;
   const dialog = useRef<HTMLDivElement>(null);
@@ -76,6 +93,7 @@ function Panel() {
         army: state.largestArmy === p.id,
         hiddenVp: p.hidden.vp,
         total: totalVP(state, p.id),
+        tag: tagOf(seatOf(p.id)),
         note: !result?.tracked
           ? undefined
           : !Object.hasOwn(result.wins, p.id)
@@ -150,6 +168,7 @@ function Panel() {
                   <td className="px-1 py-2 short:py-0.5 short:px-1 text-left font-medium sm:px-2 whitespace-nowrap short:text-xs">
                     <SeatDot color={r.p.color} className="mr-1.5 size-3 align-[-2px]" />
                     {r.p.name}
+                    {r.tag}
                     {r.note ? <span data-testid="win-profile" className="block pl-[18px] text-xs font-normal text-muted">{r.note}</span> : null}
                   </td>
                   <td className={cell}>{r.outposts}</td>
@@ -198,6 +217,7 @@ function Panel() {
             Waiting for {hostName} to start another.
           </p>
         ) : null}
+        {mode === "online" ? <LazyBoundary failed={null}><WantCount n={seats.filter(yes).length} seats={seats} /></LazyBoundary> : null}
         <div className={`mt-5 ${phone ? "short:mt-1" : "short:mt-2"} flex flex-wrap items-center gap-2`}>
           {mode === "online" ? <VictoryTargetSelect label="Next game" value={target} onChange={isHost && !spectator ? setTarget : undefined} /> : null}
           {mode === "online" && !spectator ? (
@@ -223,7 +243,9 @@ function Panel() {
               Play again
             </Button>
           ) : null}
-          <Button variant={canAgain ? "secondary" : "default"} className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-menu" onClick={goTitle}>
+          {/* #1411: every other seated player says "I'll play again"; only the host starts the next game. */}
+          {waiting ? <LazyBoundary failed={null}><WantAgain /></LazyBoundary> : null}
+          <Button variant={canAgain || waiting ? "secondary" : "default"} className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-menu" onClick={goTitle}>
             Back to menu
           </Button>
         </div>
