@@ -17,6 +17,7 @@
   "lobby-wait-box.source": "e1563eeff641aaf64502ff442fbe20732303227cff8e076d5eafd9d6a1d7141f",
   "lobby-layout-initial-failure.log": "a07237edeac0436c7e22df5a0263b3e5e07dafd6585e681f5d921fad76b9c7dc",
   "install-production-rebuild.log": "bcc4d3a5e9ade9c81718342b33b83f700c55378daec3d6ec23e6925fa1771f7a",
+  "mute-focused.log": "1a82dad90ac19f0a6915fc536ad402ff41d726c734443e460d92e4a932de0667",
   "chat-control-server-install.log": "149ce390e7659027a2225bc321842d40ef4237694544b296c20cc551b81e7d7f",
   "lobby-layout-padding8.log": "b54369c601a44dc936ab70cdd090b348fff2a0eb07ddbb2ce14b9cfa8cde3d5c",
   "install.log": "7e798e2ce952b825dc4f6eacb868874cb9182a14b3d59fee3ecae6edac587621",
@@ -24,8 +25,9 @@
   "install-production-rebuild.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
   "install-after-production-build.log": "1591da355396a1706c7ba5bc126037f3a3ebdf930927ee8ddb00470db600bd75",
   "chat-canonical-control.source": "4ce88d910e0b68b08689b8ef5251e65d95d99dcf9fb98de4f2073f27cf2d3b85",
-  "README.md": "82395a48948150b8d0dddff79c30b2db7512d8c96bcae0dcd9860ea81607a137",
+  "README.md": "e904b3ef5ab166e04b5c480498ea4efc62b0d3cdd557f553fa0f363f6ef26873",
   "chat-control-server-install.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+  "mute-focused.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
   "connection-health.source": "e1563eeff641aaf64502ff442fbe20732303227cff8e076d5eafd9d6a1d7141f",
   "chat.source": "e1563eeff641aaf64502ff442fbe20732303227cff8e076d5eafd9d6a1d7141f",
   "connection-health.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
@@ -33,5 +35,6 @@
   "client.log": "ec8da23a417395711551f068df1ea5ecd46da573a71e0cb3943869c61c622ef9",
   "chat-instrumented.log": "b234cc5e75b858fcbca156e729166e119a0ba0b7ae086db590494f90a0663ab0",
   "chat-canonical-control-after-install.log": "96db7bb415af98138903e1a03f9dac0fbfc8460f6a6b38498f0ad17a906c6ff3",
+  "mute-focused-source.txt": "a3f87dadc3250d0e537dc9d905d3f7841fcd640e53685f22df11fe5da8c6d07c",
   "chat-canonical-control-after-install.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
 }
