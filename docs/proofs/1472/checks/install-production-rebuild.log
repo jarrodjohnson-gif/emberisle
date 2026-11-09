@@ -1,0 +1,88 @@
+
+> build
+> vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 2040 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/minigames/ruffle/package.json                              0.41 kB │ gzip:     0.27 kB
+dist/minigames/ruffle/LICENSE_MIT                               1.09 kB
+dist/assets/dark-smile-BKg7DRWn.webp                            1.28 kB
+dist/assets/shrek-smirk-Do0Xo01U.webp                           2.25 kB
+dist/minigames/ruffle/README.md                                 2.32 kB
+dist/index.html                                                 2.61 kB │ gzip:     1.29 kB
+dist/assets/mike-sully-Ct202qR2.webp                            2.79 kB
+dist/assets/wide-eyes-BDiZHgYT.webp                             2.84 kB
+dist/assets/side-eye-CGXmLOil.webp                              2.86 kB
+dist/assets/goggles-guy-BssxYY7b.webp                           2.99 kB
+dist/assets/memoji-scheme-BM7oeLzb.webp                         3.05 kB
+dist/assets/leo-laugh-fpWzArdY.webp                             3.45 kB
+dist/assets/old-grump-BBGe0_6b.webp                             4.17 kB
+dist/assets/banana-guy-CzQ5EppE.webp                            4.18 kB
+dist/assets/monkey-pet-BowYolk9.webp                            4.47 kB
+dist/assets/glasses-glance-BnJIj4mf.webp                        5.81 kB
+dist/assets/daffy-shock-DVzTkIuj.webp                           6.32 kB
+dist/assets/ben-10-BZkFZeMq.webp                                6.80 kB
+dist/minigames/ruffle/LICENSE_APACHE                            9.72 kB
+dist/assets/sponge-thumbs-vsqILehC.webp                        47.96 kB
+dist/minigames/ruffle/core.ruffle.16d61072ac7fdc4d5013.js     108.32 kB
+dist/minigames/ruffle/core.ruffle.994eeef0a471a88cd0e3.js     114.74 kB
+dist/minigames/sandwichStacker.swf                            183.73 kB
+dist/minigames/ruffle/ruffle.js                               465.88 kB
+dist/minigames/ruffle/878d548199cddef07035.wasm            14,227.88 kB │ gzip: 5,069.32 kB
+dist/minigames/ruffle/172de42e6619eac8f371.wasm            14,302.75 kB │ gzip: 5,092.28 kB
+dist/assets/SeatNeeds-G8kOjkPo.css                              0.91 kB │ gzip:     0.47 kB
+dist/assets/LoadingScreen-DCoOnwZ-.css                          2.34 kB │ gzip:     0.94 kB
+dist/assets/trade-panel-DtPN9ISX.css                            7.80 kB │ gzip:     1.96 kB
+dist/assets/LobbyView-j3r7Zzlb.css                             15.57 kB │ gzip:     3.30 kB
+dist/assets/index-BcTbch67.css                                 77.57 kB │ gzip:    16.18 kB
+dist/assets/x-D0806_D_.js                                       0.18 kB │ gzip:     0.16 kB
+dist/assets/eye-off-DcYwYNoX.js                                 0.45 kB │ gzip:     0.29 kB
+dist/assets/sound-extra-DafKjM_2.js                             0.48 kB │ gzip:     0.22 kB
+dist/assets/PlayAgain-BeMOSE88.js                               0.59 kB │ gzip:     0.41 kB
+dist/assets/use-muted-seats-B4OZyfOF.js                         0.70 kB │ gzip:     0.41 kB
+dist/assets/WayfarerOptions-CpNaLwBh.js                         0.80 kB │ gzip:     0.49 kB
+dist/assets/trade-sound-BM6RLTtl.js                             0.87 kB │ gzip:     0.52 kB
+dist/assets/focus-trap-DMpgkqic.js                              0.88 kB │ gzip:     0.53 kB
+dist/assets/HandRates-UgQKEWRP.js                               1.01 kB │ gzip:     0.64 kB
+dist/assets/VictoryTargetSelect-i_lMBDaM.js                     1.02 kB │ gzip:     0.61 kB
+dist/assets/emotes-DW1f4G6o.js                                  1.24 kB │ gzip:     0.46 kB
+dist/assets/Sticker-HkyK_sRl.js                                 1.65 kB │ gzip:     0.94 kB
+dist/assets/TradeResource-CD1dbCDG.js                           1.79 kB │ gzip:     0.83 kB
+dist/assets/haptics-CtuwPFkF.js                                 1.80 kB │ gzip:     1.06 kB
+dist/assets/DockInspection-BbAOt6eV.js                          2.03 kB │ gzip:     1.03 kB
+dist/assets/TurnExtensionVote-hKFt7wqU.js                       2.67 kB │ gzip:     1.20 kB
+dist/assets/OpenTables-CE_m1GEB.js                              2.70 kB │ gzip:     1.24 kB
+dist/assets/losses-nwKMHgfg.js                                  2.70 kB │ gzip:     1.42 kB
+dist/assets/WinList-Yxa2gUF7.js                                 2.87 kB │ gzip:     1.30 kB
+dist/assets/LobbyTicTacToe-Cr3iqY7b.js                          3.50 kB │ gzip:     1.39 kB
+dist/assets/SeatNeeds-BjrpolgK.js                               4.14 kB │ gzip:     1.69 kB
+dist/assets/SoundSheet-CN3VHpRK.js                              4.59 kB │ gzip:     1.86 kB
+dist/assets/LobbyWaitBox-BbcKTzaF.js                            4.84 kB │ gzip:     2.03 kB
+dist/assets/ProfileForms-C9--vMlv.js                            4.87 kB │ gzip:     2.16 kB
+dist/assets/SetupReference-BrhSXV7C.js                          4.92 kB │ gzip:     1.86 kB
+dist/assets/table-BYv_klcw.js                                   4.92 kB │ gzip:     2.19 kB
+dist/assets/LoadingScreen-KaWn3RVD.js                           4.92 kB │ gzip:     2.40 kB
+dist/assets/ProfileRecords-DuryKr9H.js                          5.62 kB │ gzip:     2.25 kB
+dist/assets/Reactions-CqKe54M9.js                               6.04 kB │ gzip:     2.49 kB
+dist/assets/LobbyView-dAp6VZ7S.js                               6.33 kB │ gzip:     2.49 kB
+dist/assets/TradeToast-CY9jeyOM.js                              6.49 kB │ gzip:     2.67 kB
+dist/assets/ProfileRecovery-B4IQX-XB.js                         7.94 kB │ gzip:     3.03 kB
+dist/assets/moments-_5SN87yj.js                                10.16 kB │ gzip:     4.32 kB
+dist/assets/ProfileSheet-Cpyjp4F-.js                           15.73 kB │ gzip:     5.98 kB
+dist/assets/online-B5idio0z.js                                 18.05 kB │ gzip:     6.43 kB
+dist/assets/jelly-board-BkogVv78.js                            21.20 kB │ gzip:     8.23 kB
+dist/assets/sheets-DbpsFMtu.js                                 23.01 kB │ gzip:     7.52 kB
+dist/assets/harbor-jelly-CrrYPzmf.js                           27.12 kB │ gzip:    10.83 kB
+dist/assets/hex-jelly-Bl7jEqwv.js                             136.96 kB │ gzip:    47.48 kB
+dist/assets/index-DqlcE8on.js                                 397.26 kB │ gzip:   126.40 kB
+dist/assets/IslandCanvas-ZLIWQxCL.js                          763.67 kB │ gzip:   202.46 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.85s
