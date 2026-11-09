@@ -53,7 +53,8 @@ const readChip = () => {
   const chip = document.querySelector('[data-testid="log-line"]');
   const name = chip?.querySelector('[data-testid="log-roll-name"]');
   const sum = chip?.querySelector('[data-testid="log-roll-sum"]');
-  const phrase = [...(chip?.querySelectorAll("span") ?? [])].find((s) => s.textContent === " rolled ");
+  // Own green is the wrapper around the name, "rolled", the sum, and "!". The sum overrides it on a 6 or 8.
+  const wrap = name?.parentElement?.tagName === "SPAN" ? name.parentElement : null;
   const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
   const px = (css) => {
     c.clearRect(0, 0, 1, 1);
@@ -76,7 +77,7 @@ const readChip = () => {
     own: chip?.dataset.own === "true",
     nameWeight: name ? Number(getComputedStyle(name).fontWeight) : null,
     nameInk: name ? px(getComputedStyle(name).color) : null,
-    phraseInk: phrase ? px(getComputedStyle(phrase).color) : null,
+    wrapInk: wrap ? px(getComputedStyle(wrap).color) : null,
     sumInk: sum ? px(getComputedStyle(sum).color) : null,
     paper: chip ? paper(chip) : null,
     goods: window.__emberisle.getState().gameLog.at(-1)?.text ?? "",
@@ -150,7 +151,7 @@ try {
       const own = await page.evaluate(readChip);
       check(own.text === wantOwn && own.roll === "6" && own.own === true, `${tag}: chip shows "${wantOwn}", not the goods line`, own);
       check(/ — .+['’]s roll(?:;|\.)/.test(own.goods) && own.goods !== own.text, `${tag}: the log's newest line is still the goods line`, { goods: own.goods });
-      check(own.nameWeight >= 700 && same(own.phraseInk, GAIN), `${tag}: own name is bold and the phrase is green (${own.nameWeight})`, own);
+      check(own.nameWeight >= 700 && same(own.wrapInk, GAIN), `${tag}: own name is bold and the phrase is green (${own.nameWeight})`, own);
       check(same(own.nameInk, GAIN) && same(own.sumInk, DANGER), `${tag}: own line is green and the 6 is red`, { nameInk: own.nameInk, sumInk: own.sumInk });
       const ownWorst = Math.min(ratio(own.nameInk, own.paper), ratio(own.sumInk, own.paper));
       check(ownWorst >= MIN, `${tag}: own inks are >= ${MIN}:1 (worst ${ownWorst.toFixed(2)}:1)`, own);
@@ -191,7 +192,7 @@ try {
       const plain = await page.evaluate(readChip);
       check(plain.text === wantOther && plain.roll === "8" && plain.own === false, `${tag}: chip shows "${wantOther}", not as this seat`, plain);
       check(/ — .+['’]s roll(?:;|\.)/.test(plain.goods) && plain.goods !== plain.text, `${tag}: the other roll's goods line stays in the log`, { goods: plain.goods });
-      check(plain.nameWeight < 600 && !same(plain.nameInk, GAIN) && !same(plain.phraseInk, GAIN) && same(plain.sumInk, DANGER), `${tag}: the other seat's 8 is red, and the name is not bold or green`, plain);
+      check(plain.nameWeight < 600 && !same(plain.nameInk, GAIN) && !same(plain.wrapInk, GAIN) && same(plain.sumInk, DANGER), `${tag}: the other seat's 8 is red, and the name is not bold or green`, plain);
       check(ratio(plain.nameInk, plain.paper) >= MIN && ratio(plain.sumInk, plain.paper) >= MIN, `${tag}: the other seat's inks are >= ${MIN}:1`, plain);
       const passed = await page.evaluate(() => {
         const g = window.__emberisle;
