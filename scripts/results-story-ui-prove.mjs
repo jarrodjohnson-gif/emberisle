@@ -6,6 +6,7 @@
 //   - the dice strip sits under the list inside its scrolling area: 11 bars, the sum labels, the odds line and the sentence
 //   - rows stay 44 px, nothing scrolls sideways, every result button stays on screen
 // Desktop with a mouse: the table keeps no opened row; each award is a muted line under the name; the strip is under it.
+// A short mouse screen (480 px tall or less) shows no award line, so its table still fits.
 // An unusual spread colours one bar in sea ink and says so; an older game with no counts draws no strip, and its losers
 // share "Dry spell".
 // The chunk is fetched while the table plays, so the results never wait for it.
@@ -195,6 +196,16 @@ try {
     await shot(page, "table-1280x800");
     await context.close();
     console.log(`ok 1280x800 mouse: a muted award line under each name (${lines.map((l) => l[1]).join("; ")}), strip under the table`);
+  }
+
+  // A short mouse screen keeps the desktop table from scrolling (win-action-prove), so it shows no award line there.
+  {
+    const { context, page } = await open(956, 440, false);
+    await page.getByTestId("win-dice").waitFor();
+    assert.equal(await page.locator('tr[data-testid="win-row"] [data-testid="win-award"]').count(), 4, "short desktop: the award lines are in the table");
+    assert.equal(await page.locator('[data-testid="win-award"]:visible').count(), 0, "short desktop: no award line shows");
+    await context.close();
+    console.log("ok 956x440 mouse: the short desktop table shows no award line");
   }
 
   // An unusual spread: the named sum's bar is sea ink and the sentence says so.

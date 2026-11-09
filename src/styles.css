@@ -276,6 +276,8 @@ body {
 @media (max-height: 480px) {
   .win-total-hero { font-size: 26px; line-height: 28px; }
   .win-equation { margin-top: 2px; font-size: 11px; gap: 2px 6px; }
+  /* #1452: a short mouse screen keeps the desktop table without scrolling (win-action-prove), so it shows no award line. */
+  .win-award-line { display: none; }
 }
 
 @media (max-width: 767px), (pointer: coarse) {
