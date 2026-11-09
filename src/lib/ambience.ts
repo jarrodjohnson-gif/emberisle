@@ -4,6 +4,8 @@
 // Music on) and the tab is visible. The file is fetched once, on the first start; a pause suspends the context, so the loop
 // resumes where it left off.
 
+// Safari before 14.1 has only the prefixed constructor; with neither, the ambience stays silent and fetches nothing.
+const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
 let level = 0;
 let ctx: AudioContext | undefined;
 let gain: GainNode | undefined;
@@ -11,31 +13,33 @@ let loading: Promise<void> | undefined;
 
 const wanted = () => level > 0 && document.visibilityState === "visible";
 
+// Every change asks for the state it wants, suspend or resume, and never reads ctx.state to skip the call: some browsers
+// report the new state only after suspend() settles, so a quick mute and unmute would read "running" and stay suspended.
 function update() {
+  if (!Ctx) return;
   if (gain) gain.gain.value = level;
   if (!wanted()) {
-    if (ctx?.state === "running") ctx.suspend().catch(() => {});
+    ctx?.suspend().catch(() => {});
     return;
   }
+  ctx ??= new Ctx();
+  ctx.resume().catch(() => {});
   // A failed download or decode stays quiet and tries again on the next start.
-  if (!loading) loading = load().catch(() => { loading = undefined; });
-  else if (ctx && ctx.state !== "running") ctx.resume().catch(() => {});
+  loading ??= load(ctx).catch(() => { loading = undefined; });
 }
 
-async function load() {
+async function load(c: AudioContext) {
   const res = await fetch(`${import.meta.env.BASE_URL}audio/amb_sea.mp3`);
   if (!res.ok) throw new Error(`ambience ${res.status}`);
-  const bytes = await res.arrayBuffer();
-  ctx ??= new AudioContext();
-  const buffer = await ctx.decodeAudioData(bytes);
-  gain = ctx.createGain();
-  gain.connect(ctx.destination);
-  const source = ctx.createBufferSource();
+  const buffer = await c.decodeAudioData(await res.arrayBuffer());
+  gain = c.createGain();
+  gain.gain.value = level;
+  gain.connect(c.destination);
+  const source = c.createBufferSource();
   source.buffer = buffer;
   source.loop = true;
   source.connect(gain);
-  // The choice may have changed while the file loaded: this sets the level and suspends the context if it is no longer wanted.
-  update();
+  // Starting a source on a suspended context is fine: it plays from here when the context resumes.
   source.start();
 }
 
@@ -45,3 +49,6 @@ export function sync(next: number) {
 }
 
 document.addEventListener("visibilitychange", update);
+// iOS lets a context start only inside a gesture, and this chunk loads just after the first one, so a later press or key
+// resumes a context the browser held back.
+for (const type of ["pointerdown", "keydown"]) addEventListener(type, () => { if (wanted()) ctx?.resume().catch(() => {}); }, { capture: true, passive: true });

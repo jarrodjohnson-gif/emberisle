@@ -46,7 +46,7 @@ async function open(storage) {
   await page.addInitScript(() => {
     const amb = (window.__amb = { ctxs: [], gains: [], sources: [] });
     const Real = window.AudioContext;
-    window.AudioContext = class extends Real {
+    if (Real) window.AudioContext = class extends Real {
       constructor(...args) {
         super(...args);
         amb.ctxs.push(this);
@@ -142,6 +142,20 @@ try {
     await pausesAndResumes("the old Music switch off", () => t.call(SOUND, "setMusicOn", false), () => t.call(SOUND, "setMusicOn", true));
     await pausesAndResumes("Sea sounds off", () => t.call(SEA, "setSeaSounds", false), () => t.call(SEA, "setSeaSounds", true));
     await pausesAndResumes("a hidden tab", () => t.page.evaluate(() => window.__setHidden(true)), () => t.page.evaluate(() => window.__setHidden(false)));
+
+    // ---- Undone before the pause settles: a quick mute and unmute, a quick hide and show, both in one task. The context's
+    // suspend() is still settling when the second call comes, so the loop must end up playing, not left suspended.
+    for (const [what, flip] of [
+      ["a quick mute and unmute", async () => { const m = await import("/src/lib/sound.ts"); m.setMuted(true); m.setMuted(false); }],
+      ["a quick hide and show", async () => { window.__setHidden(true); window.__setHidden(false); }],
+    ]) {
+      await t.page.evaluate(flip);
+      await sleep(1000);
+      const s = await t.state();
+      assert.equal(s.state, "running", `${what}: the loop plays once it settles (context ${s.state})`);
+      assert.equal(s.sources, 1, `${what}: the same source`);
+      ok(`${what}, undone before the pause settles, leaves the loop playing`);
+    }
     await t.context.close();
   }
 
@@ -158,6 +172,21 @@ try {
     assert.equal(t.fetches.length, 1);
     assert.equal(await t.page.evaluate(() => localStorage.getItem("emberisle-sea-sounds")), null, "on is saved as the default");
     ok("with Sea sounds saved off a key press fetches nothing; switching it on starts the loop at 0.12");
+    await t.context.close();
+  }
+
+  // ---- No WebAudio at all (neither AudioContext nor webkitAudioContext): silent, and the file is never fetched.
+  {
+    const t = await open(() => {
+      delete window.AudioContext;
+      delete window.webkitAudioContext;
+    });
+    await t.page.keyboard.press("Shift");
+    await t.call(SEA, "setSeaSounds", false);
+    await t.call(SEA, "setSeaSounds", true);
+    await sleep(1200);
+    assert.equal(t.fetches.length, 0, "no WebAudio: amb_sea.mp3 is never fetched");
+    ok("with no WebAudio constructor the ambience stays silent and never fetches the file");
     await t.context.close();
   }
 
