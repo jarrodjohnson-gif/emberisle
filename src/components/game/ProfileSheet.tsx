@@ -12,6 +12,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type Dispatch, type 
 import { Eye, EyeOff, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
+import { useBackdropClose } from "@/lib/backdrop-close";
 import { useFocusTrap } from "@/lib/focus-trap";
 import { useGame } from "@/lib/game/store";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
@@ -70,6 +71,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   const snap = useSyncExternalStore(c.subscribe, c.getSnapshot);
   const root = useRef<HTMLDivElement>(null);
   useFocusTrap(root, true, '[aria-label="Close"]', opener);
+  const backdrop = useBackdropClose(onClose);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   // Signed in, "signin" is the summary; "edit" and "pin" are its two forms, "wins" and "history" its records (#767).
@@ -290,7 +292,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   }
 
   return (
-    <div className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-safe sm:items-center">
+    <div className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-safe sm:items-center" {...backdrop}>
       <div
         ref={root}
         role="dialog"

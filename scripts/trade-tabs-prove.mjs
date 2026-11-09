@@ -389,7 +389,7 @@ async function tableAndRoutes(page, tag, motion) {
   await more(page, "wool", "want").click();
   await more(page, "ore", "want").click();
   await selectionMotion(page, "ore", "want", 1, motion, tag);
-  await preview(page, ["You give: 2 wood, 1 brick", "You get: 1 sheep, 1 stone"]);
+  await preview(page, ["Give: 2 wood, 1 brick", "Get: 1 sheep, 1 stone"]);
   assert.equal(await askFor(page).isEnabled(), true, `${tag}: the Table accepts a mixed exact bag`);
   assert.equal(await more(page, "timber", "want").isDisabled(), true, `${tag}: a good cannot appear on both sides`);
   assert.equal(await panelFor(page).getByTestId("trade-give-timber").getByTestId("trade-owned").textContent(), "Have 6", `${tag}: owned count comes from the live hand`);
@@ -413,8 +413,8 @@ async function tableAndRoutes(page, tag, motion) {
   const before = await snapshot(page);
   assert.equal(await bankFor(page).isVisible(), true, `${tag}: mixed table bags retain the compact Bank action`);
   assert.equal(await bankFor(page).isDisabled(), true, `${tag}: mixed bags cannot settle at Bank`);
-  await hint(page, "Choose one kind on each side");
-  await describedAs(bankFor(page), "Choose one kind on each side for a bank or dock exchange.", `${tag} mixed bank refusal`);
+  await hint(page, "Pick one kind to give and one to get");
+  await describedAs(bankFor(page), "Pick one kind to give and one to get.", `${tag} mixed bank refusal`);
   await bankFor(page).click({ force: true });
   assert.equal(await snapshot(page), before, `${tag}: inspecting or pressing the mixed-bank refusal does not change the game`);
   assert.deepEqual(await sent(page), [], `${tag}: mixed-bank refusal sends no dispatch or offer`);
@@ -424,8 +424,8 @@ async function tableAndRoutes(page, tag, motion) {
     assert.equal(await selector.getAttribute("role"), null, `${tag}: quantity buttons retain native semantics without radio choices`);
   }
   await bankSelect(page, "ore", "grain");
-  await hint(page, "You give 4 stone. You get 1 wheat.");
-  await preview(page, ["You give: 1 stone", "You get: 1 wheat"]);
+  await hint(page, "Give 4 stone, get 1 wheat.");
+  await preview(page, ["Give: 1 stone", "Get: 1 wheat"]);
   assert.equal(await askFor(page).isEnabled(), true, `${tag}: the same single-kind draft remains available to Table`);
   assert.equal(await bankFor(page).isEnabled(), true, `${tag}: the same single-kind draft enables the exact Bank quote`);
   await layout(page, tag, "bank");
@@ -456,14 +456,14 @@ async function liveDrafts(page, tag) {
   await more(page, "timber", "give").click();
   await more(page, "ore", "want").click();
   await change(page, { hand: { timber: 1 } });
-  await preview(page, ["You give: 1 wood"]);
+  await preview(page, ["Give: 1 wood"]);
   assert.equal(await more(page, "timber", "give").isDisabled(), true, `${tag}: live losses clamp the exact give quantity`);
   await change(page, { hand: { timber: 0 } });
-  await preview(page, ["You give: choose goods"]);
+  await preview(page, ["Give: choose goods"]);
   assert.equal(await askFor(page).isDisabled(), true, `${tag}: a live empty hand disables Ask`);
   assert.equal(await fewer(page, "timber", "give").count(), 0, `${tag}: clamping to zero removes minus`);
   await change(page, { hand: { timber: 6 } });
-  await preview(page, ["You give: choose goods"]);
+  await preview(page, ["Give: choose goods"]);
   assert.equal(await askFor(page).isDisabled(), true, `${tag}: a later gain cannot restore discarded quantities`);
   await more(page, "timber", "give").click();
   await change(page, { current: "p1" });
@@ -538,11 +538,11 @@ async function accessibility(page, tag) {
   await more(page, "timber", "give").click();
   await fewer(page, "timber", "give").focus();
   await change(page, { hand: { timber: 1 } });
-  await preview(page, ["You give: 1 wood"]);
+  await preview(page, ["Give: 1 wood"]);
   await describedAs(fewer(page, "timber", "give"), "1", `${tag} live remaining count`);
   assert.equal(await fewer(page, "timber", "give").evaluate((element) => element === document.activeElement), true, `${tag}: a live partial clamp keeps the remaining minus focused`);
   await change(page, { hand: { timber: 0 } });
-  await preview(page, ["You give: choose goods"]);
+  await preview(page, ["Give: choose goods"]);
   assert.equal(await fewer(page, "timber", "give").count(), 0, `${tag}: live zero clamp unmounts the focused minus`);
   await focusAfterRemoval(page, "timber", "give", `${tag} live focused-minus clamp`);
   await describedAs(more(page, "timber", "give"), "Have 0 0", `${tag} live empty-hand description`);
@@ -552,7 +552,7 @@ async function accessibility(page, tag) {
   await bankSelect(page);
   await describedAs(more(page, "timber", "give"), "Have 6 1", `${tag} shared Bank give`);
   await describedAs(more(page, "ore", "want"), "Have 6 1", `${tag} shared Bank get`);
-  await describedAs(bankFor(page), `You give 4 wood. You get 1 stone. Bank stock: ${base.bank.ore} stone.`, `${tag} exact Bank receipt and live stock`);
+  await describedAs(bankFor(page), `Give 4 wood, get 1 stone. Bank stock: ${base.bank.ore} stone.`, `${tag} exact Bank receipt and live stock`);
   const initial = await snapshot(page);
   // Fixed fixture sequence: disabled same-kind and empty-hand controls must be skipped.
   await panelFor(page).getByRole("button", { name: "Close", exact: true }).focus();
@@ -590,8 +590,8 @@ async function accessibility(page, tag) {
   assert.equal(await snapshot(page), initial, `${tag}: quantity keyboard navigation changes only the shared draft`);
   assert.deepEqual(await sent(page), [], `${tag}: quantity keyboard navigation sends no action`);
   await change(page, { rate: 2 });
-  await hint(page, "You give 2 wood. You get 1 stone.");
-  await describedAs(bankFor(page), `You give 2 wood. You get 1 stone. Bank stock: ${base.bank.ore} stone.`, `${tag} live dock and stock description`);
+  await hint(page, "Give 2 wood, get 1 stone.");
+  await describedAs(bankFor(page), `Give 2 wood, get 1 stone. Bank stock: ${base.bank.ore} stone.`, `${tag} live dock and stock description`);
   await change(page, { bank: { ore: 0 } });
   await hint(page, "no stone");
   await describedAs(bankFor(page), "The bank has no stone. Bank stock: 0 stone.", `${tag} live zero-stock refusal description`);
@@ -605,7 +605,7 @@ async function ratesAndRejections(page, tag) {
   await bankSelect(page);
   for (const [rate, label] of [[4, "Bank 4:1"], [3, "Dock 3:1"], [2, "Dock 2:1"], [4, "Bank 4:1"]]) {
     await change(page, { rate });
-    await hint(page, `You give ${rate} wood. You get 1 stone.`);
+    await hint(page, `Give ${rate} wood, get 1 stone.`);
     assert.equal((await bankFor(page).textContent()).trim(), label, `${tag}: quote follows live dock ownership at ${rate}:1`);
   }
   await change(page, { hand: { timber: 3 } });
@@ -621,7 +621,7 @@ async function ratesAndRejections(page, tag) {
   await bankFor(page).click({ force: true });
   assert.equal(await snapshot(page), exhausted, `${tag}: exhausted stock cannot be traded`);
   await change(page, { bank: { ore: base.bank.ore } });
-  await hint(page, "You give 4 wood. You get 1 stone.");
+  await hint(page, "Give 4 wood, get 1 stone.");
   assert.equal(await more(page, "timber", "want").isDisabled(), true, `${tag}: bank cannot request its give kind`);
   await more(page, "timber", "want").click({ force: true });
   assert.equal(await panelFor(page).getByTestId("trade-want-ore").getByRole("status").textContent(), "1", `${tag}: rejecting the same kind preserves the valid want`);
@@ -634,7 +634,7 @@ async function ratesAndRejections(page, tag) {
     const initial = await page.evaluate(() => structuredClone(window.__emberisle.getState().state));
     await open(page);
     await bankSelect(page);
-    await hint(page, `You give ${rate} wood. You get 1 stone.`);
+    await hint(page, `Give ${rate} wood, get 1 stone.`);
     await armBankMotion(page, rate);
     await bankFor(page).click();
     await panelFor(page).waitFor({ state: "detached" });
@@ -672,7 +672,7 @@ async function modes(page, tag) {
   assert.equal(await panelFor(page).getByRole("radio").count(), 0, `${tag}: hotseat has no separate Bank selectors`);
   assert.equal(await panelFor(page).getByRole("button", { name: /^More / }).count(), 10, `${tag}: hotseat uses the same ten quantity cards`);
   await bankSelect(page);
-  await hint(page, "You give 4 wood. You get 1 stone.");
+  await hint(page, "Give 4 wood, get 1 stone.");
   await layout(page, tag, "hotseat-bank");
   assert.deepEqual(await sent(page), [], `${tag}: choosing a hotseat quote does not trade yet`);
   console.log(`${tag}: online exposes both receipts; hotseat uses shared cards with Bank only`);
@@ -719,10 +719,10 @@ async function lazyRecovery() {
     await more(page, "timber", "give").waitFor();
     await more(page, "timber", "give").click();
     await more(page, "ore", "want").click();
-    await preview(page, ["You give: 1 wood", "You get: 1 stone"]);
+    await preview(page, ["Give: 1 wood", "Get: 1 stone"]);
     assert.equal(await askFor(page).isEnabled(), true, "lazy picker: reopened Table controls produce a real valid draft");
     await bankSelect(page);
-    await hint(page, "You give 4 wood. You get 1 stone.");
+    await hint(page, "Give 4 wood, get 1 stone.");
     assert.ok(requests >= 2, "lazy picker: reopen makes a fresh network request after the cached failure");
     assert.equal(await panelFor(page).getByRole("alert").count(), 0, "lazy picker: recovered choices replace the error boundary");
     await page.screenshot({ path: "test-results/trade-tabs-lazy-recovered.png" });
