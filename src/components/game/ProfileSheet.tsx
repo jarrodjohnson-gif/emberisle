@@ -162,11 +162,9 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   );
   const rc = (kind: RecoveryUi["kind"]) => <ProfileRecovery ui={{ kind, c, go: back, keep, setKeep, showPin, setShowPin }} />;
   let body: ReactNode;
-  // Only reached with the recovery chunk loaded: a code comes only after it is in, and the code and recover views open
-  // from the row and the link, which it draws.
+  // The code and recover views open from the row and the link, which the recovery chunk draws, so they never suspend.
   if (snap.profile && snap.code) body = rc("save");
   else if (snap.profile && view === "code") body = rc("code");
-  else if (!snap.profile && view === "recover" && snap.status === "available") body = rc("recover");
   else if (snap.profile && (view === "edit" || view === "pin")) {
     // Only reached once `open` has loaded the forms chunk, so this never suspends.
     body = <ProfileForms ui={{ kind: view, c, form, setForm, errors, setErrors, busy, setBusy, showPin, setShowPin, back }} />;
@@ -214,6 +212,9 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
         {guest}
       </>
     );
+  } else if (view === "recover") {
+    // Signed out, on an available host.
+    body = rc("recover");
   } else {
     const create = view === "create";
     const input = (k: "displayName" | "login" | "pin" | "pinConfirm", label: string, extra: object) => (
