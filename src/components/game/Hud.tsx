@@ -106,6 +106,19 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
   }
 }
 
+// #954: practice and hotseat have no chat. While the newest lines are that roll's goods and awards, the chip shows the roll.
+const HUD_ASIDE = / — .+'s roll[;.]| (holds|loses) the (longest path|largest army)\.$/;
+function hudRollChip(lines: { text: string }[], mine: string) {
+  const last = lines.at(-1)?.text;
+  if (!last || / claims the isle |^The isle is settled/.test(last)) return null;
+  let i = lines.length - 1;
+  while (i >= 0 && HUD_ASIDE.test(lines[i]!.text)) i -= 1;
+  const roll = /^(.+) rolled (1[0-2]|[2-9])!$/.exec(lines[i]?.text ?? "");
+  if (!roll) return null;
+  const sum = +roll[2]!;
+  return { name: roll[1]!, sum, own: mine !== "" && roll[1] === mine, hot: sum === 6 || sum === 8 };
+}
+
 
 // A build that cannot happen now uses aria-disabled, not disabled, so Tab still reaches it and the price is read out. It
 // goes muted ink, not translucent, so the chips and the reason on it stay readable.
@@ -241,6 +254,8 @@ export function Hud() {
 
   if (!state || !me) return null;
   const mine = state.current === actor;
+  // This seat, same test as the online log (Chat.tsx): hotseat's other seats are not this device's seat.
+  const rollChip = mode === "ai" || mode === "hotseat" ? hudRollChip(gameLog, spectator ? "" : (state.players.find((p) => p.id === localId)?.name ?? "")) : null;
   // Hotseat has no bots: the first seat still owing a discard takes the bar, whoever rolled the 7.
   const discarder =
     state.phase !== "discard"
@@ -578,9 +593,18 @@ export function Hud() {
               <p
                 hidden={tradeVisible}
                 data-testid="log-line"
+                data-roll={rollChip ? rollChip.sum : undefined}
+                data-own={rollChip?.own ? "true" : undefined}
                 className="table-log block h-5 min-w-0 flex-1 overflow-hidden truncate rounded-control px-3 text-xs leading-5"
               >
-                {gameLog.at(-1)?.text}
+                {rollChip ? (
+                  <span className={rollChip.own ? "text-gain" : undefined}>
+                    <span data-testid="log-roll-name" className={rollChip.own ? "font-bold" : undefined}>{rollChip.name}</span>
+                    <span> rolled </span>
+                    <span data-testid="log-roll-sum" className={rollChip.hot ? "text-danger" : undefined}>{rollChip.sum}</span>
+                    !
+                  </span>
+                ) : gameLog.at(-1)?.text}
               </p>
               {/* #776: the shared draw deck is public to every seat and watcher, so its count sits here, off the build row. */}
               <span data-testid="deck-count" data-deck-left={deckLeft} title={`${deckLeft} fortunes left in the deck`} className="shrink-0 px-2 text-xs leading-5 tabular-nums">Deck {deckLeft}</span>
