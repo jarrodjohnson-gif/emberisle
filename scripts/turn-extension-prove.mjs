@@ -113,7 +113,7 @@ async function headerWithChat(page, label) {
   await page.getByRole("button", { name: /^Open chat/ }).click();
   await page.locator('section[aria-label="Table chat"]').waitFor();
   await desktopHeader(page, `${label}, chat open`);
-  await page.getByRole("button", { name: "Minimize chat" }).click();
+  await page.getByRole("button", { name: "Close chat" }).click();
   await page.locator('section[aria-label="Table chat"]').waitFor({ state: "hidden" });
 }
 try {
