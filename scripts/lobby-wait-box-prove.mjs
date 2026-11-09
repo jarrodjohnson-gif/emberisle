@@ -7,7 +7,7 @@ import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const out = process.env.LOBBY_PROOF_OUT || "docs/proofs/1262";
@@ -59,7 +59,6 @@ const vite = await createServer({ server: { host: "127.0.0.1", port: 0 }, logLev
 await vite.listen();
 const url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${hostPort}`;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--autoplay-policy=no-user-gesture-required"],
 });
 const problems = [];
@@ -103,7 +102,7 @@ const minigames = () => requests.filter((item) => item.includes("/minigames/"));
 const ruffleCount = (page) => page.evaluate(() => [...document.querySelectorAll("*")].filter((el) => /^RUFFLE-PLAYER/.test(el.tagName)).length);
 
 async function openShelf(page) {
-  await page.getByRole("button", { name: "Play games" }).click();
+  await page.getByRole("tab", { name: "Play games" }).click();
   await page.locator(".ls").waitFor();
   await logo(page, ".lt", "shelf");
 }
@@ -219,14 +218,14 @@ try {
   const desk = await client({ width: 1280, height: 720 }, false);
   assert.equal(await desk.locator(".lm button").count(), 2, "two lobby controls");
   assert.equal(await desk.getByTestId("lobby-chat").getByRole("tab").count(), 2, "chat still has two tabs");
-  assert.equal(await desk.getByRole("tab").count(), 2, "the page still has the two chat tabs");
+  assert.equal(await desk.getByRole("tab").count(), 4, "the page has the two chat tabs and the two lobby tabs");
   assert.equal(await desk.locator(".ls").count(), 0);
   assert.equal(await desk.getByTestId("lobby-players").count(), 1);
   await desk.evaluate(() => document.fonts.ready);
   assert.equal(minigames().length, 0, "nothing under /minigames/ before a game opens");
   assert.ok(!requests.some((r) => r.includes("sandwich-stacker-logo.png")), "logo is not fetched on the Table tab");
   assert.equal(await desk.locator("ruffle-player, script[src*='ruffle']").count(), 0);
-  assert.equal(await desk.getByRole("button", { name: "Table", exact: true }).getAttribute("aria-pressed"), "true");
+  assert.equal(await desk.getByRole("tab", { name: "Table", exact: true }).getAttribute("aria-selected"), "true");
   await desk.getByTestId("add-bot").first().click();
   await desk.getByTestId("add-bot").first().click();
   await desk.waitForFunction(() => window.__emberisle.getState().seats.length === 3);
@@ -237,7 +236,7 @@ try {
   assert.equal(await desk.locator(".lt").getByText("Solo", { exact: true }).count(), 1);
   assert.equal(await desk.locator(".lt button").count(), 1);
   assert.equal(await desk.getByText("Trivia").count(), 0);
-  assert.equal(await desk.getByText("Tic-tac-toe").count(), 0);
+  assert.equal(await desk.getByTestId("ttt-tile").getByText("Tic-tac-toe", { exact: true }).count(), 1);
   assert.equal(await desk.getByTestId("lobby-players").count(), 0);
   assert.equal(await desk.getByTestId("lobby-chat").count(), 0);
   assert.equal(await desk.locator(".lr").count(), 1);

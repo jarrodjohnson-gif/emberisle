@@ -32,8 +32,8 @@
 // The 3100 ms running-time limit (2600 before #825), with a separate 4000 ms raw cap and an exact 3000 ms cue-duration check.
 // Run: npm run turn-gain-prove (ONLY=390x844, reduced or hotseat or reconnect runs one part). Port from VITE_PORT, default 8476.
 // Screenshots to test-results/turn-gain-*.png.
-import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 30_000;
@@ -63,7 +63,6 @@ mkdirSync("test-results", { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 

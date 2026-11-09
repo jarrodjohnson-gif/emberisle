@@ -1,8 +1,8 @@
 // #1158: Multi-seed harbour goods visibility proof.
 // Verifies that terrain features (canopies, peaks, ridges) do not occlude pier goods across seeds and token modes.
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const port = Number(process.env.VITE_PORT) || 18747;
@@ -17,9 +17,6 @@ const errors = [];
 
 try {
   browser = await chromium.launch({
-    executablePath:
-      process.env.CHROMIUM_PATH ||
-      (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
     args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
   });
 

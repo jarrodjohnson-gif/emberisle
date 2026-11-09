@@ -1,8 +1,8 @@
 // #348: the spectator view in the browser (docs/design/spectator.md). Two headless tabs and one src/lib/net/table.ts
-// client seat a table; a third tab's Watch sends nothing under 4 characters and is refused on the lobby ("Not started
+// client seat a table; a third tab's Watch sends nothing under 4 characters (Join there shows "Enter the 4-letter code.", #1449) and is refused on the lobby ("Not started
 // yet."), then watches after the start
 // through a ?watch=CODE link. It sees the board with no glow, the Watching badge, no hand bar, no action buttons, a
-// read-only dock and the "Watching — Emberisle" title, while every seat shows the eye count "1". An injected intent is
+// read-only dock and the "Watching · Emberisle" title, while every seat shows the eye count "1". An injected intent is
 // refused with "Watching only." and the store's own actions send nothing. The seats then play to the win on the practice
 // bot and the watcher's win screen is the seats' full reveal (every hand and hidden point, the same rows as a seat) with
 // no seed or rng behind it. Leave takes it to the Title with no confirm and the count falls to 0; a dropped watcher
@@ -11,10 +11,10 @@
 // Run with: node --import ./server/register.mjs scripts/watch-ui-prove.mjs
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { connectTable } from "../src/lib/net/table.ts";
@@ -54,9 +54,7 @@ for (let tries = 0; ; tries++) {
     await new Promise((r) => setTimeout(r, 500));
   }
 }
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
-});
+const browser = await chromium.launch();
 
 const errors = [];
 let code = 0;
@@ -260,6 +258,13 @@ try {
   await w.page.getByPlaceholder(/code/i).fill(tableCode.slice(0, 3));
   // #444: Watch only shows once the field holds a whole code, so under 4 there is nothing to press.
   if (await w.page.getByRole("button", { name: "Watch", exact: true }).count()) throw new Error("Watch shows with a 3-character code");
+  // #1449: Join under 4 characters says why in the alert line and sends nothing (errorSeq below); typing clears the line.
+  await w.page.getByRole("button", { name: "Join", exact: true }).click();
+  await until(async () => (await view(w)).alert === "Enter the 4-letter code.", 'the short-code hint "Enter the 4-letter code."');
+  if ((await view(w)).screen !== "title") throw new Error("a 3-character Join left the Title");
+  await w.page.getByPlaceholder(/code/i).fill(tableCode.slice(0, 2));
+  await until(async () => (await view(w)).alert === null, "typing clears the short-code hint");
+  console.log('3-character Join: "Enter the 4-letter code." in the alert line, cleared by typing');
   await w.page.getByPlaceholder(/code/i).fill(tableCode);
   await w.page.getByRole("button", { name: "Watch", exact: true }).click();
   await until(async () => (await view(w)).alert === "Not started yet.", 'the lobby refusal "Not started yet."');
@@ -330,7 +335,7 @@ try {
   const badge = await w1.page.getByTestId("watching-badge");
   if ((await w1.page.getByTestId("table-menu").count()) !== 0 || !(await badge.isVisible()) || (await badge.textContent()) !== "Watching") throw new Error("watcher header: no visible Watching badge with the menu closed");
   wv.badge = await badge.textContent();
-  if (wv.title !== "Watching — Emberisle") throw new Error(`watcher tab title: "${wv.title}"`);
+  if (wv.title !== "Watching · Emberisle") throw new Error(`watcher tab title: "${wv.title}"`);
   if (wv.canvas < 1 || wv.boardSeq !== wv.seq) throw new Error(`the watcher's board is not drawn at seq ${wv.seq}: ${JSON.stringify([wv.canvas, wv.boardSeq])}`);
   if (wv.seq !== seatViews[0].seq || wv.phase !== "rollOff") throw new Error(`the watcher is not on the seats' state: ${JSON.stringify([wv.seq, wv.phase, seatViews[0].seq])}`);
   if (wv.resources !== 0) throw new Error(`the watcher has ${wv.resources} hand tiles`);

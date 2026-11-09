@@ -1,0 +1,1247 @@
+{
+  "browser": "153.0.8010.12",
+  "expected": {
+    "p0": 11,
+    "p1": 4,
+    "p2": 9,
+    "p3": 2
+  },
+  "runs": [
+    {
+      "size": "390x844",
+      "group": "phone",
+      "before": {
+        "wrap": {
+          "x": 33,
+          "y": 414,
+          "w": 324,
+          "h": 180,
+          "scrollHeight": 180,
+          "clientHeight": 180,
+          "scrollWidth": 463,
+          "clientWidth": 324
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": true,
+        "downScroll": false,
+        "rowHeights": [
+          37,
+          37,
+          37,
+          37
+        ],
+        "rowsInView": 0,
+        "totalsInView": 0,
+        "namesCut": null,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "after": {
+        "wrap": {
+          "x": 33,
+          "y": 404,
+          "w": 324,
+          "h": 199,
+          "scrollHeight": 199,
+          "clientHeight": 199,
+          "scrollWidth": 324,
+          "clientWidth": 324
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "namesCut": 3,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "open": {
+        "wrap": {
+          "x": 33,
+          "y": 323,
+          "w": 324,
+          "h": 362,
+          "scrollHeight": 362,
+          "clientHeight": 362,
+          "scrollWidth": 324,
+          "clientWidth": 324
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "namesCut": 3,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": {
+          "x": 33,
+          "y": 432,
+          "w": 324,
+          "h": 163
+        }
+      },
+      "openParts": [
+        "Outposts: 0 points",
+        "Strongholds: 4 points",
+        "Longest path: 0 points",
+        "Largest army: 2 points",
+        "Hidden points: 3 points"
+      ]
+    },
+    {
+      "size": "375x667",
+      "group": "phone",
+      "before": {
+        "wrap": {
+          "x": 33,
+          "y": 325,
+          "w": 309,
+          "h": 180,
+          "scrollHeight": 180,
+          "clientHeight": 180,
+          "scrollWidth": 463,
+          "clientWidth": 309
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": true,
+        "downScroll": false,
+        "rowHeights": [
+          37,
+          37,
+          37,
+          37
+        ],
+        "rowsInView": 0,
+        "totalsInView": 0,
+        "namesCut": null,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "after": {
+        "wrap": {
+          "x": 33,
+          "y": 316,
+          "w": 309,
+          "h": 199,
+          "scrollHeight": 199,
+          "clientHeight": 199,
+          "scrollWidth": 309,
+          "clientWidth": 309
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "namesCut": 4,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "open": {
+        "wrap": {
+          "x": 33,
+          "y": 312,
+          "w": 309,
+          "h": 206,
+          "scrollHeight": 384,
+          "clientHeight": 206,
+          "scrollWidth": 309,
+          "clientWidth": 309
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          66,
+          44,
+          44
+        ],
+        "rowsInView": 1,
+        "totalsInView": 1,
+        "namesCut": 3,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": {
+          "x": 33,
+          "y": 378,
+          "w": 309,
+          "h": 163
+        }
+      },
+      "openParts": [
+        "Outposts: 0 points",
+        "Strongholds: 4 points",
+        "Longest path: 0 points",
+        "Largest army: 2 points",
+        "Hidden points: 3 points"
+      ]
+    },
+    {
+      "size": "430x932",
+      "group": "phone",
+      "before": {
+        "wrap": {
+          "x": 33,
+          "y": 458,
+          "w": 364,
+          "h": 180,
+          "scrollHeight": 180,
+          "clientHeight": 180,
+          "scrollWidth": 463,
+          "clientWidth": 364
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": true,
+        "downScroll": false,
+        "rowHeights": [
+          37,
+          37,
+          37,
+          37
+        ],
+        "rowsInView": 0,
+        "totalsInView": 0,
+        "namesCut": null,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "after": {
+        "wrap": {
+          "x": 33,
+          "y": 448,
+          "w": 364,
+          "h": 199,
+          "scrollHeight": 199,
+          "clientHeight": 199,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "namesCut": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "open": {
+        "wrap": {
+          "x": 33,
+          "y": 367,
+          "w": 364,
+          "h": 362,
+          "scrollHeight": 362,
+          "clientHeight": 362,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "namesCut": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": {
+          "x": 33,
+          "y": 476,
+          "w": 364,
+          "h": 163
+        }
+      },
+      "openParts": [
+        "Outposts: 0 points",
+        "Strongholds: 4 points",
+        "Longest path: 0 points",
+        "Largest army: 2 points",
+        "Hidden points: 3 points"
+      ]
+    },
+    {
+      "size": "820x1180",
+      "group": "ipad",
+      "before": {
+        "wrap": {
+          "x": 99,
+          "y": 552,
+          "w": 622,
+          "h": 195,
+          "scrollHeight": 195,
+          "clientHeight": 195,
+          "scrollWidth": 689,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": true,
+        "downScroll": false,
+        "rowHeights": [
+          37,
+          37,
+          37,
+          37
+        ],
+        "rowsInView": 0,
+        "totalsInView": 0,
+        "namesCut": null,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "after": {
+        "wrap": {
+          "x": 99,
+          "y": 550,
+          "w": 622,
+          "h": 199,
+          "scrollHeight": 199,
+          "clientHeight": 199,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "open": {
+        "wrap": {
+          "x": 99,
+          "y": 469,
+          "w": 622,
+          "h": 362,
+          "scrollHeight": 362,
+          "clientHeight": 362,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": {
+          "x": 99,
+          "y": 578,
+          "w": 622,
+          "h": 163
+        }
+      },
+      "openParts": [
+        "Outposts: 0 points",
+        "Strongholds: 4 points",
+        "Longest path: 0 points",
+        "Largest army: 2 points",
+        "Hidden points: 3 points"
+      ]
+    },
+    {
+      "size": "1180x820",
+      "group": "ipad",
+      "before": {
+        "wrap": {
+          "x": 279,
+          "y": 372,
+          "w": 622,
+          "h": 195,
+          "scrollHeight": 195,
+          "clientHeight": 195,
+          "scrollWidth": 689,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": true,
+        "downScroll": false,
+        "rowHeights": [
+          37,
+          37,
+          37,
+          37
+        ],
+        "rowsInView": 0,
+        "totalsInView": 0,
+        "namesCut": null,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "after": {
+        "wrap": {
+          "x": 279,
+          "y": 370,
+          "w": 622,
+          "h": 199,
+          "scrollHeight": 199,
+          "clientHeight": 199,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "open": {
+        "wrap": {
+          "x": 279,
+          "y": 289,
+          "w": 622,
+          "h": 362,
+          "scrollHeight": 362,
+          "clientHeight": 362,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": {
+          "x": 279,
+          "y": 398,
+          "w": 622,
+          "h": 163
+        }
+      },
+      "openParts": [
+        "Outposts: 0 points",
+        "Strongholds: 4 points",
+        "Longest path: 0 points",
+        "Largest army: 2 points",
+        "Hidden points: 3 points"
+      ]
+    },
+    {
+      "size": "844x390",
+      "group": "sideways",
+      "before": {
+        "wrap": {
+          "x": 103,
+          "y": 160,
+          "w": 638,
+          "h": 119,
+          "scrollHeight": 119,
+          "clientHeight": 119,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          21,
+          21,
+          21,
+          21
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "namesCut": null,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "after": {
+        "wrap": {
+          "x": 103,
+          "y": 130,
+          "w": 638,
+          "h": 179,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "open": {
+        "wrap": {
+          "x": 103,
+          "y": 122,
+          "w": 638,
+          "h": 196,
+          "scrollHeight": 342,
+          "clientHeight": 196,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 1,
+        "totalsInView": 1,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": {
+          "x": 103,
+          "y": 166,
+          "w": 638,
+          "h": 163
+        }
+      },
+      "openParts": [
+        "Outposts: 0 points",
+        "Strongholds: 4 points",
+        "Longest path: 0 points",
+        "Largest army: 2 points",
+        "Hidden points: 3 points"
+      ],
+      "openScrolled": {
+        "wrap": {
+          "x": 103,
+          "y": 122,
+          "w": 638,
+          "h": 196,
+          "scrollHeight": 342,
+          "clientHeight": 196,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 2,
+        "totalsInView": 2,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": {
+          "x": 103,
+          "y": 65,
+          "w": 638,
+          "h": 163
+        }
+      },
+      "more": {
+        "wrap": {
+          "x": 103,
+          "y": 151,
+          "w": 638,
+          "h": 89,
+          "scrollHeight": 89,
+          "clientHeight": 89,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44
+        ],
+        "rowsInView": 2,
+        "totalsInView": 2,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "Show all 4 players",
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "moreOpen": {
+        "wrap": {
+          "x": 103,
+          "y": 122,
+          "w": 638,
+          "h": 148,
+          "scrollHeight": 179,
+          "clientHeight": 148,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 3,
+        "totalsInView": 3,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "Show fewer",
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      }
+    },
+    {
+      "size": "667x375",
+      "group": "sideways",
+      "before": {
+        "wrap": {
+          "x": 29,
+          "y": 152,
+          "w": 609,
+          "h": 119,
+          "scrollHeight": 119,
+          "clientHeight": 119,
+          "scrollWidth": 609,
+          "clientWidth": 609
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          21,
+          21,
+          21,
+          21
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "namesCut": null,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "after": {
+        "wrap": {
+          "x": 29,
+          "y": 122,
+          "w": 609,
+          "h": 179,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 609,
+          "clientWidth": 609
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "open": {
+        "wrap": {
+          "x": 29,
+          "y": 122,
+          "w": 609,
+          "h": 181,
+          "scrollHeight": 342,
+          "clientHeight": 181,
+          "scrollWidth": 609,
+          "clientWidth": 609
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 1,
+        "totalsInView": 1,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": {
+          "x": 29,
+          "y": 166,
+          "w": 609,
+          "h": 163
+        }
+      },
+      "openParts": [
+        "Outposts: 0 points",
+        "Strongholds: 4 points",
+        "Longest path: 0 points",
+        "Largest army: 2 points",
+        "Hidden points: 3 points"
+      ],
+      "openScrolled": {
+        "wrap": {
+          "x": 29,
+          "y": 122,
+          "w": 609,
+          "h": 181,
+          "scrollHeight": 342,
+          "clientHeight": 181,
+          "scrollWidth": 609,
+          "clientWidth": 609
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 2,
+        "totalsInView": 2,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": {
+          "x": 29,
+          "y": 50,
+          "w": 609,
+          "h": 163
+        }
+      },
+      "more": {
+        "wrap": {
+          "x": 29,
+          "y": 143,
+          "w": 609,
+          "h": 89,
+          "scrollHeight": 89,
+          "clientHeight": 89,
+          "scrollWidth": 609,
+          "clientWidth": 609
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44
+        ],
+        "rowsInView": 2,
+        "totalsInView": 2,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "Show all 4 players",
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "moreOpen": {
+        "wrap": {
+          "x": 29,
+          "y": 122,
+          "w": 609,
+          "h": 133,
+          "scrollHeight": 179,
+          "clientHeight": 133,
+          "scrollWidth": 609,
+          "clientWidth": 609
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 2,
+        "totalsInView": 3,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "Show fewer",
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      }
+    },
+    {
+      "size": "667x375-insets",
+      "group": "sideways",
+      "before": {
+        "wrap": {
+          "x": 61,
+          "y": 148,
+          "w": 545,
+          "h": 119,
+          "scrollHeight": 119,
+          "clientHeight": 119,
+          "scrollWidth": 601,
+          "clientWidth": 545
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": true,
+        "downScroll": false,
+        "rowHeights": [
+          21,
+          21,
+          21,
+          21
+        ],
+        "rowsInView": 0,
+        "totalsInView": 0,
+        "namesCut": null,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "after": {
+        "wrap": {
+          "x": 61,
+          "y": 122,
+          "w": 545,
+          "h": 172,
+          "scrollHeight": 179,
+          "clientHeight": 172,
+          "scrollWidth": 545,
+          "clientWidth": 545
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 3,
+        "totalsInView": 4,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "open": {
+        "wrap": {
+          "x": 61,
+          "y": 122,
+          "w": 545,
+          "h": 172,
+          "scrollHeight": 342,
+          "clientHeight": 172,
+          "scrollWidth": 545,
+          "clientWidth": 545
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 1,
+        "totalsInView": 1,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": {
+          "x": 61,
+          "y": 166,
+          "w": 545,
+          "h": 163
+        }
+      },
+      "openParts": [
+        "Outposts: 0 points",
+        "Strongholds: 4 points",
+        "Longest path: 0 points",
+        "Largest army: 2 points",
+        "Hidden points: 3 points"
+      ],
+      "openScrolled": {
+        "wrap": {
+          "x": 61,
+          "y": 122,
+          "w": 545,
+          "h": 172,
+          "scrollHeight": 342,
+          "clientHeight": 172,
+          "scrollWidth": 545,
+          "clientWidth": 545
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 2,
+        "totalsInView": 2,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": {
+          "x": 61,
+          "y": 41,
+          "w": 545,
+          "h": 163
+        }
+      },
+      "more": {
+        "wrap": {
+          "x": 61,
+          "y": 139,
+          "w": 545,
+          "h": 89,
+          "scrollHeight": 89,
+          "clientHeight": 89,
+          "scrollWidth": 545,
+          "clientWidth": 545
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44
+        ],
+        "rowsInView": 2,
+        "totalsInView": 2,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "Show all 4 players",
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      },
+      "moreOpen": {
+        "wrap": {
+          "x": 61,
+          "y": 122,
+          "w": 545,
+          "h": 124,
+          "scrollHeight": 179,
+          "clientHeight": 124,
+          "scrollWidth": 545,
+          "clientWidth": 545
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 2,
+        "totalsInView": 2,
+        "namesCut": 0,
+        "buttonsInView": true,
+        "buttons": [
+          "Show fewer",
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      }
+    },
+    {
+      "size": "1280x720",
+      "group": "desktop",
+      "before": {
+        "wrap": {
+          "x": 329,
+          "y": 322,
+          "w": 622,
+          "h": 195,
+          "scrollHeight": 195,
+          "clientHeight": 195,
+          "scrollWidth": 689,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "sidewaysScroll": true,
+        "downScroll": false,
+        "rowHeights": [
+          37,
+          37,
+          37,
+          37
+        ],
+        "rowsInView": 0,
+        "totalsInView": 0,
+        "namesCut": null,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": [],
+        "open": null
+      }
+    }
+  ],
+  "errors": []
+}

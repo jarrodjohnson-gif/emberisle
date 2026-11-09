@@ -181,8 +181,6 @@ body {
   --control-line: #78837a;
   --accent: #246d72;
   --accent-ink: #246d72;
-  --sea: #158e9a;
-  --sea-shallow: #65d8cb;
   --timber: #2f6a4f; --timber-on: #ffffff; --timber-side: #173d35;
   --clay: #b8533d; --clay-on: #ffffff; --clay-side: #74372b;
   --wool: #b2ce80; --wool-on: #263d3c; --wool-side: #617744;
@@ -194,11 +192,9 @@ body {
   --font-numeral: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
   --space-5: 20px; --space-6: 24px; --space-8: 32px;
-  --radius-card: 8px;
   --shadow-control: 0 1px 0 rgb(24 51 45 / 0.12);
   --shadow-sheet: 0 10px 28px rgb(24 51 45 / 0.18);
   --duration-gain: 2200ms;
-  --duration-turn: 1800ms;
   /* #899: the phone sheet ends under the island, clear of the seat strip (68 px) and the 40 px band of seat bubbles under it.
      While the keyboard is up or an offer or steal prompt is showing, the band is 0 (Chat.tsx), so the input and the choice fit. */
   --chat-sheet-height: min(420px, calc(100dvh - max(12px, env(safe-area-inset-top)) - 68px - var(--chat-bubble-band, 40px) - var(--active-offer-height, 0px) - var(--active-prompt-height, 0px) - var(--keyboard-inset, 0px)));
@@ -209,7 +205,6 @@ body {
 .seat-card.seat-turn [class*='text-zinc-700'] { color: var(--muted); }
 .seat-card button:hover { background: var(--table-raised); color: var(--table-ink); }
 .seat-card.seat-turn button:hover { background: var(--ground); color: var(--ink); }
-.seat-card button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .seat-turn .seat-dot { animation: none; outline: 2px solid var(--ink); outline-offset: 2px; }
 .seat-card [data-testid='seat-vp'] { font-weight: 750; }
 .hud-header > div > div > button[aria-label='Table menu'] { background: var(--table); color: var(--table-ink); border: 1px solid var(--table-line); }
@@ -223,7 +218,8 @@ body {
 .turn-instruction-move::before { background: #fff; }
 .goods-tray { background: transparent; }
 .hud-actions { display: flex; align-items: center; gap: 4px; padding: 4px; background: var(--table); border-radius: var(--radius-control); }
-.build-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; flex: 1; min-width: 0; }
+/* #1418: a tile is never narrower than its own caption; while there is room all four stay equal. */
+.build-grid { display: grid; grid-template-columns: repeat(4, minmax(min-content, 1fr)); gap: 4px; flex: 1; min-width: 0; }
 .build-tile { width: 100%; background: var(--table-raised); color: var(--table-ink); border-color: var(--table-line); }
 .build-tile[aria-disabled='true'] { color: var(--table-muted); }
 .build-tile [class*='text-muted'] { color: var(--table-muted); }
@@ -237,7 +233,6 @@ body {
 .action-utilities button, .hud-stack > .sticky button { background: var(--table-raised); color: var(--table-ink); border: 1px solid var(--table-line); }
 .action-utilities button.bg-fg { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .action-utilities .sticky, .action-utilities > div { background: transparent; }
-.hud-actions button:focus-visible { outline-color: var(--ink); }
 .trade-dock { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; background: var(--table); color: var(--table-ink); border: 1px solid var(--table-line); border-top: 2px solid var(--accent); box-shadow: var(--shadow-control); }
 .trade-clock { color: var(--accent); min-width: 3ch; text-align: right; }
 .trade-clock[data-urgent='true'] { font-weight: 800; font-size: 15px; }
@@ -245,15 +240,14 @@ body {
 .trade-yes { background: var(--ink); color: var(--paper); }
 .trade-yes[aria-disabled='true'] { background: var(--table-raised); color: var(--table-muted); border: 1px solid var(--table-line); }
 .trade-no { background: var(--table-raised); color: var(--table-ink); border-color: var(--table-line); }
-.trade-wait, .trade-short { grid-column: 1 / -1; color: var(--table-muted); }
-.trade-short { color: var(--accent); }
-.trade-dock button:focus-visible { outline-color: var(--ink); }
+.trade-wait { grid-column: 1 / -1; color: var(--table-muted); }
 .turn-stamp { background: #fff; border: 1px solid #cbd3d3; border-radius: 20px; box-shadow: var(--shadow-sheet); padding: 16px 24px; color: var(--ink); font-size: 28px; line-height: 32px; font-weight: 700; letter-spacing: -0.8px; }
 .turn-stamp[data-leaving] { animation: none !important; transition: opacity 160ms var(--ease-in), transform 160ms var(--ease-in); }
-.turn-stamp-dot { width: 20px; height: 20px; border: 2px solid var(--ink); }
+.turn-stamp-dot { width: 20px; height: 20px; border: 2px solid var(--ink); box-shadow: none; }
 @media (max-width: 359px) { .turn-stamp { padding: 12px 20px; font-size: 20px; } .turn-stamp-dot { width: 16px; height: 16px; } }
 .title-cover { box-shadow: var(--shadow-sheet); }
-.title-wordmark { font-weight: 800; font-size: 64px; line-height: 64px; letter-spacing: -2px; }
+/* #1281: the owner-approved 56 px wordmark, on every screen size (docs/design/loading-screen-1281). */
+.title-wordmark { font: 400 56px/64px Georgia, "Times New Roman", serif; letter-spacing: -1.5px; }
 .seat-settings { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 4px; }
 .seat-settings > summary { display: flex; min-height: 44px; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 600; list-style: none; }
 .seat-settings > summary::-webkit-details-marker { display: none; }
@@ -262,6 +256,14 @@ body {
 .lobby-cover { box-shadow: var(--shadow-sheet); background: var(--paper); }
 .win-equation { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; margin-top: 12px; font-size: 13px; color: var(--muted); }
 .win-total-hero { font-family: var(--font-numeral); font-size: 56px; line-height: 60px; font-weight: 800; letter-spacing: -2px; }
+/* #1411: who wants to play again (docs/design/play-again-1411, option A). On the desktop table it sits under the name. */
+.win-tag { flex: none; display: inline-flex; align-items: center; height: 22px; padding: 0 7px; border: 1px solid var(--color-accent); border-radius: var(--radius-chip); background: color-mix(in srgb, var(--color-sea) 10%, var(--color-surface)); color: var(--color-accent-ink); font-size: var(--text-caption); line-height: var(--text-caption--line-height); font-weight: 600; white-space: nowrap; }
+.win-tag.away { border-color: var(--color-border); background: var(--color-bg); color: var(--color-muted); }
+td > .win-tag { display: flex; width: fit-content; margin: 2px 0 0 18px; }
+/* 480 px tall or less, the table's four rows must fit with no scroll (win-action-prove), so the tag sits beside the name. */
+@media (max-height: 480px) {
+  td > .win-tag { display: inline-flex; height: 16px; margin: 0 0 0 6px; padding: 0 5px; vertical-align: middle; }
+}
 @media (max-height: 480px) {
   .win-total-hero { font-size: 26px; line-height: 28px; }
   .win-equation { margin-top: 2px; font-size: 11px; gap: 2px 6px; }
@@ -274,7 +276,6 @@ body {
   .trade-dock { grid-template-columns: minmax(0, 1fr); }
   .trade-summary { min-height: 32px; }
   .trade-answers { width: 100%; }
-  .title-wordmark { font-size: 52px; line-height: 56px; }
 }
 @media (max-height: 480px) and (pointer: coarse) {
   .hud-stack > .sticky { background: var(--table); }
@@ -301,13 +302,18 @@ body {
   .trade-summary { min-height: 24px; }
 }
 .hud-stack .action-utilities, .end-footer { flex-shrink: 0; }
+/* #1418: Trade, the dice and End turn share the 260 px column's footer; at 15 px / 600 the buttons take 6 px sides to fit. */
+.end-footer > button { padding-left: 6px; padding-right: 6px; }
 .trade-above-chat { position: fixed; bottom: calc(var(--chat-sheet-height) + var(--keyboard-inset, 0px) + 8px); left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); z-index: 40; }
 .build-tile [data-testid^='cost-'] > span:first-child { height: 16px; padding-left: 1.5px; padding-right: 1.5px; }
 .build-tile [data-testid^='cost-'] svg { width: 9px; height: 9px; }
-.hud-header button:focus-visible, .hud-utilities button:focus-visible { outline-color: var(--ink); }
 .hud-stack > .trade-dock { position: sticky; bottom: 0; z-index: 12; }
 .hud-stack { scroll-padding-bottom: calc(var(--trade-height, 0px) + 52px); }
 input, select, textarea { border-color: var(--control-line); }
+/* #1418: one keyboard focus colour, ink, on every button and tab (owner, #1298 option A). Base layer, so a control's own focus utility still wins. */
+@layer base {
+  button:focus-visible, [role="tab"]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+}
 @media (pointer: coarse) {
   input, select, textarea { font-size: 16px !important; }
 }
@@ -343,3 +349,64 @@ input, select, textarea { border-color: var(--control-line); }
 }
 .fortune-cue-glow[data-done] { animation: none; }
 @media (prefers-reduced-motion: reduce) { .fortune-cue-glow { animation: none; box-shadow: 0 0 0 2px var(--color-accent); } }
+
+/* #669 Sound sheet, option A (docs/design/sound-sheet-1276). It takes the Table menu's place: TableMenu positions it, this lays
+   out what is inside. White cards on the mist ground, one ink fill for "on", 44 px targets, 8 px gaps. Phone upright is the default;
+   phone sideways is landscape up to 480 px tall; desktop is 1000 px wide and up. */
+.ss { display: flex; flex-direction: column; gap: 8px; padding: 8px; box-sizing: border-box; width: min(366px, calc(100vw - 1.5rem)); background: var(--ground); color: var(--ink); border-radius: var(--radius-sheet); box-shadow: var(--shadow-sheet); font-size: var(--text-body); line-height: var(--text-body--line-height); font-weight: var(--text-body--font-weight); }
+.ss *, .ss *::before, .ss *::after { box-sizing: border-box; }
+.ss button { cursor: pointer; }
+.ss button:focus-visible, .ss input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.ss svg { flex: none; }
+.ss-head { display: flex; align-items: center; gap: 8px; min-height: 44px; flex: none; }
+.ss-head h2 { margin: 0 auto 0 0; font-size: var(--text-title); line-height: var(--text-title--line-height); font-weight: 600; letter-spacing: -0.01em; }
+.ss-icon { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: var(--radius-control); }
+.ss-icon:hover { background: var(--paper); }
+.ss-body { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
+.ss-card { background: var(--paper); border-radius: var(--radius-chip); padding: 8px; display: flex; flex-direction: column; gap: 4px; flex: none; }
+.ss-card h3 { margin: 0; padding: 0 4px; font-size: var(--text-body); line-height: 20px; font-weight: 600; }
+.ss-note { margin: 0; padding: 0 4px; font-size: var(--text-caption); line-height: var(--text-caption--line-height); color: var(--muted); }
+.ss-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; grid-template-areas: "label label label" "mute range val"; column-gap: 8px; align-items: center; }
+.ss-row .ss-label { grid-area: label; padding: 0 4px; line-height: 20px; }
+.ss-row .ss-mute { grid-area: mute; }
+.ss-row .ss-range { grid-area: range; }
+.ss-row .ss-val { grid-area: val; }
+.ss-master { border-bottom: 1px solid var(--line); }
+.ss-master .ss-label { font-weight: 600; }
+.ss-sub { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "label switch"; min-height: 44px; padding-left: 52px; }
+.ss-sub .ss-label { padding: 0; }
+.ss-val { font-variant-numeric: tabular-nums; text-align: right; color: var(--muted); }
+.ss-mute { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex: none; border-radius: var(--radius-control); background: var(--ground); }
+.ss-mute[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.ss-range { -webkit-appearance: none; appearance: none; width: 100%; height: 44px; margin: 0; background: transparent; --fill: var(--ink); }
+.ss-range[data-off] { --fill: var(--control-line); }
+.ss-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--fill) var(--v), var(--line) var(--v)); }
+.ss-range::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; margin-top: -10px; border-radius: 50%; background: var(--paper); border: 2px solid var(--fill); box-shadow: var(--shadow-control); }
+.ss-range::-moz-range-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--fill) var(--v), var(--line) var(--v)); }
+.ss-range::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--paper); border: 2px solid var(--fill); box-shadow: var(--shadow-control); }
+.ss-switch { grid-area: switch; display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 44px; flex: none; }
+.ss-switch span { position: relative; width: 48px; height: 28px; border-radius: 14px; background: var(--line); transition: background var(--duration-quick) var(--ease-out); }
+.ss-switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--paper); box-shadow: var(--shadow-control); transition: transform var(--duration-quick) var(--ease-out); }
+.ss-switch[aria-checked="true"] span { background: var(--ink); }
+.ss-switch[aria-checked="true"] span::after { transform: translateX(20px); }
+.ss-seats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px 8px; }
+.ss-seat { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ss-seat .ss-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (orientation: landscape) and (max-height: 480px) {
+  .ss { width: min(552px, calc(100vw - 1.5rem)); }
+  .ss-body { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); grid-template-rows: auto 1fr; align-items: start; }
+  .ss-mix { grid-row: 1 / 3; }
+  .ss-mix .ss-row { grid-template-columns: 44px 5.5rem minmax(0, 1fr) 40px; grid-template-areas: "mute label range val"; }
+  .ss-mix .ss-label { line-height: 18px; padding: 0; }
+  .ss-note { display: none; }
+  .ss-sub { padding-left: 4px; }
+}
+@media (min-width: 1000px) and (min-height: 481px) { .ss { width: 360px; } }
+@media (prefers-reduced-motion: reduce) { .ss-switch span, .ss-switch span::after { transition: none; } }
+
+/* #1419 help sheets, option A (docs/design/help-sheets-1274): How to play and Costs share one backdrop, a soft grey-green
+   wash (mist at 70 %, no blur). Its padding is the approved gutter: 16 px on phones, 24 px from 1024 px wide, or the safe-area
+   inset where that is more. The body scrolls under a fixed title row with a thin scrollbar, so overflow shows. */
+.help-wash { --gutter: 16px; background: color-mix(in srgb, var(--ground) 70%, transparent); padding: max(var(--gutter), env(safe-area-inset-top)) max(var(--gutter), env(safe-area-inset-right)) max(var(--gutter), env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left)); }
+@media (min-width: 1024px) { .help-wash { --gutter: 24px; } }
+.help-scroll { scrollbar-width: thin; scrollbar-color: var(--control-line) transparent; }

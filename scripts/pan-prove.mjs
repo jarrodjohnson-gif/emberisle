@@ -3,8 +3,7 @@
 // past the clamp stops at PAN_RADIUS from home; one finger still orbits and does not pan; a tap after a pan still picks
 // what is under the finger (screenOf lands on the mark); turning the phone refits home. Real touch through CDP
 // Input.dispatchTouchEvent. Run: npm run pan-prove
-import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;
@@ -12,7 +11,6 @@ const PORT = Number(process.env.VITE_PORT) || 8131;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];

@@ -3,10 +3,10 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { chromium } from 'playwright';
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from 'vite';
 
 const rooms = mkdtempSync(path.join(tmpdir(), 'emberisle-audio-recovery-'));
@@ -76,7 +76,7 @@ function __audioRecoveryRecord(stage, name, facts = {}) {
     },
   }] });
   await vite.listen();
-  browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined),
+  browser = await chromium.launch({
     // Desktop media fetch/decode recovery, deliberately independent of browser autoplay policy.
     args: ['--autoplay-policy=no-user-gesture-required'] });
   const tabs = [];

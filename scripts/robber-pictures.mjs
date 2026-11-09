@@ -1,8 +1,8 @@
 // #826: Pictures of blocked hex vs normal across all five terrains at 4 viewports,
 // plus comparison pictures at 25%, 50%, and 75% black, and zoomed crops for owner cards.
 // Run: node --import ./server/register.mjs scripts/robber-pictures.mjs
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync, readFileSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
@@ -26,7 +26,6 @@ await vite.listen();
 mkdirSync("docs/proofs/826", { recursive: true });
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 

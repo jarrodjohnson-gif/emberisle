@@ -36,7 +36,7 @@ import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game
 import { LAND_MS } from "@/lib/scene/landing";
 import { LandingDust } from "@/lib/scene/landing-dust";
 import { hashStr } from "@/lib/utils";
-import { chunkUrl } from "@/lib/lazy";
+import { boot, chunkUrl } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
 import { BLOCK_H, ROBBER_HEX_DIM, robberHexDim, setRobberHexDim, TILE_Y } from "@/lib/scene/jelly-dims";
 export { ROBBER_HEX_DIM, robberHexDim };
@@ -155,6 +155,8 @@ const DOUBLE_TAP_MS = 350;
 const DOUBLE_TAP_PX = 32;
 const _eye = new THREE.Vector3();
 const _sph = new THREE.Spherical();
+const _lifted = new THREE.Spherical();
+const _held = new THREE.Vector3();
 const _p = new THREE.Vector3();
 const _q = new THREE.Vector3();
 const _n = new THREE.Vector3();
@@ -310,6 +312,13 @@ export class IsleRenderer {
   private calmMq = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
   // Frames drawn; the idle proof counts them.
   renders = 0;
+  // #1385: run once the next frame is drawn. New materials link their shaders on their first draw, which in software GL
+  // holds the main thread; the loading screen's steps finish after that frame, so Start never opens onto it.
+  private afterDraw: (() => void)[] = [];
+  private whenDrawn(done: () => void) {
+    this.afterDraw.push(done);
+    this.wake();
+  }
   private foam!: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   private coastMiter = new Map<string, { mx: number; mz: number }>();
   private coastOrder: string[] = [];
@@ -1359,7 +1368,7 @@ export class IsleRenderer {
       this.startWalk();
     }
     const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.jelly?.busy() || this.dust.active;
-    const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || busy ? 0 : 1000 / 12;
+    const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? (boot.lift ? 0 : 1000 / 30) : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
     // Camera constraints and glides are input state: process them even when the next draw waits on the GPU.
     if (this.play()) {
@@ -1368,8 +1377,13 @@ export class IsleRenderer {
       this.stepGlide(now);
     }
     // Moving frames, including busy ones, wait for the previous GPU work instead of flooding a software renderer's queue.
-    // Explicit reduced-motion frames still draw immediately, including synchronous snapshots.
-    if (!calm && this.gpuBehind()) return;
+    // Explicit reduced-motion frames still draw immediately, including synchronous snapshots, except while the loading screen
+    // is up (#1385): there a burst of them filled a software renderer's queue and the next GL call held the main thread
+    // through the fade. Such a frame waits for the GPU too, and the 1 s hold stays open until it draws.
+    if ((!calm || boot.intro) && this.gpuBehind()) {
+      if (calm) this.busyUntil = Math.max(this.busyUntil, now + 100);
+      return;
+    }
     // Keep a motion resume pending until a frame is accepted; a GPU wait must not consume the paused-time reset.
     this.wasCalm = calm;
     this.lastFrame = now;
@@ -1555,8 +1569,25 @@ export class IsleRenderer {
   // simple. A stage stops as soon as its frames pass its 10-frame budget, so a slow GPU stalls for one frame.
   private draw() {
     const t0 = performance.now();
+    // #1281: the startup push arrives on an aerial view: higher, farther out and more overhead, the fog pushed back with it,
+    // settling into the title's orbit as the lift falls to 0. The orbit itself never sees the lift.
+    const lift = this.titleMode ? boot.lift : 0;
+    if (lift) {
+      _held.copy(this.camera.position);
+      _lifted.setFromVector3(_held.sub(this.controls.target));
+      _lifted.radius *= 1 + lift;
+      _lifted.phi *= 1 - 0.55 * Math.min(lift, 1);
+      this.camera.position.setFromSpherical(_lifted).add(this.controls.target);
+      this.camera.lookAt(this.controls.target);
+      _held.add(this.controls.target);
+    }
     this.poseTokens();
     this.fadeSea();
+    if (lift) {
+      const fog = this.scene.fog as THREE.Fog;
+      fog.near *= 1 + lift;
+      fog.far *= 1 + lift;
+    }
     const crystal = this.waterPath === "crystal" ? this.crystal : null;
     if (crystal) this.drawUnder(crystal);
     // The under pass already drew this frame's shadow map.
@@ -1568,14 +1599,22 @@ export class IsleRenderer {
       this.fps?.end(this.jelly?.stats() ?? null, this.lite);
     } finally {
       this.renderer.shadowMap.autoUpdate = true;
+      if (lift) {
+        this.camera.position.copy(_held);
+        this.camera.lookAt(this.controls.target);
+      }
     }
     this.renders += 1;
+    boot.drawn = true;
+    for (const done of this.afterDraw.splice(0)) done();
     this.updateDockPositions();
     const p = this.probe;
     const warm = p?.stage === "simple" ? 5 : 3;
     const budget = p?.stage === "simple" ? 11 : 22;
     const now = performance.now();
-    const settled = this.settledAt > 0 && now - this.settledAt > 1000 && now - this.lastPointer > 1000;
+    // #1385: not while the loading screen is up. Each probe frame waits for the GPU to finish (readPixels), which in
+    // software GL holds the main thread for hundreds of ms, and would land in the fade or the push.
+    const settled = this.settledAt > 0 && now - this.settledAt > 1000 && now - this.lastPointer > 1000 && !boot.intro;
     if (!p || p.stage !== this.waterPath || !this.lastState || !settled || ++p.frames <= warm) return;
     const gl = this.renderer.getContext();
     gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
@@ -1697,6 +1736,7 @@ export class IsleRenderer {
             this.slabs = null;
           }
           this.living.add(jelly.group);
+          this.whenDrawn(() => (boot.scenes = true));
           // A shore that fails to load or build leaves the plain beach and docks (said once a page).
           if (HARBOR_JELLY && !this.lite)
             loadShore()
@@ -1704,12 +1744,17 @@ export class IsleRenderer {
               .catch((e: unknown) => {
                 if (!shoreFailed) console.warn("The jelly shore did not load; the plain beach stays.", e);
                 shoreFailed = true;
-              });
+              })
+              .finally(() => this.whenDrawn(() => (boot.shore = true)));
+          else this.whenDrawn(() => (boot.shore = true));
           (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
           this.wake();
           performance.mark("props-end");
         },
-        () => tries < 5 && setTimeout(() => alive() && this.growScenes(gen, key, hexes, tries + 1), JELLY_RETRY_MS),
+        () => {
+          if (tries < 5) setTimeout(() => alive() && this.growScenes(gen, key, hexes, tries + 1), JELLY_RETRY_MS);
+          else boot.scenes = boot.shore = true;
+        },
       );
   }
 

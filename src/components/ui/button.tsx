@@ -13,13 +13,13 @@ const VARIANT = {
 } as const;
 
 const SIZE = {
-  default: "h-11 min-w-11 px-4 text-sm",
-  sm: "h-11 min-w-11 px-3 text-sm",
-  lg: "h-12 px-5 text-base",
+  default: "h-11 min-w-11 px-4",
+  sm: "h-11 min-w-11 px-3",
+  lg: "h-12 px-5",
   icon: "size-11 p-0",
 } as const;
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: keyof typeof VARIANT;
   size?: keyof typeof SIZE;
   // Close and Cancel press with ui_back instead of ui_click.
@@ -40,7 +40,7 @@ export function Button({ variant = "default", size = "default", className, type 
     <button
       type={type}
       className={cn(
-        "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-control font-medium transition-[transform,filter,background-color] duration-(--duration-press) ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sea-ink active:scale-[0.97] disabled:pointer-events-none disabled:text-muted disabled:bg-bg disabled:border-border",
+        "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-control text-[15px]/[22px] font-semibold transition-[transform,filter,background-color] duration-(--duration-press) ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg active:scale-[0.97] disabled:pointer-events-none disabled:text-muted disabled:bg-bg disabled:border-border",
         VARIANT[variant],
         SIZE[size],
         className,
