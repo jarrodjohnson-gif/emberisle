@@ -113,7 +113,7 @@ async function headerWithChat(page, label) {
   await page.getByRole("button", { name: /^Open chat/ }).click();
   await page.locator('section[aria-label="Table chat"]').waitFor();
   await desktopHeader(page, `${label}, chat open`);
-  await page.getByRole("button", { name: "Minimize chat" }).click();
+  await page.getByRole("button", { name: "Close chat" }).click();
   await page.locator('section[aria-label="Table chat"]').waitFor({ state: "hidden" });
 }
 try {
@@ -195,6 +195,8 @@ try {
   assert.deepEqual(desktopVoter.overflow, [], `desktop voter fits: ${JSON.stringify(desktopVoter)}`);
   console.log(`desktop voter: ${JSON.stringify(desktopVoter)}`);
   await b.screenshot({ path: "test-results/turn-extension-desktop-voter.png" });
+  // #1449 item 8: the confirming answer is last, as in the trade offer.
+  assert.deepEqual(await b.getByTestId("turn-extension-vote").locator("button").allTextContents(), ["No", "Yes"], "vote reads No, then Yes");
   await b.getByRole("button", { name: "Yes, more time" }).click();
   for (const page of tabs) {
     await page.getByTestId("turn-extension-result").filter({ hasText: "Ember gets 60 seconds more." }).waitFor();

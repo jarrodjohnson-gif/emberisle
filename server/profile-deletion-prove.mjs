@@ -9,8 +9,11 @@
 //  5. Deleted credentials are refused. The login cannot be taken again. The active game keeps playing, and no public
 //     projection, history row, room or pending file names the deleted profile.
 //  6. Stale pending outcomes and room snapshots are replayed. The profile does not come back and gains no result.
-//  7. On the store: an interrupted transaction changes nothing, a second deletion is refused, and a stale outcome is redacted.
-//     Curated repository assets are byte-identical throughout.
+//  7. A fenced room and unreadable pending files name the profile (#1393). A start with the store locked logs that it cannot
+//     redact them, and fences one more room. The next start with the store available redacts all of them before listening.
+//     They stay fenced, and a third start finds nothing left. A pending copy with a forged fingerprint is refused.
+//  8. On the store: an interrupted transaction changes nothing, a second deletion is refused, a stale outcome is redacted, and
+//     a hand-edited fingerprint is refused. Curated repository assets are byte-identical throughout.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
@@ -407,6 +410,71 @@ try {
     assert.equal(Object.values(s.profiles).filter((p) => p.mediaKey !== null).length, 0, "no profile inherited the media binding");
   });
 
+  await scenario("fenced rooms and unreadable pending files lose the profile, after a start with the store unavailable too", async () => {
+    const before = store(d);
+    // A pending file that does not parse, and one that parses but is not an outcome this host wrote. Both name the profile.
+    const BROK = randomUUID();
+    const ODD = randomUUID();
+    writeFileSync(pendingFile(d, BROK), `{"v":1,"gameId":"${BROK}","players":[{"profileId":"${A.id}","name":"Ashling"`);
+    writeFileSync(pendingFile(d, ODD), JSON.stringify({ ...JSON.parse(stalePend), v: 2, gameId: ODD }));
+    // A hand-edited pending copy of a recorded game, with a forged fingerprint.
+    writeFileSync(pendingFile(d, PEND), JSON.stringify({ ...JSON.parse(stalePend), fingerprint: "0".repeat(64) }));
+    // A room fenced before the deletion and kept, and a stale snapshot of BROK's game that the next start fences.
+    writeFileSync(`${roomFile(d, "OLDF")}.fenced`, staleLive);
+    seedRoom(d, "FENC", [ash, brook, "guest"]);
+    const fenc = readJson(roomFile(d, "FENC"));
+    fenc.roster.gameId = BROK;
+    writeFileSync(roomFile(d, "FENC"), JSON.stringify(fenc));
+    const kept = [pendingFile(d, BROK), pendingFile(d, ODD), `${roomFile(d, "OLDF")}.fenced`, `${roomFile(d, "FENC")}.fenced`];
+    // Another live process holds the store's lock, so this start cannot read the tombstones.
+    const lock = path.join(d.profiles, "writer.lock");
+    rmSync(lock, { recursive: true, force: true });
+    mkdirSync(lock);
+    writeFileSync(path.join(lock, `owner-${process.pid}-${randomBytes(12).toString("hex")}`), String(process.pid));
+    let h = start(d);
+    await h.port;
+    await until(() => h.err.includes("profiles: store unavailable (locked); pending outcomes and saved rooms keep any deleted profile until a start with the store available redacts them"), "the unavailable store is logged");
+    await until(() => h.err.includes(`holds game ${BROK} at main, but that game already finished; fenced`), "FENC is fenced");
+    assert(!h.out.includes("profiles: redacted"), "an unavailable store redacts nothing");
+    for (const f of kept) assert(readFileSync(f, "utf8").includes(A.id), `${path.basename(f)} still names the profile`);
+    await h.stop();
+    rmSync(lock, { recursive: true });
+
+    h = start(d);
+    await h.port;
+    const at = h.out.indexOf("listening");
+    for (const f of kept) {
+      const i = h.out.indexOf(`profiles: redacted a deleted profile from ${path.basename(f)}, kept for repair`);
+      assert(i >= 0 && i < at, `${path.basename(f)} was redacted before listening`);
+    }
+    assert(h.out.indexOf(`profiles: redacted a deleted profile from the pending outcome of game ${PEND}`) < at);
+    await until(() => h.err.includes(`results: game ${PEND} does not match its recorded receipt; nothing changed`), "the forged fingerprint is refused");
+    await h.stop();
+    const after = kept.map((f) => readFileSync(f, "utf8"));
+    for (const [i, text] of after.entries()) assert(!text.includes(A.id), `${path.basename(kept[i])} holds no profile id`);
+    for (const f of kept.slice(0, 2)) assert(!readFileSync(f, "utf8").includes("Ashling"), `${path.basename(f)} holds no name`);
+    assert(readFileSync(pendingFile(d, ODD), "utf8").includes(P.Brook.id), "the other player's row is kept for repair");
+    for (const f of kept.slice(2)) {
+      const room = readJson(f);
+      assert.equal(room.seats.length, 3, `${path.basename(f)} is redacted row by row, not replaced`);
+      assert(!JSON.stringify([room.roster, room.outcome, room.seats]).includes("Ashling"), `${path.basename(f)} rows hold no name`);
+    }
+    const stale = readFileSync(pendingFile(d, PEND), "utf8");
+    assert(!stale.includes(A.id) && !stale.includes("Ashling"), "the forged copy is redacted and kept for repair");
+    const s = store(d);
+    assert.deepEqual([s.receipts, s.results, s.records], [before.receipts, before.results, before.records], "the forged fingerprint changed nothing");
+
+    // Idempotent: a third start rewrites nothing, the rooms stay fenced, and the unreadable files still fence their games.
+    h = start(d);
+    await h.port;
+    assert(!h.out.includes("profiles: redacted"), "the third start found nothing left to redact");
+    await until(() => [BROK, ODD].every((id) => h.err.includes(`pending outcome ${id}.json`)), "the unreadable files are still kept for repair");
+    assert(!/restored .*\b(FENC|LIVE)\b/.test(h.out), "no fenced room plays again");
+    await h.stop();
+    assert(!existsSync(roomFile(d, "FENC")) && !existsSync(roomFile(d, "OLDF")));
+    assert.deepEqual(kept.map((f) => readFileSync(f, "utf8")), after, "nothing changed on the third start");
+  });
+
   await scenario("on the store: interrupted, repeated and stale deletions", async () => {
     const e = folders();
     const Q = seedStore(e, ["Dune", "Elm"]);
@@ -426,6 +494,12 @@ try {
     await assert.rejects(s.deleteProfile(Q.Dune.id), (x) => x instanceof ProfileError && x.code === "notFound", "a second deletion is refused");
     for (const bad of [undefined, null, 7, "x", randomUUID()]) await assert.rejects(s.deleteProfile(bad), (x) => x.code === "notFound");
     assert.equal(await s.recordOutcome(structuredClone(g1)), "duplicate", "the stored receipt still dedupes the unredacted outcome");
+    // A hand-edited fingerprint on a recorded game, malformed or forged, never matches its receipt: refused, and nothing changes.
+    const held = readFileSync(storeFile(e), "utf8");
+    for (const bad of ["not-a-hash", "0".repeat(64)]) {
+      await assert.rejects(s.recordOutcome({ ...structuredClone(g1), fingerprint: bad }), (x) => x instanceof ProfileError && x.code === "conflict", `the fingerprint ${bad} is refused`);
+    }
+    assert.equal(readFileSync(storeFile(e), "utf8"), held);
     const g2 = outcome(randomUUID(), [Q.Dune.id, Q.Elm.id]);
     assert.equal(await s.recordOutcome(g2), "committed");
     const doc = store(e);

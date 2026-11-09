@@ -31,10 +31,15 @@
   "ProfileSheet": 5435,
   "focus-trap": 470,
   "ProfileForms": 2189,
+  "ProfileRecords": 2248,
+  "ProfileRecovery": 3029,
   "eye-off": 290,
   "LoadingScreen": 2388,
   "SoundSheet": 1872,
   "use-muted-seats": 414,
   "WinList": 1253,
-  "TradeSlot": 800
+  "TradeSlot": 800,
+  "Sticker": 949,
+  "PlayAgain": 412,
+  "ambience": 461
 }

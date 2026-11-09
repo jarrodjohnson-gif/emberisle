@@ -1,4 +1,4 @@
-// #1163: the Sea sounds switch under Music and ambience. On unless saved as "0". Playback is #662's; this is only the saved choice.
+// #1163: the Sea sounds switch under Music and ambience. On unless saved as "0". Playback is #662's (ambience.ts); this is only the saved choice.
 import { useSyncExternalStore } from "react";
 
 const KEY = "emberisle-sea-sounds";
@@ -10,6 +10,10 @@ export function setSeaSounds(on: boolean) {
   try { if (on) localStorage.removeItem(KEY); else localStorage.setItem(KEY, "0"); } catch { /* the in-memory choice still works */ }
   for (const listener of listeners) listener();
 }
+export function subscribeSeaSounds(listener: () => void) {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+}
 export function useSeaSounds() {
-  return useSyncExternalStore((l) => { listeners.add(l); return () => { listeners.delete(l); }; }, getSeaSounds, () => true);
+  return useSyncExternalStore(subscribeSeaSounds, getSeaSounds, () => true);
 }

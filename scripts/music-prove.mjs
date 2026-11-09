@@ -11,7 +11,6 @@
 //   does not rewind across that start, the game_start sting, and the first roll (#1279).
 // Zero console errors. Run: npm run music-prove
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -19,7 +18,6 @@ const PORT = Number(process.env.VITE_PORT) || 8121;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];

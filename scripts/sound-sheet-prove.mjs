@@ -11,7 +11,7 @@
 // - Settings survive a reload. Zero console errors.
 // Run: npm run sound-sheet-prove. Pictures go to test-results/, or to $PIC_DIR (docs/proofs/669 for the PR).
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -40,7 +40,6 @@ mkdirSync(PIC_DIR, { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -331,7 +330,7 @@ try {
       await page.getByRole("dialog").waitFor({ state: "detached" });
     }
 
-    // The shortcut: Open chat, the Mute players list, Sound settings.
+    // The shortcut: Open chat, the Mute players list, Sound.
     await page.getByRole("button", { name: "Open chat" }).click();
     await page.getByTestId("chat-mute-toggle").click();
     assert.ok(await page.getByTestId("chat-mute-seat-josh").getByText("Unmute Josh").count(), "the chat's list still mutes and unmutes seats");
@@ -339,7 +338,7 @@ try {
     await page.getByRole("dialog", { name: "Sound" }).waitFor();
     assert.equal(await page.getByTestId("chat-mute-panel").count(), 0, "the shortcut closes the chat's list");
     assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("aria-label")), "Back to Table menu", "the shortcut opens the panel with focus on Back");
-    console.log("956x440: levels, mutes, Sea sounds and a muted player survive a reload; the chat's Mute players list has a Sound settings shortcut");
+    console.log("956x440: levels, mutes, Sea sounds and a muted player survive a reload; the chat's Mute players list has a Sound shortcut");
     await ctx.close();
   }
   assert.deepEqual(errors, [], "console errors");

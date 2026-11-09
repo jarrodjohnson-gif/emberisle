@@ -34,7 +34,7 @@ export function joinLines(port, lan, named = null) {
       `Permanent link:    https://${named.hostname}`,
       "Run this in a second terminal and leave it open:",
       "  node scripts/named-tunnel.mjs --run",
-      "Open the permanent link before hosting, then share Copy link with friends.",
+      "Open the permanent link before hosting, then tap the table code and share the link with friends.",
       "The address stays the same. This PC, the host, and the tunnel must be running.",
     ] : [
       "Friends on the internet — run this in a second terminal and leave it open:",

@@ -11,11 +11,11 @@ import { chooseBotAction, chooseRecoveryAction, chooseTradeAsk, logBotAction, sh
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, totalVP, validBag } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
-import { PROTO } from "../src/lib/net/proto.ts";
+import { JOIN_CODE, PROTO } from "../src/lib/net/proto.ts";
 import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
 import { PROFILE_TYPES, profileGate, profileHandler, seatCredential, seatProfile, tableCard, watchRefusal } from "./profile-protocol.mjs";
-import { fingerprint, openProfiles, ProfileError, redactOutcome, redactRows, UUID } from "./profiles.mjs";
+import { fingerprint, openProfiles, ProfileError, redactOutcome, redactRows, redactText, UUID } from "./profiles.mjs";
 import { advanceRoomNeeds, restoredNeed, validNeeds } from "./needs.mjs";
 import { getOpenTables, maybeReleaseOpenSlot, registerOpenTable, unregisterOpenTable } from "./open-table.mjs";
 import { OUTCOME_V, isTime, openJournal, validOutcome, writeDurable } from "./result-journal.mjs";
@@ -154,7 +154,7 @@ const RESULTS = path.resolve(process.env.RESULTS_DIR ?? fileURLToPath(new URL(".
 // Proof-only fault points (#889). RESULT_FAULT="room-before:fail:2,journal-after:exit" fails that commit point N times
 // (default once), or kills the host there with no exit flush, as a crash or power cut would. The points are start-, room-
 // and journal-, each -before or -after its durable write, receipt-, before or after the profile store's result
-// transaction (#890), and redact-, before or after each startup rewrite of a pending outcome or room for a deleted profile (#891).
+// transaction (#890), and redact-, before or after each startup rewrite of a pending outcome, room or file kept for repair for a deleted profile (#891, #1393).
 const FAULTS = new Map(
   String(process.env.RESULT_FAULT ?? "")
     .split(",")
@@ -248,6 +248,8 @@ function seatsOf(room) {
     away: !s.bot && !s.ws,
     bot: Boolean(s.bot),
     player: s.pid ?? null,
+    // #1411: only a seat that said it wants another game; the screen gives the host and bots their tick itself.
+    ...(s.again ? { again: true } : {}),
     needs: [...(s.needs?.kinds ?? [])],
     url: s.avatarId ? `/avatars/${s.avatarId}.jpg` : null,
     // A guest seat carries no profile field at all (#764).
@@ -282,6 +284,26 @@ function freezeOutcome(game, roster, assisted, endedAt) {
     winner: game.winner,
     players: roster.players.map((p) => ({ pid: p.pid, seat: p.seat, profileId: p.profileId, name: p.name, color: p.color, kind: p.kind, points: totalVP(game, p.pid), won: p.pid === game.winner, assisted: assisted.includes(p.pid) })),
   };
+}
+
+// What a table sees of a finished game's profile result (#767, profiles.md "Profile and Wins surfaces"), keyed by game player
+// id for each starting seat that was bound to a profile. An untracked game (legacy, invalid or not eligible) says so. A tracked
+// one gives each profile's committed win total once the profile store holds this game's receipt, and null while it is saving.
+// Read from the store, never counted here, so a repeated push cannot add a win. No profiled seat, no field. A deleted
+// profile (#891) is left out, so its row ends as "Not tracked", never "Saving record…" for good.
+function resultOf(room) {
+  if (room.game?.phase !== "over" || !room.roster) return undefined;
+  const rows = room.roster.players.filter((p) => p.profileId);
+  if (!rows.length) return undefined;
+  const tracked = room.roster.eligible && room.outcome?.gameId === room.roster.gameId;
+  const recorded = tracked && Boolean(profiles.receipt(room.roster.gameId));
+  const wins = {};
+  for (const p of rows) {
+    if (profiles.tombstoned(p.profileId)) continue;
+    const n = recorded ? profiles.committedWins(p.profileId) : null;
+    if (!recorded || n !== null) wins[p.pid] = n;
+  }
+  return { tracked, wins };
 }
 
 // A saved outcome that is not this roster's is dropped; the load freezes a fresh one from the terminal snapshot instead.
@@ -462,7 +484,7 @@ function savedRoster(saved) {
 async function load() {
   let names;
   try {
-    names = readdirSync(ROOMS).filter((n) => n.endsWith(".json"));
+    names = readdirSync(ROOMS);
   } catch {
     names = [];
   }
@@ -471,7 +493,26 @@ async function load() {
   // Profile deletion (#891) left these for the host: before anything is recorded or served, each pending outcome naming a
   // deleted profile is rewritten without it, one durable file at a time. An interrupted pass resumes on the next start.
   const gone = profiles.tombstoned;
+  if (!profiles.ready) console.error(`profiles: store unavailable (${profiles.reason}); pending outcomes and saved rooms keep any deleted profile until a start with the store available redacts them`);
   let redacted = 0;
+  // Files kept only for repair by hand (#1393) are redacted too. A fenced room keeps its suffix, so it never plays again, and
+  // an unreadable pending outcome keeps its name, so it still fences its game.
+  for (const [dir, name] of [...journal.unreadable().map((id) => [journal.dir, `${id}.json`]), ...names.filter((n) => n.endsWith(".json.fenced")).map((n) => [ROOMS, n])]) {
+    let text;
+    try {
+      text = readFileSync(path.join(dir, name), "utf8");
+    } catch (err) {
+      console.error(`profiles: cannot read ${name} to redact deleted profiles (${err.message})`);
+      continue;
+    }
+    const clean = redactText(text, gone);
+    if (clean === null) continue;
+    fault("redact-before");
+    await writeDurable(dir, name, clean);
+    redacted++;
+    console.log(`profiles: redacted a deleted profile from ${name}, kept for repair`);
+    fault("redact-after");
+  }
   for (const o of journal.pending()) {
     const clean = redactOutcome(o, gone);
     if (!clean) continue;
@@ -481,7 +522,7 @@ async function load() {
     console.log(`profiles: redacted a deleted profile from the pending outcome of game ${o.gameId}`);
     fault("redact-after");
   }
-  for (const name of names) {
+  for (const name of names.filter((n) => n.endsWith(".json"))) {
     const file = path.join(ROOMS, name);
     let saved;
     try {
@@ -845,6 +886,7 @@ function pushState(room) {
   // whose clock is off still land on the host's moment.
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
   const turnDeadline = soonest?.turnDeadline ?? null;
+  const result = resultOf(room);
   save(room);
   // The one terminal gate (#889): every route to the win (a move, a timer, a bot, takeover, rejoin) publishes through here,
   // and a finished tracked game goes out only once its final room and its pending outcome are both durable.
@@ -864,10 +906,11 @@ function pushState(room) {
       turnDeadline,
       turnPlayer: soonest?.pid ?? null,
       serverNow: Date.now(),
+      result,
     });
   }
   if (!room.watchers.size) return;
-  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
+  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now(), result });
   for (const ws of room.watchers) if (ws.readyState === ws.OPEN) ws.send(raw);
 }
 
@@ -927,7 +970,10 @@ async function recordAttempt(o) {
   const id = o.gameId;
   try {
     const out = await profiles.recordOutcome(o);
+    // Nothing credited: resultOf already left out every deleted profile, so the table's line has nothing to wait for.
     if (out === "excluded") return true;
+    // The table's win screen swaps "Saving record…" for the committed totals.
+    for (const room of rooms.values()) if (room.roster?.gameId === id && room.game?.phase === "over") pushState(room);
     await journal.done(id);
     console.log(out === "duplicate" ? `results: game ${id} was already recorded; its pending outcome is cleared` : `results: recorded game ${id}`);
     return true;
@@ -1448,6 +1494,8 @@ async function rematch(ws, room) {
     seat.ws = null;
   }
   room.seats = live;
+  // #1411: every "play again" was for the game that just ended.
+  for (const seat of room.seats) seat.again = undefined;
   // Reclaim a finished open room's slot only if no successor has taken it (#986).
   if (room.visibility === "open") registerOpenTable(room);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
@@ -1874,6 +1922,14 @@ function handle(ws, raw) {
     ws.seat.ready = value;
     return publish(room);
   }
+  // #1411: a seat says it wants another game. Only while a game is over; it never starts, blocks or delays the rematch.
+  if (msg.type === "wantAgain") {
+    if (room.game?.phase !== "over") return send(ws, { type: "error", message: "Game is not over." });
+    const value = msg.value === true;
+    if (Boolean(ws.seat.again) === value) return;
+    ws.seat.again = value || undefined;
+    return publish(room);
+  }
   if (msg.type === "rename") return renameSeat(ws, room, msg);
   if (msg.type === "addBot") return addBot(ws, room);
   if (msg.type === "removeBot") return removeBot(ws, room, msg);
@@ -1892,14 +1948,12 @@ function handle(ws, raw) {
   return play(ws, room, msg);
 }
 
-const CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
-
 // Answers which seats a lobby holds, without sitting down (docs/design/color-peek.md). The asker has no seat, so it gets
 // what dims the swatches and nothing more: no names or pictures for whoever holds the code (G10). Those come with the
 // `seats` broadcast after sitting down.
 function peek(ws, msg) {
   const code = typeof msg.code === "string" ? msg.code.toUpperCase() : "";
-  if (!CODE.test(code)) return;
+  if (!JOIN_CODE.test(code)) return;
   const room = rooms.get(code);
   const seats = room && !room.game ? room.seats.map((s) => ({ id: s.id, color: s.color, ready: s.ready })) : [];
   send(ws, { type: "seats", code, seats });
@@ -1975,6 +2029,8 @@ function dropRoom(room) {
 function hold(room, seat) {
   seat.ws = null;
   seat.gone = Date.now();
+  // #1411: back before the next game, a player says again whether they want it.
+  seat.again = undefined;
   // A dropped seat is the grace timer's business, never the turn timer's (#344).
   disarmTurn(seat);
   if (room.game) extensions(room).sync();

@@ -5,7 +5,6 @@
 // dust.step motion/fade, duplicate state push mid-landing, and runs at 640x400, 390x844 and 1280x720.
 // Run: npm run landing-dust-prove
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -15,7 +14,6 @@ const STEP_MS = 90_000;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
@@ -80,6 +78,8 @@ async function runMotionSuite(page, label) {
     window.__t0 = performance.now();
     window.__plays = [];
     g.pickVertex(vid);
+    window.__sentinelT = null;
+    setTimeout(() => (window.__sentinelT = performance.now()), 280);
     const landingKeys = window.__isle.landings.map((l) => l.obj.userData.key);
     return { id: vid, samples: eval(sample)(`v:${vid}`), landingKeys, landingCount: landingKeys.length };
   }, SAMPLE);
@@ -161,10 +161,12 @@ async function runMotionSuite(page, label) {
   await page.waitForFunction(() => window.__plays.some((p) => p.file === "drop_003.wav"), null, { timeout: 5000 });
   const outpostSounds = await page.evaluate(() => {
     const plays = window.__plays.filter((p) => p.file === "drop_003.wav");
-    return { count: plays.length, dt: plays.length ? plays[0].t - window.__t0 : null };
+    return { count: plays.length, t: plays.length ? plays[0].t : null, dt: plays.length ? plays[0].t - window.__t0 : null };
   });
   assert.ok(outpostSounds.count >= 1, `${label} outpost: sound event recorded (${outpostSounds.count})`);
-  assert.ok(outpostSounds.dt >= 250 && outpostSounds.dt <= 500, `${label} outpost: sound at ${outpostSounds.dt?.toFixed(0)}ms (~280ms expected)`);
+  assert.ok(outpostSounds.dt >= 250, `${label} outpost: sound at ${outpostSounds.dt?.toFixed(0)}ms (>= 250ms expected)`);
+  await page.waitForFunction(() => window.__sentinelT !== null, null, { timeout: 5000 });
+  assert.ok(outpostSounds.t <= (await page.evaluate(() => window.__sentinelT)), `${label} outpost: sound fires before a same-delay timer set right after the pick`);
   console.log(`${label} outpost: sound at ${outpostSounds.dt?.toFixed(0)}ms, dust aligned`);
 
   // Place a path.
@@ -175,6 +177,8 @@ async function runMotionSuite(page, label) {
     window.__t0 = performance.now();
     window.__plays = [];
     g.pickEdge(eid);
+    window.__sentinelT = null;
+    setTimeout(() => (window.__sentinelT = performance.now()), 220);
     return { id: eid, samples: eval(sample)(`e:${eid}`) };
   }, SAMPLE);
   assert.ok(path.samples, `${label} path: landing`);
@@ -215,10 +219,12 @@ async function runMotionSuite(page, label) {
   await page.waitForFunction(() => window.__plays.some((p) => p.file === "drop_002.wav"), null, { timeout: 5000 });
   const pathSounds = await page.evaluate(() => {
     const plays = window.__plays.filter((p) => p.file === "drop_002.wav");
-    return { count: plays.length, dt: plays.length ? plays[0].t - window.__t0 : null };
+    return { count: plays.length, t: plays.length ? plays[0].t : null, dt: plays.length ? plays[0].t - window.__t0 : null };
   });
   assert.ok(pathSounds.count >= 1, `${label} path: sound event recorded (${pathSounds.count})`);
-  assert.ok(pathSounds.dt >= 190 && pathSounds.dt <= 450, `${label} path: sound at ${pathSounds.dt?.toFixed(0)}ms (~220ms expected)`);
+  assert.ok(pathSounds.dt >= 190, `${label} path: sound at ${pathSounds.dt?.toFixed(0)}ms (>= 190ms expected)`);
+  await page.waitForFunction(() => window.__sentinelT !== null, null, { timeout: 5000 });
+  assert.ok(pathSounds.t <= (await page.evaluate(() => window.__sentinelT)), `${label} path: sound fires before a same-delay timer set right after the pick`);
   console.log(`${label} path: grow + squash + dust + sound at ${pathSounds.dt?.toFixed(0)}ms verified`);
 
   // Stronghold: upgrade from outpost.

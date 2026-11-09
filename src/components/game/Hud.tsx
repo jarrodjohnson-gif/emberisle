@@ -11,7 +11,7 @@ import { ChatControls, ChatDock, ChromeLanded, CostCard, DiscardBar, FirstGameCo
 import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
 import { PlayerMenu } from "@/components/game/PlayerMenu";
-import { SeatRail, SeatStrip, HiddenPointHint } from "@/components/game/SeatRail";
+import { SeatRail, SeatStrip } from "@/components/game/SeatRail";
 import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice, RollMoment } from "@/components/game/Dice";
 import { TableMenu } from "@/components/game/TableMenu";
@@ -104,6 +104,19 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
     default:
       return null;
   }
+}
+
+// #954: practice and hotseat have no chat. While the newest lines are that roll's goods and awards, the chip shows the roll.
+const HUD_ASIDE = / — .+'s roll[;.]| (holds|loses) the (longest path|largest army)\.$/;
+function hudRollChip(lines: { text: string }[], mine: string) {
+  const last = lines.at(-1)?.text;
+  if (!last || / claims the isle |^The isle is settled/.test(last)) return null;
+  let i = lines.length - 1;
+  while (i >= 0 && HUD_ASIDE.test(lines[i]!.text)) i -= 1;
+  const roll = /^(.+) rolled (1[0-2]|[2-9])!$/.exec(lines[i]?.text ?? "");
+  if (!roll) return null;
+  const sum = +roll[2]!;
+  return { name: roll[1]!, sum, own: mine !== "" && roll[1] === mine, hot: sum === 6 || sum === 8 };
 }
 
 
@@ -246,6 +259,8 @@ export function Hud() {
 
   if (!state || !me) return null;
   const mine = state.current === actor;
+  // This seat, same test as the online log (Chat.tsx): hotseat's other seats are not this device's seat.
+  const rollChip = mode === "ai" || mode === "hotseat" ? hudRollChip(gameLog, spectator ? "" : (state.players.find((p) => p.id === localId)?.name ?? "")) : null;
   // Hotseat has no bots: the first seat still owing a discard takes the bar, whoever rolled the 7.
   const discarder =
     state.phase !== "discard"
@@ -430,9 +445,18 @@ export function Hud() {
       <p
         hidden={tradeVisible && !keep}
         data-testid="log-line"
+        data-roll={rollChip ? rollChip.sum : undefined}
+        data-own={rollChip?.own ? "true" : undefined}
         className="table-log block h-5 min-w-0 flex-1 overflow-hidden truncate rounded-control px-3 text-xs leading-5"
       >
-        {gameLog.at(-1)?.text}
+        {rollChip ? (
+          <span className={rollChip.own ? "text-gain" : undefined}>
+            <span data-testid="log-roll-name" className={rollChip.own ? "font-bold" : undefined}>{rollChip.name}</span>
+            <span> rolled </span>
+            <span data-testid="log-roll-sum" className={rollChip.hot ? "text-danger" : undefined}>{rollChip.sum}</span>
+            !
+          </span>
+        ) : gameLog.at(-1)?.text}
       </p>
       {/* #776: the shared draw deck is public to every seat and watcher, so its count sits here, off the build row. */}
       <span data-testid="deck-count" data-deck-left={deckLeft} title={`${deckLeft} fortunes left in the deck`} className="shrink-0 px-2 text-xs leading-5 tabular-nums">Deck {deckLeft}</span>
@@ -475,7 +499,6 @@ export function Hud() {
           <span data-coach-skip-slot className="shrink-0 empty:hidden" />
           {phone ? null : <TableMenu />}
         </div>
-        {phone ? <div className={column ? "w-[320px]" : undefined}><HiddenPointHint /></div> : null}
       </header>
 
       {phone && portrait && (mode === "online" || spectator) ? (
@@ -484,13 +507,16 @@ export function Hud() {
           {mode === "online" ? <LazyBoundary failed={null} retryKey={String(chatOpen)}><ChatControls /></LazyBoundary> : null}
         </div>
       ) : null}
+      {/* #1420: a bottom sheet, so the trade rows sit under the thumb. Upright it spans the screen and its top edge stays in
+          the bottom half; sideways it is 320 px at the left, over the dock column and clear of the island. */}
       {phone && menuPlayer ? (
         <PlayerMenu
           player={menuPlayer}
-          heading
+          sheet
           className={cn(
-            "absolute z-20",
-            portrait ? "left-safe right-safe top-[calc(env(safe-area-inset-top)+4.25rem)]" : "right-safe top-16 w-72",
+            // The bottom room is a border, not padding: a border is outside the scrollport, so rows that scroll never pass under the home bar.
+            "absolute bottom-0 z-30 rounded-b-none border-b-[length:max(1rem,env(safe-area-inset-bottom))] border-b-surface p-4 pb-0 shadow-[var(--shadow-sheet)]",
+            portrait ? "inset-x-0 max-h-[50dvh] border-x-0 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]" : "left-safe max-h-[70dvh] w-80",
           )}
         />
       ) : null}

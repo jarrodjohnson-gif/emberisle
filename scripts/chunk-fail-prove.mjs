@@ -62,7 +62,6 @@ const hostPort = await new Promise((resolve) =>
 const server = await preview({ preview: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 const url = `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 

@@ -30,6 +30,12 @@ export const ProfileSheet = profileSheet.pick((m) => m.ProfileSheet);
 // #766 slice 2: its Edit profile and Change PIN forms load when the sheet opens one of them.
 export const profileForms = chunk(() => import("@/components/game/ProfileForms"));
 export const ProfileForms = profileForms.pick((m) => m.ProfileForms);
+// #767: its Wins and History views load when the sheet opens one of them.
+export const profileRecords = chunk(() => import("@/components/game/ProfileRecords"));
+export const ProfileRecords = profileRecords.pick((m) => m.ProfileRecords);
+// #1437: its recovery code screens; fetched as the sheet opens, and waited for before a request that answers with a code.
+export const profileRecovery = chunk(() => import("@/components/game/ProfileRecovery"));
+export const ProfileRecovery = profileRecovery.pick((m) => m.ProfileRecovery);
 
 export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);
@@ -40,6 +46,10 @@ export const WinScreen = sheets.pick((m) => m.WinScreen);
 // #748: the win screen's compact list on touch and narrow screens; the win screen fetches it on phones as the table starts.
 export const winList = chunk(() => import("@/components/game/WinList"));
 export const WinList = winList.pick((m) => m.WinList);
+// #1411: a guest's I'll play again and the win screen's count; the win screen fetches it as an online table starts.
+export const playAgain = chunk(() => import("@/components/game/PlayAgain"));
+export const WantAgain = playAgain.pick((m) => m.WantAgain);
+export const WantCount = playAgain.pick((m) => m.WantCount);
 
 // The island behind every screen (#543 preloads it). #1281: one load through the chunk loader, shared by the canvas and the
 // loading screen, so a failed download is retried under a fresh URL by Try again instead of leaving the screen stuck.

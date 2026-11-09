@@ -191,8 +191,8 @@ export function TradeToast({ slot }: { slot?: boolean }) {
           <div className="trade-details" tabIndex={0} role="group" aria-label="Trade amounts and player responses">
             {answering ? (
               <p className="trade-receipt" data-testid="trade-receipt">
-                <span><strong>You give:</strong> {bagText(offer.want) || "nothing"}</span>
-                <span><strong>You get:</strong> {bagText(offer.give) || "nothing"}</span>
+                <span><strong>Give:</strong> {bagText(offer.want) || "nothing"}</span>
+                <span><strong>Get:</strong> {bagText(offer.give) || "nothing"}</span>
               </p>
             ) : null}
             <ul className="trade-responses" aria-label="Player responses">
@@ -212,8 +212,8 @@ export function TradeToast({ slot }: { slot?: boolean }) {
           </div>
           {answering ? (
             <div className="trade-answers flex items-center gap-1">
-              <Button className="trade-yes h-11 min-w-16 flex-1" onClick={() => answerTrade(true)}>Yes</Button>
               <Button variant="secondary" className="trade-no h-11 min-w-16 flex-1" onClick={() => answerTrade(false)}>No</Button>
+              <Button className="trade-yes h-11 min-w-16 flex-1" onClick={() => answerTrade(true)}>Yes</Button>
             </div>
           ) : null}
           {asker && !spectator ? (

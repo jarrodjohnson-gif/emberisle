@@ -17,10 +17,12 @@ export interface Seat {
   bot?: boolean;
   player?: string | null;
   needs?: Resource[];
+  // #1411: the player said they want another game. Only once a game is over; the next game clears it.
+  again?: boolean;
 }
 
 // What a peek answers (G10): enough to dim taken swatches, no names or pictures.
-export type PeekSeat = Pick<Seat, "id" | "color" | "ready">;
+type PeekSeat = Pick<Seat, "id" | "color" | "ready">;
 
 export interface Legal {
   outpost: string[];
@@ -39,7 +41,7 @@ export interface Gain {
   amount: number;
 }
 
-export interface ActionStamp {
+interface ActionStamp {
   turn: number;
   baseSeq: number;
   connection: string;
@@ -68,7 +70,7 @@ export interface Reaction {
 // An ask-the-table offer (README "Messages between client and host"). Bags are resource counts, empty when absent.
 export type Bag = Partial<Record<Resource, number>>;
 
-export interface TurnExtensionState {
+interface TurnExtensionState {
   target: string | null;
   key: string | null;
   used: boolean;
@@ -77,7 +79,7 @@ export interface TurnExtensionState {
 }
 
 // Lobby tic-tac-toe (#1263, README "Messages between client and host"): seat ids, and nine cells of "x", "o" or ".".
-export interface TttGame {
+interface TttGame {
   id: string;
   x: string;
   o: string;
@@ -106,7 +108,7 @@ export interface TableEvents {
   seats(msg: { code: string; seats: Seat[] | PeekSeat[]; watching?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode }): void;
   // `you` is null on a watcher's state. `turnDeadline` is the host's clock (epoch ms) for the seat `turnPlayer`;
   // `serverNow` is the host's clock as it sent this.
-  state(msg: { you: string | null; game: GameState; legal: Legal; actionStamp?: ActionStamp; turnDeadline?: number | null; turnPlayer?: string | null; serverNow?: number }): void;
+  state(msg: { you: string | null; game: GameState; legal: Legal; actionStamp?: ActionStamp; turnDeadline?: number | null; turnPlayer?: string | null; serverNow?: number; result?: unknown }): void;
   rolled(msg: { dice: [number, number]; sum: number; gains: Gain[]; short: Resource[] }): void;
   chat(line: ChatLine): void;
   react(r: Reaction): void;
@@ -163,6 +165,8 @@ export interface TableClient {
   removeBot(id: string): void;
   // A rematch at the same table (#266). Host only, once the game is over.
   again(): void;
+  // #1411: say "I'll play again" (or take it back) on the results screen. It never starts the next game.
+  wantAgain(value: boolean): void;
   act(action: Action): boolean;
   // Ask-the-table trades are host-run (not rules Actions): offer `give` for `want` to every other seat, and answer one.
   ask(give: Bag, want: Bag): void;
@@ -336,6 +340,27 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     on.closed?.(keepSeat);
   };
 
+  // The socket `sock` is gone: redial with the seat secret while the host still holds the seat, or give up.
+  const lost = (sock: SocketLike) => {
+    // A socket a later dial replaced closing late is not a drop of the live one.
+    if (sock !== ws) return;
+    stamp = null;
+    setExtension(null);
+    stopHealth();
+    if (closedByUs) return;
+    if (attempt === 0) lostAt = Date.now();
+    // Redial until the last call before the host's hold ends; by then the seat is as good as gone.
+    const left = lostAt + (inGame ? hold.game : hold.lobby) - LAST_CALL_MS - Date.now();
+    if (!seat || left <= 0) {
+      giveUp(taken);
+      return;
+    }
+    attempt += 1;
+    health("Reconnecting");
+    on.reconnecting?.(attempt);
+    timer = setTimeout(dial, Math.min(1000 * 2 ** (attempt - 1), 15000, left));
+  };
+
   const dial = () => {
     timer = null;
     const sock = (ws = new Ctor(url));
@@ -349,25 +374,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       }
       for (const fn of queue.splice(0)) raw(fn());
     };
-    ws.onclose = () => {
-      // A socket a later dial replaced closing late is not a drop of the live one.
-      if (sock !== ws) return;
-      stamp = null;
-      setExtension(null);
-      stopHealth();
-      if (closedByUs) return;
-      if (attempt === 0) lostAt = Date.now();
-      // Redial until the last call before the host's hold ends; by then the seat is as good as gone.
-      const left = lostAt + (inGame ? hold.game : hold.lobby) - LAST_CALL_MS - Date.now();
-      if (!seat || left <= 0) {
-        giveUp(taken);
-        return;
-      }
-      attempt += 1;
-      health("Reconnecting");
-      on.reconnecting?.(attempt);
-      timer = setTimeout(dial, Math.min(1000 * 2 ** (attempt - 1), 15000, left));
-    };
+    ws.onclose = () => lost(sock);
     ws.onmessage = (ev) => {
       if (sock !== ws) return;
       try { handle(JSON.parse(String(ev.data))); } catch {}
@@ -470,6 +477,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     addBot: () => send({ type: "addBot" }),
     removeBot: (id) => send({ type: "removeBot", id }),
     again: () => send({ type: "again" }),
+    wantAgain: (value) => send({ type: "wantAgain", value }),
     act: (action) => {
       const i = toIntent(action);
       return i ? act(i) : false;
@@ -489,7 +497,15 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     sound: (id) => send({ type: "sound", id }),
     react: (emote, to) => send({ type: "react", emote, to }),
     ttt: (type, fields) => send({ type, ...fields }),
-    drop: () => ws.close(),
+    // The connection is lost, as when the network goes: recovery starts now. A plain close() waits for the host to
+    // answer the closing handshake first, and Chromium waits up to 60 s for that answer (#1442).
+    drop: () => {
+      const sock = ws;
+      if (sock.readyState > 1) return;
+      sock.onopen = sock.onmessage = sock.onclose = null;
+      sock.close();
+      lost(sock);
+    },
     wake: () => {
       if (!timer) return;
       clearTimeout(timer);

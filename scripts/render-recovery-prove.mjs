@@ -30,7 +30,6 @@ const vite = await createServer({ server: { host: "127.0.0.1", port: Number(proc
 await vite.listen();
 const port = vite.httpServer.address().port;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 let other;

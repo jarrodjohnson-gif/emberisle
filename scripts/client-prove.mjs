@@ -1,5 +1,5 @@
 // L13.4 Debug: open the browser client, play setup and one roll versus the bots, and fail on any console error.
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -11,7 +11,6 @@ const errors = [];
 let code = 0;
 const browser = await chromium.launch({
   // Cloud sessions ship Chromium here. On your own PC, run `npx playwright install chromium` once.
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 try {
@@ -617,8 +616,8 @@ try {
     )
   ).jsonValue();
   await page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: { writeText: () => Promise.resolve() }, configurable: true }));
-  await page.getByRole("button", { name: "Copy", exact: true }).click();
-  await page.getByRole("button", { name: "Copied" }).waitFor({ timeout: 3000 });
+  await page.getByRole("button", { name: "Copy link" }).click();
+  await page.locator(".lobby-code[data-copied]").waitFor({ timeout: 3000 });
   const clip = { live: await page.getByTestId("copy-status").textContent(), field: await page.getByTestId("copy-fallback").count() };
   console.log("copy fallback:", JSON.stringify({ noClip, clip }));
   if (!noClip.value.includes("?code=ABCD") || !noClip.readOnly || !noClip.selected || noClip.live !== "Select and copy" || noClip.polite !== "polite") {

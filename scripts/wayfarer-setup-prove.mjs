@@ -2,7 +2,7 @@
 // choice, host-only updates, restart persistence, the chosen rules in play, rematch inheritance, and the choice sticking until the title menu.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import WebSocket from '../server/node_modules/ws/wrapper.mjs';
@@ -56,7 +56,7 @@ async function musterBoundsDiagnostics(page,box,width,height){
  console.log(`#1059 Muster bounds predicate failed at ${width}x${height}:`,JSON.stringify({originalBox:box,viewport:{width,height},predicate:parts,laterSample:later}));
 }
 try{
- await start();await vite.listen();browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||(existsSync('/opt/pw-browsers/chromium')?'/opt/pw-browsers/chromium':undefined),args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});mkdirSync('test-results',{recursive:true});
+ await start();await vite.listen();browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});mkdirSync('test-results',{recursive:true});
  for(const contextName of ['ai','hotseat','online'])for(const mode of ['on','off']){
   const {context,page}=await pageAt();await setup(page);
   assert.equal(await page.getByLabel('Practice wayfarer',{exact:true}).inputValue(),'on');assert.equal(await page.getByLabel('Online wayfarer',{exact:true}).inputValue(),'on');assert.equal(await page.getByLabel('Hotseat wayfarer',{exact:true}).inputValue(),'on');

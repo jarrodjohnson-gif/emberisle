@@ -2,7 +2,7 @@
 // Zero page errors with Storage.prototype.getItem, setItem, removeItem and clear blocked.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
@@ -30,7 +30,6 @@ const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, stric
 await vite.listen();
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 

@@ -2,10 +2,11 @@
 // to spread out: the turn number and watcher count, How to play, Costs, Sound, the table code (online), Copy log (#899, online) and Leave table.
 // A watcher's own "Watching" chip stays in the header beside the button (docs/design/spectator.md), not in here.
 // Opens with focus on the first row; Escape, a pointerdown outside or focus leaving closes it, and Escape puts the focus
-// back on the button. Leaving an online seat asks first (the seat goes to a bot for good); Stay, Escape or 5 s cancels.
+// back on the button. Leaving an online seat asks first (the seat goes to a bot for good), and so does leaving hotseat (#1449:
+// the game ends, with nothing saved); Stay, Escape or 5 s cancels.
 // #669: Sound opens the Sound panel (SoundSheet.tsx) in the same place, with every level showing; Back and Escape return to the rows.
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Box, Copy, Ellipsis, Eye, Hammer, LogOut, ScrollText, Volume2, VolumeX, Waves } from "lucide-react";
+import { BookOpen, Box, Bug, Copy, Ellipsis, Eye, Hammer, LogOut, ScrollText, Volume2, VolumeX, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConnectionOverlay, SoundSheet, soundSheet } from "@/components/game/chunks";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
@@ -45,7 +46,7 @@ export function TableMenu({ dock }: { dock?: "left" | "right" }) {
   const sheet = useRef<HTMLDivElement>(null);
   const leaveRef = useRef<HTMLButtonElement>(null);
   const stayRef = useRef<HTMLButtonElement>(null);
-  const confirm = mode === "online" && !spectator && state.phase !== "over";
+  const confirm = (mode === "online" || mode === "hotseat") && !spectator && state.phase !== "over";
 
   // Set by Stay, Escape and the timer: the Leave row is back on the next render, and takes the focus then.
   const refocusLeave = useRef(false);
@@ -177,7 +178,7 @@ export function TableMenu({ dock }: { dock?: "left" | "right" }) {
               data-testid="leave-confirm"
               className="flex flex-col gap-2 px-3 py-2 text-body"
             >
-              <p id="leave-confirm-msg">Leave the table? Your seat goes to the bot.</p>
+              <p id="leave-confirm-msg">{mode === "hotseat" ? "Leave the table? The game ends." : "Leave the table? Your seat goes to the bot."}</p>
               <div className="flex justify-end gap-2">
                 <Button ref={stayRef} back variant="secondary" className="h-11" onClick={stay}>
                   Stay
@@ -244,7 +245,7 @@ export function TableMenu({ dock }: { dock?: "left" | "right" }) {
               </div>
               {mode === "online" && code ? (
                 <Button variant="ghost" className={ROW} onClick={() => copy("code", code)}>
-                  <Copy className={ICON} /> {copied?.ok && copied.what === "code" ? "Copied" : `Copy table code ${code}`}
+                  <Copy className={ICON} /> {copied?.ok && copied.what === "code" ? "Copied" : `Copy code ${code}`}
                 </Button>
               ) : null}
               {/* #899: the whole game log on the clipboard (or in a field to copy by hand), moved here from the online chat dock. */}
@@ -258,9 +259,10 @@ export function TableMenu({ dock }: { dock?: "left" | "right" }) {
                 variant="ghost"
                 className={ROW}
                 data-testid="report-bug"
+                aria-label="Report a bug, opens GitHub in a new tab"
                 onClick={() => window.open(bugReportUrl({ version: __BUILD_SHA__, seed: state.seed, seq: state.seq, width: window.innerWidth, height: window.innerHeight }), "_blank", "noopener")}
               >
-                <ScrollText className={ICON} /> Report a bug
+                <Bug className={ICON} /> Report a bug
               </Button>
               <Button ref={leaveRef} variant="ghost" className={ROW} onClick={confirm ? () => setAsking(true) : goTitle}>
                 <LogOut className={ICON} /> Leave table
