@@ -3,7 +3,7 @@
 // #419: an armed Path, Outpost or Stronghold turns the turn banner into what to pick and "Esc cancels"; Escape restores it.
 // #558: a tap on a spot the armed build cannot use shows the rule it broke on the HUD's error line (rules.ts settleError and the
 // built-edge line; "Path must connect to you." stays for a disconnected path) and leaves the state untouched.
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -17,7 +17,6 @@ await vite.listen();
 const errors = [];
 let code = 0;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 try {

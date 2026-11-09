@@ -24,7 +24,7 @@
 // - zero console errors.
 // Saves test-results/build-ready-390.png and -1280.png (Path Ready, Outpost No spot, Stronghold Missing in one view), build-ready-<size>.png and build-ready-card-<size>.png. Run: npm run build-ready-prove (VITE_PORT, default 8509).
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import * as types from "../src/lib/game/types.ts";
@@ -83,7 +83,6 @@ mkdirSync("test-results", { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];

@@ -27,7 +27,6 @@ const server = createServer((req, res) => {
 await new Promise((ok) => server.listen(PORT, "127.0.0.1", ok));
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 let code = 0;

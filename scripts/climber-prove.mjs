@@ -1,7 +1,7 @@
 // #966: the ore climber starts at the foot when the match starts, climbs, and reaches the summit (or falls).
 // Sample at fixed board ages (not wall-clock waits). Title/lobby hold age at 0; reduced motion holds still.
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -12,7 +12,6 @@ mkdirSync(outDir, { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 

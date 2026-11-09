@@ -10,7 +10,7 @@
 // against the rules' own grantSecondSettlement (through applyAction).
 // Run: npm run howto-prove
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -22,7 +22,6 @@ const { wayfarerRules } = await vite.ssrLoadModule("/src/lib/game/fortunes.ts");
 const rules = await vite.ssrLoadModule("/src/lib/game/rules.ts");
 const { createGame } = await vite.ssrLoadModule("/src/lib/game/board.ts");
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];

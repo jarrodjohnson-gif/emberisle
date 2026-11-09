@@ -8,7 +8,7 @@
 // - public/audio/your_turn.wav is about 420 ms (rising fifth), not the old 150 ms knocks.
 // Run: node scripts/your-turn-cue-prove.mjs
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -21,7 +21,6 @@ const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, stric
 await vite.listen();
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 

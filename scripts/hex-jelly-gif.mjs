@@ -1,7 +1,7 @@
 // The Hex Jelly roll payoff as an animated GIF (docs/design/hex-jelly-prompt.md "THE TILE IN PLAY"): the studio page frozen
 // frame by frame through a roll, written as test-results/jelly-<kind>-<seed>-roll.gif. Needs python3 with Pillow.
 // Run: node scripts/hex-jelly-gif.mjs ore 23
-import { existsSync, mkdirSync, rmSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
@@ -11,7 +11,6 @@ const PORT = Number(process.env.VITE_PORT) || 8133;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const dir = `test-results/gif-${kind}-${seed}`;

@@ -11,7 +11,7 @@
 // Run with: node --import ./server/register.mjs scripts/watch-ui-prove.mjs
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
@@ -54,9 +54,7 @@ for (let tries = 0; ; tries++) {
     await new Promise((r) => setTimeout(r, 500));
   }
 }
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
-});
+const browser = await chromium.launch();
 
 const errors = [];
 let code = 0;

@@ -6,7 +6,7 @@
 // - under reduced motion nothing animates and a still outline marks the button instead.
 // Zero console errors. Saves docs/design/829-fortune-cue/<size>.png when SHOTS=1. Run: npm run fortune-cue-prove
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -21,7 +21,6 @@ if (process.env.SHOTS) mkdirSync("docs/design/829-fortune-cue", { recursive: tru
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
