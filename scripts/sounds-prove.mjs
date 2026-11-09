@@ -65,6 +65,10 @@ async function tab(name, url) {
         window.__sockets.push(this);
       }
     };
+    window.__tableSocket = () =>
+      window.__sockets.findLast((s) => s.readyState === WebSocket.OPEN && !s.url.includes("token=")) ??
+      window.__sockets.findLast((s) => !s.url.includes("token=")) ??
+      window.__sockets.at(-1);
     HTMLMediaElement.prototype.pause = function () {
       window.__pauses.push(new URL(this.src).pathname.replace("/audio/", ""));
     };
@@ -327,16 +331,19 @@ try {
   await p2.evaluate(() => { window.__emberisle.getState().state.vertices[0].building = { playerId: "p0", kind: "outpost" }; });
   await clear(p2);
   await robbed("p0", "p1");
-  await sleep(300);
+  await until(async () => (await heard(p2)).length, "the victim hears robbed_fah");
+  await sleep(200);
   assert.deepEqual((await heard(p2)).map((x) => [x.file, x.volume]), [["robbed_fah.mp3", 1]], "the victim hears robbed_fah once, at 1, and not wayfarer_move (#659)");
   ok("wayfarer: the player with a piece on the target hex hears robbed_fah once, not wayfarer_move");
   await clear(p2);
+  await sleep(200);
   await robbed("p0", "p1", false);
-  await sleep(300);
+  await until(async () => (await names(p2)).length, "usual cue for untouched hex");
   assert.deepEqual(await names(p2), ["wayfarer_move"], "a hex with none of my pieces keeps the usual cue");
   await clear(p2);
+  await sleep(200);
   await robbed("p0", "p0");
-  await sleep(300);
+  await until(async () => (await names(p2)).length, "usual cue for mover");
   assert.deepEqual(await names(p2), ["wayfarer_move"], "the mover is not the victim of their own move");
   await clear(p2);
   await mute(p2, true);
@@ -679,7 +686,7 @@ try {
   ok("Isaac's win music plays at 1 for both seats instead of either sting and stops when leaving the end screen");
 
   const bell = await a.evaluate(async () => {
-    const pushSeats = (seats) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "seats", code: window.__emberisle.getState().code, seats }) });
+    const pushSeats = (seats) => window.__tableSocket().onmessage({ data: JSON.stringify({ type: "seats", code: window.__emberisle.getState().code, seats }) });
     const ember = { id: "s1", name: "Ember" };
     const lucky = { id: "s2", name: "Lucky Diggler" };
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -710,9 +717,13 @@ try {
     window.__plays = [];
     pushSeats([isaac, lucky]);
     await sleep(300);
-    return { joined, renamed, rejoined: window.__plays.map((x) => x.file) };
+    const debug = {
+      sockets: window.__sockets.map((s) => ({ url: s.url, readyState: s.readyState })),
+      seats: window.__emberisle.getState().seats,
+    };
+    return { joined, renamed, rejoined: window.__plays.map((x) => x.file), debug };
   });
-  assert.deepEqual(bell.joined, ["lucke_diggler.mp3"], "a new matching lobby seat rings once");
+  assert.deepEqual(bell.joined, ["lucke_diggler.mp3"], `a new matching lobby seat rings once (debug: ${JSON.stringify(bell.debug)})`);
   assert.deepEqual(bell.renamed, ["lucke_diggler.mp3"], "a lobby rename to a matching name rings once");
   assert.deepEqual(bell.rejoined, [], "the same matching seats on a later seats update do not ring again");
   ok("Isaac's bell rings for a new matching seat and lobby rename, not a repeated seat update");
@@ -724,7 +735,7 @@ try {
     for (const name of ["Isa-ac", "Pick le", "The Lucke Diggler", "Digger"]) {
       window.__emberisle.setState({ seats: [ember] });
       window.__plays = [];
-      window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "seats", code: window.__emberisle.getState().code, seats: [ember, { id: "s9", name }] }) });
+      window.__tableSocket().onmessage({ data: JSON.stringify({ type: "seats", code: window.__emberisle.getState().code, seats: [ember, { id: "s9", name }] }) });
       await sleep(300);
       out[name] = window.__plays.map((x) => x.file);
     }
@@ -746,7 +757,7 @@ try {
     base.longestRoad = "p1";
     base.largestArmy = "p1";
     const legal = { outpost: [], path: [], stronghold: [], wayfarer: [], steal: {}, discard: 0, actions: [] };
-    const push = (game) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game, legal }) });
+    const push = (game) => window.__tableSocket().onmessage({ data: JSON.stringify({ type: "state", you: "p0", game, legal }) });
     push(base);
     const before = window.__emberisle.getState().banner;
     const next = structuredClone(base);
@@ -771,15 +782,15 @@ try {
   await a.evaluate(() => new Promise((r) => setTimeout(r, 300)));
 
   // Sync both tabs to p1's turn
-  await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p1Turn);
-  await b.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p1", game: g }) }), p1Turn);
+  await a.evaluate((g) => window.__tableSocket().onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p1Turn);
+  await b.evaluate((g) => window.__tableSocket().onmessage({ data: JSON.stringify({ type: "state", you: "p1", game: g }) }), p1Turn);
   await a.evaluate(() => new Promise((r) => setTimeout(r, 200)));
   await clear(a);
   await clear(b);
 
   // (1) Turn passes to local seat p0: a hears your_turn once at volume 1; (2) b hears nothing
-  await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p0Turn);
-  await b.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p1", game: g }) }), p0Turn);
+  await a.evaluate((g) => window.__tableSocket().onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p0Turn);
+  await b.evaluate((g) => window.__tableSocket().onmessage({ data: JSON.stringify({ type: "state", you: "p1", game: g }) }), p0Turn);
   await until(async () => (await names(a)).filter((n) => n === "your_turn").length, "acting seat hears your_turn");
   await sleep(100);
   assert.deepEqual((await names(a)).filter((n) => n === "your_turn"), ["your_turn"], "your_turn plays exactly once when the turn passes to the local seat");
@@ -789,7 +800,7 @@ try {
 
   // (4) Pushing the same state twice plays it once
   await clear(a);
-  await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p0Turn);
+  await a.evaluate((g) => window.__tableSocket().onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p0Turn);
   await sleep(200);
   assert.deepEqual((await names(a)).filter((n) => n === "your_turn"), [], "pushing the same state twice plays it once");
   ok("your_turn: repeat push of the same turn plays nothing");
@@ -797,7 +808,7 @@ try {
   // (3) A tab that drops and rejoins during its own turn hears it exactly once; rejoin during another's turn hears nothing
   await clear(a);
   await a.evaluate((g) => {
-    const ws = window.__sockets.at(-1);
+    const ws = window.__tableSocket();
     const code = window.__emberisle.getState().code;
     ws.onmessage({ data: JSON.stringify({ type: "welcome", code, you: "p0", host: true }) });
     ws.onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) });
@@ -806,7 +817,7 @@ try {
   assert.deepEqual((await names(a)).filter((n) => n === "your_turn"), ["your_turn"], "rejoin during own turn hears your_turn exactly once");
   await clear(a);
   await a.evaluate((g) => {
-    const ws = window.__sockets.at(-1);
+    const ws = window.__tableSocket();
     const code = window.__emberisle.getState().code;
     ws.onmessage({ data: JSON.stringify({ type: "welcome", code, you: "p0", host: true }) });
     ws.onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) });
@@ -819,7 +830,7 @@ try {
   await mute(a, true);
   await clear(a);
   const p0TurnAgain = { ...turnBase, current: "p0", seq: turnBase.seq + 3 };
-  await a.evaluate((g) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p0TurnAgain);
+  await a.evaluate((g) => window.__tableSocket().onmessage({ data: JSON.stringify({ type: "state", you: "p0", game: g }) }), p0TurnAgain);
   await sleep(200);
   assert.deepEqual((await names(a)).filter((n) => n === "your_turn"), [], "with sound muted your_turn does not play");
   await mute(a, false);
