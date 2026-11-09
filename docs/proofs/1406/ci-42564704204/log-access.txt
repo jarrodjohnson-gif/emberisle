@@ -1,0 +1,6 @@
+Failed operation: gh api repos/jarrodjohnson-gif/emberisle/actions/jobs/128988958118/logs
+Observed error: redirected GET to productionresultssa13.blob.core.windows.net returned Forbidden.
+The original error included a temporary signed URL; it is deliberately not copied here.
+No alternate route, credential, direct network connection or repeated download was attempted.
+The GitHub check output had null summary/text; annotations reported only process exit1.
+Desk comment6732928452 subsequently supplied the real hosted failure excerpt.
