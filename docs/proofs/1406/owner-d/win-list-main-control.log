@@ -1,0 +1,24 @@
+
+> win-list-prove
+> node --import ./server/register.mjs scripts/win-list-prove.mjs
+
+ok 440x956 touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 956x440 touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 390x844 touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 430x932 touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 820x1180 touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 1180x820 touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 844x390 touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 667x375 insets touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 700x900 mouse: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 390x844 spectator: list, no Play again or React
+ok 390x844 live table: list chunk fetched before the end, all four rows in the dialog's first paint
+2:56:13 PM [vite] (client) [console.error] TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:18774/src/components/game/WinList.tsx?retry=1
+
+The above error occurred in the <Lazy> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, LazyBoundary.
+
+ok 390x844 list chunk refused: table with every total, then Show scores loads the list
+ok 1280x720 mouse: the desktop table stays
+win-list-prove: all passed

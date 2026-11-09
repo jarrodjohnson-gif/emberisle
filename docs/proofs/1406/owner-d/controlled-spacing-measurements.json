@@ -1,0 +1,380 @@
+[
+  {
+    "width": 1280,
+    "height": 720,
+    "stage": "before768",
+    "client": 718,
+    "scroll": 718,
+    "card": 768,
+    "table": 718,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "stage": "restore672",
+    "client": 622,
+    "scroll": 670,
+    "card": 672,
+    "table": 670.203125,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "stage": "padding4",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "stage": "padding2",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "stage": "padding0",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "stage": "numbers",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "stage": "namegap",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "stage": "before768",
+    "client": 718,
+    "scroll": 718,
+    "card": 768,
+    "table": 718,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "stage": "restore672",
+    "client": 622,
+    "scroll": 670,
+    "card": 672,
+    "table": 670.203125,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "stage": "padding4",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "stage": "padding2",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "stage": "padding0",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "stage": "numbers",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "stage": "namegap",
+    "client": 622,
+    "scroll": 622,
+    "card": 672,
+    "table": 622,
+    "fonts": [
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px",
+      "14px"
+    ]
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "stage": "before768",
+    "client": 734,
+    "scroll": 734,
+    "card": 768,
+    "table": 734,
+    "fonts": [
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px"
+    ]
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "stage": "restore672",
+    "client": 638,
+    "scroll": 638,
+    "card": 672,
+    "table": 638,
+    "fonts": [
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px"
+    ]
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "stage": "padding4",
+    "client": 638,
+    "scroll": 638,
+    "card": 672,
+    "table": 638,
+    "fonts": [
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px"
+    ]
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "stage": "padding2",
+    "client": 638,
+    "scroll": 638,
+    "card": 672,
+    "table": 638,
+    "fonts": [
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px"
+    ]
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "stage": "padding0",
+    "client": 638,
+    "scroll": 638,
+    "card": 672,
+    "table": 638,
+    "fonts": [
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px"
+    ]
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "stage": "numbers",
+    "client": 638,
+    "scroll": 638,
+    "card": 672,
+    "table": 638,
+    "fonts": [
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px"
+    ]
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "stage": "namegap",
+    "client": 638,
+    "scroll": 638,
+    "card": 672,
+    "table": 638,
+    "fonts": [
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px",
+      "12px"
+    ]
+  }
+]

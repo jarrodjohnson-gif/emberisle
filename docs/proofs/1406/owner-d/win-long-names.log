@@ -1,0 +1,95 @@
+
+> win-long-names-prove
+> node --import ./server/register.mjs scripts/win-long-names-prove.mjs
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 2040 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/minigames/ruffle/package.json                              0.41 kB │ gzip:     0.27 kB
+dist/minigames/ruffle/LICENSE_MIT                               1.09 kB
+dist/assets/dark-smile-BKg7DRWn.webp                            1.28 kB
+dist/assets/shrek-smirk-Do0Xo01U.webp                           2.25 kB
+dist/minigames/ruffle/README.md                                 2.32 kB
+dist/index.html                                                 2.61 kB │ gzip:     1.29 kB
+dist/assets/mike-sully-Ct202qR2.webp                            2.79 kB
+dist/assets/wide-eyes-BDiZHgYT.webp                             2.84 kB
+dist/assets/side-eye-CGXmLOil.webp                              2.86 kB
+dist/assets/goggles-guy-BssxYY7b.webp                           2.99 kB
+dist/assets/memoji-scheme-BM7oeLzb.webp                         3.05 kB
+dist/assets/leo-laugh-fpWzArdY.webp                             3.45 kB
+dist/assets/old-grump-BBGe0_6b.webp                             4.17 kB
+dist/assets/banana-guy-CzQ5EppE.webp                            4.18 kB
+dist/assets/monkey-pet-BowYolk9.webp                            4.47 kB
+dist/assets/glasses-glance-BnJIj4mf.webp                        5.81 kB
+dist/assets/daffy-shock-DVzTkIuj.webp                           6.32 kB
+dist/assets/ben-10-BZkFZeMq.webp                                6.80 kB
+dist/minigames/ruffle/LICENSE_APACHE                            9.72 kB
+dist/assets/sponge-thumbs-vsqILehC.webp                        47.96 kB
+dist/minigames/ruffle/core.ruffle.16d61072ac7fdc4d5013.js     108.32 kB
+dist/minigames/ruffle/core.ruffle.994eeef0a471a88cd0e3.js     114.74 kB
+dist/minigames/sandwichStacker.swf                            183.73 kB
+dist/minigames/ruffle/ruffle.js                               465.88 kB
+dist/minigames/ruffle/878d548199cddef07035.wasm            14,227.88 kB │ gzip: 5,069.32 kB
+dist/minigames/ruffle/172de42e6619eac8f371.wasm            14,302.75 kB │ gzip: 5,092.28 kB
+dist/assets/SeatNeeds-G8kOjkPo.css                              0.91 kB │ gzip:     0.47 kB
+dist/assets/LoadingScreen-DCoOnwZ-.css                          2.34 kB │ gzip:     0.94 kB
+dist/assets/trade-panel-DtPN9ISX.css                            7.80 kB │ gzip:     1.96 kB
+dist/assets/LobbyView-j3r7Zzlb.css                             15.57 kB │ gzip:     3.30 kB
+dist/assets/index-jRFx7cf9.css                                 77.52 kB │ gzip:    16.17 kB
+dist/assets/x-BvRNgXuQ.js                                       0.18 kB │ gzip:     0.17 kB
+dist/assets/eye-off-9ebf8ky6.js                                 0.45 kB │ gzip:     0.29 kB
+dist/assets/sound-extra-DafKjM_2.js                             0.48 kB │ gzip:     0.22 kB
+dist/assets/PlayAgain-B_JKi8nT.js                               0.59 kB │ gzip:     0.41 kB
+dist/assets/use-muted-seats-XRUZoi6z.js                         0.70 kB │ gzip:     0.41 kB
+dist/assets/WayfarerOptions-CUongpGE.js                         0.80 kB │ gzip:     0.49 kB
+dist/assets/trade-sound-CL-pjf7j.js                             0.87 kB │ gzip:     0.52 kB
+dist/assets/focus-trap-CJSAQbtg.js                              0.88 kB │ gzip:     0.53 kB
+dist/assets/HandRates-CDkDkuMw.js                               1.01 kB │ gzip:     0.64 kB
+dist/assets/VictoryTargetSelect-D0f-UYmA.js                     1.02 kB │ gzip:     0.61 kB
+dist/assets/emotes-DW1f4G6o.js                                  1.24 kB │ gzip:     0.46 kB
+dist/assets/Sticker-HohIpBaF.js                                 1.65 kB │ gzip:     0.94 kB
+dist/assets/TradeResource-D2EaurWD.js                           1.79 kB │ gzip:     0.83 kB
+dist/assets/haptics-CvCc2-k2.js                                 1.80 kB │ gzip:     1.06 kB
+dist/assets/DockInspection-Ih7xEIMk.js                          2.03 kB │ gzip:     1.03 kB
+dist/assets/TurnExtensionVote-CFD0EjVX.js                       2.67 kB │ gzip:     1.20 kB
+dist/assets/OpenTables-DW5gZqBn.js                              2.70 kB │ gzip:     1.24 kB
+dist/assets/losses-DGQersh_.js                                  2.70 kB │ gzip:     1.42 kB
+dist/assets/WinList-CcfPMojV.js                                 2.87 kB │ gzip:     1.30 kB
+dist/assets/LobbyTicTacToe-BFTmHrfZ.js                          3.50 kB │ gzip:     1.39 kB
+dist/assets/SeatNeeds-DGr5r946.js                               4.14 kB │ gzip:     1.69 kB
+dist/assets/SoundSheet-BnYFwIMY.js                              4.59 kB │ gzip:     1.86 kB
+dist/assets/LobbyWaitBox-BgXUzeHy.js                            4.85 kB │ gzip:     2.04 kB
+dist/assets/ProfileForms-9vlErDxA.js                            4.87 kB │ gzip:     2.16 kB
+dist/assets/SetupReference-BHqQdngQ.js                          4.92 kB │ gzip:     1.86 kB
+dist/assets/table-BYv_klcw.js                                   4.92 kB │ gzip:     2.19 kB
+dist/assets/LoadingScreen-DuO0uc3N.js                           4.92 kB │ gzip:     2.40 kB
+dist/assets/ProfileRecords-CfURhMEk.js                          5.62 kB │ gzip:     2.25 kB
+dist/assets/Reactions-Dxuyqu3d.js                               6.04 kB │ gzip:     2.49 kB
+dist/assets/LobbyView-CMZ0JDEh.js                               6.25 kB │ gzip:     2.49 kB
+dist/assets/TradeToast-wHovrUqh.js                              6.49 kB │ gzip:     2.67 kB
+dist/assets/ProfileRecovery-CEIvrO81.js                         7.94 kB │ gzip:     3.03 kB
+dist/assets/moments-CtQgYUhG.js                                10.16 kB │ gzip:     4.32 kB
+dist/assets/ProfileSheet-CpEztBM7.js                           15.73 kB │ gzip:     5.98 kB
+dist/assets/online-C56nAHz2.js                                 18.05 kB │ gzip:     6.44 kB
+dist/assets/jelly-board-eaVrjgUF.js                            21.20 kB │ gzip:     8.23 kB
+dist/assets/sheets-Cg3PO8V3.js                                 22.99 kB │ gzip:     7.52 kB
+dist/assets/harbor-jelly-D-dOJCu-.js                           27.12 kB │ gzip:    10.82 kB
+dist/assets/hex-jelly-Bcw-euSK.js                             136.96 kB │ gzip:    47.48 kB
+dist/assets/index-Bw72TFdM.js                                 397.26 kB │ gzip:   126.41 kB
+dist/assets/IslandCanvas-BD5VE0c5.js                          763.67 kB │ gzip:   202.46 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 3.34s
+measured 1280x720: {"viewport":[1280,720],"wrap":{"left":329,"right":951,"top":296.046875,"bottom":491.453125},"clientWidth":622,"scrollWidth":622,"headers":[{"text":"Player","left":329,"right":576.953125,"top":296.046875,"bottom":343.953125},{"text":"Outposts","left":576.953125,"right":643.34375,"top":296.046875,"bottom":343.953125},{"text":"Strongholds","left":643.34375,"right":734.90625,"top":296.046875,"bottom":343.953125},{"text":"Longest path","left":734.90625,"right":797.296875,"top":296.046875,"bottom":343.953125},{"text":"Largest army","left":797.296875,"right":857.234375,"top":296.046875,"bottom":343.953125},{"text":"Hidden","left":857.234375,"right":909.3125,"top":296.046875,"bottom":343.953125},{"text":"Total","left":909.3125,"right":951,"top":296.046875,"bottom":343.953125}],"rows":[{"id":"p0","name":"Bartholomew Featherstonehaugh","total":"10","cells":[{"left":329,"right":576.953125,"top":343.953125,"bottom":380.953125},{"left":576.953125,"right":643.34375,"top":343.953125,"bottom":380.953125},{"left":643.34375,"right":734.90625,"top":343.953125,"bottom":380.953125},{"left":734.90625,"right":797.296875,"top":343.953125,"bottom":380.953125},{"left":797.296875,"right":857.234375,"top":343.953125,"bottom":380.953125},{"left":857.234375,"right":909.3125,"top":343.953125,"bottom":380.953125},{"left":909.3125,"right":951,"top":343.953125,"bottom":380.953125}]},{"id":"p1","name":"Guinevere Wigglesworth-Smythe","total":"3","cells":[{"left":329,"right":576.953125,"top":380.953125,"bottom":417.953125},{"left":576.953125,"right":643.34375,"top":380.953125,"bottom":417.953125},{"left":643.34375,"right":734.90625,"top":380.953125,"bottom":417.953125},{"left":734.90625,"right":797.296875,"top":380.953125,"bottom":417.953125},{"left":797.296875,"right":857.234375,"top":380.953125,"bottom":417.953125},{"left":857.234375,"right":909.3125,"top":380.953125,"bottom":417.953125},{"left":909.3125,"right":951,"top":380.953125,"bottom":417.953125}]},{"id":"p2","name":"Maximilian Oppenheimer III","total":"1","cells":[{"left":329,"right":576.953125,"top":417.953125,"bottom":454.953125},{"left":576.953125,"right":643.34375,"top":417.953125,"bottom":454.953125},{"left":643.34375,"right":734.90625,"top":417.953125,"bottom":454.953125},{"left":734.90625,"right":797.296875,"top":417.953125,"bottom":454.953125},{"left":797.296875,"right":857.234375,"top":417.953125,"bottom":454.953125},{"left":857.234375,"right":909.3125,"top":417.953125,"bottom":454.953125},{"left":909.3125,"right":951,"top":417.953125,"bottom":454.953125}]},{"id":"p3","name":"Cordelia Fitzgerald-Hartwell","total":"0","cells":[{"left":329,"right":576.953125,"top":454.953125,"bottom":491.453125},{"left":576.953125,"right":643.34375,"top":454.953125,"bottom":491.453125},{"left":643.34375,"right":734.90625,"top":454.953125,"bottom":491.453125},{"left":734.90625,"right":797.296875,"top":454.953125,"bottom":491.453125},{"left":797.296875,"right":857.234375,"top":454.953125,"bottom":491.453125},{"left":857.234375,"right":909.3125,"top":454.953125,"bottom":491.453125},{"left":909.3125,"right":951,"top":454.953125,"bottom":491.453125}]}]}
+ok 1280x720: four full names, seven columns and every score visible without sideways scroll
+measured 1024x768: {"viewport":[1024,768],"wrap":{"left":201,"right":823,"top":320.046875,"bottom":515.453125},"clientWidth":622,"scrollWidth":622,"headers":[{"text":"Player","left":201,"right":448.953125,"top":320.046875,"bottom":367.953125},{"text":"Outposts","left":448.953125,"right":515.34375,"top":320.046875,"bottom":367.953125},{"text":"Strongholds","left":515.34375,"right":606.90625,"top":320.046875,"bottom":367.953125},{"text":"Longest path","left":606.90625,"right":669.296875,"top":320.046875,"bottom":367.953125},{"text":"Largest army","left":669.296875,"right":729.234375,"top":320.046875,"bottom":367.953125},{"text":"Hidden","left":729.234375,"right":781.3125,"top":320.046875,"bottom":367.953125},{"text":"Total","left":781.3125,"right":823,"top":320.046875,"bottom":367.953125}],"rows":[{"id":"p0","name":"Bartholomew Featherstonehaugh","total":"10","cells":[{"left":201,"right":448.953125,"top":367.953125,"bottom":404.953125},{"left":448.953125,"right":515.34375,"top":367.953125,"bottom":404.953125},{"left":515.34375,"right":606.90625,"top":367.953125,"bottom":404.953125},{"left":606.90625,"right":669.296875,"top":367.953125,"bottom":404.953125},{"left":669.296875,"right":729.234375,"top":367.953125,"bottom":404.953125},{"left":729.234375,"right":781.3125,"top":367.953125,"bottom":404.953125},{"left":781.3125,"right":823,"top":367.953125,"bottom":404.953125}]},{"id":"p1","name":"Guinevere Wigglesworth-Smythe","total":"3","cells":[{"left":201,"right":448.953125,"top":404.953125,"bottom":441.953125},{"left":448.953125,"right":515.34375,"top":404.953125,"bottom":441.953125},{"left":515.34375,"right":606.90625,"top":404.953125,"bottom":441.953125},{"left":606.90625,"right":669.296875,"top":404.953125,"bottom":441.953125},{"left":669.296875,"right":729.234375,"top":404.953125,"bottom":441.953125},{"left":729.234375,"right":781.3125,"top":404.953125,"bottom":441.953125},{"left":781.3125,"right":823,"top":404.953125,"bottom":441.953125}]},{"id":"p2","name":"Maximilian Oppenheimer III","total":"1","cells":[{"left":201,"right":448.953125,"top":441.953125,"bottom":478.953125},{"left":448.953125,"right":515.34375,"top":441.953125,"bottom":478.953125},{"left":515.34375,"right":606.90625,"top":441.953125,"bottom":478.953125},{"left":606.90625,"right":669.296875,"top":441.953125,"bottom":478.953125},{"left":669.296875,"right":729.234375,"top":441.953125,"bottom":478.953125},{"left":729.234375,"right":781.3125,"top":441.953125,"bottom":478.953125},{"left":781.3125,"right":823,"top":441.953125,"bottom":478.953125}]},{"id":"p3","name":"Cordelia Fitzgerald-Hartwell","total":"0","cells":[{"left":201,"right":448.953125,"top":478.953125,"bottom":515.453125},{"left":448.953125,"right":515.34375,"top":478.953125,"bottom":515.453125},{"left":515.34375,"right":606.90625,"top":478.953125,"bottom":515.453125},{"left":606.90625,"right":669.296875,"top":478.953125,"bottom":515.453125},{"left":669.296875,"right":729.234375,"top":478.953125,"bottom":515.453125},{"left":729.234375,"right":781.3125,"top":478.953125,"bottom":515.453125},{"left":781.3125,"right":823,"top":478.953125,"bottom":515.453125}]}]}
+ok 1024x768: four full names, seven columns and every score visible without sideways scroll
+measured 844x390: {"viewport":[844,390],"wrap":{"left":103,"right":741,"top":160.046875,"bottom":279.453125},"clientWidth":638,"scrollWidth":638,"headers":[{"text":"Player","left":103,"right":319.25,"top":160.046875,"bottom":195.953125},{"text":"Outposts","left":319.25,"right":385.640625,"top":160.046875,"bottom":195.953125},{"text":"Strongholds","left":385.640625,"right":477.203125,"top":160.046875,"bottom":195.953125},{"text":"Longest path","left":477.203125,"right":562.1875,"top":160.046875,"bottom":195.953125},{"text":"Largest army","left":562.1875,"right":647.234375,"top":160.046875,"bottom":195.953125},{"text":"Hidden","left":647.234375,"right":699.3125,"top":160.046875,"bottom":195.953125},{"text":"Total","left":699.3125,"right":741,"top":160.046875,"bottom":195.953125}],"rows":[{"id":"p0","name":"Bartholomew Featherstonehaugh","total":"10","cells":[{"left":103,"right":319.25,"top":195.953125,"bottom":216.953125},{"left":319.25,"right":385.640625,"top":195.953125,"bottom":216.953125},{"left":385.640625,"right":477.203125,"top":195.953125,"bottom":216.953125},{"left":477.203125,"right":562.1875,"top":195.953125,"bottom":216.953125},{"left":562.1875,"right":647.234375,"top":195.953125,"bottom":216.953125},{"left":647.234375,"right":699.3125,"top":195.953125,"bottom":216.953125},{"left":699.3125,"right":741,"top":195.953125,"bottom":216.953125}]},{"id":"p1","name":"Guinevere Wigglesworth-Smythe","total":"3","cells":[{"left":103,"right":319.25,"top":216.953125,"bottom":237.953125},{"left":319.25,"right":385.640625,"top":216.953125,"bottom":237.953125},{"left":385.640625,"right":477.203125,"top":216.953125,"bottom":237.953125},{"left":477.203125,"right":562.1875,"top":216.953125,"bottom":237.953125},{"left":562.1875,"right":647.234375,"top":216.953125,"bottom":237.953125},{"left":647.234375,"right":699.3125,"top":216.953125,"bottom":237.953125},{"left":699.3125,"right":741,"top":216.953125,"bottom":237.953125}]},{"id":"p2","name":"Maximilian Oppenheimer III","total":"1","cells":[{"left":103,"right":319.25,"top":237.953125,"bottom":258.953125},{"left":319.25,"right":385.640625,"top":237.953125,"bottom":258.953125},{"left":385.640625,"right":477.203125,"top":237.953125,"bottom":258.953125},{"left":477.203125,"right":562.1875,"top":237.953125,"bottom":258.953125},{"left":562.1875,"right":647.234375,"top":237.953125,"bottom":258.953125},{"left":647.234375,"right":699.3125,"top":237.953125,"bottom":258.953125},{"left":699.3125,"right":741,"top":237.953125,"bottom":258.953125}]},{"id":"p3","name":"Cordelia Fitzgerald-Hartwell","total":"0","cells":[{"left":103,"right":319.25,"top":258.953125,"bottom":279.453125},{"left":319.25,"right":385.640625,"top":258.953125,"bottom":279.453125},{"left":385.640625,"right":477.203125,"top":258.953125,"bottom":279.453125},{"left":477.203125,"right":562.1875,"top":258.953125,"bottom":279.453125},{"left":562.1875,"right":647.234375,"top":258.953125,"bottom":279.453125},{"left":647.234375,"right":699.3125,"top":258.953125,"bottom":279.453125},{"left":699.3125,"right":741,"top":258.953125,"bottom":279.453125}]}]}
+ok 844x390: four full names, seven columns and every score visible without sideways scroll
+win-long-names-prove: all passed

@@ -1,0 +1,15 @@
+{
+  "source": "cb66473aa83bdce59fc16f1531c0aa4da8915221",
+  "base": "2f050c3d1b6ed542b2c0b48ada186d9a58eff045",
+  "merge": "c76a8906f00ef97adae04f15d376c51a7c5e0805",
+  "typecheck": 0,
+  "registered-prove": 0,
+  "loosen-prove": 0,
+  "size-prove": 0,
+  "win-long-names": 0,
+  "win-action": 0,
+  "win-list": 1,
+  "authority": "owner D, desk6741832985, claim6742748333",
+  "win-list-main-control": 0,
+  "causality": "branch win-menu timeout unresolved; passing main control is not a fix"
+}

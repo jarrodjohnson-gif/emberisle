@@ -1,0 +1,131 @@
+Auto-merging .github/workflows/ci.yml
+Auto-merging package.json
+Auto-merging src/components/game/WinScreen.tsx
+Merge made by the 'ort' strategy.
+ .github/workflows/ci.yml                        |   8 +
+ docs/DECISIONS.md                               |   2 +
+ docs/design/profiles.md                         |   8 +
+ docs/proofs/1411/after-guest-375x812.png        | Bin 0 -> 168080 bytes
+ docs/proofs/1411/after-guest-390x844.png        | Bin 0 -> 190224 bytes
+ docs/proofs/1411/after-guest-430x932.png        | Bin 0 -> 220567 bytes
+ docs/proofs/1411/after-guest-820x1180.png       | Bin 0 -> 511360 bytes
+ docs/proofs/1411/after-guest-844x390.png        | Bin 0 -> 204522 bytes
+ docs/proofs/1411/after-guest-tapped-390x844.png | Bin 0 -> 190983 bytes
+ docs/proofs/1411/after-host-375x812.png         | Bin 0 -> 170398 bytes
+ docs/proofs/1411/after-host-390x844.png         | Bin 0 -> 180103 bytes
+ docs/proofs/1411/after-host-430x932.png         | Bin 0 -> 222162 bytes
+ docs/proofs/1411/after-host-820x1180.png        | Bin 0 -> 531344 bytes
+ docs/proofs/1411/after-host-844x390.png         | Bin 0 -> 208315 bytes
+ docs/proofs/1411/before-guest-375x812.png       | Bin 0 -> 170467 bytes
+ docs/proofs/1411/before-guest-390x844.png       | Bin 0 -> 179371 bytes
+ docs/proofs/1411/before-guest-430x932.png       | Bin 0 -> 207685 bytes
+ docs/proofs/1411/before-guest-820x1180.png      | Bin 0 -> 492952 bytes
+ docs/proofs/1411/before-guest-844x390.png       | Bin 0 -> 185588 bytes
+ docs/proofs/1411/before-host-375x812.png        | Bin 0 -> 164376 bytes
+ docs/proofs/1411/before-host-390x844.png        | Bin 0 -> 173278 bytes
+ docs/proofs/1411/before-host-430x932.png        | Bin 0 -> 213029 bytes
+ docs/proofs/1411/before-host-820x1180.png       | Bin 0 -> 514363 bytes
+ docs/proofs/1411/before-host-844x390.png        | Bin 0 -> 191971 bytes
+ docs/proofs/1411/capture.mjs                    |  89 ++++++
+ docs/proofs/1437/newcode-375x812.png            | Bin 0 -> 351765 bytes
+ docs/proofs/1437/newcode-390x844.png            | Bin 0 -> 371949 bytes
+ docs/proofs/1437/newcode-430x932.png            | Bin 0 -> 422628 bytes
+ docs/proofs/1437/newcode-820x1180.png           | Bin 0 -> 746188 bytes
+ docs/proofs/1437/recover-375x812.png            | Bin 0 -> 199721 bytes
+ docs/proofs/1437/recover-390x844.png            | Bin 0 -> 208158 bytes
+ docs/proofs/1437/recover-430x932.png            | Bin 0 -> 227507 bytes
+ docs/proofs/1437/recover-820x1180.png           | Bin 0 -> 598404 bytes
+ docs/proofs/1437/recover-error-390x844.png      | Bin 0 -> 213992 bytes
+ docs/proofs/1437/save-375x812.png               | Bin 0 -> 279473 bytes
+ docs/proofs/1437/save-390x844.png               | Bin 0 -> 349827 bytes
+ docs/proofs/1437/save-430x932.png               | Bin 0 -> 454679 bytes
+ docs/proofs/1437/save-820x1180.png              | Bin 0 -> 741260 bytes
+ docs/proofs/1437/signin-375x812.png             | Bin 0 -> 193566 bytes
+ docs/proofs/1437/signin-390x844.png             | Bin 0 -> 220285 bytes
+ docs/proofs/1437/signin-430x932.png             | Bin 0 -> 307137 bytes
+ docs/proofs/1437/signin-820x1180.png            | Bin 0 -> 640430 bytes
+ docs/proofs/1437/summary-375x812.png            | Bin 0 -> 286528 bytes
+ docs/proofs/1437/summary-390x844.png            | Bin 0 -> 317229 bytes
+ docs/proofs/1437/summary-430x932.png            | Bin 0 -> 409944 bytes
+ docs/proofs/1437/summary-820x1180.png           | Bin 0 -> 695778 bytes
+ docs/proofs/1437/summary-no-code-390x844.png    | Bin 0 -> 312610 bytes
+ package.json                                    |   4 +
+ scripts/fixtures/size/base-old.json             |   3 +-
+ scripts/fixtures/size/base-with-legacy.json     |   3 +-
+ scripts/fixtures/size/base.json                 |   3 +-
+ scripts/fixtures/size/fail.json                 |   3 +-
+ scripts/fixtures/size/new-chunk.json            |   3 +-
+ scripts/fixtures/size/over-ceiling.json         |   3 +-
+ scripts/fixtures/size/pass.json                 |   3 +-
+ scripts/play-again-prove.mjs                    | 258 +++++++++++++++
+ scripts/profile-recovery-ui-prove.mjs           | 384 ++++++++++++++++++++++
+ scripts/profiles-ui-prove.mjs                   |   9 +
+ scripts/size-prove.mjs                          |   6 +
+ server/host.mjs                                 |  14 +
+ server/play-again-prove.mjs                     | 131 ++++++++
+ server/profile-admin.mjs                        |   2 +
+ server/profile-protocol.mjs                     |  23 +-
+ server/profile-recovery-prove.mjs               | 402 ++++++++++++++++++++++++
+ server/profiles.mjs                             | 201 +++++++++++-
+ src/components/game/PlayAgain.tsx               |  26 ++
+ src/components/game/ProfileRecovery.tsx         | 215 +++++++++++++
+ src/components/game/ProfileSheet.tsx            |  37 ++-
+ src/components/game/WinList.tsx                 |   1 +
+ src/components/game/WinScreen.tsx               |  32 +-
+ src/components/game/chunks.ts                   |   7 +
+ src/lib/backdrop-close.ts                       |  10 +-
+ src/lib/game/store.ts                           |   5 +
+ src/lib/net/profiles.ts                         |  23 +-
+ src/lib/net/table.ts                            |   5 +
+ src/styles.css                                  |   8 +
+ 76 files changed, 1884 insertions(+), 47 deletions(-)
+ create mode 100644 docs/proofs/1411/after-guest-375x812.png
+ create mode 100644 docs/proofs/1411/after-guest-390x844.png
+ create mode 100644 docs/proofs/1411/after-guest-430x932.png
+ create mode 100644 docs/proofs/1411/after-guest-820x1180.png
+ create mode 100644 docs/proofs/1411/after-guest-844x390.png
+ create mode 100644 docs/proofs/1411/after-guest-tapped-390x844.png
+ create mode 100644 docs/proofs/1411/after-host-375x812.png
+ create mode 100644 docs/proofs/1411/after-host-390x844.png
+ create mode 100644 docs/proofs/1411/after-host-430x932.png
+ create mode 100644 docs/proofs/1411/after-host-820x1180.png
+ create mode 100644 docs/proofs/1411/after-host-844x390.png
+ create mode 100644 docs/proofs/1411/before-guest-375x812.png
+ create mode 100644 docs/proofs/1411/before-guest-390x844.png
+ create mode 100644 docs/proofs/1411/before-guest-430x932.png
+ create mode 100644 docs/proofs/1411/before-guest-820x1180.png
+ create mode 100644 docs/proofs/1411/before-guest-844x390.png
+ create mode 100644 docs/proofs/1411/before-host-375x812.png
+ create mode 100644 docs/proofs/1411/before-host-390x844.png
+ create mode 100644 docs/proofs/1411/before-host-430x932.png
+ create mode 100644 docs/proofs/1411/before-host-820x1180.png
+ create mode 100644 docs/proofs/1411/before-host-844x390.png
+ create mode 100644 docs/proofs/1411/capture.mjs
+ create mode 100644 docs/proofs/1437/newcode-375x812.png
+ create mode 100644 docs/proofs/1437/newcode-390x844.png
+ create mode 100644 docs/proofs/1437/newcode-430x932.png
+ create mode 100644 docs/proofs/1437/newcode-820x1180.png
+ create mode 100644 docs/proofs/1437/recover-375x812.png
+ create mode 100644 docs/proofs/1437/recover-390x844.png
+ create mode 100644 docs/proofs/1437/recover-430x932.png
+ create mode 100644 docs/proofs/1437/recover-820x1180.png
+ create mode 100644 docs/proofs/1437/recover-error-390x844.png
+ create mode 100644 docs/proofs/1437/save-375x812.png
+ create mode 100644 docs/proofs/1437/save-390x844.png
+ create mode 100644 docs/proofs/1437/save-430x932.png
+ create mode 100644 docs/proofs/1437/save-820x1180.png
+ create mode 100644 docs/proofs/1437/signin-375x812.png
+ create mode 100644 docs/proofs/1437/signin-390x844.png
+ create mode 100644 docs/proofs/1437/signin-430x932.png
+ create mode 100644 docs/proofs/1437/signin-820x1180.png
+ create mode 100644 docs/proofs/1437/summary-375x812.png
+ create mode 100644 docs/proofs/1437/summary-390x844.png
+ create mode 100644 docs/proofs/1437/summary-430x932.png
+ create mode 100644 docs/proofs/1437/summary-820x1180.png
+ create mode 100644 docs/proofs/1437/summary-no-code-390x844.png
+ create mode 100644 scripts/play-again-prove.mjs
+ create mode 100644 scripts/profile-recovery-ui-prove.mjs
+ create mode 100644 server/play-again-prove.mjs
+ create mode 100644 server/profile-recovery-prove.mjs
+ create mode 100644 src/components/game/PlayAgain.tsx
+ create mode 100644 src/components/game/ProfileRecovery.tsx
