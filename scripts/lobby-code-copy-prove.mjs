@@ -174,8 +174,51 @@ async function sideways(page, tag) {
   return { chat: `${chat.w.toFixed(0)}x${chat.h.toFixed(0)} at y ${chat.y.toFixed(0)}`, log: (await box(page, '[data-testid="chat-log"]')).h };
 }
 
+// #1430 reach, option A (owner, 2026-11-09): the view row (Table, Play games, Rules) drops from the top to just above the
+// summary row. Seats and names stay at the top, the chat in the middle, Ready and Start on the bottom edge. The Wayfarer and
+// connection lines sit in the header at the right of the code. Keyboard order follows: code, seats, chat, view row, Ready.
+async function reach(page, tag, { upright, thumb }) {
+  const m = await page.getByTestId("lobby-card").evaluate((card) => {
+    const r = (sel) => { const b = card.querySelector(sel).getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height, right: b.right, bottom: b.bottom }; };
+    const after = (a, b) => !!(card.querySelector(a).compareDocumentPosition(card.querySelector(b)) & Node.DOCUMENT_POSITION_FOLLOWING);
+    const boxes = [...card.querySelectorAll(".lm > button, .lobby-rules > button")].map((el) => el.getBoundingClientRect());
+    return {
+      vh: innerHeight, header: r(".lobby-header"), code: r(".lobby-code"), status: r(".lobby-rule-status"), players: r('[data-testid="lobby-players"]'),
+      chat: r('[data-testid="lobby-chat"]'), rules: r(".lobby-rules"), actions: r('[data-testid="lobby-actions"]'),
+      statusInHeader: !!card.querySelector(".lobby-header > .lobby-rule-status"),
+      underline: getComputedStyle(card.querySelector(".lobby-code")).textDecorationLine, border: getComputedStyle(card.querySelector(".lobby-code")).borderTopWidth,
+      boxes: boxes.map((b) => ({ x: b.x, w: b.width, h: b.height, right: b.right })),
+      order: [after(".lobby-header", '[data-testid="lobby-players"]'), after('[data-testid="lobby-players"]', '[data-testid="lobby-chat"]'), after('[data-testid="lobby-chat"]', ".lobby-rules"), after(".lobby-rules", '[data-testid="lobby-actions"]')],
+    };
+  });
+  const why = JSON.stringify(m);
+  assert.ok(m.statusInHeader, `${tag}: the Wayfarer and connection lines sit in the header`);
+  assert.ok(m.status.x >= m.code.right + 8 - 0.5 && m.status.right <= m.header.right + 0.5, `${tag}: the status sits at the right of the code, inside the header ${why}`);
+  assert.ok(m.underline === "underline" && m.border === "0px", `${tag}: the code is underlined text with no box ${why}`);
+  assert.deepEqual(m.order, [true, true, true, true], `${tag}: DOM and Tab order is header, seats, chat, view row, Ready`);
+  assert.equal(m.boxes.length, 3, `${tag}: the view row holds Table, Play games and Rules`);
+  for (const b of m.boxes) assert.ok(b.h >= 44 && b.w >= 44, `${tag}: each view-row box is a 44 px target ${why}`);
+  for (let i = 1; i < 3; i++) near(m.boxes[i].x - m.boxes[i - 1].right, 8, `${tag}: view-row boxes ${i} and ${i + 1} are 8 px apart`);
+  near(m.boxes[0].w, m.boxes[2].w, `${tag}: the three view-row boxes are equal`);
+  near(m.boxes[0].x, m.rules.x, `${tag}: the view row starts at its left edge`);
+  near(m.boxes[2].right, m.rules.right, `${tag}: the view row fills its width`);
+  near(m.actions.y - m.rules.bottom, 8, `${tag}: the view row sits 8 px above the summary row`);
+  assert.ok(m.rules.y >= m.players.bottom + 8 - 0.5, `${tag}: the view row starts below the seats ${why}`);
+  if (upright) {
+    near(m.players.y - m.header.bottom, 8, `${tag}: the seats sit right under the header`);
+    near(m.chat.y - m.players.bottom, 8, `${tag}: the chat sits right under the seats`);
+    near(m.rules.y - m.chat.bottom, 8, `${tag}: the view row starts right below the chat`);
+  } else {
+    near(m.players.y - m.header.bottom, 8, `${tag}: sideways, the seats sit right under the header`);
+    near(m.rules.x, m.players.x, `${tag}: sideways, the view row keeps to the left column`);
+    near(m.chat.bottom, m.rules.bottom, `${tag}: sideways, the chat runs down to the end of the view row`);
+  }
+  if (thumb) assert.ok(m.rules.y >= (2 * m.vh) / 3 - 0.5, `${tag}: the whole view row sits in the bottom third of the screen (top at ${m.rules.y}, third at ${(2 * m.vh) / 3})`);
+  return `view row ${m.rules.w.toFixed(0)}x${m.rules.h.toFixed(0)} at ${(m.vh - m.rules.bottom).toFixed(0)} px from the bottom, boxes ${m.boxes.map((b) => b.w.toFixed(0)).join("/")} px`;
+}
+
 try {
-  for (const [width, height] of [[390, 844], [320, 568], [844, 390], [667, 375], [1280, 720]]) {
+  for (const [width, height] of [[390, 844], [320, 568], [844, 390], [667, 375], [1280, 720], [820, 1180], [430, 932]]) {
     const tag = `${width}x${height}`;
     const page = await client("Jarrod", { width, height });
     await page.evaluate(() => window.__emberisle.getState().hostTable());
@@ -188,7 +231,9 @@ try {
     await page.evaluate(() => document.fonts.ready);
     await copies(page, tag, code);
     await tabs(page, tag);
-    if (height < 600 && width > height) {
+    const upright = !(height < 600 && width > height);
+    console.log(`ok  ${tag}: reach, ${await reach(page, tag, { upright, thumb: upright && height >= 700 })}`);
+    if (!upright) {
       const m = await sideways(page, tag);
       console.log(`ok  ${tag}: chat ${m.chat}, log ${m.log} px; header in the left column`);
     } else {
