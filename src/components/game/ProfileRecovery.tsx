@@ -197,7 +197,7 @@ export function ProfileRecovery({ ui }: { ui: RecoveryUi }) {
         <p className="text-sm text-muted">Your other devices will be signed out.</p>
         <label className="flex min-h-11 items-center gap-3 text-sm text-fg">
           <input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} className="size-5 accent-[var(--ink)]" />
-          Remember me on this device
+          Remember me
         </label>
         {formError}
         <p className="text-sm text-muted">Still stuck? Ask the host for a reset.</p>
