@@ -1571,19 +1571,26 @@ export class IsleRenderer {
     }
   }
 
-  // Chip center on the pier plate. Step along the coast when that box would cover the building or leave the screen.
+  // Chip center on the pier plate. Step along the coast when that box would cover the building.
+  // The box stays inside the board hole: 12 px "2:1 brick" plus a 2 px ring needs 40 by 12 px of room.
   private labelPoint(id: string, vertex: { x: number; z: number }, top: number): { x: number; y: number } | null {
     const spot = this.dockPlates.get(id);
     if (!spot) return null;
     const plate = this.screenAt(spot.x, spot.y, spot.z), house = this.screenAt(vertex.x, top, vertex.z);
     let dx = plate.x - house.x, dy = plate.y - house.y, n = Math.hypot(dx, dy) || 1;
     dx /= n; dy /= n;
-    const W = innerWidth, H = innerHeight;
-    for (const k of [0, 72, -72, 144, -144]) {
-      const x = Math.min(Math.max(plate.x - dy * k, 60), W - 60), y = Math.min(Math.max(plate.y + dx * k, 20), H - 20);
-      if (Math.abs(x - house.x) >= 52 || Math.abs(y - house.y) >= 12) return { x, y };
+    const r = this.renderer.domElement.getBoundingClientRect(), i = this.insets();
+    const minX = r.left + i.left + 40, maxX = r.right - i.right - 40;
+    const minY = r.top + i.top + 12, maxY = r.bottom - i.bottom - 12;
+    const clamp = (k: number) => ({
+      x: Math.min(Math.max(plate.x - dy * k, Math.min(minX, maxX)), Math.max(minX, maxX)),
+      y: Math.min(Math.max(plate.y + dx * k, Math.min(minY, maxY)), Math.max(minY, maxY)),
+    });
+    for (const k of [0, 36, -36, 72, -72]) {
+      const p = clamp(k);
+      if (Math.abs(p.x - house.x) >= 36 || Math.abs(p.y - house.y) >= 10) return p;
     }
-    return plate;
+    return clamp(0);
   }
 
   // One pier, two corners. The chip clears the corner that has a building.
