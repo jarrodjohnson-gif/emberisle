@@ -146,8 +146,8 @@ function Panel() {
     turnStart: "Started their turn with winning points",
     points: "Reached the winning score",
   }[reason?.trigger ?? "points"];
-  const head = "px-1 py-2 short:py-0.5 short:px-1 text-right text-[11px] sm:px-2 font-medium uppercase tracking-wide text-zinc-600";
-  const cell = "px-1 py-2 short:py-0.5 short:px-1 sm:px-2 text-right tabular-nums whitespace-nowrap short:text-xs";
+  const head = "px-1 py-2 short:py-0.5 short:px-1 text-right text-[11px] font-medium uppercase tracking-wide text-zinc-600";
+  const cell = "px-1 py-2 short:py-0.5 short:px-1 text-right tabular-nums whitespace-nowrap short:text-xs";
   // The desktop table, and the phone list's stand-in if its chunk cannot load (the next mount tries it again).
   const table = (
           <table className="w-full min-w-0 border-collapse text-sm">
@@ -165,7 +165,7 @@ function Panel() {
             <tbody>
               {rows.map((r) => (
                 <tr key={r.p.id} data-testid="win-row" data-player={r.p.id} className="border-t border-border">
-                  <td className="px-1 py-2 short:py-0.5 short:px-1 text-left font-medium sm:px-2 whitespace-nowrap short:text-xs">
+                  <td className="px-1 py-2 short:py-0.5 short:px-1 text-left font-medium whitespace-nowrap short:text-xs">
                     <SeatDot color={r.p.color} className="mr-1.5 size-3 align-[-2px]" />
                     {r.p.name}
                     {r.tag}
@@ -193,7 +193,7 @@ function Panel() {
       data-testid="win-screen"
       className="absolute inset-0 z-40 flex items-center justify-center bg-bg/60 p-safe"
     >
-      <div className={`flex max-h-full w-full ${phone ? "max-w-2xl" : "max-w-3xl"} flex-col rounded-sheet border border-border bg-surface p-5 text-center sm:p-6 short:px-4 ${phone ? "short:py-1" : "short:py-2"}`}>
+      <div className={`flex max-h-full w-full max-w-2xl flex-col rounded-sheet border border-border bg-surface p-5 text-center sm:p-6 short:px-4 ${phone ? "short:py-1" : "short:py-2"}`}>
         {/* #748: 480 px tall or less, the list needs room for four 44 px rows under the host's two-line actions (667x375 with insets). */}
         <div className={phone ? "short:flex short:items-center short:justify-center short:gap-3" : undefined}>
         <div className="flex items-center justify-center gap-2.5">
