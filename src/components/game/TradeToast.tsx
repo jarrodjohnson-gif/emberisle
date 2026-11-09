@@ -16,14 +16,8 @@ import "./trade-panel.css";
 const DISMISS_MS = 150;
 const calm = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// "Ember offers 2 sheep for 1 ore"; the asker reads "You offer 2 sheep for 1 ore".
-export function offerLine(name: string | null, give: Bag, want: Bag) {
-  const g = bagText(give);
-  const w = bagText(want);
-  const [who, offers, gives, asks] = name ? [name, "offers", "gives away", "asks for"] : ["You", "offer", "give away", "ask for"];
-  if (g && w) return `${who} ${offers} ${g} for ${w}`;
-  return g ? `${who} ${gives} ${g}` : `${who} ${asks} ${w}`;
-}
+import { offerLine } from "./offer-line";
+export { offerLine } from "./offer-line";
 
 // "Pine declined", "Pine and Tide declined".
 function declinedLine(names: string[]) {
@@ -183,8 +177,8 @@ export function TradeToast() {
           <div className="trade-details" tabIndex={0} role="group" aria-label="Trade amounts and player responses">
             {answering ? (
               <p className="trade-receipt" data-testid="trade-receipt">
-                <span><strong>You give:</strong> {bagText(offer.want) || "nothing"}</span>
-                <span><strong>You get:</strong> {bagText(offer.give) || "nothing"}</span>
+                <span><strong>Give:</strong> {bagText(offer.want) || "nothing"}</span>
+                <span><strong>Get:</strong> {bagText(offer.give) || "nothing"}</span>
               </p>
             ) : null}
             <ul className="trade-responses" aria-label="Player responses">
@@ -204,8 +198,8 @@ export function TradeToast() {
           </div>
           {answering ? (
             <div className="trade-answers flex items-center gap-1">
-              <Button className="trade-yes h-11 min-w-16 flex-1" onClick={() => answerTrade(true)}>Yes</Button>
               <Button variant="secondary" className="trade-no h-11 min-w-16 flex-1" onClick={() => answerTrade(false)}>No</Button>
+              <Button className="trade-yes h-11 min-w-16 flex-1" onClick={() => answerTrade(true)}>Yes</Button>
             </div>
           ) : null}
           {asker && !spectator ? (

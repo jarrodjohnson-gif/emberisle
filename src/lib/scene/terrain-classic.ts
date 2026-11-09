@@ -235,7 +235,7 @@ export type Layout = {
   room: Room;
 };
 
-export type Ridge = { ax: number; az: number; bx: number; bz: number; w: number; ha: number; hb: number; sag: number };
+type Ridge = { ax: number; az: number; bx: number; bz: number; w: number; ha: number; hb: number; sag: number };
 
 export type Sculpt = {
   geo: THREE.BufferGeometry;

@@ -6,8 +6,7 @@
 // 5. the strip never moves the map: the tray's height, the declared hole and the live hole are the same with it shown as
 //    without, and the live hole stays inside the declared one.
 // Screenshots to test-results/my-numbers-<size>.png. Run: npm run my-numbers-prove
-import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;
@@ -15,7 +14,6 @@ const PORT = Number(process.env.VITE_PORT) || 8152;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];

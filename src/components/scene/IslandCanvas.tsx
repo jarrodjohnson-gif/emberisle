@@ -5,7 +5,7 @@ import { demoBoard } from "@/lib/game/board";
 import type { GameState } from "@/lib/game/types";
 import type { DockTarget } from "@/components/scene/DockInspection";
 
-import { chunk, LazyBoundary } from "@/lib/lazy";
+import { boot, chunk, LazyBoundary } from "@/lib/lazy";
 const DockInspection = chunk(() => import("@/components/scene/DockInspection")).pick((m) => m.default);
 
 const OwnedDockLabels = chunk(() => import("@/components/scene/OwnedDockLabels")).pick((m) => m.default);
@@ -22,6 +22,8 @@ export default function IslandCanvas() {
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
+    // #1281: with no 3D view there is nothing more for the loading screen to wait for.
+    const gaveUp = () => (boot.drawn = boot.scenes = boot.shore = true);
     let renderer: IsleRenderer;
     try {
       renderer = new IsleRenderer(
@@ -40,6 +42,7 @@ export default function IslandCanvas() {
       const isWebGL = Boolean(e && typeof e === "object" && (e as { isWebGL?: boolean }).isWebGL) || /webgl/i.test(msg);
       console.error(isWebGL ? "WebGL creation failed; 3D view unavailable:" : "Renderer init failed; 3D view failed to start:", e);
       setFallback((current) => current ?? (isWebGL ? "3D view unavailable" : "3D view failed to start"));
+      gaveUp();
       return;
     }
     renderer.onDocks = setDocks;
@@ -64,6 +67,7 @@ export default function IslandCanvas() {
       unsub();
       console.error("Renderer sync failed; 3D view unavailable:", e);
       setFallback("3D view unavailable");
+      gaveUp();
       renderer.dispose();
     };
 

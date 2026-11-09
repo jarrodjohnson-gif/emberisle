@@ -1,0 +1,45 @@
+
+> chat-prove
+> node scripts/chat-prove.mjs
+
+ok lobby status on Ember: "Need 2 more players" +7.2s
+ok lobby status on Ember: "Need 1 more player" +8.1s
+ok lobby status on Tide: "Need 1 more player" +8.1s
+ok lobby status on Ember: "0 of 3 ready" +8.8s
+ok lobby status on Tide: "0 of 3 ready" +8.8s
+ok host tag on Ember's row only, seen by Ember +8.8s
+ok host tag on Ember's row only, seen by Tide +8.9s
+ok host tag on Ember's row only, seen by Pine +8.9s
+ok phone title card is 402 px tall, at most 55% of 844 +9.2s
+ok phone title card is full width minus 12 px, at the bottom +9.2s
+ok phone lobby card is 358x812, inside the 390x844 screen with the approved 16 px margins +11.9s
+ok phone lobby 390x844, 4 seats scrolled down: footer keeps the approved 12 px bottom padding (gap 12), nothing below it, Leave inside it +15.3s
+ok phone lobby 390x640, 4 seats scrolled down: footer keeps the approved 12 px bottom padding (gap 12), nothing below it, Leave inside it +17.1s
+ok phone lobby: the card starts unscrolled +17.1s
+ok phone lobby: Ready is inside the card and the 390x844 viewport without scrolling +17.1s
+ok phone lobby: Start is inside the card and the 390x844 viewport without scrolling +29.2s
+ok phone lobby: the Ready/Start row is wholly on screen +29.2s
+ok phone lobby 390x844: 8 whole chat lines on screen, newest ("Guslobby line 8") visible, 14px text +37.8s
+ok phone lobby 390x844: Ready/Start stay on screen beside the chat +37.8s
+ok phone lobby 390x844: the Sounds & stickers tab shows all 8 listed chips at 15px with no sideways scroll +38.2s
+ok phone lobby 390x844: the Sounds & stickers tab shows all 15 chips inside the box +38.2s
+ok 390x844: sticker monkey-pet is in the Sounds & stickers tab, loaded, on screen, 44x44 +38.3s
+ok 390x844: sticker side-eye is in the Sounds & stickers tab, loaded, on screen, 44x44 +38.4s
+ok 390x844: sticker banana-guy is in the Sounds & stickers tab, loaded, on screen, 44x44 +38.5s
+ok 390x844: sticker glasses-glance is in the Sounds & stickers tab, loaded, on screen, 44x44 +38.6s
+ok 390x844: sticker dark-smile is in the Sounds & stickers tab, loaded, on screen, 44x44 +38.7s
+ok 390x844: chip "Play sound Real badman" is on screen at 44 px tall +38.8s
+ok 390x844: chip "Play sound Gong" is on screen at 44 px tall +38.9s
+ok phone lobby 390x844: back on the Chat tab, 8 chat lines and the newest are on screen +39.0s
+ok phone lobby 440x956: 8 whole chat lines on screen, newest ("Guslobby line 8") visible, 14px text +39.1s
+ok phone lobby 440x956: Ready/Start stay on screen beside the chat +39.1s
+ok phone lobby 440x956: the Sounds & stickers tab shows all 8 listed chips at 15px with no sideways scroll +41.2s
+ok phone lobby 440x956: the Sounds & stickers tab shows all 15 chips inside the box +41.2s
+ok phone lobby 440x956: back on the Chat tab, 8 chat lines and the newest are on screen +41.3s
+ok phone lobby: a line that arrives while the log is at the bottom is scrolled into view +42.0s
+FAIL locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByTestId('table-code') to be visible[22m
+[2m    - waiting for "http://127.0.0.1:8094/?host=ws://127.0.0.1:43157" navigation to finish...[22m
+[2m    - navigated to "http://127.0.0.1:8094/?host=ws://127.0.0.1:43157"[22m
+

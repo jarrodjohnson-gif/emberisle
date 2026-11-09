@@ -1,8 +1,7 @@
 // #538: dock inspection and owned hand rates use real pointer and keyboard input without changing game state.
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8448;
@@ -296,7 +295,7 @@ async function provePlacement(page, tag) {
 }
 
 try {
-  browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined) });
+  browser = await chromium.launch();
   for (const view of VIEWS) {
     const ctx = await browser.newContext({ viewport: { width: view.width, height: view.height }, hasTouch: view.touch, isMobile: view.touch, reducedMotion: view.motion });
     const page = await ctx.newPage();

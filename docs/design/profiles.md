@@ -169,6 +169,14 @@ Apply existing message-size limits and separate authentication/query limits. Clo
 | `profileWins` | Require a valid profile credential. Return bounded group aggregates, never another player's detailed history. |
 | `tableProfileCard` | Authorize through the current seat/watcher socket and its current room roster. Return only a visible participant's public card. |
 | `profileLogout` | Revoke only the supplied device credential. A valid seat-rejoin secret remains usable. |
+| `profileRecover` (`recoveryV1`, #1437) | Login, recovery code and a new PIN twice. The new PIN is checked first. A right code sets the PIN, signs out every other device and returns a `profileSession` with a new credential; every refusal is `recoverFailed` after one hash. Under a PIN life lock a right code gets `pinLocked`. |
+| `profileNewCode` (`recoveryV1`, #1437) | Credential and current PIN, as Change PIN. Returns `profileRecoveryCode` `{ code, setAt }`; the old code stops working and the new one starts with fresh counters. |
+
+The permanent recovery code (#1437) is specified in [`recovery-code-1070/README.md`](recovery-code-1070/README.md): six symbols
+from a 30-symbol set, stored as an scrypt verifier in the profile record (`recovery`, `recoveryGuard`; unknown logins and
+profiles with no code count in the store's `unknownRecovery`), 3 wrong in 15 minutes, 5 a day and 10 per code, 5 tries an
+hour per address. `profileSession` carries `recoverySetAt` beside `profile`, and `recoveryCode` only on the reply that made
+it (Create profile, and the PIN change after a local reset). The local reset deletes the code.
 
 Return dedicated `profileError` messages with request IDs. Do not reuse game `error` frames during a rejoin.
 Reject edits containing another profile ID; derive ownership from the validated credential.

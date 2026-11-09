@@ -13,10 +13,10 @@
 // not checked either: an offer only exists on the asker's turn, so it and the phone's End turn are never on screen together.
 // Zero console errors. Run: npm run rotate-overlays-prove. Port from VITE_PORT, default 8557.
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 120_000;
@@ -53,7 +53,6 @@ const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, stric
 await vite.listen();
 const URL_ = `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 

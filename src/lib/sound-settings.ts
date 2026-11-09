@@ -3,7 +3,9 @@ import { useSyncExternalStore } from "react";
 
 export const SOUND_CATEGORIES = ["game", "touch", "memes", "music"] as const;
 export type SoundCategory = (typeof SOUND_CATEGORIES)[number];
-export type SoundMix = Readonly<{ master: number } & Record<SoundCategory, Readonly<{ volume: number; muted: boolean }>>>;
+type SoundMix = Readonly<{ master: number } & Record<SoundCategory, Readonly<{ volume: number; muted: boolean }>>>;
+// The chat's Mute players list asks the Table menu to open the Sound panel (#669).
+export const OPEN_SOUND_EVENT = "emberisle:open-sound";
 const KEY = "emberisle-sound-mix";
 const listeners = new Set<() => void>();
 const level = (value: unknown, fallback: number): number => typeof value === "number" && Number.isFinite(value) ? Math.round(Math.max(0, Math.min(1, value)) * 10) / 10 : fallback;

@@ -5,8 +5,7 @@
 //      No, the bot's turn waits on it, the person's Yes moves the goods, and the bot plays on.
 //   3. The same ask, and the person says No: once every seat has declined it closes, and the bot still plays on.
 // Every wait is on the store or the page, never a fixed sleep. Zero console errors.
-import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
@@ -41,7 +40,6 @@ const bot = gA.players.find((p) => p.id === "p2").name;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -109,7 +107,7 @@ try {
   const buttons = await dialog.getByRole("button").allTextContents();
   const want = `${bot} offers 1 ${RESOURCE_LABEL[Object.keys(askC.give)[0]].toLowerCase()} for 1 ${RESOURCE_LABEL[Object.keys(askC.want)[0]].toLowerCase()}`;
   console.log(`bot asks: "${line}" [${buttons.join(" / ")}]`);
-  if (line !== want || buttons.join(",") !== "Yes,No") throw new Error(`the bot's ask reads ${JSON.stringify({ line, buttons })}, wanted "${want}" + Yes/No`);
+  if (line !== want || buttons.join(",") !== "No,Yes") throw new Error(`the bot's ask reads ${JSON.stringify({ line, buttons })}, wanted "${want}" + No/Yes`);
   const waiting = await page.evaluate(() => {
     const s = window.__emberisle.getState();
     return { current: s.state.current, phase: s.state.phase, seq: s.state.seq };

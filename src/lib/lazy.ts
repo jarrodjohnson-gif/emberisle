@@ -5,6 +5,7 @@
 // suspends on the shared load; a failed load reaches the LazyBoundary around it and is forgotten there (or a second later
 // if only a prefetch asked), so the next open or mount tries the network again.
 import { Component, createElement, Suspense, use, type ComponentType, type ReactNode } from "react";
+import { JOIN_CODE } from "@/lib/net/proto";
 
 // A promise React's `use` can read without suspending once it has settled: it carries its own status, as React's thenable
 // protocol allows, so a loaded chunk renders synchronously on every later pass (React must see `use` called on each pass).
@@ -70,6 +71,12 @@ export function chunk<M>(load: () => Promise<M>) {
   return { prefetch, pick, load: loadModule };
 }
 
+// #1281: the startup loading screen's real progress, set by the island as it comes up (first frame drawn, Hex Jelly scenes
+// in, shore in; a load that gives up counts as done, as the game plays on without it), and the push's camera lift, which
+// the island reads each title frame. It lives in the index, so neither lazy chunk imports the other. `intro`: the loading
+// screen is up, so the island's one-time GPU probe waits (#1385).
+export const boot = { drawn: false, scenes: false, shore: false, lift: 0, intro: false };
+
 // Prefetch when the browser is idle (within 2 s even while the island keeps every frame busy), or after a short delay
 // where requestIdleCallback is missing (Safari).
 export function preloadOnIdle(prefetch: () => void) {
@@ -117,7 +124,7 @@ function typing() {
   return el instanceof HTMLInputElement && !/^(button|submit|reset|checkbox|radio|range|color|file|image)$/.test(el.type);
 }
 
-export const JOIN_CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
+export { JOIN_CODE };
 
 // The focus change that releases a held reload can be the press on Join or Host, which the reload then swallows. The join
 // field's value rides the reload in the URL (as a join link does) so the field refills: a valid code replaces whatever link

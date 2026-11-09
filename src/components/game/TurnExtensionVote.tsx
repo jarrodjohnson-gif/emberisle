@@ -26,14 +26,14 @@ export function TurnExtensionVote() {
   const result = extension.result;
   const canVote = vote?.voters.includes(localId) && !vote.yes.includes(localId) && !vote.no.includes(localId);
   const seconds = vote ? Math.max(0, Math.ceil((vote.until - skew - now) / 1000)) : 0;
-  const button = "min-h-11 min-w-11 rounded-lg border border-white/60 bg-white/70 px-3 py-2 text-sm font-medium text-zinc-900 hover:bg-white focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50";
+  const button = "min-h-11 min-w-11 rounded-lg border border-white/60 bg-white/70 px-3 py-2 text-sm font-medium text-zinc-900 hover:bg-white focus-visible:outline-2 focus-visible:outline-fg disabled:opacity-50";
   if (vote) return (
     <section data-testid="turn-extension-vote" aria-label="More time vote" className="flex min-w-0 flex-1 items-center gap-1 rounded-[16px] bg-glass px-2 text-xs text-zinc-900 backdrop-blur-md">
       <p role="status" className="min-w-0 flex-1 truncate" title={`Give ${name(vote.target)} 60 seconds more?`}>{name(vote.target)} +60s?</p>
       <span className="shrink-0 tabular-nums">{seconds}s</span>
       {canVote ? <>
-        <button aria-label="Yes, more time" className={button} disabled={!seconds} onClick={() => net.answerTurnExtension(vote.id, true)}>Yes</button>
         <button className={button} disabled={!seconds} onClick={() => net.answerTurnExtension(vote.id, false)}>No</button>
+        <button aria-label="Yes, more time" className={button} disabled={!seconds} onClick={() => net.answerTurnExtension(vote.id, true)}>Yes</button>
       </> : <span className="min-w-0 truncate" title={vote.target === localId ? "The other players decide." : "Waiting for the other players."}>{vote.target === localId ? "Others decide" : "Voted"}</span>}
       <span className="sr-only">{vote.yes.filter((id) => vote.voters.includes(id)).length} of {vote.voters.length} voted yes.</span>
     </section>

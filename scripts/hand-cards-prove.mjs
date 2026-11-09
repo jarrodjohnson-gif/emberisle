@@ -4,8 +4,8 @@
 // lift/dip movement on actual game actions, isolated/restarting deltas, clipping, quiet reconnect/hotseat baselines and
 // fully static reduced motion. The tests hold WAAPI timelines and wait for cue cleanup between samples.
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8436;
@@ -440,7 +440,6 @@ mkdirSync("test-results", { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 let code = 0;
@@ -552,7 +551,7 @@ try {
     for (const r of RESOURCES) {
       const c = cards[r];
       const fill = parse(c.fill);
-      assert.deepEqual(fill, rgb(want[r] === 0 ? "#eeece7" : "#fff9f0"), `${v.tag} ${r}: fill ${c.fill}`);
+      assert.deepEqual(fill, rgb(want[r] === 0 ? "#f3f6f5" : "#ffffff"), `${v.tag} ${r}: fill ${c.fill}`);
       assert.deepEqual(parse(c.color), rgb("#263d3c"), `${v.tag} ${r}: count colour ${c.color}`);
       const cr = ratio(parse(c.color), fill);
       assert.ok(cr >= 4.5, `${v.tag} ${r}: count contrast ${cr.toFixed(2)}`);

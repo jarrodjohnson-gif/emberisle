@@ -1,8 +1,10 @@
 // The player action menu, opened from a rail card (desktop) or a seat strip chip (phone). Design: docs/design/chat.md
 // "The player action menu". Illegal rows are hidden, not greyed out. Closes on Esc, a pointerdown outside the menu and
-// its trigger, or the same card again (the trigger toggles `openMenu`). Both trade rows open the trade panel (#163).
+// its trigger, the same card again (the trigger toggles `openMenu`), or the phone sheet's Close. Both trade rows open the
+// trade panel (#163). On a phone it is a bottom sheet (#1420, docs/design/seat-details-1274).
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { MessageSquare, Landmark, AtSign, Handshake } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import type { PlayerState } from "@/lib/game/types";
 import { fortuneBreakdown } from "@/lib/game/fortunes";
@@ -26,11 +28,12 @@ function focusChat() {
   requestAnimationFrame(() => document.getElementById(CHAT_INPUT)?.focus());
 }
 
-const ROW = "flex h-11 w-full cursor-pointer items-center gap-2 rounded-[8px] px-2 text-left text-sm text-zinc-900 hover:bg-white/70";
+// shrink-0: a capped sheet scrolls, so a row never squeezes under 44 px.
+const ROW = "flex h-11 w-full shrink-0 cursor-pointer items-center gap-2 rounded-[8px] px-2 text-left text-sm text-zinc-900 hover:bg-white/70";
 
-// `heading` names the seat at the top: for the phone menus, which float away from their chip; the desktop rail's menu
-// sits under its card, which already says it.
-export function PlayerMenu({ player: p, className, heading }: { player: PlayerState; className?: string; heading?: boolean }) {
+// `sheet` is the phone's bottom sheet: it names the seat at the top, since it sits away from its chip, and has a 44 px Close
+// for touch. The desktop rail's menu sits under its card, which already says it.
+export function PlayerMenu({ player: p, className, sheet }: { player: PlayerState; className?: string; sheet?: boolean }) {
   const state = useGame((s) => s.state)!;
   const spectator = useGame((s) => s.spectator);
   const mode = useGame((s) => s.mode);
@@ -51,6 +54,8 @@ export function PlayerMenu({ player: p, className, heading }: { player: PlayerSt
   const labels = { outposts: "Outposts (1 each)", strongholds: "Strongholds (2 each)", longestPath: "Longest path", largestArmy: "Largest army" };
   const reveal = state.phase === "over";
   useLayoutEffect(() => {
+    // The sheet rests on the screen's bottom edge and its own max-height caps it.
+    if (sheet) return;
     const fit = () => {
       if (root.current) root.current.style.maxHeight = `calc(100dvh - ${root.current.getBoundingClientRect().top}px - max(12px, env(safe-area-inset-bottom)))`;
     };
@@ -58,13 +63,14 @@ export function PlayerMenu({ player: p, className, heading }: { player: PlayerSt
     window.addEventListener("resize", fit);
     window.visualViewport?.addEventListener("resize", fit);
     return () => { window.removeEventListener("resize", fit); window.visualViewport?.removeEventListener("resize", fit); };
-  }, [p.id, className]);
+  }, [p.id, className, sheet]);
   // The card or chip that opened this menu; the trade rows hand it on as the panel's opener since the row itself is gone by then (#378).
   const trigger = () => document.querySelector<HTMLElement>(`[data-menu-trigger="${p.id}"]`);
 
   useEffect(() => {
     const trigger = document.querySelector<HTMLElement>(`[data-menu-trigger="${p.id}"]`);
-    root.current?.querySelector<HTMLElement>("button")?.focus();
+    // The first row takes focus; a watcher's sheet has only Close.
+    (root.current?.querySelector<HTMLElement>("button:not([data-menu-close])") ?? root.current?.querySelector<HTMLElement>("button"))?.focus();
     const onDown = (e: PointerEvent) => {
       const t = e.target as Node | null;
       if (root.current?.contains(t) || trigger?.contains(t)) return;
@@ -85,13 +91,13 @@ export function PlayerMenu({ player: p, className, heading }: { player: PlayerSt
 
   // #443: your own fortunes by kind and a dropped seat's state are facts here, one tap from the seat line.
   const facts: [string, number | string][] = [
-    ["Cards in hand", cards(p)],
-    ["Fortunes held", p.fortunes ?? hiddenCount(p)],
-    ["Points shown", publicVP(state, p.id)],
+    ["Goods", cards(p)],
+    ["Fortunes", p.fortunes ?? hiddenCount(p)],
+    ["Points", publicVP(state, p.id)],
     ["Wayfarers played", p.knightsPlayed],
   ];
   if (own && hiddenCount(p) > 0) facts.push(["Your fortunes", fortuneBreakdown(p)]);
-  if (seatAway(seats, p)) facts.push(["Connection", "reconnecting…"]);
+  if (seatAway(seats, p)) facts.push(["Connection", "Away"]);
 
   return (
     <div
@@ -99,13 +105,31 @@ export function PlayerMenu({ player: p, className, heading }: { player: PlayerSt
       id={`player-menu-${p.id}`}
       data-testid="player-menu"
       aria-label={`${p.name}'s actions`}
-      className={cn("@container flex flex-col gap-1 overflow-y-auto overscroll-contain rounded-sheet border border-white/50 bg-white/60 p-2 backdrop-blur-md", className)}
+      className={cn("@container flex flex-col gap-1 overflow-y-auto overscroll-contain rounded-sheet border border-border bg-surface p-2", className)}
     >
-      {heading ? (
-        <p data-testid="menu-seat" className="flex items-center gap-2 px-2 pt-1 text-sm font-medium text-zinc-900">
-          <SeatDot color={p.color} className="size-3" />
-          {p.name}
-        </p>
+      {sheet ? (
+        <div className="flex shrink-0 items-center justify-between gap-2">
+          <p data-testid="menu-seat" className="flex min-w-0 items-center gap-2 px-2 text-sm font-medium text-zinc-900">
+            <SeatDot color={p.color} className="size-3" />
+            <span className="truncate">{p.name}</span>
+          </p>
+          <Button
+            variant="ghost"
+            className="size-11 p-0"
+            aria-label="Close"
+            data-menu-close
+            back
+            onClick={() => {
+              close();
+              trigger()?.focus();
+            }}
+          >
+            {/* lucide's X, drawn here: importing it would pull the lazy sheets' shared `x` chunk into index. */}
+            <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </Button>
+        </div>
       ) : null}
       <LazyBoundary failed={null}><MenuNeeds player={p.id} /></LazyBoundary>
       <dl data-testid="menu-facts" className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 px-2 py-1 text-xs text-zinc-600">
@@ -127,6 +151,8 @@ export function PlayerMenu({ player: p, className, heading }: { player: PlayerSt
           <dt>{reveal ? "Final total" : "Your total"}</dt><dd data-testid="private-total" className="text-right font-medium tabular-nums text-fg">{publicVP(state, p.id) + p.hidden.vp}</dd>
         </> : null}
       </dl>
+      {/* The ledger's last line, the same for every seat and viewer, so it never signals a held point card. */}
+      <p data-testid="hidden-point-hint" className="-mt-1 px-2 pb-1 text-xs text-muted">Hidden fortunes may add points.</p>
       {own && myMain ? (
         <button
           type="button"
@@ -136,7 +162,7 @@ export function PlayerMenu({ player: p, className, heading }: { player: PlayerSt
             close();
           }}
         >
-          <Landmark className="size-4 shrink-0 text-zinc-600" /> Trade with the bank or a dock…
+          <Landmark className="size-4 shrink-0 text-zinc-600" /> Trade…
         </button>
       ) : null}
       {!own && online && myMain ? (
@@ -148,7 +174,7 @@ export function PlayerMenu({ player: p, className, heading }: { player: PlayerSt
             close();
           }}
         >
-          <Handshake className="size-4 shrink-0 text-zinc-600" /> Offer a trade…
+          <Handshake className="size-4 shrink-0 text-zinc-600" /> Trade…
         </button>
       ) : null}
       {!own && online ? (
@@ -162,7 +188,7 @@ export function PlayerMenu({ player: p, className, heading }: { player: PlayerSt
             close();
           }}
         >
-          <AtSign className="size-4 shrink-0 text-zinc-600" /> Mention @{p.name} in chat
+          <AtSign className="size-4 shrink-0 text-zinc-600" /> Mention @{p.name}
         </button>
       ) : null}
       {own && online ? (

@@ -2,8 +2,8 @@
 // Check every clip's category, multiplicative gain, mute isolation, live/delayed/queued playback,
 // background ducking, device persistence, bad storage and autoplay. Run: npm run sound-mixer-prove
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { readFileSync, readdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { TARGETS, TYPE_OF } from "./audio-level-lib.mjs";
 
@@ -44,7 +44,7 @@ let browser;
 const errors = [];
 try {
   await vite.listen();
-  browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined) });
+  browser = await chromium.launch();
   const context = await browser.newContext();
   const page = await context.newPage();
   page.on("pageerror", (e) => errors.push(String(e)));
@@ -170,21 +170,21 @@ try {
 
   await reset();
   await page.evaluate((names) => { for (const n of names) window.sound.stop(n); window.mix.setMasterVolume(0.5); window.mix.setCategoryVolume("music", 0.4); window.sound.setMusicWanted(true); }, all);
-  closeTo((await audio(TRACK)).volume, 0.05, "background is master × music × BG_VOLUME");
+  closeTo((await audio(TRACK)).volume, 0.024, "background is master × music × BG_VOLUME");
   assert.equal((await audio(TRACK)).loop, true, "background remains a loop");
   await page.evaluate(() => window.mix.setMasterVolume(0.8));
-  closeTo((await audio(TRACK)).volume, 0.08, "background gain updates live");
+  closeTo((await audio(TRACK)).volume, 0.0384, "background gain updates live");
   await page.evaluate(() => window.sound.play("game_start", 0.5));
   await page.waitForFunction((f) => window.__plays.some((p) => p.file === f), files.game_start);
-  closeTo((await audio(TRACK)).volume, 0.024, "ducking composes with master and category");
+  closeTo((await audio(TRACK)).volume, 0.01152, "ducking composes with master and category");
   await page.evaluate(() => window.sound.stop("game_start"));
-  closeTo((await audio(TRACK)).volume, 0.08, "cutting a sting restores the mixed background gain");
+  closeTo((await audio(TRACK)).volume, 0.0384, "cutting a sting restores the mixed background gain");
   await page.evaluate(() => window.sound.play("match_point", 0.5));
   await page.waitForFunction((f) => window.__plays.some((p) => p.file === f), files.match_point);
-  closeTo((await audio(TRACK)).volume, 0.024, "audible match-point sting ducks music");
+  closeTo((await audio(TRACK)).volume, 0.01152, "audible match-point sting ducks music");
   await page.evaluate(() => window.mix.setCategoryMuted("memes", true));
   closeTo((await audio(files.match_point)).volume, 0, "muting memes silences its active sting");
-  closeTo((await audio(TRACK)).volume, 0.08, "an inaudible meme sting cannot keep unrelated music ducked");
+  closeTo((await audio(TRACK)).volume, 0.0384, "an inaudible meme sting cannot keep unrelated music ducked");
   await page.evaluate(() => { window.mix.setCategoryMuted("memes", false); window.sound.stop("match_point"); });
   await page.evaluate(() => window.mix.setCategoryMuted("music", true));
   assert.equal((await audio(TRACK)).paused, true, "music category mute pauses the loop");
@@ -209,7 +209,7 @@ try {
   await page.evaluate(() => { window.sound.setMuted(false); window.sound.setMusicWanted(true); window.sound.play("dice_land"); });
   assert.deepEqual(await plays(), [], "reload re-arms autoplay despite saved settings");
   await page.keyboard.press("Shift");
-  closeTo((await audio(TRACK)).volume, 0.08, "persisted settings apply to the first post-unlock background play");
+  closeTo((await audio(TRACK)).volume, 0.0384, "persisted settings apply to the first post-unlock background play");
   await page.evaluate(() => window.sound.play("tap_fields", 0.5));
   await page.waitForFunction((f) => window.__plays.some((p) => p.file === f), files.tap_fields);
   closeTo((await audio(files.tap_fields)).volume, 0.12, "persisted settings apply to first post-unlock touch");
@@ -295,7 +295,7 @@ try {
         if (stillWanted) {
           assert.equal(attempts.length, attemptsBeforeGesture + (gesture === "keydown" ? 1 : 2), `${gesture}: still-wanted retry attempts playback`);
           assert.equal(heard.length, gesture === "keydown" ? 1 : 2, `${gesture}: still-wanted retry succeeds`);
-          closeTo(heard.at(-1).volume, 0.25, `${gesture}: wanted retry retains quiet background gain`);
+          closeTo(heard.at(-1).volume, 0.12, `${gesture}: wanted retry retains quiet background gain`);
           assert.equal(await retryPage.evaluate(() => window.__audios[0].paused), false, `${gesture}: wanted background resumes`);
         } else if (scenario === "retry rejected") {
           assert.ok(attempts.length > attemptsBeforeGesture, `${gesture}: retry reaches rejecting Audio.play`);

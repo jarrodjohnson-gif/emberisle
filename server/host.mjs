@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { mkdir, rename, writeFile } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
@@ -11,15 +11,16 @@ import { chooseBotAction, chooseRecoveryAction, chooseTradeAsk, logBotAction, sh
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, totalVP, validBag } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
-import { PROTO } from "../src/lib/net/proto.ts";
+import { JOIN_CODE, PROTO } from "../src/lib/net/proto.ts";
 import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
 import { PROFILE_TYPES, profileGate, profileHandler, seatCredential, seatProfile, tableCard, watchRefusal } from "./profile-protocol.mjs";
-import { openProfiles, UUID } from "./profiles.mjs";
+import { fingerprint, openProfiles, ProfileError, redactOutcome, redactRows, redactText, UUID } from "./profiles.mjs";
 import { advanceRoomNeeds, restoredNeed, validNeeds } from "./needs.mjs";
 import { getOpenTables, maybeReleaseOpenSlot, registerOpenTable, unregisterOpenTable } from "./open-table.mjs";
 import { OUTCOME_V, isTime, openJournal, validOutcome, writeDurable } from "./result-journal.mjs";
 import { extensionBudget, turnExtensions } from "./turn-extension.mjs";
+import { closeTtt, resendTtt, tictactoe, TTT_CAP, TTT_RATE, TTT_TYPES } from "./tictactoe.mjs";
 
 // The running host's checkout, regardless of the shell's cwd. Archives and hosts without git report dev (#913).
 const SERVER_SHA = (() => {
@@ -152,7 +153,8 @@ const PROFILES_DEV = process.env.PROFILES_DEV === "1";
 const RESULTS = path.resolve(process.env.RESULTS_DIR ?? fileURLToPath(new URL("./results/", import.meta.url)));
 // Proof-only fault points (#889). RESULT_FAULT="room-before:fail:2,journal-after:exit" fails that commit point N times
 // (default once), or kills the host there with no exit flush, as a crash or power cut would. The points are start-, room-
-// and journal-, each -before or -after its durable write.
+// and journal-, each -before or -after its durable write, receipt-, before or after the profile store's result
+// transaction (#890), and redact-, before or after each startup rewrite of a pending outcome, room or file kept for repair for a deleted profile (#891, #1393).
 const FAULTS = new Map(
   String(process.env.RESULT_FAULT ?? "")
     .split(",")
@@ -190,8 +192,20 @@ const TYPES = {
   ".ogg": "audio/ogg",
   ".mp3": "audio/mpeg",
 };
-const EMOTES_DIR = fileURLToPath(new URL("../src/assets/emotes/", import.meta.url));
+// EMOTES_DIR swaps the sticker folder for a proof (scripts/fixtures/stickers). It must be an existing folder, is read only by
+// loadEmotes (same name rules, nothing else is served from it), and holds at most the tray's 24 stickers.
+const EMOTES_DIR = process.env.EMOTES_DIR
+  ? path.resolve(process.env.EMOTES_DIR)
+  : fileURLToPath(new URL("../src/assets/emotes/", import.meta.url));
+if (process.env.EMOTES_DIR && !statSync(EMOTES_DIR, { throwIfNoEntry: false })?.isDirectory()) {
+  console.error(`EMOTES_DIR ${EMOTES_DIR} is not a folder`);
+  process.exit(1);
+}
 const EMOTES = loadEmotes(EMOTES_DIR);
+if (EMOTES.size > 24) {
+  console.error(`EMOTES_DIR ${EMOTES_DIR} has ${EMOTES.size} stickers, at most 24`);
+  process.exit(1);
+}
 
 function code() {
   let out = "";
@@ -234,6 +248,8 @@ function seatsOf(room) {
     away: !s.bot && !s.ws,
     bot: Boolean(s.bot),
     player: s.pid ?? null,
+    // #1411: only a seat that said it wants another game; the screen gives the host and bots their tick itself.
+    ...(s.again ? { again: true } : {}),
     needs: [...(s.needs?.kinds ?? [])],
     url: s.avatarId ? `/avatars/${s.avatarId}.jpg` : null,
     // A guest seat carries no profile field at all (#764).
@@ -268,6 +284,26 @@ function freezeOutcome(game, roster, assisted, endedAt) {
     winner: game.winner,
     players: roster.players.map((p) => ({ pid: p.pid, seat: p.seat, profileId: p.profileId, name: p.name, color: p.color, kind: p.kind, points: totalVP(game, p.pid), won: p.pid === game.winner, assisted: assisted.includes(p.pid) })),
   };
+}
+
+// What a table sees of a finished game's profile result (#767, profiles.md "Profile and Wins surfaces"), keyed by game player
+// id for each starting seat that was bound to a profile. An untracked game (legacy, invalid or not eligible) says so. A tracked
+// one gives each profile's committed win total once the profile store holds this game's receipt, and null while it is saving.
+// Read from the store, never counted here, so a repeated push cannot add a win. No profiled seat, no field. A deleted
+// profile (#891) is left out, so its row ends as "Not tracked", never "Saving record…" for good.
+function resultOf(room) {
+  if (room.game?.phase !== "over" || !room.roster) return undefined;
+  const rows = room.roster.players.filter((p) => p.profileId);
+  if (!rows.length) return undefined;
+  const tracked = room.roster.eligible && room.outcome?.gameId === room.roster.gameId;
+  const recorded = tracked && Boolean(profiles.receipt(room.roster.gameId));
+  const wins = {};
+  for (const p of rows) {
+    if (profiles.tombstoned(p.profileId)) continue;
+    const n = recorded ? profiles.committedWins(p.profileId) : null;
+    if (!recorded || n !== null) wins[p.pid] = n;
+  }
+  return { tracked, wins };
 }
 
 // A saved outcome that is not this roster's is dropped; the load freezes a fresh one from the terminal snapshot instead.
@@ -448,13 +484,45 @@ function savedRoster(saved) {
 async function load() {
   let names;
   try {
-    names = readdirSync(ROOMS).filter((n) => n.endsWith(".json"));
+    names = readdirSync(ROOMS);
   } catch {
     names = [];
   }
   let repaired = 0;
   let fenced = 0;
-  for (const name of names) {
+  // Profile deletion (#891) left these for the host: before anything is recorded or served, each pending outcome naming a
+  // deleted profile is rewritten without it, one durable file at a time. An interrupted pass resumes on the next start.
+  const gone = profiles.tombstoned;
+  if (!profiles.ready) console.error(`profiles: store unavailable (${profiles.reason}); pending outcomes and saved rooms keep any deleted profile until a start with the store available redacts them`);
+  let redacted = 0;
+  // Files kept only for repair by hand (#1393) are redacted too. A fenced room keeps its suffix, so it never plays again, and
+  // an unreadable pending outcome keeps its name, so it still fences its game.
+  for (const [dir, name] of [...journal.unreadable().map((id) => [journal.dir, `${id}.json`]), ...names.filter((n) => n.endsWith(".json.fenced")).map((n) => [ROOMS, n])]) {
+    let text;
+    try {
+      text = readFileSync(path.join(dir, name), "utf8");
+    } catch (err) {
+      console.error(`profiles: cannot read ${name} to redact deleted profiles (${err.message})`);
+      continue;
+    }
+    const clean = redactText(text, gone);
+    if (clean === null) continue;
+    fault("redact-before");
+    await writeDurable(dir, name, clean);
+    redacted++;
+    console.log(`profiles: redacted a deleted profile from ${name}, kept for repair`);
+    fault("redact-after");
+  }
+  for (const o of journal.pending()) {
+    const clean = redactOutcome(o, gone);
+    if (!clean) continue;
+    fault("redact-before");
+    await journal.replace(clean);
+    redacted++;
+    console.log(`profiles: redacted a deleted profile from the pending outcome of game ${o.gameId}`);
+    fault("redact-after");
+  }
+  for (const name of names.filter((n) => n.endsWith(".json"))) {
     const file = path.join(ROOMS, name);
     let saved;
     try {
@@ -476,13 +544,35 @@ async function load() {
         roster = null;
       }
     }
+    // A saved room is a stale roster to the deletion tombstones (#891): its frozen rows and outcome lose a deleted profile,
+    // fingerprinted first, and its seat drops the binding but keeps playing. The file is rewritten before it is used.
+    const outcome = roster && saved.outcome ? redactOutcome(saved.outcome, gone) : null;
+    if (outcome) saved.outcome = outcome;
+    let changed = Boolean(outcome);
+    if (roster && redactRows(roster.players, gone)) changed = true;
+    for (const s of Array.isArray(saved?.seats) ? saved.seats : []) {
+      if (typeof s?.profileId !== "string" || !gone(s.profileId)) continue;
+      delete s.profileId;
+      changed = true;
+    }
+    if (changed) {
+      fault("redact-before");
+      await writeDurable(ROOMS, name, JSON.stringify(saved));
+      redacted++;
+      console.log(`profiles: redacted a deleted profile from room ${name}`);
+      fault("redact-after");
+    }
     if (roster && saved.game.phase === "over") {
-      if (!journal.ready(roster.gameId)) {
+      // A recorded game (#890) is not journalled again; a room whose outcome is not the recorded one is reported, not counted.
+      const receipt = profiles.receipt(roster.gameId);
+      if (receipt) {
+        if (receipt.fingerprint !== fingerprint(saved.outcome)) console.error(`results: room ${name} holds game ${roster.gameId} with an outcome that differs from its recorded receipt; the receipt stands`);
+      } else if (!journal.ready(roster.gameId)) {
         await journal.put(saved.outcome);
         repaired++;
         console.log(`results: repaired the pending outcome of game ${roster.gameId} from room ${name}`);
       }
-    } else if (roster && journal.has(roster.gameId)) {
+    } else if (roster && (journal.has(roster.gameId) || profiles.receipt(roster.gameId))) {
       console.error(`results: room ${name} holds game ${roster.gameId} at ${saved.game.phase}, but that game already finished; fenced from play and kept as ${name}.fenced`);
       renameSync(file, `${file}.fenced`);
       fenced++;
@@ -526,7 +616,7 @@ async function load() {
       delete room.savedAt;
       // Reconciled above: a terminal tracked room loads with its frozen outcome already journalled, so it is settled.
       room.outcome = loadOutcome(saved.outcome, room.roster);
-      room.settled = room.outcome && journal.ready(room.outcome.gameId) ? room.outcome.gameId : null;
+      room.settled = room.outcome && (journal.ready(room.outcome.gameId) || profiles.receipt(room.outcome.gameId)) ? room.outcome.gameId : null;
       for (const [i, s] of saved.seats.entries()) {
         // #1236: name the seat and the field only. The message is logged, and the seat holds its secret.
         if (typeof s?.id !== "string") throw new Error(`bad seat ${i}: id`);
@@ -560,6 +650,7 @@ async function load() {
   }
   if (rooms.size) console.log(`restored ${rooms.size} room(s): ${[...rooms.keys()].join(" ")}`);
   console.log(`results: ${journal.pending().length} pending outcome(s) kept for recording, ${repaired} repaired from rooms, ${fenced} room(s) fenced`);
+  if (redacted) console.log(`profiles: deletion redaction finished in ${redacted} file(s)`);
 }
 
 function affords(player, cost) {
@@ -795,6 +886,7 @@ function pushState(room) {
   // whose clock is off still land on the host's moment.
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
   const turnDeadline = soonest?.turnDeadline ?? null;
+  const result = resultOf(room);
   save(room);
   // The one terminal gate (#889): every route to the win (a move, a timer, a bot, takeover, rejoin) publishes through here,
   // and a finished tracked game goes out only once its final room and its pending outcome are both durable.
@@ -814,10 +906,11 @@ function pushState(room) {
       turnDeadline,
       turnPlayer: soonest?.pid ?? null,
       serverNow: Date.now(),
+      result,
     });
   }
   if (!room.watchers.size) return;
-  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
+  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now(), result });
   for (const ws of room.watchers) if (ws.readyState === ws.OPEN) ws.send(raw);
 }
 
@@ -861,6 +954,61 @@ async function settle(room) {
   room.settling = null;
   room.settled = id;
   if (rooms.get(room.code) === room && room.game) pushState(room);
+  recordPending();
+}
+
+// Result recording (#890, profiles.md "Exactly-once recording" steps 5 and 6). Each pending outcome goes through the profile
+// store's one serialized transaction (receipt, result rows, aggregates), and its journal file is removed only after that
+// commits. A replay finds the receipt and only clears the file; a receipt with another fingerprint is reported and the file
+// is kept for repair. A game that credits no profile writes nothing and its file stays, as #889 left it. Transient failures
+// retry with bounded backoff on one timer. With the store unavailable nothing is tried; the files wait for the next start.
+const recording = new Map();
+const unrecordable = new Set();
+let recordTimer = null;
+let recordWait = 250;
+async function recordAttempt(o) {
+  const id = o.gameId;
+  try {
+    const out = await profiles.recordOutcome(o);
+    // Nothing credited: resultOf already left out every deleted profile, so the table's line has nothing to wait for.
+    if (out === "excluded") return true;
+    // The table's win screen swaps "Saving record…" for the committed totals.
+    for (const room of rooms.values()) if (room.roster?.gameId === id && room.game?.phase === "over") pushState(room);
+    await journal.done(id);
+    console.log(out === "duplicate" ? `results: game ${id} was already recorded; its pending outcome is cleared` : `results: recorded game ${id}`);
+    return true;
+  } catch (err) {
+    if (err instanceof ProfileError && (err.code === "conflict" || err.code === "invalid")) {
+      unrecordable.add(id);
+      console.error(`results: game ${id} ${err.code === "conflict" ? "does not match its recorded receipt" : "cannot be counted"}; nothing changed, and its pending outcome is kept for repair`);
+      return true;
+    }
+    console.error(`results: recording game ${id} failed (${err.message}); kept for retry`);
+    return false;
+  }
+}
+function recordOne(o) {
+  if (unrecordable.has(o.gameId)) return true;
+  let run = recording.get(o.gameId);
+  if (!run) {
+    run = recordAttempt(o).finally(() => recording.delete(o.gameId));
+    recording.set(o.gameId, run);
+  }
+  return run;
+}
+async function recordPending() {
+  if (!profiles.ready) return;
+  const ok = await Promise.all(journal.pending().map(recordOne));
+  if (ok.every(Boolean)) {
+    recordWait = 250;
+    return;
+  }
+  if (recordTimer || !profiles.ready) return;
+  recordTimer = setTimeout(() => {
+    recordTimer = null;
+    recordPending();
+  }, recordWait);
+  recordWait = Math.min(recordWait * 2, 10_000);
 }
 
 // A connection-bound baseline for gameplay intents. Rejoin/restart gets a new connection id even when
@@ -1088,7 +1236,7 @@ async function serveStatic(req, res) {
 }
 
 const wss = new WebSocketServer({ server, maxPayload: 16 * 1024 });
-const profiles = openProfiles(PROFILES, { colors: PLAYER_COLORS });
+const profiles = openProfiles(PROFILES, { colors: PLAYER_COLORS, fault });
 const onProfile = profileHandler(profiles, send);
 const journal = openJournal(RESULTS, { fault });
 
@@ -1251,6 +1399,7 @@ async function startGame(ws, room) {
     if (s.bot) game.players[i].kind = "bot";
   });
   if (!(await durableStart(ws, room, order, game, () => room.seats.length === order.length && order.every((s, i) => room.seats[i] === s)))) return;
+  closeTtt(room.seats, "start", null, send);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
   say(room, "Roll for first place.");
@@ -1345,6 +1494,8 @@ async function rematch(ws, room) {
     seat.ws = null;
   }
   room.seats = live;
+  // #1411: every "play again" was for the game that just ended.
+  for (const seat of room.seats) seat.again = undefined;
   // Reclaim a finished open room's slot only if no successor has taken it (#986).
   if (room.visibility === "open") registerOpenTable(room);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
@@ -1741,6 +1892,14 @@ function handle(ws, raw) {
   if (msg.type === "leave") return leaveOnPurpose(ws, room);
   if (msg.wayfarerMode !== undefined || msg.type === "setWayfarerMode") return send(ws, { type: "error", message: "Wayfarer mode is fixed when the table is created." });
   if (msg.type === "chat" || msg.type === "react" || msg.type === "sound") return talk(ws, room, msg);
+  if (TTT_TYPES.has(msg.type)) {
+    const now = Date.now();
+    ws.seat.tttBucket ??= { tokens: TTT_CAP, at: now };
+    if (!allow(ws.seat.tttBucket, now, TTT_CAP, TTT_RATE)) return send(ws, { type: "error", message: "Slow down." });
+    if (room.game || room.busy) return send(ws, { type: "error", message: "Games close when the table starts." });
+    const error = tictactoe(room, ws.seat, msg, send);
+    return error ? send(ws, { type: "error", message: error }) : undefined;
+  }
   if (!allow(ws.seat.act, Date.now(), ACT_CAP, ACT_RATE)) return send(ws, { type: "error", message: "Slow down.", ...(msg.type === "need" ? { request: "need" } : {}) });
   // A new game is being written to disk (#889): nothing else changes the table until it is in place or refused.
   if (room.busy) return send(ws, { type: "error", message: "The table has updated. Please try again.", ...(msg.type === "need" ? { request: "need" } : {}) });
@@ -1763,6 +1922,14 @@ function handle(ws, raw) {
     ws.seat.ready = value;
     return publish(room);
   }
+  // #1411: a seat says it wants another game. Only while a game is over; it never starts, blocks or delays the rematch.
+  if (msg.type === "wantAgain") {
+    if (room.game?.phase !== "over") return send(ws, { type: "error", message: "Game is not over." });
+    const value = msg.value === true;
+    if (Boolean(ws.seat.again) === value) return;
+    ws.seat.again = value || undefined;
+    return publish(room);
+  }
   if (msg.type === "rename") return renameSeat(ws, room, msg);
   if (msg.type === "addBot") return addBot(ws, room);
   if (msg.type === "removeBot") return removeBot(ws, room, msg);
@@ -1781,14 +1948,12 @@ function handle(ws, raw) {
   return play(ws, room, msg);
 }
 
-const CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
-
 // Answers which seats a lobby holds, without sitting down (docs/design/color-peek.md). The asker has no seat, so it gets
 // what dims the swatches and nothing more: no names or pictures for whoever holds the code (G10). Those come with the
 // `seats` broadcast after sitting down.
 function peek(ws, msg) {
   const code = typeof msg.code === "string" ? msg.code.toUpperCase() : "";
-  if (!CODE.test(code)) return;
+  if (!JOIN_CODE.test(code)) return;
   const room = rooms.get(code);
   const seats = room && !room.game ? room.seats.map((s) => ({ id: s.id, color: s.color, ready: s.ready })) : [];
   send(ws, { type: "seats", code, seats });
@@ -1813,6 +1978,7 @@ function rejoin(ws, msg) {
   send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
   say(room, `${seat.name} is back.`);
   publish(room);
+  resendTtt(seat, send);
   if (!room.game) return;
   const p = room.game.players.find((x) => x.id === seat.pid);
   if (p?.kind === "bot") {
@@ -1863,6 +2029,8 @@ function dropRoom(room) {
 function hold(room, seat) {
   seat.ws = null;
   seat.gone = Date.now();
+  // #1411: back before the next game, a player says again whether they want it.
+  seat.again = undefined;
   // A dropped seat is the grace timer's business, never the turn timer's (#344).
   disarmTurn(seat);
   if (room.game) extensions(room).sync();
@@ -1908,6 +2076,7 @@ function takeOver(room, seat) {
 function letGo(room, seat) {
   clearTimeout(seat.graceTimer);
   forgetAvatar(seat);
+  closeTtt([seat], "left", seat, send);
   room.seats = room.seats.filter((s) => s !== seat);
   if (!room.seats.some((s) => !s.bot)) return dropRoom(room);
   if (!room.game) say(room, `${seat.name} left.`);
@@ -1970,4 +2139,6 @@ pinger.unref();
 wss.on("close", () => clearInterval(pinger));
 
 await load();
+// Pending outcomes are replayed once before the host listens (#890); anything left retries in the background.
+await recordPending();
 server.listen(PORT, () => console.log(`host listening ${server.address().port}`));

@@ -1,0 +1,16 @@
+1280x720 lobby, Sounds & stickers: panel at x,y,w,h 61,269,518,302; inside viewport true; sideways scroll false; 37 controls; emoji 0, sound chips 15, stickers 15; tab scroll 232 of 412 px shown; under 44 px: none
+390x844 lobby, Sounds & stickers: panel at x,y,w,h 29,253,332,458; inside viewport true; sideways scroll false; 37 controls; emoji 0, sound chips 15, stickers 15; tab scroll 388 of 672 px shown; under 44 px: none
+844x390 lobby, Sounds & stickers: panel at x,y,w,h 333,77,486,236; inside viewport true; sideways scroll false; 37 controls; emoji 0, sound chips 15, stickers 15; tab scroll 166 of 464 px shown; under 44 px: none
+1280x720 game, Chat tab: panel at x,y,w,h 968,64,300,312; inside viewport true; sideways scroll false; 12 controls; emoji 6, sound chips 0, stickers 0; tab scroll -; under 44 px: Mute players 40x44; Minimize chat 40x44
+390x844 game, Chat tab: panel at x,y,w,h 0,424,390,420; inside viewport true; sideways scroll false; 12 controls; emoji 6, sound chips 0, stickers 0; tab scroll -; under 44 px: none
+844x390 game, Chat tab: panel at x,y,w,h 0,120,844,270; inside viewport true; sideways scroll false; 12 controls; emoji 6, sound chips 0, stickers 0; tab scroll -; under 44 px: none
+1280x720 game, Sounds & stickers: panel at x,y,w,h 968,64,300,360; inside viewport true; sideways scroll false; 39 controls; emoji 0, sound chips 15, stickers 15; tab scroll 284 of 620 px shown; under 44 px: Chat 43x44; Mute players 40x44; Minimize chat 40x44
+390x844 game, Sounds & stickers: panel at x,y,w,h 0,424,390,420; inside viewport true; sideways scroll false; 39 controls; emoji 0, sound chips 15, stickers 15; tab scroll 348 of 524 px shown; under 44 px: none
+844x390 game, Sounds & stickers: panel at x,y,w,h 0,120,844,270; inside viewport true; sideways scroll false; 39 controls; emoji 0, sound chips 15, stickers 15; tab scroll 198 of 236 px shown; under 44 px: none
+320x640 game, Sounds & stickers: panel at x,y,w,h 0,220,320,420; inside viewport true; sideways scroll false; 39 controls; emoji 0, sound chips 15, stickers 15; tab scroll 348 of 620 px shown; under 44 px: none
+320x640 game, Chat tab: panel at x,y,w,h 0,220,320,420; inside viewport true; sideways scroll false; 12 controls; emoji 6, sound chips 0, stickers 0; tab scroll -; under 44 px: none
+deadlines: after an emoji, close and reopen: emoji waiting true, sticker waiting true; after a sound, close and reopen: sounds waiting true, stickers free true
+focus: Escape on a sticker button with Path armed: chat open true, build none
+focus: tabs Chat tabindex=0, Sounds & stickers tabindex=0; ArrowRight on Chat leaves "Chat" selected
+focus: after Minimize chat by keyboard, focus is on BODY
+console errors: 0

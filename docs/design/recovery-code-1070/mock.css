@@ -1,0 +1,15 @@
+/* #1414 design mock: the recovery code. capture.mjs adds this to the real Profile sheet. Game tokens only. */
+.rc-hidden { display: none !important; }
+.rc-title { margin: 0; font-family: var(--font-display); font-size: 1.25rem; line-height: 1.75rem; font-weight: 700; color: var(--color-fg); }
+.rc-code {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 8px 8px 16px;
+  border: 2px dashed var(--color-accent); border-radius: var(--radius-chip);
+  background: color-mix(in srgb, var(--color-sea) 8%, var(--color-surface));
+}
+.rc-code-text {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 1.875rem; line-height: 2.5rem; font-weight: 700;
+  letter-spacing: 0.08em; color: var(--color-fg); white-space: nowrap; overflow: hidden;
+}
+.rc-code-input { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: 0.08em; text-transform: uppercase; }
+.rc-list { margin: 0; padding-left: 1.1rem; list-style: disc; }
+.rc-list li + li { margin-top: 4px; }

@@ -1,0 +1,44 @@
+[
+  {
+    "file": "src/lib/scene/crystal-water.ts",
+    "literalSourceLine": 140,
+    "comments": 2,
+    "removedCharacters": 212
+  },
+  {
+    "file": "src/lib/scene/crystal-water.ts",
+    "literalSourceLine": 181,
+    "comments": 11,
+    "removedCharacters": 1056
+  },
+  {
+    "file": "src/lib/scene/crystal-water.ts",
+    "literalSourceLine": 402,
+    "comments": 10,
+    "removedCharacters": 912
+  },
+  {
+    "file": "src/lib/scene/crystal-water.ts",
+    "literalSourceLine": 522,
+    "comments": 2,
+    "removedCharacters": 157
+  },
+  {
+    "file": "src/lib/scene/crystal-water.ts",
+    "literalSourceLine": 695,
+    "comments": 1,
+    "removedCharacters": 98
+  },
+  {
+    "file": "src/lib/scene/crystal-water.ts",
+    "literalSourceLine": 757,
+    "comments": 1,
+    "removedCharacters": 121
+  },
+  {
+    "file": "src/lib/scene/isle-renderer.ts",
+    "literalSourceLine": 2151,
+    "comments": 1,
+    "removedCharacters": 99
+  }
+]

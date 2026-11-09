@@ -236,7 +236,7 @@ h = await startHost();
 const resumeAfterEdit = await (await client(h, tunnel())).req({ type: "profileResume", credential: duneCred });
 check("mediaKey and winSongId survive rename+restart (they stay private)", resumeAfterEdit.type === "profileSession" && resumeAfterEdit.profile.login === "dune-new");
 check("mediaKey not in owner view (stays private)", !("mediaKey" in resumeAfterEdit.profile));
-check("winSongId is in owner view", resumeAfterEdit.profile.winSongId === "song_one");
+check("removed winSongId falls back to null in owner view", resumeAfterEdit.profile.winSongId === null);
 const storeAfter = store().profiles[duneId];
 check("mediaKey is preserved in store after rename", storeAfter.mediaKey === "m_" + "a".repeat(32));
 
