@@ -82,7 +82,7 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
   const canStart = isHost && seats.length >= 3 && seats.length <= 4 && seats.every(s => s.ready);
   const readyCount = seats.filter(s => s.ready).length;
   const missing = 3 - seats.length;
-  const status = missing > 0 ? `Need ${missing} more player${missing === 1 ? "" : "s"}` : readyCount === seats.length ? "Everyone is ready" : `${readyCount} of ${seats.length} ready`;
+  const status = missing > 0 ? `Need ${missing} more player${missing === 1 ? "" : "s"}` : readyCount === seats.length ? "All ready" : `${readyCount} of ${seats.length} ready`;
   const { state: copied, copy } = useCopy<"link">();
   const codeElement = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
@@ -130,13 +130,13 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
               <button type="button" role="tab" aria-selected={!games} tabIndex={games ? -1 : 0} onClick={() => pick(false)}>Table</button>
               <button type="button" role="tab" aria-selected={games} tabIndex={games ? 0 : -1} aria-label={invited ? "Play games, 1 invite" : undefined} onClick={() => pick(true)}><span>Play games</span>{invited ? <b className="lb" aria-hidden="true">1</b> : null}</button>
             </div>
-            <Button variant="outline" onPointerEnter={prefetchRules} onFocus={prefetchRules} onClick={e => setHowTo(true, e.currentTarget)}>Rules</Button>
+            <Button variant="outline" onPointerEnter={prefetchRules} onFocus={prefetchRules} onClick={e => setHowTo(true, e.currentTarget)}>How to play</Button>
             <div className="lobby-rule-status">
               <span data-testid="lobby-caption" className="max-w-full truncate">Wayfarer {rule}</span>
               <ConnectionStatus />
             </div>
           </div>
-          {games ? <LazyBoundary failed={<button type="button" onClick={() => setGames(false)}>Close</button>}><Play onGame={setOpen} /></LazyBoundary> : (
+          {games ? <LazyBoundary failed={<Button variant="outline" onClick={() => setGames(false)}>Close</Button>}><Play onGame={setOpen} /></LazyBoundary> : (
           <>
           <ul data-testid="lobby-players" className="lobby-players">
             {[0, 1, 2, 3].map(i => {
@@ -148,7 +148,7 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
                     {s?.id === seatId ? <OwnName seat={s} /> : <span className="truncate">{s ? s.name : "Empty"}</span>}
                     {s?.host ? <span data-testid="host-tag" className="sr-only"> · host</span> : null}
                   </span>
-                  <span className="lobby-player-status">{s ? `${s.host ? "Host · " : ""}${s.bot ? "Bot" : s.away ? "reconnecting…" : s.ready ? "Ready" : "Waiting"}` : ""}</span>
+                  <span className="lobby-player-status">{s ? `${s.host ? "Host · " : ""}${s.bot ? "Bot" : s.away ? "Away" : s.ready ? "Ready" : "Waiting"}` : ""}</span>
                   {s ? <span className="lobby-bubble"><LazyBoundary failed={null}><SeatBubbles by="seat" id={s.id} at="lobby" /></LazyBoundary></span> : null}
                   {s?.bot && isHost ? <Button variant="outline" data-testid="remove-bot" aria-label={`Remove ${s.name}`} onClick={() => removeBot(s.id)}><svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 3l10 10M13 3L3 13" /></svg></Button> : null}
                   {!s && isHost ? <Button variant="outline" data-testid="add-bot" onClick={addBot}>Add bot</Button> : null}
@@ -163,18 +163,18 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
           )}
           <div data-testid="lobby-actions" className="lobby-actions">
             <div className="lobby-summary">
-              <p data-testid="lobby-status" aria-live="polite">{error ?? status}</p>
+              <p id="lobby-status" data-testid="lobby-status" aria-live="polite">{error ?? status}</p>
               <VictoryTargetSelect value={target} onChange={isHost ? setTarget : undefined} />
             </div>
             <div className="lobby-action-buttons">
               <Button variant="outline" onClick={() => setReady(!ready)}>{ready ? "Not ready" : "Ready"}</Button>
-              {canStart ? <Button variant="sea" onClick={() => { setGames(false); setOpen(false); startTable(); }}>Start</Button> : null}
-              <Button variant="ghost" onClick={goTitle}>Leave the table</Button>
+              {isHost ? <Button variant="sea" disabled={!canStart} aria-describedby="lobby-status" onClick={() => { setGames(false); setOpen(false); startTable(); }}>Start</Button> : null}
+              <Button variant="ghost" onClick={goTitle}>Leave table</Button>
             </div>
           </div>
         </div>
       </div>
-      {howTo ? <LazyBoundary failed={<Button onClick={() => setHowTo(false)}>Close rules</Button>}><HowTo onClose={() => setHowTo(false)} /></LazyBoundary> : null}
+      {howTo ? <LazyBoundary failed={<Button variant="outline" onClick={() => setHowTo(false)}>Close</Button>}><HowTo onClose={() => setHowTo(false)} /></LazyBoundary> : null}
     </>
   );
 }
