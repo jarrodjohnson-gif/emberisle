@@ -2,8 +2,8 @@
 // Check every clip's category, multiplicative gain, mute isolation, live/delayed/queued playback,
 // background ducking, device persistence, bad storage and autoplay. Run: npm run sound-mixer-prove
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { readFileSync, readdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { TARGETS, TYPE_OF } from "./audio-level-lib.mjs";
 
@@ -44,7 +44,7 @@ let browser;
 const errors = [];
 try {
   await vite.listen();
-  browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined) });
+  browser = await chromium.launch();
   const context = await browser.newContext();
   const page = await context.newPage();
   page.on("pageerror", (e) => errors.push(String(e)));

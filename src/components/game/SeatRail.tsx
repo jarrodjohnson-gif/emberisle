@@ -6,7 +6,7 @@
 // aria-current so the turn never rests on colour or motion alone (#312); the dot is a SeatDot.
 // #645: under that line, on a line of its own, two public tallies at every width: "🛤 n" (longest continuous path) and "⚔ n"
 // (wayfarers played); the Longest Path / Largest Army holder wears a gold badge on its tally (see Tally).
-// Your fortunes by kind and a dropped seat's state are facts in the player menu, one tap away.
+// Your fortunes by kind, a dropped seat's state and "Hidden fortunes may add points." are in the player menu, one tap away.
 import { useMemo } from "react";
 import { type LucideIcon, Route, ScrollText, Swords } from "lucide-react";
 import { SeatBubbles } from "@/components/game/chunks";
@@ -20,11 +20,6 @@ import { cn } from "@/lib/utils";
 
 const needs = chunk(() => import("@/components/game/SeatNeeds"));
 const SeatNeeds = needs.pick(module => module.SeatNeeds);
-
-// Same reminder for every viewer and hand; its presence never signals a held point card.
-export function HiddenPointHint() {
-  return <p data-testid="hidden-point-hint" className="rounded-control px-2 text-xs leading-3" style={{ background: "var(--table)", color: "var(--table-muted)" }}>Hidden fortunes may add points.</p>;
-}
 
 // The seat's roll-off die, "–" until it rolls this round; gone once the roll-off is settled (docs/design/first-player.md).
 function RollOffDie({ state, id, className }: { state: GameState; id: string; className: string }) {
@@ -79,7 +74,7 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
   const path = useMemo(() => roadLength(state, p.id), [state, p.id]);
   return (
     <>
-      <span className={cn("flex w-full items-center", strip ? "gap-1.5 @max-[100px]:gap-1 @max-[100px]:has-[.seat-away]:gap-0.5 @max-[72px]:has-[.seat-away]:gap-0" : "gap-1.5")}>
+      <span className={cn("flex w-full items-center", strip ? (away ? "gap-1.5 @max-[100px]:gap-0" : "gap-1.5 @max-[100px]:gap-1") : "gap-1.5")}>
         {/* Under 100 px a cell holds "Emb" and the points with 4 px gaps; the dot gives back its two extra pixels there (#420). */}
         <SeatDot color={p.color} className={cn("seat-dot size-3", strip && "@max-[100px]:size-2.5")} />
         <span data-testid="seat-name" className={cn("min-w-0 flex-auto truncate text-sm font-medium", strip && "@max-[128px]:sr-only")}>
@@ -178,7 +173,6 @@ export function SeatRail({ actor }: { actor: string }) {
         </div>
       ))}
       <LazyBoundary failed={null}><SeatNeeds scope="rail" /></LazyBoundary>
-      <HiddenPointHint />
     </aside>
   );
 }

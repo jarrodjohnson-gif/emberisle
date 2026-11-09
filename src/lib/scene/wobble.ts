@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 // The island answers a tap (crystal-water.md "Touch the sea"): the tapped tile and what stands on it swell to 1.03 and settle
 // back over 220 ms, about the tile's base, so the props ride along. A tap again mid-wobble restarts it from where it stands.
-export const WOBBLE = { ms: 220, peak: 0.03 } as const;
+const WOBBLE = { ms: 220, peak: 0.03 } as const;
 
 type Part = { o: THREE.Object3D; y: number; scale: THREE.Vector3 };
 

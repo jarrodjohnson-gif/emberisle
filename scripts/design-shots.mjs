@@ -1,6 +1,6 @@
 // Reproducible visual review of the same crafted table before/after art direction.
 import { mkdirSync, writeFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 
 const direction = process.env.DIRECTION || "basalt";
 const out = process.env.SHOTS_OUT || "test-results/design";

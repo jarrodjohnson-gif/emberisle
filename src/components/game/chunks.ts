@@ -19,8 +19,23 @@ export const ConnectionOverlay = online.pick((m) => m.Health);
 const openTables = chunk(() => import("@/components/game/OpenTables"));
 export const OpenTables = openTables.pick((m) => m.OpenTables);
 export const OpenModeToggle = openTables.pick((m) => m.OpenModeToggle);
-export const SetupReference = chunk(() => import("@/components/game/SetupReference")).pick(m => m.SetupReference);
+// #669: the Sound panel in the Table menu; the menu asks for it when it opens, so it is in memory before Sound is pressed.
+export const soundSheet = chunk(() => import("@/components/game/SoundSheet"));
+export const SoundSheet = soundSheet.pick((m) => m.SoundSheet);
+export const SetupReference =chunk(() => import("@/components/game/SetupReference")).pick(m => m.SetupReference);
 export const WayfarerOptions = chunk(() => import("@/components/game/WayfarerOptions")).pick(m => m.WayfarerOptions);
+// #766: the title's profile sheet and its profile client load only when Profile is pointed at, focused or pressed.
+export const profileSheet = chunk(() => import("@/components/game/ProfileSheet"));
+export const ProfileSheet = profileSheet.pick((m) => m.ProfileSheet);
+// #766 slice 2: its Edit profile and Change PIN forms load when the sheet opens one of them.
+export const profileForms = chunk(() => import("@/components/game/ProfileForms"));
+export const ProfileForms = profileForms.pick((m) => m.ProfileForms);
+// #767: its Wins and History views load when the sheet opens one of them.
+export const profileRecords = chunk(() => import("@/components/game/ProfileRecords"));
+export const ProfileRecords = profileRecords.pick((m) => m.ProfileRecords);
+// #1437: its recovery code screens; fetched as the sheet opens, and waited for before a request that answers with a code.
+export const profileRecovery = chunk(() => import("@/components/game/ProfileRecovery"));
+export const ProfileRecovery = profileRecovery.pick((m) => m.ProfileRecovery);
 
 export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);
@@ -28,12 +43,34 @@ export const FortuneTray = sheets.pick((m) => m.FortuneTray);
 export const HowTo = sheets.pick((m) => m.HowTo);
 export const TradePanel = sheets.pick((m) => m.TradePanel);
 export const WinScreen = sheets.pick((m) => m.WinScreen);
+// #748: the win screen's compact list on touch and narrow screens; the win screen fetches it on phones as the table starts.
+export const winList = chunk(() => import("@/components/game/WinList"));
+export const WinList = winList.pick((m) => m.WinList);
+// #1411: a guest's I'll play again and the win screen's count; the win screen fetches it as an online table starts.
+export const playAgain = chunk(() => import("@/components/game/PlayAgain"));
+export const WantAgain = playAgain.pick((m) => m.WantAgain);
+export const WantCount = playAgain.pick((m) => m.WantCount);
+
+// The island behind every screen (#543 preloads it). #1281: one load through the chunk loader, shared by the canvas and the
+// loading screen, so a failed download is retried under a fresh URL by Try again instead of leaving the screen stuck.
+export const island = chunk(() => import("@/components/scene/IslandCanvas"));
+
+// #1281: the startup loading screen, preloaded by the built page beside the index (vite.config.ts).
+export const LoadingScreen = chunk(() => import("@/components/game/LoadingScreen")).pick((m) => m.LoadingScreen);
 
 export const moments = chunk(() => import("@/components/game/moments"));
 export const TurnMoment = moments.pick((m) => m.TurnMoment);
 export const MyNumbers = moments.pick((m) => m.MyNumbers);
 export const FirstGameCoach = moments.pick((m) => m.FirstGameCoach);
 export const SetupPipHints = moments.pick((m) => m.SetupPipHints);
+
+// #1285: trade toast and loss bars (discard, steal) moved out of initial index chunk.
+export const tradeToast = chunk(() => import("@/components/game/TradeToast"));
+export const TradeToast = tradeToast.pick((m) => m.TradeToast);
+
+export const losses = chunk(() => import("@/components/game/losses"));
+export const DiscardBar = losses.pick((m) => m.DiscardBar);
+export const TakeFromBar = losses.pick((m) => m.TakeFromBar);
 
 // A sibling of the lazy dock or panel inside its Suspense boundary: its effect runs on the commit that lands them, which is
 // a commit later than the chatOpen or tradeOpen flip when the chunk was still loading, so the island measures the hole again.

@@ -1,7 +1,7 @@
 // #826: the owner's blocked hex/token palette is 75% dimmed to black with readable light ink; the Wastes stay plain;
 // moving him clears the old hex. Run: node scripts/robber-hex-prove.mjs
-import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;
@@ -18,7 +18,6 @@ const check = (name, ok, detail) => {
 };
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 

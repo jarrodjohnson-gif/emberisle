@@ -1,6 +1,6 @@
 // #840: your-turn cue is clearer on PC — rising two-note chime, flashing tab title while hidden.
 // Practice table:
-// - document.title is "● Your turn — Emberisle" while the tab is focused on your turn.
+// - document.title is "● Your turn · Emberisle" while the tab is focused on your turn.
 // - With document.hidden forced true, the title alternates with "Emberisle" within 2.5 s.
 // - On focus return, the title stays on the your-turn string (no flash).
 // - Hotseat never uses the your-turn title.
@@ -8,20 +8,19 @@
 // - public/audio/your_turn.wav is about 420 ms (rising fifth), not the old 150 ms knocks.
 // Run: node scripts/your-turn-cue-prove.mjs
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { readFileSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 15_000;
 const PORT = Number(process.env.VITE_PORT) || 8491;
-const YOURS = "● Your turn — Emberisle";
+const YOURS = "● Your turn · Emberisle";
 const IDLE = "Emberisle";
 
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
@@ -74,7 +73,7 @@ try {
     g.setState({ state: st });
   });
   await until(page, () => document.title.startsWith("● Your turn"), "focused tab shows your-turn title");
-  ok("focused tab shows ● Your turn — Emberisle");
+  ok("focused tab shows ● Your turn · Emberisle");
 
   await page.evaluate(() => {
     Object.defineProperty(document, "hidden", { configurable: true, get: () => window.__forceHidden === true });
@@ -127,9 +126,9 @@ try {
   await page.waitForTimeout(1200);
   assert.equal(await page.title(), IDLE, "old hidden interval stays cleared after turn handoff");
   await page.evaluate(() => window.__emberisle.setState({ spectator: true }));
-  await until(page, () => document.title === "Watching — Emberisle", "spectator title");
+  await until(page, () => document.title === "Watching · Emberisle", "spectator title");
   await page.waitForTimeout(1200);
-  assert.equal(await page.title(), "Watching — Emberisle", "spectator title never flashes your turn");
+  assert.equal(await page.title(), "Watching · Emberisle", "spectator title never flashes your turn");
   await page.evaluate(() => {
     window.__forceHidden = false;
     window.__emberisle.setState({ spectator: false });

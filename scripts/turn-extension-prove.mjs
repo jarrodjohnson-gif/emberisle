@@ -4,7 +4,7 @@ import { spawn } from "node:child_process";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
@@ -195,6 +195,8 @@ try {
   assert.deepEqual(desktopVoter.overflow, [], `desktop voter fits: ${JSON.stringify(desktopVoter)}`);
   console.log(`desktop voter: ${JSON.stringify(desktopVoter)}`);
   await b.screenshot({ path: "test-results/turn-extension-desktop-voter.png" });
+  // #1449 item 8: the confirming answer is last, as in the trade offer.
+  assert.deepEqual(await b.getByTestId("turn-extension-vote").locator("button").allTextContents(), ["No", "Yes"], "vote reads No, then Yes");
   await b.getByRole("button", { name: "Yes, more time" }).click();
   for (const page of tabs) {
     await page.getByTestId("turn-extension-result").filter({ hasText: "Ember gets 60 seconds more." }).waitFor();

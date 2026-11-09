@@ -62,7 +62,7 @@ node scripts/named-tunnel.mjs --run
 The launcher reads the saved settings and starts the same named tunnel through `cloudflared`.
 No rotating quick-tunnel URL is created in named mode.
 Open the permanent HTTPS link yourself before hosting a table.
-Use the lobby's Copy link button; its room code changes with the table, while the website hostname stays fixed.
+Tap the table code in the lobby to copy the join link; its room code changes with the table, while the website hostname stays fixed.
 Friends can bookmark the website and enter the current table code.
 They must open the permanent link, rather than an old quick-tunnel link or a localhost invitation.
 

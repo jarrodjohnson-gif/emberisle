@@ -641,7 +641,7 @@ export function nearestCoast(coast: Coast, x: number, z: number) {
 }
 
 type SplashUniforms = { uSplash: { value: THREE.Vector4[] }; uSplashNow: Uniform; uSplashLive: Uniform };
-export type Splashes = ReturnType<typeof makeSplashes>;
+type Splashes = ReturnType<typeof makeSplashes>;
 
 /**
  * The live splashes: a small uniform array (SPLASH.max slots, the oldest replaced) and its CPU twin `field`, line for line

@@ -7,10 +7,10 @@
 // a turn it ends with 8 s left plays nothing, and a muted tab plays nothing.
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8099;
@@ -47,9 +47,7 @@ async function serve() {
   }
 }
 const vite = await serve();
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
-});
+const browser = await chromium.launch();
 
 const errors = [];
 let code = 0;
