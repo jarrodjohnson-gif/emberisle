@@ -1039,6 +1039,27 @@ try {
   check(await chatOpen(), "Enter with focus on the page still opens the chat and focuses the input");
   await a.page.getByPlaceholder("Say something…").press("Escape");
   await a.page.getByRole("button", { name: "Open chat" }).waitFor();
+  // #1449 item 17: with a placement pending, Enter confirms it (PlaceChip) and the chat stays closed. The seat that is up
+  // (still in its first setup step) picks one of its lit corners, as a tap on the board would; the renderer drops a pending
+  // mark that is not lit.
+  await closeChat(cur);
+  const placing = await cur.page.evaluate(() => {
+    const s = window.__emberisle.getState();
+    const v = s.legal.outpost[0];
+    s.setPendingPlace({ kind: "vertex", id: v });
+    return { v, seq: s.state.seq };
+  });
+  await cur.page.getByTestId("place-chip").waitFor({ timeout: 5000 });
+  await cur.page.evaluate(() => document.activeElement?.blur());
+  await cur.page.keyboard.press("Enter");
+  await cur.page.getByTestId("place-chip").waitFor({ state: "detached", timeout: 5000 });
+  await cur.page.waitForFunction((seq) => window.__emberisle.getState().state.seq > seq, placing.seq, { timeout: 5000 });
+  const placed = await store(cur, () => {
+    const s = window.__emberisle.getState();
+    return { chat: s.chatOpen, pending: s.pendingPlace, input: document.activeElement?.id === "chat-input" };
+  });
+  const built = await cur.page.evaluate((v) => !!window.__emberisle.getState().state.vertices.find((x) => x.id === v)?.building, placing.v);
+  check(placed.chat === false && !placed.input && placed.pending === null && built, `Enter with a placement pending confirms it (${cur.name} placed at ${placing.v}) and leaves the chat closed`);
 
   // 5. Phone: the open dock is a bottom sheet, and the tap that closes it does not reach the board.
   await phone.page.getByRole("button", { name: "Open chat" }).waitFor();

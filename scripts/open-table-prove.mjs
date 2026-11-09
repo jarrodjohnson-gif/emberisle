@@ -140,9 +140,12 @@ await nameInput.press("Escape");
 // Toggle to "Open" mode.
 const modeToggle = A.page.getByTestId("open-mode-toggle");
 await until(() => modeToggle.isVisible(), "open-mode-toggle visible");
+// #1449 item 9: the toggle is named for what it toggles, in both states; aria-pressed carries the state.
+check(await modeToggle.getAttribute("aria-label") === "Open table", "open-mode-toggle is named Open table while private");
 await modeToggle.click();
 // Confirm the toggle shows "Open".
 check(await modeToggle.getAttribute("aria-pressed") === "true", "open-mode-toggle selects Open");
+check(await modeToggle.getAttribute("aria-label") === "Open table", "open-mode-toggle keeps the name Open table while open");
 
 // Click "Host a table".
 await A.page.getByRole("button", { name: "Host a table" }).click();
