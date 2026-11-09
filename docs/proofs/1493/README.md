@@ -15,3 +15,11 @@ Pinned environment: Node22.23.4, Playwright1.63.0, Chromium1243. Serial browser 
 An additional blank-page diagnostic used exactly `install(); pauseAt(new Date())` with no intervening browser evaluation: **0 failures in20 samples**. Direct pause passed20/20. This distinguishes the unmodified API sequence control from the deliberately stale-target reproduction. The original hosted clock failure remains the actual observed failure, not reproduced by those20 uninstrumented blank-page samples.
 
 The loaded full-proof series passed runs1–3, then **run4 failed** at the unchanged10000ms host startup guard, before browser/clock initialization. All four logs/exits are retained in `series/`. No retry of the full proof was started and no20-consecutive-pass claim holds. The periodic CPU process was stopped when the series failed. Narrow host-readiness diagnosis is in progress; neither a cause nor fix for that timeout is established. Registration and advisory loosen-prove passed; the latter reports one changed proof and none loosened. Draft hosted jobs are skipped, not passed.
+
+## Host-import isolation
+
+Under the same100ms/200ms CPU load, a narrow original fixture startup control passed once (1092ms), then stalled without stdout/stderr at10000ms. A stage-instrumented control passed twice (838/1139ms), then stalled after registering the asynchronous resolver and before host module evaluation. No room load or pending-outcome recording had started.
+
+A fixture-only single synchronous hook chain mirrors the existing resolver's ESM alias/extension rules and preserves CommonJS requires. Its20 loaded startup samples all passed, with the unchanged10000ms limit. The first exploratory synchronous resolver incorrectly rewrote a CommonJS `ws` require and failed `Cannot find module './websocket.ts'`; that failure is preserved. Bypassing `require` contexts retains the old asynchronous resolver's ESM-only scope. No production loader changed. These controls isolate the mixed hook interaction, without asserting an upstream Node bug has independently been proved.
+
+The permanent proof now uses this single fixture hook chain plus direct browser-clock pause initialization. Full post-change transport/host/production validation and a fresh20-consecutive-run series remain required. The earlier3-pass/1-fail series is not reset into a pass by this change.

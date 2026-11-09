@@ -1,0 +1,2 @@
+{"trial":1,"result":"ready","elapsedMs":1092,"stdout":"results: 0 pending outcome(s) kept for recording, 0 repaired from rooms, 0 room(s) fenced\nhost listening 33601\n","stderr":""}
+{"trial":2,"result":"timeout10000","elapsedMs":13453,"stdout":"","stderr":""}

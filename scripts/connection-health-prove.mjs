@@ -16,7 +16,17 @@ if (nodeMajor === 22 && nodeMinor < 23) {
 if (process.argv.includes("--host-fixture")) {
   // Test-only observation of timer identity: no production exports, endpoint, or environment switch.
   const { registerHooks } = await import("node:module");
-  registerHooks({ load(url, context, next) {
+  // Keep fixture loading on one synchronous hook chain. Mixing this load hook with
+  // register.mjs's asynchronous resolver can stall before host evaluation (#1493).
+  // Mirror its ESM-only alias/extension rules; leave CommonJS package requires alone.
+  registerHooks({
+    resolve(specifier, context, next) {
+      if (context.conditions.includes("require")) return next(specifier, context);
+      if (specifier.startsWith("@/")) specifier = new URL(specifier.slice(2), new URL("../src/", import.meta.url)).href;
+      if ((specifier.startsWith("./") || specifier.startsWith("../") || specifier.startsWith("file:")) && !/\.[a-z]+$/i.test(specifier)) return next(`${specifier}.ts`, context);
+      return next(specifier, context);
+    },
+    load(url, context, next) {
     const result = next(url, context);
     if (url === new URL("../server/host.mjs", import.meta.url).href) return { ...result, source: readFileSync(new URL(url), "utf8") + `
       process.on('message', ({id, code}) => {
@@ -29,7 +39,6 @@ if (process.argv.includes("--host-fixture")) {
       });` };
     return result;
   }});
-  await import("../server/register.mjs");
   await import("../server/host.mjs");
 } else {
   const { chromium } = await import("./proof-browser.mjs");
