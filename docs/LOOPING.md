@@ -243,8 +243,13 @@ or ask Jarrod questions in chat. Respect any later pause. At startup read
 AGENTS.md, docs/LANES.md and docs/DECISIONS.md and hub issue #854 (body, then
 comments after the newest Hub digest), and do any direction that names you.
 Handle your own open PRs first (desk comments, CI on the exact current head).
-Then take the top eligible issue by prio:p0, p1, p2, claim before you code, one
-issue per PR, at most 4 open PRs. Follow the continuation prompt and the
+Then take the top eligible issue by prio:p0, p1, p2. Build only with the
+issue's model: label, and skip it if you cannot run that model (a tier: label
+says which models may take it). Claim before you code with a comment:
+/claim, claimed: <your agent name>, <date>, files: <paths>. One issue per PR,
+at most 4 open PRs. Register every new proof in package.json and ci.yml. Run
+long browser proofs one at a time and paste real output in the PR. A Question:
+is not a stop: finish what does not need the answer, then take the next issue. Follow the continuation prompt and the
 deterministic startup and resume steps in docs/LOOPING.md. If the fallback
 ladder in docs/LANES.md and the anytime queue are empty, post one
 "To desk: nothing eligible" on #854.
