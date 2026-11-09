@@ -121,7 +121,8 @@ try {
     for (let i = 0; i < 300; i++) { const v = await look(page); if (test(v)) return v; await wait(20); }
     throw Error(`${label}: ${JSON.stringify(await look(page))}`);
   }
-  const tagsAre = (want) => (v) => JSON.stringify(v.tags) === JSON.stringify(want);
+  // The count sits in the lazy PlayAgain part and the tags do not, so wait for both before reading the count.
+  const tagsAre = (want) => (v) => JSON.stringify(v.tags) === JSON.stringify(want) && v.count !== "";
   // What a screen reader hears for each player, read from Chromium's accessibility tree: the phone row's button, or the
   // desktop table's name cell (a table is read cell by cell).
   async function heard(s) {
