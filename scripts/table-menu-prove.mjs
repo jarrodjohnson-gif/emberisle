@@ -141,8 +141,9 @@ try {
     if (!hasHaptics) assert.equal(await menu.getByTestId("haptics-toggle").count(), 0, `${v.tag}: unsupported Haptics row is absent`);
 
     // Report a bug (#912): a 44 px row that opens the prefilled GitHub issue in a new tab, with the game left where it is.
-    const report = menu.getByRole("button", { name: "Report a bug" });
+    const report = menu.getByRole("button", { name: "Report a bug, opens GitHub in a new tab", exact: true });
     assert.equal(Math.round((await report.boundingBox()).height), 44, `${v.tag}: Report a bug is a 44 px row`);
+    assert.equal(await report.locator("svg.lucide-bug").count(), 1, "Report a bug uses the Bug icon");
     await page.evaluate(() => { window.__opened = []; window.open = (...a) => (window.__opened.push(a), null); });
     await report.click();
     const [openedUrl, target, features] = (await page.evaluate(() => window.__opened))[0] ?? [];
@@ -181,6 +182,12 @@ try {
     await trigger.click();
     await menu.waitFor();
     assert.equal(await menu.getByTestId("watching-count").textContent().then((t) => t.trim()), "2", `${v.tag}: the watcher count is in the menu`);
+    const bugIcon = menu.getByTestId("report-bug").locator("svg");
+    const logIcon = menu.getByRole("button", { name: "Copy log", exact: true }).locator("svg");
+    await logIcon.waitFor();
+    assert.equal(await logIcon.getAttribute("class").then(value => value.includes("lucide-scroll-text")), true, "Copy log keeps its ScrollText icon");
+    assert.notDeepEqual(await bugIcon.locator("path").evaluateAll(paths => paths.map(p => p.getAttribute("d"))), await logIcon.locator("path").evaluateAll(paths => paths.map(p => p.getAttribute("d"))), "Report a bug and Copy log have different icon paths");
+
     await menu.getByRole("button", { name: "Copy code K7QP" }).click();
     const copied = v.noClipboard ? "fallback" : "copied";
     const clipboard = await page.evaluate(() => navigator.clipboard?.writeText("probe").then(() => "writes", (e) => `rejects: ${e}`) ?? "missing");

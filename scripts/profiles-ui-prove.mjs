@@ -231,6 +231,24 @@ try {
   await sheet(one).getByRole("button", { name: "Create profile" }).last().click();
   await saveCode(one);
   await sheet(one).getByText("Signed in as").waitFor();
+
+  // #1477: the signed-in summary has one visible close control; Escape remains available.
+  for (const [width, height] of [[390, 844], [1280, 720]]) {
+    await one.setViewportSize({ width, height });
+    const close = sheet(one).getByRole("button", { name: "Close", exact: true });
+    assert.equal(await close.count(), 1, `${width}x${height}: one signed-in Close control`);
+    assert.equal(await close.isVisible(), true, `${width}x${height}: Close is visible`);
+    assert.equal(await sheet(one).getByRole("button", { name: "Done", exact: true }).count(), 0, "the signed-in summary has no duplicate Done");
+    assert.equal(await sheet(one).getByRole("button", { name: "Continue as guest", exact: true }).count(), 0, "Continue as guest stays on the signed-out view");
+    if (width === 390) await close.click(); else await one.keyboard.press("Escape");
+    await sheet(one).waitFor({ state: "hidden" });
+    await one.waitForFunction(() => document.activeElement?.textContent.trim() === "Profile");
+    assert.equal(await one.getByRole("button", { name: "Profile", exact: true }).evaluate(el => document.activeElement === el), true, "close returns focus to Profile");
+    await openSheet(one);
+    await sheet(one).getByText("Signed in as").waitFor();
+  }
+  await one.setViewportSize(desk.viewport);
+
   assert.match(await sheet(one).innerText(), /Remembered on this device/);
   const session = (await wire(one)).map((f) => ({ ...f, m: JSON.parse(f.raw) })).find((f) => f.m.type === "profileSession");
   const credential = session.m.credential;
@@ -247,7 +265,7 @@ try {
     }
     await one.setViewportSize(desk.viewport);
   }
-  await sheet(one).getByRole("button", { name: "Done" }).click();
+  await sheet(one).getByRole("button", { name: "Close", exact: true }).click();
   ok("field errors sit beside their fields and send nothing; create on the real host remembers only that host and keeps the saved seat");
 
   // A second device signs in without remembering, then signs out; the first device's credential survives.
@@ -288,7 +306,7 @@ try {
   assert.equal((await wire(one)).filter((f) => f.dir === "out" && /profileResume/.test(f.raw)).length, 0, "no resume before the press");
   await resume.click();
   await sheet(one).getByText("Signed in as").waitFor();
-  await sheet(one).getByRole("button", { name: "Done" }).click();
+  await sheet(one).getByRole("button", { name: "Close", exact: true }).click();
   await one.getByRole("button", { name: "Host a table" }).click();
   await one.waitForFunction(() => window.__emberisle.getState().screen === "lobby");
   await one.waitForFunction(() => window.__emberisle.getState().seats[0]?.profile);
@@ -327,7 +345,7 @@ try {
   await sheet(blocked).getByRole("button", { name: "Create profile" }).last().click();
   await saveCode(blocked);
   await sheet(blocked).getByText("Not remembered on this device.").waitFor();
-  await sheet(blocked).getByRole("button", { name: "Done" }).click();
+  await sheet(blocked).getByRole("button", { name: "Close", exact: true }).click();
   assert.ok(await blocked.getByRole("button", { name: "Play", exact: true }).isEnabled());
   await blocked.context().close();
   ok("blocked storage signs in for this page only and keeps guest play");
@@ -511,7 +529,7 @@ try {
   ok("change PIN: the form fits at the three sizes; refusals sit beside their fields; the new credential replaces the remembered one; the other device is signed out and the old PIN no longer works");
 
   // The changed profile still rides on Host a table, once, and the seat shows the edited name.
-  await sheet(coral).getByRole("button", { name: "Done" }).click();
+  await sheet(coral).getByRole("button", { name: "Close", exact: true }).click();
   await coral.getByRole("button", { name: "Host a table" }).click();
   await coral.waitForFunction(() => window.__emberisle.getState().seats[0]?.profile);
   const coralHello = (await sent(coral, "hello"));
@@ -556,7 +574,7 @@ try {
   await saveCode(kelp);
   await sheet(kelp).getByText("Signed in as Kelp").waitFor();
   assert.ok(await kelp.evaluate((host) => window.__emberisle.getState().profile.credentialForHost(host), C), "after the change a table gets the credential");
-  await sheet(kelp).getByRole("button", { name: "Done" }).click();
+  await sheet(kelp).getByRole("button", { name: "Close", exact: true }).click();
   await kelp.getByRole("button", { name: "Host a table" }).click();
   await kelp.waitForFunction(() => window.__emberisle.getState().seats[0]?.profile);
   assert.equal(await kelp.evaluate(() => window.__emberisle.getState().seats[0].profile.displayName), "Kelp");
