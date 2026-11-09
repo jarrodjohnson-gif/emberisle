@@ -83,18 +83,18 @@ try {
     await more("wool", "want").click();
     await more("ore", "want").click();
     const preview = panel.getByTestId("trade-player-preview");
-    assert.match(await preview.textContent(), /You give: 2 wood.*You get: 1 sheep, 1 stone/);
+    assert.match(await preview.textContent(), /Give: 2 wood.*Get: 1 sheep, 1 stone/);
     assert(await more("timber", "want").isDisabled(), "same kind cannot be sent both ways");
     assert.equal(await bank().count(), 1, "mixed table quantities retain the visible Bank action");
     assert(await bank().isDisabled(), "Bank must reject mixed kinds from the shared draft");
-    assert.equal(await panel.getByTestId("trade-hint").textContent(), "Choose one kind on each side for a bank or dock exchange.");
+    assert.equal(await panel.getByTestId("trade-hint").textContent(), "Pick one kind to give and one to get.");
     assert.equal(await panel.getByRole("radio").count(), 0, "Bank uses shared quantities with no separate kind selector");
     // Remove one requested kind through its actual shared quantity control: both receipts update together.
     await panel.getByRole("button", { name: "Fewer Stone to want", exact: true }).click();
     assert.equal(await panel.getByTestId("trade-give-timber").getByRole("status").textContent(), "2");
     assert.equal(await panel.getByTestId("trade-want-wool").getByRole("status").textContent(), "1");
-    assert.equal(await panel.getByTestId("trade-hint").textContent(), "You give 4 wood. You get 1 sheep.");
-    assert.match(await preview.textContent(), /You give: 2 wood.*You get: 1 sheep/, "Bank kind derivation preserves the exact shared Table quantities");
+    assert.equal(await panel.getByTestId("trade-hint").textContent(), "Give 4 wood, get 1 sheep.");
+    assert.match(await preview.textContent(), /Give: 2 wood.*Get: 1 sheep/, "Bank kind derivation preserves the exact shared Table quantities");
     assert.equal(await panel.getByTestId("trade-give-timber").getByTestId("trade-owned").textContent(), "Have 6");
     const layout = await panel.evaluate((el) => {
       const box = (s) => el.querySelector(s).getBoundingClientRect().toJSON();
@@ -112,10 +112,10 @@ try {
     await panel.locator(".trade-composer-scroll").evaluate((el) => { el.scrollTop = 0; });
     await page.screenshot({ path: `test-results/trade-map-${width}x${height}.png` });
     await change('g.players[0].resources.timber = 1');
-    await textHas(preview, "You give: 1 wood");
+    await textHas(preview, "Give: 1 wood");
     assert(await more("timber", "give").isDisabled(), "live hand must cap give");
     await change('g.players[0].resources.timber = 0');
-    await textHas(preview, "You give: choose goods");
+    await textHas(preview, "Give: choose goods");
     assert(await ask().isDisabled(), "live empty hand must disable ask");
     await page.keyboard.press("Escape");
     await panel.waitFor({ state: "detached" });
@@ -158,7 +158,7 @@ try {
     await more("wool", "want").click();
     await more("wool", "want").click();
     assert(await bank().isEnabled(), "one shared give kind and get kind enable an exact one-exchange quote despite Table quantities");
-    assert.equal(await panel.getByTestId("trade-hint").textContent(), `You give ${rate} stone. You get 1 sheep.`);
+    assert.equal(await panel.getByTestId("trade-hint").textContent(), `Give ${rate} stone, get 1 sheep.`);
     await bank().click();
     const actual = await settled();
     assert.equal(actual.hands[0].ore, 6 - rate);
@@ -273,8 +273,8 @@ try {
   assert(await page.evaluate(() => performance.now() - window.__declineAt < 1000), "bot cross took over 1 second to render");
   await page.screenshot({ path: "test-results/trade-map-responses.png" });
   await page.evaluate(() => window.__emberisle.setState({ localId: "p1" }));
-  await textHas(page.getByTestId("trade-receipt"), "You give: 1 sheep, 1 stone");
-  await textHas(page.getByTestId("trade-receipt"), "You get: 1 wood, 1 brick");
+  await textHas(page.getByTestId("trade-receipt"), "Give: 1 sheep, 1 stone");
+  await textHas(page.getByTestId("trade-receipt"), "Get: 1 wood, 1 brick");
   // #537: a short hand switches to compact demand (no Accept), then recovers to Yes/No when goods return.
   await change('g.players[1].resources.ore = 0');
   await page.waitForFunction(() => document.querySelector('[data-testid="trade-toast"]')?.getAttribute("data-compact") === "true");

@@ -239,7 +239,7 @@ export function ChatBox({ rows, minRows = 0, game, dense, narrow, onEscape, acti
           {spectator ? (
             // Read-only (docs/design/spectator.md): the log stays; the emoji and input are this one line.
             <p data-testid="chat-readonly" className="shrink-0 text-xs text-zinc-700">
-              Watching — chat is read-only
+              Watching. Chat is read-only.
             </p>
           ) : (
             <>
@@ -339,7 +339,7 @@ function MuteMenu({ above = false }: { above?: boolean }) {
             }}
             className="h-11 shrink-0 cursor-pointer rounded-control bg-glass px-3 text-left text-sm text-zinc-700 hover:text-zinc-900"
           >
-            Sound settings
+            Sound
           </button>
         </div>
       ) : null}

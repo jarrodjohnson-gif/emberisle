@@ -99,7 +99,7 @@ export function CostCard({ onClose }: { onClose: () => void }) {
             ))}
           </ul>
         </div>
-        <p className="shrink-0 px-4 pb-4 pt-3 text-body">{target} points claims the isle.</p>
+        <p className="shrink-0 px-4 pb-4 pt-3 text-body">Win at {target} points.</p>
       </div>
     </div>
   );

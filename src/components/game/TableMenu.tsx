@@ -239,7 +239,7 @@ export function TableMenu() {
               </div>
               {mode === "online" && code ? (
                 <Button variant="ghost" className={ROW} onClick={() => copy("code", code)}>
-                  <Copy className={ICON} /> {copied?.ok && copied.what === "code" ? "Copied" : `Copy table code ${code}`}
+                  <Copy className={ICON} /> {copied?.ok && copied.what === "code" ? "Copied" : `Copy code ${code}`}
                 </Button>
               ) : null}
               {/* #899: the whole game log on the clipboard (or in a field to copy by hand), moved here from the online chat dock. */}

@@ -2,7 +2,7 @@
 // client seat a table; a third tab's Watch sends nothing under 4 characters (Join there shows "Enter the 4-letter code.", #1449) and is refused on the lobby ("Not started
 // yet."), then watches after the start
 // through a ?watch=CODE link. It sees the board with no glow, the Watching badge, no hand bar, no action buttons, a
-// read-only dock and the "Watching — Emberisle" title, while every seat shows the eye count "1". An injected intent is
+// read-only dock and the "Watching · Emberisle" title, while every seat shows the eye count "1". An injected intent is
 // refused with "Watching only." and the store's own actions send nothing. The seats then play to the win on the practice
 // bot and the watcher's win screen is the seats' full reveal (every hand and hidden point, the same rows as a seat) with
 // no seed or rng behind it. Leave takes it to the Title with no confirm and the count falls to 0; a dropped watcher
@@ -337,7 +337,7 @@ try {
   const badge = await w1.page.getByTestId("watching-badge");
   if ((await w1.page.getByTestId("table-menu").count()) !== 0 || !(await badge.isVisible()) || (await badge.textContent()) !== "Watching") throw new Error("watcher header: no visible Watching badge with the menu closed");
   wv.badge = await badge.textContent();
-  if (wv.title !== "Watching — Emberisle") throw new Error(`watcher tab title: "${wv.title}"`);
+  if (wv.title !== "Watching · Emberisle") throw new Error(`watcher tab title: "${wv.title}"`);
   if (wv.canvas < 1 || wv.boardSeq !== wv.seq) throw new Error(`the watcher's board is not drawn at seq ${wv.seq}: ${JSON.stringify([wv.canvas, wv.boardSeq])}`);
   if (wv.seq !== seatViews[0].seq || wv.phase !== "rollOff") throw new Error(`the watcher is not on the seats' state: ${JSON.stringify([wv.seq, wv.phase, seatViews[0].seq])}`);
   if (wv.resources !== 0) throw new Error(`the watcher has ${wv.resources} hand tiles`);
