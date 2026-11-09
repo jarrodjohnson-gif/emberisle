@@ -1,0 +1,31 @@
+ok transport: no pre-welcome probe; duplicate welcome keeps one challenge and its 3s timeout; close cancels probing
+ok browser: nonce matched 137ms monotonic RTT; 30s spacing, one outstanding, 3s timeout, full-state recovery once; host timers/save bytes unchanged
+ok lobby: four ready seats and every health state fit 320/390/667/844px layouts; no landscape scrolling
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:34289/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:34289/assets/OpenTables-ctZNrO_X.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:34289/assets/OpenTables-ctZNrO_X.js?retry=1
+ok production startup: cancelled Host/rejoin stay offline; latest intent/selected host win; 3s fallback and saved seat survive held/failed load; explicit retry recovers
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+
++ [
++   'Error: There was an error during concurrent rendering but React was able to recover by instead synchronously rendering the entire root.'
++ ]
+- []
+
+    at file:///workspace/work/1493/scripts/connection-health-prove.mjs:519:12 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: [
+    'Error: There was an error during concurrent rendering but React was able to recover by instead synchronously rendering the entire root.'
+  ],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.4
