@@ -31,6 +31,11 @@ interface ProfileSnapshot {
   status: ProfileStatus;
   profile: Readonly<ProfileOwner> | null;
   remembered: boolean;
+  // #1437: the host offers recovery codes (caps recoveryV1); when the signed-in profile's code was made (null: none yet);
+  // and a code just made, kept in page memory only until the player presses Done on "Save your recovery code".
+  recovery?: boolean;
+  setAt?: number | null;
+  code?: string | null;
 }
 // Call check() before open/join after a transport drop; offline attachment falls back to a guest.
 // Table attachment asks at the moment of sending. No credential is put in Me, game state or saved seats.
@@ -87,7 +92,7 @@ export function createProfileClient(initialHost: string, options: {
     listeners.forEach((listener) => listener());
   };
   const removeRemembered = (host = snapshot.host) => { try { storage?.removeItem(profileStorageKey(host)); } catch { /* blocked storage */ } };
-  const forgetSession = () => { credential = null; expiresAt = 0; update({ profile: null, remembered: false }); };
+  const forgetSession = () => { credential = null; expiresAt = 0; update({ profile: null, remembered: false, code: null }); };
   const failPending = (code: string) => {
     if (!pending) return;
     const p = pending; pending = null; clearTimeout(p.timer); p.reject(new ProfileClientError(code));
@@ -137,7 +142,8 @@ export function createProfileClient(initialHost: string, options: {
         try { reply = JSON.parse(event.data); } catch { return; }
         if (!reply || !pending || reply.id !== pending.id) return;
         const p = pending; pending = null; clearTimeout(p.timer);
-        if (reply.type === "profileError") p.reject(new ProfileClientError(typeof reply.code === "string" && Object.hasOwn(messages, reply.code) ? reply.code : "unavailable"));
+        // #1437: recoverFailed keeps its code; the recovery chunk words it (the class falls back to the unavailable text).
+        if (reply.type === "profileError") p.reject(new ProfileClientError(typeof reply.code === "string" && (Object.hasOwn(messages, reply.code) || reply.code === "recoverFailed") ? reply.code : "unavailable"));
         else p.resolve(reply);
       };
       ownSocket.onopen = async () => {
@@ -148,7 +154,7 @@ export function createProfileClient(initialHost: string, options: {
           if (reply.type !== "profileHello" || !Array.isArray(reply.caps) || !reply.caps.includes("profilesV1") || reply.available !== true) {
             update({ status: "unsupported" }); throw new ProfileClientError(reply.reason === "https" || reply.reason === "origin" ? "https" : "unsupported");
           }
-          update({ status: "available" }); finish();
+          update({ status: "available", recovery: reply.caps.includes("recoveryV1") }); finish();
         } catch (e) { if (current() && snapshot.status === "connecting") update({ status: "unsupported" }); finish(e instanceof ProfileClientError ? e : new ProfileClientError("unavailable")); }
       };
       const lost = () => {
@@ -189,7 +195,8 @@ export function createProfileClient(initialHost: string, options: {
       !(p.backupColor === null || typeof p.backupColor === "string") || typeof p.catchphrase !== "string" || !(p.winSongId === null || typeof p.winSongId === "string")) throw new ProfileClientError("unavailable");
     credential = token; expiresAt = reply.expiresAt;
     const profile: ProfileOwner = { profileId: p.profileId, displayName: p.displayName, login: p.login, color: p.color, backupColor: p.backupColor, catchphrase: p.catchphrase, winSongId: p.winSongId, ...(p.pinMustChange === true ? { pinMustChange: true } : {}) };
-    update({ profile: Object.freeze(profile) }); remember(keep);
+    // #1437: only the reply that made a code sets it; a later reply without one keeps it. Done or sign-out drops it.
+    update({ profile: Object.freeze(profile), setAt: reply.recoverySetAt as number | null, code: (reply.recoveryCode as string | undefined) ?? snapshot.code }); remember(keep);
     return snapshot.profile!;
   };
   const sessionRequest = async (type: string, fields: Record<string, unknown>, keep: boolean, needsCredential: boolean) => {
@@ -202,14 +209,14 @@ export function createProfileClient(initialHost: string, options: {
     }
   };
   // An owner-only read. Its reply is dropped if the host or the signed-in profile changed while it was out.
-  const query = async (type: "profileRecord" | "profileHistory" | "profileWins", fields: Record<string, unknown> = {}) => {
+  const query = async (type: "profileRecord" | "profileHistory" | "profileWins" | "profileNewCode", fields: Record<string, unknown> = {}, want: string = type) => {
     const ownGeneration = await authorized();
     const owner = snapshot.profile?.profileId;
     if (!owner || !credential || expiresAt <= Date.now()) throw new ProfileClientError("signedOut");
     try {
       const reply = await request(type, { ...fields, credential });
       if (ownGeneration !== generation || snapshot.profile?.profileId !== owner) throw new ProfileClientError("hostChanged");
-      if (reply.type !== type) throw new ProfileClientError("unavailable");
+      if (reply.type !== want) throw new ProfileClientError("unavailable");
       return reply;
     } catch (error) {
       if (ownGeneration === generation && error instanceof ProfileClientError && error.code === "signedOut") { removeRemembered(); forgetSession(); }
@@ -250,6 +257,10 @@ export function createProfileClient(initialHost: string, options: {
     changePin: (currentPin: string, newPin: string, newPinConfirm: string) => sessionRequest("profileChangePin", { currentPin, newPin, newPinConfirm }, snapshot.remembered, true),
     // profileRecord, profileHistory or profileWins; the records view checks the reply's shape.
     query,
+    // #1437, for the recovery chunk: a request answered by a profileSession (profileRecover signs in with one), and the code
+    // "Save your recovery code" shows (from New recovery code), which Done drops with null.
+    session: sessionRequest,
+    code: (code: string | null, setAt: number | null | undefined) => update({ code, setAt }),
     async logout() {
       const ownHost = snapshot.host;
       const ownCredential = credential;

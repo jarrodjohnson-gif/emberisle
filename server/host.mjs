@@ -248,6 +248,8 @@ function seatsOf(room) {
     away: !s.bot && !s.ws,
     bot: Boolean(s.bot),
     player: s.pid ?? null,
+    // #1411: only a seat that said it wants another game; the screen gives the host and bots their tick itself.
+    ...(s.again ? { again: true } : {}),
     needs: [...(s.needs?.kinds ?? [])],
     url: s.avatarId ? `/avatars/${s.avatarId}.jpg` : null,
     // A guest seat carries no profile field at all (#764).
@@ -1492,6 +1494,8 @@ async function rematch(ws, room) {
     seat.ws = null;
   }
   room.seats = live;
+  // #1411: every "play again" was for the game that just ended.
+  for (const seat of room.seats) seat.again = undefined;
   // Reclaim a finished open room's slot only if no successor has taken it (#986).
   if (room.visibility === "open") registerOpenTable(room);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
@@ -1918,6 +1922,14 @@ function handle(ws, raw) {
     ws.seat.ready = value;
     return publish(room);
   }
+  // #1411: a seat says it wants another game. Only while a game is over; it never starts, blocks or delays the rematch.
+  if (msg.type === "wantAgain") {
+    if (room.game?.phase !== "over") return send(ws, { type: "error", message: "Game is not over." });
+    const value = msg.value === true;
+    if (Boolean(ws.seat.again) === value) return;
+    ws.seat.again = value || undefined;
+    return publish(room);
+  }
   if (msg.type === "rename") return renameSeat(ws, room, msg);
   if (msg.type === "addBot") return addBot(ws, room);
   if (msg.type === "removeBot") return removeBot(ws, room, msg);
@@ -2017,6 +2029,8 @@ function dropRoom(room) {
 function hold(room, seat) {
   seat.ws = null;
   seat.gone = Date.now();
+  // #1411: back before the next game, a player says again whether they want it.
+  seat.again = undefined;
   // A dropped seat is the grace timer's business, never the turn timer's (#344).
   disarmTurn(seat);
   if (room.game) extensions(room).sync();

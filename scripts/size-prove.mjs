@@ -78,6 +78,9 @@ const CEILINGS = [
   { name: "eye-off", gzipBytes: 310 },
   // #767, 2026-11-07: the Profile sheet's Wins and Your games views; measured 2,248 B. New chunk, per q-size-standing.
   { name: "ProfileRecords", gzipBytes: 2350 },
+  // #1437, 2026-11-09: the Profile sheet's recovery code screens (Save your recovery code, Forgot your PIN, New recovery
+  // code, the sign-in link and the summary row); measured 3,029 B gzip. New chunk only; the desk set this ceiling (2026-11-09).
+  { name: "ProfileRecovery", gzipBytes: 3200 },
   // #1281, 2026-11-07: startup loading screen, preloaded beside index; measured 2,420 B gzip. Decided per q-size-standing; paired trim to follow.
   { name: "LoadingScreen", gzipBytes: 2600 },
   // #669, 2026-11-07: the Sound panel in the Table menu, loaded as the menu opens; measured 1,872 B gzip. New chunk only; the owner must OK this ceiling.
@@ -89,6 +92,9 @@ const CEILINGS = [
   // #1363, 2026-11-07: a sticker as the tray, seat bubble and chat log draw it (animated loop, reduced-motion still), loaded
   // with the first sticker; measured 949 B gzip. New chunk only; the desk sets this ceiling.
   { name: "Sticker", gzipBytes: 1050 },
+  // #1411, 2026-11-08: a guest's I'll play again and the win screen's count, loaded as an online table starts; measured
+  // 412 B gzip. New chunk only; the desk set this ceiling.
+  { name: "PlayAgain", gzipBytes: 450 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
