@@ -1,0 +1,19 @@
+import assert from 'node:assert/strict';
+import {chromium} from './scripts/proof-browser.mjs';
+const browser=await chromium.launch();
+try {
+ for(const delay of [0,25,100]) for(let trial=1;trial<=10;trial++) {
+  const page=await browser.newPage();await page.goto('about:blank');const target=new Date();
+  await page.clock.setFixedTime(target);
+  await page.evaluate(ms=>{const end=performance.now()+ms;while(performance.now()<end){}},delay);
+  await page.clock.pauseAt(target);await page.clock.setSystemTime(target);
+  const start=await page.evaluate(()=>({wall:Date.now(),mono:performance.now()}));
+  assert.equal(start.wall,+target);assert.ok(start.mono<10000,'initial monotonic time has not jumped by decades');
+  await page.evaluate(()=>{window.fired=0;setTimeout(()=>window.fired++,137)});
+  await page.clock.fastForward(136);assert.equal(await page.evaluate(()=>window.fired),0);
+  await page.clock.fastForward(1);assert.equal(await page.evaluate(()=>window.fired),1);
+  const end=await page.evaluate(()=>({wall:Date.now(),mono:performance.now()}));
+  assert.equal(end.wall-start.wall,137);assert.equal(end.mono-start.mono,137);
+  console.log(JSON.stringify({trial,delay,start,wallDelta:end.wall-start.wall,monoDelta:end.mono-start.mono}));await page.close();
+ }
+}finally{await browser.close()}

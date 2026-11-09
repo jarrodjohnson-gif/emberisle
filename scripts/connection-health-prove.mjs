@@ -87,7 +87,19 @@ if (process.argv.includes("--host-fixture")) {
     browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH, args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     const errors = [];
-    page.on("pageerror", e => errors.push(String(e)));
+    async function observeErrors(p, label) {
+      p.on("pageerror", error => { errors.push(String(error)); console.log("HEALTH_PAGE_ERROR", label, error.stack); });
+      p.on("console", message => { if (message.text().startsWith("HEALTH_ERROR_CAUSE")) console.log(message.text()); });
+      await p.addInitScript(label => {
+        const describe = (value, depth=0) => {
+          if (value == null || depth > 4) return value == null ? value : "depth limit";
+          if (typeof value !== "object") return String(value);
+          return { name:value.name, message:value.message, stack:value.stack, cause:describe(value.cause,depth+1), errors:Array.isArray(value.errors) ? value.errors.slice(0,4).map(e=>describe(e,depth+1)) : undefined };
+        };
+        window.addEventListener("error", event => console.log("HEALTH_ERROR_CAUSE " + JSON.stringify({ label, error:describe(event.error) })));
+      }, label);
+    }
+    await observeErrors(page, "transport/main");
     await page.addInitScript(() => {
       localStorage.setItem("emberisle-name", "Ember"); localStorage.setItem("emberisle-water", "simple");
       const h = window.__health = { sockets: [], sent: [], pongs: [], held: [], hold: true, notices: [], messages: [] };
@@ -116,9 +128,12 @@ if (process.argv.includes("--host-fixture")) {
     });
     await page.goto(`http://127.0.0.1:8113/?host=ws://127.0.0.1:${port}`);
     await page.waitForFunction(() => window.__emberisle);
-    // pauseAt installs the clock itself. A separate install starts real-time ticking,
-    // so a later Node timestamp can already be in the browser clock's past (#1493).
-    await page.clock.pauseAt(new Date());
+    // Hold Date during setup so pauseAt cannot receive an already-past target (#1493).
+    // Then restore Date advancement while timers stay paused; retain a normal monotonic origin.
+    const clockStart = new Date();
+    await page.clock.setFixedTime(clockStart);
+    await page.clock.pauseAt(clockStart);
+    await page.clock.setSystemTime(clockStart);
     // Exercise the transport without the store: a duplicate welcome cannot cancel a pending challenge's timeout.
     await page.evaluate(async () => {
       const { connectTable } = await import("/src/lib/net/table.ts");
@@ -338,7 +353,7 @@ if (process.argv.includes("--host-fixture")) {
     await lobby.close();
     // Four ready seats maximize the lobby footer. Status shares the caption's row on short landscapes.
     const layout = await browser.newPage({ viewport: { width: 667, height: 375 }, isMobile: true, hasTouch: true });
-    layout.on("pageerror", e => errors.push(String(e)));
+    await observeErrors(layout, "lobby/layout");
     await layout.goto("http://127.0.0.1:8113/");
     await layout.waitForFunction(() => window.__emberisle);
     await layout.evaluate(() => window.__emberisle.setState({
@@ -400,7 +415,7 @@ if (process.argv.includes("--host-fixture")) {
     async function cold({ seed = null, fail = false } = {}) {
       const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
       const p = await context.newPage();
-      p.on("pageerror", e => errors.push(String(e)));
+      await observeErrors(p, `production/${seed ? "seeded" : "fresh"}/${fail ? "failed-load" : "held-load"}`);
       p.on("console", message => { if (message.text().startsWith("COLD preload")) console.log(message.text()); });
       const intents = [], requests = [], held = [];
       let open = false, failNext = fail;

@@ -2,7 +2,7 @@
 
 The proof installed a running clock and then asked it to pause at a Node wall-clock timestamp. Browser clock synchronization or protocol latency can put that timestamp behind the already-running fake clock. Playwright rejects that as `Cannot fast-forward to the past`, before transport cases begin. Original hosted failure: PR #1481 head47b4beff, run42612449519/job129144334724. The desk's unchanged retry passed; that was not a causal fix.
 
-Use the public `page.clock.pauseAt(new Date())` automatic installation directly. There is no separately initialized current-time clock that can overtake the target. Existing fake transport clients are constructed afterward. All transport assertions, 137ms RTT, 3s deadline, 30s spacing, host and startup cases remain unchanged. No product code changes.
+Current initialization uses public `setFixedTime(target)`, `pauseAt(target)`, then `setSystemTime(target)`. Date is held during setup so the target cannot become stale; Date advances again afterward while timers remain paused. This also preserves a normal monotonic origin. The intermediate direct-pause approach prevented stale targets but initialized monotonic time around epoch milliseconds (~1.79e12); it is superseded. Existing fake transport clients are constructed afterward. All transport assertions, 137ms RTT, 3s deadline, 30s spacing, host and startup cases remain unchanged. No product code changes.
 
 Pinned environment: Node22.23.4, Playwright1.63.0, Chromium1243. Serial browser execution uses `/tmp/emberisle-team-browser.lock`.
 
@@ -31,3 +31,9 @@ With browser activity excluded by the team lock,20 alternating mixed/single-hook
 ## Full combined-source series stopped on run5
 
 Runs1–4 passed completely. Run5 passed the transport, browser, host-state, lobby and controlled production-startup assertions, then failed the unchanged zero-page-error guard with React's recovered concurrent-render error. All five raw outputs/exits/start times are retained in `single-hook-series/`. No20-pass claim holds. This error's underlying cause was lost by the original String(error) collector. One full temporary diagnostic now preserves browser-side error.cause/stack and the same error assertion; it is not a passing retry or a claimed fix. Independent blank-page diagnostics are checking a Date-freeze barrier for initialization without the direct-pause monotonic-origin jump; no permanent change yet.
+
+## Date-freeze barrier and retained error causes
+
+Thirty blank-page controls (10 each with0/25/100ms browser delay between fixed Date and pause) all passed. Initial monotonic values remained small (about3–110ms), Date equaled the target, timers fired at exactly137ms and both Date/performance advanced137ms. This preserves the original relative clock semantics while preventing stale targets; it does not claim to fix the uninstrumented React error.
+
+The one full temporary render-cause diagnostic on the INTERMEDIATE direct-pause source passed all cases with zero page errors. That is not a causal repair of the run5 failure. The permanent proof now retains browser-side error causes/stacks and page labels on failure while preserving the original zero-error assertion, so a recurrence is diagnosable. A fresh full20-run series is still required for the Date-freeze barrier source.
