@@ -14,3 +14,10 @@ No geometry, refusal, privacy, deadline or tolerance check is removed.
 | scripts/profiles-ui-prove.mjs:514 | `` await sheet(coral).getByRole("button", { name: "Done" }).click(); `` | `` await sheet(coral).getByRole("button", { name: "Close", exact: true }).click(); `` | Owner-approved close/name equivalent; subsequent behavior checks remain. |
 | scripts/profiles-ui-prove.mjs:559 | `` await sheet(kelp).getByRole("button", { name: "Done" }).click(); `` | `` await sheet(kelp).getByRole("button", { name: "Close", exact: true }).click(); `` | Owner-approved close/name equivalent; subsequent behavior checks remain. |
 | scripts/table-menu-prove.mjs:144 | `` const report = menu.getByRole("button", { name: "Report a bug" }); `` | `` const report = menu.getByRole("button", { name: "Report a bug, opens GitHub in a new tab", exact: true }); `` | Owner-approved close/name equivalent; subsequent behavior checks remain. |
+
+Hosted CI follow-up: profile-recovery-ui-prove also names the removed summary control. Recovery save-screen Done and all tick gating remain unchanged.
+
+| File and original line | Old | New | Why |
+|---|---|---|---|
+| scripts/profile-recovery-ui-prove.mjs:132 | `find((b) => b.textContent.trim() === main)` | `find((b) => main === "Close" ? b.getAttribute("aria-label") === main : b.textContent.trim() === main)` | The approved icon-only Close uses its exact accessible label; all other primary controls still match exact text. Every geometry and44px check remains. |
+| scripts/profile-recovery-ui-prove.mjs:198 | `fits(page, "Done", summary)` | `fits(page, "Close", summary)` | Replace only obsolete signed-in summary control; recovery save Done remains. |
