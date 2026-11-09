@@ -271,7 +271,11 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-rename-cap-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-recovery-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run server-needs-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run server-play-again-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -426,6 +430,8 @@ jobs:
         run: npm run profiles-client-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run profiles-ui-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run profile-recovery-ui-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run profile-records-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
@@ -662,6 +668,8 @@ jobs:
         run: npm run win-long-names-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run win-list-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run play-again-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run lobby-overflow-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'

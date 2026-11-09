@@ -127,4 +127,6 @@ console.log(`Expires in:    ~${expiresIn} minutes`);
 console.log();
 console.log("Deliver this PIN privately to the verified person.");
 console.log("They must change it before any other profile operations.");
+// #1437: the host never sees or prints a recovery code.
+console.log("Old recovery code deleted. They get a new one after changing the PIN.");
 console.log("If unused, it expires automatically; another reset will be needed.");

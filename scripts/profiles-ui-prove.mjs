@@ -127,6 +127,11 @@ try {
     await sheet(page).waitFor();
   };
   const wire = (page) => page.evaluate(() => window.__wire);
+  // #1437: Create, and the change of a temporary PIN, first show "Save your recovery code": tick "I've written it down", press Done.
+  const saveCode = async (page) => {
+    await sheet(page).getByLabel("I've written it down").check();
+    await sheet(page).getByRole("button", { name: "Done" }).click();
+  };
 
   // Layout, focus and guest controls at the five sizes.
   const sizes = [
@@ -224,6 +229,7 @@ try {
   await sheet(one).getByLabel("Confirm PIN").fill("4821");
   await sheet(one).getByRole("radio", { name: "Tide" }).click();
   await sheet(one).getByRole("button", { name: "Create profile" }).last().click();
+  await saveCode(one);
   await sheet(one).getByText("Signed in as").waitFor();
   assert.match(await sheet(one).innerText(), /Remembered on this device/);
   const session = (await wire(one)).map((f) => ({ ...f, m: JSON.parse(f.raw) })).find((f) => f.m.type === "profileSession");
@@ -319,6 +325,7 @@ try {
   await sheet(blocked).getByLabel("PIN", { exact: true }).fill("7390");
   await sheet(blocked).getByLabel("Confirm PIN").fill("7390");
   await sheet(blocked).getByRole("button", { name: "Create profile" }).last().click();
+  await saveCode(blocked);
   await sheet(blocked).getByText("Not remembered on this device.").waitFor();
   await sheet(blocked).getByRole("button", { name: "Done" }).click();
   assert.ok(await blocked.getByRole("button", { name: "Play", exact: true }).isEnabled());
@@ -385,6 +392,7 @@ try {
   // Blocked before signing in: the sheet prefetches the forms once signed in, and that quiet prefetch fails too.
   await coral.route(/ProfileForms\.tsx/, (route) => route.abort("connectionrefused"));
   await sheet(coral).getByRole("button", { name: "Create profile" }).last().click();
+  await saveCode(coral);
   await sheet(coral).getByText("Signed in as").waitFor();
   await shots(coral, "signed-in-edit-buttons");
   await coral.setViewportSize({ width: 440, height: 956 });
@@ -545,6 +553,7 @@ try {
   await forced.getByLabel("New PIN", { exact: true }).fill("8080");
   await forced.getByLabel("Confirm new PIN").fill("8080");
   await forced.getByRole("button", { name: "Save PIN" }).click();
+  await saveCode(kelp);
   await sheet(kelp).getByText("Signed in as Kelp").waitFor();
   assert.ok(await kelp.evaluate((host) => window.__emberisle.getState().profile.credentialForHost(host), C), "after the change a table gets the credential");
   await sheet(kelp).getByRole("button", { name: "Done" }).click();
