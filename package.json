@@ -48,6 +48,7 @@
     "trade-prove": "node scripts/trade-prove.mjs",
     "trade-map-test": "node --import ./server/register.mjs scripts/trade-map.test.mjs",
     "trade-tabs-prove": "node --import ./server/register.mjs scripts/trade-tabs-prove.mjs",
+    "trade-contrast-prove": "node scripts/trade-contrast-prove.mjs",
     "sounds-prove": "node scripts/sounds-prove.mjs",
     "audio-recovery-prove": "node scripts/audio-recovery-prove.mjs",
     "sound-mixer-prove": "node scripts/sound-mixer-prove.mjs",
