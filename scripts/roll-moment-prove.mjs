@@ -2,10 +2,10 @@
 // and 390x844 (touch), played to the person's first roll through the real roll-off and setup:
 // - the person's roll (a real click on Roll): the moment mounts in the same frame the roll is applied, so no frame shows the
 //   roll without it; it is centred within ±10 % of the viewport, the sum's computed font-size ≥ 48 px, and the resting dice
-//   row is hidden (the sum is on screen once);
+//   row is hidden (the centre sum is up, and the chip may show it too, #954);
 // - after a hold of at least 900 ms it shrinks into the resting dice row: one flight of 220 ms, no delay, --ease-out, fill
 //   forwards, whose last keyframe puts the chip on the row (centre within 4 px, one side matching); afterwards the row shows
-//   the same faces and nothing spells the roll out twice (the banner and the log line carry no dice numbers);
+//   the same faces. The banner carries no dice numbers. The HUD chip shows the roll line (#954), so its sum is the one other place;
 // - the issue's wall-clock limits, measured in the page from the state change: up within 200 ms and gone by 1400 ms, net of
 //   the time the page's main thread was measurably stalled (a 10 ms interval probe), so a loaded machine slows the clock
 //   but cannot fail or pass the check by itself; raw and stalled times are printed;
@@ -228,7 +228,9 @@ async function settleChecks(page, tag, { applied, dice }, { reduced = false } = 
     rowVisible: document.querySelector('[data-testid="dice-row"]')?.checkVisibility({ visibilityProperty: true }) ?? false,
     shown: window.__sumShown(sum),
     banner: document.querySelector('[data-testid="banner"]')?.textContent ?? null,
-    log: document.querySelector('[data-testid="log-line"]')?.textContent ?? null,
+    // The goods line stays in the log. The chip shows the roll line (#954).
+    log: window.__emberisle.getState().gameLog.at(-1)?.text ?? null,
+    chip: document.querySelector('[data-testid="log-line"]')?.textContent ?? null,
   }), sum);
   const up = m.at - t0;
   const gone = m.gone - t0;
@@ -242,11 +244,12 @@ async function settleChecks(page, tag, { applied, dice }, { reduced = false } = 
   check(Math.abs(m.centreY - m.vh / 2) <= m.vh * 0.1, `${tag}: centred vertically (${m.centreY.toFixed(0)} of ${m.vh}, ±10 %)`);
   check(m.fontSize >= 48, `${tag}: the sum is ${m.fontSize}px (≥ 48)`);
   check(m.sumColor === (sum === 7 ? "rgb(179, 38, 30)" : "rgb(38, 61, 60)"), `${tag}: the sum is ${sum === 7 ? "danger on a 7" : "ink"} (${m.sumColor})`);
-  check(m.rowHidden === true && m.shown.length === 1 && m.shown[0] === "roll-sum", `${tag}: while it is up the roll is on screen once (${JSON.stringify(m.shown)})`);
+  check(m.rowHidden === true && m.shown.includes("roll-sum") && m.shown.every((id) => id === "roll-sum" || id === "log-roll-sum"), `${tag}: while it is up the roll is the centre sum and the chip (${JSON.stringify(m.shown)})`);
   check(!late.moment && gone - stall.gone <= 1400, `${tag}: gone by 1400 ms of the roll being applied (${gone.toFixed(0)} ms, ${stall.gone.toFixed(0)} of them stalled)`);
   check(late.rowVisible && late.row.join() === dice.join(), `${tag}: the resting row shows the same faces (${late.row})`);
-  check(late.shown.length === 1 && late.shown[0] === "dice-row", `${tag}: afterwards the sum is on screen once, in the row (${JSON.stringify(late.shown)})`);
-  check(!late.banner && / — .+'s roll[;.]/.test(late.log ?? ""), `${tag}: one persistent roll event and no duplicate goods banner`);
+  check(late.shown.includes("dice-row") && late.shown.every((id) => id === "dice-row" || id === "log-roll-sum"), `${tag}: afterwards the sum is the resting row and the chip (${JSON.stringify(late.shown)})`);
+  check(!late.banner && / — .+'s roll[;.]/.test(late.log ?? ""), `${tag}: the log keeps the goods line and there is no duplicate goods banner`);
+  check(/^.+ rolled \d+!$/.test((late.chip ?? "").replace(/\s+/g, " ").trim()), `${tag}: the HUD chip shows the roll line (${JSON.stringify(late.chip)})`);
   if (reduced) {
     check(flights.length === 0, `${tag}: reduced motion, no flight (${flights.length})`);
     check(m.animation === "none", `${tag}: reduced motion, no entry animation (${m.animation})`);
