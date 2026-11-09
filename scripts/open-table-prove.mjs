@@ -4,7 +4,7 @@
 // never appears in Tab B's open-table list.
 // Run with: node --import ./server/register.mjs scripts/open-table-prove.mjs
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
@@ -51,9 +51,7 @@ for (let tries = 0; ; tries++) {
     await new Promise((r) => setTimeout(r, 500));
   }
 }
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
-});
+const browser = await chromium.launch();
 
 mkdirSync("test-results", { recursive: true });
 const T0 = Date.now();

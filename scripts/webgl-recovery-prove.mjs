@@ -1,6 +1,6 @@
 // #1137: TableRecoveryBoundary logs errors with componentStack, and WebGL creation failure falls back gracefully so the table stays playable.
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -12,9 +12,6 @@ const vite = await createServer({
 await vite.listen();
 
 const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROMIUM_PATH ||
-    (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 

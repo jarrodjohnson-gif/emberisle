@@ -1,6 +1,6 @@
 // #831 B: one shared draft exposes exact table and bank quotes; each action settles its own receipt.
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { createGame } from "../src/lib/game/board.ts";
@@ -743,7 +743,6 @@ async function lazyRecovery() {
 
 try {
   browser = await chromium.launch({
-    executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
     args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
   });
   for (const view of VIEWS) {
