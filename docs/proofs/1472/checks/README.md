@@ -5,3 +5,5 @@ PASS: eight-viewport lobby-layout on padding source, lobby-code-copy, connection
 Follow-up: canonical2f050c3d chat first exited13 before host readiness (server dependency absent); after pinned server npm ci, full unchanged canonical chat PASS308s including mute/unmute. This does not establish a fix or cause for the branch failure. Clean NODE_ENV=production build then install PASS; supports artifact-mode contamination after connection-health builds dist in-process. Both initial failures retained. Instrumented branch diagnostic still pending.
 
 GitHub CLI subsequently returned HTTP401 Bad credentials during a fresh CI jobs read. No retries, alternate identities/credentials/routes or push attempts after denial. Subsequent evidence may be local-only until normal authority returns.
+
+Instrumented branch chat diagnostic FAIL at earlier table-code wait30000ms after79.2s, before added mute instrumentation ran. It provides no evidence about the mute failure and is not a passing retry/fix. Scratch diagnostic source preserved as text and removed from scripts; no permanent proof added. No further retries.
