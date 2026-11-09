@@ -1,0 +1,12 @@
+{
+  "commit": "5af47993a36f706d84a357325cc88d271d8d4b1a",
+  "base": "3ed2c19635c003644d2f3f41cf3789f60f713148",
+  "sha256": {
+    "src/components/game/WinScreen.tsx": "02d664c0f153b19242611916b6e3e48bf2cc1b4f09fcf36bf29ac27bb907ffd0",
+    "scripts/win-action-prove.mjs": "9fa9a442e875bd801f15c1df1ea97bf23460013b1d7d2c7c4edeb3a4f70a036b",
+    "scripts/win-list-prove.mjs": "3bf99eac29399131a933eca12a703366128d5b46dafd7a476e763fffc04ad5ce",
+    "scripts/win-long-names-prove.mjs": "6777779ebc98d41b5dcf060c6d048874b8765e65ef81ea873b848876209e80d7",
+    "package-lock.json": "afc604fefb7b57004ef48b587ed9e54f30291bc44100a98e81d5f62eaa1ca4de",
+    ".github/workflows/ci.yml": "4463f42c97c2d563ecdc27c4965c7669fd6a337ec207c1b3b4700fbb82558205"
+  }
+}
