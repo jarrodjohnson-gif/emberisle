@@ -69,7 +69,7 @@ const clear = async () => {
     const n = window.__plays.length, now = performance.now();
     if (window.__quietN !== n) { window.__quietN = n; window.__quietAt = now; }
     return (window.__pendingPumps ?? 0) === 0 && now - (window.__quietAt ?? now) >= quietMs;
-  }, 400, { timeout: 10000 }).catch(() => {});
+  }, 400, { timeout: 10000 });
   await page.evaluate(() => { window.__plays.length = 0; });
 };
 const until = (fn, arg) => page.waitForFunction(fn, arg, { timeout: STEP_MS });
