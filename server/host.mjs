@@ -488,6 +488,7 @@ function alive(pid) {
 
 // Remove orphan temp files left by an earlier process before reconciliation, redaction or listening (#1474).
 function sweepOrphans() {
+  if (profiles.reason === "locked") return;
   let swept = 0;
   for (const dir of [ROOMS, RESULTS, PROFILES]) {
     let list;
@@ -501,7 +502,10 @@ function sweepOrphans() {
       const m = name.match(/\.(\d+)\.[0-9a-zA-Z]+\.tmp$/);
       if (m) {
         const pid = Number(m[1]);
-        if (pid === process.pid || alive(pid)) continue;
+        if (pid !== process.pid && alive(pid)) {
+          console.log(`storage: kept orphan ${name} (pid ${pid} is alive)`);
+          continue;
+        }
       }
       try {
         rmSync(path.join(dir, name), { force: true });
