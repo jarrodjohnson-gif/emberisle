@@ -1,0 +1,18 @@
+[
+  {
+    "directory": "/workspace/work/1493-prod-base",
+    "head": "6022600a8f78f385e8054581f4ebfe9ff80623a9",
+    "name": "index-HHHbT7P-.js",
+    "bytes": 399352,
+    "humanConcurrentError": false,
+    "minifiedReactError": true
+  },
+  {
+    "directory": "/workspace/work/1493",
+    "head": "557e1d5d2fa73b00d01a8cbfd199e21556bf4389",
+    "name": "index-BciL89yV.js",
+    "bytes": 399491,
+    "humanConcurrentError": false,
+    "minifiedReactError": true
+  }
+]

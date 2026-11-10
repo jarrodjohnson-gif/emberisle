@@ -1,5 +1,14 @@
 # Connection-health clock initialization (#1493)
 
+## Current local validation complete
+
+At runtime source557e1d5d2fa73b00d01a8cbfd199e21556bf4389, **20 consecutive complete proofs passed**, every exit0 and terminal success retained in production-series/. All original assertions ran; no retries. Pinned Node22.23.4/Playwright1.63.0/Chromium1243, serial dedicated team lock,2CPU quota plus one100ms-busy/200ms CPU process. Source head/blobs and exact batch source retained. Final child-build artifact independently confirms production React, not the earlier inherited development build.
+
+Actual production typecheck/build/base-build/size/growth and title-chunks-prove pass. Index126079B versus canonical6022600a126037B: **+42B/400B**. OpenTables1241B unchanged; all ceilings retained. Private hosting after failed discovery and all held optional-title cases pass. Exact-head hosted CI and independent review remain separate gates; this evidence-only commit changes no runtime source.
+
+The historical checkpoint is archived for prior owner gates and superseded observations; current authority/state lives at issue1477comment6739296722.
+
+
 The proof installed a running clock and then asked it to pause at a Node wall-clock timestamp. Browser clock synchronization or protocol latency can put that timestamp behind the already-running fake clock. Playwright rejects that as `Cannot fast-forward to the past`, before transport cases begin. Original hosted failure: PR #1481 head47b4beff, run42612449519/job129144334724. The desk's unchanged retry passed; that was not a causal fix.
 
 Current initialization uses public `setFixedTime(target)`, `pauseAt(target)`, then `setSystemTime(target)`. Date is held during setup so the target cannot become stale; Date advances again afterward while timers remain paused. This also preserves a normal monotonic origin. The intermediate direct-pause approach prevented stale targets but initialized monotonic time around epoch milliseconds (~1.79e12); it is superseded. Existing fake transport clients are constructed afterward. All transport assertions, 137ms RTT, 3s deadline, 30s spacing, host and startup cases remain unchanged. No product code changes.
