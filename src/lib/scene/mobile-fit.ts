@@ -115,9 +115,12 @@ const LEAN_RISE = 1.15;
 
 // #1509 (option A, owner card q1508-table-goal): on an upright phone the island fills the width. The shore is the coast's
 // pale foam band, 0.42 past the outer hex edges (isle-renderer's foam strip); the middle row's coast is 2.5 hex widths from
-// the centre. A dock's pier and boat reach further (DOCK_HALF_X, below), and every dock stays in the hole, so the docks,
-// not the shore, meet the hole's sides, 12 px from each edge.
+// the centre. The shore comes to EDGE_GAP px from each screen edge (422 px of 430). A side dock's boat reaches further
+// (DOCK_HALF_X, below) and runs off the screen edge: the owner chose that (card q1515-table-look, B, "crop the side boats,
+// keep every dock button on screen"); DockInspection keeps each dock's 44 px button on screen. No corner, number or piece
+// leaves the hole.
 export const SHORE_HALF_X = 2.5 * Math.sqrt(3) * 1.12 + 0.42;
+export const EDGE_GAP = 4;
 // #1509: the upright phone's default lean. The owner found the 25° board hard to see and always tilted it; 40° shows the
 // slabs' sides and the pieces standing, while a number token still reads as a disc. Only depth shrinks (by cos), and an
 // upright phone has height to spare: its island is bound by the width.
@@ -136,16 +139,16 @@ export function playLean(cssW: number, cssH: number, phone: boolean) {
 // Overhead frustum sized to the island inside the hole, then the camera's look-at point is shifted so the world center
 // lands at the hole center. Screen-up is -Z, screen-right is +X. `lean` is radians off straight down; it shortens the
 // island's screen depth by cos(lean), so a screen shift on the ground is that much longer.
-// `edge` (#1509): the island and its docks span the hole's width (DOCK_HALF_X or the shore, whichever is wider), unless that
-// would take them past the hole's height; the island sits at the hole's bottom edge instead of its centre.
+// `edge` (#1509): the shore spans the canvas's width less EDGE_GAP each side (past the hole's 12 px sides), unless that would
+// take the island and its docks past the hole's height; the island sits at the hole's bottom edge instead of its centre.
 export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0, edge = false): OrthoFit {
   const halfZ = ISLE_HALF.z * Math.cos(lean) + LEAN_RISE * Math.sin(lean);
   if (edge) {
-    const sides = { left: insets.left, right: insets.right };
+    const sides = { left: Math.max(EDGE_GAP, insets.left - 12 + EDGE_GAP), right: Math.max(EDGE_GAP, insets.right - 12 + EDGE_GAP) };
     const holeW = Math.max(1, cssW - sides.left - sides.right);
     const holeH = Math.max(1, cssH - insets.top - insets.bottom);
     // A hole too short for that (a 375x667 phone) scales the island to its height instead, which is then centred in it.
-    const px = Math.min(holeW / (2 * Math.max(SHORE_HALF_X, DOCK_HALF_X)), holeH / (2 * halfZ));
+    const px = Math.min(holeW / (2 * SHORE_HALF_X), holeH / (2 * halfZ));
     const hw = cssW / 2 / px;
     const hh = cssH / 2 / px;
     const cx = sides.left + holeW / 2;
@@ -255,6 +258,7 @@ for (let q = -2; q <= 2; q++) {
 // waterline and the tallest prop's top wherever one can stand on the outer ring: up to 0.86 from its hex's centre
 // (decorate's tree ring) and LEAN_RISE over cap level.
 // #1509: how far across a dock's pier and boat can reach, at any coast corner (the diorama fit's DOCK_REACH along its miter).
+// The upright fit lets it pass the screen's side edges (q1515-table-look, B); proofs use it.
 export const DOCK_HALF_X = Math.max(...COAST.map(({ x, mx }) => Math.abs(x + mx * DOCK_REACH)));
 const COAST_POINTS: [number, number, number][] = COAST.map(({ x, z }) => [x, CAP_LEVEL, z]);
 const DIORAMA_POINTS: [number, number, number][] = [
