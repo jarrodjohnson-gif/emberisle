@@ -18,7 +18,7 @@
     {
       "id": "tokens-prove",
       "pattern": "FAIL 7 no numeral behind the scenery \\(1280x720\\): the \\d+: 1 of 5 points( \\(hit \\([^)]*\\) on \\w+ seed \\d+\\))?\\n",
-      "issue": 887
+      "issue": 1511
     },
     {
       "id": "board-touch-prove",
