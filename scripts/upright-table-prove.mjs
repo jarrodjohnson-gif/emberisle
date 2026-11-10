@@ -1,8 +1,8 @@
 // #1509 (option A, owner card q1508-table-goal): the upright phone table. At 430x932, 390x844 and 375x812 (touch, with the
 // device's safe-area insets), on a crafted main phase (seed 20261110, four seats, own turn):
-// - camera: the default view is overhead at UPRIGHT_LEAN (40°), and the island's coast spans the screen: the outermost hex
-//   corners sit SHORE_HALF_X - 0.42 world units out from the centre, which puts the shore's outer edge EDGE_GAP (+-2) px from
-//   each screen edge; the island is centred across; it sits low: its lowest corner is nearer the hole's bottom than its
+// - camera: the default view is overhead at UPRIGHT_LEAN (40°), and the island fills the width: its scale is the one where
+//   DOCK_HALF_X (a dock's reach, wider than the shore) spans the hole, 12 px in from each edge; every dock's
+//   pier and boat is inside the hole and every dock's 44 px inspect button is wholly on screen; it sits low: its lowest corner is nearer the hole's bottom than its
 //   highest corner is to the hole's top, and no corner leaves the hole; sideways (844x390) the lean is still OVERHEAD_LEAN;
 //   a turn of the phone goes from one lean to the other;
 // - 16 px gutters: the seat strip and the bottom stack start 16 px from the left edge and end 16 px from the right;
@@ -77,7 +77,19 @@ const lookAt = (page) =>
       UPRIGHT_LEAN: fit.UPRIGHT_LEAN,
       OVERHEAD_LEAN: fit.OVERHEAD_LEAN,
       SHORE_HALF_X: fit.SHORE_HALF_X,
-      EDGE_GAP: fit.EDGE_GAP,
+      DOCK_HALF_X: fit.DOCK_HALF_X,
+      // Each dock's pier and boat from both its corners (nine docks, 18 corners), 0.7 out along the coast at the waterline,
+      // against the hole (negative: outside).
+      docks: st.vertices.filter((v) => v.harbor).map((v) => {
+        const m = isle.coastMiter.get(v.id);
+        const p = isle.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7);
+        const i = isle.insets();
+        return Math.min(p.x - i.left, c.clientWidth - i.right - p.x, p.y - i.top, c.clientHeight - i.bottom - p.y);
+      }),
+      buttons: [...document.querySelectorAll('[data-testid="dock-rate-target"]')].map((el) => {
+        const r = el.getBoundingClientRect();
+        return { label: el.getAttribute("aria-label"), l: r.left, r: r.right, t: r.top, b: r.bottom, w: r.width };
+      }),
       hole: isle.insets(),
       // World units per CSS px across: the frustum's width over the canvas's.
       unit: c.clientWidth / (isle.ortho.right - isle.ortho.left) * isle.ortho.zoom,
@@ -102,19 +114,24 @@ try {
     await page.waitForFunction(() => window.__emberisle && window.__isle);
     await crafted(page);
 
-    // Camera.
+    // Camera. The dock buttons come from a lazy chunk.
+    await page.waitForFunction(() => document.querySelectorAll('[data-testid="dock-rate-target"]').length === 9, null, { timeout: 30_000 });
     const a = await lookAt(page);
     assert.equal(a.view, "overhead", `${tag}: the upright default view is overhead`);
     assert.ok(Math.abs(a.polar - a.UPRIGHT_LEAN) < 1e-3, `${tag}: the eye leans ${((a.polar * 180) / Math.PI).toFixed(1)}°, not the upright ${((a.UPRIGHT_LEAN * 180) / Math.PI).toFixed(0)}°`);
     const shore = 0.42 * a.unit;
     const gapL = a.left - shore;
     const gapR = a.w - (a.right + shore);
-    assert.ok(Math.abs(gapL - a.EDGE_GAP) <= 2 && Math.abs(gapR - a.EDGE_GAP) <= 2, `${tag}: the shore is ${gapL.toFixed(1)} px from the left edge and ${gapR.toFixed(1)} px from the right, not ${a.EDGE_GAP}`);
+    assert.ok(a.hole.left === 12 && a.hole.right === 12, `${tag}: the hole's sides are ${a.hole.left} / ${a.hole.right} px, not 12`);
+    const scale = (a.w - a.hole.left - a.hole.right) / (2 * Math.max(a.SHORE_HALF_X, a.DOCK_HALF_X));
+    assert.ok(Math.abs(a.unit / scale - 1) < 0.005, `${tag}: ${a.unit.toFixed(2)} px a world unit, not the ${scale.toFixed(2)} that spans the hole with the docks`);
+    assert.ok(a.docks.length === 18 && a.docks.every((d) => d >= -0.5), `${tag}: a dock leaves the hole by ${Math.min(...a.docks).toFixed(1)} px`);
+    assert.ok(a.buttons.length === 9 && a.buttons.every((b) => b.w >= 44 && b.l >= 0 && b.t >= 0 && b.r <= a.w && b.b <= a.h), `${tag}: dock buttons off screen ${JSON.stringify(a.buttons)}`);
     const holeTop = a.hole.top;
     const holeBottom = a.h - a.hole.bottom;
     assert.ok(a.top >= holeTop - 1 && a.bottom <= holeBottom + 1, `${tag}: corners ${a.top.toFixed(0)}..${a.bottom.toFixed(0)} leave the hole ${holeTop}..${holeBottom}`);
     assert.ok(holeBottom - a.bottom < a.top - holeTop, `${tag}: the island is not low: ${(holeBottom - a.bottom).toFixed(0)} px under it, ${(a.top - holeTop).toFixed(0)} px over it`);
-    console.log(`${tag}: overhead at ${((a.polar * 180) / Math.PI).toFixed(1)}°, shore ${gapL.toFixed(1)} / ${gapR.toFixed(1)} px from the edges, island ${Math.round(a.right - a.left + 2 * shore)} px wide, ${Math.round(holeBottom - a.bottom)} px over the dock and ${Math.round(a.top - holeTop)} px under the seats`);
+    console.log(`${tag}: overhead at ${((a.polar * 180) / Math.PI).toFixed(1)}°, shore ${gapL.toFixed(1)} / ${gapR.toFixed(1)} px from the edges, nearest dock ${Math.min(...a.docks).toFixed(1)} px inside the hole, nine dock buttons on screen, island ${Math.round(a.right - a.left + 2 * shore)} px wide, ${Math.round(holeBottom - a.bottom)} px over the dock and ${Math.round(a.top - holeTop)} px under the seats`);
 
     // Gutters, seats, dock.
     const ui = await page.evaluate(() => {
