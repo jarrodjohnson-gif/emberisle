@@ -1,0 +1,29 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const source=fs.readFileSync('/workspace/work/1518/scripts/turn-gain-prove.mjs','utf8');
+const begin=source.indexOf('  window.__held = new Map();');
+const end=source.indexOf('  window.__turns = [];',begin);
+assert(begin>0&&end>begin);
+const old=source.slice(begin,end);
+const needle='ms >= 1500 && ms <= 2700';
+assert(old.includes(needle));
+const candidate=old.replace(needle, '(ms >= 1500 && ms <= 2700 || window.__hold === "resource-flash" && ms === 3000)');
+const variants=[];
+for(const [name,code] of [['old',old],['candidate',candidate]]) {
+ const calls=[]; const ctx={Map,clearTimeout,setTimeout:(fn,ms,...args)=>{calls.push(ms);return setTimeout(fn,ms,...args)},document:{querySelector:()=>({})}};
+ ctx.window=ctx;vm.createContext(ctx);vm.runInContext(code,ctx);ctx.__hold='resource-flash';
+ const result={name,calls,expired:false,start:performance.now()};
+ ctx.setTimeout(()=>{result.expired=true;result.expiredAt=performance.now()-result.start},3000);
+ variants.push({ctx,result});
+}
+await new Promise(r=>setTimeout(r,3200));
+for(const {ctx,result} of variants) {
+ result.beforeRelease={expired:result.expired,held:ctx.__held.size};ctx.__release();result.afterRelease={expired:result.expired,held:ctx.__held.size};
+ console.log(JSON.stringify(result));
+}
+assert.equal(variants[0].result.beforeRelease.expired,true);
+assert.equal(variants[1].result.beforeRelease.expired,false);
+assert.equal(variants[1].result.beforeRelease.held,1);
+assert.equal(variants[1].result.afterRelease.expired,true);
+console.log('Exact recorded helper: old misses real3000ms removal timer; candidate holds only during explicit measurement and releases callback. No product lifetime or assertion changed.');

@@ -85,14 +85,15 @@ export function hudInsets(cssW: number, cssH: number, coarse: boolean, safe: Par
 // A phone on its side: a 284 px column on the left. A desktop: the seat rail on the left, and, from RAIL_FROM to RAIL_FULL px
 // wide, the docked right rail (chat, offer, PlaceList: 312 px) and the offer's taller bottom stack (220 px) ramp in.
 // The widest upright phone whose main-phase action row takes two lines: styles.css forces the wrap up to here and forbids it above.
-// The declared bottom carries 4 px for sub-pixel font differences.
+// The declared bottom carries 4 px for sub-pixel font differences. #1509: the upright build row lost its 4 px tray padding
+// above and below, so the upright bottoms are 8 px lower than the 322 / 274 they were.
 // A desktop tray carries 6 px more at the top for the +N / -N pill (#825: 22 to 28 px), so its bottom is 186, not 180.
 export const TRAY_WRAP_MAX = 400;
 const RAIL_FROM = 960;
 const RAIL_FULL = 1024;
 export function playHole(cssW: number, cssH: number, phone: boolean, safe: Partial<Insets> = {}): Insets {
   let i: Insets;
-  if (phone && cssH > cssW) i = { top: 68, right: 12, bottom: (cssW <= TRAY_WRAP_MAX ? 322 : 274) + 4, left: 12 };
+  if (phone && cssH > cssW) i = { top: 68, right: 12, bottom: (cssW <= TRAY_WRAP_MAX ? 314 : 266) + 4, left: 12 };
   else if (phone) i = { top: 68, right: 12, bottom: 12, left: 284 };
   else {
     const t = Math.min(1, Math.max(0, (cssW - RAIL_FROM) / (RAIL_FULL - RAIL_FROM)));
@@ -101,7 +102,8 @@ export function playHole(cssW: number, cssH: number, phone: boolean, safe: Parti
   return { top: i.top + Math.max(0, (safe.top ?? 0) - 12), right: i.right + (safe.right ?? 0), bottom: i.bottom + (safe.bottom ?? 0), left: i.left + (safe.left ?? 0) };
 }
 
-export type OrthoFit = { left: number; right: number; top: number; bottom: number; x: number; z: number };
+// `lean` is the polar angle the fit was made for, so the eye goes home to it.
+export type OrthoFit = { left: number; right: number; top: number; bottom: number; x: number; z: number; lean: number };
 
 // The overhead camera leans this far off straight down, toward the player (#135, polish.md "The board look target"):
 // the slabs show a side and the trees a silhouette, like a board seen by someone leaning over the table, while a
@@ -111,15 +113,60 @@ export const OVERHEAD_LEAN = (25 * Math.PI) / 180;
 export const CAP_LEVEL = 0.35;
 const LEAN_RISE = 1.15;
 
+// #1509 (option A, owner card q1508-table-goal): on an upright phone the island fills the width. The shore is the coast's
+// pale foam band, 0.42 past the outer hex edges (isle-renderer's foam strip); the middle row's coast is 2.5 hex widths from
+// the centre. The shore comes to EDGE_GAP px from each screen edge (422 px of 430). A side dock's boat reaches further
+// (DOCK_HALF_X, below) and runs off the screen edge: the owner chose that (card q1515-table-look, B, "crop the side boats,
+// keep every dock button on screen"); DockInspection keeps each dock's 44 px button on screen. No corner, number or piece
+// leaves the hole.
+export const SHORE_HALF_X = 2.5 * Math.sqrt(3) * 1.12 + 0.42;
+export const EDGE_GAP = 4;
+// #1509: the goods pile on a pier (#846, 2.5x) stays wholly on screen even where the boat beside it is cropped; it is part of
+// the dock, not the boat. The outermost pile reaches 5.72 world units across (harbor-jelly's packed goods, measured over
+// eight seeds on a side dock); PILE_HALF_X holds that with a little room, and the fit never puts it past PILE_GAP px from
+// the screen edge. Where the piles bind, the shore stops a few pixels short of EDGE_GAP.
+export const PILE_HALF_X = 5.75;
+export const PILE_GAP = 2;
+// #1509: the upright phone's default lean. The owner found the 25° board hard to see and always tilted it; 40° shows the
+// slabs' sides and the pieces standing, while a number token still reads as a disc. Only depth shrinks (by cos), and an
+// upright phone has height to spare: its island is bound by the width.
+export const UPRIGHT_LEAN = (40 * Math.PI) / 180;
+
+// The overhead fit in play: on an upright phone the shore spans the screen and the island sits low in the hole, nearer
+// the thumb (`edge`); elsewhere the island and its docks are centred in the hole. The renderer and the proofs share this.
+export function playOrtho(cssW: number, cssH: number, insets: Insets, phone: boolean): OrthoFit {
+  const upright = phone && cssH > cssW;
+  return fitOrtho(cssW, cssH, insets, upright ? UPRIGHT_LEAN : OVERHEAD_LEAN, upright);
+}
+export function playLean(cssW: number, cssH: number, phone: boolean) {
+  return phone && cssH > cssW ? UPRIGHT_LEAN : OVERHEAD_LEAN;
+}
+
 // Overhead frustum sized to the island inside the hole, then the camera's look-at point is shifted so the world center
 // lands at the hole center. Screen-up is -Z, screen-right is +X. `lean` is radians off straight down; it shortens the
 // island's screen depth by cos(lean), so a screen shift on the ground is that much longer.
-export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0): OrthoFit {
+// `edge` (#1509): the shore spans the canvas's width less EDGE_GAP each side (past the hole's 12 px sides), unless that would
+// take a goods pile off the screen or the island and its docks past the hole's height; the island sits at the hole's bottom edge instead of its centre.
+export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0, edge = false): OrthoFit {
+  const halfZ = ISLE_HALF.z * Math.cos(lean) + LEAN_RISE * Math.sin(lean);
+  if (edge) {
+    const sides = { left: Math.max(EDGE_GAP, insets.left - 12 + EDGE_GAP), right: Math.max(EDGE_GAP, insets.right - 12 + EDGE_GAP) };
+    const holeW = Math.max(1, cssW - sides.left - sides.right);
+    const holeH = Math.max(1, cssH - insets.top - insets.bottom);
+    // A hole too short for that (a 375x667 phone) scales the island to its height instead, which is then centred in it.
+    const px = Math.min(holeW / (2 * SHORE_HALF_X), (cssW / 2 - PILE_GAP) / PILE_HALF_X, holeH / (2 * halfZ));
+    const hw = cssW / 2 / px;
+    const hh = cssH / 2 / px;
+    const cx = sides.left + holeW / 2;
+    const cy = cssH - insets.bottom - halfZ * px;
+    const ndcX = (cx / cssW) * 2 - 1;
+    const ndcY = -((cy / cssH) * 2 - 1);
+    return { left: -hw, right: hw, top: hh, bottom: -hh, x: -ndcX * hw, z: (ndcY * hh) / Math.cos(lean), lean };
+  }
   const holeW = Math.max(1, cssW - insets.left - insets.right);
   const holeH = Math.max(1, cssH - insets.top - insets.bottom);
   const aspect = holeW / holeH;
   const halfX = ISLE_HALF.x;
-  const halfZ = ISLE_HALF.z * Math.cos(lean) + LEAN_RISE * Math.sin(lean);
   // The frustum spans the whole canvas, so scale the hole's world size up by canvas / hole.
   let hw: number;
   let hh: number;
@@ -144,6 +191,7 @@ export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0): 
     // Centered on the island (0, 0), not the 0.15 orbit target: ISLE_HALF is symmetric about the origin.
     x: -ndcX * worldW * 0.5,
     z: (ndcY * worldH * 0.5) / Math.cos(lean),
+    lean,
   };
 }
 
@@ -215,6 +263,9 @@ for (let q = -2; q <= 2; q++) {
 // What the diorama fit measures: each coast corner at cap level, and (held inside the hole) a dock's reach past it at the
 // waterline and the tallest prop's top wherever one can stand on the outer ring: up to 0.86 from its hex's centre
 // (decorate's tree ring) and LEAN_RISE over cap level.
+// #1509: how far across a dock's pier and boat can reach, at any coast corner (the diorama fit's DOCK_REACH along its miter).
+// The upright fit lets it pass the screen's side edges (q1515-table-look, B); proofs use it.
+export const DOCK_HALF_X = Math.max(...COAST.map(({ x, mx }) => Math.abs(x + mx * DOCK_REACH)));
 const COAST_POINTS: [number, number, number][] = COAST.map(({ x, z }) => [x, CAP_LEVEL, z]);
 const DIORAMA_POINTS: [number, number, number][] = [
   ...COAST.flatMap(({ x, z, mx, mz }) => [
