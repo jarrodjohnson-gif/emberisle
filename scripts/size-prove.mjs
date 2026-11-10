@@ -63,6 +63,8 @@ const CEILINGS = [
   { name: "WayfarerOptions", gzipBytes: 500 },
   // #832: the online-only timer ballot loads separately (2026-10-20; measured 1.20 kB).
   { name: "TurnExtensionVote", gzipBytes: 1400 },
+  // #560: pier trade tags load separately. Text stays 12 px (law 9 floor). Ceiling 700 B, not raised here.
+  { name: "OwnedDockLabels", gzipBytes: 700 },
   // #1285: trade toast, loss bars (discard/steal) and shared trade-panel helper chunk (ceilings per owner/Opus decision 2026-11-06).
   { name: "TradeToast", gzipBytes: 3000 },
   { name: "losses", gzipBytes: 1600 },

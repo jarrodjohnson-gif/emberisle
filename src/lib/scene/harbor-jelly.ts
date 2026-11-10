@@ -15,6 +15,8 @@ type CoastPt = { id: string; x: number; z: number; mx: number; mz: number };
 export type Dock = { cx: number; cz: number; mx: number; mz: number; kind: HarborKind; vids: string[] };
 export type Shore = {
   group: THREE.Group;
+  // The rate plate on each pier's T-head, shared by that dock's two corners. Owner 2026-10-16: the rate is on the pier, not the sails.
+  plates: { vids: string[]; x: number; y: number; z: number }[];
   // Everything the swell carries (ships first, one per dock in order, then the buoys): rest = { x, z, yaw }.
   floaters: THREE.Group[];
   // The waterline as a coast (one point per sample, its outward normal), for the crystal sea's lace and swash.
@@ -635,6 +637,7 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
   const pierParts: THREE.BufferGeometry[] = [];
   const glowParts: THREE.BufferGeometry[] = [];
   const plateParts: THREE.BufferGeometry[] = [];
+  const plates: Shore["plates"] = [];
   const floaters: THREE.Group[] = [];
   const life: ((t: number) => void)[] = [];
   const box = new THREE.BoxGeometry(1, 1, 1);
@@ -689,6 +692,7 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       const uv = pl.attributes.uv as THREE.BufferAttribute;
       for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - (row + 1 - uv.getY(i)) / PLATE_KINDS.length);
       const at = world(0, DECK + 0.0085, tv);
+      plates.push({ vids: d.vids, x: at.x, y: at.y, z: at.z });
       plateParts.push(pl.rotateX(-Math.PI / 2).translate(at.x, at.y, at.z));
     }
     P(K.part(box, "#7a5236", [0, DECK - 0.014, tv + 0.08], [0, 0, 0], [0.45, 0.018, 0.014]));
@@ -1118,6 +1122,7 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
 
   return {
     group,
+    plates,
     floaters,
     waterline: water.map((w, i) => ({ x: w.x - normals[i]!.nx * 0.25, z: w.z - normals[i]!.nz * 0.25, mx: normals[i]!.nx, mz: normals[i]!.nz })),
     update,

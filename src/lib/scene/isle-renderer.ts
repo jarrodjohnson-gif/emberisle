@@ -171,6 +171,8 @@ export const TOKEN_FACE = 0.245;
 // How far a tilted token is lifted so its near edge stays where the flat disc's underside was.
 export const TOKEN_LIFT = TOKEN_R * Math.sin(TOKEN_TILT) + (TOKEN_H / 2) * Math.cos(TOKEN_TILT) - TOKEN_H / 2;
 
+export type OwnedDockPosition = { id: string; owner: string | null; kind: HarborKind; x: number; y: number };
+
 type DockPosition = { id: string; kind: HarborKind; x: number; y: number };
 
 export class IsleRenderer {
@@ -282,6 +284,10 @@ export class IsleRenderer {
   onDock: (id: string) => boolean = () => false;
   private dockPositions: DockPosition[] = [];
   private docksDirty = true;
+  onTags: (docks: readonly OwnedDockPosition[]) => void = () => {};
+  // Rate plates on the jelly piers, keyed by either corner of the dock. Empty until the shore swaps in.
+  private dockPlates = new Map<string, { x: number; y: number; z: number }>();
+  private tagDirty = true;
   private choice: WaterPath | null = null;
   private waterSet = false;
   private probed: { path: WaterPath; ms: number } | null = null;
@@ -701,6 +707,7 @@ export class IsleRenderer {
     // (online bots) still flash when one roll is among them.
     const prev = this.lastState;
     const rolled = prev && landKey(prev) === landKey(state) && (state.rolls ?? 0) === (prev.rolls ?? 0) + 1;
+    if (prev !== state) this.tagDirty = true;
     this.lastState = state;
     this.lastHi = highlights;
     this.lastInteractive = interactive;
@@ -1544,6 +1551,7 @@ export class IsleRenderer {
   private updateDockPositions() {
     if (this.titleMode || !this.docksDirty) return;
     this.docksDirty = false;
+    this.tagDirty = true;
     const rect = this.renderer.domElement.getBoundingClientRect();
     const camera = this.cam();
     const docks = this.docks.map((d) => {
@@ -1564,6 +1572,59 @@ export class IsleRenderer {
       this.dockPositions = docks;
       this.onDocks(docks);
     }
+  }
+
+  // Chip center on the pier plate. Step along the coast when that box would cover the building.
+  // The box stays inside the board hole: 12 px "2:1 brick" plus a 2 px ring needs 40 by 12 px of room.
+  private labelPoint(id: string, vertex: { x: number; z: number }, top: number): { x: number; y: number } | null {
+    const spot = this.dockPlates.get(id);
+    if (!spot) return null;
+    const plate = this.screenAt(spot.x, spot.y, spot.z), house = this.screenAt(vertex.x, top, vertex.z);
+    let dx = plate.x - house.x, dy = plate.y - house.y, n = Math.hypot(dx, dy) || 1;
+    dx /= n; dy /= n;
+    const r = this.renderer.domElement.getBoundingClientRect(), i = this.insets();
+    const minX = r.left + i.left + 40, maxX = r.right - i.right - 40;
+    const minY = r.top + i.top + 12, maxY = r.bottom - i.bottom - 12;
+    const clamp = (k: number) => ({
+      x: Math.min(Math.max(plate.x - dy * k, Math.min(minX, maxX)), Math.max(minX, maxX)),
+      y: Math.min(Math.max(plate.y + dx * k, Math.min(minY, maxY)), Math.max(minY, maxY)),
+    });
+    for (const k of [0, 36, -36, 72, -72]) {
+      const p = clamp(k);
+      if (Math.abs(p.x - house.x) >= 36 || Math.abs(p.y - house.y) >= 10) return p;
+    }
+    return clamp(0);
+  }
+
+  // One pier, two corners. The chip clears the corner that has a building.
+  private dockAnchor(ids: readonly string[]) {
+    const vs = this.lastState?.vertices;
+    if (!vs) return null;
+    let held: (typeof vs)[number] | null = null;
+    for (const id of [...ids].sort()) {
+      const v = vs.find((row) => row.id === id);
+      if (v && (!held || v.building)) held = v;
+    }
+    return held;
+  }
+
+  // Page pixels for a dock id ("corner:corner") or one corner. The owned-dock proof reads this.
+  pierScreen(id: string): { x: number; y: number } | null {
+    const vertex = this.dockAnchor(id.split(":"));
+    const st = this.lastState;
+    return vertex && st ? this.labelPoint(vertex.id, vertex, vertexTop(hexTops(st), vertex)) : null;
+  }
+
+  // One tag per dock, on the pier (#560). An empty coast still gets a tag.
+  private tags() {
+    if (this.titleMode || !this.tagDirty || !this.lastState) return;
+    this.tagDirty = false;
+    const tops = hexTops(this.lastState);
+    this.onTags(this.docks.flatMap((dock) => {
+      const held = this.dockAnchor(dock.vids);
+      const point = held && this.labelPoint(held.id, held, vertexTop(tops, held));
+      return point ? [{ id: [...dock.vids].sort().join(":"), owner: held.building?.playerId ?? null, kind: dock.kind, x: point.x, y: point.y }] : [];
+    }));
   }
 
   // The one-time GPU check, on a built and warm scene of a settled client (a second after setSettled and after the last
@@ -1611,6 +1672,7 @@ export class IsleRenderer {
     boot.drawn = true;
     for (const done of this.afterDraw.splice(0)) done();
     this.updateDockPositions();
+    this.tags();
     const p = this.probe;
     const warm = p?.stage === "simple" ? 5 : 3;
     const budget = p?.stage === "simple" ? 11 : 22;
@@ -1780,6 +1842,7 @@ export class IsleRenderer {
     this.boats = [];
     this.docks = [];
     this.piers = [];
+    this.dockPlates.clear();
     this.living.add(this.wayfarer);
     this.pickables = [];
     this.tokens = [];
@@ -1951,6 +2014,9 @@ export class IsleRenderer {
       this.crystal.wash = wash;
     }
     this.shore = shore;
+    this.dockPlates.clear();
+    for (const plate of shore.plates) for (const id of plate.vids) this.dockPlates.set(id, plate);
+    this.tagDirty = true;
     this.living.add(shore.group);
     if (this.lastState) this.paintSails(this.lastState);
     this.wake();

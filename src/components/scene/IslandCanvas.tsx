@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { IsleRenderer } from "@/lib/scene/isle-renderer";
+import { IsleRenderer, type OwnedDockPosition } from "@/lib/scene/isle-renderer";
 import { useGame } from "@/lib/game/store";
 import { demoBoard } from "@/lib/game/board";
 import type { GameState } from "@/lib/game/types";
@@ -8,12 +8,15 @@ import type { DockTarget } from "@/components/scene/DockInspection";
 import { boot, chunk, LazyBoundary } from "@/lib/lazy";
 const DockInspection = chunk(() => import("@/components/scene/DockInspection")).pick((m) => m.default);
 
+const OwnedDockLabels = chunk(() => import("@/components/scene/OwnedDockLabels")).pick((m) => m.default);
+
 // One dealt island for the life of the page, shown behind the title and the lobby. It is never in the store.
 let demo: GameState | null = null;
 
 export default function IslandCanvas() {
   const ref = useRef<HTMLCanvasElement>(null);
   const [docks, setDocks] = useState<DockTarget[]>([]);
+  const [ownedDocks, setOwnedDocks] = useState<readonly OwnedDockPosition[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [fallback, setFallback] = useState<string | null>(null);
   useEffect(() => {
@@ -43,6 +46,7 @@ export default function IslandCanvas() {
       return;
     }
     renderer.onDocks = setDocks;
+    renderer.onTags = setOwnedDocks;
     renderer.onDock = (id) => {
       const s = useGame.getState();
       if (s.screen !== "play" || s.buildMode !== "none" || !s.state || !["roll", "main", "over"].includes(s.state.phase)) return false;
@@ -124,6 +128,7 @@ export default function IslandCanvas() {
 
   return <>
     <canvas ref={ref} className="absolute inset-0 h-full w-full" />
+    {ownedDocks.length > 0 && <LazyBoundary failed={null}><OwnedDockLabels docks={ownedDocks} /></LazyBoundary>}
     {fallback && (
       <div data-testid="canvas-fallback" className="absolute inset-0 flex items-center justify-center bg-bg p-6 text-center select-none pointer-events-none">
         <p className="text-sm text-muted">{fallback}</p>
