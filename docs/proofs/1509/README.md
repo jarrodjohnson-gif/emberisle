@@ -22,11 +22,11 @@ Run `node docs/proofs/1509/shots.mjs after` to take them again.
 
 | What | Before | After |
 |---|---|---|
-| Island with its shore, wide | 370 px | 386 px (the docks reach the hole's 12 px sides) |
-| Outer hex corners, wide | 340 px | 354 px |
-| Outer hex corners, tall | 284 px | 251 px (40° shortens depth) |
+| Island with its shore, wide | 370 px | 422 px (4 px from each edge) |
+| Outer hex corners, wide | 340 px | 388 px |
+| Outer hex corners, tall | 284 px | 274 px (40° shortens depth) |
 | Dock top | 670 px | 678 px |
 | Gutters | 12 px | 16 px |
 
-The first build fitted the shore 4 px from the edges (422 px), as in the research picture. Review found that pushed a dock's
-44 px inspect button off the screen and dock boats out of the hole. Every dock now stays in the hole, so the island grows 4 %, not 14 %.
+The side boats run off the screen edges and every dock's 44 px button stays on screen: the owner's choice on card
+`q1515-table-look` (B, 2026-11-10), after a round that kept every dock in the hole (386 px).
