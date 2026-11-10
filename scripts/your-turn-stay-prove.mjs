@@ -67,31 +67,36 @@ function recorders() {
   window.__yt = [];
   window.__exits = [];
   const exiting = new Map();
-  new MutationObserver((records) => {
-    for (const record of records) {
-      const el = record.target;
-      if (record.type !== "attributes" || !el.matches?.('[data-testid="turn-moment"][data-leaving]') || exiting.has(el)) continue;
-      const css = getComputedStyle(el);
-      const entry = { at: performance.now(), pointer: css.pointerEvents, hidden: el.parentElement?.getAttribute("aria-hidden"),
-        animation: css.animationName, duration: css.transitionDuration, easing: css.transitionTimingFunction };
-      exiting.set(el, entry);
-      window.__exits.push(entry);
-    }
-    for (const [el, entry] of exiting) if (!el.isConnected) { entry.gone = performance.now(); exiting.delete(el); }
-  }).observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-leaving"] });
-  // The fade starts a frame after data-leaving is set, so a timer from that moment can land before it began or after it ended on a
-  // loaded runner. Sample the transition itself: when it runs, put it at 80 ms of its 160, read the frame, then let it carry on.
-  document.addEventListener("transitionrun", (e) => {
-    const el = e.target;
-    const entry = exiting.get(el);
-    if (!entry) return;
-    (entry.runs ??= []).push(e.propertyName);
+  // Read the existing real transition after the exit style write, before a delayed event can miss it.
+  // No transition means no midpoint: the original fade assertions must still fail.
+  const sampleFade = (el, entry) => {
     if (entry.mid) return;
-    const fades = el.getAnimations().filter((a) => a.transitionProperty);
+    const fades = el.getAnimations().filter(a => a.transitionProperty);
+    if (!fades.length) return;
     for (const a of fades) { a.pause(); a.currentTime = 80; }
     const mid = getComputedStyle(el);
     entry.mid = { opacity: Number(mid.opacity), transform: mid.transform, target: el.style.transform };
     for (const a of fades) a.play();
+  };
+  new MutationObserver(records => {
+    for (const record of records) {
+      const el = record.target;
+      if (record.type !== "attributes" || !el.matches?.('[data-testid="turn-moment"][data-leaving]')) continue;
+      let entry = exiting.get(el);
+      if (!entry) {
+        const css = getComputedStyle(el);
+        entry = { at: performance.now(), pointer: css.pointerEvents, hidden: el.parentElement?.getAttribute("aria-hidden"),
+          animation: css.animationName, duration: css.transitionDuration, easing: css.transitionTimingFunction };
+        exiting.set(el, entry); window.__exits.push(entry);
+      }
+      if (el.style.opacity === "0") sampleFade(el, entry);
+    }
+    for (const [el, entry] of exiting) if (!el.isConnected) { entry.gone = performance.now(); exiting.delete(el); }
+  }).observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-leaving", "style"] });
+  document.addEventListener("transitionrun", e => {
+    const el = e.target, entry = exiting.get(el);
+    if (!entry) return;
+    (entry.runs ??= []).push(e.propertyName); sampleFade(el, entry);
   }, true);
   const OBSTACLES = 'header > div, [data-testid="seat-strip"] > *, [data-testid^="rail-"], [data-hud-stack], [data-testid="banner"], [data-testid="turn-banner"], .hud-utilities, [data-testid="resource-flash"]';
   const box = (el) => {
