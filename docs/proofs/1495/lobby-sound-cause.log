@@ -1,0 +1,402 @@
+Tide SOUND_TRACE {"event":"DOM","wall":1794268793127,"mono":16496.30000001192,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268793157,"mono":14386.09999999404,"details":[]}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268793157,"mono":19130.59999999404,"details":[]}
+SOUND_CLICK {"trial":1,"stage":"before","wall":1794268793520}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268793921,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268793976,"type":"chat","id":0,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268793922,"mono":17291.70000000298,"details":{"id":0,"sound":"sb_wololo","seat":"s2","at":1794268793864,"arrived":1794268793864}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268793953,"mono":17322.90000000596,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268793976,"type":"chat","id":0,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268793976,"type":"chat","id":0,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268793956,"mono":19927,"details":{"id":0,"sound":"sb_wololo","seat":"s2","at":1794268793864,"arrived":1794268793864}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268793957,"mono":19927.5,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268794101,"type":"chat","id":0,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268794062,"mono":15291.20000000298,"details":{"id":0,"sound":"sb_wololo","seat":"s2","at":1794268793964,"arrived":1794268793967}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268794063,"mono":15292.29999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":1,"stage":"resolved","wall":1794268794271}
+ok trial1: Ember sound bubble clear of name  +21.3s
+ok trial1: Tide sound bubble clear of name  +21.4s
+ok trial1: Pine sound bubble clear of name  +21.5s
+SOUND_TRIAL_PASS 1
+Ember SOUND_TRACE {"event":"DOM","wall":1794268796881,"mono":22851.70000000298,"details":[]}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268796882,"mono":20251.80000001192,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268796984,"mono":18213.29999999702,"details":[]}
+SOUND_CLICK {"trial":2,"stage":"before","wall":1794268797203}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268797357,"type":"chat","id":1,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268797333,"mono":23303.70000000298,"details":{"id":1,"sound":"sb_wololo","seat":"s2","at":1794268797291,"arrived":1794268797292}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268797334,"mono":23304.29999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268797357,"type":"chat","id":1,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268797361,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268797370,"type":"chat","id":1,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268797369,"mono":20738.40000000596,"details":{"id":1,"sound":"sb_wololo","seat":"s2","at":1794268797321,"arrived":1794268797321}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268797369,"mono":20739.10000000894,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268797421,"type":"chat","id":1,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268797417,"mono":18645.79999999702,"details":{"id":1,"sound":"sb_wololo","seat":"s2","at":1794268797386,"arrived":1794268797386}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268797417,"mono":18646.20000000298,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":2,"stage":"resolved","wall":1794268797477}
+ok trial2: Ember sound bubble clear of name  +24.3s
+ok trial2: Tide sound bubble clear of name  +24.4s
+ok trial2: Pine sound bubble clear of name  +24.5s
+SOUND_TRIAL_PASS 2
+Ember SOUND_TRACE {"event":"DOM","wall":1794268800331,"mono":26301.70000000298,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268800433,"mono":21661.79999999702,"details":[]}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268800461,"mono":23830.80000001192,"details":[]}
+SOUND_CLICK {"trial":3,"stage":"before","wall":1794268801058}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268801183,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268801277,"type":"chat","id":2,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268801264,"mono":24633.40000000596,"details":{"id":2,"sound":"sb_wololo","seat":"s2","at":1794268801185,"arrived":1794268801187}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268801264,"mono":24634,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268801279,"type":"chat","id":2,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268801287,"type":"chat","id":2,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268801283,"mono":27254,"details":{"id":2,"sound":"sb_wololo","seat":"s2","at":1794268801181,"arrived":1794268801181}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268801284,"mono":27254.79999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268801290,"type":"chat","id":2,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268801288,"mono":22517.5,"details":{"id":2,"sound":"sb_wololo","seat":"s2","at":1794268801195,"arrived":1794268801195}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268801289,"mono":22518.39999999106,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":3,"stage":"resolved","wall":1794268801327}
+ok trial3: Ember sound bubble clear of name  +28.2s
+ok trial3: Tide sound bubble clear of name  +28.2s
+ok trial3: Pine sound bubble clear of name  +28.3s
+SOUND_TRIAL_PASS 3
+Ember SOUND_TRACE {"event":"DOM","wall":1794268804198,"mono":30168.70000000298,"details":[]}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268804204,"mono":27574.10000000894,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268804236,"mono":25464.70000000298,"details":[]}
+SOUND_CLICK {"trial":4,"stage":"before","wall":1794268804801}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268804883,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268804918,"type":"chat","id":3,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268804955,"type":"chat","id":3,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268804953,"mono":28322.20000000298,"details":{"id":3,"sound":"sb_wololo","seat":"s2","at":1794268804867,"arrived":1794268804873}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268804955,"mono":28325.10000000894,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268804960,"type":"chat","id":3,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268804957,"mono":30927.70000000298,"details":{"id":3,"sound":"sb_wololo","seat":"s2","at":1794268804892,"arrived":1794268804893}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268804960,"mono":30931.20000000298,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268804975,"type":"chat","id":3,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268804974,"mono":26202.89999999106,"details":{"id":3,"sound":"sb_wololo","seat":"s2","at":1794268804906,"arrived":1794268804907}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268804975,"mono":26204.20000000298,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":4,"stage":"resolved","wall":1794268804995}
+ok trial4: Ember sound bubble clear of name  +31.8s
+ok trial4: Tide sound bubble clear of name  +31.9s
+ok trial4: Pine sound bubble clear of name  +32.0s
+SOUND_TRIAL_PASS 4
+Tide SOUND_TRACE {"event":"DOM","wall":1794268807903,"mono":31272.90000000596,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268807927,"mono":29155.59999999404,"details":[]}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268807930,"mono":33900.29999999702,"details":[]}
+SOUND_CLICK {"trial":5,"stage":"before","wall":1794268808068}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268808181,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268808187,"type":"chat","id":4,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268808179,"mono":34149.90000000596,"details":{"id":4,"sound":"sb_wololo","seat":"s2","at":1794268808124,"arrived":1794268808124}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268808180,"mono":34150.90000000596,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268808188,"type":"chat","id":4,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268808182,"mono":31551.40000000596,"details":{"id":4,"sound":"sb_wololo","seat":"s2","at":1794268808123,"arrived":1794268808123}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268808182,"mono":31551.90000000596,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268808191,"type":"chat","id":4,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268808227,"type":"chat","id":4,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268808222,"mono":29451,"details":{"id":4,"sound":"sb_wololo","seat":"s2","at":1794268808194,"arrived":1794268808194}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268808223,"mono":29451.70000000298,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":5,"stage":"resolved","wall":1794268808277}
+ok trial5: Ember sound bubble clear of name  +35.1s
+ok trial5: Tide sound bubble clear of name  +35.2s
+ok trial5: Pine sound bubble clear of name  +35.2s
+SOUND_TRIAL_PASS 5
+Tide SOUND_TRACE {"event":"DOM","wall":1794268811141,"mono":34510.90000000596,"details":[]}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268811144,"mono":37114.40000000596,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268811224,"mono":32453.09999999404,"details":[]}
+SOUND_CLICK {"trial":6,"stage":"before","wall":1794268811889}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268812052,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268812060,"type":"chat","id":5,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268812026,"mono":37996.5,"details":{"id":5,"sound":"sb_wololo","seat":"s2","at":1794268811991,"arrived":1794268811991}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268812027,"mono":37997.5,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268812061,"type":"chat","id":5,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268812056,"mono":35425.70000000298,"details":{"id":5,"sound":"sb_wololo","seat":"s2","at":1794268811996,"arrived":1794268811996}}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268812061,"type":"chat","id":5,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268812061,"mono":35431,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268812102,"type":"chat","id":5,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268812101,"mono":33330.29999999702,"details":{"id":5,"sound":"sb_wololo","seat":"s2","at":1794268812076,"arrived":1794268812076}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268812102,"mono":33331,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":6,"stage":"resolved","wall":1794268812122}
+ok trial6: Ember sound bubble clear of name  +39.0s
+ok trial6: Tide sound bubble clear of name  +39.1s
+ok trial6: Pine sound bubble clear of name  +39.1s
+SOUND_TRIAL_PASS 6
+Ember SOUND_TRACE {"event":"DOM","wall":1794268815008,"mono":40979.09999999404,"details":[]}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268815024,"mono":38393.20000000298,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268815093,"mono":36322.5,"details":[]}
+SOUND_CLICK {"trial":7,"stage":"before","wall":1794268815234}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268815328,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268815328,"type":"chat","id":6,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268815359,"type":"chat","id":6,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268815333,"mono":38702.80000001192,"details":{"id":6,"sound":"sb_wololo","seat":"s2","at":1794268815290,"arrived":1794268815290}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268815334,"mono":38703.40000000596,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268815362,"type":"chat","id":6,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268815357,"mono":41327.59999999404,"details":{"id":6,"sound":"sb_wololo","seat":"s2","at":1794268815291,"arrived":1794268815291}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268815362,"mono":41333.20000000298,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268815403,"type":"chat","id":6,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268815400,"mono":36628.89999999106,"details":{"id":6,"sound":"sb_wololo","seat":"s2","at":1794268815369,"arrived":1794268815369}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268815401,"mono":36630,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":7,"stage":"resolved","wall":1794268815422}
+ok trial7: Ember sound bubble clear of name  +42.4s
+ok trial7: Tide sound bubble clear of name  +42.4s
+ok trial7: Pine sound bubble clear of name  +42.5s
+SOUND_TRIAL_PASS 7
+Tide SOUND_TRACE {"event":"DOM","wall":1794268818310,"mono":41680.20000000298,"details":[]}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268818308,"mono":44278.59999999404,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268818396,"mono":39625.20000000298,"details":[]}
+SOUND_CLICK {"trial":8,"stage":"before","wall":1794268818957}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268819064,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268819065,"type":"chat","id":7,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268819057,"mono":45027.79999999702,"details":{"id":7,"sound":"sb_wololo","seat":"s2","at":1794268819026,"arrived":1794268819026}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268819058,"mono":45028.29999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268819078,"type":"chat","id":7,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268819066,"mono":42435.80000001192,"details":{"id":7,"sound":"sb_wololo","seat":"s2","at":1794268819014,"arrived":1794268819014}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268819067,"mono":42436.70000000298,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268819091,"type":"chat","id":7,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268819108,"type":"chat","id":7,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268819106,"mono":40335.09999999404,"details":{"id":7,"sound":"sb_wololo","seat":"s2","at":1794268819072,"arrived":1794268819072}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268819107,"mono":40335.79999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":8,"stage":"resolved","wall":1794268819113}
+ok trial8: Ember sound bubble clear of name  +46.0s
+ok trial8: Tide sound bubble clear of name  +46.1s
+ok trial8: Pine sound bubble clear of name  +46.2s
+SOUND_TRIAL_PASS 8
+Ember SOUND_TRACE {"event":"DOM","wall":1794268822047,"mono":48017.40000000596,"details":[]}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268822058,"mono":45427.20000000298,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268822089,"mono":43318.59999999404,"details":[]}
+SOUND_CLICK {"trial":9,"stage":"before","wall":1794268822620}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268822752,"type":"chat","id":8,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268822754,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268822755,"type":"chat","id":8,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268822735,"mono":48706,"details":{"id":8,"sound":"sb_wololo","seat":"s2","at":1794268822706,"arrived":1794268822706}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268822736,"mono":48706.29999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268822782,"type":"chat","id":8,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268822779,"mono":46148.30000001192,"details":{"id":8,"sound":"sb_wololo","seat":"s2","at":1794268822710,"arrived":1794268822710}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268822780,"mono":46149.40000000596,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268822823,"type":"chat","id":8,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268822817,"mono":44046.29999999702,"details":{"id":8,"sound":"sb_wololo","seat":"s2","at":1794268822796,"arrived":1794268822796}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268822820,"mono":44049.29999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":9,"stage":"resolved","wall":1794268822860}
+ok trial9: Ember sound bubble clear of name  +49.7s
+ok trial9: Tide sound bubble clear of name  +49.7s
+ok trial9: Pine sound bubble clear of name  +49.8s
+SOUND_TRIAL_PASS 9
+Tide SOUND_TRACE {"event":"DOM","wall":1794268825729,"mono":49098.20000000298,"details":[]}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268825738,"mono":51709.20000000298,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268825813,"mono":47042,"details":[]}
+SOUND_CLICK {"trial":10,"stage":"before","wall":1794268826501}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268826687,"type":"sound","id":"sb_wololo"}
+SOUND_CLICK {"trial":10,"stage":"resolved","wall":1794268826689}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268826783,"type":"chat","id":9,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268826777,"mono":50146.70000000298,"details":{"id":9,"sound":"sb_wololo","seat":"s2","at":1794268826704,"arrived":1794268826704}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268826780,"mono":50150,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268826813,"type":"chat","id":9,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268826803,"mono":48032.09999999404,"details":{"id":9,"sound":"sb_wololo","seat":"s2","at":1794268826771,"arrived":1794268826772}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268826803,"mono":48032.5,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268826856,"type":"chat","id":9,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268826799,"mono":52785,"details":{"id":9,"sound":"sb_wololo","seat":"s2","at":1794268826685,"arrived":1794268826688}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268826852,"mono":52823,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268826859,"type":"chat","id":9,"sound":"sb_wololo","seat":"s2"}
+ok trial10: Ember sound bubble clear of name  +53.8s
+ok trial10: Tide sound bubble clear of name  +53.9s
+ok trial10: Pine sound bubble clear of name  +53.9s
+SOUND_TRIAL_PASS 10
+Ember SOUND_TRACE {"event":"DOM","wall":1794268829705,"mono":55675.5,"details":[]}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268829721,"mono":53090.60000000894,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268829789,"mono":51017.79999999702,"details":[]}
+SOUND_CLICK {"trial":11,"stage":"before","wall":1794268829999}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268830105,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268830114,"type":"chat","id":10,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268830109,"mono":56080,"details":{"id":10,"sound":"sb_wololo","seat":"s2","at":1794268830067,"arrived":1794268830067}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268830110,"mono":56080.5,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268830129,"type":"chat","id":10,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268830126,"mono":53495.60000000894,"details":{"id":10,"sound":"sb_wololo","seat":"s2","at":1794268830066,"arrived":1794268830066}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268830128,"mono":53497.20000000298,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268830161,"type":"chat","id":10,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268830194,"type":"chat","id":10,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268830192,"mono":51420.89999999106,"details":{"id":10,"sound":"sb_wololo","seat":"s2","at":1794268830155,"arrived":1794268830155}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268830193,"mono":51422.20000000298,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":11,"stage":"resolved","wall":1794268830222}
+ok trial11: Ember sound bubble clear of name  +57.3s
+ok trial11: Tide sound bubble clear of name  +57.4s
+ok trial11: Pine sound bubble clear of name  +57.4s
+SOUND_TRIAL_PASS 11
+Tide SOUND_TRACE {"event":"DOM","wall":1794268833083,"mono":56452.20000000298,"details":[]}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268833084,"mono":59055,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268833173,"mono":54402.20000000298,"details":[]}
+SOUND_CLICK {"trial":12,"stage":"before","wall":1794268833464}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268833557,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268833596,"type":"chat","id":11,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268833591,"mono":56961.10000000894,"details":{"id":11,"sound":"sb_wololo","seat":"s2","at":1794268833537,"arrived":1794268833537}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268833596,"mono":56966,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268833612,"type":"chat","id":11,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268833611,"mono":59581.5,"details":{"id":11,"sound":"sb_wololo","seat":"s2","at":1794268833531,"arrived":1794268833532}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268833611,"mono":59581.90000000596,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268833617,"type":"chat","id":11,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268833652,"type":"chat","id":11,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268833617,"mono":54846,"details":{"id":11,"sound":"sb_wololo","seat":"s2","at":1794268833592,"arrived":1794268833593}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268833618,"mono":54846.59999999404,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":12,"stage":"resolved","wall":1794268833677}
+ok trial12: Ember sound bubble clear of name  +60.5s
+ok trial12: Tide sound bubble clear of name  +60.6s
+ok trial12: Pine sound bubble clear of name  +60.6s
+SOUND_TRIAL_PASS 12
+Ember SOUND_TRACE {"event":"DOM","wall":1794268836571,"mono":62541.79999999702,"details":[]}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268836573,"mono":59942.80000001192,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268836610,"mono":57839.29999999702,"details":[]}
+SOUND_CLICK {"trial":13,"stage":"before","wall":1794268837260}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268837386,"type":"chat","id":12,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268837391,"type":"chat","id":12,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268837388,"mono":60757.30000001192,"details":{"id":12,"sound":"sb_wololo","seat":"s2","at":1794268837359,"arrived":1794268837360}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268837388,"mono":60757.90000000596,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268837399,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268837400,"type":"chat","id":12,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268837399,"mono":63369.5,"details":{"id":12,"sound":"sb_wololo","seat":"s2","at":1794268837336,"arrived":1794268837337}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268837399,"mono":63370,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268837469,"type":"chat","id":12,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268837467,"mono":58696.09999999404,"details":{"id":12,"sound":"sb_wololo","seat":"s2","at":1794268837418,"arrived":1794268837419}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268837468,"mono":58697.09999999404,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":13,"stage":"resolved","wall":1794268837484}
+ok trial13: Ember sound bubble clear of name  +64.4s
+ok trial13: Tide sound bubble clear of name  +64.5s
+ok trial13: Pine sound bubble clear of name  +64.6s
+SOUND_TRIAL_PASS 13
+Ember SOUND_TRACE {"event":"DOM","wall":1794268840369,"mono":66339.5,"details":[]}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268840379,"mono":63748.5,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268840493,"mono":61722.39999999106,"details":[]}
+SOUND_CLICK {"trial":14,"stage":"before","wall":1794268840858}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268841114,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268841279,"type":"chat","id":13,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268841286,"type":"chat","id":13,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268841270,"mono":62499.29999999702,"details":{"id":13,"sound":"sb_wololo","seat":"s2","at":1794268841198,"arrived":1794268841199}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268841271,"mono":62500,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268841286,"type":"chat","id":13,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268841258,"mono":67229.09999999404,"details":{"id":13,"sound":"sb_wololo","seat":"s2","at":1794268840995,"arrived":1794268840995}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268841274,"mono":67244.29999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268841289,"type":"chat","id":13,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268841286,"mono":64655.90000000596,"details":{"id":13,"sound":"sb_wololo","seat":"s2","at":1794268840989,"arrived":1794268840989}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268841289,"mono":64658.70000000298,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":14,"stage":"resolved","wall":1794268841308}
+ok trial14: Ember sound bubble clear of name  +68.2s
+ok trial14: Tide sound bubble clear of name  +68.2s
+ok trial14: Pine sound bubble clear of name  +68.4s
+SOUND_TRIAL_PASS 14
+Tide SOUND_TRACE {"event":"DOM","wall":1794268844006,"mono":67375.5,"details":[]}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268844012,"mono":69983.09999999404,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268844230,"mono":65458.89999999106,"details":[]}
+SOUND_CLICK {"trial":15,"stage":"before","wall":1794268844478}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268844584,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268844606,"type":"chat","id":14,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268844605,"mono":70575.29999999702,"details":{"id":14,"sound":"sb_wololo","seat":"s2","at":1794268844552,"arrived":1794268844552}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268844607,"mono":70577.29999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268844620,"type":"chat","id":14,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268844668,"type":"chat","id":14,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268844653,"mono":68023.10000000894,"details":{"id":14,"sound":"sb_wololo","seat":"s2","at":1794268844578,"arrived":1794268844578}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268844663,"mono":68032.5,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268844683,"type":"chat","id":14,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268844677,"mono":65906.39999999106,"details":{"id":14,"sound":"sb_wololo","seat":"s2","at":1794268844611,"arrived":1794268844611}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268844678,"mono":65907.29999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":15,"stage":"resolved","wall":1794268844704}
+ok trial15: Ember sound bubble clear of name  +71.6s
+ok trial15: Tide sound bubble clear of name  +71.7s
+ok trial15: Pine sound bubble clear of name  +71.8s
+SOUND_TRIAL_PASS 15
+Ember SOUND_TRACE {"event":"DOM","wall":1794268847580,"mono":73551.09999999404,"details":[]}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268847602,"mono":70971.90000000596,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268847656,"mono":68884.70000000298,"details":[]}
+SOUND_CLICK {"trial":16,"stage":"before","wall":1794268847869}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268847989,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268847991,"type":"chat","id":15,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268847989,"mono":73959.70000000298,"details":{"id":15,"sound":"sb_wololo","seat":"s2","at":1794268847936,"arrived":1794268847936}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268847990,"mono":73960.40000000596,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268847995,"type":"chat","id":15,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268847993,"mono":71362.5,"details":{"id":15,"sound":"sb_wololo","seat":"s2","at":1794268847937,"arrived":1794268847938}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268847997,"mono":71367,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268848053,"type":"chat","id":15,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268848083,"type":"chat","id":15,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268848078,"mono":69307.29999999702,"details":{"id":15,"sound":"sb_wololo","seat":"s2","at":1794268848016,"arrived":1794268848017}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268848080,"mono":69308.59999999404,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":16,"stage":"resolved","wall":1794268848092}
+ok trial16: Ember sound bubble clear of name  +75.0s
+ok trial16: Tide sound bubble clear of name  +75.0s
+ok trial16: Pine sound bubble clear of name  +75.1s
+SOUND_TRIAL_PASS 16
+Ember SOUND_TRACE {"event":"DOM","wall":1794268850955,"mono":76925.5,"details":[]}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268850958,"mono":74327.90000000596,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268851036,"mono":72264.59999999404,"details":[]}
+SOUND_CLICK {"trial":17,"stage":"before","wall":1794268851591}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268851713,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268851766,"type":"chat","id":16,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268851762,"mono":77732.5,"details":{"id":16,"sound":"sb_wololo","seat":"s2","at":1794268851695,"arrived":1794268851696}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268851762,"mono":77733,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268851789,"type":"chat","id":16,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268851786,"mono":73014.70000000298,"details":{"id":16,"sound":"sb_wololo","seat":"s2","at":1794268851763,"arrived":1794268851763}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268851786,"mono":73015.39999999106,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":17,"stage":"resolved","wall":1794268851795}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268851856,"type":"chat","id":16,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268851887,"type":"chat","id":16,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268851886,"mono":75255.30000001192,"details":{"id":16,"sound":"sb_wololo","seat":"s2","at":1794268851753,"arrived":1794268851753}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268851889,"mono":75258.40000000596,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+ok trial17: Ember sound bubble clear of name  +78.7s
+ok trial17: Tide sound bubble clear of name  +78.8s
+ok trial17: Pine sound bubble clear of name  +78.8s
+SOUND_TRIAL_PASS 17
+Ember SOUND_TRACE {"event":"DOM","wall":1794268854713,"mono":80683.70000000298,"details":[]}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268854792,"mono":78162,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268854797,"mono":76026.59999999404,"details":[]}
+SOUND_CLICK {"trial":18,"stage":"before","wall":1794268855823}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268856155,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268856182,"type":"chat","id":17,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268856196,"type":"chat","id":17,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268856189,"mono":82159.59999999404,"details":{"id":17,"sound":"sb_wololo","seat":"s2","at":1794268856112,"arrived":1794268856113}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268856195,"mono":82165.79999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268856213,"type":"chat","id":17,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268856208,"mono":79577.30000001192,"details":{"id":17,"sound":"sb_wololo","seat":"s2","at":1794268856083,"arrived":1794268856084}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268856209,"mono":79578.10000000894,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268856262,"type":"chat","id":17,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268856262,"mono":77490.70000000298,"details":{"id":17,"sound":"sb_wololo","seat":"s2","at":1794268856164,"arrived":1794268856165}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268856263,"mono":77492.29999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":18,"stage":"resolved","wall":1794268856361}
+ok trial18: Ember sound bubble clear of name  +83.3s
+ok trial18: Tide sound bubble clear of name  +83.3s
+ok trial18: Pine sound bubble clear of name  +83.4s
+SOUND_TRIAL_PASS 18
+Tide SOUND_TRACE {"event":"DOM","wall":1794268859103,"mono":82472.5,"details":[]}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268859143,"mono":85114.20000000298,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268859189,"mono":80417.59999999404,"details":[]}
+SOUND_CLICK {"trial":19,"stage":"before","wall":1794268859600}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268859775,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268859862,"type":"chat","id":18,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268859860,"mono":85831,"details":{"id":18,"sound":"sb_wololo","seat":"s2","at":1794268859762,"arrived":1794268859762}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268859861,"mono":85831.70000000298,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268859866,"type":"chat","id":18,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268859862,"mono":83232.20000000298,"details":{"id":18,"sound":"sb_wololo","seat":"s2","at":1794268859728,"arrived":1794268859728}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268859864,"mono":83233.80000001192,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268859873,"type":"chat","id":18,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268859884,"type":"chat","id":18,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268859883,"mono":81112,"details":{"id":18,"sound":"sb_wololo","seat":"s2","at":1794268859800,"arrived":1794268859801}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268859885,"mono":81113.89999999106,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":19,"stage":"resolved","wall":1794268859909}
+ok trial19: Ember sound bubble clear of name  +86.8s
+ok trial19: Tide sound bubble clear of name  +86.8s
+ok trial19: Pine sound bubble clear of name  +86.9s
+SOUND_TRIAL_PASS 19
+Ember SOUND_TRACE {"event":"DOM","wall":1794268863487,"mono":89457.59999999404,"details":[]}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268863499,"mono":86868.5,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268863502,"mono":84730.79999999702,"details":[]}
+SOUND_CLICK {"trial":20,"stage":"before","wall":1794268865073}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794268865621,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794268866654,"type":"chat","id":19,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794268866555,"mono":87784.20000000298,"details":{"id":19,"sound":"sb_wololo","seat":"s2","at":1794268865614,"arrived":1794268865623}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794268866581,"mono":87810.29999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794268866788,"type":"chat","id":19,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794268866798,"type":"chat","id":19,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794268866792,"mono":92762.59999999404,"details":{"id":19,"sound":"sb_wololo","seat":"s2","at":1794268866372,"arrived":1794268866376}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794268866793,"mono":92763.79999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794268866853,"type":"chat","id":19,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794268866789,"mono":90158.20000000298,"details":{"id":19,"sound":"sb_wololo","seat":"s2","at":1794268866425,"arrived":1794268866426}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794268866796,"mono":90165.70000000298,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_CLICK {"trial":20,"stage":"resolved","wall":1794268866860}
+ok trial20: Ember sound bubble clear of name  +94.3s
+ok trial20: Tide sound bubble clear of name  +94.3s
+ok trial20: Pine sound bubble clear of name  +94.4s
+SOUND_TRIAL_PASS 20
+ok no console errors in focused lobby diagnostic +95.1s
+focused lobby sound diagnostic complete; not the full chat proof

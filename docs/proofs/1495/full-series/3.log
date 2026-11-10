@@ -1,0 +1,66 @@
+ok lobby status on Ember: "Need 2 more players" +12.5s
+ok lobby status on Ember: "Need 1 more player" +14.6s
+ok lobby status on Tide: "Need 1 more player" +14.6s
+ok lobby status on Ember: "0 of 3 ready" +16.1s
+ok lobby status on Tide: "0 of 3 ready" +16.1s
+ok host tag on Ember's row only, seen by Ember +16.1s
+ok host tag on Ember's row only, seen by Tide +16.2s
+ok host tag on Ember's row only, seen by Pine +16.2s
+ok phone title card is 410 px tall, at most 55% of 844 +16.3s
+ok phone title card is full width minus 12 px, at the bottom +16.3s
+ok phone lobby card is 358x812, inside the 390x844 screen with the approved 16 px margins +21.5s
+ok phone lobby 390x844, 4 seats scrolled down: footer keeps the approved 12 px bottom padding (gap 12), nothing below it, Leave inside it +26.8s
+ok phone lobby 390x640, 4 seats scrolled down: footer keeps the approved 12 px bottom padding (gap 12), nothing below it, Leave inside it +29.3s
+ok phone lobby: the card starts unscrolled +29.4s
+ok phone lobby: Ready is inside the card and the 390x844 viewport without scrolling +29.5s
+ok phone lobby: Start is inside the card and the 390x844 viewport without scrolling +53.1s
+ok phone lobby: the Ready/Start row is wholly on screen +53.2s
+ok phone lobby 390x844: 8 whole chat lines on screen, newest ("Guslobby line 8") visible, 14px text +76.0s
+ok phone lobby 390x844: Ready/Start stay on screen beside the chat +76.1s
+ok phone lobby 390x844: the Sounds & stickers tab shows all 8 listed chips at 15px with no sideways scroll +77.3s
+ok phone lobby 390x844: the Sounds & stickers tab shows all 15 chips inside the box +77.3s
+ok 390x844: sticker monkey-pet is in the Sounds & stickers tab, loaded, on screen, 44x44 +77.8s
+ok 390x844: sticker side-eye is in the Sounds & stickers tab, loaded, on screen, 44x44 +78.2s
+ok 390x844: sticker banana-guy is in the Sounds & stickers tab, loaded, on screen, 44x44 +78.4s
+ok 390x844: sticker glasses-glance is in the Sounds & stickers tab, loaded, on screen, 44x44 +78.6s
+ok 390x844: sticker dark-smile is in the Sounds & stickers tab, loaded, on screen, 44x44 +79.0s
+ok 390x844: chip "Play sound Real badman" is on screen at 44 px tall +79.3s
+ok 390x844: chip "Play sound Gong" is on screen at 44 px tall +79.5s
+ok phone lobby 390x844: back on the Chat tab, 8 chat lines and the newest are on screen +79.9s
+ok phone lobby 440x956: 8 whole chat lines on screen, newest ("Guslobby line 8") visible, 14px text +80.3s
+ok phone lobby 440x956: Ready/Start stay on screen beside the chat +80.3s
+ok phone lobby 440x956: the Sounds & stickers tab shows all 8 listed chips at 15px with no sideways scroll +84.8s
+ok phone lobby 440x956: the Sounds & stickers tab shows all 15 chips inside the box +84.8s
+ok phone lobby 440x956: back on the Chat tab, 8 chat lines and the newest are on screen +85.1s
+ok phone lobby: a line that arrives while the log is at the bottom is scrolled into view +86.0s
+ok phone landscape 844x390, 4 seats all ready: status, Ready, Start and Leave are on screen without scrolling +98.4s
+ok phone landscape 844x390: all four seat rows are on screen +98.4s
+ok phone landscape 844x390: nothing in the card scrolls () +98.4s
+ok phone landscape 844x390: the rename button is 44.7x44.0, at least 44x44 +98.5s
+ok phone landscape 844x390: Sounds & stickers shows 8 listed chips and 5 presets at 44 px, in a 218 px scroll box (scrollHeight 464) +98.9s
+ok phone landscape 844x390: Sounds & stickers shows the 15 chips and 5 presets at 44 px +98.9s
+ok 844x390: sticker monkey-pet is in the Sounds & stickers tab, loaded, on screen, 44x44 +99.3s
+ok 844x390: sticker side-eye is in the Sounds & stickers tab, loaded, on screen, 44x44 +99.6s
+ok 844x390: sticker banana-guy is in the Sounds & stickers tab, loaded, on screen, 44x44 +100.0s
+ok 844x390: sticker glasses-glance is in the Sounds & stickers tab, loaded, on screen, 44x44 +100.2s
+ok 844x390: sticker dark-smile is in the Sounds & stickers tab, loaded, on screen, 44x44 +100.5s
+ok 844x390: chip "Play sound Real badman" is on screen at 44 px tall +100.8s
+ok 844x390: chip "Play sound Gong" is on screen at 44 px tall +101.2s
+ok phone landscape 667x375, 4 seats all ready: status, Ready, Start and Leave are on screen without scrolling +104.6s
+ok phone landscape 667x375: all four seat rows are on screen +104.6s
+ok phone landscape 667x375: nothing in the card scrolls () +104.6s
+ok phone landscape 667x375: the rename button is 44.7x44.0, at least 44x44 +104.6s
+ok phone landscape 667x375: Sounds & stickers shows 8 listed chips and 5 presets at 44 px, in a 219 px scroll box (scrollHeight 620) +105.0s
+ok phone landscape 667x375: Sounds & stickers shows the 15 chips and 5 presets at 44 px +105.0s
+ok lobby status on Ember: "0 of 4 ready" +105.9s
+ok lobby: Ember shows "hello" from Ember +106.3s
+ok lobby: Tide shows "hello" from Ember +106.3s
+ok lobby: Pine shows "hello" from Ember +106.4s
+ok lobby: Ember shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect  +106.8s
+ok lobby: Tide shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect  +106.9s
+ok lobby: Pine shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect  +107.0s
+ok lobby: Tide's one-tap emoji is a light line in all 3 logs +107.1s
+FAIL locator.waitFor: Timeout 5000ms exceeded.
+Call log:
+[2m  - waiting for getByTestId('lobby-seat-s2').locator('[data-testid="sound-bubble"][data-sound="sb_wololo"]') to be visible[22m
+
