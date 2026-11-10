@@ -276,9 +276,11 @@ try {
   const before = g.loads;
   await g.page.getByRole("button", { name: "Join", exact: true }).click();
   await until(() => g.loads >= 2, "the held reload once Join took focus");
-  await title(g.page);
+  const keptJoin = g.page.getByTestId("join-table");
+  await keptJoin.waitFor({ timeout: 15_000 });
   await sleep(500);
-  check("typing: a typed code is still in the field after the reload Join released", before === 1 && (await gInput.inputValue()) === "K7QP", { before, loads: g.loads, value: await gInput.inputValue() });
+  const keptLabel = (await keptJoin.textContent()) ?? "";
+  check("typing: a typed code is still on Join after the reload Join released", before === 1 && keptLabel.includes("K7QP") && g.loads === 2 && (await g.page.getByRole("button", { name: "Play", exact: true }).count()) === 0, { before, loads: g.loads, keptLabel });
   await g.page.close();
 
   // --- 6. (#492) chunkUrl names dev source URLs (.tsx) as well as built ones, so dev retries too.
