@@ -46,8 +46,7 @@ export default function DockInspection({ docks, selected, setSelected }: Props) 
         aria-expanded={selected === d.id}
         onClick={() => setSelected((s) => s === d.id ? null : d.id)}
         className="pointer-events-none absolute size-11 rounded-full border border-transparent bg-transparent opacity-0 focus-visible:border-fg focus-visible:opacity-100 focus-visible:outline-none"
-        // #1509: a dock near a screen edge (the upright island fills the width) keeps its whole 44 px target on screen.
-        style={{ left: Math.max(0, Math.min(innerWidth - 44, d.x - 22)), top: Math.max(0, Math.min(innerHeight - 44, d.y - 22)) }}
+        style={{ left: d.x - 22, top: d.y - 22 }}
       />)}
       {dock ? createPortal(<div
         data-dock-inspection

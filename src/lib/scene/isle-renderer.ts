@@ -1548,11 +1548,13 @@ export class IsleRenderer {
     const camera = this.cam();
     const docks = this.docks.map((d) => {
       const p = _p.set(d.cx + d.mx * 0.62, 0.12, d.cz + d.mz * 0.62).project(camera);
+      // #1509 (owner card q1515-table-look, B): the upright island crops its side boats at the screen edge, but every dock's
+      // 44 px target (its button and the canvas tap around it) stays wholly on the canvas.
       return {
         id: d.vids.join(":"),
         kind: d.kind,
-        x: rect.left + ((p.x + 1) / 2) * rect.width,
-        y: rect.top + ((1 - p.y) / 2) * rect.height,
+        x: Math.min(rect.right - 22, Math.max(rect.left + 22, rect.left + ((p.x + 1) / 2) * rect.width)),
+        y: Math.min(rect.bottom - 22, Math.max(rect.top + 22, rect.top + ((1 - p.y) / 2) * rect.height)),
       };
     });
     if (docks.length !== this.dockPositions.length || docks.some((d, i) => {
