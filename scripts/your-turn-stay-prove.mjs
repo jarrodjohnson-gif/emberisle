@@ -370,7 +370,6 @@ async function online(me, { cap = false } = {}) {
     await shows(1);
     await page.waitForFunction(() => window.__yt[0]?.bg, null, { timeout: STEP_MS });
     readable(tg, "the turn arrives", await page.evaluate(() => window.__yt[0]), seatHex);
-    const t0 = Date.now();
     push(at({ turn: 3, phase: "roll", current: me }));
     push(at({ turn: 3, phase: "roll", current: me }));
     await loaded();
@@ -378,7 +377,8 @@ async function online(me, { cap = false } = {}) {
     check((await bannerCount(page)) === 1 && (await up(page)) === 1, `${tg} repeat pushes add none, and it is still up 2.6 s later (no timed fade)`, [await bannerCount(page), await up(page)]);
     if (cap) {
       await gone(9000);
-      const held = Date.now() - t0;
+      // Both endpoints come from the browser, so CDP/host delay cannot move the start of the measured lifetime.
+      const held = await page.evaluate(() => window.__exits[0].gone - window.__yt[0].at);
       check(held >= 7500 && held <= 8800, `${tg} untouched, it leaves at its 8 s cap (timed from just after it mounted)`, held);
       await faded("8 s cap");
       push(at({ turn: 3, phase: "roll", current: me }));

@@ -1,0 +1,16 @@
+ok   390x844 online p0 first load onto own roll at seq 20: no moment
+ok   390x844 online p0 a bot's turn: no moment {"mounts":0,"up":0}
+ok   390x844 online p0 the turn arrives: reads "Your turn" "Your turn"
+ok   390x844 online p0 the turn arrives: the dot is the seat's colour ["rgb(226, 61, 46)","#e23d2e"]
+ok   390x844 online p0 the turn arrives: text is 15 px or larger 28
+ok   390x844 online p0 the turn arrives: white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p0 the turn arrives: approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p0 the turn arrives: approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p0 the turn arrives: ink on the pill reads at 4.5:1 or better "11.57"
+ok   390x844 online p0 the turn arrives: takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   390x844 online p0 repeat pushes add none, and it is still up 2.6 s later (no timed fade) [1,1]
+FAIL 390x844 online p0 untouched, it leaves at its 8 s cap (timed from just after it mounted) 6158
+ok   390x844 online p0 8 s cap: pointer-transparent 160 ms fade {"at":15240.20000000298,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.672895,"transform":"matrix(0.98911, 0, 0, 0.98911, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":15426}
+focused cap timing {"mount":7125.29999999702,"exit":{"at":15240.20000000298,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.672895,"transform":"matrix(0.98911, 0, 0, 0.98911, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":15426}}
+ok   zero console errors []
+your-turn-stay-prove: 1 failed
