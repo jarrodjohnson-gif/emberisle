@@ -334,9 +334,10 @@ try {
     // between does not move it; the next state change does).
     const home = () =>
       page.evaluate(async () => {
-        const { DIORAMA_POLAR, DIORAMA_AZIMUTH, OVERHEAD_LEAN, CAP_LEVEL } = await import("/src/lib/scene/mobile-fit.ts");
+        const { DIORAMA_POLAR, DIORAMA_AZIMUTH, playLean, CAP_LEVEL } = await import("/src/lib/scene/mobile-fit.ts");
         const isle = window.__isle;
-        if (isle.view === "overhead") return { polar: OVERHEAD_LEAN, azimuth: 0, zoom: 1, target: [isle.fit.x, CAP_LEVEL, isle.fit.z] };
+        // #1509: 40° on an upright phone, 25° elsewhere (the viewport.ts phone test).
+        if (isle.view === "overhead") return { polar: playLean(innerWidth, innerHeight, matchMedia("(pointer: coarse)").matches || innerWidth < 768), azimuth: 0, zoom: 1, target: [isle.fit.x, CAP_LEVEL, isle.fit.z] };
         return { polar: DIORAMA_POLAR, azimuth: DIORAMA_AZIMUTH, zoom: 1, target: [0, CAP_LEVEL, 0] };
       });
     const atHome = async (p) => {
@@ -364,7 +365,10 @@ try {
       for (const v of st.vertices) {
         const p = isle.screenOf(v.id);
         const m = isle.coastMiter.get(v.id);
-        const reach = v.harbor ? inside(isle.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)) : Infinity;
+        // #1509 (owner card q1515-table-look, B: "crop the side boats, keep every dock button on screen"): in the upright overhead
+        // view a side dock's boat may run off the side edges; it stays inside the hole's top and bottom. Corners keep the whole hole.
+        const dock = (p) => (innerHeight > innerWidth && isle.view === "overhead" ? Math.min(p.y - hole.t, hole.b - p.y) : inside(p));
+        const reach = v.harbor ? dock(isle.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)) : Infinity;
         if (v.harbor) dockIn = Math.min(dockIn, reach);
         // A dock may come to the hole's edge (the diorama fit puts the nearest one there), not past it: half a pixel of float.
         if (inside(p) < 0 || reach < -0.5) out.push(`${v.id}@${p.x | 0},${p.y | 0}`);

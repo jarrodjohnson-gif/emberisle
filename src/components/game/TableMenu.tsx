@@ -6,7 +6,7 @@
 // the game ends, with nothing saved); Stay, Escape or 5 s cancels.
 // #669: Sound opens the Sound panel (SoundSheet.tsx) in the same place, with every level showing; Back and Escape return to the rows.
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Box, Copy, Ellipsis, Eye, Hammer, LogOut, ScrollText, Volume2, VolumeX, Waves } from "lucide-react";
+import { BookOpen, Box, Bug, Copy, Ellipsis, Eye, Hammer, LogOut, ScrollText, Volume2, VolumeX, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConnectionOverlay, SoundSheet, soundSheet } from "@/components/game/chunks";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
@@ -253,9 +253,10 @@ export function TableMenu() {
                 variant="ghost"
                 className={ROW}
                 data-testid="report-bug"
+                aria-label="Report a bug, opens GitHub in a new tab"
                 onClick={() => window.open(bugReportUrl({ version: __BUILD_SHA__, seed: state.seed, seq: state.seq, width: window.innerWidth, height: window.innerHeight }), "_blank", "noopener")}
               >
-                <ScrollText className={ICON} /> Report a bug
+                <Bug className={ICON} /> Report a bug
               </Button>
               <Button ref={leaveRef} variant="ghost" className={ROW} onClick={confirm ? () => setAsking(true) : goTitle}>
                 <LogOut className={ICON} /> Leave table
