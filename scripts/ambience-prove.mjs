@@ -3,7 +3,7 @@
 // - before the first key or press nothing is fetched and no AudioContext exists;
 // - after it the loop plays: one context running, one looping buffer source of the whole 20 s file, gain 0.12 (AMB_VOLUME
 //   at Music and ambience 100%), and the file fetched once;
-// - the Music and ambience level scales it (50% -> 0.06), and All sound scales it too;
+// - the Music and ambience level scales it (50% -> 0.06), All sound scales it too, and the Sea sounds volume does the same;
 // - master mute, the Music and ambience mute, the old Music switch, the Sea sounds switch and a hidden tab each pause it
 //   (context suspended) and undoing each resumes the same source, with no second source or fetch;
 // - with Sea sounds saved off, a key press fetches nothing and makes no context; switching it on starts the loop;
@@ -123,7 +123,15 @@ try {
     await t.call(MIX, "setMasterVolume", 1);
     await t.call(MIX, "setCategoryVolume", "music", 1);
     await until(async () => (await t.state()).gain === 0.12, "back to 0.12");
-    ok("Music and ambience 50% plays it at 0.06, All sound 50% on top at 0.03, and 100% restores 0.12");
+    await t.call(SEA, "setSeaVolume", 0.5);
+    await until(async () => (await t.state()).gain === 0.06, "Sea sounds 50% gives 0.06");
+    await t.call(SEA, "setSeaVolume", 0);
+    await until(async () => (await t.state()).state === "suspended", "Sea sounds volume 0 pauses the loop");
+    await t.call(SEA, "setSeaVolume", 1);
+    const restored = await until(async () => { const s = await t.state(); return s.state === "running" && s.gain === 0.12 ? s : null; }, "Sea sounds 100% restores 0.12");
+    assert.equal(restored.sources, 1, "Sea sounds volume: the same source resumes");
+    assert.equal(t.fetches.length, 1, "Sea sounds volume: no second fetch");
+    ok("Music and ambience 50% plays it at 0.06, All sound 50% on top at 0.03, Sea sounds 50% at 0.06, and 100% restores 0.12");
 
     // ---- Each off switch pauses it; undoing it resumes the same loop.
     const pausesAndResumes = async (what, off, on) => {
