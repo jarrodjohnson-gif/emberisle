@@ -8,7 +8,7 @@
 // played); the Longest Path / Largest Army holder wears a gold badge on its tally (see Tally). The phone strip shows the
 // name on that line instead, and the seat sheet carries the tallies (#1509).
 // Your fortunes by kind, a dropped seat's state and "Hidden fortunes may add points." are in the player menu, one tap away.
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { type LucideIcon, Route, ScrollText, Swords } from "lucide-react";
 import { SeatBubbles } from "@/components/game/chunks";
 import { chunk, LazyBoundary } from "@/lib/lazy";
@@ -65,7 +65,7 @@ function Tally({ testid, Icon, n, name, held }: { testid: string; Icon: LucideIc
 // `short` is the strip's narrow form (#420); its presence makes this a strip line, which also hides the counts in a cell
 // under 200 px so the points keep their room. A dropped seat's marker shows at every width (the word only where it fits).
 // #1509 (option A, owner card q1508-table-goal): on the phone strip the name has a line of its own, under the dot and the
-// points, so it reads whole ("Jarrod", not "Jar"); the short form is left for a cell under 60 px. The two tallies are not on
+// points, so it reads whole ("Jarrod", not "Jar"); the short form is left for a name too long for its line. The two tallies are not on
 // the strip: they are in the seat sheet (PlayerMenu), one tap away. The desktop rail keeps them on a line of their own.
 function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: string }) {
   const state = useGame((s) => s.state)!;
@@ -76,13 +76,26 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
   const fortunes = p.fortunes ?? hiddenCount(p);
   const narrow = strip ? "@max-[200px]:hidden" : undefined;
   const path = useMemo(() => roadLength(state, p.id), [state, p.id]);
+  // #1509: the strip draws the whole name when it fits its line, and the short form when it would be cut ("Tide (bot)" in a
+  // 76 px cell), measured, not guessed: a long name never shows an ellipsis. The full name stays for screen readers.
+  const line = useRef<HTMLSpanElement>(null);
+  const full = useRef<HTMLSpanElement>(null);
+  const [fits, setFits] = useState(true);
+  useLayoutEffect(() => {
+    if (!strip || !line.current || !full.current) return;
+    const measure = () => setFits(full.current!.scrollWidth <= line.current!.clientWidth);
+    measure();
+    const watch = new ResizeObserver(measure);
+    watch.observe(line.current);
+    return () => watch.disconnect();
+  }, [strip, p.name]);
   const name = (
     <>
-      <span data-testid="seat-name" className={cn("min-w-0 flex-auto truncate text-sm font-medium", strip && "leading-4 @max-[60px]:sr-only")}>
+      <span ref={full} data-testid="seat-name" className={cn("min-w-0 flex-auto truncate text-sm font-medium", strip && "leading-4", strip && !fits && "sr-only")}>
         {p.name}
       </span>
       {strip ? (
-        <span data-testid="seat-name" aria-hidden="true" className="hidden min-w-0 flex-auto truncate text-xs font-medium leading-4 @max-[60px]:block">
+        <span data-testid="seat-name" aria-hidden="true" className={cn("min-w-0 flex-auto truncate text-sm font-medium leading-4", fits ? "hidden" : "block")}>
           {short}
         </span>
       ) : null}
@@ -124,7 +137,7 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
         </span>
       </span>
       {strip ? (
-        <span className="flex w-full items-center">{name}</span>
+        <span ref={line} className="flex w-full items-center">{name}</span>
       ) : (
         // Its own line, so the card's width is the tallies' room.
         <span className="flex w-full items-center gap-1 text-caption">
@@ -196,7 +209,7 @@ function shortName(name: string) {
   return n ? `${name[0]}${n}` : name.slice(0, 3);
 }
 
-// Three letters is all a cell under 60 px holds, so seats that still share a short form ("Ember", "Emberly") fall back to
+// Three letters is what a narrow cell holds, so seats that still share a short form ("Ember", "Emberly") fall back to
 // the initial and the seat number ("E1", "E2").
 function shortNames(names: string[]) {
   const short = names.map(shortName);
