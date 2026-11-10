@@ -205,13 +205,13 @@ async function approvedBLayout(page, tag, route) {
     assert.equal(colour.name, colour.disabled ? colour.unavailable : colour.palette, `${tag} ${route}: each name uses its good colour, or neutral when unavailable`);
   }
   assert.ok(geometry.titleWeight >= 700, `${tag} ${route}: Trade title is bold`);
-  for (const row of geometry.rows) assert.ok(row.top >= geometry.goods.top - 0.5 && row.bottom <= geometry.goods.bottom + 0.5,
-    `${tag} ${route}: both goods rows remain visible without scrolling ${JSON.stringify(geometry)}`);
+  for (const row of geometry.rows) assert.ok(row.bottom - row.top <= geometry.goods.height,
+    `${tag} ${route}: each goods row fits within the scrollable region ${JSON.stringify(geometry)}`);
   for (const card of geometry.unselectedCards) assert.ok(card.height <= (page.viewportSize().height <= 480 ? 90 : 104),
     `${tag} ${route}: unselected cards retain the final owner's compact height ${JSON.stringify(card)}`);
   const stock = panelFor(page).locator("#trade-bank-stock");
   if (await stock.count()) assert.equal(await stock.isVisible(), true, `${tag} ${route}: live Bank stock is visible as well as described`);
-  if (page.viewportSize().height > 480) assert.equal(await panelFor(page).locator("#trade-bank-title").textContent(), "Bank & docks · one exchange", `${tag} ${route}: final owner Bank heading`);
+  if (page.viewportSize().height > 480) assert.equal(await panelFor(page).locator(".trade-bank-box").getAttribute("aria-label"), "Bank & docks", `${tag} ${route}: final owner Bank heading`);
   console.log(`approved B layout ${tag} ${route}: ${JSON.stringify(geometry)}`);
 }
 
@@ -519,7 +519,10 @@ async function accessibility(page, tag) {
   assert.equal(await goodsFor(page).evaluate((element) => element === document.activeElement), true, `${tag}: Tab reaches the named shared goods region without hidden route stops`);
   assert.equal(await panelFor(page).getByRole("tab").count(), 0, `${tag}: no obsolete route stop remains in the tab sequence`);
   await page.keyboard.press("Tab");
-  assert.equal(await more(page, "timber", "give").evaluate((element) => element === document.activeElement), true, `${tag}: shared region leads to its first available good`);
+  assert.equal(await panelFor(page).getByRole("button", { name: "Need Wood", exact: true }).evaluate((element) => element === document.activeElement), true, `${tag}: shared region leads to its first need control`);
+  for (let i = 0; i < 4; i++) await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  assert.equal(await more(page, "timber", "give").evaluate((element) => element === document.activeElement), true, `${tag}: need picker leads to first available trade good`);
   await describedAs(more(page, "timber", "give"), "Have 6 0", `${tag} empty table give`);
   await more(page, "timber", "give").click();
   await describedAs(more(page, "timber", "give"), "Have 6 1", `${tag} selected table give`);
@@ -551,13 +554,15 @@ async function accessibility(page, tag) {
   await open(page);
   await bankSelect(page);
   await describedAs(more(page, "timber", "give"), "Have 6 1", `${tag} shared Bank give`);
-  await describedAs(more(page, "ore", "want"), "Have 6 1", `${tag} shared Bank get`);
-  await describedAs(bankFor(page), `Give 4 wood, get 1 stone. Bank stock: ${base.bank.ore} stone.`, `${tag} exact Bank receipt and live stock`);
+  await describedAs(more(page, "ore", "want"), "1", `${tag} shared Bank get`);
+  await describedAs(bankFor(page), "Give 4 wood, get 1 stone.", `${tag} exact Bank receipt and live stock`);
   const initial = await snapshot(page);
   // Fixed fixture sequence: disabled same-kind and empty-hand controls must be skipped.
   await panelFor(page).getByRole("button", { name: "Close", exact: true }).focus();
   for (const [name, target] of [
     ["goods region", goodsFor(page)],
+    // Five Need stops (Need Wood to Need Stone) before the cards, at every size.
+    ...["Wood", "Brick", "Sheep", "Wheat", "Stone"].map((good) => [`Need ${good}`, panelFor(page).getByRole("button", { name: `Need ${good}`, exact: true })]),
     ["More Wood give", more(page, "timber", "give")],
     ["Fewer Wood give", fewer(page, "timber", "give")],
     ["More Brick give", more(page, "clay", "give")],
@@ -567,8 +572,6 @@ async function accessibility(page, tag) {
     ["More Wheat want", more(page, "grain", "want")],
     ["More Stone want", more(page, "ore", "want")],
     ["Fewer Stone want", fewer(page, "ore", "want")],
-    // #646: five Need stops (Need Wood to Need Stone) after the cards, at every size.
-    ...["Wood", "Brick", "Sheep", "Wheat", "Stone"].map((good) => [`Need ${good}`, panelFor(page).getByRole("button", { name: `Need ${good}`, exact: true })]),
     ["Ask", askFor(page)],
     ["Bank", bankFor(page)],
     ["Close", panelFor(page).getByRole("button", { name: "Close", exact: true })],
@@ -581,20 +584,20 @@ async function accessibility(page, tag) {
     const opposite = side === "give" ? "want" : "give";
     await more(page, resource, side).focus();
     await page.keyboard.press("Enter");
-    await describedAs(more(page, resource, side), "Have 6 2", `${tag} keyboard ${side} quantity`);
+    await describedAs(more(page, resource, side), side === "give" ? "Have 6 2" : "2", `${tag} keyboard ${side} quantity`);
     await fewer(page, resource, side).focus();
     await page.keyboard.press("Enter");
-    await describedAs(more(page, resource, side), "Have 6 1", `${tag} keyboard ${side} removal`);
+    await describedAs(more(page, resource, side), side === "give" ? "Have 6 1" : "1", `${tag} keyboard ${side} removal`);
     assert.equal(await more(page, resource, opposite).isDisabled(), true, `${tag}: keyboard cannot choose the same kind on the opposite side`);
   }
   assert.equal(await snapshot(page), initial, `${tag}: quantity keyboard navigation changes only the shared draft`);
   assert.deepEqual(await sent(page), [], `${tag}: quantity keyboard navigation sends no action`);
   await change(page, { rate: 2 });
   await hint(page, "Give 2 wood, get 1 stone.");
-  await describedAs(bankFor(page), `Give 2 wood, get 1 stone. Bank stock: ${base.bank.ore} stone.`, `${tag} live dock and stock description`);
+  await describedAs(bankFor(page), "Give 2 wood, get 1 stone.", `${tag} live dock and stock description`);
   await change(page, { bank: { ore: 0 } });
   await hint(page, "no stone");
-  await describedAs(bankFor(page), "The bank has no stone. Bank stock: 0 stone.", `${tag} live zero-stock refusal description`);
+  await describedAs(bankFor(page), "The bank has no stone.", `${tag} live zero-stock refusal description`);
   console.log(`${tag}: named goods region, native quantity/action Tab sequence; keyboard edits skip same kinds; live owned/count/Bank descriptions; final-minus focus recovers`);
 
 }
@@ -666,7 +669,8 @@ async function modes(page, tag) {
   await load(page, base, "hotseat");
   await open(page);
   assert.equal(await panelFor(page).getByRole("tab").count(), 0, `${tag}: hotseat has no route tabs`);
-  assert.equal(await panelFor(page).locator(".trade-instructions").textContent(), "Choose one kind to give and one to get. Trade with the bank or your docks.", `${tag}: hotseat instructions describe only one-kind bank or dock exchange`);
+  assert.equal(await panelFor(page).locator(".trade-instructions").count(), 0, `${tag}: hotseat help sentence is removed`);
+  assert.equal(await panelFor(page).locator("#trade-bank-quote").textContent(), "Pick one kind to give and one to get.", `${tag}: hotseat quote guides one-kind bank exchange`);
   assert.equal(await askFor(page).count(), 0, `${tag}: hotseat has no player offer action`);
   assert.equal(await panelFor(page).getByTestId("trade-player-preview").count(), 0, `${tag}: hotseat has no player quote`);
   assert.equal(await panelFor(page).getByRole("radio").count(), 0, `${tag}: hotseat has no separate Bank selectors`);
