@@ -10,6 +10,7 @@ import { RESOURCES, RESOURCE_LABEL } from "../src/lib/game/types.ts";
 
 const PORT = Number(process.env.VITE_PORT) || 8469;
 const VIEWS = [
+  { tag: "320x568", width: 320, height: 568, touch: true },
   { tag: "390x844", width: 390, height: 844, touch: true },
   { tag: "844x390", width: 844, height: 390, touch: true },
   { tag: "1280x720", width: 1280, height: 720, touch: false },
@@ -205,8 +206,37 @@ async function approvedBLayout(page, tag, route) {
     assert.equal(colour.name, colour.disabled ? colour.unavailable : colour.palette, `${tag} ${route}: each name uses its good colour, or neutral when unavailable`);
   }
   assert.ok(geometry.titleWeight >= 700, `${tag} ${route}: Trade title is bold`);
-  for (const row of geometry.rows) assert.ok(row.bottom - row.top <= geometry.goods.height,
-    `${tag} ${route}: each goods row fits within the scrollable region ${JSON.stringify(geometry)}`);
+  const reachable = await panelFor(page).evaluate((element) => {
+    const scroll = element.querySelector(".trade-composer-scroll");
+    const give = element.querySelector('[data-testid="trade-give-row"]');
+    const want = element.querySelector('[data-testid="trade-want-row"]');
+    const bank = element.querySelector(".trade-bank-box");
+    const table = element.querySelector('[data-testid="trade-player-preview"]').closest(".trade-route");
+
+    give.scrollIntoView();
+    let sBox = scroll.getBoundingClientRect();
+    let gBox = give.getBoundingClientRect();
+    const giveIn = gBox.top >= sBox.top - 1 && gBox.bottom <= sBox.bottom + 1;
+
+    want.scrollIntoView();
+    sBox = scroll.getBoundingClientRect();
+    let wBox = want.getBoundingClientRect();
+    const wantIn = wBox.top >= sBox.top - 1 && wBox.bottom <= sBox.bottom + 1;
+
+    const askBtn = table.querySelector("button");
+    const bankBtn = bank.querySelector("button");
+    const aBox = askBtn.getBoundingClientRect();
+    const bBox = bankBtn.getBoundingClientRect();
+    const footerVisible = aBox.height > 0 && bBox.height > 0 &&
+      aBox.top >= 0 && aBox.bottom <= window.innerHeight + 1 &&
+      bBox.top >= 0 && bBox.bottom <= window.innerHeight + 1;
+
+    scroll.scrollTop = 0;
+    return { giveIn, wantIn, footerVisible, sBox, gBox, wBox, aBox, bBox };
+  });
+  assert.equal(reachable.giveIn, true, `${tag} ${route}: Give row sits fully inside the scrollable region after scrollIntoView ${JSON.stringify(reachable)}`);
+  assert.equal(reachable.wantIn, true, `${tag} ${route}: Want row sits fully inside the scrollable region after scrollIntoView ${JSON.stringify(reachable)}`);
+  assert.equal(reachable.footerVisible, true, `${tag} ${route}: Ask the table and Bank button remain visible in the footer ${JSON.stringify(reachable)}`);
   for (const card of geometry.unselectedCards) assert.ok(card.height <= (page.viewportSize().height <= 480 ? 90 : 104),
     `${tag} ${route}: unselected cards retain the final owner's compact height ${JSON.stringify(card)}`);
   const stock = panelFor(page).locator("#trade-bank-stock");
@@ -776,7 +806,7 @@ try {
   }
   await lazyRecovery();
   assert.deepEqual(errors, [], "zero browser errors");
-  console.log("trade tabs proof ok: three viewports, both motion settings, real rules settlement, zero browser errors");
+  console.log("trade tabs proof ok: four viewports, both motion settings, real rules settlement, zero browser errors");
 } finally {
   await browser?.close();
   await vite.close();
