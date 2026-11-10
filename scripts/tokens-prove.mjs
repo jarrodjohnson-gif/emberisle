@@ -197,7 +197,7 @@ try {
           for (const [cx, cy] of [[128, mid], [128, top + 4], [128, bottom - 4], [88, mid], [168, mid]]) {
             const v = label.localToWorld(new V((cx / 128 - 1) * 0.245, (1 - cy / 128) * 0.245, 0.005));
             const hit = isle.jellyBoard.occludes(isle.persp.position, v);
-            if (hit && Math.hypot(hit.point.x - v.x, hit.point.y - v.y, hit.point.z - v.z) > 0.03) hits.push(hit);
+            if (hit) hits.push(hit);
           }
           return {
             n,
