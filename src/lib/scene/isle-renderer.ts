@@ -3,14 +3,13 @@ import {
   CAP_LEVEL,
   DIORAMA_AZIMUTH,
   DIORAMA_POLAR,
-  OVERHEAD_LEAN,
+  playOrtho,
   TouchGesture,
   PICK_EDGE,
   PICK_VERTEX_RADIUS,
   chromeInsets,
   defaultView,
   fitDiorama,
-  fitOrtho,
   freeMaxDistance,
   hudInsets,
   playHole,
@@ -946,7 +945,7 @@ export class IsleRenderer {
     // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment): the one the map is fitted to.
     for (const k of ["top", "right", "bottom", "left"] as const) c.parentElement?.style.setProperty(`--hole-${k}`, `${base[k]}px`);
     const [w, h] = [c.clientWidth || 1, c.clientHeight || 1];
-    const f = this.view === "diorama" ? fitDiorama(w, h, base) : fitOrtho(w, h, base, OVERHEAD_LEAN);
+    const f = this.view === "diorama" ? fitDiorama(w, h, base) : playOrtho(w, h, base, readViewport().phone);
     const was = this.fit;
     if (was && FIT_KEYS.every((k) => Math.abs(this.fitPose(f)[k] - this.fitPose(was)[k]) < 1e-6)) return;
     this.fit = f;
@@ -966,12 +965,14 @@ export class IsleRenderer {
       to.tx += this.orbit.target.x - from.tx;
       to.tz += this.orbit.target.z - from.tz;
     }
-    this.moveTo(to, FIT_KEYS, instant || this.renders <= this.shownAt);
+    // #1509: a turn of the phone changes the overhead lean (40° upright, 25° on its side), so the eye goes to the new one.
+    const lean = "lean" in f && "lean" in was && f.lean !== was.lean;
+    this.moveTo(to, lean ? [...FIT_KEYS, "polar"] : FIT_KEYS, instant || this.renders <= this.shownAt);
   }
 
   private fitPose(f: OrthoFit | DioramaFit): Pose {
     if ("focal" in f) return { ...NO_FIT, focal: f.focal, dist: f.dist, cx: f.cx, cy: f.cy, polar: DIORAMA_POLAR, azimuth: DIORAMA_AZIMUTH, zoom: 1 };
-    return { ...NO_FIT, left: f.left, right: f.right, top: f.top, bottom: f.bottom, tx: f.x, tz: f.z, polar: OVERHEAD_LEAN, azimuth: 0, zoom: 1 };
+    return { ...NO_FIT, left: f.left, right: f.right, top: f.top, bottom: f.bottom, tx: f.x, tz: f.z, polar: f.lean, azimuth: 0, zoom: 1 };
   }
 
   // Read from the camera itself, so it is right straight after applyPose, before the controls' next update.

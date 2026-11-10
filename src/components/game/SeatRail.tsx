@@ -4,8 +4,9 @@
 // non-zero, the roll-off die only while the roll-off is live, and the points at text-title. The seat on turn carries
 // `seat-turn`: its dot pulses softly (bible §4.3) and the card brightens over 200 ms (§8), with an ink ring on the dot and
 // aria-current so the turn never rests on colour or motion alone (#312); the dot is a SeatDot.
-// #645: under that line, on a line of its own, two public tallies at every width: "🛤 n" (longest continuous path) and "⚔ n"
-// (wayfarers played); the Longest Path / Largest Army holder wears a gold badge on its tally (see Tally).
+// #645: on the desktop rail, under that line, two public tallies: "🛤 n" (longest continuous path) and "⚔ n" (wayfarers
+// played); the Longest Path / Largest Army holder wears a gold badge on its tally (see Tally). The phone strip shows the
+// name on that line instead, and the seat sheet carries the tallies (#1509).
 // Your fortunes by kind, a dropped seat's state and "Hidden fortunes may add points." are in the player menu, one tap away.
 import { useMemo } from "react";
 import { type LucideIcon, Route, ScrollText, Swords } from "lucide-react";
@@ -61,8 +62,11 @@ function Tally({ testid, Icon, n, name, held }: { testid: string; Icon: LucideIc
   );
 }
 
-// `short` is the strip's under-100 px form (#420); its presence makes this a strip line, which also hides the counts in
-// a cell under 200 px so the name keeps its room. A dropped seat's marker shows at every width (the word only where it fits).
+// `short` is the strip's narrow form (#420); its presence makes this a strip line, which also hides the counts in a cell
+// under 200 px so the points keep their room. A dropped seat's marker shows at every width (the word only where it fits).
+// #1509 (option A, owner card q1508-table-goal): on the phone strip the name has a line of its own, under the dot and the
+// points, so it reads whole ("Jarrod", not "Jar"); the short form is left for a cell under 60 px. The two tallies are not on
+// the strip: they are in the seat sheet (PlayerMenu), one tap away. The desktop rail keeps them on a line of their own.
 function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: string }) {
   const state = useGame((s) => s.state)!;
   const away = seatAway(useGame((s) => s.seats), p);
@@ -72,19 +76,24 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
   const fortunes = p.fortunes ?? hiddenCount(p);
   const narrow = strip ? "@max-[200px]:hidden" : undefined;
   const path = useMemo(() => roadLength(state, p.id), [state, p.id]);
+  const name = (
+    <>
+      <span data-testid="seat-name" className={cn("min-w-0 flex-auto truncate text-sm font-medium", strip && "leading-4 @max-[60px]:sr-only")}>
+        {p.name}
+      </span>
+      {strip ? (
+        <span data-testid="seat-name" aria-hidden="true" className="hidden min-w-0 flex-auto truncate text-xs font-medium leading-4 @max-[60px]:block">
+          {short}
+        </span>
+      ) : null}
+    </>
+  );
   return (
     <>
       <span className={cn("flex w-full items-center", strip ? (away ? "gap-1.5 @max-[100px]:gap-0" : "gap-1.5 @max-[100px]:gap-1") : "gap-1.5")}>
-        {/* Under 100 px a cell holds "Emb" and the points with 4 px gaps; the dot gives back its two extra pixels there (#420). */}
+        {/* Under 100 px the dot gives back its two extra pixels (#420). */}
         <SeatDot color={p.color} className={cn("seat-dot size-3", strip && "@max-[100px]:size-2.5")} />
-        <span data-testid="seat-name" className={cn("min-w-0 flex-auto truncate text-sm font-medium", strip && "@max-[128px]:sr-only")}>
-          {p.name}
-        </span>
-        {strip ? (
-          <span data-testid="seat-name" aria-hidden="true" className="hidden min-w-0 flex-auto truncate text-xs font-medium @max-[128px]:block">
-            {short}
-          </span>
-        ) : null}
+        {strip ? null : name}
         {away ? (
           <span data-testid="seat-away" className={cn("seat-away flex min-w-4 shrink-[9] items-center gap-0.5 text-caption text-zinc-700", strip && "@max-[100px]:min-w-3")}>
             {/* A struck ring: the seat's circle with a line through it, in CSS so it costs no icon. */}
@@ -100,10 +109,10 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
             {fortunes > 0 ? <Count testid="seat-fortunes" n={fortunes} unit="fortune" className={narrow} /> : null}
           </>
         )}
-        <RollOffDie state={state} id={p.id} className={strip ? "size-5 rounded-[4px] text-xs" : "size-6 text-sm"} />
+        <RollOffDie state={state} id={p.id} className={strip ? "ml-auto size-5 rounded-[4px] text-xs" : "size-6 text-sm"} />
         <span
           data-testid="seat-vp"
-          className={cn("shrink-0 text-title tabular-nums", strip && state.phase === "rollOff" && "@max-[100px]:hidden")}
+          className={cn("shrink-0 text-title tabular-nums", strip && "leading-5", strip && !(state.rollOff && state.phase === "rollOff") && "ml-auto", strip && state.phase === "rollOff" && "@max-[100px]:hidden")}
         >
           {publicVP(state, p.id)}
           <span className="sr-only"> points{hidden ? `, plus ${hidden} hidden` : ""}</span>
@@ -114,11 +123,15 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
           ) : null}
         </span>
       </span>
-      {/* Its own line, so the cell's width is the tallies' room: a 77 px phone cell holds both with two-digit counts. */}
-      <span className="flex w-full items-center gap-1 text-caption">
-        <Tally testid="tally-path" Icon={Route} n={path} name={["Path length", "Longest path"]} held={state.longestRoad === p.id} />
-        <Tally testid="tally-army" Icon={Swords} n={p.knightsPlayed} name={["Wayfarers played", "Largest army"]} held={state.largestArmy === p.id} />
-      </span>
+      {strip ? (
+        <span className="flex w-full items-center">{name}</span>
+      ) : (
+        // Its own line, so the card's width is the tallies' room.
+        <span className="flex w-full items-center gap-1 text-caption">
+          <Tally testid="tally-path" Icon={Route} n={path} name={["Path length", "Longest path"]} held={state.longestRoad === p.id} />
+          <Tally testid="tally-army" Icon={Swords} n={p.knightsPlayed} name={["Wayfarers played", "Largest army"]} held={state.largestArmy === p.id} />
+        </span>
+      )}
     </>
   );
 }
@@ -183,7 +196,7 @@ function shortName(name: string) {
   return n ? `${name[0]}${n}` : name.slice(0, 3);
 }
 
-// Three letters is all an 89 px cell holds, so seats that still share a short form ("Ember", "Emberly") fall back to
+// Three letters is all a cell under 60 px holds, so seats that still share a short form ("Ember", "Emberly") fall back to
 // the initial and the seat number ("E1", "E2").
 function shortNames(names: string[]) {
   const short = names.map(shortName);
