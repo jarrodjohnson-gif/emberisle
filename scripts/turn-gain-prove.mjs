@@ -79,12 +79,12 @@ function check(ok, label, data) {
 // Installed before the app: every turn moment and every gain line, with what the store said when it mounted, its box and
 // colour, and its opacity and transform on every frame it lives; the person's own hand changes; the roll moment's spans.
 function recorders() {
-  // For a measure only: __hold names the moment being measured; a 1.5-2.7 s timer set while it is on screen (its own end)
+  // For a measure only: __hold names the moment being measured; its end timer (including the hand's current 3 s cue)
   // waits until __release() runs it. Nothing else is held, so the bots play on.
   window.__held = new Map();
   const later = window.setTimeout;
   window.setTimeout = function (fn, ms, ...a) {
-    if (window.__hold && document.querySelector(`[data-testid="${window.__hold}"]`) && typeof fn === "function" && ms >= 1500 && ms <= 2700) {
+    if (window.__hold && document.querySelector(`[data-testid="${window.__hold}"]`) && typeof fn === "function" && (ms >= 1500 && ms <= 2700 || window.__hold === "resource-flash" && ms === 3000)) {
       const id = later(() => window.__held.delete(id), 600_000);
       window.__held.set(id, () => fn(...a));
       return id;
@@ -851,6 +851,9 @@ async function reconnect() {
 
     states = [at(20, 2, "main", "p1", 1)];
     await page.waitForFunction(() => window.__emberisle?.getState().state?.seq === 20, null, { timeout: STEP_MS });
+    // The store can publish before React commits the first hand. Establish its baseline before
+    // sending a live gain: a hand first mounted at seq 21 correctly treats that count as initial.
+    await page.waitForFunction(() => document.querySelector('[data-testid="resource-timber"] [data-testid="hand-count"]')?.textContent === "1", null, { timeout: STEP_MS });
     await stays("first load, seq 20", { turns: 0, lines: 0 });
 
     // A cue from before the drop must not outlive it: gain a good live, drop at once.
