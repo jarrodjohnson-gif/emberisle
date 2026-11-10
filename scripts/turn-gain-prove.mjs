@@ -851,6 +851,9 @@ async function reconnect() {
 
     states = [at(20, 2, "main", "p1", 1)];
     await page.waitForFunction(() => window.__emberisle?.getState().state?.seq === 20, null, { timeout: STEP_MS });
+    // The store can publish before React commits the first hand. Establish its baseline before
+    // sending a live gain: a hand first mounted at seq 21 correctly treats that count as initial.
+    await page.waitForFunction(() => document.querySelector('[data-testid="resource-timber"] [data-testid="hand-count"]')?.textContent === "1", null, { timeout: STEP_MS });
     await stays("first load, seq 20", { turns: 0, lines: 0 });
 
     // A cue from before the drop must not outlive it: gain a good live, drop at once.
