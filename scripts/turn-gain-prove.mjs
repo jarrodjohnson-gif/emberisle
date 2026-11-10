@@ -858,7 +858,37 @@ async function reconnect() {
 
     // A cue from before the drop must not outlive it: gain a good live, drop at once.
     push(at(21, 2, "main", "p1", 2));
-    await page.waitForSelector('[data-testid="resource-flash"]', { timeout: STEP_MS });
+    try {
+      await page.waitForSelector('[data-testid="resource-flash"]', { timeout: STEP_MS });
+    } catch (error) {
+      // Observe only after the original guard fails: a mounted-and-expired cue differs from
+      // a missing state or hand commit. Reporting must never replace or pass that failure.
+      let reportTimer;
+      try {
+        const context = await Promise.race([
+          page.evaluate(() => {
+            const s = window.__emberisle?.getState();
+            return {
+              now: performance.now(), origin: performance.timeOrigin, hidden: document.hidden,
+              seq: s?.state?.seq, synced: s?.synced, resync: s?.resync, screen: s?.screen,
+              localId: s?.localId, error: s?.error,
+              timber: s?.state?.players.find(p => p.id === s.localId)?.resources.timber,
+              hand: document.querySelector('[data-testid="resource-timber"] [data-testid="hand-count"]')?.textContent,
+              cues: [...document.querySelectorAll('[data-testid="resource-flash"]')].map(e => ({ text: e.textContent, resource: e.dataset.resource })),
+              own: window.__own.slice(-5),
+              lines: window.__lines.slice(-5).map(({ at, gone, text, r, d, frames }) => ({ at, gone, text, r, d, frames: frames.length })),
+            };
+          }),
+          new Promise(resolve => { reportTimer = setTimeout(() => resolve({ reportTimedOut: true }), 3000); }),
+        ]);
+        console.log("reconnect cue failure context", JSON.stringify({ welcomes: sent.welcomes, sockets: sockets.length, ...context }));
+      } catch (reportError) {
+        console.log("reconnect cue failure context unavailable", reportError.message);
+      } finally {
+        clearTimeout(reportTimer);
+      }
+      throw error;
+    }
     const before = await shown();
     states = [at(22, 3, "roll", "p0", 4)];
     sockets.at(-1).close();
