@@ -1,0 +1,7 @@
+ok   390x844 online p1 first load onto own roll at seq 20: no moment
+ok   390x844 online p1 a bot's turn: no moment {"mounts":0,"up":0}
+focused exit precondition { age: 202.6000000089407, leaving: false }
+ok   390x844 online p1 focused exit: pointer-transparent 160 ms fade {"at":5546.79999999702,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.653949,"transform":"matrix(0.979637, 0, 0, 0.979637, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":5859.79999999702}
+controlled exit RAF context { delayed: 1, marker: null }
+ok   zero console errors []
+focused exit control: passed

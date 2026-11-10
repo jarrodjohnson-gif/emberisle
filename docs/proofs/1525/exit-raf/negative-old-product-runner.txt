@@ -1,0 +1,15 @@
+from pathlib import Path
+import subprocess,os
+p=Path('src/components/game/TurnMoment.tsx');out=Path('docs/proofs/1525/exit-raf')
+old=(out/'old-product-source.txt').read_text();new=(out/'new-product-source.txt').read_text();assert p.read_text()==new
+try:
+ p.write_text(old)
+ with Path('/workspace/work/resume-nov9/1525-poll-old-product.log').open('w') as log:
+  r=subprocess.run(['/workspace/work/runtime/node_modules/node/bin/node','scripts/.codex-p-1525-exit-raf-timer.mjs'],env={**os.environ,'ONLY':'online'},stdout=log,stderr=subprocess.STDOUT)
+ Path('/workspace/work/resume-nov9/1525-poll-old-product.exit').write_text(str(r.returncode)+'\n')
+finally:
+ assert p.read_text()==old
+ p.write_text(new)
+print('\n'.join(Path('/workspace/work/resume-nov9/1525-poll-old-product.log').read_text().splitlines()[-14:]))
+assert r.returncode==1,'negative must retain original failure'
+print('Expected old-product failure preserved; candidate product restored.')

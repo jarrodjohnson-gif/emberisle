@@ -293,7 +293,8 @@ async function online(me, { cap = false } = {}) {
       const now = { mounts: await bannerCount(page), up: await up(page) };
       check(now.mounts === n0 && now.up === 0, `${tg} ${label}: no moment`, now);
     };
-    const gone = (ms = 1000) => page.waitForFunction(() => !document.querySelector('[data-testid="turn-moment"]'), null, { timeout: ms });
+    // DOM dismissal must be observable even when animation-frame callbacks are delayed.
+    const gone = (ms = 1000) => page.waitForFunction(() => !document.querySelector('[data-testid="turn-moment"]'), null, { timeout: ms, polling: 50 });
     const shows = async (n) => {
       try {
         await page.waitForFunction((n) => window.__yt.length === n && document.querySelector('[data-testid="turn-moment"]'), n, { timeout: STEP_MS });

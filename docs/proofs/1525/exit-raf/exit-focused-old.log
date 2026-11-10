@@ -1,0 +1,16 @@
+ok   390x844 online p1 first load onto own roll at seq 20: no moment
+ok   390x844 online p1 a bot's turn: no moment {"mounts":0,"up":0}
+focused exit precondition { age: 320.5, leaving: false }
+390x844 online p1: page.waitForFunction: Timeout 1000ms exceeded.
+    at gone (/workspace/work/1518/scripts/.codex-p-1525-exit-raf-focused.mjs:307:38)
+    at online (/workspace/work/1518/scripts/.codex-p-1525-exit-raf-focused.mjs:372:28)
+    at async file:///workspace/work/1518/scripts/.codex-p-1525-exit-raf-focused.mjs:637:5 {
+  log: [],
+  name: 'TimeoutError'
+}
+controlled exit RAF context {
+  delayed: [ 6292.0999999940395 ],
+  marker: { leaving: 'true', opacity: '0.957124' }
+}
+ok   zero console errors []
+focused exit control: 1 failed
