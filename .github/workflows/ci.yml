@@ -225,6 +225,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run registered-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run roll-off-oracle-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run readme-server-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run spiral-prove
@@ -418,6 +420,8 @@ jobs:
         run: npm run needs-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run trade-tabs-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run trade-contrast-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a2'
         run: npm run practice-trade-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a2'
@@ -566,6 +570,8 @@ jobs:
         run: npm run your-turn-cue-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run music-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run ambience-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run ore-tokens-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
@@ -702,6 +708,8 @@ jobs:
         run: npm run longest-army-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run roll-log-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run hud-roll-line-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run public-score-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'

@@ -129,7 +129,7 @@ try {
         const b = el.getBoundingClientRect();
         if (b.height < 44 || b.width < 44) out.push(`${el.getAttribute("aria-label") || el.textContent.trim() || el.tagName} ${b.width}x${b.height}`);
       }
-      const button = [...d.querySelectorAll("button")].find((b) => b.textContent.trim() === main);
+      const button = [...d.querySelectorAll("button")].find((b) => main === "Close" ? b.getAttribute("aria-label") === main : b.textContent.trim() === main);
       if (!button) out.push(`no ${main} button`);
       else {
         const b = button.getBoundingClientRect();
@@ -195,7 +195,7 @@ try {
     // The summary says when the code was made and offers a new one.
     await sheet(page).getByText("Signed in as").waitFor();
     await sheet(page).getByText(/^Recovery code made \d{1,2} [A-Z][a-z]{2} \d{4}\.$/).waitFor();
-    await fits(page, "Done", `${size.name} summary`);
+    await fits(page, "Close", `${size.name} summary`);
     await shot(page, "summary", size.name);
 
     // New recovery code: a wrong PIN beside the field, then a new code.

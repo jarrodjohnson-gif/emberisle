@@ -14,7 +14,7 @@
 .trade-half h3 { margin-bottom: 8px; font-size: 15px; line-height: 20px; font-weight: 700; }
 .trade-resource-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .trade-resource { position: relative; display: flex; align-self: start; min-width: 0; flex-direction: column; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--paper); }
-.trade-resource[data-selected] { border-color: var(--ink); background: var(--table-raised); }
+.trade-resource[data-selected] { border-color: var(--ink); background: var(--paper); }
 .trade-add > svg, .trade-resource-name { color: var(--sym); }
 .trade-resource-name { margin-top: 4px; font-size: 12px; line-height: 14px; font-weight: 650; }
 .trade-owned { color: var(--muted); font-size: 12px; line-height: 14px; font-variant-numeric: tabular-nums; }

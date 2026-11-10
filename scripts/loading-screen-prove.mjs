@@ -244,7 +244,7 @@ try {
       await page.getByTestId("title-card").waitFor();
       const moved = await page.getByTestId("loading-card").evaluateAll((els) => els.map((el) => el.style.transform).join(""));
       await page.getByTestId("loading-card").waitFor({ state: "detached", timeout: 2000 });
-      ms = Date.now() - t0;
+      ms = await page.evaluate(() => Math.round(window.__trace.gone - window.__trace.start));
       check(ms < 1000 && !moved, "reduced motion: a cross-fade only (the card never moves) and the title is up in under a second", { ms });
     } finally {
       console.log(`     reduced motion trace (ms from navigation; long tasks as ms-from-Start+duration): ${JSON.stringify({ ms: ms ?? Date.now() - t0, ...(await traced()) })}`);
@@ -255,13 +255,13 @@ try {
 
   // #1385: frames that stop for 2.5 s just as the title arrives do not hold the loading card: the fade ends on its own clock.
   {
-    const { ctx, page, errors } = await open({ width: 390, height: 844 }, { reducedMotion: "reduce", stall: 2500 });
+    const { ctx, page, errors } = await open({ width: 390, height: 844 }, { reducedMotion: "reduce", stall: 2500, trace: true });
     await page.waitForFunction(() => document.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow") === "100", null, { timeout: 60_000 });
     await start(page).click();
     const t0 = Date.now();
     await page.getByTestId("title-card").waitFor();
     await page.getByTestId("loading-card").waitFor({ state: "detached", timeout: 2000 });
-    const ms = Date.now() - t0;
+    const ms = await page.evaluate(() => Math.round(window.__trace.gone - window.__trace.start));
     check(ms < 1000, "reduced motion: with frames stalled 2.5 s as the title arrives, the loading card is still gone within a second of Start", { ms });
     check(errors.length === 0, "reduced motion with stalled frames: no browser errors", errors);
     await ctx.close();
@@ -294,7 +294,7 @@ try {
     const t0 = Date.now();
     await page.getByTestId("title-card").waitFor();
     await page.getByTestId("loading-card").waitFor({ state: "detached", timeout: 2000 });
-    const ms = Date.now() - t0;
+    const ms = await page.evaluate(() => Math.round(window.__trace.gone - window.__trace.start));
     const gap = await page.evaluate(() => Math.round(window.__trace.start - window.__trace.at100));
     check(ms < 1000, `reduced motion, CPU 6x, Start tapped ${gap} ms after 100% (run ${run} of 3): the title is up and the loading card gone within a second`, { ms });
     check(errors.length === 0, `reduced motion, CPU 6x, instant Start (run ${run} of 3): no browser errors`, errors);

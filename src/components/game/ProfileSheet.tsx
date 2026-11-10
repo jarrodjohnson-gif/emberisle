@@ -196,9 +196,6 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
         {formError}
         {actions(
           <>
-            <Button size="lg" variant="primary" className="w-full" onClick={onClose}>
-              Done
-            </Button>
             <Button variant="secondary" className="w-full" disabled={busy} onClick={() => void send(() => c.logout())}>
               Sign out
             </Button>
