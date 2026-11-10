@@ -137,24 +137,23 @@ export function playLean(cssW: number, cssH: number, phone: boolean) {
 // Overhead frustum sized to the island inside the hole, then the camera's look-at point is shifted so the world center
 // lands at the hole center. Screen-up is -Z, screen-right is +X. `lean` is radians off straight down; it shortens the
 // island's screen depth by cos(lean), so a screen shift on the ground is that much longer.
-// `edge` (#1509): the shore spans the canvas's width less EDGE_GAP each side, not the hole's, when that leaves the island
-// and its docks inside the hole's height; the island then sits at the hole's bottom edge instead of its centre.
+// `edge` (#1509): the shore spans the canvas's width less EDGE_GAP each side, not the hole's, unless that would take the
+// island and its docks past the hole's height; the island sits at the hole's bottom edge instead of its centre.
 export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0, edge = false): OrthoFit {
   const halfZ = ISLE_HALF.z * Math.cos(lean) + LEAN_RISE * Math.sin(lean);
   if (edge) {
     const sides = { left: Math.max(EDGE_GAP, insets.left - 12 + EDGE_GAP), right: Math.max(EDGE_GAP, insets.right - 12 + EDGE_GAP) };
     const holeW = Math.max(1, cssW - sides.left - sides.right);
     const holeH = Math.max(1, cssH - insets.top - insets.bottom);
-    const px = holeW / (2 * SHORE_HALF_X);
-    if (halfZ * 2 * px <= holeH) {
-      const hw = (cssW / 2) / px;
-      const hh = (cssH / 2) / px;
-      const cx = sides.left + holeW / 2;
-      const cy = cssH - insets.bottom - halfZ * px;
-      const ndcX = (cx / cssW) * 2 - 1;
-      const ndcY = -((cy / cssH) * 2 - 1);
-      return { left: -hw, right: hw, top: hh, bottom: -hh, x: -ndcX * hw, z: (ndcY * hh) / Math.cos(lean), lean };
-    }
+    // A hole too short for that (a 375x667 phone) scales the island to its height instead, which is then centred in it.
+    const px = Math.min(holeW / (2 * SHORE_HALF_X), holeH / (2 * halfZ));
+    const hw = cssW / 2 / px;
+    const hh = cssH / 2 / px;
+    const cx = sides.left + holeW / 2;
+    const cy = cssH - insets.bottom - halfZ * px;
+    const ndcX = (cx / cssW) * 2 - 1;
+    const ndcY = -((cy / cssH) * 2 - 1);
+    return { left: -hw, right: hw, top: hh, bottom: -hh, x: -ndcX * hw, z: (ndcY * hh) / Math.cos(lean), lean };
   }
   const holeW = Math.max(1, cssW - insets.left - insets.right);
   const holeH = Math.max(1, cssH - insets.top - insets.bottom);

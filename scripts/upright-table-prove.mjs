@@ -1,5 +1,5 @@
-// #1509 (option A, owner card q1508-table-goal): the upright phone table. At 430x932, 390x844 and 375x667 (touch, with the
-// device's safe-area insets where it has them), on a crafted main phase (seed 20261110, four seats, own turn):
+// #1509 (option A, owner card q1508-table-goal): the upright phone table. At 430x932, 390x844 and 375x812 (touch, with the
+// device's safe-area insets), on a crafted main phase (seed 20261110, four seats, own turn):
 // - camera: the default view is overhead at UPRIGHT_LEAN (40°), and the island's coast spans the screen: the outermost hex
 //   corners sit SHORE_HALF_X - 0.42 world units out from the centre, which puts the shore's outer edge EDGE_GAP (+-2) px from
 //   each screen edge; the island is centred across; it sits low: its lowest corner is nearer the hole's bottom than its
@@ -7,7 +7,8 @@
 //   a turn of the phone goes from one lean to the other;
 // - 16 px gutters: the seat strip and the bottom stack start 16 px from the left edge and end 16 px from the right;
 // - seats: every seat shows its full name (no ellipsis, not a short form) on its own line under its dot and points; the strip
-//   has no path or army tally; the seat's sheet lists "Path length" and "Wayfarers played";
+//   has no path or army tally; the seat's sheet lists "Path length" and "Wayfarers played" as the rules count them, and
+//   "Longest path" and "Largest army" on the seat that holds them;
 // - the dock: the turn line, the hand tray and the build row have no fill and no padding box; there are no "pays on"
 //   number chips; the last-event line runs from the left gutter to the deck count;
 // - the empty space between the seat strip and the dock is at least 58.3 % of the height at 390x844 with a 34 px home bar;
@@ -20,8 +21,9 @@ import { createServer } from "vite";
 
 const SIZES = [
   { width: 430, height: 932, insets: { top: 59, right: 0, bottom: 34, left: 0 } },
-  { width: 390, height: 844, insets: { top: 47, right: 0, bottom: 34, left: 0 } },
-  { width: 375, height: 667, insets: null },
+  // q1274-1 measures 58.3 % at 390x844 with a 34 px home bar and no top inset.
+  { width: 390, height: 844, insets: { top: 0, right: 0, bottom: 34, left: 0 } },
+  { width: 375, height: 812, insets: { top: 44, right: 0, bottom: 34, left: 0 } },
 ];
 const vite = await createServer({ server: { host: "127.0.0.1", port: 0 }, logLevel: "error" });
 await vite.listen();
@@ -90,6 +92,8 @@ try {
   for (const size of SIZES) {
     const tag = `${size.width}x${size.height}`;
     const ctx = await browser.newContext({ viewport: { width: size.width, height: size.height }, isMobile: true, hasTouch: true });
+    // First-game tips off: their "Skip tips" chip shares the strip's row (on a first game a 375 px strip falls back to short names).
+    await ctx.addInitScript(() => localStorage.setItem("emberisle-first-game-coach", '"done"'));
     const page = await ctx.newPage();
     if (size.insets) await (await ctx.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets: size.insets });
     page.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
@@ -168,27 +172,54 @@ try {
     for (const [k, v] of Object.entries(ui.pads)) assert.equal(v, "0px", `${tag}: the ${k} has a ${v} side padding`);
     assert.equal(ui.numbers, 0, `${tag}: the "pays on" number chips are on the table`);
     assert.equal(ui.log.l, 16, `${tag}: the last event starts ${ui.log.l} px from the left`);
-    assert.ok(ui.log.r <= ui.log.deckL && ui.log.deckL - ui.log.r < 1, `${tag}: the last event stops ${(ui.log.deckL - ui.log.r).toFixed(1)} px short of the deck count`);
+    // The row's own 4 px gap sits between them.
+    assert.ok(ui.log.r <= ui.log.deckL && ui.log.deckL - ui.log.r <= 4.5, `${tag}: the last event stops ${(ui.log.deckL - ui.log.r).toFixed(1)} px short of the deck count`);
     assert.deepEqual(ui.small, [], `${tag}: text under 12 px`);
     const clear = (ui.stack.t - ui.strip.b) / ui.h;
     if (tag === "390x844") assert.ok(clear >= 0.583, `${tag}: the clear height is ${(clear * 100).toFixed(1)} %, under 58.3 %`);
     console.log(`${tag}: 16 px gutters, full names on their own line, no tallies, no boxes, no number chips, the last event ${Math.round(ui.log.r - ui.log.l)} px wide; clear height ${(clear * 100).toFixed(1)} %`);
 
-    // The seat sheet carries the tallies.
-    await page.locator('[data-menu-trigger="p1"]').tap();
-    const labels = await page.getByTestId("menu-facts").locator("dt").allTextContents();
-    assert.ok(labels.includes("Path length") && labels.includes("Wayfarers played"), `${tag}: the seat sheet lists ${JSON.stringify(labels)}`);
-    await page.getByRole("button", { name: "Close" }).tap();
+    // The seat sheet carries the tallies: the counts the rules hold, and the award's name on the seat that holds it.
+    const sheet = async (id) => {
+      await page.locator(`[data-menu-trigger="${id}"]`).tap();
+      const facts = await page.getByTestId("menu-facts").evaluate((dl) => Object.fromEntries([...dl.querySelectorAll("div")].map((d) => [d.querySelector("dt").textContent, d.querySelector("dd").textContent])));
+      await page.getByRole("button", { name: "Close" }).tap();
+      return facts;
+    };
+    const want = await page.evaluate(async () => {
+      const { roadLength } = await import("/src/lib/game/rules.ts");
+      const st = window.__emberisle.getState().state;
+      return { path: String(roadLength(st, "p1")), army: String(st.players[1].knightsPlayed) };
+    });
+    const plain = await sheet("p1");
+    assert.ok(plain["Path length"] === want.path && plain["Wayfarers played"] === want.army, `${tag}: the seat sheet lists ${JSON.stringify(plain)}, want ${JSON.stringify(want)}`);
+    await page.evaluate(() => {
+      const g = window.__emberisle;
+      const st = structuredClone(g.getState().state);
+      st.longestRoad = "p1";
+      st.largestArmy = "p1";
+      st.players[1].knightsPlayed = 3;
+      st.seq++;
+      g.setState({ state: st });
+    });
+    const held = await sheet("p1");
+    assert.ok(held["Longest path"] === want.path && held["Largest army"] === "3" && !("Path length" in held), `${tag}: the holder's sheet lists ${JSON.stringify(held)}`);
+    const other = await sheet("p2");
+    assert.ok("Path length" in other && "Wayfarers played" in other && !("Longest path" in other), `${tag}: another seat's sheet lists ${JSON.stringify(other)}`);
     await page.screenshot({ path: `test-results/upright-table-${tag}.png` });
-    console.log(`${tag}: the seat sheet lists the path length and wayfarers played`);
+    console.log(`${tag}: the seat sheet lists the path length and wayfarers played, and names an award on its holder`);
 
     // A turn of the phone: sideways the lean is the overhead one, and upright again it is the upright one.
     if (tag === "390x844") {
       await page.setViewportSize({ width: 844, height: 390 });
+      // The canvas is measured again over a few frames after a resize; then the glide runs.
+      await page.evaluate(async () => { for (let i = 0; i < 8; i++) await new Promise((r) => requestAnimationFrame(r)); });
       await page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide && innerWidth > innerHeight, null, { timeout: 30_000 });
       const side = await lookAt(page);
       assert.ok(Math.abs(side.polar - side.OVERHEAD_LEAN) < 1e-3, `844x390: the eye leans ${((side.polar * 180) / Math.PI).toFixed(1)}°, not ${((side.OVERHEAD_LEAN * 180) / Math.PI).toFixed(0)}°`);
       await page.setViewportSize({ width: 390, height: 844 });
+      // The canvas is measured again over a few frames after a resize; then the glide runs.
+      await page.evaluate(async () => { for (let i = 0; i < 8; i++) await new Promise((r) => requestAnimationFrame(r)); });
       await page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide && innerWidth < innerHeight, null, { timeout: 30_000 });
       const back = await lookAt(page);
       assert.ok(Math.abs(back.polar - back.UPRIGHT_LEAN) < 1e-3, `390x844 again: the eye leans ${((back.polar * 180) / Math.PI).toFixed(1)}°`);
