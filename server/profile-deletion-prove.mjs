@@ -221,21 +221,6 @@ function rowsText(d) {
   return JSON.stringify({ rooms, pending, results: s.results, records: s.records, receipts: s.receipts });
 }
 
-function assertAbsent(d, terms, message) {
-  const text = rowsText(d);
-  for (const x of terms) {
-    if (text.includes(x)) {
-      for (const dir of [d.rooms, d.results, d.profiles]) {
-        for (const f of existsSync(dir) ? readdirSync(dir) : []) {
-          const full = path.join(dir, f);
-          if (readFileSync(full, "utf8").includes(x)) console.error(`match ${x} in ${full}`);
-        }
-      }
-    }
-    assert(!text.includes(x), `${message}: ${x}`);
-  }
-}
-
 const done = [];
 async function scenario(name, fn) {
   const t = Date.now();
@@ -352,7 +337,8 @@ try {
     assert.deepEqual(s.records[P.Cove.id], was.records[P.Cove.id]);
     assert(!Object.hasOwn(s.records, A.id), "the deleted profile gained no result");
     assert(!existsSync(planted), "a planted orphan .tmp holding a tombstoned uuid is removed at startup");
-    assertAbsent(d, [A.id, "Ashling", A.login, A.catchphrase], "no stored, pending or frozen row carries");
+    const text = rowsText(d);
+    for (const x of [A.id, "Ashling", A.login, A.catchphrase]) assert(!text.includes(x), `no stored, pending or frozen row carries ${x}`);
   });
 
   await scenario("credentials are revoked, the active game plays on, and public projections carry no deleted identity", async () => {
@@ -423,7 +409,8 @@ try {
     assert.equal(s.records[P.Brook.id].games, before.records[P.Brook.id].games + 1, "only the live profile gains the stale finished game");
     assert(!Object.hasOwn(s.profiles, A.id) && !Object.hasOwn(s.records, A.id) && !Object.hasOwn(s.logins, A.login), "the deleted profile did not return");
     assert(!readFileSync(roomFile(d, "LIVE") + ".fenced", "utf8").includes(A.id), "the fenced snapshot was redacted before it was set aside");
-    assertAbsent(d, [A.id, "Ashling"], "no row carries after the replay");
+    const text = rowsText(d);
+    for (const x of [A.id, "Ashling"]) assert(!text.includes(x), `no row carries ${x} after the replay`);
     assert.equal(Object.values(s.profiles).filter((p) => p.mediaKey !== null).length, 0, "no profile inherited the media binding");
   });
 
