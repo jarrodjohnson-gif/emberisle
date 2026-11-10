@@ -131,8 +131,11 @@ s().answerTrade(false);
 if (s().offer) fail("D: the offer stayed open after the person declined");
 s().runBots();
 if (s().offer || s().state.seq === seqD) fail("D: the bot did not play on after its declined ask closed");
-const declinedCheck = s().botDeclined;
-if (JSON.stringify(declinedCheck?.p2) !== JSON.stringify(askC)) fail("D: declined ask was not recorded in memory", declinedCheck);
+const repeatD = structuredClone(gC);
+repeatD.turn = s().state.turn + 1;
+useGame.setState({ state: repeatD, offer: null, declined: [] });
+s().runBots();
+if (s().offer) fail("D: the same declined proposal reopened on the next turn", s().offer);
 console.log("D ok: a bot's ask waits until the person answers; No from all closes it and its turn plays on");
 
 // E: the person asks the helpful ask and ends the turn before any bot answers.
