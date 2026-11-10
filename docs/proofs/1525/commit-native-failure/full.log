@@ -1,0 +1,375 @@
+ok   390x844 online p0 first load onto own roll at seq 20: no moment
+ok   390x844 online p0 a bot's turn: no moment {"mounts":0,"up":0}
+ok   390x844 online p0 the turn arrives: reads "Your turn" "Your turn"
+ok   390x844 online p0 the turn arrives: the dot is the seat's colour ["rgb(226, 61, 46)","#e23d2e"]
+ok   390x844 online p0 the turn arrives: text is 15 px or larger 28
+ok   390x844 online p0 the turn arrives: white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p0 the turn arrives: approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p0 the turn arrives: approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p0 the turn arrives: ink on the pill reads at 4.5:1 or better "11.57"
+ok   390x844 online p0 the turn arrives: takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   390x844 online p0 repeat pushes add none, and it is still up 2.6 s later (no timed fade) [1,1]
+ok   390x844 online p0 untouched, it leaves at its 8 s cap (timed from just after it mounted) 8167
+ok   390x844 online p0 8 s cap: pointer-transparent 160 ms fade {"at":14168.20000000298,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.674459,"transform":"matrix(0.989892, 0, 0, 0.989892, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":14329.09999999404}
+ok   390x844 online p0 a repeat push after the cap: no moment {"mounts":1,"up":0}
+ok   390x844 online p0 a repeat push after it left: no moment {"mounts":2,"up":0}
+ok   390x844 online p0 the person rolling ends it
+ok   390x844 online p0 roll: pointer-transparent 160 ms fade {"at":16817.20000000298,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.665629,"transform":"matrix(0.985477, 0, 0, 0.985477, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":16977.39999999106}
+ok   390x844 online p0 the turn passing on ends it
+ok   390x844 online p0 turn passing on: pointer-transparent 160 ms fade {"at":17438.59999999404,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.665638,"transform":"matrix(0.985481, 0, 0, 0.985481, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":17598.79999999702}
+ok   390x844 online p0 a watcher: no moment {"mounts":4,"up":0}
+ok   390x844 online p0 the watcher's table moving on: no moment {"mounts":4,"up":0}
+ok   390x844 online p0 the seat was re-welcomed through the redial {"welcomes":2}
+ok   390x844 online p0 a rejoin onto own roll: no moment {"mounts":4,"up":0}
+ok   390x844 online p0 a live turn after the rejoin shows one
+ok   390x844 online p0 other roll-off: no moment {"mounts":5,"up":0}
+ok   390x844 online p0 own roll-off: no moment {"mounts":5,"up":0}
+ok   390x844 online p0 own settlement: no moment {"mounts":5,"up":0}
+ok   390x844 online p0 own road: no moment {"mounts":5,"up":0}
+ok   390x844 online p0 second settlement: no moment {"mounts":5,"up":0}
+ok   390x844 online p0 tied rethrow: no moment {"mounts":5,"up":0}
+ok   390x844 online p1 first load onto own roll at seq 20: no moment
+ok   390x844 online p1 a bot's turn: no moment {"mounts":0,"up":0}
+ok   390x844 online p1 the turn arrives: reads "Your turn" "Your turn"
+ok   390x844 online p1 the turn arrives: the dot is the seat's colour ["rgb(45, 110, 232)","#2d6ee8"]
+ok   390x844 online p1 the turn arrives: text is 15 px or larger 28
+ok   390x844 online p1 the turn arrives: white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p1 the turn arrives: approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p1 the turn arrives: approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p1 the turn arrives: ink on the pill reads at 4.5:1 or better "11.57"
+ok   390x844 online p1 the turn arrives: takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   390x844 online p1 repeat pushes add none, and it is still up 2.6 s later (no timed fade) [1,1]
+ok   390x844 online p1 it pulses slowly, 1.6 s, for as long as it is up {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   390x844 online p1 the pulse runs opacity 1 to 0.92 and scale 1 to 0.96 {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   390x844 online p1 two taps produce one pointer-transparent 160 ms fade [{"at":7314.5999999940395,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.621171,"transform":"matrix(0.963248, 0, 0, 0.963248, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":7475.79999999702}]
+ok   390x844 online p1 after the tap: no moment {"mounts":1,"up":0}
+ok   390x844 online p1 a key press ends it
+ok   390x844 online p1 a repeat push after it left: no moment {"mounts":2,"up":0}
+ok   390x844 online p1 the person rolling ends it
+ok   390x844 online p1 roll: pointer-transparent 160 ms fade {"at":11410.29999999702,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.628147,"transform":"matrix(0.966736, 0, 0, 0.966736, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":11570.70000000298}
+ok   390x844 online p1 the turn passing on ends it
+ok   390x844 online p1 turn passing on: pointer-transparent 160 ms fade {"at":11984.59999999404,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.665629,"transform":"matrix(0.985477, 0, 0, 0.985477, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":12152.20000000298}
+ok   390x844 online p1 a watcher: no moment {"mounts":4,"up":0}
+ok   390x844 online p1 the watcher's table moving on: no moment {"mounts":4,"up":0}
+ok   390x844 online p1 the seat was re-welcomed through the redial {"welcomes":2}
+ok   390x844 online p1 a rejoin onto own roll: no moment {"mounts":4,"up":0}
+ok   390x844 online p1 a live turn after the rejoin shows one
+ok   390x844 online p1 other roll-off: no moment {"mounts":5,"up":0}
+ok   390x844 online p1 own roll-off: no moment {"mounts":5,"up":0}
+ok   390x844 online p1 own settlement: no moment {"mounts":5,"up":0}
+ok   390x844 online p1 own road: no moment {"mounts":5,"up":0}
+ok   390x844 online p1 second settlement: no moment {"mounts":5,"up":0}
+ok   390x844 online p1 tied rethrow: no moment {"mounts":5,"up":0}
+ok   390x844 online p1 a tap during entry fades from its current opacity {"before":0.633979,"frozen":0.633979,"leaving":true}
+ok   390x844 online p1 entry tap: pointer-transparent 160 ms fade {"at":22361.20000000298,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.428053,"transform":"matrix(0.98037, 0, 0, 0.98037, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":22521.20000000298}
+ok   390x844 online p2 first load onto own roll at seq 20: no moment
+ok   390x844 online p2 a bot's turn: no moment {"mounts":0,"up":0}
+ok   390x844 online p2 the turn arrives: reads "Your turn" "Your turn"
+ok   390x844 online p2 the turn arrives: the dot is the seat's colour ["rgb(243, 236, 217)","#f3ecd9"]
+ok   390x844 online p2 the turn arrives: text is 15 px or larger 28
+ok   390x844 online p2 the turn arrives: white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p2 the turn arrives: approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p2 the turn arrives: approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p2 the turn arrives: ink on the pill reads at 4.5:1 or better "11.57"
+ok   390x844 online p2 the turn arrives: takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   390x844 online p2 repeat pushes add none, and it is still up 2.6 s later (no timed fade) [1,1]
+ok   390x844 online p2 it pulses slowly, 1.6 s, for as long as it is up {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   390x844 online p2 the pulse runs opacity 1 to 0.92 and scale 1 to 0.96 {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   390x844 online p2 two taps produce one pointer-transparent 160 ms fade [{"at":7565.899999991059,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.621215,"transform":"matrix(0.96327, 0, 0, 0.96327, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":7910.5}]
+ok   390x844 online p2 after the tap: no moment {"mounts":1,"up":0}
+ok   390x844 online p2 a key press ends it
+ok   390x844 online p2 a repeat push after it left: no moment {"mounts":2,"up":0}
+ok   390x844 online p2 the person rolling ends it
+ok   390x844 online p2 roll: pointer-transparent 160 ms fade {"at":10218.5,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.665629,"transform":"matrix(0.985477, 0, 0, 0.985477, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":10400}
+ok   390x844 online p2 the turn passing on ends it
+ok   390x844 online p2 turn passing on: pointer-transparent 160 ms fade {"at":10711.699999988079,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.665629,"transform":"matrix(0.985477, 0, 0, 0.985477, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":10894.59999999404}
+ok   390x844 online p2 a watcher: no moment {"mounts":4,"up":0}
+ok   390x844 online p2 the watcher's table moving on: no moment {"mounts":4,"up":0}
+ok   390x844 online p2 the seat was re-welcomed through the redial {"welcomes":2}
+ok   390x844 online p2 a rejoin onto own roll: no moment {"mounts":4,"up":0}
+ok   390x844 online p2 a live turn after the rejoin shows one
+ok   390x844 online p2 other roll-off: no moment {"mounts":5,"up":0}
+ok   390x844 online p2 own roll-off: no moment {"mounts":5,"up":0}
+ok   390x844 online p2 own settlement: no moment {"mounts":5,"up":0}
+ok   390x844 online p2 own road: no moment {"mounts":5,"up":0}
+ok   390x844 online p2 second settlement: no moment {"mounts":5,"up":0}
+ok   390x844 online p2 tied rethrow: no moment {"mounts":5,"up":0}
+ok   390x844 online p3 first load onto own roll at seq 20: no moment
+ok   390x844 online p3 a bot's turn: no moment {"mounts":0,"up":0}
+ok   390x844 online p3 the turn arrives: reads "Your turn" "Your turn"
+ok   390x844 online p3 the turn arrives: the dot is the seat's colour ["rgb(138, 79, 211)","#8a4fd3"]
+ok   390x844 online p3 the turn arrives: text is 15 px or larger 28
+ok   390x844 online p3 the turn arrives: white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p3 the turn arrives: approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p3 the turn arrives: approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p3 the turn arrives: ink on the pill reads at 4.5:1 or better "11.57"
+ok   390x844 online p3 the turn arrives: takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   390x844 online p3 repeat pushes add none, and it is still up 2.6 s later (no timed fade) [1,1]
+ok   390x844 online p3 it pulses slowly, 1.6 s, for as long as it is up {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   390x844 online p3 the pulse runs opacity 1 to 0.92 and scale 1 to 0.96 {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   390x844 online p3 two taps produce one pointer-transparent 160 ms fade [{"at":11818.70000000298,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.621171,"transform":"matrix(0.963248, 0, 0, 0.963248, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":11981.800000011921}]
+ok   390x844 online p3 after the tap: no moment {"mounts":1,"up":0}
+ok   390x844 online p3 a key press ends it
+ok   390x844 online p3 a repeat push after it left: no moment {"mounts":2,"up":0}
+ok   390x844 online p3 the person rolling ends it
+FAIL 390x844 online p3 roll: pointer-transparent 160 ms fade {"at":14315.40000000596,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.665629,"transform":"matrix(0.985477, 0, 0, 0.985477, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":14440.800000011921}
+ok   390x844 online p3 the turn passing on ends it
+ok   390x844 online p3 turn passing on: pointer-transparent 160 ms fade {"at":14921.5,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.664191,"transform":"matrix(0.984758, 0, 0, 0.984758, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":15080.60000000894}
+ok   390x844 online p3 a watcher: no moment {"mounts":4,"up":0}
+ok   390x844 online p3 the watcher's table moving on: no moment {"mounts":4,"up":0}
+ok   390x844 online p3 the seat was re-welcomed through the redial {"welcomes":2}
+ok   390x844 online p3 a rejoin onto own roll: no moment {"mounts":4,"up":0}
+ok   390x844 online p3 a live turn after the rejoin shows one
+ok   390x844 online p3 other roll-off: no moment {"mounts":5,"up":0}
+ok   390x844 online p3 own roll-off: no moment {"mounts":5,"up":0}
+ok   390x844 online p3 own settlement: no moment {"mounts":5,"up":0}
+ok   390x844 online p3 own road: no moment {"mounts":5,"up":0}
+ok   390x844 online p3 second settlement: no moment {"mounts":5,"up":0}
+ok   390x844 online p3 tied rethrow: no moment {"mounts":5,"up":0}
+ok   320x568 red: a moment at the first roll ["roll"]
+ok   320x568 red: never at the path that follows a settlement ["roll"]
+ok   320x568 red: no moment in roll-off or setup ["roll"]
+ok   320x568 red: no two moments for one move
+ok   320x568 red: the person's seat has the chosen colour ["#e23d2e","#e23d2e"]
+ok   320x568 red moment 1 (roll): reads "Your turn" "Your turn"
+ok   320x568 red moment 1 (roll): the dot is the seat's colour ["rgb(226, 61, 46)","#e23d2e"]
+ok   320x568 red moment 1 (roll): text is 15 px or larger 20
+ok   320x568 red moment 1 (roll): white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["12px","20px","12px","20px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"16px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   320x568 red moment 1 (roll): approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["12px","20px","12px","20px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"16px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   320x568 red moment 1 (roll): approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["12px","20px","12px","20px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"16px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   320x568 red moment 1 (roll): ink on the pill reads at 4.5:1 or better "11.57"
+ok   320x568 red moment 1 (roll): takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   320x568 red moment 1 (roll): inside the safe area [{"left":80.9375,"top":128,"right":239.0625,"bottom":186,"width":158.125,"height":58},{"top":24,"right":0,"bottom":16,"left":0}]
+ok   320x568 red moment 1 (roll): near the horizontal centre of the island's hole [{"left":80.9375,"top":128,"right":239.0625,"bottom":186,"width":158.125,"height":58},{"left":12,"top":80,"right":308,"bottom":234,"width":296,"height":154}]
+ok   320x568 red moment 1 (roll): over no HUD box []
+ok   320x568 red moment 2 (roll): reads "Your turn" "Your turn"
+ok   320x568 red moment 2 (roll): the dot is the seat's colour ["rgb(226, 61, 46)","#e23d2e"]
+ok   320x568 red moment 2 (roll): text is 15 px or larger 20
+ok   320x568 red moment 2 (roll): white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["12px","20px","12px","20px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"16px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   320x568 red moment 2 (roll): approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["12px","20px","12px","20px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"16px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   320x568 red moment 2 (roll): approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["12px","20px","12px","20px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"16px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   320x568 red moment 2 (roll): ink on the pill reads at 4.5:1 or better "11.57"
+ok   320x568 red moment 2 (roll): takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   320x568 red moment 2 (roll): inside the safe area [{"left":80.9375,"top":128,"right":239.0625,"bottom":186,"width":158.125,"height":58},{"top":24,"right":0,"bottom":16,"left":0}]
+ok   320x568 red moment 2 (roll): near the horizontal centre of the island's hole [{"left":80.9375,"top":128,"right":239.0625,"bottom":186,"width":158.125,"height":58},{"left":12,"top":80,"right":308,"bottom":234,"width":296,"height":154}]
+ok   320x568 red moment 2 (roll): over no HUD box []
+ok   320x568 red: it is pulsing {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   320x568 red: still up 2.6 s later
+ok   320x568 red: a real click on Roll was not blocked, rolled, and ended the moment
+ok   320x568 ivory: a moment at the first roll ["roll"]
+ok   320x568 ivory: never at the path that follows a settlement ["roll"]
+ok   320x568 ivory: no moment in roll-off or setup ["roll"]
+ok   320x568 ivory: no two moments for one move
+ok   320x568 ivory: the person's seat has the chosen colour ["#f3ecd9","#f3ecd9"]
+ok   320x568 ivory moment 1 (roll): reads "Your turn" "Your turn"
+ok   320x568 ivory moment 1 (roll): the dot is the seat's colour ["rgb(243, 236, 217)","#f3ecd9"]
+ok   320x568 ivory moment 1 (roll): text is 15 px or larger 20
+ok   320x568 ivory moment 1 (roll): white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["12px","20px","12px","20px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"16px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   320x568 ivory moment 1 (roll): approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["12px","20px","12px","20px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"16px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   320x568 ivory moment 1 (roll): approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["12px","20px","12px","20px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"16px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   320x568 ivory moment 1 (roll): ink on the pill reads at 4.5:1 or better "11.57"
+ok   320x568 ivory moment 1 (roll): takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   320x568 ivory moment 1 (roll): inside the safe area [{"left":80.9375,"top":128,"right":239.0625,"bottom":186,"width":158.125,"height":58},{"top":24,"right":0,"bottom":16,"left":0}]
+ok   320x568 ivory moment 1 (roll): near the horizontal centre of the island's hole [{"left":80.9375,"top":128,"right":239.0625,"bottom":186,"width":158.125,"height":58},{"left":12,"top":80,"right":308,"bottom":234,"width":296,"height":154}]
+ok   320x568 ivory moment 1 (roll): over no HUD box []
+ok   320x568 ivory moment 2 (roll): reads "Your turn" "Your turn"
+ok   320x568 ivory moment 2 (roll): the dot is the seat's colour ["rgb(243, 236, 217)","#f3ecd9"]
+ok   320x568 ivory moment 2 (roll): text is 15 px or larger 20
+ok   320x568 ivory moment 2 (roll): white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["12px","20px","12px","20px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"16px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   320x568 ivory moment 2 (roll): approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["12px","20px","12px","20px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"16px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   320x568 ivory moment 2 (roll): approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["12px","20px","12px","20px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"16px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   320x568 ivory moment 2 (roll): ink on the pill reads at 4.5:1 or better "11.57"
+ok   320x568 ivory moment 2 (roll): takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   320x568 ivory moment 2 (roll): inside the safe area [{"left":80.9375,"top":128,"right":239.0625,"bottom":186,"width":158.125,"height":58},{"top":24,"right":0,"bottom":16,"left":0}]
+ok   320x568 ivory moment 2 (roll): near the horizontal centre of the island's hole [{"left":80.9375,"top":128,"right":239.0625,"bottom":186,"width":158.125,"height":58},{"left":12,"top":80,"right":308,"bottom":234,"width":296,"height":154}]
+ok   320x568 ivory moment 2 (roll): over no HUD box []
+ok   320x568 ivory: it is pulsing {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   320x568 ivory: still up 2.6 s later
+ok   320x568 ivory: a real click on Roll was not blocked, rolled, and ended the moment
+ok   390x844 red: a moment at the first roll ["roll"]
+ok   390x844 red: never at the path that follows a settlement ["roll"]
+ok   390x844 red: no moment in roll-off or setup ["roll"]
+ok   390x844 red: no two moments for one move
+ok   390x844 red: the person's seat has the chosen colour ["#e23d2e","#e23d2e"]
+ok   390x844 red moment 1 (roll): reads "Your turn" "Your turn"
+ok   390x844 red moment 1 (roll): the dot is the seat's colour ["rgb(226, 61, 46)","#e23d2e"]
+ok   390x844 red moment 1 (roll): text is 15 px or larger 28
+ok   390x844 red moment 1 (roll): white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 red moment 1 (roll): approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 red moment 1 (roll): approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 red moment 1 (roll): ink on the pill reads at 4.5:1 or better "11.57"
+ok   390x844 red moment 1 (roll): takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   390x844 red moment 1 (roll): inside the safe area [{"left":90.875,"top":264.5,"right":299.125,"bottom":330.5,"width":208.25,"height":66},{"top":47,"right":0,"bottom":34,"left":0}]
+ok   390x844 red moment 1 (roll): near the horizontal centre of the island's hole [{"left":90.875,"top":264.5,"right":299.125,"bottom":330.5,"width":208.25,"height":66},{"left":12,"top":103,"right":378,"bottom":492,"width":366,"height":389}]
+ok   390x844 red moment 1 (roll): over no HUD box []
+ok   390x844 red moment 2 (roll): reads "Your turn" "Your turn"
+ok   390x844 red moment 2 (roll): the dot is the seat's colour ["rgb(226, 61, 46)","#e23d2e"]
+ok   390x844 red moment 2 (roll): text is 15 px or larger 28
+ok   390x844 red moment 2 (roll): white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 red moment 2 (roll): approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 red moment 2 (roll): approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 red moment 2 (roll): ink on the pill reads at 4.5:1 or better "11.57"
+ok   390x844 red moment 2 (roll): takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   390x844 red moment 2 (roll): inside the safe area [{"left":90.875,"top":264.5,"right":299.125,"bottom":330.5,"width":208.25,"height":66},{"top":47,"right":0,"bottom":34,"left":0}]
+ok   390x844 red moment 2 (roll): near the horizontal centre of the island's hole [{"left":90.875,"top":264.5,"right":299.125,"bottom":330.5,"width":208.25,"height":66},{"left":12,"top":103,"right":378,"bottom":492,"width":366,"height":389}]
+ok   390x844 red moment 2 (roll): over no HUD box []
+ok   390x844 red: it is pulsing {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   390x844 red: still up 2.6 s later
+ok   390x844 red: a real click on Roll was not blocked, rolled, and ended the moment
+ok   390x844 ivory: a moment at the first roll ["roll"]
+ok   390x844 ivory: never at the path that follows a settlement ["roll"]
+ok   390x844 ivory: no moment in roll-off or setup ["roll"]
+ok   390x844 ivory: no two moments for one move
+ok   390x844 ivory: the person's seat has the chosen colour ["#f3ecd9","#f3ecd9"]
+ok   390x844 ivory moment 1 (roll): reads "Your turn" "Your turn"
+ok   390x844 ivory moment 1 (roll): the dot is the seat's colour ["rgb(243, 236, 217)","#f3ecd9"]
+ok   390x844 ivory moment 1 (roll): text is 15 px or larger 28
+ok   390x844 ivory moment 1 (roll): white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 ivory moment 1 (roll): approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 ivory moment 1 (roll): approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 ivory moment 1 (roll): ink on the pill reads at 4.5:1 or better "11.57"
+ok   390x844 ivory moment 1 (roll): takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   390x844 ivory moment 1 (roll): inside the safe area [{"left":90.875,"top":264.5,"right":299.125,"bottom":330.5,"width":208.25,"height":66},{"top":47,"right":0,"bottom":34,"left":0}]
+ok   390x844 ivory moment 1 (roll): near the horizontal centre of the island's hole [{"left":90.875,"top":264.5,"right":299.125,"bottom":330.5,"width":208.25,"height":66},{"left":12,"top":103,"right":378,"bottom":492,"width":366,"height":389}]
+ok   390x844 ivory moment 1 (roll): over no HUD box []
+ok   390x844 ivory moment 2 (roll): reads "Your turn" "Your turn"
+ok   390x844 ivory moment 2 (roll): the dot is the seat's colour ["rgb(243, 236, 217)","#f3ecd9"]
+ok   390x844 ivory moment 2 (roll): text is 15 px or larger 28
+ok   390x844 ivory moment 2 (roll): white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 ivory moment 2 (roll): approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 ivory moment 2 (roll): approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 ivory moment 2 (roll): ink on the pill reads at 4.5:1 or better "11.57"
+ok   390x844 ivory moment 2 (roll): takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   390x844 ivory moment 2 (roll): inside the safe area [{"left":90.875,"top":264.5,"right":299.125,"bottom":330.5,"width":208.25,"height":66},{"top":47,"right":0,"bottom":34,"left":0}]
+ok   390x844 ivory moment 2 (roll): near the horizontal centre of the island's hole [{"left":90.875,"top":264.5,"right":299.125,"bottom":330.5,"width":208.25,"height":66},{"left":12,"top":103,"right":378,"bottom":492,"width":366,"height":389}]
+ok   390x844 ivory moment 2 (roll): over no HUD box []
+ok   390x844 ivory: it is pulsing {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   390x844 ivory: still up 2.6 s later
+ok   390x844 ivory: a real click on Roll was not blocked, rolled, and ended the moment
+ok   844x390 red: a moment at the first roll ["roll"]
+ok   844x390 red: never at the path that follows a settlement ["roll"]
+ok   844x390 red: no moment in roll-off or setup ["roll"]
+ok   844x390 red: no two moments for one move
+ok   844x390 red: the person's seat has the chosen colour ["#e23d2e","#e23d2e"]
+ok   844x390 red moment 1 (roll): reads "Your turn" "Your turn"
+ok   844x390 red moment 1 (roll): the dot is the seat's colour ["rgb(226, 61, 46)","#e23d2e"]
+ok   844x390 red moment 1 (roll): text is 15 px or larger 28
+ok   844x390 red moment 1 (roll): white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   844x390 red moment 1 (roll): approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   844x390 red moment 1 (roll): approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   844x390 red moment 1 (roll): ink on the pill reads at 4.5:1 or better "11.57"
+ok   844x390 red moment 1 (roll): takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   844x390 red moment 1 (roll): inside the safe area [{"left":453.875,"top":179.5,"right":662.125,"bottom":245.5,"width":208.25,"height":66},{"top":0,"right":47,"bottom":21,"left":47}]
+ok   844x390 red moment 1 (roll): near the horizontal centre of the island's hole [{"left":453.875,"top":179.5,"right":662.125,"bottom":245.5,"width":208.25,"height":66},{"left":331,"top":68,"right":785,"bottom":357,"width":454,"height":289}]
+ok   844x390 red moment 1 (roll): over no HUD box []
+ok   844x390 red moment 2 (roll): reads "Your turn" "Your turn"
+ok   844x390 red moment 2 (roll): the dot is the seat's colour ["rgb(226, 61, 46)","#e23d2e"]
+ok   844x390 red moment 2 (roll): text is 15 px or larger 28
+ok   844x390 red moment 2 (roll): white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   844x390 red moment 2 (roll): approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   844x390 red moment 2 (roll): approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   844x390 red moment 2 (roll): ink on the pill reads at 4.5:1 or better "11.57"
+ok   844x390 red moment 2 (roll): takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   844x390 red moment 2 (roll): inside the safe area [{"left":453.875,"top":179.5,"right":662.125,"bottom":245.5,"width":208.25,"height":66},{"top":0,"right":47,"bottom":21,"left":47}]
+ok   844x390 red moment 2 (roll): near the horizontal centre of the island's hole [{"left":453.875,"top":179.5,"right":662.125,"bottom":245.5,"width":208.25,"height":66},{"left":331,"top":68,"right":785,"bottom":357,"width":454,"height":289}]
+ok   844x390 red moment 2 (roll): over no HUD box []
+ok   844x390 red: it is pulsing {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   844x390 red: still up 2.6 s later
+ok   844x390 red: a real click on Roll was not blocked, rolled, and ended the moment
+ok   844x390 ivory: a moment at the first roll ["roll"]
+ok   844x390 ivory: never at the path that follows a settlement ["roll"]
+ok   844x390 ivory: no moment in roll-off or setup ["roll"]
+ok   844x390 ivory: no two moments for one move
+ok   844x390 ivory: the person's seat has the chosen colour ["#f3ecd9","#f3ecd9"]
+ok   844x390 ivory moment 1 (roll): reads "Your turn" "Your turn"
+ok   844x390 ivory moment 1 (roll): the dot is the seat's colour ["rgb(243, 236, 217)","#f3ecd9"]
+ok   844x390 ivory moment 1 (roll): text is 15 px or larger 28
+ok   844x390 ivory moment 1 (roll): white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   844x390 ivory moment 1 (roll): approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   844x390 ivory moment 1 (roll): approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   844x390 ivory moment 1 (roll): ink on the pill reads at 4.5:1 or better "11.57"
+ok   844x390 ivory moment 1 (roll): takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   844x390 ivory moment 1 (roll): inside the safe area [{"left":453.875,"top":179.5,"right":662.125,"bottom":245.5,"width":208.25,"height":66},{"top":0,"right":47,"bottom":21,"left":47}]
+ok   844x390 ivory moment 1 (roll): near the horizontal centre of the island's hole [{"left":453.875,"top":179.5,"right":662.125,"bottom":245.5,"width":208.25,"height":66},{"left":331,"top":68,"right":785,"bottom":357,"width":454,"height":289}]
+ok   844x390 ivory moment 1 (roll): over no HUD box []
+ok   844x390 ivory moment 2 (roll): reads "Your turn" "Your turn"
+ok   844x390 ivory moment 2 (roll): the dot is the seat's colour ["rgb(243, 236, 217)","#f3ecd9"]
+ok   844x390 ivory moment 2 (roll): text is 15 px or larger 28
+ok   844x390 ivory moment 2 (roll): white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   844x390 ivory moment 2 (roll): approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   844x390 ivory moment 2 (roll): approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   844x390 ivory moment 2 (roll): ink on the pill reads at 4.5:1 or better "11.57"
+ok   844x390 ivory moment 2 (roll): takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   844x390 ivory moment 2 (roll): inside the safe area [{"left":453.875,"top":179.5,"right":662.125,"bottom":245.5,"width":208.25,"height":66},{"top":0,"right":47,"bottom":21,"left":47}]
+ok   844x390 ivory moment 2 (roll): near the horizontal centre of the island's hole [{"left":453.875,"top":179.5,"right":662.125,"bottom":245.5,"width":208.25,"height":66},{"left":331,"top":68,"right":785,"bottom":357,"width":454,"height":289}]
+ok   844x390 ivory moment 2 (roll): over no HUD box []
+ok   844x390 ivory: it is pulsing {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   844x390 ivory: still up 2.6 s later
+ok   844x390 ivory: a real click on Roll was not blocked, rolled, and ended the moment
+ok   1280x720 red: a moment at the first roll ["roll"]
+ok   1280x720 red: never at the path that follows a settlement ["roll"]
+ok   1280x720 red: no moment in roll-off or setup ["roll"]
+ok   1280x720 red: no two moments for one move
+ok   1280x720 red: the person's seat has the chosen colour ["#e23d2e","#e23d2e"]
+ok   1280x720 red moment 1 (roll): reads "Your turn" "Your turn"
+ok   1280x720 red moment 1 (roll): the dot is the seat's colour ["rgb(226, 61, 46)","#e23d2e"]
+ok   1280x720 red moment 1 (roll): text is 15 px or larger 28
+ok   1280x720 red moment 1 (roll): white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   1280x720 red moment 1 (roll): approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   1280x720 red moment 1 (roll): approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   1280x720 red moment 1 (roll): ink on the pill reads at 4.5:1 or better "11.57"
+ok   1280x720 red moment 1 (roll): takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   1280x720 red moment 1 (roll): inside the safe area [{"left":487.875,"top":248,"right":696.125,"bottom":314,"width":208.25,"height":66},{"top":0,"right":0,"bottom":0,"left":0}]
+ok   1280x720 red moment 1 (roll): near the horizontal centre of the island's hole [{"left":487.875,"top":248,"right":696.125,"bottom":314,"width":208.25,"height":66},{"left":216,"top":68,"right":968,"bottom":494,"width":752,"height":426}]
+ok   1280x720 red moment 1 (roll): over no HUD box []
+ok   1280x720 red moment 2 (roll): reads "Your turn" "Your turn"
+ok   1280x720 red moment 2 (roll): the dot is the seat's colour ["rgb(226, 61, 46)","#e23d2e"]
+ok   1280x720 red moment 2 (roll): text is 15 px or larger 28
+ok   1280x720 red moment 2 (roll): white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   1280x720 red moment 2 (roll): approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   1280x720 red moment 2 (roll): approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   1280x720 red moment 2 (roll): ink on the pill reads at 4.5:1 or better "11.57"
+ok   1280x720 red moment 2 (roll): takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   1280x720 red moment 2 (roll): inside the safe area [{"left":487.875,"top":248,"right":696.125,"bottom":314,"width":208.25,"height":66},{"top":0,"right":0,"bottom":0,"left":0}]
+ok   1280x720 red moment 2 (roll): near the horizontal centre of the island's hole [{"left":487.875,"top":248,"right":696.125,"bottom":314,"width":208.25,"height":66},{"left":216,"top":68,"right":968,"bottom":494,"width":752,"height":426}]
+ok   1280x720 red moment 2 (roll): over no HUD box []
+ok   1280x720 red: it is pulsing {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   1280x720 red: still up 2.6 s later
+ok   1280x720 red: a real click on Roll was not blocked, rolled, and ended the moment
+ok   1280x720 ivory: a moment at the first roll ["roll"]
+ok   1280x720 ivory: never at the path that follows a settlement ["roll"]
+ok   1280x720 ivory: no moment in roll-off or setup ["roll"]
+ok   1280x720 ivory: no two moments for one move
+ok   1280x720 ivory: the person's seat has the chosen colour ["#f3ecd9","#f3ecd9"]
+ok   1280x720 ivory moment 1 (roll): reads "Your turn" "Your turn"
+ok   1280x720 ivory moment 1 (roll): the dot is the seat's colour ["rgb(243, 236, 217)","#f3ecd9"]
+ok   1280x720 ivory moment 1 (roll): text is 15 px or larger 28
+ok   1280x720 ivory moment 1 (roll): white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   1280x720 ivory moment 1 (roll): approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   1280x720 ivory moment 1 (roll): approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   1280x720 ivory moment 1 (roll): ink on the pill reads at 4.5:1 or better "11.57"
+ok   1280x720 ivory moment 1 (roll): takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   1280x720 ivory moment 1 (roll): inside the safe area [{"left":487.875,"top":248,"right":696.125,"bottom":314,"width":208.25,"height":66},{"top":0,"right":0,"bottom":0,"left":0}]
+ok   1280x720 ivory moment 1 (roll): near the horizontal centre of the island's hole [{"left":487.875,"top":248,"right":696.125,"bottom":314,"width":208.25,"height":66},{"left":216,"top":68,"right":968,"bottom":494,"width":752,"height":426}]
+ok   1280x720 ivory moment 1 (roll): over no HUD box []
+ok   1280x720 ivory moment 2 (roll): reads "Your turn" "Your turn"
+ok   1280x720 ivory moment 2 (roll): the dot is the seat's colour ["rgb(243, 236, 217)","#f3ecd9"]
+ok   1280x720 ivory moment 2 (roll): text is 15 px or larger 28
+ok   1280x720 ivory moment 2 (roll): white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   1280x720 ivory moment 2 (roll): approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   1280x720 ivory moment 2 (roll): approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   1280x720 ivory moment 2 (roll): ink on the pill reads at 4.5:1 or better "11.57"
+ok   1280x720 ivory moment 2 (roll): takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   1280x720 ivory moment 2 (roll): inside the safe area [{"left":487.875,"top":248,"right":696.125,"bottom":314,"width":208.25,"height":66},{"top":0,"right":0,"bottom":0,"left":0}]
+ok   1280x720 ivory moment 2 (roll): near the horizontal centre of the island's hole [{"left":487.875,"top":248,"right":696.125,"bottom":314,"width":208.25,"height":66},{"left":216,"top":68,"right":968,"bottom":494,"width":752,"height":426}]
+ok   1280x720 ivory moment 2 (roll): over no HUD box []
+ok   1280x720 ivory: it is pulsing {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   1280x720 ivory: still up 2.6 s later
+ok   1280x720 ivory: a real click on Roll was not blocked, rolled, and ended the moment
+ok   1280x720 reduced: reduced motion is a steady pill: no animation, no pulse, no transform {"anims":0,"o":"1","tf":"none"}
+ok   1280x720 reduced: and it stays up
+ok   1280x720 reduced: a tap ends it
+ok   1280x720 hotseat: only "<name>'s turn" on a roll, nothing in the roll-off or setup [["roll","Ember's turn"]]
+ok   1280x720 hotseat: untouched, it is timed and gone within 2.5 s 879
+ok   zero console errors []
+your-turn-stay-prove: 1 failed
