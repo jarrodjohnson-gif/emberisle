@@ -808,6 +808,7 @@ async function reconnect() {
   const sent = { welcomes: 0 };
   let states = [];
   let sockets = [];
+  let seatSocket;
   const { ctx, page, tag } = await open(view, {
     path: "/?host=ws://127.0.0.1:9",
     before: async (ctx, page) => {
@@ -816,6 +817,9 @@ async function reconnect() {
         sockets.push(ws);
         ws.onMessage(async (raw) => {
           if (JSON.parse(String(raw)).type !== "hello") return;
+          // Title discovery may open another socket to this host. State and the deliberate
+          // seat drop belong to the connection that sent hello, not the newest list client.
+          seatSocket = ws;
           sent.welcomes++;
           ws.send(JSON.stringify({ type: "welcome", code: "ABCD", you: "p0", host: false, secret: "s3cret", chat: [] }));
           // The state follows the welcome once the proof has built it (the first dial is at page load).
@@ -840,7 +844,7 @@ async function reconnect() {
     const own = () => page.evaluate(() => window.__emberisle.getState().state?.players.find((p) => p.id === "p0")?.resources.timber);
     const shown = () => page.evaluate(() => ({ turns: window.__turns.length, lines: window.__lines.length, up: !!document.querySelector('[data-testid="turn-moment"], [data-testid="resource-flash"]') }));
     const seq = () => page.evaluate(() => window.__emberisle.getState().state?.seq);
-    const push = (m) => sockets.at(-1).send(JSON.stringify(m));
+    const push = (m) => seatSocket.send(JSON.stringify(m));
     // Nothing new shows for a while after `n` has loaded: polled for 900 ms, longer than the store-to-DOM round trip.
     const stays = async (label, was) => {
       const end = Date.now() + 900;
@@ -855,6 +859,15 @@ async function reconnect() {
     // sending a live gain: a hand first mounted at seq 21 correctly treats that count as initial.
     await page.waitForFunction(() => document.querySelector('[data-testid="resource-timber"] [data-testid="hand-count"]')?.textContent === "1", null, { timeout: STEP_MS });
     await stays("first load, seq 20", { turns: 0, lines: 0 });
+
+    // A seatless same-host discovery connection may open after the seat. Keep this ordering
+    // explicit so the fixture cannot silently send the game's next state to the list client.
+    await page.evaluate(() => new Promise((resolve, reject) => {
+      const ws = new WebSocket("ws://127.0.0.1:9/");
+      ws.onopen = () => { ws.send(JSON.stringify({ type: "list" })); resolve(); };
+      ws.onerror = () => reject(new Error("reconnect fixture discovery socket failed"));
+      window.__reconnectDiscoverySocket = ws;
+    }));
 
     // A cue from before the drop must not outlive it: gain a good live, drop at once.
     push(at(21, 2, "main", "p1", 2));
@@ -891,7 +904,7 @@ async function reconnect() {
     }
     const before = await shown();
     states = [at(22, 3, "roll", "p0", 4)];
-    sockets.at(-1).close();
+    seatSocket.close();
     await page.waitForFunction(() => /Reconnecting/.test(window.__emberisle.getState().error ?? ""), null, { timeout: STEP_MS });
     await page.waitForFunction(() => window.__emberisle.getState().state?.seq === 22, null, { timeout: STEP_MS });
     check(sent.welcomes === 2, `${tag} reconnect: the seat was re-welcomed through the redial`, sent);
