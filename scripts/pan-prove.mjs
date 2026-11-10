@@ -128,9 +128,9 @@ try {
     if (h > w) check(Math.abs(s0.cx - hole0.x) <= 0.02 * w, `${tag}: ... and in the hole's width`, { cx: s0.cx, holeX: hole0.x });
     if (h > w) {
       // #1509: upright, the island sits at the hole's bottom: its docks' reach (ISLE_HALF.z, leaned, and a pine's 1.15 rise) above
-      // the hole's bottom edge, at the scale where the docks (or the shore, if wider) span the hole's width. A hole too short for that
+      // the hole's bottom edge, at the scale where the shore spans the width less EDGE_GAP each side. A hole too short for that
       // (360x640) scales the island to its height, so it is centred there.
-      const vy = await page.evaluate(async () => { const { ISLE_HALF, SHORE_HALF_X, DOCK_HALF_X, UPRIGHT_LEAN } = await import("/src/lib/scene/mobile-fit.ts"); const i = window.__isle, c = document.querySelector("canvas"), hl = i.insets(); const reach = ISLE_HALF.z * Math.cos(UPRIGHT_LEAN) + 1.15 * Math.sin(UPRIGHT_LEAN); const holeH = c.clientHeight - hl.top - hl.bottom; const px = Math.min((c.clientWidth - hl.left - hl.right) / (2 * Math.max(SHORE_HALF_X, DOCK_HALF_X)), holeH / (2 * reach)); return c.clientHeight - hl.bottom - reach * px; });
+      const vy = await page.evaluate(async () => { const { ISLE_HALF, SHORE_HALF_X, EDGE_GAP, UPRIGHT_LEAN } = await import("/src/lib/scene/mobile-fit.ts"); const i = window.__isle, c = document.querySelector("canvas"), hl = i.insets(); const reach = ISLE_HALF.z * Math.cos(UPRIGHT_LEAN) + 1.15 * Math.sin(UPRIGHT_LEAN); const holeH = c.clientHeight - hl.top - hl.bottom; const px = Math.min((c.clientWidth - 2 * EDGE_GAP - Math.max(0, hl.left - 12) - Math.max(0, hl.right - 12)) / (2 * SHORE_HALF_X), holeH / (2 * reach)); return c.clientHeight - hl.bottom - reach * px; });
       check(Math.abs(s0.cy - vy) <= 0.02 * h, `${tag}: ... and low in the hole's height`, { cy: s0.cy, lowY: vy });
     }
     if (w === 430 || w === 360 || w === 440) { await ctx.close(); continue; }

@@ -139,7 +139,11 @@ async function prove(p, moment, { island = true } = {}) {
         const m = isle.coastMiter.get(v.id);
         const pts = v.harbor ? [q, isle.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)] : [q];
         // A dock may come to the hole's edge (the diorama fit puts the nearest one there), not past it: half a pixel of float.
-        if (pts.some((p) => Math.min(p.x - hole.l, hole.r - p.x, p.y - hole.t, hole.b - p.y) < -0.5)) corners.push(`${v.id}@${q.x | 0},${q.y | 0}`);
+        // #1509 (owner card q1515-table-look, B: "crop the side boats, keep every dock button on screen"): in the upright overhead
+        // view a side dock's boat may run off the side edges; it stays inside the hole's top and bottom. Corners keep the whole hole.
+        const upright = innerHeight > innerWidth && isle.view === "overhead";
+        const room = (p, i) => (upright && i > 0 ? Math.min(p.y - hole.t, hole.b - p.y) : Math.min(p.x - hole.l, hole.r - p.x, p.y - hole.t, hole.b - p.y));
+        if (pts.some((p, i) => room(p, i) < -0.5)) corners.push(`${v.id}@${q.x | 0},${q.y | 0}`);
       }
       return {
         reached, seen, out, chatOut, play: isle.view !== "free", vertices: st.vertices.length, corners, holeSafe,

@@ -365,7 +365,10 @@ try {
       for (const v of st.vertices) {
         const p = isle.screenOf(v.id);
         const m = isle.coastMiter.get(v.id);
-        const reach = v.harbor ? inside(isle.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)) : Infinity;
+        // #1509 (owner card q1515-table-look, B: "crop the side boats, keep every dock button on screen"): in the upright overhead
+        // view a side dock's boat may run off the side edges; it stays inside the hole's top and bottom. Corners keep the whole hole.
+        const dock = (p) => (innerHeight > innerWidth && isle.view === "overhead" ? Math.min(p.y - hole.t, hole.b - p.y) : inside(p));
+        const reach = v.harbor ? dock(isle.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)) : Infinity;
         if (v.harbor) dockIn = Math.min(dockIn, reach);
         // A dock may come to the hole's edge (the diorama fit puts the nearest one there), not past it: half a pixel of float.
         if (inside(p) < 0 || reach < -0.5) out.push(`${v.id}@${p.x | 0},${p.y | 0}`);
