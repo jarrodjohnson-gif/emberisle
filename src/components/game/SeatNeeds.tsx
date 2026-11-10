@@ -16,7 +16,6 @@ function useNeeds() {
 export function NeedRow({ player }: { player: string }) {
   return <section className="trade-half trade-need" aria-labelledby="trade-need-title">
     <h3 id="trade-need-title">Need</h3>
-    <p className="need-hint">Tap up to two. Not part of the offer; other players see it.</p>
     <Picker player={player} />
   </section>;
 }
