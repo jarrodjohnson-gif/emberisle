@@ -326,8 +326,18 @@ input, select, textarea { border-color: var(--control-line); }
 .bg-glass, .title-cover, .title-cover > div, .lobby-cover { backdrop-filter: none; }
 .hud-stack [data-testid="dice-row"] { background: var(--table); color: var(--table-muted); border-radius: var(--radius-control); }
 
-/* #1101: the phone dock (Hud.tsx). Every row is a fixed box, and every target in it is 44 px with 8 px to the next (design law 6). */
-.dock .goods-tray { padding: 0; gap: 8px; }
+/* #1101: the phone dock (Hud.tsx). Every row is a fixed box, and every target in it is 44 px with 8 px to the next (design law 6).
+   The goods slot is exactly the card's height, so the tray's own padding is drawn outside that slot: 8 px above a gain's 6 px
+   lift (4 px when short) and 4 px below a loss's 2 px dip. The negative margins keep the card's rest box in the slot.
+   flow-root keeps that margin inside the slot, so an empty hand does not move the dock. */
+.dock-goods { display: flow-root; }
+.dock .goods-tray { padding: 8px 0 4px; margin-top: -8px; margin-bottom: -4px; gap: 8px; }
+/* Short sideways: the 320 px column is wider than the old 260 px tray. Five 47.2 px cards, 8 px apart, in a 268 px tray.
+   6 px above the card holds the 4 px short lift; 4 px below holds the 2 px dip. */
+@media (max-height: 480px) {
+  .dock .goods-tray { justify-content: center; align-self: center; width: 268px; padding: 6px 0 4px; margin-top: -6px; margin-bottom: -4px; }
+  .dock .hand-resource-card-slot { flex: 0 0 47.2px; }
+}
 .dock .build-grid { gap: 8px; }
 /* The dock has no scroller to clip the ready pulse, so the end tiles grow inward and stay inside the safe area. */
 .dock .build-grid > :first-child { transform-origin: left center; }

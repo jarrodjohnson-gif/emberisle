@@ -483,11 +483,16 @@ export function Hud() {
           a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
       <header className={cn("hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30", phone ? "pb-0" : "pb-3")}>
         {/* #1101: on a phone the menu (and, sideways, the chat) live in the dock; sideways the seats sit at the top of its 320 px column. */}
-        <div data-slot={phone ? "seats" : undefined} className={cn("pointer-events-auto flex items-center justify-end gap-1", column && "w-[320px]")}>
+        <div data-slot={phone ? "seats" : undefined} className={cn("pointer-events-auto flex items-center justify-end gap-1", column && "relative w-[320px]")}>
           {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : <div className="mr-auto shrink-0">{turnLine()}</div>}
           {phone ? null : <div ref={setTimerHeader} className="mx-2 min-w-0 flex-1 empty:hidden" />}
-          {spectator && !(phone && portrait) ? (
+          {spectator && !phone ? (
             <span data-testid="watching-badge" className="flex h-11 items-center rounded-chip bg-glass px-3 text-caption text-fg backdrop-blur-md">
+              Watching
+            </span>
+          ) : null}
+          {column && spectator ? (
+            <span data-testid="watching-badge" className="pointer-events-auto absolute left-full top-0 ml-3 flex h-11 items-center rounded-chip bg-glass px-3 text-caption text-fg backdrop-blur-md">
               Watching
             </span>
           ) : null}
@@ -556,7 +561,8 @@ export function Hud() {
                 </p>
               ) : null}
               <div className="pointer-events-auto empty:hidden">
-                <PlaceChip column />
+                {/* Sideways the chip is the status row's, so it stays in that row's box (board-look). */}
+                {column ? null : <PlaceChip />}
               </div>
               <div className="pointer-events-auto empty:hidden">
                 <TurnCountdown header={null} />
@@ -597,13 +603,15 @@ export function Hud() {
               <div data-slot="goods" className="dock-goods h-[62px] short:h-11">
                 {spectator ? null : <HandDock me={me} phase={state.phase} always />}
               </div>
-              <div data-slot="status" className="dock-status mt-2 flex h-11 items-center gap-2 rounded-control">
+              <div data-slot="status" className="dock-status relative mt-2 flex h-11 min-w-0 items-center gap-2 rounded-control">
                 {!chatOpen && tradeHere ? (
                   <LazyBoundary failed={null}>
                     <TradeToast slot />
                   </LazyBoundary>
                 ) : (
                   <>
+                    {/* In the turn line's own row, so a sideways Place chip is inside that box and clear of the hand. */}
+                    {column ? <PlaceChip column /> : null}
                     {turnLine(true)}
                     {dice ? <div className="shrink-0 pr-1 [&>div]:gap-1 [&_[data-testid=die]]:size-6 [&_[data-testid=die]]:p-0.5 [&_[data-pip]]:size-1">{dice}</div> : null}
                   </>
