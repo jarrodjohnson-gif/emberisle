@@ -169,7 +169,8 @@ try {
 
   // #156/#271: before Join, the color the table already holds is dimmed and cannot be picked.
   const tideDims = async (t) => {
-    await t.page.locator(".seat-settings > summary").click();
+    const summary = t.page.locator(".seat-settings > summary");
+    if (await summary.count()) await summary.click();
     const swatch = (n) => t.page.getByRole("radio", { name: n });
     await until(async () => {
       const tide = swatch("Tide (taken)");
@@ -182,8 +183,11 @@ try {
   await b.page.getByPlaceholder(/code/i).fill(tableCode);
   await tideDims(b);
   console.log("tab B typed the code: Tide swatch disabled at opacity 0.35, aria-checked=false; Ember, Dune, Pine enabled");
-  // #304: tab C typed nothing. The link filled the field, the peek dimmed Tide, and the code is gone from the URL.
-  await until(async () => ((await c.page.getByPlaceholder(/code/i).inputValue()) === tableCode ? true : null), "join link prefills tab C's Join field");
+  // #304/#1505: tab C typed nothing. The link names the table on Join, the peek dims Tide, and the code leaves the URL.
+  await until(async () => {
+    const join = c.page.getByTestId("join-table");
+    return (await join.count()) && (await join.textContent())?.includes(tableCode) ? true : null;
+  }, "join link names the table on Join");
   await tideDims(c);
   const searchC = await c.page.evaluate(() => location.search);
   if (new URLSearchParams(searchC).has("code")) throw new Error(`tab C's URL still carries the code: ${searchC}`);
