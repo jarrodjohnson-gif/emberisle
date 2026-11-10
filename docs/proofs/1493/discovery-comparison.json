@@ -1,0 +1,32 @@
+{
+  "baseline": {
+    "samples": 20,
+    "samplesWithErrors": 1,
+    "errors": 1,
+    "initialSnapshotFingerprint": {
+      "name": "index-BNDDXzcU.js",
+      "bytes": 631476,
+      "humanConcurrentError": true,
+      "minifiedReactError": false
+    },
+    "repeatIndexFromErrorStack": "index-BUSKy-mv.js",
+    "artifactNote": "The initial snapshot and repeated run have the same baseline frontend source, but were built at different proof-only Git metadata heads; raw repeated-run stacks identify its actual index asset."
+  },
+  "gated": {
+    "samples": 20,
+    "samplesWithErrors": 0,
+    "errors": 0,
+    "artifact": {
+      "name": "index-DLZdlaq7.js",
+      "bytes": 631605,
+      "humanConcurrentError": true,
+      "minifiedReactError": false
+    }
+  },
+  "buildMode": "bundled development React inherited from createServer, NOT actual production",
+  "baseFrontend": "6022600a8f78f385e8054581f4ebfe9ff80623a9",
+  "candidateBlobs": {
+    "src/components/game/EmberisleApp.tsx": "ea9b14d5303b8d9068b672004bd84dcf1d3a5378",
+    "src/components/game/chunks.ts": "da31b5f724ec56d0118fb55ab617f42967223e27"
+  }
+}

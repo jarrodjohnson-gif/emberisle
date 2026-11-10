@@ -42,7 +42,7 @@ if (process.argv.includes("--host-fixture")) {
   await import("../server/host.mjs");
 } else {
   const { chromium } = await import("./proof-browser.mjs");
-  const { createServer, build, preview } = await import("vite");
+  const { createServer, preview } = await import("vite");
   const resultsDir = fileURLToPath(new URL("../test-results/", import.meta.url));
   mkdirSync(resultsDir, { recursive: true });
   const dir = mkdtempSync(path.join(tmpdir(), "emberisle-health-"));
@@ -401,7 +401,16 @@ if (process.argv.includes("--host-fixture")) {
     await layout.close();
     console.log("ok lobby: four ready seats and every health state fit 320/390/667/844px layouts; no landscape scrolling");
     // Production demand loading: the protocol itself remains synchronous once imported.
-    await build({ logLevel: "error" });
+    // createServer sets this process to development. Build in a separate production
+    // process so the preview tests production React rather than a development bundle.
+    const buildProcess = spawn(process.execPath, [fileURLToPath(new URL("../node_modules/vite/bin/vite.js", import.meta.url)), "build", "--logLevel", "error"], {
+      cwd: fileURLToPath(new URL("../", import.meta.url)),
+      env: { ...process.env, NODE_ENV: "production" }, stdio: "inherit",
+    });
+    await new Promise((resolve, reject) => {
+      buildProcess.once("error", reject);
+      buildProcess.once("exit", (code, signal) => code === 0 ? resolve() : reject(Error(`production build failed: ${code ?? signal}`)));
+    });
     const asset = readdirSync("dist/assets").find(name => /^table-[^/]+\.js$/.test(name));
     assert.ok(asset, "production has a separately budgeted table client");
     production = await preview({ preview: { host: "127.0.0.1", port: 0, strictPort: false }, logLevel: "error" });

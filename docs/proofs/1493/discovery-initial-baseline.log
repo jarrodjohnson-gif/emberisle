@@ -1,0 +1,20 @@
+{"trial":1,"abortDelayMs":0,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":2,"abortDelayMs":1,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":3,"abortDelayMs":5,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":4,"abortDelayMs":25,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":5,"abortDelayMs":100,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":6,"abortDelayMs":0,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":7,"abortDelayMs":1,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":8,"abortDelayMs":5,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":9,"abortDelayMs":25,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":10,"abortDelayMs":100,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":11,"abortDelayMs":0,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":12,"abortDelayMs":1,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":13,"abortDelayMs":5,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":14,"abortDelayMs":25,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":15,"abortDelayMs":100,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":16,"abortDelayMs":0,"errors":["Error: There was an error during concurrent rendering but React was able to recover by instead synchronously rendering the entire root."],"causes":[{"message":"There was an error during concurrent rendering but React was able to recover by instead synchronously rendering the entire root.","cause":"Failed to fetch dynamically imported module: http://127.0.0.1:45087/assets/OpenTables-CUaROT6I.js"}],"preloadCount":3,"saved":true,"restoring":false}
+{"trial":17,"abortDelayMs":1,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":18,"abortDelayMs":5,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":19,"abortDelayMs":25,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}
+{"trial":20,"abortDelayMs":100,"errors":[],"causes":[],"preloadCount":2,"saved":true,"restoring":false}

@@ -1,0 +1,66 @@
+ok transport: no pre-welcome probe; duplicate welcome keeps one challenge and its 3s timeout; close cancels probing
+ok browser: nonce matched 137ms monotonic RTT; 30s spacing, one outstanding, 3s timeout, full-state recovery once; host timers/save bytes unchanged
+ok lobby: four ready seats and every health state fit 320/390/667/844px layouts; no landscape scrolling
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":1,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":2,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":3,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":4,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":5,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":6,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":7,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":8,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":9,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":10,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":11,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":12,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":13,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":14,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":15,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":16,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":17,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":18,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":19,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:43249/assets/OpenTables-Cr8y9Lau.js
+FAILED_RECOVERY_SAMPLE {"sample":20,"newErrors":[]}
+ok production startup: cancelled Host/rejoin stay offline; latest intent/selected host win; 3s fallback and saved seat survive held/failed load; explicit retry recovers
+ok host: malformed/oversized/prehello probes refused; peek/hello bucket retained; seated flood bounded to two pongs; game/timers/disk unchanged
+connection health prove ok
