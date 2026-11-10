@@ -246,6 +246,7 @@ async function online(me, { cap = false } = {}) {
   const sent = { welcomes: 0 };
   let states = [];
   let sockets = [];
+  let seatSocket;
   const requested = [];
   const { ctx, page, tag } = await open(view, {
     path: "/?host=ws://127.0.0.1:9",
@@ -257,6 +258,9 @@ async function online(me, { cap = false } = {}) {
         sockets.push(ws);
         ws.onMessage(async (raw) => {
           if (JSON.parse(String(raw)).type !== "hello") return;
+          // Discovery may dial this host after the seat. Game states and the deliberate
+          // drop belong to the connection that sent hello, not the newest list client.
+          seatSocket = ws;
           sent.welcomes++;
           ws.send(JSON.stringify({ type: "welcome", code: "ABCD", you: me, host: false, secret: "s3cret", chat: [] }));
           while (!states.length) await new Promise((r) => setTimeout(r, 20));
@@ -275,7 +279,7 @@ async function online(me, { cap = false } = {}) {
     const seatHex = base.players.find((p) => p.id === me).color;
     let seq = 20;
     const at = (patch) => ({ type: "state", you: me, legal, game: { ...base, ...patch, seq: ++seq } });
-    const push = (m) => sockets.at(-1).send(JSON.stringify(m));
+    const push = (m) => seatSocket.send(JSON.stringify(m));
     const loaded = () => page.waitForFunction((n) => window.__emberisle.getState().state?.seq === n, seq, { timeout: STEP_MS });
     // Nothing new shows for a while after the state has loaded.
     const stays = async (label, n0) => {
@@ -323,6 +327,14 @@ async function online(me, { cap = false } = {}) {
     await page.waitForFunction(() => window.__emberisle?.getState().state?.seq === 20, null, { timeout: STEP_MS });
     await page.waitForTimeout(700);
     check((await bannerCount(page)) === 0, `${tg} first load onto own roll at seq 20: no moment`);
+
+    // Keep the late-discovery ordering explicit so routing cannot silently regress.
+    await page.evaluate(() => new Promise((resolve, reject) => {
+      const ws = new WebSocket("ws://127.0.0.1:9/");
+      ws.onopen = () => { ws.send(JSON.stringify({ type: "list" })); resolve(); };
+      ws.onerror = () => reject(new Error("online fixture discovery socket failed"));
+      window.__yourTurnDiscoverySocket = ws;
+    }));
 
     // Another seat's move, and a bot's, show none.
     push(at({ turn: 2, phase: "main", current: me }));
@@ -399,7 +411,7 @@ async function online(me, { cap = false } = {}) {
 
     // A drop and a rejoin onto the person's own move under way: none. A live turn after it: one.
     states = [at({ turn: 8, phase: "roll", current: me })];
-    sockets.at(-1).close();
+    seatSocket.close();
     await page.waitForFunction(() => /Reconnecting/.test(window.__emberisle.getState().error ?? ""), null, { timeout: STEP_MS });
     await page.waitForFunction((n) => window.__emberisle.getState().state?.seq === n, seq, { timeout: STEP_MS });
     check(sent.welcomes === 2, `${tg} the seat was re-welcomed through the redial`, sent);

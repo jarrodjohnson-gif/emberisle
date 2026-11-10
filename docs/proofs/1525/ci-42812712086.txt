@@ -1,0 +1,19 @@
+Exact1496 head8b76bac96ffdab380ae3fa256727a6ffc971a588, run42812712086 job129818479608 presentation-3. Official decoded excerpt; turn-gain passed, your-turn-stay p1/p2/p3 state waits failed. This matches investigated newest-socket routing. No retry requested.
+2026-11-10T12:18:22.0768508Z ok   390x844 online p0 first load onto own roll at seq 20: no moment
+2026-11-10T12:18:44.0149110Z ok   390x844 online p1 first load onto own roll at seq 20: no moment
+2026-11-10T12:19:14.0307833Z 390x844 online p1: page.waitForFunction: Timeout 30000ms exceeded.
+2026-11-10T12:19:14.0327325Z     at loaded (/home/runner/work/emberisle/emberisle/scripts/your-turn-stay-prove.mjs:279:31)
+2026-11-10T12:19:14.0384516Z     at stays (/home/runner/work/emberisle/emberisle/scripts/your-turn-stay-prove.mjs:282:13)
+2026-11-10T12:19:14.0427216Z     at online (/home/runner/work/emberisle/emberisle/scripts/your-turn-stay-prove.mjs:330:11)
+2026-11-10T12:19:15.5795137Z ok   390x844 online p2 first load onto own roll at seq 20: no moment
+2026-11-10T12:19:45.5855298Z 390x844 online p2: page.waitForFunction: Timeout 30000ms exceeded.
+2026-11-10T12:19:45.5860704Z     at loaded (/home/runner/work/emberisle/emberisle/scripts/your-turn-stay-prove.mjs:279:31)
+2026-11-10T12:19:45.5862394Z     at stays (/home/runner/work/emberisle/emberisle/scripts/your-turn-stay-prove.mjs:282:13)
+2026-11-10T12:19:45.5868968Z     at online (/home/runner/work/emberisle/emberisle/scripts/your-turn-stay-prove.mjs:330:11)
+2026-11-10T12:19:47.2854225Z ok   390x844 online p3 first load onto own roll at seq 20: no moment
+2026-11-10T12:20:17.2893296Z 390x844 online p3: page.waitForFunction: Timeout 30000ms exceeded.
+2026-11-10T12:20:17.2909396Z     at loaded (/home/runner/work/emberisle/emberisle/scripts/your-turn-stay-prove.mjs:279:31)
+2026-11-10T12:20:17.2937504Z     at stays (/home/runner/work/emberisle/emberisle/scripts/your-turn-stay-prove.mjs:282:13)
+2026-11-10T12:20:17.2939083Z     at online (/home/runner/work/emberisle/emberisle/scripts/your-turn-stay-prove.mjs:330:11)
+2026-11-10T12:24:46.2645170Z your-turn-stay-prove: 3 failed
+
