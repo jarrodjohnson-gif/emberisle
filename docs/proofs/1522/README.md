@@ -13,3 +13,9 @@ Controlled200ms delay of A's own-roll state delivery, retaining the real host an
 - Same delay plus acting-client readiness: roll atseq3/p0roll, pass atseq4/p0main, all original full server-needs cases/terminal success, exit0. No artificial delay exists in the permanent candidate.
 
 This demonstrates the fixture race and the repaired boundary at the same failure path. Historical CI lacks the trace, so its precise original schedule remains unproved. Full unmodified candidate validation under load, independent review and hosted CI remain pending. Existing server-needs-prove is registered in package.json and ci.yml; no new permanent proof. Eight open PR cap respected; publication as a separate PR waits for an authorized slot.
+
+## Full candidate validation
+
+At fixed sourcec263f426178f6d7745aff1225dee4d59d285997b,20/20 consecutive COMPLETE unmodified candidate server-needs proofs passed under2CPU quota plus100ms-busy/200ms CPU load, pinned Node22.23.4. Every exit0 and terminal needs server prove ok; no retry. Raw logs/exits/start times/source hash/CPU metadata/batch in full-series/. This is20 full server-needs proofs, separate from chat validation and from the latency-injected controls.
+
+Syntax/registered215/advisory loosen1-none loosened pass. Final evidence commit changes no server/src/package/workflow source. No hosted CI or independent review claimed. Candidate stays on a separate pushed feature branch while all eight owned/adopted PR slots are occupied; no ninth PR or cap exception assumed. Original assertions/5000ms guard and host stale-action rejection unchanged.
