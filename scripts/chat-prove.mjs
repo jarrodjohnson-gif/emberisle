@@ -93,28 +93,56 @@ const store = (t, fn) => t.page.evaluate(fn);
 // Capture after actual rendered frames, including the lazy island's first mount.
 async function shot(t, file) {
   await t.page.waitForFunction(() => Boolean(window.__isle));
-  let failed = false, failure;
+  let failed = false, failure, baseline;
   try {
-    const before = await t.page.evaluate(() => {
+    baseline = await t.page.evaluate(() => {
       const isle = window.__isle, draw = isle.draw;
       if (typeof draw !== "function") throw new Error("chat capture: scene draw hook missing");
-      window.__chatShot = { isle, draw, own: Object.hasOwn(isle, "draw") };
+      const capture = window.__chatShot = { isle, draw, own: Object.hasOwn(isle, "draw"), attempts: 0, completed: 0 };
       // Retain the two actual frames required below, then let the compositor capture them without
       // competing with further scene draws. DOM RAFs, clocks and reaction expiry keep running.
       let remaining = 2;
       isle.draw = function (...args) {
+        capture.attempts++;
         if (!remaining) return;
         remaining--;
-        return draw.apply(this, args);
+        const result = draw.apply(this, args);
+        capture.completed++;
+        return result;
       };
       window.__draw = true;
-      return isle.renders;
+      return { renders: isle.renders, origin: performance.timeOrigin };
     });
-    await t.page.waitForFunction((n) => window.__isle.renders >= n + 2, before, { timeout: 15_000 });
+    await t.page.waitForFunction((n) => window.__isle.renders >= n + 2, baseline.renders, { timeout: 15_000 });
     await t.page.screenshot({ path: `${SHOTS}${file}`, type: "jpeg", quality: 70 });
   } catch (error) {
     failed = true;
     failure = error;
+    // Reporting happens after the original guard failed; it cannot make that failed check pass.
+    let reportTimer;
+    try {
+      const context = await Promise.race([
+        t.page.evaluate(() => {
+          const capture = window.__chatShot, saved = capture?.isle, current = window.__isle;
+          const gl = saved?.renderer?.getContext();
+          return {
+            origin: performance.timeOrigin, sameRenderer: saved === current,
+            savedRenders: saved?.renders, currentRenders: current?.renders,
+            attempts: capture?.attempts, completed: capture?.completed,
+            hidden: document.hidden, motionReduced: matchMedia("(prefers-reduced-motion: reduce)").matches,
+            rendererCalm: saved?.calm(), stopped: saved?.stopped, connected: saved?.renderer?.domElement?.isConnected,
+            busyUntil: saved?.busyUntil, lastFrame: saved?.lastFrame, now: performance.now(),
+            contextLost: gl?.isContextLost(), fence: saved?.fence && !gl.isContextLost() ? gl.getSyncParameter(saved.fence, gl.SYNC_STATUS) : null,
+          };
+        }),
+        new Promise((resolve) => { reportTimer = setTimeout(() => resolve({ reportTimedOut: true }), 3000); }),
+      ]);
+      console.log("capture failure context", file, { baseline, ...context });
+    } catch (reportError) {
+      console.log("capture failure context unavailable", file, reportError.message);
+    } finally {
+      clearTimeout(reportTimer);
+    }
   }
   try {
     await t.page.evaluate(() => {

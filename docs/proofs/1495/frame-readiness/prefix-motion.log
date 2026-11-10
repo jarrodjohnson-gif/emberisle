@@ -1,0 +1,5910 @@
+ok lobby status on Ember: "Need 2 more players" +13.5s
+ok lobby status on Ember: "Need 1 more player" +15.5s
+ok lobby status on Tide: "Need 1 more player" +15.5s
+ok lobby status on Ember: "0 of 3 ready" +16.7s
+ok lobby status on Tide: "0 of 3 ready" +16.8s
+ok host tag on Ember's row only, seen by Ember +16.8s
+ok host tag on Ember's row only, seen by Tide +16.9s
+ok host tag on Ember's row only, seen by Pine +16.9s
+ok phone title card is 410 px tall, at most 55% of 844 +17.0s
+ok phone title card is full width minus 12 px, at the bottom +17.0s
+ok phone lobby card is 358x812, inside the 390x844 screen with the approved 16 px margins +20.5s
+ok phone lobby 390x844, 4 seats scrolled down: footer keeps the approved 12 px bottom padding (gap 12), nothing below it, Leave inside it +22.1s
+ok phone lobby 390x640, 4 seats scrolled down: footer keeps the approved 12 px bottom padding (gap 12), nothing below it, Leave inside it +23.1s
+ok phone lobby: the card starts unscrolled +23.1s
+ok phone lobby: Ready is inside the card and the 390x844 viewport without scrolling +23.4s
+ok phone lobby: Start is inside the card and the 390x844 viewport without scrolling +41.3s
+ok phone lobby: the Ready/Start row is wholly on screen +41.3s
+ok phone lobby 390x844: 8 whole chat lines on screen, newest ("Guslobby line 8") visible, 14px text +49.9s
+ok phone lobby 390x844: Ready/Start stay on screen beside the chat +50.1s
+ok phone lobby 390x844: the Sounds & stickers tab shows all 8 listed chips at 15px with no sideways scroll +51.4s
+ok phone lobby 390x844: the Sounds & stickers tab shows all 15 chips inside the box +51.4s
+ok 390x844: sticker monkey-pet is in the Sounds & stickers tab, loaded, on screen, 44x44 +52.0s
+ok 390x844: sticker side-eye is in the Sounds & stickers tab, loaded, on screen, 44x44 +52.3s
+ok 390x844: sticker banana-guy is in the Sounds & stickers tab, loaded, on screen, 44x44 +52.7s
+ok 390x844: sticker glasses-glance is in the Sounds & stickers tab, loaded, on screen, 44x44 +53.0s
+ok 390x844: sticker dark-smile is in the Sounds & stickers tab, loaded, on screen, 44x44 +53.7s
+ok 390x844: chip "Play sound Real badman" is on screen at 44 px tall +53.9s
+ok 390x844: chip "Play sound Gong" is on screen at 44 px tall +54.2s
+ok phone lobby 390x844: back on the Chat tab, 8 chat lines and the newest are on screen +54.9s
+ok phone lobby 440x956: 8 whole chat lines on screen, newest ("Guslobby line 8") visible, 14px text +55.4s
+ok phone lobby 440x956: Ready/Start stay on screen beside the chat +55.4s
+ok phone lobby 440x956: the Sounds & stickers tab shows all 8 listed chips at 15px with no sideways scroll +57.4s
+ok phone lobby 440x956: the Sounds & stickers tab shows all 15 chips inside the box +57.4s
+ok phone lobby 440x956: back on the Chat tab, 8 chat lines and the newest are on screen +57.8s
+ok phone lobby: a line that arrives while the log is at the bottom is scrolled into view +58.6s
+ok phone landscape 844x390, 4 seats all ready: status, Ready, Start and Leave are on screen without scrolling +69.4s
+ok phone landscape 844x390: all four seat rows are on screen +69.4s
+ok phone landscape 844x390: nothing in the card scrolls () +69.4s
+ok phone landscape 844x390: the rename button is 44.7x44.0, at least 44x44 +69.4s
+ok phone landscape 844x390: Sounds & stickers shows 8 listed chips and 5 presets at 44 px, in a 218 px scroll box (scrollHeight 464) +69.8s
+ok phone landscape 844x390: Sounds & stickers shows the 15 chips and 5 presets at 44 px +69.8s
+ok 844x390: sticker monkey-pet is in the Sounds & stickers tab, loaded, on screen, 44x44 +70.2s
+ok 844x390: sticker side-eye is in the Sounds & stickers tab, loaded, on screen, 44x44 +70.6s
+ok 844x390: sticker banana-guy is in the Sounds & stickers tab, loaded, on screen, 44x44 +71.0s
+ok 844x390: sticker glasses-glance is in the Sounds & stickers tab, loaded, on screen, 44x44 +71.2s
+ok 844x390: sticker dark-smile is in the Sounds & stickers tab, loaded, on screen, 44x44 +71.6s
+ok 844x390: chip "Play sound Real badman" is on screen at 44 px tall +71.9s
+ok 844x390: chip "Play sound Gong" is on screen at 44 px tall +72.3s
+ok phone landscape 667x375, 4 seats all ready: status, Ready, Start and Leave are on screen without scrolling +73.6s
+ok phone landscape 667x375: all four seat rows are on screen +73.6s
+ok phone landscape 667x375: nothing in the card scrolls () +73.6s
+ok phone landscape 667x375: the rename button is 44.7x44.0, at least 44x44 +73.8s
+ok phone landscape 667x375: Sounds & stickers shows 8 listed chips and 5 presets at 44 px, in a 219 px scroll box (scrollHeight 620) +74.2s
+ok phone landscape 667x375: Sounds & stickers shows the 15 chips and 5 presets at 44 px +74.2s
+ok lobby status on Ember: "0 of 4 ready" +74.8s
+ok lobby: Ember shows "hello" from Ember +75.1s
+ok lobby: Tide shows "hello" from Ember +75.2s
+ok lobby: Pine shows "hello" from Ember +75.2s
+ok lobby: Pine shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect  +75.6s
+ok lobby: Ember shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect  +75.7s
+ok lobby: Tide shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect  +75.7s
+ok lobby: Tide's one-tap emoji is a light line in all 3 logs +75.8s
+ok lobby: Pine shows Pine's Wololo bubble, clear of the name  +76.9s
+ok lobby: Tide shows Pine's Wololo bubble, clear of the name  +77.1s
+ok lobby: Ember shows Pine's Wololo bubble, clear of the name  +77.1s
+ok lobby: Pine's sound is a bubble and a light line on all 3 tabs +77.2s
+ok lobby: Real badman from Tide is a bubble and a sound line on all 3 tabs +78.6s
+ok lobby: Gong from Ember is a bubble and a sound line on all 3 tabs +80.5s
+ok lobby: input cleared after Enter +80.5s
+ok desktop lobby 1280x720 (host, before Ready): a hit test reaches the input, Send and both tabs, none under the footer {"input":"ok","Send":"ok","Chat tab":"ok","Sounds & stickers tab":"ok"} +80.5s
+ok desktop lobby 1280x720 (guest, before Ready): a hit test reaches the input, Send and both tabs, none under the footer {"input":"ok","Send":"ok","Chat tab":"ok","Sounds & stickers tab":"ok"} +80.5s
+ok lobby status on Ember: "1 of 4 ready" +83.3s
+ok lobby status on Ember: "2 of 4 ready" +83.5s
+ok lobby status on Ember: "3 of 4 ready" +83.6s
+ok lobby status on Ember: "Everyone is ready" +83.8s
+ok desktop lobby: the card starts unscrolled +83.9s
+ok desktop lobby at 1280x720: Start is inside the card (bottom 675 <= card 696) without scrolling +83.9s
+ok desktop lobby at 1280x720: Leave the table is inside the card (bottom 675 <= card 696) without scrolling +83.9s
+ok desktop lobby 1280x720 (host, everyone ready, Start showing): a hit test reaches the input, Send and both tabs, none under the footer {"input":"ok","Send":"ok","Chat tab":"ok","Sounds & stickers tab":"ok"} +83.9s
+ok desktop lobby 1280x720 (host, Sounds & stickers tab): all 8 listed chips with no sideways scroll, both tabs reachable; 8 of 8 chips in view without scrolling the tab +84.2s
+ok desktop lobby 1280x720 (host, Sounds & stickers tab): all 15 chips with no sideways scroll, both tabs reachable; 15 of 15 chips in view without scrolling the tab +84.2s
+ok 1280x720: sticker monkey-pet is in the Sounds & stickers tab, loaded, on screen, 44x44 +84.4s
+ok 1280x720: sticker side-eye is in the Sounds & stickers tab, loaded, on screen, 44x44 +84.4s
+ok 1280x720: sticker banana-guy is in the Sounds & stickers tab, loaded, on screen, 44x44 +84.6s
+ok 1280x720: sticker glasses-glance is in the Sounds & stickers tab, loaded, on screen, 44x44 +84.8s
+ok 1280x720: sticker dark-smile is in the Sounds & stickers tab, loaded, on screen, 44x44 +84.9s
+ok 1280x720: chip "Play sound Real badman" is on screen at 44 px tall +85.0s
+ok 1280x720: chip "Play sound Gong" is on screen at 44 px tall +85.1s
+ok game: every tab shows the minimized dock, and the lobby lines did not count as unread +88.6s
+ok game: Ember has no unread badge +88.6s
+ok game: Tide has no unread badge +88.7s
+ok game: Pine has no unread badge +88.7s
+ok phone: Play starts with the sheet closed although chat was remembered open +88.8s
+ok phone: the remembered open state is left in storage +88.8s
+ok chat panel: first Escape (from the input) minimizes chat and keeps Path armed +90.3s
+ok chat panel: second Escape disarms Path +90.3s
+ok chat panel: Ember has no separate quick-reaction button +90.4s
+ok chat panel: Ember starts with chat closed +90.4s
+ok chat panel: Ember opens on the Chat tab +90.6s
+ok chat panel: Ember has no speaker or smile toggle in the chat box +90.6s
+ok chat polish 1280x720 chat tab: 12 controls, 26 texts, minimum 10.43:1, glass over black rgb(255,255,255)
+ok chat panel: Ember has the six 44 px emoji in the viewport, right above the input +90.7s
+ok chat panel: Moss has no separate quick-reaction button +93.0s
+ok chat panel: Moss starts with chat closed +93.0s
+ok chat panel: phone Open chat leaves the rotate hint unobscured +93.1s
+ok chat panel: Moss opens on the Chat tab +93.2s
+ok chat panel: Moss has no speaker or smile toggle in the chat box +93.3s
+ok chat polish 390x844 chat tab: 12 controls, 24 texts, minimum 10.43:1, glass over black rgb(255,255,255)
+ok chat panel: Moss has the six 44 px emoji in the viewport, right above the input +93.3s
+ok quick reactions: 😠 from Ember reaches another seat through the host +95.3s
+ok chat panel: one tap on angry sends it and keeps the panel open +95.3s
+ok chat panel: the emoji dim and disable during the cooldown +95.3s
+ok quick reactions: 😊 from Ember reaches another seat through the host +96.4s
+ok chat panel: one tap on happy sends it and keeps the panel open +96.4s
+ok quick reactions: 👏 from Ember reaches another seat through the host +97.4s
+ok chat panel: one tap on clap sends it and keeps the panel open +97.5s
+ok quick reactions: 😂 from Ember reaches another seat through the host +98.5s
+ok chat panel: one tap on laugh sends it and keeps the panel open +98.5s
+ok quick reactions: 🔥 from Ember reaches another seat through the host +99.6s
+ok chat panel: one tap on fire sends it and keeps the panel open +99.6s
+ok quick reactions: 🐑 from Ember reaches another seat through the host +100.7s
+ok chat panel: one tap on sheep sends it and keeps the panel open +100.7s
+ok quick reactions: 🔥 from Ember reaches another seat through the host +101.7s
+ok chat panel: key 5 sends fire while the panel is open +101.7s
+ok chat panel: an emote writes a light line in the log +101.7s
+ok chat panel: typing 1 in chat types it and sends no reaction +103.1s
+ok chat panel: Escape from the chat input minimizes chat +103.2s
+ok quick reactions: ben-10 from Ember reaches another seat through the host +103.9s
+ok chat panel: the sticker sends from the Sounds & stickers tab +104.0s
+ok quick reactions: monkey-pet from Ember reaches another seat through the host +105.1s
+ok chat panel: sticker monkey-pet is sent and seen by another seat +105.2s
+ok quick reactions: side-eye from Ember reaches another seat through the host +106.2s
+ok chat panel: sticker side-eye is sent and seen by another seat +106.2s
+ok quick reactions: banana-guy from Ember reaches another seat through the host +107.3s
+ok chat panel: sticker banana-guy is sent and seen by another seat +107.4s
+ok quick reactions: glasses-glance from Ember reaches another seat through the host +108.4s
+ok chat panel: sticker glasses-glance is sent and seen by another seat +108.4s
+ok quick reactions: dark-smile from Ember reaches another seat through the host +109.5s
+ok chat panel: sticker dark-smile is sent and seen by another seat +109.5s
+ok quick reactions: 🐑 from Moss reaches another seat through the host +110.8s
+ok chat panel: a phone tap sends from the open sheet and keeps it open +110.8s
+ok quick reactions: host drops an unknown id, unlisted emoji, and URL +111.7s
+ok quick reactions: repeats coalesce at Tide's sender seat +111.9s
+ok quick reactions: Tide float, badge and target fit at every sampled animation frame +111.9s
+ok seat bubble: at Tide's rail the bubble box and the name box don't intersect  +111.9s
+ok seat bubble: at Tide it sits right of the rail card +112.1s
+ok quick reactions: repeats coalesce at Moss's sender seat +112.1s
+ok quick reactions: Moss float, badge and target fit at every sampled animation frame +112.1s
+ok seat bubble: at Moss's seat the bubble box and the name box don't intersect  +112.1s
+ok seat bubble: at Moss it sits under the strip cell +112.2s
+ok quick reactions: reduced motion stays fully static +112.2s
+ok mute: Pine is muted in this chat dock +115.5s
+ok chat polish 1280x720 mute panel: 4 controls, 4 texts, minimum 10.43:1, glass over black rgb(255,255,255)
+ok mute: Pine's chat line is hidden only in Ember's view +115.5s
+ok mute: unmuting Pine restores the earlier chat line +115.6s
+ok mute: Pine's reaction bubble and its log line are hidden only in Ember's view +116.0s
+ok mute: unmuting Pine restores the active reaction and its log line +116.1s
+ok mute: a muted player's line does not add to unread +116.4s
+ok mute: unread counts only the unmuted player's line +116.5s
+ok mute: blocked storage still mutes in the current tab +117.0s
+ok mute: blocked storage still hides Pine's chat line +117.0s
+ok mute: blocked-storage preference can be cleared in the current tab +117.1s
+ok closed chat: Pine sees Ember's line as a bubble at the seat; bubble box and name box don't intersect  +121.1s
+ok closed chat: the bubble fades out (its animation ends at opacity 0) +121.2s
+ok open chat: Tide, chat open, shows the line in the log and no bubble +121.2s
+ok chat polish 1280x720 minimized: 1 controls, 1 texts, minimum 4.77:1, glass over black rgb(255,255,255)
+ok closed chat (owner decision): no preview pills under the top-right icons, only the unread badge on the chat button +121.6s
+ok minimized dock: 73 legal corners, edges, and hexes are on screen +121.6s
+ok minimized dock: no target is covered by chat (73 reach the canvas, the rest sit under the HUD) +121.6s
+ok closed chat: the line's bubble is gone after its lifetime +125.1s
+ok presets: Ember's "gg" shows as a closed-chat bubble on Pine +125.4s
+ok presets: Ember's "gg" is a chat line in all 3 logs +126.1s
+ok reaction: Ember shows ben-10 beside Pine's card +130.7s
+ok reaction: Ember image is 48 px wide +130.7s
+ok reaction: Tide shows ben-10 beside Pine's card +130.7s
+ok reaction: Tide image is 48 px wide +130.7s
+ok reaction: gone after its lifetime on Ember +132.9s
+ok reaction: gone after its lifetime on Tide +132.9s
+ok reaction: gone after its lifetime on Pine +132.9s
+ok menu: Tide's card is a button with aria-expanded +133.2s
+ok menu: 4 facts [0,0,0,0] equal the card's numbers +133.2s
+ok menu: sits in the rail column under the card and pushes the cards below it down +133.2s
+ok menu: no Trade row outside your main phase +133.2s
+ok menu: no sticker or reaction buttons; reactions come only from the chat panel +134.9s
+ok menu: Esc closes it and the focus returns to the card +135.8s
+ok menu: the same card closes it +136.6s
+ok menu: a click outside closes it +136.8s
+ok menu: Mention puts "@Tide " in the input +137.1s
+ok menu: Mention focuses the input +137.1s
+ok minimize: localStorage["emberisle-chat-open"] is "0" +137.4s
+ok reduced motion: the closed-chat bubble is fully static +138.2s
+ok reduced motion: the closed-chat bubble goes after its lifetime, with no movement +142.3s
+ok unread: tab 1's badge shows 1 +142.5s
+ok unread: the minimized button is named "Open chat, 1 unread" +142.7s
+ok open: badge cleared and the value is "1" +143.2s
+FRAME setup chat-open.jpg {
+  before: 1281,
+  oldRenders: 1282,
+  currentRenders: 1282,
+  same: true,
+  calls: 1,
+  actual: 1,
+  skipped: 0,
+  remaining: 1,
+  history: [ { at: 143049.5, renders: 1282 } ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 143133.89999999106,
+  lastFrame: 143045.69999998808,
+  now: 143810.29999999702,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME ready chat-open.jpg {
+  before: 1281,
+  oldRenders: 1283,
+  currentRenders: 1283,
+  same: true,
+  calls: 3,
+  actual: 2,
+  skipped: 1,
+  remaining: 0,
+  history: [
+    { at: 143049.5, renders: 1282 },
+    { at: 143829.09999999404, renders: 1283 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 143133.89999999106,
+  lastFrame: 144543.39999999106,
+  now: 144551.29999999702,
+  connected: true,
+  lost: false,
+  fence: null,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-1.jpg {
+  before: 1339,
+  oldRenders: 1340,
+  currentRenders: 1340,
+  same: true,
+  calls: 1,
+  actual: 1,
+  skipped: 0,
+  remaining: 1,
+  history: [ { at: 145838.5, renders: 1340 } ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 146834.79999999702,
+  lastFrame: 145834.79999999702,
+  now: 146162.59999999404,
+  connected: true,
+  lost: false,
+  fence: 37144,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME ready frame-resume-1.jpg {
+  before: 1339,
+  oldRenders: 1341,
+  currentRenders: 1341,
+  same: true,
+  calls: 4,
+  actual: 2,
+  skipped: 2,
+  remaining: 0,
+  history: [ { at: 145838.5, renders: 1340 }, { at: 146167, renders: 1341 } ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 146834.79999999702,
+  lastFrame: 146643.19999998808,
+  now: 146652.89999999106,
+  connected: true,
+  lost: false,
+  fence: null,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-2.jpg {
+  before: 1374,
+  oldRenders: 1375,
+  currentRenders: 1375,
+  same: true,
+  calls: 1,
+  actual: 1,
+  skipped: 0,
+  remaining: 1,
+  history: [ { at: 147924.5, renders: 1375 } ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 148921.89999999106,
+  lastFrame: 147921.89999999106,
+  now: 148259.39999999106,
+  connected: true,
+  lost: false,
+  fence: 37144,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME ready frame-resume-2.jpg {
+  before: 1374,
+  oldRenders: 1376,
+  currentRenders: 1376,
+  same: true,
+  calls: 3,
+  actual: 2,
+  skipped: 1,
+  remaining: 0,
+  history: [
+    { at: 147924.5, renders: 1375 },
+    { at: 148267.69999998808, renders: 1376 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 148921.89999999106,
+  lastFrame: 148675.5,
+  now: 148684.59999999404,
+  connected: true,
+  lost: false,
+  fence: null,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-3.jpg {
+  before: 1436,
+  oldRenders: 1436,
+  currentRenders: 1436,
+  same: true,
+  calls: 0,
+  actual: 0,
+  skipped: 0,
+  remaining: 2,
+  history: [],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: true,
+  stopped: false,
+  busyUntil: 149883.69999998808,
+  lastFrame: 149883.39999999106,
+  now: 149983.5,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    }
+  ]
+}
+FRAME ready frame-resume-3.jpg {
+  before: 1436,
+  oldRenders: 1438,
+  currentRenders: 1438,
+  same: true,
+  calls: 3,
+  actual: 2,
+  skipped: 1,
+  remaining: 0,
+  history: [
+    { at: 149998.69999998808, renders: 1437 },
+    { at: 150376, renders: 1438 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 150996,
+  lastFrame: 150762.59999999404,
+  now: 150767,
+  connected: true,
+  lost: false,
+  fence: null,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-4.jpg {
+  before: 1470,
+  oldRenders: 1470,
+  currentRenders: 1470,
+  same: true,
+  calls: 0,
+  actual: 0,
+  skipped: 0,
+  remaining: 2,
+  history: [],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 153185.69999998808,
+  lastFrame: 152207.29999999702,
+  now: 152216.59999999404,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME ready frame-resume-4.jpg {
+  before: 1470,
+  oldRenders: 1472,
+  currentRenders: 1472,
+  same: true,
+  calls: 3,
+  actual: 2,
+  skipped: 1,
+  remaining: 0,
+  history: [
+    { at: 152220.19999998808, renders: 1471 },
+    { at: 153073.29999999702, renders: 1472 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 153185.69999998808,
+  lastFrame: 153591.79999999702,
+  now: 153638.19999998808,
+  connected: true,
+  lost: false,
+  fence: null,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-5.jpg {
+  before: 1520,
+  oldRenders: 1520,
+  currentRenders: 1520,
+  same: true,
+  calls: 0,
+  actual: 0,
+  skipped: 0,
+  remaining: 2,
+  history: [],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: true,
+  stopped: false,
+  busyUntil: 154834.29999999702,
+  lastFrame: 154819.79999999702,
+  now: 154909.5,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    }
+  ]
+}
+FRAME ready frame-resume-5.jpg {
+  before: 1520,
+  oldRenders: 1522,
+  currentRenders: 1522,
+  same: true,
+  calls: 2,
+  actual: 2,
+  skipped: 0,
+  remaining: 0,
+  history: [
+    { at: 154937, renders: 1521 },
+    { at: 155303.89999999106, renders: 1522 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 155931.09999999404,
+  lastFrame: 155292,
+  now: 155741.89999999106,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-6.jpg {
+  before: 1566,
+  oldRenders: 1567,
+  currentRenders: 1567,
+  same: true,
+  calls: 1,
+  actual: 1,
+  skipped: 0,
+  remaining: 1,
+  history: [ { at: 157049.59999999404, renders: 1567 } ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 158009.69999998808,
+  lastFrame: 157041.79999999702,
+  now: 157446.29999999702,
+  connected: true,
+  lost: false,
+  fence: 37144,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME ready frame-resume-6.jpg {
+  before: 1566,
+  oldRenders: 1568,
+  currentRenders: 1568,
+  same: true,
+  calls: 3,
+  actual: 2,
+  skipped: 1,
+  remaining: 0,
+  history: [
+    { at: 157049.59999999404, renders: 1567 },
+    { at: 157456.59999999404, renders: 1568 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 158009.69999998808,
+  lastFrame: 157840.39999999106,
+  now: 157856.59999999404,
+  connected: true,
+  lost: false,
+  fence: null,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-7.jpg {
+  before: 1613,
+  oldRenders: 1614,
+  currentRenders: 1614,
+  same: true,
+  calls: 1,
+  actual: 1,
+  skipped: 0,
+  remaining: 1,
+  history: [ { at: 159098.39999999106, renders: 1614 } ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 160077.09999999404,
+  lastFrame: 159091.59999999404,
+  now: 159463.79999999702,
+  connected: true,
+  lost: false,
+  fence: 37144,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME ready frame-resume-7.jpg {
+  before: 1613,
+  oldRenders: 1615,
+  currentRenders: 1615,
+  same: true,
+  calls: 3,
+  actual: 2,
+  skipped: 1,
+  remaining: 0,
+  history: [
+    { at: 159098.39999999106, renders: 1614 },
+    { at: 159469.39999999106, renders: 1615 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 160077.09999999404,
+  lastFrame: 159853.29999999702,
+  now: 159858.29999999702,
+  connected: true,
+  lost: false,
+  fence: null,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-8.jpg {
+  before: 1670,
+  oldRenders: 1670,
+  currentRenders: 1670,
+  same: true,
+  calls: 0,
+  actual: 0,
+  skipped: 0,
+  remaining: 2,
+  history: [],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: true,
+  stopped: false,
+  busyUntil: 161040.89999999106,
+  lastFrame: 161035.19999998808,
+  now: 161108.69999998808,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true }
+  ]
+}
+FRAME ready frame-resume-8.jpg {
+  before: 1670,
+  oldRenders: 1672,
+  currentRenders: 1672,
+  same: true,
+  calls: 2,
+  actual: 2,
+  skipped: 0,
+  remaining: 0,
+  history: [
+    { at: 161142.5, renders: 1671 },
+    { at: 161547.59999999404, renders: 1672 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 162138.89999999106,
+  lastFrame: 161541.39999999106,
+  now: 161948.29999999702,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false }
+  ]
+}
+FRAME setup frame-resume-9.jpg {
+  before: 1734,
+  oldRenders: 1734,
+  currentRenders: 1734,
+  same: true,
+  calls: 0,
+  actual: 0,
+  skipped: 0,
+  remaining: 2,
+  history: [],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 164197.29999999702,
+  lastFrame: 163215.29999999702,
+  now: 163230,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME ready frame-resume-9.jpg {
+  before: 1734,
+  oldRenders: 1736,
+  currentRenders: 1736,
+  same: true,
+  calls: 2,
+  actual: 2,
+  skipped: 0,
+  remaining: 0,
+  history: [
+    { at: 163238, renders: 1735 },
+    { at: 163591.69999998808, renders: 1736 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 164197.29999999702,
+  lastFrame: 163589.5,
+  now: 163958.59999999404,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-10.jpg {
+  before: 1791,
+  oldRenders: 1791,
+  currentRenders: 1791,
+  same: true,
+  calls: 0,
+  actual: 0,
+  skipped: 0,
+  remaining: 2,
+  history: [],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: true,
+  stopped: false,
+  busyUntil: 165105.5,
+  lastFrame: 165102.39999999106,
+  now: 165194.69999998808,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    }
+  ]
+}
+FRAME ready frame-resume-10.jpg {
+  before: 1791,
+  oldRenders: 1793,
+  currentRenders: 1793,
+  same: true,
+  calls: 2,
+  actual: 2,
+  skipped: 0,
+  remaining: 0,
+  history: [
+    { at: 165221.19999998808, renders: 1792 },
+    { at: 165589.89999999106, renders: 1793 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 166217.89999999106,
+  lastFrame: 165581.79999999702,
+  now: 165988.79999999702,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-11.jpg {
+  before: 1850,
+  oldRenders: 1850,
+  currentRenders: 1850,
+  same: true,
+  calls: 0,
+  actual: 0,
+  skipped: 0,
+  remaining: 2,
+  history: [],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: true,
+  stopped: false,
+  busyUntil: 167239.29999999702,
+  lastFrame: 167232.39999999106,
+  now: 167322.79999999702,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    }
+  ]
+}
+FRAME ready frame-resume-11.jpg {
+  before: 1850,
+  oldRenders: 1852,
+  currentRenders: 1852,
+  same: true,
+  calls: 2,
+  actual: 2,
+  skipped: 0,
+  remaining: 0,
+  history: [
+    { at: 167349.79999999702, renders: 1851 },
+    { at: 167691.69999998808, renders: 1852 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 168343,
+  lastFrame: 167690,
+  now: 168064.39999999106,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-12.jpg {
+  before: 1907,
+  oldRenders: 1907,
+  currentRenders: 1907,
+  same: true,
+  calls: 0,
+  actual: 0,
+  skipped: 0,
+  remaining: 2,
+  history: [],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: true,
+  stopped: false,
+  busyUntil: 169246.29999999702,
+  lastFrame: 169232.39999999106,
+  now: 169330.39999999106,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    }
+  ]
+}
+FRAME ready frame-resume-12.jpg {
+  before: 1907,
+  oldRenders: 1909,
+  currentRenders: 1909,
+  same: true,
+  calls: 3,
+  actual: 2,
+  skipped: 1,
+  remaining: 0,
+  history: [
+    { at: 169343.39999999106, renders: 1908 },
+    { at: 169677.19999998808, renders: 1909 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 170341.5,
+  lastFrame: 170043,
+  now: 170048.89999999106,
+  connected: true,
+  lost: false,
+  fence: null,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-13.jpg {
+  before: 1969,
+  oldRenders: 1969,
+  currentRenders: 1969,
+  same: true,
+  calls: 0,
+  actual: 0,
+  skipped: 0,
+  remaining: 2,
+  history: [],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 172292.89999999106,
+  lastFrame: 171308,
+  now: 171336.5,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 170202.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 171291.09999999404,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME ready frame-resume-13.jpg {
+  before: 1969,
+  oldRenders: 1971,
+  currentRenders: 1971,
+  same: true,
+  calls: 2,
+  actual: 2,
+  skipped: 0,
+  remaining: 0,
+  history: [
+    { at: 171347.09999999404, renders: 1970 },
+    { at: 171858.19999998808, renders: 1971 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 172292.89999999106,
+  lastFrame: 171854,
+  now: 172247.09999999404,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 170202.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 171291.09999999404,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-14.jpg {
+  before: 2033,
+  oldRenders: 2033,
+  currentRenders: 2033,
+  same: true,
+  calls: 0,
+  actual: 0,
+  skipped: 0,
+  remaining: 2,
+  history: [],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 174511.89999999106,
+  lastFrame: 173533,
+  now: 173550.09999999404,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 170202.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 171291.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 172409.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 173508.69999998808,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME ready frame-resume-14.jpg {
+  before: 2033,
+  oldRenders: 2035,
+  currentRenders: 2035,
+  same: true,
+  calls: 3,
+  actual: 2,
+  skipped: 1,
+  remaining: 0,
+  history: [
+    { at: 173557.59999999404, renders: 2034 },
+    { at: 173906.29999999702, renders: 2035 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 174511.89999999106,
+  lastFrame: 174288.89999999106,
+  now: 174296.79999999702,
+  connected: true,
+  lost: false,
+  fence: null,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 170202.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 171291.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 172409.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 173508.69999998808,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-15.jpg {
+  before: 2098,
+  oldRenders: 2099,
+  currentRenders: 2099,
+  same: true,
+  calls: 1,
+  actual: 1,
+  skipped: 0,
+  remaining: 1,
+  history: [ { at: 175577, renders: 2099 } ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 176547.69999998808,
+  lastFrame: 175572.29999999702,
+  now: 175994.69999998808,
+  connected: true,
+  lost: false,
+  fence: 37144,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 170202.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 171291.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 172409.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 173508.69999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 174443.5, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 175546.29999999702,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME ready frame-resume-15.jpg {
+  before: 2098,
+  oldRenders: 2100,
+  currentRenders: 2100,
+  same: true,
+  calls: 3,
+  actual: 2,
+  skipped: 1,
+  remaining: 0,
+  history: [
+    { at: 175577, renders: 2099 },
+    { at: 176163.59999999404, renders: 2100 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 176547.69999998808,
+  lastFrame: 176759.69999998808,
+  now: 176767,
+  connected: true,
+  lost: false,
+  fence: null,
+  events: [
+    {
+      type: 'motion',
+      at: 137310.19999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 170202.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 171291.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 172409.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 173508.69999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 174443.5, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 175546.29999999702,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-16.jpg {
+  before: 2151,
+  oldRenders: 2151,
+  currentRenders: 2151,
+  same: true,
+  calls: 0,
+  actual: 0,
+  skipped: 0,
+  remaining: 2,
+  history: [],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: true,
+  stopped: false,
+  busyUntil: 178084.19999998808,
+  lastFrame: 178073.59999999404,
+  now: 178165.19999998808,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 142133.59999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 170202.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 171291.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 172409.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 173508.69999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 174443.5, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 175546.29999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 177079.59999999404,
+      hidden: false,
+      calm: true
+    }
+  ]
+}
+FRAME ready frame-resume-16.jpg {
+  before: 2151,
+  oldRenders: 2153,
+  currentRenders: 2153,
+  same: true,
+  calls: 3,
+  actual: 2,
+  skipped: 1,
+  remaining: 0,
+  history: [
+    { at: 178179.19999998808, renders: 2152 },
+    { at: 178587.89999999106, renders: 2153 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 179177.59999999404,
+  lastFrame: 178974.19999998808,
+  now: 178977,
+  connected: true,
+  lost: false,
+  fence: null,
+  events: [
+    {
+      type: 'motion',
+      at: 144727.39999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 170202.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 171291.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 172409.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 173508.69999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 174443.5, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 175546.29999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 177079.59999999404,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 178175.5, hidden: false, calm: false }
+  ]
+}
+FRAME setup frame-resume-17.jpg {
+  before: 2215,
+  oldRenders: 2215,
+  currentRenders: 2215,
+  same: true,
+  calls: 0,
+  actual: 0,
+  skipped: 0,
+  remaining: 2,
+  history: [],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: true,
+  stopped: false,
+  busyUntil: 180165.59999999404,
+  lastFrame: 180165.29999999702,
+  now: 180264.09999999404,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 145830.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 170202.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 171291.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 172409.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 173508.69999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 174443.5, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 175546.29999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 177079.59999999404,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 178175.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 179163.89999999106,
+      hidden: false,
+      calm: true
+    }
+  ]
+}
+FRAME ready frame-resume-17.jpg {
+  before: 2215,
+  oldRenders: 2217,
+  currentRenders: 2217,
+  same: true,
+  calls: 3,
+  actual: 2,
+  skipped: 1,
+  remaining: 0,
+  history: [
+    { at: 180283.09999999404, renders: 2216 },
+    { at: 180595.39999999106, renders: 2217 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 181281.29999999702,
+  lastFrame: 180972.19999998808,
+  now: 180990.29999999702,
+  connected: true,
+  lost: false,
+  fence: null,
+  events: [
+    {
+      type: 'motion',
+      at: 146797.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 147913.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 170202.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 171291.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 172409.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 173508.69999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 174443.5, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 175546.29999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 177079.59999999404,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 178175.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 179163.89999999106,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 180277.5, hidden: false, calm: false }
+  ]
+}
+FRAME setup frame-resume-18.jpg {
+  before: 2279,
+  oldRenders: 2280,
+  currentRenders: 2280,
+  same: true,
+  calls: 1,
+  actual: 1,
+  skipped: 0,
+  remaining: 1,
+  history: [ { at: 182313.39999999106, renders: 2280 } ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 183290.29999999702,
+  lastFrame: 182310.5,
+  now: 182643,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 170202.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 171291.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 172409.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 173508.69999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 174443.5, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 175546.29999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 177079.59999999404,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 178175.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 179163.89999999106,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 180277.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 181173.69999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 182286.79999999702,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME ready frame-resume-18.jpg {
+  before: 2279,
+  oldRenders: 2281,
+  currentRenders: 2281,
+  same: true,
+  calls: 4,
+  actual: 2,
+  skipped: 2,
+  remaining: 0,
+  history: [
+    { at: 182313.39999999106, renders: 2280 },
+    { at: 182656.39999999106, renders: 2281 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 183290.29999999702,
+  lastFrame: 183033.89999999106,
+  now: 183042.39999999106,
+  connected: true,
+  lost: false,
+  fence: null,
+  events: [
+    {
+      type: 'motion',
+      at: 148879.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 149994.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 170202.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 171291.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 172409.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 173508.69999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 174443.5, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 175546.29999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 177079.59999999404,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 178175.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 179163.89999999106,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 180277.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 181173.69999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 182286.79999999702,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-19.jpg {
+  before: 2340,
+  oldRenders: 2341,
+  currentRenders: 2341,
+  same: true,
+  calls: 1,
+  actual: 1,
+  skipped: 0,
+  remaining: 1,
+  history: [ { at: 184265.89999999106, renders: 2341 } ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 185263.29999999702,
+  lastFrame: 184263.29999999702,
+  now: 184768.69999998808,
+  connected: true,
+  lost: false,
+  fence: 37144,
+  events: [
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 170202.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 171291.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 172409.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 173508.69999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 174443.5, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 175546.29999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 177079.59999999404,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 178175.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 179163.89999999106,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 180277.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 181173.69999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 182286.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 183164.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 184261.39999999106,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME ready frame-resume-19.jpg {
+  before: 2340,
+  oldRenders: 2342,
+  currentRenders: 2342,
+  same: true,
+  calls: 3,
+  actual: 2,
+  skipped: 1,
+  remaining: 0,
+  history: [
+    { at: 184265.89999999106, renders: 2341 },
+    { at: 184780.39999999106, renders: 2342 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 185263.29999999702,
+  lastFrame: 185177.79999999702,
+  now: 185185.59999999404,
+  connected: true,
+  lost: false,
+  fence: null,
+  events: [
+    {
+      type: 'motion',
+      at: 151069.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 152182.19999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 170202.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 171291.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 172409.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 173508.69999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 174443.5, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 175546.29999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 177079.59999999404,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 178175.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 179163.89999999106,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 180277.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 181173.69999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 182286.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 183164.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 184261.39999999106,
+      hidden: false,
+      calm: false
+    }
+  ]
+}
+FRAME setup frame-resume-20.jpg {
+  before: 2402,
+  oldRenders: 2403,
+  currentRenders: 2403,
+  same: true,
+  calls: 1,
+  actual: 1,
+  skipped: 0,
+  remaining: 1,
+  history: [ { at: 186449.19999998808, renders: 2403 } ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 187432.59999999404,
+  lastFrame: 186445.79999999702,
+  now: 186854.69999998808,
+  connected: true,
+  lost: false,
+  fence: 37145,
+  events: [
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 170202.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 171291.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 172409.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 173508.69999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 174443.5, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 175546.29999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 177079.59999999404,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 178175.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 179163.89999999106,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 180277.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 181173.69999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 182286.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 183164.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 184261.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 185402.69999998808,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 186430.5, hidden: false, calm: false }
+  ]
+}
+FRAME ready frame-resume-20.jpg {
+  before: 2402,
+  oldRenders: 2404,
+  currentRenders: 2404,
+  same: true,
+  calls: 4,
+  actual: 2,
+  skipped: 2,
+  remaining: 0,
+  history: [
+    { at: 186449.19999998808, renders: 2403 },
+    { at: 186864.89999999106, renders: 2404 }
+  ],
+  hidden: false,
+  visibility: 'visible',
+  focus: true,
+  calm: false,
+  wasCalm: false,
+  stopped: false,
+  busyUntil: 187432.59999999404,
+  lastFrame: 187283.09999999404,
+  now: 187284.19999998808,
+  connected: true,
+  lost: false,
+  fence: null,
+  events: [
+    {
+      type: 'motion',
+      at: 153832.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 154924.69999998808,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 155895.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 157008.19999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 157985, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 159074.29999999702,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 160034.5, hidden: false, calm: true },
+    { type: 'motion', at: 161135.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 162096.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 163195.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 164103.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 165214.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 166236.89999999106,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 167340.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 168244.59999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 169339.89999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 170202.29999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 171291.09999999404,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 172409.79999999702,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 173508.69999998808,
+      hidden: false,
+      calm: false
+    },
+    { type: 'motion', at: 174443.5, hidden: false, calm: true },
+    {
+      type: 'motion',
+      at: 175546.29999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 177079.59999999404,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 178175.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 179163.89999999106,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 180277.5, hidden: false, calm: false },
+    {
+      type: 'motion',
+      at: 181173.69999998808,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 182286.79999999702,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 183164.09999999404,
+      hidden: false,
+      calm: true
+    },
+    {
+      type: 'motion',
+      at: 184261.39999999106,
+      hidden: false,
+      calm: false
+    },
+    {
+      type: 'motion',
+      at: 185402.69999998808,
+      hidden: false,
+      calm: true
+    },
+    { type: 'motion', at: 186430.5, hidden: false, calm: false }
+  ]
+}
+ok zero browser errors in frame-prefix diagnostic +187.8s
+FRAME exact prefix plus20 motion-resume captures complete; not full chat20

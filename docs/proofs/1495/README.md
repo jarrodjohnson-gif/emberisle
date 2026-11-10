@@ -57,3 +57,9 @@ The exact committed helper at e3664e25 passed real-browser contract controls und
 At52a4e2ef, six consecutive complete loaded full proofs passed (230.8,246.9,232.2,227.9,258.4,287.7s). Run7 failed the ORIGINAL15000ms two-real-frame wait in shot113/caller1044, after reopening desktop chat and before screenshot capture. All preceding reaction/expiry assertions passed. Series stopped:6pass+1failure, no run8/20 claim. Every raw record is in bounded-series-frame-failure/; the six successes are not a causal fix for this failure.
 
 Precise cause UNKNOWN: no renderer identity/frame/GPU snapshot was logged by the old helper at that failure boundary. Do not widen the wait, force fake frame counts or call a passing retry a fix. Next narrow diagnostic observes actual draw calls/count, instance identity, visibility, reduced-motion and GPU context/fence readiness through the existing reduced-motion-to-chat-open path. No product edit or lifetime change.
+
+## Frame-readiness diagnostic after resume
+
+The retained diagnostic completed the original prefix through desktop chat-open, then20 controlled reduced-motion/normal-motion capture cycles:21 ready captures, exit0, zero browser errors,187.8s. It did NOT reproduce run7's original15000ms wait failure and is NOT20 full chat proofs. At the target, the same renderer advanced1281→1283 with2actualdraws; document visible, normal motion, context not lost. No hidden/lost context was observed anywhere in this diagnostic. Source/raw trace retained in frame-readiness/.
+
+A healthy diagnostic does not justify a speculative product wake/renderer change. Next helper instrumentation records only after failure: original baseline, current/saved renderer identity/count, actual draw attempts/completions, visibility, motion and GPU readiness, with bounded reporting that cannot replace the original error. Original15000/30000ms guards, frame requirement and product lifetimes remain unchanged.
