@@ -811,6 +811,8 @@ async function reconnect() {
   const { ctx, page, tag } = await open(view, {
     path: "/?host=ws://127.0.0.1:9",
     before: async (ctx, page) => {
+      page.on('framenavigated', f => console.log('CONTROL navigation', f.url()));
+      page.on('pageerror', e => console.log('CONTROL pageerror', String(e)));
       await page.route('**/src/components/game/Hud.tsx', async (route) => {
         console.log('CONTROL: delaying Hud mount by 2500ms');
         const response = await route.fetch();
@@ -870,7 +872,7 @@ Hud = function DelayedFixtureHud() {
     await stays("first load, seq 20", { turns: 0, lines: 0 });
 
     // A cue from before the drop must not outlive it: gain a good live, drop at once.
-    console.log('CONTROL pre-gain', await page.evaluate(() => ({seq:window.__emberisle.getState().state?.seq, hands:document.querySelectorAll('[data-testid="hand-count"]').length, lines:window.__lines.length})));
+    console.log('CONTROL pre-gain', await page.evaluate(() => ({seq:window.__emberisle?.getState().state?.seq, hands:document.querySelectorAll('[data-testid="hand-count"]').length, lines:window.__lines.length})));
     push(at(21, 2, "main", "p1", 2));
     await page.waitForSelector('[data-testid="resource-flash"]', { timeout: STEP_MS });
     console.log('CONTROL observed-gain', await shown());
@@ -894,7 +896,7 @@ Hud = function DelayedFixtureHud() {
     await page.waitForFunction(() => document.querySelector('[data-testid="turn-moment"]')?.textContent === "Your turn", null, { timeout: STEP_MS });
     check(true, `${tag} reconnect: a live turn after the rejoin shows "Your turn"`);
   } catch (e) {
-    console.log('CONTROL final', await page.evaluate(() => ({seq:window.__emberisle.getState().state?.seq, hands:document.querySelectorAll('[data-testid="hand-count"]').length, lines:window.__lines.length, counts:[...document.querySelectorAll('[data-testid="hand-count"]')].map(e=>e.textContent)})));
+    console.log('CONTROL final', await page.evaluate(() => ({seq:window.__emberisle?.getState().state?.seq, hands:document.querySelectorAll('[data-testid="hand-count"]').length, lines:window.__lines.length, counts:[...document.querySelectorAll('[data-testid="hand-count"]')].map(e=>e.textContent)})));
     console.error(`${tag} reconnect:`, e);
     failures++;
   } finally {
