@@ -23,7 +23,7 @@
     {
       "id": "board-touch-prove",
       "pattern": "AssertionError \\[ERR_ASSERTION\\]: setup: a tap on a Pasture hex plays nothing\\n",
-      "issue": 860
+      "issue": 1510
     },
     {
       "id": "lobby-layout-prove",

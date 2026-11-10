@@ -26,6 +26,24 @@ const ctx = await browser.newContext({ viewport: { width: 440, height: 956 }, is
 await ctx.addInitScript(() => {
   localStorage.setItem("emberisle-water", "simple");
   window.__plays = [];
+  const later = window.setTimeout;
+  window.__pendingPumps = 0;
+  const pumps = new WeakMap();
+  window.setTimeout = function (callback, ms, ...args) {
+    if (typeof callback !== "function" || callback.name !== "pump") return later.call(this, callback, ms, ...args);
+    let pump = pumps.get(callback);
+    if (!pump) {
+      pump = {};
+      pump.fire = function (...firedArgs) {
+        try { return callback.apply(this, firedArgs); }
+        finally { window.__pendingPumps--; }
+      };
+      pumps.set(callback, pump);
+    }
+    window.__pendingPumps++;
+    try { return later.call(this, pump.fire, ms, ...args); }
+    catch (failure) { window.__pendingPumps--; throw failure; }
+  };
   HTMLMediaElement.prototype.pause = function () {};
   HTMLMediaElement.prototype.play = function () {
     window.__plays.push({ file: new URL(this.src).pathname.replace("/audio/", ""), volume: this.volume });
@@ -45,9 +63,13 @@ const settle = async () => {
 };
 const plays = () => page.evaluate(() => window.__plays.map((p) => p.file));
 // Sounds are paced 150 ms apart, up to 8 queued, so a bot's last clip can start after the move it belongs to.
-// Wait for a second with no new clip, then empty the list.
+// Wait until sound queue pumps have drained and no new clip has played for at least 400 ms.
 const clear = async () => {
-  for (let n = -1, m; n !== (m = await page.evaluate(() => window.__plays.length)); n = m) await sleep(1000);
+  await page.waitForFunction((quietMs) => {
+    const n = window.__plays.length, now = performance.now();
+    if (window.__quietN !== n) { window.__quietN = n; window.__quietAt = now; }
+    return (window.__pendingPumps ?? 0) === 0 && now - (window.__quietAt ?? now) >= quietMs;
+  }, 400, { timeout: 10000 }).catch(() => {});
   await page.evaluate(() => { window.__plays.length = 0; });
 };
 const until = (fn, arg) => page.waitForFunction(fn, arg, { timeout: STEP_MS });
