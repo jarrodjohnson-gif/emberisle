@@ -88,7 +88,7 @@ So this picture uses its styles, not its code. The builder should confirm it at 
 
 ![The mock: green and red pills under the seat](uiux-followup-2026-11-10/2-gains-mock-430.jpg)
 
-*Mock. CSS changed: pill group moved from inside the seat to 6 px under it and centred; gain fill set to the game's green; icons set to white.*
+*Mock. CSS changed: pill group moved to 6 px under the seat and centred. Gain fill set to the game's green, icons to white.*
 
 ### Alternatives
 
@@ -115,7 +115,7 @@ Split it in two, because the two halves are worth very different amounts.
 - Flights to your own hand: medium to large. A new scene piece, its own proof, and care on slow phones.
 - Flights to other seats: a small step after that, since the same flight just ends at a seat.
 
-So build the pills now, build the own hand flight next, and look at seat flights after you have played with both.
+So build the pills now and the own hand flight next. Look at seat flights after you have played with both.
 
 ### Owner decision needed? Yes, one card
 
