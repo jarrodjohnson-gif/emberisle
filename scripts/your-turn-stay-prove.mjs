@@ -36,7 +36,24 @@ const SEATS = [["red", "#e23d2e"], ["ivory", "#f3ecd9"]];
 mkdirSync("test-results", { recursive: true });
 if (SHOTS) mkdirSync(SHOT_DIR, { recursive: true });
 
-const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
+// Observe the lazy component's actual commit, including its invisible initial baseline.
+// This Vite-only hook never enters a production build or changes game state.
+const commitObserver = {
+  name: "your-turn-proof-commit-observer",
+  enforce: "pre",
+  transform(source, id) {
+    if (!id.split("?")[0].endsWith("/src/components/game/TurnMoment.tsx")) return;
+    const anchor = "export function TurnMoment() {";
+    if (source.split(anchor).length !== 2) throw new Error("TurnMoment proof observer anchor changed");
+    return { code: source.replace(anchor, anchor + `
+      useEffect(() => {
+        window.__yourTurnCommit = { mounted: true, seq: useGame.getState().state?.seq, synced: useGame.getState().synced };
+        return () => { window.__yourTurnCommit.mounted = false; };
+      }, []);
+    `), map: null };
+  },
+};
+const vite = await createServer({ plugins: [commitObserver], server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
@@ -302,19 +319,14 @@ async function online(me, { cap = false } = {}) {
         console.log(`shows(${n}) timed out`, JSON.stringify(await page.evaluate(() => {
           const g = window.__emberisle.getState();
           return { yt: window.__yt.length, element: !!document.querySelector('[data-testid="turn-moment"]'), seq: g.state?.seq, phase: g.state?.phase,
-            current: g.state?.current, localId: g.localId, synced: g.synced, spectator: g.spectator };
+            commit: window.__yourTurnCommit, current: g.state?.current, localId: g.localId, synced: g.synced, spectator: g.spectator };
         })), JSON.stringify({ momentsRequested: requested }));
         throw e;
       }
     };
     // TurnMoment is lazy (the moments chunk) and takes the first move it sees as its baseline, so the turn must not arrive before the
     // chunk is in and the component has mounted: a turn that lands first is the baseline and shows nothing.
-    const momentsMounted = async () => {
-      await page.evaluate(async () => {
-        await import("/src/components/game/moments.ts");
-        for (let i = 0; i < 3; i++) await new Promise((r) => requestAnimationFrame(r));
-      });
-    };
+    const momentsMounted = () => page.waitForFunction(() => window.__yourTurnCommit?.mounted, null, { timeout: STEP_MS, polling: 50 });
     // The entry fade (turn-stay-in) has finished, so an exit starts from the full pill: ended mid-entry it freezes at the fade's
     // current opacity, which is near 0 on a loaded runner and leaves no opacity to fade.
     const settled = () => page.waitForFunction(() => {
@@ -331,6 +343,7 @@ async function online(me, { cap = false } = {}) {
     // A first load onto a move under way (the baseline) shows nothing, not even on the person's own roll.
     states = [{ type: "state", you: me, legal, game: { ...base, seq: 20, turn: 2, phase: "roll", current: me } }];
     await page.waitForFunction(() => window.__emberisle?.getState().state?.seq === 20, null, { timeout: STEP_MS });
+    await momentsMounted();
     await page.waitForTimeout(700);
     check((await bannerCount(page)) === 0, `${tg} first load onto own roll at seq 20: no moment`);
 

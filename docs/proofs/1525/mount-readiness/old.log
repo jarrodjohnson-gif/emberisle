@@ -1,0 +1,12 @@
+ok   390x844 online p0 first load onto own roll at seq 20: no moment
+ok   390x844 online p0 a bot's turn: no moment {"mounts":0,"up":0}
+shows(1) timed out {"yt":0,"element":false,"seq":23,"phase":"roll","commit":{"mounted":true,"seq":23,"synced":1},"current":"p0","localId":"p0","synced":1,"spectator":false} {"momentsRequested":["http://127.0.0.1:8485/src/components/game/moments.ts"]}
+390x844 online p0: page.waitForFunction: Timeout 30000ms exceeded.
+    at shows (/workspace/work/1518/scripts/.codex-p-1525-mount-old.mjs:319:20)
+    at online (/workspace/work/1518/scripts/.codex-p-1525-mount-old.mjs:372:11)
+    at async file:///workspace/work/1518/scripts/.codex-p-1525-mount-old.mjs:634:5 {
+  log: [],
+  name: 'TimeoutError'
+}
+ok   zero console errors []
+your-turn-stay-prove: 1 failed
