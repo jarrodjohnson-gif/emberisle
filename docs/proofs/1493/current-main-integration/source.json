@@ -1,0 +1,9 @@
+{
+  "tested_head": "7286cd175e94cfa591b77aa723b5d798a48bd645",
+  "baseline": "f2ae313c11e05a641d6c337030e8a00277b20324",
+  "node": "v22.23.4",
+  "extra_cpu_load": false,
+  "full_health_runs": 1,
+  "health_exit": 0,
+  "notes": "Actual isolated production build and recovery. COLD preload TypeErrors are deliberate refused-import fixture diagnostics; zero browser-error guard retained. Earlier twenty loaded full proofs belong to557e1d5d, not this integration."
+}
