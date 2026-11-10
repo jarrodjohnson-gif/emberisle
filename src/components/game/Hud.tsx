@@ -538,7 +538,7 @@ export function Hud() {
                       {/* The chips and the reason are aria-hidden: the name stays the piece, the description says the rest. Missing
                           goods ring what the hand lacks and say how many short. */}
                       {why ? <span aria-hidden className="text-caption text-muted">{kind === "stronghold" && why === "No spot" ? "No homes" : why}</span> : <CostChips kind={kind} hand={missing ? me.resources : undefined} />}
-                      {kind === "card" && !why ? <span aria-hidden data-testid="deck-left" className="text-[10px] leading-[10px] tabular-nums text-muted">{deckLeft} left</span> : null}
+                      {kind === "card" && !why ? <span aria-hidden data-testid="deck-left" className="text-[12px] leading-[12px] tabular-nums text-muted">{deckLeft} left</span> : null}
                       {/* The ends of the row hang the chip inward, so it stays on a phone's screen. Last child: the tile's own
                           styles address its first span. */}
                       {hint?.kind === kind ? (
