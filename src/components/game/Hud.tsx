@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import {
   Dices,
   Home,
@@ -178,6 +178,9 @@ export function Hud() {
   const { phone, portrait } = useViewport();
   // #422: a sideways phone stacks the HUD in a full-height left column, so the island fills the height beside it.
   const column = phone && !portrait;
+  // #1509 (option A, owner card q1508-table-goal): the upright phone table has 16 px gutters, a turn line, hand and build
+  // row with no boxes round them, and a last-event line with the row to itself (styles.css, `.upright-table`).
+  const upright = phone && portrait;
   // #492: the sheets chunk is asked for again on each open and at the win (the boundary's key). When the ask made at the
   // win fails, the win screen cannot show and the winner line gets the way out; a failure under an earlier key is not it.
   const sheetsKey = `${tradeOpen}|${howTo}|${costs}|${state?.winner ?? ""}`;
@@ -326,7 +329,8 @@ export function Hud() {
 
   const instruction = state.phase === "over" ? null : (
     <p key={`turn-${state.current}`} data-testid="turn-banner"
-      style={{ borderLeftColor: yours ? undefined : subjectPlayer.color }}
+      // #1509: on the upright table the line has no box, so another seat's colour is a dot before it (styles.css, --seat).
+      style={{ borderLeftColor: yours ? undefined : subjectPlayer.color, ...(yours ? {} : { "--seat": subjectPlayer.color }) } as CSSProperties}
       className={cn("turn-instruction rounded-control px-3 py-1.5 text-[15px] font-medium leading-5", yours ? "turn-instruction-own" : "border-l-4", !waiting && !choosing && (state.phase === "robber" || buildMode === "knight") && "turn-instruction-move")}
     >{turnText}</p>
   );
@@ -348,7 +352,7 @@ export function Hud() {
           sheet rises over the z-20 chat dock (it reaches the header on a sideways phone). Online, Open chat (#899: the one chat button)
           sits in this row too, left of the menu, so it never moves with the turn and never reaches the board. A watcher's badge stays out here,
           a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
-      <header className={cn("hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30", phone ? "pb-0" : "pb-3")}>
+      <header className={cn("hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30", phone ? "pb-0" : "pb-3", upright && "upright-table")}>
         <div className="pointer-events-auto flex items-center justify-end gap-1">
           {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : <div className="mr-auto shrink-0">{instruction}</div>}
           {phone ? null : <div ref={setTimerHeader} className="mx-2 min-w-0 flex-1 empty:hidden" />}
@@ -368,7 +372,7 @@ export function Hud() {
       </header>
 
       {phone && portrait && (mode === "online" || spectator) ? (
-        <div className="hud-utilities pointer-events-none absolute right-safe top-[calc(max(0.75rem,env(safe-area-inset-top))+3rem)] z-20 flex gap-1">
+        <div className="hud-utilities upright-table pointer-events-none absolute right-safe top-[calc(max(0.75rem,env(safe-area-inset-top))+3rem)] z-20 flex gap-1">
           {spectator ? <span data-testid="watching-badge" className="pointer-events-auto flex h-11 items-center rounded-control bg-surface px-3 text-caption text-fg">Watching</span> : null}
           {mode === "online" ? <LazyBoundary failed={null} retryKey={String(chatOpen)}><ChatControls /></LazyBoundary> : null}
         </div>
@@ -405,7 +409,7 @@ export function Hud() {
         <TurnMoment />
       </LazyBoundary>
 
-      <div className="pointer-events-none absolute bottom-0 inset-x-0 z-10 px-safe pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className={cn("pointer-events-none absolute bottom-0 inset-x-0 z-10 px-safe pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", upright && "upright-table")}>
         <div className={cn("relative", column ? "w-[260px] max-w-[42vw]" : "mx-auto max-w-[720px]")}>
           {/* #459: floats above the stack, so it coming and going never reflows the turn banner. */}
           {banner && !(tradeOutcome && banner.endsWith("'s trade")) ? (
@@ -583,9 +587,9 @@ export function Hud() {
 
             {/* #643: the seat's numbers share the log line's row, so the tray keeps its height (the declared hole holds). They
                 ride in the moments chunk (off the first load: there are none before the first outpost); if it cannot load,
-                the row is the log line alone. */}
+                the row is the log line alone. #1509: the upright phone table has no numbers there, so the last event has the row. */}
             <div className={cn(tradeVisible ? "hidden" : "flex", "h-5 shrink-0 items-center gap-1")}>
-              {spectator ? null : (
+              {spectator || upright ? null : (
                 <LazyBoundary failed={null}>
                   <MyNumbers state={state} playerId={me.id} />
                 </LazyBoundary>
