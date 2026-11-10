@@ -79,12 +79,12 @@ function check(ok, label, data) {
 // Installed before the app: every turn moment and every gain line, with what the store said when it mounted, its box and
 // colour, and its opacity and transform on every frame it lives; the person's own hand changes; the roll moment's spans.
 function recorders() {
-  // For a measure only: __hold names the moment being measured; a 1.5-2.7 s timer set while it is on screen (its own end)
+  // For a measure only: __hold names the moment being measured; its end timer (including the hand's current 3 s cue)
   // waits until __release() runs it. Nothing else is held, so the bots play on.
   window.__held = new Map();
   const later = window.setTimeout;
   window.setTimeout = function (fn, ms, ...a) {
-    if (window.__hold && document.querySelector(`[data-testid="${window.__hold}"]`) && typeof fn === "function" && ms >= 1500 && ms <= 2700) {
+    if (window.__hold && document.querySelector(`[data-testid="${window.__hold}"]`) && typeof fn === "function" && (ms >= 1500 && ms <= 2700 || window.__hold === "resource-flash" && ms === 3000)) {
       const id = later(() => window.__held.delete(id), 600_000);
       window.__held.set(id, () => fn(...a));
       return id;
