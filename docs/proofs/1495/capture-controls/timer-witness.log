@@ -1,0 +1,59 @@
+ok lobby status on Ember: "Need 2 more players" +13.5s
+ok lobby status on Ember: "Need 1 more player" +15.2s
+ok lobby status on Tide: "Need 1 more player" +15.2s
+ok lobby status on Ember: "0 of 3 ready" +16.6s
+ok lobby status on Tide: "0 of 3 ready" +16.6s
+ok host tag on Ember's row only, seen by Ember +16.7s
+ok host tag on Ember's row only, seen by Tide +16.8s
+ok host tag on Ember's row only, seen by Pine +16.8s
+ok phone title card is 410 px tall, at most 55% of 844 +17.0s
+ok phone title card is full width minus 12 px, at the bottom +17.0s
+CAPTURE start 1495-bounded-phone-title.jpg {
+  renders: 31,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE clock witness {
+  date: 2207,
+  perf: 2206.1000000089407,
+  frames: 128,
+  timer: true,
+  firedAt: 2000.2000000029802,
+  renders: 35
+}
+ok real Date/performance/2s timer/DOM RAF continue while exactly two real scene draws are retained +21.0s
+CAPTURE complete 1495-bounded-phone-title.jpg 4066 {
+  renders: 35,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+ok phone lobby card is 358x812, inside the 390x844 screen with the approved 16 px margins +21.9s
+CAPTURE start 1495-bounded-phone-lobby.jpg {
+  renders: 47,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-phone-lobby.jpg 867 {
+  renders: 49,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+ok capture cleanup restores original draw and GL suppression +22.8s
+ok zero browser errors in timer witness +22.8s
+CAPTURE timer/cleanup witness complete, not full chat validation

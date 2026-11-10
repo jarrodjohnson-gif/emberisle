@@ -1,0 +1,545 @@
+// #899 (Chat C): one chat button, a panel with two tabs (Chat with the six emoji, Sounds & stickers with ten chips and the
+// sticker), seat bubbles beside the card and never on the name (lobby, rail and strip), closed-chat line bubbles, the #895
+// lobby hit test at 1280x720, a phone sheet that leaves the strip and its bubbles clear, and reduced motion.
+// #160: three headless tabs at 1280x720 chat through server/host.mjs. Lobby chat, a floating reaction,
+// the unread badge and the remembered open/minimized state, a minimized dock that covers no board target, the player action
+// menu in the rail and under the phone seat strip (#161), the game log in the dock and Copy log in the Table menu (#305, #899),
+// the lobby status line as seats join and ready up (#418), Start and Leave inside the 1280x720 lobby card (#417),
+// #460: computed glass surfaces, 12 px controls, one primary and >= 4.5:1 text contrast over black, on desktop and phone,
+// including the emoji, the sound chips, copy fallback and read-only chat. Zero console errors.
+// #467: board reactions, all six emoji, image delivery, keyboard/cooldown, coalescing, reduced motion and host rejection.
+// #477, #899: Open chat (the one chat button) sits in the top row beside the Table menu: at 390x844, 360x640 and 844x390 with notch insets, on
+// an own Roll turn and another seat's turn, it is whole, in the safe area, clear of the menu and status, 12 px from every board target.
+// Design: docs/design/chat.md "Test plan". Screenshots go to test-results/.
+import { spawn } from "node:child_process";
+import { once } from "node:events";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { chromium } from "./proof-browser.mjs";
+import { createServer } from "vite";
+
+const PORT = Number(process.env.VITE_PORT) || 8094;
+const SHOTS = fileURLToPath(new URL("../test-results/", import.meta.url));
+const HUD_STACK = ".pointer-events-none.absolute.bottom-0.inset-x-0.z-10 > .relative > .overflow-y-auto";
+mkdirSync(SHOTS, { recursive: true });
+
+// Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
+const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
+process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
+const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+  cwd: new URL("../server/", import.meta.url),
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
+});
+process.on("exit", () => host.kill());
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
+const hostPort = await new Promise((resolve) =>
+  host.stdout.on("data", (d) => {
+    const m = String(d).match(/listening (\d+)/);
+    if (m) resolve(Number(m[1]));
+  }),
+);
+const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
+await vite.listen();
+const browser = await chromium.launch();
+
+const T0 = Date.now();
+const errors = [];
+let code = 0;
+const url = `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`;
+
+function watch(name, page) {
+  page.on("console", (m) => m.type() === "error" && errors.push(`${name}: ${m.text()}`));
+  page.on("pageerror", (e) => errors.push(`${name}: ${e}`));
+  page.on("response", (r) => r.status() >= 400 && errors.push(`${name}: ${r.status()} ${r.url()}`));
+}
+
+// `phone` is a 390x844 touch phone (#178), the same device as scripts/mobile-shots.mjs.
+async function tab(name, phone = false) {
+  const ctx = await browser.newContext(
+    phone ? { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1 } : { viewport: { width: 1280, height: 720 } },
+  );
+  const page = await ctx.newPage();
+  watch(name, page);
+  await page.addInitScript((n) => localStorage.setItem("emberisle-name", n), name);
+  // The phone remembers an open chat, and Play must still start with the sheet closed.
+  if (phone) await page.addInitScript(() => localStorage.setItem("emberisle-chat-open", "1"));
+  // Three software-rendered 1280x720 scenes starve the machine, and the proof reads the DOM. Skip GL draws except while a screenshot is taken.
+  await page.addInitScript(() => {
+    window.__draw = false;
+    for (const fn of ["drawElements", "drawArrays", "drawElementsInstanced", "drawArraysInstanced"]) {
+      const orig = WebGL2RenderingContext.prototype[fn];
+      WebGL2RenderingContext.prototype[fn] = function (...args) {
+        if (window.__draw) return orig.apply(this, args);
+      };
+    }
+  });
+  await page.goto(url);
+  return { name, page };
+}
+
+async function until(check, what, ms = 10_000) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    const got = await check();
+    if (got) return got;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  throw new Error(`timed out: ${what}`);
+}
+
+const store = (t, fn) => t.page.evaluate(fn);
+// Capture after actual rendered frames, including the lazy island's first mount.
+async function shot(t, file) {
+  const started=Date.now();
+  const snapshot=()=>t.page.evaluate(()=>{const i=window.__isle;const gl=i?.renderer?.getContext();return {renders:i?.renders,draw:window.__draw,fonts:document.fonts.status,viewport:[innerWidth,innerHeight],water:i?.waterPath,contextLost:gl?.isContextLost(),fence:i?.fence ? gl.getSyncParameter(i.fence,gl.SYNC_STATUS):null};});
+  console.log('CAPTURE start',file,await snapshot());
+  await t.page.waitForFunction(()=>Boolean(window.__isle));
+  const before=await t.page.evaluate(()=>{
+    window.__draw=true;
+    const isle=window.__isle,draw=isle.draw,own=Object.hasOwn(isle,'draw');
+    window.__captureDraw={isle,draw,own};
+    let frames=0;
+    isle.draw=function(...args){if(frames>=2)return;frames++;return draw.apply(this,args);};
+    return isle.renders;
+  });
+  let failure;
+  try {
+    await t.page.waitForFunction(n=>window.__isle.renders>=n+2,before,{timeout:15_000});
+    const probe=setTimeout(()=>snapshot().then(v=>console.log('CAPTURE pending5s',file,v)).catch(e=>console.log('CAPTURE probe error',String(e))),5000);
+    try {await t.page.screenshot({path:`${SHOTS}${file}`,type:'jpeg',quality:70});}
+    finally {clearTimeout(probe);}
+    console.log('CAPTURE complete',file,Date.now()-started,await snapshot());
+  } catch(e){failure=e;console.log('CAPTURE failed',file,Date.now()-started);}
+  try {await t.page.evaluate(()=>{const saved=window.__captureDraw;if(saved){if(saved.own)saved.isle.draw=saved.draw;else delete saved.isle.draw;delete window.__captureDraw;}window.__draw=false;});}
+  catch(e){console.log('CAPTURE cleanup failed',String(e));failure??=e;}
+  if(failure)throw failure;
+}
+const check = (ok, what) => {
+  if (!ok) throw new Error(what);
+  console.log(`ok ${what}`, `+${((Date.now() - T0) / 1000).toFixed(1)}s`);
+};
+
+// #1129: the five newest stickers and the two newest soundboard chips are all on the open Sounds & stickers tab at this size: each
+// sticker's image has loaded, each button scrolls fully into the viewport, and no sticker or chip is under 32 px (the existing sticker size on a mouse; the touch sizes are checked by the chip lines above).
+// With PROOF_SHOTS set, a screenshot of the tab goes to that folder.
+const NEW_STICKERS = ["monkey-pet", "side-eye", "banana-guy", "glasses-glance", "dark-smile"];
+const NEW_CHIPS = ["Play sound Real badman", "Play sound Gong"];
+async function newContent(t, size) {
+  for (const id of NEW_STICKERS) {
+    const button = t.page.getByTestId("stickers").getByRole("button", { name: `React ${id}`, exact: true });
+    await button.scrollIntoViewIfNeeded();
+    const m = await button.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const img = el.querySelector("img");
+      return { loaded: Boolean(img && img.complete && img.naturalWidth > 0), inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight, w: r.width, h: r.height };
+    });
+    check(m.loaded && m.inView && m.w >= 32 - 0.5 && m.h >= 32 - 0.5, `${size}: sticker ${id} is in the Sounds & stickers tab, loaded, on screen, ${m.w.toFixed(0)}x${m.h.toFixed(0)}`);
+  }
+  for (const name of NEW_CHIPS) {
+    const chip = t.page.getByTestId("soundboard").getByRole("button", { name, exact: true });
+    await chip.scrollIntoViewIfNeeded();
+    const m = await chip.evaluate((el) => { const r = el.getBoundingClientRect(); return { inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight, h: r.height }; });
+    check(m.inView && m.h >= 32 - 0.5, `${size}: chip "${name}" is on screen at ${m.h.toFixed(0)} px tall`);
+  }
+  if (process.env.PROOF_SHOTS) {
+    await t.page.getByTestId("stickers").scrollIntoViewIfNeeded();
+    await t.page.screenshot({ path: `${process.env.PROOF_SHOTS}/stickers-${size}.png` });
+  }
+}
+
+// Accumulate the style failures so a main run reports both viewports, rather than stopping at the first 8 px corner.
+const polishFailures = [];
+async function polish(t, state, selector = 'section[aria-label="Table chat"]', minControls = 1) {
+  await t.page.locator(selector).first().waitFor();
+  const result = await t.page.evaluate(({ selector, minControls }) => {
+    const roots = [...document.querySelectorAll(selector)];
+    const canvas = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+    const px = (css, under = "#000") => {
+      canvas.fillStyle = under;
+      canvas.fillRect(0, 0, 1, 1);
+      canvas.fillStyle = css;
+      canvas.fillRect(0, 0, 1, 1);
+      return [...canvas.getImageData(0, 0, 1, 1).data].slice(0, 3);
+    };
+    const theme = getComputedStyle(document.documentElement);
+    const glassCSS = theme.getPropertyValue("--color-glass").trim();
+    if (!glassCSS) throw new Error("the glass token is missing");
+    const glass = px(glassCSS);
+    // Comparing over both black and white detects alpha differences as well as different RGB colours.
+    const same = (a, b) => ["#000", "#fff"].every((under) => px(a, under).every((n, i) => Math.abs(n - px(b, under)[i]) <= 1));
+    const lum = (rgb) => rgb.map((v) => {
+      const s = v / 255;
+      return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    }).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+    const ratio = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+    const visible = (el) => el.getClientRects().length && getComputedStyle(el).visibility !== "hidden" && !el.closest(".sr-only");
+    const name = (el) => el.getAttribute("aria-label") || el.textContent.trim().slice(0, 35) || el.tagName.toLowerCase();
+    const bad = { corners: [], glass: [], contrast: [], primary: [] };
+    const controls = roots.flatMap((root) => [
+      ...(root.matches("button,input,textarea") ? [root] : []),
+      ...root.querySelectorAll("button,input,textarea"),
+    ]).filter(visible);
+    if (controls.length < minControls) bad.corners.push(`expected at least ${minControls} controls, found ${controls.length}`);
+    const pills = new Set(["Chat", "All", "Copy log", "Copied", "gg", "nice roll", "your turn", "one sec", "ty"]);
+    const fg = theme.getPropertyValue("--color-fg").trim();
+    const filled = [];
+    for (const el of controls) {
+      const css = getComputedStyle(el);
+      const label = name(el);
+      const radii = ["TopLeft", "TopRight", "BottomLeft", "BottomRight"].map((corner) => parseFloat(css[`border${corner}Radius`]));
+      const pill = pills.has(el.textContent.trim());
+      if (!radii.every((r) => Math.abs(r - 8) <= 0.01)) {
+        bad.corners.push(`${label}: ${radii.join("/")} px${pill ? " (pill)" : ", want 12"}`);
+      }
+      const send = el.tagName === "BUTTON" && el.textContent.trim() === "Send";
+      if (!same(css.backgroundColor, send ? fg : glassCSS)) bad.glass.push(`${label}: ${css.backgroundColor}`);
+      if (["Top", "Right", "Bottom", "Left"].some((edge) => parseFloat(css[`border${edge}Width`]) !== 0)) bad.glass.push(`${label}: has a border`);
+      if (el.tagName === "BUTTON" && same(css.backgroundColor, fg)) filled.push(label);
+    }
+    // Send is the deliberate primary exception to the glass controls. Spectators and minimized chat have no primary.
+    const sends = controls.filter((el) => el.tagName === "BUTTON" && el.textContent.trim() === "Send").length;
+    if (filled.length !== sends || filled.some((label) => label !== "Send")) bad.primary.push(`filled buttons: ${JSON.stringify(filled)}`);
+    for (const root of roots) {
+      if (!same(getComputedStyle(root).backgroundColor, glassCSS)) bad.glass.push(`${name(root)} surface: ${getComputedStyle(root).backgroundColor}`);
+    }
+    const texts = [];
+    const measure = (el, text, css = getComputedStyle(el)) => {
+      if (!text.trim() || !visible(el)) return;
+      // Use one glass over black even inside the layered dock. Primary text, the unread badge and mentions have their
+      // own backing; checking white badge/Send text against glass would report a false failure.
+      const send = el.closest("button")?.textContent.trim() === "Send";
+      const badge = el.closest('[data-testid="chat-unread"]');
+      const mark = el.closest("mark");
+      const backing = send ? fg : badge ? getComputedStyle(badge).backgroundColor : mark ? getComputedStyle(mark).backgroundColor : null;
+      const bg = backing ? px(backing, `rgb(${glass.join(" ")})`) : glass;
+      let ink = px(css.color, `rgb(${bg.join(" ")})`);
+      const opacity = Number(css.opacity);
+      ink = ink.map((n, i) => n * opacity + bg[i] * (1 - opacity));
+      const contrast = ratio(ink, bg);
+      texts.push(contrast);
+      if (contrast < 4.5) bad.contrast.push(`${text.trim().slice(0, 30)}: ${contrast.toFixed(2)}:1`);
+    };
+    for (const root of roots) {
+      const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      while (walk.nextNode()) measure(walk.currentNode.parentElement, walk.currentNode.textContent);
+    }
+    for (const el of controls) {
+      if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+        measure(el, el.value || el.placeholder, el.value ? getComputedStyle(el) : getComputedStyle(el, "::placeholder"));
+      }
+    }
+    return { bad, controls: controls.length, texts: texts.length, min: texts.length ? Math.min(...texts).toFixed(2) : "n/a", glass, viewport: `${innerWidth}x${innerHeight}` };
+  }, { selector, minControls });
+  for (const [kind, failures] of Object.entries(result.bad)) {
+    if (failures.length) polishFailures.push(`${result.viewport} ${state} ${kind}: ${failures.join("; ")}`);
+  }
+  console.log(`${Object.values(result.bad).some((failures) => failures.length) ? "FAIL" : "ok"} chat polish ${result.viewport} ${state}: ${result.controls} controls, ${result.texts} texts, minimum ${result.min}:1, glass over black rgb(${result.glass})`);
+}
+
+// The chat log as a person sees it: how many whole lines are on screen (not clipped by the card or covered by the sticky row),
+// whether the newest is one of them, and the text size.
+const logView = (t) => t.page.evaluate(() => {
+  const log = document.querySelector('[data-testid="chat-log"]');
+  const box = log.getBoundingClientRect();
+  const lines = [...log.querySelectorAll("li")];
+  const shown = (li) => {
+    const r = li.getBoundingClientRect();
+    if (r.top < box.top - 0.5 || r.bottom > box.bottom + 0.5 || r.top < 0 || r.bottom > innerHeight) return false;
+    const hit = document.elementFromPoint(r.left + Math.min(12, r.width / 2), r.top + r.height / 2);
+    return Boolean(hit && li.contains(hit));
+  };
+  const last = lines.at(-1);
+  return {
+    total: lines.length,
+    whole: lines.filter(shown).length,
+    newest: Boolean(last && shown(last)),
+    newestText: last?.textContent ?? "",
+    font: last ? parseFloat(getComputedStyle(last).fontSize) : 0,
+    size: `${innerWidth}x${innerHeight}`,
+  };
+});
+// The rect the map is fitted to: if opening the chat refit the map, these change.
+const hole = (t) => t.page.evaluate(() => {
+  const el = document.querySelector("canvas")?.parentElement;
+  return ["top", "right", "bottom", "left"].map((k) => el?.style.getPropertyValue(`--hole-${k}`)).join();
+});
+// The host allows a burst of five chat lines, then one a second, so lines are sent 700 ms apart.
+const SAY = async (t, text) => {
+  await t.page.evaluate((x) => window.__emberisle.getState().sendChat(x), text);
+  await new Promise((r) => setTimeout(r, 700));
+};
+
+// #899 (Chat C): the one chat button opens the panel, whose Chat tab has the six emoji right above the input.
+const openChat = async (t) => {
+  if (!(await store(t, () => window.__emberisle.getState().chatOpen))) await t.page.getByRole("button", { name: /^Open chat/ }).click();
+  await t.page.getByTestId("emoji-row").waitFor();
+  await t.page.waitForFunction(() => !document.querySelector('[data-testid="emoji-row"] button')?.disabled);
+};
+const closeChat = async (t) => {
+  if (await store(t, () => window.__emberisle.getState().chatOpen)) await t.page.getByRole("button", { name: "Close chat" }).click();
+  await t.page.getByRole("button", { name: /^Open chat/ }).waitFor();
+};
+const showTab = async (t, name) => {
+  await t.page.getByRole("tab", { name, exact: true }).click();
+  await t.page.getByRole("tab", { name, exact: true, selected: true }).waitFor();
+};
+// A bubble (its visible box, the inner element) must not cross the name it belongs to, at any width.
+const clearOfName = (t, anchor) =>
+  t.page.getByTestId(anchor).evaluate((card) => {
+    const bubble = card.querySelector("[data-seat-bubble] > div");
+    const names = [...card.querySelectorAll('[data-testid="seat-name"], [data-testid="lobby-name"]')].filter((el) => el.getClientRects().length && !el.closest(".sr-only") && el.getBoundingClientRect().width > 1);
+    if (!bubble || !names.length) return { ok: false, why: `bubble ${!!bubble}, names ${names.length}` };
+    const b = bubble.getBoundingClientRect();
+    const hit = names.find((el) => { const n = el.getBoundingClientRect(); return b.right > n.left && b.left < n.right && b.bottom > n.top && b.top < n.bottom; });
+    return { ok: !hit, why: hit ? `bubble ${JSON.stringify(b)} crosses name ${JSON.stringify(hit.getBoundingClientRect())}` : "" };
+  });
+
+async function quickReactions(a, b, c, phone) {
+  const choices = [["😠", "angry"], ["😊", "happy"], ["👏", "clap"], ["😂", "laugh"], ["🔥", "fire"], ["🐑", "sheep"]];
+  // Preserve incoming events beyond their two-second UI lifetime, including any forbidden host broadcast.
+  await b.page.evaluate(() => {
+    window.__reactionProofReceived = [];
+    window.__reactionProofUnsubscribe = window.__emberisle.subscribe((next, previous) => {
+      window.__reactionProofReceived.push(...next.reactions.filter((r) => !previous.reactions.includes(r)));
+    });
+  });
+  const identity = (t) => store(t, () => ({ seat: window.__emberisle.getState().seatId, player: window.__emberisle.getState().localId }));
+  const receivedCount = () => b.page.evaluate(() => window.__reactionProofReceived.length);
+  const delivered = async (t, emote, before) => {
+    const { seat } = await identity(t);
+    await b.page.waitForFunction(({ seat, emote, before }) => window.__reactionProofReceived.slice(before).some((r) => r.seat === seat && r.emote === emote), { seat, emote, before });
+    check(true, `quick reactions: ${emote} from ${t.name} reaches another seat through the host`);
+  };
+  await a.page.evaluate(() => window.__emberisle.getState().setBuildMode("path"));
+  await openChat(a);
+  await a.page.getByPlaceholder("Say something…").focus();
+  await a.page.keyboard.press("Escape");
+  await a.page.getByRole("button", { name: /^Open chat/ }).waitFor();
+  check(await store(a, () => window.__emberisle.getState().buildMode === "path"), "chat panel: first Escape (from the input) minimizes chat and keeps Path armed");
+  await a.page.keyboard.press("Escape");
+  check(await store(a, () => window.__emberisle.getState().buildMode === "none"), "chat panel: second Escape disarms Path");
+  for (const t of [a, phone]) {
+    check(await t.page.getByRole("button", { name: "Quick reactions" }).count() === 0, `chat panel: ${t.name} has no separate quick-reaction button`);
+    check(await store(t, () => !window.__emberisle.getState().chatOpen), `chat panel: ${t.name} starts with chat closed`);
+    if (t === phone) {
+      check(await t.page.getByRole("button", { name: /^Open chat/ }).evaluate((button) => {
+        const hint = document.querySelector('[data-testid="landscape-hint"]');
+        if (!hint) return true;
+        const a = button.getBoundingClientRect();
+        const b = hint.getBoundingClientRect();
+        return a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom;
+      }), "chat panel: phone Open chat leaves the rotate hint unobscured");
+    }
+    await openChat(t);
+    check(await t.page.getByRole("tab", { name: "Chat", exact: true, selected: true }).count() === 1, `chat panel: ${t.name} opens on the Chat tab`);
+    for (const [, label] of choices) await t.page.getByTestId("emoji-row").getByRole("button", { name: `React ${label}`, exact: true }).waitFor();
+    check(await t.page.locator('section[aria-label="Table chat"] button[aria-label="Soundboard"], section[aria-label="Table chat"] button[aria-label="Emotes"]').count() === 0, `chat panel: ${t.name} has no speaker or smile toggle in the chat box`);
+    await polish(t, "chat tab", 'section[aria-label="Table chat"]', 12);
+    const fits = await t.page.getByTestId("emoji-row").evaluate((root) => {
+      const input = document.getElementById("chat-input").getBoundingClientRect();
+      const buttons = [...root.querySelectorAll("button")];
+      return buttons.length === 6 && buttons.every((button) => {
+        const r = button.getBoundingClientRect();
+        return r.width >= 44 && r.height >= 44 && r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight && r.bottom <= input.top && input.top - r.bottom <= 12;
+      });
+    });
+    check(fits, `chat panel: ${t.name} has the six 44 px emoji in the viewport, right above the input`);
+    await shot(t, t === phone ? "reactions-phone.jpg" : "reactions-desktop.jpg");
+    await closeChat(t);
+  }
+  // Tab 1 sends each of the six emoji in one tap, and the panel stays open; a sent emoji rests the row for the cooldown.
+  await openChat(a);
+  for (const [index, [emoji, label]] of choices.entries()) {
+    await a.page.waitForFunction(() => !document.querySelector('[data-testid="emoji-row"] button')?.disabled);
+    const before = await receivedCount();
+    await a.page.getByTestId("emoji-row").getByRole("button", { name: `React ${label}`, exact: true }).click();
+    await delivered(a, emoji, before);
+    check(await store(a, () => window.__emberisle.getState().chatOpen), `chat panel: one tap on ${label} sends it and keeps the panel open`);
+    if (index === 0) check(await a.page.getByRole("button", { name: "React happy", exact: true }).isDisabled(), "chat panel: the emoji dim and disable during the cooldown");
+  }
+  // In the game dock keys 1-6 send them too while the focus is outside the input.
+  await a.page.waitForFunction(() => !document.querySelector('[data-testid="emoji-row"] button')?.disabled);
+  await a.page.getByTestId("chat-log").focus();
+  let before = await receivedCount();
+  await a.page.keyboard.press("5");
+  await delivered(a, "🔥", before);
+  check(true, "chat panel: key 5 sends fire while the panel is open");
+  // Each emote also writes a light line in the sender's log, folded "×n" when repeated.
+  await a.page.getByTestId("chat-log").locator('[data-testid="react-line"][data-emote="🔥"]').last().waitFor();
+  check(true, "chat panel: an emote writes a light line in the log");
+  // Use the real chat input: typing a digit there is text, not a reaction.
+  await a.page.waitForFunction(() => !document.querySelector('[data-testid="emoji-row"] button')?.disabled);
+  const input = a.page.getByPlaceholder("Say something…");
+  before = await receivedCount();
+  await input.focus();
+  await input.press("1");
+  await new Promise((r) => setTimeout(r, 400));
+  check(await input.inputValue() === "1" && (await receivedCount()) === before, "chat panel: typing 1 in chat types it and sends no reaction");
+  await input.fill("");
+  await input.press("Escape");
+  await a.page.getByRole("button", { name: /^Open chat/ }).waitFor();
+  check(true, "chat panel: Escape from the chat input minimizes chat");
+
+  // Tab 2: the sticker sends from Sounds & stickers, and the receiving seat shows it.
+  await openChat(a);
+  await showTab(a, "Sounds & stickers");
+  before = await receivedCount();
+  await a.page.getByTestId("stickers").getByRole("button", { name: "React ben-10", exact: true }).click();
+  await delivered(a, "ben-10", before);
+  await b.page.locator('[data-testid="reaction"][data-emote="ben-10"] img').waitFor();
+  check(true, "chat panel: the sticker sends from the Sounds & stickers tab");
+  // #1129: each of the five newest stickers reaches the other seat as an image through the host.
+  for (const id of NEW_STICKERS) {
+    before = await receivedCount();
+    await a.page.getByTestId("stickers").getByRole("button", { name: `React ${id}`, exact: true }).click();
+    await delivered(a, id, before);
+    await b.page.locator(`[data-testid="reaction"][data-emote="${id}"] img`).waitFor();
+    check(true, `chat panel: sticker ${id} is sent and seen by another seat`);
+    await new Promise((r) => setTimeout(r, 600));
+  }
+  await showTab(a, "Chat");
+  await closeChat(a);
+
+  await openChat(phone);
+  before = await receivedCount();
+  await phone.page.getByTestId("emoji-row").getByRole("button", { name: "React sheep", exact: true }).tap();
+  await delivered(phone, "🐑", before);
+  check(await store(phone, () => window.__emberisle.getState().chatOpen), "chat panel: a phone tap sends from the open sheet and keeps it open");
+  await closeChat(phone);
+
+  // This bypasses the picker allowlist. The valid chat marker on the same ordered socket proves the host processed all three bad frames.
+  const invalid = ["not-an-emote", "🙃", "https://example.invalid/reaction.png"];
+  const marker = `reaction-validation-${Date.now()}`;
+  await c.page.evaluate(({ invalid, marker }) => {
+    const s = window.__emberisle.getState();
+    for (const id of invalid) s.net.react(id);
+    s.sendChat(marker);
+  }, { invalid, marker });
+  await b.page.waitForFunction((marker) => window.__emberisle.getState().chat.some((line) => line.text === marker), marker);
+  check(await b.page.evaluate((invalid) => !window.__reactionProofReceived.some((r) => invalid.includes(r.emote)), invalid), "quick reactions: host drops an unknown id, unlisted emoji, and URL");
+
+  const target = (await identity(a)).seat;
+  const sender = await identity(phone);
+  await phone.page.evaluate((target) => {
+    const s = window.__emberisle.getState();
+    s.sendReact("🔥", target);
+    s.sendReact("🔥", target);
+  }, target);
+  for (const [t, anchor] of [[b, `rail-${sender.player}`], [phone, `seat-${sender.player}`]]) {
+    const float = t.page.getByTestId(anchor).getByTestId("reaction");
+    await float.getByTestId("reaction-count").getByText("×2", { exact: true }).waitFor();
+    check(await float.count() === 1, `quick reactions: repeats coalesce at ${t.name}'s sender seat`);
+    const fits = await float.evaluate((wrapper) => {
+      const element = wrapper.firstElementChild;
+      const animation = element.getAnimations()[0];
+      if (!animation) return false;
+      animation.pause();
+      for (const time of [0, 1500, 1999]) {
+        animation.currentTime = time;
+        for (const node of [element, ...element.querySelectorAll("img,span")]) {
+          const r = node.getBoundingClientRect();
+          if (r.left < 7.9 || r.top < 7.9 || r.right > innerWidth - 7.9 || r.bottom > innerHeight - 7.9) return false;
+        }
+      }
+      return true;
+    });
+    check(fits, `quick reactions: ${t.name} float, badge and target fit at every sampled animation frame`);
+    // #899: the bubble hangs off the card (right of the rail card, under the strip cell) and never crosses the seat's name.
+    const name = await clearOfName(t, anchor);
+    check(name.ok, `seat bubble: at ${t.name}'s ${anchor.split("-")[0]} the bubble box and the name box don't intersect ${name.why}`);
+    const place = await t.page.getByTestId(anchor).evaluate((card) => {
+      const c = card.getBoundingClientRect();
+      const b = card.querySelector("[data-seat-bubble] > div").getBoundingClientRect();
+      return { right: b.left >= c.right, under: b.top >= c.bottom };
+    });
+    check(anchor.startsWith("rail") ? place.right : place.under, `seat bubble: at ${t.name} it sits ${anchor.startsWith("rail") ? "right of the rail card" : "under the strip cell"}`);
+  }
+  await phone.page.emulateMedia({ reducedMotion: "reduce" });
+  await phone.page.evaluate(() => window.__emberisle.getState().sendReact("👏"));
+  const reduced = phone.page.getByTestId(`seat-${sender.player}`).locator('[data-testid="reaction"][data-emote="👏"] > div');
+  await reduced.waitFor();
+  const fadeOnly = await reduced.evaluate((element) => {
+    return element.getAnimations().length === 0 && getComputedStyle(element).opacity === "1" && getComputedStyle(element).transform === "none";
+  });
+  check(fadeOnly, "quick reactions: reduced motion stays fully static");
+  await phone.page.emulateMedia({ reducedMotion: "no-preference" });
+  for (const t of [a, b, c, phone]) {
+    await openChat(t);
+    await closeChat(t);
+    await t.page.waitForFunction(() => document.querySelectorAll('[data-testid="reaction"]').length === 0, null, { timeout: 6000 });
+  }
+  await b.page.evaluate(() => window.__reactionProofUnsubscribe());
+}
+
+try {
+  const tabs = [await tab("Ember"), await tab("Tide"), await tab("Pine")];
+  const [a, b, c] = tabs;
+  const phone = await tab("Moss", true);
+
+  // #418: the host's status line says what is still missing, from the seat list alone, as seats join and ready up.
+  const statusIs = (t, text) =>
+    until(async () => (await t.page.getByTestId("lobby-status").textContent()).trim() === text, `${t.name} lobby status "${text}"`).then(() =>
+      check(true, `lobby status on ${t.name}: "${text}"`),
+    );
+  await a.page.getByRole("button", { name: "Host a table" }).click();
+  const tableCode = (await a.page.getByTestId("table-code").textContent()).trim();
+  await statusIs(a, "Need 2 more players");
+  for (const [i, t] of [b, c].entries()) {
+    await t.page.getByPlaceholder(/code/i).fill(tableCode);
+    await t.page.getByRole("button", { name: "Join" }).click();
+    await t.page.getByTestId("table-code").waitFor();
+    await statusIs(a, i === 0 ? "Need 1 more player" : "0 of 3 ready");
+    // A guest tab reads the same status off the same seat list.
+    await statusIs(b, i === 0 ? "Need 1 more player" : "0 of 3 ready");
+  }
+  // The host tag sits on the host's row only, on every tab.
+  for (const t of tabs) {
+    await until(
+      async () => (await t.page.getByTestId("host-tag").count()) === 1 && (await t.page.locator("li", { hasText: "Ember" }).getByTestId("host-tag").count()) === 1,
+      `${t.name} sees one host tag, on Ember's row`,
+    );
+    check(true, `host tag on Ember's row only, seen by ${t.name}`);
+  }
+  for (const t of tabs) {
+    await until(async () => (await t.page.locator("li", { hasText: "Pine" }).count()) === 1, `${t.name} sees 3 seats`);
+  }
+
+  // Phone title card (#178): full width minus 12 px, at most 55% of the viewport, pinned to the bottom.
+  const box = (t, sel) => t.page.evaluate((q) => {
+    const r = document.querySelector(q).getBoundingClientRect();
+    return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height, vw: innerWidth, vh: innerHeight };
+  }, sel);
+  await phone.page.getByTestId("title-card").waitFor();
+  let r = await box(phone, '[data-testid="title-card"]');
+  check(r.height <= 0.55 * r.vh + 0.5, `phone title card is ${r.height.toFixed(0)} px tall, at most 55% of ${r.vh}`);
+  check(Math.abs(r.width - (r.vw - 24)) < 1 && r.left >= 11 && r.bottom > r.vh - 20, "phone title card is full width minus 12 px, at the bottom");
+  await shot(phone, "1495-bounded-phone-title.jpg");
+  await phone.page.getByPlaceholder(/code/i).fill(tableCode);
+  await phone.page.getByRole("button", { name: "Join" }).click();
+  await phone.page.getByTestId("table-code").waitFor();
+  r = await box(phone, '[data-testid="lobby-card"]');
+  // The lobby sheet used to stop at 55vh, which left the chat one line. It may now use the whole screen below the notch (see "chat is readable" below).
+  check(Math.abs(r.top - 16) < 1 && Math.abs(r.left - 16) < 1 && Math.abs(r.height - (r.vh - 32)) < 1 && Math.abs(r.width - (r.vw - 32)) < 1, `phone lobby card is ${r.width.toFixed(0)}x${r.height.toFixed(0)}, inside the ${r.vw}x${r.vh} screen with the approved 16 px margins`);
+  await shot(phone, "1495-bounded-phone-lobby.jpg");
+  for(let sample=1;sample<=20;sample++) {
+    for(const h of [844,640]) {
+      await phone.page.setViewportSize({width:390,height:h});
+      await phone.page.evaluate(()=>{const s=document.querySelector('[data-testid="lobby-card"] > div');s.scrollTop=s.scrollHeight;});
+      await shot(phone,`1495-bounded-${sample}-${h}.jpg`);
+    }
+  }
+  check(errors.length===0,'zero browser errors in capture-only replay');
+  console.log('CAPTURE replay20 pairs complete, not20 full chat proofs');
+} catch (e) {
+  console.log("FAIL", e.stack ?? e.message);
+  if (errors.length) console.log(errors.join("\n"));
+  code = 1;
+} finally {
+  await browser.close();
+  await vite.close();
+  host.kill();
+  if (host.exitCode === null && host.signalCode === null) await Promise.race([once(host, "exit"), new Promise((r) => setTimeout(r, 3000).unref())]);
+}
+process.exit(code);

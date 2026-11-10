@@ -93,13 +93,44 @@ const store = (t, fn) => t.page.evaluate(fn);
 // Capture after actual rendered frames, including the lazy island's first mount.
 async function shot(t, file) {
   await t.page.waitForFunction(() => Boolean(window.__isle));
-  const before = await t.page.evaluate(() => {
-    window.__draw = true;
-    return window.__isle.renders;
-  });
-  await t.page.waitForFunction((n) => window.__isle.renders >= n + 2, before, { timeout: 15_000 });
-  await t.page.screenshot({ path: `${SHOTS}${file}`, type: "jpeg", quality: 70 });
-  await t.page.evaluate(() => (window.__draw = false));
+  let failed = false, failure;
+  try {
+    const before = await t.page.evaluate(() => {
+      const isle = window.__isle, draw = isle.draw;
+      if (typeof draw !== "function") throw new Error("chat capture: scene draw hook missing");
+      window.__chatShot = { isle, draw, own: Object.hasOwn(isle, "draw") };
+      // Retain the two actual frames required below, then let the compositor capture them without
+      // competing with further scene draws. DOM RAFs, clocks and reaction expiry keep running.
+      let remaining = 2;
+      isle.draw = function (...args) {
+        if (!remaining) return;
+        remaining--;
+        return draw.apply(this, args);
+      };
+      window.__draw = true;
+      return isle.renders;
+    });
+    await t.page.waitForFunction((n) => window.__isle.renders >= n + 2, before, { timeout: 15_000 });
+    await t.page.screenshot({ path: `${SHOTS}${file}`, type: "jpeg", quality: 70 });
+  } catch (error) {
+    failed = true;
+    failure = error;
+  }
+  try {
+    await t.page.evaluate(() => {
+      const saved = window.__chatShot;
+      if (saved) {
+        if (saved.own) saved.isle.draw = saved.draw;
+        else delete saved.isle.draw;
+        delete window.__chatShot;
+      }
+      window.__draw = false;
+    });
+  } catch (error) {
+    if (failed) console.log("FAIL capture cleanup", error.stack ?? error.message);
+    else { failed = true; failure = error; }
+  }
+  if (failed) throw failure;
 }
 const check = (ok, what) => {
   if (!ok) throw new Error(what);
