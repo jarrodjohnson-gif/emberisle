@@ -19,3 +19,9 @@ This demonstrates the fixture race and the repaired boundary at the same failure
 At fixed sourcec263f426178f6d7745aff1225dee4d59d285997b,20/20 consecutive COMPLETE unmodified candidate server-needs proofs passed under2CPU quota plus100ms-busy/200ms CPU load, pinned Node22.23.4. Every exit0 and terminal needs server prove ok; no retry. Raw logs/exits/start times/source hash/CPU metadata/batch in full-series/. This is20 full server-needs proofs, separate from chat validation and from the latency-injected controls.
 
 Syntax/registered215/advisory loosen1-none loosened pass. Final evidence commit changes no server/src/package/workflow source. No hosted CI or independent review claimed. Candidate stays on a separate pushed feature branch while all eight owned/adopted PR slots are occupied; no ninth PR or cap exception assumed. Original assertions/5000ms guard and host stale-action rejection unchanged.
+
+## Current main integration and publication slot
+
+The desk merged1520 as0ae586d6 after unchangedb0 CI run42758315547 eventually passed on attempt4. Its earlier server-needs failure remains retained; a passing retry did not fix this race. The merge freed one of the authorized eight slots.
+
+Normal main merge5ec84c73 incorporates current0ae586d6. Verified server/src/lib/package/lockfile inputs are identical to the twenty-run candidatec263; current main's Hud font change is unrelated to this Node proof. One additional COMPLETE exact-merge-head server-needs proof passed without extra load, exit0/terminal success. Registered215 and advisory loosen1-none loosened pass against current main. This does not claim twenty separate runs on the merge commit. New-head hosted CI and independent review remain pending.
