@@ -218,6 +218,18 @@ body {
 .turn-instruction-move::before { background: #fff; }
 .goods-tray { background: transparent; }
 .hud-actions { display: flex; align-items: center; gap: 4px; padding: 4px; background: var(--table); border-radius: var(--radius-control); }
+/* #1509 (option A, owner card q1508-table-goal): the upright phone table. 16 px gutters (q1274-11); the turn line is plain
+   centred ink with no box (another seat's colour is a dot before it; the mover's dark line, #1112, stays); the hand and the
+   build row have no tray round them. Hud.tsx puts the class on the header, the bottom stack and the chat button's row. */
+.upright-table { padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
+.hud-utilities.upright-table { padding: 0; right: max(1rem, env(safe-area-inset-right)); }
+.upright-table .turn-instruction { border-left-width: 0; padding-left: 0; padding-right: 0; text-align: center; }
+.upright-table .turn-instruction:not(.turn-instruction-move) { background: transparent; color: var(--ink); }
+.upright-table .turn-instruction-move { padding-left: 12px; padding-right: 12px; }
+.upright-table .turn-instruction.border-l-4::before { content: ''; display: inline-block; width: 8px; height: 8px; background: var(--seat); box-shadow: 0 0 0 1px var(--ink); border-radius: 50%; margin-right: 8px; vertical-align: 1px; }
+.upright-table .hud-actions { background: transparent; padding: 0; }
+.upright-table .hud-stack [data-testid="dice-row"] { background: transparent; }
+.upright-table .goods-tray { padding-left: 0; padding-right: 0; }
 /* #1418: a tile is never narrower than its own caption; while there is room all four stay equal. */
 .build-grid { display: grid; grid-template-columns: repeat(4, minmax(min-content, 1fr)); gap: 4px; flex: 1; min-width: 0; }
 .build-tile { width: 100%; background: var(--table-raised); color: var(--table-ink); border-color: var(--table-line); }
