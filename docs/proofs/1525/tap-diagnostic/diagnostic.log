@@ -1,0 +1,117 @@
+ok   390x844 online p0 first load onto own roll at seq 20: no moment
+ok   390x844 online p0 a bot's turn: no moment {"mounts":0,"up":0}
+ok   390x844 online p0 the turn arrives: reads "Your turn" "Your turn"
+ok   390x844 online p0 the turn arrives: the dot is the seat's colour ["rgb(226, 61, 46)","#e23d2e"]
+ok   390x844 online p0 the turn arrives: text is 15 px or larger 28
+ok   390x844 online p0 the turn arrives: white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p0 the turn arrives: approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p0 the turn arrives: approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p0 the turn arrives: ink on the pill reads at 4.5:1 or better "11.57"
+ok   390x844 online p0 the turn arrives: takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   390x844 online p0 repeat pushes add none, and it is still up 2.6 s later (no timed fade) [1,1]
+ok   390x844 online p0 untouched, it leaves at its 8 s cap (timed from just after it mounted) 8055
+ok   390x844 online p0 8 s cap: pointer-transparent 160 ms fade {"at":16840.59999999404,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.67478,"transform":"matrix(0.990053, 0, 0, 0.990053, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":17038.19999998808}
+ok   390x844 online p0 a repeat push after the cap: no moment {"mounts":1,"up":0}
+ok   390x844 online p0 a repeat push after it left: no moment {"mounts":2,"up":0}
+ok   390x844 online p0 the person rolling ends it
+ok   390x844 online p0 roll: pointer-transparent 160 ms fade {"at":21559.09999999404,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.669346,"transform":"matrix(0.987335, 0, 0, 0.987335, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":21938.59999999404}
+ok   390x844 online p0 the turn passing on ends it
+ok   390x844 online p0 turn passing on: pointer-transparent 160 ms fade {"at":22299.79999999702,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.665629,"transform":"matrix(0.985477, 0, 0, 0.985477, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":22538}
+ok   390x844 online p0 a watcher: no moment {"mounts":4,"up":0}
+ok   390x844 online p0 the watcher's table moving on: no moment {"mounts":4,"up":0}
+ok   390x844 online p0 the seat was re-welcomed through the redial {"welcomes":2}
+ok   390x844 online p0 a rejoin onto own roll: no moment {"mounts":4,"up":0}
+ok   390x844 online p0 a live turn after the rejoin shows one
+ok   390x844 online p0 other roll-off: no moment {"mounts":5,"up":0}
+ok   390x844 online p0 own roll-off: no moment {"mounts":5,"up":0}
+ok   390x844 online p0 own settlement: no moment {"mounts":5,"up":0}
+ok   390x844 online p0 own road: no moment {"mounts":5,"up":0}
+ok   390x844 online p0 second settlement: no moment {"mounts":5,"up":0}
+ok   390x844 online p0 tied rethrow: no moment {"mounts":5,"up":0}
+ok   390x844 online p1 first load onto own roll at seq 20: no moment
+ok   390x844 online p1 a bot's turn: no moment {"mounts":0,"up":0}
+ok   390x844 online p1 the turn arrives: reads "Your turn" "Your turn"
+ok   390x844 online p1 the turn arrives: the dot is the seat's colour ["rgb(45, 110, 232)","#2d6ee8"]
+ok   390x844 online p1 the turn arrives: text is 15 px or larger 28
+ok   390x844 online p1 the turn arrives: white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p1 the turn arrives: approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p1 the turn arrives: approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p1 the turn arrives: ink on the pill reads at 4.5:1 or better "11.57"
+ok   390x844 online p1 the turn arrives: takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   390x844 online p1 repeat pushes add none, and it is still up 2.6 s later (no timed fade) [1,1]
+ok   390x844 online p1 it pulses slowly, 1.6 s, for as long as it is up {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   390x844 online p1 the pulse runs opacity 1 to 0.92 and scale 1 to 0.96 {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+tap dismiss failure context 390x844 online p1 1000 {"now":15010.90000000596,"lastRAF":13552.20000000298,"hidden":false,"focus":true,"marker":{"text":"Your turn","leaving":"true","opacity":"0.92","transform":"matrix(0.96, 0, 0, 0.96, 0, 0)","computedOpacity":"0.92","animations":[]},"exits":[{"at":13908.59999999404,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)"}],"events":[{"type":"pointerdown","t":13902.5,"x":5,"y":5,"pointer":"mouse","target":"CANVAS"},{"type":"pointerup","t":13916.20000000298,"x":5,"y":5,"pointer":"mouse","target":"CANVAS"},{"type":"pointerdown","t":13948.29999999702,"x":5,"y":5,"pointer":"mouse","target":"CANVAS"},{"type":"pointerup","t":13953.70000000298,"x":5,"y":5,"pointer":"mouse","target":"CANVAS"}],"seq":25,"localId":"p1","viewport":{"width":390,"height":844,"x":0,"y":0},"hit":"CANVAS"}
+390x844 online p1: page.waitForFunction: Timeout 1000ms exceeded.
+    at gone (/workspace/work/1518/scripts/.codex-p-1525-tap-diagnostic.mjs:303:38)
+    at online (/workspace/work/1518/scripts/.codex-p-1525-tap-diagnostic.mjs:404:13)
+    at async file:///workspace/work/1518/scripts/.codex-p-1525-tap-diagnostic.mjs:637:5 {
+  log: [],
+  name: 'TimeoutError'
+}
+ok   390x844 online p2 first load onto own roll at seq 20: no moment
+ok   390x844 online p2 a bot's turn: no moment {"mounts":0,"up":0}
+ok   390x844 online p2 the turn arrives: reads "Your turn" "Your turn"
+ok   390x844 online p2 the turn arrives: the dot is the seat's colour ["rgb(243, 236, 217)","#f3ecd9"]
+ok   390x844 online p2 the turn arrives: text is 15 px or larger 28
+ok   390x844 online p2 the turn arrives: white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p2 the turn arrives: approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p2 the turn arrives: approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p2 the turn arrives: ink on the pill reads at 4.5:1 or better "11.57"
+ok   390x844 online p2 the turn arrives: takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   390x844 online p2 repeat pushes add none, and it is still up 2.6 s later (no timed fade) [1,1]
+ok   390x844 online p2 it pulses slowly, 1.6 s, for as long as it is up {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   390x844 online p2 the pulse runs opacity 1 to 0.92 and scale 1 to 0.96 {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   390x844 online p2 two taps produce one pointer-transparent 160 ms fade [{"at":8254.39999999106,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.621171,"transform":"matrix(0.963248, 0, 0, 0.963248, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":8489.5}]
+ok   390x844 online p2 after the tap: no moment {"mounts":1,"up":0}
+ok   390x844 online p2 a key press ends it
+ok   390x844 online p2 a repeat push after it left: no moment {"mounts":2,"up":0}
+ok   390x844 online p2 the person rolling ends it
+ok   390x844 online p2 roll: pointer-transparent 160 ms fade {"at":10923.09999999404,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.659371,"transform":"matrix(0.982349, 0, 0, 0.982349, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":11109.89999999106}
+ok   390x844 online p2 the turn passing on ends it
+ok   390x844 online p2 turn passing on: pointer-transparent 160 ms fade {"at":11954.20000000298,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.623477,"transform":"matrix(0.964401, 0, 0, 0.964401, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":12117.29999999702}
+ok   390x844 online p2 a watcher: no moment {"mounts":4,"up":0}
+ok   390x844 online p2 the watcher's table moving on: no moment {"mounts":4,"up":0}
+ok   390x844 online p2 the seat was re-welcomed through the redial {"welcomes":2}
+ok   390x844 online p2 a rejoin onto own roll: no moment {"mounts":4,"up":0}
+ok   390x844 online p2 a live turn after the rejoin shows one
+ok   390x844 online p2 other roll-off: no moment {"mounts":5,"up":0}
+ok   390x844 online p2 own roll-off: no moment {"mounts":5,"up":0}
+ok   390x844 online p2 own settlement: no moment {"mounts":5,"up":0}
+ok   390x844 online p2 own road: no moment {"mounts":5,"up":0}
+ok   390x844 online p2 second settlement: no moment {"mounts":5,"up":0}
+ok   390x844 online p2 tied rethrow: no moment {"mounts":5,"up":0}
+ok   390x844 online p3 first load onto own roll at seq 20: no moment
+ok   390x844 online p3 a bot's turn: no moment {"mounts":0,"up":0}
+ok   390x844 online p3 the turn arrives: reads "Your turn" "Your turn"
+ok   390x844 online p3 the turn arrives: the dot is the seat's colour ["rgb(138, 79, 211)","#8a4fd3"]
+ok   390x844 online p3 the turn arrives: text is 15 px or larger 28
+ok   390x844 online p3 the turn arrives: white pill has the approved edge and radius {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p3 the turn arrives: approved text and ink-ringed seat dot {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p3 the turn arrives: approved sizing, padding and sheet shadow {"border":"1px","borderColor":"rgb(203, 211, 211)","radius":"20px","shadow":"rgba(24, 51, 45, 0.18) 0px 10px 28px 0px","padding":["16px","24px","16px","24px"],"lineHeight":"32px","weight":"700","letterSpacing":"-0.8px","backdrop":"none","dotWidth":"20px","dotBorder":"2px","dotBorderColor":"rgb(38, 61, 60)"}
+ok   390x844 online p3 the turn arrives: ink on the pill reads at 4.5:1 or better "11.57"
+ok   390x844 online p3 the turn arrives: takes no pointer events and nothing is blocked at its centre ["none","other"]
+ok   390x844 online p3 repeat pushes add none, and it is still up 2.6 s later (no timed fade) [1,1]
+ok   390x844 online p3 it pulses slowly, 1.6 s, for as long as it is up {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   390x844 online p3 the pulse runs opacity 1 to 0.92 and scale 1 to 0.96 {"names":["turn-stay-in","turn-pulse"],"duration":1600,"iterations":null,"peak":{"o":1,"tf":"matrix(1, 0, 0, 1, 0, 0)"},"trough":{"o":0.92,"tf":"matrix(0.96, 0, 0, 0.96, 0, 0)"}}
+ok   390x844 online p3 two taps produce one pointer-transparent 160 ms fade [{"at":8743.59999999404,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.621171,"transform":"matrix(0.963248, 0, 0, 0.963248, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":9018.29999999702}]
+ok   390x844 online p3 after the tap: no moment {"mounts":1,"up":0}
+ok   390x844 online p3 a key press ends it
+ok   390x844 online p3 a repeat push after it left: no moment {"mounts":2,"up":0}
+ok   390x844 online p3 the person rolling ends it
+ok   390x844 online p3 roll: pointer-transparent 160 ms fade {"at":13122.89999999106,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.621215,"transform":"matrix(0.96327, 0, 0, 0.96327, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":13298.5}
+ok   390x844 online p3 the turn passing on ends it
+ok   390x844 online p3 turn passing on: pointer-transparent 160 ms fade {"at":14482.199999988079,"pointer":"none","hidden":"true","animation":"none","duration":"0.16s, 0.16s","easing":"cubic-bezier(0.4, 0, 1, 1), cubic-bezier(0.4, 0, 1, 1)","mid":{"opacity":0.630735,"transform":"matrix(0.968031, 0, 0, 0.968031, 0, 0)","target":"scale(0.97)"},"runs":["opacity","transform"],"gone":14673.59999999404}
+ok   390x844 online p3 a watcher: no moment {"mounts":4,"up":0}
+ok   390x844 online p3 the watcher's table moving on: no moment {"mounts":4,"up":0}
+ok   390x844 online p3 the seat was re-welcomed through the redial {"welcomes":2}
+ok   390x844 online p3 a rejoin onto own roll: no moment {"mounts":4,"up":0}
+ok   390x844 online p3 a live turn after the rejoin shows one
+ok   390x844 online p3 other roll-off: no moment {"mounts":5,"up":0}
+ok   390x844 online p3 own roll-off: no moment {"mounts":5,"up":0}
+ok   390x844 online p3 own settlement: no moment {"mounts":5,"up":0}
+ok   390x844 online p3 own road: no moment {"mounts":5,"up":0}
+ok   390x844 online p3 second settlement: no moment {"mounts":5,"up":0}
+ok   390x844 online p3 tied rethrow: no moment {"mounts":5,"up":0}
+ok   zero console errors []
+your-turn-stay-prove: 1 failed
