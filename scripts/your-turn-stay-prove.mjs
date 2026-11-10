@@ -36,7 +36,7 @@ const SEATS = [["red", "#e23d2e"], ["ivory", "#f3ecd9"]];
 mkdirSync("test-results", { recursive: true });
 if (SHOTS) mkdirSync(SHOT_DIR, { recursive: true });
 
-// Observe the lazy component's actual commit, including its invisible initial baseline.
+// Observe the lazy component commit and the actual exit-style write before asynchronous recorder delivery.
 // This Vite-only hook never enters a production build or changes game state.
 const commitObserver = {
   name: "your-turn-proof-commit-observer",
@@ -44,13 +44,15 @@ const commitObserver = {
   transform(source, id) {
     if (!id.split("?")[0].endsWith("/src/components/game/TurnMoment.tsx")) return;
     const anchor = "export function TurnMoment() {";
+    const exit = 'el.style.opacity = "0";';
+    if (source.split(exit).length !== 2) throw new Error("TurnMoment proof exit anchor changed");
     if (source.split(anchor).length !== 2) throw new Error("TurnMoment proof observer anchor changed");
     return { code: source.replace(anchor, anchor + `
       useEffect(() => {
         window.__yourTurnCommit = { mounted: true, seq: useGame.getState().state?.seq, synced: useGame.getState().synced };
         return () => { window.__yourTurnCommit.mounted = false; };
       }, []);
-    `), map: null };
+    `).replace(exit, 'window.__turnExitStarts.set(el, performance.now()); ' + exit), map: null };
   },
 };
 const vite = await createServer({ plugins: [commitObserver], server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
@@ -82,6 +84,7 @@ const contrast = (a, b) => {
 // clear of are measured with the animation paused at its steady part (no transform), the way a player sees it held.
 function recorders() {
   window.__yt = [];
+  window.__turnExitStarts = new WeakMap();
   window.__exits = [];
   const exiting = new Map();
   // Read the existing real transition after the exit style write, before a delayed event can miss it.
@@ -101,8 +104,9 @@ function recorders() {
       if (record.type !== "attributes" || !el.matches?.('[data-testid="turn-moment"][data-leaving]')) continue;
       let entry = exiting.get(el);
       if (!entry) {
+        if (!window.__turnExitStarts.has(el)) throw new Error("TurnMoment exit start was not observed");
         const css = getComputedStyle(el);
-        entry = { at: performance.now(), pointer: css.pointerEvents, hidden: el.parentElement?.getAttribute("aria-hidden"),
+        entry = { at: window.__turnExitStarts.get(el), pointer: css.pointerEvents, hidden: el.parentElement?.getAttribute("aria-hidden"),
           animation: css.animationName, duration: css.transitionDuration, easing: css.transitionTimingFunction };
         exiting.set(el, entry); window.__exits.push(entry);
       }
