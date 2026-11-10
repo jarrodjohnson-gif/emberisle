@@ -108,6 +108,9 @@ try {
     assert.deepEqual(row.fortunes, ["Play fortune · 6"], `${v.tag}: one fortunes button with the number held, got ${JSON.stringify(row.fortunes)}`);
     // #776: the deck count sits on the Fortune buy tile and in its label.
     assert.equal(await page.getByTestId("deck-left").textContent(), `${row.deck} left`, `${v.tag}: the buy tile shows the deck count`);
+    // #1512: the count is meta text, so it sits on the 12 px floor. The 10 px hand names stay the exception.
+    const deckPx = await page.getByTestId("deck-left").evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    assert.equal(deckPx, 12, `${v.tag}: the Fortune count is 12 px, got ${deckPx}`);
     assert.equal(await page.getByTestId("build-card").getAttribute("aria-label"), `Fortune, ${row.deck} left in deck`, `${v.tag}: the buy tile's label says how many are left`);
     assert.equal(row.selects, 0, `${v.tag}: no <select> on the page`);
     assert.deepEqual(row.stale, [], `${v.tag}: no per-fortune buttons left in the row`);
