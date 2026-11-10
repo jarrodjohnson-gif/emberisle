@@ -332,12 +332,23 @@ try {
       await page.getByTestId("sound-entry").click();
       const sheet = page.getByRole("dialog", { name: "Sound" });
       await sheet.waitFor();
-      const state = await sheet.evaluate((el) => ({
-        sliders: Object.fromEntries([...el.querySelectorAll("input[type=range]")].map((r) => [r.dataset.testid.replace("sound-slider-", ""), r.value])),
-        pressed: Object.fromEntries([...el.querySelectorAll("[data-testid^=sound-mute-],[data-testid^=sound-seat-]")].map((b) => [b.dataset.testid, b.getAttribute("aria-pressed")])),
-        sea: el.querySelector("[role=switch]").getAttribute("aria-checked"),
-      }));
-      assert.deepEqual(state.sliders, { master: "70", game: "100", touch: "100", memes: "30", music: "100", sea: "50" }, `${round}: the levels are kept`);
+      const state = await sheet.evaluate((el) => {
+        const sliders = {};
+        let seaLevel = null;
+        for (const r of el.querySelectorAll("input[type=range]")) {
+          const key = r.dataset.testid.replace("sound-slider-", "");
+          if (key === "sea") seaLevel = r.value;
+          else sliders[key] = r.value;
+        }
+        return {
+          sliders,
+          seaLevel,
+          pressed: Object.fromEntries([...el.querySelectorAll("[data-testid^=sound-mute-],[data-testid^=sound-seat-]")].map((b) => [b.dataset.testid, b.getAttribute("aria-pressed")])),
+          sea: el.querySelector("[role=switch]").getAttribute("aria-checked"),
+        };
+      });
+      assert.deepEqual(state.sliders, { master: "70", game: "100", touch: "100", memes: "30", music: "100" }, `${round}: the levels are kept`);
+      assert.equal(state.seaLevel, "50", `${round}: Sea sounds keeps the saved 50%`);
       assert.equal(state.pressed["sound-mute-touch"], "true", `${round}: Board touch stays muted`);
       assert.equal(state.pressed["sound-mute-game"], "false", `${round}: Game sounds is not muted`);
       assert.equal(state.pressed["sound-seat-josh"], "true", `${round}: Josh stays muted`);
