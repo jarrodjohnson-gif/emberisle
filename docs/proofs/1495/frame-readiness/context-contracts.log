@@ -1,0 +1,67 @@
+ok lobby status on Ember: "Need 2 more players" +17.2s
+ok lobby status on Ember: "Need 1 more player" +18.7s
+ok lobby status on Tide: "Need 1 more player" +18.8s
+ok lobby status on Ember: "0 of 3 ready" +20.2s
+ok lobby status on Tide: "0 of 3 ready" +20.3s
+ok host tag on Ember's row only, seen by Ember +20.3s
+ok host tag on Ember's row only, seen by Tide +20.3s
+ok host tag on Ember's row only, seen by Pine +20.4s
+ok phone title card is 410 px tall, at most 55% of 844 +20.5s
+ok phone title card is full width minus 12 px, at the bottom +20.5s
+ACTUAL HELPER clock witness {
+  date: 2208,
+  perf: 2208,
+  frames: 120,
+  timer: true,
+  firedAt: 2000.2000000029802,
+  renders: 40,
+  initialRenders: 40
+}
+ok actual helper preserves Date/performance/native2s timer/DOM RAF while scene draws wait +24.7s
+ok phone lobby card is 358x812, inside the 390x844 screen with the approved 16 px margins +25.9s
+ok actual helper success restores original draw and GL suppression +26.8s
+capture failure context 1495-controlled-capture-failure.jpg {
+  baseline: { renders: 54, origin: 1794305825377.3 },
+  origin: 1794305825377.3,
+  sameRenderer: true,
+  savedRenders: 56,
+  currentRenders: 56,
+  attempts: 3,
+  completed: 2,
+  hidden: false,
+  motionReduced: false,
+  rendererCalm: false,
+  stopped: false,
+  connected: true,
+  busyUntil: 20314,
+  lastFrame: 19313.79999999702,
+  now: 19324.5,
+  contextLost: false,
+  fence: null
+}
+ok actual helper preserves capture error identity and restores after failure +28.1s
+capture failure context 1495-controlled-double-failure.jpg {
+  baseline: { renders: 57, origin: 1794305825377.3 },
+  origin: 1794305825377.3,
+  sameRenderer: true,
+  savedRenders: 59,
+  currentRenders: 59,
+  attempts: 2,
+  completed: 2,
+  hidden: false,
+  motionReduced: false,
+  rendererCalm: false,
+  stopped: false,
+  connected: true,
+  busyUntil: 20816.70000000298,
+  lastFrame: 19815.59999999404,
+  now: 20183.40000000596,
+  contextLost: false,
+  fence: 37145
+}
+FAIL capture cleanup Error: controlled cleanup failure
+    at file:///workspace/work/1495/scripts/.codex-p-1495-frame-diagnostic.mjs:593:68
+ok actual helper retains primary capture error when cleanup also fails +28.9s
+ok actual helper fails on cleanup-only error instead of passing +29.8s
+ok zero browser errors in actual helper controls +29.8s
+ACTUAL HELPER controls complete; expected negative errors are fixture checks, not full chat validation
