@@ -373,8 +373,7 @@ input, select, textarea { border-color: var(--control-line); }
 .ss-row .ss-val { grid-area: val; }
 .ss-master { border-bottom: 1px solid var(--line); }
 .ss-master .ss-label { font-weight: 600; }
-.ss-sub { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "label switch"; min-height: 44px; padding-left: 52px; }
-.ss-sub .ss-label { padding: 0; }
+.ss-sub { grid-template-columns: 56px minmax(0, 1fr) 44px; grid-template-areas: "label label label" "switch range val"; min-height: 44px; }
 .ss-val { font-variant-numeric: tabular-nums; text-align: right; color: var(--muted); }
 .ss-mute { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex: none; border-radius: var(--radius-control); background: var(--ground); }
 .ss-mute[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
@@ -399,7 +398,6 @@ input, select, textarea { border-color: var(--control-line); }
   .ss-mix .ss-row { grid-template-columns: 44px 5.5rem minmax(0, 1fr) 40px; grid-template-areas: "mute label range val"; }
   .ss-mix .ss-label { line-height: 18px; padding: 0; }
   .ss-note { display: none; }
-  .ss-sub { padding-left: 4px; }
 }
 @media (min-width: 1000px) and (min-height: 481px) { .ss { width: 360px; } }
 @media (prefers-reduced-motion: reduce) { .ss-switch span, .ss-switch span::after { transition: none; } }

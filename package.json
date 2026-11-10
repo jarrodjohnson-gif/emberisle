@@ -169,6 +169,7 @@
     "longest-army-prove": "node scripts/longest-army-prove.mjs",
     "roll-log-prove": "node scripts/roll-log-prove.mjs",
     "hud-roll-line-prove": "node scripts/hud-roll-line-prove.mjs",
+    "roll-off-oracle-prove": "node scripts/roll-off-oracle-prove.mjs",
     "public-score-prove": "node --import ./server/register.mjs scripts/public-score-prove.mjs",
     "seat-menu-sheet-prove": "node scripts/seat-menu-sheet-prove.mjs",
     "fortune-tray-prove": "node scripts/fortune-tray-prove.mjs",

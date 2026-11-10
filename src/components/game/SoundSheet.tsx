@@ -1,5 +1,5 @@
 // #669: the Sound panel, option A of docs/design/sound-sheet-1276. TableMenu shows it in its own place: All sound, one volume and
-// mute for each kind of sound, the Sea sounds switch (#1163) and the players this device has muted. Every level is a slider in
+// mute for each kind of sound, the Sea sounds switch and volume (#1163) and the players this device has muted. Every level is a slider in
 // 10% steps with a 44 px touch area; letting go of one plays a short clip of its kind so the level can be heard.
 // A lazy chunk: it loads when the Table menu opens, long before Sound is pressed.
 import { useEffect, useRef, type CSSProperties } from "react";
@@ -8,7 +8,7 @@ import { SeatDot } from "@/components/game/SeatDot";
 import { useGame } from "@/lib/game/store";
 import { useMutedSeats } from "@/lib/use-muted-seats";
 import { isMusicOn, play, setMusicOn, setMuted, useMuted, useMusicOn, type SoundName } from "@/lib/sound";
-import { useSeaSounds, setSeaSounds } from "@/lib/sea-setting";
+import { useSeaSounds, useSeaVolume, setSeaSounds, setSeaVolume } from "@/lib/sea-setting";
 import { SOUND_CATEGORIES, getSoundMix, setCategoryMuted, setCategoryVolume, setMasterVolume, useSoundMix, type SoundCategory } from "@/lib/sound-settings";
 
 type Id = "master" | SoundCategory;
@@ -65,6 +65,8 @@ export function SoundSheet({ onBack, onClose }: { onBack: () => void; onClose: (
   const muted = useMuted();
   const music = useMusicOn();
   const sea = useSeaSounds();
+  const seaLevel = useSeaVolume();
+  const seaPct = Math.round(seaLevel * 100);
   const seats = useGame((s) => s.seats);
   const seatId = useGame((s) => s.seatId);
   const code = useGame((s) => s.code);
@@ -113,11 +115,25 @@ export function SoundSheet({ onBack, onClose }: { onBack: () => void; onClose: (
         <section className="ss-card ss-mix">{ROWS.slice(0, 4).map(row)}</section>
         <section className="ss-card ss-music">
           {row(ROWS[4]!)}
-          <div className="ss-row ss-sub">
+          <div className="ss-row ss-sub" data-testid="sound-row-sea">
             <span className="ss-label">Sea sounds</span>
             <button type="button" role="switch" className="ss-switch" data-testid="sound-sea" aria-checked={sea} aria-label="Sea sounds" onClick={() => setSeaSounds(!sea)}>
               <span />
             </button>
+            <input
+              type="range"
+              className="ss-range"
+              data-testid="sound-slider-sea"
+              min={0}
+              max={100}
+              step={10}
+              value={seaPct}
+              aria-label="Sea sounds volume"
+              style={{ "--v": `${seaPct}%` } as CSSProperties}
+              data-off={sea ? undefined : ""}
+              onChange={(e) => setSeaVolume(Number(e.currentTarget.value) / 100)}
+            />
+            <span className="ss-val">{sea ? `${seaPct}%` : "Off"}</span>
           </div>
         </section>
         {targets.length ? (

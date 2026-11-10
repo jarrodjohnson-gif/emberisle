@@ -2,7 +2,7 @@
 // named as in server/cue.mjs. Nothing plays before the first pointer or key gesture (browsers refuse autoplay), and a
 // missing or blocked file is silent, never a thrown error or a console error.
 import { useSyncExternalStore } from "react";
-import { getSeaSounds, subscribeSeaSounds } from "./sea-setting";
+import { getSeaSounds, getSeaVolume, subscribeSeaSounds } from "./sea-setting";
 import { categoryGain, subscribeSoundMix, type SoundCategory } from "./sound-settings";
 import type { ExtraSoundName } from "./sound-extra";
 import type { Bag } from "./net/table";
@@ -364,13 +364,14 @@ function syncVolumes() {
 }
 subscribeSoundMix(() => { syncVolumes(); syncMusic(); syncAmbience(); });
 
-// #662: the sea-and-wind ambience at AMB_VOLUME under the Music and ambience level, after the first gesture, while the Sea
-// sounds switch is on, unless muted or Music is off. ambience.ts pauses it on a hidden tab; it and its file load on its first start.
+// #662: the sea-and-wind ambience at AMB_VOLUME under the Music and ambience level and the Sea sounds volume (#1163),
+// after the first gesture, while the Sea sounds switch is on, unless muted or Music is off. ambience.ts pauses it on a
+// hidden tab; it and its file load on its first start.
 export const AMB_VOLUME = 0.12;
 let amb: Promise<typeof import("./ambience")> | undefined;
 subscribeSeaSounds(syncAmbience);
 function syncAmbience() {
-  const level = unlocked && !muted && bgOn && getSeaSounds() ? AMB_VOLUME * categoryGain("music") : 0;
+  const level = unlocked && !muted && bgOn && getSeaSounds() ? AMB_VOLUME * categoryGain("music") * getSeaVolume() : 0;
   if (!level && !amb) return;
   (amb ??= import("./ambience")).then((m) => m.sync(level), () => { amb = undefined; });
 }
