@@ -1,8 +1,8 @@
 // #1509 (option A, owner card q1508-table-goal): the upright phone table. At 430x932, 390x844 and 375x812 (touch, with the
 // device's safe-area insets), on a crafted main phase (seed 20261110, four seats, own turn):
 // - camera: the default view is overhead at UPRIGHT_LEAN (40°), and the island's shore spans the screen: the outermost hex
-//   corners sit SHORE_HALF_X - 0.42 world units out, which puts the shore's outer edge EDGE_GAP (+-2) px from each screen
-//   edge; a side dock's boat may run off the side edges (owner card q1515-table-look, B), but every dock's pier and boat is
+//   corners sit SHORE_HALF_X - 0.42 world units out, and the shore comes EDGE_GAP px from each screen edge, or as near as
+//   keeps every goods pile wholly on screen (PILE_HALF_X, PILE_GAP); a side dock's boat may run off the side edges (owner card q1515-table-look, B), but every dock's pier and boat is
 //   inside the hole's top and bottom and every dock's 44 px inspect button is wholly on screen; it sits low: its lowest
 //   corner is nearer the hole's bottom than its highest corner is to the hole's top, and no corner leaves the hole; sideways (844x390) the lean is still OVERHEAD_LEAN;
 //   a turn of the phone goes from one lean to the other;
@@ -54,7 +54,7 @@ async function crafted(page) {
     game.setState({ state: st, localId: st.players[0].id, mode: "ai", spectator: false, buildMode: "none", banner: null, error: null, menuFor: null });
   }, NAMES);
   await page.locator('[data-menu-trigger="p0"]').waitFor();
-  await page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide && window.__isle.fit, null, { timeout: 30_000 });
+  await page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide && window.__isle.fit && window.__isle.shore?.group.userData.goodsPiles?.length === 9, null, { timeout: 60_000 });
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 }
 
@@ -79,6 +79,18 @@ const lookAt = (page) =>
       OVERHEAD_LEAN: fit.OVERHEAD_LEAN,
       SHORE_HALF_X: fit.SHORE_HALF_X,
       EDGE_GAP: fit.EDGE_GAP,
+      PILE_HALF_X: fit.PILE_HALF_X,
+      PILE_GAP: fit.PILE_GAP,
+      // Every goods pile's screen box (#846: the pile stays on screen where its boat is cropped).
+      piles: (isle.shore?.group.userData.goodsPiles ?? []).map((pile) => {
+        const m = new isle.ortho.matrixWorld.constructor().fromArray(pile.frame);
+        const pts = [];
+        for (const x of [pile.min[0], pile.max[0]]) for (const y of [pile.min[1], pile.max[1]]) for (const z of [pile.min[2], pile.max[2]]) {
+          const p = isle.ortho.position.clone().set(x, y, z).applyMatrix4(m);
+          pts.push(isle.screenAt(p.x, p.y, p.z));
+        }
+        return { kind: pile.kind, l: Math.min(...pts.map((q) => q.x)), r: Math.max(...pts.map((q) => q.x)), t: Math.min(...pts.map((q) => q.y)), b: Math.max(...pts.map((q) => q.y)) };
+      }),
       // Each dock's pier and boat from both its corners (nine docks, 18 corners), 0.7 out along the coast at the waterline,
       // against the hole (negative: outside).
       docks: st.vertices.filter((v) => v.harbor).map((v) => {
@@ -107,6 +119,8 @@ try {
     const ctx = await browser.newContext({ viewport: { width: size.width, height: size.height }, isMobile: true, hasTouch: true });
     // First-game tips off: their "Skip tips" chip shares the strip's row (on a first game a 375 px strip falls back to short names).
     await ctx.addInitScript(() => localStorage.setItem("emberisle-first-game-coach", '"done"'));
+    // The jelly shore carries the piers' goods piles (#846), as dock-piles-prove draws them.
+    await ctx.addInitScript(() => localStorage.setItem("emberisle-jelly", "full"));
     const page = await ctx.newPage();
     if (size.insets) await (await ctx.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets: size.insets });
     page.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
@@ -123,14 +137,18 @@ try {
     const shore = 0.42 * a.unit;
     const gapL = a.left - shore;
     const gapR = a.w - (a.right + shore);
-    assert.ok(Math.abs(gapL - a.EDGE_GAP) <= 2 && Math.abs(gapR - a.EDGE_GAP) <= 2, `${tag}: the shore is ${gapL.toFixed(1)} px from the left edge and ${gapR.toFixed(1)} px from the right, not ${a.EDGE_GAP}`);
+    // The shore comes EDGE_GAP from the edges unless the goods piles would leave the screen first; then the piles set the scale.
+    const scale = Math.min((a.w - 2 * a.EDGE_GAP) / (2 * a.SHORE_HALF_X), (a.w / 2 - a.PILE_GAP) / a.PILE_HALF_X);
+    assert.ok(Math.abs(a.unit / scale - 1) < 0.005, `${tag}: ${a.unit.toFixed(2)} px a world unit, not ${scale.toFixed(2)}`);
+    assert.ok(Math.abs(gapL - gapR) <= 1 && gapL >= a.EDGE_GAP - 1, `${tag}: the shore is ${gapL.toFixed(1)} px from the left edge and ${gapR.toFixed(1)} px from the right`);
+    assert.ok(a.piles.length === 9 && a.piles.every((q) => q.l >= 0 && q.r <= a.w && q.t >= 0 && q.b <= a.h), `${tag}: goods piles off screen ${JSON.stringify(a.piles.filter((q) => q.l < 0 || q.r > a.w))}`);
     assert.ok(a.docks.length === 18 && a.docks.every((d) => d >= -0.5), `${tag}: a dock leaves the hole's top or bottom by ${Math.min(...a.docks).toFixed(1)} px`);
     assert.ok(a.buttons.length === 9 && a.buttons.every((b) => b.w >= 44 && b.l >= 0 && b.t >= 0 && b.r <= a.w && b.b <= a.h), `${tag}: dock buttons off screen ${JSON.stringify(a.buttons)}`);
     const holeTop = a.hole.top;
     const holeBottom = a.h - a.hole.bottom;
     assert.ok(a.top >= holeTop - 1 && a.bottom <= holeBottom + 1, `${tag}: corners ${a.top.toFixed(0)}..${a.bottom.toFixed(0)} leave the hole ${holeTop}..${holeBottom}`);
     assert.ok(holeBottom - a.bottom < a.top - holeTop, `${tag}: the island is not low: ${(holeBottom - a.bottom).toFixed(0)} px under it, ${(a.top - holeTop).toFixed(0)} px over it`);
-    console.log(`${tag}: overhead at ${((a.polar * 180) / Math.PI).toFixed(1)}°, shore ${gapL.toFixed(1)} / ${gapR.toFixed(1)} px from the edges, docks inside the hole's height, nine dock buttons on screen, island ${Math.round(a.right - a.left + 2 * shore)} px wide, ${Math.round(holeBottom - a.bottom)} px over the dock and ${Math.round(a.top - holeTop)} px under the seats`);
+    console.log(`${tag}: overhead at ${((a.polar * 180) / Math.PI).toFixed(1)}°, shore ${gapL.toFixed(1)} / ${gapR.toFixed(1)} px from the edges, docks inside the hole's height, nine dock buttons and nine goods piles on screen, island ${Math.round(a.right - a.left + 2 * shore)} px wide, ${Math.round(holeBottom - a.bottom)} px over the dock and ${Math.round(a.top - holeTop)} px under the seats`);
 
     // Gutters, seats, dock.
     const ui = await page.evaluate(() => {

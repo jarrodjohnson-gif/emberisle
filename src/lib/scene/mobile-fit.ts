@@ -121,6 +121,12 @@ const LEAN_RISE = 1.15;
 // leaves the hole.
 export const SHORE_HALF_X = 2.5 * Math.sqrt(3) * 1.12 + 0.42;
 export const EDGE_GAP = 4;
+// #1509: the goods pile on a pier (#846, 2.5x) stays wholly on screen even where the boat beside it is cropped; it is part of
+// the dock, not the boat. The outermost pile reaches 5.72 world units across (harbor-jelly's packed goods, measured over
+// eight seeds on a side dock); PILE_HALF_X holds that with a little room, and the fit never puts it past PILE_GAP px from
+// the screen edge. Where the piles bind, the shore stops a few pixels short of EDGE_GAP.
+export const PILE_HALF_X = 5.75;
+export const PILE_GAP = 2;
 // #1509: the upright phone's default lean. The owner found the 25° board hard to see and always tilted it; 40° shows the
 // slabs' sides and the pieces standing, while a number token still reads as a disc. Only depth shrinks (by cos), and an
 // upright phone has height to spare: its island is bound by the width.
@@ -140,7 +146,7 @@ export function playLean(cssW: number, cssH: number, phone: boolean) {
 // lands at the hole center. Screen-up is -Z, screen-right is +X. `lean` is radians off straight down; it shortens the
 // island's screen depth by cos(lean), so a screen shift on the ground is that much longer.
 // `edge` (#1509): the shore spans the canvas's width less EDGE_GAP each side (past the hole's 12 px sides), unless that would
-// take the island and its docks past the hole's height; the island sits at the hole's bottom edge instead of its centre.
+// take a goods pile off the screen or the island and its docks past the hole's height; the island sits at the hole's bottom edge instead of its centre.
 export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0, edge = false): OrthoFit {
   const halfZ = ISLE_HALF.z * Math.cos(lean) + LEAN_RISE * Math.sin(lean);
   if (edge) {
@@ -148,7 +154,7 @@ export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0, e
     const holeW = Math.max(1, cssW - sides.left - sides.right);
     const holeH = Math.max(1, cssH - insets.top - insets.bottom);
     // A hole too short for that (a 375x667 phone) scales the island to its height instead, which is then centred in it.
-    const px = Math.min(holeW / (2 * SHORE_HALF_X), holeH / (2 * halfZ));
+    const px = Math.min(holeW / (2 * SHORE_HALF_X), (cssW / 2 - PILE_GAP) / PILE_HALF_X, holeH / (2 * halfZ));
     const hw = cssW / 2 / px;
     const hh = cssH / 2 / px;
     const cx = sides.left + holeW / 2;
