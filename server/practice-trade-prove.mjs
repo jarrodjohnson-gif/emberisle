@@ -4,7 +4,7 @@
 //   B. The person asks for what one bot needs: that bot takes it within 2 s and the goods move.
 //   C. A bot asks on its own turn and its turn waits; the other bots say No, the person's Yes moves the goods, and the
 //      bot plays on without asking again.
-//   D. A bot asks and the person stays silent: it closes at 20 s and the bot plays on.
+//   D. A bot asks and the person stays silent: the card waits until answered (#1507).
 //   E. The person's offer closes when their turn ends, and its bots' answers never land.
 //   F. Leaving for the Title, or starting a new practice game, drops an open offer, and its bots' answers never land.
 //   H. A bot asks and another bot wants it: with the person silent, that bot's Yes waits until 8 s (#850).
@@ -117,26 +117,23 @@ if (s().offer) fail("C: the bot asked twice in one turn");
 if (s().state.seq <= seqC + 2) fail("C: the bot did not play on after the trade", s().state.seq);
 console.log("C ok: a bot asks once on its turn, waits, and plays on after the person's Yes");
 
-// D: the same ask, and the person never answers.
+// D: the same ask, and the person stays silent: the card waits until answered (#1507).
 practice(structuredClone(gC));
 s().runBots();
 if (s().offer?.from !== "p2") fail("D: the bot did not ask");
+if (s().offer?.until !== null) fail("D: the bot's offer until should be null");
 const seqD = s().state.seq;
-mock.timers.tick(19_999);
-if (!s().offer) fail("D: the offer closed before 20 s");
-mock.timers.tick(1);
-if (s().offer) fail("D: the offer is still open at 20 s");
+mock.timers.tick(30_000);
+if (!s().offer) fail("D: the bot's offer closed without the person answering");
+if (s().offer.from !== "p2") fail("D: the bot's offer from changed");
+// The person declines, so every seat has answered No and the offer closes.
+s().answerTrade(false);
+if (s().offer) fail("D: the offer stayed open after the person declined");
 s().runBots();
-if (s().offer || s().state.seq === seqD) fail("D: the bot did not play on after its ask ran out");
-console.log("D ok: a bot's unanswered ask closes at 20 s and its turn plays on");
-const expiredRetry = structuredClone(gC);
-expiredRetry.turn = s().state.turn + 1;
-const expiredAsk = chooseTradeAsk(expiredRetry, "p2");
-if (!expiredAsk || JSON.stringify(expiredAsk) !== JSON.stringify(askC)) fail("D: the expired proposal changed", expiredAsk);
-useGame.setState({ state: expiredRetry, offer: null, declined: [] });
-s().runBots();
-if (!s().offer || s().offer.from !== "p2") fail("D: an expired ask was remembered as declined", s().offer);
-console.log("D boundary ok: an expired ask does not create declined-proposal memory");
+if (s().offer || s().state.seq === seqD) fail("D: the bot did not play on after its declined ask closed");
+const declinedCheck = s().botDeclined;
+if (JSON.stringify(declinedCheck?.p2) !== JSON.stringify(askC)) fail("D: declined ask was not recorded in memory", declinedCheck);
+console.log("D ok: a bot's ask waits until the person answers; No from all closes it and its turn plays on");
 
 // E: the person asks the helpful ask and ends the turn before any bot answers.
 practice(structuredClone(gA));

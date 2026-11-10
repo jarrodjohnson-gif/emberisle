@@ -218,15 +218,20 @@ const roomC = (async () => {
   await seated([C, CT]);
   const offer = await C.next("tradeOffer");
   if (offer.from !== "p2") fail("C: the ask is not the bot's", offer);
-  const closed = await C.next("tradeClosed", OFFER_MS + 5000);
+  if (offer.seconds !== null) fail("C: the bot offer came with seconds", offer);
+  await sleep(3000);
+  if (C.inbox.some((m) => m.type === "tradeClosed")) fail("C: the bot's offer closed before answers landed");
+  C.send({ type: "tradeAnswer", tradeId: offer.tradeId, yes: false });
+  await sleep(500);
+  if (C.inbox.some((m) => m.type === "tradeClosed")) fail("C: the offer closed while Tide had not answered");
+  CT.send({ type: "tradeAnswer", tradeId: offer.tradeId, yes: false });
+  const closed = await C.next("tradeClosed");
   if (closed.tradeId !== offer.tradeId || closed.taker) fail("C: the bot's offer closed with a taker", closed);
-  const ms = closed.at - offer.at;
-  if (ms < OFFER_MS - 100) fail(`C: the offer closed after ${ms} ms, before it ran out`);
   const answers = C.seen.filter((m) => m.type === "tradeDeclined");
-  if (answers.length) fail("C: a bot answered its own ask", answers);
+  if (answers.some((m) => m.by === "p2")) fail("C: a bot answered its own ask", answers);
   // The bot's turn plays on to the next person's roll: the table never stalls behind the ask.
   await C.until("state", (m) => m.game.current === "p0" && m.game.phase === "roll");
-  return ms;
+  return closed.at - offer.at;
 })();
 
 // H runs alongside the rest too.
@@ -448,7 +453,7 @@ if (offerG.from !== "p2" || JSON.stringify({ give: offerG.give, want: offerG.wan
 console.log("G: a different useful proposal opened through the host");
 
 const cMs = await roomC;
-console.log(`C: nobody answered the bot's ask; no bot answered it; it closed after ${cMs} ms and the bot's turn played on`);
+console.log(`C: both players declined the bot's ask; it closed once all declined and the bot's turn played on`);
 async function rollAndPass(c) {
   const pid = c.pid;
   if (c.state?.game.current !== pid || c.state.game.phase !== "roll") {
@@ -468,13 +473,9 @@ async function rollAndPass(c) {
 }
 await rollAndPass(C);
 await rollAndPass(CT);
-const savedC = await waitForSavedRoom("BTCC", (saved) => saved.game?.turn > gC.turn && saved.game.current === "p2" && saved.game.phase === "main");
-const retryC = structuredClone(savedC.game);
-const rawRetry = chooseTradeAsk(retryC, "p2");
-if (JSON.stringify(rawRetry) !== JSON.stringify(askC)) fail("C boundary: the raw offer changed before the retry", { rawRetry, askC, hand: savedC.game.players.find((p) => p.id === "p2").resources, declined: savedC.botDeclined });
-const retry = await C.next("tradeOffer");
-if (retry.from !== "p2" || JSON.stringify({ give: retry.give, want: retry.want }) !== JSON.stringify(askC)) fail("C boundary: the expired offer was remembered or changed", retry);
-console.log("C boundary: a 20-second expiry does not suppress the same proposal on a later turn");
+const savedC = await waitForSavedRoom("BTCC", (saved) => saved.game?.turn > gC.turn && saved.game.current === "p0" && saved.game.phase === "roll");
+if (C.seen.filter((m) => m.type === "tradeOffer" && m.from === "p2").length !== 1) fail("C: the declined ask reopened on the bot's next turn", C.seen.filter((m) => m.type === "tradeOffer"));
+console.log("C: bot's ask waited until both players answered No; it closed once all declined and stayed suppressed on the next turn");
 await roomH;
 console.log(`I: Tide's Yes 5 s in took the ask the bot wanted, ${await roomI} ms after it`);
 console.log(`J: Tide said No 3 s in; the bot's held Yes took it ${await roomJ} ms later`);
