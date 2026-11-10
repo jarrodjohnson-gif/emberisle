@@ -1,4 +1,4 @@
-// #643 "My numbers": at 440x956 and 956x440, on a hotseat table with the seat's outposts and a stronghold placed,
+// #643 "My numbers": at 1180x820 and 956x440 (#1509: the upright phone table has no numbers; upright-table-prove checks that), on a hotseat table with the seat's outposts and a stronghold placed,
 // 1. the strip lists exactly the numbers on the hexes touching the seat's buildings, most pips first (ties by the lower);
 // 2. a stronghold's hexes show their good twice;
 // 3. rolling one of the numbers lights its chip, and it goes out after about 1.2 s;
@@ -25,7 +25,7 @@ const check = (name, ok, detail = "") => {
 const frames = (page, n) => page.evaluate(async (n) => { for (let i = 0; i < n; i++) await new Promise((r) => requestAnimationFrame(r)); }, n);
 let code = 0;
 try {
-  for (const [w, h] of [[440, 956], [956, 440]]) {
+  for (const [w, h] of [[1180, 820], [956, 440]]) {
     const tag = `${w}x${h}`;
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true });
     await ctx.addInitScript(() => localStorage.setItem("emberisle-water", "simple"));

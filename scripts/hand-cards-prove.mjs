@@ -41,7 +41,8 @@ const CUE_MS = 3000;
 // Each layout's fixed card: upright and short as today; the wide, fine-pointer layout at 1.3x the upright mock.
 const SIZE = {
   desk: { box: [88, 80], symbol: 22, count: 30, name: 12 },
-  port: { box: [66.8, 62], symbol: 18, count: 24, name: 10 },
+  // #1509: upright, the hand has no tray padding and 16 px gutters, so five cards share 358 px: 68.4 px each, not 66.8.
+  port: { box: [68.4, 62], symbol: 18, count: 24, name: 10 },
   short: { box: [47.2, 44], symbol: 14, count: 24, name: 0 },
 };
 // A gain lifts by the tray's --goods-lift: 6 px upright, 4 px short and where the hand heads a wide screen's stack.
