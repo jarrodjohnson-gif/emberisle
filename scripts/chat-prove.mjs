@@ -648,31 +648,38 @@ try {
   }
   // #899: the lobby has the six emoji too. One tap from Tide shows a bubble mid-row on Tide's seat, clear of the name, and a
   // light line in every log; a sound from Pine's Sounds & stickers tab shows its own bubble and line.
+  // Observe transient bubbles while the sender action completes, within their original lifetime (#1495).
   const tideSeat = await store(b, () => window.__emberisle.getState().seatId);
   const pineSeat = await store(c, () => window.__emberisle.getState().seatId);
-  await b.page.getByTestId("emoji-row").getByRole("button", { name: "React happy", exact: true }).click();
-  for (const t of tabs) {
-    await t.page.getByTestId(`lobby-seat-${tideSeat}`).locator('[data-testid="reaction"][data-emote="😊"]').waitFor({ timeout: 5000 });
-    const name = await clearOfName(t, `lobby-seat-${tideSeat}`);
-    check(name.ok, `lobby: ${t.name} shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect ${name.why}`);
-    await t.page.getByTestId("chat-log").locator('[data-testid="react-line"][data-emote="😊"]', { hasText: "Tide" }).waitFor({ timeout: 5000 });
-  }
+  await Promise.all([
+    ...tabs.map(async (t) => {
+      await t.page.getByTestId(`lobby-seat-${tideSeat}`).locator('[data-testid="reaction"][data-emote="😊"]').waitFor({ timeout: 5000 });
+      const name = await clearOfName(t, `lobby-seat-${tideSeat}`);
+      check(name.ok, `lobby: ${t.name} shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect ${name.why}`);
+      await t.page.getByTestId("chat-log").locator('[data-testid="react-line"][data-emote="😊"]', { hasText: "Tide" }).waitFor({ timeout: 5000 });
+    }),
+    b.page.getByTestId("emoji-row").getByRole("button", { name: "React happy", exact: true }).click(),
+  ]);
   check(true, "lobby: Tide's one-tap emoji is a light line in all 3 logs");
   await c.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
-  await c.page.getByRole("button", { name: "Play sound Wololo", exact: true }).click();
-  for (const t of tabs) {
-    await t.page.getByTestId(`lobby-seat-${pineSeat}`).locator('[data-testid="sound-bubble"][data-sound="sb_wololo"]').waitFor({ timeout: 5000 });
-    const name = await clearOfName(t, `lobby-seat-${pineSeat}`);
-    check(name.ok, `lobby: ${t.name} shows Pine's Wololo bubble, clear of the name ${name.why}`);
-  }
+  await Promise.all([
+    ...tabs.map(async (t) => {
+      await t.page.getByTestId(`lobby-seat-${pineSeat}`).locator('[data-testid="sound-bubble"][data-sound="sb_wololo"]').waitFor({ timeout: 5000 });
+      const name = await clearOfName(t, `lobby-seat-${pineSeat}`);
+      check(name.ok, `lobby: ${t.name} shows Pine's Wololo bubble, clear of the name ${name.why}`);
+    }),
+    c.page.getByRole("button", { name: "Play sound Wololo", exact: true }).click(),
+  ]);
   await c.page.getByRole("tab", { name: "Chat", exact: true }).click();
   for (const t of tabs) await t.page.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: "Wololo" }).waitFor({ timeout: 5000 });
   check(true, "lobby: Pine's sound is a bubble and a light line on all 3 tabs");
   // #1129: the two newest chips, one from each of two other seats, are a bubble and a sound line on every seat.
   for (const [sender, senderSeat, id, label] of [[b, tideSeat, "sb_real_badman", "Real badman"], [a, await store(a, () => window.__emberisle.getState().seatId), "sb_gong", "Gong"]]) {
     await sender.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
-    await sender.page.getByRole("button", { name: `Play sound ${label}`, exact: true }).click();
-    for (const t of tabs) await t.page.getByTestId(`lobby-seat-${senderSeat}`).locator(`[data-testid="sound-bubble"][data-sound="${id}"]`).waitFor({ timeout: 5000 });
+    await Promise.all([
+      ...tabs.map((t) => t.page.getByTestId(`lobby-seat-${senderSeat}`).locator(`[data-testid="sound-bubble"][data-sound="${id}"]`).waitFor({ timeout: 5000 })),
+      sender.page.getByRole("button", { name: `Play sound ${label}`, exact: true }).click(),
+    ]);
     await sender.page.getByRole("tab", { name: "Chat", exact: true }).click();
     for (const t of tabs) await t.page.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: label }).waitFor({ timeout: 5000 });
     check(true, `lobby: ${label} from ${sender.name} is a bubble and a sound line on all 3 tabs`);
@@ -1551,7 +1558,7 @@ try {
   check(errors.length === 0, "zero console errors in all tabs");
   console.log("chat prove ok");
 } catch (e) {
-  console.log("FAIL", e.message);
+  console.log("FAIL", e.stack ?? e.message);
   if (errors.length) console.log(errors.join("\n"));
   code = 1;
 } finally {

@@ -21,3 +21,9 @@ The reorder removes that unrelated wait from the live-reaction observation windo
 At unchanged runtime source6d0c0236, full runs1/2 passed completely (307.6s/336.0s). Run3 failed an unchanged5000ms lobby Pine Wololo sound-bubble wait before the game/mute section. All three source-series outputs/exits/start times are preserved. The series stopped; no20-pass claim and no retry-for-green.
 
 A focused real-host four-seat lobby diagnostic repeated20 Wololo sends, retaining5000ms bubble waits and every per-tab clear-of-name check. All20 passed, with filtered send/receive/store/DOM timestamps. It omits the preceding full layout workload and is not20 full proofs or a causal fix. Exact historical lobby failure cause remains unproved. A controlled4s producer-completion delay is being compared with observations armed before the producer call; product sound lifetime3s and all existing timeouts remain intact.
+
+## Armed transient observers
+
+The4s producer-completion comparison completed: old ordering failed the original5000ms Wololo wait after the3s sound bubble had appeared and expired; armed observations passed every tab's original visibility/clear-of-name check while live, then still awaited the delayed producer. Raw traces show removal before producer completion in both cases. The artificial delay is a controlled reproduction of the ordering vulnerability, not an attributed timing trace of historical full run3.
+
+The permanent proof now arms existing lobby emoji and sound observations while the sender click completes. Every visibility/geometry/log assertion and5000ms timeout remains; the full proof scripts still run serially under the team lock. The original mute1500ms waits remain unchanged. Failure output includes its stack for future diagnosis. New full20-run validation is required for this source; prior two full passes are historical, not counted toward it.

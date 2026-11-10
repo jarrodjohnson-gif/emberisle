@@ -1,0 +1,24 @@
+Ember SOUND_TRACE {"event":"DOM","wall":1794269536769,"mono":17570.59999999404,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794269536784,"mono":13865.79999999702,"details":[]}
+Tide SOUND_TRACE {"event":"DOM","wall":1794269536784,"mono":15347,"details":[]}
+SOUND_CLICK {"trial":1,"stage":"before","wall":1794269537171}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794269537575,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794269537581,"type":"chat","id":0,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794269537571,"mono":18372.79999999702,"details":{"id":0,"sound":"sb_wololo","seat":"s2","at":1794269537511,"arrived":1794269537511}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794269537579,"mono":18381.29999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794269537657,"type":"chat","id":0,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794269537654,"mono":16217.59999999404,"details":{"id":0,"sound":"sb_wololo","seat":"s2","at":1794269537562,"arrived":1794269537563}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794269537655,"mono":16218.699999988079,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794269537668,"type":"chat","id":0,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794269537665,"mono":14747.40000000596,"details":{"id":0,"sound":"sb_wololo","seat":"s2","at":1794269537579,"arrived":1794269537581}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794269537667,"mono":14749.29999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794269537674,"type":"chat","id":0,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"DOM","wall":1794269540545,"mono":21346.79999999702,"details":[]}
+Tide SOUND_TRACE {"event":"DOM","wall":1794269540580,"mono":19142.89999999106,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794269540598,"mono":17680,"details":[]}
+SOUND_CLICK {"trial":1,"stage":"resolved","wall":1794269541703}
+FAIL locator.waitFor: Timeout 5000ms exceeded.
+Call log:
+[2m  - waiting for getByTestId('lobby-seat-s2').locator('[data-testid="sound-bubble"][data-sound="sb_wololo"]') to be visible[22m
+
+    at /workspace/work/1495/scripts/lobby-sound-latency-old-diagnostic.mjs:501:122

@@ -1,0 +1,25 @@
+Pine SOUND_TRACE {"event":"DOM","wall":1794269964426,"mono":48160.40000000596,"details":[]}
+Ember SOUND_TRACE {"event":"DOM","wall":1794269964458,"mono":58965.89999999106,"details":[]}
+Tide SOUND_TRACE {"event":"DOM","wall":1794269964494,"mono":53124.89999999106,"details":[]}
+SOUND_CLICK {"trial":1,"stage":"before","wall":1794269964994}
+SOUND_NET {"name":"Tide","event":"framereceived","wall":1794269965519,"type":"chat","id":0,"sound":"sb_wololo","seat":"s2"}
+Tide SOUND_TRACE {"event":"store","wall":1794269965502,"mono":54132.39999999106,"details":{"id":0,"sound":"sb_wololo","seat":"s2","at":1794269965460,"arrived":1794269965460}}
+Tide SOUND_TRACE {"event":"DOM","wall":1794269965509,"mono":54139.70000000298,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Pine","event":"framesent","wall":1794269965557,"type":"sound","id":"sb_wololo"}
+SOUND_NET {"name":"Moss","event":"framereceived","wall":1794269965564,"type":"chat","id":0,"sound":"sb_wololo","seat":"s2"}
+SOUND_NET {"name":"Ember","event":"framereceived","wall":1794269965573,"type":"chat","id":0,"sound":"sb_wololo","seat":"s2"}
+Ember SOUND_TRACE {"event":"store","wall":1794269965564,"mono":60071.09999999404,"details":{"id":0,"sound":"sb_wololo","seat":"s2","at":1794269965473,"arrived":1794269965473}}
+Ember SOUND_TRACE {"event":"DOM","wall":1794269965564,"mono":60071.69999998808,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+SOUND_NET {"name":"Pine","event":"framereceived","wall":1794269965857,"type":"chat","id":0,"sound":"sb_wololo","seat":"s2"}
+Pine SOUND_TRACE {"event":"store","wall":1794269965814,"mono":49548.59999999404,"details":{"id":0,"sound":"sb_wololo","seat":"s2","at":1794269965697,"arrived":1794269965698}}
+Pine SOUND_TRACE {"event":"DOM","wall":1794269965816,"mono":49550.29999999702,"details":[{"sound":"sb_wololo","seat":"lobby-seat-s2","width":60.140625,"height":22,"visibility":"visible"}]}
+ok trial1: Tide sound bubble clear of name  +60.9s
+ok trial1: Pine sound bubble clear of name  +61.1s
+ok trial1: Ember sound bubble clear of name  +61.2s
+Tide SOUND_TRACE {"event":"DOM","wall":1794269968489,"mono":57119.5,"details":[]}
+Ember SOUND_TRACE {"event":"DOM","wall":1794269968493,"mono":63000,"details":[]}
+Pine SOUND_TRACE {"event":"DOM","wall":1794269968715,"mono":52449.5,"details":[]}
+SOUND_CLICK {"trial":1,"stage":"resolved","wall":1794269969957}
+SOUND_TRIAL_PASS 1
+ok no console errors in focused lobby diagnostic +65.2s
+focused lobby sound diagnostic complete; not the full chat proof
