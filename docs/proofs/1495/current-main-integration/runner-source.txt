@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -u
+export PATH=/workspace/work/runtime/node_modules/node/bin:$PATH
+run=${1:?run index required}
+case "$run" in ''|*[!0-9]*) exit 2;; esac
+series_dir=/workspace/work/resume-nov9/1495-current-main-integration
+cd /workspace/work/1495 || exit 2
+expected=5f138c10828e31b3dcdcb1de350e7d3c26f3860f
+actual=$(git rev-parse HEAD)
+if [ "$actual" != "$expected" ]; then printf 'source HEAD changed: %s\n' "$actual"; exit 2; fi
+if ! git diff --quiet HEAD --; then printf "tracked worktree differs from recorded source\n"; exit 2; fi
+if [ -e "$series_dir/$run.started" ]; then printf 'run record already exists; preserve it\n'; exit 2; fi
+printf '%s\n' "$actual" > "$series_dir/source-head"
+git rev-parse HEAD:scripts/chat-prove.mjs > "$series_dir/proof-blob"
+node --version > "$series_dir/node-version"
+cat /sys/fs/cgroup/cpu.max > "$series_dir/cpu-max"
+date -u +%FT%TZ > "$series_dir/$run.started"
+node --input-type=module -e 'setInterval(()=>{const until=performance.now()+100;while(performance.now()<until){}},200)' &
+load_pid=$!
+trap 'kill "$load_pid" 2>/dev/null || true' EXIT
+node scripts/chat-prove.mjs > "$series_dir/$run.log" 2>&1
+result=$?
+printf '%s\n' "$result" > "$series_dir/$run.exit"
+date -u +%FT%TZ > "$series_dir/$run.ended"
+tail -8 "$series_dir/$run.log"
+exit "$result"
