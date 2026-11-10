@@ -197,11 +197,11 @@ try {
   await c2.addInitScript((n) => localStorage.setItem("emberisle-name", n), "Reed");
   await c2.goto(`${url}&code=K7QP`);
   await until(() => cLoads >= 2, "the join link's title reloading once on the failed online prefetch");
-  await title(c2);
-  const joinInput = c2.locator('input[aria-label="Join code"]');
-  await joinInput.waitFor({ timeout: 15_000 });
+  const joinBtn = c2.getByTestId("join-table");
+  await joinBtn.waitFor({ timeout: 15_000 });
   await sleep(500);
-  check("join link: the code is still in the field after the stale-chunk reload", (await joinInput.inputValue()) === "K7QP" && cLoads === 2, { value: await joinInput.inputValue(), loads: cLoads });
+  const joinLabel = (await joinBtn.textContent()) ?? "";
+  check("join link: the code is still on Join after the stale-chunk reload", joinLabel.includes("K7QP") && cLoads === 2 && (await c2.getByRole("button", { name: "Play", exact: true }).count()) === 0, { joinLabel, loads: cLoads });
   await c2.close();
 
   // --- 4. (#492) The title's How to play retries on every press, the first one after the route recovers included.

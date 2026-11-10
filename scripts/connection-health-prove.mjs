@@ -147,7 +147,8 @@ if (process.argv.includes("--host-fixture")) {
       window.__emberisle.getState().hostTable();
     });
     await page.getByTestId("table-code").waitFor();
-    assert.match(await page.getByTestId("connection-status").innerText(), /^Reachable$/);
+    assert.equal(await page.getByTestId("connection-status").count(), 0, "Reachable stays off the lobby");
+    assert.equal(await page.evaluate(() => window.__emberisle.getState().connectionHealth.status), "Reachable", "host link is up");
     const code = await page.evaluate(() => window.__emberisle.getState().code);
     for (const name of ["Tide", "Pine", "Cloud"]) {
       const c = await client(port); c.send({ type: "hello", code, name }); await c.next("welcome"); c.send({ type: "ready", value: true });
