@@ -1,0 +1,85 @@
+ok   SeatNeeds: 1.71 kB gzip, ceiling 1.90 kB
+ok   LobbyView: 2.48 kB gzip, ceiling 2.50 kB
+ok   LobbyWaitBox: 2.04 kB gzip, ceiling 2.10 kB
+ok   LobbyTicTacToe: 1.39 kB gzip, ceiling 1.60 kB
+ok   table: 2.18 kB gzip, ceiling 2.20 kB
+ok   haptics: 1.06 kB gzip, ceiling 1.20 kB
+ok   index: 126.23 kB gzip, ceiling 127.00 kB
+ok   IslandCanvas: 201.01 kB gzip, ceiling 203.50 kB
+ok   jelly-board: 8.18 kB gzip, ceiling 9.00 kB
+ok   hex-jelly: 46.88 kB gzip, ceiling 50.00 kB
+ok   harbor-jelly: 10.74 kB gzip, ceiling 11.50 kB
+ok   online: 6.40 kB gzip, ceiling 9.00 kB
+ok   Reactions: 2.49 kB gzip, ceiling 2.60 kB
+ok   sound-extra: 0.23 kB gzip, ceiling 0.60 kB
+ok   trade-sound: 0.52 kB gzip, ceiling 0.60 kB
+ok   emotes: 0.46 kB gzip, ceiling 0.60 kB
+ok   sheets: 7.49 kB gzip, ceiling 7.80 kB
+ok   SetupReference: 1.86 kB gzip, ceiling 2.20 kB
+ok   moments: 4.33 kB gzip, ceiling 5.70 kB
+ok   VictoryTargetSelect: 0.62 kB gzip, ceiling 1.00 kB
+ok   DockInspection: 1.03 kB gzip, ceiling 1.20 kB
+ok   HandRates: 0.65 kB gzip, ceiling 0.80 kB
+ok   TradeResource: 0.83 kB gzip, ceiling 1.65 kB
+ok   OpenTables: 1.24 kB gzip, ceiling 1.30 kB
+ok   WayfarerOptions: 0.49 kB gzip, ceiling 0.50 kB
+ok   TurnExtensionVote: 1.20 kB gzip, ceiling 1.40 kB
+ok   TradeToast: 2.67 kB gzip, ceiling 3.00 kB
+ok   losses: 1.41 kB gzip, ceiling 1.60 kB
+ok   x: 0.17 kB gzip, ceiling 0.30 kB
+ok   ProfileSheet: 5.94 kB gzip, ceiling 6.00 kB
+ok   focus-trap: 0.54 kB gzip, ceiling 0.55 kB
+ok   ProfileForms: 2.17 kB gzip, ceiling 2.35 kB
+ok   eye-off: 0.29 kB gzip, ceiling 0.31 kB
+ok   ProfileRecords: 2.25 kB gzip, ceiling 2.35 kB
+ok   ProfileRecovery: 3.03 kB gzip, ceiling 3.20 kB
+ok   LoadingScreen: 2.40 kB gzip, ceiling 2.60 kB
+ok   SoundSheet: 1.78 kB gzip, ceiling 2.00 kB
+ok   use-muted-seats: 0.42 kB gzip, ceiling 0.50 kB
+ok   WinList: 1.30 kB gzip, ceiling 1.36 kB
+ok   Sticker: 0.94 kB gzip, ceiling 1.05 kB
+ok   ambience: 0.46 kB gzip, ceiling 0.55 kB
+ok   PlayAgain: 0.41 kB gzip, ceiling 0.45 kB
+ok   SeatNeeds growth: base 1703 B, PR 1705 B, +2 B, allowance 200 B
+ok   LobbyView growth: base 2483 B, PR 2483 B, +0 B, allowance 200 B
+ok   LobbyWaitBox growth: base 2042 B, PR 2042 B, +0 B, allowance 200 B
+ok   LobbyTicTacToe growth: base 1392 B, PR 1393 B, +1 B, allowance 200 B
+ok   table growth: base 2183 B, PR 2183 B, +0 B, allowance 200 B
+ok   haptics growth: base 1064 B, PR 1064 B, +0 B, allowance 200 B
+ok   index growth: base 126196 B, PR 126228 B, +32 B, allowance 400 B
+ok   IslandCanvas growth: base 201013 B, PR 201013 B, +0 B, allowance 663 B
+ok   jelly-board growth: base 8180 B, PR 8181 B, +1 B, allowance 200 B
+ok   hex-jelly growth: base 46877 B, PR 46877 B, +0 B, allowance 200 B
+ok   harbor-jelly growth: base 10737 B, PR 10738 B, +1 B, allowance 200 B
+ok   online growth: base 6406 B, PR 6404 B, -2 B, allowance 200 B
+ok   Reactions growth: base 2489 B, PR 2488 B, -1 B, allowance 200 B
+ok   sound-extra growth: base 225 B, PR 225 B, +0 B, allowance 200 B
+ok   trade-sound growth: base 522 B, PR 522 B, +0 B, allowance 200 B
+ok   emotes growth: base 463 B, PR 463 B, +0 B, allowance 200 B
+ok   sheets growth: base 7494 B, PR 7493 B, -1 B, allowance 200 B
+ok   SetupReference growth: base 1857 B, PR 1858 B, +1 B, allowance 200 B
+ok   moments growth: base 4328 B, PR 4327 B, -1 B, allowance 200 B
+ok   VictoryTargetSelect growth: base 616 B, PR 618 B, +2 B, allowance 200 B
+ok   DockInspection growth: base 1030 B, PR 1031 B, +1 B, allowance 200 B
+ok   HandRates growth: base 647 B, PR 647 B, +0 B, allowance 200 B
+ok   TradeResource growth: base 832 B, PR 832 B, +0 B, allowance 200 B
+ok   OpenTables growth: base 1240 B, PR 1240 B, +0 B, allowance 200 B
+ok   WayfarerOptions growth: base 488 B, PR 489 B, +1 B, allowance 200 B
+ok   TurnExtensionVote growth: base 1205 B, PR 1204 B, -1 B, allowance 200 B
+ok   TradeToast growth: base 2670 B, PR 2671 B, +1 B, allowance 200 B
+ok   losses growth: base 1411 B, PR 1409 B, -2 B, allowance 200 B
+ok   x growth: base 169 B, PR 168 B, -1 B, allowance 200 B
+ok   ProfileSheet growth: base 5943 B, PR 5943 B, +0 B, allowance 200 B
+ok   focus-trap growth: base 534 B, PR 536 B, +2 B, allowance 200 B
+ok   ProfileForms growth: base 2166 B, PR 2167 B, +1 B, allowance 200 B
+ok   eye-off growth: base 290 B, PR 288 B, -2 B, allowance 200 B
+ok   ProfileRecords growth: base 2247 B, PR 2248 B, +1 B, allowance 200 B
+ok   ProfileRecovery growth: base 3030 B, PR 3032 B, +2 B, allowance 200 B
+ok   LoadingScreen growth: base 2399 B, PR 2399 B, +0 B, allowance 200 B
+ok   SoundSheet growth: base 1785 B, PR 1784 B, -1 B, allowance 200 B
+ok   use-muted-seats growth: base 416 B, PR 418 B, +2 B, allowance 200 B
+ok   WinList growth: base 1298 B, PR 1299 B, +1 B, allowance 200 B
+ok   Sticker growth: base 944 B, PR 945 B, +1 B, allowance 200 B
+ok   ambience growth: base 461 B, PR 461 B, +0 B, allowance 200 B
+ok   PlayAgain growth: base 413 B, PR 413 B, +0 B, allowance 200 B
+size-prove: all chunks inside ceiling and growth allowance

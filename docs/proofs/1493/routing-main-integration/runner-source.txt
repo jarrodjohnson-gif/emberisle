@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -u
+export PATH=/workspace/work/runtime/node_modules/node/bin:$PATH
+out=/workspace/work/resume-nov9/1493-routing-integration
+mkdir -p "$out"
+[ ! -e "$out/started" ] || exit 2
+cd /workspace/work/1493 || exit 2
+[ "$(git rev-parse HEAD)" = 1864e908d521dcb572d6911ee0bb63821d9f028c ] || exit 2
+git diff --quiet HEAD -- || exit 2
+date -u +%FT%TZ > "$out/started"
+git rev-parse HEAD > "$out/source-head"
+printf '%s\n' 59d9fedfb147e410a68bb584cb7a0a1ba8698ec5 > "$out/base-head"
+node --version > "$out/node-version"
+check() {
+ name=$1; shift
+ "$@" > "$out/$name.log" 2>&1
+ result=$?
+ printf '%s\n' "$result" > "$out/$name.exit"
+ printf '%s exit %s\n' "$name" "$result"
+ tail -n 3 "$out/$name.log"
+ return "$result"
+}
+check typecheck npm run typecheck || exit $?
+check feature-build env NODE_ENV=production npm run build || exit $?
+cd /workspace/work/1493-prod-base || exit 2
+git diff --quiet HEAD -- || exit 2
+git checkout --detach 59d9fedfb147e410a68bb584cb7a0a1ba8698ec5 > "$out/base-checkout.log" 2>&1 || exit $?
+check base-build env NODE_ENV=production npm run build || exit $?
+cd /workspace/work/1493 || exit 2
+check size node scripts/size-prove.mjs --base /workspace/work/1493-prod-base || exit $?
+check health npm run connection-health-prove || exit $?
+date -u +%FT%TZ > "$out/ended"
