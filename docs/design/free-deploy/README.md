@@ -10,7 +10,12 @@ Jarrod asked: "get this game deployed permanently somewhere free".
 `docs/DECISIONS.md` (2026-10-27) parks the Cloudflare papers #789–795 and keeps hosting on his Mac.
 That row states the goal: hosting that runs 24/7 or starts on command.
 The reason is sharing the game on Threads and Instagram.
-This paper answers the new request without porting the host.
+The owner clarified the requirement on 2026-11-03 (card `q1240-plan`).
+Hosting need not run 24/7 throughout the week.
+However, during active play it must stay up with zero drops.
+Continuous weekly uptime is optional.
+Zero drops during an active game session are mandatory.
+This paper answers the request under that rule without porting the host.
 
 Terms used below:
 
@@ -211,6 +216,17 @@ Reasons:
 - Measured memory is a small part of the free allowance.
 - Its weak point is idle reclaim. Plan B covers it at no cost.
 
+### Meeting the "no drops during a game" requirement
+
+The owner requires zero drops while a game is being played.
+This shapes the hosting choices and operational design:
+
+1. **No mid-game idle reclaim.** Oracle's idle reclaim evaluates a 7-day trailing average. It never terminates a VM mid-game while active play occurs.
+2. **Process stability.** The host runs under systemd with `Restart=always`. It flushes room states on `SIGTERM`.
+3. **No proxy timeouts.** The Cloudflare named tunnel runs on loopback beside the host. It preserves WebSocket ping intervals without external proxy cutoffs.
+4. **The Mac question.** Because 24/7 uptime is not required, Jarrod's Mac with the named tunnel completely satisfies the requirement. The Mac has zero cloud idle-reclaim risk. It gives zero drops during scheduled game sessions.
+5. **Combined model.** The Oracle VM provides casual on-demand access between sessions. The Mac with the named tunnel serves as the zero-drop anchor for scheduled game nights.
+
 ### Runbook
 
 #### Jarrod does these himself
@@ -324,11 +340,10 @@ Those proofs run against stubs in CI. Only the live checks below need the VM.
 ## 4. Questions for Jarrod
 
 1. **Which home: Oracle Always Free VM, or keep the Mac only?**
-   Oracle needs a card and a phone number to sign up, for "most users".
-   Oracle says the card "will not be charged unless you upgrade."
-   So part of this choice is: are you willing to give Oracle a card?
-   Oracle may also reclaim the VM as idle, so the Mac stays plan B.
-   Recommendation: Oracle. It is the only verified free option that stays on without the Mac.
+   The owner clarified that 24/7 uptime is not needed, but zero drops during games are essential.
+   The Mac with a named tunnel gives zero drops during games with no cloud setup.
+   The Oracle VM stays online when the Mac is asleep, but faces potential 7-day idle reclaim.
+   Recommendation: use the Mac with the named tunnel for game sessions, or Oracle VM with Mac fallback.
 2. **Which domain for the public link?**
    Options: `play.hightidewash.net` after moving its Webflow records to Cloudflare, or a new domain.
    Recommendation: `hightidewash.net`, since it is free. A new domain costs money (price not checked).
