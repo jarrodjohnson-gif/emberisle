@@ -65,7 +65,7 @@
   animation-name: seat-tag-right;
 }
 .seat-public-gains[data-scope="rail"] > .seat-public-pill { flex: 0 0 auto; height: auto; min-width: 40px; padding: 0 8px; font-size: 18px; line-height: 20px; }
-.seat-public-gains[data-scope="rail"] > .seat-public-pill:first-child { padding-left: 20px; }
+.seat-public-gains[data-scope="rail"] > .seat-public-pill:first-child { min-width: 52px; padding-left: 20px; }
 .seat-public-gains[data-scope="rail"] > .seat-public-pill > svg { width: 18px; height: 18px; }
 /* A chat bubble on a seat with a tag hangs clear of it: below it on the strip, right of it on the rail. */
 .seat-card:has(> .seat-public-gains[data-scope="seat"]) .seat-bubble { margin-top: calc(var(--seat-cue-reach, 52px) - 4px); }
