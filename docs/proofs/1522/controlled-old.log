@@ -1,0 +1,49 @@
+ok needs validation and shared local/host expiry rules
+DIAG connect p0 NEED
+DIAG connect p1 NEED
+DIAG connect p2 NEED
+ok real need frames: public seat projection, malformed/duplicate/oversized rejection; game and clocks unchanged
+DIAG action p0 pass 0 p0 main
+DIAG connect p0 NEED
+DIAG connect p1 NEED
+DIAG connect p2 NEED
+DIAG connect watch NEED
+DIAG action p1 roll 1 p1 roll
+DIAG action p1 pass 2 p1 main
+DIAG action p2 roll 3 p2 roll
+DIAG action p2 pass 4 p2 main
+DIAG action p0 roll 5 p0 roll
+DIAG action p0 pass 6 p0 main
+ok restart/rejoin keeps one remaining own turn; second own turn clears; watchers cannot change needs
+DIAG action p1 roll 7 p1 roll
+DIAG action p1 tradeBank 8 p1 main
+DIAG action p0 tradeAnswer 9 p1 main
+ok bank and player trades clear only needs satisfied by received goods, for both participants
+ok need updates share the ACT rate limit
+DIAG connect p0 NEED
+DIAG connect p1 NEED
+DIAG connect p2 NEED
+ok real start transition clears restored needs from every public seat
+DIAG connect p0 NEED
+DIAG connect p1 NEED
+DIAG connect p2 NEED
+ok finished-game need ACT is refused with public state and existing need preserved
+ok real rematch transition clears prior needs from every public seat
+DIAG connect p0 NEED
+DIAG connect p2 NEED
+DIAG action p2 roll 1 p2 roll
+DIAG action p2 pass 2 p2 main
+CONTROL delay p0 roll-state delivery200ms 3
+DIAG action p0 roll 2 p2 main
+CONTROL delay p0 roll-state delivery200ms 3
+DIAG action p0 pass 3 p0 roll
+file:///workspace/work/1494/server/.codex-p-1522-needs-diagnostic.mjs:58
+   await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error(`timeout ${pid} ${type}: ${stderr} CONTEXT ${JSON.stringify({roomCode,origin,ws:ws.readyState,hostExit:host?.exitCode,state:c.state?{seq:c.state.game.seq,current:c.state.game.current,phase:c.state.game.phase}:null,inbox:c.inbox.map(m=>m.type),trace:c.trace.slice(-14)})}`)),Math.max(1,deadline-Date.now()));c.changed=()=>{clearTimeout(timer);c.changed=null;resolve();};});}
+                                                                          ^
+
+Error: timeout p0 state:  CONTEXT {"roomCode":"NEED","origin":"Error: wait origin\n    at c.next (file:///workspace/work/1494/server/.codex-p-1522-needs-diagnostic.mjs:55:55)\n    at c.act (file:///workspace/work/1494/server/.codex-p-1522-needs-diagnostic.mjs:66:210)\n    at file:///workspace/work/1494/server/.codex-p-1522-needs-diagnostic.mjs:179:37","ws":1,"hostExit":null,"state":{"seq":3,"current":"p0","phase":"roll"},"inbox":["log","seats","seats","log","log","seats","state","rolled","log","log","state","seats","log","error","state","error"],"trace":[{"at":3158,"dir":"in","type":"seats"},{"at":3159,"dir":"in","type":"state","seq":1,"phase":"roll","current":"p2"},{"at":3165,"dir":"in","type":"rolled"},{"at":3165,"dir":"in","type":"log"},{"at":3165,"dir":"in","type":"log"},{"at":3166,"dir":"in","type":"state","seq":2,"phase":"main","current":"p2"},{"at":3167,"dir":"in","type":"seats"},{"at":3167,"dir":"in","type":"log"},{"at":3168,"dir":"out","type":"roll","seq":2,"phase":"main","current":"p2"},{"at":3168,"dir":"in","type":"error","error":"The table has updated. Please try again."},{"at":3368,"dir":"in","type":"state","seq":3,"phase":"roll","current":"p0"},{"at":3368,"dir":"out","type":"pass","seq":3,"phase":"roll","current":"p0"},{"at":3369,"dir":"in","type":"state","seq":3,"phase":"roll","current":"p0"},{"at":3370,"dir":"in","type":"error","error":"Finish your turn first."}]}
+    at Timeout._onTimeout (file:///workspace/work/1494/server/.codex-p-1522-needs-diagnostic.mjs:58:75)
+    at listOnTimeout (node:internal/timers:585:17)
+    at process.processTimers (node:internal/timers:521:7)
+
+Node.js v22.23.4

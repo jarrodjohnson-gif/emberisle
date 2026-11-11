@@ -23,14 +23,14 @@ const check = (ok, what, data) => {
 // The fit the hole asks for right now, whether `__isle.fit` is it, and (once settled) the camera and corners against it.
 const look = (page) =>
   page.evaluate(async () => {
-    const { defaultView, fitDiorama, fitOrtho, OVERHEAD_LEAN } = await import("/src/lib/scene/mobile-fit.ts");
+    const { defaultView, fitDiorama, playOrtho } = await import("/src/lib/scene/mobile-fit.ts");
     const isle = window.__isle;
     const c = document.querySelector("canvas");
     const hole = isle.insets();
     // The view is the default for the canvas's shape (#597): overhead upright, the diorama on its side. Overhead, the frustum
     // is the fit; diorama, the lens is.
     const view = defaultView(c.clientWidth, c.clientHeight, true);
-    const want = view === "overhead" ? fitOrtho(c.clientWidth, c.clientHeight, hole, OVERHEAD_LEAN) : fitDiorama(c.clientWidth, c.clientHeight, hole);
+    const want = view === "overhead" ? playOrtho(c.clientWidth, c.clientHeight, hole, true) : fitDiorama(c.clientWidth, c.clientHeight, hole);
     const keys = Object.keys(want);
     const fresh = isle.view === view && isle.fit !== null && keys.every((k) => Math.abs(want[k] - isle.fit[k]) < 1e-6);
     const onCamera =

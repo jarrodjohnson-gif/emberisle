@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import type { PlayerState } from "@/lib/game/types";
 import { fortuneBreakdown } from "@/lib/game/fortunes";
-import { cards, hiddenCount, publicVP, publicScoreBreakdown } from "@/lib/game/rules";
+import { cards, hiddenCount, publicVP, publicScoreBreakdown, roadLength } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import type { Seat } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
@@ -94,8 +94,10 @@ export function PlayerMenu({ player: p, className, sheet }: { player: PlayerStat
     ["Goods", cards(p)],
     ["Fortunes", p.fortunes ?? hiddenCount(p)],
     ["Points", publicVP(state, p.id)],
-    ["Wayfarers played", p.knightsPlayed],
+    [sheet && state.largestArmy === p.id ? "Largest army" : "Wayfarers played", p.knightsPlayed],
   ];
+  // #1509: the phone strip has no tallies, so the sheet carries the path length too, and names an award its seat holds.
+  if (sheet) facts.splice(3, 0, [state.longestRoad === p.id ? "Longest path" : "Path length", roadLength(state, p.id)]);
   if (own && hiddenCount(p) > 0) facts.push(["Your fortunes", fortuneBreakdown(p)]);
   if (seatAway(seats, p)) facts.push(["Connection", "Away"]);
 
