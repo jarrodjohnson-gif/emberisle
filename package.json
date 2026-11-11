@@ -129,6 +129,7 @@
     "contrast-prove": "node scripts/contrast-prove.mjs",
     "button-system-prove": "node scripts/button-system-prove.mjs",
     "title-prove": "node scripts/title-prove.mjs",
+    "join-link-prove": "node scripts/join-link-prove.mjs",
     "storage-blocked-prove": "node scripts/storage-blocked-prove.mjs",
     "howto-prove": "node scripts/howto-prove.mjs",
     "help-sheets-prove": "node scripts/help-sheets-prove.mjs",

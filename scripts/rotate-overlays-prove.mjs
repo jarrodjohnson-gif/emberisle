@@ -126,8 +126,7 @@ async function table(seats, width, height) {
     g.setDefaultTimeout(STEP_MS);
     g.on("pageerror", (e) => errors.push(`guest: ${e}`));
     await g.goto(`${URL_}&code=${code}`);
-    await g.waitForFunction((c) => document.querySelector('input[aria-label="Join code"]')?.value === c, code, { timeout: STEP_MS });
-    await g.getByRole("textbox", { name: "Join code" }).press("Enter");
+    await g.getByRole("button", { name: `Join table ${code}`, exact: true }).click({ timeout: STEP_MS });
     await g.getByTestId("table-code").waitFor({ timeout: STEP_MS });
     await g.getByRole("button", { name: "Ready", exact: true }).press("Enter");
     p.guests.push(g);
