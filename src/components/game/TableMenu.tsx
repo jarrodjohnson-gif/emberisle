@@ -216,7 +216,7 @@ export function TableMenu() {
               {haptics.row}
               {/* The sea's look; the choice is remembered and overrides the GPU probe (docs/design/crystal-water.md).
                   The label sits under the icon, same as View, so the choices share the row (#1501). */}
-              <div role="group" aria-label="Water" data-testid="water-toggle" className="flex h-11 min-w-0 items-center gap-2 px-3 text-body">
+              <div role="group" aria-label="Water" data-testid="water-toggle" className="flex min-w-0 items-center gap-2 px-3 py-1 text-body">
                 <span className="flex shrink-0 flex-col items-center leading-none">
                   <Waves className={ICON} />
                   Water
@@ -232,8 +232,9 @@ export function TableMenu() {
               {/* The camera in play (#597): the tilted diorama or the overhead board; remembered like the water. Unchosen, it shows
                   the renderer's default for the screen's shape. #1501: the label sits under the icon so the two choices share
                   the row and stay inside the panel at phone width. The row keeps the px-3 inset of every other row. Text stays
-                  15 px; each choice stays at least 44 px. */}
-              <div role="group" aria-label="View" data-testid="view-toggle" className="flex h-11 min-w-0 items-center gap-2 px-3 text-body">
+                  15 px; each choice stays at least 44 px. Owner q1503-menu-fit D: py-1 on both rows leaves an 8 px gap
+                  between the Water and View choice boxes, so a selected box never touches the one below it. */}
+              <div role="group" aria-label="View" data-testid="view-toggle" className="flex min-w-0 items-center gap-2 px-3 py-1 text-body">
                 <span className="flex shrink-0 flex-col items-center leading-none">
                   <Box className={ICON} />
                   View
