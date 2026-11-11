@@ -82,6 +82,51 @@ try {
       return bad;
     });
     check(outside.length === 0, `${v.tag}: every control sits inside the menu`, JSON.stringify(outside));
+    // #1501 review: Water and View keep the same left and right inset as the other rows (How to play is the reference):
+    // the icon-and-label column starts where the other rows' icons start, and the last choice ends a row inset short of
+    // the panel's edge. Their two choices still share one line, each at least 44x44.
+    const inset = await menu.evaluate((el) => {
+      const ref = [...el.querySelectorAll("button")].find((b) => b.textContent.trim() === "How to play");
+      const refBox = ref.getBoundingClientRect();
+      const refStyle = getComputedStyle(ref);
+      const refIcon = ref.querySelector("svg").getBoundingClientRect();
+      return ["water-toggle", "view-toggle"].map((id) => {
+        const row = el.querySelector(`[data-testid="${id}"]`);
+        const box = row.getBoundingClientRect();
+        const style = getComputedStyle(row);
+        const label = row.firstElementChild.getBoundingClientRect();
+        const choices = [...row.querySelectorAll("button")].map((b) => b.getBoundingClientRect());
+        const last = choices.at(-1);
+        return {
+          id,
+          padLeft: style.paddingLeft,
+          padRight: style.paddingRight,
+          refPadLeft: refStyle.paddingLeft,
+          refPadRight: refStyle.paddingRight,
+          rowLeft: Math.round((box.left - refBox.left) * 10) / 10,
+          rowRight: Math.round((box.right - refBox.right) * 10) / 10,
+          labelLeft: Math.round((label.left - refIcon.left) * 10) / 10,
+          rightGap: Math.round((refBox.right - last.right) * 10) / 10,
+          oneLine: choices.length === 2 && Math.abs(choices[0].top - choices[1].top) < 1,
+          minWidth: Math.round(Math.min(...choices.map((c) => c.width)) * 10) / 10,
+          minHeight: Math.round(Math.min(...choices.map((c) => c.height)) * 10) / 10,
+        };
+      });
+    });
+    for (const r of inset) {
+      const pad = parseFloat(r.refPadRight);
+      const ok =
+        r.padLeft === r.refPadLeft &&
+        r.padRight === r.refPadRight &&
+        Math.abs(r.rowLeft) <= 1 &&
+        Math.abs(r.rowRight) <= 1 &&
+        Math.abs(r.labelLeft) <= 1 &&
+        r.rightGap >= pad - 1 &&
+        r.oneLine &&
+        r.minWidth >= 44 &&
+        r.minHeight >= 44;
+      check(ok, `${v.tag}: ${r.id} keeps the other rows' inset and its choices share the row`, JSON.stringify(r));
+    }
     await ctx.close();
   }
   for (const v of VIEWS) {
