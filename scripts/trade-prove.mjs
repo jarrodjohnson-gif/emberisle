@@ -4,8 +4,8 @@
 // stay put and the toast closes everywhere (#1245: a person's offer holds until answered). Zero console errors.
 // #366 / #537: every non-asker's toast is a named region for the offer (or compact demand) that does not take focus.
 // A seat that can pay sees Yes/No; a seat that cannot (#537) sees only "X is looking for …" with Dismiss — no Accept.
-// Escape answers No / Dismiss. A person's offer shows no countdown (#1245); a bot's still does, hidden from screen
-// readers, with a polite line that says "5 seconds left".
+// Escape answers No / Dismiss. No offer shows a countdown (#1245, #1507): a bot's offer still runs out on the host and
+// comes with `seconds`, but its card shows no clock and never says "5 seconds left".
 // Step 4 is the hold lifecycle: a second ask nobody takes is still open past the old 20 s and ends at the asker's Cancel
 // (C answers with Escape, the asker alone hears the No, hands unchanged). Steps 5 and 6 are #537: B has none of the goods asked for and sees the compact demand,
 // C can pay and sees the normal offer; changing B's hand flips its toast without a new offer; Dismiss from B and No from C
@@ -455,15 +455,23 @@ try {
   if (!same(await trades(A), [...offerHeard(want, give, true), "error_002.wav@1"])) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for the expiry`);
   for (const t of [B, C]) if (!same(await trades(t), offerHeard(want, give, false))) throw new Error(`${t.name} heard ${JSON.stringify(await trades(t))} for the expiry`);
   console.log("#609: trade_no plays for the asker only");
-  // #1507 (owner q1504-offer-hold A): a bot's offer holds without countdown (seconds null).
+  // #1507 (owner q1517-bot-offer-stall A): a bot's offer keeps its run-out, so the host sends it with seconds. Injected
+  // into B's socket as the host would send it (6 s here), its card shows no clock and never says "5 seconds left", even
+  // past the 5 s mark. The client reads only `seconds`, so the asker's id stands in for a bot's; these three tabs are all people.
   const botId = again[i].you;
-  await B.page.evaluate(([from]) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "tradeOffer", tradeId: "bot-clock", from, give: { grain: 1 }, want: { wool: 1 }, seconds: null }) }), [botId]);
-  if (await B.page.getByTestId("trade-countdown").count()) throw new Error("a bot's offer shows a countdown clock");
-  if (await B.page.getByTestId("trade-countdown-live").count()) throw new Error("a bot's offer has a polite countdown line");
-  if (await B.page.locator(".trade-clock").count()) throw new Error("a bot's offer has a trade-clock element");
+  await B.page.evaluate(([from]) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "tradeOffer", tradeId: "bot-clock", from, give: { grain: 1 }, want: { wool: 1 }, seconds: 6 }) }), [botId]);
   if (await B.page.getByTestId("trade-toast").count() < 1) throw new Error("a bot's offer toast missing");
+  await sleep(1_500);
+  for (const at of ["at 1.5 s", "past 5 s"]) {
+    if (await B.page.getByTestId("trade-countdown").count()) throw new Error(`a bot's offer shows a countdown clock ${at}`);
+    if (await B.page.getByTestId("trade-countdown-live").count()) throw new Error(`a bot's offer has a polite countdown line ${at}`);
+    if (await B.page.locator(".trade-clock").count()) throw new Error(`a bot's offer has a trade-clock element ${at}`);
+    const text = await B.page.getByTestId("trade-toast").first().textContent();
+    if (/seconds? left|\b\d+ s\b/.test(text)) throw new Error(`a bot's offer card reads "${text}" ${at}`);
+    if (at === "at 1.5 s") await sleep(4_000);
+  }
   await B.page.evaluate(() => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "tradeClosed", tradeId: "bot-clock" }) }));
-  console.log("#1507: a bot's offer holds with no countdown or polite countdown line");
+  console.log("#1507: a bot's offer with seconds shows no countdown and no polite countdown line, at 1.5 s and past 5 s");
   if (vs[0].seq !== again[0].seq) throw new Error("the timeout changed the game");
   for (const n of [0, 1, 2]) if (!same(vs[n].mine, again[n].mine)) throw new Error(`${tabs[n].name}'s hand changed on a timeout`);
   console.log("second offer ended at the asker's Cancel: hands unchanged, toast closed on all 3 tabs");
