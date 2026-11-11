@@ -19,6 +19,8 @@ export interface Seat {
   needs?: Resource[];
   // #1411: the player said they want another game. Only once a game is over; the next game clears it.
   again?: boolean;
+  // #764, #1350: public profile projection of a bound seat.
+  profile?: { profileId: string; displayName?: string };
 }
 
 // What a peek answers (G10): enough to dim taken swatches, no names or pictures.
@@ -124,6 +126,9 @@ export interface TableEvents {
   // Open tables on this host (#833); never includes private codes. Seatless `list` replies only.
   openTables(tables: OpenTableEntry[]): void;
   ttt(msg: TttMsg): void;
+  // #764, #1350: read-only profile card for another seat at the table.
+  tableProfileCard?(msg: { id?: string; card: { profileId: string; displayName: string; catchphrase?: string; [k: string]: unknown } }): void;
+  profileError?(msg: { id?: string; code: string; message: string }): void;
 }
 
 export interface Me {
@@ -182,6 +187,8 @@ export interface TableClient {
   react(emote: string, to?: string): void;
   // Lobby tic-tac-toe: one of the five ttt messages, e.g. ttt("tttMove", { id, cell }).
   ttt(type: "tttInvite" | "tttAnswer" | "tttMove" | "tttAgain" | "tttClose", fields: Record<string, unknown>): void;
+  // #764, #1350: request a read-only profile card for another seat at the table.
+  profileCard(profileId: string): void;
   // The browser says the network or the tab is back: if a backoff timer is pending, dial now. Otherwise nothing.
   wake(): void;
   // Leave on purpose: the host frees a lobby seat at once. `leave: false` only closes, and the seat is held as a drop.
@@ -257,7 +264,7 @@ const LAST_CALL_MS = 1000;
 // Both action IDs and health challenges use 128 random bits, including on plain-HTTP LAN joins.
 const randomNonce = () => crypto.getRandomValues(new Uint8Array(16)).reduce((hex, b) => hex + b.toString(16).padStart(2, "0"), "");
 
-const ALLOWED_EVENTS = ["seats", "rolled", "chat", "react", "tradeOffer", "tradeDeclined", "tradeClosed", "ttt"];
+const ALLOWED_EVENTS = ["seats", "rolled", "chat", "react", "tradeOffer", "tradeDeclined", "tradeClosed", "ttt", "tableProfileCard", "profileError"];
 
 // `giveUpMs` is only for proofs that cannot wait 10 minutes: it stands in for both holds until a welcome says otherwise.
 export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor, giveUpMs?: number): TableClient {
@@ -497,6 +504,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     sound: (id) => send({ type: "sound", id }),
     react: (emote, to) => send({ type: "react", emote, to }),
     ttt: (type, fields) => send({ type, ...fields }),
+    profileCard: (profileId) => send({ type: "tableProfileCard", id: randomNonce(), profileId }),
     // The connection is lost, as when the network goes: recovery starts now. A plain close() waits for the host to
     // answer the closing handshake first, and Chromium waits up to 60 s for that answer (#1442).
     drop: () => {

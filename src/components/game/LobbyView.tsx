@@ -58,7 +58,7 @@ function OwnName({ seat }: { seat: Seat }) {
   );
 }
 
-export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefetchRules, fitCode }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; prefetchRules: () => Promise<boolean>; fitCode: (el: HTMLElement, code: string) => void }) {
+export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, OtherProfileCard, prefetchRules, fitCode }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; OtherProfileCard?: typeof import("./OtherProfileCard").OtherProfileCard; prefetchRules: () => Promise<boolean>; fitCode: (el: HTMLElement, code: string) => void }) {
   const rule = useGame(s => s.tableWayfarerMode);
   const code = useGame(s => s.code);
   const seats = useGame(s => s.seats);
@@ -78,6 +78,8 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
   // #1263: a table-mate's tic-tac-toe invite is a badge on the tab, never a popup.
   const invited = useGame(s => s.ttt?.game?.status === "invited" && s.ttt.game.o === s.seatId);
   const [open, setOpen] = useState(false);
+  const [cardSeat, setCardSeat] = useState<typeof seats[0] | null>(null);
+  const [cardOpener, setCardOpener] = useState<HTMLElement | null>(null);
   const ready = seats.find(s => s.id === seatId)?.ready ?? false;
   const canStart = isHost && seats.length >= 3 && seats.length <= 4 && seats.every(s => s.ready);
   const readyCount = seats.filter(s => s.ready).length;
@@ -145,7 +147,24 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
                 <li key={i} data-testid={s ? `lobby-seat-${s.id}` : undefined} className="lobby-player">
                   <SeatDot color={s?.color ?? "transparent"} className="dot" />
                   <span data-testid="lobby-name" className="lobby-name">
-                    {s?.id === seatId ? <OwnName seat={s} /> : <span className="truncate">{s ? s.name : "Empty"}</span>}
+                    {s?.id === seatId ? (
+                      <OwnName seat={s} />
+                    ) : s ? (
+                      <button
+                        type="button"
+                        data-testid={`lobby-player-${s.id}`}
+                        className="truncate text-left hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
+                        onClick={(e) => {
+                          setCardSeat(s);
+                          setCardOpener(e.currentTarget);
+                        }}
+                        aria-label={`Profile for ${s.name}`}
+                      >
+                        <span className="truncate">{s.name}</span>
+                      </button>
+                    ) : (
+                      <span className="truncate">Empty</span>
+                    )}
                     {s?.host ? <span data-testid="host-tag" className="sr-only"> · host</span> : null}
                   </span>
                   <span className="lobby-player-status">{s ? `${s.host ? "Host · " : ""}${s.bot ? "Bot" : s.away ? "reconnecting…" : s.ready ? "Ready" : "Waiting"}` : ""}</span>
@@ -175,6 +194,7 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
         </div>
       </div>
       {howTo ? <LazyBoundary failed={<Button onClick={() => setHowTo(false)}>Close rules</Button>}><HowTo onClose={() => setHowTo(false)} /></LazyBoundary> : null}
+      {cardSeat && OtherProfileCard ? <OtherProfileCard seat={cardSeat} opener={cardOpener} onClose={() => setCardSeat(null)} /> : null}
     </>
   );
 }
