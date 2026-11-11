@@ -322,7 +322,8 @@ async function practice(viewport, touch) {
     };
   }, touch ? 8 : 6);
   await frames(page);
-  const ownedNumbers = await page.getByTestId("my-numbers").locator("[data-n]").evaluateAll(els => els.map(el => Number(el.dataset.n)));
+  // #1509: the upright phone table has no "pays on" chips, so the owned numbers are read from the state the table draws.
+  const ownedNumbers = await page.evaluate(() => { const g = window.__emberisle.getState(); const st = g.state; const owned = new Set(st.vertices.filter((v) => v.building?.playerId === g.localId).flatMap((v) => v.hexes)); return st.hexes.filter((h) => owned.has(h.id) && h.terrain !== "waste").map((h) => h.pip); });
   if (!ownedNumbers.includes(6) || !ownedNumbers.includes(8)) throw new Error("overlap fixture did not render owned 6 and 8");
   const roll = await clickRoll(page);
   if (roll.dice[0] + roll.dice[1] !== (touch ? 8 : 6)) throw new Error("overlap fixture did not force the clicked roll");

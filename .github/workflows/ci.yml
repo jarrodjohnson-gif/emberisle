@@ -225,6 +225,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run registered-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run roll-off-oracle-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run readme-server-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run spiral-prove
@@ -712,6 +714,8 @@ jobs:
         run: npm run public-score-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run seat-menu-sheet-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run upright-table-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run hand-hidden-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'

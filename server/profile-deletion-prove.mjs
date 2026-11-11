@@ -15,7 +15,7 @@
 //  8. On the store: an interrupted transaction changes nothing, a second deletion is refused, a stale outcome is redacted, and
 //     a hand-edited fingerprint is refused. Curated repository assets are byte-identical throughout.
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -221,6 +221,18 @@ function rowsText(d) {
   return JSON.stringify({ rooms, pending, results: s.results, records: s.records, receipts: s.receipts });
 }
 
+function logMatches(d, x) {
+  for (const dir of [d.rooms, d.results, d.profiles]) {
+    for (const f of existsSync(dir) ? readdirSync(dir) : []) {
+      const full = path.join(dir, f);
+      try {
+        if (!statSync(full).isFile()) continue;
+        if (readFileSync(full, "utf8").includes(x)) console.error(`match ${x} in ${full}`);
+      } catch {}
+    }
+  }
+}
+
 const done = [];
 async function scenario(name, fn) {
   const t = Date.now();
@@ -306,9 +318,14 @@ try {
   });
 
   await scenario("startup redaction is interrupted at each durable boundary and completes before listening", async () => {
+    const deadPid = spawnSync(process.execPath, ["-e", ""]).pid;
+    const planted = path.join(d.results, `.x.json.${deadPid}.abc.tmp`);
+    writeFileSync(planted, JSON.stringify({ tombstoned: A.id }));
     const files = () => [readFileSync(pendingFile(d, PEND), "utf8"), ...["DONE", "PEND", "LIVE"].map((c) => readFileSync(roomFile(d, c), "utf8"))];
     const before = files();
     let h = start(d, { RESULT_FAULT: "redact-before:exit" });
+    const plantedOwn = path.join(d.results, `.x.json.${h.proc.pid}.own.tmp`);
+    writeFileSync(plantedOwn, JSON.stringify({ tombstoned: A.id }));
     assert.equal(await Promise.race([h.exited, h.port.then(() => "listening", () => "exited")]), "SIGKILL", "the host died at its first rewrite");
     assert(!h.out.includes("listening"));
     assert.deepEqual(files(), before, "killed before its first rewrite, the host wrote nothing");
@@ -333,7 +350,10 @@ try {
     assert.deepEqual([s.records[P.Brook.id].games, s.records[P.Brook.id].wins], [2, 2], "the other player is credited");
     assert.deepEqual(s.records[P.Cove.id], was.records[P.Cove.id]);
     assert(!Object.hasOwn(s.records, A.id), "the deleted profile gained no result");
+    assert(!existsSync(planted), "a planted orphan .tmp holding a tombstoned uuid is removed at startup");
+    assert(!existsSync(plantedOwn), "a planted orphan .tmp with the host's own pid is removed at startup");
     const text = rowsText(d);
+    for (const x of [A.id, "Ashling", A.login, A.catchphrase]) if (text.includes(x)) logMatches(d, x);
     for (const x of [A.id, "Ashling", A.login, A.catchphrase]) assert(!text.includes(x), `no stored, pending or frozen row carries ${x}`);
   });
 
@@ -406,6 +426,7 @@ try {
     assert(!Object.hasOwn(s.profiles, A.id) && !Object.hasOwn(s.records, A.id) && !Object.hasOwn(s.logins, A.login), "the deleted profile did not return");
     assert(!readFileSync(roomFile(d, "LIVE") + ".fenced", "utf8").includes(A.id), "the fenced snapshot was redacted before it was set aside");
     const text = rowsText(d);
+    for (const x of [A.id, "Ashling"]) if (text.includes(x)) logMatches(d, x);
     for (const x of [A.id, "Ashling"]) assert(!text.includes(x), `no row carries ${x} after the replay`);
     assert.equal(Object.values(s.profiles).filter((p) => p.mediaKey !== null).length, 0, "no profile inherited the media binding");
   });
@@ -431,14 +452,18 @@ try {
     rmSync(lock, { recursive: true, force: true });
     mkdirSync(lock);
     writeFileSync(path.join(lock, `owner-${process.pid}-${randomBytes(12).toString("hex")}`), String(process.pid));
+    const roomTmp = path.join(d.rooms, "ROOM.tmp");
+    writeFileSync(roomTmp, "room write");
     let h = start(d);
     await h.port;
     await until(() => h.err.includes("profiles: store unavailable (locked); pending outcomes and saved rooms keep any deleted profile until a start with the store available redacts them"), "the unavailable store is logged");
     await until(() => h.err.includes(`holds game ${BROK} at main, but that game already finished; fenced`), "FENC is fenced");
     assert(!h.out.includes("profiles: redacted"), "an unavailable store redacts nothing");
+    assert(existsSync(roomTmp), "a host on a locked store skips sweep and leaves temp files");
     for (const f of kept) assert(readFileSync(f, "utf8").includes(A.id), `${path.basename(f)} still names the profile`);
     await h.stop();
     rmSync(lock, { recursive: true });
+    rmSync(roomTmp, { force: true });
 
     h = start(d);
     await h.port;
@@ -473,6 +498,8 @@ try {
     await h.stop();
     assert(!existsSync(roomFile(d, "FENC")) && !existsSync(roomFile(d, "OLDF")));
     assert.deepEqual(kept.map((f) => readFileSync(f, "utf8")), after, "nothing changed on the third start");
+    const tmps = [d.rooms, d.results, d.profiles].flatMap((dir) => (existsSync(dir) ? readdirSync(dir).filter((n) => n.endsWith(".tmp")) : []));
+    assert.deepEqual(tmps, [], "after the final start the three folders hold no hidden .tmp file");
   });
 
   await scenario("on the store: interrupted, repeated and stale deletions", async () => {

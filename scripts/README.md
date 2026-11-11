@@ -34,7 +34,7 @@ The issue column lists numbers named in each script's opening comment.
 | `shots.mjs` | `node scripts/shots.mjs` | Writes screen captures under `test-results/shots/` and prints rendering measurements. | No | #125, #310 |
 | `stale-pr-sweeper.mjs` | `node scripts/stale-pr-sweeper.mjs` | Records activity and closes stale PRs when `STALE_PR_SWEEPER=on`; otherwise prints `disabled`. | Yes: `stale-pr-sweeper.yml` | None |
 | `trade-map.test.mjs` | `npm run trade-map-test` | Checks trade previews and settlement, writing `test-results/trade-map-*.png`. | Yes: `trade-map.yml`, `ci.yml` (`npm run trade-map-test`) | #536 |
-| Libraries | Imported or loaded by scripts; no standalone command. | `audio-level-lib.mjs`, `roll-off-oracle.mjs`, `fixtures/`, `hex-jelly.html`, `hex-jelly-lineup.html`, and `jelly-board.html` support scripts and proofs. | Through callers | #1073, #1286 |
+| Libraries | Imported or loaded by scripts; no standalone command. | `audio-level-lib.mjs`, `proof-browser.mjs`, `roll-off-oracle.mjs`, `fixtures/`, `hex-jelly.html`, `hex-jelly-lineup.html`, and `jelly-board.html` support scripts and proofs. | Through callers | #1073, #1281, #1286 |
 
 The `emote.mjs` command copies the header's arrow notation; the arrow describes output, not a shell operator.
 The `trade-map.test.mjs` command copies its header; choose an installed browser path when running locally.
