@@ -1,6 +1,9 @@
-/* #827: the other-seat cue is the #1242 goods pill (hand-motion.css .goods-tab). A gain is that light
-   pill with one green outline, not a per-good colour. A loss is the same red pill. The seat is not a
-   goods card, so the pills sit in the seat instead of hanging above it. The fade is the goods cue. */
+/* #827 (owner q1508-gain-show A): another seat's public gain is a solid green pill with white text and a loss a solid
+   red pill with white text, the same green and red as the hand's +1 and -1 and the build preview (--gain, --loss).
+   The pills hang just under the seat, over open sea, so its name and score stay readable. Each group is centred
+   under its own seat and may be at most one strip gap wider than it, so it never reaches a neighbour's group: on a
+   narrow seat the two pills of a trade stack. On the desktop rail the seats stack, so the open sea is to the right of
+   the seat and the group hangs there. The fade is the goods cue. */
 @keyframes goods-cue {
   0% { opacity: 0; }
   4%, 83.3334% { opacity: 1; }
@@ -8,14 +11,25 @@
 }
 .seat-public-gains {
   position: absolute;
-  inset: 0;
+  top: calc(100% + 6px);
+  left: 50%;
   z-index: 20;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
-  gap: 2px;
-  padding: 0 4px;
+  justify-content: center;
+  gap: 4px;
+  width: max-content;
+  max-width: calc(100% + 4px);
+  transform: translateX(-50%);
   pointer-events: none;
+}
+.seat-public-gains[data-scope="rail"] {
+  top: 50%;
+  left: calc(100% + 6px);
+  flex-wrap: nowrap;
+  max-width: none;
+  transform: translateY(-50%);
 }
 .seat-public-pill {
   display: inline-flex;
@@ -30,16 +44,12 @@
   white-space: nowrap;
   font: 700 14px/24px var(--font-numeral);
   font-variant-numeric: tabular-nums;
-  background: var(--color-raised);
-  color: var(--ink);
-  box-shadow: inset 0 0 0 1.5px var(--gain), 0 2px 6px rgb(24 51 45 / 0.25);
+  background: var(--gain);
+  color: #fff;
+  box-shadow: 0 2px 6px rgb(24 51 45 / 0.25);
   animation: goods-cue 3000ms var(--ease-out) both;
 }
-.seat-public-pill[data-sign="-"] {
-  background: var(--loss);
-  color: #fff;
-  box-shadow: inset 0 0 0 1.5px var(--loss), 0 2px 6px rgb(24 51 45 / 0.25);
-}
+.seat-public-pill[data-sign="-"] { background: var(--loss); }
 .seat-public-pill > svg { display: block; width: 1em; height: 1em; }
 @media (min-width: 1280px) and (pointer: fine) and (min-height: 481px) {
   .seat-public-pill { min-width: 50px; height: 28px; padding: 0 10px; font-size: 17.5px; line-height: 28px; }

@@ -36,7 +36,8 @@ useGame.subscribe((next, previous) => {
   }
 });
 
-// Portals attach to existing seat boxes without changing card dimensions or the map hole.
+// Portals attach to existing seat boxes without changing card dimensions or the map hole. The group hangs outside the
+// box (under a strip seat, right of a rail seat: seat-public-gains.css), so it never covers the name or the score.
 export function SeatPublicGains({ scope }: { scope: 'rail' | 'seat' }) {
   const changes = useCues(s => s.changes);
   const players = useGame(s => s.state?.players);
@@ -51,7 +52,7 @@ export function SeatPublicGains({ scope }: { scope: 'rail' | 'seat' }) {
     const active = RESOURCES.filter(r => change.goods[r]);
     const label = active.map(r => `${change.goods[r]! > 0 ? '+' : '−'}${Math.abs(change.goods[r]!)} ${RESOURCE_LABEL[r]}`).join(', ');
     return createPortal(
-      <span data-testid="seat-public-gains" data-player={change.player} role="status" aria-label={`${name}: ${label}`}
+      <span data-testid="seat-public-gains" data-player={change.player} data-scope={scope} role="status" aria-label={`${name}: ${label}`}
         className="seat-public-gains">
         {active.map(resource => {
           const n = change.goods[resource]!, Icon = SYMBOLS[resource];
