@@ -37,7 +37,8 @@ useGame.subscribe((next, previous) => {
 });
 
 // Portals attach to existing seat boxes without changing card dimensions or the map hole. The group hangs outside the
-// box (under a strip seat, right of a rail seat: seat-public-gains.css), so it never covers the name or the score.
+// box as a tag tucked behind the seat's edge (under a strip seat, right of a rail seat: seat-public-gains.css), so it
+// never covers the name or the score.
 export function SeatPublicGains({ scope }: { scope: 'rail' | 'seat' }) {
   const changes = useCues(s => s.changes);
   const players = useGame(s => s.state?.players);
@@ -49,16 +50,19 @@ export function SeatPublicGains({ scope }: { scope: 'rail' | 'seat' }) {
     const anchor = document.querySelector<HTMLElement>(`.seat-card[data-testid="${scope}-${change.player}"]`);
     if (!anchor) return null;
     const name = players?.find(p => p.id === change.player)?.name ?? '';
-    const active = RESOURCES.filter(r => change.goods[r]);
+    // Gains on the left, losses on the right, at every seat (owner q1530-gain-finalists A).
+    const active = RESOURCES.filter(r => change.goods[r]! > 0).concat(RESOURCES.filter(r => change.goods[r]! < 0));
     const label = active.map(r => `${change.goods[r]! > 0 ? '+' : '−'}${Math.abs(change.goods[r]!)} ${RESOURCE_LABEL[r]}`).join(', ');
     return createPortal(
       <span data-testid="seat-public-gains" data-player={change.player} data-scope={scope} role="status" aria-label={`${name}: ${label}`}
-        className="seat-public-gains">
+        className="seat-public-gains"
+        // How far the tag reaches past the seat, so a chat bubble on this seat hangs clear of it (seat-public-gains.css).
+        ref={el => { if (el) anchor.style.setProperty('--seat-cue-reach', `${scope === 'rail' ? el.offsetWidth : el.offsetHeight}px`); }}>
         {active.map(resource => {
           const n = change.goods[resource]!, Icon = SYMBOLS[resource];
           return <span key={resource} data-testid="seat-public-pill" data-sign={n > 0 ? '+' : '-'} data-resource={resource}
             className="seat-public-pill" aria-hidden="true">
-            {n > 0 ? '+' : '−'}{Math.abs(n)}<Icon width={14} height={14} />
+            <Icon width={17} height={17} /><span>{n > 0 ? '+' : '−'}{Math.abs(n)}</span>
           </span>;
         })}
       </span>, anchor, `${scope}-${change.player}`,
