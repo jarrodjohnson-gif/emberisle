@@ -19,6 +19,8 @@ import { cards, hiddenCount, publicVP, roadLength } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { cn } from "@/lib/utils";
 
+const publicGains = chunk(() => import("@/components/game/SeatPublicGains"));
+const SeatPublicGains = publicGains.pick(module => module.SeatPublicGains);
 const needs = chunk(() => import("@/components/game/SeatNeeds"));
 const SeatNeeds = needs.pick(module => module.SeatNeeds);
 
@@ -198,6 +200,7 @@ export function SeatRail({ actor }: { actor: string }) {
           {menuFor === p.id ? <PlayerMenu player={p} /> : null}
         </div>
       ))}
+      <LazyBoundary failed={null}><SeatPublicGains scope="rail" /></LazyBoundary>
       <LazyBoundary failed={null}><SeatNeeds scope="rail" /></LazyBoundary>
     </aside>
   );
@@ -225,6 +228,7 @@ export function SeatStrip({ actor, className }: { actor: string; className: stri
       {players.map((p, i) => (
         <SeatCard key={p.id} p={p} actor={actor} short={short[i]} className="@container h-11 min-w-0 flex-1 rounded-control" />
       ))}
+      <LazyBoundary failed={null}><SeatPublicGains scope="seat" /></LazyBoundary>
       <LazyBoundary failed={null}><SeatNeeds scope="seat" /></LazyBoundary>
     </div>
   );
