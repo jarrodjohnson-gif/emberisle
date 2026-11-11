@@ -124,6 +124,8 @@ const TURN_EXTENSION_MS = envMs("TURN_EXTENSION_MS", 60_000);
 const BOT_ANSWER_MS = Number(process.env.BOT_ANSWER_MS ?? 1000);
 // People first (#850): a bot's Yes waits this long, or until every person asked has said No. A bot's No does not wait.
 const PEOPLE_FIRST_MS = Number(process.env.PEOPLE_FIRST_MS ?? 8000);
+// A bot's table offer closes after this if nobody takes it (#1245: a person's offer has no run-out).
+const OFFER_MS = 20000;
 // Every socket is pinged this often; one that has not answered the last ping is cut, so a phone that
 // locked or changed Wi-Fi frees its seat for the rejoin instead of holding it half-open (#202, #113).
 const PING_MS = Number(process.env.PING_MS ?? 30 * 1000);
@@ -1619,10 +1621,19 @@ function openOffer(room, from, give, want) {
   if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
   closeOffer(room);
   const tradeId = `t${room.game.seq}-${(room.offerSeq = (room.offerSeq ?? 0) + 1)}`;
-  // #1507 (owner q1504-offer-hold A): all offers hold until answered, declined by all, cancelled, or their turn
-  // ends; there is no run-out (until and seconds are null), and the card waits without a countdown.
-  const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), botTimers: [], until: null });
-  broadcast(room, { type: "tradeOffer", tradeId, from, give, want, seconds: null });
+  // #1245 (owner q-trade-hold B): a person's offer holds until it is answered, declined by all, cancelled, or their turn
+  // ends; it has no run-out (until and seconds are null). A bot's offer keeps the run-out, so a bot never stalls the table.
+  // #1507 (owner q1517-bot-offer-stall A): no card shows a countdown for any offer; `seconds` stays on the wire only.
+  const runOut = room.game.players.find((p) => p.id === from)?.kind === "bot";
+  const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), botTimers: [], until: runOut ? Date.now() + OFFER_MS : null });
+  if (runOut) {
+    room.offerTimer = setTimeout(() => {
+      closeOffer(room);
+      broadcast(room, { type: "tradeClosed", tradeId });
+      botsOn(room, offer);
+    }, OFFER_MS);
+  }
+  broadcast(room, { type: "tradeOffer", tradeId, from, give, want, seconds: runOut ? OFFER_MS / 1000 : null });
   offer.peopleUntil = Date.now() + PEOPLE_FIRST_MS;
   offer.heldYes = [];
   offer.botTimers.push(setTimeout(() => releaseHeld(room, offer), PEOPLE_FIRST_MS));
