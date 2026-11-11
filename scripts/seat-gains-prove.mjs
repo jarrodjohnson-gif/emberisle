@@ -85,9 +85,9 @@ try {
  await cue.waitFor();assert.equal(await cue.getAttribute('aria-label'),'Joshua: +2 Wheat');
  const rollPill=await cue.getByTestId('seat-public-pill').evaluate(el=>{const s=getComputedStyle(el);return{sign:el.getAttribute('data-sign'),bg:s.backgroundColor,fg:s.color,shadow:s.boxShadow};});
  assert.equal(rollPill.sign,'+');
- assert.equal(rollPill.bg,'rgb(255, 255, 255)');
- assert.equal(rollPill.fg,'rgb(38, 61, 60)');
- assert.match(rollPill.shadow,/rgb\(16, 86, 42\)/);
+ assert.equal(rollPill.bg,'rgb(16, 86, 42)');
+ assert.equal(rollPill.fg,'rgb(255, 255, 255)');
+ const railBox=await cue.boundingBox(),railSeat=await jarrod.getByTestId('rail-p1').boundingBox();assert(railBox.x>=railSeat.x+railSeat.width&&Math.abs(railBox.y+railBox.height/2-(railSeat.y+railSeat.height/2))<=1,`the rail cue hangs right of its seat, not on it: ${JSON.stringify({railBox,railSeat})}`);
  const started=Date.now();
  assert.equal(await jarrod.getByTestId('rail-p0').getByTestId('seat-public-gains').count(),0);
  assert.equal(await jarrod.evaluate(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p1').resources),undefined,'other hand stays hidden');
@@ -103,9 +103,9 @@ try {
  const phoneCue=jarrod.getByTestId('seat-p1').getByTestId('seat-public-gains');
  await phoneCue.waitFor();assert.equal(await phoneCue.getAttribute('aria-label'),'Joshua: +1 Wood, −1 Wheat');
  const tradePills=await phoneCue.getByTestId('seat-public-pill').evaluateAll(els=>els.map(el=>{const s=getComputedStyle(el);return{sign:el.getAttribute('data-sign'),bg:s.backgroundColor,fg:s.color};}));
- assert.deepEqual(tradePills,[{sign:'+',bg:'rgb(255, 255, 255)',fg:'rgb(38, 61, 60)'},{sign:'-',bg:'rgb(138, 34, 25)',fg:'rgb(255, 255, 255)'}]);
+ assert.deepEqual(tradePills,[{sign:'+',bg:'rgb(16, 86, 42)',fg:'rgb(255, 255, 255)'},{sign:'-',bg:'rgb(138, 34, 25)',fg:'rgb(255, 255, 255)'}]);
  const box=await phoneCue.boundingBox(),anchor=await jarrod.getByTestId('seat-p1').boundingBox();
- assert.deepEqual(box,anchor);assert.equal(await phoneCue.evaluate(el=>el.getAnimations({subtree:true}).length),0);
+ assert(box.y>=anchor.y+anchor.height&&Math.abs(box.x+box.width/2-(anchor.x+anchor.width/2))<=1&&box.x>=anchor.x-2.5&&box.x+box.width<=anchor.x+anchor.width+2.5,`the phone cue hangs under its own seat, centred, no wider than the seat and one gap: ${JSON.stringify({box,anchor})}`);assert.equal(await phoneCue.evaluate(el=>el.getAnimations({subtree:true}).length),0);
  await jarrod.screenshot({path:'test-results/seat-gains-phone.png'});
  await jarrod.setViewportSize({width:1280,height:720});await cue.waitFor();
  assert.equal(await cue.getAttribute('aria-label'),'Joshua: +1 Wood, −1 Wheat');
