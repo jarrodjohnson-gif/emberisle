@@ -1623,6 +1623,7 @@ function openOffer(room, from, give, want) {
   const tradeId = `t${room.game.seq}-${(room.offerSeq = (room.offerSeq ?? 0) + 1)}`;
   // #1245 (owner q-trade-hold B): a person's offer holds until it is answered, declined by all, cancelled, or their turn
   // ends; it has no run-out (until and seconds are null). A bot's offer keeps the run-out, so a bot never stalls the table.
+  // #1507 (owner q1517-bot-offer-stall A): no card shows a countdown for any offer; `seconds` stays on the wire only.
   const runOut = room.game.players.find((p) => p.id === from)?.kind === "bot";
   const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), botTimers: [], until: runOut ? Date.now() + OFFER_MS : null });
   if (runOut) {

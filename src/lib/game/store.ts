@@ -221,7 +221,8 @@ import type { PlayView } from "@/lib/scene/mobile-fit";
 const tradeSounds = import("../trade-sound");
 
 // The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when a bot's offer runs out
-// (20 s); it is null for a person's offer, which holds until it is answered (#1245).
+// (20 s); it is null for a person's offer, which holds until it is answered (#1245). The toast never shows a countdown
+// for either (#1507, owner q1517-bot-offer-stall A).
 interface OpenOffer {
   tradeId: string;
   from: string;
