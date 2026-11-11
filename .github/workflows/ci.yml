@@ -684,6 +684,8 @@ jobs:
         run: npm run lobby-layout-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run lobby-code-copy-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
+        run: npm run lobby-profile-card-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run turn-copy-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'

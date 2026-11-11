@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
@@ -58,7 +58,7 @@ function OwnName({ seat }: { seat: Seat }) {
   );
 }
 
-export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefetchRules, fitCode }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; prefetchRules: () => Promise<boolean>; fitCode: (el: HTMLElement, code: string) => void }) {
+export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, SeatName, prefetchRules, fitCode }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; SeatName: (props: { seat?: Seat }) => ReactNode; prefetchRules: () => Promise<boolean>; fitCode: (el: HTMLElement, code: string) => void }) {
   const rule = useGame(s => s.tableWayfarerMode);
   const code = useGame(s => s.code);
   const seats = useGame(s => s.seats);
@@ -145,7 +145,7 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
                 <li key={i} data-testid={s ? `lobby-seat-${s.id}` : undefined} className="lobby-player">
                   <SeatDot color={s?.color ?? "transparent"} className="dot" />
                   <span data-testid="lobby-name" className="lobby-name">
-                    {s?.id === seatId ? <OwnName seat={s} /> : <span className="truncate">{s ? s.name : "Empty"}</span>}
+                    {s?.id === seatId ? <OwnName seat={s} /> : <SeatName seat={s} />}
                     {s?.host ? <span data-testid="host-tag" className="sr-only"> · host</span> : null}
                   </span>
                   <span className="lobby-player-status">{s ? `${s.host ? "Host · " : ""}${s.bot ? "Bot" : s.away ? "reconnecting…" : s.ready ? "Ready" : "Waiting"}` : ""}</span>
