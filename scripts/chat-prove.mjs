@@ -602,7 +602,7 @@ try {
       const scrollers = [card, ...card.querySelectorAll("*")].filter((el) => getComputedStyle(el).overflowY === "auto" && el.getAttribute("data-testid") !== "chat-log");
       return {
         status: inside(document.querySelector('[data-testid="lobby-status"]')),
-        ready: !!btn("Not ready") && inside(btn("Not ready")),
+        ready: !!btn("Cancel ready") && inside(btn("Cancel ready")),
         start: !!btn("Start") && inside(btn("Start")),
         leave: !!btn("Leave the table") && inside(btn("Leave the table")),
         seats: [...card.querySelectorAll("li")].filter((li) => !li.closest('[data-testid="chat-log"]') && li.querySelector("span.rounded-full") && inside(li)).length,
