@@ -32,7 +32,7 @@ if (process.argv.includes("--host-fixture")) {
   await import("../server/register.mjs");
   await import("../server/host.mjs");
 } else {
-  const { chromium } = await import("playwright");
+  const { chromium } = await import("./proof-browser.mjs");
   const { createServer, build, preview } = await import("vite");
   const resultsDir = fileURLToPath(new URL("../test-results/", import.meta.url));
   mkdirSync(resultsDir, { recursive: true });
@@ -147,7 +147,8 @@ if (process.argv.includes("--host-fixture")) {
       window.__emberisle.getState().hostTable();
     });
     await page.getByTestId("table-code").waitFor();
-    assert.match(await page.getByTestId("connection-status").innerText(), /^Reachable$/);
+    assert.equal(await page.getByTestId("connection-status").count(), 0, "Reachable stays off the lobby");
+    assert.equal(await page.evaluate(() => window.__emberisle.getState().connectionHealth.status), "Reachable", "host link is up");
     const code = await page.evaluate(() => window.__emberisle.getState().code);
     for (const name of ["Tide", "Pine", "Cloud"]) {
       const c = await client(port); c.send({ type: "hello", code, name }); await c.next("welcome"); c.send({ type: "ready", value: true });
@@ -220,27 +221,22 @@ if (process.argv.includes("--host-fixture")) {
     assert.equal(await page.evaluate(() => window.__health.sent.length), 2, "one outstanding probe");
     const fits = await page.evaluate(() => {
       const box = el => el.getBoundingClientRect();
-      const status = box(document.querySelector('[data-testid="connection-status"]'));
+      const statusEl = document.querySelector('[data-testid="connection-status"]');
+      const status = statusEl ? box(statusEl) : { left: 0, right: 0, top: 0, bottom: 0 };
       const menu = box(document.querySelector('button[aria-label="Table menu"]'));
       const scores = [...document.querySelectorAll('[data-testid="seat-strip"] [data-testid="seat-vp"]')].map(box);
       const utility = [...document.querySelectorAll('.hud-utilities button')].map(box);
-      const clear = utility.every(r => status.right <= r.left || status.left >= r.right || status.bottom <= r.top || status.top >= r.bottom);
+      const clear = !statusEl || utility.every(r => status.right <= r.left || status.left >= r.right || status.bottom <= r.top || status.top >= r.bottom);
       return { clear, status: status.left >= 0 && status.right <= innerWidth,
         menu: menu.width === 44 && menu.height === 44,
         scores: scores.length === 4 && scores.every(r => r.width > 0 && r.left >= 0 && r.right <= innerWidth && r.bottom <= menu.bottom) };
     });
     assert.deepEqual(fits, { clear: true, status: true, menu: true, scores: true }, "390px four-seat header fits with RTT visible");
+    assert.equal(await page.getByTestId("connection-status").count(), 0, "Reachable stays off the header");
     await page.screenshot({ path: path.join(resultsDir, "connection-health-phone.png") });
     for (const width of [700, 900]) {
       await page.setViewportSize({ width, height: 1100 });
-      assert.ok(await page.evaluate(() => {
-        const s = document.querySelector('[data-testid="connection-status"]').getBoundingClientRect();
-        const utilities = [...document.querySelectorAll('.hud-utilities button')];
-        return utilities.length > 0 && utilities.every(el => {
-          const r = el.getBoundingClientRect();
-          return s.right <= r.left || s.left >= r.right || s.bottom <= r.top || s.top >= r.bottom;
-        });
-      }), `${width}px coarse portrait status clears utility controls`);
+      assert.ok(await page.evaluate(() => !document.querySelector('[data-testid="connection-status"]') && document.querySelectorAll('.hud-utilities button').length > 0), `${width}px coarse portrait hides Reachable and keeps utility controls`);
     }
     await page.setViewportSize({ width: 390, height: 844 });
     assert.deepEqual(await snapshot(code), before, "all host timer identities, deadlines, seq and save state unchanged");
@@ -248,6 +244,16 @@ if (process.argv.includes("--host-fixture")) {
     assert.deepEqual(await page.evaluate(() => { const s = window.__emberisle.getState(); return { seq: s.state.seq, timer: s.turnTimer }; }), clientBefore);
     await page.clock.fastForward(1);
     await until(() => page.evaluate(() => window.__emberisle.getState().connectionHealth.status === "Reconnecting"), "3s timeout");
+    assert.ok(await page.evaluate(() => {
+      const node = document.querySelector('[data-testid="connection-status"]');
+      if (!node) return false;
+      const s = node.getBoundingClientRect();
+      const utilities = [...document.querySelectorAll('.hud-utilities button')];
+      return s.width > 0 && utilities.length > 0 && utilities.every(el => {
+        const r = el.getBoundingClientRect();
+        return s.right <= r.left || s.left >= r.right || s.bottom <= r.top || s.top >= r.bottom;
+      });
+    }), "Reconnecting stays clear of the utility controls");
     assert.deepEqual(await snapshot(code), before, "health timeout also preserves host timers");
     assert.deepEqual(readFileSync(path.join(dir, `${code}.json`)), bytes, "health timeout does not save or drop a seat");
     await page.evaluate(() => { window.__health.hold = false; window.__emberisle.getState().net.drop(); });
@@ -273,8 +279,11 @@ if (process.argv.includes("--host-fixture")) {
     assert.equal(unseated.inbox.length, 0, "no preauth pong or peek response");
     const seated = clients[0];
     seated.inbox.length = 0;
-    const stable = await snapshot(code);
-    await sleep(100);
+    // Compare against a settled save, not an in-flight snapshot that can finish before the later comparison.
+    const stable = await until(async () => {
+      const state = await snapshot(code);
+      return !state.saving && !state.dirty && !state.saveTimer ? state : null;
+    }, "room save settles before health-ping comparison");
     const saved = readFileSync(path.join(dir, `${code}.json`));
     for (const nonce of [null, 1, "", "a".repeat(33), "z".repeat(32), {}, "a".repeat(10000)]) seated.send({ type: "healthPing", nonce });
     seated.send({ type: "healthPing", nonce: "a".repeat(32) });
@@ -341,19 +350,21 @@ if (process.argv.includes("--host-fixture")) {
       await layout.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       for (const status of ["Reachable", "Reconnecting", "Offline"]) {
         await layout.evaluate(status => window.__emberisle.setState({ connectionHealth: { status, rtt: status === "Reachable" ? 2999 : null } }), status);
-        await until(() => layout.getByTestId("connection-status").textContent().then(text => text.startsWith(status)), "lobby health text");
-        const geometry = await layout.evaluate(() => {
+        if (status === "Reachable") await until(() => layout.getByTestId("connection-status").count().then(n => n === 0), "healthy link stays quiet");
+        else await until(() => layout.getByTestId("connection-status").textContent().then(text => text.startsWith(status)), "lobby health text");
+        const geometry = await layout.evaluate((healthy) => {
           const card = document.querySelector('[data-testid="lobby-card"]');
           const cover = card.querySelector(".lobby-cover");
           const inside = el => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; };
-          const controls = [...card.querySelectorAll("button")].filter(b => ["Not ready", "Start", "Leave the table"].includes(b.textContent.trim()));
+          const controls = [...card.querySelectorAll("button")].filter(b => ["Cancel ready", "Start", "Leave the table"].includes(b.textContent.trim()));
+          const statusEl = card.querySelector('[data-testid="connection-status"]');
           return {
-            status: inside(card.querySelector('[data-testid="connection-status"]')),
+            status: statusEl ? inside(statusEl) : healthy,
             x: cover.scrollWidth - cover.clientWidth,
             y: [...card.querySelectorAll("*")].filter(el => getComputedStyle(el).overflowY === "auto" && el.dataset.testid !== "chat-log").map(el => el.scrollHeight - el.clientHeight),
             controls: controls.map(el => ({ inside: inside(el), width: el.getBoundingClientRect().width, height: el.getBoundingClientRect().height })),
           };
-        });
+        }, status === "Reachable");
         try {
           assert.ok(geometry.status, `${width}x${height} ${status}: status stays inside the lobby`);
           if (width > height) {

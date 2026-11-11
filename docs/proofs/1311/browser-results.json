@@ -1,0 +1,27 @@
+[
+  {
+    "check": "waves",
+    "exit": 0,
+    "seconds": 17.48
+  },
+  {
+    "check": "splash",
+    "exit": 0,
+    "seconds": 108.19
+  },
+  {
+    "check": "board-look",
+    "exit": 0,
+    "seconds": 104.46
+  },
+  {
+    "check": "jelly-ocean",
+    "exit": 0,
+    "seconds": 81.55
+  },
+  {
+    "check": "dpr",
+    "exit": 0,
+    "seconds": 14.97
+  }
+]

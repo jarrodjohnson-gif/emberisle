@@ -23,8 +23,8 @@
 //   top corner of the tray's box hits the tray or its own backdrop, never the turn banner or anything else behind it;
 // Zero console errors. Saves test-results/fortune-tray-<size>.png. Run: npm run fortune-tray-prove
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync, readFileSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8423;
@@ -46,7 +46,6 @@ mkdirSync("test-results", { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -109,6 +108,9 @@ try {
     assert.deepEqual(row.fortunes, ["Play fortune · 6"], `${v.tag}: one fortunes button with the number held, got ${JSON.stringify(row.fortunes)}`);
     // #776: the deck count sits on the Fortune buy tile and in its label.
     assert.equal(await page.getByTestId("deck-left").textContent(), `${row.deck} left`, `${v.tag}: the buy tile shows the deck count`);
+    // #1512: the count is meta text, so it sits on the 12 px floor. The 10 px hand names stay the exception.
+    const deckPx = await page.getByTestId("deck-left").evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    assert.equal(deckPx, 12, `${v.tag}: the Fortune count is 12 px, got ${deckPx}`);
     assert.equal(await page.getByTestId("build-card").getAttribute("aria-label"), `Fortune, ${row.deck} left in deck`, `${v.tag}: the buy tile's label says how many are left`);
     assert.equal(row.selects, 0, `${v.tag}: no <select> on the page`);
     assert.deepEqual(row.stale, [], `${v.tag}: no per-fortune buttons left in the row`);

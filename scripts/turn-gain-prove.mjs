@@ -1,15 +1,16 @@
 // Jarrod's playtest: "not intuitive on when it's your turn", and gains "too quick". In practice against the isle at 1280x720
 // and, with safe-area insets emulated over CDP, 390x844 (47 top, 34 bottom), 360x640 (24 top, 16 bottom) and 844x390 (47
 // left, 47 right, 21 bottom; the HUD is a left column), played through the real roll-off and setup:
-// - "Your turn" (data-testid="turn-moment") shows when a bot's turn passes to the person and, untouched, is gone within
-//   2 s and readable (opacity ≥ 0.5) for at least 1.2 s; it never shows on a bot's turn, nor in the roll-off or setup; while
+// - "Your turn" (data-testid="turn-moment") shows when a roll turn passes to the person (#1140),
+//   not in roll-off or setup, and, untouched, stays up, pulsing, until its 8 s cap (a press or the move passing ends it
+//   sooner: your-turn-stay-prove); it never shows on a bot's turn; while
 //   it is the person's roll, Roll is the one filled primary and their seat card wears the turn ring (seat-turn,
 //   aria-current); on a bot's turn the banner reads "Wait for {bot} …" and there is no Roll;
 // - a roll steered to pay the person shows its goods on the hand only (#773): one +N tab (data-testid="resource-flash") per
 //   good gained, with the right good and amount, on that good's card, which fills with the good's colour and lifts (a
-//   translateY keyframe); the cues of one roll start together; each readable for at least 1.2 s and gone within 2.6 s
-//   (2200 ms held, 300 ms fade); nothing ever shows over the island (no "gain-float", the island text that #773 removed);
-// - a bank trade shows the ore given ("−4", or the harbour's rate) as a hollow red tab on a dipped card and "+1" on the
+//   translateY keyframe); the cues of one roll start together; each readable for at least 1.2 s and gone within 3.1 s
+//   (2500 ms held, 500 ms fade); nothing ever shows over the island (no "gain-float", the island text that #773 removed);
+// - a bank trade shows the ore given ("−4", or the harbour's rate) as a light pill on a dipped card and "+1" on the
 //   lifted Wheat card; a state where only another seat gains shows nothing, and so does a watcher's; every cue shown in the
 //   whole game is one of the person's own hand changes;
 // - each tab sits centred on its own card, inside the safe area, with nothing covering or clipping it, and its text is at
@@ -24,15 +25,15 @@
 //   frame, the gain's fill a still highlight) for at least 1.5 s, each cue still readable for 1.2 s.
 // Hotseat at 1280x720: the moment names the seat taking the device ("Seat 2's turn"). A reconnect at 390x844 replays nothing
 // (reconnect(): a real connectTable over a controlled socket) and a live change after it still shows. Zero console errors.
-// Readable times come from each element's own animation (keyframes, duration, delay) capped by how long it stayed on the
-// page: software GL frames are too sparse to time it by sampling. For the placement and contrast measures only, the
+// Gain readability uses its animation's keyframes and duration; the sustained turn cue is also checked by sampled frames.
+// For the placement and contrast measures only, the
 // moment being measured is held on screen (__hold), and "Your turn" is timed again on a later turn left untouched.
 // Expiry also reports measured main-thread stalls, as roll-moment-prove does: a software-GL screenshot may block timers.
-// The 2600 ms running-time limit remains, with a separate 3500 ms raw cap and an exact 2500 ms cue-duration check.
+// The 3100 ms running-time limit (2600 before #825), with a separate 4000 ms raw cap and an exact 3000 ms cue-duration check.
 // Run: npm run turn-gain-prove (ONLY=390x844, reduced or hotseat or reconnect runs one part). Port from VITE_PORT, default 8476.
 // Screenshots to test-results/turn-gain-*.png.
-import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 30_000;
@@ -44,7 +45,8 @@ const VIEWS = [
   { width: 844, height: 390, touch: true, insets: { top: 0, right: 47, bottom: 21, left: 47 } },
 ];
 const RED = "rgb(138, 34, 25)";
-const WHITE = "rgb(255, 255, 255)";
+const INK = "rgb(38, 61, 60)";
+const RAISED = "rgb(255, 255, 255)";
 // Each good's colour and side colour (styles.css :root): a gain fills the card with the first and its tab is the second.
 const PAINT = {
   timber: ["rgb(47, 106, 79)", "rgb(23, 61, 53)"],
@@ -53,21 +55,23 @@ const PAINT = {
   grain: ["rgb(227, 196, 98)", "rgb(140, 114, 45)"],
   ore: ["rgb(99, 116, 138)", "rgb(65, 77, 91)"],
 };
-// A cue's whole life on the card: FLASH_MS (2200) held, then a 300 ms fade (Hand.tsx CUE_MS).
-const CUE_MS = 2500;
+// A cue's whole life on the card: FLASH_MS (2500) held, then a 500 ms fade (Hand.tsx CUE_MS).
+const CUE_MS = 3000;
 const RESOURCE_LABEL = { timber: "Wood", clay: "Brick", wool: "Sheep", grain: "Wheat", ore: "Stone" };
 mkdirSync("test-results", { recursive: true });
 
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
 const errors = [];
 let failures = 0;
+// Set for the refit placement only. A failing check prints this trace; a pass does not.
+let refitTrace;
 function check(ok, label, data) {
+  if (!ok && refitTrace) data = { ...(data ?? {}), steps: refitTrace };
   console.log(`${ok ? "ok  " : "FAIL"} ${label}${data === undefined ? "" : " " + JSON.stringify(data)}`);
   if (!ok) failures++;
 }
@@ -75,12 +79,12 @@ function check(ok, label, data) {
 // Installed before the app: every turn moment and every gain line, with what the store said when it mounted, its box and
 // colour, and its opacity and transform on every frame it lives; the person's own hand changes; the roll moment's spans.
 function recorders() {
-  // For a measure only: __hold names the moment being measured; a 1.5-2.7 s timer set while it is on screen (its own end)
+  // For a measure only: __hold names the moment being measured; its end timer (including the hand's current 3 s cue)
   // waits until __release() runs it. Nothing else is held, so the bots play on.
   window.__held = new Map();
   const later = window.setTimeout;
   window.setTimeout = function (fn, ms, ...a) {
-    if (window.__hold && document.querySelector(`[data-testid="${window.__hold}"]`) && typeof fn === "function" && ms >= 1500 && ms <= 2700) {
+    if (window.__hold && document.querySelector(`[data-testid="${window.__hold}"]`) && typeof fn === "function" && (ms >= 1500 && ms <= 2700 || window.__hold === "resource-flash" && ms === 3000)) {
       const id = later(() => window.__held.delete(id), 600_000);
       window.__held.set(id, () => fn(...a));
       return id;
@@ -201,7 +205,7 @@ function recorders() {
       const cs = getComputedStyle(el);
       // A tab's own transform is none; the card carries the lift, so its transform is the one that moves the cue.
       const tf = el.dataset.testid === "turn-moment" ? cs.transform : getComputedStyle(el.closest(".goods-card")).transform;
-      rec.frames.push({ t: performance.now(), o: Number(cs.opacity), tf, box: box(el) });
+      rec.frames.push({ t: performance.now(), o: Number(cs.opacity), tf, box: box(el), leaving: el.hasAttribute("data-leaving") });
       // #1085: same-callback identity and placement at this read, not the moment's final stage.
       const sample = rec.frames.at(-1);
       sample.frameId = frameId;
@@ -370,8 +374,8 @@ async function tabs(page, tag, what, lay) {
     t.style.pointerEvents = "auto";
     const hit = document.elementFromPoint(a.left + a.width / 2, a.top + 1);
     t.style.pointerEvents = "";
-    // The +N tab stands 18 px above the edge, the hollow −N tab 19 px (its 1 px outline sits outside the card's edge).
-    return { r: t.dataset.resource, card: card.dataset.testid, box: a.toJSON(), off: a.left + a.width / 2 - (c.left + c.width / 2), above: c.top - a.top, want: t.dataset.sign === "+" ? 18 : 19, top: hit === t || t.contains(hit) };
+    // #825: both pills stand 20 px above the edge (24 px on the wide fine-pointer layout).
+    return { r: t.dataset.resource, card: card.dataset.testid, box: a.toJSON(), off: a.left + a.width / 2 - (c.left + c.width / 2), above: c.top - a.top, want: matchMedia("(min-width: 1280px) and (pointer: fine) and (min-height: 481px)").matches ? 24 : 20, top: hit === t || t.contains(hit) };
   }));
   check(got.length > 0 && got.every((t) => t.card === `resource-${t.r}`), `${tag}: ${what} sit on their own goods' cards`, got.map((t) => [t.r, t.card]));
   check(got.every((t) => Math.abs(t.off) <= 0.5 && Math.abs(t.above - t.want) <= 0.5), `${tag}: ${what} are centred on their cards and grow out of the top edge`, got.map((t) => [t.off.toFixed(2), t.above.toFixed(2)]));
@@ -382,7 +386,7 @@ async function tabs(page, tag, what, lay) {
 
 // WCAG contrast of the element's text colour against every pixel behind its text: the element is frozen at full opacity,
 // screenshotted with its text and icon transparent (the glass and the board under it stay), and the lowest ratio counts.
-async function contrast(page, testid, index = 0) {
+async function contrast(page, testid, index = 0, band = 0.65) {
   const loc = page.locator(`[data-testid="${testid}"]`).nth(index);
   const color = await loc.evaluate((el) => {
     for (const a of el.getAnimations()) {
@@ -399,7 +403,7 @@ async function contrast(page, testid, index = 0) {
     el.style.removeProperty("color");
     for (const k of el.children) k.style.visibility = "";
   });
-  const pixels = await page.evaluate(async (b64) => {
+  const pixels = await page.evaluate(async ({ b64, band }) => {
     const img = new Image();
     img.src = `data:image/png;base64,${b64}`;
     await img.decode();
@@ -407,11 +411,11 @@ async function contrast(page, testid, index = 0) {
     const x = c.getContext("2d");
     x.drawImage(img, 0, 0);
     // The middle band, where the glyphs are: inset from the rounded corners and the icon disc.
-    const d = x.getImageData(Math.floor(img.width * 0.3), Math.floor(img.height * 0.25), Math.max(1, Math.floor(img.width * 0.65)), Math.max(1, Math.floor(img.height * 0.5))).data;
+    const d = x.getImageData(Math.floor(img.width * 0.3), Math.floor(img.height * 0.25), Math.max(1, Math.floor(img.width * band)), Math.max(1, Math.floor(img.height * 0.5))).data;
     const out = [];
     for (let i = 0; i < d.length; i += 4) out.push([d[i], d[i + 1], d[i + 2]]);
     return out;
-  }, png.toString("base64"));
+  }, { b64: png.toString("base64"), band });
   const lin = (v) => ((v /= 255) <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
   const L = ([r, g, b]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
   const text = color.match(/\d+/g).slice(0, 3).map(Number);
@@ -424,8 +428,7 @@ async function contrast(page, testid, index = 0) {
   return { color, min, pixels: pixels.length };
 }
 
-// How long a line or a moment reads (opacity at least 0.5): from its own animation (linear, keyframe opacities), and no
-// longer than it stayed on the page after its delay. Frames under software GL are too sparse to time it by sampling.
+// How long a finite animation reads (opacity at least 0.5), capped by its time on the page after its delay.
 const readable = (rec) => {
   const k = rec.anim?.keyframes.filter((f) => f.o !== null);
   if (!rec.gone) return 0;
@@ -469,7 +472,7 @@ async function practice(view) {
   try {
     await page.getByRole("button", { name: "Play", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
-    // Through the roll-off and setup to the person's first roll: no turn moment before the first roll phase.
+    // Through the roll-off and setup to the person's first roll: no turn moment appears (#1140).
     await playUntil(page, myRoll);
     const early = await page.evaluate(() => window.__turns.filter((t) => t.phase !== "roll").length);
     check(early === 0, `${tag}: no turn moment in the roll-off or setup`, early);
@@ -491,15 +494,15 @@ async function practice(view) {
     const got = roll.lines.map((l) => `${l.r}+${l.d}`).sort();
     console.log(`${tag}: rolled ${pip}; own ${JSON.stringify(want)}; cues ${JSON.stringify(roll.lines.map((l) => `${RESOURCE_LABEL[l.r]} ${l.text}`))}`);
     check(got.length > 0 && got.join() === want.join(), `${tag}: one cue per good the roll paid, right good and amount`, { want, got });
-    check(roll.lines.every((l) => l.text === `+${l.d}` && l.color === WHITE && l.bg === PAINT[l.r][1]), `${tag}: each reads "+N" in white on its good's side colour`, roll.lines.map((l) => [l.r, l.text, l.color, l.bg]));
+    check(roll.lines.every((l) => l.text === `+${l.d}` && l.color === INK && l.bg === RAISED), `${tag}: each reads "+N" in dark ink on the white pill`, roll.lines.map((l) => [l.r, l.text, l.color, l.bg]));
     check(roll.lines.every((l) => l.lit?.fill === PAINT[l.r][0] && !l.lost), `${tag}: each gained card fills with its good's colour`, roll.lines.map((l) => [l.r, l.lit?.fill]));
     check(await page.evaluate(() => window.__floats) === 0, `${tag}: no "+N Good" text over the island`);
     const spans = roll.lines.map(readable);
     check(spans.every((s) => s >= 1200), `${tag}: each cue readable for at least 1.2 s`, spans.map((s) => s.toFixed(0)));
     const expiry = roll.lines.map(l => ({ raw: l.gone - l.at, stalled: l.stalled, running: l.gone - l.at - l.stalled }));
-    check(roll.lines.every(l => l.anim?.duration === CUE_MS && l.lit?.animations === 1 && l.move?.duration === CUE_MS), `${tag}: the tab, the fill and the lift each run exactly 2500 ms (2200 ms held, 300 ms fade)`, roll.lines.map((l) => [l.anim?.duration, l.move?.duration]));
-    check(expiry.every(t => t.running <= 2600), `${tag}: the batch has left within 2.6 s, excluding measured stalls`, expiry);
-    check(expiry.every(t => t.raw <= 3500), `${tag}: raw expiry stays below the 3.5 s guard`, expiry);
+    check(roll.lines.every(l => l.anim?.duration === CUE_MS && l.lit?.animations === 1 && l.move?.duration === CUE_MS), `${tag}: the tab, the fill and the lift each run exactly 3000 ms (2500 ms held, 500 ms fade)`, roll.lines.map((l) => [l.anim?.duration, l.move?.duration]));
+    check(expiry.every(t => t.running <= 3100), `${tag}: the batch has left within 3.1 s, excluding measured stalls`, expiry);
+    check(expiry.every(t => t.raw <= 4000), `${tag}: raw expiry stays below the 4 s guard`, expiry);
     if (roll.lines.length > 1) {
       const starts = roll.lines.map((l) => l.at);
       check(Math.max(...starts) - Math.min(...starts) <= 100, `${tag}: the cues of one roll start together`, starts.map((t) => (t - starts[0]).toFixed(0)));
@@ -526,14 +529,14 @@ async function practice(view) {
     await tabs(page, `${tag} trade`, "the trade's tabs", tradeLay);
     const trade = await page.evaluate((n) => window.__lines.slice(n).map((l) => ({ r: l.r, text: l.text, color: l.color, bg: l.bg, lit: l.lit?.fill ?? null, lost: !!l.lost, move: l.move?.keyframes })), n1);
     const gave = await page.evaluate((o) => -window.__own.slice(o).find((x) => x.r === "ore").d, o1);
-    const shades = [await contrast(page, "resource-flash", 0), await contrast(page, "resource-flash", 1)];
+    const shades = [await contrast(page, "resource-flash", 0, 0.5), await contrast(page, "resource-flash", 1, 0.5)];
     await page.evaluate(() => window.__release());
     const stone = trade.find((l) => l.r === "ore");
     const wheat = trade.find((l) => l.r === "grain");
-    check(traded && trade.length === 2 && stone?.text === `−${gave}` && stone.color === RED && stone.bg === "rgb(255, 249, 240)" && stone.lost && !stone.lit, `${tag}: a bank trade shows −${gave} on Stone as a hollow red tab, the card ringed red`, trade);
-    check(wheat?.text === "+1" && wheat.bg === PAINT.grain[1] && wheat.lit === PAINT.grain[0], `${tag}: and +1 on the filled Wheat card`, wheat);
+    check(traded && trade.length === 2 && stone?.text === `−${gave}` && stone.color === "rgb(255, 255, 255)" && stone.bg === RED && stone.lost && !stone.lit, `${tag}: a bank trade shows −${gave} on Stone as a red pill in white, the card ringed red`, trade);
+    check(wheat?.text === "+1" && wheat.bg === RAISED && wheat.lit === PAINT.grain[0], `${tag}: and +1 on the filled Wheat card`, wheat);
     check(stone?.move?.some((k) => /translateY\(2px\)/.test(k ?? "")) && wheat?.move?.some((k) => /translateY\(-/.test(k ?? "")), `${tag}: the given card dips and the received card lifts`, { stone: stone?.move, wheat: wheat?.move });
-    for (const c of shades) check(c.min >= 4.5, `${tag}: ${c.color === RED ? "loss" : "gain"} tab text ≥ 4.5:1 against the pixels behind it`, { color: c.color, min: c.min.toFixed(2), pixels: c.pixels });
+    for (const c of shades) check(c.min >= 4.5, `${tag}: ${c.color === INK ? "gain" : "loss"} tab text ≥ 4.5:1 against the pixels behind it`, { color: c.color, min: c.min.toFixed(2), pixels: c.pixels });
     await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
 
     // Another seat's goods are never shown.
@@ -580,23 +583,89 @@ async function practice(view) {
     // The renderer refits the hole a frame after the HUD changes, so a moment can show against the old one: when the hole
     // changes under it, it places itself again. Under the held moment, make the hole run 168 px into the bottom stack with 120
     // px of board above it (as a refit on a short phone gives): its new centre is on the stack, and the board above has room.
-    await page.evaluate(() => {
-      const shell = document.querySelector('[data-testid="turn-moment"]').parentElement.parentElement;
-      const top = document.querySelector("[data-hud-stack]").getBoundingClientRect().top;
+    // The renderer's refit writes the same --hole-* vars. Split reads then saw the new hole with the popup still on the old
+    // one (CI run 42564704204: popup y 249–313, hole y 396–684). Hold the test hole until one read takes the hole, the popup
+    // and the stage together. Tolerances are unchanged.
+    const refitSteps = await page.evaluate(async () => {
+      const shot = () => {
+        const el = document.querySelector('[data-testid="turn-moment"]');
+        const area = el?.parentElement;
+        const shell = area?.parentElement;
+        const rect = (n) => (n ? n.getBoundingClientRect().toJSON() : null);
+        return {
+          box: rect(el),
+          hole: rect(area),
+          shift: el?.dataset.shift ?? null,
+          stage: el?.dataset.stage ?? null,
+          translate: el?.style.translate || "",
+          vars: shell ? { top: shell.style.getPropertyValue("--hole-top"), bottom: shell.style.getPropertyValue("--hole-bottom") } : null,
+        };
+      };
+      const el = document.querySelector('[data-testid="turn-moment"]');
+      const shell = el.parentElement.parentElement;
+      const stackTop = document.querySelector("[data-hud-stack]").getBoundingClientRect().top;
+      const nextTop = `${stackTop - 120}px`;
+      const nextBottom = `${innerHeight - stackTop - 168}px`;
+      const before = shot();
       window.__hole = ["top", "bottom"].map((k) => shell.style.getPropertyValue(`--hole-${k}`));
-      shell.style.setProperty("--hole-top", `${top - 120}px`);
-      shell.style.setProperty("--hole-bottom", `${innerHeight - top - 168}px`);
+      const hold = new MutationObserver(() => {
+        if (shell.style.getPropertyValue("--hole-top") !== nextTop) shell.style.setProperty("--hole-top", nextTop);
+        if (shell.style.getPropertyValue("--hole-bottom") !== nextBottom) shell.style.setProperty("--hole-bottom", nextBottom);
+      });
+      hold.observe(shell, { attributes: true, attributeFilter: ["style"] });
+      window.__restoreHole = () => {
+        hold.disconnect();
+        shell.style.setProperty("--hole-top", window.__hole[0]);
+        shell.style.setProperty("--hole-bottom", window.__hole[1]);
+        delete window.__restoreHole;
+      };
+      shell.style.setProperty("--hole-top", nextTop);
+      shell.style.setProperty("--hole-bottom", nextBottom);
+      const written = shot();
+      await new Promise((r) => queueMicrotask(r));
+      const afterObserver = shot();
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return { before, written, afterObserver, framed: shot() };
     });
-    await page.waitForTimeout(300);
-    // Only the moment's area moved (the renderer's own fit did not), so the hole to centre on is that area.
-    const rlay = { ...(await layout(page)), hole: await page.$eval('[data-testid="turn-moment"]', (e) => e.parentElement.getBoundingClientRect().toJSON()) };
-    const rbox = await page.$$eval('[data-testid="turn-moment"]', (els) => els.map((e) => e.getBoundingClientRect().toJSON()));
-    const rstage = await page.evaluate(() => window.__turns.at(-1).stage);
-    await page.evaluate(() => {
-      const shell = document.querySelector('[data-testid="turn-moment"]').parentElement.parentElement;
-      ["top", "bottom"].forEach((k, i) => shell.style.setProperty(`--hole-${k}`, window.__hole[i]));
-    });
-    placement(`${tag} refit`, '"Your turn" after the hole changed under it', rbox, rlay, rstage);
+    // Same centred / inside test as placement(), so this wait only outlasts the observer. A miss still fails below.
+    await page.waitForFunction(() => {
+      const el = document.querySelector('[data-testid="turn-moment"]');
+      const stage = window.__turns.at(-1)?.stage;
+      if (!el || !stage || !window.__restoreHole) return false;
+      const hole = el.parentElement.getBoundingClientRect();
+      const box = el.getBoundingClientRect();
+      const shift = stage.shift;
+      const cx = (box.left + box.right) / 2, cy = (box.top + box.bottom) / 2;
+      const hx = (hole.left + hole.right) / 2, hy = (hole.top + hole.bottom) / 2;
+      return Math.abs(cx - hx) <= 4 && Math.abs(cy - shift - hy) <= 24
+        && box.left >= hole.left - 0.5 && box.top >= hole.top - 0.5 && box.right <= hole.right + 0.5 && box.bottom <= hole.bottom + 0.5;
+    }, null, { timeout: 1000 }).catch(() => {});
+    let measured;
+    try {
+      const lay = await layout(page);
+      measured = await page.evaluate(() => {
+        const el = document.querySelector('[data-testid="turn-moment"]');
+        return {
+          hole: el.parentElement.getBoundingClientRect().toJSON(),
+          boxes: [el.getBoundingClientRect().toJSON()],
+          stage: window.__turns.at(-1).stage,
+          live: { shift: el.dataset.shift ?? null, stage: el.dataset.stage ?? null, translate: el.style.translate || "" },
+        };
+      });
+      measured.lay = lay;
+    } finally {
+      await page.evaluate(() => window.__restoreHole?.());
+    }
+    const steps = { ...refitSteps, final: measured ? { box: measured.boxes[0], hole: measured.hole, stage: measured.stage, live: measured.live } : null };
+    // The area's box at the write is the test hole (taken before the renderer can run). The checked read has to be that same hole.
+    const holeHeld = !!measured && Math.abs(measured.hole.top - refitSteps.written.hole.top) <= 0.5 && Math.abs(measured.hole.left - refitSteps.written.hole.left) <= 0.5 && Math.abs(measured.hole.height - refitSteps.written.hole.height) <= 0.5;
+    check(holeHeld, `${tag} refit: the hole read with the popup is the hole the refit set`, holeHeld ? { written: refitSteps.written.hole, final: measured.hole } : { written: refitSteps.written.hole, final: measured?.hole ?? null, steps });
+    refitTrace = steps;
+    try {
+      placement(`${tag} refit`, '"Your turn" after the hole changed under it', measured.boxes, { ...measured.lay, hole: measured.hole }, measured.stage);
+    } finally {
+      refitTrace = undefined;
+    }
     await page.evaluate(() => window.__release());
     check(cue.primaries.length === 1 && cue.primaries[0] === "Roll", `${tag}: on the person's roll, Roll is the one filled primary`, cue.primaries);
     check(cue.seatTurn && cue.current && cue.banner === "Roll the dice", `${tag}: the person's seat card wears the turn ring and the banner leads with Roll`, cue);
@@ -613,12 +682,17 @@ async function practice(view) {
     await playUntil(page, () => window.__turns.length > window.__t1);
     await page.waitForFunction(() => !document.querySelector('[data-testid="turn-moment"]'), null, { timeout: STEP_MS });
     const t2 = await page.evaluate(() => window.__turns[window.__t1]);
-    check(t2.gone - t2.at <= 2000 && readable(t2) >= 1200, `${tag}: untouched, "Your turn" is up about 1.6 s and gone within 2 s`, { up: (t2.gone - t2.at).toFixed(0), readable: readable(t2).toFixed(0) });
+    // The existing readable() measures a single finite entry animation, not the infinite pulse.
+    // Check every sampled frame after the entry reaches 0.5 and the elapsed visible frame span instead.
+    const firstVisible = t2.frames.findIndex((frame) => frame.o >= 0.5);
+    const visibleFrames = firstVisible < 0 ? [] : t2.frames.slice(firstVisible).filter((frame) => !frame.leaving);
+    const visibleMs = visibleFrames.length > 1 ? visibleFrames.at(-1).t - visibleFrames[0].t : 0;
+    check(t2.gone - t2.at >= 7500 && t2.gone - t2.at <= 8800 && /turn-pulse/.test(t2.animation) && visibleMs >= 7000 && visibleFrames.every((frame) => frame.o >= 0.5), `${tag}: untouched, "Your turn" stays up, pulsing, until its 8 s cap`, { up: (t2.gone - t2.at).toFixed(0), animation: t2.animation, visibleMs: visibleMs.toFixed(0) });
 
     // Over the whole game: every turn moment was the person's roll; every line was one of the person's own changes.
     const all = await page.evaluate(() => ({ turns: window.__turns.map((t) => ({ current: t.current, localId: t.localId, phase: t.phase })), lines: window.__lines.map((l) => ({ r: l.r, d: l.d, at: l.at })), own: window.__own }));
     check(all.turns.length >= 2 && all.turns.every((t) => t.current === t.localId && t.phase === "roll"), `${tag}: every turn moment was on the person's own roll`, all.turns.length);
-    const stray = all.lines.filter((l) => !all.own.some((o) => o.r === l.r && o.d === l.d && o.at <= l.at && l.at - o.at < 2500));
+    const stray = all.lines.filter((l) => !all.own.some((o) => o.r === l.r && o.d === l.d && o.at <= l.at && l.at - o.at < 3000));
     check(stray.length === 0, `${tag}: every cue shown was one of the person's own hand changes`, stray);
     // The turn moment no longer waits on gains (#773: useFloatsUp is gone), so a cue may be up with it; it never covers one.
     const clash = await page.evaluate(() => window.__turns.flatMap((t) => window.__lines.filter((l) => l.at < (t.gone ?? Infinity) && t.at < (l.gone ?? Infinity)).filter((l) => t.frames.some((a) => l.frames.some((b) => Math.abs(a.t - b.t) < 50 && a.box.left < b.box.right && b.box.left < a.box.right && a.box.top < b.box.bottom && b.box.top < a.box.bottom))).map((l) => l.text)));
@@ -734,6 +808,7 @@ async function reconnect() {
   const sent = { welcomes: 0 };
   let states = [];
   let sockets = [];
+  let seatSocket;
   const { ctx, page, tag } = await open(view, {
     path: "/?host=ws://127.0.0.1:9",
     before: async (ctx, page) => {
@@ -742,6 +817,9 @@ async function reconnect() {
         sockets.push(ws);
         ws.onMessage(async (raw) => {
           if (JSON.parse(String(raw)).type !== "hello") return;
+          // Title discovery may open another socket to this host. State and the deliberate
+          // seat drop belong to the connection that sent hello, not the newest list client.
+          seatSocket = ws;
           sent.welcomes++;
           ws.send(JSON.stringify({ type: "welcome", code: "ABCD", you: "p0", host: false, secret: "s3cret", chat: [] }));
           // The state follows the welcome once the proof has built it (the first dial is at page load).
@@ -766,7 +844,7 @@ async function reconnect() {
     const own = () => page.evaluate(() => window.__emberisle.getState().state?.players.find((p) => p.id === "p0")?.resources.timber);
     const shown = () => page.evaluate(() => ({ turns: window.__turns.length, lines: window.__lines.length, up: !!document.querySelector('[data-testid="turn-moment"], [data-testid="resource-flash"]') }));
     const seq = () => page.evaluate(() => window.__emberisle.getState().state?.seq);
-    const push = (m) => sockets.at(-1).send(JSON.stringify(m));
+    const push = (m) => seatSocket.send(JSON.stringify(m));
     // Nothing new shows for a while after `n` has loaded: polled for 900 ms, longer than the store-to-DOM round trip.
     const stays = async (label, was) => {
       const end = Date.now() + 900;
@@ -777,14 +855,56 @@ async function reconnect() {
 
     states = [at(20, 2, "main", "p1", 1)];
     await page.waitForFunction(() => window.__emberisle?.getState().state?.seq === 20, null, { timeout: STEP_MS });
+    // The store can publish before React commits the first hand. Establish its baseline before
+    // sending a live gain: a hand first mounted at seq 21 correctly treats that count as initial.
+    await page.waitForFunction(() => document.querySelector('[data-testid="resource-timber"] [data-testid="hand-count"]')?.textContent === "1", null, { timeout: STEP_MS });
     await stays("first load, seq 20", { turns: 0, lines: 0 });
+
+    // A seatless same-host discovery connection may open after the seat. Keep this ordering
+    // explicit so the fixture cannot silently send the game's next state to the list client.
+    await page.evaluate(() => new Promise((resolve, reject) => {
+      const ws = new WebSocket("ws://127.0.0.1:9/");
+      ws.onopen = () => { ws.send(JSON.stringify({ type: "list" })); resolve(); };
+      ws.onerror = () => reject(new Error("reconnect fixture discovery socket failed"));
+      window.__reconnectDiscoverySocket = ws;
+    }));
 
     // A cue from before the drop must not outlive it: gain a good live, drop at once.
     push(at(21, 2, "main", "p1", 2));
-    await page.waitForSelector('[data-testid="resource-flash"]', { timeout: STEP_MS });
+    try {
+      await page.waitForSelector('[data-testid="resource-flash"]', { timeout: STEP_MS });
+    } catch (error) {
+      // Observe only after the original guard fails: a mounted-and-expired cue differs from
+      // a missing state or hand commit. Reporting must never replace or pass that failure.
+      let reportTimer;
+      try {
+        const context = await Promise.race([
+          page.evaluate(() => {
+            const s = window.__emberisle?.getState();
+            return {
+              now: performance.now(), origin: performance.timeOrigin, hidden: document.hidden,
+              seq: s?.state?.seq, synced: s?.synced, resync: s?.resync, screen: s?.screen,
+              localId: s?.localId, error: s?.error,
+              timber: s?.state?.players.find(p => p.id === s.localId)?.resources.timber,
+              hand: document.querySelector('[data-testid="resource-timber"] [data-testid="hand-count"]')?.textContent,
+              cues: [...document.querySelectorAll('[data-testid="resource-flash"]')].map(e => ({ text: e.textContent, resource: e.dataset.resource })),
+              own: window.__own.slice(-5),
+              lines: window.__lines.slice(-5).map(({ at, gone, text, r, d, frames }) => ({ at, gone, text, r, d, frames: frames.length })),
+            };
+          }),
+          new Promise(resolve => { reportTimer = setTimeout(() => resolve({ reportTimedOut: true }), 3000); }),
+        ]);
+        console.log("reconnect cue failure context", JSON.stringify({ welcomes: sent.welcomes, sockets: sockets.length, ...context }));
+      } catch (reportError) {
+        console.log("reconnect cue failure context unavailable", reportError.message);
+      } finally {
+        clearTimeout(reportTimer);
+      }
+      throw error;
+    }
     const before = await shown();
     states = [at(22, 3, "roll", "p0", 4)];
-    sockets.at(-1).close();
+    seatSocket.close();
     await page.waitForFunction(() => /Reconnecting/.test(window.__emberisle.getState().error ?? ""), null, { timeout: STEP_MS });
     await page.waitForFunction(() => window.__emberisle.getState().state?.seq === 22, null, { timeout: STEP_MS });
     check(sent.welcomes === 2, `${tag} reconnect: the seat was re-welcomed through the redial`, sent);

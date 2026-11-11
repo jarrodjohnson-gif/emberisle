@@ -7,10 +7,11 @@
 // isle), and the log line at 1280x720. Worst case, computed: every text on a glass chip against the glass token
 // composited over black (the darkest board the blur can show).
 // #513: the win headline (dark text, seat colour as a dot) for each seat colour as winner, same text-transparent sampling.
+// #1419: How to play and Costs on the grey-green wash: each sheet is opaque, and its title, body, rows and win line read >= 4.5:1.
 // Run: npm run contrast-prove
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { readFileSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const cpuThrottle = Number(process.env.CONTRAST_PROVE_CPU_THROTTLE || 1);
@@ -31,7 +32,6 @@ const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 async function openPage(options) {
@@ -75,6 +75,8 @@ try {
       bg: px(root.getPropertyValue("--color-bg").trim()),
       accentInk: px(root.getPropertyValue("--color-accent-ink").trim()),
       accent: px(root.getPropertyValue("--color-accent").trim()),
+      controlLine: px(root.getPropertyValue("--control-line").trim()),
+      ground: px(root.getPropertyValue("--ground").trim()),
     };
   });
   // The error line only appears after a failed join, so take its colour from the token the source names.
@@ -101,6 +103,12 @@ try {
   for (const [name, r] of checks) {
     console.log(`${r.toFixed(2)}:1  ${name}`);
     if (r < MIN) bad.push(`${name} is ${r.toFixed(2)}:1`);
+  }
+  // #1417: the seat-dot ring (--control-line) is a non-text edge, so it needs 3:1 on white and on mist (--ground).
+  for (const [name, bg] of [["white", [255, 255, 255]], ["mist (--ground)", read.ground]]) {
+    const r = ratio(read.controlLine, bg);
+    console.log(`${r.toFixed(2)}:1  seat-dot ring rgb(${read.controlLine}) on ${name} (needs 3:1)`);
+    if (r < 3) bad.push(`seat-dot ring on ${name} is ${r.toFixed(2)}:1`);
   }
   // The source must use the ink tokens where the error line and eyebrows are drawn.
   const app = readFileSync("src/components/game/EmberisleApp.tsx", "utf8");
@@ -324,6 +332,41 @@ try {
     const ring = ratio(chips.ring, chips.paper);
     console.log(`  ${tag}: red ring rgb(${chips.ring}) on paper rgb(${chips.paper}) ${ring.toFixed(2)}:1 (needs 3:1)`);
     if (ring < 3) bad.push(`${tag} red ring on paper is ${ring.toFixed(2)}:1`);
+    await pg.close();
+  }
+  // #1419: How to play and Costs on the soft grey-green wash. The sheet must stay opaque, so the wash never shows through
+  // its text; every text kind is read as computed against the sheet's own fill.
+  for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
+    const tag = `${viewport.width}x${viewport.height}`;
+    const pg = await openPage({ viewport });
+    pg.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+    pg.on("pageerror", (e) => errors.push(String(e)));
+    await pg.goto(`http://127.0.0.1:${PORT}/`);
+    await pg.getByRole("button", { name: "Join", exact: true }).waitFor();
+    await pg.evaluate(() => window.__emberisle.getState().startHotseat(4));
+    for (const [row, sheet, texts] of [
+      ["How to play", '[aria-labelledby="howto-title"] > div', { title: "#howto-title", sentence: '[role="region"] > p', figcaption: "figcaption" }],
+      ["Costs", '[data-testid="cost-card"]', { title: "#costs-title", "cost row": '[data-testid="cost-row-path"] > span', "worth row 12 px": '[data-testid="worth-row"] > span', "worth number": '[data-testid="worth-row"] > span:last-child', "win line": ":scope > p" }],
+    ]) {
+      await pg.getByRole("button", { name: "Table menu", exact: true }).click();
+      await pg.getByRole("dialog", { name: "Table menu" }).getByRole("button", { name: row, exact: true }).click();
+      await pg.locator(sheet).waitFor();
+      if (row === "How to play") await pg.locator(`${sheet} figure`).nth(2).waitFor();
+      const got = await pg.locator(sheet).evaluate((el, texts) => {
+        const px = (css) => {
+          const c = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+          c.clearRect(0, 0, 1, 1);
+          c.fillStyle = css;
+          c.fillRect(0, 0, 1, 1);
+          return [...c.getImageData(0, 0, 1, 1).data];
+        };
+        return { fill: px(getComputedStyle(el).backgroundColor), inks: Object.fromEntries(Object.entries(texts).map(([k, sel]) => [k, px(getComputedStyle(el.querySelector(sel)).color).slice(0, 3)])) };
+      }, texts);
+      if (got.fill[3] !== 255) bad.push(`${tag} ${row} sheet is not opaque (alpha ${got.fill[3]})`);
+      for (const [k, ink] of Object.entries(got.inks)) sampled.push([`${tag} ${row} ${k} (rgb ${ink}) on the sheet over the wash`, ratio(ink, got.fill.slice(0, 3))]);
+      await pg.keyboard.press("Escape");
+      await pg.locator(sheet).waitFor({ state: "detached" });
+    }
     await pg.close();
   }
   for (const [name, r] of sampled) {

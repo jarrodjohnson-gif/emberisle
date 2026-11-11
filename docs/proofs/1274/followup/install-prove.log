@@ -1,0 +1,13 @@
+
+> install-prove
+> node scripts/install-prove.mjs
+
+ok   host: meta tags, manifest (start_url http://127.0.0.1:41935/, scope http://127.0.0.1:41935/) and 4 icons
+ok   vite preview: meta tags, manifest (start_url http://127.0.0.1:8110/, scope http://127.0.0.1:8110/) and 4 icons
+ok   390x844: Play and the title card inside the safe area; the page cannot scroll or bounce
+ok   390x844: Ready and the lobby card inside the safe area (table 6SSE)
+ok   ?code=6SSE fills the field and Join seats a second player
+ok   ?watch=6SSE fills the field and shows Watch inside the safe area
+ok   390x844 in game: every HUD button inside the safe area
+ok   844x390: Play, Ready and both cards inside the safe area
+install-prove: ok

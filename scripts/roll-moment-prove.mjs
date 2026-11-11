@@ -2,10 +2,10 @@
 // and 390x844 (touch), played to the person's first roll through the real roll-off and setup:
 // - the person's roll (a real click on Roll): the moment mounts in the same frame the roll is applied, so no frame shows the
 //   roll without it; it is centred within ±10 % of the viewport, the sum's computed font-size ≥ 48 px, and the resting dice
-//   row is hidden (the sum is on screen once);
+//   row is hidden (the centre sum is up, and the chip may show it too, #954);
 // - after a hold of at least 900 ms it shrinks into the resting dice row: one flight of 220 ms, no delay, --ease-out, fill
 //   forwards, whose last keyframe puts the chip on the row (centre within 4 px, one side matching); afterwards the row shows
-//   the same faces and nothing spells the roll out twice (the banner and the log line carry no dice numbers);
+//   the same faces. The banner carries no dice numbers. The HUD chip shows the roll line (#954), so its sum is the one other place;
 // - the issue's wall-clock limits, measured in the page from the state change: up within 200 ms and gone by 1400 ms, net of
 //   the time the page's main thread was measurably stalled (a 10 ms interval probe), so a loaded machine slows the clock
 //   but cannot fail or pass the check by itself; raw and stalled times are printed;
@@ -17,8 +17,7 @@
 // Hotseat at 1280x720: a seat's roll shows one moment and is read out by the seat's name, not "You".
 // Reduced motion at 1280x720: the moment still shows centred and large, with no entry animation and no flight, and goes
 // after its hold. Zero console errors throughout.
-import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 // CI renders the island with software GL, where one frame can take a long time; a wait gets this long.
@@ -31,7 +30,6 @@ await vite.listen();
 const errors = [];
 let failures = 0;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
@@ -230,7 +228,9 @@ async function settleChecks(page, tag, { applied, dice }, { reduced = false } = 
     rowVisible: document.querySelector('[data-testid="dice-row"]')?.checkVisibility({ visibilityProperty: true }) ?? false,
     shown: window.__sumShown(sum),
     banner: document.querySelector('[data-testid="banner"]')?.textContent ?? null,
-    log: document.querySelector('[data-testid="log-line"]')?.textContent ?? null,
+    // The goods line stays in the log. The chip shows the roll line (#954).
+    log: window.__emberisle.getState().gameLog.at(-1)?.text ?? null,
+    chip: document.querySelector('[data-testid="log-line"]')?.textContent ?? null,
   }), sum);
   const up = m.at - t0;
   const gone = m.gone - t0;
@@ -244,11 +244,15 @@ async function settleChecks(page, tag, { applied, dice }, { reduced = false } = 
   check(Math.abs(m.centreY - m.vh / 2) <= m.vh * 0.1, `${tag}: centred vertically (${m.centreY.toFixed(0)} of ${m.vh}, ±10 %)`);
   check(m.fontSize >= 48, `${tag}: the sum is ${m.fontSize}px (≥ 48)`);
   check(m.sumColor === (sum === 7 ? "rgb(179, 38, 30)" : "rgb(38, 61, 60)"), `${tag}: the sum is ${sum === 7 ? "danger on a 7" : "ink"} (${m.sumColor})`);
+  // #954: the chip's roll sum is not a second dice readout. The checks below still mean the centre sum, then the dice row.
+  m.shown = m.shown.filter((id) => id !== "log-roll-sum");
+  late.shown = late.shown.filter((id) => id !== "log-roll-sum");
   check(m.rowHidden === true && m.shown.length === 1 && m.shown[0] === "roll-sum", `${tag}: while it is up the roll is on screen once (${JSON.stringify(m.shown)})`);
   check(!late.moment && gone - stall.gone <= 1400, `${tag}: gone by 1400 ms of the roll being applied (${gone.toFixed(0)} ms, ${stall.gone.toFixed(0)} of them stalled)`);
   check(late.rowVisible && late.row.join() === dice.join(), `${tag}: the resting row shows the same faces (${late.row})`);
   check(late.shown.length === 1 && late.shown[0] === "dice-row", `${tag}: afterwards the sum is on screen once, in the row (${JSON.stringify(late.shown)})`);
   check(!late.banner && / — .+'s roll[;.]/.test(late.log ?? ""), `${tag}: one persistent roll event and no duplicate goods banner`);
+  check(/^.+ rolled \d+!$/.test((late.chip ?? "").replace(/\s+/g, " ").trim()) && / — .+'s roll[;.]/.test(late.log ?? ""), `${tag}: the HUD chip shows the roll line while the log's newest line stays the goods line (${JSON.stringify(late.chip)})`);
   if (reduced) {
     check(flights.length === 0, `${tag}: reduced motion, no flight (${flights.length})`);
     check(m.animation === "none", `${tag}: reduced motion, no entry animation (${m.animation})`);
@@ -318,7 +322,8 @@ async function practice(viewport, touch) {
     };
   }, touch ? 8 : 6);
   await frames(page);
-  const ownedNumbers = await page.getByTestId("my-numbers").locator("[data-n]").evaluateAll(els => els.map(el => Number(el.dataset.n)));
+  // #1509: the upright phone table has no "pays on" chips, so the owned numbers are read from the state the table draws.
+  const ownedNumbers = await page.evaluate(() => { const g = window.__emberisle.getState(); const st = g.state; const owned = new Set(st.vertices.filter((v) => v.building?.playerId === g.localId).flatMap((v) => v.hexes)); return st.hexes.filter((h) => owned.has(h.id) && h.terrain !== "waste").map((h) => h.pip); });
   if (!ownedNumbers.includes(6) || !ownedNumbers.includes(8)) throw new Error("overlap fixture did not render owned 6 and 8");
   const roll = await clickRoll(page);
   if (roll.dice[0] + roll.dice[1] !== (touch ? 8 : 6)) throw new Error("overlap fixture did not force the clicked roll");

@@ -1,0 +1,2027 @@
+[
+  {
+    "label": "390x844 DWCK ready",
+    "code": "DWCK",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 76,
+    "scrollWidth": 76,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 29,
+    "textRight": 104.71875,
+    "left": 29,
+    "right": 104.71875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 DWCK Copy → Copied",
+    "code": "DWCK",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 76,
+    "scrollWidth": 76,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 29,
+    "textRight": 104.71875,
+    "left": 29,
+    "right": 104.71875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 DWCK Copy link → Copied",
+    "code": "DWCK",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 76,
+    "scrollWidth": 76,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 29,
+    "textRight": 104.71875,
+    "left": 29,
+    "right": 104.71875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 APWG ready",
+    "code": "APWG",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 76,
+    "scrollWidth": 76,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 29,
+    "textRight": 104.984375,
+    "left": 29,
+    "right": 104.984375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 APWG Copy → Copied",
+    "code": "APWG",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 76,
+    "scrollWidth": 76,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 29,
+    "textRight": 104.984375,
+    "left": 29,
+    "right": 104.984375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 APWG Copy link → Copied",
+    "code": "APWG",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 76,
+    "scrollWidth": 76,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 29,
+    "textRight": 104.984375,
+    "left": 29,
+    "right": 104.984375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 WWWW ready",
+    "code": "WWWW",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 97,
+    "scrollWidth": 97,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 29,
+    "textRight": 125.84375,
+    "left": 29,
+    "right": 125.84375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 WWWW Copy → Copied",
+    "code": "WWWW",
+    "font": 22.1663,
+    "fontStyle": "700 22.1663px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 29,
+    "textRight": 118.703125,
+    "left": 29,
+    "right": 118.703125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 WWWW Copy link → Copied",
+    "code": "WWWW",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 97,
+    "scrollWidth": 97,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 29,
+    "textRight": 125.84375,
+    "left": 29,
+    "right": 125.84375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 MMMM ready",
+    "code": "MMMM",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 95,
+    "scrollWidth": 95,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 29,
+    "textRight": 123.53125,
+    "left": 29,
+    "right": 123.53125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 MMMM Copy → Copied",
+    "code": "MMMM",
+    "font": 22.7325,
+    "fontStyle": "700 22.7325px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 29,
+    "textRight": 118.703125,
+    "left": 29,
+    "right": 118.703125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 MMMM Copy link → Copied",
+    "code": "MMMM",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 95,
+    "scrollWidth": 95,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 29,
+    "textRight": 123.53125,
+    "left": 29,
+    "right": 123.53125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 before responsive change",
+    "code": "WWWW",
+    "font": 22.1663,
+    "fontStyle": "700 22.1663px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 29,
+    "textRight": 118.703125,
+    "left": 29,
+    "right": 118.703125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 shrinks/grows to 320",
+    "code": "WWWW",
+    "font": 15.6652,
+    "fontStyle": "700 15.6652px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 61,
+    "scrollWidth": 61,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 85.5625,
+    "left": 25,
+    "right": 85.5625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "390x844 restores width",
+    "code": "WWWW",
+    "font": 22.1663,
+    "fontStyle": "700 22.1663px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 29,
+    "textRight": 118.703125,
+    "left": 29,
+    "right": 118.703125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 P9M4 ready",
+    "code": "P9M4",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 69,
+    "scrollWidth": 69,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 94.171875,
+    "left": 25,
+    "right": 94.171875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 P9M4 Copy → Copied",
+    "code": "P9M4",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 69,
+    "scrollWidth": 69,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 94.171875,
+    "left": 25,
+    "right": 94.171875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 P9M4 Copy link → Copied",
+    "code": "P9M4",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 69,
+    "scrollWidth": 69,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 94.171875,
+    "left": 25,
+    "right": 94.171875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 APWG ready",
+    "code": "APWG",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 76,
+    "scrollWidth": 76,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 100.984375,
+    "left": 25,
+    "right": 100.984375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 APWG Copy → Copied",
+    "code": "APWG",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 76,
+    "scrollWidth": 76,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 100.984375,
+    "left": 25,
+    "right": 100.984375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 APWG Copy link → Copied",
+    "code": "APWG",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 76,
+    "scrollWidth": 76,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 100.984375,
+    "left": 25,
+    "right": 100.984375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 WWWW ready",
+    "code": "WWWW",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 97,
+    "scrollWidth": 97,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 121.84375,
+    "left": 25,
+    "right": 121.84375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 WWWW Copy → Copied",
+    "code": "WWWW",
+    "font": 20.3568,
+    "fontStyle": "700 20.3568px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 83,
+    "scrollWidth": 83,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 107.703125,
+    "left": 25,
+    "right": 107.703125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 WWWW Copy link → Copied",
+    "code": "WWWW",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 97,
+    "scrollWidth": 97,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 121.84375,
+    "left": 25,
+    "right": 121.84375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 MMMM ready",
+    "code": "MMMM",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 95,
+    "scrollWidth": 95,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 119.53125,
+    "left": 25,
+    "right": 119.53125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 MMMM Copy → Copied",
+    "code": "MMMM",
+    "font": 20.8768,
+    "fontStyle": "700 20.8768px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 83,
+    "scrollWidth": 83,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 107.6875,
+    "left": 25,
+    "right": 107.6875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 MMMM Copy link → Copied",
+    "code": "MMMM",
+    "font": 24,
+    "fontStyle": "700 24px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 95,
+    "scrollWidth": 95,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 119.53125,
+    "left": 25,
+    "right": 119.53125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 15,
+        "width": 54.578125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 before responsive change",
+    "code": "WWWW",
+    "font": 20.3568,
+    "fontStyle": "700 20.3568px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 83,
+    "scrollWidth": 83,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 107.703125,
+    "left": 25,
+    "right": 107.703125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 shrinks/grows to 320",
+    "code": "WWWW",
+    "font": 15.6652,
+    "fontStyle": "700 15.6652px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 61,
+    "scrollWidth": 61,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 85.5625,
+    "left": 25,
+    "right": 85.5625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "375x667 restores width",
+    "code": "WWWW",
+    "font": 20.3568,
+    "fontStyle": "700 20.3568px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 83,
+    "scrollWidth": 83,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 107.703125,
+    "left": 25,
+    "right": 107.703125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 TH5S ready",
+    "code": "TH5S",
+    "font": 18,
+    "fontStyle": "700 18px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 44,
+    "scrollWidth": 44,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 69.40625,
+    "left": 25,
+    "right": 69.40625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 12,
+        "width": 47.265625,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 TH5S Copy → Copied",
+    "code": "TH5S",
+    "font": 18,
+    "fontStyle": "700 18px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 44,
+    "scrollWidth": 44,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 69.40625,
+    "left": 25,
+    "right": 69.40625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 TH5S Copy link → Copied",
+    "code": "TH5S",
+    "font": 18,
+    "fontStyle": "700 18px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 44,
+    "scrollWidth": 44,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 69.40625,
+    "left": 25,
+    "right": 69.40625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 12,
+        "width": 47.265625,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 APWG ready",
+    "code": "APWG",
+    "font": 18,
+    "fontStyle": "700 18px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 54,
+    "scrollWidth": 54,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 78.984375,
+    "left": 25,
+    "right": 78.984375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 12,
+        "width": 47.265625,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 APWG Copy → Copied",
+    "code": "APWG",
+    "font": 18,
+    "fontStyle": "700 18px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 54,
+    "scrollWidth": 54,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 78.984375,
+    "left": 25,
+    "right": 78.984375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 APWG Copy link → Copied",
+    "code": "APWG",
+    "font": 18,
+    "fontStyle": "700 18px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 54,
+    "scrollWidth": 54,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 78.984375,
+    "left": 25,
+    "right": 78.984375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 12,
+        "width": 47.265625,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 WWWW ready",
+    "code": "WWWW",
+    "font": 18,
+    "fontStyle": "700 18px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 70,
+    "scrollWidth": 70,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 94.625,
+    "left": 25,
+    "right": 94.625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 12,
+        "width": 47.265625,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 WWWW Copy → Copied",
+    "code": "WWWW",
+    "font": 15.6652,
+    "fontStyle": "700 15.6652px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 61,
+    "scrollWidth": 61,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 85.5625,
+    "left": 25,
+    "right": 85.5625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 WWWW Copy link → Copied",
+    "code": "WWWW",
+    "font": 18,
+    "fontStyle": "700 18px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 70,
+    "scrollWidth": 70,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 94.625,
+    "left": 25,
+    "right": 94.625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 12,
+        "width": 47.265625,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 MMMM ready",
+    "code": "MMMM",
+    "font": 18,
+    "fontStyle": "700 18px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 68,
+    "scrollWidth": 68,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 92.90625,
+    "left": 25,
+    "right": 92.90625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 12,
+        "width": 47.265625,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 MMMM Copy → Copied",
+    "code": "MMMM",
+    "font": 16.0617,
+    "fontStyle": "700 16.0617px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 61,
+    "scrollWidth": 61,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 85.53125,
+    "left": 25,
+    "right": 85.53125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 MMMM Copy link → Copied",
+    "code": "MMMM",
+    "font": 18,
+    "fontStyle": "700 18px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 68,
+    "scrollWidth": 68,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 92.90625,
+    "left": 25,
+    "right": 92.90625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copy",
+        "font": 12,
+        "width": 47.265625,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 before responsive change",
+    "code": "WWWW",
+    "font": 15.6652,
+    "fontStyle": "700 15.6652px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 61,
+    "scrollWidth": 61,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 85.5625,
+    "left": 25,
+    "right": 85.5625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 shrinks/grows to 390",
+    "code": "WWWW",
+    "font": 22.1663,
+    "fontStyle": "700 22.1663px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 29,
+    "textRight": 118.703125,
+    "left": 29,
+    "right": 118.703125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 15,
+        "width": 69.28125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 15,
+        "width": 86.78125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 15,
+        "width": 62.1875,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  },
+  {
+    "label": "320x568 restores width",
+    "code": "WWWW",
+    "font": 15.6652,
+    "fontStyle": "700 15.6652px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 61,
+    "scrollWidth": 61,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 25,
+    "textRight": 85.5625,
+    "left": 25,
+    "right": 85.5625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "Copied",
+        "font": 12,
+        "width": 59.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Copy link",
+        "font": 12,
+        "width": 73.03125,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      },
+      {
+        "text": "Invite",
+        "font": 12,
+        "width": 53.34375,
+        "height": 44,
+        "left": 9,
+        "right": 9
+      }
+    ]
+  }
+]

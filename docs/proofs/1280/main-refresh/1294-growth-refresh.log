@@ -1,0 +1,51 @@
+ok   SeatNeeds: 1.70 kB gzip, ceiling 1.90 kB
+ok   LobbyView: 2.43 kB gzip, ceiling 2.50 kB
+ok   LobbyWaitBox: 1.97 kB gzip, ceiling 2.10 kB
+ok   table: 2.20 kB gzip, ceiling 2.20 kB
+ok   haptics: 1.07 kB gzip, ceiling 1.20 kB
+ok   index: 125.46 kB gzip, ceiling 127.00 kB
+ok   IslandCanvas: 202.00 kB gzip, ceiling 202.50 kB
+ok   jelly-board: 8.12 kB gzip, ceiling 9.00 kB
+ok   hex-jelly: 46.72 kB gzip, ceiling 50.00 kB
+ok   harbor-jelly: 10.72 kB gzip, ceiling 11.50 kB
+ok   online: 6.49 kB gzip, ceiling 9.00 kB
+ok   Reactions: 2.48 kB gzip, ceiling 2.60 kB
+ok   sound-extra: 0.23 kB gzip, ceiling 0.60 kB
+ok   trade-sound: 0.53 kB gzip, ceiling 0.60 kB
+ok   emotes: 0.46 kB gzip, ceiling 0.60 kB
+ok   sheets: 7.21 kB gzip, ceiling 7.80 kB
+ok   SetupReference: 1.86 kB gzip, ceiling 2.20 kB
+ok   moments: 4.32 kB gzip, ceiling 5.70 kB
+ok   VictoryTargetSelect: 0.62 kB gzip, ceiling 1.00 kB
+ok   DockInspection: 1.03 kB gzip, ceiling 1.20 kB
+ok   HandRates: 0.65 kB gzip, ceiling 0.80 kB
+ok   TradeResource: 0.83 kB gzip, ceiling 1.65 kB
+ok   OpenTables: 1.27 kB gzip, ceiling 1.30 kB
+ok   WayfarerOptions: 0.49 kB gzip, ceiling 0.50 kB
+ok   TurnExtensionVote: 1.20 kB gzip, ceiling 1.40 kB
+ok   SeatNeeds growth: base 1698 B, PR 1697 B, -1 B, allowance 200 B
+ok   LobbyView growth: base 2429 B, PR 2429 B, +0 B, allowance 200 B
+ok   LobbyWaitBox growth: base 1868 B, PR 1967 B, +99 B, allowance 200 B
+ok   table growth: base 2196 B, PR 2196 B, +0 B, allowance 200 B
+ok   haptics growth: base 1068 B, PR 1068 B, +0 B, allowance 200 B
+ok   index growth: base 125456 B, PR 125457 B, +1 B, allowance 400 B
+ok   IslandCanvas growth: base 201995 B, PR 202002 B, +7 B, allowance 667 B
+ok   jelly-board growth: base 8123 B, PR 8122 B, -1 B, allowance 200 B
+ok   hex-jelly growth: base 46714 B, PR 46715 B, +1 B, allowance 200 B
+ok   harbor-jelly growth: base 10716 B, PR 10716 B, +0 B, allowance 200 B
+ok   online growth: base 6491 B, PR 6492 B, +1 B, allowance 200 B
+ok   Reactions growth: base 2484 B, PR 2482 B, -2 B, allowance 200 B
+ok   sound-extra growth: base 225 B, PR 225 B, +0 B, allowance 200 B
+ok   trade-sound growth: base 533 B, PR 533 B, +0 B, allowance 200 B
+ok   emotes growth: base 464 B, PR 464 B, +0 B, allowance 200 B
+ok   sheets growth: base 7207 B, PR 7206 B, -1 B, allowance 200 B
+ok   SetupReference growth: base 1859 B, PR 1856 B, -3 B, allowance 200 B
+ok   moments growth: base 4318 B, PR 4316 B, -2 B, allowance 200 B
+ok   VictoryTargetSelect growth: base 617 B, PR 616 B, -1 B, allowance 200 B
+ok   DockInspection growth: base 1031 B, PR 1030 B, -1 B, allowance 200 B
+ok   HandRates growth: base 647 B, PR 648 B, +1 B, allowance 200 B
+ok   TradeResource growth: base 831 B, PR 831 B, +0 B, allowance 200 B
+ok   OpenTables growth: base 1277 B, PR 1275 B, -2 B, allowance 200 B
+ok   WayfarerOptions growth: base 488 B, PR 486 B, -2 B, allowance 200 B
+ok   TurnExtensionVote growth: base 1206 B, PR 1204 B, -2 B, allowance 200 B
+size-prove: all chunks inside ceiling and growth allowance

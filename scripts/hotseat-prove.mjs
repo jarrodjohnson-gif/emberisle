@@ -6,9 +6,10 @@
 // #410: with the bank out of ore, the fortune tray's ore chip is greyed out (aria-disabled, described) and it cannot be picked (#423).
 // #430: while p2 owes that discard on p0's turn the banner reads "{p2} — discard 4", not "{p2}'s turn", and p0's turn after.
 // #412: a pick the bank empties while the tray is open is dropped and Play waits; an empty bank turns Plenty off.
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
+import { rollOffOrderOk } from "./roll-off-oracle.mjs";
 
 // CI renders the island with software GL, where one frame can take seconds; a step gets this long to show.
 const STEP_MS = 15_000;
@@ -20,7 +21,6 @@ await vite.listen();
 const errors = [];
 let code = 0;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 try {
@@ -115,16 +115,9 @@ try {
     rollers.push(before.current);
   }
   const tilesAfter = await page.locator('[data-testid="rolloff-die"]:visible').count();
-  const off = await page.evaluate(() => {
-    const st = window.__emberisle.getState().state;
-    const ids = st.players.map((p) => p.id);
-    const d = st.rollOff.rolls;
-    const [first, ...rest] = ids;
-    const ok = st.phase === "setupSettle" && st.setupIndex === 0 && st.current === first && st.rollOff.pending.length === 0 &&
-      Object.keys(d).length === ids.length && rest.every((id) => d[id] < d[first]) &&
-      rest.every((id, i) => i === 0 || d[rest[i - 1]] > d[id] || (d[rest[i - 1]] === d[id] && rest[i - 1] < id));
-    return { ok, ids, rolls: d, line: st.log.findLast((l) => l.includes("places first, then")) };
-  });
+  const st = await page.evaluate(() => window.__emberisle.getState().state);
+  const ok = rollOffOrderOk(st);
+  const off = { ok, ids: st.players.map((p) => p.id), rolls: st.rollOff.rolls, line: st.log.findLast((l) => l.includes("places first, then")) };
   console.log(`roll-off by the Roll button: ${rollers.length} clicks (${rollers.join(" ")}), order ${off.ids.join(" ")} ok ${off.ok}, tiles [${offTiles.join(" ")}] then ${tilesAfter}, "${off.line}"`);
   if (!off.ok || rollers.length < 4 || offTiles.length !== 4 || offTiles.some((t) => !/^[1-6–]$/.test(t)) || offTiles.filter((t) => t === "–").length > 1 || tilesAfter !== 0) throw new Error(`roll-off: ${JSON.stringify({ off, rollers, offTiles, tilesAfter })}`);
 
@@ -368,7 +361,8 @@ try {
   await page.keyboard.press("Escape");
   await tray.waitFor({ state: "detached", timeout: STEP_MS });
 
-  // #425: Leave plays click_001 once (a hotseat table has no confirm popover, so it goes straight to the title).
+  // #425: Leave plays click_001 once. #1449: hotseat asks first, so the Leave table row and the question's Leave each
+  // play click_001 once, and nothing else plays on the way to the title.
   // #442: Leave table is a row of the table menu; the menu's own open click is not counted.
   await page.getByRole("button", { name: "Table menu" }).click();
   // Clips start 150 ms apart (#609): let the tray's Escape and the menu's open click start before counting.
@@ -383,13 +377,14 @@ try {
   if (scheduledPumps < 1) throw new Error("No sound pump was scheduled before Leave");
   const playsBeforeLeave = await page.evaluate(() => window.__plays.length);
   await page.getByRole("button", { name: "Leave table" }).click();
+  await page.getByTestId("leave-confirm").getByRole("button", { name: "Leave", exact: true }).click();
   await page.waitForFunction(() => !window.__emberisle.getState().state, null, { timeout: STEP_MS });
-  // The click is paced 150 ms behind whatever queued before it (#609), so give it a moment to start before counting.
-  await page.waitForFunction((n) => window.__plays.length > n, playsBeforeLeave, { timeout: 2000 }).catch(() => {});
+  // Each click is paced 150 ms behind whatever queued before it (#609), so give both a moment to start before counting.
+  await page.waitForFunction((n) => window.__plays.length > n + 1, playsBeforeLeave, { timeout: 2000 }).catch(() => {});
   const leavePlays = await page.evaluate((n) => window.__plays.slice(n), playsBeforeLeave);
   console.log("Leave played", JSON.stringify(leavePlays));
   try {
-    if (leavePlays.join() !== "/audio/click_001.wav") throw new Error(`Leave played ${JSON.stringify(leavePlays)}, not click_001.wav once`);
+    if (leavePlays.join() !== "/audio/click_001.wav,/audio/click_001.wav") throw new Error(`Leave table and Leave played ${JSON.stringify(leavePlays)}, not click_001.wav once each`);
   } catch (failure) {
     try {
       const diagnostic = await page.evaluate(({ baseline, observed }) => ({

@@ -1,8 +1,8 @@
 // #536: browser proof of exact trade previews, live hands, directional motion, and one-step settlement.
 // Run: CHROMIUM_PATH=/usr/bin/chromium node --import ./server/register.mjs scripts/trade-map.test.mjs
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { createGame } from "../src/lib/game/board.ts";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
@@ -27,7 +27,6 @@ for (const r of RESOURCES) base.bank[r] = 19 - base.players.reduce((n, p) => n +
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -83,18 +82,18 @@ try {
     await more("wool", "want").click();
     await more("ore", "want").click();
     const preview = panel.getByTestId("trade-player-preview");
-    assert.match(await preview.textContent(), /You give: 2 wood.*You get: 1 sheep, 1 stone/);
+    assert.match(await preview.textContent(), /Give: 2 wood.*Get: 1 sheep, 1 stone/);
     assert(await more("timber", "want").isDisabled(), "same kind cannot be sent both ways");
     assert.equal(await bank().count(), 1, "mixed table quantities retain the visible Bank action");
     assert(await bank().isDisabled(), "Bank must reject mixed kinds from the shared draft");
-    assert.equal(await panel.getByTestId("trade-hint").textContent(), "Choose one kind on each side for a bank or dock exchange.");
+    assert.equal(await panel.getByTestId("trade-hint").textContent(), "Pick one kind to give and one to get.");
     assert.equal(await panel.getByRole("radio").count(), 0, "Bank uses shared quantities with no separate kind selector");
     // Remove one requested kind through its actual shared quantity control: both receipts update together.
     await panel.getByRole("button", { name: "Fewer Stone to want", exact: true }).click();
     assert.equal(await panel.getByTestId("trade-give-timber").getByRole("status").textContent(), "2");
     assert.equal(await panel.getByTestId("trade-want-wool").getByRole("status").textContent(), "1");
-    assert.equal(await panel.getByTestId("trade-hint").textContent(), "You give 4 wood. You get 1 sheep.");
-    assert.match(await preview.textContent(), /You give: 2 wood.*You get: 1 sheep/, "Bank kind derivation preserves the exact shared Table quantities");
+    assert.equal(await panel.getByTestId("trade-hint").textContent(), "Give 4 wood, get 1 sheep.");
+    assert.match(await preview.textContent(), /Give: 2 wood.*Get: 1 sheep/, "Bank kind derivation preserves the exact shared Table quantities");
     assert.equal(await panel.getByTestId("trade-give-timber").getByTestId("trade-owned").textContent(), "Have 6");
     const layout = await panel.evaluate((el) => {
       const box = (s) => el.querySelector(s).getBoundingClientRect().toJSON();
@@ -112,10 +111,10 @@ try {
     await panel.locator(".trade-composer-scroll").evaluate((el) => { el.scrollTop = 0; });
     await page.screenshot({ path: `test-results/trade-map-${width}x${height}.png` });
     await change('g.players[0].resources.timber = 1');
-    await textHas(preview, "You give: 1 wood");
+    await textHas(preview, "Give: 1 wood");
     assert(await more("timber", "give").isDisabled(), "live hand must cap give");
     await change('g.players[0].resources.timber = 0');
-    await textHas(preview, "You give: choose goods");
+    await textHas(preview, "Give: choose goods");
     assert(await ask().isDisabled(), "live empty hand must disable ask");
     await page.keyboard.press("Escape");
     await panel.waitFor({ state: "detached" });
@@ -158,7 +157,7 @@ try {
     await more("wool", "want").click();
     await more("wool", "want").click();
     assert(await bank().isEnabled(), "one shared give kind and get kind enable an exact one-exchange quote despite Table quantities");
-    assert.equal(await panel.getByTestId("trade-hint").textContent(), `You give ${rate} stone. You get 1 sheep.`);
+    assert.equal(await panel.getByTestId("trade-hint").textContent(), `Give ${rate} stone, get 1 sheep.`);
     await bank().click();
     const actual = await settled();
     assert.equal(actual.hands[0].ore, 6 - rate);
@@ -183,11 +182,14 @@ try {
   // Long mixed offers must fit the frozen desktop board hole and leave chat usable after rotation.
   const long = structuredClone(base);
   for (const p of long.players) {
-    p.name = `Alexanderthe${p.id}`;
+    // 16 characters, the longest a name can be (NAME_MAX). A recipient who can pay (#537) has no "Need" line any more, so
+    // names this long are what wrap the responses and keep the details taller than the room above the chat.
+    p.name = `Alexanderthegr${p.id}`;
     p.resources = Object.fromEntries(RESOURCES.map((r) => [r, 0]));
   }
   Object.assign(long.players[0].resources, { timber: 8, clay: 8, grain: 8 });
-  Object.assign(long.players[1].resources, { wool: 8 });
+  // #537: recipient must be able to pay, or the toast collapses to compact demand without details/receipt.
+  Object.assign(long.players[1].resources, { wool: 8, ore: 8 });
   for (const r of RESOURCES) long.bank[r] = 19 - long.players.reduce((n, p) => n + p.resources[r], 0);
   const longOffer = { tradeId: "long", from: "p0", fromName: long.players[0].name,
     give: { timber: 6, clay: 6, grain: 6 }, want: { wool: 6, ore: 6 }, until: Date.now() + 60_000 };
@@ -270,15 +272,26 @@ try {
   assert(await page.evaluate(() => performance.now() - window.__declineAt < 1000), "bot cross took over 1 second to render");
   await page.screenshot({ path: "test-results/trade-map-responses.png" });
   await page.evaluate(() => window.__emberisle.setState({ localId: "p1" }));
-  await textHas(page.getByTestId("trade-receipt"), "You give: 1 sheep, 1 stone");
-  await textHas(page.getByTestId("trade-receipt"), "You get: 1 wood, 1 brick");
+  await textHas(page.getByTestId("trade-receipt"), "Give: 1 sheep, 1 stone");
+  await textHas(page.getByTestId("trade-receipt"), "Get: 1 wood, 1 brick");
+  // #537: a short hand switches to compact demand (no Accept), then recovers to Yes/No when goods return.
   await change('g.players[1].resources.ore = 0');
-  await page.waitForFunction(() => document.querySelector(".trade-yes")?.getAttribute("aria-disabled") === "true");
-  await toast.getByRole("button", { name: "Yes", exact: true }).focus();
-  await page.keyboard.press("Enter");
-  assert((await settled()).offer, "unaffordable Yes must not settle");
+  await page.waitForFunction(() => document.querySelector('[data-testid="trade-toast"]')?.getAttribute("data-compact") === "true");
+  assert.equal(await page.getByTestId("trade-demand").count(), 1);
+  assert.equal(await page.getByRole("button", { name: "Yes", exact: true }).count(), 0);
+  // The old check pressed an aria-disabled Yes. There is no Yes now, so force the answer the store would get from one.
+  const handsBefore = JSON.stringify((await settled()).hands);
+  await page.evaluate(() => window.__emberisle.getState().answerTrade(true));
+  const afterYes = await settled();
+  assert(afterYes.offer, "an unaffordable Yes must not settle");
+  assert.equal(JSON.stringify(afterYes.hands), handsBefore, "an unaffordable Yes must not move goods");
+  assert.equal(await page.evaluate(() => window.__emberisle.getState().declined.includes("p1")), false, "an unaffordable Yes is not a decline");
+  // #537: the visible "Need" line is gone, so the reason is kept for keyboard and screen-reader users.
+  assert.equal(await page.getByTestId("trade-why").textContent(), "You need 1 more stone to accept");
+  assert.equal(await toast.getByTestId("trade-dismiss").getAttribute("aria-describedby"), await page.getByTestId("trade-why").getAttribute("id"), "Dismiss must be described by the reason");
   await change('g.players[1].resources.ore = 2');
-  await page.waitForFunction(() => !document.querySelector(".trade-yes")?.hasAttribute("aria-disabled"));
+  await page.waitForFunction(() => document.querySelector('[data-testid="trade-toast"]')?.getAttribute("data-compact") !== "true");
+  assert.equal(await page.getByTestId("trade-why").count(), 0, "a seat that can pay has no unaffordable reason");
   await toast.getByRole("button", { name: "Yes", exact: true }).click();
   await page.getByTestId("trade-outcome").waitFor();
   assert.equal(await page.getByTestId("trade-outcome").getAttribute("data-taker"), "p1");
@@ -289,7 +302,7 @@ try {
   assert.deepEqual(actual.hands[0], { timber: 5, clay: 1, wool: 1, grain: 1, ore: 7 });
   assert.deepEqual(actual.hands[1], { timber: 1, clay: 1, wool: 2, grain: 0, ore: 1 });
   assert.deepEqual(actual.bank, mixed.bank, "player trade must not touch bank");
-  console.log("real mixed trade: reduced-motion bot cross <1s, recipient pays/gets preview, stale hand refuses, one Yes settles both bags exactly once");
+  console.log("real mixed trade: reduced-motion bot cross <1s, recipient pays/gets preview, #537 compact when short, one Yes settles both bags exactly once");
   assert.deepEqual(errors, []);
   console.log("trade map proof ok; zero browser errors");
 } finally {

@@ -8,7 +8,7 @@ import { useGame } from "@/lib/game/store";
 import { chunk } from "@/lib/lazy";
 import type { Reaction } from "@/lib/net/table";
 import { play } from "@/lib/sound";
-import { MUTE_KEY, mutedByCode, readMutedSeats } from "@/lib/muted-seats";
+export { useMutedSeats } from "@/lib/use-muted-seats";
 import { cn } from "@/lib/utils";
 
 const reactions = chunk(() => import("@/components/game/Reactions"));
@@ -34,50 +34,9 @@ const COOLDOWN = 1000;
 const SOUND_REST = 3000;
 // How long each kind of bubble stays at the seat. A reaction's 2 s is the store's own lifetime for it.
 export const LIFE = { react: 2000, sound: 3000, chat: 4000 } as const;
-const MUTE_EVENT = "emberisle:chat-mutes-changed";
 const TAB_KEY = "emberisle-chat-tab";
 export const CONTROL =
   "flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 transition-transform duration-75 active:scale-[0.97] disabled:cursor-default disabled:opacity-50";
-
-// Muting is a browser preference, scoped to one table code; no message reaches the host.
-export function useMutedSeats(code: string) {
-  const [seats, setSeats] = useState<string[]>(() => readMutedSeats(code));
-
-  useEffect(() => {
-    const syncLocal = () => setSeats(readMutedSeats(code));
-    const syncStorage = (event: StorageEvent) => {
-      if (event.key !== null && event.key !== `${MUTE_KEY}${code}`) return;
-      mutedByCode.delete(code);
-      setSeats(readMutedSeats(code));
-    };
-    window.addEventListener(MUTE_EVENT, syncLocal);
-    window.addEventListener("storage", syncStorage);
-    return () => {
-      window.removeEventListener(MUTE_EVENT, syncLocal);
-      window.removeEventListener("storage", syncStorage);
-    };
-  }, [code]);
-
-  useEffect(() => setSeats(readMutedSeats(code)), [code]);
-
-  const toggle = (seat: string) => {
-    if (!code || !seat) return;
-    const next = new Set(readMutedSeats(code));
-    if (next.has(seat)) next.delete(seat);
-    else next.add(seat);
-    const value = [...next];
-    mutedByCode.set(code, value);
-    try {
-      localStorage.setItem(`${MUTE_KEY}${code}`, JSON.stringify(value));
-    } catch {
-      // The in-memory preference still applies and syncs to this tab's chat and reaction views.
-    }
-    setSeats(value);
-    window.dispatchEvent(new Event(MUTE_EVENT));
-  };
-
-  return { muted: new Set(seats), toggle };
-}
 
 export type ChatTab = "chat" | "sounds";
 
@@ -199,11 +158,15 @@ export function EmojiRow({ keys, dense }: { keys?: boolean; dense?: boolean }) {
   );
 }
 
-export function Emote({ emote, className }: { emote: string; className?: string }) {
+type StickerModule = typeof import("@/components/game/Sticker");
+let sticker: Promise<StickerModule> | null = null;
+
+// `once`: the tray's copy, which stops after one loop (#1363).
+export function Emote({ emote, className, once }: { emote: string; className?: string; once?: boolean }) {
   const emoji = QUICK_REACTIONS.find((item) => item.emoji === emote);
-  const [stickers, setStickers] = useState<Record<string, string>>({});
+  const [loaded, setLoaded] = useState<StickerModule>();
   useEffect(() => {
-    if (!emoji) void loadEmotes().then(setStickers);
+    if (!emoji) void (sticker ??= import("@/components/game/Sticker")).then(setLoaded);
   }, [emoji]);
   if (emoji)
     return (
@@ -211,5 +174,5 @@ export function Emote({ emote, className }: { emote: string; className?: string 
         {emoji.emoji}
       </span>
     );
-  return Object.hasOwn(stickers, emote) ? <img src={stickers[emote]} alt={emote} className={cn("object-contain", className)} /> : null;
+  return loaded ? <loaded.Sticker id={emote} once={once} className={className} /> : null;
 }

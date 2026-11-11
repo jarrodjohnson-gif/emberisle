@@ -1,7 +1,7 @@
 // Geometry, AA colour pairs, offer placement/refit, touch targets and truly static reduced motion.
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const port = Number(process.env.VITE_PORT ?? 8171);
@@ -83,7 +83,10 @@ try {
         const inHole = p => Math.min(p.x - hole.left, hole.right - p.x, p.y - hole.top, hole.bottom - p.y) >= -0.5;
         const out = window.__emberisle.getState().state.vertices.filter(v => {
           const m = r.coastMiter.get(v.id);
-          return !inHole(r.screenOf(v.id)) || (v.harbor && !inHole(r.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)));
+          // #1509 (owner card q1515-table-look, B: "crop the side boats, keep every dock button on screen"): in the upright overhead
+          // view a side dock's boat may run off the side edges; it stays inside the hole's top and bottom. Corners keep the whole hole.
+          const dockIn = p => (innerHeight > innerWidth && r.view === "overhead" ? Math.min(p.y - hole.top, hole.bottom - p.y) >= -0.5 : inHole(p));
+          return !inHole(r.screenOf(v.id)) || (v.harbor && !dockIn(r.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)));
         }).map(v => v.id);
         // No corner (so no legal one) under the HUD: each one's screen point is the canvas.
         const covered = window.__emberisle.getState().state.vertices.map(v => v.id).filter(id => { const p = r.screenOf(id); return document.elementFromPoint(p.x, p.y)?.tagName !== 'CANVAS'; });

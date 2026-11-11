@@ -229,7 +229,7 @@ const roomC = (async () => {
   return ms;
 })();
 
-// H runs alongside the rest too: its second offer has to run out.
+// H runs alongside the rest too.
 const seatH = (pid) => seatsH.find((s) => s.pid === pid);
 const roomH = (async () => {
   const [EH, TH, PH] = ["p0", "p1", "p2"].map((pid) => rejoin("BTHH", seatH(pid)));
@@ -252,7 +252,7 @@ const roomH = (async () => {
   const again = await TH2.next("tradeOffer");
   const left = (OFFER_MS - (again.at - first.at)) / 1000;
   if (again.tradeId !== first.tradeId || again.from !== "p0") fail("H: the re-sent offer is not the open one", { first, again });
-  if (!(again.seconds >= 0 && again.seconds <= left)) fail(`H: re-sent seconds ${again.seconds} is not within the ${left} s left`);
+  if (again.seconds !== null) fail(`H: re-sent seconds ${again.seconds}, not null: a person's offer has no run-out (#1245)`);
   if (TH2.seen.findIndex((m) => m.type === "tradeOffer") < TH2.seen.findIndex((m) => m.type === "state")) fail("H: the offer came before the state", TH2.seen.map((m) => m.type));
   const missed = await TH2.next("tradeDeclined");
   if (missed.tradeId !== first.tradeId || missed.by !== "p2" || missed.name !== "Pine") fail("H: the missed No", missed);
@@ -268,12 +268,14 @@ const roomH = (async () => {
   if (after.ember.wool !== before.ember.wool - 1 || after.ember.timber !== before.ember.timber + 1) fail("H: Ember's hand after the trade", [before.ember, after.ember]);
   if (after.tide.timber !== before.tide.timber - 1 || after.tide.wool !== before.tide.wool + 1) fail("H: Tide's hand after the trade", [before.tide, after.tide]);
   if (TH2.seen.filter((m) => m.type === "tradeOffer").length !== 1) fail("H: the rejoined seat got the offer more than once");
-  console.log(`H: Tide rejoined with ${left.toFixed(1)} s left and got the offer again with ${again.seconds} s and Pine's No; its Yes moved both hands`);
-  // Tide drops again; the second ask runs out before Tide is back, and the rejoin says nothing about it.
+  console.log(`H: Tide rejoined ${(OFFER_MS / 1000 - left).toFixed(1)} s into the offer and got it again with no run-out and Pine's No; its Yes moved both hands`);
+  // Tide drops again; Ember cancels the second ask before Tide is back (#1245: a person's offer has no run-out), and the
+  // rejoin says nothing about it.
   EH.send({ type: "tradeAsk", give: { timber: 1 }, want: { clay: 1 } });
   const [second] = await Promise.all([EH, TH2, PH].map((c) => c.next("tradeOffer")));
   TH2.ws.close();
   await EH.until("seats", (m) => m.seats.some((s) => s.away));
+  EH.send({ type: "tradeCancel", tradeId: second.tradeId });
   const ran = await EH.until("tradeClosed", (m) => m.tradeId === second.tradeId, OFFER_MS + 5000);
   if (ran.taker) fail("H: the second offer closed with a taker", ran);
   const TH3 = rejoin("BTHH", seatH("p1"));
@@ -281,7 +283,7 @@ const roomH = (async () => {
   TH3.send({ type: "chat", text: "back" });
   await TH3.until("chat", (m) => m.text === "back");
   if (TH3.seen.some((m) => m.type === "tradeOffer" || m.type === "tradeDeclined")) fail("H: a rejoin after the window closed was told about the offer", TH3.seen.map((m) => m.type));
-  console.log("H: a rejoin after the offer ran out got no tradeOffer; a watcher got none while it was open");
+  console.log("H: a rejoin after the offer was cancelled got no tradeOffer; a watcher got none while it was open");
 })();
 
 // I and J run alongside the rest: in each, a person waits seconds before answering.

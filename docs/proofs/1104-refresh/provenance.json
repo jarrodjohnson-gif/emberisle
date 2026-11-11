@@ -1,0 +1,15 @@
+{
+  "builder": "Codex-p",
+  "parent": "Codex-p",
+  "model": "GPT-6.1 Sol",
+  "main": "13f73f44f7f11b30b20eefd330452f9ac43163f2",
+  "originalHead": "66ee3a11385ca35f1a00924cdd3b86d0d750aec4",
+  "mergeHead": "e4fd01828e6d41db566597ca67ff091fa1471a13",
+  "proofSha256": "f6ce5f7fe9f2a5bd1ddc6206c0d0d7fbdda07f1bf12edfa31e6dda7aec2fd007",
+  "oldSourceRef": "f334d47",
+  "oldSourceSha256": "cd40a220fbe81023bc3fb5e89ede60acfeac189ad257e171592914344e81a89c",
+  "currentSourceSha256": "18485eb2450a152458948f1c00d0b6ea18b23c3fcca6885c5bb3d5324607be9f",
+  "controlProofIdentical": true,
+  "stageOk": 25,
+  "oldSourceFailures": 7
+}

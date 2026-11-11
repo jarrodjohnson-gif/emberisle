@@ -12,10 +12,9 @@
 // - cancellation, cache ownership, repeated disposal and bounded GPU resources;
 // - no game-state, RNG, picking or shared-scene mutation;
 // and it records the measured geometry and the Classic code's gzip size. Run: npm run classic-builder-prove
-import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { build, createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8197;
@@ -760,7 +759,6 @@ await vite.listen();
 const errors = [];
 let failed = 0;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 try {

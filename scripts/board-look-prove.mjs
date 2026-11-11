@@ -31,7 +31,8 @@
 //   within 0.31 of a hex's centre; saves test-results/terrain-1280.png (diorama) and terrain-390.png (overhead).
 // Zero console errors. Saves test-results/board-look-{title,play}-<size>.png. Port from VITE_PORT, default 8112.
 import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { writeFileSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 // CI renders the island with software GL, where one frame can take seconds; a step gets this long to show.
@@ -51,7 +52,6 @@ const check = (name, ok, detail) => {
 };
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 mkdirSync("test-results", { recursive: true });
@@ -141,6 +141,46 @@ const patch = (page, rect) =>
     return { p5: lum[Math.floor(n * 0.05)], p95: lum[Math.floor(n * 0.95)], mean: { r: rs / n / 255, g: gs / n / 255, b: bs / n / 255 } };
   }, rect);
 
+// #1295: observation only; retain the random deal and every colour check.
+async function saveCrystalDiagnostic(page, spots, samples) {
+  const frame = await page.evaluate(() => {
+    const isle = window.__isle;
+    const state = window.__emberisle.getState().state;
+    const gl = isle.renderer?.getContext?.();
+    const debug = gl?.getExtension("WEBGL_debug_renderer_info");
+    return {
+      state,
+      seed: state?.seed ?? null,
+      viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
+      waterPath: window.__emberisle.water?.path ?? null,
+      reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
+      wasCalm: isle.wasCalm,
+      renders: isle.renders,
+      gl: gl ? {
+        version: gl.getParameter(gl.VERSION),
+        vendor: debug ? gl.getParameter(debug.UNMASKED_VENDOR_WEBGL) : null,
+        renderer: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : null,
+      } : null,
+    };
+  });
+  const diagnostic = {
+    schema: 1,
+    screenshot: "board-look-crystal-1280x720.png",
+    node: process.version,
+    platform: process.platform,
+    browserVersion: browser.version(),
+    launchOverride: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : null),
+    actualExecutable: null,
+    executableLimitation: "The existing chromium.launch browser does not expose its spawned process; no executable inferred from executablePath().",
+    spots,
+    samples,
+    failedChecksSoFar: [...fails],
+    ...frame,
+  };
+  writeFileSync("test-results/board-look-crystal-1280x720.json", JSON.stringify(diagnostic, null, 2) + "\n");
+  console.log(`saved crystal diagnostic: seed ${diagnostic.seed}, ${diagnostic.failedChecksSoFar.length} recorded failures`);
+}
+
 try {
   // 1. The title at 1280x720: the light rig, the sea, the orbit.
   const title = await open(1280, 720, false);
@@ -211,6 +251,7 @@ try {
       return null;
     });
     check("1280x720 crystal: a coast edge with open water beside it inside the hole", spots !== null, spots);
+    let crystalSamples = null;
     if (spots) {
       // The colours at rest: under reduced motion the waves lie flat (a breaker over the shallow band changes its depth by half),
       // and a 9 px patch averages over what is left.
@@ -227,9 +268,11 @@ try {
       const rgb = (m) => ["r", "g", "b"].map((c) => Math.round(m[c] * 255));
       const near = (m, want) => Math.max(...rgb(m).map((v, i) => Math.abs(v - want[i]))) <= 20;
       const [dr, dg, db] = rgb(deep.mean);
+      crystalSamples = { shore: rgb(shore.mean), deep: rgb(deep.mean), shoreStats: shore, deepStats: deep };
       check("1280x720 crystal: deep water is a light blue-green, no darker or more saturated than #4ab9b5", dg > dr * 1.3 && db > dr * 1.3 && dr >= 74 && dg >= 185 && db >= 181, { deep: rgb(deep.mean) });
       check("1280x720 crystal: the shallow band is near-white aqua #cdf1ec (within 20/255), lighter than the deep", near(shore.mean, [205, 241, 236]) && lum(shore.mean) > lum(deep.mean) + 0.04, { shore: rgb(shore.mean), deep: rgb(deep.mean) });
     }
+    await saveCrystalDiagnostic(page, spots, crystalSamples);
     await page.screenshot({ path: "test-results/board-look-crystal-1280x720.png" });
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.waitForFunction(() => !window.__isle.wasCalm, null, { timeout: STEP_MS });
@@ -291,9 +334,10 @@ try {
     // between does not move it; the next state change does).
     const home = () =>
       page.evaluate(async () => {
-        const { DIORAMA_POLAR, DIORAMA_AZIMUTH, OVERHEAD_LEAN, CAP_LEVEL } = await import("/src/lib/scene/mobile-fit.ts");
+        const { DIORAMA_POLAR, DIORAMA_AZIMUTH, playLean, CAP_LEVEL } = await import("/src/lib/scene/mobile-fit.ts");
         const isle = window.__isle;
-        if (isle.view === "overhead") return { polar: OVERHEAD_LEAN, azimuth: 0, zoom: 1, target: [isle.fit.x, CAP_LEVEL, isle.fit.z] };
+        // #1509: 40° on an upright phone, 25° elsewhere (the viewport.ts phone test).
+        if (isle.view === "overhead") return { polar: playLean(innerWidth, innerHeight, matchMedia("(pointer: coarse)").matches || innerWidth < 768), azimuth: 0, zoom: 1, target: [isle.fit.x, CAP_LEVEL, isle.fit.z] };
         return { polar: DIORAMA_POLAR, azimuth: DIORAMA_AZIMUTH, zoom: 1, target: [0, CAP_LEVEL, 0] };
       });
     const atHome = async (p) => {
@@ -321,7 +365,10 @@ try {
       for (const v of st.vertices) {
         const p = isle.screenOf(v.id);
         const m = isle.coastMiter.get(v.id);
-        const reach = v.harbor ? inside(isle.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)) : Infinity;
+        // #1509 (owner card q1515-table-look, B: "crop the side boats, keep every dock button on screen"): in the upright overhead
+        // view a side dock's boat may run off the side edges; it stays inside the hole's top and bottom. Corners keep the whole hole.
+        const dock = (p) => (innerHeight > innerWidth && isle.view === "overhead" ? Math.min(p.y - hole.t, hole.b - p.y) : inside(p));
+        const reach = v.harbor ? dock(isle.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)) : Infinity;
         if (v.harbor) dockIn = Math.min(dockIn, reach);
         // A dock may come to the hole's edge (the diorama fit puts the nearest one there), not past it: half a pixel of float.
         if (inside(p) < 0 || reach < -0.5) out.push(`${v.id}@${p.x | 0},${p.y | 0}`);

@@ -3,8 +3,7 @@
 // past the clamp stops at PAN_RADIUS from home; one finger still orbits and does not pan; a tap after a pan still picks
 // what is under the finger (screenOf lands on the mark); turning the phone refits home. Real touch through CDP
 // Input.dispatchTouchEvent. Run: npm run pan-prove
-import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;
@@ -12,7 +11,6 @@ const PORT = Number(process.env.VITE_PORT) || 8131;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -129,8 +127,11 @@ try {
     const hole0 = await page.evaluate(() => { const i = window.__isle, c = document.querySelector("canvas"), hl = i.insets(); return { x: s0x(), }; function s0x() { return hl.left + (c.clientWidth - hl.left - hl.right) / 2; } });
     if (h > w) check(Math.abs(s0.cx - hole0.x) <= 0.02 * w, `${tag}: ... and in the hole's width`, { cx: s0.cx, holeX: hole0.x });
     if (h > w) {
-      const vy = await page.evaluate(() => { const i = window.__isle, c = document.querySelector("canvas"), hl = i.insets(); return hl.top + (c.clientHeight - hl.top - hl.bottom) / 2; });
-      check(Math.abs(s0.cy - vy) <= 0.02 * h, `${tag}: ... and in the hole's height`, { cy: s0.cy, holeY: vy });
+      // #1509: upright, the island sits at the hole's bottom: its docks' reach (ISLE_HALF.z, leaned, and a pine's 1.15 rise) above
+      // the hole's bottom edge, at the scale where the shore spans the width less EDGE_GAP each side, or the goods piles reach PILE_GAP from it. A hole too short for that
+      // (360x640) scales the island to its height, so it is centred there.
+      const vy = await page.evaluate(async () => { const { ISLE_HALF, SHORE_HALF_X, EDGE_GAP, PILE_HALF_X, PILE_GAP, UPRIGHT_LEAN } = await import("/src/lib/scene/mobile-fit.ts"); const i = window.__isle, c = document.querySelector("canvas"), hl = i.insets(); const reach = ISLE_HALF.z * Math.cos(UPRIGHT_LEAN) + 1.15 * Math.sin(UPRIGHT_LEAN); const holeH = c.clientHeight - hl.top - hl.bottom; const px = Math.min((c.clientWidth - 2 * EDGE_GAP - Math.max(0, hl.left - 12) - Math.max(0, hl.right - 12)) / (2 * SHORE_HALF_X), (c.clientWidth / 2 - PILE_GAP) / PILE_HALF_X, holeH / (2 * reach)); return c.clientHeight - hl.bottom - reach * px; });
+      check(Math.abs(s0.cy - vy) <= 0.02 * h, `${tag}: ... and low in the hole's height`, { cy: s0.cy, lowY: vy });
     }
     if (w === 430 || w === 360 || w === 440) { await ctx.close(); continue; }
 

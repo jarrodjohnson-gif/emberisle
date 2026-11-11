@@ -1,10 +1,10 @@
 // #117: client chat messages stay literal text in lobby and game across three real host-connected tabs.
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, mkdirSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
@@ -68,7 +68,6 @@ try {
   await vite.listen();
   const vitePort = vite.httpServer.address().port;
   browser = await chromium.launch({
-    executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
     args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
   });
   const url = `http://127.0.0.1:${vitePort}/?host=ws://127.0.0.1:${hostPort}`;

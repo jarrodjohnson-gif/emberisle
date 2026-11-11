@@ -11,7 +11,7 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const seatsArg = process.argv.indexOf("--seats");
@@ -50,9 +50,7 @@ const vite = SERVED
   ? null
   : await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite?.listen();
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
-});
+const browser = await chromium.launch();
 
 const errors = [];
 let code = 0;
@@ -171,7 +169,8 @@ try {
 
   // #156/#271: before Join, the color the table already holds is dimmed and cannot be picked.
   const tideDims = async (t) => {
-    await t.page.locator(".seat-settings > summary").click();
+    const summary = t.page.locator(".seat-settings > summary");
+    if (await summary.count()) await summary.click();
     const swatch = (n) => t.page.getByRole("radio", { name: n });
     await until(async () => {
       const tide = swatch("Tide (taken)");
@@ -184,8 +183,11 @@ try {
   await b.page.getByPlaceholder(/code/i).fill(tableCode);
   await tideDims(b);
   console.log("tab B typed the code: Tide swatch disabled at opacity 0.35, aria-checked=false; Ember, Dune, Pine enabled");
-  // #304: tab C typed nothing. The link filled the field, the peek dimmed Tide, and the code is gone from the URL.
-  await until(async () => ((await c.page.getByPlaceholder(/code/i).inputValue()) === tableCode ? true : null), "join link prefills tab C's Join field");
+  // #304/#1505: tab C typed nothing. The link names the table on Join, the peek dims Tide, and the code leaves the URL.
+  await until(async () => {
+    const join = c.page.getByTestId("join-table");
+    return (await join.count()) && (await join.textContent())?.includes(tableCode) ? true : null;
+  }, "join link names the table on Join");
   await tideDims(c);
   const searchC = await c.page.evaluate(() => location.search);
   if (new URLSearchParams(searchC).has("code")) throw new Error(`tab C's URL still carries the code: ${searchC}`);
@@ -288,8 +290,17 @@ try {
   const bannerB = await b.page.getByTestId("turn-banner").elementHandle();
   offlineTab = "Tide";
   await b.page.context().setOffline(true);
-  await b.page.evaluate(() => window.__emberisle.getState().net.drop());
-  const sawReconnecting = await until(async () => ((await me(b)).error?.startsWith("Reconnecting") ? true : null), "tab B notices the drop", 20_000);
+  // #1442: the host is stopped through the drop, so it cannot answer tab B's close. A busy runner can hold that
+  // answer past this 20 s window (Chromium waits up to 60 s for it), and a lost network never answers at all:
+  // the tab must notice the drop on its own.
+  host.kill("SIGSTOP");
+  let sawReconnecting;
+  try {
+    await b.page.evaluate(() => window.__emberisle.getState().net.drop());
+    sawReconnecting = await until(async () => ((await me(b)).error?.startsWith("Reconnecting") ? true : null), "tab B notices the drop", 20_000);
+  } finally {
+    host.kill("SIGCONT");
+  }
   await new Promise((r) => setTimeout(r, 3000));
   await b.page.context().setOffline(false);
   const afterB = await until(async () => {

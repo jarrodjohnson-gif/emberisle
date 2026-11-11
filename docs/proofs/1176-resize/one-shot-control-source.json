@@ -1,0 +1,5 @@
+{
+  "final_source": "5ef0005a3af0599a3d426dee7dd040baaf49ba39",
+  "mutation": "disconnect observer after first delivery",
+  "mutant_sha256": "5356e06553d1a6c97bd5eb9777095b81c06c38cb27d621c286992a38908f5626"
+}

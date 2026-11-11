@@ -3,10 +3,10 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { chromium } from 'playwright';
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from 'vite';
 
 const rooms = mkdtempSync(path.join(tmpdir(), 'emberisle-audio-recovery-'));
@@ -57,9 +57,9 @@ try {
     enforce: 'pre',
     transform(source, id) {
       if (!/\/src\/lib\/sound\.ts(?:\?|$)/.test(id)) return;
-      const request = 'export function play(name: SoundName, volume = 1) {';
+      const request = 'export function play(name: SoundName, volume = 1, category = soundCategory(name)) {';
       const gate = '  if ((!UI.has(name) && now - (asked.get(name) ?? -GAP_MS) < GAP_MS) || queue.length >= MAX_QUEUE) return;';
-      const start = '  const gain = volume * categoryGain(soundCategory(name));';
+      const start = '  const gain = volume * categoryGain(category);';
       for (const anchor of [request, gate, start]) if (source.split(anchor).length !== 2) throw new Error('audio diagnostic source anchor changed');
       // Observations only: the original guards, queue, timings and start calls stay intact.
       const trace = `const __audioRecoveryTrace = [];
@@ -69,14 +69,14 @@ function __audioRecoveryRecord(stage, name, facts = {}) {
   if (__audioRecoveryTrace.length > 400) __audioRecoveryTrace.shift();
 }\n`;
       return { code: trace + source
-        .replace(request, request + '\n  __audioRecoveryRecord("request", name, {volume, noAudio: typeof Audio === "undefined"});')
+        .replace(request, request + '\n  __audioRecoveryRecord("request", name, {volume, category, categoryGain: categoryGain(category), noAudio: typeof Audio === "undefined"});')
         .replace(gate, '  __audioRecoveryRecord("gate", name, {now, asked: asked.get(name) ?? null, burst: !UI.has(name) && now - (asked.get(name) ?? -GAP_MS) < GAP_MS, full: queue.length >= MAX_QUEUE});\n' + gate)
-        .replace(start, start + '\n  __audioRecoveryRecord("start", name, {gain});')
+        .replace(start, start + '\n  __audioRecoveryRecord("start", name, {gain, category, categoryGain: categoryGain(category)});')
         + '\nexport const __audioRecoveryQueue = () => ({pacing, queue: queue.map(item => item[0]), trace: __audioRecoveryTrace.slice()});\n', map: null };
     },
   }] });
   await vite.listen();
-  browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined),
+  browser = await chromium.launch({
     // Desktop media fetch/decode recovery, deliberately independent of browser autoplay policy.
     args: ['--autoplay-policy=no-user-gesture-required'] });
   const tabs = [];
@@ -232,10 +232,31 @@ function __audioRecoveryRecord(stage, name, facts = {}) {
   // Wait on native playback progress itself, not delivery of a timeupdate event. CI can
   // delay/coalesce those events even while the real media element is already advancing.
   // Keep the timeout bounded and leave the playback assertions below in place.
+  try {
   await Promise.all(tabs.map(t => t.page.waitForFunction(files => files.every(file => {
     return window.audios.some((audio, id) => new URL(audio.src).pathname.endsWith('/' + file) &&
       audio.currentTime > (window.mediaTimeBaseline[id] ?? 0));
   }), files, { timeout: 8000, polling: 50 })));
+  } catch (originalError) {
+    try {
+      const snapshots = tabs.map(t => ({ name: t.name, status: 'timeout' }));
+      const attempts = tabs.map((t, index) => t.page.evaluate(files => ({
+        documentIdentity: window.documentIdentity,
+        audio: window.audios.map((audio, id) => ({ id, file: new URL(audio.src).pathname.split('/').at(-1),
+          error: audio.error?.code ?? null, readyState: audio.readyState, currentTime: audio.currentTime,
+          baseline: window.mediaTimeBaseline[id] ?? 0, paused: audio.paused, ended: audio.ended }))
+          .filter(audio => files.includes(audio.file)),
+        recentMediaEvents: window.mediaEvents.slice(-50).map(({ event, id, file, time, error }) => ({ event, id, file, time, error })),
+        hostStateReceived: window.hostFrames.some(frame => frame.type === 'state'),
+        bongReceived: window.game.getState().chat.some(line => line.sound === 'bong'),
+      }), files).then(value => { snapshots[index] = { name: t.name, status: 'fulfilled', ...value }; },
+        () => { snapshots[index] = { name: t.name, status: 'rejected' }; }));
+      await Promise.race([Promise.allSettled(attempts), sleep(1000)]);
+      for (const snapshot of snapshots) console.log('RECOVERY_WAIT_FAILURE', JSON.stringify(snapshot));
+    } finally {
+      throw originalError;
+    }
+  }
   const failures = [];
   for (const t of tabs) {
     const result = await t.page.evaluate(files => ({ identity: window.documentIdentity,

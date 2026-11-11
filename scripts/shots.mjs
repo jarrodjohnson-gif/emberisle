@@ -5,10 +5,10 @@
 // and --budget skips the shots and prints the frame-time matrix (pixel ratio x view x SSAO size) in the play screen.
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8094;
@@ -44,7 +44,6 @@ const hostPort = await new Promise((resolve) =>
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
@@ -159,8 +158,12 @@ async function frameBudget(page, [w, h]) {
         r.composer.setPixelRatio(pr);
         r.resize();
         r.ssao.enabled = ssao !== "off";
-        if (ssao === "canvas") r.ssao.setSize(Math.round(r.renderer.domElement.clientWidth * pr), Math.round(r.renderer.domElement.clientHeight * pr));
-        if (ssao === "half") r.ssao.setSize(Math.round(r.renderer.domElement.clientWidth / 2), Math.round(r.renderer.domElement.clientHeight / 2));
+        // Name the target after resize(). Free view now sizes SSAO to half CSS, so the css row must set the full size itself.
+        const cssW = r.renderer.domElement.clientWidth;
+        const cssH = r.renderer.domElement.clientHeight;
+        if (ssao === "css") r.ssao.setSize(cssW, cssH);
+        if (ssao === "canvas") r.ssao.setSize(Math.round(cssW * pr), Math.round(cssH * pr));
+        if (ssao === "half") r.ssao.setSize(Math.round(cssW / 2), Math.round(cssH / 2));
         const c = r.renderer.domElement;
         return { canvas: `${c.width}x${c.height}`, ssaoTarget: `${r.ssao.width}x${r.ssao.height}` };
       },

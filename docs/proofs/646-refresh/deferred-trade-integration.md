@@ -1,0 +1,31 @@
+# #646 deferred Trade integration plan
+
+Preparation only; no Trade implementation or acceptance is claimed. Compared #873 `b07966bbf8b968151ecae522b8c8357db9d14703` with open #883 `441ad0314a352159e3c2a61d64d1f3b63e0ab427`. Recheck both heads and the actual merged main before implementation. [Desk decision 6425583272](https://github.com/jarrodjohnson-gif/emberisle/pull/873#issuecomment-6425583272) selects B: seat dot and details in player menu and the approved single Trade window; defer Trade chips until #883 merges. The dot must clear tallies; menu details use 8px gaps and 12px text.
+
+## Reconciliation and mounts
+
+- #873 `TradePanel.tsx` imports `{ NeedPicker }` from `./SeatNeeds` and mounts `<NeedPicker player={me.id} />` at the start of `.trade-composer-scroll`, before instructions. `NeedPicker` is an export in `SeatNeeds.tsx`, not a separate module. Preserve that import and working mount through reconciliation. #883's same scroll container adds `id="trade-goods"`, `role="region"`, `aria-labelledby="trade-goods-title"`, `tabIndex={0}` and its screen-reader heading, then a `LazyBoundary` around shared quantity cards. Preserve those attributes, heading, boundary, failure recovery and #883's single-window footer with Table offer and compact Bank/dock quote. The old panel's instructions and layout are not a replacement for the approved window.
+- A read-only merge-tree comparison of these two heads shows a conflict at that scroll-container opening/mount; it also shows registration and size-fixture conflicts. Actual conflicts after #883 merges may differ. Reconcile `package.json` and `.github/workflows/ci.yml` to retain both existing `needs-prove` and #883 trade proof registrations. Preserve both SeatNeeds and TradeResource size ceilings and applicable fixture entries; retain all other incoming main registrations and fixture values. Do not assume this preview is the eventual merge result.
+- `Hud.tsx` mounts `<TradePanel />` from `chunks.ts`; `chunks.ts` picks it from lazy `sheets`. #883 `TradePanel` lazily loads and prefetches `TradeResource` via `chunk`, with a `LazyBoundary` for failed loading. #873 `SeatRail` lazily mounts `SeatNeeds` for rail and seat, and `PlayerMenu` lazily picks `MenuNeeds` from that same module. Preserve these mounts, the existing picker and lazy failure behavior; do not move the window into Hud or add a parallel Trade dialog.
+- Online public needs come from published seat projections; practice/hotseat use local needs. `NeedPicker` maintains an optimistic draft while host echoes are in flight, but public dot/menu details follow actual published state. Reuse that public source for other players' Trade details; do not expose hidden hands or invent a second authoritative needs store. No server, protocol, security or store changes are planned.
+
+## Placement decision before implementation
+
+The decision specifies the approved window, but does not settle an exact location, ordering, treatment of empty needs, or interaction with the compact Bank box and short landscape scrolling. Ask a `Question:` with an appropriate recommendation and obtain the decision before choosing these details. Do not infer a pixel placement from the earlier mock of the old panel. This plan does not post that question or authorize implementation. Check current owner decisions and any newer #883 changes first.
+
+## Focused regression plan after merge and placement decision
+
+Add targeted cases to the already registered `scripts/needs-prove.mjs`, retaining all existing assertions, limits and timing. Run the affected proofs serially under the shared browser lock after authorization; no validation is claimed here.
+
+1. Two real online clients: publish one then two needs; while the peer's approved Trade window is open, verify the approved public details update from the host projection and disappear on clear. Ensure no private hand information appears. Keep the existing delayed-echo draft, two-good cap, rejoin and player-menu/dot checks.
+2. Verify the original Need control opens, sets and clears needs in the new window, including hotseat's current actor and the online player; the picker and Trade quantities must remain independent. Keep the real accepted table trade clearing the received requested good and the existing local settlement/nonmatching/refused cases.
+3. At 320×568, 390×844, 844×390 and 1280×720, measure the approved details and picker, 44px targets, 8px gaps, no horizontal overflow, and existing 844×390 open-picker/give-control visibility assertion. Check focus trap, Escape/close and keyboard reachability with the new content, and the #883 scroll region and Bank/offer controls. Preserve the approved #883 behavior if a constraint conflicts; seek a decision rather than weaken a check.
+4. Cover empty, one and two published needs and live clear; ensure public details are quiet rather than a duplicate live announcement. Exercise #883 lazy-load failure/reopen and verify Need availability according to the approved placement without masking its failure UI. Run existing trade and trade-tabs proofs as affected coverage alongside needs, registered, loosen, type/build and size checks appropriate to the eventual change.
+
+## Size and review gates
+
+#873's retained build reports SeatNeeds 1894/1900 gzip bytes at product source `19cdb3e`; #883 reports TradeResource 825/1650 and sheets 7137/7800 at its documented frozen source. These are historical separate builds, not a combined measurement. A direct `SeatNeeds` import from the lazy TradePanel and the other lazy consumers may affect chunk sharing or `sheets` growth; inspect the actual combined build output and compare with a separately built current main. Prefer reusing the existing shared public selector and lazy boundaries where the bundler preserves the desired split; do not assume a new import is free. Keep all existing ceilings and growth allowances. If the approved behavior cannot fit, seek an owner decision rather than raise a cap or weaken a proof.
+
+After #883 merges, perform normal reconciliation, make the approved integration, collect actual serial proof and size results, and obtain fresh exact-head CI, independent review and owner picture acceptance. The present green CI applies only to the pre-integration #873 head.
+
+— p2 terra; parent: Codex-p; Model: GPT-6.1 Terra
