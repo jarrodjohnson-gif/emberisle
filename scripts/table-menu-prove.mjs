@@ -136,6 +136,24 @@ try {
       return { gap: Math.round(gap * 10) / 10, water: water.length, view: view.length };
     });
     check(between.water === 2 && between.view === 2 && between.gap >= 4, `${v.tag}: the Water and View choice boxes keep a gap of at least 4 px`, JSON.stringify(between));
+    // Owner q1503-menu-gap D: Water and View are one aligned grid. Crystal over Diorama and Simple over Overhead share
+    // the same left edge and width (within 0.5 px), and every box is at least 44x44.
+    const grid = await menu.evaluate((el) => {
+      const boxes = (id) => [...el.querySelectorAll(`[data-testid="${id}"] button`)].map((b) => b.getBoundingClientRect());
+      const water = boxes("water-toggle"), view = boxes("view-toggle");
+      const r = (n) => Math.round(n * 10) / 10;
+      return {
+        count: [water.length, view.length],
+        left: water.map((b, i) => r(b.left - view[i].left)),
+        width: water.map((b, i) => r(b.width - view[i].width)),
+        min: r(Math.min(...[...water, ...view].flatMap((b) => [b.width, b.height]))),
+      };
+    });
+    check(
+      grid.count[0] === 2 && grid.count[1] === 2 && grid.left.every((d) => Math.abs(d) <= 0.5) && grid.width.every((d) => Math.abs(d) <= 0.5) && grid.min >= 44,
+      `${v.tag}: Water and View boxes share left edges and widths column by column`,
+      JSON.stringify(grid),
+    );
     await ctx.close();
   }
   for (const v of VIEWS) {
