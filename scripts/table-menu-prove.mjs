@@ -127,6 +127,15 @@ try {
         r.minHeight >= 44;
       check(ok, `${v.tag}: ${r.id} keeps the other rows' inset and its choices share the row`, JSON.stringify(r));
     }
+    // Owner q1503-menu-fit D: the Water row's choice boxes and the View row's never touch or overlap; a gap of at least
+    // 4 px stays between them (bottom of every Water choice to the top of every View choice).
+    const between = await menu.evaluate((el) => {
+      const boxes = (id) => [...el.querySelectorAll(`[data-testid="${id}"] button`)].map((b) => b.getBoundingClientRect());
+      const water = boxes("water-toggle"), view = boxes("view-toggle");
+      const gap = Math.min(...view.map((b) => b.top)) - Math.max(...water.map((b) => b.bottom));
+      return { gap: Math.round(gap * 10) / 10, water: water.length, view: view.length };
+    });
+    check(between.water === 2 && between.view === 2 && between.gap >= 4, `${v.tag}: the Water and View choice boxes keep a gap of at least 4 px`, JSON.stringify(between));
     await ctx.close();
   }
   for (const v of VIEWS) {
