@@ -87,7 +87,7 @@ try {
  assert.equal(rollPill.sign,'+');
  assert.equal(rollPill.bg,'rgb(16, 86, 42)');
  assert.equal(rollPill.fg,'rgb(255, 255, 255)');
- const railBox=await cue.boundingBox(),railSeat=await jarrod.getByTestId('rail-p1').boundingBox();assert(railBox.x>=railSeat.x+railSeat.width&&Math.abs(railBox.y+railBox.height/2-(railSeat.y+railSeat.height/2))<=1,`the rail cue hangs right of its seat, not on it: ${JSON.stringify({railBox,railSeat})}`);
+ const railBox=await cue.boundingBox(),railSeat=await jarrod.getByTestId('rail-p1').boundingBox();assert(Math.abs(railBox.x-(railSeat.x+railSeat.width-12))<=0.5&&Math.abs(railBox.y-railSeat.y)<=0.5&&Math.abs(railBox.height-railSeat.height)<=0.5&&railBox.width-12>=40,`the rail tag comes out of the seat's right side, tucked 12 px behind it, as tall as the seat: ${JSON.stringify({railBox,railSeat})}`);
  const started=Date.now();
  assert.equal(await jarrod.getByTestId('rail-p0').getByTestId('seat-public-gains').count(),0);
  assert.equal(await jarrod.evaluate(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p1').resources),undefined,'other hand stays hidden');
@@ -105,7 +105,7 @@ try {
  const tradePills=await phoneCue.getByTestId('seat-public-pill').evaluateAll(els=>els.map(el=>{const s=getComputedStyle(el);return{sign:el.getAttribute('data-sign'),bg:s.backgroundColor,fg:s.color};}));
  assert.deepEqual(tradePills,[{sign:'+',bg:'rgb(16, 86, 42)',fg:'rgb(255, 255, 255)'},{sign:'-',bg:'rgb(138, 34, 25)',fg:'rgb(255, 255, 255)'}]);
  const box=await phoneCue.boundingBox(),anchor=await jarrod.getByTestId('seat-p1').boundingBox();
- assert(box.y>=anchor.y+anchor.height&&Math.abs(box.x+box.width/2-(anchor.x+anchor.width/2))<=1&&box.x>=anchor.x-2.5&&box.x+box.width<=anchor.x+anchor.width+2.5,`the phone cue hangs under its own seat, centred, no wider than the seat and one gap: ${JSON.stringify({box,anchor})}`);assert.equal(await phoneCue.evaluate(el=>el.getAnimations({subtree:true}).length),0);
+ assert(Math.abs(box.y-(anchor.y+anchor.height-12))<=0.5&&Math.abs(box.x-anchor.x)<=0.5&&Math.abs(box.width-anchor.width)<=0.5&&Math.abs(box.y+box.height-(anchor.y+anchor.height)-40)<=0.5,`the phone tag is tucked 12 px behind its seat, exactly as wide as it, and 40 px below it: ${JSON.stringify({box,anchor})}`);assert.equal(await phoneCue.evaluate(el=>el.getAnimations({subtree:true}).length),0);
  await jarrod.screenshot({path:'test-results/seat-gains-phone.png'});
  await jarrod.setViewportSize({width:1280,height:720});await cue.waitFor();
  assert.equal(await cue.getAttribute('aria-label'),'Joshua: +1 Wood, −1 Wheat');
