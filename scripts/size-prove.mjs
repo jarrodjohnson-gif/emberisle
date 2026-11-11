@@ -98,6 +98,9 @@ const CEILINGS = [
   // #1411, 2026-11-08: a guest's I'll play again and the win screen's count, loaded as an online table starts; measured
   // 412 B gzip. New chunk only; the desk set this ceiling.
   { name: "PlayAgain", gzipBytes: 450 },
+  // #1350, 2026-11-11: read-only profile card for other seats in the lobby; measured 1,415 B gzip.
+  // New chunk only; the desk sets this ceiling.
+  { name: "OtherProfileCard", gzipBytes: 1550 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.

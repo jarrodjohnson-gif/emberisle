@@ -2,16 +2,19 @@ import { useState } from "react";
 import { ConnectionStatus } from "@/components/game/ConnectionStatus";
 import { chunk } from "@/lib/lazy";
 import { ChatBox, SeatBubbles } from "@/components/game/Chat";
-import { OtherProfileCard } from "@/components/game/OtherProfileCard";
 import type { Seat } from "@/lib/net/table";
 
 const lobby = chunk(() => import("@/components/game/LobbyView"));
 const LobbyView = lobby.pick(m => m.LobbyView);
 const rules = chunk(() => import("@/components/game/sheets"));
 const HowTo = rules.pick(m => m.HowTo);
+const Card = chunk(() => import("@/components/game/OtherProfileCard")).pick(m => m.OtherProfileCard);
 void lobby.prefetch();
+
+const joinLink = (c: string) => `${location.origin}${location.pathname}?code=${c}` + (location.search.match(/[?&]host=[^&#]+/)?.[0]?.replace("?", "&") || "");
+
 export function Lobby() {
-  const [profile, setProfile] = useState<{ seat: Seat; opener: HTMLElement } | null>(null);
+  const [c, setC] = useState<{ seat: Seat; opener: HTMLElement }>();
   return (
     <>
       <LobbyView
@@ -19,11 +22,12 @@ export function Lobby() {
         ChatBox={ChatBox}
         SeatBubbles={SeatBubbles}
         HowTo={HowTo}
-        onProfile={(seat, opener) => setProfile({ seat, opener })}
+        onProfile={(seat, opener) => setC({ seat, opener })}
         prefetchRules={rules.prefetch}
         fitCode={fitLobbyCode}
+        getJoinLink={joinLink}
       />
-      {profile ? <OtherProfileCard seat={profile.seat} opener={profile.opener} onClose={() => setProfile(null)} /> : null}
+      {c && <Card {...c} onClose={() => setC(undefined)} />}
     </>
   );
 }
@@ -32,11 +36,10 @@ export function Lobby() {
 function fitLobbyCode(el: HTMLElement, code: string) {
   if (el.textContent !== code) return;
   el.style.fontSize = "";
-  const style = getComputedStyle(el);
-  const range = document.createRange();
-  range.selectNodeContents(el);
-  const width = range.getBoundingClientRect().width, available = el.getBoundingClientRect().width;
-  if (width <= available) return;
-  const tracking = (parseFloat(style.letterSpacing) || 0) * 4;
-  el.style.fontSize = `${parseFloat(style.fontSize) * (available - tracking) / (width - tracking)}px`;
+  const s = getComputedStyle(el), r = document.createRange();
+  r.selectNodeContents(el);
+  const w = r.getBoundingClientRect().width, a = el.getBoundingClientRect().width;
+  if (w <= a) return;
+  const t = (parseFloat(s.letterSpacing) || 0) * 4;
+  el.style.fontSize = `${parseFloat(s.fontSize) * (a - t) / (w - t)}px`;
 }

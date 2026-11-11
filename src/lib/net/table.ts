@@ -262,7 +262,7 @@ const LOBBY_GIVE_UP_MS = 90 * 1000;
 const LAST_CALL_MS = 1000;
 
 // Both action IDs and health challenges use 128 random bits, including on plain-HTTP LAN joins.
-const randomNonce = () => crypto.getRandomValues(new Uint8Array(16)).reduce((hex, b) => hex + b.toString(16).padStart(2, "0"), "");
+const randomNonce = () => crypto.randomUUID().replace(/-/g, "");
 
 const ALLOWED_EVENTS = ["seats", "rolled", "chat", "react", "tradeOffer", "tradeDeclined", "tradeClosed", "ttt", "tableProfileCard", "profileError"];
 
@@ -504,7 +504,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     sound: (id) => send({ type: "sound", id }),
     react: (emote, to) => send({ type: "react", emote, to }),
     ttt: (type, fields) => send({ type, ...fields }),
-    profileCard: (profileId) => send({ type: "tableProfileCard", id: randomNonce(), profileId }),
+    profileCard: (profileId) => send({ type: "tableProfileCard", profileId }),
     // The connection is lost, as when the network goes: recovery starts now. A plain close() waits for the host to
     // answer the closing handshake first, and Chromium waits up to 60 s for that answer (#1442).
     drop: () => {

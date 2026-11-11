@@ -274,12 +274,23 @@ for (const { width, height } of VIEWPORTS) {
   await p3.waitForFunction(() => window.__emberisle.getState().spectator === true);
 
   // Watcher sees only cards at its own table
+  await p3.evaluate(() => {
+    window.__cards = {};
+    window.__emberisle.subscribeCardEvents((msg) => {
+      if (msg.type === "tableProfileCard" && msg.card?.profileId) {
+        window.__cards[msg.card.profileId] = msg.card;
+      } else if (msg.type === "profileError") {
+        window.__cards.__lastError = true;
+      }
+    });
+  });
+
   await p3.evaluate(({ hostProfileId }) => {
-    window.__emberisle.getState().requestProfileCard(hostProfileId);
+    window.__emberisle.getState().net.profileCard(hostProfileId);
   }, { hostProfileId: profileA.id });
   await p3.waitForFunction(
     ({ hostProfileId }) => {
-      const c = window.__emberisle.getState().profileCards[hostProfileId];
+      const c = window.__cards[hostProfileId];
       return typeof c === "object" && c?.displayName === "Ember";
     },
     { hostProfileId: profileA.id }
@@ -287,13 +298,11 @@ for (const { width, height } of VIEWPORTS) {
 
   // Asking for a profile from another table fails (watcher receives error, no card from other table)
   await p3.evaluate(({ foreignId }) => {
-    window.__emberisle.getState().requestProfileCard(foreignId);
+    window.__cards.__lastError = false;
+    window.__emberisle.getState().net.profileCard(foreignId);
   }, { foreignId: profileC.id });
 
-  await p3.waitForFunction(
-    ({ foreignId }) => window.__emberisle.getState().profileCards[foreignId] === "error",
-    { foreignId: profileC.id }
-  );
+  await p3.waitForFunction(() => window.__cards.__lastError === true);
 
   assert.deepEqual(errors, [], `${width}x${height}: zero browser errors`);
   await context.close();

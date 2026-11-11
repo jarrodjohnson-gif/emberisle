@@ -445,9 +445,6 @@ interface GameStore {
   // The player whose action menu is open in the HUD rail or seat strip (docs/design/chat.md "The player action menu").
   menuFor: string | null;
   openMenu: (id: string | null) => void;
-  // #764, #1350: read-only profile cards for other seats at the table.
-  profileCards: Record<string, { profileId: string; displayName: string; catchphrase?: string; [k: string]: unknown } | "error" | "loading">;
-  requestProfileCard: (profileId: string) => void;
 }
 
 const CHAT_OPEN_KEY = "emberisle-chat-open";
@@ -534,6 +531,11 @@ function savedColor(): string | null {
   }
 }
 
+let cardSub: ((msg: Record<string, unknown>) => void) | null = null;
+export function subscribeCardEvents(listener: typeof cardSub) {
+  cardSub = listener;
+}
+
 export const useGame = create<GameStore>((set, get) => ({
   screen: "title",
   name: savedName(),
@@ -581,18 +583,6 @@ export const useGame = create<GameStore>((set, get) => ({
   reactions: [],
   chatOpen: savedChatOpen(),
   unread: 0,
-  profileCards: {},
-  requestProfileCard: (profileId: string) => {
-    const current = get().profileCards[profileId];
-    if (current && current !== "error") return;
-    set((s) => ({ profileCards: { ...s.profileCards, [profileId]: "loading" } }));
-    const net = get().net;
-    if (net) {
-      net.profileCard(profileId);
-    } else {
-      set((s) => ({ profileCards: { ...s.profileCards, [profileId]: "error" } }));
-    }
-  },
   chatDraft: "",
   gameLog: [],
   waterChoice: savedWater(),
@@ -767,7 +757,6 @@ export const useGame = create<GameStore>((set, get) => ({
       chatDraft: "",
       gameLog: [],
       menuFor: null,
-      profileCards: {},
       lobbyLog: "",
       seatId: "",
       isHost: false,
@@ -1127,6 +1116,7 @@ export const useGame = create<GameStore>((set, get) => ({
     set({ menuFor: id });
   },
 }));
+(useGame as unknown as { subscribeCardEvents: typeof subscribeCardEvents }).subscribeCardEvents = subscribeCardEvents;
 
 type Set = (partial: Partial<GameStore>) => void;
 type Get = () => GameStore;
@@ -1277,7 +1267,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       const history = (chat ?? []).slice(-50).map((l) => ({ ...l, at: known.get(l.id) ?? now }));
       if (spectator) {
         // No lobby for a watcher: the host's first `state`, which follows at once, moves it to the board.
-        set({ profileCards: {}, announcement: null, code, spectator: true, seatId: "", isHost: false, mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
+        set({ announcement: null, code, spectator: true, seatId: "", isHost: false, mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
         return;
       }
       // A reload at a table that was in play (#543) waits on the loading screen for the state that follows at once, not the
@@ -1298,7 +1288,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
           recovery = false;
           set({ restoring: false, screen: "lobby" });
         }, 1500);
-      set({ profileCards: {}, announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0, ttt: null });
+      set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0, ttt: null });
     },
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
     reconnecting: (attempt) => {
@@ -1329,16 +1319,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       const after = seats as Seat[];
       const me = get().localId;
       void tradeSounds.then(({ diggerBell }) => diggerBell(play, before, after, me));
-      const active = new Set(after.map((s) => s.profile?.profileId).filter(Boolean));
-      const cards = get().profileCards;
-      let pruned: typeof cards | null = null;
-      for (const k of Object.keys(cards)) {
-        if (!active.has(k)) {
-          if (!pruned) pruned = { ...cards };
-          delete pruned[k];
-        }
-      }
-      set({ code, seats: after, profileCards: pruned ?? cards, watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
+      set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
     },
     // Dice and gain floats present the roll; its words live only in the persistent log.
     rolled: () => {},
@@ -1389,21 +1370,8 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     tradeClosed: ({ tradeId, taker }) => {
       if (get().offer?.tradeId === tradeId) endOffer(set, get, taker ?? null);
     },
-    tableProfileCard: (msg) => {
-      if (msg?.card?.profileId) {
-        const id = msg.card.profileId;
-        if (get().seats.some((s) => s.profile?.profileId === id)) {
-          set({ profileCards: { ...get().profileCards, [id]: msg.card } });
-        }
-      }
-    },
-    profileError: () => {
-      const updated = { ...get().profileCards };
-      for (const [k, v] of Object.entries(updated)) {
-        if (v === "loading") updated[k] = "error";
-      }
-      set({ profileCards: updated });
-    },
+    tableProfileCard: (msg) => cardSub?.({ type: "tableProfileCard", ...msg }),
+    profileError: (msg) => cardSub?.({ type: "profileError", ...msg }),
     error: (message, request) => {
       if (!pending && kind !== "peek") {
         set({ announcement: null, error: message, toast: message, errorSeq: get().errorSeq + 1, needError: get().needError + Number(request === "need") });

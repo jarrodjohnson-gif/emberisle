@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ComponentType, type KeyboardEvent } from "react";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
@@ -17,11 +17,12 @@ const Play = chunk(() => import("@/components/game/LobbyWaitBox")).pick((m) => m
 function OwnName({ seat }: { seat: Seat }) {
   const rename = useGame((s) => s.renameSeat);
   const [draft, setDraft] = useState<string | null>(null);
+  const done = useRef(false);
   const finish = (save: boolean) => {
-    if (draft === null) return;
-    const t = draft.trim();
+    if (done.current) return;
+    done.current = true;
+    if (save && draft !== null && draft.trim() && draft.trim() !== seat.name) rename(draft);
     setDraft(null);
-    if (save && t && t !== seat.name) rename(t);
   };
   if (draft === null) {
     return (
@@ -29,7 +30,10 @@ function OwnName({ seat }: { seat: Seat }) {
         type="button"
         data-testid="rename-seat"
         aria-label={`Your name is ${seat.name}. Change it`}
-        onClick={() => setDraft(seat.name)}
+        onClick={() => {
+          done.current = false;
+          setDraft(seat.name);
+        }}
       >
         {seat.name}
       </button>
@@ -54,60 +58,49 @@ function OwnName({ seat }: { seat: Seat }) {
   );
 }
 
-export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, onProfile, prefetchRules, fitCode }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; onProfile?: (seat: Seat, opener: HTMLElement) => void; prefetchRules: () => Promise<boolean>; fitCode: (el: HTMLElement, code: string) => void }) {
+export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, onProfile, prefetchRules, fitCode, getJoinLink }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; onProfile?: (seat: Seat, opener: HTMLElement) => void; prefetchRules: () => Promise<boolean>; fitCode: (el: HTMLElement, code: string) => void; getJoinLink?: (code: string) => string }) {
   const rule = useGame(s => s.tableWayfarerMode);
   const code = useGame(s => s.code);
   const seats = useGame(s => s.seats);
   const seatId = useGame(s => s.seatId);
   const isHost = useGame(s => s.seats.find(x => x.id === s.seatId)?.host ?? s.isHost);
   const error = useGame(s => s.error);
-  const setReady = useGame(s => s.setReady);
-  const startTable = useGame(s => s.startTable);
-  const goTitle = useGame(s => s.goTitle);
   const target = useGame(s => s.tableVictoryTarget);
-  const setTarget = useGame(s => s.setVictoryTarget);
-  const addBot = useGame(s => s.addBot);
-  const removeBot = useGame(s => s.removeBot);
   const howTo = useGame(s => s.howTo);
-  const setHowTo = useGame(s => s.setHowTo);
-  const [games, setGames] = useState(false);
-  // #1263: a table-mate's tic-tac-toe invite is a badge on the tab, never a popup.
+  const { startTable, goTitle, setVictoryTarget: setTarget, addBot, removeBot, setHowTo, setReady } = useGame.getState();
+  const [games, setGames] = useState(false), [open, setOpen] = useState(false);
   const invited = useGame(s => s.ttt?.game?.status === "invited" && s.ttt.game.o === s.seatId);
-  const [open, setOpen] = useState(false);
   const ready = seats.find(s => s.id === seatId)?.ready ?? false;
-  const canStart = isHost && seats.length >= 3 && seats.length <= 4 && seats.every(s => s.ready);
+  const n = seats.length;
+  const canStart = isHost && n >= 3 && n <= 4 && seats.every(s => s.ready);
   const readyCount = seats.filter(s => s.ready).length;
-  const missing = 3 - seats.length;
-  const status = missing > 0 ? `Need ${missing} more player${missing === 1 ? "" : "s"}` : readyCount === seats.length ? "Everyone is ready" : `${readyCount} of ${seats.length} ready`;
+  const missing = 3 - n;
+  const status = missing > 0 ? `Need ${missing} more player${missing === 1 ? "" : "s"}` : readyCount === n ? "Everyone is ready" : `${readyCount} of ${n} ready`;
   const { state: copied, copy } = useCopy<"link">();
   const codeElement = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
     // The host issues four-character codes. Preserve longer display fixtures unchanged.
     const el = codeElement.current;
-    if (!el) return;
+    if (!el || code.length !== 4) return;
     el.style.fontSize = "";
-    if (code.length !== 4) return;
-    const observer = new ResizeObserver(() => fitCode(el, code));
-    observer.observe(el.parentElement!);
-    return () => observer.disconnect();
+    const o = new ResizeObserver(() => fitCode(el, code));
+    o.observe(el.parentElement!);
+    return () => o.disconnect();
   }, [code, copied, fitCode]);
-  const joinLink = () => {
-    const host = new URLSearchParams(location.search).get("host");
-    return `${location.origin}${location.pathname}?code=${code}${host ? `&host=${encodeURIComponent(host)}` : ""}`;
-  };
+  const joinLink = () => getJoinLink?.(code) ?? `${location.origin}${location.pathname}?code=${code}`;
   const pick = (play: boolean) => {
     setGames(play);
     if (!play) setOpen(false);
   };
   // #1430: Table and Play games are tabs. Left and Right switch between them; only the picked tab is in the Tab order.
   const tabKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    if (!/Arrow(Left|Right)/.test(e.key)) return;
     e.preventDefault();
     pick(!games);
     (e.currentTarget.children[+!games] as HTMLElement).focus();
   };
 
-  const fallback = <CopyFallback state={copied} label="Join link" />;
+  const fb = <CopyFallback state={copied} label="Join link" />;
 
   return (
     <>
@@ -120,11 +113,11 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, onPro
               <span>Copied</span>
             </button>
           </div>
-          {copied && !copied.ok ? <div className="lobby-copy-fallback">{fallback}</div> : fallback}
+          {copied && !copied.ok ? <div className="lobby-copy-fallback">{fb}</div> : fb}
           <div className="lobby-rules">
             <div className="lm" role="tablist" aria-label="Lobby" onKeyDown={tabKey}>
               <button type="button" role="tab" aria-selected={!games} tabIndex={games ? -1 : 0} onClick={() => pick(false)}>Table</button>
-              <button type="button" role="tab" aria-selected={games} tabIndex={games ? 0 : -1} aria-label={invited ? "Play games, 1 invite" : undefined} onClick={() => pick(true)}><span>Play games</span>{invited ? <b className="lb" aria-hidden="true">1</b> : null}</button>
+              <button type="button" role="tab" aria-selected={games} tabIndex={games ? 0 : -1} aria-label={invited ? "Play games, 1 invite" : undefined} onClick={() => pick(true)}><span>Play games</span>{invited && <b className="lb" aria-hidden="true">1</b>}</button>
             </div>
             <Button variant="outline" onPointerEnter={prefetchRules} onFocus={prefetchRules} onClick={e => setHowTo(true, e.currentTarget)}>Rules</Button>
             <div className="lobby-rule-status">
@@ -141,26 +134,17 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, onPro
                 <li key={i} data-testid={s ? `lobby-seat-${s.id}` : undefined} className="lobby-player">
                   <SeatDot color={s?.color ?? "transparent"} className="dot" />
                   <span data-testid="lobby-name" className="lobby-name">
-                    {s?.id === seatId ? (
-                      <OwnName seat={s} />
-                    ) : s ? (
-                      <button
-                        type="button"
-                        data-testid={`lobby-player-${s.id}`}
-                        onClick={(e) => onProfile?.(s, e.currentTarget)}
-                        aria-label={`Profile for ${s.name}`}
-                      >
-                        {s.name}
-                      </button>
+                    {s?.id === seatId ? <OwnName seat={s} /> : s ? (
+                      <button type="button" data-testid={`lobby-player-${s.id}`} onClick={e => onProfile?.(s, e.currentTarget)}>{s.name}</button>
                     ) : (
                       <span className="truncate">Empty</span>
                     )}
-                    {s?.host ? <span data-testid="host-tag" className="sr-only"> · host</span> : null}
+                    {s?.host && <span data-testid="host-tag" className="sr-only"> · host</span>}
                   </span>
                   <span className="lobby-player-status">{s ? `${s.host ? "Host · " : ""}${s.bot ? "Bot" : s.away ? "reconnecting…" : s.ready ? "Ready" : "Waiting"}` : ""}</span>
-                  {s ? <span className="lobby-bubble"><LazyBoundary failed={null}><SeatBubbles by="seat" id={s.id} at="lobby" /></LazyBoundary></span> : null}
-                  {s?.bot && isHost ? <Button variant="outline" data-testid="remove-bot" aria-label={`Remove ${s.name}`} onClick={() => removeBot(s.id)}><svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 3l10 10M13 3L3 13" /></svg></Button> : null}
-                  {!s && isHost ? <Button variant="outline" data-testid="add-bot" onClick={addBot}>Add bot</Button> : null}
+                  {s && <span className="lobby-bubble"><LazyBoundary failed={null}><SeatBubbles by="seat" id={s.id} at="lobby" /></LazyBoundary></span>}
+                  {s?.bot && isHost && <Button variant="outline" data-testid="remove-bot" aria-label={`Remove ${s.name}`} onClick={() => removeBot(s.id)}><svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 3 13 13M13 3 3 13" /></svg></Button>}
+                  {!s && isHost && <Button variant="outline" data-testid="add-bot" onClick={addBot}>Add bot</Button>}
                 </li>
               );
             })}
@@ -177,13 +161,13 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, onPro
             </div>
             <div className="lobby-action-buttons">
               <Button variant="outline" onClick={() => setReady(!ready)}>{ready ? "Cancel ready" : "Ready"}</Button>
-              {canStart ? <Button variant="sea" onClick={() => { pick(false); startTable(); }}>Start</Button> : null}
+              {canStart && <Button variant="sea" onClick={() => (pick(false), startTable())}>Start</Button>}
               <Button variant="ghost" onClick={goTitle}>Leave the table</Button>
             </div>
           </div>
         </div>
       </div>
-      {howTo ? <LazyBoundary failed={<Button onClick={() => setHowTo(false)}>Close rules</Button>}><HowTo onClose={() => setHowTo(false)} /></LazyBoundary> : null}
+      {howTo && <LazyBoundary failed={<Button onClick={() => setHowTo(false)}>Close rules</Button>}><HowTo onClose={() => setHowTo(false)} /></LazyBoundary>}
     </>
   );
 }

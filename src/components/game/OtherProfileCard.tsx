@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useBackdropClose } from "@/lib/backdrop-close";
 import { useFocusTrap } from "@/lib/focus-trap";
-import { useGame } from "@/lib/game/store";
+import { subscribeCardEvents, useGame } from "@/lib/game/store";
 import { play } from "@/lib/sound";
 import type { Seat } from "@/lib/net/table";
 
@@ -44,9 +44,10 @@ export function OtherProfileCard({
   }, [onClose]);
 
   const profileId = seat.profile?.profileId;
-  const card = useGame((s) => (profileId ? s.profileCards[profileId] : null));
-  const requestProfileCard = useGame((s) => s.requestProfileCard);
   const seats = useGame((s) => s.seats);
+  const [card, setCard] = useState<PublicProfileCardData | "error" | "loading">(
+    !profileId || seat.bot ? "error" : "loading"
+  );
 
   useEffect(() => {
     const match = seats.find((s) => s.id === seat.id);
@@ -54,11 +55,31 @@ export function OtherProfileCard({
   }, [seats, seat, onClose]);
 
   useEffect(() => {
-    if (profileId) requestProfileCard(profileId);
-  }, [profileId, requestProfileCard]);
+    if (!profileId || seat.bot) return;
+    setCard("loading");
+    subscribeCardEvents((msg) => {
+      if (msg.type === "profileError") {
+        setCard("error");
+      } else if (msg.type === "tableProfileCard" && msg.card && typeof msg.card === "object") {
+        const c = msg.card as PublicProfileCardData;
+        if (c.profileId === profileId) {
+          setCard(c);
+        }
+      }
+    });
+    const net = useGame.getState().net;
+    if (net) {
+      net.profileCard(profileId);
+    } else {
+      setCard("error");
+    }
+    return () => {
+      subscribeCardEvents(null);
+    };
+  }, [profileId, seat.bot]);
 
   const isGuest = !profileId || seat.bot;
-  const isLoading = Boolean(profileId && (!card || card === "loading"));
+  const isLoading = Boolean(profileId && card === "loading");
   const isError = Boolean(profileId && card === "error");
   const data = (typeof card === "object" && card !== null ? card : null) as PublicProfileCardData | null;
 
