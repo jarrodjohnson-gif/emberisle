@@ -167,7 +167,7 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
               <VictoryTargetSelect value={target} onChange={isHost ? setTarget : undefined} />
             </div>
             <div className="lobby-action-buttons">
-              <Button variant="outline" onClick={() => setReady(!ready)}>{ready ? "Not ready" : "Ready"}</Button>
+              <Button variant="outline" onClick={() => setReady(!ready)}>{ready ? "Cancel ready" : "Ready"}</Button>
               {canStart ? <Button variant="sea" onClick={() => { setGames(false); setOpen(false); startTable(); }}>Start</Button> : null}
               <Button variant="ghost" onClick={goTitle}>Leave the table</Button>
             </div>
