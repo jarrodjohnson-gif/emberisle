@@ -158,10 +158,28 @@ on its corner, and measures their meshes on screen: the path is 34.0 x 11.7 px, 
 corner 28 px across (the 24 px touch slop or more). No zoom bias: any zoom past the fit pushes a
 dock or a pine out of the hole, and the pick reach, not the piece's drawn size, is the tap target.
 
+## Budget
+
+Target: 60 fps (16.7 ms frame budget).
+Measurements from `node scripts/shots.mjs --budget` across viewports:
+
+| Viewport | Pixel Ratio | View | SSAO | Draw calls / frame | Mean frame time |
+|---|---|---|---|---|---|
+| 1280x720 | 1 | Overhead | Off | 36.8 | 16.9 ms |
+| 1280x720 | 1 | Free | Off | 35.0 | 16.7 ms |
+| 1280x720 | 1 | Free | Half | 68.2 | 16.7 ms |
+| 1920x1080 | 1 | Overhead | Off | 37.0 | 16.9 ms |
+| 1920x1080 | 1 | Free | Off | 34.5 | 16.7 ms |
+| 1920x1080 | 1 | Free | Half | 37.9 | 16.7 ms |
+
+Ceilings for future scene and piece work:
+- Overhead play view: maximum 50 draw calls per frame.
+- Free and diorama views with SSAO: maximum 75 draw calls per frame.
+- Frame budget: 16.7 ms mean frame time (60 fps target) on standard viewports.
+
 ## Open
 
-- **Budget and frame time**: draw calls in the overhead play view are about 480 a frame (docs/research/mobile-frame-time.md);
-  a real-GPU frame time from Jarrod's PC and a budget line are #464.
+- **Budget and frame time** (#464): settled from CI draw-call counts per the 2026-11-06 owner decision (see "Budget" above).
 - **The phone hole** (#422, done as HUD work): on a sideways phone the bottom stack is a full-height left column (20 rem,
   at most 48 vw so it stays a rail), so the hole is the same in every phase. Main phase, hand shown: 844x390 went from a
   101x85 px island and a 7.1 px token to 270x227 and 19 px (adjacent corners 28 px apart); 667x375 from 101x85 and 7.1 px
