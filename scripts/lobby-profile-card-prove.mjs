@@ -298,10 +298,6 @@ for (const { width, height } of VIEWPORTS) {
   assert.deepEqual(errors, [], `${width}x${height}: zero browser errors`);
   await context.close();
   console.log(`ok ${width}x${height}: read-only profile card, public fields, guest label, watcher access, focus return`);
-
-  assert.deepEqual(errors, [], `${width}x${height}: zero browser errors`);
-  await context.close();
-  console.log(`ok ${width}x${height}: read-only profile card, public fields, guest label, watcher access, focus return`);
 }
 
 console.log("lobby-profile-card-prove: ok");

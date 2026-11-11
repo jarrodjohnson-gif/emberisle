@@ -29,7 +29,7 @@ export function OtherProfileCard({
   onClose: () => void;
 }) {
   const root = useRef<HTMLDivElement>(null);
-  useFocusTrap(root);
+  useFocusTrap(root, true, undefined, opener);
   const backdrop = useBackdropClose(onClose);
 
   useEffect(() => {
@@ -42,12 +42,6 @@ export function OtherProfileCard({
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
   }, [onClose]);
-
-  useEffect(() => {
-    return () => {
-      opener?.focus();
-    };
-  }, [opener]);
 
   const profileId = seat.profile?.profileId;
   const card = useGame((s) => (profileId ? s.profileCards[profileId] : null));
@@ -126,6 +120,10 @@ export function OtherProfileCard({
                     <div>
                       <span className="text-muted">Wins: </span>
                       <span>{data.wins}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted">Losses: </span>
+                      <span>{data.losses ?? (typeof data.games === "number" && typeof data.wins === "number" ? Math.max(0, data.games - data.wins) : 0)}</span>
                     </div>
                     <div>
                       <span className="text-muted">Win rate: </span>

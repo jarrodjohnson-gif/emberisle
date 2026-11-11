@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useLayoutEffect, useRef, useState, type ComponentType, type KeyboardEvent } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
@@ -17,12 +17,11 @@ const Play = chunk(() => import("@/components/game/LobbyWaitBox")).pick((m) => m
 function OwnName({ seat }: { seat: Seat }) {
   const rename = useGame((s) => s.renameSeat);
   const [draft, setDraft] = useState<string | null>(null);
-  const done = useRef(false);
   const finish = (save: boolean) => {
-    if (done.current) return;
-    done.current = true;
-    if (save && draft !== null && draft.trim() && draft.trim() !== seat.name) rename(draft);
+    if (draft === null) return;
+    const t = draft.trim();
     setDraft(null);
+    if (save && t && t !== seat.name) rename(t);
   };
   if (draft === null) {
     return (
@@ -30,10 +29,7 @@ function OwnName({ seat }: { seat: Seat }) {
         type="button"
         data-testid="rename-seat"
         aria-label={`Your name is ${seat.name}. Change it`}
-        onClick={() => {
-          done.current = false;
-          setDraft(seat.name);
-        }}
+        onClick={() => setDraft(seat.name)}
       >
         {seat.name}
       </button>
@@ -58,7 +54,7 @@ function OwnName({ seat }: { seat: Seat }) {
   );
 }
 
-export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, OtherProfileCard, prefetchRules, fitCode }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; OtherProfileCard?: typeof import("./OtherProfileCard").OtherProfileCard; prefetchRules: () => Promise<boolean>; fitCode: (el: HTMLElement, code: string) => void }) {
+export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, onProfile, prefetchRules, fitCode }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; onProfile?: (seat: Seat, opener: HTMLElement) => void; prefetchRules: () => Promise<boolean>; fitCode: (el: HTMLElement, code: string) => void }) {
   const rule = useGame(s => s.tableWayfarerMode);
   const code = useGame(s => s.code);
   const seats = useGame(s => s.seats);
@@ -78,8 +74,6 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, Other
   // #1263: a table-mate's tic-tac-toe invite is a badge on the tab, never a popup.
   const invited = useGame(s => s.ttt?.game?.status === "invited" && s.ttt.game.o === s.seatId);
   const [open, setOpen] = useState(false);
-  const [cardSeat, setCardSeat] = useState<typeof seats[0] | null>(null);
-  const [cardOpener, setCardOpener] = useState<HTMLElement | null>(null);
   const ready = seats.find(s => s.id === seatId)?.ready ?? false;
   const canStart = isHost && seats.length >= 3 && seats.length <= 4 && seats.every(s => s.ready);
   const readyCount = seats.filter(s => s.ready).length;
@@ -93,9 +87,7 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, Other
     if (!el) return;
     el.style.fontSize = "";
     if (code.length !== 4) return;
-    const observer = new ResizeObserver(() => {
-      fitCode(el, code);
-    });
+    const observer = new ResizeObserver(() => fitCode(el, code));
     observer.observe(el.parentElement!);
     return () => observer.disconnect();
   }, [code, copied, fitCode]);
@@ -115,6 +107,8 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, Other
     (e.currentTarget.children[+!games] as HTMLElement).focus();
   };
 
+  const fallback = <CopyFallback state={copied} label="Join link" />;
+
   return (
     <>
       <div data-testid="lobby-card" className={cn("lobby-layout", open && "lg")}>
@@ -126,7 +120,7 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, Other
               <span>Copied</span>
             </button>
           </div>
-          {copied && !copied.ok ? <div className="lobby-copy-fallback"><CopyFallback state={copied} label="Join link" /></div> : <CopyFallback state={copied} label="Join link" />}
+          {copied && !copied.ok ? <div className="lobby-copy-fallback">{fallback}</div> : fallback}
           <div className="lobby-rules">
             <div className="lm" role="tablist" aria-label="Lobby" onKeyDown={tabKey}>
               <button type="button" role="tab" aria-selected={!games} tabIndex={games ? -1 : 0} onClick={() => pick(false)}>Table</button>
@@ -153,14 +147,10 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, Other
                       <button
                         type="button"
                         data-testid={`lobby-player-${s.id}`}
-                        className="truncate text-left hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-ring"
-                        onClick={(e) => {
-                          setCardSeat(s);
-                          setCardOpener(e.currentTarget);
-                        }}
+                        onClick={(e) => onProfile?.(s, e.currentTarget)}
                         aria-label={`Profile for ${s.name}`}
                       >
-                        <span className="truncate">{s.name}</span>
+                        {s.name}
                       </button>
                     ) : (
                       <span className="truncate">Empty</span>
@@ -187,14 +177,13 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, Other
             </div>
             <div className="lobby-action-buttons">
               <Button variant="outline" onClick={() => setReady(!ready)}>{ready ? "Cancel ready" : "Ready"}</Button>
-              {canStart ? <Button variant="sea" onClick={() => { setGames(false); setOpen(false); startTable(); }}>Start</Button> : null}
+              {canStart ? <Button variant="sea" onClick={() => { pick(false); startTable(); }}>Start</Button> : null}
               <Button variant="ghost" onClick={goTitle}>Leave the table</Button>
             </div>
           </div>
         </div>
       </div>
       {howTo ? <LazyBoundary failed={<Button onClick={() => setHowTo(false)}>Close rules</Button>}><HowTo onClose={() => setHowTo(false)} /></LazyBoundary> : null}
-      {cardSeat && OtherProfileCard ? <OtherProfileCard seat={cardSeat} opener={cardOpener} onClose={() => setCardSeat(null)} /> : null}
     </>
   );
 }

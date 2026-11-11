@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { ConnectionStatus } from "@/components/game/ConnectionStatus";
 import { chunk } from "@/lib/lazy";
 import { ChatBox, SeatBubbles } from "@/components/game/Chat";
 import { OtherProfileCard } from "@/components/game/OtherProfileCard";
+import type { Seat } from "@/lib/net/table";
 
 const lobby = chunk(() => import("@/components/game/LobbyView"));
 const LobbyView = lobby.pick(m => m.LobbyView);
@@ -9,7 +11,21 @@ const rules = chunk(() => import("@/components/game/sheets"));
 const HowTo = rules.pick(m => m.HowTo);
 void lobby.prefetch();
 export function Lobby() {
-  return <LobbyView ConnectionStatus={ConnectionStatus} ChatBox={ChatBox} SeatBubbles={SeatBubbles} HowTo={HowTo} OtherProfileCard={OtherProfileCard} prefetchRules={rules.prefetch} fitCode={fitLobbyCode} />;
+  const [profile, setProfile] = useState<{ seat: Seat; opener: HTMLElement } | null>(null);
+  return (
+    <>
+      <LobbyView
+        ConnectionStatus={ConnectionStatus}
+        ChatBox={ChatBox}
+        SeatBubbles={SeatBubbles}
+        HowTo={HowTo}
+        onProfile={(seat, opener) => setProfile({ seat, opener })}
+        prefetchRules={rules.prefetch}
+        fitCode={fitLobbyCode}
+      />
+      {profile ? <OtherProfileCard seat={profile.seat} opener={profile.opener} onClose={() => setProfile(null)} /> : null}
+    </>
+  );
 }
 
 // Fits host-issued code text; the view owns observation and cleanup.
