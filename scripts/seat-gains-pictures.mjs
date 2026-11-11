@@ -1,4 +1,5 @@
-// #827: real-board pictures of another seat's public gain and loss, at the three review sizes.
+// #827: real-board pictures of other seats' public gains and losses (owner q1508-gain-show A). Jarrod watches; Joshua's
+// roll pays him wheat, then Joshua and Isaac (neighbouring seats) trade, so both of their seats carry two pills.
 // Run: node --import ./server/register.mjs scripts/seat-gains-pictures.mjs
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -11,8 +12,8 @@ import { createGame } from '../src/lib/game/board.ts';
 
 const directory = mkdtempSync(path.join(tmpdir(), 'emberisle-seat-pictures-'));
 function writeRoom(code) {
-  const game = createGame({ humans: [{ name: 'Jarrod' }, { name: 'Joshua' }], bots: 0, seed: 14 });
-  game.phase = 'roll'; game.rollOff = null; game.current = 'p0'; game.rolls = 4; game.log = ['Earlier event'];
+  const game = createGame({ humans: [{ name: 'Jarrod' }, { name: 'Joshua' }, { name: 'Isaac' }, { name: 'Daking' }], bots: 0, seed: 14 });
+  game.phase = 'roll'; game.rollOff = null; game.current = 'p1'; game.rolls = 4; game.log = ['Earlier event'];
   for (const vertex of game.vertices) vertex.building = null;
   const vertex = game.vertices.find(v => v.hexes.length === 3);
   vertex.building = { playerId: 'p1', kind: 'stronghold' };
@@ -20,17 +21,19 @@ function writeRoom(code) {
   const paying = game.hexes.find(h => h.id === vertex.hexes[0]); paying.pip = 6;
   game.robberHex = game.hexes.find(h => h.id !== paying.id).id;
   for (const p of game.players) { for (const r of ['timber', 'clay', 'wool', 'grain', 'ore']) p.resources[r] = 0; }
-  game.players[0].resources.timber = 2; game.players[1].strongholdsLeft = 3;
+  game.players[2].resources.timber = 2; game.players[1].strongholdsLeft = 3;
   game.bank = { timber: 17, clay: 19, wool: 19, grain: 19, ore: 19 };
   game.lastProduction = [{ hex: paying.id, player: 'p1', res: 'grain', n: 2 }];
   const seats = game.players.map((p, i) => ({ id: `s${i}`, name: p.name, color: p.color, ready: true, pid: p.id, secret: `fixture-${p.id}` }));
   writeFileSync(path.join(directory, `${code}.json`), JSON.stringify({ code, host: 's0', next: 2, chat: [], chatSeq: 0, game, seats, shape: 2, savedAt: Date.now() }));
 }
 
+// Full-size PNGs at twice the CSS pixels (the owner asked for sharper pictures than the earlier ones).
 const shots = [
-  { code: 'GA1N', width: 1280, height: 720, touch: false, file: 'docs/proofs/827/seat-gains-desktop.png', rollFile: 'docs/proofs/827/seat-gains-roll.png' },
-  { code: 'GA2N', width: 390, height: 844, touch: true, file: 'docs/proofs/827/seat-gains-phone.png' },
-  { code: 'GA3N', width: 844, height: 390, touch: true, file: 'docs/proofs/827/seat-gains-landscape.png' },
+  { code: 'GA1N', width: 390, height: 844, touch: true, file: 'docs/proofs/827/trade-390x844.png', rollFile: 'docs/proofs/827/roll-390x844.png' },
+  { code: 'GA2N', width: 430, height: 932, touch: true, file: 'docs/proofs/827/trade-430x932.png', rollFile: 'docs/proofs/827/roll-430x932.png' },
+  { code: 'GA3N', width: 844, height: 390, touch: true, file: 'docs/proofs/827/trade-844x390.png' },
+  { code: 'GA4N', width: 1280, height: 720, touch: false, file: 'docs/proofs/827/trade-1280x720.png' },
 ];
 for (const shot of shots) writeRoom(shot.code);
 
@@ -72,7 +75,7 @@ try {
   for (const shot of shots) {
     const context = await browser.newContext({
       viewport: { width: shot.width, height: shot.height },
-      deviceScaleFactor: 1,
+      deviceScaleFactor: 2,
       hasTouch: shot.touch,
       isMobile: shot.touch,
     });
@@ -91,8 +94,12 @@ try {
     }
     const jarrod = await makeTab('p0');
     const joshua = await makeTab('p1');
-    const seatId = `${shot.touch ? 'seat' : 'rail'}-p1`;
-    await jarrod.evaluate(() => window.__emberisle.getState().dispatch({ type: 'roll' }));
+    const isaac = await makeTab('p2');
+    const daking = await makeTab('p3');
+    await jarrod.bringToFront();
+    const scope = shot.touch ? 'seat' : 'rail';
+    const seatId = `${scope}-p1`;
+    await joshua.evaluate(() => window.__emberisle.getState().dispatch({ type: 'roll' }));
     const rollCue = jarrod.getByTestId(seatId).getByTestId('seat-public-gains');
     await rollCue.waitFor();
     if (shot.rollFile) {
@@ -100,18 +107,26 @@ try {
       await jarrod.screenshot({ path: shot.rollFile });
       console.log(`captured ${shot.rollFile}`);
     }
-    await jarrod.waitForFunction(() => window.__emberisle.getState().state.phase === 'main');
-    await jarrod.evaluate(() => window.__emberisle.getState().askTable({ timber: 1 }, { grain: 1 }));
-    await joshua.waitForFunction(() => window.__emberisle.getState().offer);
-    await joshua.evaluate(() => window.__emberisle.getState().answerTrade(true));
-    const tradeCue = jarrod.getByTestId(seatId).getByTestId('seat-public-gains');
-    await tradeCue.waitFor();
-    await jarrod.waitForFunction(id => {
+    await joshua.waitForFunction(() => window.__emberisle.getState().state.phase === 'main');
+    // Let the roll cue clear first, so the trade picture shows only the trade.
+    await jarrod.getByTestId(seatId).getByTestId('seat-public-gains').waitFor({ state: 'detached', timeout: 5000 });
+    await joshua.evaluate(() => window.__emberisle.getState().askTable({ grain: 1 }, { timber: 1 }));
+    await isaac.waitForFunction(() => window.__emberisle.getState().offer);
+    await isaac.evaluate(() => window.__emberisle.getState().answerTrade(true));
+    await jarrod.waitForFunction(ids => ids.every(id => {
       const root = document.querySelector(`[data-testid="${id}"] [data-testid="seat-public-gains"]`);
       const pills = root ? [...root.querySelectorAll('[data-testid="seat-public-pill"]')] : [];
       const label = root?.getAttribute('aria-label') ?? '';
       return label.includes('+1') && label.includes('−1') && pills.length === 2 && pills.every(pill => parseFloat(getComputedStyle(pill).opacity) > 0.95);
-    }, seatId);
+    }), [`${scope}-p1`, `${scope}-p2`]);
+    // The two groups never touch, and each stays off its seat.
+    const boxes = await jarrod.evaluate(scope => ['p1', 'p2'].map(id => {
+      const seat = document.querySelector(`[data-testid="${scope}-${id}"]`).getBoundingClientRect();
+      const cue = document.querySelector(`[data-testid="${scope}-${id}"] [data-testid="seat-public-gains"]`).getBoundingClientRect();
+      return { seat: [seat.left, seat.top, seat.right, seat.bottom].map(Math.round), cue: [cue.left, cue.top, cue.right, cue.bottom].map(Math.round) };
+    }), scope);
+    console.log(`${shot.width}x${shot.height} ${JSON.stringify(boxes)}`);
+    void daking;
     await jarrod.screenshot({ path: shot.file });
     console.log(`captured ${shot.file}`);
     await context.close();
