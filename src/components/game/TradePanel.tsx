@@ -117,7 +117,8 @@ export function TradePanel() {
         <div className="trade-composer-scroll" id="trade-goods" role="region" aria-labelledby="trade-goods-title" tabIndex={0}>
           <h3 id="trade-goods-title" className="sr-only">Trade goods</h3>
           <LazyBoundary failed={<p role="alert">Trade choices could not load. Close and reopen to retry.</p>}>
-          <p className="trade-instructions">{mode === "hotseat" ? "Choose one kind to give and one to get. Trade with the bank or your docks." : "Tap a good to add it. Mix goods for the table; one good each way for the bank."}</p>
+          <NeedRow player={me.id} />
+          <NeedsAtTable me={me.id} />
           {(["give", "want"] as const).map((side) => {
             const bag = side === "give" ? give : want;
             return (
@@ -134,15 +135,12 @@ export function TradePanel() {
               </section>
             );
           })}
-          <NeedRow player={me.id} />
-          <NeedsAtTable me={me.id} />
           </LazyBoundary>
         </div>
 
         <footer className="trade-composer-footer">
           {mode !== "hotseat" ? (
             <div className="trade-route">
-              <h3>Table offer</h3>
               <p className="trade-exact-preview" data-testid="trade-player-preview" aria-live="polite">
                 <span>Give: {bagText(give) || "choose goods"}</span>
                 <span>Get: {bagText(want) || "choose goods"}</span>
@@ -150,11 +148,9 @@ export function TradePanel() {
               <Button className="h-11 w-full" disabled={!asking} onClick={() => askTable(give, want)}>Ask the table</Button>
             </div>
           ) : null}
-          <div className="trade-route trade-bank-box" role="group" aria-labelledby="trade-bank-title">
-            <h3 id="trade-bank-title">Bank &amp; docks · one exchange</h3>
+          <div className="trade-route trade-bank-box" role="group" aria-label="Bank &amp; docks">
             <p className="trade-exact-preview" id="trade-bank-quote" data-testid="trade-hint" aria-live="polite">{bankHint}</p>
-            {w ? <p className="trade-bank-stock" id="trade-bank-stock" aria-live="polite">Bank stock: {state.bank[w]} {RESOURCE_LABEL[w].toLowerCase()}.</p> : null}
-            <Button variant="secondary" className="trade-bank-action h-11 w-full" aria-describedby={w ? "trade-bank-quote trade-bank-stock" : "trade-bank-quote"} disabled={bankWhy !== null} onClick={bank}>{bankLabel}</Button>
+            <Button variant="secondary" className="trade-bank-action h-11 w-full" aria-describedby="trade-bank-quote" disabled={bankWhy !== null} onClick={bank}>{bankLabel}</Button>
           </div>
         </footer>
       </section>

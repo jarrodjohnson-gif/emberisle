@@ -23,10 +23,10 @@ export function TradeResource({ resource, value, owned, side, canMore, onChange 
     }
   }, [value]);
   return <div className={`trade-resource goods-${resource}`} data-selected={value > 0 || undefined} data-testid={id}>
-    <button ref={add} className="trade-add" aria-label={`More ${RESOURCE_LABEL[resource]} to ${side}`} aria-describedby={`${id}-owned ${id}-count`} disabled={!canMore} onClick={() => { play("ui_click"); onChange(value + 1); }}>
+    <button ref={add} className="trade-add" aria-label={`More ${RESOURCE_LABEL[resource]} to ${side}`} aria-describedby={side === "give" ? `${id}-owned ${id}-count` : `${id}-count`} disabled={!canMore} onClick={() => { play("ui_click"); onChange(value + 1); }}>
       <Icon aria-hidden="true" className="size-5" />
       <span className="trade-resource-name">{RESOURCE_LABEL[resource]}</span>
-      <span id={`${id}-owned`} className="trade-owned" data-testid="trade-owned">Have {owned}</span>
+      {side === "give" ? <span id={`${id}-owned`} className="trade-owned" data-testid="trade-owned">Have {owned}</span> : null}
       <output id={`${id}-count`} aria-label={`${RESOURCE_LABEL[resource]} to ${side}`} className="trade-quantity">{value}</output>
       <Plus aria-hidden="true" className="size-3" />
     </button>
