@@ -154,6 +154,22 @@ try {
       `${v.tag}: Water and View boxes share left edges and widths column by column`,
       JSON.stringify(grid),
     );
+    // The two choice columns are the same width too (Crystal = Simple, Diorama = Overhead, within 0.5 px), and every
+    // choice label stays inside its own box.
+    const columns = await menu.evaluate((el) => {
+      const r = (n) => Math.round(n * 10) / 10;
+      return ["water-toggle", "view-toggle"].map((id) => {
+        const bs = [...el.querySelectorAll(`[data-testid="${id}"] button`)];
+        const inside = bs.every((b) => {
+          const box = b.getBoundingClientRect(), range = document.createRange();
+          range.selectNodeContents(b);
+          const t = range.getBoundingClientRect();
+          return t.left >= box.left - 0.5 && t.right <= box.right + 0.5;
+        });
+        return { id, diff: r(bs[0].getBoundingClientRect().width - bs[1].getBoundingClientRect().width), inside };
+      });
+    });
+    check(columns.every((c) => Math.abs(c.diff) <= 0.5 && c.inside), `${v.tag}: the two choice columns are the same width and each label fits its box`, JSON.stringify(columns));
     await ctx.close();
   }
   for (const v of VIEWS) {
