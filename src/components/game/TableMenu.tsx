@@ -214,16 +214,20 @@ export function TableMenu() {
                 </span>
               </Button>
               {haptics.row}
+              {/* Owner q1503-menu-gap D: Water and View are one grid. A label column as wide as the wider label, then two equal
+                  choice columns, so Crystal sits over Diorama and Simple over Overhead with the same edges. Each row is a subgrid
+                  that keeps its own px-3 inset and py-1 (8 px between the rows' boxes). */}
+              <div className="grid grid-cols-[max-content_minmax(0,1fr)_minmax(0,1fr)] gap-x-1">
               {/* The sea's look; the choice is remembered and overrides the GPU probe (docs/design/crystal-water.md).
                   The label sits under the icon, same as View, so the choices share the row (#1501). */}
-              <div role="group" aria-label="Water" data-testid="water-toggle" className="flex min-w-0 items-center gap-2 px-3 py-1 text-body">
-                <span className="flex shrink-0 flex-col items-center leading-none">
+              <div role="group" aria-label="Water" data-testid="water-toggle" className="grid grid-cols-subgrid col-span-3 items-center px-3 py-1 text-body">
+                <span className="flex flex-col items-center pr-1 leading-none">
                   <Waves className={ICON} />
                   Water
                 </span>
-                <span className="flex min-w-0 flex-1 gap-1">
+                <span className="contents">
                   {(["crystal", "simple"] as const).map((p) => (
-                    <Button key={p} size="sm" variant={water === p ? "default" : "ghost"} aria-pressed={water === p} className="min-w-11 flex-1 px-1.5" onClick={() => setWaterChoice(p)}>
+                    <Button key={p} size="sm" variant={water === p ? "default" : "ghost"} aria-pressed={water === p} className="min-w-11 px-1.5" onClick={() => setWaterChoice(p)}>
                       {p === "crystal" ? "Crystal" : "Simple"}
                     </Button>
                   ))}
@@ -234,18 +238,19 @@ export function TableMenu() {
                   the row and stay inside the panel at phone width. The row keeps the px-3 inset of every other row. Text stays
                   15 px; each choice stays at least 44 px. Owner q1503-menu-fit D: py-1 on both rows leaves an 8 px gap
                   between the Water and View choice boxes, so a selected box never touches the one below it. */}
-              <div role="group" aria-label="View" data-testid="view-toggle" className="flex min-w-0 items-center gap-2 px-3 py-1 text-body">
-                <span className="flex shrink-0 flex-col items-center leading-none">
+              <div role="group" aria-label="View" data-testid="view-toggle" className="grid grid-cols-subgrid col-span-3 items-center px-3 py-1 text-body">
+                <span className="flex flex-col items-center pr-1 leading-none">
                   <Box className={ICON} />
                   View
                 </span>
-                <span className="flex min-w-0 flex-1 gap-1">
+                <span className="contents">
                   {(["diorama", "overhead"] as const).map((v) => (
-                    <Button key={v} size="sm" variant={view === v ? "default" : "ghost"} aria-pressed={view === v} className="min-w-11 flex-1 px-1.5" onClick={() => setViewChoice(v)}>
+                    <Button key={v} size="sm" variant={view === v ? "default" : "ghost"} aria-pressed={view === v} className="min-w-11 px-1.5" onClick={() => setViewChoice(v)}>
                       {v === "diorama" ? "Diorama" : "Overhead"}
                     </Button>
                   ))}
                 </span>
+              </div>
               </div>
               {mode === "online" && code ? (
                 <Button variant="ghost" className={ROW} onClick={() => copy("code", code)}>
