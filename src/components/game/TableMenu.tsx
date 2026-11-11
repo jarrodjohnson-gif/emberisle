@@ -216,12 +216,14 @@ export function TableMenu() {
               {haptics.row}
               {/* Owner q1503-menu-gap D: Water and View are one grid. A label column as wide as the wider label, then two equal
                   choice columns, so Crystal sits over Diorama and Simple over Overhead with the same edges. Each row is a subgrid
-                  that keeps its own px-3 inset and py-1 (8 px between the rows' boxes). */}
-              <div className="grid grid-cols-[max-content_minmax(0,1fr)_minmax(0,1fr)] gap-x-1">
+                  with the px-3 inset of the other rows and py-1 (8 px between the rows' boxes). The inset lives on the wrapper,
+                  and each row cancels it with -mx-3 and puts it back as padding: a subgrid's own padding would otherwise be
+                  added to the edge columns and make the second choice column narrower than the first. */}
+              <div className="grid grid-cols-[max-content_minmax(0,1fr)_minmax(0,1fr)] gap-x-1 px-3">
               {/* The sea's look; the choice is remembered and overrides the GPU probe (docs/design/crystal-water.md).
                   The label sits under the icon, same as View, so the choices share the row (#1501). */}
-              <div role="group" aria-label="Water" data-testid="water-toggle" className="grid grid-cols-subgrid col-span-3 items-center px-3 py-1 text-body">
-                <span className="flex flex-col items-center pr-1 leading-none">
+              <div role="group" aria-label="Water" data-testid="water-toggle" className="-mx-3 grid grid-cols-subgrid col-span-3 items-center px-3 py-1 text-body">
+                <span className="flex flex-col items-center leading-none">
                   <Waves className={ICON} />
                   Water
                 </span>
@@ -238,8 +240,8 @@ export function TableMenu() {
                   the row and stay inside the panel at phone width. The row keeps the px-3 inset of every other row. Text stays
                   15 px; each choice stays at least 44 px. Owner q1503-menu-fit D: py-1 on both rows leaves an 8 px gap
                   between the Water and View choice boxes, so a selected box never touches the one below it. */}
-              <div role="group" aria-label="View" data-testid="view-toggle" className="grid grid-cols-subgrid col-span-3 items-center px-3 py-1 text-body">
-                <span className="flex flex-col items-center pr-1 leading-none">
+              <div role="group" aria-label="View" data-testid="view-toggle" className="-mx-3 grid grid-cols-subgrid col-span-3 items-center px-3 py-1 text-body">
+                <span className="flex flex-col items-center leading-none">
                   <Box className={ICON} />
                   View
                 </span>
