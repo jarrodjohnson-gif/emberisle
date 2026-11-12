@@ -173,6 +173,14 @@
   .lobby-players { grid-template-rows: repeat(2, 44px); }
   .lobby-player { grid-template-rows: 18px 18px; --seat-row: 18px; }
   .lobby-actions { grid-template-columns: minmax(0, 42fr) minmax(0, 58fr); column-gap: 8px; }
+  .lobby-rules > button:not([role="tab"]) {
+    width: 76px;
+    height: 44px;
+    padding-inline: 8px;
+    padding-block: 0;
+    white-space: normal;
+    line-height: 1.1;
+  }
 }
 
 .lobby-bubble [data-seat-bubble] > div { max-width: 100%; padding: 0; background: none; box-shadow: none; backdrop-filter: none; }

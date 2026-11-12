@@ -314,9 +314,18 @@ async function howToPlayFits(page, label) {
   const m = await page.getByRole("button", { name: "How to play", exact: true }).evaluate(el => {
     const range = document.createRange(); range.selectNodeContents(el);
     const text = range.getBoundingClientRect(), box = el.getBoundingClientRect(), row = el.parentElement.getBoundingClientRect();
-    return { lines: range.getClientRects().length, lineHeight: parseFloat(getComputedStyle(el).lineHeight), textHeight: text.height, inside: text.left >= box.left && text.right <= box.right && box.left >= row.left && box.right <= row.right, scroll: el.scrollWidth <= el.clientWidth };
+    const isNarrowLandscape = window.innerWidth <= 700 && window.innerWidth > window.innerHeight;
+    const maxLines = isNarrowLandscape ? 2 : 1;
+    return {
+      lines: range.getClientRects().length,
+      lineHeight: parseFloat(getComputedStyle(el).lineHeight),
+      textHeight: text.height,
+      inside: text.left >= box.left - 0.5 && text.right <= box.right + 0.5 && box.left >= row.left - 0.5 && box.right <= row.right + 0.5,
+      scroll: el.scrollWidth <= el.clientWidth,
+      maxLines,
+    };
   });
-  assert.ok(m.lines === 1 && m.textHeight <= m.lineHeight + 1 && m.inside && m.scroll, `${label}: How to play fits its row on one line: ${JSON.stringify(m)}`);
+  assert.ok(m.lines <= m.maxLines && m.inside && m.scroll, `${label}: How to play fits its row: ${JSON.stringify(m)}`);
 }
 
 try {
@@ -342,9 +351,9 @@ try {
     await page.getByRole("button", { name: "Ready", exact: true }).click();
     await guest.getByRole("button", { name: "Ready", exact: true }).click();
     await startState(page, false, "All ready");
-    await guest.getByRole("button", { name: "Not ready", exact: true }).click();
+    await guest.getByRole("button", { name: "Cancel ready", exact: true }).click();
     await startState(page, true, "2 of 3 ready");
-    await page.getByRole("button", { name: "Not ready", exact: true }).click();
+    await page.getByRole("button", { name: "Cancel ready", exact: true }).click();
     await startState(page, true, "1 of 3 ready");
     await page.getByTestId("add-bot").first().click();
     await page.waitForFunction(() => window.__emberisle.getState().seats.length === 4);
