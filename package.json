@@ -89,6 +89,7 @@
     "sticker-motion-prove": "node scripts/sticker-motion-prove.mjs",
     "lobby-layout-prove": "node scripts/lobby-layout-prove.mjs",
     "lobby-code-copy-prove": "node scripts/lobby-code-copy-prove.mjs",
+    "lobby-profile-card-prove": "node scripts/lobby-profile-card-prove.mjs",
     "lobby-prove": "node scripts/lobby-prove.mjs",
     "lobby-wait-box-prove": "node scripts/lobby-wait-box-prove.mjs",
     "lobby-tictactoe-prove": "node scripts/lobby-tictactoe-prove.mjs",
