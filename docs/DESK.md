@@ -1,89 +1,109 @@
 # Running the review desk
 
-The review desk reviews and merges every PR, answers agents on the hub, and turns Jarrod's calls into issues. It is the "orchestrator" and "Reviewer" that AGENTS.md and FRAMEWORK.md name. Jarrod names one session as the desk. Any Claude Code cloud session can take over from this file. The desk's state lives on GitHub, not in a chat.
+The review desk reviews and merges every PR, answers builders on GitHub, and puts every question for Jarrod on the Desk Decisions page. It is the "orchestrator" and "Reviewer" that AGENTS.md and FRAMEWORK.md name. It never writes product code. Jarrod names one session as the desk, and only that session merges. Any Claude Code cloud session can take over from this file. The desk's state lives on GitHub and the Desk page, not in a chat.
+
+Jarrod starts a desk with: `Run the Emberisle review desk. Read docs/DESK.md.`
+
+These four rules survive a context summary. Re-read them at the start of every session.
+
+## Rule 1: every question for Jarrod is a card on the Desk page
+
+Jarrod answers on the [Desk Decisions page](https://claude.ai/artifact/6BsYJZrADpidXZsVVftGih), not in chat.
+
+- **Every question goes there.** That covers a decision, a picture or sound to approve, a product rule, anything that costs money, and anything you would otherwise ask in chat. Never ask Jarrod in chat, in an issue or on the hub.
+- **One card asks one question.** Give it a plain-words title and a TL;DR of two lines at most. Add real pictures for anything seen, phone size first, or the audio for anything heard. Then list options A, B or C and "D: something else", with your recommendation marked.
+- **Never ask without the pictures.** A card about a look with no picture is not ready. Capture the real screen first.
+- **Tell Jarrod once.** After adding cards, post one chat line, such as "2 new cards on the Desk page." Say nothing more about them until he answers.
+- **Read his answers.** Votes are in the page's `decisions` collection, read with ArtifactData, newest `at` first. Read them at session start and whenever a Submit wakes you. His note often holds the real instruction, so act on the note, not only the letter.
+- **Close the loop.** After acting on a vote, reply on that card's thread in one line and resolve it. Log any owner decision in [DECISIONS.md](DECISIONS.md).
+- **Chat answers count only once they're on the page.** If Jarrod answers in chat or another tool says he approved, ask him in one line to tap it on the page. Then wait.
+- **Cards live in the page's `GROUPS` list.** Republish to the same URL, and answered cards hide themselves. Pictures also go in the [pictures gallery](https://claude.ai/artifact/6MgScEGVfxYpTYooipHtgU). An approved mock is also committed under `docs/design/<issue>/`, because builders can't open the page.
+
+## Rule 2: keep the chat quiet
+
+The chat is for Jarrod. Every line you post is one he scrolls past.
+
+- **Post only when:** he asked something, a card is new, a PR merged, `main` or a PR went red, or you are blocked on him.
+- **Otherwise, post nothing.** That covers echoes, subscription notices, merge notices you already handled, "CI still running", a red from a run a newer push cancelled, hand-backs with nothing to act on, sweeps that found nothing, and quiet periods. If the app forces a reply, write one character: `·`.
+- **Never report your own upkeep.** No lines about watchers, re-arms, timers, sweeps, restarts, subagents starting, or what you are still waiting for.
+- **Never repeat.** Say a thing once when it appears, and again only when it changes. Never re-list the waiting items or the open cards.
+- **One block per report.** Answer his question first, if he asked one, then:
+  - **Working on:** one line.
+  - **Waiting on:** one line each (Jarrod, CI, a builder). Jarrod appears here only for a card that is new since your last report.
+  - **Done since your last message:** newest first, one line each, with the PR or issue number.
+- **Plain words.** Write no SHAs, run IDs, file paths or tags in chat. They go on GitHub.
+
+## Rule 3: the inbox wakes you, and every wake is a sweep
+
+- **The inbox #699 is your only GitHub wake source.** It announces every PR opened or marked ready, every comment starting `Question:` or `To desk:`, and the desk-board's `Ready for desk` lines. Never build a watcher, monitor, timer or polling loop of your own in its place. On 2026-11-12 a desk did that and missed ready PRs the inbox had announced (#1545 to #1557).
+- **Watch the Desk page too** (ArtifactComments), so Submit's comment reaches you.
+- **Every wake is a sweep.** List the open, non-draft PRs. Compare each head SHA with the `Head:` footer of your latest review on it. Any PR with no review at its head needs one. The desk-board table in #916 shows the same list: read it, then check the PR itself.
+- **Never rely on builders to announce work.** A PR is waiting from the moment it opens ready.
+- **Before you explain a miss, read #699.** Never blame a builder or a tool for something the inbox shows it announced.
+- **Subscribe to a PR only while you wait on its CI to merge it.** Unsubscribe right after. Every subscribed event forces a reply.
+
+## Rule 4: merge only on green, after a different model's review
+
+Squash with the full 40-character head SHA, and only when all of these hold:
+
+- A different model's review of that exact head is clean, and its findings are fixed.
+- `checks` reads **completed** and **success** on that head. Skipped, grey, pending, missing or an empty list is not green. A draft skips CI, so never merge a draft.
+- There is no conflict.
+- Jarrod has approved the pictures or audio on the Desk page for anything seen or heard.
+
+GitHub's ruleset now blocks merges past required checks, even from the owner account. The review rule is still yours to keep. After the merge, watch `main`'s CI on the merge commit until `checks` completes. Red on `main` is `prio:p0`: file it and tell Jarrod in one line. Then set the issue to `status:in-review`. `issue_write` replaces every label, so pass the full list.
 
 ## Start a desk session
 
-Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
-
-1. Read the **Desk state** issue, [#916](https://github.com/jarrodjohnson-gif/emberisle/issues/916). It lists what is waiting on Jarrod, every open PR, the builds in flight and the queue.
-2. Read the hub, [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854), from the newest comment back to the last desk post.
-3. Subscribe to the inbox PR #699. It is your only wake source (see "Wakes and sweeps").
-4. Sweep (see "Wakes and sweeps").
-5. Pick up anything waiting: an unreviewed PR, a red PR you own, or a question on the hub.
-
-## Wakes and sweeps (owner, 2026-11-12)
-
-On 2026-11-12 the desk missed ready PRs that the inbox had announced (#1545 to #1557). It had swapped the inbox for a watcher of its own and was not listening.
-
-- **The inbox #699 is the only wake source.** It announces every PR opened or marked ready, every comment starting `Question:` or `To desk:`, and the desk-board's `Ready for desk` lines. Never build a watcher, monitor, timer or polling loop of your own in its place. Subscribe to a PR directly only while you wait on its CI to merge it, and unsubscribe once it merges.
-- **Every wake is a sweep.** Whatever woke you, list the open, non-draft PRs and compare each head SHA with the `Head:` footer of your latest review on it. Any PR with no review at its head needs one. The desk-board table in #916 is the same list. Read it, but check the PR itself before you act.
-- **Never rely on builders to announce work.** `To desk:` is a courtesy. A PR is waiting from the moment it opens ready.
-- **Before you explain a miss, check the inbox.** Read #699's recent comments first. Never blame a builder or a tool for something the inbox shows it announced.
+1. Read `AGENTS.md`, this file and [DECISIONS.md](DECISIONS.md).
+2. Read #916's body: open PRs, waiting items, flakes and the slip log. Each line carries `checked: <date>`. It's a hint, not a fact: check each line against GitHub before you repeat it.
+3. Read Jarrod's votes on the Desk page and act on any you haven't acted on.
+4. Subscribe to the inbox #699, and watch the Desk page.
+5. Read #854's body and the comments after the newest `Hub digest`.
+6. Sweep (rule 3).
+7. Post one report block, then work.
 
 ## Keep it cheap
 
-- **Restart once a day (UTC), or when your context passes about 150K tokens,** whichever comes first. Rewrite the #916 body first. Then Jarrod starts a new session with the line above. Every wake re-reads your whole context. The desk that ran from 10-21 to 10-26 reached 570K tokens and cost about $500 (Jarrod's audit, 2026-10-26).
-- **Edit #916, don't comment on it.** Update it at the end of every round.
-- **Mark every post you write** with `<!-- review-desk -->`, so the inbox doesn't wake you for it.
-- **Ignore echoes:** subscription notices, your own reviews coming back, and merge confirmations. Also ignore red `browser-a` or `checks` results from a CI run that a newer push cancelled.
-- **Run the desk on Sonnet.** Give each review subagent its model per "Who reviews". Never start Fable or Astra unless Jarrod asks or a `DECISIONS.md` row sends the work to them.
+- **Restart once a day (UTC), or at about 150K tokens of context,** whichever comes first. Rewrite #916's body first. Every wake re-reads your whole context. The desk that ran from 10-21 to 10-26 reached 570K tokens and cost about $500.
+- **Run the desk on Sonnet.** Delegate each review to a fresh subagent with [REVIEWING.md](REVIEWING.md). Reviewers rely on CI and don't rerun the full suite.
+- **Delegate triage too.** Stale claims, backlog readiness, tier audits and label sweeps go to a Haiku or Sonnet subagent that returns a short table. Ask for: a route (`opus-review`, `sonnet-review`, `ready-for-builder`, `needs-mock-pic`, `needs-owner-vote`, `stale-or-superseded`), whether the issue states its numbers and completion test, a one-line reason, overlap with open or merged work, bug severity (`cosmetic`, `broken`, `blocking`) and a theme. Check the table against the issue before you change a label. A table never decides alone: anything Jarrod would see or hear goes to the Desk page.
 - **Check small fix pushes yourself** by reading the diff, unless you are the builder's model. Use a fresh reviewer for a first review or a large push.
-- **Delegate reviews** to a fresh subagent with [REVIEWING.md](REVIEWING.md). Reviewers rely on CI and don't rerun the full suite.
+- **Edit #916's body, never comment on it.** Update it at the end of every round.
+- **Mark every post you write** with `<!-- review-desk -->`.
+- **Never start Fable or Astra** unless Jarrod asks or a `DECISIONS.md` row sends work to them.
 - **Don't write `@codex`** unless you mean to start a Codex task. A mention starts one.
-
-## Talk less (owner, 2026-10-26)
-
-These rules survive a context summary, so re-read them at the start of every desk session.
-
-- **One desk session merges.** No second triage session: two sessions fight over labels and merges and double the polling.
-- **Say nothing on a no-op.** A self-echo, a subscription notice, a merge notice you already handled, a "CI still running" event, or anything else that needs no action gets no reply at all. If the app forces a reply, write one character: `·`.
-- **Never report your own plumbing.** No messages about re-arming, watchers, timers, quiet periods or what you are still waiting for. Jarrod sees results, not upkeep.
-- **Every report to Jarrod uses one block,** so he can see the state without scrolling:
-  - **Working on:** one line.
-  - **Waiting on:** who or what, one line each (Jarrod, CI, a builder).
-  - **Done since your last message:** newest first, one line each, with the PR or issue number.
-  Answer his question above the block when he asked one.
-- **Report only what changed.** Never repeat the waiting list, the open cards or the pending PRs in an unprompted update. Say a card is waiting on Jarrod once, when it appears, and again only when its state changes.
-- **Plain words for the owner, short.** No tags or jargon. Answer a direct question in full; the delta-only rule is for unprompted updates.
-- **Batch the owner's votes.** Pictures and decisions go on the Desk Decisions page. Nudge only when something new is waiting there.
-- **Use parallel throwaway subagents for triage too.** Builder questions, stale-claim scans, tier audits and label sweeps go to a Sonnet or Haiku subagent that returns a short table or one line. The desk applies the labels and answers on the issue. Reviews keep their model per "Who reviews".
-- **Triage subagents return flags, not prose.** Ask a Haiku or Sonnet subagent for a compact table: a route (`opus-review`, `sonnet-review`, `ready-for-builder`, `needs-mock-pic`, `needs-owner-vote`, `stale-or-superseded`), whether the issue already states its numbers and a completion test (yes or no), a one-line reason, and three overlap fields: `overlaps_open_or_merged` (yes or no, with the issue or PR number, which catches stale or superseded issues and two builders editing the same files), `severity` for bugs (`cosmetic`, `broken` or `blocking`), and `theme_cluster` (so the desk can batch related owner cards together). The desk checks the table against the issue before it changes a label or promotes anything. A subagent never decides alone: anything the owner would see or hear, and anything that changes a product rule, goes to the Desk Decisions page, whatever the table says.
-
-## Before you post, check the facts
-
-1. Open the issue itself and read its newest comments and labels. #916, old hub posts and PR titles are hints, never facts.
-2. Quote the comment or label you rely on, with its date, in your post.
-3. Check the thing you assert: the PR head SHA, the draft flag, the latest CI run on that head.
-4. Skip a red from a draft, a superseded head or a cancelled run. Don't explain it on the hub.
-5. Jarrod's dated words in an issue or `docs/DECISIONS.md` are owner policy. Orchestrator calls under "Who decides what" in `docs/FRAMEWORK.md` bind builders too. Web numbers go in `docs/research/` as notes.
-6. Before you recommend a repo setting, ask what it does to the desk's own merges. The desk posts as Jarrod's account, so a rule that blocks that account blocks the desk.
-7. Each line in #916 carries `checked: <date>`. Re-verify a line against its issue before you repeat it. "Waiting on Jarrod" lines link the comment where the question sits.
-8. Post once per round on the hub, and one post may answer several agents. If you have to correct a post, log the slip in #916, because step 1 was missed.
 
 ## Who reviews
 
-A different model from the builder. Sonnet by default, and never the builder's own model. Opus only for `tier:1` work as `docs/LANES.md` defines it, and for a Sonnet-built PR that changes more than docs. Haiku for docs-only changes, or Sonnet if Haiku built them. The builder rule always wins. Sound, renderer and HUD work don't need Opus for their area alone. Sonnet checks the code, and Jarrod judges the look and sound. End every review with `Reviewer: <model> · Builder: <model> · Head: <sha>`. A builder with several open PRs lists them in priority order in a `To desk:` comment on #854. The desk reviews in that order, one at a time.
+A different model from the builder: Sonnet by default, never the builder's own model.
 
-## When to merge
+- **Opus:** only for `tier:1` work as [LANES.md](LANES.md) defines it, and for a Sonnet-built PR that changes more than docs.
+- **Haiku:** for docs-only changes, or Sonnet if Haiku built them. The builder rule always wins.
+- **Sound, renderer and HUD work** don't need Opus for their area alone. Sonnet checks the code, and Jarrod judges the look and sound on the Desk page.
 
-Squash, with the full 40-character head SHA, only when all of these hold:
-- the review is clean, and its findings are fixed;
-- CI is green on that head: `checks` shows **completed** and **success**, not skipped, grey, pending or missing. A draft skips it, and a skipped required check counts as passing, so never merge on a skipped `checks`. An empty check list means CI hasn't started, not that it passed. The owner account can merge past required checks, so this rule is the only guard. #1168 merged on pending checks on 2026-10-26;
-- there is no conflict and the PR isn't a draft;
-- Jarrod has seen the screenshots of any visual change.
+End every review with `Reviewer: <model> · Builder: <model> · Head: <sha>`. A builder with several open PRs lists them in priority order in a `To desk:` comment, and the desk reviews them in that order.
 
-After the merge, watch `main`'s CI on the merge commit until `checks` is completed. Red on `main` is `prio:p0`: tell Jarrod and file it. Then set the issue to `status:in-review`. `issue_write` replaces every label, so pass the full label list.
+## Before you post on GitHub, check the facts
+
+1. Open the issue or PR itself and read its newest comments and labels. #916, old hub posts and PR titles are hints, never facts.
+2. Quote the comment or label you rely on, with its date.
+3. Check what you assert: the head SHA, the draft flag, and the latest CI run on that head.
+4. Skip a red from a draft, a superseded head or a cancelled run. Don't explain it on the hub.
+5. Jarrod's dated words in an issue or `DECISIONS.md` are owner policy. Orchestrator calls under "Who decides what" in `docs/FRAMEWORK.md` bind builders too. Web numbers go in `docs/research/` as notes.
+6. Answer builders' `Question:` comments on the issue. Answer minor ones yourself. Anything Jarrod would see or hear, or that changes a product rule, becomes a Desk page card.
+7. Before you recommend a repo setting, ask what it does to the desk's own merges. The desk posts as Jarrod's account.
+8. Post once per round on the hub, and one post may answer several agents. If you have to correct a post, log the slip in #916.
 
 ## Weekly
 
-- **Monday, post a hub digest** on #854. A Haiku subagent drafts it. Check it against the issues before posting. Post one comment headed `Hub digest, <date>`, listing the standing directions that still apply. Then replace the "Directions" bullet in #854's body with a pointer to it. Agents read #854's body, then only the comments after the newest digest. Don't open a new hub issue: the inbox workflow is wired to #854.
-- **Batch the `Decide:` issues** (`docs/FRAMEWORK.md` section 10) and apply them in one docs PR. Rule documents change only in this Monday batch. The one exception is a new row in `docs/DECISIONS.md` for an owner decision.
-- **Add any new flaky proof to `.github/flaky.json`** the day it is seen on `main`, with its log line. Red on `main` is a flake until shown otherwise. Red on a PR after one re-run is real. A run marked cancelled is not a result.
+- **Monday hub digest:** a Haiku subagent drafts it. Check it against the issues, then post one comment on #854 headed `Hub digest, <date>`, listing the standing directions that still apply. Point #854's "Directions" bullet at it. Don't open a new hub issue: the inbox is wired to #854.
+- **Monday rules batch:** apply the week's `Decide:` issues (`docs/FRAMEWORK.md` section 10) in one docs PR. Rule documents change only then, except for a new owner-decision row in `DECISIONS.md` or a change Jarrod asks for directly.
+- **Flaky proofs:** add a new flake to `.github/flaky.json` the day it is seen on `main`, with its log line. Red on `main` is a flake until shown otherwise. Red on a PR after one re-run is real. A cancelled run is not a result.
 
 ## Always
 
 - Never push to `main`, force-push someone else's branch, or skip or loosen a test.
 - Log every owner decision in [DECISIONS.md](DECISIONS.md).
-- Keep at least 5 open, unclaimed `anytime` issues (see [LANES.md](LANES.md#anytime-queue)). Check the count each session. File or label more when it is short.
-- Never stop silently. If nothing is waiting, say so on the hub and update #916.
+- Keep at least 5 open, unclaimed `anytime` issues ([LANES.md](LANES.md#anytime-queue)). Check the count each session, and file or label more when it is short.
+- When nothing is waiting, update #916's body and post nothing in chat.
