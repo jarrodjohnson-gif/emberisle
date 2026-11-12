@@ -47,7 +47,7 @@ The chat is for Jarrod. Every line you post is one he scrolls past.
 
 ## Rule 3: the inbox wakes you, and every wake is a sweep
 
-- **The inbox #699 is your only GitHub wake source.** It announces every PR opened or marked ready, and every comment starting `Question:` or `To desk:`. It also carries the desk-board's `Ready for desk` lines. Never build a watcher, monitor, repeating timer or polling loop in its place. On 2026-11-12 a desk did that and missed ready PRs the inbox had announced (#1545 to #1557).
+- **The inbox #699 is your only GitHub wake source.** It announces every PR opened or marked ready, and every comment starting `Question:` or `To desk:`. It also carries the desk-board's lines: `unreviewed` for a green head with no review, and `ready to merge` for a clean, green head. A `ready to merge` line means: recheck the head and `checks`, then merge (rule 4). Never build a watcher, monitor, repeating timer or polling loop in its place. On 2026-11-12 a desk did that and missed ready PRs the inbox had announced (#1545 to #1557).
 - **One exception: a one-shot `send_later` for one named wait.** Use it only where no event will wake you: `main` CI after a merge, an overdue subagent, a handover check. Give each a row in `In flight`. Never chain them into a loop.
 - **Watch the Desk page too** (ArtifactComments, `action: "watch"`, with the page URL). Submit's comment then reaches you. Confirm it with a bare watch listing.
 - **Every wake is a sweep.** Do these in order:
