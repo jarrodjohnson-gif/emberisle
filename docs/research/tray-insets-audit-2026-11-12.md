@@ -3,6 +3,8 @@
 - date: 2026-11-12
 - agent: builder-proofs
 - lane: hud (tier 3)
+- commit: 3475e541
+- command: `npm run tray-prove` (logged live via `scripts/tray-prove.mjs:214`)
 - targets: `src/lib/scene/mobile-fit.ts`, `src/components/game/Hud.tsx`
 
 ## Overview
@@ -13,6 +15,11 @@ The declared hole follows the measured tray on screen.
 Every measured inset preserves a positive safety margin to prevent board cropping.
 
 ## Measurements Across Viewports
+
+Run output from `npm run tray-prove` (`scripts/tray-prove.mjs:214`):
+- `390x844 main: bottom inset measured 228, declared 232`
+- `1280x720 main: bottom inset measured 164, declared 168`
+- `430x932 main: bottom inset measured 228, declared 232`
 
 | Viewport | Device Mode | Declared Bottom Inset | Measured Bottom Inset | Safety Margin | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -45,7 +52,7 @@ The camera frustum fits horizontally into the remaining screen width.
 - `npm run tray-prove` passed all viewport inset assertions cleanly.
 - `npm run upright-table-prove` confirmed 390x844 and 430x932 framing without obstruction.
 - `npm run hud-safe-area-prove` confirmed notch and home-bar padding compliance.
-- `npm run reflow-prove` verified zero layout shifts during turn transitions.
+- `npm run reflow-prove` verified wordmark, Join button, no horizontal scroll, and >= 120 px island uncovered (WCAG 1.4.4 and 1.4.10).
 
 ## Conclusion
 
