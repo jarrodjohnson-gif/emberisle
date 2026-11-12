@@ -160,41 +160,40 @@ dock or a pine out of the hole, and the pick reach, not the piece's drawn size, 
 
 ## Budget
 
-Draw call measurements from `node scripts/shots.mjs --budget`:
+Draw call measurements per rendered frame (while animating):
 
-| Viewport | Pixel Ratio | View | SSAO | Draw calls / rAF tick |
+| Viewport | Pixel Ratio | View | SSAO | Draw calls / rendered frame |
 |---|---|---|---|---|
-| 1280x720 | 1 | Overhead | Off | 36.8 |
-| 1280x720 | 1 | Free | Off | 35.0 |
-| 1280x720 | 1 | Free | Half | 68.2 |
-| 1920x1080 | 1 | Overhead | Off | 37.0 |
-| 1920x1080 | 1 | Free | Off | 34.5 |
-| 1920x1080 | 1 | Free | Half | 37.9 |
+| 1280x720 | 1 | Overhead | Off | 184 |
+| 1280x720 | 1 | Free | Off | 175 |
+| 1280x720 | 1 | Free | Half | 341 |
+| 1920x1080 | 1 | Overhead | Off | 185 |
+| 1920x1080 | 1 | Free | Off | 173 |
+| 1920x1080 | 1 | Free | Half | 190 |
 
-The table reports draw calls averaged across 60 Hz `requestAnimationFrame` ticks.
-The board render loop idles at 12 fps when motionless (PR #341, issue #331).
-Calls per rendered frame are roughly 5x higher.
-Hex Jelly scenes batched board terrain into shared scenes (PR #618, PR #624, issue #599).
-Batched scenes dropped draw calls from ~480 in October to under 60.
+The table reports draw calls per rendered frame paid by the GPU.
+When motionless, the board loop idles at 12 fps (PR #341, issue #331).
+Over 60 Hz ticks, idle averages ~37 overhead and ~68 SSAO calls per tick.
+Hex Jelly scenes batched terrain and dropped draw calls from ~480 to under 60 (PR #618, PR #624, issue #599).
 
 Ceilings for future scene and piece work:
-- Overhead play view: maximum 50 draw calls per rAF tick.
-- Free and diorama views with SSAO: maximum 75 draw calls per rAF tick.
+- Overhead play view: maximum 250 draw calls per rendered frame (50 calls per rAF tick).
+- Free and diorama views with SSAO: maximum 375 draw calls per rendered frame (75 calls per rAF tick).
 
 Ceiling rationale:
-- Overhead measures ~37 calls per tick.
-- The 50 ceiling provides 35% headroom (13 calls) for animations and highlights.
-- Free view with SSAO measures up to 68.2 calls per tick.
-- The 75 ceiling provides 10% headroom (7 calls) for SSAO and multi-mesh terrain blocks.
+- Overhead measures ~185 calls per rendered frame.
+- The 250 ceiling provides 35% headroom (65 calls) for animations and highlights.
+- Free view with SSAO measures up to 341 calls per rendered frame.
+- The 375 ceiling provides 10% headroom (34 calls) for SSAO and multi-mesh terrain blocks.
 
 Frame time:
 Real-GPU frame times cannot be measured in headless CI.
 CI runs on SwiftShader CPU rasterization at a fixed 60 Hz timer.
-Real-GPU frame budget remains pending physical hardware measurement (needs: jarrod).
+Physical GPU frame time measurement is tracked in follow-up issue #1558 (needs: jarrod).
 
 ## Open
 
-- **Budget and frame time** (#464): draw-call ceilings documented above; real-GPU frame time requires Question on #464 or owner PC measurement.
+- **Budget and frame time** (#464): draw-call ceilings documented above; real-GPU frame time is tracked in #1558.
 - **The phone hole** (#422, done as HUD work): on a sideways phone the bottom stack is a full-height left column (20 rem,
   at most 48 vw so it stays a rail), so the hole is the same in every phase. Main phase, hand shown: 844x390 went from a
   101x85 px island and a 7.1 px token to 270x227 and 19 px (adjacent corners 28 px apart); 667x375 from 101x85 and 7.1 px
