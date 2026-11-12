@@ -191,7 +191,13 @@ await drag([{ x: woolSpot.x, y: woolSpot.y }], 90, 40);
 await sleep(500);
 assert.deepEqual(await plays(), [], "a one-finger drag from a Pasture hex plays nothing");
 await settle();
-await drag([{ x: 150, y: 400 }, { x: 270, y: 400 }], 0, 60);
+// #1539: the tray's new hole moves the island, so the pan starts on the hexes nearest its old fixed points (150,400 and
+// 270,400), as it did before; a lone first finger on open water splashes by design (poke in isle-renderer.ts).
+const panFrom = await page.evaluate(() => [[150, 400], [270, 400]].map(([x, y]) => {
+  const near = window.__emberisle.getState().state.hexes.map((h) => window.__isle.screenOf(h.id)).filter(Boolean).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0];
+  return { x: near.x, y: near.y };
+}));
+await drag(panFrom, 0, 60);
 await sleep(500);
 assert.deepEqual(await plays(), [], "a two-finger pan plays nothing");
 await settle();

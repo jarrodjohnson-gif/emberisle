@@ -701,7 +701,7 @@ try {
       const isle = window.__isle;
       const st = window.__emberisle.getState().state;
       const ins = isle.insets();
-      const stack = document.querySelector('[data-testid="turn-banner"]').parentElement.getBoundingClientRect();
+      const stack = document.querySelector('[data-testid="turn-banner"]').closest("[data-hud-stack]").getBoundingClientRect();
       const at = Object.fromEntries(st.vertices.map((v) => [v.id, isle.screenOf(v.id)]));
       const xs = Object.values(at).map((p) => p.x);
       const ys = Object.values(at).map((p) => p.y);
@@ -734,7 +734,7 @@ try {
     await page.evaluate(() => {
       const g = window.__emberisle.getState();
       g.setBuildMode("path");
-      const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+      const sc = document.querySelector('[data-testid="turn-banner"]').closest("[data-hud-stack]");
       sc.scrollTop = sc.scrollHeight;
       g.setPendingPlace({ kind: "edge", id: g.highlights().edges[0] });
     });
@@ -749,7 +749,7 @@ try {
       const row = box(place.parentElement);
       const hand = box(document.querySelector('[data-testid="hand-dock"]'));
       const turn = box(document.querySelector('[data-testid="turn-banner"]'));
-      const sc = box(document.querySelector('[data-testid="turn-banner"]').parentElement);
+      const sc = box(document.querySelector('[data-testid="turn-banner"]').closest("[data-hud-stack]"));
       const p = box(place);
       const onTop = place.contains(document.elementFromPoint((p.l + p.r) / 2, (p.t + p.b) / 2));
       return { armed: window.__emberisle.getState().buildMode, row, hand, turn, onTop, inView: p.t >= sc.t && p.b <= sc.b, overHand: meets(row, hand), overTurn: meets(row, turn) };

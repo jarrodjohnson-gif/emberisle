@@ -247,11 +247,13 @@ try {
   assert.doesNotMatch(await coach.innerText(), /Build a path first|Now place an outpost/);
   await page.evaluate((s) => window.__emberisle.setState({ state: s }), mainFixture);
   await step(3, /Build a path first/);
+  await page.getByTestId("build-open").click(); // #1539: the builds are rows in the Build list
   await page.getByTestId("build-path").click();
   await step(3, /Build a path first/);
   await tapMark(plan.edge);
   await step(3, /Now place an outpost at a connected corner.*Costs are in the menu/s);
   await page.screenshot({ path: "test-results/first-game-coach-outpost-390.png" });
+  await page.getByTestId("build-open").click(); // #1539: the builds are rows in the Build list
   await page.getByTestId("build-outpost").click();
   await tapMark(plan.vertex);
   await clearBanner();

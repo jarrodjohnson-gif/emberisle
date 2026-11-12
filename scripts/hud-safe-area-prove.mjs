@@ -208,7 +208,7 @@ async function pinned(p, moment, name, mustScroll) {
   // Keyboard: Tab through the column from its top; every focused control stays uncovered (the pinned row does not hide it),
   // and the "more below" cue does not sit under that row.
   await page.evaluate(() => {
-    const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+    const sc = document.querySelector('[data-testid="turn-banner"]').closest("[data-hud-stack]");
     sc.scrollTop = 0;
     sc.querySelector("button").focus();
   });
@@ -216,7 +216,7 @@ async function pinned(p, moment, name, mustScroll) {
   for (let i = 0; i < 30; i++) {
     const f = await page.evaluate(() => {
       const el = document.activeElement;
-      const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+      const sc = document.querySelector('[data-testid="turn-banner"]').closest("[data-hud-stack]");
       if (!sc.contains(el)) return null;
       const b = el.getBoundingClientRect();
       const top = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
@@ -246,7 +246,7 @@ async function pinned(p, moment, name, mustScroll) {
   ).then(() =>
     page.evaluate((insets) => {
       const t = document.querySelector("#fortune-title").closest('[role="dialog"]').getBoundingClientRect();
-      const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+      const sc = document.querySelector('[data-testid="turn-banner"]').closest("[data-hud-stack]");
       const end = [...sc.querySelectorAll("button")].find((x) => x.textContent.trim() === "End turn");
       const b = end.parentElement.getBoundingClientRect();
       const hit = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
