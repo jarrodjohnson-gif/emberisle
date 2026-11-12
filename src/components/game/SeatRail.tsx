@@ -66,14 +66,14 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
   const fortunes = p.fortunes ?? hiddenCount(p);
   const path = useMemo(() => roadLength(state, p.id), [state, p.id]);
   // #1509: the strip draws the whole name when it fits its line, and the short form when it would be cut, measured, not
-  // guessed: a name never shows an ellipsis. The full name stays for screen readers. 18 px is the dot and its gap.
+  // guessed: a name never shows an ellipsis. The full name stays for screen readers. 14 px is the dot and its gap.
   const line = useRef<HTMLSpanElement>(null);
   const full = useRef<HTMLSpanElement>(null);
   const [fits, setFits] = useState(true);
   const label = strip ? p.name.replace(/ \(bot\)$/, "") : p.name;
   useLayoutEffect(() => {
     if (!strip || !line.current || !full.current) return;
-    const measure = () => setFits(full.current!.scrollWidth <= line.current!.clientWidth - 18);
+    const measure = () => setFits(full.current!.scrollWidth <= line.current!.clientWidth - 14);
     measure();
     const watch = new ResizeObserver(measure);
     watch.observe(line.current);
@@ -84,7 +84,7 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
     <span data-testid="seat-away" className="seat-away flex min-w-3 shrink-[9] items-center gap-0.5 text-zinc-700">
       {/* A struck ring: the seat's circle with a line through it, in CSS so it costs no icon. */}
       <span className="relative size-2.5 shrink-0 rounded-full border-[1.5px] border-current after:absolute after:-inset-x-0.5 after:top-1/2 after:h-[1.5px] after:-rotate-45 after:bg-current" />
-      <span aria-hidden="true" className={cn("truncate", strip && "@max-[200px]:hidden")}>
+      <span aria-hidden="true" className={cn("truncate", strip && "text-caption @max-[200px]:hidden")}>
         Away
       </span>
       <span className="sr-only">reconnecting</span>
@@ -109,6 +109,7 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
           <SeatDot color={p.color} className="seat-dot size-2.5" />
           <span ref={full} data-testid="seat-name" className={cn("min-w-0 truncate text-[13px] font-semibold leading-4", !fits && "sr-only")}>
             {label}
+            {label !== p.name ? <span className="sr-only"> (bot)</span> : null}
           </span>
           <span data-testid="seat-name" aria-hidden="true" className={cn("min-w-0 truncate text-[13px] font-semibold leading-4", fits && "hidden")}>
             {short}
