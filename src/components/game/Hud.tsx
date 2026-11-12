@@ -41,7 +41,8 @@ function phaseCopy(phase: string) {
     case "robber":
       return "Move the wayfarer";
     case "main":
-      return "Build, trade, or end your turn";
+      // #1539: the three buttons under the hand say what a turn can do; the line only says whose it is.
+      return "Your turn";
     case "over":
       return "The isle has a ruler.";
     default:
@@ -251,6 +252,7 @@ export function Hud() {
   const playableNow = mine && !spectator && !state.playedCard ? (["knight", "road", "plenty", "monopoly"] as const).reduce((n, k) => n + Math.max(0, playable(me, k)), 0) : 0;
   // Owner decision (#829, provisional): the label itself says a fortune can be played now.
   const fortunesLabel = playableNow > 0 ? "Play fortune" : "Fortunes";
+  // #1539: in the tray's action row the button is short, "Fortune · N"; the glow says one can be played, and the read-out keeps the full label.
   const fortunes = showFortunes ? (
     <Button
       ref={fortunesButton}
@@ -268,7 +270,7 @@ export function Hud() {
       }}
     >
       {playableNow > 0 && <span key={cueKey} ref={cueRing} onAnimationStart={() => (glowed.current = cueKey)} aria-hidden="true" data-testid="fortune-cue-glow" className="fortune-cue-glow" />}
-      {fortunesLabel} · {heldNow}
+      {column ? fortunesLabel : "Fortune"} · {heldNow}
     </Button>
   ) : null;
   // Hotseat has no "you": every seat is named. The turn banner sits out once the isle has a ruler (the pill says who).
@@ -312,11 +314,16 @@ export function Hud() {
     >{turnText}</p>
   );
 
+  const numbers = (
+    <LazyBoundary failed={null}>
+      <MyNumbers state={state} playerId={me.id} />
+    </LazyBoundary>
+  );
   const endRow = (
     <div className={cn("flex *:self-center", column ? "end-footer sticky z-10 justify-between gap-1 rounded-control bg-surface p-1" : "tray-end ml-auto gap-2")}>
       {/* The 260 px column has room for End turn and the dice only with the faces shrunk (they are not targets); Trade and My fortunes share the row above. */}
-      {column ? <>{fortunes ? null : <TradeButton />}<div className="[&>div]:gap-1 [&_[data-testid=die]]:size-6 [&_[data-testid=die]]:p-0.5 [&_[data-pip]]:size-1">{dice}</div></> : dice}
-      <Button size="sm" variant={endPrimary ? "primary" : "secondary"} className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
+      {column ? <>{fortunes ? null : <TradeButton />}<div className="[&>div]:gap-1 [&_[data-testid=die]]:size-6 [&_[data-testid=die]]:p-0.5 [&_[data-pip]]:size-1">{dice}</div></> : null}
+      <Button size="sm" variant={endPrimary || !column ? "primary" : "secondary"} className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
         End turn
       </Button>
     </div>
@@ -331,7 +338,7 @@ export function Hud() {
           a chip and not a button, so a watcher always sees why it has no controls (docs/design/spectator.md). */}
       <header className={cn("hud-header pointer-events-none absolute inset-x-0 top-0 z-20 px-safe pt-[max(0.75rem,env(safe-area-inset-top))] has-[#table-menu]:z-30", phone ? "pb-0" : "pb-3", upright && "upright-table")}>
         <div className="pointer-events-auto flex items-center justify-end gap-1">
-          {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : <div className="mr-auto shrink-0">{instruction}</div>}
+          {phone ? <SeatStrip actor={actor} className="min-w-0 max-w-[48rem] flex-1" /> : <div className="mr-auto shrink-0" />}
           {phone ? null : <div ref={setTimerHeader} className="mx-2 min-w-0 flex-1 empty:hidden" />}
           {spectator && !(phone && portrait) ? (
             <span data-testid="watching-badge" className="flex h-11 items-center rounded-chip bg-glass px-3 text-caption text-fg backdrop-blur-md">
@@ -387,7 +394,7 @@ export function Hud() {
       </LazyBoundary>
 
       <div className={cn("pointer-events-none absolute bottom-0 inset-x-0 z-10 px-safe pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", upright && "upright-table")}>
-        <div className={cn("relative", column ? "w-[260px] max-w-[42vw]" : "mx-auto max-w-[720px]")}>
+        <div className={cn("relative", column ? "w-[260px] max-w-[42vw]" : phone ? "mx-auto max-w-[720px]" : "mx-auto max-w-[520px]")}>
           {/* #459: floats above the stack, so it coming and going never reflows the turn banner. */}
           {banner && !(tradeOutcome && banner.endsWith("'s trade")) ? (
             <p
@@ -413,6 +420,7 @@ export function Hud() {
             data-hud-stack
             className={cn(
               "hud-stack pointer-events-auto flex flex-col gap-1 overflow-y-auto overscroll-contain",
+              !column && "hud-tray",
               // #383: stop under the header (or the portrait seat strip) and leave the island at least ~8 rem.
               // #422: the column runs from under the header to the bottom edge every phase, so the hole beside it never moves.
               column
@@ -423,7 +431,29 @@ export function Hud() {
             {/* #422: in the column the Place chip is the first row, so it never covers the hand or the turn banner. Not
                 pointer-events-none: a porous child would make the stack's chrome only its parts, and the column no rail. */}
             <PlaceChip column />
-            {phone ? instruction : null}
+            {/* #1539: the tray's top line. The status is on the left; the newest event (the roll, or the last log line) is quiet
+                text on the right. The public deck count is read out for every seat and shown to a watcher, who has no Build list. */}
+            <div className="tray-top flex shrink-0 items-center justify-between gap-3">
+              {instruction}
+              {phone || spectator || tradeVisible ? null : numbers}
+              <p
+                hidden={tradeVisible}
+                data-testid="log-line"
+                data-roll={rollChip ? rollChip.sum : undefined}
+                data-own={rollChip?.own ? "true" : undefined}
+                className="tray-event min-w-0 shrink truncate text-[13px] leading-5"
+              >
+                {rollChip ? (
+                  <span className={rollChip.own ? "text-gain" : undefined}>
+                    <span data-testid="log-roll-name" className={rollChip.own ? "font-bold" : undefined}>{rollChip.name}</span>
+                    <span> rolled </span>
+                    <span data-testid="log-roll-sum" className={rollChip.hot ? "text-danger" : undefined}>{rollChip.sum}</span>
+                    !
+                  </span>
+                ) : gameLog.at(-1)?.text}
+              </p>
+              <span data-testid="deck-count" data-deck-left={deckLeft} title={`${deckLeft} fortunes left in the deck`} className={cn("shrink-0 text-[13px] leading-5 tabular-nums", !spectator && "sr-only")}>Deck {deckLeft}</span>
+            </div>
             <TurnCountdown header={phone ? null : timerHeader} />
             {winner || error ? (
               <p className="rounded-[16px] border border-white/50 bg-glass px-3 py-2 text-sm text-zinc-900 backdrop-blur-md">
@@ -495,7 +525,7 @@ export function Hud() {
             {(state.phase === "roll" || state.phase === "rollOff") && mine && !armedNow ? (
               <div className="flex flex-col gap-2">
                 <div className="flex flex-wrap gap-2 *:self-center">
-                  {dice}
+                  {column ? dice : null}
                   {fortunes}
                   <Button size="lg" className="flex-1" data-after-fortune onClick={() => dispatch({ type: "roll" })}>
                     <Dices className="size-5" /> Roll
@@ -505,37 +535,12 @@ export function Hud() {
             ) : null}
 
             {!mine || !["main", "roll", "rollOff"].includes(state.phase) ? (
-              fortunes || dice ? <div className="flex flex-wrap items-center gap-2">{fortunes}{dice}</div> : null
-            ) : diceInBar ? null : dice}
+              fortunes || (column && dice) ? <div className="flex flex-wrap items-center gap-2">{fortunes}{column ? dice : null}</div> : null
+            ) : diceInBar || !column ? null : dice}
 
-            {/* #643: the seat's numbers share the log line's row, so the tray keeps its height (the declared hole holds). They
-                ride in the moments chunk (off the first load: there are none before the first outpost); if it cannot load,
-                the row is the log line alone. #1509: the upright phone table has no numbers there, so the last event has the row. */}
-            <div className={cn(tradeVisible ? "hidden" : "flex", "h-5 shrink-0 items-center gap-1")}>
-              {spectator || upright ? null : (
-                <LazyBoundary failed={null}>
-                  <MyNumbers state={state} playerId={me.id} />
-                </LazyBoundary>
-              )}
-              <p
-                hidden={tradeVisible}
-                data-testid="log-line"
-                data-roll={rollChip ? rollChip.sum : undefined}
-                data-own={rollChip?.own ? "true" : undefined}
-                className="table-log block h-5 min-w-0 flex-1 overflow-hidden truncate rounded-control px-3 text-xs leading-5"
-              >
-                {rollChip ? (
-                  <span className={rollChip.own ? "text-gain" : undefined}>
-                    <span data-testid="log-roll-name" className={rollChip.own ? "font-bold" : undefined}>{rollChip.name}</span>
-                    <span> rolled </span>
-                    <span data-testid="log-roll-sum" className={rollChip.hot ? "text-danger" : undefined}>{rollChip.sum}</span>
-                    !
-                  </span>
-                ) : gameLog.at(-1)?.text}
-              </p>
-              {/* #776: the shared draw deck is public to every seat and watcher, so its count sits here, off the build row. */}
-              <span data-testid="deck-count" data-deck-left={deckLeft} title={`${deckLeft} fortunes left in the deck`} className="shrink-0 px-2 text-xs leading-5 tabular-nums">Deck {deckLeft}</span>
-            </div>
+            {/* #643: on a sideways phone the seat's numbers are one quiet line under the action row. A desktop has them in
+                the tray's top line; the upright phone table has none (#1509). */}
+            {phone && !spectator && !upright && !tradeVisible ? <div className="flex h-5 shrink-0 items-center gap-1">{numbers}</div> : null}
             {pinEnd ? endRow : null}
             {tradeVisible ? (
               <LazyBoundary failed={null}>

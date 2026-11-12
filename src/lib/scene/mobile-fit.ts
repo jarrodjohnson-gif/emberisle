@@ -93,11 +93,14 @@ const RAIL_FROM = 960;
 const RAIL_FULL = 1024;
 export function playHole(cssW: number, cssH: number, phone: boolean, safe: Partial<Insets> = {}): Insets {
   let i: Insets;
-  if (phone && cssH > cssW) i = { top: 68, right: 12, bottom: (cssW <= TRAY_WRAP_MAX ? 314 : 266) + 4, left: 12 };
+  // #1539 one tray: the upright tray is one height at every width (measured 238 px with its 12 px gap), so the action
+  // row no longer wraps on a narrow phone. It was 318 up to 400 px wide and 270 above.
+  if (phone && cssH > cssW) i = { top: 68, right: 12, bottom: 238 + 4, left: 12 };
   else if (phone) i = { top: 68, right: 12, bottom: 12, left: 284 };
   else {
     const t = Math.min(1, Math.max(0, (cssW - RAIL_FROM) / (RAIL_FULL - RAIL_FROM)));
-    i = { top: 68, right: 12 + 300 * t, bottom: 186 + 40 * t, left: 216 };
+    // #1539: the desktop tray is one height too (measured 220 px with its gaps); it was 186, or 226 with the rail.
+    i = { top: 68, right: 12 + 300 * t, bottom: 220 + 4, left: 216 };
   }
   return { top: i.top + Math.max(0, (safe.top ?? 0) - 12), right: i.right + (safe.right ?? 0), bottom: i.bottom + (safe.bottom ?? 0), left: i.left + (safe.left ?? 0) };
 }
