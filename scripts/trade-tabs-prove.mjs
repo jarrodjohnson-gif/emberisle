@@ -45,7 +45,7 @@ const goodsFor = (page) => panelFor(page).getByRole("region", { name: "Trade goo
 const more = (page, resource, side) => panelFor(page).getByRole("button", { name: `More ${RESOURCE_LABEL[resource]} to ${side}`, exact: true });
 const fewer = (page, resource, side) => panelFor(page).getByRole("button", { name: `Fewer ${RESOURCE_LABEL[resource]} to ${side}`, exact: true });
 const askFor = (page) => panelFor(page).getByRole("button", { name: "Ask the table", exact: true });
-const bankFor = (page) => panelFor(page).getByRole("button", { name: /^(Bank(?: 4:1)?|Dock [23]:1)$/ });
+const bankFor = (page) => panelFor(page).getByRole("button", { name: /^(Bank(?: 4:1|: one kind each| needs 4| has no \w+)|Dock(?: [23]:1| needs [23])|\w+ dock 2:1)$/ });
 const snapshot = (page) => page.evaluate(() => JSON.stringify(window.__emberisle.getState().state));
 const sent = (page) => page.evaluate(() => window.__tradeTabsSent);
 
@@ -109,6 +109,10 @@ async function preview(page, fragments) {
   }, fragments);
 }
 
+async function exactPreview(page, text) {
+  await page.waitForFunction((text) => document.querySelector('[data-testid="trade-player-preview"]')?.textContent === text, text);
+}
+
 // Edit the visible quantity cards; Bank derives kinds from the very same draft as Table.
 async function bankSelect(page, give = "timber", want = "ore") {
   for (const side of ["give", "want"]) for (const resource of RESOURCES) {
@@ -164,8 +168,8 @@ async function approvedBLayout(page, tag, route) {
       const b = node.getBoundingClientRect();
       return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width, height: b.height };
     };
-    const bank = element.querySelector(".trade-bank-box");
-    const table = element.querySelector('[data-testid="trade-player-preview"]').closest(".trade-route");
+    const bank = element.querySelector(".trade-bank");
+    const table = element.querySelector(".trade-ask");
     const give = element.querySelector('[data-testid="trade-give-row"]');
     const colours = [...give.querySelectorAll(".trade-resource")].map((card) => {
       const button = card.querySelector(".trade-add");
@@ -176,13 +180,13 @@ async function approvedBLayout(page, tag, route) {
       swatch.style.color = "var(--muted)";
       const unavailable = getComputedStyle(swatch).color;
       swatch.remove();
-      return { palette, unavailable, disabled: button.disabled,
+      return { palette, unavailable, disabled: button.disabled, selected: card.hasAttribute("data-selected"),
         icon: getComputedStyle(card.querySelector(".trade-add > svg")).color,
-        name: getComputedStyle(card.querySelector(".trade-resource-name")).color };
+        name: getComputedStyle(card.querySelector(".trade-owned")).color };
     });
     return {
-      bank: rect(bank), table: rect(table), action: rect(table.querySelector("button")),
-      bankAction: rect(bank.querySelector("button")), quote: rect(bank.querySelector('[data-testid="trade-hint"]')),
+      bank: rect(bank), table: rect(table), action: rect(table), footer: rect(element.querySelector("footer")),
+      bankAction: rect(bank), quote: rect(element.querySelector('[data-testid="trade-player-preview"]')),
       goods: rect(element.querySelector(".trade-composer-scroll")),
       rows: [rect(give), rect(element.querySelector('[data-testid="trade-want-row"]'))],
       unselectedCards: [...element.querySelectorAll(".trade-resource:not([data-selected])")].map(rect),
@@ -191,27 +195,27 @@ async function approvedBLayout(page, tag, route) {
   });
   assert.ok(geometry.table.right <= geometry.bank.left,
     `${tag} ${route}: final owner footer puts Table left and Bank right ${JSON.stringify(geometry)}`);
-  assert.ok(Math.abs(geometry.bank.top - geometry.table.top) <= 0.5 && Math.abs(geometry.bank.width - geometry.table.width) <= 0.5,
-    `${tag} ${route}: final owner footer columns align and have equal width`);
+  assert.ok(Math.abs(geometry.bank.top - geometry.table.top) <= 0.5 && geometry.bank.width >= (geometry.table.width + geometry.bank.width) * 5 / 12 - 0.5,
+    `${tag} ${route}: one-tray footer buttons align; Bank keeps at least the mock's 5/12 and Ask the table takes the rest`);
   if (page.viewportSize().height <= 480) {
-    assert.ok(geometry.bankAction.left >= geometry.quote.right - 0.5, `${tag} ${route}: short-screen Bank action stays beside its quote`);
+    assert.ok(geometry.bankAction.top >= geometry.quote.bottom - 0.5, `${tag} ${route}: short-screen Bank button sits below the offer sentence`);
   } else {
-    assert.ok(geometry.bankAction.top >= geometry.quote.bottom - 0.5, `${tag} ${route}: one Bank action sits below its exact quote`);
-    assert.ok(Math.abs(geometry.bankAction.width - geometry.quote.width) <= 0.5, `${tag} ${route}: normal-height Bank action fills its inner column`);
+    assert.ok(geometry.bankAction.top >= geometry.quote.bottom - 0.5, `${tag} ${route}: one Bank button sits below the offer sentence`);
+    assert.ok(Math.abs(geometry.bankAction.right - geometry.quote.right) <= 0.5, `${tag} ${route}: normal-height Bank button ends at the sentence's right edge`);
   }
-  assert.ok(Math.abs(geometry.action.width - geometry.table.width) <= 0.5, `${tag} ${route}: Ask the table fills its column`);
+  assert.ok(Math.abs(geometry.action.height - 48) <= 0.5, `${tag} ${route}: Ask the table is the 48 px main button`);
   assert.equal(new Set(geometry.colours.map((c) => c.palette)).size, 5, `${tag} ${route}: all five goods retain distinct palette colours`);
   for (const colour of geometry.colours) {
     assert.equal(colour.icon, colour.disabled ? colour.unavailable : colour.palette, `${tag} ${route}: each symbol uses its good colour, or neutral when unavailable`);
-    assert.equal(colour.name, colour.disabled ? colour.unavailable : colour.palette, `${tag} ${route}: each name uses its good colour, or neutral when unavailable`);
+    assert.equal(colour.name, colour.selected ? "rgb(31, 51, 49)" : "rgb(82, 98, 95)", `${tag} ${route}: each held count is quiet text, or text colour when chosen; the icon carries the good colour`);
   }
   assert.ok(geometry.titleWeight >= 700, `${tag} ${route}: Trade title is bold`);
   const reachable = await panelFor(page).evaluate((element) => {
     const scroll = element.querySelector(".trade-composer-scroll");
     const give = element.querySelector('[data-testid="trade-give-row"]');
     const want = element.querySelector('[data-testid="trade-want-row"]');
-    const bank = element.querySelector(".trade-bank-box");
-    const table = element.querySelector('[data-testid="trade-player-preview"]').closest(".trade-route");
+    const bank = element.querySelector(".trade-bank");
+    const table = element.querySelector(".trade-ask");
 
     give.scrollIntoView();
     let sBox = scroll.getBoundingClientRect();
@@ -223,8 +227,8 @@ async function approvedBLayout(page, tag, route) {
     let wBox = want.getBoundingClientRect();
     const wantIn = wBox.top >= sBox.top - 1 && wBox.bottom <= sBox.bottom + 1;
 
-    const askBtn = table.querySelector("button");
-    const bankBtn = bank.querySelector("button");
+    const askBtn = table;
+    const bankBtn = bank;
     const aBox = askBtn.getBoundingClientRect();
     const bBox = bankBtn.getBoundingClientRect();
     const footerVisible = aBox.height > 0 && bBox.height > 0 &&
@@ -241,16 +245,18 @@ async function approvedBLayout(page, tag, route) {
     `${tag} ${route}: unselected cards retain the final owner's compact height ${JSON.stringify(card)}`);
   const stock = panelFor(page).locator("#trade-bank-stock");
   if (await stock.count()) assert.equal(await stock.isVisible(), true, `${tag} ${route}: live Bank stock is visible as well as described`);
-  if (page.viewportSize().height > 480) assert.equal(await panelFor(page).locator(".trade-bank-box").getAttribute("aria-label"), "Bank & docks", `${tag} ${route}: final owner Bank heading`);
+  if (page.viewportSize().height > 480) assert.equal(await bankFor(page).getAttribute("aria-describedby"), "trade-bank-quote", `${tag} ${route}: one-tray Bank button carries its fuller quote`);
   console.log(`approved B layout ${tag} ${route}: ${JSON.stringify(geometry)}`);
 }
 
 async function selectionMotion(page, resource, side, count, motion, tag) {
-  const sample = await panelFor(page).getByTestId(`trade-${side}-${resource}`).getByTestId("trade-selection-motion").evaluate((element) => {
+  const sample = await panelFor(page).getByTestId(`trade-${side}-${resource}`).getByTestId("trade-badge").evaluate((element) => {
     const animation = element.getAnimations()[0];
     const output = element.parentElement.querySelector("output");
+    const style = getComputedStyle(element);
     const result = { text: element.textContent.trim(), count: output.textContent.trim(), animations: element.getAnimations().length,
-      outputVisible: output.getBoundingClientRect().height > 0 && getComputedStyle(output).visibility !== "hidden" };
+      outputVisible: output.getBoundingClientRect().height > 0 && getComputedStyle(output).visibility !== "hidden",
+      opacity: Number(style.opacity), background: style.backgroundColor, color: style.color };
     if (!animation) return result;
     animation.pause();
     const duration = animation.effect.getTiming().duration;
@@ -268,11 +274,11 @@ async function selectionMotion(page, resource, side, count, motion, tag) {
   if (motion === "reduce") {
     assert.equal(sample.animations, 0, `${tag}: reduced-motion selection is static`);
   } else {
-    assert.equal(sample.duration, 220, `${tag}: selection retains its 220ms timing`);
-    assert.equal(sample.start.y, 0, `${tag}: selection starts at rest`);
-    assert.ok(Math.abs(sample.end.y - (side === "give" ? 12 : -12)) < 0.1, `${tag}: losses fall and gains rise ${JSON.stringify(sample)}`);
-    assert.equal(sample.start.opacity, 1, `${tag}: the signed selection begins readable`);
-    assert.equal(sample.end.opacity, 0, `${tag}: selection fades at its endpoint`);
+    assert.equal(sample.animations, 0, `${tag}: the one-tray badge stays on the chosen token rather than moving away`);
+    assert.equal(sample.opacity, 1, `${tag}: the signed badge stays readable`);
+    assert.equal(sample.background, side === "give" ? "rgb(179, 38, 30)" : "rgb(30, 122, 70)", `${tag}: losses badge red and gains badge green ${JSON.stringify(sample)}`);
+    assert.equal(sample.color, "rgb(255, 255, 255)", `${tag}: the signed badge text is white`);
+    assert.equal(await panelFor(page).getByTestId(`trade-${side}-${resource}`).getByTestId("trade-badge").count(), 1, `${tag}: the badge does not fade away`);
   }
 }
 
@@ -419,17 +425,17 @@ async function tableAndRoutes(page, tag, motion) {
   await more(page, "wool", "want").click();
   await more(page, "ore", "want").click();
   await selectionMotion(page, "ore", "want", 1, motion, tag);
-  await preview(page, ["Give: 2 wood, 1 brick", "Get: 1 sheep, 1 stone"]);
+  await exactPreview(page, "Give 2 wood, 1 brick · Get 1 sheep, 1 stone");
   assert.equal(await askFor(page).isEnabled(), true, `${tag}: the Table accepts a mixed exact bag`);
   assert.equal(await more(page, "timber", "want").isDisabled(), true, `${tag}: a good cannot appear on both sides`);
   assert.equal(await panelFor(page).getByTestId("trade-give-timber").getByTestId("trade-owned").textContent(), "Have 6", `${tag}: owned count comes from the live hand`);
-  if (motion === "reduce") assert.equal(await panelFor(page).getByTestId("trade-give-timber").getByTestId("trade-selection-motion").evaluate((element) => element.getAnimations().length), 0, `${tag}: selected quantity does not animate under reduced motion`);
+  if (motion === "reduce") assert.equal(await panelFor(page).getByTestId("trade-give-timber").getByTestId("trade-badge").evaluate((element) => element.getAnimations().length), 0, `${tag}: selected quantity does not animate under reduced motion`);
   await layout(page, tag, "table");
   if (page.viewportSize().height <= 480) {
     const mixedPreview = panelFor(page).getByTestId("trade-player-preview");
     const originalFont = await mixedPreview.evaluate((element) => element.style.fontFamily);
     try {
-      await mixedPreview.evaluate((element) => { element.style.fontFamily = "monospace"; });
+      await mixedPreview.evaluate((element) => { element.style.fontFamily = "monospace"; element.style.letterSpacing = "8px"; });
       const receipt = await mixedPreview.evaluate((element) => ({
         height: element.getBoundingClientRect().height,
         lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight),
@@ -437,7 +443,7 @@ async function tableAndRoutes(page, tag, motion) {
       assert.ok(receipt.height >= 2 * receipt.lineHeight, `${tag}: controlled mixed receipt wraps to at least two lines`);
       await layout(page, `${tag}-wrapped-receipt`, "table");
     } finally {
-      await mixedPreview.evaluate((element, font) => { element.style.fontFamily = font; }, originalFont);
+      await mixedPreview.evaluate((element, font) => { element.style.fontFamily = font; element.style.letterSpacing = ""; }, originalFont);
     }
   }
   const before = await snapshot(page);
@@ -455,7 +461,7 @@ async function tableAndRoutes(page, tag, motion) {
   }
   await bankSelect(page, "ore", "grain");
   await hint(page, "Give 4 stone, get 1 wheat.");
-  await preview(page, ["Give: 1 stone", "Get: 1 wheat"]);
+  await exactPreview(page, "Give 1 stone · Get 1 wheat");
   assert.equal(await askFor(page).isEnabled(), true, `${tag}: the same single-kind draft remains available to Table`);
   assert.equal(await bankFor(page).isEnabled(), true, `${tag}: the same single-kind draft enables the exact Bank quote`);
   await layout(page, tag, "bank");
@@ -486,14 +492,14 @@ async function liveDrafts(page, tag) {
   await more(page, "timber", "give").click();
   await more(page, "ore", "want").click();
   await change(page, { hand: { timber: 1 } });
-  await preview(page, ["Give: 1 wood"]);
+  await preview(page, ["Give 1 wood"]);
   assert.equal(await more(page, "timber", "give").isDisabled(), true, `${tag}: live losses clamp the exact give quantity`);
   await change(page, { hand: { timber: 0 } });
-  await preview(page, ["Give: choose goods"]);
+  await exactPreview(page, "Get 1 stone");
   assert.equal(await askFor(page).isDisabled(), true, `${tag}: a live empty hand disables Ask`);
   assert.equal(await fewer(page, "timber", "give").count(), 0, `${tag}: clamping to zero removes minus`);
   await change(page, { hand: { timber: 6 } });
-  await preview(page, ["Give: choose goods"]);
+  await exactPreview(page, "Get 1 stone");
   assert.equal(await askFor(page).isDisabled(), true, `${tag}: a later gain cannot restore discarded quantities`);
   await more(page, "timber", "give").click();
   await change(page, { current: "p1" });
@@ -549,10 +555,8 @@ async function accessibility(page, tag) {
   assert.equal(await goodsFor(page).evaluate((element) => element === document.activeElement), true, `${tag}: Tab reaches the named shared goods region without hidden route stops`);
   assert.equal(await panelFor(page).getByRole("tab").count(), 0, `${tag}: no obsolete route stop remains in the tab sequence`);
   await page.keyboard.press("Tab");
-  assert.equal(await panelFor(page).getByRole("button", { name: "Need Wood", exact: true }).evaluate((element) => element === document.activeElement), true, `${tag}: shared region leads to its first need control`);
-  for (let i = 0; i < 4; i++) await page.keyboard.press("Tab");
-  await page.keyboard.press("Tab");
-  assert.equal(await more(page, "timber", "give").evaluate((element) => element === document.activeElement), true, `${tag}: need picker leads to first available trade good`);
+  assert.equal(await panelFor(page).getByRole("button", { name: /^Need / }).count(), 0, `${tag}: the one-tray sheet has no Need controls in the region`);
+  assert.equal(await more(page, "timber", "give").evaluate((element) => element === document.activeElement), true, `${tag}: shared region leads straight to first available trade good`);
   await describedAs(more(page, "timber", "give"), "Have 6 0", `${tag} empty table give`);
   await more(page, "timber", "give").click();
   await describedAs(more(page, "timber", "give"), "Have 6 1", `${tag} selected table give`);
@@ -571,11 +575,11 @@ async function accessibility(page, tag) {
   await more(page, "timber", "give").click();
   await fewer(page, "timber", "give").focus();
   await change(page, { hand: { timber: 1 } });
-  await preview(page, ["Give: 1 wood"]);
+  await preview(page, ["Give 1 wood"]);
   await describedAs(fewer(page, "timber", "give"), "1", `${tag} live remaining count`);
   assert.equal(await fewer(page, "timber", "give").evaluate((element) => element === document.activeElement), true, `${tag}: a live partial clamp keeps the remaining minus focused`);
   await change(page, { hand: { timber: 0 } });
-  await preview(page, ["Give: choose goods"]);
+  await exactPreview(page, "Pick what to give and what to get.");
   assert.equal(await fewer(page, "timber", "give").count(), 0, `${tag}: live zero clamp unmounts the focused minus`);
   await focusAfterRemoval(page, "timber", "give", `${tag} live focused-minus clamp`);
   await describedAs(more(page, "timber", "give"), "Have 0 0", `${tag} live empty-hand description`);
@@ -589,10 +593,9 @@ async function accessibility(page, tag) {
   const initial = await snapshot(page);
   // Fixed fixture sequence: disabled same-kind and empty-hand controls must be skipped.
   await panelFor(page).getByRole("button", { name: "Close", exact: true }).focus();
+  assert.equal(await panelFor(page).getByRole("button", { name: /^Need / }).count(), 0, `${tag}: no Need stops before the cards, at every size`);
   for (const [name, target] of [
     ["goods region", goodsFor(page)],
-    // Five Need stops (Need Wood to Need Stone) before the cards, at every size.
-    ...["Wood", "Brick", "Sheep", "Wheat", "Stone"].map((good) => [`Need ${good}`, panelFor(page).getByRole("button", { name: `Need ${good}`, exact: true })]),
     ["More Wood give", more(page, "timber", "give")],
     ["Fewer Wood give", fewer(page, "timber", "give")],
     ["More Brick give", more(page, "clay", "give")],
@@ -636,7 +639,7 @@ async function ratesAndRejections(page, tag) {
   await load(page);
   await open(page);
   await bankSelect(page);
-  for (const [rate, label] of [[4, "Bank 4:1"], [3, "Dock 3:1"], [2, "Dock 2:1"], [4, "Bank 4:1"]]) {
+  for (const [rate, label] of [[4, "Bank 4:1"], [3, "Dock 3:1"], [2, "Wood dock 2:1"], [4, "Bank 4:1"]]) {
     await change(page, { rate });
     await hint(page, `Give ${rate} wood, get 1 stone.`);
     assert.equal((await bankFor(page).textContent()).trim(), label, `${tag}: quote follows live dock ownership at ${rate}:1`);
@@ -753,7 +756,7 @@ async function lazyRecovery() {
     await more(page, "timber", "give").waitFor();
     await more(page, "timber", "give").click();
     await more(page, "ore", "want").click();
-    await preview(page, ["Give: 1 wood", "Get: 1 stone"]);
+    await exactPreview(page, "Give 1 wood · Get 1 stone");
     assert.equal(await askFor(page).isEnabled(), true, "lazy picker: reopened Table controls produce a real valid draft");
     await bankSelect(page);
     await hint(page, "Give 4 wood, get 1 stone.");

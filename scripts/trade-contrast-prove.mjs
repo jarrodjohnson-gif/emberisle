@@ -61,7 +61,7 @@ try {
     const measureCard = async (side, resource) => {
       return page.evaluate(([side, resource]) => {
         const card = document.querySelector(`[data-testid="trade-${side}-${resource}"]`);
-        const name = card.querySelector(".trade-resource-name");
+        const name = card.querySelector(".trade-resource-name, .trade-owned");
         const s = getComputedStyle(card);
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -97,39 +97,39 @@ try {
     await page.getByRole("button", { name: "More Wheat to give" }).click();
     await page.getByRole("button", { name: "More Stone to give" }).click();
 
-    // --- CONTROL PHASE: Inject old background rule to prove rendered contrast failure ---
+    // --- CONTROL PHASE: Inject a low-contrast selected fill (the Give edge red) to prove the measure catches a failure (#1537) ---
     const controlStyle = await page.addStyleTag({
-      content: ".trade-resource[data-selected] { background: var(--table-raised) !important; }",
+      content: ".trade-resource[data-selected] { background: var(--edge) !important; }",
     });
 
     measurements.controlBefore[v.tag] = {};
     for (const [name, resKey] of [["Brick", "clay"], ["Wheat", "grain"], ["Stone", "ore"]]) {
       const m = await measureCard("give", resKey);
       assert.equal(m.selected, true, `${v.tag} give ${name} selected (control)`);
-      assert.deepEqual(m.bg, [0xf3, 0xf6, 0xf5], `${v.tag} give ${name} control bg is #f3f6f5`);
+      assert.deepEqual(m.bg, [0xb3, 0x26, 0x1e], `${v.tag} give ${name} control bg is the Give edge red #b3261e`);
       const cr = ratio(m.fg, m.bg);
       measurements.controlBefore[v.tag][name] = cr.toFixed(3);
       assert.ok(cr < 4.5, `${v.tag} give ${name} control contrast ${cr.toFixed(3)} must be < 4.5`);
     }
 
-    // Capture BEFORE screenshot with old selected card appearance
+    // Capture BEFORE screenshot with the control fill
     await page.screenshot({ path: `docs/proofs/1252/screenshots/before-${v.tag}.png` });
 
-    // Remove control style to restore production white selected surface
+    // Remove control style to restore the production Give tint
     await controlStyle.evaluate((el) => el.remove());
 
-    // --- PRODUCTION PHASE: Verify white selected surface meets >= 4.5:1 ---
+    // --- PRODUCTION PHASE: Verify the Give and Get tints meet >= 4.5:1 ---
     measurements.productionAfter[v.tag] = { give: {}, want: {} };
     for (const [name, resKey] of [["Brick", "clay"], ["Wheat", "grain"], ["Stone", "ore"]]) {
       const m = await measureCard("give", resKey);
       assert.equal(m.selected, true, `${v.tag} give ${name} selected (production)`);
-      assert.deepEqual(m.bg, [255, 255, 255], `${v.tag} give ${name} production bg is white`);
+      assert.deepEqual(m.bg, [0xfd, 0xec, 0xea], `${v.tag} give ${name} production bg is the Give tint #fdecea`);
       const cr = ratio(m.fg, m.bg);
       measurements.productionAfter[v.tag].give[name] = cr.toFixed(3);
       assert.ok(cr >= 4.5, `${v.tag} give ${name} production contrast ${cr.toFixed(3)} >= 4.5`);
     }
 
-    // Capture AFTER screenshot with production white selected surface
+    // Capture AFTER screenshot with the production tint
     await page.screenshot({ path: `docs/proofs/1252/screenshots/after-${v.tag}.png` });
 
     // 3. Reset give and select want
@@ -145,7 +145,7 @@ try {
     for (const [name, resKey] of [["Brick", "clay"], ["Wheat", "grain"], ["Stone", "ore"]]) {
       const m = await measureCard("want", resKey);
       assert.equal(m.selected, true, `${v.tag} want ${name} selected`);
-      assert.deepEqual(m.bg, [255, 255, 255], `${v.tag} want ${name} selected bg is white`);
+      assert.deepEqual(m.bg, [0xe4, 0xf4, 0xea], `${v.tag} want ${name} selected bg is the Get tint #e4f4ea`);
       const cr = ratio(m.fg, m.bg);
       measurements.productionAfter[v.tag].want[name] = cr.toFixed(3);
       assert.ok(cr >= 4.5, `${v.tag} want ${name} selected contrast ${cr.toFixed(3)} >= 4.5`);
