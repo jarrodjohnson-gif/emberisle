@@ -71,6 +71,16 @@ try {
         if (f === fitNow) break;
         fitNow = f;
       }
+      // #1539: the build prices are in the Build list; open it, read every row, and close it before the geometry.
+      let clippedCosts = [];
+      if (await page.getByTestId("build-open").count()) {
+        await page.getByTestId("build-open").evaluate((el) => el.click());
+        await page.getByTestId("build-list").waitFor();
+        clippedCosts = await page.evaluate(() => [...document.querySelectorAll('[data-testid="build-list"] .build-row')].filter(el => [el, ...el.querySelectorAll('*')].some(x => x.scrollWidth > x.clientWidth + 1)).map(el => el.getAttribute('aria-label')));
+        await page.keyboard.press("Escape");
+        await page.getByTestId("build-list").waitFor({ state: "detached" });
+        await settle(page);
+      }
       // On a phone the offer slides over the board and the camera does not move (#625): its corners are held to the hole the main phase left.
       const holeFor = phone && phase === "offer" ? mainHole : null;
       const geometry = await page.evaluate((holeFor) => {
@@ -83,21 +93,23 @@ try {
         const inHole = p => Math.min(p.x - hole.left, hole.right - p.x, p.y - hole.top, hole.bottom - p.y) >= -0.5;
         const out = window.__emberisle.getState().state.vertices.filter(v => {
           const m = r.coastMiter.get(v.id);
-          return !inHole(r.screenOf(v.id)) || (v.harbor && !inHole(r.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)));
+          // #1509 (owner card q1515-table-look, B: "crop the side boats, keep every dock button on screen"): in the upright overhead
+          // view a side dock's boat may run off the side edges; it stays inside the hole's top and bottom. Corners keep the whole hole.
+          const dockIn = p => (innerHeight > innerWidth && r.view === "overhead" ? Math.min(p.y - hole.top, hole.bottom - p.y) >= -0.5 : inHole(p));
+          return !inHole(r.screenOf(v.id)) || (v.harbor && !dockIn(r.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)));
         }).map(v => v.id);
         // No corner (so no legal one) under the HUD: each one's screen point is the canvas.
         const covered = window.__emberisle.getState().state.vertices.map(v => v.id).filter(id => { const p = r.screenOf(id); return document.elementFromPoint(p.x, p.y)?.tagName !== 'CANVAS'; });
-        const clippedCosts = [...document.querySelectorAll('.build-tile')].filter(el => el.scrollWidth > el.clientWidth + 1).map(el => el.getAttribute('aria-label'));
         const offer = document.querySelector('[data-testid="trade-toast"]');
         const stack = document.querySelector('[data-hud-stack]').getBoundingClientRect();
         const b = offer?.getBoundingClientRect();
-        return { scale, hole, out, covered, clippedCosts, offer: b ? { top: b.top, bottom: b.bottom, left: b.left, right: b.right, insideStack: b.top >= stack.top && b.bottom <= stack.bottom + 0.5, modal: offer.getAttribute('aria-modal') } : null };
+        return { scale, hole, out, covered, offer: b ? { top: b.top, bottom: b.bottom, left: b.left, right: b.right, insideStack: b.top >= stack.top && b.bottom <= stack.bottom + 0.5, modal: offer.getAttribute('aria-modal') } : null };
       }, holeFor);
       if (phase === "main") { mainFit = fitNow; mainHole = geometry.hole; }
       else assert.equal(fitNow, mainFit, `${width}: the offer opening leaves the fit where it was`);
       assert.deepEqual(geometry.out, [], `${width} ${phase}: all corners and dock clearance inside board hole`);
       if (!holeFor) assert.deepEqual(geometry.covered, [], `${width} ${phase}: no corner under the HUD`);
-      assert.deepEqual(geometry.clippedCosts, [], `${width} ${phase}: all build prices fit`);
+      assert.deepEqual(clippedCosts, [], `${width} ${phase}: all build prices fit`);
       if (baseline[width]) {
         const [w, h] = baseline[width][phase];
         const oldScale = Math.min(w / 12, h / (2 * (5.6 * Math.cos(25 * Math.PI / 180) + 1.15 * Math.sin(25 * Math.PI / 180))));

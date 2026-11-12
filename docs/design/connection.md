@@ -24,6 +24,17 @@ The first frame on a new socket is always `hello`:
 
 `create` and `join` still work as aliases for older test clients.
 
+### Join links (?code=)
+
+Opening a `?code=<code>` link displays the join card (#1505).
+The card shows player name and colour choices.
+The primary button reads `Join table <code>`.
+The code box, practice bots, hotseat, and Wayfarer controls are omitted.
+Clicking `Join table <code>` sends `{ "type": "hello", "code", "name", "color", "avatarId" }`.
+In the lobby, healthy connection status is hidden.
+The Ready button toggles between `Ready` and `Cancel ready`.
+Tapping the lobby code copies the full join link to the clipboard (#1430).
+
 ## After hello
 
 | Server → client | Client does |

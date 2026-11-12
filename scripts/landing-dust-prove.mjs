@@ -37,7 +37,12 @@ async function toMySetup(page) {
         { timeout: STEP_MS },
       )
     ).jsonValue();
-    if (next === "mine") return page.evaluate(() => window.__emberisle.setState({ runBots: () => {} }));
+    if (next === "mine") {
+      await page.evaluate(() => window.__emberisle.setState({ runBots: () => {} }));
+      await page.waitForFunction(() => (window.__isle?.landings?.length ?? 0) === 0, null, { timeout: STEP_MS });
+      await page.waitForTimeout(300);
+      return;
+    }
     await page.evaluate(() => window.__emberisle.getState().dispatch({ type: "roll" }));
     await page.waitForFunction(() => {
       const s = window.__emberisle.getState();

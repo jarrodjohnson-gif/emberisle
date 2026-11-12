@@ -17,6 +17,10 @@ export interface Seat {
   bot?: boolean;
   player?: string | null;
   needs?: Resource[];
+  // #1411: the player said they want another game. Only once a game is over; the next game clears it.
+  again?: boolean;
+  // #764: the public profile of a bound seat. A guest seat has no such field.
+  profile?: { profileId: string; displayName: string };
 }
 
 // What a peek answers (G10): enough to dim taken swatches, no names or pictures.
@@ -122,6 +126,16 @@ export interface TableEvents {
   // Open tables on this host (#833); never includes private codes. Seatless `list` replies only.
   openTables(tables: OpenTableEntry[]): void;
   ttt(msg: TttMsg): void;
+  // #1350: the host's answers to profileCard, carrying the request's `id`.
+  tableProfileCard(msg: ProfileCardReply): void;
+  profileError(msg: ProfileCardReply): void;
+}
+
+// A card holds public fields only (server/profiles.mjs publicCard); a profileError has no card.
+export interface ProfileCardReply {
+  type: "tableProfileCard" | "profileError";
+  id: number;
+  card?: { profileId: string; displayName: string; catchphrase: string };
 }
 
 export interface Me {
@@ -163,6 +177,8 @@ export interface TableClient {
   removeBot(id: string): void;
   // A rematch at the same table (#266). Host only, once the game is over.
   again(): void;
+  // #1411: say "I'll play again" (or take it back) on the results screen. It never starts the next game.
+  wantAgain(value: boolean): void;
   act(action: Action): boolean;
   // Ask-the-table trades are host-run (not rules Actions): offer `give` for `want` to every other seat, and answer one.
   ask(give: Bag, want: Bag): void;
@@ -177,7 +193,9 @@ export interface TableClient {
   sound(id: string): void;
   react(emote: string, to?: string): void;
   // Lobby tic-tac-toe: one of the five ttt messages, e.g. ttt("tttMove", { id, cell }).
-  ttt(type: "tttInvite" | "tttAnswer" | "tttMove" | "tttAgain" | "tttClose", fields: Record<string, unknown>): void;
+  // #1350: it also sends the card read, ttt("tableProfileCard", { id, profileId }); the host answers with the same `id`.
+  // The table chunk sits at its size ceiling, so the read shares this sender and adds no second one.
+  ttt(type: "tttInvite" | "tttAnswer" | "tttMove" | "tttAgain" | "tttClose" | "tableProfileCard", fields: Record<string, unknown>): void;
   // The browser says the network or the tab is back: if a backoff timer is pending, dial now. Otherwise nothing.
   wake(): void;
   // Leave on purpose: the host frees a lobby seat at once. `leave: false` only closes, and the seat is held as a drop.
@@ -253,7 +271,7 @@ const LAST_CALL_MS = 1000;
 // Both action IDs and health challenges use 128 random bits, including on plain-HTTP LAN joins.
 const randomNonce = () => crypto.getRandomValues(new Uint8Array(16)).reduce((hex, b) => hex + b.toString(16).padStart(2, "0"), "");
 
-const ALLOWED_EVENTS = ["seats", "rolled", "chat", "react", "tradeOffer", "tradeDeclined", "tradeClosed", "ttt"];
+const ALLOWED_EVENTS = ["seats", "rolled", "chat", "react", "tradeOffer", "tradeDeclined", "tradeClosed", "ttt", "profileError", "tableProfileCard"];
 
 // `giveUpMs` is only for proofs that cannot wait 10 minutes: it stands in for both holds until a welcome says otherwise.
 export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor, giveUpMs?: number): TableClient {
@@ -473,6 +491,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     addBot: () => send({ type: "addBot" }),
     removeBot: (id) => send({ type: "removeBot", id }),
     again: () => send({ type: "again" }),
+    wantAgain: (value) => send({ type: "wantAgain", value }),
     act: (action) => {
       const i = toIntent(action);
       return i ? act(i) : false;

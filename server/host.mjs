@@ -248,6 +248,8 @@ function seatsOf(room) {
     away: !s.bot && !s.ws,
     bot: Boolean(s.bot),
     player: s.pid ?? null,
+    // #1411: only a seat that said it wants another game; the screen gives the host and bots their tick itself.
+    ...(s.again ? { again: true } : {}),
     needs: [...(s.needs?.kinds ?? [])],
     url: s.avatarId ? `/avatars/${s.avatarId}.jpg` : null,
     // A guest seat carries no profile field at all (#764).
@@ -475,11 +477,53 @@ function savedRoster(saved) {
   }
 }
 
+function alive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    return e.code === "EPERM";
+  }
+}
+
+// Remove orphan temp files left by an earlier process before reconciliation, redaction or listening (#1474).
+function sweepOrphans() {
+  if (profiles.reason === "locked") return;
+  let swept = 0;
+  for (const dir of [ROOMS, RESULTS, PROFILES]) {
+    let list;
+    try {
+      list = readdirSync(dir);
+    } catch {
+      continue;
+    }
+    for (const name of list) {
+      if (!name.endsWith(".tmp")) continue;
+      const m = name.match(/\.(\d+)\.[0-9a-zA-Z]+\.tmp$/);
+      if (m) {
+        const pid = Number(m[1]);
+        if (pid !== process.pid && alive(pid)) {
+          console.log(`storage: kept orphan ${name} (pid ${pid} is alive)`);
+          continue;
+        }
+      }
+      try {
+        rmSync(path.join(dir, name), { force: true });
+        swept++;
+      } catch (err) {
+        console.error(`cannot remove orphan ${name}: ${err.message}`);
+      }
+    }
+  }
+  if (swept) console.log(`storage: swept ${swept} orphan temp file(s)`);
+}
+
 // Rebuild every saved room. Nobody is connected yet, so each seat is held as if it had just dropped.
 // Startup reconciliation (#889) comes first for each file, before expiry, any shape check, play or listen: a terminal room
 // whose pending outcome never reached disk gets one now, frozen from that snapshot, and a nonterminal room for a game that
 // already finished is fenced from play and kept aside for repair. A failed repair write stops the host before it listens.
 async function load() {
+  sweepOrphans();
   let names;
   try {
     names = readdirSync(ROOMS);
@@ -1493,6 +1537,8 @@ async function rematch(ws, room) {
     seat.ws = null;
   }
   room.seats = live;
+  // #1411: every "play again" was for the game that just ended.
+  for (const seat of room.seats) seat.again = undefined;
   // Reclaim a finished open room's slot only if no successor has taken it (#986).
   if (room.visibility === "open") registerOpenTable(room);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
@@ -1578,6 +1624,7 @@ function openOffer(room, from, give, want) {
   const tradeId = `t${room.game.seq}-${(room.offerSeq = (room.offerSeq ?? 0) + 1)}`;
   // #1245 (owner q-trade-hold B): a person's offer holds until it is answered, declined by all, cancelled, or their turn
   // ends; it has no run-out (until and seconds are null). A bot's offer keeps the run-out, so a bot never stalls the table.
+  // #1507 (owner q1517-bot-offer-stall A): no card shows a countdown for any offer; `seconds` stays on the wire only.
   const runOut = room.game.players.find((p) => p.id === from)?.kind === "bot";
   const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), botTimers: [], until: runOut ? Date.now() + OFFER_MS : null });
   if (runOut) {
@@ -1919,6 +1966,14 @@ function handle(ws, raw) {
     ws.seat.ready = value;
     return publish(room);
   }
+  // #1411: a seat says it wants another game. Only while a game is over; it never starts, blocks or delays the rematch.
+  if (msg.type === "wantAgain") {
+    if (room.game?.phase !== "over") return send(ws, { type: "error", message: "Game is not over." });
+    const value = msg.value === true;
+    if (Boolean(ws.seat.again) === value) return;
+    ws.seat.again = value || undefined;
+    return publish(room);
+  }
   if (msg.type === "rename") return renameSeat(ws, room, msg);
   if (msg.type === "addBot") return addBot(ws, room);
   if (msg.type === "removeBot") return removeBot(ws, room, msg);
@@ -2018,6 +2073,8 @@ function dropRoom(room) {
 function hold(room, seat) {
   seat.ws = null;
   seat.gone = Date.now();
+  // #1411: back before the next game, a player says again whether they want it.
+  seat.again = undefined;
   // A dropped seat is the grace timer's business, never the turn timer's (#344).
   disarmTurn(seat);
   if (room.game) extensions(room).sync();

@@ -126,8 +126,7 @@ async function table(seats, width, height) {
     g.setDefaultTimeout(STEP_MS);
     g.on("pageerror", (e) => errors.push(`guest: ${e}`));
     await g.goto(`${URL_}&code=${code}`);
-    await g.waitForFunction((c) => document.querySelector('input[aria-label="Join code"]')?.value === c, code, { timeout: STEP_MS });
-    await g.getByRole("textbox", { name: "Join code" }).press("Enter");
+    await g.getByRole("button", { name: `Join table ${code}`, exact: true }).click({ timeout: STEP_MS });
     await g.getByTestId("table-code").waitFor({ timeout: STEP_MS });
     await g.getByRole("button", { name: "Ready", exact: true }).press("Enter");
     p.guests.push(g);
@@ -202,7 +201,7 @@ function measure({ insets, kind }) {
   // The chat sheet's Minimize is a 24 px header control by design (chat-prove and hud-safe-area-prove pin the header's row and its
   // fit in the landscape safe area), so it is held to its own size plus the safe-area and tappable checks; the sheet's
   // tabs, emoji and sound chips are #460's glass controls and are not checked here (#899 removed the filter chips and presets).
-  if (chat) controls.push({ ...box(chat.querySelector('button[aria-label="Minimize chat"]')), min: 44 });
+  if (chat) controls.push({ ...box(chat.querySelector('button[aria-label="Close chat"]')), min: 44 });
   if (kind === "trade") for (const n of [/^Yes$/, /^No$/]) controls.push(box(find(n, toast)));
   else for (const b of prompt.querySelectorAll("button")) controls.push(box(b));
   const seats = [...document.querySelectorAll('[data-testid="seat-vp"]')].map((el) => {

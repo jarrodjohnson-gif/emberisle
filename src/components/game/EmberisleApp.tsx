@@ -124,10 +124,40 @@ function stripLink() {
   history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
 }
 
+// #1505: ?code= on the first load. A watch link is not this screen.
+function joinLinkCode(): string | null {
+  if (typeof location === "undefined") return null;
+  const code = new URL(location.href).searchParams.get("code")?.toUpperCase() ?? "";
+  return PEEK_CODE.test(code) ? code : null;
+}
+
 // A lazy chunk that did not load: carry on without it.
 function Gone({ then }: { then: () => void }) {
   useEffect(then, []);
   return null;
+}
+
+function SeatColors({ taken, color }: { taken: string[]; color: string | null }) {
+  return (
+    <div role="radiogroup" aria-label="Your color" className="mt-3 flex gap-2">
+      {PLAYER_COLORS.map((c, i) => (
+        <button
+          key={c}
+          type="button"
+          role="radio"
+          aria-checked={!taken.includes(c) && color === c}
+          aria-label={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
+          title={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
+          disabled={taken.includes(c)}
+          onClick={() => useGame.getState().setColor(c)}
+          className={cn("grid size-11 place-items-center rounded-control border-2 p-1 transition", taken.includes(c) && "cursor-not-allowed opacity-35")}
+          style={{ borderColor: !taken.includes(c) && color === c ? "#1c1915" : "transparent" }}
+        >
+          <SeatDot color={c} className="size-7" />
+        </button>
+      ))}
+    </div>
+  );
 }
 
 function Title({ arrive }: { arrive: boolean }) {
@@ -137,7 +167,19 @@ function Title({ arrive }: { arrive: boolean }) {
   const rules = { ai: choices.ai ?? "on", online: choices.online ?? "on", hotseat: choices.hotseat ?? "on" };
   const setHowTo = useGame.getState().setHowTo;
   const howTo = useGame((s) => s.howTo);
-  const [join, setJoin] = useState("");
+  const [join, setJoin] = useState(() => joinLinkCode() ?? "");
+  // #1505: a ?code= link opens the join card on the first paint, before the effect below.
+  const [linkedCode, setLinkedCode] = useState(joinLinkCode);
+  const [joinName, setJoinName] = useState("");
+  const applyJoinName = () => {
+    const typed = joinName.trim();
+    if (typed) useGame.getState().setName(typed);
+  };
+  const joinLinked = () => {
+    if (!linkedCode) return;
+    applyJoinName();
+    useGame.getState().joinTable(linkedCode);
+  };
   // #1449: Join or Watch with fewer than four characters says why nothing was sent, until the field changes.
   const [shortCode, setShortCode] = useState(false);
   const [openMode, setOpenMode] = useState(false);
@@ -183,13 +225,15 @@ function Title({ arrive }: { arrive: boolean }) {
     setJoin(fill);
     void online.prefetch().then((ok) => ok && stripLink());
     if (code === undefined) setWatchLink(true);
+    else setLinkedCode(fill);
   }, []);
 
   // #488: How to play is a lazy chunk; idle time on the title fetches it, and so does a pointer or focus on its button.
   useEffect(() => preloadOnIdle(sheets.prefetch), []);
 
   // One primary per screen (docs/design/polish.md): Play, or Watch on a watch link. Watch only shows once there is a code.
-  const showWatch = watchLink || join.length === 4;
+  // A join link's one primary is Join table, on its own card.
+  const showWatch = watchLink || (!linkedCode && join.length === 4);
 
   return (
     <>
@@ -199,12 +243,13 @@ function Title({ arrive }: { arrive: boolean }) {
           a short window (1280x500) never pushes the wordmark above the top edge. */}
       <div
         data-testid="title-card"
+        data-join-link={linkedCode || undefined}
         className={cn(
           "title-cover absolute z-10",
           arrive && "title-arrive",
           phone && "overflow-y-auto rounded-[20px] border border-white/50 bg-surface p-5 backdrop-blur-md",
           sheet
-            ? "inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-h-[55vh]"
+            ? `inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] ${linkedCode ? "max-h-[calc(100dvh-max(0.75rem,env(safe-area-inset-top))-max(0.75rem,env(safe-area-inset-bottom)))]" : "max-h-[55vh]"}`
             : phone
               ? "bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] w-[min(44rem,calc(100%-1.5rem))] max-h-[calc(100dvh_-_max(0.75rem,env(safe-area-inset-top))_-_max(0.75rem,env(safe-area-inset-bottom)))]"
               : "bottom-5 left-5 max-h-[calc(100dvh-2.5rem)] w-full max-w-sm overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:bottom-10 sm:left-10 sm:max-h-[calc(100dvh-5rem)]",
@@ -218,6 +263,23 @@ function Title({ arrive }: { arrive: boolean }) {
         >
           <div>
             <h1 className="title-wordmark font-display">Emberisle</h1>
+            {linkedCode ? (
+              <input
+                value={joinName}
+                onChange={(e) => setJoinName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return;
+                  e.preventDefault();
+                  joinLinked();
+                }}
+                placeholder="Your name"
+                aria-label="Your name"
+                autoComplete="off"
+                data-testid="join-name"
+                className="mt-5 h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg"
+              />
+            ) : null}
+            {linkedCode ? <SeatColors taken={taken} color={color} /> : (
             <details className="seat-settings">
               <summary aria-label="Your seat">
                 <SeatDot color={color ?? PLAYER_COLORS[0]!} className="size-4" />
@@ -231,30 +293,14 @@ function Title({ arrive }: { arrive: boolean }) {
               aria-label="Your name"
               className="mt-5 h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg"
             />
-            <div role="radiogroup" aria-label="Your color" className="mt-3 flex gap-2">
-              {PLAYER_COLORS.map((c, i) => (
-                <button
-                  key={c}
-                  type="button"
-                  role="radio"
-                  aria-checked={!taken.includes(c) && color === c}
-                  aria-label={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
-                  title={taken.includes(c) ? `${PLAYER_NAMES[i]} (taken)` : PLAYER_NAMES[i]}
-                  disabled={taken.includes(c)}
-                  onClick={() => useGame.getState().setColor(c)}
-                  className={cn("grid size-11 place-items-center rounded-control border-2 p-1 transition", taken.includes(c) && "cursor-not-allowed opacity-35")}
-                  style={{ borderColor: !taken.includes(c) && color === c ? "#1c1915" : "transparent" }}
-                >
-                  <SeatDot color={c} className="size-7" />
-                </button>
-              ))}
-            </div>
+            <SeatColors taken={taken} color={color} />
             {/* #766: inside the seat settings, so the closed title card keeps its height (title-prove at 1280x500). */}
             <Button variant="ghost" className="mt-2 px-3" onPointerEnter={profileSheet.prefetch} onFocus={profileSheet.prefetch} onClick={(e) => setProfileOpener(e.currentTarget)}>
               Profile
             </Button>
             </details>
-            <details data-testid="wayfarer-setup" className="group border-t border-border">
+            )}
+            {linkedCode ? null : <details data-testid="wayfarer-setup" className="group border-t border-border">
               <summary className="flex min-h-11 cursor-pointer flex-col justify-center text-xs text-muted">
                 <span className="flex w-full items-center justify-between text-sm font-medium text-fg">Wayfarer<svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg></span>
                 <span className="capitalize">Practice: {rules.ai} · Online: {rules.online} · Hotseat: {rules.hotseat}</span>
@@ -262,9 +308,23 @@ function Title({ arrive }: { arrive: boolean }) {
               <LazyBoundary failed={null}>
                 <WayfarerOptions rules={rules} choose={useGame.getState().setWayfarerChoice} />
               </LazyBoundary>
-            </details>
+            </details>}
           </div>
           <div className="mt-2 flex flex-col gap-1">
+            {linkedCode ? (
+              <>
+                <Button size="lg" variant="primary" className="w-full" data-testid="join-table" onPointerEnter={online.prefetch} onFocus={online.prefetch} onClick={joinLinked}>
+                  {`Join table ${linkedCode}`}
+                </Button>
+                <div className="flex justify-center">
+                  <Button type="button" variant="ghost" data-testid="join-host" className="underline decoration-fg/40 underline-offset-4" onPointerEnter={online.prefetch} onFocus={online.prefetch} onClick={() => { applyJoinName(); useGame.getState().hostTable(); }}>
+                    Host a table
+                  </Button>
+                </div>
+                {error ? <p role="alert" className="text-sm text-accent-ink">{error}</p> : null}
+              </>
+            ) : (
+            <>
             <div className="flex flex-col items-center gap-1">
               <Button size="lg" variant={watchLink ? "secondary" : "primary"} className="w-full" onClick={useGame.getState().startAi}>
                 Play
@@ -341,12 +401,14 @@ function Title({ arrive }: { arrive: boolean }) {
             <LazyBoundary failed={null}>
               <OpenTables />
             </LazyBoundary>
+            </>
+            )}
             {/* #1418: the quiet row may use the card's side padding (its buttons have no fill), so at 15 px / 600 the sound
                 button keeps its place beside How to play and a short window (1280x500) gains no line. */}
             <div className="-mx-5 flex flex-wrap items-center justify-center">
-              <Button variant="ghost" className="px-3" title="Pass one device around" onClick={() => useGame.getState().startHotseat(4)}>
+              {linkedCode ? null : <Button variant="ghost" className="px-3" title="Pass one device around" onClick={() => useGame.getState().startHotseat(4)}>
                 Four seats, one table
-              </Button>
+              </Button>}
               <Button variant="ghost" className="px-3" onPointerEnter={sheets.prefetch} onFocus={sheets.prefetch} onClick={(e) => setHowTo(!howTo, e.currentTarget)}>
                 How to play
               </Button>

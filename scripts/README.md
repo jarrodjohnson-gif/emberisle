@@ -26,15 +26,19 @@ The issue column lists numbers named in each script's opening comment.
 | `make-sounds.mjs` | `node scripts/make-sounds.mjs` | Generates and levels table clips in `public/audio/`; needs ffmpeg. | No | #609, #616, #1073 |
 | `mobile-shots.mjs` | `node scripts/mobile-shots.mjs` | Writes phone screenshots under `test-results/mobile/` and checks the placement flow. | No | #175 |
 | `named-tunnel.mjs` | `node scripts/named-tunnel.mjs --setup HOSTNAME TUNNEL-UUID [PORT] [CREDENTIALS-FILE]`; `node scripts/named-tunnel.mjs --run` | Saves `.emberisle-tunnel/config.yml` and `settings.json`, or starts the saved tunnel. | No | #746 |
-| `named-tunnel.test.mjs` | `node --test scripts/named-tunnel.test.mjs` | Tests tunnel setup using temporary files and stub commands; needs no Cloudflare account. | No | #746 |
+| `named-tunnel.test.mjs` | `npm run named-tunnel-test` | Tests tunnel setup using temporary files and stub commands; needs no Cloudflare account. | Yes: `ci.yml` (`npm run named-tunnel-test`) | #746 |
 | `next-up.mjs` | `node scripts/next-up.mjs` | Updates the labelled GitHub queue issue body; requires the workflow environment. | Yes: `next-up.yml` | #858 |
-| `night.mjs` | `node scripts/night.mjs` | Builds `dist/`, starts the rules host, and prints the join line. | No | #87, #321 |
+| `night.mjs` | `node scripts/night.mjs` | Builds `dist/`, starts the rules host, and prints the join line. | Yes: `night-prove` (`npm run night-prove`) | #87, #321 |
 | `orphan-check.mjs` | `npm run orphan-check` | Terminates two proofs and checks for leftover host processes; writes no report. | No, deliberately | #242 |
+| `proof-host-port-prove.mjs` | `npm run proof-host-port-prove` | Tests that host startup failures reject cleanly before browser launch. | Yes: `ci.yml` (`npm run proof-host-port-prove`) | #1556 |
 | `robber-pictures.mjs` | `node --import ./server/register.mjs scripts/robber-pictures.mjs` | Writes blocked-terrain comparisons and crops under `docs/proofs/826/`. | No | #826 |
+| `seat-gains-pictures.mjs` | `OUT=<dir> node --import ./server/register.mjs scripts/seat-gains-pictures.mjs` | Writes real-board pictures of public goods cues under `OUT`. | No | #827 |
+| `seat-tray-prove.mjs` | `npm run seat-tray-prove` | Verifies one-tray seats without boxes, 44px targets, and contrast across viewports. | Yes: `ci.yml` (`npm run seat-tray-prove`) | #1544 |
 | `shots.mjs` | `node scripts/shots.mjs` | Writes screen captures under `test-results/shots/` and prints rendering measurements. | No | #125, #310 |
 | `stale-pr-sweeper.mjs` | `node scripts/stale-pr-sweeper.mjs` | Records activity and closes stale PRs when `STALE_PR_SWEEPER=on`; otherwise prints `disabled`. | Yes: `stale-pr-sweeper.yml` | None |
-| `trade-map.test.mjs` | `CHROMIUM_PATH=/usr/bin/chromium node --import ./server/register.mjs scripts/trade-map.test.mjs` | Checks trade previews and settlement, writing `test-results/trade-map-*.png`. | Yes: `trade-map.yml` | #536 |
-| Libraries | Imported or loaded by scripts; no standalone command. | `audio-level-lib.mjs`, `roll-off-oracle.mjs`, `fixtures/`, `hex-jelly.html`, `hex-jelly-lineup.html`, and `jelly-board.html` support scripts and proofs. | Through callers | #1073, #1286 |
+| `trade-map.test.mjs` | `npm run trade-map-test` | Checks trade previews and settlement, writing `test-results/trade-map-*.png`. | Yes: `trade-map.yml`, `ci.yml` (`npm run trade-map-test`) | #536 |
+| `tunnel-reconnect-prove.mjs` | `npm run tunnel-reconnect-prove` | Simulates phone-lock and Wi-Fi switch reconnect flows against real host rules. | Yes: `ci.yml` (`npm run tunnel-reconnect-prove`) | #197 |
+| Libraries | Imported or loaded by scripts; no standalone command. | `audio-level-lib.mjs`, `proof-browser.mjs`, `proof-host-port.mjs`, `roll-off-oracle.mjs`, `fixtures/`, `hex-jelly.html`, `hex-jelly-lineup.html`, and `jelly-board.html` support scripts and proofs. | Through callers | #1073, #1281, #1286, #1556 |
 
 The `emote.mjs` command copies the header's arrow notation; the arrow describes output, not a shell operator.
 The `trade-map.test.mjs` command copies its header; choose an installed browser path when running locally.

@@ -49,6 +49,7 @@ export function WinList({ rows }: { rows: Row[] }) {
                     {r.p.name}
                     {r.note ? <span data-testid="win-profile" className="block truncate text-caption text-muted">{r.note}</span> : null}
                   </span>
+                  {r.tag}
                   <span data-testid="win-total" className="flex-none text-xl font-bold tabular-nums">{r.total}</span>
                   <svg viewBox="0 0 20 20" aria-hidden="true" className={`size-5 flex-none text-muted ${on ? "rotate-180" : ""}`}>
                     <path d="M5 7.5l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

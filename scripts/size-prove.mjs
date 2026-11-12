@@ -78,6 +78,9 @@ const CEILINGS = [
   { name: "eye-off", gzipBytes: 310 },
   // #767, 2026-11-07: the Profile sheet's Wins and Your games views; measured 2,248 B. New chunk, per q-size-standing.
   { name: "ProfileRecords", gzipBytes: 2350 },
+  // #1437, 2026-11-09: the Profile sheet's recovery code screens (Save your recovery code, Forgot your PIN, New recovery
+  // code, the sign-in link and the summary row); measured 3,029 B gzip. New chunk only; the desk set this ceiling (2026-11-09).
+  { name: "ProfileRecovery", gzipBytes: 3200 },
   // #1281, 2026-11-07: startup loading screen, preloaded beside index; measured 2,420 B gzip. Decided per q-size-standing; paired trim to follow.
   { name: "LoadingScreen", gzipBytes: 2600 },
   // #669, 2026-11-07: the Sound panel in the Table menu, loaded as the menu opens; measured 1,872 B gzip. New chunk only; the owner must OK this ceiling.
@@ -92,6 +95,20 @@ const CEILINGS = [
   // #1452 and #1453, 2026-11-09: the results screen's island awards and dice strip, one chunk the win screen fetches as the
   // table starts; measured 2,048 B gzip. New chunk only; the desk set this ceiling on #1452 (q-size-standing, option A).
   { name: "ResultsStory", gzipBytes: 2200 },
+  // #662, 2026-11-08: the sea-and-wind ambience loop, loaded on its first start after the first gesture; measured 461 B gzip.
+  // New chunk only; the desk sets this ceiling.
+  { name: "ambience", gzipBytes: 550 },
+  // #1411, 2026-11-08: a guest's I'll play again and the win screen's count, loaded as an online table starts; measured
+  // 412 B gzip. New chunk only; the desk set this ceiling.
+  { name: "PlayAgain", gzipBytes: 450 },
+  // #1350, 2026-11-11: the read-only profile card for another lobby seat, loaded when a name is first pressed.
+  // New chunk only; the desk set this ceiling in its review of PR #1531.
+  { name: "OtherProfileCard", gzipBytes: 1550 },
+  // #1539, 2026-11-12: the Build list sheet, loaded on idle; measured 1,439 B gzip. New chunk only; proposed, the desk sets
+  // this ceiling.
+  { name: "BuildList", gzipBytes: 1600 },
+  // #827: other seats' public roll and trade gains load lazily (online only); a new chunk, so this ceiling is its only limit.
+  { name: "SeatPublicGains", gzipBytes: 1800 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.

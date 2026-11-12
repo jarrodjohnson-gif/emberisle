@@ -300,6 +300,9 @@ try {
       st.seq += 1;
       g.setState({ state: st, buildMode: "none" });
     });
+    // #1539: the builds are rows in the Build list; the Build button keeps the Ready check.
+    await pg.getByTestId("build-open").click();
+    await pg.getByTestId("build-list").waitFor();
     await pg.waitForFunction(() => document.querySelector('[data-testid="build-path"]')?.dataset.buildState === "ready" && document.querySelector('[data-testid="build-stronghold"]')?.dataset.buildState === "missing");
     const chips = await pg.evaluate(() => {
       const px = (css) => {
@@ -311,24 +314,26 @@ try {
       };
       const path = document.querySelector('[data-testid="build-path"]');
       const strong = document.querySelector('[data-testid="build-stronghold"]');
-      const ringed = strong.querySelector("[data-short] > span:first-child");
-      const badge = strong.querySelector("[data-short] > span:last-child");
+      const ringed = strong.querySelector('[data-testid="build-why-stronghold"]');
+      const badge = ringed;
+      const sheet = strong.closest('[data-testid="build-list"]');
+      const build = document.querySelector('[data-testid="build-open"]');
       return {
-        ink: px(getComputedStyle(path).color),
-        green: px(getComputedStyle(path).backgroundColor),
-        check: px(getComputedStyle(path.querySelector(".build-ready-mark")).color),
-        checkFill: px(getComputedStyle(path.querySelector(".build-ready-mark")).backgroundColor),
-        label: px(getComputedStyle(strong).color),
-        paper: px(getComputedStyle(strong).backgroundColor),
-        ring: px(getComputedStyle(ringed).getPropertyValue("--tw-ring-color")),
+        ink: px(getComputedStyle(path.querySelector(".build-pill")).color),
+        green: px(getComputedStyle(path.querySelector(".build-pill")).backgroundColor),
+        check: px(getComputedStyle(build.querySelector(".build-ready-mark")).color),
+        checkFill: px(getComputedStyle(build.querySelector(".build-ready-mark")).backgroundColor),
+        label: px(getComputedStyle(strong.querySelector("b")).color),
+        paper: px(getComputedStyle(sheet).backgroundColor),
+        ring: px(getComputedStyle(ringed).color),
         badgeInk: px(getComputedStyle(badge).color),
-        badgeFill: px(getComputedStyle(badge).backgroundColor),
+        badgeFill: px(getComputedStyle(sheet).backgroundColor),
       };
     });
-    sampled.push([`${tag} Ready chip ink on green paper`, ratio(chips.ink, chips.green)]);
-    sampled.push([`${tag} Ready check badge white on green`, ratio(chips.check, chips.checkFill)]);
-    sampled.push([`${tag} Missing chip label on paper`, ratio(chips.label, chips.paper)]);
-    sampled.push([`${tag} shortfall badge white on red`, ratio(chips.badgeInk, chips.badgeFill)]);
+    sampled.push([`${tag} Ready row's Place pill white on ink`, ratio(chips.ink, chips.green)]);
+    sampled.push([`${tag} Build button's Ready check white on green`, ratio(chips.check, chips.checkFill)]);
+    sampled.push([`${tag} Missing row name on the sheet`, ratio(chips.label, chips.paper)]);
+    sampled.push([`${tag} "You need" line red on the sheet`, ratio(chips.badgeInk, chips.badgeFill)]);
     const ring = ratio(chips.ring, chips.paper);
     console.log(`  ${tag}: red ring rgb(${chips.ring}) on paper rgb(${chips.paper}) ${ring.toFixed(2)}:1 (needs 3:1)`);
     if (ring < 3) bad.push(`${tag} red ring on paper is ${ring.toFixed(2)}:1`);

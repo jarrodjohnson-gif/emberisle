@@ -33,6 +33,9 @@ export const ProfileForms = profileForms.pick((m) => m.ProfileForms);
 // #767: its Wins and History views load when the sheet opens one of them.
 export const profileRecords = chunk(() => import("@/components/game/ProfileRecords"));
 export const ProfileRecords = profileRecords.pick((m) => m.ProfileRecords);
+// #1437: its recovery code screens; fetched as the sheet opens, and waited for before a request that answers with a code.
+export const profileRecovery = chunk(() => import("@/components/game/ProfileRecovery"));
+export const ProfileRecovery = profileRecovery.pick((m) => m.ProfileRecovery);
 
 export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);
@@ -40,6 +43,9 @@ export const FortuneTray = sheets.pick((m) => m.FortuneTray);
 export const HowTo = sheets.pick((m) => m.HowTo);
 export const TradePanel = sheets.pick((m) => m.TradePanel);
 export const WinScreen = sheets.pick((m) => m.WinScreen);
+// #1539: the Build list opens from the tray's Build button; fetched on idle with the sheets.
+export const buildList = chunk(() => import("@/components/game/BuildList"));
+export const BuildList = buildList.pick((m) => m.BuildList);
 // #748: the win screen's compact list on touch and narrow screens; the win screen fetches it on phones as the table starts.
 export const winList = chunk(() => import("@/components/game/WinList"));
 export const WinList = winList.pick((m) => m.WinList);
@@ -47,6 +53,10 @@ export const WinList = winList.pick((m) => m.WinList);
 export const resultsStory = chunk(() => import("@/components/game/ResultsStory"));
 export const Award = resultsStory.pick((m) => m.Award);
 export const DiceStrip = resultsStory.pick((m) => m.DiceStrip);
+// #1411: a guest's I'll play again and the win screen's count; the win screen fetches it as an online table starts.
+export const playAgain = chunk(() => import("@/components/game/PlayAgain"));
+export const WantAgain = playAgain.pick((m) => m.WantAgain);
+export const WantCount = playAgain.pick((m) => m.WantCount);
 
 // The island behind every screen (#543 preloads it). #1281: one load through the chunk loader, shared by the canvas and the
 // loading screen, so a failed download is retried under a fresh URL by Try again instead of leaving the screen stuck.
