@@ -2,7 +2,7 @@
 
 The review desk reviews and merges every PR and answers builders on GitHub. It puts every question for Jarrod on the Desk Decisions page. It is the "orchestrator" and "Reviewer" that AGENTS.md and FRAMEWORK.md name. It never writes product code. Only one session is the desk at a time, and only that session merges. The desk's state lives on GitHub and the Desk page, never in a chat.
 
-A daily scheduled task starts each desk. Jarrod can also start one by hand: `Run the Emberisle review desk. Read docs/DESK.md.`
+Each desk starts the next one every morning (rule 6). Jarrod can also start one by hand: `Run the Emberisle review desk. Read docs/DESK.md.`
 
 ## The card: read this at every wake
 
@@ -89,7 +89,7 @@ The ledger is a marked block at the top of #916's body. A new desk resumes from 
 ## Desk ledger
 Desk: <session id> (Opus 5.5), since <UTC date and time>
 Next desk: none
-Daily task: <trigger id>
+Next rotation: <send_later id>, due <UTC time>
 Inbox handled through: <created_at of the last handled #699 comment> (comment <id>)
 Hub read through: <created_at of the last #854 comment read>
 
@@ -149,7 +149,20 @@ If a row has no wake, do the work now or set one `send_later` for it. Never end 
 
 ## Rule 6: one desk a day, and a clean handover
 
-A scheduled task named "Emberisle desk daily" starts a fresh desk session every day. The fresh desk takes over, and the old one is archived. Nobody pastes anything.
+Every morning at 5:43 a.m. Arizona time (America/Phoenix, 12:43 UTC), the desk starts its successor with `create_session`, and the successor takes over. The old desk is then archived. Nobody pastes anything.
+
+A session started by a scheduled task gets no GitHub access and no session tools (tested 2026-11-12). A session made with `create_session` gets them. That is why each desk starts the next one itself. The "Emberisle desk daily" scheduled task stays disabled.
+
+**Each desk keeps the chain going.** Right after you take the `Desk:` line, set one `send_later` for the next 12:43 UTC with the message `Rotate now: start the next desk (rule 6).` Write its id and time on the ledger's `Next rotation:` line. If the line is empty or past due when you wake, start the next desk now.
+
+### Starting the next desk
+
+When `Rotate now` arrives, or an early-rotation rule below fires:
+
+1. Call `create_session` with `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, `model` `claude-opus-5-5`, `title` `Emberisle desk <UTC date>`, and `prompt` set to "The next desk's prompt" below, with your session id filled in.
+2. Write `Next desk: <its session id>` in the ledger. Add a `handover` row and set one `send_later` for 20 minutes.
+3. Then follow "If you are the old desk" as soon as its `Desk rotation` message arrives.
+4. If `create_session` fails, tell Jarrod once: "The desk could not start its successor. Please start a new one." Give him the start line from the top of this file.
 
 **You are the desk only while the ledger's `Desk:` line names your session.** Check it at every wake and before every merge. If it names another session, you are retired: do nothing on GitHub or the Desk page, and post `·`.
 
@@ -157,12 +170,13 @@ A scheduled task named "Emberisle desk daily" starts a fresh desk session every 
 
 Follow "Start a desk session" below. In short:
 
-1. Write `Next desk: <your session id>` in the ledger.
+1. Check that the ledger's `Next desk:` line names you. If it is empty, write your session id there.
 2. Send the old desk one message with `send_message`: `Desk rotation: hand over to <your session id>. Follow "If you are the old desk" in docs/DESK.md.`
 3. Add a `handover` row and set one `send_later` for 20 minutes.
 4. Until the handover ends, only read. Don't merge, review, post, or add cards.
 5. When `Handover done` arrives, archive the old session with `archive_session`.
 6. Set `Desk:` to your session and `Next desk: none`. Remove the `handover` row.
+7. Set tomorrow's `Rotate now` reminder (above).
 
 **If the handover stalls:**
 
@@ -192,10 +206,9 @@ After that, answer every wake with `·`.
 ### When to rotate early
 
 - Check your context size with `get_session` after each merge.
-- At about 150K tokens, fire the daily task with `fire_trigger` and the `Daily task:` id.
-- If `Desk: ... since` is more than 26 hours old, the task missed a day. Fire it.
-- If firing fails, tell Jarrod once: "This desk is full. Please start a new one." Give him the start line from the top of this file.
-- Never delete the daily task. Deleting it also deletes every session it started. Disable it with `update_trigger` instead.
+- At about 150K tokens, start the next desk now ("Starting the next desk").
+- If `Desk: ... since` is more than 26 hours old, the reminder was missed. Start the next desk now.
+- Never delete the disabled "Emberisle desk daily" task. Deleting it also deletes every session it started.
 
 Every wake re-reads your whole context. The desk that ran from 10-21 to 10-26 reached 570K tokens and cost about $500. The desk that ran from 11-09 to 11-12 reached 727K tokens and cost $291.
 
@@ -221,30 +234,21 @@ Every wake re-reads your whole context. The desk that ran from 10-21 to 10-26 re
 
 ## Set up rotation
 
-Do this once, when Jarrod asks. Do it again only if the task is lost.
+Do this once, when Jarrod asks. Do it again only if the chain breaks.
 
-1. Call `create_trigger` with:
-   - `name`: `Emberisle desk daily`
-   - `cron_expression`: `CRON_TZ=America/Los_Angeles 43 5 * * *` (5:43 a.m. Pacific, so a fresh desk is ready when Jarrod wakes)
-   - `create_new_session_on_fire`: `true`
-   - `notifications`: `{"push": true}`
-   - `initiation`: `human_request`
-   - `prompt`: the text under "The daily task's prompt" below, word for word.
-2. Set the task's model to Opus 5.5 with `update_trigger`. Jarrod asked for this model on 2026-11-12.
-3. Write the task id on the ledger's `Daily task:` line.
-4. Mark every existing vote as handled: set `handled_for` to its `at`, after checking it against [DECISIONS.md](DECISIONS.md).
-5. Fire the task once with `fire_trigger`. Check that the new session has GitHub tools, the Artifact tools and the repo.
-6. Hand over to it (rule 6).
+1. Mark every existing vote as handled: set `handled_for` to its `at`, after checking it against [DECISIONS.md](DECISIONS.md). Or write a cutoff line in the ledger's notes (`Votes handled through: <UTC time>`) and act only on newer votes.
+2. Set the `Rotate now` reminder for the next 12:43 UTC, and write it on the `Next rotation:` line.
+3. To test now, follow "Starting the next desk" once. Check that the new desk reaches step 10 of "Start a desk session".
 
-### The daily task's prompt
+### The next desk's prompt
 
 ```
 You are today's Emberisle review desk. Repo: jarrodjohnson-gif/emberisle on GitHub.
-A daily scheduled task started you. You have no memory of earlier desks, and you need none.
+The previous desk started you. Its session id is <old desk id>. You have no memory of earlier desks, and you need none.
 
-1. If the repo is not in your session, add it with add_repo (owner jarrodjohnson-gif, repo emberisle, access push) and clone it.
+1. GitHub tools can take a few minutes to connect. Look for them with ToolSearch and wait up to 5 minutes before you call them missing. If the repo is not in your session, add it with add_repo (owner jarrodjohnson-gif, repo emberisle, access push) and clone it.
 2. Read docs/DESK.md from the main branch, every line. It is your full manual. Follow it exactly.
-3. Do "Start a desk session" in that file, step by step. It tells you how to take over from yesterday's desk and archive it.
+3. Do "Start a desk session" in that file, step by step. It tells you how to take over from the previous desk and archive it.
 
 Hard rules, in case you lose the rest:
 - Your state is the "Desk ledger" block in the body of issue #916, and the Desk Decisions page: https://claude.ai/artifact/6BsYJZrADpidXZsVVftGih
