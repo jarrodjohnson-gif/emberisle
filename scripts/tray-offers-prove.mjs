@@ -371,7 +371,7 @@ try {
       await settle();
       s = await readStack(page);
       at = `${tag} hotseat discard`;
-      check(s.banner === `${owes}: discard 4 goods`, `${at}: the status reads "${s.banner}", want "${owes}: discard 4 goods"`);
+      check(s.banner === `Discard 4 goods · ${owes}`, `${at}: the status reads "${s.banner}", want "Discard 4 goods · ${owes}"`);
       check(s.tokens.length === 5 && s.tokens.every((t) => +t.owned === EIGHT[t.kind]) && s.hand === 0, `${at}: the tokens show ${owes}'s goods ${JSON.stringify(s.tokens)}`);
       await rules(s, at);
       await shot("discard-hotseat");

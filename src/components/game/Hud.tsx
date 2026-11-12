@@ -311,7 +311,7 @@ export function Hud() {
   // #430: in hotseat a seat that owes a discard on another seat's turn is named, not given the turn.
   const turnText =
     mode === "hotseat" && (subject !== state.current || state.phase === "discard")
-      ? state.phase === "discard" ? `${subjectPlayer.name}: discard ${state.discardNeeded[subject] ?? 0} goods` : `${phaseText} · ${subjectPlayer.name}`
+      ? `${phaseText} · ${subjectPlayer.name}`
       : waiting
         ? waitingCopy(state.phase, subjectPlayer.name)
         : phaseText;
