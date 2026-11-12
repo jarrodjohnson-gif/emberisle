@@ -106,8 +106,8 @@ function hudRollChip(lines: { text: string }[], mine: string) {
 // A build the hand can pay for with a legal spot waiting: a small warm dot on the button's corner (docs/design/polish.md: no glows).
 // #606: the corner check badge on a Ready chip (the chip's own fill and outline are in styles.css).
 const READY_DOT = (
-  <span aria-hidden className="build-ready-mark absolute right-0 top-0 flex size-4 items-center justify-center rounded-full text-[10px] font-bold leading-none">
-    ✓
+  <span aria-hidden className="build-ready-mark absolute right-0 top-0 flex size-4 items-center justify-center rounded-full ">
+    <svg viewBox="0 0 10 10" className="size-2.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 5.4 4.1 7.5 8 3" /></svg>
   </span>
 );
 
@@ -270,7 +270,7 @@ export function Hud() {
       }}
     >
       {playableNow > 0 && <span key={cueKey} ref={cueRing} onAnimationStart={() => (glowed.current = cueKey)} aria-hidden="true" data-testid="fortune-cue-glow" className="fortune-cue-glow" />}
-      {column ? fortunesLabel : "Fortune"} · {heldNow}
+      Fortune · {heldNow}
     </Button>
   ) : null;
   // Hotseat has no "you": every seat is named. The turn banner sits out once the isle has a ruler (the pill says who).
@@ -300,11 +300,9 @@ export function Hud() {
   const dice = state.dice ? <Dice values={state.dice} /> : null;
   const diceInBar = mine && /^(main|roll)/.test(state.phase);
   // #491: in the column End turn is its own row pinned to the bottom of the scroller on a solid ground, so it never scrolls out of reach.
-  const pinEnd = column && state.phase === "main" && mine;
-  // docs/design/polish.md "Buttons": End turn is the one primary once nothing else can be bought and nothing is armed.
+  const pinEnd = column && state.phase === "main" && mine && !armedNow;
   // A watcher's `me` has no `resources` online (docs/design/spectator.md) and buys nothing, so it is checked first.
   const canBuy = !spectator && PRICES.some((k) => buildStatus(state, me, k).ready);
-  const endPrimary = !canBuy && buildMode === "none";
 
   const instruction = state.phase === "over" ? null : (
     <p key={`turn-${state.current}`} data-testid="turn-banner"
@@ -321,9 +319,9 @@ export function Hud() {
   );
   const endRow = (
     <div className={cn("flex *:self-center", column ? "end-footer sticky z-10 justify-between gap-1 rounded-control bg-surface p-1" : "tray-end ml-auto gap-2")}>
-      {/* The 260 px column has room for End turn and the dice only with the faces shrunk (they are not targets); Trade and My fortunes share the row above. */}
-      {column ? <>{fortunes ? null : <TradeButton />}<div className="[&>div]:gap-1 [&_[data-testid=die]]:size-6 [&_[data-testid=die]]:p-0.5 [&_[data-pip]]:size-1">{dice}</div></> : null}
-      <Button size="sm" variant={endPrimary || !column ? "primary" : "secondary"} className={phone ? "h-11" : undefined} onClick={() => dispatch({ type: "endTurn" })}>
+      {/* The 260 px column has room for End turn and the dice only with the faces shrunk (they are not targets). */}
+      {column ? <div className="[&>div]:gap-1 [&_[data-testid=die]]:size-6 [&_[data-testid=die]]:p-0.5 [&_[data-pip]]:size-1">{dice}</div> : null}
+      <Button size="sm" variant="primary" className={cn(phone && "h-11", column && "flex-1")} onClick={() => dispatch({ type: "endTurn" })}>
         End turn
       </Button>
     </div>
@@ -394,7 +392,7 @@ export function Hud() {
       </LazyBoundary>
 
       <div className={cn("pointer-events-none absolute bottom-0 inset-x-0 z-10 px-safe pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", upright && "upright-table")}>
-        <div className={cn("relative", column ? "w-[260px] max-w-[42vw]" : phone ? "mx-auto max-w-[720px]" : "mx-auto max-w-[520px]")}>
+        <div className={cn("relative", column ? "flex h-[calc(100dvh-4.25rem-max(0.75rem,env(safe-area-inset-bottom)))] w-[260px] max-w-[42vw] flex-col justify-end" : "mx-auto max-w-[720px]")}>
           {/* #459: floats above the stack, so it coming and going never reflows the turn banner. */}
           {banner && !(tradeOutcome && banner.endsWith("'s trade")) ? (
             <p
@@ -420,11 +418,11 @@ export function Hud() {
             data-hud-stack
             className={cn(
               "hud-stack pointer-events-auto flex flex-col gap-1 overflow-y-auto overscroll-contain",
-              !column && "hud-tray",
+              "hud-tray", column && "hud-col",
               // #383: stop under the header (or the portrait seat strip) and leave the island at least ~8 rem.
-              // #422: the column runs from under the header to the bottom edge every phase, so the hole beside it never moves.
+              // #422, #1539: the column's room runs from under the header to the bottom edge; the tray sits at its foot, as tall as its rows.
               column
-                ? "h-[calc(100dvh-4.25rem-max(0.75rem,env(safe-area-inset-bottom)))] scroll-pb-16 rounded-b-[16px] [&>:first-child]:mt-auto"
+                ? "max-h-full scroll-pb-16"
                 : portrait ? "max-h-[calc(100dvh-16rem)]" : "max-h-[calc(100dvh-13rem)]",
             )}
           >
@@ -523,7 +521,7 @@ export function Hud() {
             ) : null}
 
             {(state.phase === "roll" || state.phase === "rollOff") && mine && !armedNow ? (
-              <div className="flex flex-col gap-2">
+              <div className="hud-roll flex flex-col gap-2">
                 <div className="flex flex-wrap gap-2 *:self-center">
                   {column ? dice : null}
                   {fortunes}

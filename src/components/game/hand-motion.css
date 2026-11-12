@@ -107,4 +107,4 @@
 .goods-card, .goods-empty { background: transparent; box-shadow: none; }
 .hand-resource-card-slot + .hand-resource-card-slot { border-left: 1px solid #e3eae7; }
 .goods-label { padding-left: 0; font: 500 12px/14px var(--font-ui); letter-spacing: 0; text-transform: none; }
-.goods-empty > .goods-count, .goods-empty > .goods-label { color: #9aa8a5; }
+.goods-empty > .goods-count, .goods-empty > .goods-label { color: #64736f; }

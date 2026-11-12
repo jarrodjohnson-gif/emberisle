@@ -253,6 +253,11 @@ body {
 .hud-tray { gap: 10px; padding: 12px 14px 14px; border-radius: 22px; background: #fbfdfc; box-shadow: 0 -8px 28px rgba(14, 60, 66, 0.22); }
 .hud-tray .hud-actions { background: transparent; padding: 0; }
 .hud-tray .action-utilities { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
+/* four buttons (a fortune is held) share the row by their words, not in equal columns, so none wraps on a 375 px phone */
+.hud-tray .action-utilities[data-fortunes] { display: flex; flex-wrap: nowrap; }
+.hud-tray .action-utilities[data-fortunes] > * { flex: 1 1 auto; }
+.hud-tray .action-utilities[data-fortunes] button { padding-left: 6px; padding-right: 6px; white-space: nowrap; }
+.hud-tray .action-utilities[data-fortunes] button > svg { display: none; }
 .hud-tray .action-utilities > .tray-end { display: block; margin: 0; }
 .hud-tray .action-utilities button, .hud-tray .hud-actions > button { width: 100%; height: 48px; border: 0; border-radius: 12px; background: #e9f0ee; color: #1f3331; }
 .hud-tray .action-utilities button.bg-fg { background: #1f3d3b; color: #fff; }
@@ -260,11 +265,21 @@ body {
 .hud-tray .tray-event { flex: 0 1 auto; }
 .tray-event { color: #52625f; text-align: right; }
 /* the sideways phone column is 260 px wide: the status and the newest event stack */
-.hud-stack:not(.hud-tray) > .tray-top { flex-direction: column; align-items: stretch; gap: 2px; }
-.hud-stack:not(.hud-tray) > .tray-top > .tray-event { text-align: left; padding-left: 12px; }
+.hud-col { gap: 8px; padding: 10px; border-radius: 16px; box-shadow: 0 4px 20px rgba(14, 60, 66, 0.18); }
+.hud-col > .tray-top { flex-direction: column; align-items: stretch; gap: 2px; }
+.hud-col > .tray-top > .tray-event { text-align: left; }
+.hud-col .end-footer { gap: 8px; padding: 0; background: #fbfdfc !important; }
+.hud-stack.hud-col > .end-footer > button { height: 48px; border: 0; border-radius: 12px; background: #1f3d3b; color: #fff; }
+/* an empty row (the turn clock with no clock running) takes no gap */
+.hud-tray > div:empty { display: none; }
 .hud-tray .turn-instruction { padding-top: 0; padding-bottom: 0; }
 @media (min-width: 768px) and (pointer: fine) {
-  .hud-tray { gap: 8px; padding: 10px 14px 12px; }
+  /* a desktop has the width for one row: the hand on the left, the action row beside it */
+  .hud-tray { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px 14px; padding: 10px 14px 12px; }
+  .hud-tray > * { grid-column: 1 / -1; }
+  .hud-tray > [data-testid="hand-dock"] { grid-column: 1; }
+  .hud-tray > [data-testid="hand-dock"] + .hud-actions, .hud-tray > [data-testid="hand-dock"] + .hud-roll { grid-column: 2; }
+  .hud-tray .hand-resource-card-slot { flex-basis: 64px; }
   .hud-tray .goods-card { height: 62px; }
   .hud-tray .goods-card, .hud-tray .goods-lit { padding-top: 2px; }
   .hud-tray .goods-icon { width: 20px; height: 20px; }
