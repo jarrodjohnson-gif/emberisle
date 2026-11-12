@@ -3,13 +3,16 @@
 - date: 2026-11-12
 - agent: builder-decide
 - lane: hud (tier 3)
+- commit: 3475e541
+- reference: complements `docs/design/one-tray/README.md`
 - targets: `src/components/game/Hud.tsx`, `src/components/game/BuildList.tsx`
 
 ## Overview
 
 This specification documents the component architecture of the merged one-tray table HUD (PR #1542).
-The one-tray design replaces fragmented floating controls with a single unified card.
-The tray manages hand counts, action buttons, turn status, and build sheet invocation.
+The design unifies hand tallies, action utilities, and turn state into a single card surface.
+Detailed UX specifications and historical mockups live in `docs/design/one-tray/README.md`.
+This note details the implemented component tree as of commit 3475e541.
 
 ## Component Structure
 
@@ -36,13 +39,15 @@ The tray manages hand counts, action buttons, turn status, and build sheet invoc
 ### 3. Action Utilities
 - Base row holds three buttons: Build, Trade, and End Turn.
 - When the player holds any fortune card, a fourth Fortune button appears.
-- When four buttons show, labels share the row by word length to avoid text wrapping.
-- While a build is armed, the action row collapses to a single Cancel button.
+- Utility buttons use `flex-1` with the Fortune button sizing at its natural width.
+- When a build is armed with no target, the row shows Cancel alone.
+- When a target spot is picked, the row shows Cancel and Place (`place-cancel` and `place-chip`).
+- The Build button receives a one-shot `build-ready` pulse when a build becomes newly ready.
+- Builds with no legal spot or none left never trigger the pulse.
 
 ### 4. Build List Sheet
 - Build button opens `BuildList.tsx` in a modal sheet.
 - Each row displays structure cost and an actionable Place or Buy pill.
-- When affordable, buttons pulse with `--ink` background.
 - When unaffordable, buttons render disabled with plain explanatory text.
 - `BuildList` loads as a lazy chunk under a desk-approved 1,600 B gzip ceiling.
 
