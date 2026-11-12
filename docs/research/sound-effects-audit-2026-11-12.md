@@ -4,7 +4,7 @@
 - agent: builder-touch
 - lane: docs (tier 3)
 - basis: commit 3475e541
-- targets: `src/lib/sound.ts`, `src/lib/scene/board-touch.ts`, issue #1543, PR #1555
+- targets: `src/lib/sound.ts`, `src/lib/scene/isle-renderer.ts`, issue #1543, PR #1555
 
 ## Overview
 
@@ -30,7 +30,7 @@ Immediate visual ripples and single-tap audio cues remain responsive.
 - The first pointer contact on water records coordinates and arms a 100 ms timeout.
 - If a single tap finishes before 100 ms, `plop.wav` plays immediately upon pointer release.
 - If a second pointer lands within 100 ms, the scheduled timer cancels cleanly.
-- If pointer travel exceeds the 24 px drag slop, the audio trigger aborts.
+- If pointer travel exceeds the tap slop, the audio trigger aborts.
 
 ### Visual State Independence
 - Visual water ripples dispatch immediately on pointer down.
