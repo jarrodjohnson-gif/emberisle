@@ -169,7 +169,11 @@ try {
       }, g);
       return g;
     };
-    const settle = () => page.evaluate(async () => { for (let i = 0; i < 6; i++) await new Promise((r) => requestAnimationFrame(r)); });
+    // The pill fades in over 200 ms: a read waits for the seats' transitions to end.
+    const settle = () => page.evaluate(async () => {
+      for (let i = 0; i < 6; i++) await new Promise((r) => requestAnimationFrame(r));
+      await Promise.all(document.getAnimations().filter((a) => a.effect?.target?.closest?.(".seat-card")).map((a) => a.finished.catch(() => {})));
+    });
     const g = await load("p0");
     await page.locator(`[data-testid="${v.seat}-p0"]`).waitFor();
     await page.locator("canvas").first().waitFor();
