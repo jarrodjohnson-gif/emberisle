@@ -11,6 +11,8 @@
 .trade-label h3 { color: var(--give); font-size: 16px; line-height: 20px; font-weight: 700; }
 .trade-label p { color: #52625f; font-size: 13px; line-height: 16px; text-align: right; }
 [data-testid="trade-want-row"] .trade-label h3 { color: var(--get); }
+/* The Get hint shows only while a need dot does. */
+[data-testid="trade-want-row"]:not(:has([data-testid="trade-need-dot"])) .trade-label p { display: none; }
 .trade-resource-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 /* A token: soft fill, no border. A chosen one takes its side's 2 px inset edge, tint and badge. */
 .trade-resource { --edge: var(--give); --tint: var(--give-bg); position: relative; min-width: 0; border-radius: var(--radius-chip); background: #e9f0ee; }
@@ -26,17 +28,22 @@
 .trade-remove { position: absolute; top: 50px; left: 50%; z-index: 1; display: flex; width: 44px; height: 44px; margin-left: -22px; justify-content: center; padding-top: 4px; }
 .trade-remove > span { width: 24px; height: 24px; border-radius: 9999px; background: #fff; box-shadow: inset 0 0 0 2px var(--edge); color: var(--edge); font-size: 16px; line-height: 24px; font-weight: 700; }
 .trade-need-dots { position: absolute; right: 6px; bottom: 6px; display: flex; gap: 2px; pointer-events: none; }
+/* On a chosen token the minus hangs at the bottom centre, so the dots move to the bottom left, above it. */
+.trade-resource[data-selected] .trade-need-dots { right: auto; bottom: 10px; left: 6px; }
 .trade-need-dot { width: 8px; height: 8px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--control-line); }
 .trade-sentence { margin-top: 18px; text-align: center; font-size: 16px; line-height: 24px; font-weight: 600; overflow-wrap: anywhere; }
 .trade-give-text { color: var(--give); }
 .trade-get-text { color: var(--get); }
 .trade-empty { color: #52625f; font-size: 14px; font-weight: 400; }
-/* Ask the table and the bank button: the bank keeps the mock's 5/12 of the row and widens only when its reason is longer. */
-.trade-composer-footer { display: grid; flex-shrink: 0; grid-template-columns: minmax(0, 1fr) minmax(calc((100% - 8px) * 5 / 12), auto); gap: 8px; padding-top: 14px; padding-bottom: 16px; }
-.trade-composer-footer > button { height: 48px; padding: 0 12px; border: 0; border-radius: var(--radius-chip); background: #e9f0ee; color: #1f3331; white-space: nowrap; }
+.trade-composer-footer { display: grid; flex-shrink: 0; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 8px; padding-top: 14px; padding-bottom: 16px; }
+.trade-composer-footer > button { height: 48px; padding: 0 12px; border: 0; border-radius: var(--radius-chip); background: #e9f0ee; color: #1f3331; white-space: nowrap; filter: none; }
 .trade-composer-footer > .trade-ask { background: #1f3d3b; color: #fff; }
 .trade-composer-footer > button:disabled { background: #e9f0ee; color: #52625f; }
 .trade-bank:first-child { grid-column: 1 / -1; }
+/* Desktop: the sheet floats 16 px above the bottom edge with all four corners round. */
+@media (min-width: 768px) and (pointer: fine) {
+  .trade-composer { max-height: calc(100dvh - 28px - env(safe-area-inset-top)); margin-bottom: 16px; border-radius: 22px; }
+}
 @media (max-height: 480px) {
   .trade-composer-header { padding-top: 0; }
   .trade-title { font-size: 20px; line-height: 24px; }

@@ -86,11 +86,11 @@ export function TradePanel() {
   const where = rate === 4 ? "Bank" : "Dock";
   const low = (r: Resource) => RESOURCE_LABEL[r].toLowerCase();
   const refusal = !g || !w
-    ? ["Bank: one kind each", "Pick one kind to give and one to get."]
+    ? ["One kind each", "Pick one kind to give and one to get."]
     : me.resources[g] < rate
       ? [`${where} needs ${rate}`, `Need ${rate} ${low(g)} for the ${where.toLowerCase()}.`]
       : state.bank[w] <= 0
-        ? [`Bank has no ${low(w)}`, `The bank has no ${low(w)}.`]
+        ? [`No ${low(w)} left`, `The bank has no ${low(w)}.`]
         : null;
   const bankLabel = refusal?.[0] ?? (rate === 2 ? `${RESOURCE_LABEL[g!]} dock 2:1` : `${where} ${rate}:1`);
   const bankHint = refusal?.[1] ?? `Give ${rate} ${low(g!)}, get 1 ${low(w!)}.`;
@@ -132,7 +132,7 @@ export function TradePanel() {
               <section key={side} className="trade-half" data-testid={`trade-${side}-row`} aria-labelledby={`trade-${side}-title`}>
                 <div className="trade-label">
                   <h3 id={`trade-${side}-title`}>{side === "give" ? "Give" : "Get"}</h3>
-                  <p>{side === "give" ? "tap to add, hold to take away" : "dots show who is asking for it"}</p>
+                  {side === "want" ? <p>dots show who is asking for it</p> : null}
                 </div>
                 <div className="trade-resource-grid">
                   {RESOURCES.map((r) => (

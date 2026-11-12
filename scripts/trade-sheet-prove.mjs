@@ -1,5 +1,5 @@
 // #1537 (one tray, slice A): the trade sheet. Give and Get tokens, the offer in one sentence, need dots, Ask the table and
-// one Bank button, in a real practice game at 390x844 and 844x390 (touch) and 1280x720.
+// one Bank button, in a real practice game at 390x844, 375x812 and 844x390 (touch) and 1280x720.
 // Each view: the sheet rises from the bottom inside the viewport, the page never scrolls, 44 px targets and 12 px text;
 // add by tap, Enter, Space and "+", take away by the minus button, long press, right click and "-"; the three limits;
 // the sentence and its colours; need dots from other seats' needs; every Bank button state and a real bank trade;
@@ -19,10 +19,13 @@ const SHOT_DIR = "docs/proofs/1537";
 const VIEWS = [
   ...(SHOTS ? [{ tag: "430x932", width: 430, height: 932, touch: true }] : []),
   { tag: "390x844", width: 390, height: 844, touch: true },
+  // The narrowest phone the button system checks: the 7:5 footer must hold here with every bank label.
+  ...(SHOTS ? [] : [{ tag: "375x812", width: 375, height: 812, touch: true }]),
   { tag: "844x390", width: 844, height: 390, touch: true },
   { tag: "1280x720", width: 1280, height: 720, touch: false },
 ];
 const RED = "rgb(179, 38, 30)", RED_BG = "rgb(253, 236, 234)", GREEN = "rgb(30, 122, 70)", GREEN_BG = "rgb(228, 244, 234)";
+const SOFT = "rgb(233, 240, 238)", TEXT = "rgb(31, 51, 49)";
 const QUIET = "rgb(82, 98, 95)", INK = "rgb(31, 61, 59)", SHEET = "rgb(251, 253, 252)", WHITE = "rgb(255, 255, 255)";
 
 // A real game past setup, with the mock's hand: 2 wood, 1 brick, 2 sheep, 3 wheat, 1 stone. Every seat is human so no bot moves.
@@ -119,6 +122,16 @@ async function bankIs(page, label, enabled, hint, tag) {
   assert.equal(await bankFor(page).isEnabled(), enabled, `${tag}: "${label}" is ${enabled ? "enabled" : "disabled"}`);
   const described = await bankFor(page).evaluate((b) => b.getAttribute("aria-describedby").split(" ").map((id) => document.getElementById(id)?.textContent).join(" "));
   assert.equal(described, hint, `${tag}: "${label}" keeps its fuller accessible reason`);
+  if (enabled && !page.__touch) await bankFor(page).hover();
+  const look = await panelFor(page).evaluate((panel) => {
+    const b = panel.querySelector(".trade-bank"), s = getComputedStyle(b), ask = panel.querySelector(".trade-ask"), r = document.createRange();
+    r.selectNodeContents(b);
+    return { bg: s.backgroundColor, color: s.color, filter: s.filter, lines: r.getClientRects().length, overflow: b.scrollWidth > b.clientWidth + 1,
+      ratio: ask ? ask.getBoundingClientRect().width / b.getBoundingClientRect().width : null };
+  });
+  assert.deepEqual([look.bg, look.color, look.filter], [SOFT, enabled ? TEXT : QUIET, "none"], `${tag}: "${label}" is a soft-fill button with ${enabled ? "text" : "quiet"} colour, hovered or not`);
+  assert.ok(look.lines === 1 && !look.overflow, `${tag}: "${label}" fits on one line ${JSON.stringify(look)}`);
+  if (look.ratio !== null) assert.ok(Math.abs(look.ratio - 7 / 5) <= 0.02, `${tag}: with "${label}" the footer stays 7:5 ${JSON.stringify(look)}`);
 }
 
 async function shot(page, tag, state) {
@@ -144,7 +157,8 @@ async function sheetChecks(page, tag, state) {
       return ["Top", "Right", "Bottom", "Left"].some((side) => Number.parseFloat(s[`border${side}Width`]) > 0 && s[`border${side}Style`] !== "none");
     }).filter((n) => !n.closest("button") && !n.closest(".trade-resource")).map((n) => n.className || n.tagName);
     const footer = panel.querySelector("footer");
-    return { panel: rect(panel), footer: rect(footer), radius: [css.borderTopLeftRadius, css.borderTopRightRadius, css.borderBottomLeftRadius],
+    return { panel: rect(panel), footer: rect(footer), radius: [css.borderTopLeftRadius, css.borderTopRightRadius, css.borderBottomLeftRadius, css.borderBottomRightRadius],
+      desktop: matchMedia("(min-width: 768px) and (pointer: fine)").matches,
       background: css.backgroundColor, text, buttons, boxed,
       grids: [...panel.querySelectorAll(".trade-resource-grid")].map(rect), tokens: [...panel.querySelectorAll(".trade-resource")].map(rect),
       pageScroll: { h: document.documentElement.scrollHeight - innerHeight, w: document.documentElement.scrollWidth - innerWidth, y: scrollY } };
@@ -152,10 +166,11 @@ async function sheetChecks(page, tag, state) {
   const { width, height } = page.viewportSize();
   const at = `${tag} ${state}`;
   assert.ok(m.panel.left >= -0.5 && m.panel.right <= width + 0.5 && m.panel.top >= -0.5 && m.panel.bottom <= height + 0.5, `${at}: sheet inside the viewport ${JSON.stringify(m.panel)}`);
-  assert.ok(Math.abs(m.panel.bottom - height) <= 0.5, `${at}: sheet sits on the bottom edge ${JSON.stringify(m.panel)}`);
+  assert.equal(m.desktop, !page.__touch && width >= 768, `${at}: desktop layout only with a fine pointer at 768 px and up`);
+  assert.ok(Math.abs(m.panel.bottom - (m.desktop ? height - 16 : height)) <= 0.5, `${at}: ${m.desktop ? "the sheet floats 16 px above the bottom edge" : "the sheet sits on the bottom edge"} ${JSON.stringify(m.panel)}`);
   assert.ok(Math.abs((m.panel.left + m.panel.right) / 2 - width / 2) <= 0.5, `${at}: sheet is centred`);
   assert.ok(width <= 520 ? Math.abs(m.panel.width - width) <= 0.5 : m.panel.width <= 520.5, `${at}: sheet spans a phone, at most 520 px wide elsewhere ${m.panel.width}`);
-  assert.deepEqual(m.radius, ["22px", "22px", "0px"], `${at}: 22 px top radius`);
+  assert.deepEqual(m.radius, m.desktop ? ["22px", "22px", "22px", "22px"] : ["22px", "22px", "0px", "0px"], `${at}: 22 px radius, ${m.desktop ? "all four corners" : "top only"}`);
   assert.equal(m.background, SHEET, `${at}: sheet background #fbfdfc`);
   assert.ok(m.pageScroll.h <= 0 && m.pageScroll.w <= 0 && m.pageScroll.y === 0, `${at}: the page does not scroll ${JSON.stringify(m.pageScroll)}`);
   assert.ok(m.footer.top >= 0 && m.footer.bottom <= height + 0.5, `${at}: both buttons stay on screen ${JSON.stringify(m.footer)}`);
@@ -172,12 +187,11 @@ async function layoutAndAdd(page, tag) {
   await open(page);
   const empty = await sheetChecks(page, tag, "empty");
   const labels = await panelFor(page).evaluate((panel) => [...panel.querySelectorAll(".trade-label")].map((l) => ({
-    h: l.querySelector("h3").textContent, color: getComputedStyle(l.querySelector("h3")).color, hint: l.querySelector("p").textContent,
-    hintSize: Number.parseFloat(getComputedStyle(l.querySelector("p")).fontSize) })));
+    h: l.querySelector("h3").textContent, color: getComputedStyle(l.querySelector("h3")).color,
+    hint: l.querySelector("p")?.getClientRects().length ? l.querySelector("p").textContent : null })));
   assert.deepEqual(labels.map((l) => l.h), ["Give", "Get"], `${tag}: labels are exactly Give and Get`);
   assert.deepEqual(labels.map((l) => l.color), [RED, GREEN], `${tag}: Give is red, Get is green`);
-  assert.deepEqual(labels.map((l) => l.hint), ["tap to add, hold to take away", "dots show who is asking for it"], `${tag}: the mock's hints stay`);
-  assert.ok(labels.every((l) => l.hintSize >= 12), `${tag}: hints at least 12 px`);
+  assert.deepEqual(labels.map((l) => l.hint), [null, null], `${tag}: no Give hint, and no Get hint while no need dot shows`);
   assert.equal(await panelFor(page).getByText(/You give|You get/).count(), 0, `${tag}: never "You give" or "You get"`);
   assert.equal(await panelFor(page).getByRole("heading", { name: /need/i }).count(), 0, `${tag}: no Need row and no Others need list`);
   assert.equal(await panelFor(page).getByRole("button", { name: /^Need / }).count(), 0, `${tag}: no Need buttons`);
@@ -193,7 +207,7 @@ async function layoutAndAdd(page, tag) {
   assert.equal((await sentence.textContent()).trim(), "Pick what to give and what to get.", `${tag}: empty sentence`);
   assert.equal(await sentence.locator("span").evaluate((s) => getComputedStyle(s).color), QUIET, `${tag}: empty sentence is quiet text`);
   assert.equal(await askFor(page).isDisabled(), true, `${tag}: Ask the table is off with nothing chosen`);
-  await bankIs(page, "Bank: one kind each", false, "Pick one kind to give and one to get.", `${tag} empty`);
+  await bankIs(page, "One kind each", false, "Pick one kind to give and one to get.", `${tag} empty`);
   await shot(page, tag, "empty");
 
   // Add: tap, Enter, "+", Space. Take away: "-". Wheat is held 3 times, so the fourth add is refused.
@@ -252,7 +266,7 @@ async function layoutAndAdd(page, tag) {
   assert.equal(await minus(page, "give", "grain").count(), 0, `${tag}: an unchosen token has no minus`);
   assert.equal(await token(page, "give", "grain").getByTestId("trade-badge").count(), 0, `${tag}: an unchosen token has no badge`);
   assert.equal(await token(page, "give", "grain").evaluate((t) => getComputedStyle(t).boxShadow), "none", `${tag}: an unchosen token has no edge`);
-  console.log(`${tag}: layout, labels, hints, add by tap/Enter/Space/+, take away by minus/long press/right click/-, Give limit, badge`);
+  console.log(`${tag}: layout, labels, hint rule, add by tap/Enter/Space/+, take away by minus/long press/right click/-, Give limit, badge`);
 }
 
 async function limitsAndSentence(page, tag) {
@@ -321,6 +335,8 @@ async function needDots(page, tag) {
     ["trade-want-ore", `${NAMES.p2} needs stone`],
   ], `${tag}: one dot per other seat that needs the good, on Get tokens only, never your own`);
   assert.deepEqual(dots.map((d) => d.color), [colour[0], colour[1], colour[2], colour[1]], `${tag}: each dot is its seat's colour`);
+  const getHint = () => panelFor(page).locator('[data-testid="trade-want-row"] .trade-label p').evaluate((p) => p.getClientRects().length ? { text: p.textContent, size: Number.parseFloat(getComputedStyle(p).fontSize) } : null);
+  assert.deepEqual(await getHint(), { text: "dots show who is asking for it", size: 13 }, `${tag}: the Get hint shows while a need dot does, at least 12 px`);
   for (const d of dots) {
     assert.equal(d.srOnly, d.label, `${tag}: each dot has a visually hidden text label`);
     assert.ok(d.bottomRight, `${tag}: dots sit at the bottom right of the token ${JSON.stringify(d)}`);
@@ -331,11 +347,19 @@ async function needDots(page, tag) {
   await more(page, "give", "grain").click();
   await more(page, "want", "ore").click();
   assert.equal((await panelFor(page).getByTestId("trade-player-preview").textContent()), "Give 2 wheat · Get 1 stone", `${tag}: the mock's sentence`);
+  const chosen = await token(page, "want", "ore").evaluate((t) => {
+    const tr = t.getBoundingClientRect(), dr = t.querySelector('[data-testid="trade-need-dot"]').getBoundingClientRect(), mr = t.querySelector(".trade-remove > span").getBoundingClientRect();
+    return { bottomLeft: dr.left >= tr.left && dr.right < tr.left + tr.width / 2 && dr.bottom <= tr.bottom && dr.top > tr.top + tr.height / 2,
+      clear: dr.right <= mr.left || dr.left >= mr.right || dr.bottom <= mr.top || dr.top >= mr.bottom, dot: dr.toJSON(), minus: mr.toJSON() };
+  });
+  assert.ok(chosen.bottomLeft, `${tag}: on a chosen Get token the dots move to the bottom left ${JSON.stringify(chosen)}`);
+  assert.ok(chosen.clear, `${tag}: no dot sits under the minus button ${JSON.stringify(chosen)}`);
   await bankIs(page, "Bank needs 4", false, "Need 4 wheat for the bank.", `${tag} short`);
   await sheetChecks(page, tag, "offer");
   await shot(page, tag, "offer");
   await needs(page, {});
   await page.waitForFunction(() => document.querySelectorAll('[data-testid="trade-need-dot"]').length === 0);
+  assert.equal(await getHint(), null, `${tag}: the Get hint goes with the last dot`);
   console.log(`${tag}: need dots by seat colour with hidden labels; cleared needs clear the dots`);
 }
 
@@ -345,7 +369,7 @@ async function bankStates(page, tag) {
   await more(page, "give", "timber").click();
   await more(page, "give", "grain").click();
   await more(page, "want", "ore").click();
-  await bankIs(page, "Bank: one kind each", false, "Pick one kind to give and one to get.", `${tag} two kinds`);
+  await bankIs(page, "One kind each", false, "Pick one kind to give and one to get.", `${tag} two kinds`);
   await minus(page, "give", "timber").click();
   await bankIs(page, "Bank needs 4", false, "Need 4 wheat for the bank.", `${tag} 4:1 short`);
   await change(page, { rate: 3, hand: { grain: 2 } });
@@ -359,7 +383,7 @@ async function bankStates(page, tag) {
   await change(page, { rate: 4, hand: { grain: 4 } });
   await bankIs(page, "Bank 4:1", true, "Give 4 wheat, get 1 stone.", `${tag} 4:1`);
   await change(page, { bank: { ore: 0 } });
-  await bankIs(page, "Bank has no stone", false, "The bank has no stone.", `${tag} empty bank`);
+  await bankIs(page, "No stone left", false, "The bank has no stone.", `${tag} empty bank`);
   const before = await page.evaluate(() => JSON.stringify(window.__emberisle.getState().state));
   await bankFor(page).click({ force: true });
   assert.equal(await page.evaluate(() => JSON.stringify(window.__emberisle.getState().state)), before, `${tag}: a refused Bank button changes nothing`);
@@ -428,12 +452,22 @@ async function primaryButton(page, tag) {
   const row = await panelFor(page).evaluate((panel) => [...panel.querySelectorAll("footer > button")].map((b) => { const r = b.getBoundingClientRect(); return { left: r.left, width: r.width }; }));
   assert.ok(row[0].left < row[1].left, `${tag}: Ask the table left, bank right`);
   assert.ok(Math.abs(row[0].width / row[1].width - 7 / 5) <= 0.02, `${tag}: with a short bank label the row splits 7:5 as in the mock ${JSON.stringify(row)}`);
-  for (const label of ["Bank: one kind each", "Bank has no stone"]) {
-    if (label === "Bank: one kind each") await more(page, "want", "wool").click();
-    else { await minus(page, "want", "wool").click(); await change(page, { hand: { grain: 4 }, bank: { ore: 0 } }); }
-    await bankIs(page, label, false, label === "Bank has no stone" ? "The bank has no stone." : "Pick one kind to give and one to get.", `${tag} long label`);
-    const fit = await bankFor(page).evaluate((b) => ({ scroll: b.scrollWidth, client: b.clientWidth, range: (() => { const r = document.createRange(); r.selectNodeContents(b); return r.getClientRects().length; })() }));
-    assert.ok(fit.scroll <= fit.client + 1 && fit.range === 1, `${tag}: "${label}" fits on one line ${JSON.stringify(fit)}`);
+  // The longest labels: each good's "No <good> left", and its 2:1 dock. bankIs checks one line and 7:5 for each.
+  await more(page, "want", "wool").click();
+  await bankIs(page, "One kind each", false, "Pick one kind to give and one to get.", `${tag} long label`);
+  await minus(page, "want", "wool").click();
+  await minus(page, "want", "ore").click();
+  await minus(page, "give", "grain").click();
+  for (const [g, w] of [["grain", "timber"], ["timber", "clay"], ["timber", "wool"], ["timber", "grain"], ["timber", "ore"]]) {
+    await more(page, "give", g).click();
+    await more(page, "want", w).click();
+    await change(page, { hand: { [g]: 4 }, bank: { [w]: 0 } });
+    await bankIs(page, `No ${RESOURCE_LABEL[w].toLowerCase()} left`, false, `The bank has no ${RESOURCE_LABEL[w].toLowerCase()}.`, `${tag} long label`);
+    await change(page, { bank: { [w]: base.bank[w] }, rate: 2, dock: g });
+    await bankIs(page, `${RESOURCE_LABEL[g]} dock 2:1`, true, `Give 2 ${RESOURCE_LABEL[g].toLowerCase()}, get 1 ${RESOURCE_LABEL[w].toLowerCase()}.`, `${tag} long label`);
+    await change(page, { rate: 4 });
+    await minus(page, "give", g).click();
+    await minus(page, "want", w).click();
   }
   await page.keyboard.press("Escape");
   await panelFor(page).waitFor({ state: "detached" });
@@ -445,6 +479,7 @@ try {
     const context = await browser.newContext({ viewport: { width: view.width, height: view.height }, hasTouch: view.touch, isMobile: view.touch,
       deviceScaleFactor: SHOTS ? 2 : 1, reducedMotion: "reduce" });
     const page = await context.newPage();
+    page.__touch = view.touch;
     page.setDefaultTimeout(20_000);
     page.on("pageerror", (error) => errors.push(`${view.tag}: ${error}`));
     page.on("console", (message) => message.type() === "error" && errors.push(`${view.tag}: ${message.text()}`));
