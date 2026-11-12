@@ -143,6 +143,7 @@
 @media (max-width: 600px) and (orientation: portrait) {
   .lobby-layout { inset: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); width: auto; }
   .lobby-layout .lobby-layout-cover { padding: 12px; }
+  .lobby-action-buttons > * { padding: 0 6px; }
   .lobby-code > [data-testid="table-code"] { font-size: 22px; line-height: 28px; }
 }
 @media (max-height: 600px) and (orientation: landscape) {
