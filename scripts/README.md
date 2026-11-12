@@ -31,6 +31,7 @@ The issue column lists numbers named in each script's opening comment.
 | `night.mjs` | `node scripts/night.mjs` | Builds `dist/`, starts the rules host, and prints the join line. | Yes: `night-prove` (`npm run night-prove`) | #87, #321 |
 | `orphan-check.mjs` | `npm run orphan-check` | Terminates two proofs and checks for leftover host processes; writes no report. | No, deliberately | #242 |
 | `robber-pictures.mjs` | `node --import ./server/register.mjs scripts/robber-pictures.mjs` | Writes blocked-terrain comparisons and crops under `docs/proofs/826/`. | No | #826 |
+| `seat-gains-pictures.mjs` | `OUT=<dir> node --import ./server/register.mjs scripts/seat-gains-pictures.mjs` | Writes real-board pictures of public goods cues under `OUT`. | No | #827 |
 | `shots.mjs` | `node scripts/shots.mjs` | Writes screen captures under `test-results/shots/` and prints rendering measurements. | No | #125, #310 |
 | `stale-pr-sweeper.mjs` | `node scripts/stale-pr-sweeper.mjs` | Records activity and closes stale PRs when `STALE_PR_SWEEPER=on`; otherwise prints `disabled`. | Yes: `stale-pr-sweeper.yml` | None |
 | `trade-map.test.mjs` | `npm run trade-map-test` | Checks trade previews and settlement, writing `test-results/trade-map-*.png`. | Yes: `trade-map.yml`, `ci.yml` (`npm run trade-map-test`) | #536 |
