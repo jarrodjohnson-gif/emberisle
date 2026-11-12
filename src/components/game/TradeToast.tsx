@@ -1,9 +1,10 @@
-// The ask-the-table toast (docs/BUILD_BIBLE.md 4.4): "Ember offers 2 sheep for 1 ore", Yes / No, and the 20 s left.
-// The asker sees the same offer with who has declined, then the outcome for a moment.
-// #537: a seat that cannot pay sees a compact demand ("Ember is looking for 2 ore") with Dismiss only — no Accept.
+// The ask-the-table offer in the tray (docs/design/one-tray, slice C): the top line says it in one sentence, "Tide: give 1
+// wood, get 1 brick", and the action row is No and Yes. The asker reads "You offer 2 sheep for 1 ore", who has said no,
+// and Cancel; then the outcome for a moment, where the newest event sits.
+// #537: a seat that cannot pay reads "Ember is looking for 2 ore" with Dismiss only.
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Check, Hourglass, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useViewport } from "@/lib/viewport";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
@@ -19,10 +20,23 @@ const calm = () => typeof matchMedia === "function" && matchMedia("(prefers-redu
 import { offerLine } from "./offer-line";
 export { offerLine } from "./offer-line";
 
-// "Pine declined", "Pine and Tide declined".
+// "Pine said no", "Pine and Tide said no".
+// The ask closed the trade sheet and the Trade button gave way to Cancel: if focus fell to the page, Cancel takes it (#378).
+const takeFocus = (el: HTMLButtonElement | null) => {
+  // The trade sheet hands focus back a few frames after the offer is up; Cancel takes it once focus has left the sheet.
+  let tries = 0;
+  const settle = () => {
+    if (!el?.isConnected || tries++ > 30) return;
+    const at = document.activeElement;
+    if (at?.closest("[role='dialog']")) return void requestAnimationFrame(settle);
+    // The sheet hands focus to the Trade button, which this offer hides, so Cancel takes it unless the player is typing.
+    if (!at?.closest("input, textarea, select")) el.focus();
+  };
+  if (el) requestAnimationFrame(settle);
+};
+
 function declinedLine(names: string[]) {
-  if (names.length === 1) return `${names[0]} declined`;
-  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]} declined`;
+  return `${names.length > 1 ? `${names.slice(0, -1).join(", ")} and ` : ""}${names[names.length - 1]} said no`;
 }
 
 export function TradeToast() {
@@ -71,14 +85,13 @@ export function TradeToast() {
   useLayoutEffect(() => {
     const el = dock.current;
     if (!el) return;
-    const stack = el.closest<HTMLElement>("[data-hud-stack]");
     const root = document.documentElement;
     let lastHeight = -1;
     let frame = 0;
     const measure = () => {
       const h = el.getBoundingClientRect().height;
-      stack?.style.setProperty("--trade-height", `${h + 4}px`);
-      root.style.setProperty("--active-offer-height", `${h + 8}px`);
+      // Only the card that rides above the phone's open chat takes room from the chat sheet; in the tray it takes none.
+      if (aboveChat) root.style.setProperty("--active-offer-height", `${h + 8}px`);
       if (h !== lastHeight) { lastHeight = h; useGame.getState().chromeLanded(); }
     };
     measure();
@@ -88,7 +101,7 @@ export function TradeToast() {
       frame = requestAnimationFrame(measure);
     });
     observer.observe(el);
-    return () => { observer.disconnect(); cancelAnimationFrame(frame); stack?.style.removeProperty("--trade-height"); root.style.removeProperty("--active-offer-height"); };
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); root.style.removeProperty("--active-offer-height"); };
   }, [shown, aboveChat, leaving]);
 
   // True from the very render after this seat answers, so the card stays mounted and its opacity transition runs (#537).
@@ -106,7 +119,7 @@ export function TradeToast() {
       const taker = players?.find((p) => p.id === takerId);
       const ResultIcon = takerId ? Check : X;
       return (
-        <p className="trade-result table-log flex items-center gap-1 rounded-control px-3 py-1 text-caption" role="status" data-testid="trade-outcome" data-taker={takerId ?? undefined} data-fade-ms={fadeMs}>
+        <p className="trade-result" role="status" data-testid="trade-outcome" data-taker={takerId ?? undefined} data-fade-ms={fadeMs}>
           {taker ? <SeatDot color={taker.color} className="size-2.5" /> : null}
           <ResultIcon aria-hidden="true" className="size-3.5" />{outcome}
         </p>
@@ -121,75 +134,51 @@ export function TradeToast() {
     // #537: the compact signal drops the visible "Need" line, so keyboard and screen-reader users still get the reason.
     why = compact && me ? `You need ${short.map((r) => `${offer.want[r]! - me.resources[r]} more ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ")} to accept` : null;
     const fromColor = players?.find((p) => p.id === offer.from)?.color ?? "transparent";
+    const gives = bagText(offer.want);
+    const gets = bagText(offer.give);
+    // What this seat would give is red and what it would get is green, as on the trade sheet.
     const line = compact
-      ? `${offer.fromName} is looking for ${bagText(offer.want)}`
-      : offerLine(asker ? null : offer.fromName, offer.give, offer.want);
-    const tick = (
-      <div className="trade-summary flex min-w-0 items-center justify-between gap-2">
-        <p id={lineId} className="text-sm font-medium leading-5" title={line} data-testid={compact ? "trade-demand" : undefined}>
-          {!asker || compact ? <SeatDot color={fromColor} className="mr-1.5 size-3 align-[-1px]" /> : null}
-          {line}
-        </p>
-      </div>
-    );
-    if (compact) {
-      body = (
-        <>
-          {tick}
-          <p id={whyId} className="sr-only" data-testid="trade-why">{why}</p>
-          <div className="trade-answers flex items-center gap-1">
-            <Button variant="secondary" className="trade-no h-11 min-w-16 flex-1" data-testid="trade-dismiss" aria-describedby={whyId} onClick={() => answerTrade(false)}>
-              Dismiss
-            </Button>
-          </div>
-        </>
-      );
-    } else {
-      body = (
-        <>
-          {tick}
+      ? `${offer.fromName} is looking for ${gives}`
+      : answering
+        ? `${offer.fromName}: ${gives ? `give ${gives}` : ""}${gives && gets ? ", " : ""}${gets ? `get ${gets}` : ""}`
+        : offerLine(asker ? null : offer.fromName, offer.give, offer.want);
+    body = (
+      <>
+        <div className="trade-summary">
+          <p id={lineId} className="trade-line" title={line} data-testid={compact ? "trade-demand" : undefined}>
+            {asker ? null : <SeatDot color={fromColor} className="mr-1.5 size-3 align-[-1px]" />}
+            {answering && !compact ? (
+              <>
+                {offer.fromName}: {gives ? <b className="trade-give-text">give {gives}</b> : null}
+                {gives && gets ? ", " : null}
+                {gets ? <b className="trade-get-text">get {gets}</b> : null}
+              </>
+            ) : line}
+          </p>
           {asker ? (
-            <p role="status" className="trade-wait sr-only">
+            <p role="status" className={declined.length ? "trade-wait" : "sr-only"}>
               {declined.length ? declinedLine(declined.map(name)) : "Waiting…"}
             </p>
           ) : null}
-          <div className="trade-details" tabIndex={0} role="group" aria-label="Trade amounts and player responses">
-            {answering ? (
-              <p className="trade-receipt" data-testid="trade-receipt">
-                <span><strong>Give:</strong> {bagText(offer.want) || "nothing"}</span>
-                <span><strong>Get:</strong> {bagText(offer.give) || "nothing"}</span>
-              </p>
-            ) : null}
-            <ul className="trade-responses" aria-label="Player responses">
-              {players?.filter((p) => p.id !== offer.from).map((p) => {
-                const refused = declined.includes(p.id);
-                const Icon = refused ? X : Hourglass;
-                const response = refused ? "declined" : "waiting";
-                return (
-                  <li key={p.id} className="trade-response" data-testid={`trade-response-${p.id}`} data-response={response} aria-label={`${p.name}: ${response}`}>
-                    <SeatDot color={p.color} className="size-2.5" />
-                    <span className="trade-response-name">{p.name}</span>
-                    <Icon aria-hidden="true" className="size-3.5" />
-                  </li>
-                );
-              })}
-            </ul>
+        </div>
+        {compact ? <p id={whyId} className="sr-only" data-testid="trade-why">{why}</p> : null}
+        {spectator ? null : (
+          <div className="trade-answers">
+            {compact ? (
+              <Button variant="secondary" data-testid="trade-dismiss" aria-describedby={whyId} onClick={() => answerTrade(false)}>Dismiss</Button>
+            ) : asker ? (
+              // #1245: a person's offer holds until answered, so the asker can always take it back.
+              <Button ref={takeFocus} variant="secondary" data-testid="trade-cancel" onClick={cancelTrade}>Cancel</Button>
+            ) : (
+              <>
+                <Button variant="secondary" onClick={() => answerTrade(false)}>No</Button>
+                <Button className="trade-yes" onClick={() => answerTrade(true)}>Yes</Button>
+              </>
+            )}
           </div>
-          {answering ? (
-            <div className="trade-answers flex items-center gap-1">
-              <Button variant="secondary" className="trade-no h-11 min-w-16 flex-1" onClick={() => answerTrade(false)}>No</Button>
-              <Button className="trade-yes h-11 min-w-16 flex-1" onClick={() => answerTrade(true)}>Yes</Button>
-            </div>
-          ) : null}
-          {asker && !spectator ? (
-            // #1245: a person's offer holds until answered, so the asker can always take it back.
-            <div className="trade-answers flex items-center gap-1">
-              <Button variant="secondary" className="trade-no h-11 min-w-16 flex-1" data-testid="trade-cancel" onClick={cancelTrade}>Cancel</Button>
-            </div>
-          ) : null}
-        </>
-      );
-    }
+        )}
+      </>
+    );
   } else if (!fading) {
     // This seat answered; the offer stays open for the others. While `fading`, the last body fades out below (#537).
     return null;
@@ -207,7 +196,7 @@ export function TradeToast() {
       aria-hidden={fading || undefined}
       inert={fading || undefined}
       data-fade-ms={fadeMs}
-      className={`trade-dock pointer-events-auto shrink-0 rounded-chip p-2${aboveChat ? " trade-above-chat" : ""}${fading ? " opacity-0" : " opacity-100"}`}
+      className={`trade-dock${aboveChat ? " trade-above-chat" : ""}${fading ? " opacity-0" : " opacity-100"}`}
       style={{ transition: fading ? `opacity ${fadeMs}ms linear` : undefined }}
       role="region"
       aria-label="Trade offer"
