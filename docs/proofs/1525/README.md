@@ -1,1 +1,6 @@
-Old matched p0 control: real extra list socket1 after welcomedseat0, newest selection fails original30000ms loaded wait, exit1 expected. Seat-target candidate passes state delivery, rejoin and live-turn assertions but COMPLETE control exits1 at separate natural8s-cap fade midpoint assertion: entry.gone-entry.at163.6ms and CSS160ms correct, entry.mid/runs absent. NOT green; preserve before diagnosis, do not retryforgreen/loosenassertions. Actual CI1496 8b also fails your-turn-stay p1/p2/p3 loaded wait; desk6767298765 explicitly requests this fix in separatePRor1496, separate1525 chosen.
+# Turn proof routing and dismissal checks (#1525)
+
+This folder records turn proof routing and dismissal checks (#1525).
+The proof routes game states directly to the welcomed seat socket.
+TurnMoment immediately applies target styles upon dismissal.
+Unresolved run 14 failures are tracked in separate defect issue #1575.
