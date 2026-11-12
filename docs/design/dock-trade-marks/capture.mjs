@@ -96,8 +96,14 @@ try {
         { timeout: 120_000 },
       );
       await page.waitForTimeout(1500);
+      // Under reduced motion the render loop sleeps, so the canvas can still hold a frame from before the shore swapped in:
+      // draw this pose now.
+      await page.evaluate(() => {
+        const i = window.__isle;
+        i.draw();
+        i.renderer.getContext().finish();
+      });
       const ok = await page.evaluate((lite) => lite || window.__isle.piers.every((p) => !p.visible), LITE);
-      if (process.env.DEBUG) console.log("DEBUG", name, JSON.stringify(await page.evaluate(() => { const i = window.__isle; let h = null; i.shore.group.traverse((o) => { if (o.name === "harbors") h = o.visible; }); let vis = true; for (let o = i.shore.group; o; o = o.parent) vis &&= o.visible; return { piersHidden: i.piers.filter((p) => !p.visible).length, piers: i.piers.length, harbors: h, shoreChainVisible: vis, inScene: !!i.shore.group.parent }; })));
       if (!ok) throw new Error(`${label} ${tag} ${name}: the shore is not in`);
       const file = path.join(outDir, `${label}-${tag}-${name}.jpg`);
       await page.screenshot({ path: file, type: "jpeg", quality: 86 });

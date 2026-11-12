@@ -17,7 +17,7 @@ Author: Claude Opus 5.5 (builder 2), 2026-11-12. Base: `main` at `2486e10`.
 |---|---|---|---|
 | **What it is** | Today's plank on the end of each pier, repainted: the good's colour, its symbol and the pips. A little larger than today's (0.42 × 0.21 instead of 0.36 × 0.165). | A short mast on the pier head flies the same mark as a flag, facing the camera. | The same mark on a board on two posts at the pier's root, facing the camera. |
 | **An owned dock** | A swallow-tailed pennant in the owner's colour on the pier head. | The same pennant, under the flag. | The same pennant, on top of the sign. |
-| **Zoomed out** | A coloured plank on the pier, about the size of the goods pile; at this size the symbol becomes a coloured shape with pips. | The flag reads as a coloured card above the pier. The mast barely shows from the camera's height, so it looks as if it floats. | A small card at the shoreline; it can crowd the dockhouse. |
+| **Zoomed out** | A small coloured plank at the end of each pier, smaller than the goods pile; it scales with the island, so it never covers a hex. At this size it reads as the good's colour, not its symbol. | A small coloured flag above the pier head. The mast barely shows from the camera's height, so the flag looks as if it floats. | A small coloured sign at the shoreline beside the dockhouse. |
 | **Close up** | The clearest: symbol and pips are largest, flat on the deck like a painted sign. | Clear, upright. | Clear, upright, but partly in front of the dockhouse on some docks. |
 
 In all three:
@@ -33,7 +33,7 @@ Each picture comes from the real build:
 - **Sizes:** 390×844, 820×1180 and 844×390, each zoomed right out (the game's least zoom, 0.8), at the home view, and close up on Ember's wood dock at the game's most zoom (2.4).
 - **Rows:** *Main* is today's board. *Old tags* is the branch `codex/560-owned-dock-labels` (PR #881) at `29675fbb`, for comparison.
 
-All pictures are in [`pictures/`](pictures/), named `<option>-<size>-<1-out|2-home|3-close>.jpg`.
+All 63 pictures are in [`pictures/`](pictures/), named `<option>-<size>-<1-out|2-home|3-close>.jpg`; each is under 300 KB. The old-tags branch is older than main, so its HUD differs; only the docks are being compared.
 
 ### Zoomed right out (the case Jarrod raised)
 
@@ -65,11 +65,22 @@ All pictures are in [`pictures/`](pictures/), named `<option>-<size>-<1-out|2-ho
 | B. Flag on a mast | ![](pictures/b-flag-on-mast-390x844-3-close.jpg) | ![](pictures/b-flag-on-mast-820x1180-3-close.jpg) | ![](pictures/b-flag-on-mast-844x390-3-close.jpg) |
 | C. Standing sign | ![](pictures/c-standing-sign-390x844-3-close.jpg) | ![](pictures/c-standing-sign-820x1180-3-close.jpg) | ![](pictures/c-standing-sign-844x390-3-close.jpg) |
 
-### The three options side by side, close up (820×1180, cropped from the pictures above, not enlarged)
+### Side by side, close up (820×1180, cropped from the pictures above, not enlarged): old tags, main today, A, B, C
 
 ![](pictures/compare-close-820x1180.png)
 
-LITE_SECTION
+## The lite board (software GPU)
+
+The lite board has no harbour shore: plain piers and boats, and no plank. Today a lite dock shows its trade only on the boat's sail: "2:1" or "3:1" in text, with the 2:1 sail banded in its good's colour. Option A carries over to lite: the prototype draws the same painted plank on each plain pier's root (on piers facing the camera, the sail covers the pier's end), so no dock is left without a mark. The sail keeps the owner's colour, as today. B and C were not drawn on lite; each would need the same small addition.
+
+| | 390×844 | 820×1180 | 844×390 |
+|---|---|---|---|
+| Lite today, home view | ![](pictures/lite-main-390x844-2-home.jpg) | ![](pictures/lite-main-820x1180-2-home.jpg) | ![](pictures/lite-main-844x390-2-home.jpg) |
+| Lite today, close up | ![](pictures/lite-main-390x844-3-close.jpg) | ![](pictures/lite-main-820x1180-3-close.jpg) | ![](pictures/lite-main-844x390-3-close.jpg) |
+| Lite with A, home view | ![](pictures/lite-a-painted-plank-390x844-2-home.jpg) | ![](pictures/lite-a-painted-plank-820x1180-2-home.jpg) | ![](pictures/lite-a-painted-plank-844x390-2-home.jpg) |
+| Lite with A, close up | ![](pictures/lite-a-painted-plank-390x844-3-close.jpg) | ![](pictures/lite-a-painted-plank-820x1180-3-close.jpg) | ![](pictures/lite-a-painted-plank-844x390-3-close.jpg) |
+
+The zoomed-out lite pictures are in `pictures/` too (`lite-*-1-out.jpg`).
 
 ## Cost
 

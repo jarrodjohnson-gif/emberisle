@@ -160,10 +160,10 @@ index b93e886e..3fc50d82 100644
      const me = new THREE.Mesh(g, pm);
      me.receiveShadow = true;
 diff --git a/src/lib/scene/isle-renderer.ts b/src/lib/scene/isle-renderer.ts
-index 7bfc9f09..7e6f2ec9 100644
+index 7bfc9f09..5e8c4275 100644
 --- a/src/lib/scene/isle-renderer.ts
 +++ b/src/lib/scene/isle-renderer.ts
-@@ -1885,6 +1885,28 @@ export class IsleRenderer {
+@@ -1885,6 +1885,29 @@ export class IsleRenderer {
        this.living.add(boat);
        this.boats.push(boat);
      }
@@ -179,11 +179,12 @@ index 7bfc9f09..7e6f2ec9 100644
 +        const atlas = markAtlas();
 +        const mat = new THREE.MeshStandardMaterial({ map: atlas, emissive: 0x6a645a, emissiveMap: atlas, roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2 });
 +        for (const d of docks) {
-+          const pl = new THREE.PlaneGeometry(0.2, 0.1);
++          const pl = new THREE.PlaneGeometry(0.24, 0.12);
 +          const row = PLATE_KINDS.indexOf(d.kind);
 +          const uv = pl.attributes.uv as THREE.BufferAttribute;
 +          for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - (row + 1 - uv.getY(i)) / PLATE_KINDS.length);
-+          pl.rotateX(-Math.PI / 2).translate(d.cx + d.mx * 0.37, 0.127, d.cz + d.mz * 0.37);
++          // At the pier's root: the boat's sail stands in front of the pier's end on piers that face the camera.
++          pl.rotateX(-Math.PI / 2).translate(d.cx + d.mx * 0.29, 0.128, d.cz + d.mz * 0.29);
 +          land.add(new THREE.Mesh(pl, mat));
 +        }
 +        this.wake();
@@ -192,7 +193,7 @@ index 7bfc9f09..7e6f2ec9 100644
    }
  
    // A new board (or a first one, as on a reconnect) is drawn standing; only pieces added since the last board land.
-@@ -1954,6 +1976,13 @@ export class IsleRenderer {
+@@ -1954,6 +1977,13 @@ export class IsleRenderer {
          sail.material.color.set(claimed ? pmap.get(claimed)?.color ?? "#eee" : "#f4efe4");
        }
      }
