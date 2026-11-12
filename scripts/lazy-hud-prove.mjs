@@ -101,7 +101,7 @@ const timeToAppear = (kind, trigger) =>
 
 try {
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("button", { name: "Play", exact: true }).click({ timeout: STEP_MS });
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click({ timeout: STEP_MS });
   await page.waitForFunction(() => window.__emberisle?.getState().state);
 
   const g = mainGame();
@@ -193,7 +193,7 @@ try {
   });
 
   await failPage.goto(`http://127.0.0.1:${PORT}/`);
-  await failPage.getByRole("button", { name: "Play", exact: true }).click({ timeout: STEP_MS });
+  await failPage.getByRole("button", { name: "Play with bots", exact: true }).click({ timeout: STEP_MS });
   await failPage.waitForFunction(() => window.__emberisle?.getState().state);
 
   await failPage.evaluate((state) => {
@@ -236,7 +236,7 @@ try {
   });
 
   await stealFailPage.goto(`http://127.0.0.1:${PORT}/`);
-  await stealFailPage.getByRole("button", { name: "Play", exact: true }).click({ timeout: STEP_MS });
+  await stealFailPage.getByRole("button", { name: "Play with bots", exact: true }).click({ timeout: STEP_MS });
   await stealFailPage.waitForFunction(() => window.__emberisle?.getState().state);
 
   await stealFailPage.evaluate((state) => {

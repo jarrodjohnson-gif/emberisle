@@ -548,7 +548,7 @@ async function practice(view, [colorName, hex]) {
 async function reduced() {
   const { ctx, page, tag } = await open(VIEWS[3], { reduced: true });
   try {
-    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play with bots", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
     await playUntil(page, (s) => s.state.phase === "roll" && s.state.current === s.localId);
     await page.waitForSelector(MOMENT, { timeout: STEP_MS });
@@ -570,7 +570,7 @@ async function reduced() {
 async function hotseat() {
   const { ctx, page, tag } = await open(VIEWS[3]);
   try {
-    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.getByRole("button", { name: "Pass and play" }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
     await playUntil(page, (s) => s.state.phase === "roll" && s.state.turn >= 1, true);
     await page.waitForSelector(MOMENT, { timeout: STEP_MS });

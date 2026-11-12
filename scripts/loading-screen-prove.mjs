@@ -211,6 +211,7 @@ try {
     const wordmark = await page.getByTestId("title-card").locator("h1").evaluate((el) => getComputedStyle(el).fontSize);
     check(wordmark === "56px", `${tag}: the title wordmark is 56 px`, wordmark);
     await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play with bots", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle.getState().screen === "play");
     check(true, `${tag}: Play still starts a game after the loading screen`);
     check(errors.length === 0, `${tag}: no browser errors`, errors);
