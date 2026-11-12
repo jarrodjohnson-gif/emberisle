@@ -474,3 +474,6 @@ input, select, textarea { border-color: var(--control-line); }
 .hud-tray .hud-roll [data-after-fortune] { flex: 2 1 0; }
 .hud-tray .hud-place > button { width: auto; }
 .hud-tray .hud-place > [data-testid='place-chip'] { background: #1f3d3b; color: #fff; }
+/* the newest event always keeps room in the top line; the numbers strip gives way and scrolls */
+.hud-tray .tray-top > .my-numbers { flex-shrink: 1; }
+.hud-tray .tray-top > .tray-event:not(:empty) { min-width: 9rem; }

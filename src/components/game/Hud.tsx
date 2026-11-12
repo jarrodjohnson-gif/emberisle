@@ -111,6 +111,9 @@ const READY_DOT = (
   </span>
 );
 
+// A sideways column scrolled away from its foot brings Cancel and Place back into view. Stable, so it runs when the row mounts.
+const intoView = (el: HTMLElement | null) => el?.scrollIntoView({ block: "nearest" });
+
 function LossesFailed({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div
@@ -186,6 +189,12 @@ export function Hud() {
   const pending = useGame((st) => st.pendingPlace);
   const confirmPlace = useGame((st) => st.confirmPlace);
   const setPendingPlace = useGame((st) => st.setPendingPlace);
+  // A build or fortune left armed when the turn moves on (online the host moves it on a timeout) is dropped, so it never
+  // hides Roll on this seat's next turn.
+  const turnOf = state?.current;
+  useEffect(() => {
+    if (useGame.getState().buildMode !== "none") useGame.getState().setBuildMode("none");
+  }, [turnOf]);
   const buildButton = useRef<HTMLButtonElement>(null);
   const fortunesButton = useRef<HTMLButtonElement>(null);
   const turnKey = state ? `${state.turn}|${state.current}|${state.phase}` : "";
@@ -498,7 +507,7 @@ export function Hud() {
             {/* #1539: one action row. An armed build or fortune leaves one button, Cancel; otherwise Build, Trade, the held
                 fortunes and End turn. The builds themselves, with their costs and reasons, are in the Build list. */}
             {pending && !spectator ? (
-              <div className="hud-actions hud-place flex gap-2">
+              <div ref={column ? intoView : undefined} className="hud-actions hud-place flex gap-2">
                 <Button size="sm" variant="secondary" data-testid="place-cancel" className="h-12 flex-1" onClick={() => setPendingPlace(null)}>Cancel</Button>
                 <Button size="sm" variant="primary" data-testid="place-chip" className="h-12 flex-[2]" onClick={confirmPlace}>Place</Button>
               </div>
