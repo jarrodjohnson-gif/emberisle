@@ -156,3 +156,18 @@ The script still asks for SwiftShader. On this Mac every SSAO row sat on 16.7 ms
 | 2 | free, SSAO half | 960x540 | 3840x2160 | 360 | 16.7 | 16.7 | 17.3 |
 
 The `css` row sets the full CSS size itself. Free-view `resize()` would otherwise leave it at half. The October tables above stay the before measurement. A phone is still `needs: jarrod` for a real frame time.
+
+## Why draw calls dropped from October to November
+
+October 2026 measurements showed ~480 overhead calls and ~950 free SSAO calls.
+November 2026 runs report ~37 overhead calls and ~68 SSAO calls.
+Two distinct changes explain this difference.
+
+First, Hex Jelly batched terrain meshes (PR #618 and PR #624, issue #599).
+Each terrain kind shares one scene instead of unique meshes per tile.
+`board-look-prove` line 883 enforces that terrain scenes draw in at most 60 calls.
+Second, PR #341 (issue #331) added idle loop throttling to 12 fps when motionless.
+`scripts/shots.mjs` samples draw calls across every 60 Hz `requestAnimationFrame` tick.
+During idle, 48 of 60 ticks draw 0 times.
+Reported calls per rAF tick are roughly one-fifth of calls per rendered frame.
+Real-GPU frame time remains unmeasured on software CI (needs: jarrod).

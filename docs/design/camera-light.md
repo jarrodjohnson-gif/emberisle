@@ -160,26 +160,41 @@ dock or a pine out of the hole, and the pick reach, not the piece's drawn size, 
 
 ## Budget
 
-Target: 60 fps (16.7 ms frame budget).
-Measurements from `node scripts/shots.mjs --budget` across viewports:
+Draw call measurements from `node scripts/shots.mjs --budget`:
 
-| Viewport | Pixel Ratio | View | SSAO | Draw calls / frame | Mean frame time |
-|---|---|---|---|---|---|
-| 1280x720 | 1 | Overhead | Off | 36.8 | 16.9 ms |
-| 1280x720 | 1 | Free | Off | 35.0 | 16.7 ms |
-| 1280x720 | 1 | Free | Half | 68.2 | 16.7 ms |
-| 1920x1080 | 1 | Overhead | Off | 37.0 | 16.9 ms |
-| 1920x1080 | 1 | Free | Off | 34.5 | 16.7 ms |
-| 1920x1080 | 1 | Free | Half | 37.9 | 16.7 ms |
+| Viewport | Pixel Ratio | View | SSAO | Draw calls / rAF tick |
+|---|---|---|---|---|
+| 1280x720 | 1 | Overhead | Off | 36.8 |
+| 1280x720 | 1 | Free | Off | 35.0 |
+| 1280x720 | 1 | Free | Half | 68.2 |
+| 1920x1080 | 1 | Overhead | Off | 37.0 |
+| 1920x1080 | 1 | Free | Off | 34.5 |
+| 1920x1080 | 1 | Free | Half | 37.9 |
+
+The table reports draw calls averaged across 60 Hz `requestAnimationFrame` ticks.
+The board render loop idles at 12 fps when motionless (PR #341, issue #331).
+Calls per rendered frame are roughly 5x higher.
+Hex Jelly scenes batched board terrain into shared scenes (PR #618, PR #624, issue #599).
+Batched scenes dropped draw calls from ~480 in October to under 60.
 
 Ceilings for future scene and piece work:
-- Overhead play view: maximum 50 draw calls per frame.
-- Free and diorama views with SSAO: maximum 75 draw calls per frame.
-- Frame budget: 16.7 ms mean frame time (60 fps target) on standard viewports.
+- Overhead play view: maximum 50 draw calls per rAF tick.
+- Free and diorama views with SSAO: maximum 75 draw calls per rAF tick.
+
+Ceiling rationale:
+- Overhead measures ~37 calls per tick.
+- The 50 ceiling provides 35% headroom (13 calls) for animations and highlights.
+- Free view with SSAO measures up to 68.2 calls per tick.
+- The 75 ceiling provides 10% headroom (7 calls) for SSAO and multi-mesh terrain blocks.
+
+Frame time:
+Real-GPU frame times cannot be measured in headless CI.
+CI runs on SwiftShader CPU rasterization at a fixed 60 Hz timer.
+Real-GPU frame budget remains pending physical hardware measurement (needs: jarrod).
 
 ## Open
 
-- **Budget and frame time** (#464): settled from CI draw-call counts per the 2026-11-06 owner decision (see "Budget" above).
+- **Budget and frame time** (#464): draw-call ceilings documented above; real-GPU frame time requires Question on #464 or owner PC measurement.
 - **The phone hole** (#422, done as HUD work): on a sideways phone the bottom stack is a full-height left column (20 rem,
   at most 48 vw so it stays a rail), so the hole is the same in every phase. Main phase, hand shown: 844x390 went from a
   101x85 px island and a 7.1 px token to 270x227 and 19 px (adjacent corners 28 px apart); 667x375 from 101x85 and 7.1 px
