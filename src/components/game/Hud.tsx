@@ -183,6 +183,9 @@ export function Hud() {
   const [fortunesOpen, setFortunesOpen] = useState(false);
   // #1539: the Build list is open until a row is pressed, it is closed, or the turn or phase moves on.
   const [buildOpen, setBuildOpen] = useState(false);
+  const pending = useGame((st) => st.pendingPlace);
+  const confirmPlace = useGame((st) => st.confirmPlace);
+  const setPendingPlace = useGame((st) => st.setPendingPlace);
   const buildButton = useRef<HTMLButtonElement>(null);
   const fortunesButton = useRef<HTMLButtonElement>(null);
   const turnKey = state ? `${state.turn}|${state.current}|${state.phase}` : "";
@@ -234,7 +237,7 @@ export function Hud() {
   if (!state || !me) return null;
   const mine = state.current === actor;
   // This seat, same test as the online log (Chat.tsx): hotseat's other seats are not this device's seat.
-  const rollChip = mode === "ai" || mode === "hotseat" ? hudRollChip(gameLog, spectator ? "" : (state.players.find((p) => p.id === localId)?.name ?? "")) : null;
+  const rollChip = hudRollChip(gameLog, spectator ? "" : (state.players.find((p) => p.id === localId)?.name ?? ""));
   // Hotseat has no bots: the first seat still owing a discard takes the bar, whoever rolled the 7.
   const discarder =
     state.phase !== "discard"
@@ -278,7 +281,9 @@ export function Hud() {
   const subjectPlayer = state.players.find((p) => p.id === subject) ?? state.players[0]!;
   const yours = mode !== "hotseat" && subject === actor && (state.phase !== "discard" || discarder !== null);
   // #419: an armed build says what to pick and how to cancel (a touch screen has no Esc key).
-  const armed = mine ? armedCopy(buildMode, roadPicks.length) : null;
+  // A build is armed only in the main phase; a fortune can be armed before the roll. A build left armed when a turn timed out
+  // (online, the host moves the turn) must not hide Roll on the next one.
+  const armed = mine && (state.phase === "main" || fortuneArmed) ? armedCopy(buildMode, roadPicks.length) : null;
   // #1539: an armed build or fortune has its own Cancel button in the action row, so a touch screen needs no hint.
   const armedNow = !!armed && !spectator;
   const phaseText = armed
@@ -426,9 +431,8 @@ export function Hud() {
                 : portrait ? "max-h-[calc(100dvh-16rem)]" : "max-h-[calc(100dvh-13rem)]",
             )}
           >
-            {/* #422: in the column the Place chip is the first row, so it never covers the hand or the turn banner. Not
-                pointer-events-none: a porous child would make the stack's chrome only its parts, and the column no rail. */}
-            <PlaceChip column />
+            {/* #1539: a picked spot is confirmed in the action row (Cancel and Place); PlaceChip keeps Enter and Esc. */}
+            <PlaceChip />
             {/* #1539: the tray's top line. The status is on the left; the newest event (the roll, or the last log line) is quiet
                 text on the right. The public deck count is read out for every seat and shown to a watcher, who has no Build list. */}
             <div className="tray-top flex shrink-0 items-center justify-between gap-3">
@@ -493,7 +497,12 @@ export function Hud() {
 
             {/* #1539: one action row. An armed build or fortune leaves one button, Cancel; otherwise Build, Trade, the held
                 fortunes and End turn. The builds themselves, with their costs and reasons, are in the Build list. */}
-            {armedNow ? (
+            {pending && !spectator ? (
+              <div className="hud-actions hud-place flex gap-2">
+                <Button size="sm" variant="secondary" data-testid="place-cancel" className="h-12 flex-1" onClick={() => setPendingPlace(null)}>Cancel</Button>
+                <Button size="sm" variant="primary" data-testid="place-chip" className="h-12 flex-[2]" onClick={confirmPlace}>Place</Button>
+              </div>
+            ) : armedNow ? (
               <div className="hud-actions">
                 <Button size="sm" variant="secondary" data-testid="build-cancel" className="h-12 w-full" onClick={() => setBuildMode("none")}>Cancel</Button>
               </div>
@@ -580,11 +589,17 @@ export function Hud() {
 
       {/* #488: the trade panel, How to play and the win screen share one lazy chunk, fetched on idle once the table is up.
           If it fails the table stands with no sheet; SheetsFailed drops the open flags so the next tap tries again. */}
+      {/* The Build list is its own chunk: if it cannot load, Build closes, so the next press tries again and the other sheets stay up. */}
+      {buildOpen && state.phase === "main" && mine && !spectator ? (
+        <LazyBoundary failed={<TrayFailed close={() => setBuildOpen(false)} />}>
+          <BuildList state={state} me={me} opener={buildButton.current} onClose={() => setBuildOpen(false)} />
+        </LazyBoundary>
+      ) : null}
       <LazyBoundary failed={<SheetsFailed sheetsKey={sheetsKey} onLost={setSheetsLost} />} retryKey={sheetsKey}>
         <TradePanel />
         {howTo ? <HowTo onClose={() => setHowTo(false)} /> : null}
         {costs ? <CostCard onClose={() => setCosts(false)} /> : null}
-        {buildOpen && state.phase === "main" && mine && !spectator ? <BuildList state={state} me={me} opener={buildButton.current} onClose={() => setBuildOpen(false)} /> : null}
+        
         <WinScreen />
         <ChromeLanded />
       </LazyBoundary>

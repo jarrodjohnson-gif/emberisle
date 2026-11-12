@@ -468,3 +468,9 @@ input, select, textarea { border-color: var(--control-line); }
 .hud-col .goods-tray { padding-left: 0; padding-right: 0; }
 .hud-tray .action-utilities[data-fortunes] > .tray-end { display: contents; }
 .hud-tray .action-utilities[data-fortunes] button { flex: 1 1 auto; width: auto; }
+/* before the roll a held fortune shares the row with Roll, which is twice as wide */
+.hud-tray .hud-roll > div { flex-wrap: nowrap; }
+.hud-tray .hud-roll [data-testid='fortunes-button'] { flex: 1 1 0; height: 48px; border: 0; border-radius: 12px; background: #e9f0ee; color: #1f3331; }
+.hud-tray .hud-roll [data-after-fortune] { flex: 2 1 0; }
+.hud-tray .hud-place > button { width: auto; }
+.hud-tray .hud-place > [data-testid='place-chip'] { background: #1f3d3b; color: #fff; }
