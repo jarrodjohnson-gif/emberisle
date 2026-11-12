@@ -3,16 +3,16 @@
 // 1. When upgrade mode is on with eligible homes:
 //    - Every eligible home glows with the PR #848 legal-spot glow (ring, outline, disc resting on the piece base).
 //    - The turn banner shows a clear line: "Pick a home to upgrade to a stronghold".
-//    - Shows a clear way out ("Esc cancels" on desktop, "tap Upgrade again to cancel" on phone).
+//    - Shows a clear way out ("Esc cancels" on desktop; #1539: the tray's Cancel button on a phone).
 //    - Saves docs/proofs/1155/upgrade-mode-eligible-{w}x{h}.png.
 // 2. When upgrade mode is on with no eligible homes:
 //    - The turn banner shows: "No homes to upgrade".
-//    - The button tile subtitle shows "No homes" (not "No spot").
-//    - Clicking says why via hint tooltip and refuseQuietly instead of doing nothing.
+//    - #1539: the Build list's Stronghold row says "No homes to upgrade." (not "No spot"), and "None left." with none left.
+//    - Clicking says why on the row and through refuseQuietly instead of doing nothing.
 //    - No homes glow (0 marks).
-//    - Shows a clear way out ("Esc cancels" on desktop, "tap Upgrade again to cancel" on phone).
+//    - Shows a clear way out ("Esc cancels" on desktop; #1539: the tray's Cancel button on a phone).
 //    - Saves docs/proofs/1155/upgrade-mode-none-{w}x{h}.png.
-// 3. Disarming via Esc or button tap cleanly returns to "none" with normal turn banner.
+// 3. Disarming via Esc or the Cancel button cleanly returns to "none" with normal turn banner.
 import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
@@ -103,7 +103,7 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
     window.__emberisle.setState({ state: g, buildMode: "none", pendingPlace: null, error: null, toast: null });
   }, mainGame({ grain: 3, ore: 2 }));
 
-  await page.getByTestId("build-stronghold").waitFor({ timeout: STEP_MS });
+  await page.getByTestId("build-open").waitFor({ timeout: STEP_MS });
   await page.waitForFunction(() => window.__isle?.lastState && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
   await drawn(page, 3);
 
@@ -134,9 +134,16 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
     if (hasTouch) await page.touchscreen.tap(x, y);
     else await page.mouse.click(x, y);
   };
+  // #1539: Upgrade is the Stronghold row of the Build list, opened from the tray's Build button.
+  const openList = async () => {
+    if (await page.getByTestId("build-list").count()) return;
+    await press(page.getByTestId("build-open"));
+    await page.getByTestId("build-list").waitFor({ timeout: STEP_MS });
+  };
 
   // --- Part 1: Upgrade mode with eligible homes glowing ---
   const upgradeBtn = page.getByTestId("build-stronghold");
+  await openList();
   await press(upgradeBtn);
   await page.waitForFunction(() => window.__emberisle.getState().buildMode === "stronghold", null, { timeout: STEP_MS });
   await drawn(page, 2);
@@ -157,11 +164,12 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
     bannerText,
   );
 
-  const expectedCancelWay = isMobile || hasTouch ? "tap Upgrade again to cancel" : "Esc cancels";
+  const expectedCancelWay = isMobile || hasTouch ? "the Cancel button" : "Esc cancels";
+  const cancelShown = await page.getByTestId("build-cancel").isVisible();
   check(
     `${tag}: instruction provides clear way out (${expectedCancelWay})`,
-    bannerText.includes(expectedCancelWay),
-    bannerText,
+    isMobile || hasTouch ? bannerText === "Pick a home to upgrade" && cancelShown : bannerText.includes(expectedCancelWay) && cancelShown,
+    { bannerText, cancelShown },
   );
 
   if (process.env.CAPTURE_PROOFS) {
@@ -171,7 +179,7 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
 
   // Test disarm: tap again on touch, Esc on desktop
   if (isMobile || hasTouch) {
-    await press(upgradeBtn);
+    await press(page.getByTestId("build-cancel"));
   } else {
     await page.keyboard.press("Escape");
   }
@@ -197,6 +205,7 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
   await drawn(page, 2);
 
   // Check the button subtitle says "No homes"
+  await openList();
   const btnSubtitle = await upgradeBtn.innerText();
   check(
     `${tag}: stronghold button subtitle displays "No homes"`,
@@ -216,7 +225,7 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
     { mode: modeWhenNone },
   );
 
-  const hintText = await page.getByTestId("build-hint-stronghold").innerText({ timeout: 5000 }).catch(() => "");
+  const hintText = await page.getByTestId("build-why-stronghold").innerText({ timeout: 5000 }).catch(() => "");
   check(
     `${tag}: clicking button with none eligible says why in hint tooltip`,
     hintText.includes("No homes to upgrade"),
@@ -245,6 +254,7 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
   });
   await drawn(page, 2);
 
+  await openList();
   const noneLeftSub = await upgradeBtn.innerText();
   check(
     `${tag}: all strongholds built displays subtitle "None left"`,
@@ -262,10 +272,10 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
     modeWhenNoneLeft === "none",
   );
 
-  const hintNoneLeft = await page.getByTestId("build-hint-stronghold").innerText({ timeout: 5000 }).catch(() => "");
+  const hintNoneLeft = await page.getByTestId("build-why-stronghold").innerText({ timeout: 5000 }).catch(() => "");
   check(
-    `${tag}: clicking button with none left says "No strongholds left"`,
-    hintNoneLeft.includes("No strongholds left"),
+    `${tag}: clicking button with none left says "None left."`,
+    hintNoneLeft.includes("None left.") && (await page.evaluate(() => window.__emberisle.getState().announcement)) === "None left.",
     { hintNoneLeft },
   );
 

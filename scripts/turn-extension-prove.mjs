@@ -77,7 +77,8 @@ async function desktopHeader(page, label) {
   await page.waitForFunction(() => document.querySelector('header [data-testid="turn-countdown"]') && window.__isle?.lastState && !window.__isle.refitDue && !window.__isle.glide);
   const geometry = await page.evaluate(() => {
     const issues = [];
-    const instruction = document.querySelector('header [data-testid="turn-banner"]');
+    // #1539: the status line sits in the tray's top line on desktop too; the countdown and the vote stay in the header.
+    const instruction = document.querySelector('[data-hud-stack] [data-testid="turn-banner"]');
     const text = document.createRange();
     text.selectNodeContents(instruction);
     const box = instruction.getBoundingClientRect();
@@ -89,7 +90,7 @@ async function desktopHeader(page, label) {
     for (const [i, el] of nodes.entries()) {
       const r = el.getBoundingClientRect();
       const name = el.getAttribute("data-testid");
-      if (!el.closest("header")) issues.push(`${name} left header`);
+      if (!el.closest(el === instruction ? "[data-hud-stack]" : "header")) issues.push(`${name} left ${el === instruction ? "the tray" : "header"}`);
       if (r.left < 0 || r.top < 0 || r.right > innerWidth || r.bottom > innerHeight) issues.push(`${name} outside viewport`);
       if (nodes.slice(i + 1).some((other) => overlaps(r, other.getBoundingClientRect()))) issues.push(`${name} overlaps another header item`);
       if (blockers.some((other) => overlaps(r, other))) issues.push(`${name} overlaps seats or chat`);
@@ -184,7 +185,8 @@ try {
   await (await b.context().newCDPSession(b)).send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 0, right: 0, bottom: 0, left: 0 } });
   await b.setViewportSize({ width: 1280, height: 720 });
   // The viewport event reaches React after setViewportSize resolves. Wait for its desktop HUD first.
-  await b.waitForFunction(() => innerWidth === 1280 && document.querySelector('header [data-testid="turn-banner"]') && !document.querySelector('[data-hud-stack] [data-testid="turn-banner"]') && !document.querySelector(".hud-utilities"));
+  // #1539: the status line stays in the tray on both; the phone's seat strip going away marks the desktop HUD.
+  await b.waitForFunction(() => innerWidth === 1280 && !document.querySelector('[data-testid="seat-strip"]') && document.querySelector('[data-hud-stack] [data-testid="turn-banner"]') && !document.querySelector(".hud-utilities"));
   await b.waitForFunction(() => window.__isle?.lastState && !window.__isle.refitDue && !window.__isle.glide);
   await headerWithChat(b, "desktop voter");
   const desktopVoter = await b.evaluate(() => {

@@ -701,7 +701,7 @@ try {
       const isle = window.__isle;
       const st = window.__emberisle.getState().state;
       const ins = isle.insets();
-      const stack = document.querySelector('[data-testid="turn-banner"]').parentElement.getBoundingClientRect();
+      const stack = document.querySelector('[data-testid="turn-banner"]').closest("[data-hud-stack]").getBoundingClientRect();
       const at = Object.fromEntries(st.vertices.map((v) => [v.id, isle.screenOf(v.id)]));
       const xs = Object.values(at).map((p) => p.x);
       const ys = Object.values(at).map((p) => p.y);
@@ -734,7 +734,7 @@ try {
     await page.evaluate(() => {
       const g = window.__emberisle.getState();
       g.setBuildMode("path");
-      const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+      const sc = document.querySelector('[data-testid="turn-banner"]').closest("[data-hud-stack]");
       sc.scrollTop = sc.scrollHeight;
       g.setPendingPlace({ kind: "edge", id: g.highlights().edges[0] });
     });
@@ -749,12 +749,12 @@ try {
       const row = box(place.parentElement);
       const hand = box(document.querySelector('[data-testid="hand-dock"]'));
       const turn = box(document.querySelector('[data-testid="turn-banner"]'));
-      const sc = box(document.querySelector('[data-testid="turn-banner"]').parentElement);
+      const sc = box(document.querySelector('[data-testid="turn-banner"]').closest("[data-hud-stack]"));
       const p = box(place);
       const onTop = place.contains(document.elementFromPoint((p.l + p.r) / 2, (p.t + p.b) / 2));
       return { armed: window.__emberisle.getState().buildMode, row, hand, turn, onTop, inView: p.t >= sc.t && p.b <= sc.b, overHand: meets(row, hand), overTurn: meets(row, turn) };
     });
-    check(`${tag}: an armed Path's Place chip is the column's first row, in view, clear of the hand and the turn banner`, chip.armed === "path" && chip.onTop && chip.inView && !chip.overHand && !chip.overTurn, chip);
+    check(`${tag}: an armed Path's Place button is in the column's action row, in view, clear of the hand and the turn banner`, chip.armed === "path" && chip.onTop && chip.inView && !chip.overHand && !chip.overTurn, chip);
     if (w === 844) {
       // #597: the diorama by choice on the sideways phone. Adjacent corners stay at least 18 px apart. The far (north) coast
       // is smallest on screen: a path on the northmost coast edge and an outpost on its corner, measured from their own

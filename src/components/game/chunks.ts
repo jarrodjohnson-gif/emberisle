@@ -43,6 +43,9 @@ export const FortuneTray = sheets.pick((m) => m.FortuneTray);
 export const HowTo = sheets.pick((m) => m.HowTo);
 export const TradePanel = sheets.pick((m) => m.TradePanel);
 export const WinScreen = sheets.pick((m) => m.WinScreen);
+// #1539: the Build list opens from the tray's Build button; fetched on idle with the sheets.
+export const buildList = chunk(() => import("@/components/game/BuildList"));
+export const BuildList = buildList.pick((m) => m.BuildList);
 // #748: the win screen's compact list on touch and narrow screens; the win screen fetches it on phones as the table starts.
 export const winList = chunk(() => import("@/components/game/WinList"));
 export const WinList = winList.pick((m) => m.WinList);
