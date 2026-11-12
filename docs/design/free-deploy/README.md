@@ -209,7 +209,7 @@ Leave #789–795 parked.
 
 Reasons:
 
-- The owner's rule is zero drops during a game. Only the Mac with the named tunnel can meet it.
+- The owner's rule is zero drops during a game. The Mac with the named tunnel comes closest: no provider can end a game.
 - The Mac has no provider that can take the machine away.
 - The Mac needs no card, no cloud account and no data on someone else's machine.
 - The named tunnel gives one stable public link. It keeps the loopback rules, so profiles work as tested.
@@ -233,9 +233,9 @@ The owner requires zero drops while a game is being played.
    If the VM can be started again, players open the link and rejoin their seats.
    If the VM is gone, Jarrod restores last night's backup on the Mac. The game in progress is lost.
    Whether Oracle stops a reclaimed VM or deletes it is not verified.
-3. **The Mac with the named tunnel can promise it.**
-   No provider can take the Mac away, so nothing outside the house ends the game.
-   A drop can then come only from the Mac itself: sleep, a restart, a power cut or home internet loss.
+3. **The Mac with the named tunnel comes closest.**
+   No provider can switch the Mac off.
+   A drop can still come from the Mac sleeping, a restart, a power cut, home internet loss or a Cloudflare outage.
    On game night, keep the Mac plugged in and awake, and skip macOS updates.
 4. **Today's `play` command does not meet the rule yet.**
    It opens a quick tunnel. Cloudflare says quick tunnels "have no uptime guarantee".
@@ -402,10 +402,10 @@ One card.
 **Card: "Where should the game be hosted?"**
 
 TLDR: You said the game need not be on all week, but a game must never drop.
-Only your Mac can promise that. The free Oracle server can be switched off by Oracle at any time, even mid-game.
+Your Mac comes closest: no provider can switch it off. The free Oracle server can be switched off by Oracle at any time, even mid-game.
 
-- **A (recommended): your Mac, with one permanent link.** Nothing outside your house can end a game.
-  The Mac must be on and awake on game night. One step is left: move a domain to Cloudflare.
+- **A (recommended): your Mac, with one permanent link.** No provider can switch the game off.
+  The Mac sleeping, a power cut or home internet can still drop it. One step is left: move a domain to Cloudflare.
 - **B: your Mac for game nights, plus the free Oracle server between them.** The link also works while the Mac sleeps.
   Games on the Oracle server may drop. It needs a card to sign up and about 1–2 hours of setup (an estimate).
 - **C: the free Oracle server only.** Always on, no Mac needed. Oracle can end a game mid-play. This breaks your rule.
