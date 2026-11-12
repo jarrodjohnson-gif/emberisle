@@ -12,6 +12,7 @@
 // an own Roll turn and another seat's turn, it is whole, in the safe area, clear of the menu and status, 12 px from every board target.
 // Design: docs/design/chat.md "Test plan". Screenshots go to test-results/.
 import { spawn } from "node:child_process";
+import { hostPort as waitForHostPort } from "./proof-host-port.mjs";
 import { once } from "node:events";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -34,12 +35,7 @@ const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"],
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
-const hostPort = await new Promise((resolve) =>
-  host.stdout.on("data", (d) => {
-    const m = String(d).match(/listening (\d+)/);
-    if (m) resolve(Number(m[1]));
-  }),
-);
+const hostPort = await waitForHostPort(host);
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch();
