@@ -6,9 +6,10 @@
 // the game ends, with nothing saved); Stay, Escape or 5 s cancels.
 // #669: Sound opens the Sound panel (SoundSheet.tsx) in the same place, with every level showing; Back and Escape return to the rows.
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Box, Bug, Copy, Ellipsis, Eye, Hammer, LogOut, ScrollText, Volume2, VolumeX, Waves } from "lucide-react";
+import { BookOpen, Box, Bug, Copy, Ellipsis, Eye, Hammer, History, LogOut, ScrollText, Volume2, VolumeX, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ConnectionOverlay, SoundSheet, soundSheet } from "@/components/game/chunks";
+import { ConnectionOverlay, GameLog, gameLog as logSheet, SoundSheet, soundSheet } from "@/components/game/chunks";
+import { TrayFailed } from "@/components/game/TrayFailed";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
 import { useGame } from "@/lib/game/store";
 import { haptics, play, useMuted } from "@/lib/sound";
@@ -40,6 +41,7 @@ export function TableMenu() {
   const [open, setOpen] = useState(false);
   const [asking, setAsking] = useState(false);
   const [sound, setSound] = useState(false);
+  const [log, setLog] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const sheet = useRef<HTMLDivElement>(null);
   const leaveRef = useRef<HTMLButtonElement>(null);
@@ -68,6 +70,7 @@ export function TableMenu() {
       return;
     }
     void soundSheet.prefetch();
+    void logSheet.prefetch();
     sheet.current?.querySelector<HTMLElement>("button")?.focus();
     const onDown = (e: PointerEvent) => {
       const t = e.target as Node | null;
@@ -204,6 +207,18 @@ export function TableMenu() {
               >
                 <Hammer className={ICON} /> Costs
               </Button>
+              {/* The full game log (owner 2026-11-12, docs/design/end-of-game): a sheet over the tray; the menu closes behind it. */}
+              <Button
+                variant="ghost"
+                className={ROW}
+                data-testid="log-entry"
+                onClick={() => {
+                  setLog(true);
+                  close(false);
+                }}
+              >
+                <History className={ICON} /> Game log
+              </Button>
               {/* #669: one row for every sound setting; the levels live in the Sound panel. */}
               <Button variant="ghost" className={ROW} data-testid="sound-entry" onClick={() => setSound(true)}>
                 {muted ? <VolumeX className={ICON} /> : <Volume2 className={ICON} />}
@@ -288,6 +303,11 @@ export function TableMenu() {
             client {__BUILD_SHA__}{mode === "online" ? ` · server ${serverSha ?? "unknown"}${serverSha && serverSha !== "dev" && __BUILD_SHA__ !== "dev" && serverSha !== __BUILD_SHA__ ? " · different builds" : ""}` : ""} · <time dateTime={__BUILD_TIME__}>{new Date(__BUILD_TIME__).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" })}</time>
           </p>
         </div>
+      ) : null}
+      {log ? (
+        <LazyBoundary failed={<TrayFailed close={() => setLog(false)} />}>
+          <GameLog opener={trigger.current} onClose={() => setLog(false)} />
+        </LazyBoundary>
       ) : null}
     </div>
   );

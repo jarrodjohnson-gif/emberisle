@@ -104,6 +104,9 @@ const CEILINGS = [
   // #1539, 2026-11-12: the Build list sheet, loaded on idle; measured 1,439 B gzip. New chunk only; proposed, the desk sets
   // this ceiling.
   { name: "BuildList", gzipBytes: 1600 },
+  // docs/design/end-of-game slice 1, 2026-11-12: the Game log sheet, loaded as the Table menu opens; measured 1,369 B gzip.
+  // New chunk only; proposed, the desk sets this ceiling.
+  { name: "GameLog", gzipBytes: 1550 },
   // #827: other seats' public roll and trade gains load lazily (online only); a new chunk, so this ceiling is its only limit.
   { name: "SeatPublicGains", gzipBytes: 1800 },
 ];
