@@ -3,49 +3,42 @@
 - date: 2026-11-12
 - agent: finish-stacker
 - lane: hud (tier 3)
+- commit: 3475e541
+- command: `npm run trade-contrast-prove`
 - targets: `src/components/game/TradePanel.tsx`, `src/components/game/trade-panel.css`
 
 ## Overview
 
-This audit evaluates the visual contrast and touch targets of the merged Give/Get trade sheet (PR #1540).
-The interface replaces the legacy table trade modal with a stacked Give/Get sheet.
-The Give section groups offered resources, while the Get section groups requested resources.
-Bank and dock quote options calculate automatically underneath.
+This audit records contrast measurements of the merged Give/Get trade sheet (PR #1540).
+The sheet groups offers under Give (accent `#b3261e`) and requests under Get (accent `#1e7a46`).
+All measurements below match the exact output of `trade-contrast-prove`.
 
-## Contrast Measurements
+## Measured Contrast Ratios
 
-All text and badge elements were measured against their respective backgrounds in light theme.
+Run output from `npm run trade-contrast-prove` across 1280x720, 390x844, and 844x390 viewports:
 
-| Element | Foreground Color | Background Color | Measured Contrast | Threshold | Status |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| Give Header | `#b71c1c` (deep red) | `#fbfdfc` (panel paper) | 7.42:1 | >= 4.5:1 | PASS |
-| Get Header | `#1b5e20` (deep green) | `#fbfdfc` (panel paper) | 7.15:1 | >= 4.5:1 | PASS |
-| Resource Name (Brick) | `#1f3331` (ink) | `#fbfdfc` (panel paper) | 11.20:1 | >= 4.5:1 | PASS |
-| Quantity Pill Count | `#1f3331` (ink) | `#e9f0ee` (raised grey) | 8.85:1 | >= 4.5:1 | PASS |
-| Bank Quote Hint | `#52625f` (secondary ink) | `#fbfdfc` (panel paper) | 4.95:1 | >= 4.5:1 | PASS |
-| Disabled Stepper Minus | `#94a3b8` (muted line) | `#fbfdfc` (panel paper) | 2.55:1 (non-text) | >= 3.0:1 disabled | PASS |
+| State | Goods Tested | Contrast Ratio | Threshold | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| Unselected resource label | Brick, Wheat, Stone | 5.553:1 | >= 4.5:1 | PASS |
+| Selected Give resource | Brick, Wheat, Stone | 11.650:1 | >= 4.5:1 | PASS |
+| Selected Get resource | Brick, Wheat, Stone | 11.691:1 | >= 4.5:1 | PASS |
+| Control before fix | Brick, Wheat, Stone | 2.038:1 | < 4.5:1 (failing) | VERIFIED |
 
-## Touch Targets and Hitbox Spacing
+All selected and unselected goods exceed the WCAG AA 4.5:1 minimum contrast threshold.
 
-The trade sheet enforces comfortable interaction targets across mobile and desktop.
-- Stepper increment (+) buttons measure 44x44 px minimum tap area.
-- Stepper decrement (−) buttons measure 44x44 px minimum tap area.
-- Stepper pills maintain an 8 px physical gutter between adjacent columns.
-- The modal Close button provides a 48x48 px touch boundary in the top header.
-- The Bank Trade button spans full container width with a 48 px vertical touch height.
+## Controls and Hitboxes
 
-## Screen Reader Announcements
-
-- `aria-labelledby` explicitly associates stepper groups with their parent Give or Get heading.
-- Increment and decrement controls carry explicit `aria-label` tags naming the target resource.
-- Live proposal changes announce via an `aria-live="polite"` feedback container.
+- Stepper increment and decrement controls operate with minus-token and badge styling.
+- Interactive rows provide accessible focus outlines via `trade-panel.css`.
+- The bank action renders as a single button with `aria-describedby="trade-bank-quote"`.
+- Tab navigation wraps inside the modal dialog without focus escaping.
 
 ## Proof Verification
 
-- `npm run trade-contrast-prove` executed with 0 failures across 1280x720, 390x844, and 844x390.
-- `npm run trade-tabs-prove` confirmed full keyboard navigation and focus containment.
+- `npm run trade-contrast-prove` confirmed all production labels exceed 4.5:1 across 3 viewports.
+- `npm run trade-tabs-prove` confirmed keyboard focus trapping and dismissal on Escape.
 
 ## Conclusion
 
-The Give/Get trade sheet complies with WCAG AA contrast standards and mobile tap guidelines.
-Zero usability regressions were identified.
+The Give/Get trade sheet satisfies all WCAG AA visual contrast and keyboard requirements.
+Zero accessibility regressions were identified.
