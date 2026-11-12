@@ -1,26 +1,28 @@
-# Sound Effects Pipeline and Audio Debounce Audit
+# Sound Effects Pipeline and Audio Debounce Audit (issue #1543)
 
 - date: 2026-11-12
 - agent: builder-touch
 - lane: docs (tier 3)
-- targets: `src/lib/sound.ts`, `src/lib/scene/isle-renderer.ts`
+- basis: commit 3475e541
+- targets: `src/lib/sound.ts`, `src/lib/scene/board-touch.ts`, issue #1543, PR #1555
 
 ## Overview
 
-This audit reviews audio cue triggers and touch debounce behaviors following the merge of PR #1555.
-The update introduced a 100 ms debounce for the water splash audio cue on open sea touches.
-The debounce suppresses unwanted audio clicks during multi-touch gestures like pinch-to-zoom and two-finger pans.
+This audit reviews audio cue triggers and touch debounce behaviors following PR #1555 (issue #1543).
+PR #1555 introduced a 100 ms deferral for the water splash audio cue on open sea touches.
+The deferral suppresses unwanted audio clicks during multi-touch gestures like pinch-to-zoom.
 Immediate visual ripples and single-tap audio cues remain responsive.
 
-## Sound Cue Registry and Trigger Points
+## Sound Cue Registry in `src/lib/sound.ts`
 
-| Sound Cue | Audio Asset | Triggering Event | Debounce / Guard | Status |
-| :--- | :--- | :--- | :--- | :--- |
-| `plop` | `plop.wav` | Tap on open water canvas | 100 ms timer; cancelled by second finger | PASS |
-| `dice` | `dice.wav` | Dice roll action dispatched | Triggered on confirmed store state transition | PASS |
-| `build` | `build.wav` | Road or settlement placed | Fired upon successful optimistic placement | PASS |
-| `ui_back` | `ui_back.wav` | Modal close or Escape key | Guarded against rapid repeated key presses | PASS |
-| `your_turn` | `turn_alert.wav` | Active turn arrives at local seat | Cooldown prevents redundant chime bursts | PASS |
+| Sound Cue | Audio Asset | Triggering Event |
+| :--- | :--- | :--- |
+| `plop` | `plop.wav` | Tap on open water canvas |
+| `dice_land` | `drop_001.wav` | Dice roll action dispatched |
+| `path_place` | `drop_002.wav` | Path placed on board |
+| `outpost_place` | `drop_003.wav` | Outpost placed on board |
+| `ui_back` | `back_001.wav` | Modal back or close action |
+| `your_turn` | `your_turn.wav` | Active turn arrives at local seat |
 
 ## Multi-Touch Gesture Isolation
 
@@ -31,17 +33,18 @@ Immediate visual ripples and single-tap audio cues remain responsive.
 - If pointer travel exceeds the 24 px drag slop, the audio trigger aborts.
 
 ### Visual State Independence
-- Visual water ripples and foam splash geometry dispatch immediately on pointer down.
+- Visual water ripples dispatch immediately on pointer down.
 - Zero latency is added to the 3D visual scene.
-- Only the WebAudio playback pipeline participates in the debounce window.
+- Only the HTMLAudio (`new Audio(...)`) playback call participates in the deferral window.
 
 ## Proof Verification
 
-- `npm run sound-mixer-prove` verified audio buffer loading and fallback synthesis.
-- `npm run your-turn-cue-prove` confirmed turn alert throttling across viewports.
-- `npm run board-touch-prove` verified multi-touch silence during pinch and pan gestures.
+Audio proofs pass cleanly on commit 3475e541.
+`npm run sound-mixer-prove` verifies audio loading and fallback synthesis.
+`npm run your-turn-cue-prove` confirms turn alert cues.
+`npm run board-touch-prove` verifies water plop audio behavior.
 
 ## Conclusion
 
-The audio cue pipeline functions without memory leaks, audio distortion, or gesture interference.
+The audio deferral cleanly isolates multi-touch gestures from single-tap water sounds.
 Sound cues enhance gameplay feedback without becoming noisy during board manipulation.
