@@ -45,7 +45,7 @@ const goodsFor = (page) => panelFor(page).getByRole("region", { name: "Trade goo
 const more = (page, resource, side) => panelFor(page).getByRole("button", { name: `More ${RESOURCE_LABEL[resource]} to ${side}`, exact: true });
 const fewer = (page, resource, side) => panelFor(page).getByRole("button", { name: `Fewer ${RESOURCE_LABEL[resource]} to ${side}`, exact: true });
 const askFor = (page) => panelFor(page).getByRole("button", { name: "Ask the table", exact: true });
-const bankFor = (page) => panelFor(page).getByRole("button", { name: /^(Bank(?: 4:1|: one kind each| needs 4| has no \w+)|Dock(?: [23]:1| needs [23])|\w+ dock 2:1)$/ });
+const bankFor = (page) => panelFor(page).getByRole("button", { name: /^(Bank(?: 4:1| needs 4)|Dock(?: [23]:1| needs [23])|\w+ dock 2:1|One kind each|No \w+ left)$/ });
 const snapshot = (page) => page.evaluate(() => JSON.stringify(window.__emberisle.getState().state));
 const sent = (page) => page.evaluate(() => window.__tradeTabsSent);
 
@@ -195,8 +195,8 @@ async function approvedBLayout(page, tag, route) {
   });
   assert.ok(geometry.table.right <= geometry.bank.left,
     `${tag} ${route}: final owner footer puts Table left and Bank right ${JSON.stringify(geometry)}`);
-  assert.ok(Math.abs(geometry.bank.top - geometry.table.top) <= 0.5 && geometry.bank.width >= (geometry.table.width + geometry.bank.width) * 5 / 12 - 0.5,
-    `${tag} ${route}: one-tray footer buttons align; Bank keeps at least the mock's 5/12 and Ask the table takes the rest`);
+  assert.ok(Math.abs(geometry.bank.top - geometry.table.top) <= 0.5 && Math.abs(geometry.table.width / geometry.bank.width - 1.4) <= 0.02,
+    `${tag} ${route}: one-tray footer buttons align, Ask the table 7:5 wider than Bank as in the mock`);
   if (page.viewportSize().height <= 480) {
     assert.ok(geometry.bankAction.top >= geometry.quote.bottom - 0.5, `${tag} ${route}: short-screen Bank button sits below the offer sentence`);
   } else {
