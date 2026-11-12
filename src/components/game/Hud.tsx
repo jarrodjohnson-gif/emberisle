@@ -195,6 +195,11 @@ export function Hud() {
   useEffect(() => {
     if (useGame.getState().buildMode !== "none") useGame.getState().setBuildMode("none");
   }, [turnOf]);
+  // A roll is newer than a trade's outcome line ("Nobody took it."), so the outcome gives the top line back at once.
+  const rolled = state?.dice?.join();
+  useEffect(() => {
+    if (useGame.getState().tradeOutcome) useGame.setState({ tradeOutcome: null, tradeTaker: null });
+  }, [rolled]);
   const buildButton = useRef<HTMLButtonElement>(null);
   const fortunesButton = useRef<HTMLButtonElement>(null);
   const turnKey = state ? `${state.turn}|${state.current}|${state.phase}` : "";

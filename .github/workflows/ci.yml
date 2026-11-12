@@ -717,6 +717,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run seat-rail-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run seat-tray-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run seat-dot-ring-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run longest-army-prove

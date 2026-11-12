@@ -172,6 +172,7 @@
     "harbor-access-prove": "node scripts/harbor-access-prove.mjs",
     "hex-variety-prove": "node scripts/hex-variety-prove.mjs",
     "seat-rail-prove": "node scripts/seat-rail-prove.mjs",
+    "seat-tray-prove": "node scripts/seat-tray-prove.mjs",
     "seat-dot-ring-prove": "node scripts/seat-dot-ring-prove.mjs",
     "longest-army-prove": "node scripts/longest-army-prove.mjs",
     "roll-log-prove": "node scripts/roll-log-prove.mjs",
