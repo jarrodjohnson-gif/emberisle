@@ -363,7 +363,8 @@ async function bankMotion(page, rate, tag) {
   const actual = await page.evaluate(() => window.__tradeTabsBankMotion);
   assert.equal(actual.afterSeq, actual.beforeSeq + 1, `${tag}: movement belongs to the genuine one-action bank settlement`);
   // #773's approved V1 moves the card, keeps its signed tab still, and removes island gain text.
-  const lift = actual.compact && !actual.coarse ? 0 : actual.upright && actual.coarse ? 6 : 4;
+  // #1539: the status line heads the tray, so a desktop hand lifts the full 6 px (4 px in a short window), as hand-cards-prove measures.
+  const lift = actual.compact && !actual.coarse ? 4 : actual.upright && actual.coarse ? 6 : actual.coarse ? 4 : 6;
   const trajectories = { handLoss: 0, handGain: 0, cardLoss: 2, cardGain: -lift };
   for (const [key, cue] of Object.entries(actual.cues)) {
     const loss = key.endsWith("Loss");

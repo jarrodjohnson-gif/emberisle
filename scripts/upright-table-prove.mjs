@@ -11,7 +11,7 @@
 //   has no path or army tally; the seat's sheet lists "Path length" and "Wayfarers played" as the rules count them, and
 //   "Longest path" and "Largest army" on the seat that holds them;
 // - the dock: the turn line, the hand tray and the build row have no fill and no padding box; there are no "pays on"
-//   number chips; the last-event line runs from the left gutter to the deck count;
+//   number chips; the last-event line follows the status on the tray's top line and runs to the tray's right padding (#1539);
 // - the empty space between the seat strip and the dock is at least 58.3 % of the height at 390x844 with a 34 px home bar;
 // - no text in the seat strip, the turn line or the log line is under 12 px.
 // Zero console errors. Screenshots to test-results/upright-table-<size>.png. Run: npm run upright-table-prove
@@ -188,7 +188,7 @@ try {
         fills: { banner: fill(banner), tray: fill(tray), actions: fill(actions) },
         pads: { banner: getComputedStyle(banner).paddingLeft, tray: getComputedStyle(tray).paddingLeft, actions: getComputedStyle(actions).paddingLeft },
         numbers: document.querySelectorAll('[data-testid="my-numbers"], .my-numbers').length,
-        log: { l: box(log).left, r: box(log).right, deckL: box(deck).left },
+        log: { l: box(log).left, r: box(log).right, deckL: box(deck).left, mid: box(log).top + box(log).height / 2, bannerR: box(banner).right, bannerMid: box(banner).top + box(banner).height / 2, innerR: box(stack).right - parseFloat(getComputedStyle(stack).paddingRight) },
         small,
       };
     });
@@ -205,9 +205,10 @@ try {
     for (const [k, v] of Object.entries(ui.fills)) assert.equal(v, "rgba(0, 0, 0, 0)", `${tag}: the ${k} has a fill (${v})`);
     for (const [k, v] of Object.entries(ui.pads)) assert.equal(v, "0px", `${tag}: the ${k} has a ${v} side padding`);
     assert.equal(ui.numbers, 0, `${tag}: the "pays on" number chips are on the table`);
-    assert.equal(ui.log.l, 16, `${tag}: the last event starts ${ui.log.l} px from the left`);
-    // The row's own 4 px gap sits between them.
-    assert.ok(ui.log.r <= ui.log.deckL && ui.log.deckL - ui.log.r <= 4.5, `${tag}: the last event stops ${(ui.log.deckL - ui.log.r).toFixed(1)} px short of the deck count`);
+    // #1539: the last event is the right side of the tray's top line, after the status; the deck count is read out only.
+    assert.ok(ui.log.l >= ui.log.bannerR && Math.abs(ui.log.mid - ui.log.bannerMid) <= 2, `${tag}: the last event starts at ${ui.log.l} px, after the status (ends ${ui.log.bannerR}) on its line`);
+    // The tray's own right padding sits after it.
+    assert.ok(Math.abs(ui.log.r - ui.log.innerR) <= 0.5, `${tag}: the last event ends ${(ui.log.innerR - ui.log.r).toFixed(1)} px short of the tray's inner right edge`);
     assert.deepEqual(ui.small, [], `${tag}: text under 12 px`);
     const clear = (ui.stack.t - ui.strip.b) / ui.h;
     if (tag === "390x844") assert.ok(clear >= 0.583, `${tag}: the clear height is ${(clear * 100).toFixed(1)} %, under 58.3 %`);

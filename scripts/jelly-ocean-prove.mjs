@@ -73,6 +73,10 @@ try {
         if (was && !next.active) waitAfterVisit = Math.min(waitAfterVisit,next.next);
         if (next.visible > 1) throw new Error("overlapping wildlife visits");
       }
+      // A frozen scheduler ends a visit in progress by design (ocean-life.ts step), so the freeze is checked between visits.
+      // #1539: the bigger desktop island moved the lanes, and the 40,000th step fell inside a visit.
+      for (let i = 0; i < 2000 && life.snapshot().active; i++) life.step(0.1, true, () => view);
+      if (life.snapshot().active) throw new Error("a visit never ended");
       const frozen = JSON.stringify(life.snapshot());
       life.step(60,false,() => view);
       const disabledUnchanged = frozen === JSON.stringify(life.snapshot());
@@ -83,7 +87,13 @@ try {
       life.group.traverse(o => { if(pickable.has(o))visitorPickables++; });
       const props = r.scene.getObjectByName("floor-props");
       const floorTris = props.geometry.index ? props.geometry.index.count / 3 : props.geometry.attributes.position.count / 3;
-      return {floorTris, water: window.__emberisle.water, seq, stateUnchanged:before===JSON.stringify(state),routes,observed:[...observed],minRadius,maxMeshes,waitAfterVisit,disabledUnchanged,clear,visitorPickables};
+      // #1539: whether the whale has any clear lane here, in either direction (lane() tries one direction at random).
+      const W = { radius: 6.9, reach: 1.1, arc: 0.32 };
+      let whaleLanes = 0;
+      for (const arc of [W.arc, W.arc * 0.6]) for (let i = 0; i < 32; i++) for (const d of [-1, 1]) {
+        if ([0, 0.5, 1].every(u => { const a = i * Math.PI / 16 + (u - 0.5) * arc * d; return view(Math.cos(a) * W.radius, Math.sin(a) * W.radius, W.reach); })) whaleLanes++;
+      }
+      return {whaleLanes, floorTris, water: window.__emberisle.water, seq, stateUnchanged:before===JSON.stringify(state),routes,observed:[...observed],minRadius,maxMeshes,waitAfterVisit,disabledUnchanged,clear,visitorPickables};
     });
     assert.equal(geometry.water?.path, "crystal", `${width}: the crystal sea is on`);
     assert.ok(geometry.floorTris > 0 && geometry.floorTris < 2000, `${width}: sea-floor props under 2k triangles (${geometry.floorTris})`);
@@ -95,7 +105,8 @@ try {
     assert.ok(geometry.observed.length > 0, `${width}: suitable water exists for visits on this viewport`);
     assert.equal(geometry.visitorPickables,0,`${width}: wildlife cannot intercept board picks`);
     assert.ok(geometry.clear.length===6&&geometry.clear.every(m=>m>=0.31),`${width}: the six kinds' scenes are built and clear the tokens (${geometry.clear.map(m=>m.toFixed(3))})`);
-    if(!phone) assert.deepEqual(geometry.observed.sort(),["dolphin","turtle","whale"],"all three species arrive through the random scheduler");
+    // #1539: the desktop island fills more of the hole, so the whale (the widest visitor) arrives only where it has a clear lane, as on a phone.
+    if(!phone) assert.deepEqual(geometry.observed.sort(),geometry.whaleLanes>0?["dolphin","turtle","whale"]:["dolphin","turtle"],`every species with clear water arrives through the random scheduler (whale lanes: ${geometry.whaleLanes})`);
 
     // Freeze an actual visible visit and all workers, including when the preference flips during motion.
     await page.evaluate(() => {
