@@ -8,7 +8,7 @@
 // - every visible text in a seat reads at least 4.5:1 against what is really behind it: the seats are hidden, the page is
 //   captured, and each text box is checked against every pixel of that capture under it (the sea, the board, or the pill);
 // - the phone strip leaves "(bot)" to the player menu; the rail reads "Name · you" on your own seat and the hand in words;
-// - the Table menu button (and the chat button, online only, so not here) has no ground;
+// - the Table menu button keeps its 44 px target (it and the chat button keep their ground, so they read over anything);
 // - tapping a seat opens its player menu;
 // - zero page errors.
 // Every failure is listed before the run fails. SHOTS=1 also writes real-game PNGs at device scale 2 into docs/proofs/1544/
@@ -83,9 +83,10 @@ const readSeats = (page, sel) =>
         if (!text || !seen(el)) continue;
         const ecs = getComputedStyle(el);
         // The text's own box: a range over its text nodes, so a flex child's empty room is not sampled.
-        const range = document.createRange();
-        range.selectNodeContents(el);
-        texts.push({ text, size: parseFloat(ecs.fontSize), color: ecs.color, box: box(range.getBoundingClientRect()) });
+        // Only this element's own text nodes: a hidden read-out child (sr-only " points") is not part of what is drawn here.
+        const rects = [...el.childNodes].filter((n) => n.nodeType === 3 && n.textContent.trim()).map((n) => { const r = document.createRange(); r.selectNodeContents(n); return r.getBoundingClientRect(); });
+        const l = Math.min(...rects.map((r) => r.left)), t = Math.min(...rects.map((r) => r.top)), rgt = Math.max(...rects.map((r) => r.right)), btm = Math.max(...rects.map((r) => r.bottom));
+        texts.push({ text, size: parseFloat(ecs.fontSize), color: ecs.color, box: box(new DOMRect(l, t, rgt - l, btm - t)) });
       }
       return {
         id: card.dataset.testid,
@@ -140,7 +141,7 @@ const contrastOf = (page, shot, items) =>
         const ratio = (Math.max(L, B) + 0.05) / (Math.min(L, B) + 0.05);
         if (ratio < worst) {
           worst = ratio;
-          at = `rgb(${data[i]}, ${data[i + 1]}, ${data[i + 2]})`;
+          at = `rgb(${data[i]}, ${data[i + 1]}, ${data[i + 2]}) at ${((x0 + (i / 4) % w) / dpr).toFixed(1)},${((y0 + Math.floor(i / 4 / w)) / dpr).toFixed(1)} (box ${box.left.toFixed(1)},${box.top.toFixed(1)} ${box.w.toFixed(1)}x${box.h.toFixed(1)})`;
         }
       }
       return { ratio: worst, behind: at };
@@ -218,11 +219,11 @@ try {
     if (v.seat === "rail") {
       const mine = seats.find((s) => s.id === "rail-p0");
       check(/^Ember · you/.test(mine.line), `${at}: your rail seat reads ${JSON.stringify(mine.line)}`);
-      check(/7 cards·1 fortune/.test(mine.line), `${at}: your rail seat names the hand in words ${JSON.stringify(mine.line)}`);
+      check(/7 cards · 1 fortune/.test(mine.line), `${at}: your rail seat names the hand in words ${JSON.stringify(mine.line)}`);
       const one = seats.find((s) => s.id === "rail-p1");
       check(/1 card(?!s)/.test(one.line) && !/fortune/.test(one.line), `${at}: one card and no fortune reads "1 card" alone ${JSON.stringify(one.line)}`);
       const two = seats.find((s) => s.id === "rail-p2");
-      check(/11 cards·2 fortunes/.test(two.line), `${at}: plural forms ${JSON.stringify(two.line)}`);
+      check(/11 cards · 2 fortunes/.test(two.line), `${at}: plural forms ${JSON.stringify(two.line)}`);
     }
 
     // 2. Contrast: every text against the real pixels behind it.
@@ -235,9 +236,9 @@ try {
       check(r.ratio >= 4.5, `${at}: ${items[i].id} "${items[i].text}" ${items[i].color} reads ${r.ratio.toFixed(2)}:1 on ${r.behind}`);
     });
 
-    // 3. The Table menu button: a plain icon on the sea.
-    const menuBg = await page.getByRole("button", { name: "Table menu" }).evaluate((b) => ({ bg: getComputedStyle(b).backgroundColor, border: getComputedStyle(b).borderTopWidth, w: b.getBoundingClientRect().width, h: b.getBoundingClientRect().height }));
-    check(menuBg.bg === CLEAR && menuBg.border === "0px" && menuBg.w >= 44 && menuBg.h >= 44, `${at}: the Table menu button ${JSON.stringify(menuBg)}`);
+    // 3. The Table menu button is still a 44 px target.
+    const menuBg = await page.getByRole("button", { name: "Table menu" }).evaluate((b) => ({ w: b.getBoundingClientRect().width, h: b.getBoundingClientRect().height }));
+    check(menuBg.w >= 44 && menuBg.h >= 44, `${at}: the Table menu button ${JSON.stringify(menuBg)}`);
 
     // 4. The turn moves: so does the pill.
     await page.evaluate(() => {

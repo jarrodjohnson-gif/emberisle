@@ -202,11 +202,10 @@ body {
 /* #1544: seats sit on the sea with no box; the seat on turn is the one white pill. The quiet ink holds 4.5:1 on the sea's
    lightest tone (#c4e3df) and on the pill. */
 .seat-card { color: #1f3331; }
-.seat-card [class*='text-zinc-700'] { color: #3d524f; }
+.seat-card [class*='text-zinc-700'] { color: #334744; }
 .seat-card.seat-turn { background: #fbfdfc; box-shadow: 0 2px 10px rgb(14 60 66 / 0.18); }
 @media (hover: hover) { .seat-card:not(.seat-turn) button:hover { background: rgb(251 253 252 / 0.45); } }
-/* #1544: the Table menu and chat buttons are plain dark icons on the sea, still 44 px targets with the focus ring. */
-.sea-icon { background: transparent; color: #1f3331; border: 0; }
+.hud-header > div > div > button[aria-label='Table menu'] { background: var(--table); color: var(--table-ink); border: 1px solid var(--table-line); }
 .hud-stack { scrollbar-width: thin; scrollbar-color: var(--table-line) var(--table); }
 .turn-instruction, .table-log { background: var(--table); color: var(--table-muted); }
 .turn-instruction { min-height: 32px; line-height: 20px; }

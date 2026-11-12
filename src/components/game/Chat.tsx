@@ -391,7 +391,7 @@ export function ChatControls() {
         focusNext.current = true;
         setOpen(true);
       }}
-      className="pointer-events-auto relative flex size-11 cursor-pointer items-center justify-center rounded-control sea-icon"
+      className="pointer-events-auto relative flex size-11 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 backdrop-blur-md hover:text-zinc-900"
     >
       <MessageSquare className="size-5" />
       {unread > 0 ? (

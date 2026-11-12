@@ -105,8 +105,8 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
   if (strip)
     return (
       <>
-        <span ref={line} className="flex w-full items-center justify-center gap-1.5">
-          <SeatDot color={p.color} className="seat-dot size-3" />
+        <span ref={line} className="flex w-full items-center justify-center gap-1">
+          <SeatDot color={p.color} className="seat-dot size-2.5" />
           <span ref={full} data-testid="seat-name" className={cn("min-w-0 truncate text-[13px] font-semibold leading-4", !fits && "sr-only")}>
             {label}
           </span>
@@ -132,11 +132,11 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
         <RollOffDie state={state} id={p.id} className="size-5 text-xs" />
         {points}
       </span>
-      <span className="flex w-full items-center gap-2 text-[13px] leading-[18px] text-zinc-700">
+      <span className="flex w-full items-center gap-1 text-xs leading-[18px] text-zinc-700">
         {awayMark ?? (
-          <span className="flex shrink-0 gap-1">
+          <span className="mr-auto min-w-0 truncate">
             <span data-testid="seat-goods">{words(goods, "card")}</span>
-            {fortunes > 0 ? <><span aria-hidden="true">·</span><span data-testid="seat-fortunes">{words(fortunes, "fortune")}</span></> : null}
+            {fortunes > 0 ? <><span aria-hidden="true"> · </span><span data-testid="seat-fortunes">{words(fortunes, "fortune")}</span></> : null}
           </span>
         )}
         <Tally testid="tally-path" Icon={Route} n={path} name={["Path length", "Longest path"]} held={state.longestRoad === p.id} />
@@ -169,7 +169,7 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
         onClick={() => openMenu(menuFor === p.id ? null : p.id)}
         className={cn(
           "flex w-full cursor-pointer flex-col justify-center rounded-[inherit]",
-          strip ? "h-11 min-w-11 items-center px-2 @max-[100px]:px-1.5 @max-[72px]:px-1" : "min-h-11 px-3 py-1.5 text-left",
+          strip ? "h-11 min-w-11 items-center px-2 @max-[100px]:px-1 @max-[76px]:px-0" : "min-h-11 px-2 py-1.5 text-left",
         )}
       >
         <SeatLine p={p} actor={actor} short={short} />
@@ -188,7 +188,7 @@ export function SeatRail({ actor }: { actor: string }) {
   const players = useGame((s) => s.state!.players);
   const menuFor = useGame((s) => s.menuFor);
   return (
-    <aside className={cn("pointer-events-none absolute left-3 top-20 hidden w-56 flex-col gap-1 md:flex", menuFor ? "z-20" : "z-10")}>
+    <aside className={cn("pointer-events-none absolute left-3 top-20 hidden w-48 flex-col gap-1 md:flex", menuFor ? "z-20" : "z-10")}>
       {players.map((p) => (
         <div key={p.id} className="pointer-events-auto flex flex-col gap-1">
           <SeatCard p={p} actor={actor} className="rounded-[14px]" />

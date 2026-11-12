@@ -128,7 +128,7 @@ export function TableMenu() {
         ref={trigger}
         variant="ghost"
         size="icon"
-        className="sea-icon size-11"
+        className="size-11 bg-glass backdrop-blur-md"
         aria-label="Table menu"
         aria-haspopup="dialog"
         aria-expanded={open}
