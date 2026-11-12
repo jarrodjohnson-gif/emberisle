@@ -20,7 +20,7 @@ eq(bucket({ checks: [{ ...green, conclusion: 'failure' }] }), 'Red / waiting');
 eq(bucket({ comments: [comment('<!-- review-desk -->\nReview: clean.')] }), 'Red / waiting');
 eq(bucket({ comments: [review(A, 'not clean')] }), 'Red / waiting');
 eq(bucket({ comments: [comment(`<!-- review-desk: clean ${A} -->\nOwner approval pending.`)] }), 'Ready for Jarrod');
-eq(bucket({ comments: [comment(`<!-- review-desk -->\nReview: clean.\nHead: ${A}`)] }), 'Red / waiting');
+eq(bucket({ comments: [comment(`<!-- review-desk -->\nReview: clean.\nHead: ${A}`)] }), 'Ready to merge');
 eq(bucket({ comments: [review(), { ...review(A, 'not clean'), id: 2, created_at: '2026-10-28T02:00:00Z' }] }), 'Red / waiting');
 eq(bucket({ comments: [{ ...review(), author_association: 'NONE' }] }), 'Ready for desk');
 eq(bucket({ comments: [comment('```\n<!-- review-desk -->\nHead: ' + A + '\n```')] }), 'Ready for desk');
