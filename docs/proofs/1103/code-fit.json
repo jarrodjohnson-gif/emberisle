@@ -1,0 +1,1916 @@
+[
+  {
+    "label": "390x844 HZRA ready",
+    "code": "HZRA",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 64,
+    "scrollWidth": 64,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 106.203125,
+    "left": 42,
+    "right": 106.203125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "HZRACopied",
+        "font": 15,
+        "width": 90.203125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 HZRA code → Copied",
+    "code": "HZRA",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 64,
+    "scrollWidth": 64,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 106.203125,
+    "left": 42,
+    "right": 106.203125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "HZRACopied",
+        "font": 15,
+        "width": 90.203125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 APWG ready",
+    "code": "APWG",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 70,
+    "scrollWidth": 70,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 112.203125,
+    "left": 42,
+    "right": 112.203125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "APWGCopied",
+        "font": 15,
+        "width": 96.203125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 APWG code → Copied",
+    "code": "APWG",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 70,
+    "scrollWidth": 70,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 112.203125,
+    "left": 42,
+    "right": 112.203125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "APWGCopied",
+        "font": 15,
+        "width": 96.203125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 WWWW ready",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 131.765625,
+    "left": 42,
+    "right": 131.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 WWWW code → Copied",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 131.765625,
+    "left": 42,
+    "right": 131.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 MMMM ready",
+    "code": "MMMM",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 81,
+    "scrollWidth": 81,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 122.625,
+    "left": 42,
+    "right": 122.625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "MMMMCopied",
+        "font": 15,
+        "width": 106.625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 MMMM code → Copied",
+    "code": "MMMM",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 81,
+    "scrollWidth": 81,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 122.625,
+    "left": 42,
+    "right": 122.625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "MMMMCopied",
+        "font": 15,
+        "width": 106.625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 before responsive change",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 131.765625,
+    "left": 42,
+    "right": 131.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 shrinks/grows to 320",
+    "code": "WWWW",
+    "font": 18,
+    "fontStyle": "700 18px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 71,
+    "scrollWidth": 71,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 108.78125,
+    "left": 38,
+    "right": 108.78125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 96.78125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 restores width",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 131.765625,
+    "left": 42,
+    "right": 131.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 DejaVu Sans HZRA ready",
+    "code": "HZRA",
+    "font": 22,
+    "fontStyle": "700 22px / 28px \"DejaVu Sans\", sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 65,
+    "scrollWidth": 65,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 107.109375,
+    "left": 42,
+    "right": 107.109375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "HZRACopied",
+        "font": 15,
+        "width": 91.109375,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 DejaVu Sans HZRA code → Copied",
+    "code": "HZRA",
+    "font": 22,
+    "fontStyle": "700 22px / 28px \"DejaVu Sans\", sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 65,
+    "scrollWidth": 65,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 107.109375,
+    "left": 42,
+    "right": 107.109375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "HZRACopied",
+        "font": 15,
+        "width": 91.109375,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 DejaVu Sans APWG ready",
+    "code": "APWG",
+    "font": 22,
+    "fontStyle": "700 22px / 28px \"DejaVu Sans\", sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 72,
+    "scrollWidth": 72,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 114.453125,
+    "left": 42,
+    "right": 114.453125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "APWGCopied",
+        "font": 15,
+        "width": 98.453125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 DejaVu Sans APWG code → Copied",
+    "code": "APWG",
+    "font": 22,
+    "fontStyle": "700 22px / 28px \"DejaVu Sans\", sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 72,
+    "scrollWidth": 72,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 114.453125,
+    "left": 42,
+    "right": 114.453125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "APWGCopied",
+        "font": 15,
+        "width": 98.453125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 DejaVu Sans WWWW ready",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px \"DejaVu Sans\", sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 87,
+    "scrollWidth": 87,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 129.0625,
+    "left": 42,
+    "right": 129.0625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 113.0625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 DejaVu Sans WWWW code → Copied",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px \"DejaVu Sans\", sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 87,
+    "scrollWidth": 87,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 129.0625,
+    "left": 42,
+    "right": 129.0625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 113.0625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 DejaVu Sans MMMM ready",
+    "code": "MMMM",
+    "font": 22,
+    "fontStyle": "700 22px / 28px \"DejaVu Sans\", sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 77,
+    "scrollWidth": 77,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 119.3125,
+    "left": 42,
+    "right": 119.3125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "MMMMCopied",
+        "font": 15,
+        "width": 103.3125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 DejaVu Sans MMMM code → Copied",
+    "code": "MMMM",
+    "font": 22,
+    "fontStyle": "700 22px / 28px \"DejaVu Sans\", sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 77,
+    "scrollWidth": 77,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 119.3125,
+    "left": 42,
+    "right": 119.3125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "MMMMCopied",
+        "font": 15,
+        "width": 103.3125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 DejaVu Sans before responsive change",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px \"DejaVu Sans\", sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 87,
+    "scrollWidth": 87,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 129.0625,
+    "left": 42,
+    "right": 129.0625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 113.0625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 DejaVu Sans shrinks/grows to 320",
+    "code": "WWWW",
+    "font": 18,
+    "fontStyle": "700 18px / 28px \"DejaVu Sans\", sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 68,
+    "scrollWidth": 68,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 105.96875,
+    "left": 38,
+    "right": 105.96875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 93.96875,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "390x844 DejaVu Sans restores width",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px \"DejaVu Sans\", sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 87,
+    "scrollWidth": 87,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 129.0625,
+    "left": 42,
+    "right": 129.0625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 113.0625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x667 8ARZ ready",
+    "code": "8ARZ",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 62,
+    "scrollWidth": 62,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 100.09375,
+    "left": 38,
+    "right": 100.09375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "8ARZCopied",
+        "font": 15,
+        "width": 88.09375,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x667 8ARZ code → Copied",
+    "code": "8ARZ",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 62,
+    "scrollWidth": 62,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 100.09375,
+    "left": 38,
+    "right": 100.09375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "8ARZCopied",
+        "font": 15,
+        "width": 88.09375,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x667 APWG ready",
+    "code": "APWG",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 70,
+    "scrollWidth": 70,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 108.203125,
+    "left": 38,
+    "right": 108.203125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "APWGCopied",
+        "font": 15,
+        "width": 96.203125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x667 APWG code → Copied",
+    "code": "APWG",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 70,
+    "scrollWidth": 70,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 108.203125,
+    "left": 38,
+    "right": 108.203125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "APWGCopied",
+        "font": 15,
+        "width": 96.203125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x667 WWWW ready",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 127.765625,
+    "left": 38,
+    "right": 127.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x667 WWWW code → Copied",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 127.765625,
+    "left": 38,
+    "right": 127.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x667 MMMM ready",
+    "code": "MMMM",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 81,
+    "scrollWidth": 81,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 118.625,
+    "left": 38,
+    "right": 118.625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "MMMMCopied",
+        "font": 15,
+        "width": 106.625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x667 MMMM code → Copied",
+    "code": "MMMM",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 81,
+    "scrollWidth": 81,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 118.625,
+    "left": 38,
+    "right": 118.625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "MMMMCopied",
+        "font": 15,
+        "width": 106.625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x667 before responsive change",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 127.765625,
+    "left": 38,
+    "right": 127.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x667 shrinks/grows to 320",
+    "code": "WWWW",
+    "font": 18,
+    "fontStyle": "700 18px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 71,
+    "scrollWidth": 71,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 108.78125,
+    "left": 38,
+    "right": 108.78125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 96.78125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x667 restores width",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 375,
+      "height": 667,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 127.765625,
+    "left": 38,
+    "right": 127.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "320x568 C4Z2 ready",
+    "code": "C4Z2",
+    "font": 18,
+    "fontStyle": "700 18px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 48,
+    "scrollWidth": 48,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 85.515625,
+    "left": 38,
+    "right": 85.515625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "C4Z2Copied",
+        "font": 15,
+        "width": 73.515625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "320x568 C4Z2 code → Copied",
+    "code": "C4Z2",
+    "font": 18,
+    "fontStyle": "700 18px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 48,
+    "scrollWidth": 48,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 85.515625,
+    "left": 38,
+    "right": 85.515625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "C4Z2Copied",
+        "font": 15,
+        "width": 73.515625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "320x568 APWG ready",
+    "code": "APWG",
+    "font": 18,
+    "fontStyle": "700 18px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 55,
+    "scrollWidth": 55,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 92.8125,
+    "left": 38,
+    "right": 92.8125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "APWGCopied",
+        "font": 15,
+        "width": 80.8125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "320x568 APWG code → Copied",
+    "code": "APWG",
+    "font": 18,
+    "fontStyle": "700 18px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 55,
+    "scrollWidth": 55,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 92.8125,
+    "left": 38,
+    "right": 92.8125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "APWGCopied",
+        "font": 15,
+        "width": 80.8125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "320x568 WWWW ready",
+    "code": "WWWW",
+    "font": 18,
+    "fontStyle": "700 18px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 71,
+    "scrollWidth": 71,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 108.78125,
+    "left": 38,
+    "right": 108.78125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 96.78125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "320x568 WWWW code → Copied",
+    "code": "WWWW",
+    "font": 18,
+    "fontStyle": "700 18px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 71,
+    "scrollWidth": 71,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 108.78125,
+    "left": 38,
+    "right": 108.78125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 96.78125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "320x568 MMMM ready",
+    "code": "MMMM",
+    "font": 18,
+    "fontStyle": "700 18px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 63,
+    "scrollWidth": 63,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 101.359375,
+    "left": 38,
+    "right": 101.359375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "MMMMCopied",
+        "font": 15,
+        "width": 89.359375,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "320x568 MMMM code → Copied",
+    "code": "MMMM",
+    "font": 18,
+    "fontStyle": "700 18px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 63,
+    "scrollWidth": 63,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 101.359375,
+    "left": 38,
+    "right": 101.359375,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "MMMMCopied",
+        "font": 15,
+        "width": 89.359375,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "320x568 before responsive change",
+    "code": "WWWW",
+    "font": 18,
+    "fontStyle": "700 18px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 71,
+    "scrollWidth": 71,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 108.78125,
+    "left": 38,
+    "right": 108.78125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 96.78125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "320x568 shrinks/grows to 390",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 131.765625,
+    "left": 42,
+    "right": 131.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "320x568 restores width",
+    "code": "WWWW",
+    "font": 18,
+    "fontStyle": "700 18px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 71,
+    "scrollWidth": 71,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 108.78125,
+    "left": 38,
+    "right": 108.78125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 96.78125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "430x932 V5K4 ready",
+    "code": "V5K4",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 61,
+    "scrollWidth": 61,
+    "viewport": {
+      "width": 430,
+      "height": 932,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 103.453125,
+    "left": 42,
+    "right": 103.453125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "V5K4Copied",
+        "font": 15,
+        "width": 87.453125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "430x932 V5K4 code → Copied",
+    "code": "V5K4",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 61,
+    "scrollWidth": 61,
+    "viewport": {
+      "width": 430,
+      "height": 932,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 103.453125,
+    "left": 42,
+    "right": 103.453125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "V5K4Copied",
+        "font": 15,
+        "width": 87.453125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "430x932 APWG ready",
+    "code": "APWG",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 70,
+    "scrollWidth": 70,
+    "viewport": {
+      "width": 430,
+      "height": 932,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 112.203125,
+    "left": 42,
+    "right": 112.203125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "APWGCopied",
+        "font": 15,
+        "width": 96.203125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "430x932 APWG code → Copied",
+    "code": "APWG",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 70,
+    "scrollWidth": 70,
+    "viewport": {
+      "width": 430,
+      "height": 932,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 112.203125,
+    "left": 42,
+    "right": 112.203125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "APWGCopied",
+        "font": 15,
+        "width": 96.203125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "430x932 WWWW ready",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 430,
+      "height": 932,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 131.765625,
+    "left": 42,
+    "right": 131.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "430x932 WWWW code → Copied",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 430,
+      "height": 932,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 131.765625,
+    "left": 42,
+    "right": 131.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "430x932 MMMM ready",
+    "code": "MMMM",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 81,
+    "scrollWidth": 81,
+    "viewport": {
+      "width": 430,
+      "height": 932,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 122.625,
+    "left": 42,
+    "right": 122.625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "MMMMCopied",
+        "font": 15,
+        "width": 106.625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "430x932 MMMM code → Copied",
+    "code": "MMMM",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 81,
+    "scrollWidth": 81,
+    "viewport": {
+      "width": 430,
+      "height": 932,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 122.625,
+    "left": 42,
+    "right": 122.625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "MMMMCopied",
+        "font": 15,
+        "width": 106.625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "430x932 before responsive change",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 430,
+      "height": 932,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 131.765625,
+    "left": 42,
+    "right": 131.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "430x932 shrinks/grows to 320",
+    "code": "WWWW",
+    "font": 18,
+    "fontStyle": "700 18px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 71,
+    "scrollWidth": 71,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 108.78125,
+    "left": 38,
+    "right": 108.78125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 96.78125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "430x932 restores width",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 430,
+      "height": 932,
+      "dpr": 1
+    },
+    "textLeft": 42,
+    "textRight": 131.765625,
+    "left": 42,
+    "right": 131.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x812 H3MQ ready",
+    "code": "H3MQ",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 70,
+    "scrollWidth": 70,
+    "viewport": {
+      "width": 375,
+      "height": 812,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 108.171875,
+    "left": 38,
+    "right": 108.171875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "H3MQCopied",
+        "font": 15,
+        "width": 96.171875,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x812 H3MQ code → Copied",
+    "code": "H3MQ",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 70,
+    "scrollWidth": 70,
+    "viewport": {
+      "width": 375,
+      "height": 812,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 108.171875,
+    "left": 38,
+    "right": 108.171875,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "H3MQCopied",
+        "font": 15,
+        "width": 96.171875,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x812 APWG ready",
+    "code": "APWG",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 70,
+    "scrollWidth": 70,
+    "viewport": {
+      "width": 375,
+      "height": 812,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 108.203125,
+    "left": 38,
+    "right": 108.203125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "APWGCopied",
+        "font": 15,
+        "width": 96.203125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x812 APWG code → Copied",
+    "code": "APWG",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 70,
+    "scrollWidth": 70,
+    "viewport": {
+      "width": 375,
+      "height": 812,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 108.203125,
+    "left": 38,
+    "right": 108.203125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "APWGCopied",
+        "font": 15,
+        "width": 96.203125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x812 WWWW ready",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 375,
+      "height": 812,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 127.765625,
+    "left": 38,
+    "right": 127.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x812 WWWW code → Copied",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 375,
+      "height": 812,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 127.765625,
+    "left": 38,
+    "right": 127.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x812 MMMM ready",
+    "code": "MMMM",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 81,
+    "scrollWidth": 81,
+    "viewport": {
+      "width": 375,
+      "height": 812,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 118.625,
+    "left": 38,
+    "right": 118.625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "MMMMCopied",
+        "font": 15,
+        "width": 106.625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x812 MMMM code → Copied",
+    "code": "MMMM",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 81,
+    "scrollWidth": 81,
+    "viewport": {
+      "width": 375,
+      "height": 812,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 118.625,
+    "left": 38,
+    "right": 118.625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "MMMMCopied",
+        "font": 15,
+        "width": 106.625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x812 before responsive change",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 375,
+      "height": 812,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 127.765625,
+    "left": 38,
+    "right": 127.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x812 shrinks/grows to 320",
+    "code": "WWWW",
+    "font": 18,
+    "fontStyle": "700 18px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "normal",
+    "clientWidth": 71,
+    "scrollWidth": 71,
+    "viewport": {
+      "width": 320,
+      "height": 568,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 108.78125,
+    "left": 38,
+    "right": 108.78125,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 96.78125,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  },
+  {
+    "label": "375x812 restores width",
+    "code": "WWWW",
+    "font": 22,
+    "fontStyle": "700 22px / 28px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+    "letterSpacing": "1px",
+    "clientWidth": 90,
+    "scrollWidth": 90,
+    "viewport": {
+      "width": 375,
+      "height": 812,
+      "dpr": 1
+    },
+    "textLeft": 38,
+    "textRight": 127.765625,
+    "left": 38,
+    "right": 127.765625,
+    "focus": true,
+    "buttons": [
+      {
+        "text": "WWWWCopied",
+        "font": 15,
+        "width": 115.765625,
+        "height": 44,
+        "left": 13,
+        "right": 13
+      }
+    ]
+  }
+]
