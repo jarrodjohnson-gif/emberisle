@@ -552,6 +552,8 @@ jobs:
         run: npm run sticker-motion-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run react-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
+        run: npm run seat-gains-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run wayfarer-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'

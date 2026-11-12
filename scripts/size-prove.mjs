@@ -98,6 +98,8 @@ const CEILINGS = [
   // #1411, 2026-11-08: a guest's I'll play again and the win screen's count, loaded as an online table starts; measured
   // 412 B gzip. New chunk only; the desk set this ceiling.
   { name: "PlayAgain", gzipBytes: 450 },
+  // #827: other seats' public roll and trade gains load lazily (online only); a new chunk, so this ceiling is its only limit.
+  { name: "SeatPublicGains", gzipBytes: 1800 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
