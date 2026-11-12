@@ -106,7 +106,7 @@ try {
       };
     });
     // #1539: outside the sideways-phone column the tray's button is short, "Fortune · N".
-    assert.deepEqual(row.fortunes, [v.column ? "Play fortune · 6" : "Fortune · 6"], `${v.tag}: one fortunes button with the number held, got ${JSON.stringify(row.fortunes)}`);
+    assert.deepEqual(row.fortunes, ["Fortune · 6"], `${v.tag}: one fortunes button with the number held, got ${JSON.stringify(row.fortunes)}`);
     // #776, #1539: the deck count sits on the Build list's Fortune row, in its Buy pill and its description.
     await page.getByTestId("build-open").click({ timeout: STEP_MS });
     await page.getByTestId("build-list").waitFor({ timeout: STEP_MS });

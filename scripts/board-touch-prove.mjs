@@ -201,8 +201,14 @@ await drag(panFrom, 0, 60);
 await sleep(500);
 assert.deepEqual(await plays(), [], "a two-finger pan plays nothing");
 await settle();
-await touch("touchStart", [{ x: 150, y: 480, id: 1 }, { x: 290, y: 480, id: 2 }]);
-for (let k = 1; k <= 8; k++) { await touch("touchMove", [{ x: 150 - k * 8, y: 480, id: 1 }, { x: 290 + k * 8, y: 480, id: 2 }]); await frames(1); }
+// #1539: the pinch starts on the hexes nearest its old fixed points (150,480 and 290,480), for the same reason as the pan.
+const [pl, pr] = await page.evaluate(() => [[150, 480], [290, 480]].map(([x, y]) => {
+  const near = window.__emberisle.getState().state.hexes.map((h) => window.__isle.screenOf(h.id)).filter(Boolean).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0];
+  return { x: near.x, y: near.y };
+}));
+assert.ok(pr.x - pl.x > 40, `the pinch's two fingers start on different hexes ${JSON.stringify([pl, pr])}`);
+await touch("touchStart", [{ x: pl.x, y: pl.y, id: 1 }, { x: pr.x, y: pr.y, id: 2 }]);
+for (let k = 1; k <= 8; k++) { await touch("touchMove", [{ x: pl.x - k * 8, y: pl.y, id: 1 }, { x: pr.x + k * 8, y: pr.y, id: 2 }]); await frames(1); }
 await touch("touchEnd", []);
 await sleep(500);
 assert.deepEqual(await plays(), [], "a pinch plays nothing");

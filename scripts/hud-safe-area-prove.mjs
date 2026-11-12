@@ -262,7 +262,7 @@ async function pinned(p, moment, name, mustScroll) {
   await page.locator("#fortune-title").waitFor({ state: "detached", timeout: STEP_MS });
   check(
     `${tag} ${moment}: Escape closes the tray and focus returns to Fortunes`,
-    await page.evaluate(() => /^(Play fortune|Fortunes)/.test(document.activeElement?.textContent ?? "")),
+    await page.evaluate(() => /^(Play fortune|Fortunes?)/.test(document.activeElement?.textContent ?? "")),
   );
 }
 
