@@ -185,12 +185,12 @@ try {
   });
 
   const p2Name = await page.evaluate(() => window.__emberisle.getState().state.players.find((p) => p.id === "p2").name);
-  const label = await page.getByText(`${p2Name}: discard 4`).textContent({ timeout: STEP_MS });
+  const label = await page.getByText(`Discard 4 goods · ${p2Name}`).textContent({ timeout: STEP_MS });
   console.log("bar:", label);
   const bannerIs = (want) =>
     page.waitForFunction((t) => document.querySelector('[data-testid="turn-banner"]')?.textContent === t, want, { timeout: STEP_MS })
       .catch(async () => { throw new Error(`banner: want "${want}", got "${await page.getByTestId("turn-banner").textContent()}"`); });
-  await bannerIs(`${p2Name}: discard 4 goods`);
+  await bannerIs(`Discard 4 goods · ${p2Name}`);
   console.log(`banner while ${p2Name} discards on p0's turn: "${await page.getByTestId("turn-banner").textContent()}"`);
 
   // #1546: the discard is picked on the hand's five tokens in the tray (a tap adds one, the minus takes one back).
@@ -252,11 +252,11 @@ try {
     return [x, y];
   });
   const name = (id) => page.evaluate((i) => window.__emberisle.getState().state.players.find((p) => p.id === i).name, id);
-  await page.getByText(`${await name(first)}: discard 4`).waitFor({ timeout: STEP_MS });
+  await page.getByText(`Discard 4 goods · ${await name(first)}`).waitFor({ timeout: STEP_MS });
   for (let k = 0; k < 3; k++) await more("Wood").click();
   await more("Brick").click();
   await submit.click();
-  await page.getByText(`${await name(second)}: discard 5`).waitFor({ timeout: STEP_MS });
+  await page.getByText(`Discard 5 goods · ${await name(second)}`).waitFor({ timeout: STEP_MS });
   const vals = await pick.locator("output").evaluateAll((els) => els.map((e) => e.textContent.trim()));
   console.log("second bar counts:", vals.join(","));
   if (vals.length !== 5 || vals.some((v) => v !== "0")) throw new Error(`second bar kept the first seat's numbers: ${vals}`);
@@ -278,7 +278,7 @@ try {
     g.setState({ state: st, pendingSteal: null, error: null });
   });
   const curName = await page.evaluate(() => { const st = window.__emberisle.getState().state; return st.players.find((p) => p.id === st.current).name; });
-  await page.getByText(`${curName}: discard 5`).waitFor({ timeout: STEP_MS });
+  await page.getByText(`Discard 5 goods · ${curName}`).waitFor({ timeout: STEP_MS });
   await page.waitForTimeout(300);
   console.log("roller discards: bar and banner side by side");
 
