@@ -1,0 +1,29 @@
+
+> trade-prove
+> node scripts/trade-prove.mjs
+
+#425: Host a table -> /audio/click_001.wav once
+table USJN: setup done, seq 17
+Ember gives 1 timber, wants 1 ore; Tide says no, Pine says yes
+#425: Escape on the trade panel -> /audio/back_001.wav once
+#378: Enter on Trade -> dialog "Trade", focus on "Close"; 14 Tabs + 3 Shift+Tabs stayed inside (9 stops); Escape -> focus on Trade
+#609/#1107: offer of timber for ore heard as ["trade_offer.wav@1"] on the other seats and [] on the asker
+toast on Pine and Tide: "Ember offers 1 wood for 1 stone"; asker sees "Waiting…"
+#366: Pine and Tide see an alertdialog named "Ember offers 1 wood for 1 stone", focus untouched, countdown aria-hidden
+Tide declined: asker sees "Tide declined", offer still open for Pine
+#609: trade_yes plays in full for the asker and taker, at half volume for the bystander
+Pine took it: 1 timber -> Pine, 1 ore -> Ember, hands and goods counts agree on all 3 tabs
+#366: "Ember offers 1 stone for 2 wood": Yes on Pine and Tide is aria-disabled, focusable, described by "Need … more wood"
+#366: Enter on Pine's aria-disabled Yes sent nothing; Escape in Tide's toast answered No
+#609: trade_no plays for the asker only
+#366: Pine's polite line said only "5 seconds left"
+second offer ran out after 20 s left on the clock: hands unchanged, toast closed on all 3 tabs
+#1107: trade clips follow precedence, reach all seats, plain chime excludes the asker, and corn_no needs every explicit No
+FAIL please-sheep: automatic trade uses board gain even with Memes muted
++ actual - expected
+
++ []
+- [
+-   'sb_sheep_please.mp3@0.2'
+- ]
+

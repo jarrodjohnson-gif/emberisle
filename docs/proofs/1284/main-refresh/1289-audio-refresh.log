@@ -1,0 +1,37 @@
+ok nothing is requested or played before the first interaction, on the play screen
+ok the track plays at 0.12, loop=true, and its clock advances
+ok it loops: seeking to the last 0.6 s wraps to the start, still playing
+ok game_start ducks it to 0.036
+ok the volume is back to 0.12 when game_start ends
+ok a cut-off sting restores it too
+ok all four stings keep gain 1 and duck only the background bed
+ok mute stops it, unmuting resumes it
+ok a watcher follows the same mute rule
+ok the Music toggle stops and resumes it, and is stored
+ok the Table menu's Music row switches it off and on
+ok lobby and game keep volume 0.12 on one advancing, uninterrupted track
+ok it stops at the win screen
+ok it comes back when the game leaves the win screen
+ok it stops when you leave to the title
+ok a title and game round trip reuses the one track element
+ok zero console errors
+music-prove: pass
+ok all 56 audio assets have one mastering type; ambience is isolated at -30.6 LUFS
+ok autoplay gate covers immediate, delayed and background playback
+ok all 56 clips have one category and use master × category × clip
+ok each category mute silences only its own new requests
+ok active elements respond immediately to category volume and master mute/zero
+ok queued/delayed clips use current settings and remain silent after a category mute
+ok background gain, ducking, category mute and legacy music/master switches compose
+ok per-device persistence, autoplay after reload, immutable snapshots and subscriptions
+ok invalid/partial/blocked storage is safe and settings remain per device
+ok background autoplay title: late key and pointer checks pass without unhandled rejection
+ok background autoplay ownership: late key and pointer checks pass without unhandled rejection
+ok background autoplay Music off: late key and pointer checks pass without unhandled rejection
+ok background autoplay master mute: late key and pointer checks pass without unhandled rejection
+ok background autoplay master zero: late key and pointer checks pass without unhandled rejection
+ok background autoplay Music mute: late key and pointer checks pass without unhandled rejection
+ok background autoplay Music zero: late key and pointer checks pass without unhandled rejection
+ok background autoplay still wanted: late key and pointer checks pass without unhandled rejection
+ok background autoplay retry rejected: late key and pointer checks pass without unhandled rejection
+sound-mixer-prove ok

@@ -11,8 +11,7 @@
 //   Two seats whose three letters match ("Ember", "Emberly") still read differently.
 // - #419: on that touch screen an armed Path's banner ends "tap Path again to cancel", and a second tap restores it.
 // Zero console errors. Run: npm run reflow-prove
-import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8100;
@@ -30,7 +29,6 @@ const VIEWPORTS = [
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -193,11 +191,13 @@ try {
       check(new Set(shown).size === 4 && twins.cells.every((c) => !c.cut), `${tag} strip: "Ember" and "Emberly" read differently`, shown);
       const path = page.getByRole("button", { name: "Path", exact: true });
       const bannerIs = (t) => page.waitForFunction((t) => document.querySelector('[data-testid="turn-banner"]')?.textContent === t, t, { timeout: 5000 }).then(() => true, () => false);
+      // #1539: Path is a row in the Build list; armed, the action row is Cancel alone, so the banner only says what to pick.
+      await page.getByTestId("build-open").tap();
       await path.tap();
-      const armed = `Place a path · tap Path again to cancel`;
-      check(await bannerIs(armed), `${tag} armed Path on touch: banner says what to pick and how to cancel`, await page.getByTestId("turn-banner").textContent());
-      await path.tap();
-      check(await bannerIs(`Build, trade, or end your turn`), `${tag} second tap: banner back to the main line`, await page.getByTestId("turn-banner").textContent());
+      const armed = `Place a path`;
+      check(await bannerIs(armed) && (await page.getByTestId("build-cancel").isVisible()), `${tag} armed Path on touch: banner says what to pick, Cancel is how to cancel`, await page.getByTestId("turn-banner").textContent());
+      await page.getByTestId("build-cancel").tap();
+      check(await bannerIs(`Your turn`), `${tag} Cancel: banner back to the main line`, await page.getByTestId("turn-banner").textContent());
     }
     const floor = hud.stripBottom ?? hud.headerBottom + 8;
     check(hud.stackTop >= floor, `${tag} hud: bottom stack starts below the ${hud.stripBottom ? "seat strip" : "header + 8 px"}`, hud);

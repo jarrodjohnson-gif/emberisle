@@ -1,0 +1,11 @@
+Observed fresh-baseline setup error:
+fatal: cannot create directory at 'docs/design/hud-pass/v2/mocks': No space left on device
+No build ran in that missing checkout. No source was lost.
+Verified and removed only the clean, disposable 905-base-nov5 worktree created during this invocation.
+Its HEAD was f5054a841358c0a1ce8173b274d16dd9298cb2b8. No tracked modifications existed.
+The ignored node_modules symlink was not followed or its target deleted.
+Free space rose from24 MiB to257 MiB.
+Reused this invocation's published research worktree at /workspace/work/1308-canvas-trim-audit.
+Its clean branch was preserved remotely, then the worktree was detached at exact baselinef111d0d.
+Both baseline and PR builds use the same existing installed dependency tree.
+No lockfile or tracked dependency changed. Free space after builds was224 MiB.

@@ -3,8 +3,7 @@
 // one, not a stale aspect); once the glide ends the camera is on that fit (the overhead frustum upright, the diorama lens on its side, #597), the drawing buffer is the canvas's size
 // (no stretch), and every corner of the island is inside the hole. The oracle is a fresh load: the island's settled
 // bounding box after each rotation of one page is within 10 % of the box a fresh page at that viewport draws. Zero console errors. Run: npm run rotate-prove
-import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;
@@ -12,7 +11,6 @@ const PORT = Number(process.env.VITE_PORT) || 8121;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -25,14 +23,14 @@ const check = (ok, what, data) => {
 // The fit the hole asks for right now, whether `__isle.fit` is it, and (once settled) the camera and corners against it.
 const look = (page) =>
   page.evaluate(async () => {
-    const { defaultView, fitDiorama, fitOrtho, OVERHEAD_LEAN } = await import("/src/lib/scene/mobile-fit.ts");
+    const { defaultView, fitDiorama, playOrtho } = await import("/src/lib/scene/mobile-fit.ts");
     const isle = window.__isle;
     const c = document.querySelector("canvas");
     const hole = isle.insets();
     // The view is the default for the canvas's shape (#597): overhead upright, the diorama on its side. Overhead, the frustum
     // is the fit; diorama, the lens is.
     const view = defaultView(c.clientWidth, c.clientHeight, true);
-    const want = view === "overhead" ? fitOrtho(c.clientWidth, c.clientHeight, hole, OVERHEAD_LEAN) : fitDiorama(c.clientWidth, c.clientHeight, hole);
+    const want = view === "overhead" ? playOrtho(c.clientWidth, c.clientHeight, hole, true) : fitDiorama(c.clientWidth, c.clientHeight, hole);
     const keys = Object.keys(want);
     const fresh = isle.view === view && isle.fit !== null && keys.every((k) => Math.abs(want[k] - isle.fit[k]) < 1e-6);
     const onCamera =

@@ -10,8 +10,8 @@
 // - at 1280x720 a mouse click on an armed outpost still upgrades it in one click;
 // Zero console errors. Run: npm run upgrade-prove (VITE_PORT, default 8520).
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
@@ -42,7 +42,6 @@ mkdirSync("test-results", { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -64,12 +63,18 @@ try {
       if (v.touch) await page.touchscreen.tap(x, y);
       else await page.mouse.click(x, y);
     };
+    // #1539: Upgrade and Path are rows in the Build list, opened from the tray's Build button.
+    const openList = async () => {
+      if (await page.getByTestId("build-list").count()) return;
+      await press(page.getByTestId("build-open"));
+      await page.getByTestId("build-list").waitFor();
+    };
     const load = async (hand) => {
       await page.evaluate((g) => {
         window.__emberisle.getState().startAi();
         window.__emberisle.setState({ state: g, buildMode: "none", pendingPlace: null, error: null, toast: null });
       }, mainGame(hand));
-      await page.getByTestId("build-stronghold").waitFor();
+      await page.getByTestId("build-open").waitFor();
       await page.waitForFunction(() => window.__isle?.screenOf);
     };
     const mine = () =>
@@ -97,6 +102,7 @@ try {
     const before = await mine();
     assert.equal(before.length, 2, `${tag}: two starter outposts`);
     assert.ok(before.every((x) => x.kind === "outpost"));
+    await openList();
     await press(upgrade);
     await page.waitForFunction(() => window.__emberisle.getState().buildMode === "stronghold");
     const target = before[0].id;
@@ -121,6 +127,7 @@ try {
         st.seq += 1;
         g.setState({ state: st });
       });
+      await openList();
       await press(upgrade);
       await page.waitForFunction(() => window.__emberisle.getState().buildMode === "stronghold", null, { timeout: STEP_MS }).catch(async () => {
         throw new Error(`${tag}: Upgrade did not arm for the second outpost: ${JSON.stringify(await page.evaluate(() => { const s = window.__emberisle.getState(); return { error: s.error, bm: s.buildMode, cur: s.state.current, ph: s.state.phase, hand: s.state.players[0].resources }; }))}`);
@@ -141,6 +148,7 @@ try {
         st.seq += 1;
         g.setState({ state: st, buildMode: "none" });
       });
+      await openList();
       await press(page.getByTestId("build-path"));
       await page.waitForFunction(() => window.__emberisle.getState().buildMode === "path");
       const edge = await page.evaluate(() => window.__emberisle.getState().highlights().edges[0]);
@@ -169,6 +177,7 @@ try {
           legal: { outpost: [], path: [], stronghold: ids, wayfarer: [], steal: {}, discard: 0, actions: ["trade", "pass"] },
         });
       }, ids);
+      await openList();
       await press(upgrade);
       await page.waitForFunction(() => window.__emberisle.getState().buildMode === "stronghold");
       const online = await settled(ids[0]);
@@ -182,15 +191,19 @@ try {
 
     // 4. Short of stone: Upgrade says so, on the button and to the screen reader (no HUD error line, #535), and arms nothing.
     await load({ grain: 3, ore: 1 });
-    assert.match(await upgrade.getAttribute("aria-description"), /Need 1 more stone/, `${tag}: description`);
+    await openList();
+    assert.match(await upgrade.getAttribute("aria-description"), /You need 1 more stone/, `${tag}: description`);
+    await openList();
     await press(upgrade);
-    await page.waitForFunction(() => /Need 1 more stone/.test(window.__emberisle.getState().announcement ?? ""), null, { timeout: STEP_MS });
+    await page.waitForFunction(() => /You need 1 more stone/.test(window.__emberisle.getState().announcement ?? ""), null, { timeout: STEP_MS });
     assert.equal(await page.evaluate(() => window.__emberisle.getState().buildMode), "none", `${tag}: a short Upgrade arms nothing`);
     await load({});
-    assert.match(await upgrade.getAttribute("aria-description"), /Need 3 more wheat and 2 more stone/, `${tag}: short of everything`);
+    await openList();
+    assert.match(await upgrade.getAttribute("aria-description"), /You need 3 more wheat and 2 more stone/, `${tag}: short of everything`);
+    await openList();
     await press(upgrade);
-    await page.waitForFunction(() => /Need 3 more wheat and 2 more stone/.test(window.__emberisle.getState().announcement ?? ""), null, { timeout: STEP_MS });
-    assert.equal((await page.getByTestId("announce-error").textContent()).trim(), "Need 3 more wheat and 2 more stone", `${tag}: the alert region says it`);
+    await page.waitForFunction(() => /You need 3 more wheat and 2 more stone/.test(window.__emberisle.getState().announcement ?? ""), null, { timeout: STEP_MS });
+    assert.equal((await page.getByTestId("announce-error").textContent()).trim(), "You need 3 more wheat and 2 more stone", `${tag}: the alert region says it`);
     assert.equal(await page.evaluate(() => window.__emberisle.getState().error), null, `${tag}: no HUD error line is set`);
     assert.equal(await page.locator("span.text-orange-700", { hasText: "Need 3 more wheat" }).count(), 0, `${tag}: no error line on screen`);
     console.log(`${tag}: a short hand says "Need 1 more stone" / "Need 3 more wheat and 2 more stone"`);

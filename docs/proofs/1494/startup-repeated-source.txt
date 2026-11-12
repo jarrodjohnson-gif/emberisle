@@ -1,0 +1,125 @@
+// #748: the compact results list on touch and narrow screens, and the desktop table on a wide mouse screen.
+// A finished four-player game with long names, buildings, both awards, hidden points, a tie and a zero total.
+// Every row opens by tap and keyboard, one at a time; the open row scrolls to the top of the list and fits the
+// list and the screen; every value matches the game state; nothing scrolls sideways; every result action stays reachable.
+// The list is its own chunk: a real game fetches it while the table plays (no empty first paint), a refused chunk leaves
+// the table with every total until Show scores tries again, and the desktop never asks for it.
+// With SHOTS=1 it writes the closed and one-open pictures in docs/proofs/748/ at device scale 2.
+import assert from "node:assert/strict";
+import { mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
+import { createServer } from "vite";
+import { createGame } from "../src/lib/game/board.ts";
+import { publicScoreBreakdown, totalVP } from "../src/lib/game/rules.ts";
+
+const port = Number(process.env.VITE_PORT || 18774);
+const SHOTS = process.env.SHOTS === "1" ? "docs/proofs/748" : null;
+const g = createGame({ humans: [{ name: "Bartholomew Featherstonehaugh" }, { name: "Guinevere Wigglesworth-Smythe" }, { name: "Maximilian Oppenheimer III" }, { name: "Cordelia Fitzgerald-Hartwell" }], bots: 0, seed: 559 });
+g.rollOff = null; g.log = []; g.victoryTarget = 10;
+const built = [["p0", "stronghold"], ["p0", "stronghold"], ["p0", "stronghold"], ["p0", "outpost"], ["p0", "outpost"], ["p1", "stronghold"], ["p1", "stronghold"], ["p1", "outpost"], ["p1", "outpost"], ["p2", "stronghold"], ["p2", "stronghold"]];
+built.forEach(([playerId, kind], i) => { g.vertices[i].building = { playerId, kind }; });
+g.longestRoad = "p0"; g.largestArmy = "p2"; g.players[2].knightsPlayed = 3;
+g.players.forEach((p, i) => { p.hidden.vp = [1, 3, 3, 0][i]; });
+g.phase = "over"; g.winner = "p0"; g.current = "p0";
+g.winReason = { trigger: "outpost", points: totalVP(g, "p0"), target: 10 };
+
+const pts = (n) => `${n} point${n === 1 ? "" : "s"}`;
+const expected = Object.fromEntries(g.players.map((p) => {
+  const parts = publicScoreBreakdown(g, p.id);
+  const count = (kind) => g.vertices.filter((v) => v.building?.playerId === p.id && v.building.kind === kind).length;
+  const total = totalVP(g, p.id);
+  return [p.id, {
+    name: p.name,
+    total,
+    lines: [
+      ["Outposts", String(count("outpost")), pts(parts.outposts)],
+      ["Strongholds", String(count("stronghold")), pts(parts.strongholds)],
+      ["Longest path", parts.longestPath ? "Yes" : "No", pts(parts.longestPath)],
+      ["Largest army", parts.largestArmy ? "Yes" : "No", pts(parts.largestArmy)],
+      ["Hidden points", String(p.hidden.vp), pts(total - Object.values(parts).reduce((a, b) => a + b, 0))],
+      ["Total", "", pts(total)],
+    ],
+  }];
+}));
+// The fixture covers what the issue asks for: a tie, a zero total, and zero parts next to non-zero ones.
+assert.deepEqual(g.players.map((p) => expected[p.id].total), [11, 9, 9, 0]);
+const order = ["p0", "p1", "p2", "p3"];
+
+const LIST = [
+  [440, 956, true],
+  [956, 440, true],
+  [390, 844, true],
+  [430, 932, true],
+  [820, 1180, true],
+  [1180, 820, true],
+  [844, 390, true],
+  [667, 375, true, { top: 0, right: 44, bottom: 21, left: 44 }],
+  [700, 900, false], // The phone rule's narrow half: a mouse under 768 px wide.
+];
+
+const vite = await createServer({ server: { host: "127.0.0.1", port, strictPort: true }, logLevel: "error" });
+let browser;
+try {
+  await vite.listen();
+  browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
+  mkdirSync("test-results", { recursive: true });
+  if (SHOTS) mkdirSync(SHOTS, { recursive: true });
+  const shot = (page, name) => page.screenshot({ path: `${SHOTS ?? "test-results"}/${SHOTS ? "" : "win-list-"}${name}.png` });
+  const errors = [];
+
+  // The list's own chunk (src/components/game/WinList.tsx, served as source by the dev server).
+  const LIST_CHUNK = /\/WinList\.tsx/;
+  // `live`: the table plays first, so the list chunk is fetched before the game ends, as in a real game.
+  // `block`: the list chunk cannot load; its console errors are expected, page errors still fail.
+  async function open(width, height, touch, insets, { spectator = false, live = false, block = false } = {}) {
+    const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: "reduce", deviceScaleFactor: SHOTS ? 2 : 1 });
+    const page = await context.newPage();
+    const tag = `${width}x${height}${insets ? " insets" : ""}`;
+    page.on("pageerror", (e) => errors.push(`${tag}: ${e.message}`));
+    if (!block) page.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
+    if (block) await page.route(LIST_CHUNK, (r) => r.abort());
+    const listLoads = [];
+    page.on("request", (r) => LIST_CHUNK.test(r.url()) && listLoads.push(r.url()));
+    if (insets) await (await context.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets });
+    await page.goto(`http://127.0.0.1:${port}/`);
+    await page.waitForFunction(() => !!window.__emberisle);
+    const load = (game) => page.evaluate(({ game, spectator }) => {
+      const s = window.__emberisle;
+      s.setState({ spectator, isHost: !spectator, menuFor: null, chatOpen: false });
+      s.getState().loadState(game, spectator ? "" : "p0", !spectator, "WLST");
+    }, { game, spectator });
+    if (live) {
+      const fetched = page.waitForResponse((r) => LIST_CHUNK.test(r.url()));
+      await load({ ...structuredClone(g), phase: "main", winner: null, winReason: undefined });
+      await fetched;
+      await page.waitForLoadState("networkidle");
+      // Record how many rows the dialog holds in the DOM update that first adds it, before the browser paints it.
+      await page.evaluate(() => {
+        window.__rowsAtFirstPaint = null;
+        new MutationObserver((_, o) => {
+          const screen = document.querySelector('[data-testid="win-screen"]');
+          if (!screen) return;
+          window.__rowsAtFirstPaint = screen.querySelectorAll('[data-testid="win-row"]').length;
+          o.disconnect();
+        }).observe(document.body, { childList: true, subtree: true });
+      });
+    }
+    await load(structuredClone(g));
+    try { await page.getByTestId("win-menu").waitFor(); }
+    catch (error) {
+      console.log("STARTUP FAILURE", JSON.stringify({tag, errors, listLoads, state: await page.evaluate(() => {
+        const s=window.__emberisle?.getState(); return {screen:s?.screen, phase:s?.state?.phase, winner:s?.state?.winner, body:document.body.innerText.slice(0,5000), resources:performance.getEntriesByType("resource").filter(r=>/Sheets|WinScreen|WinList/.test(r.name)).map(r=>({name:r.name,duration:r.duration}))};
+      })})); throw error;
+    }
+    return { context, page, tag, listLoads };
+  }
+
+  for (let sample=1; sample<=20; sample++) {
+    for(const [width,height,touch,insets] of LIST.slice(0,3)) {
+      const {context,tag}=await open(width,height,touch,insets);
+      await context.close();console.log(JSON.stringify({sample,tag,result:"startup ready"}));
+    }
+  }
+  assert.deepEqual(errors,[],"no console or page errors in startup-only diagnostic");
+  console.log("startup-only diagnostic complete; not the full win-list proof");
+} finally { await browser?.close();await vite.close(); }

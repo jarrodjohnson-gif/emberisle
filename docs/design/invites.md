@@ -6,11 +6,11 @@ and its proofs belong to tracker issues when this feature leaves Backlog.
 
 ## Existing behavior and fit
 
-The [README](../../README.md#game-night) describes browser hosting, four-character table codes and
-`?code=K7QP` join links; the friend opens the link and presses Join. The README's message contract
-separately describes per-seat rejoin secrets, held seats and browser reload recovery. A personal
-invite should select a familiar profile before that ordinary join flow. It grants neither a reserved
-seat nor access to another player's held seat.
+The [README](../../README.md#game-night) describes browser hosting and table codes.
+A `?code=K7QP` join link lets friends open the game and press Join table.
+The README also specifies rejoin secrets, held seats, and reload recovery.
+A personal invite selects a profile before that ordinary join flow.
+It grants neither a reserved seat nor access to another player's held seat.
 
 Use [polish.md](polish.md): warm stone surfaces, one primary action, profile colour only where it
 conveys identity, 44 px targets and short copy. Profile settings live behind the table menu or Title

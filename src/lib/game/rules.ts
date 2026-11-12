@@ -133,7 +133,7 @@ export function settleError(state: GameState, pid: string, vid: string, setup: b
   const v = vertex(state, vid);
   if (!v) return "Illegal outpost.";
   if (v.building) return "That corner is taken.";
-  if (!distanceOk(state, vid)) return "Too close — leave one corner between buildings.";
+  if (!distanceOk(state, vid)) return "Too close. Leave a corner between buildings.";
   if (!setup && !state.edges.some((e) => e.path === pid && (e.va === vid || e.vb === vid))) return "Outpost must touch your path.";
   return null;
 }
@@ -312,18 +312,29 @@ function rollOffRoll(state: GameState, me: PlayerState) {
   }
   const seated = state.players.filter((p) => p.id === ro.first);
   const rolling = state.players.filter((p) => p.id !== ro.first);
-  const top = Math.max(...Object.values(ro.rolls));
-  const leaders = rolling.filter((p) => ro.rolls[p.id] === top);
+  const candidates = ro.tied ? rolling.filter((p) => ro.tied!.includes(p.id)) : rolling;
+  const top = ro.tied ? Math.max(...candidates.map((p) => ro.rolls[p.id]!)) : Math.max(...Object.values(ro.rolls));
+  const leaders = candidates.filter((p) => ro.rolls[p.id] === top);
   if (leaders.length > 1) {
+    const out = candidates.filter((p) => ro.rolls[p.id] !== top).sort((a, b) => ro.rolls[b.id]! - ro.rolls[a.id]!);
+    ro.settled = [...out.map((p) => p.id), ...(ro.settled ?? [])];
     for (const p of leaders) delete ro.rolls[p.id];
     ro.pending = leaders.map((p) => p.id);
+    ro.tied = leaders.map((p) => p.id);
     state.current = leaders[0]!.id;
     log(state, `${names(leaders)} tie at ${top} and roll again.`);
     return;
   }
   const lead = leaders[0]!;
-  const rest = rolling.filter((p) => p !== lead).sort((a, b) => ro.rolls[b.id]! - ro.rolls[a.id]!);
-  state.players = [...seated, lead, ...rest];
+  if (!ro.tied) {
+    const rest = rolling.filter((p) => p !== lead).sort((a, b) => ro.rolls[b.id]! - ro.rolls[a.id]!);
+    state.players = [...seated, lead, ...rest];
+  } else {
+    const out = candidates.filter((p) => p !== lead).sort((a, b) => ro.rolls[b.id]! - ro.rolls[a.id]!);
+    ro.settled = [...out.map((p) => p.id), ...(ro.settled ?? [])];
+    const rest = ro.settled.map((id) => rolling.find((p) => p.id === id)!);
+    state.players = [...seated, lead, ...rest];
+  }
   const [first, ...after] = state.players;
   state.current = first!.id;
   state.phase = "setupSettle";
@@ -847,8 +858,4 @@ export function playable(p: PlayerState, k: DevKind) {
 
 export function hiddenCount(p: PlayerState) {
   return (Object.keys(p.hidden) as DevKind[]).reduce((n, k) => n + p.hidden[k], 0);
-}
-
-export function pipColor(n: number) {
-  return n === 6 || n === 8 ? "#c45c3e" : "#1a1a18";
 }

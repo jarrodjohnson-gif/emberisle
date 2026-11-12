@@ -1,7 +1,6 @@
 // Real useStage hook in a React/DOM fixture matching #1096's observed phone geometry.
 // Sample the first RAF after shell refits; no timer or retry can hide stale placement.
-import { existsSync } from 'node:fs';
-import { chromium } from 'playwright';
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from 'vite';
 
 const PORT = Number(process.env.VITE_PORT) || 8490;
@@ -49,8 +48,7 @@ function check(ok, label, data) {
 }
 try {
   await vite.listen();
-  browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ||
-    (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined) });
+  browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('http://127.0.0.1:' + PORT + '/stage-probe');
@@ -65,6 +63,13 @@ try {
       hud: box('#hud'), gain: box('#gain'), stage: document.querySelector('#moment').dataset.stage,
       shift: Number(document.querySelector('#moment').dataset.shift), text: document.querySelector('#moment').textContent });
     const frame = () => new Promise(resolve => requestAnimationFrame(resolve));
+    const writeThenSample = (top, bottom, label) => new Promise(resolve => {
+      requestAnimationFrame(() => {
+        shell.style.setProperty('--hole-top', top + 'px');
+        shell.style.setProperty('--hole-bottom', bottom + 'px');
+      });
+      requestAnimationFrame(() => resolve(sample(label)));
+    });
     const move = async (top, bottom, label) => {
       shell.style.setProperty('--hole-top', top + 'px');
       shell.style.setProperty('--hole-bottom', bottom + 'px');
@@ -78,7 +83,7 @@ try {
     window.rerender(); out.push(sample('React dependency update while moved'));
     out.push(await move(103, 360, 'restore observed pre-refit hole'));
     await frame();
-    out.push(await move(500, 56, 'size-changing refit: first frame'));
+    out.push(await writeThenSample(500, 56, 'size-changing refit: writer and reader RAFs in one frame'));
     await frame(); out.push(sample('size-changing refit: next frame'));
     out.push(await move(100, 456, 'restore clear centre: first frame'));
     return out;

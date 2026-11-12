@@ -1,14 +1,39 @@
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import { totalVP, victoryTarget } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
-import { useViewport } from "@/lib/viewport";
+import { readViewport, useViewport } from "@/lib/viewport";
+import { LazyBoundary } from "@/lib/lazy";
+import { playAgain, WantAgain, WantCount, WinList, winList } from "@/components/game/chunks";
 import { useFocusTrap } from "@/lib/focus-trap";
+import type { PlayerState } from "@/lib/game/types";
+import type { Seat } from "@/lib/net/table";
 
-// Build bible 4.7: the island stays visible. "Look around" hides the panel and leaves a small chip.
+// `note` is the row's profile line (#767), only when a seat in this game started bound to a profile; `tag` says who wants to play again (#1411).
+export type Row = { p: PlayerState; outposts: number; strongholds: number; path: boolean; army: boolean; hiddenVp: number; total: number; note?: string; tag?: ReactNode };
+
+// #1411 (design docs/design/play-again-1411, option A): the host and bots are always in; an away seat is left out of the next game.
+const yes = (x: Seat) => !x.away && (x.host || x.bot || x.again);
+const tagOf = (x?: Seat) =>
+  x?.away ? (
+    <span className="win-tag away">Away</span>
+  ) : x && yes(x) ? (
+    <span className="win-tag">
+      <span aria-hidden="true">✓ Play again</span>
+      <span className="sr-only">, wants to play again</span>
+    </span>
+  ) : undefined;
+
+// Build bible 4.7: the island stays visible. "Hide scores" hides the panel and leaves a small chip.
 export function WinScreen() {
+  // #748: the phone list is its own chunk; fetch it while the table plays, so it is in memory before the game ends.
+  useEffect(() => {
+    if (readViewport().phone) void winList.prefetch();
+    // #1411: the guest's I'll play again and the count, in memory before the game ends.
+    if (useGame.getState().mode === "online") void playAgain.prefetch();
+  }, []);
   const winnerId = useGame((s) => s.state?.phase === "over" ? s.state.winner : null);
   return winnerId ? <Panel key={winnerId} /> : null;
 }
@@ -24,18 +49,22 @@ function Panel() {
   const [resting, setResting] = useState(false);
   const mode = useGame((s) => s.mode);
   const spectator = useGame((s) => s.spectator);
+  // #767: the host's committed profile totals for this game. Never counted here, so a repeated state cannot add a win.
+  const result = useGame((s) => (s.mode === "online" ? s.gameResult : null));
   // The lobby's host test (EmberisleApp), so a handed-off host gets the button.
   const isHost = useGame((s) => s.seats.find((x) => x.id === s.seatId)?.host ?? s.isHost);
   const hostName = useGame((s) => s.seats.find((x) => x.host)?.name);
+  const seats = useGame((s) => s.seats);
   // docs/design/rematch.md: the online host and hotseat start another; practice has no table to keep.
   const canAgain = mode === "hotseat" || (mode === "online" && isHost);
   const waiting = mode === "online" && !isHost && !spectator && hostName;
+  const seatOf = (id: string) => (mode === "online" ? seats.find((x) => x.player === id) : undefined);
   const [hidden, setHidden] = useState(false);
   const winner = state.players.find((p) => p.id === state.winner)!;
   const dialog = useRef<HTMLDivElement>(null);
   const chip = useRef<HTMLDivElement>(null);
 
-  // #379: Tab stays inside the dialog; "Look around" hands focus to the chip so the keyboard does not land on the body.
+  // #379: Tab stays inside the dialog; "Hide scores" hands focus to the chip so the keyboard does not land on the body.
   useFocusTrap(dialog, !hidden, '[data-testid="win-menu"]');
   useEffect(() => {
     if (hidden) {
@@ -47,7 +76,7 @@ function Panel() {
     return () => window.removeEventListener("keydown", onKey);
   }, [hidden]);
 
-  const rows = state.players
+  const rows: Row[] = state.players
     .map((p) => {
       let outposts = 0;
       let strongholds = 0;
@@ -64,6 +93,14 @@ function Panel() {
         army: state.largestArmy === p.id,
         hiddenVp: p.hidden.vp,
         total: totalVP(state, p.id),
+        tag: tagOf(seatOf(p.id)),
+        note: !result?.tracked
+          ? undefined
+          : !Object.hasOwn(result.wins, p.id)
+            ? "Not tracked"
+            : result.wins[p.id] === null
+              ? "Saving record…"
+              : `${result.wins[p.id]} profile win${result.wins[p.id] === 1 ? "" : "s"}`,
       };
     })
     .sort((a, b) => Number(b.p.id === winner.id) - Number(a.p.id === winner.id) || b.total - a.total);
@@ -74,7 +111,7 @@ function Panel() {
         ref={chip}
         data-testid="win-chip"
         style={{ top: `calc(max(12px, env(safe-area-inset-top)) + ${phone && portrait && mode === "online" ? 96 : 48}px)` }}
-        className="absolute left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-[20px] border border-white/50 bg-white/60 p-1 backdrop-blur-md"
+        className="absolute left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-[20px] border border-border bg-surface p-1"
       >
         <Button size="sm" variant="secondary" className="whitespace-nowrap" data-testid="win-show" onClick={() => setHidden(false)}>
           Show scores
@@ -111,52 +148,17 @@ function Panel() {
   }[reason?.trigger ?? "points"];
   const head = "px-1 py-2 short:py-0.5 short:px-1 text-right text-[11px] sm:px-2 font-medium uppercase tracking-wide text-zinc-600";
   const cell = "px-1 py-2 short:py-0.5 short:px-1 sm:px-2 text-right tabular-nums whitespace-nowrap short:text-xs";
-  return (
-    <div
-      ref={dialog}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="win-headline"
-      data-testid="win-screen"
-      className="absolute inset-0 z-40 flex items-center justify-center bg-bg/60 p-safe backdrop-blur-sm"
-    >
-      <div className="flex max-h-full w-full max-w-2xl flex-col rounded-sheet border border-white/50 bg-surface p-5 text-center sm:p-6 short:py-2 short:px-4">
-        <div className="flex items-center justify-center gap-2.5">
-          <SeatDot color={winner.color} className="size-4" />
-          <p id="win-headline" data-testid="win-headline" className="font-display text-3xl short:text-lg text-fg">
-            {winner.name} wins
-          </p>
-        </div>
-        <p className="win-total-hero mt-3 short:mt-0.5" data-testid="win-points">{winning.total}<span className="ml-2 text-body font-medium tracking-normal">points</span></p>
-        <p data-testid="win-action" className="mt-2 short:mt-0.5 text-sm short:text-xs text-muted">
-          {action} · {reason?.points ?? winning.total} points, target {reason?.target ?? victoryTarget(state)}.
-        </p>
-        <div className="win-equation" data-testid="win-reason">{contribution.map((part, i) => <span key={part}>{i > 0 ? "+ " : ""}{part}</span>)}</div>
-        <div data-testid="win-table-wrap" className="mt-4 short:mt-1.5 min-h-0 overflow-auto">
+  // The desktop table, and the phone list's stand-in if its chunk cannot load (the next mount tries it again).
+  const table = (
           <table className="w-full min-w-0 border-collapse text-sm">
             <thead>
               <tr>
                 <th className={`${head} text-left whitespace-nowrap`}>Player</th>
-                <th className={head} title="Outposts">
-                  <span className="sm:hidden">Out</span>
-                  <span className="hidden sm:inline">Outposts</span>
-                </th>
-                <th className={head} title="Strongholds">
-                  <span className="sm:hidden">Str</span>
-                  <span className="hidden sm:inline">Strongholds</span>
-                </th>
-                <th className={head} title="Longest path">
-                  <span className="sm:hidden">Path</span>
-                  <span className="hidden sm:inline">Longest path</span>
-                </th>
-                <th className={head} title="Largest army">
-                  <span className="sm:hidden">Army</span>
-                  <span className="hidden sm:inline">Largest army</span>
-                </th>
-                <th className={head} title="Hidden">
-                  <span className="sm:hidden">Hid</span>
-                  <span className="hidden sm:inline">Hidden</span>
-                </th>
+                <th className={head}>Outposts</th>
+                <th className={head}>Strongholds</th>
+                <th className={head}>Longest path</th>
+                <th className={head}>Largest army</th>
+                <th className={head}>Hidden</th>
                 <th className={head}>Total</th>
               </tr>
             </thead>
@@ -166,12 +168,14 @@ function Panel() {
                   <td className="px-1 py-2 short:py-0.5 short:px-1 text-left font-medium sm:px-2 whitespace-nowrap short:text-xs">
                     <SeatDot color={r.p.color} className="mr-1.5 size-3 align-[-2px]" />
                     {r.p.name}
+                    {r.tag}
+                    {r.note ? <span data-testid="win-profile" className="block pl-[18px] text-xs font-normal text-muted">{r.note}</span> : null}
                   </td>
                   <td className={cell}>{r.outposts}</td>
                   <td className={cell}>{r.strongholds}</td>
                   <td className={cell}>{r.path ? "✓" : ""}</td>
                   <td className={cell}>{r.army ? "✓" : ""}</td>
-                  <td className={cell}>{r.hiddenVp}</td>
+                  <td data-testid="win-hidden" className={cell}>{r.hiddenVp}</td>
                   <td data-testid="win-total" className={`${cell} font-medium`}>
                     {r.total}
                   </td>
@@ -179,13 +183,42 @@ function Panel() {
               ))}
             </tbody>
           </table>
+  );
+  return (
+    <div
+      ref={dialog}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="win-headline"
+      data-testid="win-screen"
+      className="absolute inset-0 z-40 flex items-center justify-center bg-bg/60 p-safe"
+    >
+      <div className={`flex max-h-full w-full max-w-2xl flex-col rounded-sheet border border-border bg-surface p-5 text-center sm:p-6 short:px-4 ${phone ? "short:py-1" : "short:py-2"}`}>
+        {/* #748: 480 px tall or less, the list needs room for four 44 px rows under the host's two-line actions (667x375 with insets). */}
+        <div className={phone ? "short:flex short:items-center short:justify-center short:gap-3" : undefined}>
+        <div className="flex items-center justify-center gap-2.5">
+          <SeatDot color={winner.color} className="size-4" />
+          <p id="win-headline" data-testid="win-headline" className="font-display text-3xl short:text-lg text-fg">
+            {winner.name} wins
+          </p>
+        </div>
+        <p className={`win-total-hero mt-3 ${phone ? "short:mt-0" : "short:mt-0.5"}`} data-testid="win-points">{winning.total}<span className="ml-2 text-body font-medium tracking-normal">points</span></p>
+        </div>
+        <p data-testid="win-action" className="mt-2 short:mt-0.5 text-sm short:text-xs text-muted">
+          {action} · {reason?.points ?? winning.total} points, target {reason?.target ?? victoryTarget(state)}.
+        </p>
+        {result && !result.tracked ? <p data-testid="win-untracked" className="mt-1 text-sm short:text-xs text-muted">This game isn't tracked.</p> : null}
+        <div className={`win-equation ${phone ? "short:hidden!" : ""}`} data-testid="win-reason">{contribution.map((part, i) => <span key={part}>{i > 0 ? "+ " : ""}{part}</span>)}</div>
+        <div data-testid="win-table-wrap" className={`mt-4 min-h-0 overflow-auto ${phone ? "border-t border-border pt-2 text-left short:mt-1 short:pt-0" : "short:mt-1.5"}`}>
+          {phone ? <LazyBoundary failed={table}><WinList rows={rows} /></LazyBoundary> : table}
         </div>
         {waiting ? (
           <p data-testid="win-waiting" className="mt-4 text-sm text-zinc-600">
             Waiting for {hostName} to start another.
           </p>
         ) : null}
-        <div className="mt-5 short:mt-2 flex flex-wrap items-center gap-2">
+        {mode === "online" ? <LazyBoundary failed={null}><WantCount n={seats.filter(yes).length} seats={seats} /></LazyBoundary> : null}
+        <div className={`mt-5 ${phone ? "short:mt-1" : "short:mt-2"} flex flex-wrap items-center gap-2`}>
           {mode === "online" ? <VictoryTargetSelect label="Next game" value={target} onChange={isHost && !spectator ? setTarget : undefined} /> : null}
           {mode === "online" && !spectator ? (
             <Button
@@ -203,14 +236,16 @@ function Panel() {
             </Button>
           ) : null}
           <Button variant="secondary" className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-look" onClick={() => setHidden(true)}>
-            Look around
+            Hide scores
           </Button>
           {canAgain ? (
             <Button className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-again" onClick={playAgain}>
               Play again
             </Button>
           ) : null}
-          <Button variant={canAgain ? "secondary" : "default"} className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-menu" onClick={goTitle}>
+          {/* #1411: every other seated player says "I'll play again"; only the host starts the next game. */}
+          {waiting ? <LazyBoundary failed={null}><WantAgain /></LazyBoundary> : null}
+          <Button variant={canAgain || waiting ? "secondary" : "default"} className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-menu" onClick={goTitle}>
             Back to menu
           </Button>
         </div>

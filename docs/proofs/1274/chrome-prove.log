@@ -1,0 +1,9 @@
+
+> chrome-prove
+> node scripts/chrome-prove.mjs
+
+1280x720: white title/menu/sheets; mist ground; preserved goods; readable text; controls reachable, chrome contained
+390x844: white title/menu/sheets; mist ground; preserved goods; readable text; controls reachable, chrome contained
+844x390: white title/menu/sheets; mist ground; preserved goods; readable text; controls reachable, chrome contained
+320x568: white title/menu/sheets; mist ground; preserved goods; readable text; controls reachable, chrome contained
+chrome-prove: PASS

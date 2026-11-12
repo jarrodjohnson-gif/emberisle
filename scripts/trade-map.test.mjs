@@ -1,8 +1,8 @@
 // #536: browser proof of exact trade previews, live hands, directional motion, and one-step settlement.
 // Run: CHROMIUM_PATH=/usr/bin/chromium node --import ./server/register.mjs scripts/trade-map.test.mjs
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { createGame } from "../src/lib/game/board.ts";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
@@ -27,7 +27,6 @@ for (const r of RESOURCES) base.bank[r] = 19 - base.players.reduce((n, p) => n +
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -39,7 +38,8 @@ const panel = page.getByTestId("trade-panel");
 const more = (r, side) => panel.getByRole("button", { name: `More ${RESOURCE_LABEL[r]} to ${side}`, exact: true });
 const fewer = (r, side) => panel.getByRole("button", { name: `Fewer ${RESOURCE_LABEL[r]} to ${side}`, exact: true });
 const ask = () => panel.getByRole("button", { name: "Ask the table" });
-const bank = () => panel.getByRole("button", { name: /^(Bank 4|Dock [23]):1$/ });
+// #1537: the one bank button names its rate when the trade is valid and its reason when it is not.
+const bank = () => panel.getByRole("button", { name: /^(Bank 4:1|Dock 3:1|(Wood|Brick|Sheep|Wheat|Stone) dock 2:1|(Bank|Dock) needs [234]|One kind each|No (wood|brick|sheep|wheat|stone) left)$/ });
 const change = (fn, arg) => page.evaluate(([f, a]) => {
   const store = window.__emberisle;
   const g = structuredClone(store.getState().state);
@@ -83,18 +83,18 @@ try {
     await more("wool", "want").click();
     await more("ore", "want").click();
     const preview = panel.getByTestId("trade-player-preview");
-    assert.match(await preview.textContent(), /You give: 2 wood.*You get: 1 sheep, 1 stone/);
+    assert.match(await preview.textContent(), /Give 2 wood · Get 1 sheep, 1 stone/);
     assert(await more("timber", "want").isDisabled(), "same kind cannot be sent both ways");
     assert.equal(await bank().count(), 1, "mixed table quantities retain the visible Bank action");
     assert(await bank().isDisabled(), "Bank must reject mixed kinds from the shared draft");
-    assert.equal(await panel.getByTestId("trade-hint").textContent(), "Choose one kind on each side for a bank or dock exchange.");
+    assert.equal(await panel.getByTestId("trade-hint").textContent(), "Pick one kind to give and one to get.");
     assert.equal(await panel.getByRole("radio").count(), 0, "Bank uses shared quantities with no separate kind selector");
     // Remove one requested kind through its actual shared quantity control: both receipts update together.
     await panel.getByRole("button", { name: "Fewer Stone to want", exact: true }).click();
     assert.equal(await panel.getByTestId("trade-give-timber").getByRole("status").textContent(), "2");
     assert.equal(await panel.getByTestId("trade-want-wool").getByRole("status").textContent(), "1");
-    assert.equal(await panel.getByTestId("trade-hint").textContent(), "You give 4 wood. You get 1 sheep.");
-    assert.match(await preview.textContent(), /You give: 2 wood.*You get: 1 sheep/, "Bank kind derivation preserves the exact shared Table quantities");
+    assert.equal(await panel.getByTestId("trade-hint").textContent(), "Give 4 wood, get 1 sheep.");
+    assert.match(await preview.textContent(), /Give 2 wood · Get 1 sheep/, "Bank kind derivation preserves the exact shared Table quantities");
     assert.equal(await panel.getByTestId("trade-give-timber").getByTestId("trade-owned").textContent(), "Have 6");
     const layout = await panel.evaluate((el) => {
       const box = (s) => el.querySelector(s).getBoundingClientRect().toJSON();
@@ -112,10 +112,11 @@ try {
     await panel.locator(".trade-composer-scroll").evaluate((el) => { el.scrollTop = 0; });
     await page.screenshot({ path: `test-results/trade-map-${width}x${height}.png` });
     await change('g.players[0].resources.timber = 1');
-    await textHas(preview, "You give: 1 wood");
+    await textHas(preview, "Give 1 wood");
     assert(await more("timber", "give").isDisabled(), "live hand must cap give");
     await change('g.players[0].resources.timber = 0');
-    await textHas(preview, "You give: choose goods");
+    // #1537: with nothing left to give, the sentence keeps only its Get part.
+    await page.waitForFunction(() => document.querySelector('[data-testid="trade-player-preview"]')?.textContent === "Get 1 sheep");
     assert(await ask().isDisabled(), "live empty hand must disable ask");
     await page.keyboard.press("Escape");
     await panel.waitFor({ state: "detached" });
@@ -126,26 +127,23 @@ try {
   await page.setViewportSize({ width: 440, height: 956 });
   await load();
   await open();
-  // Pause the real CSS animation at its endpoints to measure its full trajectory.
+  // #1537: the signed selection is a badge that stays on the token: red for Give, green for Get, with no animation.
   for (const side of ["give", "want"]) {
     const r = side === "give" ? "timber" : "wool";
     await more(r, side).click();
-    const delta = await panel.getByTestId(`trade-${side}-${r}`).getByTestId("trade-selection-motion").evaluate((el) => {
-      const a = el.getAnimations()[0];
-      a.pause(); a.currentTime = 0;
-      const start = el.getBoundingClientRect().y;
-      a.currentTime = 220;
-      return { y: el.getBoundingClientRect().y - start, duration: a.effect.getTiming().duration };
+    const badge = await panel.getByTestId(`trade-${side}-${r}`).getByTestId("trade-badge").evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { text: el.textContent, animations: el.getAnimations().length, opacity: cs.opacity, bg: cs.backgroundColor };
     });
-    assert.equal(delta.duration, 220);
-    assert(Math.abs(delta.y - (side === "give" ? 12 : -12)) <= 1, `${side} motion: ${JSON.stringify(delta)}`);
+    assert.equal(badge.animations, 0);
+    assert.deepEqual([badge.text, badge.opacity, badge.bg], side === "give" ? ["\u22121", "1", "rgb(179, 38, 30)"] : ["+1", "1", "rgb(30, 122, 70)"], `${side} badge: ${JSON.stringify(badge)}`);
   }
   await page.emulateMedia({ reducedMotion: "reduce" });
   await more("timber", "give").click();
   assert.equal(await panel.getByTestId("trade-give-timber").getByRole("status").textContent(), "2");
-  assert.equal(await panel.getByTestId("trade-give-timber").getByTestId("trade-selection-motion").evaluate((el) => el.getAnimations().length), 0);
+  assert.equal(await panel.getByTestId("trade-give-timber").getByTestId("trade-badge").evaluate((el) => el.getAnimations().length), 0);
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  console.log("motion: give +12px / get -12px in 220ms; reduced motion shows selected count instantly");
+  console.log("badge: give red −1 / get green +1 with no animation; reduced motion shows the selected count instantly");
 
   for (const rate of [4, 3, 2]) {
     const g = structuredClone(base);
@@ -158,7 +156,7 @@ try {
     await more("wool", "want").click();
     await more("wool", "want").click();
     assert(await bank().isEnabled(), "one shared give kind and get kind enable an exact one-exchange quote despite Table quantities");
-    assert.equal(await panel.getByTestId("trade-hint").textContent(), `You give ${rate} stone. You get 1 sheep.`);
+    assert.equal(await panel.getByTestId("trade-hint").textContent(), `Give ${rate} stone, get 1 sheep.`);
     await bank().click();
     const actual = await settled();
     assert.equal(actual.hands[0].ore, 6 - rate);
@@ -273,8 +271,8 @@ try {
   assert(await page.evaluate(() => performance.now() - window.__declineAt < 1000), "bot cross took over 1 second to render");
   await page.screenshot({ path: "test-results/trade-map-responses.png" });
   await page.evaluate(() => window.__emberisle.setState({ localId: "p1" }));
-  await textHas(page.getByTestId("trade-receipt"), "You give: 1 sheep, 1 stone");
-  await textHas(page.getByTestId("trade-receipt"), "You get: 1 wood, 1 brick");
+  await textHas(page.getByTestId("trade-receipt"), "Give: 1 sheep, 1 stone");
+  await textHas(page.getByTestId("trade-receipt"), "Get: 1 wood, 1 brick");
   // #537: a short hand switches to compact demand (no Accept), then recovers to Yes/No when goods return.
   await change('g.players[1].resources.ore = 0');
   await page.waitForFunction(() => document.querySelector('[data-testid="trade-toast"]')?.getAttribute("data-compact") === "true");

@@ -72,7 +72,7 @@ export function SoundsTab({ dense }: { dense?: boolean }) {
         <>
           <p className="mt-1 text-caption text-zinc-700">Stickers · silent</p>
           <div role="group" aria-label="Stickers" data-testid="stickers" className="flex flex-wrap gap-1">
-            {stickers.map(([id, url]) => (
+            {stickers.map(([id]) => (
               <button
                 key={id}
                 type="button"
@@ -82,7 +82,8 @@ export function SoundsTab({ dense }: { dense?: boolean }) {
                 onPointerDown={() => play("ui_click")}
                 onClick={() => sendReaction(id)}
               >
-                <img src={url} alt="" className={cn("object-contain", dense ? "size-6" : "size-8")} />
+                {/* #1363: owner on #1364, "a little bigger": 36 px (28 px dense) in the unchanged 44 px (32 px) button. */}
+                <Emote emote={id} once className={dense ? "size-7" : "size-9"} />
               </button>
             ))}
           </div>
@@ -98,7 +99,7 @@ type Bubble =
 
 // Where the bubble hangs. Rail: to the right of the desktop card, over the sea. Strip: under the phone cell, below the hidden
 // points hint. Lobby: in the row, between the name and the status, so it can never sit on the name (#847).
-export type BubbleAt = "rail" | "strip" | "lobby";
+type BubbleAt = "rail" | "strip" | "lobby";
 const PLACE: Record<BubbleAt, string> = {
   rail: "absolute left-full top-1/2 z-30 ml-2 -translate-y-1/2",
   strip: "absolute left-1/2 top-full z-30 mt-4 -translate-x-1/2",

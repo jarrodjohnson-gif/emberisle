@@ -3,14 +3,13 @@ import {
   CAP_LEVEL,
   DIORAMA_AZIMUTH,
   DIORAMA_POLAR,
-  OVERHEAD_LEAN,
+  playOrtho,
   TouchGesture,
   PICK_EDGE,
   PICK_VERTEX_RADIUS,
   chromeInsets,
   defaultView,
   fitDiorama,
-  fitOrtho,
   freeMaxDistance,
   hudInsets,
   playHole,
@@ -34,10 +33,12 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { worldOfHex } from "@/lib/game/board";
 import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game/hex";
 import { LAND_MS } from "@/lib/scene/landing";
+import { LandingDust } from "@/lib/scene/landing-dust";
 import { hashStr } from "@/lib/utils";
-import { chunkUrl } from "@/lib/lazy";
+import { boot, chunkUrl } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
-import { BLOCK_H, TILE_Y } from "@/lib/scene/jelly-dims";
+import { BLOCK_H, ROBBER_HEX_DIM, robberHexDim, setRobberHexDim, TILE_Y } from "@/lib/scene/jelly-dims";
+export { ROBBER_HEX_DIM, robberHexDim };
 import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
 import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
 import { OceanLife } from "@/lib/scene/ocean-life";
@@ -103,6 +104,16 @@ const FLASH_S = 0.6;
 const FLASH_PEAK = 0.35;
 // The pulse token (polish.md "Motion"): legal corners and paths breathe once per 1.2 s.
 const LEGAL_PULSE_S = 1.2;
+// The legal-corner ring (#830): wide enough to see from the default view, outlined dark so it holds on every terrain.
+const VERTEX_RING = { radius: 0.2, tube: 0.04, outline: 0.025, outlineColor: 0x1c120a } as const;
+// A corner that already holds a home (a Stronghold upgrade) gets a halo on the ground around the piece, never on it (owner
+// card on PR #848, Fable spec, 2026-11-01): the piece's base ends at 0.276, so the halo's dark outline (0.285 out) meets the
+// base's own dark rim and the white band (0.31 to 0.39) sits outside it. Depth-tested, so the house stands in front of it.
+const HOME_HALO = { radius: 0.35, tube: 0.04, outline: 0.025 } as const;
+// The warm orange-white glow a paying piece takes on a roll.
+const WARM_GLOW = 0xffd27a;
+// The legal-corner rings and discs glow plain white (#830, owner q848-glow-v2: "Keep it white"); the dark outline carries the contrast.
+const RING_GLOW = 0xffffff;
 
 // The two views in play (docs/design/camera-light.md). Overhead: a frustum and a look-at point from the fit to the HUD hole,
 // and the eye on an orbit around that point, ORBIT_RADIUS out. Diorama (the default, #597): a perspective eye on an orbit
@@ -143,6 +154,8 @@ const DOUBLE_TAP_MS = 350;
 const DOUBLE_TAP_PX = 32;
 const _eye = new THREE.Vector3();
 const _sph = new THREE.Spherical();
+const _lifted = new THREE.Spherical();
+const _held = new THREE.Vector3();
 const _p = new THREE.Vector3();
 const _q = new THREE.Vector3();
 const _n = new THREE.Vector3();
@@ -180,6 +193,7 @@ export class IsleRenderer {
   private lastTap = { t: 0, x: 0, y: 0, empty: false };
   // Set once a single pointer has moved past the tap slop; an out-and-back drag ends where it began and must not place.
   private dragged = false;
+  private plopTimer: ReturnType<typeof setTimeout> | null = null;
   private safeProbe: HTMLDivElement;
   private controls: OrbitControls;
   private orbit: OrbitControls;
@@ -237,7 +251,8 @@ export class IsleRenderer {
   // placed (performance.now()), so a rebuild mid-fall carries the fall over to the new mesh instead of restarting it.
   private placed = new Map<string, PieceKind>();
   private landStart = new Map<string, number>();
-  private landings: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number }[] = [];
+  private landings: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number; dusted?: boolean }[] = [];
+  private dust = new LandingDust();
   private legalIds = new Set<string>();
   // An armed Upgrade: only the player's own outposts are legal, so a touch tap on one raises it at once, with no Place chip.
   private oneTap = false;
@@ -297,6 +312,13 @@ export class IsleRenderer {
   private calmMq = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
   // Frames drawn; the idle proof counts them.
   renders = 0;
+  // #1385: run once the next frame is drawn. New materials link their shaders on their first draw, which in software GL
+  // holds the main thread; the loading screen's steps finish after that frame, so Start never opens onto it.
+  private afterDraw: (() => void)[] = [];
+  private whenDrawn(done: () => void) {
+    this.afterDraw.push(done);
+    this.wake();
+  }
   private foam!: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   private coastMiter = new Map<string, { mx: number; mz: number }>();
   private coastOrder: string[] = [];
@@ -440,7 +462,7 @@ export class IsleRenderer {
     this.wayfarer = this.bruno.g;
     this.lantern = this.bruno.lantern;
     this.living.add(this.wayfarer);
-    this.scene.add(this.land, this.living, this.pieces, this.marks);
+    this.scene.add(this.land, this.living, this.pieces, this.marks, this.dust.group);
 
     canvas.style.touchAction = "none";
     canvas.addEventListener("pointerdown", this.onDown);
@@ -471,6 +493,8 @@ export class IsleRenderer {
     this.ssao.maxDistance = 0.08;
     this.composer.addPass(this.ssao);
     this.composer.addPass(new OutputPass());
+    // addPass sizes SSAO to the full composer. Resize again so the first frame uses the free-view half size (#330).
+    this.resize();
     this.renderer.setAnimationLoop(this.tick);
     } catch (err) {
       this.dispose();
@@ -537,7 +561,7 @@ export class IsleRenderer {
     };
   }
 
-  // The hole the HUD leaves for the island right now, measured from the chrome around the canvas. Proofs read it too.
+  // The declared island hole for this viewport and its safe areas. Proofs read it too.
   insets(): Insets {
     const c = this.renderer.domElement;
     // The keyboard is an overlay like the chat above it: only the notch counts.
@@ -663,7 +687,7 @@ export class IsleRenderer {
         }
         if (mesh.userData.payerMaterial) {
           const mat = mesh.material as THREE.MeshStandardMaterial;
-          mat.emissive.set(0xffd27a);
+          mat.emissive.set(WARM_GLOW);
           mat.emissiveIntensity = calm && active ? 0.35 : 0;
         }
       });
@@ -717,7 +741,7 @@ export class IsleRenderer {
     }
   }
 
-  // #826: black terrain/token with readable light ink (waste / missing → restore).
+  // #826: blocked terrain/token with readable light ink (waste / missing → restore).
   private shadeRobber(rh?: HexCell) {
     const id = rh && rh.terrain !== "waste" ? rh.id : null;
     this.jelly?.robber(id);
@@ -727,7 +751,7 @@ export class IsleRenderer {
         const m = c.material as THREE.MeshBasicMaterial;
         if (!m?.color) continue;
         m.userData.rest ??= m.color.clone();
-        m.color.copy(m.userData.rest as THREE.Color).multiplyScalar(blocked ? (m.map ? 0.55 : 0) : 1);
+        m.color.copy(m.userData.rest as THREE.Color).multiplyScalar(blocked && !m.map ? 1 - robberHexDim : 1);
         if (m.map && blocked !== !!m.userData.blocked) {
           if (!m.userData.restMap) {
             m.userData.restMap = m.map;
@@ -738,13 +762,30 @@ export class IsleRenderer {
           }
           if (blocked) m.map = blackNumberFace(m.userData.restMap, t.userData.token);
           else {
-            m.map.dispose();
+            if (m.map !== m.userData.restMap) m.map.dispose();
             m.map = m.userData.restMap;
           }
           m.userData.blocked = blocked;
         }
       }
     }
+  }
+
+  setRobberHexDim(dim: number) {
+    setRobberHexDim(dim);
+    this.jelly?.setRobberHexDim(dim);
+    for (const t of this.tokens) {
+      for (const c of t.children as THREE.Mesh[]) {
+        const m = c.material as THREE.MeshBasicMaterial;
+        if (m?.map && m.userData.blocked) {
+          if (m.map !== m.userData.restMap) m.map.dispose();
+          m.map = blackNumberFace(m.userData.restMap, t.userData.token);
+        }
+      }
+    }
+    const rh = this.lastState?.hexes.find((h) => h.id === this.lastState?.robberHex);
+    this.shadeRobber(rh);
+    this.wake();
   }
 
   // Where the wayfarer stands on a hex: on the waste (no token) its centre; on a hex with a number, beside the token, to its
@@ -815,6 +856,7 @@ export class IsleRenderer {
   }
 
   dispose() {
+    this.cancelPlop();
     this.clearPayers();
     this.stopped = true;
     this.renderer?.domElement?.removeEventListener("webglcontextlost", this.onContextLost);
@@ -840,6 +882,7 @@ export class IsleRenderer {
     this.renderer?.domElement?.removeEventListener("pointermove", this.onMove);
     this.renderer?.domElement?.removeEventListener("pointercancel", this.onCancel);
     this.safeProbe?.remove();
+    this.dust?.dispose?.();
     this.oceanLife?.dispose?.();
     this.bruno?.dispose?.();
     this.under?.dispose?.();
@@ -879,15 +922,17 @@ export class IsleRenderer {
     this.composer?.setSize(w, h);
     const ratio = this.renderer.getPixelRatio();
     this.under?.setSize(Math.round(w * ratio), Math.round(h * ratio));
-    this.ssao?.setSize(w, h);
+    // #330: free view (title, lobby, and the free camera) runs SSAO at half the CSS size. Play views keep the full CSS size.
+    const half = this.view === "free";
+    this.ssao?.setSize(half ? Math.ceil(w / 2) : w, half ? Math.ceil(h / 2) : h);
     this.refit(true);
     // The HUD re-lays out for the new size after this event (a rotation swaps its columns and rails), so the hole just
     // measured is the old one: measure again on each of the next frames.
     this.relayout = RELAYOUT_FRAMES;
   };
 
-  // The player changed the chrome without the game moving (opened the chat or a sheet, focused the PlaceList): measure the
-  // hole again on the next frame. Cheap enough to call on every such change; a hole that did not change refits nothing.
+  // Recheck the declared hole on the next frame. HUD events may call this, but they do not define the hole.
+  // An unchanged hole does not refit the island or wake the loop.
   remeasure = () => {
     this.refitDue = true;
   };
@@ -902,7 +947,7 @@ export class IsleRenderer {
     // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment): the one the map is fitted to.
     for (const k of ["top", "right", "bottom", "left"] as const) c.parentElement?.style.setProperty(`--hole-${k}`, `${base[k]}px`);
     const [w, h] = [c.clientWidth || 1, c.clientHeight || 1];
-    const f = this.view === "diorama" ? fitDiorama(w, h, base) : fitOrtho(w, h, base, OVERHEAD_LEAN);
+    const f = this.view === "diorama" ? fitDiorama(w, h, base) : playOrtho(w, h, base, readViewport().phone);
     const was = this.fit;
     if (was && FIT_KEYS.every((k) => Math.abs(this.fitPose(f)[k] - this.fitPose(was)[k]) < 1e-6)) return;
     this.fit = f;
@@ -922,12 +967,14 @@ export class IsleRenderer {
       to.tx += this.orbit.target.x - from.tx;
       to.tz += this.orbit.target.z - from.tz;
     }
-    this.moveTo(to, FIT_KEYS, instant || this.renders <= this.shownAt);
+    // #1509: a turn of the phone changes the overhead lean (40° upright, 25° on its side), so the eye goes to the new one.
+    const lean = "lean" in f && "lean" in was && f.lean !== was.lean;
+    this.moveTo(to, lean ? [...FIT_KEYS, "polar"] : FIT_KEYS, instant || this.renders <= this.shownAt);
   }
 
   private fitPose(f: OrthoFit | DioramaFit): Pose {
     if ("focal" in f) return { ...NO_FIT, focal: f.focal, dist: f.dist, cx: f.cx, cy: f.cy, polar: DIORAMA_POLAR, azimuth: DIORAMA_AZIMUTH, zoom: 1 };
-    return { ...NO_FIT, left: f.left, right: f.right, top: f.top, bottom: f.bottom, tx: f.x, tz: f.z, polar: OVERHEAD_LEAN, azimuth: 0, zoom: 1 };
+    return { ...NO_FIT, left: f.left, right: f.right, top: f.top, bottom: f.bottom, tx: f.x, tz: f.z, polar: f.lean, azimuth: 0, zoom: 1 };
   }
 
   // Read from the camera itself, so it is right straight after applyPose, before the controls' next update.
@@ -1139,6 +1186,13 @@ export class IsleRenderer {
     this.panOpen = Math.hypot(cur.mx - st.mx, cur.my - st.my) >= PAN_DEAD;
   };
 
+  private cancelPlop() {
+    if (this.plopTimer !== null) {
+      clearTimeout(this.plopTimer);
+      this.plopTimer = null;
+    }
+  }
+
   private onDown = (e: PointerEvent) => {
     this.lastPointer = performance.now();
     this.wake();
@@ -1147,6 +1201,7 @@ export class IsleRenderer {
     this.downType = e.pointerType;
     this.dragged = false;
     this.gesture.down(e.pointerId, e.clientX, e.clientY);
+    if (this.gesture.pointers.size > 1) this.cancelPlop();
     this.poke(e);
   };
 
@@ -1160,6 +1215,7 @@ export class IsleRenderer {
     if (this.dragged || this.gesture.pointers.size !== 1) return;
     if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, this.coarse())) {
       this.dragged = true;
+      this.cancelPlop();
       // A drag orbits the camera: the stir ends where the tap slop does, so an orbit never splashes.
       this.trail = null;
       this.dragTakesEye();
@@ -1169,13 +1225,22 @@ export class IsleRenderer {
   };
 
   private onCancel = (e: PointerEvent) => {
+    this.cancelPlop();
     this.trail = null;
     this.gesture.up(e.pointerId);
   };
 
   private onUp = (e: PointerEvent) => {
     this.trail = null;
-    if (this.gesture.up(e.pointerId) || this.dragged) return;
+    const isPinch = this.gesture.up(e.pointerId);
+    if (isPinch || this.dragged) {
+      this.cancelPlop();
+      return;
+    }
+    if (this.plopTimer !== null) {
+      this.cancelPlop();
+      play("plop");
+    }
     const coarse = this.coarse();
     if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, coarse)) return;
     if (e.button === 0) {
@@ -1257,7 +1322,7 @@ export class IsleRenderer {
     }
     const p = this.seaPoint();
     if (!p) return;
-    this.splashAt(p.x, p.z, 1);
+    this.splashAt(p.x, p.z, 1, true);
     this.trail = { ...p, t: performance.now() };
   }
 
@@ -1273,11 +1338,22 @@ export class IsleRenderer {
   }
 
   /** A splash on the sea at (x, z), 1 for a tap. Starts at once; the fish and the visitor near it scatter. */
-  splashAt(x: number, z: number, strength: number) {
+  splashAt(x: number, z: number, strength: number, deferSound = false) {
     this.splash.add(x, z, strength, this.clock.getElapsed() + (performance.now() - this.lastFrame) / 1000);
     if (!this.calm()) this.oceanLife.scatter(x, z, Math.max(0, performance.now() - this.lastFrame) / 1000);
     // A tap plops (sound.ts keeps it quiet while muted); a drag's trail does not.
-    if (strength >= 1) play("plop");
+    // #1543: defer plop by 100 ms so a two-finger pan/pinch or drag starting on water stays silent.
+    if (strength >= 1) {
+      if (deferSound) {
+        this.cancelPlop();
+        this.plopTimer = setTimeout(() => {
+          this.plopTimer = null;
+          play("plop");
+        }, 100);
+      } else {
+        play("plop");
+      }
+    }
     this.busyUntil = Math.max(this.busyUntil, performance.now() + SPLASH.life * 1000);
   }
 
@@ -1323,8 +1399,8 @@ export class IsleRenderer {
       this.walk = null;
       this.startWalk();
     }
-    const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.jelly?.busy();
-    const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? 1000 / 30 : this.walk || pulsing || busy ? 0 : 1000 / 12;
+    const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.jelly?.busy() || this.dust.active;
+    const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? (boot.lift ? 0 : 1000 / 30) : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
     // Camera constraints and glides are input state: process them even when the next draw waits on the GPU.
     if (this.play()) {
@@ -1333,8 +1409,13 @@ export class IsleRenderer {
       this.stepGlide(now);
     }
     // Moving frames, including busy ones, wait for the previous GPU work instead of flooding a software renderer's queue.
-    // Explicit reduced-motion frames still draw immediately, including synchronous snapshots.
-    if (!calm && this.gpuBehind()) return;
+    // Explicit reduced-motion frames still draw immediately, including synchronous snapshots, except while the loading screen
+    // is up (#1385): there a burst of them filled a software renderer's queue and the next GL call held the main thread
+    // through the fade. Such a frame waits for the GPU too, and the 1 s hold stays open until it draws.
+    if ((!calm || boot.intro) && this.gpuBehind()) {
+      if (calm) this.busyUntil = Math.max(this.busyUntil, now + 100);
+      return;
+    }
     // Keep a motion resume pending until a frame is accepted; a GPU wait must not consume the paused-time reset.
     this.wasCalm = calm;
     this.lastFrame = now;
@@ -1344,6 +1425,7 @@ export class IsleRenderer {
     const dt = Math.min(this.clock.getDelta(), 0.1);
     this.stepFlashes(dt, calm);
     this.stepPayers(dt, calm);
+    this.dust.step(dt);
     this.controls.autoRotate = this.titleMode && !calm;
     if (!this.play()) {
       this.controls.enableDamping = !calm;
@@ -1497,11 +1579,13 @@ export class IsleRenderer {
     const camera = this.cam();
     const docks = this.docks.map((d) => {
       const p = _p.set(d.cx + d.mx * 0.62, 0.12, d.cz + d.mz * 0.62).project(camera);
+      // #1509 (owner card q1515-table-look, B): the upright island crops its side boats at the screen edge, but every dock's
+      // 44 px target (its button and the canvas tap around it) stays wholly on the canvas.
       return {
         id: d.vids.join(":"),
         kind: d.kind,
-        x: rect.left + ((p.x + 1) / 2) * rect.width,
-        y: rect.top + ((1 - p.y) / 2) * rect.height,
+        x: Math.min(rect.right - 22, Math.max(rect.left + 22, rect.left + ((p.x + 1) / 2) * rect.width)),
+        y: Math.min(rect.bottom - 22, Math.max(rect.top + 22, rect.top + ((1 - p.y) / 2) * rect.height)),
       };
     });
     if (docks.length !== this.dockPositions.length || docks.some((d, i) => {
@@ -1519,8 +1603,25 @@ export class IsleRenderer {
   // simple. A stage stops as soon as its frames pass its 10-frame budget, so a slow GPU stalls for one frame.
   private draw() {
     const t0 = performance.now();
+    // #1281: the startup push arrives on an aerial view: higher, farther out and more overhead, the fog pushed back with it,
+    // settling into the title's orbit as the lift falls to 0. The orbit itself never sees the lift.
+    const lift = this.titleMode ? boot.lift : 0;
+    if (lift) {
+      _held.copy(this.camera.position);
+      _lifted.setFromVector3(_held.sub(this.controls.target));
+      _lifted.radius *= 1 + lift;
+      _lifted.phi *= 1 - 0.55 * Math.min(lift, 1);
+      this.camera.position.setFromSpherical(_lifted).add(this.controls.target);
+      this.camera.lookAt(this.controls.target);
+      _held.add(this.controls.target);
+    }
     this.poseTokens();
     this.fadeSea();
+    if (lift) {
+      const fog = this.scene.fog as THREE.Fog;
+      fog.near *= 1 + lift;
+      fog.far *= 1 + lift;
+    }
     const crystal = this.waterPath === "crystal" ? this.crystal : null;
     if (crystal) this.drawUnder(crystal);
     // The under pass already drew this frame's shadow map.
@@ -1532,14 +1633,22 @@ export class IsleRenderer {
       this.fps?.end(this.jelly?.stats() ?? null, this.lite);
     } finally {
       this.renderer.shadowMap.autoUpdate = true;
+      if (lift) {
+        this.camera.position.copy(_held);
+        this.camera.lookAt(this.controls.target);
+      }
     }
     this.renders += 1;
+    boot.drawn = true;
+    for (const done of this.afterDraw.splice(0)) done();
     this.updateDockPositions();
     const p = this.probe;
     const warm = p?.stage === "simple" ? 5 : 3;
     const budget = p?.stage === "simple" ? 11 : 22;
     const now = performance.now();
-    const settled = this.settledAt > 0 && now - this.settledAt > 1000 && now - this.lastPointer > 1000;
+    // #1385: not while the loading screen is up. Each probe frame waits for the GPU to finish (readPixels), which in
+    // software GL holds the main thread for hundreds of ms, and would land in the fade or the push.
+    const settled = this.settledAt > 0 && now - this.settledAt > 1000 && now - this.lastPointer > 1000 && !boot.intro;
     if (!p || p.stage !== this.waterPath || !this.lastState || !settled || ++p.frames <= warm) return;
     const gl = this.renderer.getContext();
     gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
@@ -1661,6 +1770,7 @@ export class IsleRenderer {
             this.slabs = null;
           }
           this.living.add(jelly.group);
+          this.whenDrawn(() => (boot.scenes = true));
           // A shore that fails to load or build leaves the plain beach and docks (said once a page).
           if (HARBOR_JELLY && !this.lite)
             loadShore()
@@ -1668,12 +1778,17 @@ export class IsleRenderer {
               .catch((e: unknown) => {
                 if (!shoreFailed) console.warn("The jelly shore did not load; the plain beach stays.", e);
                 shoreFailed = true;
-              });
+              })
+              .finally(() => this.whenDrawn(() => (boot.shore = true)));
+          else this.whenDrawn(() => (boot.shore = true));
           (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
           this.wake();
           performance.mark("props-end");
         },
-        () => tries < 5 && setTimeout(() => alive() && this.growScenes(gen, key, hexes, tries + 1), JELLY_RETRY_MS),
+        () => {
+          if (tries < 5) setTimeout(() => alive() && this.growScenes(gen, key, hexes, tries + 1), JELLY_RETRY_MS);
+          else boot.scenes = boot.shore = true;
+        },
       );
   }
 
@@ -1701,6 +1816,7 @@ export class IsleRenderer {
     this.tokens = [];
     this.caps.clear();
     this.flashes = [];
+    this.dust.clear();
     this.oceanLife.reset(landKey(state));
 
     // Each hex: an unseen block to pick it by, a stand-in slab in its terrain's paint, and its token.
@@ -1872,9 +1988,18 @@ export class IsleRenderer {
   }
 
   // Pose every landing piece for this moment; a finished one is left exactly at rest. Reduced motion skips to rest.
+  // Dust fires once per landing at LAND_MS, aligned with the placement sound.
   private stepLandings(now: number, calm: boolean) {
     if (!this.landings.length) return;
     for (const l of this.landings) poseLanding(l, calm ? Infinity : now);
+    if (!calm) {
+      for (const l of this.landings) {
+        if (!l.dusted && now - l.start >= LAND_MS[LAND_SOUND[l.kind]]) {
+          l.dusted = true;
+          if (now - l.start < LAND_MS[LAND_SOUND[l.kind]] + 100) this.dust.emit(l.obj.position.x, l.restY, l.obj.position.z);
+        }
+      }
+    }
     this.landings = this.landings.filter((l) => !calm && now - l.start < LAND_MS[LAND_SOUND[l.kind]]);
     for (const [key, start] of this.landStart) if (calm || now - start >= LAND_MAX) this.landStart.delete(key);
   }
@@ -1893,16 +2018,76 @@ export class IsleRenderer {
     const seat = new THREE.Color(state.players.find((p) => p.id === state.current)?.color ?? "#fff6e8");
     // The glow leans toward cream so a dark seat (Pine) still reads on forest at the pulse trough; the hue stays the seat's.
     const glow = seat.clone().lerp(new THREE.Color(0xfff6e8), 0.35);
+    // The corner rings glow plain white (#830); the path bars keep the seat glow above.
+    const ringGlow = new THREE.Color(RING_GLOW);
 
-    for (const v of state.vertices) {
-      if (!vset.has(v.id)) continue;
+    const legalVertices = state.vertices.filter((v) => vset.has(v.id));
+    const emptyCorners = legalVertices.filter((v) => !v.building);
+    const builtCorners = legalVertices.filter((v) => v.building);
+    const dummy = new THREE.Object3D();
+    if (emptyCorners.length > 0) {
+      // Outlines and discs are instanced across all empty legal corners: drops 108 draw calls down to 2 (#830).
+      const outlineGeo = new THREE.TorusGeometry(VERTEX_RING.radius, VERTEX_RING.tube + VERTEX_RING.outline, 8, 32);
+      const outlineMat = new THREE.MeshBasicMaterial({ color: VERTEX_RING.outlineColor, depthTest: false });
+      const outlines = new THREE.InstancedMesh(outlineGeo, outlineMat, emptyCorners.length);
+      outlines.renderOrder = 98;
+      outlines.userData = { kind: "vertex-outlines" };
+
+      const discGeo = new THREE.CircleGeometry(VERTEX_RING.radius, 32);
+      const discMat = new THREE.MeshBasicMaterial({ color: RING_GLOW, transparent: true, opacity: 0.3, depthWrite: false, depthTest: false });
+      const discs = new THREE.InstancedMesh(discGeo, discMat, emptyCorners.length);
+      discs.renderOrder = 99;
+      discs.userData = { kind: "vertex-discs" };
+
+      emptyCorners.forEach((v, i) => {
+        const y = vertexTop(tops, v) + 0.03;
+        dummy.position.set(v.x, y - 0.04, v.z);
+        dummy.rotation.set(Math.PI / 2, 0, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        outlines.setMatrixAt(i, dummy.matrix);
+
+        dummy.position.set(v.x, y - 0.016, v.z);
+        dummy.rotation.set(-Math.PI / 2, 0, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        discs.setMatrixAt(i, dummy.matrix);
+      });
+      outlines.instanceMatrix.needsUpdate = true;
+      discs.instanceMatrix.needsUpdate = true;
+      this.marks.add(outlines);
+      this.marks.add(discs);
+    }
+    if (builtCorners.length > 0) {
+      // A home's halo: one instanced dark outline under the white band, depth-tested with the default render order so the
+      // house stands in front of the halo's far side. No disc at a built corner.
+      const haloGeo = new THREE.TorusGeometry(HOME_HALO.radius, HOME_HALO.tube + HOME_HALO.outline, 8, 48);
+      const haloMat = new THREE.MeshBasicMaterial({ color: VERTEX_RING.outlineColor });
+      const haloOutlines = new THREE.InstancedMesh(haloGeo, haloMat, builtCorners.length);
+      haloOutlines.userData = { kind: "home-halo-outlines" };
+      builtCorners.forEach((v, i) => {
+        dummy.position.set(v.x, vertexTop(tops, v) + 0.03 - 0.04, v.z);
+        dummy.rotation.set(Math.PI / 2, 0, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        haloOutlines.setMatrixAt(i, dummy.matrix);
+      });
+      haloOutlines.instanceMatrix.needsUpdate = true;
+      this.marks.add(haloOutlines);
+    }
+
+    for (const v of legalVertices) {
+      // An empty corner's ring draws over everything; a home's halo is depth-tested so the house stands in front of it.
+      const ring = v.building ? HOME_HALO : VERTEX_RING;
       const m = new THREE.Mesh(
-        new THREE.TorusGeometry(0.13, 0.025, 8, 24),
-        new THREE.MeshStandardMaterial({ color: seat, emissive: glow, emissiveIntensity: 0.8 }),
+        new THREE.TorusGeometry(ring.radius, ring.tube, 8, v.building ? 48 : 32),
+        new THREE.MeshStandardMaterial({ color: seat, emissive: ringGlow, emissiveIntensity: 1, depthTest: Boolean(v.building) }),
       );
+      if (!v.building) m.renderOrder = 100;
       m.rotation.x = Math.PI / 2;
+      // Both sit on the ground at the corner (no lift onto a home's base).
       m.position.set(v.x, vertexTop(tops, v) + 0.03, v.z);
-      m.userData = { kind: "vertex", id: v.id, baseGlow: 0.8 };
+      m.userData = { kind: "vertex", id: v.id, baseGlow: 1 };
       this.marks.add(m);
       const pick = new THREE.Mesh(new THREE.SphereGeometry(PICK_VERTEX_RADIUS, 8, 6), new THREE.MeshBasicMaterial());
       pick.visible = false;
@@ -2042,8 +2227,9 @@ function makeWater() {
       uFog: { value: PAPER.clone() },
       uFade: { value: new THREE.Vector2(11, 22) },
     },
+    // The circle is local XY; +Z is up after the mesh's rotation. Crests stay at or below y = 0.
     vertexShader: /* glsl */ `
-      // The circle is local XY; +Z is up after the mesh's rotation. Crests stay at or below y = 0.
+
       uniform float uTime;
       varying vec2 vXZ;
       void main() {
@@ -2250,9 +2436,16 @@ function blackNumberFace(map: THREE.Texture, n: number) {
   ctx.drawImage(map.image as HTMLCanvasElement, 0, 0);
   const image = ctx.getImageData(0, 0, 256, 256);
   const ink = n === 6 || n === 8 ? 38 : 25;
+  // Face background derived from (1 - robberHexDim): higher dimming (more black) gives a darker face.
+  // 50% dimming -> bg = 50; 25% -> bg = 75; 75% -> bg = 25. Numerals/pips at 255 maintain >= 4.5:1 contrast across all.
+  const bg = Math.round(100 * (1 - robberHexDim));
+  const fg = 255;
   for (let i = 0; i < image.data.length; i += 4) {
+    // Leave transparent pixels outside the circular token boundary untouched.
+    if (image.data[i + 3]! === 0) continue;
     const coverage = Math.max(0, Math.min(255, Math.round((249 - image.data[i + 1]!) * 255 / (249 - ink))));
-    image.data[i] = image.data[i + 1] = image.data[i + 2] = coverage;
+    const val = Math.round(bg + (coverage * (fg - bg)) / 255);
+    image.data[i] = image.data[i + 1] = image.data[i + 2] = val;
   }
   ctx.putImageData(image, 0, 0);
   const tex = new THREE.CanvasTexture(c);
@@ -2316,16 +2509,35 @@ const LAND_MAX = Math.max(...Object.values(LAND_MS));
 const easeOut = (u: number) => 1 - (1 - u) ** 5;
 const easeSnap = (u: number) => 1 + 2.70158 * (u - 1) ** 3 + 1.70158 * (u - 1) ** 2;
 
-// A path grows from 0.2 along its edge; an outpost drops 0.2 and settles; a stronghold swaps in at 1.05 and settles.
+// Drop heights: path 0.04, outpost 0.2, stronghold 0.15. Squash overlay in the last 35% of the animation:
+// a damped sine compresses Y and expands XZ, settling to [1,1,1] at u=1 (LAND_MS).
+const SQUASH_START = 0.65;
+const jellyBounce = (su: number) => Math.exp(-5 * su) * Math.sin(su * Math.PI * 3);
+
 function poseLanding(l: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number }, now: number) {
   const u = Math.min(1, Math.max(0, (now - l.start) / LAND_MS[LAND_SOUND[l.kind]]));
   const { obj } = l;
   if (u >= 1) {
     obj.position.y = l.restY;
     obj.scale.set(1, 1, 1);
-  } else if (l.kind === "path") obj.scale.set(1, 1, 0.2 + 0.8 * easeOut(u));
-  else if (l.kind === "outpost") obj.position.y = l.restY + 0.2 * (1 - easeSnap(u));
-  else obj.scale.setScalar(1.05 - 0.05 * easeSnap(u));
+    return;
+  }
+  const j = u > SQUASH_START ? jellyBounce((u - SQUASH_START) / (1 - SQUASH_START)) : 0;
+  const sqY = 1 - 0.22 * j;
+  const sqXZ = 1 + 0.11 * j;
+
+  if (l.kind === "path") {
+    const gu = Math.min(u / SQUASH_START, 1);
+    obj.scale.set(sqXZ, sqY, (0.2 + 0.8 * easeOut(gu)) * sqXZ);
+    obj.position.y = l.restY + 0.04 * (1 - easeOut(gu));
+  } else if (l.kind === "outpost") {
+    obj.position.y = l.restY + 0.2 * (1 - easeSnap(u));
+    obj.scale.set(sqXZ, sqY, sqXZ);
+  } else {
+    const s = 1.05 - 0.05 * easeSnap(u);
+    obj.position.y = l.restY + 0.15 * (1 - easeSnap(u));
+    obj.scale.set(s * sqXZ, s * sqY, s * sqXZ);
+  }
 }
 
 function makePath(seat: string, len: number) {

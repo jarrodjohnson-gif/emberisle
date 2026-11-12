@@ -1,0 +1,15 @@
+
+> profile-recovery-ui-prove
+> node scripts/profile-recovery-ui-prove.mjs
+
+ok 430x932: sign in link, save screen (Done off until ticked), summary, New recovery code and Forgot your PIN all fit, and each refusal sits beside its field
+ok 390x844: sign in link, save screen (Done off until ticked), summary, New recovery code and Forgot your PIN all fit, and each refusal sits beside its field
+ok 375x812: sign in link, save screen (Done off until ticked), summary, New recovery code and Forgot your PIN all fit, and each refusal sits beside its field
+ok 820x1180: sign in link, save screen (Done off until ticked), summary, New recovery code and Forgot your PIN all fit, and each refusal sits beside its field
+ok Copy puts the code on the clipboard; closing the sheet before Done shows the same save screen again on the next opening
+ok an edit or resume reply without a code keeps the held code on the save screen until Done
+ok a profile with no code says so, and Get a recovery code makes one with its PIN
+ok a temporary PIN's Change PIN waits for the recovery chunk, so the new code it answers with is always shown
+ok a host without recoveryV1 shows no recovery link
+ok codes stay in their own frames, never in browser storage, the host's log or the profile file
+profile-recovery-ui-prove: pass
