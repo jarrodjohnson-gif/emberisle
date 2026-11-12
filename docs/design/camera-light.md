@@ -160,36 +160,37 @@ dock or a pine out of the hole, and the pick reach, not the piece's drawn size, 
 
 ## Budget
 
-Draw call measurements per rendered frame (while animating):
+Draw call measurements per rAF tick (idle board averaging 12 fps across 60 Hz rAF):
 
-| Viewport | Pixel Ratio | View | SSAO | Draw calls / rendered frame |
+| Viewport | Pixel Ratio | View | SSAO | Draw calls / rAF tick |
 |---|---|---|---|---|
-| 1280x720 | 1 | Overhead | Off | 184 |
-| 1280x720 | 1 | Free | Off | 175 |
-| 1280x720 | 1 | Free | Half | 341 |
-| 1920x1080 | 1 | Overhead | Off | 185 |
-| 1920x1080 | 1 | Free | Off | 173 |
-| 1920x1080 | 1 | Free | Half | 190 |
+| 1280x720 | 1 | Overhead | Off | 36.8 |
+| 1280x720 | 1 | Free | Off | 35.0 |
+| 1280x720 | 1 | Free | Half | 68.2 |
+| 1920x1080 | 1 | Overhead | Off | 37.0 |
+| 1920x1080 | 1 | Free | Off | 34.5 |
+| 1920x1080 | 1 | Free | Half | 37.9 |
 
-The table reports draw calls per rendered frame paid by the GPU.
+The table reports measured draw calls per rAF tick.
 When motionless, the board loop idles at 12 fps (PR #341, issue #331).
-Over 60 Hz ticks, idle averages ~37 overhead and ~68 SSAO calls per tick.
+Per-frame numbers while animating are an estimate of about five times.
+Estimated rendered frame costs are ~185 overhead and ~341 SSAO.
 Hex Jelly scenes batched terrain and dropped draw calls from ~480 to under 60 (PR #618, PR #624, issue #599).
 
-Ceilings for future scene and piece work:
-- Overhead play view: maximum 250 draw calls per rendered frame (50 calls per rAF tick).
-- Free and diorama views with SSAO: maximum 375 draw calls per rendered frame (75 calls per rAF tick).
+Ceilings for future scene and piece work (in per-tick units):
+- Overhead play view: maximum 50 draw calls per rAF tick (estimated ~250 per rendered frame).
+- Free and diorama views with SSAO: maximum 75 draw calls per rAF tick (estimated ~375 per rendered frame).
 
 Ceiling rationale:
-- Overhead measures ~185 calls per rendered frame.
-- The 250 ceiling provides 35% headroom (65 calls) for animations and highlights.
-- Free view with SSAO measures up to 341 calls per rendered frame.
-- The 375 ceiling provides 10% headroom (34 calls) for SSAO and multi-mesh terrain blocks.
+- Overhead measures 37.0 calls per tick.
+- The 50 ceiling provides 35% headroom for animations and highlights.
+- Free view with SSAO measures up to 68.2 calls per tick.
+- The 75 ceiling provides 10% headroom for SSAO and multi-mesh terrain blocks.
 
 Frame time:
 Real-GPU frame times cannot be measured in headless CI.
-CI runs on SwiftShader CPU rasterization at a fixed 60 Hz timer.
-Physical GPU frame time measurement is tracked in follow-up issue #1558 (needs: jarrod).
+Headless CI runs on SwiftShader CPU rasterization at a fixed 60 Hz timer.
+Physical GPU frame time measurement is tracked in follow-up issue #1558.
 
 ## Open
 

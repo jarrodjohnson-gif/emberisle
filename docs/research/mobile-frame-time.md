@@ -160,7 +160,7 @@ The `css` row sets the full CSS size itself. Free-view `resize()` would otherwis
 ## Why draw calls dropped from October to November
 
 October 2026 measurements showed ~480 overhead calls and ~950 free SSAO calls.
-November 2026 runs report ~185 overhead calls and ~341 free SSAO calls per rendered frame.
+November 2026 runs report ~37 overhead calls and ~68 SSAO calls per rAF tick.
 Two distinct changes explain this difference.
 
 First, Hex Jelly batched terrain meshes (PR #618 and PR #624, issue #599).
@@ -168,5 +168,5 @@ Each terrain kind shares one scene instead of unique meshes per tile.
 `board-look-prove` line 883 enforces that terrain scenes draw in at most 60 calls.
 Second, PR #341 (issue #331) added idle loop throttling to 12 fps when motionless.
 During idle, 48 of 60 ticks draw 0 times.
-Idle tick averages are therefore roughly one-fifth of calls per rendered frame (~37 overhead, ~68 SSAO).
-Physical GPU frame time measurement is tracked in follow-up issue #1558 (needs: jarrod).
+Per-rendered-frame costs while animating are estimated at roughly five times (~185 overhead, ~341 SSAO).
+Physical GPU frame time measurement is tracked in follow-up issue #1558.
