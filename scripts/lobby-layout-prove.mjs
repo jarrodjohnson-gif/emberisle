@@ -201,6 +201,7 @@ async function safeArea(page, label, expected) {
     const edges = await page.getByTestId("lobby-card").evaluate(el => { const r = el.getBoundingClientRect(); return { top: r.top, right: innerWidth - r.right, bottom: innerHeight - r.bottom, left: r.left }; });
     for (const [side, value] of Object.entries(expected)) assert.ok(Math.abs(edges[side] - value) <= .5, `${label}: card ${side} edge at ${value} px with a ${insets[side]} px safe area (${edges[side]})`);
     console.log(`${label}: card clears the safe area (${Object.keys(expected).join(", ")})`);
+    if (label.includes("667x375")) await howToPlayFits(page, `${label} with safe area`);
   } finally {
     await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 0, right: 0, bottom: 0, left: 0 } });
     await cdp.detach();
@@ -303,6 +304,7 @@ async function supportedCodeFits(page, label) {
 async function startState(page, disabled, reason) {
   await page.getByTestId("lobby-status").getByText(reason, { exact: true }).waitFor();
   const start = page.getByRole("button", { name: "Start", exact: true });
+  await start.waitFor({ timeout: 5000 });
   assert.equal(await start.count(), 1, "the host always has one Start button");
   assert.equal(await start.isDisabled(), disabled, reason);
   assert.equal(await start.getAttribute("aria-describedby"), "lobby-status", "Start names the visible status as its reason");
@@ -320,12 +322,14 @@ async function howToPlayFits(page, label) {
       lines: range.getClientRects().length,
       lineHeight: parseFloat(getComputedStyle(el).lineHeight),
       textHeight: text.height,
-      inside: text.left >= box.left - 0.5 && text.right <= box.right + 0.5 && box.left >= row.left - 0.5 && box.right <= row.right + 0.5,
+      inside: text.left >= box.left && text.right <= box.right && box.left >= row.left && box.right <= row.right,
       scroll: el.scrollWidth <= el.clientWidth,
       maxLines,
     };
   });
-  assert.ok(m.lines <= m.maxLines && m.inside && m.scroll, `${label}: How to play fits its row: ${JSON.stringify(m)}`);
+  const linesMatch = m.maxLines === 1 ? m.lines === 1 : m.lines <= m.maxLines;
+  const heightOk = m.maxLines === 1 ? m.textHeight <= m.lineHeight + 1 : m.textHeight <= m.lineHeight * m.maxLines + 2;
+  assert.ok(linesMatch && heightOk && m.inside && m.scroll, `${label}: How to play fits its row: ${JSON.stringify(m)}`);
 }
 
 try {
@@ -377,6 +381,7 @@ try {
       await page.setViewportSize({ width: 667, height: 375 });
       try {
         await safeArea(page, "667x375", { top: 47, right: 21, bottom: 34, left: 59 });
+        await howToPlayFits(page, "667x375");
       } finally {
         await page.setViewportSize({ width, height });
       }
