@@ -754,7 +754,7 @@ try {
       const onTop = place.contains(document.elementFromPoint((p.l + p.r) / 2, (p.t + p.b) / 2));
       return { armed: window.__emberisle.getState().buildMode, row, hand, turn, onTop, inView: p.t >= sc.t && p.b <= sc.b, overHand: meets(row, hand), overTurn: meets(row, turn) };
     });
-    check(`${tag}: an armed Path's Place chip is the column's first row, in view, clear of the hand and the turn banner`, chip.armed === "path" && chip.onTop && chip.inView && !chip.overHand && !chip.overTurn, chip);
+    check(`${tag}: an armed Path's Place button is in the column's action row, in view, clear of the hand and the turn banner`, chip.armed === "path" && chip.onTop && chip.inView && !chip.overHand && !chip.overTurn, chip);
     if (w === 844) {
       // #597: the diorama by choice on the sideways phone. Adjacent corners stay at least 18 px apart. The far (north) coast
       // is smallest on screen: a path on the northmost coast edge and an outpost on its corner, measured from their own

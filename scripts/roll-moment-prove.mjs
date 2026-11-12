@@ -395,7 +395,11 @@ async function practice(viewport, touch) {
   console.log(`${tag}: ${touch ? "tap" : "key"} skip, gone ${skipped.toFixed(0)} ms after the press, page heard it ${skip.pressed}×`);
   check(skipped < 100 && skip.flights === 0 && skip.pressed === 1, `${tag}: a ${touch ? "touch pointerdown" : "key press"} skips the moment and still reaches the page`);
   const column = viewport.height < 500 && viewport.width > viewport.height;
-  check(await page.getByTestId(column ? "dice-row" : "log-line").isVisible(), `${tag}: after a skip the resting ${column ? "row" : "event line"} shows`);
+  // The roll comes to rest within a second of the skip (the line can be a frame behind the moment leaving); on a miss the
+  // message says what was on screen.
+  const rested = await page.getByTestId(column ? "dice-row" : "log-line").waitFor({ state: "visible", timeout: 1000 }).then(() => true, () => false);
+  const restInfo = rested ? "" : await page.evaluate(() => { const el = document.querySelector('[data-testid="log-line"]'); const b = el?.getBoundingClientRect(); const st = window.__emberisle.getState(); return JSON.stringify({ text: el?.textContent, hidden: el?.hidden, w: b?.width, h: b?.height, phase: st.state.phase, dice: st.state.dice, log: st.gameLog.slice(-3).map((l) => l.text), trade: !!st.offer }); });
+  check(rested, `${tag}: after a skip the resting ${column ? "row" : "event line"} shows ${restInfo}`);
 
   // Online seats and watchers mount a table from the host's state and get each roll as a pushed state (the store's
   // loadState and state message). A table loaded with dice already on it shows nothing; one roll on shows one moment,
