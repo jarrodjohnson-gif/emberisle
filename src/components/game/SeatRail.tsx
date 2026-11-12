@@ -79,18 +79,19 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
     watch.observe(line.current);
     return () => watch.disconnect();
   }, [strip, label]);
+  // #420: a strip cell under 100 px shows the die without the points during the roll-off.
   const awayMark = away ? (
     <span data-testid="seat-away" className="seat-away flex min-w-3 shrink-[9] items-center gap-0.5 text-zinc-700">
       {/* A struck ring: the seat's circle with a line through it, in CSS so it costs no icon. */}
       <span className="relative size-2.5 shrink-0 rounded-full border-[1.5px] border-current after:absolute after:-inset-x-0.5 after:top-1/2 after:h-[1.5px] after:-rotate-45 after:bg-current" />
-      <span aria-hidden="true" className={cn("truncate", strip && "@max-[120px]:hidden")}>
+      <span aria-hidden="true" className={cn("truncate", strip && "@max-[200px]:hidden")}>
         Away
       </span>
       <span className="sr-only">reconnecting</span>
     </span>
   ) : null;
   const points = (
-    <span data-testid="seat-vp" className={cn("shrink-0 tabular-nums", strip ? "text-xs text-zinc-700" : "ml-auto text-[15px] font-bold leading-5")}>
+    <span data-testid="seat-vp" className={cn("shrink-0 tabular-nums", strip ? cn("text-xs text-zinc-700", state.phase === "rollOff" && "@max-[100px]:hidden") : "ml-auto text-[15px] font-bold leading-5")}>
       {publicVP(state, p.id)}
       {strip ? <span aria-hidden="true"> pts</span> : null}
       <span className="sr-only"> points{hidden ? `, plus ${hidden} hidden` : ""}</span>
