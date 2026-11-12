@@ -111,6 +111,7 @@
     "auto-merge-prove": "node scripts/auto-merge-prove.mjs",
     "ci-install-prove": "node scripts/ci-install-prove.mjs",
     "ci-changes-prove": "node scripts/ci-changes-prove.mjs",
+    "proof-host-port-prove": "node scripts/proof-host-port-prove.mjs",
     "registered-prove": "node scripts/registered-prove.mjs",
     "readme-server-prove": "node scripts/readme-server-prove.mjs",
     "loosen-prove": "node scripts/loosen-prove.mjs",
