@@ -1,7 +1,7 @@
 // #1180: classification, stale-head suppression, once-per-head delivery, and workflow boundaries.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { classify, reviewOf, routeFor, notifications, wakeLine, MISSING, DAILY_LIMIT, tableFor, updateBody, sweep } from './desk-board.mjs';
+import { classify, reviewOf, routeFor, notifications, wakeLine, mergeLine, MISSING, DAILY_LIMIT, tableFor, updateBody, sweep } from './desk-board.mjs';
 const A = 'a'.repeat(40), B = 'b'.repeat(40);
 const now = new Date('2026-10-28T03:00:00Z');
 const pr = { number: 1, state: 'open', draft: false, head: { sha: A }, changed_files: 1 };
@@ -136,6 +136,26 @@ for (const condition of ['except one should-fix', 'pending fixes', 'if the bug i
 eq(f.inboxReads.includes('2026-10-28T00:00:00Z'), true);
 const relayToday = today.map(c => ({ ...c, body: 'review-desk: comment on #854 by builder: https://example.test/comment' }));
 eq(notifications([ready, missing], relayToday, now), []);
+// #1584: DESK.md's "Clean." verdict, and a ready-to-merge wake once per head.
+const deskReview = (verdict, extra = 'Docs only.', sha = A) => comment(`<!-- review-desk -->\n\n${verdict}\n\n${extra}\n\nReviewer: Sonnet 5.5 · Builder: Opus 5.5 · Head: ${sha}`);
+eq(reviewOf([deskReview('Clean.')]).clean, true);
+eq(reviewOf([deskReview('Not clean.')]).clean, false);
+eq(reviewOf([deskReview('Clean, except the proof.')]).clean, false);
+eq(bucket({ comments: [deskReview('Clean.')] }), 'Ready to merge');
+eq(bucket({ comments: [deskReview('Not clean.')] }), 'Red / waiting');
+eq(bucket({ comments: [deskReview('Clean.', 'Jarrod must see pictures first.')] }), 'Ready for Jarrod');
+eq(bucket({ comments: [deskReview('Clean.', 'Docs only.', B)] }), 'Ready for desk');
+eq(bucket({ comments: [deskReview('Clean.')], checks: [{ ...green, status: 'in_progress', conclusion: null }] }), 'Red / waiting');
+const mergeable = classify({ ...input, comments: [deskReview('Clean.')] });
+eq(notifications([mergeable], [], now), [mergeLine(mergeable)]);
+eq(notifications([mergeable], [comment(mergeLine(mergeable))], now), []);
+eq(notifications([classify({ ...input, comments: [deskReview('Clean.', 'Jarrod must see pictures first.')] })], [], now), []);
+const mergeSweep = fixture({ reviewComments: [deskReview('Clean.')] });
+await sweep(mergeSweep.api, { now });
+eq(mergeSweep.inbox.map(c => c.body), [mergeLine(mergeable)]);
+await sweep(mergeSweep.api, { now });
+eq(mergeSweep.inbox.length, 1);
+eq(mergeSweep.body().includes('Ready to merge'), true);
 const workflow = readFileSync('.github/workflows/desk-board.yml', 'utf8');
 for (const required of ['workflows: [CI]', 'types: [completed]', 'types: [ready_for_review]', "cron: '17 0,8,16 * * *'", 'group: desk-board', 'cancel-in-progress: true', 'ref: ${{ github.event.repository.default_branch }}', 'persist-credentials: false', 'sparse-checkout: scripts/desk-board.mjs', 'sparse-checkout-cone-mode: false', 'issues: write']) {
   eq(workflow.includes(required), true);
