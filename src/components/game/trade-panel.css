@@ -20,7 +20,7 @@
 .trade-add > svg { flex-shrink: 0; color: var(--sym); }
 .trade-resource[data-selected] .trade-add { color: #1f3331; font-weight: 700; }
 .trade-add:disabled { opacity: 0.5; }
-.trade-add:disabled > svg { color: #52625f; }
+.trade-add:disabled > svg { color: var(--muted); }
 .trade-add:focus-visible, .trade-remove:focus-visible > span { outline: 2px solid #1f3d3b; outline-offset: 2px; }
 .trade-badge { position: absolute; top: -10px; right: -6px; min-width: 28px; height: 24px; padding: 0 6px; border-radius: 12px; background: var(--edge); box-shadow: 0 0 0 2px #fbfdfc; color: #fff; font-size: 14px; line-height: 24px; font-weight: 700; text-align: center; pointer-events: none; }
 /* The minus hangs half below the token, so the row stays 64 px; its 44 px hit area runs into the space under the row. */
