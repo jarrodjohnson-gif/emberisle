@@ -163,7 +163,8 @@ try {
         return {
           name: name?.textContent,
           cut: !name || name.scrollWidth > name.clientWidth,
-          below: !!name && box(name).top >= Math.max(box(vp).bottom, box(dot).bottom) - 1,
+          // #1544: the dot and the full name share the first line; the points sit on their own line under the name.
+          below: !!name && Math.abs((box(dot).top + box(dot).bottom) / 2 - (box(name).top + box(name).bottom) / 2) <= 2 && box(vp).top >= box(name).bottom - 1,
           tallies: cell.querySelectorAll('[data-testid^="tally-"]').length,
         };
       });
@@ -199,7 +200,7 @@ try {
     assert.deepEqual(ui.seats.map((s) => s.name), NAMES, `${tag}: seats show the full names`);
     for (const s of ui.seats) {
       assert.ok(!s.cut, `${tag}: ${s.name} is cut off`);
-      assert.ok(s.below, `${tag}: ${s.name} is not on its own line under the dot and points`);
+      assert.ok(s.below, `${tag}: ${s.name} is not on the dot's line with the points under it`);
       assert.equal(s.tallies, 0, `${tag}: ${s.name}'s seat still has a tally on the strip`);
     }
     for (const [k, v] of Object.entries(ui.fills)) assert.equal(v, "rgba(0, 0, 0, 0)", `${tag}: the ${k} has a fill (${v})`);
