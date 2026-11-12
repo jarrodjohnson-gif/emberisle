@@ -92,9 +92,20 @@ const CEILINGS = [
   // #1363, 2026-11-07: a sticker as the tray, seat bubble and chat log draw it (animated loop, reduced-motion still), loaded
   // with the first sticker; measured 949 B gzip. New chunk only; the desk sets this ceiling.
   { name: "Sticker", gzipBytes: 1050 },
+  // #662, 2026-11-08: the sea-and-wind ambience loop, loaded on its first start after the first gesture; measured 461 B gzip.
+  // New chunk only; the desk sets this ceiling.
+  { name: "ambience", gzipBytes: 550 },
   // #1411, 2026-11-08: a guest's I'll play again and the win screen's count, loaded as an online table starts; measured
   // 412 B gzip. New chunk only; the desk set this ceiling.
   { name: "PlayAgain", gzipBytes: 450 },
+  // #1350, 2026-11-11: the read-only profile card for another lobby seat, loaded when a name is first pressed.
+  // New chunk only; the desk set this ceiling in its review of PR #1531.
+  { name: "OtherProfileCard", gzipBytes: 1550 },
+  // #1539, 2026-11-12: the Build list sheet, loaded on idle; measured 1,439 B gzip. New chunk only; proposed, the desk sets
+  // this ceiling.
+  { name: "BuildList", gzipBytes: 1600 },
+  // #827: other seats' public roll and trade gains load lazily (online only); a new chunk, so this ceiling is its only limit.
+  { name: "SeatPublicGains", gzipBytes: 1800 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.

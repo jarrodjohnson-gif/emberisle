@@ -141,7 +141,7 @@ async function centred(page, label) {
       const rs = [...rg.getClientRects()];
       return { l: Math.min(...rs.map(r => r.left)), r: Math.max(...rs.map(r => r.right)), t: Math.min(...rs.map(r => r.top)), b: Math.max(...rs.map(r => r.bottom)) };
     };
-    const labels = [...card.querySelectorAll("button, [role=tab]")].filter(el => !el.matches('[data-testid="rename-seat"], [data-emote]') && !el.closest('[data-testid="emoji-row"]')).map(el => {
+    const labels = [...card.querySelectorAll("button, [role=tab]")].filter(el => !el.matches('[data-testid="rename-seat"], [data-testid^="lobby-player-"], [data-emote]') && !el.closest('[data-testid="emoji-row"]')).map(el => {
       const b = box(el);
       const icon = el.querySelector("svg");
       const ib = icon && !el.textContent.trim() ? box(icon) : null;

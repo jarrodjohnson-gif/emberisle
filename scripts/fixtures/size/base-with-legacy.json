@@ -26,6 +26,7 @@
   "emotes": 371,
   "SeatNeeds": 1780,
   "TradeResource": 1430,
+  "SeatPublicGains": 1770,
   "TradeToast": 2661,
   "losses": 1407,
   "x": 157,
@@ -39,5 +40,9 @@
   "SoundSheet": 1872,
   "use-muted-seats": 414,
   "WinList": 1253,
-  "Sticker": 949, "PlayAgain": 412
+  "Sticker": 949,
+  "PlayAgain": 412,
+  "BuildList": 1439,
+  "OtherProfileCard": 1078,
+  "ambience": 461
 }

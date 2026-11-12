@@ -39,7 +39,6 @@ export function TradeToast() {
   const spectator = useGame((s) => s.spectator);
   const answerTrade = useGame((s) => s.answerTrade);
   const cancelTrade = useGame((s) => s.cancelTrade);
-  const [now, setNow] = useState(() => Date.now());
   const [leaving, setLeaving] = useState(false);
   const fadeMs = calm() ? 0 : DISMISS_MS;
   const lineId = useId();
@@ -92,13 +91,6 @@ export function TradeToast() {
     return () => { observer.disconnect(); cancelAnimationFrame(frame); stack?.style.removeProperty("--trade-height"); root.style.removeProperty("--active-offer-height"); };
   }, [shown, aboveChat, leaving]);
 
-  useEffect(() => {
-    if (!offer) return;
-    setNow(Date.now());
-    const t = window.setInterval(() => setNow(Date.now()), 250);
-    return () => window.clearInterval(t);
-  }, [offer]);
-
   // True from the very render after this seat answers, so the card stays mounted and its opacity transition runs (#537).
   const fading = leaving || (hadOffer.current && !shown && !outcome);
   const me = players?.find((p) => p.id === localId);
@@ -121,8 +113,7 @@ export function TradeToast() {
       );
     }
   } else if (!declined.includes(localId)) {
-    // #1245: a person's offer holds until answered (until is null): no countdown and no "5 seconds left".
-    const left = offer.until === null ? null : Math.max(0, Math.ceil((offer.until - now) / 1000));
+    // #1507 (owner q1504-offer-hold A): all offers hold until answered; no countdown.
     const asker = offer.from === localId;
     const short = me ? RESOURCES.filter((r) => (offer.want[r] ?? 0) > me.resources[r]) : [];
     answering = !asker && !spectator;
@@ -134,24 +125,12 @@ export function TradeToast() {
       ? `${offer.fromName} is looking for ${bagText(offer.want)}`
       : offerLine(asker ? null : offer.fromName, offer.give, offer.want);
     const tick = (
-      <>
-        <div className="trade-summary flex min-w-0 items-center justify-between gap-2">
-          <p id={lineId} className="text-sm font-medium leading-5" title={line} data-testid={compact ? "trade-demand" : undefined}>
-            {!asker || compact ? <SeatDot color={fromColor} className="mr-1.5 size-3 align-[-1px]" /> : null}
-            {line}
-          </p>
-          {left === null ? null : (
-            <span aria-hidden={!asker || undefined} className="trade-clock shrink-0 tabular-nums text-xs" data-testid="trade-countdown" data-urgent={left <= 5 || undefined}>
-              {left} s
-            </span>
-          )}
-        </div>
-        {answering && left !== null ? (
-          <p aria-live="polite" className="sr-only" data-testid="trade-countdown-live">
-            {left === 5 ? "5 seconds left" : ""}
-          </p>
-        ) : null}
-      </>
+      <div className="trade-summary flex min-w-0 items-center justify-between gap-2">
+        <p id={lineId} className="text-sm font-medium leading-5" title={line} data-testid={compact ? "trade-demand" : undefined}>
+          {!asker || compact ? <SeatDot color={fromColor} className="mr-1.5 size-3 align-[-1px]" /> : null}
+          {line}
+        </p>
+      </div>
     );
     if (compact) {
       body = (

@@ -169,7 +169,8 @@ try {
 
   // #156/#271: before Join, the color the table already holds is dimmed and cannot be picked.
   const tideDims = async (t) => {
-    await t.page.locator(".seat-settings > summary").click();
+    const summary = t.page.locator(".seat-settings > summary");
+    if (await summary.count()) await summary.click();
     const swatch = (n) => t.page.getByRole("radio", { name: n });
     await until(async () => {
       const tide = swatch("Tide (taken)");
@@ -182,8 +183,11 @@ try {
   await b.page.getByPlaceholder(/code/i).fill(tableCode);
   await tideDims(b);
   console.log("tab B typed the code: Tide swatch disabled at opacity 0.35, aria-checked=false; Ember, Dune, Pine enabled");
-  // #304: tab C typed nothing. The link filled the field, the peek dimmed Tide, and the code is gone from the URL.
-  await until(async () => ((await c.page.getByPlaceholder(/code/i).inputValue()) === tableCode ? true : null), "join link prefills tab C's Join field");
+  // #304/#1505: tab C typed nothing. The link names the table on Join, the peek dims Tide, and the code leaves the URL.
+  await until(async () => {
+    const join = c.page.getByTestId("join-table");
+    return (await join.count()) && (await join.textContent())?.includes(tableCode) ? true : null;
+  }, "join link names the table on Join");
   await tideDims(c);
   const searchC = await c.page.evaluate(() => location.search);
   if (new URLSearchParams(searchC).has("code")) throw new Error(`tab C's URL still carries the code: ${searchC}`);
@@ -366,10 +370,13 @@ try {
   for (const t of tabs) {
     await t.page.evaluate(() => {
       window.__moments = [];
+      // #1539: outside the sideways-phone column the HUD has no resting dice, so the moment's own faces are read as it mounts.
+      window.__momentFaces = [];
       let cur = null;
       new MutationObserver(() => {
         const m = document.querySelector('[data-testid="roll-moment"]');
         if (m && m !== cur) window.__moments.push([...m.querySelectorAll('[data-testid="die"]')].map((e) => Number(e.dataset.value)));
+        if (m && m !== cur) window.__momentFaces.push({ pips: [...m.querySelectorAll('[data-testid="die"]')].map((e) => e.querySelectorAll("[data-pip]").length), motion: getComputedStyle(m).animationName });
         cur = m;
       }).observe(document.body, { subtree: true, childList: true });
     });
@@ -388,7 +395,8 @@ try {
       const s = window.__emberisle.getState();
       return { text: s.gameLog.at(-1)?.text, banner: s.banner, hud: document.querySelector('[data-testid="log-line"]')?.textContent };
     })));
-    if (new Set(events.map((e) => e.text)).size !== 1 || events.some((e) => e.banner || e.hud !== e.text)) throw new Error(`roll event differs or repeats: ${JSON.stringify(events)}`);
+    // #1539: the tray's event line rests on the roll online too ("Ember rolled 8!"), the same on every tab; the goods line stays the log's newest.
+    if (new Set(events.map((e) => e.text)).size !== 1 || new Set(events.map((e) => e.hud)).size !== 1 || events.some((e) => e.banner || !/ rolled (1[0-2]|[2-9])!$/.test(e.hud ?? ""))) throw new Error(`roll event differs or repeats: ${JSON.stringify(events)}`);
     const d = JSON.parse(vs[0].shared).dice;
     dice.push(d);
     const roller = await tabs[i].page.evaluate((id) => window.__emberisle.getState().state.players.find((p) => p.id === id)?.name, cur);
@@ -400,32 +408,44 @@ try {
       if (seen.length !== r + 1 || seen[r].join() !== d.join()) throw new Error(`${t.name} roll moments ${JSON.stringify(seen)} after roll ${r + 1} of ${d}`);
     }
     if (r === 0) console.log(`roll moment on all tabs: ${d.join("+")}`);
-    // #322: every tab rests the roll as two pip faces that match the authoritative shared dice.
+    // #322: every tab shows the roll as two pip faces that match the authoritative shared dice. #1539: outside the
+    // sideways-phone column the faces are the roll moment's, and the roll rests as the tray's event line.
     const sum = d[0] + d[1];
     for (const t of tabs) {
       const faces = await until(
         () =>
-          t.page.evaluate((want) => {
-            const els = [...document.querySelectorAll('[data-testid="dice-row"] [data-testid="die"]')];
-            const values = els.map((e) => Number(e.dataset.value));
-            if (els.length !== 2 || values.join("+") !== want) return null;
+          t.page.evaluate(({ r }) => {
+            const m = window.__moments[r];
+            if (!m || m.length !== 2) return null;
             return {
-              values,
+              values: m,
               authoritative: window.__emberisle.getState().state.dice,
-              pips: els.map((e) => e.querySelectorAll("[data-pip]").length),
-              label: els[0].closest('[role="img"]')?.getAttribute("aria-label"),
-              motion: getComputedStyle(els[0]).animationName,
+              pips: window.__momentFaces[r].pips,
+              label: (document.querySelector('[data-testid="announce-roll"]')?.textContent ?? "").trim(),
+              motion: window.__momentFaces[r].motion,
             };
-          }, d.join("+")),
+          }, { r }),
         `dice faces on ${t.name} after roll ${r + 1}`,
       );
       const [x, y] = faces.values;
       if (x + y !== sum) throw new Error(`${t.name} dice ${x}+${y} vs shared sum ${sum}`);
       if (faces.authoritative.join() !== faces.values.join()) throw new Error(`${t.name} dice ${x}+${y} vs host ${faces.authoritative.join("+")}`);
       if (faces.pips.join() !== faces.values.join()) throw new Error(`${t.name} dice ${x}+${y} drew ${faces.pips.join("+")} pips`);
-      if (faces.label !== `Rolled ${x} and ${y}, ${sum}`) throw new Error(`${t.name} dice label "${faces.label}"`);
-      const want = t === c ? "none" : "die-settle";
-      if (faces.motion !== want) throw new Error(`${t.name} die animation ${faces.motion}, want ${want}`);
+      if (!faces.label.endsWith(`rolled ${x} and ${y}: ${sum}.`)) throw new Error(`${t.name} roll read-out "${faces.label}"`);
+      const want = t === c ? "none" : "roll-in";
+      if (faces.motion !== want) throw new Error(`${t.name} roll moment animation ${faces.motion}, want ${want}`);
+      // #1539: the roll rests on screen on every tab, online too: the tray's event line holds the sum (a sideways phone keeps the dice row).
+      const rest = await until(
+        () => t.page.evaluate(() => {
+          const row = document.querySelector('[data-testid="dice-row"]');
+          if (row) return { where: "dice-row", sum: [...row.querySelectorAll('[data-testid="die"]')].reduce((n, e) => n + Number(e.dataset.value), 0) };
+          const el = document.querySelector('[data-testid="log-roll-sum"]');
+          const box = el?.getBoundingClientRect();
+          return el && box.width > 0 && box.height > 0 ? { where: "log-roll-sum", sum: Number(el.textContent.trim()) } : null;
+        }),
+        `the roll at rest on ${t.name} after roll ${r + 1}`,
+      );
+      if (rest.sum !== sum) throw new Error(`${t.name} resting roll shows ${rest.sum} in ${rest.where}, want ${sum}`);
     }
     diceMatch++;
 

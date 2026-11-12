@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -u
+export PATH=/workspace/work/runtime/node_modules/node/bin:$PATH
+cd /workspace/work/1518 || exit 2
+out=/workspace/work/resume-nov9/1518-routing-validation
+mkdir -p "$out"
+[ ! -e "$out/source-head" ] || exit 2
+[ "$(git rev-parse HEAD)" = eb2613bb0c488d6ef2f16451866ed8462f934b64 ] || exit 2
+git diff --quiet HEAD -- || exit 2
+git rev-parse HEAD > "$out/source-head"
+git rev-parse HEAD:scripts/turn-gain-prove.mjs > "$out/proof-blob"
+node --version > "$out/node-version"
+cat /sys/fs/cgroup/cpu.max > "$out/cpu-max"
+node --input-type=module -e 'setInterval(()=>{const until=performance.now()+100;while(performance.now()<until){}},200)' &
+load_pid=$!
+trap 'kill "$load_pid" 2>/dev/null || true' EXIT
+for run in $(seq 1 20); do
+ date -u +%FT%TZ > "$out/$run.started"
+ ONLY=reconnect node scripts/turn-gain-prove.mjs > "$out/$run.log" 2>&1
+ result=$?
+ printf '%s\n' "$result" > "$out/$run.exit"
+ date -u +%FT%TZ > "$out/$run.ended"
+ printf 'focused run %s exit %s\n' "$run" "$result"
+ if [ "$result" -ne 0 ]; then tail -n 16 "$out/$run.log"; exit "$result"; fi
+done
+date -u +%FT%TZ > "$out/full.started"
+node scripts/turn-gain-prove.mjs > "$out/full.log" 2>&1
+result=$?
+printf '%s\n' "$result" > "$out/full.exit"
+date -u +%FT%TZ > "$out/full.ended"
+tail -n 15 "$out/full.log"
+exit "$result"

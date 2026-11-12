@@ -8,7 +8,7 @@
 // - on a 390x844 phone with an iPhone's safe-area insets (47 top, 34 bottom), the page cannot scroll or rubber-band, the
 //   title's Play, the lobby's Ready and both cards sit inside the safe area, and so does every button of the in-game HUD;
 // - held sideways (844x390, 47 left and right, 21 bottom), the title's Play, the lobby's Ready and both cards do too;
-// - a join link (?code=) and a watch link (?watch=) opened at that address still fill the code and join or watch.
+// - a join link (?code=) opens Join table <code> with no code box; a watch link (?watch=) still fills the code and shows Watch.
 // Chromium has no standalone display-mode to emulate; the page's safe-area CSS is unconditional (env() is 0 in a plain
 // tab), so the insets are what installing changes, and those are emulated over CDP. Zero console errors.
 // Run: npm run build && npm run install-prove
@@ -181,14 +181,15 @@ try {
   const joinUrl = `${HOST}?code=${tableCode}`;
   assert.ok(joinUrl.startsWith(scope), "the join link is inside the manifest scope");
   await join.page.goto(joinUrl);
-  const field = join.page.getByRole("textbox", { name: "Join code" });
-  await field.waitFor();
-  assert.equal(await field.inputValue(), tableCode, "?code= fills the join field");
-  await join.page.getByRole("button", { name: "Join", exact: true }).click();
+  const joinTable = join.page.getByTestId("join-table");
+  await joinTable.waitFor();
+  assert.equal((await joinTable.innerText()).trim(), `Join table ${tableCode}`, "?code= names the table on Join");
+  assert.equal(await join.page.getByRole("textbox", { name: "Join code" }).count(), 0, "?code= hides the code box");
+  await joinTable.click();
   await join.page.getByTestId("table-code").getByText(tableCode).waitFor();
   await p.page.getByTestId("lobby-card").getByText("Waiting").nth(1).waitFor();
   await join.ctx.close();
-  console.log(`ok   ?code=${tableCode} fills the field and Join seats a second player`);
+  console.log(`ok   ?code=${tableCode} seats a second player from Join table`);
 
   const watch = await phone(390, 844, { top: 47, bottom: 34, left: 0, right: 0 });
   await watch.page.goto(`${HOST}?watch=${tableCode}`);

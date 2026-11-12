@@ -105,7 +105,23 @@ try {
       });
     }
     await load(structuredClone(g));
-    await page.getByTestId("win-menu").waitFor();
+    // Preserve the original startup guard; emit state only on failure, then rethrow (#1494).
+    try {
+      await page.getByTestId("win-menu").waitFor();
+    } catch (error) {
+      const state = await page.evaluate(() => {
+        const s = window.__emberisle?.getState();
+        return {
+          screen: s?.screen, phase: s?.state?.phase, winner: s?.state?.winner,
+          body: document.body.innerText.slice(0, 5000),
+          resources: performance.getEntriesByType("resource")
+            .filter(r => /Sheets|WinScreen|WinList/.test(r.name))
+            .map(r => ({ name: r.name, duration: r.duration })),
+        };
+      }).catch(captureError => ({ diagnosticError: String(captureError) }));
+      console.log("STARTUP FAILURE", JSON.stringify({ tag, errors, listLoads, state }));
+      throw error;
+    }
     return { context, page, tag, listLoads };
   }
 

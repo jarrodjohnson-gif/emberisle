@@ -100,15 +100,23 @@ try {
       const bar = document.querySelector('[data-testid="fortunes-button"]').parentElement;
       return {
         deck: window.__emberisle.getState().state.deckLeft ?? window.__emberisle.getState().state.deck.length,
-        fortunes: [...document.querySelectorAll("button")].filter((b) => /^(Play fortune|Fortunes)/.test(b.textContent.trim())).map((b) => b.textContent.trim()),
+        fortunes: [...document.querySelectorAll("button")].filter((b) => /^(Play fortune|Fortunes?) ·/.test(b.textContent.trim())).map((b) => b.textContent.trim()),
         selects: document.querySelectorAll("select").length,
         stale: [...bar.querySelectorAll("button")].map((b) => b.textContent.trim()).filter((t) => /knight|Wayfarer card|Path fortune|Plenty|Monopoly/.test(t)),
       };
     });
-    assert.deepEqual(row.fortunes, ["Play fortune · 6"], `${v.tag}: one fortunes button with the number held, got ${JSON.stringify(row.fortunes)}`);
-    // #776: the deck count sits on the Fortune buy tile and in its label.
-    assert.equal(await page.getByTestId("deck-left").textContent(), `${row.deck} left`, `${v.tag}: the buy tile shows the deck count`);
-    assert.equal(await page.getByTestId("build-card").getAttribute("aria-label"), `Fortune, ${row.deck} left in deck`, `${v.tag}: the buy tile's label says how many are left`);
+    // #1539: outside the sideways-phone column the tray's button is short, "Fortune · N".
+    assert.deepEqual(row.fortunes, ["Fortune · 6"], `${v.tag}: one fortunes button with the number held, got ${JSON.stringify(row.fortunes)}`);
+    // #776, #1539: the deck count sits on the Build list's Fortune row, in its Buy pill and its description.
+    await page.getByTestId("build-open").click({ timeout: STEP_MS });
+    await page.getByTestId("build-list").waitFor({ timeout: STEP_MS });
+    assert.equal(await page.getByTestId("deck-left").textContent(), `${row.deck}`, `${v.tag}: the Buy pill shows the deck count`);
+    // #1512: the count is meta text, on the 12 px floor; the Buy pill sets it at 13 px.
+    const deckPx = await page.getByTestId("deck-left").evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    assert.equal(deckPx, 13, `${v.tag}: the Fortune count is 13 px, got ${deckPx}`);
+    assert.match(await page.getByTestId("build-card").getAttribute("aria-description"), new RegExp(` · Buy, ${row.deck} left$`), `${v.tag}: the Fortune row's description says how many are left`);
+    await page.keyboard.press("Escape");
+    await page.getByTestId("build-list").waitFor({ state: "detached", timeout: STEP_MS });
     assert.equal(row.selects, 0, `${v.tag}: no <select> on the page`);
     assert.deepEqual(row.stale, [], `${v.tag}: no per-fortune buttons left in the row`);
     // The row's buttons are 44 px on a phone, as the other build buttons are (the desktop row is 32 px under a fine pointer).
@@ -170,10 +178,11 @@ try {
     await page.getByTestId("fortune-play-knight").click();
     await closed();
     assert.equal(await store(() => window.__emberisle.getState().buildMode), "knight", `${v.tag}: wayfarer armed`);
-    assert.equal(await button.getAttribute("aria-pressed"), "true", `${v.tag}: Fortunes pressed while armed`);
+    // #1539: armed, the action row is Cancel alone; the banner says what to pick, and Esc on a keyboard.
+    assert.deepEqual([await page.getByTestId("build-cancel").count(), await button.count()], [1, 0], `${v.tag}: Cancel alone while armed`);
     const banner = await page.getByTestId("turn-banner").textContent();
-    assert.match(banner, /Move the wayfarer · (tap Play fortune again to cancel|Esc cancels)/, `${v.tag}: banner "${banner}"`);
-    await button.click();
+    assert.equal(banner, v.touch ? "Move the wayfarer" : "Move the wayfarer · Esc cancels", `${v.tag}: banner "${banner}"`);
+    await page.getByTestId("build-cancel").click();
     await page.waitForFunction(() => window.__emberisle.getState().buildMode === "none", null, { timeout: STEP_MS });
     await open();
     await page.getByTestId("fortune-play-knight").click();

@@ -18,12 +18,12 @@
     {
       "id": "tokens-prove",
       "pattern": "FAIL 7 no numeral behind the scenery \\(1280x720\\): the \\d+: 1 of 5 points( \\(hit \\([^)]*\\) on \\w+ seed \\d+\\))?\\n",
-      "issue": 887
+      "issue": 1511
     },
     {
       "id": "board-touch-prove",
       "pattern": "AssertionError \\[ERR_ASSERTION\\]: setup: a tap on a Pasture hex plays nothing\\n",
-      "issue": 860
+      "issue": 1510
     },
     {
       "id": "lobby-layout-prove",

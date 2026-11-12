@@ -366,7 +366,7 @@ try {
   console.log("turn banner:", JSON.stringify(turn));
 
   // Jarrod's playtest: another seat's turn says whom you wait for, not what to do.
-  if (turn.theirs !== `Wait for ${turn.bot} to roll` || !/^(Roll|Place|Build|Move|Discard)\b/.test(turn.mineText ?? "") || turn.strip) {
+  if (turn.theirs !== `Wait for ${turn.bot} to roll` || !/^(Roll|Place|Build|Move|Discard|Your turn$)\b/.test(turn.mineText ?? "") || turn.strip) {
     throw new Error(`turn banner: ${JSON.stringify(turn)}`);
   }
   if (phase !== "roll" && phase !== "main" && phase !== "robber" && phase !== "discard") throw new Error(`setup: ${phase}`);
@@ -801,18 +801,26 @@ try {
         ["Path", "Outpost", "Stronghold", "Fortune"].map((n) => {
           // The build buttons carry their cost chips and state in their text; the aria-description leads with the piece.
           const b = [...document.querySelectorAll("button")].find((x) => x.getAttribute("aria-description")?.startsWith(`${n} ·`));
-          return [n, { disabled: b?.getAttribute("aria-disabled") === "true", native: b?.disabled, cursor: b && getComputedStyle(b).cursor, title: b?.title, desc: b?.getAttribute("aria-description"), pressed: b?.getAttribute("aria-pressed") }];
+          // #1539: the rows carry no title; the price leads the description ("Path · 1 wood, 1 brick · Place").
+          return [n, { disabled: b?.getAttribute("aria-disabled") === "true", native: b?.disabled, cursor: b && getComputedStyle(b).cursor, title: b?.getAttribute("aria-description")?.split(" · ").slice(0, 2).join(" · "), desc: b?.getAttribute("aria-description"), pressed: b?.getAttribute("aria-pressed") }];
         }),
       ),
     );
   const price = { Path: "Path · 1 wood, 1 brick", Outpost: "Outpost · 1 wood, 1 brick, 1 sheep, 1 wheat", Stronghold: "Stronghold · 3 wheat, 2 stone", Fortune: "Fortune · 1 sheep, 1 wheat, 1 stone" };
   const storeNow = () => page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, tradeOpen: window.__emberisle.getState().tradeOpen, howTo: window.__emberisle.getState().howTo }));
+  // #1539: the builds are rows in the Build list, opened from the tray's Build button.
+  const openList = async () => {
+    if (await page.getByTestId("build-list").count()) return;
+    await page.getByTestId("build-open").click();
+    await page.getByTestId("build-list").waitFor({ timeout: 5000 });
+  };
   await setHand({});
+  await openList();
   await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });
   const empty = await buildRow();
   // #606: a build with no legal spot reads No spot before it reads Need.
   console.log("build row, empty hand:", JSON.stringify(empty));
-  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || !new RegExp(`^${p} · (Need|No spot)`).test(empty[n].desc)) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
+  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || !new RegExp(`^${p} · (You need|No free spot|No homes to upgrade)`).test(empty[n].desc)) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
   // #302: an unaffordable button is still in the Tab order, reports aria-disabled and its price, and a click neither arms nor buys.
   await page.evaluate(() => document.activeElement?.blur());
   let tabbedTo = null;
@@ -824,12 +832,12 @@ try {
   console.log("Tab to unaffordable Path:", JSON.stringify({ tabbedTo, ...tabFocus }));
   if (tabbedTo !== "Path" || tabFocus.aria !== "true" || !tabFocus.desc.startsWith(price.Path)) throw new Error(`Tab/aria-disabled: ${JSON.stringify({ tabbedTo, ...tabFocus })}`);
   const cardsBefore = await page.evaluate(() => window.__emberisle.getState().state.deck.length);
-  for (const n of ["Path", "Outpost", "Stronghold", "Fortune"]) await page.getByRole("button", n === "Fortune" ? { name: /^Fortune, \d+ left in deck$/ } : { name: n, exact: true }).click({ force: true });
+  for (const n of ["Path", "Outpost", "Stronghold", "Fortune"]) await page.getByRole("button", { name: n, exact: true }).click({ force: true });
   await page.keyboard.press("Enter");
   const clickRes = await page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, cards: window.__emberisle.getState().state.deck.length, error: window.__emberisle.getState().error, said: window.__emberisle.getState().announcement }));
   console.log("click unaffordable:", JSON.stringify({ ...clickRes, cardsBefore }));
   // A tap the hand cannot pay for builds and buys nothing, and says what is missing: to the screen reader and the error cue, with no HUD error line (#535: the chip over the build is the one message on screen).
-  if (clickRes.buildMode !== "none" || clickRes.cards !== cardsBefore || clickRes.error !== null || !/^Need \d+ more /.test(clickRes.said ?? "")) throw new Error(`unaffordable click acted: ${JSON.stringify(clickRes)}`);
+  if (clickRes.buildMode !== "none" || clickRes.cards !== cardsBefore || clickRes.error !== null || !/^You need \d+ more /.test(clickRes.said ?? "")) throw new Error(`unaffordable click acted: ${JSON.stringify(clickRes)}`);
   // #535 review: the quiet message is not left behind when `error` moves on. A quiet "x", then a refused move (error "y"), then
   // the error cleared: the alert region reads x, y, and then nothing, never x again.
   {
@@ -851,13 +859,16 @@ try {
   const pathBtn = page.getByRole("button", { name: "Path", exact: true });
   await pathBtn.click();
   const armed = await page.evaluate(() => ({ ...window.__emberisle.getState(), edges: window.__emberisle.getState().highlights().edges.length }));
-  const pressed = await pathBtn.getAttribute("aria-pressed");
+  // #1539: a ready row closes the list; armed, the tray's action row is Cancel alone (it stands for the old pressed button).
+  const cancelShown = async () => ((await page.getByTestId("build-cancel").count()) === 1 ? "true" : "false");
+  const pressed = await cancelShown();
   if (armed.buildMode !== "path" || pressed !== "true" || !armed.edges) throw new Error(`armed: ${JSON.stringify({ mode: armed.buildMode, pressed, edges: armed.edges })}`);
   await page.keyboard.press("Escape");
-  const disarmed = { ...(await storeNow()), pressed: await pathBtn.getAttribute("aria-pressed") };
+  const disarmed = { ...(await storeNow()), pressed: await cancelShown() };
   console.log("arm then Escape:", JSON.stringify({ armed: armed.buildMode, pressed, edges: armed.edges, disarmed }));
   if (disarmed.buildMode !== "none" || disarmed.pressed !== "false") throw new Error(`Escape did not disarm: ${JSON.stringify(disarmed)}`);
   // One Escape closes only the topmost thing: the trade panel first, then the arm.
+  await openList();
   await pathBtn.click();
   await page.evaluate(() => window.__emberisle.getState().setTradeOpen(true));
   await page.keyboard.press("Escape");
@@ -867,6 +878,7 @@ try {
   console.log("escape order, trade over arm:", JSON.stringify({ layer1, layer2 }));
   if (layer1.tradeOpen || layer1.buildMode !== "path" || layer2.buildMode !== "none") throw new Error(`trade/arm order: ${JSON.stringify({ layer1, layer2 })}`);
   // The How-to dialog is above an armed build: its Escape leaves the arm alone (#442: it opens from the table menu).
+  await openList();
   await pathBtn.click();
   await page.getByRole("button", { name: "Table menu" }).click();
   await page.getByRole("button", { name: "How to play" }).click();
@@ -879,11 +891,14 @@ try {
   // Phone: the four build buttons keep a 44 px target.
   await setHand({});
   await page.setViewportSize({ width: 390, height: 844 });
+  await openList();
   await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });
   await page.waitForFunction(() => document.querySelector("[data-testid='seat-strip']"), null, { timeout: 5000 });
   const heights = await page.evaluate(() => ["Path", "Outpost", "Stronghold", "Fortune"].map((n) => [...document.querySelectorAll("button")].find((x) => x.getAttribute("aria-description")?.startsWith(`${n} ·`)).getBoundingClientRect().height));
   console.log("phone build button heights:", JSON.stringify(heights));
   if (heights.some((h) => h < 44)) throw new Error(`phone build buttons under 44 px: ${JSON.stringify(heights)}`);
+  await page.keyboard.press("Escape");
+  await page.getByTestId("build-list").waitFor({ state: "detached", timeout: 5000 });
   await page.setViewportSize({ width: 800, height: 500 });
 
   // #286: How to play is a dialog: focus goes to Close, Escape closes it, and focus returns to the opener (title and in-game).

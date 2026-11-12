@@ -29,7 +29,7 @@ try {
       assert.equal(info.transform, "none");
       assert.ok(["normal", "0px"].includes(info.tracking), info.tracking);
       assert.ok(!info.text.endsWith(".") && !info.text.includes("turn ·"), info.text);
-      assert.match(info.text, /^(Roll|Place|Build|Move|Discard|Wait)\b/);
+      assert.match(info.text, /^(Roll|Place|Build|Move|Discard|Wait|Your turn$)\b/);
     };
     // Real roll-off and both rounds of legal setup, through the store's normal actions.
     for (let i = 0; i < 100; i++) {
@@ -50,7 +50,7 @@ try {
       crypto.getRandomValues = buf => queue.length ? (buf[0] = queue.shift(), buf) : real(buf);
     });
     await page.getByRole("button", { name: "Roll", exact: true }).click();
-    await prompt("Build, trade, or end your turn");
+    await prompt("Your turn");
     await page.evaluate(() => {
       const g=window.__emberisle,st=structuredClone(g.getState().state);
       st.phase="discard";st.discardNeeded={[st.players.find(p=>p.id!==st.current).id]:3};st.seq++;
@@ -71,16 +71,17 @@ try {
       st.players.find(p=>p.id===st.current).resources={timber:5,clay:5,wool:5,grain:5,ore:5};st.seq++;
       g.setState({state:st});
     });
+    // #1539: the builds are rows in the Build list; an armed build is cancelled with the tray's Cancel button.
     const path=page.getByRole("button",{name:"Path",exact:true});
-    await path.click(); await prompt("Place a path");
-    assert.match(await page.getByTestId("turn-banner").textContent(), /tap Path again to cancel|Esc cancels/);
-    await path.click(); await prompt("Build, trade, or end your turn");
+    await page.getByTestId("build-open").click(); await path.click(); await prompt("Place a path");
+    assert.match(await page.getByTestId("turn-banner").textContent(), /^Place a path$|Esc cancels/);
+    await page.getByTestId("build-cancel").click(); await prompt("Your turn");
     const strongBtn = page.getByTestId("build-stronghold");
-    await strongBtn.click();
+    await page.getByTestId("build-open").click(); await strongBtn.click();
     await page.waitForFunction(() => document.querySelector('[data-testid="turn-banner"]')?.textContent.startsWith("Pick a home to upgrade"));
     assert.match(await page.getByTestId("turn-banner").textContent(), /^Pick\b/);
-    assert.match(await page.getByTestId("turn-banner").textContent(), /tap Upgrade again to cancel|Esc cancels/);
-    await strongBtn.click(); await prompt("Build, trade, or end your turn");
+    assert.match(await page.getByTestId("turn-banner").textContent(), /^Pick a home to upgrade$|Esc cancels/);
+    await page.getByTestId("build-cancel").click(); await prompt("Your turn");
     await page.evaluate(() => {
       const g=window.__emberisle, st=structuredClone(g.getState().state);
       st.phase="discard";st.discardNeeded={[st.current]:3};st.seq++;g.setState({state:st});
@@ -93,7 +94,7 @@ try {
       const hex=st.hexes.find(h=>h.id!==st.robberHex&&!st.vertices.some(v=>v.hexes.includes(h.id)&&v.building&&v.building.playerId!==st.current));
       const result=s.dispatch({type:"moveRobber",hexId:hex.id,stealFrom:null});if(!result.ok)throw new Error(result.error);
     });
-    await prompt("Build, trade, or end your turn");
+    await prompt("Your turn");
     await page.evaluate(() => {
       const g=window.__emberisle,st=g.getState().state;
       g.setState({mode:"ai",localId:st.players.find(p=>p.id!==st.current).id});
