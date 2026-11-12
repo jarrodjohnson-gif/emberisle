@@ -176,7 +176,7 @@ function Panel() {
                     {r.p.name}
                     {r.tag}
                     {r.note ? <span data-testid="win-profile" className="block pl-[18px] text-xs font-normal text-muted">{r.note}</span> : null}
-                    {r.award}
+                    {r.award ? <span aria-hidden="true">{r.award}</span> : null}
                   </td>
                   <td className={cell}>{r.outposts}</td>
                   <td className={cell}>{r.strongholds}</td>
