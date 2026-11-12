@@ -300,7 +300,9 @@ body {
 .turn-stamp[data-leaving] { animation: none !important; transition: opacity 160ms var(--ease-in), transform 160ms var(--ease-in); }
 .turn-stamp-dot { width: 20px; height: 20px; border: 2px solid var(--ink); box-shadow: none; }
 @media (max-width: 359px) { .turn-stamp { padding: 12px 20px; font-size: 20px; } .turn-stamp-dot { width: 16px; height: 16px; } }
-.title-cover { box-shadow: var(--shadow-sheet); }
+/* docs/design/first-minute: the title is one tray, the table tray's surface and soft fills (docs/design/one-tray). */
+.title-cover { padding: 14px 16px; border-radius: 22px; background: var(--color-surface); box-shadow: 0 -8px 28px rgba(14, 60, 66, 0.22); }
+.title-cover .border-control-line, .title-cover .bg-bg { border-color: transparent; background-color: #e9f0ee; }
 /* #1281: the owner-approved 56 px wordmark, on every screen size (docs/design/loading-screen-1281). */
 .title-wordmark { font: 400 56px/64px Georgia, "Times New Roman", serif; letter-spacing: -1.5px; }
 .seat-settings { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 4px; }
