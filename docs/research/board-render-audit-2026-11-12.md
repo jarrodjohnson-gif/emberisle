@@ -3,7 +3,7 @@
 This audit verifies rendering performance, draw calls, and board fitting in emberisle.
 All tests ran against commit e4cbf246 on main.
 
-## 1. Draw Calls and Geometry
+## 1. Draw Calls and Geometry (as of e4cbf246)
 
 The Hex Jelly board renders through batched scenes.
 All draw call and triangle metrics remain within approved limits.
@@ -14,7 +14,7 @@ All draw call and triangle metrics remain within approved limits.
 - Hex center clearance: minimum 0.335 on ore (requirement: >= 0.31).
 - Pad and rim deviation: under 1e-4 across all 6 terrain types.
 
-## 2. Light Rig and Materials
+## 2. Light Rig and Materials (as of e4cbf246)
 
 The scene lighting follows the board look specifications.
 
@@ -34,18 +34,14 @@ Commit 974f4045 introduced the upright phone table fit (#1509, #1515).
 The camera adapts to phone orientation and layout changes.
 
 - Default upright phone view: overhead at 40° lean.
-- Default landscape view: diorama at 38° above horizon or overhead at 25°.
 - Shore fitting: island shore spans to edge gaps inside the hole.
-- Dock inspection buttons: all 9 buttons clamp on screen.
 - Harbor geometry: 9 piers and 9 boats, matching dock kinds.
-- Desktop token diameter: 31.3 px (requirement: >= 24 px).
-- Phone token diameter: 19.6 px (requirement: >= 18 px).
 
 ## 4. Render Loops and Resize Handling
 
 The renderer lifecycle handles animation and resizing cleanly.
 
-- Animation loop: IsleRenderer uses setAnimationLoop with requestAnimationFrame fallback.
+- Animation loop: IsleRenderer drives rendering through setAnimationLoop.
 - Disposal: dispose clears animation loop and event listeners.
 - GPU synchronization: WebGLSync fences handle frame timing and drop cleanly on context loss.
 - SSAO buffer sizing: half-resolution in free view and full resolution in play views.
@@ -56,7 +52,7 @@ The renderer lifecycle handles animation and resizing cleanly.
 All proofs ran and passed with zero errors:
 
 - npm run board-look-prove: passed all checks.
-- npm run upright-table-prove: passed across 4 phone viewports.
+- npm run upright-table-prove: passed across 3 phone viewports (430x932, 390x844, 375x812) plus rotation.
 - npm run dock-rates-prove: passed across desktop and mobile viewports.
-- npm run visual-direction-prove: passed across all 6 viewports.
+- npm run visual-direction-prove: passed all checks.
 - npm run typecheck: passed with zero compiler errors.
