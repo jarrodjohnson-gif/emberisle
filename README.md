@@ -235,9 +235,9 @@ npm run night
 
 That builds the client, starts the host, and prints the join line:
 
-- **On this PC** — open it, then Host a table. Tap the table code in the lobby to copy the join link, and paste it in the chat. Friends open it and press Join. Anyone who already has the page open can type the 4-character code instead.
+- **On this PC** — open it, then Host a table. Tap the table code in the lobby to copy the join link. Paste that link in your group chat. Friends open it, pick a name and colour, and press Join table. Anyone who already has the page open can type the 4-character code instead.
 - **On your network** — same Wi-Fi. No tunnel.
-- **Friends on the internet** — the script does not start the tunnel. In a second terminal, run the `cloudflared tunnel --url ...` command it printed. Leave both open. cloudflared prints an `https://….trycloudflare.com` link; open that link yourself (the copied join link carries the address the lobby page is on, so a `localhost` lobby would hand out a `localhost` link), Host a table, tap the table code, paste the link in the chat. Friends open it and press Join. They never type a port or a code. The invite is also at `<that link>/invite.html`.
+- **Friends on the internet** — the script does not start the tunnel. In a second terminal, run the printed `cloudflared tunnel` command. Leave both terminals open. `cloudflared` prints an `https://….trycloudflare.com` link. Open that link yourself before hosting. The copied join link uses the address the lobby page is on. Host a table and tap the table code to copy the join link. Paste that link in your group chat. Friends open it, pick a name and colour, and press Join table. They never type a port or a code. The cinematic invite is also at `<that link>/invite.html`.
 
 Host env knobs: `PORT` (default 8787), `ROOMS_DIR` (where tables are saved, default `server/rooms/`), `GRACE_MS` (how long the table waits before a bot plays a dropped seat, default 90 s), `HOLD_MS` (how long a dropped seat is held in a game, default 10 min), `LOBBY_HOLD_MS` (how long a dropped seat is held in the lobby, default 90 s; both ride on `welcome` so the client's redials stop 1 s before the hold ends, never after it), `SAVE_MS` (how long a changed room waits before one coalesced write, default 250 ms), `OPEN_CAP` and `OPEN_REFILL_MS` (how many tables the whole host opens in a burst, default 8, and how long until it opens one more, default 30 s, floored at 1 ms; G10), `OPEN_IP_CAP` and `OPEN_IP_MS` (the same per client address, in front of the shared cap: a burst of 3 tables, one more per 60 s. A direct client is keyed on its socket address, a tunnelled player on the `cf-connecting-ip` header, trusted only on a loopback connection; IPv6 counts by its /64 and `::ffff:` addresses as plain IPv4. Loopback without that header (local dev) is not metered by address, and `OPEN_IP_CAP=0` refuses every metered client; #581), `TURN_MS` (how long a connected seat may sit on its move before the host's bot makes that one move for it, default 120 s; every `state` carries the earliest `turnDeadline` as epoch ms, or null) and `TURN_TOTAL_MS` (the most one seat's turn may last however often it acts, default 6x `TURN_MS`; each action restarts the `TURN_MS` window but never past this cap, where the bot moves for the seat as on idle). Both survive a drop and rejoin within the turn, and a host restart: room files carry each seat's optional `turnDeadline` and `turnStartedAt` (additive, so older files load without a `ROOM_SHAPE` bump), a rejoining seat resumes the remaining window, and one that ran out while the host was down, or has under `min(5 s, TURN_MS/10)` left, is moved by the bot on its rejoin.
 
@@ -252,7 +252,17 @@ Emberisle installs from the browser, with no App Store. Open the game at the add
 - **iPhone or iPad (Safari):** Share → Add to Home Screen → Add.
 - **Android (Chrome):** the ⋮ menu → Install app (or Add to Home screen).
 
-The icon opens the game full-screen, with nothing under the notch or the home bar. It always opens the address it was added from, so add it from a link that stays the same: a quick `trycloudflare.com` tunnel gets a new address every night, so re-add it then, or use the named tunnel. A join link (`?code=K7QP`) or a watch link (`?watch=K7QP`) still works: Android opens it in the installed app, and iPhone opens it in Safari (or type the four characters into the app's code field). The icons are drawn from `public/icons/icon.svg`; after editing it, run `npm run make-icons` and commit the PNGs.
+The icon opens the game full-screen, with nothing under the notch or home bar.
+It always opens the address it was added from.
+Add it from a link that stays the same.
+A quick `trycloudflare.com` tunnel changes address every night.
+Re-add the icon each night, or configure a named tunnel.
+A join link (`?code=K7QP`) or a watch link (`?watch=K7QP`) still works.
+Android opens the link in the installed app.
+iPhone opens the link in Safari.
+You can also type the four characters into the app's code field.
+The icons are drawn from `public/icons/icon.svg`.
+After editing the icon, run `npm run make-icons` and commit the PNGs.
 
 If any command here fails on a fresh clone, that is a bug. File it (label `bug`) before doing anything else.
 

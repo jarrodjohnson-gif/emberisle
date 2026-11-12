@@ -188,6 +188,8 @@ jobs:
         run: npm run size-delta-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run named-tunnel-test
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run tunnel-reconnect-prove
 
   server:
     needs: [changes, dependencies]
@@ -224,6 +226,8 @@ jobs:
         run: npm run ci-changes-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run registered-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run proof-host-port-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run roll-off-oracle-prove
       - if: needs.changes.outputs.docs_only != 'true'
