@@ -1,8 +1,11 @@
-# Bundle size headroom audit
+# Bundle size headroom audit (45 chunks)
 
 - date: 2026-11-12
 - agent: builder-size
 - branch: origin/main
+- commit: e4cbf246
+- method: local build (`npm run build && node scripts/size-prove.mjs`)
+- note: all figures including eye-off (292 B) were measured from local production build assets
 
 ## Overview
 
@@ -93,5 +96,5 @@ No ceilings were moved during this audit.
 ## Recommendations
 
 - Keep imports out of `table` until the review desk trims it.
-- Builders touching `LobbyView` must measure chunk size carefully before opening PRs.
+- Builders touching `LobbyView` should measure chunk size carefully before opening PRs.
 - Avoid adding dependencies to `WayfarerOptions` or `focus-trap`.
