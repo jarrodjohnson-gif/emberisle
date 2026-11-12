@@ -8,9 +8,18 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 
 1. Read the **Desk state** issue, [#916](https://github.com/jarrodjohnson-gif/emberisle/issues/916). It lists what is waiting on Jarrod, every open PR, the builds in flight and the queue.
 2. Read the hub, [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854), from the newest comment back to the last desk post.
-3. Subscribe to the inbox PR #699 only. The inbox relays PRs opened or marked ready, not drafts. It also relays any comment that starts with `Question:` or `To desk:`. It skips CI and hub status lines. Subscribe to a PR directly only while you wait on its CI to merge it. Unsubscribe once it merges.
-4. Sweep every open PR once. A builder's push doesn't wake you, so list each PR whose head SHA differs from the head your last review named. Those need a fresh review.
+3. Subscribe to the inbox PR #699. It is your only wake source (see "Wakes and sweeps").
+4. Sweep (see "Wakes and sweeps").
 5. Pick up anything waiting: an unreviewed PR, a red PR you own, or a question on the hub.
+
+## Wakes and sweeps (owner, 2026-11-12)
+
+On 2026-11-12 the desk missed ready PRs that the inbox had announced (#1545 to #1557). It had swapped the inbox for a watcher of its own and was not listening.
+
+- **The inbox #699 is the only wake source.** It announces every PR opened or marked ready, every comment starting `Question:` or `To desk:`, and the desk-board's `Ready for desk` lines. Never build a watcher, monitor, timer or polling loop of your own in its place. Subscribe to a PR directly only while you wait on its CI to merge it, and unsubscribe once it merges.
+- **Every wake is a sweep.** Whatever woke you, list the open, non-draft PRs and compare each head SHA with the `Head:` footer of your latest review on it. Any PR with no review at its head needs one. The desk-board table in #916 is the same list. Read it, but check the PR itself before you act.
+- **Never rely on builders to announce work.** `To desk:` is a courtesy. A PR is waiting from the moment it opens ready.
+- **Before you explain a miss, check the inbox.** Read #699's recent comments first. Never blame a builder or a tool for something the inbox shows it announced.
 
 ## Keep it cheap
 
@@ -28,13 +37,14 @@ Jarrod pastes: `Run the Emberisle review desk. Read docs/DESK.md.`
 These rules survive a context summary, so re-read them at the start of every desk session.
 
 - **One desk session merges.** No second triage session: two sessions fight over labels and merges and double the polling.
-- **Say nothing on a no-op.** A self-echo, a subscription notice, a merge notice you already handled, a "CI still running" event, or anything else that needs no action gets no reply at all.
+- **Say nothing on a no-op.** A self-echo, a subscription notice, a merge notice you already handled, a "CI still running" event, or anything else that needs no action gets no reply at all. If the app forces a reply, write one character: `·`.
+- **Never report your own plumbing.** No messages about re-arming, watchers, timers, quiet periods or what you are still waiting for. Jarrod sees results, not upkeep.
 - **Every report to Jarrod uses one block,** so he can see the state without scrolling:
   - **Working on:** one line.
   - **Waiting on:** who or what, one line each (Jarrod, CI, a builder).
   - **Done since your last message:** newest first, one line each, with the PR or issue number.
   Answer his question above the block when he asked one.
-- **Report only what changed.** Never repeat the waiting list, the open cards or the pending PRs in an unprompted update. Say it once when it appears and again only when its state changes.
+- **Report only what changed.** Never repeat the waiting list, the open cards or the pending PRs in an unprompted update. Say a card is waiting on Jarrod once, when it appears, and again only when its state changes.
 - **Plain words for the owner, short.** No tags or jargon. Answer a direct question in full; the delta-only rule is for unprompted updates.
 - **Batch the owner's votes.** Pictures and decisions go on the Desk Decisions page. Nudge only when something new is waiting there.
 - **Use parallel throwaway subagents for triage too.** Builder questions, stale-claim scans, tier audits and label sweeps go to a Sonnet or Haiku subagent that returns a short table or one line. The desk applies the labels and answers on the issue. Reviews keep their model per "Who reviews".
