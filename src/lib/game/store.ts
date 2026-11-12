@@ -207,7 +207,8 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
 }
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
-import type { Bag, ChatLine, Legal, Me, Reaction, Seat, TableClient } from "@/lib/net/table";
+import type { Bag, ChatLine, Legal, Me, ProfileCardReply, Reaction, Seat, TableClient, TttMsg } from "@/lib/net/table";
+import type { ProfileAttachment } from "@/lib/net/profiles";
 import { chunk } from "@/lib/lazy";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
@@ -220,8 +221,9 @@ import type { PlayView } from "@/lib/scene/mobile-fit";
 const tradeSounds = import("../trade-sound");
 
 // The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when a bot's offer runs out
-// (20 s); it is null for a person's offer, which holds until it is answered (#1245).
-export interface OpenOffer {
+// (20 s); it is null for a person's offer, which holds until it is answered (#1245). The toast never shows a countdown
+// for either (#1507, owner q1517-bot-offer-stall A).
+interface OpenOffer {
   tradeId: string;
   from: string;
   fromName: string;
@@ -232,6 +234,18 @@ export interface OpenOffer {
 
 // The client is needed only for discovery or an explicit online journey.
 const tableModule = chunk(() => import("@/lib/net/table"));
+
+// #767: a finished game's profile result as the host sent it. `wins` is keyed by player id for each seat that started bound to
+// a profile that still exists: its committed total, or null while the host is still saving it. Empty when every such profile
+// was deleted, so each row reads "Not tracked". Anything malformed is dropped, never guessed.
+export type GameResult = { tracked: boolean; wins: Record<string, number | null> };
+function gameResult(r: unknown): GameResult | null {
+  const v = r as Partial<GameResult> | null;
+  if (!v || typeof v !== "object" || typeof v.tracked !== "boolean" || !v.wins || typeof v.wins !== "object") return null;
+  const wins = Object.entries(v.wins);
+  if (!wins.every(([, n]) => n === null || (Number.isSafeInteger(n) && (n as number) >= 0))) return null;
+  return { tracked: v.tracked, wins: Object.fromEntries(wins) };
+}
 
 // The window listeners that wake a backing-off table; one connection at a time, so one remover.
 let stopWake: (() => void) | null = null;
@@ -294,6 +308,11 @@ interface GameStore {
   // The Costs card (the building-costs card that comes with the board game), opened from the Table menu.
   costs: boolean;
   costsOpener: HTMLElement | null;
+  // #766: the title's profile client, set when its sheet first opens. It gives Host and Join a credential only for its own
+  // confirmed host, at the moment of sending; nothing of it reaches game state or the saved seat.
+  profile: ProfileAttachment | null;
+  // #767: the host's word on a finished online game's profile result, or null (no profiled seat, or not over).
+  gameResult: GameResult | null;
   toast: string | null;
   // One line everyone reads for a moment: the roll and who got what, or an award changing hands (#188).
   banner: string | null;
@@ -364,6 +383,8 @@ interface GameStore {
   resync: boolean;
   // How many spectators the table has, from `seats {watching}` (#347).
   watching: number;
+  // This seat's lobby tic-tac-toe game, as the host last sent it (#1263); null after each welcome.
+  ttt: TttMsg | null;
   // Sit back down in the seat this browser held (localStorage), e.g. after a reload (#196).
   rejoinTable: () => boolean;
   setReady: (value: boolean) => void;
@@ -375,6 +396,8 @@ interface GameStore {
   startTable: () => void;
   // A rematch (#266): online the host asks for it; hotseat deals it here, the last winner first.
   playAgain: () => void;
+  // #1411: an online player who is not the host says they want another game, or takes it back.
+  wantAgain: (value: boolean) => void;
   // Table chat (docs/design/chat.md)
   // This tab's seat id (s0...), from welcome. localId is the player id once the game starts.
   seatId: string;
@@ -488,7 +511,11 @@ const NAME_MAX = 16;
 const NAME_KEY = "emberisle-name";
 function savedName() {
   if (typeof window === "undefined") return "Ember";
-  return localStorage.getItem(NAME_KEY) || "Ember";
+  try {
+    return localStorage.getItem(NAME_KEY) || "Ember";
+  } catch {
+    return "Ember";
+  }
 }
 
 // null (not a default swatch) until the player actively picks one, so a fresh tab sends no `color`
@@ -496,9 +523,16 @@ function savedName() {
 // touch the picker would both request the same default color and the second would be rejected.
 function savedColor(): string | null {
   if (typeof window === "undefined") return null;
-  const saved = localStorage.getItem("emberisle-color");
-  return saved && (PLAYER_COLORS as readonly string[]).includes(saved) ? saved : null;
+  try {
+    const saved = localStorage.getItem("emberisle-color");
+    return saved && (PLAYER_COLORS as readonly string[]).includes(saved) ? saved : null;
+  } catch {
+    return null;
+  }
 }
+
+// #1350: the open profile card listens here for the host's answer; the lazy card chunk sets and clears `on`.
+export const cardReply: { on?: (msg: ProfileCardReply) => void } = {};
 
 export const useGame = create<GameStore>((set, get) => ({
   screen: "title",
@@ -521,6 +555,8 @@ export const useGame = create<GameStore>((set, get) => ({
   howToOpener: null,
   costs: false,
   costsOpener: null,
+  profile: null,
+  gameResult: null,
   toast: null,
   banner: null,
   net: null,
@@ -538,6 +574,7 @@ export const useGame = create<GameStore>((set, get) => ({
   synced: 0,
   resync: false,
   watching: 0,
+  ttt: null,
   pendingSteal: null,
   seatId: "",
   chat: [],
@@ -559,17 +596,35 @@ export const useGame = create<GameStore>((set, get) => ({
   menuFor: null,
   setName: (n) => {
     const name = Array.from(n).slice(0, NAME_MAX).join("");
-    if (name.trim() && typeof window !== "undefined") localStorage.setItem(NAME_KEY, name.trim());
+    if (name.trim() && typeof window !== "undefined") {
+      try {
+        localStorage.setItem(NAME_KEY, name.trim());
+      } catch {
+        // storage can be blocked; name is still set in state
+      }
+    }
     set({ name });
   },
   commitName: () => {
     const name = get().name.trim() || "Ember";
-    if (typeof window !== "undefined") localStorage.setItem(NAME_KEY, name);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(NAME_KEY, name);
+      } catch {
+        // storage can be blocked; name is still set in state
+      }
+    }
     set({ name });
     return name;
   },
   setColor: (c) => {
-    if (typeof window !== "undefined") localStorage.setItem("emberisle-color", c);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("emberisle-color", c);
+      } catch {
+        // storage can be blocked; color is still set in state
+      }
+    }
     set({ color: c });
   },
   setHowTo: (v, opener) => set({ howTo: v, howToOpener: v ? (opener ?? null) : null }),
@@ -932,7 +987,13 @@ export const useGame = create<GameStore>((set, get) => ({
     const name = Array.from(n.trim()).slice(0, NAME_MAX).join("");
     if (!name) return;
     set({ name });
-    if (typeof window !== "undefined") localStorage.setItem(NAME_KEY, name);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(NAME_KEY, name);
+      } catch {
+        // storage can be blocked; name is still set in state
+      }
+    }
     get().net?.rename(name);
   },
   addBot: () => {
@@ -943,6 +1004,9 @@ export const useGame = create<GameStore>((set, get) => ({
   },
   startTable: () => {
     if (!get().spectator) get().net?.start();
+  },
+  wantAgain: (value) => {
+    if (!get().spectator) get().net?.wantAgain(value);
   },
   playAgain: () => {
     const { mode, state, net, spectator } = get();
@@ -1153,7 +1217,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
   // Not a leave: a rejoin after a crash dials the same seat, which the host must still be holding.
   get().net?.close(false);
   const selectedHost = new URL(window.location.href);
-  const selectedMe: Me = { name: get().name.trim() || "Ember", color: get().color ?? undefined };
+  const selectedMe: Me = { name: get().name.trim() || "Ember", color: get().color ?? undefined, profile: get().profile ?? undefined };
   let cancelled = false;
   let removeListeners = () => {};
   let restoreTimer: ReturnType<typeof setTimeout> | undefined;
@@ -1221,7 +1285,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
           recovery = false;
           set({ restoring: false, screen: "lobby" });
         }, 1500);
-      set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
+      set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0, ttt: null });
     },
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
     reconnecting: (attempt) => {
@@ -1256,7 +1320,8 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     },
     // Dice and gain floats present the roll; its words live only in the persistent log.
     rolled: () => {},
-    state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow }) => {
+    state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow, result }) => {
+      set({ gameResult: game.phase === "over" ? gameResult(result) : null });
       // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
       const me = you ?? "";
       const rollOff = rollOffLine(get().state, game);
@@ -1287,6 +1352,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       else if (swing) showBanner(set, swing);
     },
     log: (text) => set({ lobbyLog: text, gameLog: appendLog(get().gameLog, [text]) }),
+    ttt: (ttt) => set({ ttt }),
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       // #1245: a null `seconds` is an offer that holds until answered (no run-out).
@@ -1301,6 +1367,8 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     tradeClosed: ({ tradeId, taker }) => {
       if (get().offer?.tradeId === tradeId) endOffer(set, get, taker ?? null);
     },
+    tableProfileCard: (msg) => cardReply.on?.(msg),
+    profileError: (msg) => cardReply.on?.(msg),
     error: (message, request) => {
       if (!pending && kind !== "peek") {
         set({ announcement: null, error: message, toast: message, errorSeq: get().errorSeq + 1, needError: get().needError + Number(request === "need") });

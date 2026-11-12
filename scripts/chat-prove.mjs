@@ -12,12 +12,13 @@
 // an own Roll turn and another seat's turn, it is whole, in the safe area, clear of the menu and status, 12 px from every board target.
 // Design: docs/design/chat.md "Test plan". Screenshots go to test-results/.
 import { spawn } from "node:child_process";
+import { hostPort as waitForHostPort } from "./proof-host-port.mjs";
 import { once } from "node:events";
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8094;
@@ -34,17 +35,10 @@ const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"],
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
-const hostPort = await new Promise((resolve) =>
-  host.stdout.on("data", (d) => {
-    const m = String(d).match(/listening (\d+)/);
-    if (m) resolve(Number(m[1]));
-  }),
-);
+const hostPort = await waitForHostPort(host);
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
-});
+const browser = await chromium.launch();
 
 const T0 = Date.now();
 const errors = [];
@@ -265,7 +259,7 @@ const openChat = async (t) => {
   await t.page.waitForFunction(() => !document.querySelector('[data-testid="emoji-row"] button')?.disabled);
 };
 const closeChat = async (t) => {
-  if (await store(t, () => window.__emberisle.getState().chatOpen)) await t.page.getByRole("button", { name: "Minimize chat" }).click();
+  if (await store(t, () => window.__emberisle.getState().chatOpen)) await t.page.getByRole("button", { name: "Close chat" }).click();
   await t.page.getByRole("button", { name: /^Open chat/ }).waitFor();
 };
 const showTab = async (t, name) => {
@@ -604,7 +598,7 @@ try {
       const scrollers = [card, ...card.querySelectorAll("*")].filter((el) => getComputedStyle(el).overflowY === "auto" && el.getAttribute("data-testid") !== "chat-log");
       return {
         status: inside(document.querySelector('[data-testid="lobby-status"]')),
-        ready: !!btn("Not ready") && inside(btn("Not ready")),
+        ready: !!btn("Cancel ready") && inside(btn("Cancel ready")),
         start: !!btn("Start") && inside(btn("Start")),
         leave: !!btn("Leave the table") && inside(btn("Leave the table")),
         seats: [...card.querySelectorAll("li")].filter((li) => !li.closest('[data-testid="chat-log"]') && li.querySelector("span.rounded-full") && inside(li)).length,
@@ -777,7 +771,7 @@ try {
   check(true, "mute: unmuting Pine restores the active reaction and its log line");
 
   await a.page.getByRole("button", { name: "Mute player Pine", exact: true }).click();
-  await a.page.getByRole("button", { name: "Minimize chat" }).click();
+  await a.page.getByRole("button", { name: "Close chat" }).click();
   const mutedUnread = `muted-unread-${Date.now()}`;
   await c.page.evaluate((text) => window.__emberisle.getState().sendChat(text), mutedUnread);
   await a.page.waitForFunction((text) => window.__emberisle.getState().chat.some((line) => line.text === text), mutedUnread);
@@ -807,7 +801,7 @@ try {
   await a.page.getByRole("button", { name: "Unmute player Pine", exact: true }).click();
   await a.page.getByTestId("chat-log").locator("li").filter({ hasText: mutedLine }).waitFor();
   check(true, "mute: blocked-storage preference can be cleared in the current tab");
-  await a.page.getByRole("button", { name: "Minimize chat" }).click();
+  await a.page.getByRole("button", { name: "Close chat" }).click();
 
   // #232: roll off for first place; whichever seat is up rolls, until setup starts.
   await until(async () => {
@@ -942,7 +936,7 @@ try {
     return { inRail: menu.left >= aside.left - 1 && menu.right <= aside.right + 1, under: menu.top >= card.bottom, pushed: !below || below.top >= menu.bottom };
   }, bId);
   check(geo.inRail && geo.under && geo.pushed, "menu: sits in the rail column under the card and pushes the cards below it down");
-  check((await menu.getByRole("button", { name: /Offer a trade/ }).count()) === 0, "menu: no Offer a trade row outside your main phase");
+  check((await menu.getByRole("button", { name: "Trade…", exact: true }).count()) === 0, "menu: no Trade row outside your main phase");
   await shot(a, "menu-open.jpg");
   // #899: the menu's lone sticker is gone; reactions come only from the chat panel.
   check((await menu.getByTestId("menu-emotes").count()) === 0 && (await menu.getByRole("button", { name: /^React / }).count()) === 0, "menu: no sticker or reaction buttons; reactions come only from the chat panel");
@@ -964,7 +958,7 @@ try {
   await menu.waitFor({ state: "detached" });
   check(true, "menu: a click outside closes it");
   await card.click();
-  await menu.getByRole("button", { name: "Mention @Tide in chat" }).click();
+  await menu.getByRole("button", { name: "Mention @Tide" }).click();
   await menu.waitFor({ state: "detached" });
   await a.page.getByPlaceholder("Say something…").waitFor();
   check((await a.page.getByPlaceholder("Say something…").inputValue()) === "@Tide ", 'menu: Mention puts "@Tide " in the input');
@@ -980,7 +974,7 @@ try {
   // 4. Minimize and unread, and the remembered state.
   const stored = (t) => t.page.evaluate(() => localStorage.getItem("emberisle-chat-open"));
   await a.page.getByRole("button", { name: "Open chat" }).click();
-  await a.page.getByRole("button", { name: "Minimize chat" }).click();
+  await a.page.getByRole("button", { name: "Close chat" }).click();
   check((await stored(a)) === "0", 'minimize: localStorage["emberisle-chat-open"] is "0"');
   // Reduced motion: a closed-chat bubble appears and goes with no animation and no transform, then leaves.
   await openChat(c);
@@ -1028,17 +1022,38 @@ try {
   const log = a.page.getByTestId("chat-log");
   await log.waitFor();
   check((await log.getAttribute("tabindex")) === "0" && (await log.getAttribute("role")) === "log", "the chat log is a focusable role=log");
-  const min = a.page.getByRole("button", { name: "Minimize chat" });
+  const min = a.page.getByRole("button", { name: "Close chat" });
   await min.focus();
   await a.page.keyboard.press("Enter");
   await a.page.getByRole("button", { name: "Open chat" }).waitFor({ timeout: 5000 });
-  check((await chatOpen()) === false, "Enter on Minimize chat minimizes the dock");
+  check((await chatOpen()) === false, "Enter on Close chat minimizes the dock");
   await a.page.evaluate(() => document.activeElement?.blur());
   await a.page.keyboard.press("Enter");
   await a.page.waitForFunction(() => document.activeElement?.id === "chat-input", null, { timeout: 5000 });
   check(await chatOpen(), "Enter with focus on the page still opens the chat and focuses the input");
   await a.page.getByPlaceholder("Say something…").press("Escape");
   await a.page.getByRole("button", { name: "Open chat" }).waitFor();
+  // #1449 item 17: with a placement pending, Enter confirms it (PlaceChip) and the chat stays closed. The seat that is up
+  // (still in its first setup step) picks one of its lit corners, as a tap on the board would; the renderer drops a pending
+  // mark that is not lit.
+  await closeChat(cur);
+  const placing = await cur.page.evaluate(() => {
+    const s = window.__emberisle.getState();
+    const v = s.legal.outpost[0];
+    s.setPendingPlace({ kind: "vertex", id: v });
+    return { v, seq: s.state.seq };
+  });
+  await cur.page.getByTestId("place-chip").waitFor({ timeout: 5000 });
+  await cur.page.evaluate(() => document.activeElement?.blur());
+  await cur.page.keyboard.press("Enter");
+  await cur.page.getByTestId("place-chip").waitFor({ state: "detached", timeout: 5000 });
+  await cur.page.waitForFunction((seq) => window.__emberisle.getState().state.seq > seq, placing.seq, { timeout: 5000 });
+  const placed = await store(cur, () => {
+    const s = window.__emberisle.getState();
+    return { chat: s.chatOpen, pending: s.pendingPlace, input: document.activeElement?.id === "chat-input" };
+  });
+  const built = await cur.page.evaluate((v) => !!window.__emberisle.getState().state.vertices.find((x) => x.id === v)?.building, placing.v);
+  check(placed.chat === false && !placed.input && placed.pending === null && built, `Enter with a placement pending confirms it (${cur.name} placed at ${placing.v}) and leaves the chat closed`);
 
   // 5. Phone: the open dock is a bottom sheet, and the tap that closes it does not reach the board.
   await phone.page.getByRole("button", { name: "Open chat" }).waitFor();
@@ -1114,7 +1129,7 @@ try {
   check(pGeo.under && pGeo.onScreen, "phone: the menu opens downward from the strip, on screen");
   check(pGeo.items > 0 && pGeo.small === 0, `phone: all ${pGeo.items} menu items are at least 44 px on both axes`);
   await shot(phone, "chat-phone-menu.jpg");
-  await pMenu.getByRole("button", { name: "Mention @Ember in chat" }).tap();
+  await pMenu.getByRole("button", { name: "Mention @Ember" }).tap();
   await pMenu.waitFor({ state: "detached" });
   await phone.page.getByTestId("chat-sheet").waitFor({ timeout: 5000 });
   check((await phone.page.getByPlaceholder("Say something…").inputValue()) === "@Ember ", 'phone: Mention opens the sheet with "@Ember "');
@@ -1123,7 +1138,7 @@ try {
     const sheet = document.querySelector('[data-testid="chat-sheet"]').getBoundingClientRect();
     const header = document.querySelector('[data-testid="chat-sheet-header"]').getBoundingClientRect();
     const mute = document.querySelector('[data-testid="chat-mute-toggle"]').getBoundingClientRect();
-    const minimize = document.querySelector('button[aria-label="Minimize chat"]').getBoundingClientRect();
+    const minimize = document.querySelector('button[aria-label="Close chat"]').getBoundingClientRect();
     const input = document.getElementById("chat-input").getBoundingClientRect();
     const paddingBottom = Number.parseFloat(getComputedStyle(document.querySelector('[data-testid="chat-sheet"]')).paddingBottom) || 0;
     return {
@@ -1146,7 +1161,7 @@ try {
     shortLandscape.inputBottom <= shortLandscape.sheetBottom - shortLandscape.paddingBottom + 1 && shortLandscape.inputBottom <= shortLandscape.height - shortLandscape.paddingBottom + 1,
     `phone 667x375: chat input clears the bottom safe padding (${shortLandscape.paddingBottom}px)`,
   );
-  await phone.page.getByRole("button", { name: "Minimize chat" }).tap();
+  await phone.page.getByRole("button", { name: "Close chat" }).tap();
   await phone.page.setViewportSize({ width: 390, height: 844 });
 
   // 7. The game log (#305): setup and the first roll through the store, then every dock lists the game's lines as muted
@@ -1256,7 +1271,7 @@ try {
   const phoneLayout = async (t, ownTurn, checkBanner = false) => {
     const state = await seen(t);
     check(state.phase === "roll" && (state.current === state.you) === ownTurn, `chat dock: ${ownTurn ? "own" : "another seat's"} turn is available for the layout check`);
-    if (await store(t, () => window.__emberisle.getState().chatOpen)) await t.page.getByRole("button", { name: "Minimize chat" }).click();
+    if (await store(t, () => window.__emberisle.getState().chatOpen)) await t.page.getByRole("button", { name: "Close chat" }).click();
     const roll = t.page.getByRole("button", { name: "Roll", exact: true });
     const turn = ownTurn ? "own Roll turn" : "another seat's turn";
     const cdp = await t.page.context().newCDPSession(t.page);
@@ -1296,7 +1311,7 @@ try {
         return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
       });
       if (row.left < safe.left || row.right > safe.right || row.top < m.chat.bottom || row.bottom > safe.bottom) bad(`the panel's emoji row is not inside the safe area, below the button ${JSON.stringify(row)}`);
-      await t.page.getByRole("button", { name: "Minimize chat" }).click();
+      await t.page.getByRole("button", { name: "Close chat" }).click();
       await t.page.getByRole("button", { name: /^Open chat/ }).waitFor();
       if (checkBanner && size.width === 390) {
         await t.page.evaluate(() => window.__emberisle.setState({ banner: "Ember's roll · Ember +2 timber · Ember +1 grain · Pine +2 timber · Pine +1 grain · Tide +2 timber · Tide +1 grain · Moss +2 timber · Moss +1 grain · bank short of timber and grain" }));
@@ -1401,7 +1416,7 @@ try {
   await a.page.keyboard.press("Escape");
   await a.page.getByRole("dialog", { name: "Table menu" }).waitFor({ state: "detached" });
   await phone.page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }));
-  if (await store(phone, () => window.__emberisle.getState().chatOpen)) await phone.page.getByRole("button", { name: "Minimize chat" }).click();
+  if (await store(phone, () => window.__emberisle.getState().chatOpen)) await phone.page.getByRole("button", { name: "Close chat" }).click();
   await menuCopyLog(phone);
   await phone.page.getByTestId("copy-fallback").waitFor();
   check((await phone.page.getByTestId("copy-fallback").inputValue()) === (await store(phone, () => window.__emberisle.getState().gameLog.map((l) => l.text).join("\n"))), "game log: on the phone the Table menu's Copy log shows the whole log");
@@ -1438,7 +1453,7 @@ try {
     await polish(reader, "read-only", undefined, 2);
     check((await reader.page.locator('section[aria-label="Table chat"] [aria-pressed]').count()) === 0 && (await reader.page.getByTestId("chat-log").getByTestId("log-row").count()) > 0, `watcher ${isPhone ? "phone" : "desktop"}: no filter row, and the log lists the game rows`);
     await reader.page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }));
-    if (await store(reader, () => window.__emberisle.getState().chatOpen)) await reader.page.getByRole("button", { name: "Minimize chat" }).click();
+    if (await store(reader, () => window.__emberisle.getState().chatOpen)) await reader.page.getByRole("button", { name: "Close chat" }).click();
     await menuCopyLog(reader);
     await reader.page.getByTestId("copy-fallback").waitFor();
     check(await reader.page.getByTestId("copy-fallback").evaluate((el) => el.readOnly && el.value.length > 0), `watcher ${isPhone ? "phone" : "desktop"}: the Table menu's Copy log shows the log to copy`);
@@ -1465,7 +1480,7 @@ try {
   // Chat is readable on a phone in a game: an unread line shows without opening the dock, the open sheet shows at least four whole
   // lines of 14 px or more with the newest in view, and the map is not refitted by opening or closing it.
   await phone.page.setViewportSize({ width: 440, height: 956 });
-  if (await phone.page.getByTestId("chat-sheet").count()) await phone.page.getByRole("button", { name: "Minimize chat" }).click();
+  if (await phone.page.getByTestId("chat-sheet").count()) await phone.page.getByRole("button", { name: "Close chat" }).click();
   await phone.page.getByRole("button", { name: /^Open chat/ }).waitFor();
   for (const i of [1, 2, 3, 4, 5, 6]) await SAY(a, `game line ${i}`);
   await until(async () => (await phone.page.getByTestId("chat-unread").textContent().catch(() => "")) === "6", "Moss's badge counts six unread lines");
@@ -1493,18 +1508,18 @@ try {
       const g = await phone.page.evaluate(() => ({ sheet: document.querySelector('[data-testid="chat-sheet"]').getBoundingClientRect().top, strip: document.querySelector('[data-testid="seat-strip"]').getBoundingClientRect().bottom }));
       check(g.sheet >= g.strip + 56, `phone game ${w}x${h} ${tab} tab: the sheet (top ${Math.round(g.sheet)}) leaves the seat strip (bottom ${Math.round(g.strip)}) and its bubble band clear`);
     }
-    check((await phone.page.getByRole("button", { name: "Minimize chat" }).textContent()).trim() === "Close", `phone game ${v.size}: the sheet has a labelled Close`);
+    check((await phone.page.getByRole("button", { name: "Close chat" }).textContent()).trim() === "Close", `phone game ${v.size}: the sheet has a labelled Close`);
   }
   await phone.page.setViewportSize({ width: 440, height: 956 });
   await new Promise((r) => setTimeout(r, 700));
   check((await hole(phone)) === holeBefore, `phone game: the map's hole is the same with the chat open (${holeBefore})`);
-  await phone.page.getByRole("button", { name: "Minimize chat" }).click();
+  await phone.page.getByRole("button", { name: "Close chat" }).click();
   await new Promise((r) => setTimeout(r, 700));
   check((await hole(phone)) === holeBefore, "phone game: and the same again after it is closed");
 
   // The 844x390 board reaction shares the top-menu edge. The menu and its Leave question stay above it.
-  if (await phone.page.getByRole("button", { name: "Minimize chat" }).count()) {
-    await phone.page.getByRole("button", { name: "Minimize chat" }).click();
+  if (await phone.page.getByRole("button", { name: "Close chat" }).count()) {
+    await phone.page.getByRole("button", { name: "Close chat" }).click();
   }
   await phone.page.setViewportSize({ width: 844, height: 390 });
   await phone.page.getByRole("button", { name: /^Open chat/ }).waitFor();

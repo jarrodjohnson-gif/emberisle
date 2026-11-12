@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Emberisle loading</title>
+<!--
+  Startup loading screen mock for issue #1281. Standalone, no network.
+  ?state=loading[&p=0.62]  ?state=ready  ?state=through&t=0.5  ?state=title
+  &rm=1 forces the reduced-motion variant (cross-fade only). No state = live demo.
+-->
+<style>
+:root {
+  --mist: #f3f6f5;      /* ground */
+  --white: #ffffff;
+  --ink: #263d3c;
+  --muted: #536763;
+  --teal: #246d72;      /* primary */
+  --teal-press: #1c585c;
+  --line: #c9d4d2;
+  --off-bg: #e9efed; --off-ink: #6b7c79;
+  --sky-top: #cfe6e8; --sky-low: #eef4f3;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+body { background: var(--mist); color: var(--ink); font: 15px/24px Arial, Helvetica, sans-serif; -webkit-tap-highlight-color: transparent; }
+h1, p { margin: 0; }
+
+#sky { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* The card sits exactly where the approved title card sits (PR #1216). */
+.card {
+  position: fixed; left: 40px; bottom: 40px; width: 432px;
+  padding: 24px; border-radius: 20px;
+  background: var(--mist); border: 1px solid #d5dedc;
+  box-shadow: 0 8px 32px rgb(35 62 67 / .14);
+  display: grid; gap: 16px;
+  will-change: transform, opacity;
+}
+.wordmark { font: 400 56px/64px Georgia, 'Times New Roman', serif; letter-spacing: -1.5px; color: var(--ink); }
+
+.btn {
+  height: 48px; min-width: 44px; width: 100%; padding: 0 16px; border-radius: 12px;
+  font: 700 20px/1 Arial, Helvetica, sans-serif; cursor: pointer;
+  border: 1px solid var(--teal); background: var(--teal); color: var(--white);
+}
+.btn:active { background: var(--teal-press); }
+.btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.btn[aria-disabled="true"] { background: var(--off-bg); border-color: var(--line); color: var(--off-ink); cursor: default; }
+
+.progress { min-height: 48px; display: grid; gap: 8px; align-content: center; }
+.bar-row { display: flex; align-items: center; gap: 16px; }
+.track { position: relative; flex: 1; height: 8px; border-radius: 8px; background: var(--white); border: 1px solid var(--line); overflow: hidden; }
+.fill { position: absolute; inset: 0 auto 0 0; background: var(--teal); border-radius: 8px; }
+.pct { width: 48px; text-align: right; font: 700 15px/24px Arial, sans-serif; font-variant-numeric: tabular-nums; color: var(--ink); }
+.status { font-size: 12px; line-height: 16px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.tools { min-height: 48px; display: flex; justify-content: center; align-items: center; gap: 8px; }
+.quiet { height: 44px; min-width: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid transparent; background: transparent; color: var(--ink); font: 700 12px/1 Arial, sans-serif; cursor: pointer; }
+
+.layer { display: grid; gap: 16px; }
+.slot { display: grid; grid-template: auto / 1fr; }
+.slot > * { grid-area: 1 / 1; }
+
+/* Phone upright: same insets as the title card. */
+@media (max-width: 767px) and (orientation: portrait) {
+  .card { left: 16px; right: 16px; bottom: 16px; width: auto; padding: 16px; }
+}
+/* Phone sideways. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .card { left: 16px; bottom: 16px; width: 352px; padding: 16px; gap: 8px; }
+  .layer { gap: 8px; }
+}
+</style>
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+
+<main class="card" id="card" aria-live="polite">
+  <h1 class="wordmark">Emberisle</h1>
+  <div class="slot">
+    <button class="btn" id="start" aria-disabled="true">Start</button>
+    <button class="btn" id="play" style="opacity:0;visibility:hidden">Play</button>
+  </div>
+  <div class="slot">
+    <div class="progress" id="progress">
+      <div class="bar-row">
+        <div class="track" role="progressbar" aria-label="Loading Emberisle" aria-valuemin="0" aria-valuemax="100" id="track"><div class="fill" id="fill"></div></div>
+        <span class="pct" id="pct">0%</span>
+      </div>
+      <p class="status" id="status">Starting</p>
+    </div>
+    <div class="tools" id="tools" style="opacity:0;visibility:hidden">
+      <button class="quiet">How to play</button>
+      <button class="quiet">Sound on</button>
+    </div>
+  </div>
+</main>
+
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var reduce = q.get('rm') === '1' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var $ = function (id) { return document.getElementById(id); };
+  var cv = $('sky'), g = cv.getContext('2d'), W = 0, H = 0, DPR = 1;
+
+  /* ---------- the island the camera arrives at (same art as the title) ---------- */
+  function islandSrc() {
+    var w = innerWidth, h = innerHeight;
+    if (w <= 767 && h > w) return 'island-390x844.jpg';
+    if (h <= 500 && w > h) return 'island-844x390.jpg';
+    return 'island-1280x720.jpg';
+  }
+  var island = new Image(); island.src = islandSrc();
+
+  /* ---------- cloud puffs: the invite page's cloudTex, lit for day ---------- */
+  function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function puff(seed) {
+    var n = 256, c = document.createElement('canvas'); c.width = c.height = n;
+    var x = c.getContext('2d'), rnd = mulberry(seed), i, blobs = [];
+    for (i = 0; i < 18; i++) {
+      var u = rnd(), cx = n * (.18 + u * .64), hump = Math.sin(u * Math.PI);
+      blobs.push([cx, n * (.62 - hump * .22 - rnd() * .1), n * (.09 + hump * .12 + rnd() * .05)]);
+    }
+    function pass(dy, col, a) {
+      blobs.forEach(function (b) {
+        var gr = x.createRadialGradient(b[0], b[1] + dy, 0, b[0], b[1] + dy, b[2]);
+        gr.addColorStop(0, 'rgba(' + col + ',' + a + ')'); gr.addColorStop(.62, 'rgba(' + col + ',' + a * .85 + ')'); gr.addColorStop(1, 'rgba(' + col + ',0)');
+        x.fillStyle = gr; x.beginPath(); x.arc(b[0], b[1] + dy, b[2], 0, 7); x.fill();
+      });
+    }
+    pass(n * .03, '168,192,198', .9);   // shaded underside
+    pass(-n * .015, '255,255,255', .95); // sunlit tops
+    return c;
+  }
+  var puffs = [1, 2, 3, 4, 5, 6].map(puff);
+  var rnd = mulberry(1281), clouds = [];
+  for (var i = 0; i < 64; i++) {
+    clouds.push({ x: (rnd() * 2 - 1) * 4.5, y: (rnd() * 2 - 1) * 3.2, z: 3.2 + rnd() * 14, s: 1.3 + rnd() * 1.6, tex: puffs[i % puffs.length], drift: rnd() * 6.28 });
+  }
+  clouds.sort(function (a, b) { return b.z - a.z; });
+
+  function resize() {
+    DPR = Math.min(2, window.devicePixelRatio || 1); W = innerWidth; H = innerHeight;
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  }
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function smooth(a, b, v) { v = clamp((v - a) / (b - a), 0, 1); return v * v * (3 - 2 * v); }
+  function easeInOut(v) { return v < .5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2; }
+
+  function drawCover(img, scale, alpha) {
+    if (!img.complete || !img.naturalWidth || alpha <= 0) return;
+    var k = Math.max(W / img.naturalWidth, H / img.naturalHeight) * scale;
+    var w = img.naturalWidth * k, h = img.naturalHeight * k;
+    g.globalAlpha = alpha; g.drawImage(img, (W - w) / 2, (H - h) / 2, w, h); g.globalAlpha = 1;
+  }
+
+  /* camZ: how far the camera has pushed into the cloud bank. reveal: island visibility. */
+  function render(camZ, reveal, cloudAlpha, time) {
+    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    var sky = g.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#8fc6cf'); sky.addColorStop(.7, '#cfe7e8'); sky.addColorStop(1, '#eef4f3');
+    g.fillStyle = sky; g.fillRect(0, 0, W, H);
+    drawCover(island, 1 + 0.35 * (1 - reveal), reveal);
+    var F = Math.max(W, H) * 0.55;
+    for (var i = 0; i < clouds.length; i++) {
+      var c = clouds[i], dz = c.z - camZ;
+      if (dz < 0.25) continue;
+      var near = clamp((dz - 0.25) / 1.6, 0, 1);         // fade puffs as the camera passes through
+      var far = clamp(1.15 - dz / 17, 0, 1);              // distant puffs sink into the haze
+      var a = near * far * cloudAlpha;
+      if (a <= 0.01) continue;
+      var k = F / dz, sway = Math.sin(time * 0.15 + c.drift) * 0.12;
+      var size = c.s * k, sx = W / 2 + (c.x + sway) * k, sy = H * 0.42 + c.y * k;
+      if (sx + size < 0 || sx - size > W || sy + size < 0 || sy - size > H) continue;
+      g.globalAlpha = a; g.drawImage(c.tex, sx - size, sy - size * 0.6, size * 2, size * 1.2);
+    }
+    g.globalAlpha = 1;
+    // inside-the-cloud whiteout, peaks mid-push
+    var wash = cloudAlpha * (0.06 + 0.4 * Math.exp(-Math.pow((camZ - 8) / 2.4, 2))) * (1 - reveal);
+    g.fillStyle = 'rgba(243,246,245,' + clamp(wash, 0, 0.85) + ')'; g.fillRect(0, 0, W, H);
+  }
+
+  /* ---------- card states ---------- */
+  var STEPS = [[0, 'Starting'], [.08, 'Fetching the board'], [.3, 'Painting the hexes'], [.62, 'Carving the ports'], [.85, 'Waking the lanterns'], [1, 'Ready']];
+  var TOTAL = 4.8; // MB, the heavy files moved out of the first download
+  function setProgress(p) {
+    var pc = Math.floor(p * 100), label = 'Starting';
+    STEPS.forEach(function (s) { if (p >= s[0]) label = s[1]; });
+    $('fill').style.width = (p * 100) + '%';
+    $('pct').textContent = pc + '%';
+    $('track').setAttribute('aria-valuenow', pc);
+    $('status').textContent = p >= 1 ? 'Ready when you are' : label + ' · ' + (p * TOTAL).toFixed(1) + ' of ' + TOTAL.toFixed(1) + ' MB';
+    var ready = p >= 1;
+    $('start').setAttribute('aria-disabled', ready ? 'false' : 'true');
+  }
+  function show(el, v) { el.style.opacity = v; el.style.visibility = v > 0.001 ? 'visible' : 'hidden'; }
+
+  /* t in [0,1] of the 2400 ms push. The card dips out, the camera flies through, the title card rises. */
+  function through(t) {
+    var card = $('card');
+    if (reduce) {
+      // Cross-fade only: clouds fade, island fades in, card contents swap in place.
+      render(0, t, 1 - t, 0);
+      card.style.transform = 'none'; card.style.opacity = 1;
+      var o = 1 - smooth(0, .5, t), n = smooth(.5, 1, t); // out, then in: never two labels at once
+      show($('start'), o); show($('progress'), o); show($('play'), n); show($('tools'), n);
+      return;
+    }
+    var e = Math.pow(t, 1.6); // ease-in: the push accelerates, the island's settle eases it out
+    render(e * 19, smooth(0.4, 0.9, t), 1, t * 2.4);
+    var out = smooth(0, 0.2, t), back = smooth(0.8, 1, t);
+    var titleNow = t >= 0.5;
+    show($('start'), titleNow ? 0 : 1); show($('progress'), titleNow ? 0 : 1);
+    show($('play'), titleNow ? 1 : 0); show($('tools'), titleNow ? 1 : 0);
+    if (!titleNow) { card.style.transform = 'translateY(' + (out * 140) + '%)'; card.style.opacity = 1 - out; }
+    else { card.style.transform = 'translateY(' + ((1 - back) * 24) + 'px)'; card.style.opacity = back; }
+  }
+
+  function staticState(state) {
+    var p = state === 'ready' ? 1 : clamp(parseFloat(q.get('p') || '0.62'), 0, 1);
+    if (state === 'through' || state === 'title') { setProgress(1); through(state === 'title' ? 1 : clamp(parseFloat(q.get('t') || '0.5'), 0, 1)); return; }
+    setProgress(p); render(0, 0, 1, 0);
+  }
+
+  /* ---------- live demo: fake a 6 s load, then Start runs the 2400 ms push ---------- */
+  function demo() {
+    var t0 = performance.now(), p = 0, phase = 'loading', pushStart = 0, DUR = reduce ? 400 : 2400;
+    setProgress(0);
+    $('start').addEventListener('click', function () {
+      if (phase !== 'ready') { $('status').textContent = 'Start opens at 100% · ' + Math.floor(p * 100) + '%'; return; }
+      phase = 'push'; pushStart = performance.now(); $('start').setAttribute('aria-disabled', 'true');
+    });
+    (function frame(now) {
+      var secs = (now - t0) / 1000;
+      if (phase === 'loading') {
+        p = Math.min(1, 1 - Math.pow(1 - Math.min(1, secs / 6), 1.6));
+        setProgress(p); render(Math.sin(secs * 0.2) * 0.25, 0, 1, secs);
+        if (p >= 1) phase = 'ready';
+      } else if (phase === 'ready') {
+        render(Math.sin(secs * 0.2) * 0.25, 0, 1, secs);
+      } else if (phase === 'push') {
+        var t = Math.min(1, (now - pushStart) / DUR); through(t);
+        if (t >= 1) phase = 'title';
+      } else { through(1); }
+      requestAnimationFrame(frame);
+    })(t0);
+  }
+
+  resize();
+  addEventListener('resize', function () { resize(); var s = q.get('state'); if (s) staticState(s); });
+  var state = q.get('state');
+  var go = function () { if (state) { staticState(state); document.body.dataset.ready = '1'; } else demo(); };
+  if (island.complete) go(); else { island.onload = go; island.onerror = go; }
+})();
+</script>
+</body>
+</html>

@@ -101,3 +101,10 @@
   .hand-resource-card-slot { transition: none; }
   .hand-resource-card-slot[data-offer] { transform: none; }
 }
+
+/* #1539 one tray (docs/design/one-tray): the hand is five plain numbers. No card: a 1 px divider splits the columns, the
+   name is 12 px sentence case, and a zero is greyed. The gain fill, the loss ring and the offer edges still use the card's box. */
+.goods-card, .goods-empty { background: transparent; box-shadow: none; }
+.hand-resource-card-slot + .hand-resource-card-slot { border-left: 1px solid #e3eae7; }
+.goods-label { padding-left: 0; font: 500 12px/14px var(--font-ui); letter-spacing: 0; text-transform: none; }
+.goods-empty > .goods-count, .goods-empty > .goods-label { color: #64736f; }

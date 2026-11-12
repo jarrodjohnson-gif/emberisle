@@ -1,6 +1,7 @@
 {
   "LobbyView": 2300,
   "LobbyWaitBox": 1800,
+  "LobbyTicTacToe": 1390,
   "index": 122000,
   "IslandCanvas": 199000,
   "jelly-board": 7600,
@@ -24,5 +25,24 @@
   "trade-sound": 468,
   "emotes": 371,
   "SeatNeeds": 1780,
-  "TradeResource": 1430
+  "TradeResource": 1430,
+  "SeatPublicGains": 1770,
+  "TradeToast": 2661,
+  "losses": 1407,
+  "x": 157,
+  "ProfileSheet": 5435,
+  "focus-trap": 470,
+  "ProfileForms": 2189,
+  "ProfileRecords": 2248,
+  "ProfileRecovery": 3029,
+  "eye-off": 290,
+  "LoadingScreen": 2388,
+  "SoundSheet": 1872,
+  "use-muted-seats": 414,
+  "WinList": 1253,
+  "Sticker": 949,
+  "PlayAgain": 412,
+  "BuildList": 1439,
+  "OtherProfileCard": 1078,
+  "ambience": 461
 }

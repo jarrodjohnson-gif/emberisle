@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8114;
@@ -8,8 +7,7 @@ const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, stric
 let browser;
 try {
   await vite.listen();
-  browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ||
-    (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined) });
+  browser = await chromium.launch();
   const fast = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const page = await fast.newPage();
   await page.addInitScript(() => {

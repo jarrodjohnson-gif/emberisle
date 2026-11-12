@@ -19,10 +19,10 @@
 // Run: npm run hud-safe-area-prove. Port from VITE_PORT, default 8475. Screenshots to test-results/hud-safe-*.png.
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const CHAT_PENDING = false;
@@ -59,7 +59,6 @@ await vite.listen();
 const URL_ = `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`;
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
@@ -140,7 +139,11 @@ async function prove(p, moment, { island = true } = {}) {
         const m = isle.coastMiter.get(v.id);
         const pts = v.harbor ? [q, isle.screenAt(v.x + m.mx * 0.7, 0.1, v.z + m.mz * 0.7)] : [q];
         // A dock may come to the hole's edge (the diorama fit puts the nearest one there), not past it: half a pixel of float.
-        if (pts.some((p) => Math.min(p.x - hole.l, hole.r - p.x, p.y - hole.t, hole.b - p.y) < -0.5)) corners.push(`${v.id}@${q.x | 0},${q.y | 0}`);
+        // #1509 (owner card q1515-table-look, B: "crop the side boats, keep every dock button on screen"): in the upright overhead
+        // view a side dock's boat may run off the side edges; it stays inside the hole's top and bottom. Corners keep the whole hole.
+        const upright = innerHeight > innerWidth && isle.view === "overhead";
+        const room = (p, i) => (upright && i > 0 ? Math.min(p.y - hole.t, hole.b - p.y) : Math.min(p.x - hole.l, hole.r - p.x, p.y - hole.t, hole.b - p.y));
+        if (pts.some((p, i) => room(p, i) < -0.5)) corners.push(`${v.id}@${q.x | 0},${q.y | 0}`);
       }
       return {
         reached, seen, out, chatOut, play: isle.view !== "free", vertices: st.vertices.length, corners, holeSafe,
@@ -205,7 +208,7 @@ async function pinned(p, moment, name, mustScroll) {
   // Keyboard: Tab through the column from its top; every focused control stays uncovered (the pinned row does not hide it),
   // and the "more below" cue does not sit under that row.
   await page.evaluate(() => {
-    const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+    const sc = document.querySelector('[data-testid="turn-banner"]').closest("[data-hud-stack]");
     sc.scrollTop = 0;
     sc.querySelector("button").focus();
   });
@@ -213,7 +216,7 @@ async function pinned(p, moment, name, mustScroll) {
   for (let i = 0; i < 30; i++) {
     const f = await page.evaluate(() => {
       const el = document.activeElement;
-      const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+      const sc = document.querySelector('[data-testid="turn-banner"]').closest("[data-hud-stack]");
       if (!sc.contains(el)) return null;
       const b = el.getBoundingClientRect();
       const top = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
@@ -243,7 +246,7 @@ async function pinned(p, moment, name, mustScroll) {
   ).then(() =>
     page.evaluate((insets) => {
       const t = document.querySelector("#fortune-title").closest('[role="dialog"]').getBoundingClientRect();
-      const sc = document.querySelector('[data-testid="turn-banner"]').parentElement;
+      const sc = document.querySelector('[data-testid="turn-banner"]').closest("[data-hud-stack]");
       const end = [...sc.querySelectorAll("button")].find((x) => x.textContent.trim() === "End turn");
       const b = end.parentElement.getBoundingClientRect();
       const hit = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
@@ -259,7 +262,7 @@ async function pinned(p, moment, name, mustScroll) {
   await page.locator("#fortune-title").waitFor({ state: "detached", timeout: STEP_MS });
   check(
     `${tag} ${moment}: Escape closes the tray and focus returns to Fortunes`,
-    await page.evaluate(() => /^(Play fortune|Fortunes)/.test(document.activeElement?.textContent ?? "")),
+    await page.evaluate(() => /^(Play fortune|Fortunes?)/.test(document.activeElement?.textContent ?? "")),
   );
 }
 
@@ -397,10 +400,7 @@ async function online(spec) {
     g.setDefaultTimeout(STEP_MS);
     g.on("pageerror", (e) => errors.push(`guest: ${e}`));
     await g.goto(`${URL_}&code=${code}`);
-    // The join link fills the field after the first render; Enter before that submits nothing.
-    await g.waitForFunction((c) => document.querySelector('input[aria-label="Join code"]')?.value === c, code, { timeout: STEP_MS });
-    // Enter in the filled field submits the join (the same form as the Join button).
-    await g.getByRole("textbox", { name: "Join code" }).press("Enter");
+    await g.getByRole("button", { name: `Join table ${code}`, exact: true }).click({ timeout: STEP_MS });
     await g.getByTestId("table-code").waitFor({ timeout: STEP_MS });
     // Guests are scaffolding: the keyboard presses their buttons without waiting on their island's frames.
     await g.getByRole("button", { name: "Ready", exact: true }).press("Enter");

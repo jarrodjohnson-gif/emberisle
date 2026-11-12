@@ -4,7 +4,7 @@ import { spawn } from "node:child_process";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
@@ -77,7 +77,8 @@ async function desktopHeader(page, label) {
   await page.waitForFunction(() => document.querySelector('header [data-testid="turn-countdown"]') && window.__isle?.lastState && !window.__isle.refitDue && !window.__isle.glide);
   const geometry = await page.evaluate(() => {
     const issues = [];
-    const instruction = document.querySelector('header [data-testid="turn-banner"]');
+    // #1539: the status line sits in the tray's top line on desktop too; the countdown and the vote stay in the header.
+    const instruction = document.querySelector('[data-hud-stack] [data-testid="turn-banner"]');
     const text = document.createRange();
     text.selectNodeContents(instruction);
     const box = instruction.getBoundingClientRect();
@@ -89,7 +90,7 @@ async function desktopHeader(page, label) {
     for (const [i, el] of nodes.entries()) {
       const r = el.getBoundingClientRect();
       const name = el.getAttribute("data-testid");
-      if (!el.closest("header")) issues.push(`${name} left header`);
+      if (!el.closest(el === instruction ? "[data-hud-stack]" : "header")) issues.push(`${name} left ${el === instruction ? "the tray" : "header"}`);
       if (r.left < 0 || r.top < 0 || r.right > innerWidth || r.bottom > innerHeight) issues.push(`${name} outside viewport`);
       if (nodes.slice(i + 1).some((other) => overlaps(r, other.getBoundingClientRect()))) issues.push(`${name} overlaps another header item`);
       if (blockers.some((other) => overlaps(r, other))) issues.push(`${name} overlaps seats or chat`);
@@ -113,7 +114,7 @@ async function headerWithChat(page, label) {
   await page.getByRole("button", { name: /^Open chat/ }).click();
   await page.locator('section[aria-label="Table chat"]').waitFor();
   await desktopHeader(page, `${label}, chat open`);
-  await page.getByRole("button", { name: "Minimize chat" }).click();
+  await page.getByRole("button", { name: "Close chat" }).click();
   await page.locator('section[aria-label="Table chat"]').waitFor({ state: "hidden" });
 }
 try {
@@ -184,7 +185,8 @@ try {
   await (await b.context().newCDPSession(b)).send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 0, right: 0, bottom: 0, left: 0 } });
   await b.setViewportSize({ width: 1280, height: 720 });
   // The viewport event reaches React after setViewportSize resolves. Wait for its desktop HUD first.
-  await b.waitForFunction(() => innerWidth === 1280 && document.querySelector('header [data-testid="turn-banner"]') && !document.querySelector('[data-hud-stack] [data-testid="turn-banner"]') && !document.querySelector(".hud-utilities"));
+  // #1539: the status line stays in the tray on both; the phone's seat strip going away marks the desktop HUD.
+  await b.waitForFunction(() => innerWidth === 1280 && !document.querySelector('[data-testid="seat-strip"]') && document.querySelector('[data-hud-stack] [data-testid="turn-banner"]') && !document.querySelector(".hud-utilities"));
   await b.waitForFunction(() => window.__isle?.lastState && !window.__isle.refitDue && !window.__isle.glide);
   await headerWithChat(b, "desktop voter");
   const desktopVoter = await b.evaluate(() => {
@@ -195,6 +197,8 @@ try {
   assert.deepEqual(desktopVoter.overflow, [], `desktop voter fits: ${JSON.stringify(desktopVoter)}`);
   console.log(`desktop voter: ${JSON.stringify(desktopVoter)}`);
   await b.screenshot({ path: "test-results/turn-extension-desktop-voter.png" });
+  // #1449 item 8: the confirming answer is last, as in the trade offer.
+  assert.deepEqual(await b.getByTestId("turn-extension-vote").locator("button").allTextContents(), ["No", "Yes"], "vote reads No, then Yes");
   await b.getByRole("button", { name: "Yes, more time" }).click();
   for (const page of tabs) {
     await page.getByTestId("turn-extension-result").filter({ hasText: "Ember gets 60 seconds more." }).waitFor();

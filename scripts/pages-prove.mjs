@@ -6,7 +6,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 
 const BASE = "/emberisle/";
 const PORT = Number(process.env.PAGES_PORT) || 8110;
@@ -27,7 +27,6 @@ const server = createServer((req, res) => {
 await new Promise((ok) => server.listen(PORT, "127.0.0.1", ok));
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 let code = 0;

@@ -4,7 +4,7 @@ import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
@@ -182,7 +182,8 @@ try {
   await knightPage.getByText("Take from whom?").waitFor();
   const knightOpen = await knightPage.evaluate(id => { const s = window.__emberisle.getState(); return { phase: s.state.phase, current: s.state.current, picker: s.pendingSteal, targets: s.legal.steal[id] }; }, hex.id);
   check("Knight picker opens before roll with two victims", knightOpen.phase === "roll" && knightOpen.current === "p0" && knightOpen.picker?.kind === "playKnight" && knightOpen.targets.length === 2, knightOpen);
-  await knightPage.getByRole("button", { name: "Roll", exact: true }).click();
+  // #1539: an armed fortune leaves Cancel alone in the action row, so the roll is the Roll button's own dispatch.
+  await knightPage.evaluate(() => window.__emberisle.getState().dispatch({ type: "roll" }));
   await knightPage.waitForFunction(() => window.__emberisle.getState().state.phase === "main");
   const knightAfter = await knightPage.evaluate(id => { const s = window.__emberisle.getState(); return { phase: s.state.phase, current: s.state.current, knight: s.state.players.find(p => p.id === s.localId).hidden.knight, picker: s.pendingSteal, targets: s.legal.steal[id], bar: document.querySelectorAll('[aria-label="The wayfarer takes a card"] button').length, dice: s.state.dice }; }, hex.id);
   check("real host uses the same non-seven dice as the setup", knightAfter.dice?.[0] === rolled.state.dice[0] && knightAfter.dice?.[1] === rolled.state.dice[1] && knightAfter.dice[0] === 4 && knightAfter.dice[1] === 4, knightAfter.dice);

@@ -2,6 +2,7 @@
 // named as in server/cue.mjs. Nothing plays before the first pointer or key gesture (browsers refuse autoplay), and a
 // missing or blocked file is silent, never a thrown error or a console error.
 import { useSyncExternalStore } from "react";
+import { getSeaSounds, getSeaVolume, subscribeSeaSounds } from "./sea-setting";
 import { categoryGain, subscribeSoundMix, type SoundCategory } from "./sound-settings";
 import type { ExtraSoundName } from "./sound-extra";
 import type { Bag } from "./net/table";
@@ -109,6 +110,7 @@ if (typeof window !== "undefined") {
   const unlock = () => {
     unlocked = true;
     syncMusic();
+    syncAmbience();
   };
   window.addEventListener("pointerdown", unlock, { once: true, capture: true, passive: true });
   window.addEventListener("keydown", unlock, { once: true, capture: true, passive: true });
@@ -123,6 +125,7 @@ export function setMuted(v: boolean) {
   if (v) stop("end_music");
   syncVolumes();
   syncMusic();
+  syncAmbience();
   try {
     if (v) localStorage.setItem(MUTED_KEY, "1");
     else localStorage.removeItem(MUTED_KEY);
@@ -170,7 +173,8 @@ function pump() {
 let extraFiles: Partial<Record<ExtraSoundName, string>> | null = null;
 function start(name: SoundName, volume: number, category: SoundCategory) {
   const gain = volume * categoryGain(category);
-  if (muted || !gain) return;
+  // Music off (the saved switch) silences the stings too, not only the track.
+  if (muted || !gain || (category === "music" && !bgOn)) return;
   const file = FILES[name as keyof typeof FILES] ?? extraFiles?.[name as ExtraSoundName];
   if (!file) {
     if (extraFiles) return;
@@ -262,11 +266,11 @@ export function yourTurn() {
   haptics.turn?.();
 }
 
-// Background music (#814): "Medieval: The Old Tower Inn" (docs/design/sound.md). The file is fetched on the first start, after
-// the first gesture, never before, and is not part of any JS chunk. It plays while the table wants it (the lobby and play, not
-// the title or the end screen), unless muted or switched off; it dips under the stings.
+// Background music (#814, #1279): "Medieval: The Old Tower Inn" (docs/design/sound.md). The file is fetched on the first
+// start, after the first gesture, never before, and is not part of any JS chunk. It plays while the screen wants it (the
+// title, the lobby and play, not the end screen), unless muted or switched off; it dips under the stings.
 const MUSIC_FILE = "old_tower_inn_loop.mp3";
-export const BG_VOLUME = 0.25;
+export const BG_VOLUME = 0.12;
 const BG_DUCK = 0.3;
 const DUCKERS: ReadonlySet<SoundName> = new Set<SoundName>(["game_start", "match_point", "game_lose", "end_music"]);
 const MUSIC_KEY = "emberisle-music";
@@ -300,6 +304,7 @@ export function setMusicOn(v: boolean) {
     // storage can be blocked; the toggle still holds for this page
   }
   syncMusic();
+  syncAmbience();
   for (const l of listeners) l();
 }
 
@@ -357,7 +362,19 @@ function syncVolumes() {
     clip.volume = muted ? 0 : volume * categoryGain(category);
   }
 }
-subscribeSoundMix(() => { syncVolumes(); syncMusic(); });
+subscribeSoundMix(() => { syncVolumes(); syncMusic(); syncAmbience(); });
+
+// #662: the sea-and-wind ambience at AMB_VOLUME under the Music and ambience level and the Sea sounds volume (#1163),
+// after the first gesture, while the Sea sounds switch is on, unless muted or Music is off. ambience.ts pauses it on a
+// hidden tab; it and its file load on its first start.
+export const AMB_VOLUME = 0.12;
+let amb: Promise<typeof import("./ambience")> | undefined;
+subscribeSeaSounds(syncAmbience);
+function syncAmbience() {
+  const level = unlocked && !muted && bgOn && getSeaSounds() ? AMB_VOLUME * categoryGain("music") * getSeaVolume() : 0;
+  if (!level && !amb) return;
+  (amb ??= import("./ambience")).then((m) => m.sync(level), () => { amb = undefined; });
+}
 
 // #667: a tap on a hex that places nothing plays that terrain's clip, at most once per TOUCH_GAP_MS. Only a sheep
 // hex (Pasture, "wool") baas. The renderer calls this for a plain tap only: never for a drag, a pinch or an armed placement.

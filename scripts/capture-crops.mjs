@@ -1,11 +1,10 @@
 import { createServer } from "vite";
-import { chromium } from "playwright";
-import { existsSync, mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
+import { mkdirSync } from "node:fs";
 
 const vite = await createServer({ server: { host: "127.0.0.1", port: 18752, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"]
 });
 

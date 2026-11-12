@@ -4,9 +4,8 @@
 // Asserts frustum aspect matches canvas aspect at each step (no squashing), world-per-pixel scale is
 // preserved, top-anchored crop keeps board top and seat strip inside the hole, and the keyboard crop clears on rotation or actual viewport restoration.
 // Run: npm run keyboard-fit-prove
-import { existsSync } from "node:fs";
 import { mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;
@@ -14,7 +13,6 @@ const PORT = Number(process.env.VITE_PORT) || 8145;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];

@@ -1,0 +1,240 @@
+{
+  "note": "Chunk gzip reads final files after build. Module renderedLength is pre-minification attribution, not marginal gzip savings.",
+  "chunks": [
+    {
+      "file": "DockInspection-BqNsKBnD.js",
+      "bytes": 2038,
+      "gzip": 1031
+    },
+    {
+      "file": "HandRates-z2IXzQie.js",
+      "bytes": 1012,
+      "gzip": 647
+    },
+    {
+      "file": "IslandCanvas-CFJt1l9M.js",
+      "bytes": 765516,
+      "gzip": 202145
+    },
+    {
+      "file": "LobbyView-B0XB_qqR.js",
+      "bytes": 6192,
+      "gzip": 2432
+    },
+    {
+      "file": "LobbyWaitBox-oM_Q2bpk.js",
+      "bytes": 4732,
+      "gzip": 1967
+    },
+    {
+      "file": "OpenTables-F_q7Tewv.js",
+      "bytes": 2733,
+      "gzip": 1258
+    },
+    {
+      "file": "Reactions-Dw8VSy1y.js",
+      "bytes": 6024,
+      "gzip": 2481
+    },
+    {
+      "file": "SeatNeeds-BzyOwXx5.js",
+      "bytes": 4159,
+      "gzip": 1698
+    },
+    {
+      "file": "SetupReference-u3ezTCC5.js",
+      "bytes": 4920,
+      "gzip": 1858
+    },
+    {
+      "file": "TradeResource-CV-OlBK0.js",
+      "bytes": 1796,
+      "gzip": 830
+    },
+    {
+      "file": "TurnExtensionVote-CyNqR_BH.js",
+      "bytes": 2677,
+      "gzip": 1205
+    },
+    {
+      "file": "VictoryTargetSelect-CX2ZXjGj.js",
+      "bytes": 1028,
+      "gzip": 616
+    },
+    {
+      "file": "WayfarerOptions-CPRo0TJb.js",
+      "bytes": 806,
+      "gzip": 489
+    },
+    {
+      "file": "emotes-Ijw0U75Z.js",
+      "bytes": 1240,
+      "gzip": 464
+    },
+    {
+      "file": "haptics-Kx7mRFwy.js",
+      "bytes": 1800,
+      "gzip": 1068
+    },
+    {
+      "file": "harbor-jelly-BcZefjlI.js",
+      "bytes": 27129,
+      "gzip": 10736
+    },
+    {
+      "file": "hex-jelly-n3L_4Zqe.js",
+      "bytes": 136964,
+      "gzip": 46877
+    },
+    {
+      "file": "index-70wUcrqE.js",
+      "bytes": 399691,
+      "gzip": 125528
+    },
+    {
+      "file": "jelly-board-C469YhdN.js",
+      "bytes": 21208,
+      "gzip": 8182
+    },
+    {
+      "file": "moments-LMTPu__x.js",
+      "bytes": 10163,
+      "gzip": 4317
+    },
+    {
+      "file": "online-aLbWfgQe.js",
+      "bytes": 18257,
+      "gzip": 6493
+    },
+    {
+      "file": "sheets-Cj0p4i5m.js",
+      "bytes": 22547,
+      "gzip": 7207
+    },
+    {
+      "file": "sound-extra-DafKjM_2.js",
+      "bytes": 481,
+      "gzip": 225
+    },
+    {
+      "file": "table-Cz9AI20j.js",
+      "bytes": 5109,
+      "gzip": 2196
+    },
+    {
+      "file": "trade-sound-R0MMNDEp.js",
+      "bytes": 887,
+      "gzip": 533
+    }
+  ],
+  "canvasModules": [
+    {
+      "id": "node_modules/three/build/three.module.js",
+      "renderedLength": 542808
+    },
+    {
+      "id": "node_modules/three/build/three.core.js",
+      "renderedLength": 447714
+    },
+    {
+      "id": "src/lib/scene/isle-renderer.ts",
+      "renderedLength": 76863
+    },
+    {
+      "id": "src/lib/scene/crystal-water.ts",
+      "renderedLength": 33394
+    },
+    {
+      "id": "node_modules/three/examples/jsm/controls/OrbitControls.js",
+      "renderedLength": 27396
+    },
+    {
+      "id": "src/lib/scene/ocean-life.ts",
+      "renderedLength": 13041
+    },
+    {
+      "id": "node_modules/three/examples/jsm/math/SimplexNoise.js",
+      "renderedLength": 11249
+    },
+    {
+      "id": "node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+      "renderedLength": 9733
+    },
+    {
+      "id": "node_modules/three/examples/jsm/postprocessing/SSAOPass.js",
+      "renderedLength": 9312
+    },
+    {
+      "id": "src/lib/scene/mobile-fit.ts",
+      "renderedLength": 8885
+    },
+    {
+      "id": "src/lib/scene/bruno.ts",
+      "renderedLength": 6359
+    },
+    {
+      "id": "node_modules/three/examples/jsm/shaders/SSAOShader.js",
+      "renderedLength": 6313
+    },
+    {
+      "id": "src/components/scene/IslandCanvas.tsx",
+      "renderedLength": 4842
+    },
+    {
+      "id": "node_modules/three/examples/jsm/postprocessing/EffectComposer.js",
+      "renderedLength": 4035
+    },
+    {
+      "id": "node_modules/three/examples/jsm/geometries/RoundedBoxGeometry.js",
+      "renderedLength": 3941
+    },
+    {
+      "id": "src/lib/scene/pieces-jelly.ts",
+      "renderedLength": 3579
+    },
+    {
+      "id": "node_modules/three/examples/jsm/postprocessing/OutputPass.js",
+      "renderedLength": 2122
+    },
+    {
+      "id": "src/lib/scene/landing-dust.ts",
+      "renderedLength": 1957
+    },
+    {
+      "id": "node_modules/three/examples/jsm/postprocessing/MaskPass.js",
+      "renderedLength": 1839
+    },
+    {
+      "id": "node_modules/three/examples/jsm/postprocessing/RenderPass.js",
+      "renderedLength": 1706
+    },
+    {
+      "id": "node_modules/three/examples/jsm/shaders/OutputShader.js",
+      "renderedLength": 1637
+    },
+    {
+      "id": "node_modules/three/examples/jsm/postprocessing/ShaderPass.js",
+      "renderedLength": 1348
+    },
+    {
+      "id": "node_modules/three/examples/jsm/postprocessing/Pass.js",
+      "renderedLength": 1145
+    },
+    {
+      "id": "src/lib/scene/wobble.ts",
+      "renderedLength": 1116
+    },
+    {
+      "id": "node_modules/three/examples/jsm/shaders/CopyShader.js",
+      "renderedLength": 568
+    },
+    {
+      "id": "src/lib/scene/palette.ts",
+      "renderedLength": 413
+    },
+    {
+      "id": "src/lib/scene/jelly-dims.ts",
+      "renderedLength": 224
+    }
+  ]
+}

@@ -1,10 +1,9 @@
 // #625: the declared hole (`playHole`, what the island is fitted to) covers the HUD's persistent footprint. On a phone, at rest and in
 // each in-play phase (roll, main, robber, setup), every side of the live hole (`__isle.liveInsets()`, what the chrome around the canvas
 // leaves right now) is no bigger than the declared one (`__isle.insets()`), across a width sweep: upright 320-440 px (every pixel
-// from 375 to 411, around TRAY_WRAP_MAX (400), where the main phase's action row stops taking two lines by rule), sideways 667-956 px,
-// a 440 px case, and safe-area notch insets. A side where the live hole is bigger is a place the HUD covers a corner. Run: npm run hole-prove
-import { existsSync } from "node:fs";
-import { chromium } from "playwright";
+// from 375 to 410, around TRAY_WRAP_MAX, where the main phase's action row stops taking two lines by rule), sideways 667-956 px. A side where the live hole is
+// bigger is a place the HUD covers a corner. Run: npm run hole-prove
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 60_000;
@@ -12,7 +11,6 @@ const PORT = Number(process.env.VITE_PORT) || 8141;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];

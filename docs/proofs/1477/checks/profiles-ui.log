@@ -1,0 +1,18 @@
+
+> profiles-ui-prove
+> node scripts/profiles-ui-prove.mjs
+
+ok five sizes: Profile and the sheet fit with 44 px controls; focus starts on Close, stays inside, returns to Profile; guest controls and typed code stay
+ok field errors sit beside their fields and send nothing; create on the real host remembers only that host and keeps the saved seat
+ok a wrong PIN is refused; a second device signs in and out without remembering or revoking the first
+ok switching to host B shows no remembered profile and sends B only the capability check
+ok a remembered profile resumes only after a press; Host a table attaches it once and the seat shows the profile
+ok PINs, credentials and the login appear only in their own requests and replies, never in seats, chat, state or log frames
+ok blocked storage signs in for this page only and keeps guest play
+ok unsupported and offline hosts say so, send no credential and leave guest play and the saved seat
+ok edit profile: a failed form load says so and retries on the next press; the form fits at 440x956, 956x440 and 1280x720 with 44 px controls; colours never match; a login change needs the current PIN, refused beside it; focus returns to Edit profile
+ok the old login is refused after a rename; edits persist across a resume
+ok change PIN: the form fits at the three sizes; refusals sit beside their fields; the new credential replaces the remembered one; the other device is signed out and the old PIN no longer works
+ok an edited profile with a new PIN attaches once on Host a table; PINs, credentials and logins stay in their own frames
+ok a temporary PIN must be changed first: Change PIN opens with Sign out, no table credential until then, Host a table attaches after
+profiles-ui-prove: pass

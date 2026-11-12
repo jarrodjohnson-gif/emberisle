@@ -32,8 +32,8 @@
 // The 3100 ms running-time limit (2600 before #825), with a separate 4000 ms raw cap and an exact 3000 ms cue-duration check.
 // Run: npm run turn-gain-prove (ONLY=390x844, reduced or hotseat or reconnect runs one part). Port from VITE_PORT, default 8476.
 // Screenshots to test-results/turn-gain-*.png.
-import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const STEP_MS = 30_000;
@@ -63,13 +63,15 @@ mkdirSync("test-results", { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
 const errors = [];
 let failures = 0;
+// Set for the refit placement only. A failing check prints this trace; a pass does not.
+let refitTrace;
 function check(ok, label, data) {
+  if (!ok && refitTrace) data = { ...(data ?? {}), steps: refitTrace };
   console.log(`${ok ? "ok  " : "FAIL"} ${label}${data === undefined ? "" : " " + JSON.stringify(data)}`);
   if (!ok) failures++;
 }
@@ -77,12 +79,12 @@ function check(ok, label, data) {
 // Installed before the app: every turn moment and every gain line, with what the store said when it mounted, its box and
 // colour, and its opacity and transform on every frame it lives; the person's own hand changes; the roll moment's spans.
 function recorders() {
-  // For a measure only: __hold names the moment being measured; a 1.5-2.7 s timer set while it is on screen (its own end)
+  // For a measure only: __hold names the moment being measured; its end timer (including the hand's current 3 s cue)
   // waits until __release() runs it. Nothing else is held, so the bots play on.
   window.__held = new Map();
   const later = window.setTimeout;
   window.setTimeout = function (fn, ms, ...a) {
-    if (window.__hold && document.querySelector(`[data-testid="${window.__hold}"]`) && typeof fn === "function" && ms >= 1500 && ms <= 2700) {
+    if (window.__hold && document.querySelector(`[data-testid="${window.__hold}"]`) && typeof fn === "function" && (ms >= 1500 && ms <= 2700 || window.__hold === "resource-flash" && ms === 3000)) {
       const id = later(() => window.__held.delete(id), 600_000);
       window.__held.set(id, () => fn(...a));
       return id;
@@ -581,23 +583,89 @@ async function practice(view) {
     // The renderer refits the hole a frame after the HUD changes, so a moment can show against the old one: when the hole
     // changes under it, it places itself again. Under the held moment, make the hole run 168 px into the bottom stack with 120
     // px of board above it (as a refit on a short phone gives): its new centre is on the stack, and the board above has room.
-    await page.evaluate(() => {
-      const shell = document.querySelector('[data-testid="turn-moment"]').parentElement.parentElement;
-      const top = document.querySelector("[data-hud-stack]").getBoundingClientRect().top;
+    // The renderer's refit writes the same --hole-* vars. Split reads then saw the new hole with the popup still on the old
+    // one (CI run 42564704204: popup y 249–313, hole y 396–684). Hold the test hole until one read takes the hole, the popup
+    // and the stage together. Tolerances are unchanged.
+    const refitSteps = await page.evaluate(async () => {
+      const shot = () => {
+        const el = document.querySelector('[data-testid="turn-moment"]');
+        const area = el?.parentElement;
+        const shell = area?.parentElement;
+        const rect = (n) => (n ? n.getBoundingClientRect().toJSON() : null);
+        return {
+          box: rect(el),
+          hole: rect(area),
+          shift: el?.dataset.shift ?? null,
+          stage: el?.dataset.stage ?? null,
+          translate: el?.style.translate || "",
+          vars: shell ? { top: shell.style.getPropertyValue("--hole-top"), bottom: shell.style.getPropertyValue("--hole-bottom") } : null,
+        };
+      };
+      const el = document.querySelector('[data-testid="turn-moment"]');
+      const shell = el.parentElement.parentElement;
+      const stackTop = document.querySelector("[data-hud-stack]").getBoundingClientRect().top;
+      const nextTop = `${stackTop - 120}px`;
+      const nextBottom = `${innerHeight - stackTop - 168}px`;
+      const before = shot();
       window.__hole = ["top", "bottom"].map((k) => shell.style.getPropertyValue(`--hole-${k}`));
-      shell.style.setProperty("--hole-top", `${top - 120}px`);
-      shell.style.setProperty("--hole-bottom", `${innerHeight - top - 168}px`);
+      const hold = new MutationObserver(() => {
+        if (shell.style.getPropertyValue("--hole-top") !== nextTop) shell.style.setProperty("--hole-top", nextTop);
+        if (shell.style.getPropertyValue("--hole-bottom") !== nextBottom) shell.style.setProperty("--hole-bottom", nextBottom);
+      });
+      hold.observe(shell, { attributes: true, attributeFilter: ["style"] });
+      window.__restoreHole = () => {
+        hold.disconnect();
+        shell.style.setProperty("--hole-top", window.__hole[0]);
+        shell.style.setProperty("--hole-bottom", window.__hole[1]);
+        delete window.__restoreHole;
+      };
+      shell.style.setProperty("--hole-top", nextTop);
+      shell.style.setProperty("--hole-bottom", nextBottom);
+      const written = shot();
+      await new Promise((r) => queueMicrotask(r));
+      const afterObserver = shot();
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return { before, written, afterObserver, framed: shot() };
     });
-    await page.waitForTimeout(300);
-    // Only the moment's area moved (the renderer's own fit did not), so the hole to centre on is that area.
-    const rlay = { ...(await layout(page)), hole: await page.$eval('[data-testid="turn-moment"]', (e) => e.parentElement.getBoundingClientRect().toJSON()) };
-    const rbox = await page.$$eval('[data-testid="turn-moment"]', (els) => els.map((e) => e.getBoundingClientRect().toJSON()));
-    const rstage = await page.evaluate(() => window.__turns.at(-1).stage);
-    await page.evaluate(() => {
-      const shell = document.querySelector('[data-testid="turn-moment"]').parentElement.parentElement;
-      ["top", "bottom"].forEach((k, i) => shell.style.setProperty(`--hole-${k}`, window.__hole[i]));
-    });
-    placement(`${tag} refit`, '"Your turn" after the hole changed under it', rbox, rlay, rstage);
+    // Same centred / inside test as placement(), so this wait only outlasts the observer. A miss still fails below.
+    await page.waitForFunction(() => {
+      const el = document.querySelector('[data-testid="turn-moment"]');
+      const stage = window.__turns.at(-1)?.stage;
+      if (!el || !stage || !window.__restoreHole) return false;
+      const hole = el.parentElement.getBoundingClientRect();
+      const box = el.getBoundingClientRect();
+      const shift = stage.shift;
+      const cx = (box.left + box.right) / 2, cy = (box.top + box.bottom) / 2;
+      const hx = (hole.left + hole.right) / 2, hy = (hole.top + hole.bottom) / 2;
+      return Math.abs(cx - hx) <= 4 && Math.abs(cy - shift - hy) <= 24
+        && box.left >= hole.left - 0.5 && box.top >= hole.top - 0.5 && box.right <= hole.right + 0.5 && box.bottom <= hole.bottom + 0.5;
+    }, null, { timeout: 1000 }).catch(() => {});
+    let measured;
+    try {
+      const lay = await layout(page);
+      measured = await page.evaluate(() => {
+        const el = document.querySelector('[data-testid="turn-moment"]');
+        return {
+          hole: el.parentElement.getBoundingClientRect().toJSON(),
+          boxes: [el.getBoundingClientRect().toJSON()],
+          stage: window.__turns.at(-1).stage,
+          live: { shift: el.dataset.shift ?? null, stage: el.dataset.stage ?? null, translate: el.style.translate || "" },
+        };
+      });
+      measured.lay = lay;
+    } finally {
+      await page.evaluate(() => window.__restoreHole?.());
+    }
+    const steps = { ...refitSteps, final: measured ? { box: measured.boxes[0], hole: measured.hole, stage: measured.stage, live: measured.live } : null };
+    // The area's box at the write is the test hole (taken before the renderer can run). The checked read has to be that same hole.
+    const holeHeld = !!measured && Math.abs(measured.hole.top - refitSteps.written.hole.top) <= 0.5 && Math.abs(measured.hole.left - refitSteps.written.hole.left) <= 0.5 && Math.abs(measured.hole.height - refitSteps.written.hole.height) <= 0.5;
+    check(holeHeld, `${tag} refit: the hole read with the popup is the hole the refit set`, holeHeld ? { written: refitSteps.written.hole, final: measured.hole } : { written: refitSteps.written.hole, final: measured?.hole ?? null, steps });
+    refitTrace = steps;
+    try {
+      placement(`${tag} refit`, '"Your turn" after the hole changed under it', measured.boxes, { ...measured.lay, hole: measured.hole }, measured.stage);
+    } finally {
+      refitTrace = undefined;
+    }
     await page.evaluate(() => window.__release());
     check(cue.primaries.length === 1 && cue.primaries[0] === "Roll", `${tag}: on the person's roll, Roll is the one filled primary`, cue.primaries);
     check(cue.seatTurn && cue.current && cue.banner === "Roll the dice", `${tag}: the person's seat card wears the turn ring and the banner leads with Roll`, cue);
@@ -740,6 +808,7 @@ async function reconnect() {
   const sent = { welcomes: 0 };
   let states = [];
   let sockets = [];
+  let seatSocket;
   const { ctx, page, tag } = await open(view, {
     path: "/?host=ws://127.0.0.1:9",
     before: async (ctx, page) => {
@@ -748,6 +817,9 @@ async function reconnect() {
         sockets.push(ws);
         ws.onMessage(async (raw) => {
           if (JSON.parse(String(raw)).type !== "hello") return;
+          // Title discovery may open another socket to this host. State and the deliberate
+          // seat drop belong to the connection that sent hello, not the newest list client.
+          seatSocket = ws;
           sent.welcomes++;
           ws.send(JSON.stringify({ type: "welcome", code: "ABCD", you: "p0", host: false, secret: "s3cret", chat: [] }));
           // The state follows the welcome once the proof has built it (the first dial is at page load).
@@ -772,7 +844,7 @@ async function reconnect() {
     const own = () => page.evaluate(() => window.__emberisle.getState().state?.players.find((p) => p.id === "p0")?.resources.timber);
     const shown = () => page.evaluate(() => ({ turns: window.__turns.length, lines: window.__lines.length, up: !!document.querySelector('[data-testid="turn-moment"], [data-testid="resource-flash"]') }));
     const seq = () => page.evaluate(() => window.__emberisle.getState().state?.seq);
-    const push = (m) => sockets.at(-1).send(JSON.stringify(m));
+    const push = (m) => seatSocket.send(JSON.stringify(m));
     // Nothing new shows for a while after `n` has loaded: polled for 900 ms, longer than the store-to-DOM round trip.
     const stays = async (label, was) => {
       const end = Date.now() + 900;
@@ -783,14 +855,56 @@ async function reconnect() {
 
     states = [at(20, 2, "main", "p1", 1)];
     await page.waitForFunction(() => window.__emberisle?.getState().state?.seq === 20, null, { timeout: STEP_MS });
+    // The store can publish before React commits the first hand. Establish its baseline before
+    // sending a live gain: a hand first mounted at seq 21 correctly treats that count as initial.
+    await page.waitForFunction(() => document.querySelector('[data-testid="resource-timber"] [data-testid="hand-count"]')?.textContent === "1", null, { timeout: STEP_MS });
     await stays("first load, seq 20", { turns: 0, lines: 0 });
+
+    // A seatless same-host discovery connection may open after the seat. Keep this ordering
+    // explicit so the fixture cannot silently send the game's next state to the list client.
+    await page.evaluate(() => new Promise((resolve, reject) => {
+      const ws = new WebSocket("ws://127.0.0.1:9/");
+      ws.onopen = () => { ws.send(JSON.stringify({ type: "list" })); resolve(); };
+      ws.onerror = () => reject(new Error("reconnect fixture discovery socket failed"));
+      window.__reconnectDiscoverySocket = ws;
+    }));
 
     // A cue from before the drop must not outlive it: gain a good live, drop at once.
     push(at(21, 2, "main", "p1", 2));
-    await page.waitForSelector('[data-testid="resource-flash"]', { timeout: STEP_MS });
+    try {
+      await page.waitForSelector('[data-testid="resource-flash"]', { timeout: STEP_MS });
+    } catch (error) {
+      // Observe only after the original guard fails: a mounted-and-expired cue differs from
+      // a missing state or hand commit. Reporting must never replace or pass that failure.
+      let reportTimer;
+      try {
+        const context = await Promise.race([
+          page.evaluate(() => {
+            const s = window.__emberisle?.getState();
+            return {
+              now: performance.now(), origin: performance.timeOrigin, hidden: document.hidden,
+              seq: s?.state?.seq, synced: s?.synced, resync: s?.resync, screen: s?.screen,
+              localId: s?.localId, error: s?.error,
+              timber: s?.state?.players.find(p => p.id === s.localId)?.resources.timber,
+              hand: document.querySelector('[data-testid="resource-timber"] [data-testid="hand-count"]')?.textContent,
+              cues: [...document.querySelectorAll('[data-testid="resource-flash"]')].map(e => ({ text: e.textContent, resource: e.dataset.resource })),
+              own: window.__own.slice(-5),
+              lines: window.__lines.slice(-5).map(({ at, gone, text, r, d, frames }) => ({ at, gone, text, r, d, frames: frames.length })),
+            };
+          }),
+          new Promise(resolve => { reportTimer = setTimeout(() => resolve({ reportTimedOut: true }), 3000); }),
+        ]);
+        console.log("reconnect cue failure context", JSON.stringify({ welcomes: sent.welcomes, sockets: sockets.length, ...context }));
+      } catch (reportError) {
+        console.log("reconnect cue failure context unavailable", reportError.message);
+      } finally {
+        clearTimeout(reportTimer);
+      }
+      throw error;
+    }
     const before = await shown();
     states = [at(22, 3, "roll", "p0", 4)];
-    sockets.at(-1).close();
+    seatSocket.close();
     await page.waitForFunction(() => /Reconnecting/.test(window.__emberisle.getState().error ?? ""), null, { timeout: STEP_MS });
     await page.waitForFunction(() => window.__emberisle.getState().state?.seq === 22, null, { timeout: STEP_MS });
     check(sent.welcomes === 2, `${tag} reconnect: the seat was re-welcomed through the redial`, sent);
