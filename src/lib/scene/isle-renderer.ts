@@ -560,7 +560,7 @@ export class IsleRenderer {
     };
   }
 
-  // The hole the HUD leaves for the island right now, measured from the chrome around the canvas. Proofs read it too.
+  // The declared island hole for this viewport and its safe areas. Proofs read it too.
   insets(): Insets {
     const c = this.renderer.domElement;
     // The keyboard is an overlay like the chat above it: only the notch counts.
@@ -929,8 +929,8 @@ export class IsleRenderer {
     this.relayout = RELAYOUT_FRAMES;
   };
 
-  // The player changed the chrome without the game moving (opened the chat or a sheet, focused the PlaceList): measure the
-  // hole again on the next frame. Cheap enough to call on every such change; a hole that did not change refits nothing.
+  // Recheck the declared hole on the next frame. HUD events may call this, but they do not define the hole.
+  // An unchanged hole does not refit the island or wake the loop.
   remeasure = () => {
     this.refitDue = true;
   };
