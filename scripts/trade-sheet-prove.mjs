@@ -349,10 +349,13 @@ async function needDots(page, tag) {
   assert.equal((await panelFor(page).getByTestId("trade-player-preview").textContent()), "Give 2 wheat · Get 1 stone", `${tag}: the mock's sentence`);
   const chosen = await token(page, "want", "ore").evaluate((t) => {
     const tr = t.getBoundingClientRect(), dr = t.querySelector('[data-testid="trade-need-dot"]').getBoundingClientRect(), mr = t.querySelector(".trade-remove > span").getBoundingClientRect();
-    return { bottomLeft: dr.left >= tr.left && dr.right < tr.left + tr.width / 2 && dr.bottom <= tr.bottom && dr.top > tr.top + tr.height / 2,
+    const nr = t.querySelector(".trade-resource-name").getBoundingClientRect();
+    return { topLeft: dr.left >= tr.left && dr.right < tr.left + tr.width / 2 && dr.top >= tr.top && dr.bottom < tr.top + tr.height / 2,
+      offName: dr.right <= nr.left || dr.left >= nr.right || dr.bottom <= nr.top || dr.top >= nr.bottom,
       clear: dr.right <= mr.left || dr.left >= mr.right || dr.bottom <= mr.top || dr.top >= mr.bottom, dot: dr.toJSON(), minus: mr.toJSON() };
   });
-  assert.ok(chosen.bottomLeft, `${tag}: on a chosen Get token the dots move to the bottom left ${JSON.stringify(chosen)}`);
+  assert.ok(chosen.topLeft, `${tag}: on a chosen Get token the dots move to the top left ${JSON.stringify(chosen)}`);
+  assert.ok(chosen.offName, `${tag}: no dot touches the good's name ${JSON.stringify(chosen)}`);
   assert.ok(chosen.clear, `${tag}: no dot sits under the minus button ${JSON.stringify(chosen)}`);
   await bankIs(page, "Bank needs 4", false, "Need 4 wheat for the bank.", `${tag} short`);
   await sheetChecks(page, tag, "offer");
