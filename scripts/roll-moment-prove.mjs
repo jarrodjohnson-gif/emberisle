@@ -1,5 +1,7 @@
-// #440: each roll is shown once, big and centred, then the dice settle into the HUD. Practice versus the isle at 1280x720
-// and 390x844 (touch), played to the person's first roll through the real roll-off and setup:
+// #440: each roll is shown once, big and centred, then the dice settle into the HUD. Practice versus the isle at 1280x720,
+// 390x844 and 844x390 (touch), played to the person's first roll through the real roll-off and setup. #1539: only the
+// sideways-phone column keeps a dice row; elsewhere the moment holds 900 ms and goes with no flight, and the roll rests in
+// the tray's event line (log-line), the one other place its sum shows:
 // - the person's roll (a real click on Roll): the moment mounts in the same frame the roll is applied, so no frame shows the
 //   roll without it; it is centred within ±10 % of the viewport, the sum's computed font-size ≥ 48 px, and the resting dice
 //   row is hidden (the centre sum is up, and the chip may show it too, #954);
@@ -209,6 +211,10 @@ const frames = (page) => page.evaluate(() => new Promise((r) => requestAnimation
 async function settleChecks(page, tag, { applied, dice }, { reduced = false } = {}) {
   const sum = dice[0] + dice[1];
   const t0 = applied.at;
+  // #1539: only the sideways-phone column keeps a dice row in the HUD. Elsewhere the moment holds and goes, and the tray's
+  // newest-event line (log-line) is where the roll rests.
+  const vp = page.viewportSize();
+  const column = vp.height < 500 && vp.width > vp.height;
   await page.waitForFunction((n) => window.__moments.find((m) => m.n === n)?.gone, applied.n, { timeout: STEP_MS, polling: 50 });
   await frames(page);
   const { m, flights, stall } = await page.evaluate((n) => {
@@ -231,6 +237,8 @@ async function settleChecks(page, tag, { applied, dice }, { reduced = false } = 
     // The goods line stays in the log. The chip shows the roll line (#954).
     log: window.__emberisle.getState().gameLog.at(-1)?.text ?? null,
     chip: document.querySelector('[data-testid="log-line"]')?.textContent ?? null,
+    chipVisible: document.querySelector('[data-testid="log-line"]')?.checkVisibility({ visibilityProperty: true }) ?? false,
+    chipSum: (() => { const el = document.querySelector('[data-testid="log-roll-sum"]'); return el ? { text: el.textContent.trim(), px: parseFloat(getComputedStyle(el).fontSize) } : null; })(),
   }), sum);
   const up = m.at - t0;
   const gone = m.gone - t0;
@@ -246,17 +254,26 @@ async function settleChecks(page, tag, { applied, dice }, { reduced = false } = 
   check(m.sumColor === (sum === 7 ? "rgb(179, 38, 30)" : "rgb(38, 61, 60)"), `${tag}: the sum is ${sum === 7 ? "danger on a 7" : "ink"} (${m.sumColor})`);
   // #954: the chip's roll sum is not a second dice readout. The checks below still mean the centre sum, then the dice row.
   m.shown = m.shown.filter((id) => id !== "log-roll-sum");
-  late.shown = late.shown.filter((id) => id !== "log-roll-sum");
-  check(m.rowHidden === true && m.shown.length === 1 && m.shown[0] === "roll-sum", `${tag}: while it is up the roll is on screen once (${JSON.stringify(m.shown)})`);
+  if (column) late.shown = late.shown.filter((id) => id !== "log-roll-sum");
+  check((column ? m.rowHidden === true : m.rowHidden !== false) && m.shown.length === 1 && m.shown[0] === "roll-sum", `${tag}: while it is up the roll is on screen once (${JSON.stringify(m.shown)})`);
   check(!late.moment && gone - stall.gone <= 1400, `${tag}: gone by 1400 ms of the roll being applied (${gone.toFixed(0)} ms, ${stall.gone.toFixed(0)} of them stalled)`);
-  check(late.rowVisible && late.row.join() === dice.join(), `${tag}: the resting row shows the same faces (${late.row})`);
-  check(late.shown.length === 1 && late.shown[0] === "dice-row", `${tag}: afterwards the sum is on screen once, in the row (${JSON.stringify(late.shown)})`);
+  check(column ? late.rowVisible && late.row.join() === dice.join() : late.chipVisible && late.chipSum?.text === String(sum), column ? `${tag}: the resting row shows the same faces (${late.row})` : `${tag}: the tray's event line shows the same roll (${JSON.stringify(late.chipSum)})`);
+  check(late.shown.length === 1 && late.shown[0] === (column ? "dice-row" : "log-roll-sum"), `${tag}: afterwards the sum is on screen once, in the ${column ? "row" : "event line"} (${JSON.stringify(late.shown)})`);
   check(!late.banner && / — .+'s roll[;.]/.test(late.log ?? ""), `${tag}: one persistent roll event and no duplicate goods banner`);
   check(/^.+ rolled \d+!$/.test((late.chip ?? "").replace(/\s+/g, " ").trim()) && / — .+'s roll[;.]/.test(late.log ?? ""), `${tag}: the HUD chip shows the roll line while the log's newest line stays the goods line (${JSON.stringify(late.chip)})`);
   if (reduced) {
     check(flights.length === 0, `${tag}: reduced motion, no flight (${flights.length})`);
     check(m.animation === "none", `${tag}: reduced motion, no entry animation (${m.animation})`);
     check(gone >= 898 && gone - stall.gone <= 900 + 200, `${tag}: reduced motion, it holds about 900 ms and goes (${gone.toFixed(0)} ms)`);
+    return;
+  }
+  if (!column) {
+    // No dice row outside the column, so no flight: the moment holds 900 ms and goes, and the roll rests in the event line.
+    check(flights.length === 0, `${tag}: one flight: none, there is no dice row outside the column (${flights.length})`);
+    check(gone >= 898, `${tag}: the moment holds its 900 ms (${gone.toFixed(0)} ms)`);
+    check(gone - stall.gone <= 900 + 200, `${tag}: the moment goes when its hold ends (${gone.toFixed(0)} ms, ${stall.gone.toFixed(0)} stalled)`);
+    check(!late.rowVisible && late.chipVisible, `${tag}: the roll lands in the tray's event line, no dice row shows`);
+    check(late.chipSum && m.fontSize > late.chipSum.px * 1.5, `${tag}: it starts large, the event line's sum is small (${m.fontSize} → ${late.chipSum?.px} px)`);
     return;
   }
   const f = flights[0];
@@ -377,7 +394,12 @@ async function practice(viewport, touch) {
   const skipped = skip.m.gone - skip.at;
   console.log(`${tag}: ${touch ? "tap" : "key"} skip, gone ${skipped.toFixed(0)} ms after the press, page heard it ${skip.pressed}×`);
   check(skipped < 100 && skip.flights === 0 && skip.pressed === 1, `${tag}: a ${touch ? "touch pointerdown" : "key press"} skips the moment and still reaches the page`);
-  check(await page.getByTestId("dice-row").isVisible(), `${tag}: after a skip the resting row shows`);
+  const column = viewport.height < 500 && viewport.width > viewport.height;
+  // The roll comes to rest within a second of the skip (the line can be a frame behind the moment leaving); on a miss the
+  // message says what was on screen.
+  const rested = await page.getByTestId(column ? "dice-row" : "log-line").waitFor({ state: "visible", timeout: 1000 }).then(() => true, () => false);
+  const restInfo = rested ? "" : await page.evaluate(() => { const el = document.querySelector('[data-testid="log-line"]'); const b = el?.getBoundingClientRect(); const st = window.__emberisle.getState(); return JSON.stringify({ text: el?.textContent, hidden: el?.hidden, w: b?.width, h: b?.height, phase: st.state.phase, dice: st.state.dice, log: st.gameLog.slice(-3).map((l) => l.text), trade: !!st.offer }); });
+  check(rested, `${tag}: after a skip the resting ${column ? "row" : "event line"} shows ${restInfo}`);
 
   // Online seats and watchers mount a table from the host's state and get each roll as a pushed state (the store's
   // loadState and state message). A table loaded with dice already on it shows nothing; one roll on shows one moment,
@@ -390,7 +412,8 @@ async function practice(viewport, touch) {
       for (let i = 0; i < 200 && !ok(); i++) await sleep(50);
       await frame();
     };
-    const row = () => [...document.querySelectorAll('[data-testid="dice-row"] [data-testid="die"]')].map((d) => d.dataset.value).join("+");
+    // #1539: outside the column there is no dice row; the state's dice stand in, and until() still waits a frame to render.
+    const row = () => document.querySelector('[data-testid="dice-row"]') ? [...document.querySelectorAll('[data-testid="dice-row"] [data-testid="die"]')].map((d) => d.dataset.value).join("+") : (g.getState().state?.dice ?? []).join("+");
     const saved = structuredClone(g.getState().state);
     const roller = saved.players.find((p) => p.id === saved.current).name;
     g.getState().goTitle();
@@ -425,10 +448,11 @@ async function practice(viewport, touch) {
   await page.close();
 }
 
-// #481 item 8: if the flight cannot start (`animate` throws), the moment still goes, on the settle timer.
+// #481 item 8: if the flight cannot start (`animate` throws), the moment still goes, on the settle timer. #1539: only the
+// sideways-phone column has a dice row to fly to, so this runs there.
 async function noFlight() {
-  const tag = "animate throws 1280x720";
-  const page = await open({ width: 1280, height: 720 });
+  const tag = "animate throws 844x390";
+  const page = await open({ width: 844, height: 390 }, { touch: true });
   await page.getByRole("button", { name: "Four seats, one table" }).click();
   await playUntil(page, myRoll);
   await page.evaluate(() => (window.__animateThrows = true));
@@ -466,6 +490,8 @@ async function reduced() {
 try {
   await practice({ width: 1280, height: 720 }, false);
   await practice({ width: 390, height: 844 }, true);
+  // #1539: the dice row and the flight into it live on in the sideways-phone column.
+  await practice({ width: 844, height: 390 }, true);
   await hotseat();
   await noFlight();
   await reduced();

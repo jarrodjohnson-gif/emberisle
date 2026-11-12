@@ -89,7 +89,7 @@ try {
  assert.equal(rollPill.fg,'rgb(255, 255, 255)');
  // The tag slides 24 px out from behind the seat in 220 ms; measure where it rests.
  await cue.evaluate(el=>Promise.all(el.getAnimations().map(a=>a.finished)));
- const railBox=await cue.boundingBox(),railSeat=await jarrod.getByTestId('rail-p1').boundingBox();assert(Math.abs(railBox.x-(railSeat.x+railSeat.width-12))<=0.5&&Math.abs(railBox.y-railSeat.y)<=0.5&&Math.abs(railBox.height-railSeat.height)<=0.5&&railBox.width-12>=40,`the rail tag comes out of the seat's right side, tucked 12 px behind it, as tall as the seat: ${JSON.stringify({railBox,railSeat})}`);
+ const railBox=await cue.boundingBox(),railSeat=await jarrod.getByTestId('rail-p1').boundingBox();assert(Math.abs(railBox.x-(railSeat.x+railSeat.width))<=0.5&&Math.abs(railBox.y-railSeat.y)<=0.5&&Math.abs(railBox.height-railSeat.height)<=0.5&&railBox.width>=40,`the rail tag comes out of the seat's right side at its edge (#1544: no box to tuck behind), as tall as the seat: ${JSON.stringify({railBox,railSeat})}`);
  const started=Date.now();
  assert.equal(await jarrod.getByTestId('rail-p0').getByTestId('seat-public-gains').count(),0);
  assert.equal(await jarrod.evaluate(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p1').resources),undefined,'other hand stays hidden');
@@ -109,7 +109,7 @@ try {
  const tradePills=await phoneCue.getByTestId('seat-public-pill').evaluateAll(els=>els.map(el=>{const s=getComputedStyle(el);return{sign:el.getAttribute('data-sign'),bg:s.backgroundColor,fg:s.color};}));
  assert.deepEqual(tradePills,[{sign:'+',bg:'rgb(16, 86, 42)',fg:'rgb(255, 255, 255)'},{sign:'-',bg:'rgb(138, 34, 25)',fg:'rgb(255, 255, 255)'}]);
  const box=await phoneCue.boundingBox(),anchor=await jarrod.getByTestId('seat-p1').boundingBox();
- assert(Math.abs(box.y-(anchor.y+anchor.height-12))<=0.5&&Math.abs(box.x-anchor.x)<=0.5&&Math.abs(box.width-anchor.width)<=0.5&&Math.abs(box.y+box.height-(anchor.y+anchor.height)-40)<=0.5,`the phone tag is tucked 12 px behind its seat, exactly as wide as it, and 40 px below it: ${JSON.stringify({box,anchor})}`);assert.equal(await phoneCue.evaluate(el=>el.getAnimations({subtree:true}).length),0);
+ assert(Math.abs(box.y-(anchor.y+anchor.height))<=0.5&&Math.abs(box.x-anchor.x)<=0.5&&Math.abs(box.width-anchor.width)<=0.5&&Math.abs(box.y+box.height-(anchor.y+anchor.height)-40)<=0.5,`the phone tag starts at its seat's bottom edge (#1544: no box to tuck behind), exactly as wide as it, and 40 px below it: ${JSON.stringify({box,anchor})}`);assert.equal(await phoneCue.evaluate(el=>el.getAnimations({subtree:true}).length),0);
  // Owner q1530-gain-finalists A: one row, 40 px, gains left of losses, numerals 17 px, the seat's name and score uncovered,
  // and the chat bubble hangs below the tag instead of over it.
  const tag=await jarrod.evaluate(()=>{
@@ -120,7 +120,7 @@ try {
   return{cells,uncovered,cueBottom:cue.getBoundingClientRect().bottom,bubbleTop:bubble?.top??null};
  });
  assert.equal(new Set(tag.cells.map(c=>Math.round(c.top))).size,1,`the tag is one row: ${JSON.stringify(tag.cells)}`);
- assert(tag.cells.every(c=>Math.abs(c.bottom-c.top-52)<=0.5),`each cell is 52 px, 40 px of it below the seat: ${JSON.stringify(tag.cells)}`);
+ assert(tag.cells.every(c=>Math.abs(c.bottom-c.top-40)<=0.5),`each cell is 40 px, all of it below the seat: ${JSON.stringify(tag.cells)}`);
  assert(tag.cells.findLastIndex(c=>c.sign==='+')<tag.cells.findIndex(c=>c.sign==='-')&&tag.cells.filter(c=>c.sign==='+').every(g=>tag.cells.filter(c=>c.sign==='-').every(l=>g.left<l.left)),`gains sit left of losses: ${JSON.stringify(tag.cells)}`);
  assert(tag.cells.every(c=>c.font==='17px'),`one or two goods use 17 px numerals: ${JSON.stringify(tag.cells)}`);
  assert(tag.uncovered.length>=2&&tag.uncovered.every(u=>u.clear),`the seat's name and score stay uncovered: ${JSON.stringify(tag.uncovered)}`);

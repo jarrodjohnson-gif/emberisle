@@ -1,4 +1,4 @@
-// #831 B: shared quantity cards feed the table offer and the compact exact Bank quote.
+// #1537: the trade sheet. Give and Get tokens feed one sentence, Ask the table, and one Bank button.
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,8 @@ import { play } from "@/lib/sound";
 import { bagText } from "@/lib/game/trade";
 import { chunk, LazyBoundary } from "@/lib/lazy";
 import "./trade-panel.css";
-import { NeedRow, NeedsAtTable } from "./SeatNeeds";
+import { NeedDots } from "./SeatNeeds";
+import { setPlayerNeeds } from "./need-state";
 
 const picker = chunk(() => import("./TradeResource"));
 picker.prefetch();
@@ -73,31 +74,39 @@ export function TradePanel() {
 
   if (!shown || !state || !me) return null;
 
-  const asking = RESOURCES.some((r) => give[r] > 0) && RESOURCES.some((r) => want[r] > 0);
-
-  // The bank and the docks take one kind for one other kind, at the best rate a building of yours earns.
   const giving = RESOURCES.filter((r) => give[r] > 0);
   const wanting = RESOURCES.filter((r) => want[r] > 0);
+  const asking = giving.length > 0 && wanting.length > 0;
+  const giveText = bagText(give), getText = bagText(want);
+
+  // The bank and the docks take one kind for one other kind, at the best rate a building of yours earns.
   const g = giving.length === 1 ? giving[0]! : null;
   const w = wanting.length === 1 ? wanting[0]! : null;
-  const rate = g ? harborRate(state, me.id, g) : null;
-  const bankLabel = rate === null ? "Bank" : rate === 4 ? "Bank 4:1" : `Dock ${rate}:1`;
-  const bankWhy = !g || !w || g === w
-    ? "Pick one kind to give and one to get."
-    : me.resources[g] < rate!
-      ? `Need ${rate} ${RESOURCE_LABEL[g].toLowerCase()} for the ${rate === 4 ? "bank" : "dock"}.`
+  const rate = g ? harborRate(state, me.id, g) : 4;
+  const where = rate === 4 ? "Bank" : "Dock";
+  const low = (r: Resource) => RESOURCE_LABEL[r].toLowerCase();
+  const refusal = !g || !w
+    ? ["One kind each", "Pick one kind to give and one to get."]
+    : me.resources[g] < rate
+      ? [`${where} needs ${rate}`, `Need ${rate} ${low(g)} for the ${where.toLowerCase()}.`]
       : state.bank[w] <= 0
-        ? `The bank has no ${RESOURCE_LABEL[w].toLowerCase()}.`
+        ? [`No ${low(w)} left`, `The bank has no ${low(w)}.`]
         : null;
-  const bankHint = bankWhy ?? `Give ${rate} ${RESOURCE_LABEL[g!].toLowerCase()}, get 1 ${RESOURCE_LABEL[w!].toLowerCase()}.`;
+  const bankLabel = refusal?.[0] ?? (rate === 2 ? `${RESOURCE_LABEL[g!]} dock 2:1` : `${where} ${rate}:1`);
+  const bankHint = refusal?.[1] ?? `Give ${rate} ${low(g!)}, get 1 ${low(w!)}.`;
 
   const bank = () => {
-    if (!g || !w || bankWhy) return;
+    if (!g || !w || refusal) return;
     if (dispatch({ type: "bankTrade", give: g, want: w }).ok) setTradeOpen(false);
+  };
+  // #1537: your own needs follow from your offer: its Get goods, at most two.
+  const ask = () => {
+    setPlayerNeeds(me.id, wanting.slice(0, 2));
+    askTable(give, want);
   };
 
   return (
-    <div className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-safe sm:items-center" onClick={() => setTradeOpen(false)}>
+    <div className="absolute inset-0 z-30 flex items-end justify-center bg-black/15" onClick={() => setTradeOpen(false)}>
       <section
         ref={panel}
         role="dialog"
@@ -110,48 +119,48 @@ export function TradePanel() {
         <header className="trade-composer-header">
           <h2 id="trade-title" className="trade-title">Trade</h2>
           <Button variant="ghost" size="icon" onClick={() => setTradeOpen(false)} aria-label="Close" back>
-            <X className="size-4" />
+            <X className="size-5" />
           </Button>
         </header>
 
         <div className="trade-composer-scroll" id="trade-goods" role="region" aria-labelledby="trade-goods-title" tabIndex={0}>
           <h3 id="trade-goods-title" className="sr-only">Trade goods</h3>
           <LazyBoundary failed={<p role="alert">Trade choices could not load. Close and reopen to retry.</p>}>
-          <NeedRow player={me.id} />
-          <NeedsAtTable me={me.id} />
           {(["give", "want"] as const).map((side) => {
             const bag = side === "give" ? give : want;
             return (
               <section key={side} className="trade-half" data-testid={`trade-${side}-row`} aria-labelledby={`trade-${side}-title`}>
-                <h3 id={`trade-${side}-title`}>{side === "give" ? "Give" : "Get"}</h3>
+                <div className="trade-label">
+                  <h3 id={`trade-${side}-title`}>{side === "give" ? "Give" : "Get"}</h3>
+                  {side === "want" ? <p>dots show who is asking for it</p> : null}
+                </div>
                 <div className="trade-resource-grid">
                   {RESOURCES.map((r) => (
                     <Stepper key={r} resource={r} side={side} owned={me.resources[r]} value={bag[r]}
                       canMore={side === "give" ? give[r] < me.resources[r] && want[r] === 0 : want[r] < 19 && give[r] === 0}
                       onChange={(n) => side === "give" ? setGive({ ...give, [r]: n }) : setWant({ ...want, [r]: n })}
-                    />
+                    >{side === "want" ? <NeedDots kind={r} me={me.id} /> : null}</Stepper>
                   ))}
                 </div>
               </section>
             );
           })}
           </LazyBoundary>
+          {mode !== "hotseat" ? (
+            <p className="trade-sentence" data-testid="trade-player-preview" aria-live="polite">
+              {giveText || getText ? <>
+                {giveText ? <span className="trade-give-text">Give {giveText}</span> : null}
+                {giveText && getText ? " · " : null}
+                {getText ? <span className="trade-get-text">Get {getText}</span> : null}
+              </> : <span className="trade-empty">Pick what to give and what to get.</span>}
+            </p>
+          ) : null}
         </div>
 
         <footer className="trade-composer-footer">
-          {mode !== "hotseat" ? (
-            <div className="trade-route">
-              <p className="trade-exact-preview" data-testid="trade-player-preview" aria-live="polite">
-                <span>Give: {bagText(give) || "choose goods"}</span>
-                <span>Get: {bagText(want) || "choose goods"}</span>
-              </p>
-              <Button className="h-11 w-full" disabled={!asking} onClick={() => askTable(give, want)}>Ask the table</Button>
-            </div>
-          ) : null}
-          <div className="trade-route trade-bank-box" role="group" aria-label="Bank &amp; docks">
-            <p className="trade-exact-preview" id="trade-bank-quote" data-testid="trade-hint" aria-live="polite">{bankHint}</p>
-            <Button variant="secondary" className="trade-bank-action h-11 w-full" aria-describedby="trade-bank-quote" disabled={bankWhy !== null} onClick={bank}>{bankLabel}</Button>
-          </div>
+          {mode !== "hotseat" ? <Button className="trade-ask" disabled={!asking} onClick={ask}>Ask the table</Button> : null}
+          <Button variant="secondary" className="trade-bank" aria-describedby="trade-bank-quote" disabled={refusal !== null} onClick={bank}>{bankLabel}</Button>
+          <p className="sr-only" id="trade-bank-quote" data-testid="trade-hint" aria-live="polite">{bankHint}</p>
         </footer>
       </section>
     </div>

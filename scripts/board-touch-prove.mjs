@@ -2,7 +2,8 @@
 // terrain's clip once, at 1 (#1073); only a Pasture hex plays the sheep baa (tap_pasture.mp3).
 //  - each terrain on the board plays its own clip, once, and only Pasture plays tap_pasture;
 //  - rapid taps are one sound per 400 ms;
-//  - a one-finger drag that starts on a Pasture hex, a two-finger pan and a pinch play nothing;
+//  - a tap on open water plays plop (#1543);
+//  - a one-finger drag, a two-finger pan and a pinch (on hexes or water) play nothing;
 //  - during setup (legal marks showing) and with a build armed, a tap on a Pasture hex plays nothing;
 //  - muted, a tap plays nothing.
 // HTMLMediaElement.play is stubbed to record { file, volume }. Run: npm run board-touch-prove
@@ -191,16 +192,51 @@ await drag([{ x: woolSpot.x, y: woolSpot.y }], 90, 40);
 await sleep(500);
 assert.deepEqual(await plays(), [], "a one-finger drag from a Pasture hex plays nothing");
 await settle();
-await drag([{ x: 150, y: 400 }, { x: 270, y: 400 }], 0, 60);
+// #1539: the tray's new hole moves the island, so the pan starts on the hexes nearest its old fixed points (150,400 and
+// 270,400), as it did before; a lone first finger on open water splashes by design (poke in isle-renderer.ts).
+const panFrom = await page.evaluate(() => [[150, 400], [270, 400]].map(([x, y]) => {
+  const near = window.__emberisle.getState().state.hexes.map((h) => window.__isle.screenOf(h.id)).filter(Boolean).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0];
+  return { x: near.x, y: near.y };
+}));
+await drag(panFrom, 0, 60);
 await sleep(500);
 assert.deepEqual(await plays(), [], "a two-finger pan plays nothing");
 await settle();
-await touch("touchStart", [{ x: 150, y: 480, id: 1 }, { x: 290, y: 480, id: 2 }]);
-for (let k = 1; k <= 8; k++) { await touch("touchMove", [{ x: 150 - k * 8, y: 480, id: 1 }, { x: 290 + k * 8, y: 480, id: 2 }]); await frames(1); }
+// #1539: the pinch starts on the hexes nearest its old fixed points (150,480 and 290,480), for the same reason as the pan.
+const [pl, pr] = await page.evaluate(() => [[150, 480], [290, 480]].map(([x, y]) => {
+  const near = window.__emberisle.getState().state.hexes.map((h) => window.__isle.screenOf(h.id)).filter(Boolean).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0];
+  return { x: near.x, y: near.y };
+}));
+assert.ok(pr.x - pl.x > 40, `the pinch's two fingers start on different hexes ${JSON.stringify([pl, pr])}`);
+await touch("touchStart", [{ x: pl.x, y: pl.y, id: 1 }, { x: pr.x, y: pr.y, id: 2 }]);
+for (let k = 1; k <= 8; k++) { await touch("touchMove", [{ x: pl.x - k * 8, y: pl.y, id: 1 }, { x: pr.x + k * 8, y: pr.y, id: 2 }]); await frames(1); }
 await touch("touchEnd", []);
 await sleep(500);
 assert.deepEqual(await plays(), [], "a pinch plays nothing");
 ok("drag, pan and pinch: silent");
+await settle();
+
+// #1543: two-finger pan or pinch starting on open water plays nothing.
+await clear();
+await drag([{ x: 60, y: 200 }, { x: 180, y: 200 }], 0, 60);
+await sleep(500);
+assert.deepEqual(await plays(), [], "a two-finger pan on open water plays nothing");
+await settle();
+await clear();
+await touch("touchStart", [{ x: 60, y: 200, id: 1 }, { x: 180, y: 200, id: 2 }]);
+for (let k = 1; k <= 8; k++) { await touch("touchMove", [{ x: 60 - k * 4, y: 200, id: 1 }, { x: 180 + k * 4, y: 200, id: 2 }]); await frames(1); }
+await touch("touchEnd", []);
+await sleep(500);
+assert.deepEqual(await plays(), [], "a pinch on open water plays nothing");
+ok("pan and pinch starting on water: silent");
+await settle();
+
+// A plain tap on open water plays plop once.
+await clear();
+await page.touchscreen.tap(60, 200);
+await sleep(500);
+assert.deepEqual(await plays(), ["plop.wav"], "a tap on open water plays plop.wav");
+ok("tap on open water: plop.wav once");
 await settle();
 
 // An armed build: a tap on a Pasture hex plays nothing.

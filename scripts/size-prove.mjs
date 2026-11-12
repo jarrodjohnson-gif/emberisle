@@ -98,6 +98,12 @@ const CEILINGS = [
   // #1411, 2026-11-08: a guest's I'll play again and the win screen's count, loaded as an online table starts; measured
   // 412 B gzip. New chunk only; the desk set this ceiling.
   { name: "PlayAgain", gzipBytes: 450 },
+  // #1350, 2026-11-11: the read-only profile card for another lobby seat, loaded when a name is first pressed.
+  // New chunk only; the desk set this ceiling in its review of PR #1531.
+  { name: "OtherProfileCard", gzipBytes: 1550 },
+  // #1539, 2026-11-12: the Build list sheet, loaded on idle; measured 1,439 B gzip. New chunk only; proposed, the desk sets
+  // this ceiling.
+  { name: "BuildList", gzipBytes: 1600 },
   // #827: other seats' public roll and trade gains load lazily (online only); a new chunk, so this ceiling is its only limit.
   { name: "SeatPublicGains", gzipBytes: 1800 },
 ];

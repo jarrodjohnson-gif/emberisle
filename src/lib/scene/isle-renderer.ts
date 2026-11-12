@@ -193,6 +193,7 @@ export class IsleRenderer {
   private lastTap = { t: 0, x: 0, y: 0, empty: false };
   // Set once a single pointer has moved past the tap slop; an out-and-back drag ends where it began and must not place.
   private dragged = false;
+  private plopTimer: ReturnType<typeof setTimeout> | null = null;
   private safeProbe: HTMLDivElement;
   private controls: OrbitControls;
   private orbit: OrbitControls;
@@ -560,7 +561,7 @@ export class IsleRenderer {
     };
   }
 
-  // The hole the HUD leaves for the island right now, measured from the chrome around the canvas. Proofs read it too.
+  // The declared island hole for this viewport and its safe areas. Proofs read it too.
   insets(): Insets {
     const c = this.renderer.domElement;
     // The keyboard is an overlay like the chat above it: only the notch counts.
@@ -855,6 +856,7 @@ export class IsleRenderer {
   }
 
   dispose() {
+    this.cancelPlop();
     this.clearPayers();
     this.stopped = true;
     this.renderer?.domElement?.removeEventListener("webglcontextlost", this.onContextLost);
@@ -929,8 +931,8 @@ export class IsleRenderer {
     this.relayout = RELAYOUT_FRAMES;
   };
 
-  // The player changed the chrome without the game moving (opened the chat or a sheet, focused the PlaceList): measure the
-  // hole again on the next frame. Cheap enough to call on every such change; a hole that did not change refits nothing.
+  // Recheck the declared hole on the next frame. HUD events may call this, but they do not define the hole.
+  // An unchanged hole does not refit the island or wake the loop.
   remeasure = () => {
     this.refitDue = true;
   };
@@ -1184,6 +1186,13 @@ export class IsleRenderer {
     this.panOpen = Math.hypot(cur.mx - st.mx, cur.my - st.my) >= PAN_DEAD;
   };
 
+  private cancelPlop() {
+    if (this.plopTimer !== null) {
+      clearTimeout(this.plopTimer);
+      this.plopTimer = null;
+    }
+  }
+
   private onDown = (e: PointerEvent) => {
     this.lastPointer = performance.now();
     this.wake();
@@ -1192,6 +1201,7 @@ export class IsleRenderer {
     this.downType = e.pointerType;
     this.dragged = false;
     this.gesture.down(e.pointerId, e.clientX, e.clientY);
+    if (this.gesture.pointers.size > 1) this.cancelPlop();
     this.poke(e);
   };
 
@@ -1205,6 +1215,7 @@ export class IsleRenderer {
     if (this.dragged || this.gesture.pointers.size !== 1) return;
     if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, this.coarse())) {
       this.dragged = true;
+      this.cancelPlop();
       // A drag orbits the camera: the stir ends where the tap slop does, so an orbit never splashes.
       this.trail = null;
       this.dragTakesEye();
@@ -1214,13 +1225,22 @@ export class IsleRenderer {
   };
 
   private onCancel = (e: PointerEvent) => {
+    this.cancelPlop();
     this.trail = null;
     this.gesture.up(e.pointerId);
   };
 
   private onUp = (e: PointerEvent) => {
     this.trail = null;
-    if (this.gesture.up(e.pointerId) || this.dragged) return;
+    const isPinch = this.gesture.up(e.pointerId);
+    if (isPinch || this.dragged) {
+      this.cancelPlop();
+      return;
+    }
+    if (this.plopTimer !== null) {
+      this.cancelPlop();
+      play("plop");
+    }
     const coarse = this.coarse();
     if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > tapSlop(this.downType, coarse)) return;
     if (e.button === 0) {
@@ -1302,7 +1322,7 @@ export class IsleRenderer {
     }
     const p = this.seaPoint();
     if (!p) return;
-    this.splashAt(p.x, p.z, 1);
+    this.splashAt(p.x, p.z, 1, true);
     this.trail = { ...p, t: performance.now() };
   }
 
@@ -1318,11 +1338,22 @@ export class IsleRenderer {
   }
 
   /** A splash on the sea at (x, z), 1 for a tap. Starts at once; the fish and the visitor near it scatter. */
-  splashAt(x: number, z: number, strength: number) {
+  splashAt(x: number, z: number, strength: number, deferSound = false) {
     this.splash.add(x, z, strength, this.clock.getElapsed() + (performance.now() - this.lastFrame) / 1000);
     if (!this.calm()) this.oceanLife.scatter(x, z, Math.max(0, performance.now() - this.lastFrame) / 1000);
     // A tap plops (sound.ts keeps it quiet while muted); a drag's trail does not.
-    if (strength >= 1) play("plop");
+    // #1543: defer plop by 100 ms so a two-finger pan/pinch or drag starting on water stays silent.
+    if (strength >= 1) {
+      if (deferSound) {
+        this.cancelPlop();
+        this.plopTimer = setTimeout(() => {
+          this.plopTimer = null;
+          play("plop");
+        }, 100);
+      } else {
+        play("plop");
+      }
+    }
     this.busyUntil = Math.max(this.busyUntil, performance.now() + SPLASH.life * 1000);
   }
 
