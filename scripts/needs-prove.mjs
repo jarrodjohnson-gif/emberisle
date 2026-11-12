@@ -49,58 +49,64 @@ try{
  }
  const a=await tab('p0',true),b=await tab('p1',false);
  const before=await a.evaluate(()=>window.__isle.insets());
+ // #1537 one tray: the Need row is gone; your needs are the Get goods (first two) of the offer you send with Ask the table.
+ const pick=async(page,goods)=>{const panel=page.getByTestId('trade-panel');if(!await panel.count())await page.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));await panel.waitFor();await panel.getByRole('button',{name:'More Wood to give',exact:true}).click();for(const good of goods)await panel.getByRole('button',{name:`More ${good} to want`,exact:true}).click();};
+ const askButton=page=>page.getByTestId('trade-panel').getByRole('button',{name:'Ask the table',exact:true});
+ const cancel=async()=>{await a.evaluate(()=>window.__emberisle.getState().cancelTrade());await a.waitForFunction(()=>!window.__emberisle.getState().offer);};
  await a.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
- await a.getByRole('heading',{name:'Need',exact:true}).waitFor();
- assert.equal(await a.getByRole('button',{name:/^Need (Wood|Brick|Sheep|Wheat|Stone)$/}).count(),5);
- const started=Date.now();await a.getByRole('button',{name:'Need Stone',exact:true}).click();
+ await a.getByTestId('trade-panel').waitFor();
+ assert.equal(await a.getByRole('button',{name:/^Need (Wood|Brick|Sheep|Wheat|Stone)$/}).count(),0,'one tray: no Need buttons');assert.equal(await a.getByRole('button',{name:/^More (Wood|Brick|Sheep|Wheat|Stone) to want$/}).count(),5,'five Get tokens set the needs');
+ await pick(a,['Stone']);const started=Date.now();await askButton(a).click();
  const chip=b.getByTestId('rail-p0').getByTestId('seat-needs');await chip.waitFor({timeout:1000});
  assert.equal(await chip.getAttribute('aria-label'),'Jarrod needs Stone');assert(Date.now()-started<1000);
  await b.locator('[data-menu-trigger="p0"]').click();
  const peerNeeds=b.getByTestId('player-menu').getByTestId('menu-needs');await peerNeeds.waitFor();
  assert.deepEqual(await peerNeeds.getByTestId('need-chip').allTextContents(),['Stone']);
- await a.getByRole('button',{name:'Need Wheat',exact:true}).click();
- await b.waitForFunction(()=>document.querySelector('[data-testid="rail-p0"] [data-testid="seat-needs"]')?.getAttribute('aria-label')==='Jarrod needs Stone and Wheat');
- await b.waitForFunction(()=>[...document.querySelectorAll('[data-testid="player-menu"] [data-testid="need-chip"]')].map(e=>e.textContent).join(',')==='Stone,Wheat');
- assert.deepEqual(await peerNeeds.getByTestId('need-chip').allTextContents(),['Stone','Wheat']);
+ await cancel();await pick(a,['Sheep','Wheat','Stone']);await askButton(a).click();
+ await b.waitForFunction(()=>document.querySelector('[data-testid="rail-p0"] [data-testid="seat-needs"]')?.getAttribute('aria-label')==='Jarrod needs Sheep and Wheat');
+ await b.waitForFunction(()=>[...document.querySelectorAll('[data-testid="player-menu"] [data-testid="need-chip"]')].map(e=>e.textContent).join(',')==='Sheep,Wheat');
+ assert.deepEqual(await peerNeeds.getByTestId('need-chip').allTextContents(),['Sheep','Wheat']);
+ await cancel();await a.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
  // The approved single Trade window (open on the seat whose turn it is) lists the other seats' published needs, quietly, from
  // the host projection (owner B, #873). Only the actor can open it, so the peer publishes through its own socket.
- const rows=a.getByTestId('trade-panel').getByTestId('other-need-row'),p1Name=await a.evaluate(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p1').name);
- const chipsOf=row=>row.locator('.trade-other-chip').allTextContents();
- await a.getByRole('heading',{name:'Others need',exact:true}).waitFor();
- assert.equal(await rows.count(),2,'one fixed row per other seat, always shown, even when nobody has shared a need');
- assert.equal(await rows.first().getAttribute('aria-label'),`${p1Name} has not shared a need`);assert.equal((await rows.first().textContent()).endsWith('None yet'),true);
+ // #1537 one tray: the Others need list is replaced by seat-colour dots on the Get tokens, each with a hidden text label.
+ const dots=a.getByTestId('trade-panel').getByTestId('trade-need-dot'),[p1Name,p2Name]=await a.evaluate(()=>['p1','p2'].map(id=>window.__emberisle.getState().state.players.find(p=>p.id===id).name));
+ const dotsOn=kind=>a.getByTestId('trade-panel').getByTestId(`trade-want-${kind}`).getByTestId('trade-need-dot').allTextContents();
+ await a.getByTestId('trade-panel').getByTestId('trade-want-ore').waitFor();
+ assert.equal(await dots.count(),0,'no dot while nobody else has shared a need');
+ assert.equal(await a.getByTestId('trade-panel').getByText(/has not shared a need|None yet/).count(),0,'no per-seat placeholder text');assert.equal(await a.getByTestId('trade-panel').getByRole('heading',{name:'Others need'}).count(),0,'the Others need list is removed');
  await b.evaluate(()=>window.__emberisle.getState().net.need(['ore']));
- await a.waitForFunction(()=>document.querySelector('[data-testid="trade-panel"] [data-testid="other-need-row"]')?.getAttribute('aria-label')?.endsWith('needs Stone'));
- assert.equal(await rows.count(),2,'the row count never changes when a need arrives');
- assert.equal(await rows.first().getAttribute('aria-label'),`${p1Name} needs Stone`);assert.equal((await rows.first().textContent()).startsWith(p1Name),true);
- assert.deepEqual(await chipsOf(rows.first()),['Stone']);assert.equal(await rows.nth(1).locator('.trade-other-chip').count(),0,'the seat with no need shows no chips');
+ await a.waitForFunction(()=>document.querySelector('[data-testid="trade-panel"] [data-testid="trade-need-dot"]')?.textContent.endsWith('needs stone'));
+ assert.equal(await dots.count(),1,'one dot for one seat needing one good');
+ assert.equal(await dots.first().textContent(),`${p1Name} needs stone`);assert.equal((await dotsOn('ore')).length,1,'the dot sits on the Stone Get token');
+ assert.deepEqual(await dotsOn('ore'),[`${p1Name} needs stone`]);assert.equal((await dots.allTextContents()).some(t=>t.startsWith(p2Name)),false,'the seat with no need shows no dot');
  await b.evaluate(()=>window.__emberisle.getState().net.need(['ore','grain']));
- await a.waitForFunction(()=>[...document.querySelectorAll('[data-testid="trade-panel"] .trade-other-chip')].map(e=>e.textContent).join(',')==='Stone,Wheat');
- assert.equal(await rows.first().getAttribute('aria-label'),`${p1Name} needs Stone and Wheat`);
- assert.equal(await rows.evaluateAll(list=>list.some(row=>row.hasAttribute('aria-live')||row.getAttribute('role')==='status'||row.querySelector('[aria-live],[role=status],button,a,input,[tabindex]')!==null)),false,'Trade-window needs are not a live region and not tappable');
- assert.equal(/\d/.test((await rows.allTextContents()).join('')),false,'the needs rows carry no counts or hand information');
+ await a.waitForFunction(()=>document.querySelectorAll('[data-testid="trade-panel"] [data-testid="trade-need-dot"]').length===2);
+ assert.deepEqual(await dots.allTextContents(),[`${p1Name} needs wheat`,`${p1Name} needs stone`]);
+ assert.equal(await dots.evaluateAll(list=>list.some(dot=>dot.hasAttribute('aria-live')||dot.getAttribute('role')==='status'||dot.querySelector('[aria-live],[role=status],button,a,input,[tabindex]')!==null)),false,'Trade-sheet need dots are not a live region and not tappable');
+ assert.equal(/\d/.test((await dots.allTextContents()).join('')),false,'the need dots carry no counts or hand information');
  // BAD input: a clear leaves the window; three goods are refused by the host, so the row keeps its last valid value.
  await b.evaluate(()=>window.__emberisle.getState().net.need(['ore','grain','wool']));
  await a.waitForTimeout(600);
- assert.deepEqual(await chipsOf(rows.first()),['Stone','Wheat']);
- await b.evaluate(()=>window.__emberisle.getState().net.need([]));await a.waitForFunction(()=>document.querySelector('[data-testid="trade-panel"] [data-testid="other-need-row"]')?.getAttribute('aria-label')?.endsWith('has not shared a need'));
- assert.equal(await rows.count(),2,'clearing a need never removes the row');
- assert(await a.getByRole('button',{name:'Need Wood',exact:true}).isDisabled());
- const dimensions=await a.getByRole('button',{name:/^Need (Wood|Brick|Sheep|Wheat|Stone)$/}).evaluateAll(buttons=>buttons.map(button=>{const box=button.getBoundingClientRect();return {w:box.width,h:box.height};}));
+ assert.deepEqual(await dots.allTextContents(),[`${p1Name} needs wheat`,`${p1Name} needs stone`]);
+ await b.evaluate(()=>window.__emberisle.getState().net.need([]));await a.waitForFunction(()=>!document.querySelector('[data-testid="trade-panel"] [data-testid="trade-need-dot"]'));
+ assert.equal(await a.getByTestId('trade-panel').getByRole('button',{name:/ to want$/}).count(),5,'clearing a need clears its dots and keeps every Get token');
+ assert.deepEqual(await a.evaluate(()=>window.__emberisle.getState().seats.find(s=>s.player==='p0').needs),['wool','grain'],'an offer with three Get goods sets only the first two as needs');
+ const dimensions=await a.getByRole('button',{name:/^More (Wood|Brick|Sheep|Wheat|Stone) to want$/}).evaluateAll(buttons=>buttons.map(button=>{const box=button.getBoundingClientRect();return {w:box.width,h:box.height};}));
  assert(dimensions.every(d=>d.w>=44&&d.h>=44));
  assert.deepEqual(await a.evaluate(()=>window.__isle.insets()),before);
  assert.equal(await b.evaluate(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p0').resources),undefined);
- for(const good of ['Stone','Wheat'])await a.getByRole('button',{name:`Need ${good}`,exact:true}).click();await chip.waitFor({state:'detached'});
+ await a.evaluate(async()=>{const {setPlayerNeeds}=await import('/src/components/game/need-state.ts');setPlayerNeeds('p0',[]);});await chip.waitFor({state:'detached'});
  await peerNeeds.waitFor({state:'detached'});await b.keyboard.press('Escape');
  // Empty row: closing the picker shows the one sentence of the feature, then reopen for the next step.
  // The picker is always in the window: the heading and its one hint line replace the old closed-row sentence.
- await a.getByRole('heading',{name:'Need',exact:true}).waitFor();assert.equal(await a.locator('.need-hint').count(),0,'help hint is removed');assert.equal(await a.locator('#need-picker').count(),1,'need picker is always visible');assert.equal(await a.getByTestId('own-needs').count(),0,'no separate own chips line');assert.equal(await a.getByRole('button',{name:'Need',exact:true}).count(),0,'no Need toggle button');
- await a.getByRole('button',{name:'Need Stone',exact:true}).click();await chip.waitFor();
+ await a.getByTestId('trade-panel').waitFor();assert.equal(await a.locator('.need-hint').count(),0,'help hint is removed');assert.equal(await a.locator('#need-picker').count(),0,'one tray: no need picker in the sheet');assert.equal(await a.getByTestId('own-needs').count(),0,'no separate own chips line');assert.equal(await a.getByRole('button',{name:'Need',exact:true}).count(),0,'no Need toggle button');
+ await pick(a,['Stone']);await askButton(a).click();await chip.waitFor();
  mkdirSync('test-results',{recursive:true});await a.screenshot({path:'test-results/needs-picker-phone.png'});
- await a.getByRole('button',{name:'Close',exact:true}).click();
+ await cancel();
  await a.reload();await a.waitForFunction(()=>window.__emberisle?.getState().state);
  await a.getByTestId('seat-p0').getByTestId('seat-needs').waitFor();
- console.log('ok Need picker with 250ms host echoes: rapid selections compose; five 44px controls, maximum two, clear, public chip within 1s, hidden hand preserved, rejoin and unchanged hole');
+ console.log('ok needs from Ask the table with 250ms host echoes: first two Get goods, public chip within 1s, need dots on Get tokens, 44px tokens, clear, hidden hand preserved, rejoin and unchanged hole');
  await a.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
  await a.getByRole('button',{name:'More Wood to give',exact:true}).click();await a.getByRole('button',{name:'More Stone to want',exact:true}).click();
  await a.getByRole('button',{name:'Ask the table',exact:true}).click();
@@ -109,28 +115,31 @@ try{
  console.log('ok real table trade: received requested Stone clears the public need on the other client');
  await a.waitForFunction(()=>window.__emberisle.getState().seats.find(s=>s.player==='p0')?.needs?.length===0);
  await a.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
- await a.getByRole('heading',{name:'Need',exact:true}).waitFor();
- // Hold real host seat echoes so unrelated messages cannot hide an optimistic-draft reset.
+ await a.getByTestId('trade-panel').waitFor();
+ // Hold the asker's host seat echoes; the published need is read on the other client, which the host answers directly.
  await a.evaluate(()=>{window.__holdNeedSeats=true;});
- await a.getByRole('button',{name:'Need Stone',exact:true}).click();
+ await pick(a,['Stone']);await askButton(a).click();await chip.waitFor();
  await a.evaluate(()=>window.__emberisle.getState().refuseQuietly('An unrelated announcement.'));
  await a.evaluate(()=>new Promise(requestAnimationFrame));
- assert.equal(await a.getByRole('button',{name:'Need Stone',exact:true}).getAttribute('aria-pressed'),'true','an unrelated announcement preserves the delayed Need draft');
+ assert.equal(await chip.getAttribute('aria-label'),'Jarrod needs Stone','an unrelated announcement on the asker leaves the need sent with Ask the table');
+ await cancel();await pick(a,['Wheat']);
  const errorBefore=await a.evaluate(()=>window.__emberisle.getState().errorSeq);
  await a.evaluate(()=>{for(let i=0;i<30;i++)window.__emberisle.getState().net.rename('Still the same person');});
  await a.waitForFunction(n=>window.__emberisle.getState().errorSeq>n&&window.__emberisle.getState().error==='Slow down.',errorBefore);
- assert.equal(await a.getByRole('button',{name:'Need Stone',exact:true}).getAttribute('aria-pressed'),'true','unrelated host ACT rate errors preserve the delayed Need draft');
+ assert.equal(await chip.getAttribute('aria-label'),'Jarrod needs Stone','unrelated host ACT rate errors leave the published need');
+ const rejectedSeq=await a.evaluate(()=>window.__emberisle.getState().errorSeq);
  const rejectedAt=Date.now();
  await a.evaluate(()=>{
   // Exhaust and choose in one task: no intervening browser round trip can refill an ACT token.
   for(let i=0;i<30;i++)window.__emberisle.getState().net.rename('Still the same person');
-  document.querySelector('#need-picker [aria-label="Need Wheat"]').click();
+  document.querySelector('[data-testid="trade-panel"] .trade-ask').click();
  });
- await a.waitForFunction(()=>[...document.querySelectorAll('#need-picker [aria-pressed]')].every(button=>button.getAttribute('aria-pressed')==='false'));
- assert(Date.now()-rejectedAt<1000,'Need rejection rolls back promptly, before the unchanged three-second fallback');
+ await a.waitForFunction(n=>window.__emberisle.getState().errorSeq>n,rejectedSeq);
+ assert(Date.now()-rejectedAt<1000,'a rate-rejected Need from Ask the table is refused promptly');
  assert.equal(await a.evaluate(()=>window.__emberisle.getState().error),'Slow down.','a genuinely rate-rejected Need rolls back to the authoritative selection');
  await a.evaluate(()=>{window.__holdNeedSeats=false;for(const deliver of window.__needSeats??[])deliver();window.__needSeats=[];});
- console.log('ok delayed Need draft survives unrelated announcements and host ACT errors; actual Need rate rejection rolls back');
+ assert.equal(await chip.getAttribute('aria-label'),'Jarrod needs Stone','a rate-rejected Need leaves the authoritative selection');
+ console.log('ok published need survives unrelated announcements and host ACT errors; a rate-rejected Need from Ask the table leaves the authoritative selection');
  // Isolated hotseat session exercises the same picker and the lazy local-state lifecycle.
  await a.evaluate(async()=>{
   const {createGame}=await import('/src/lib/game/board.ts');
@@ -260,34 +269,36 @@ try{
   await page.keyboard.press('Escape');
   await page.evaluate(()=>window.__emberisle.getState().setTradeOpen(true));
   await page.screenshot({path:path.join(captureDirectory,`needs-${width}x${height}-picker.png`)});
-  const picker=await page.locator('#need-picker').evaluate(field=>{
-   const grid=field.querySelector('div'),style=getComputedStyle(grid),scroll=document.querySelector('.trade-composer-scroll');
+  // #1537 one tray: the Need picker is gone; the Get row carries the other seats' need dots.
+  const picker=await page.locator('[data-testid="trade-want-row"]').evaluate(field=>{
+   const grid=field.querySelector('.trade-resource-grid'),style=getComputedStyle(grid),scroll=document.querySelector('.trade-composer-scroll');
    const viewport=scroll.getBoundingClientRect(),give=scroll.querySelector('[data-testid="trade-give-row"]');
    give.scrollIntoView();
    const scrolledViewport=scroll.getBoundingClientRect();
    const controls=[give.querySelector('h3'),...give.querySelectorAll('button')].map(control=>{const box=control.getBoundingClientRect();return {label:control.getAttribute('aria-label')||control.textContent,top:box.top,bottom:box.bottom,visible:box.top>=scrolledViewport.top-1&&box.bottom<=scrolledViewport.bottom+1};});
    scroll.scrollTop=0;
-   const targets=[...field.querySelectorAll('button')].map(button=>{const box=button.getBoundingClientRect();return {label:button.getAttribute('aria-label')||button.textContent,width:box.width,height:box.height,fill:getComputedStyle(button).backgroundColor,pressed:button.getAttribute('aria-pressed')};}),gaps=[...field.querySelectorAll('button')].slice(1).map((button,i)=>button.getBoundingClientRect().left-field.querySelectorAll('button')[i].getBoundingClientRect().right);
+   const tokens=[...field.querySelectorAll('.trade-resource')];
+   const targets=tokens.map(token=>{const box=token.querySelector('.trade-add').getBoundingClientRect();return {label:token.querySelector('.trade-add').getAttribute('aria-label'),width:box.width,height:box.height,fill:getComputedStyle(token).backgroundColor,pressed:String(token.hasAttribute('data-selected')),dots:[...token.querySelectorAll('[data-testid="trade-need-dot"]')].map(d=>d.textContent)};}),gaps=tokens.slice(1).map((token,i)=>token.getBoundingClientRect().left-tokens[i].getBoundingClientRect().right);
    return {targets,gaps,noOverflow:field.scrollWidth<=field.clientWidth&&scroll.scrollWidth<=scroll.clientWidth,gap:Number.parseFloat(style.columnGap),scrollHeight:scroll.scrollHeight,clientHeight:scroll.clientHeight,viewport:{top:viewport.top,bottom:viewport.bottom},giveControls:controls};
   });
-  geometry.at(-1).picker=picker;if(!picker.noOverflow)geometryProblems.push(`${width}x${height}: picker horizontal overflow`);if(picker.targets.some(target=>target.width<44||target.height<44))geometryProblems.push(`${width}x${height}: picker target below44px`);if(width===844&&picker.giveControls.some(control=>!control.visible))geometryProblems.push(`${width}x${height}: give heading/steppers must sit inside scrollable region after scroll`);if(picker.gap<8)geometryProblems.push(`${width}x${height}: picker gap below8px`);if(picker.targets.length!==5||picker.targets.some(t=>t.height!==44)||picker.gaps.some(g=>g<8))geometryProblems.push(`${width}x${height}: five 44px pills with 8px gaps differ ${JSON.stringify(picker.targets)}`);if(picker.targets.some(t=>t.fill!==(t.pressed==='true'?'rgb(255, 255, 255)':'rgb(243, 246, 245)')))geometryProblems.push(`${width}x${height}: lit pill must be white and unlit the sheet fill ${JSON.stringify(picker.targets)}`);
-  // C3 11.1: the window stays in the lobby's white set, and the Need pills and chips read at 4.5:1.
+  geometry.at(-1).picker=picker;if(!picker.noOverflow)geometryProblems.push(`${width}x${height}: picker horizontal overflow`);if(picker.targets.some(target=>target.width<44||target.height<44))geometryProblems.push(`${width}x${height}: picker target below44px`);if(width===844&&picker.giveControls.some(control=>!control.visible))geometryProblems.push(`${width}x${height}: give heading/steppers must sit inside scrollable region after scroll`);if(picker.gap<8)geometryProblems.push(`${width}x${height}: picker gap below8px`);if(picker.targets.length!==5||picker.targets.some(t=>t.height!==64)||picker.gaps.some(g=>g<8))geometryProblems.push(`${width}x${height}: five 64px Get tokens with 8px gaps differ ${JSON.stringify(picker.targets)}`);if(picker.targets.some(t=>t.fill!==(t.pressed==='true'?'rgb(228, 244, 234)':'rgb(233, 240, 238)')))geometryProblems.push(`${width}x${height}: a chosen Get token must be the Get tint and a resting one the soft fill ${JSON.stringify(picker.targets)}`);if(picker.targets.map(t=>t.dots.length).join()!=='0,0,0,3,3'||picker.targets.some(t=>t.dots.some(label=>!/^(Joshua|Dune|Ember) needs (wheat|stone)$/.test(label))))geometryProblems.push(`${width}x${height}: the three other seats' Stone and Wheat needs must show as labelled dots ${JSON.stringify(picker.targets)}`);
+  // C3 11.1 (#1537 one tray): the sheet is #fbfdfc, and the Get names and Give counts read at 4.5:1 on their tokens.
   const white=await page.getByTestId('trade-panel').evaluate(panel=>{
    const rgb=c=>c.match(/[\d.]+/g).slice(0,3).map(Number),lum=c=>{const [r,g,b]=rgb(c).map(v=>{v/=255;return v<=0.03928?v/12.92:((v+0.055)/1.055)**2.4;});return 0.2126*r+0.7152*g+0.0722*b;};
    const ratio=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);};
-   const button=panel.querySelector('#need-picker button'),chip=panel.querySelector('.trade-other-chip');
-   return {sheet:getComputedStyle(panel).backgroundColor,button:ratio(getComputedStyle(button).color,getComputedStyle(button).backgroundColor),chip:chip?ratio(getComputedStyle(chip).color,getComputedStyle(chip).backgroundColor):null};
+   const button=panel.querySelector('[data-testid="trade-want-row"] .trade-resource-name'),chip=panel.querySelector('[data-testid="trade-give-row"] .trade-owned'),fill=e=>getComputedStyle(e.closest('.trade-resource')).backgroundColor;
+   return {sheet:getComputedStyle(panel).backgroundColor,button:ratio(getComputedStyle(button).color,fill(button)),chip:chip?ratio(getComputedStyle(chip).color,fill(chip)):null};
   });
   geometry.at(-1).white=white;
-  if(white.sheet!=='rgb(243, 246, 245)'||white.button<4.5||white.chip===null||white.chip<4.5)geometryProblems.push(`${width}x${height}: Trade window colour or Need text contrast differs from C3 ${JSON.stringify(white)}`);
+  if(white.sheet!=='rgb(251, 253, 252)'||white.button<4.5||white.chip===null||white.chip<4.5)geometryProblems.push(`${width}x${height}: Trade window colour or Need text contrast differs from C3 ${JSON.stringify(white)}`);
   {const dangling=await page.getByTestId('trade-panel').evaluate(panel=>[...panel.querySelectorAll('[aria-controls]')].filter(e=>!e.getAttribute('aria-controls').split(/\s+/).every(id=>document.getElementById(id))).length+panel.querySelectorAll('#need-picker[aria-controls],#need-picker[aria-expanded],.trade-need[aria-controls],.trade-need[aria-expanded]').length);if(dangling)geometryProblems.push(`${width}x${height}: Trade window has a dangling aria-controls or the always-open picker carries aria-controls/aria-expanded`);}
   await page.getByRole('button',{name:'Close',exact:true}).click();await context.close();
  }
  writeFileSync(path.join(captureDirectory,'needs-geometry.json'),JSON.stringify(geometry,null,2));
  console.log('four-seat needs geometry',JSON.stringify(geometry));
  assert.deepEqual(geometryProblems,[],'four-seat dots match approved geometry, clear public information and menu chips meet approved type/spacing');
- console.log('ok four-seat needs table and own picker:320x568,390x844,844x390,1280x720');
- // #646 Others need: one fixed row per other seat. The window, its Close button and every row sit in the same place whatever the seats share.
+ console.log('ok four-seat needs table and Get-row need dots:320x568,390x844,844x390,1280x720');
+ // #646 Others need, #1537 one tray: the list became need dots on the Get tokens. The sheet, its Close button and every token sit in the same place whatever the seats share.
  const fixedProblems=[],fixedSummary=[];
  const configs={none:{},oneSeatOne:{p1:['timber']},twoSeatsBoth:{p1:['timber','ore'],p2:['grain','clay']},sharedFirst:{p1:['timber','ore'],p2:['timber'],p3:['timber']}};
  for(const [width,height] of [[320,568],[390,844],[844,390],[1280,720]]){
@@ -307,60 +318,56 @@ try{
     useLocalNeeds.setState({},true);g.setState({mode:'ai',screen:'play',state,localId:'p0',spectator:false,tradeOpen:false,offer:null,declined:[]});g.getState().setTradeOpen(true);
    },names);
    await page.getByTestId('trade-panel').waitFor();
-   // Zero published needs means zero chips, so the chip count is already true before the trade chunk mounts.
-   await page.locator('#trade-others-title').waitFor();
+   // Zero published needs means zero dots, so the dot count is already true before the trade chunk mounts.
+   await page.locator('[data-testid="trade-want-row"]').waitFor();
    const frames={};
    for(const [label,needs] of Object.entries(configs)){
     await page.evaluate(async needs=>{const {useLocalNeeds}=await import('/src/components/game/need-state.ts');useLocalNeeds.setState(Object.fromEntries(Object.entries(needs).map(([id,kinds])=>[id,{kinds,turnsLeft:2}])),true);},needs);
-    await page.waitForFunction(count=>document.querySelectorAll('[data-testid="trade-panel"] .trade-other-chip').length===count,Object.values(needs).reduce((n,k)=>n+k.length,0));
+    await page.waitForFunction(count=>document.querySelectorAll('[data-testid="trade-panel"] [data-testid="trade-need-dot"]').length===count,Object.values(needs).reduce((n,k)=>n+k.length,0));
     await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
     frames[label]=await page.evaluate(()=>{
      const panel=document.querySelector('[data-testid="trade-panel"]'),box=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};},num=n=>Math.round(n*100)/100;
-     const lum=c=>{const [r,g,b]=c.match(/[\d.]+/g).slice(0,3).map(Number).map(v=>{v/=255;return v<=0.03928?v/12.92:((v+0.055)/1.055)**2.4;});return 0.2126*r+0.7152*g+0.0722*b;};
-     const ratio=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);};
-     const sheet=getComputedStyle(panel).backgroundColor,rows=[...panel.querySelectorAll('[data-testid="other-need-row"]')];
+     const tokens=[...panel.querySelectorAll('[data-testid="trade-want-row"] .trade-resource')];
      const close=panel.querySelector('[aria-label="Close"]')||document.querySelector('[aria-label="Close"]');
-     return {top:num(panel.getBoundingClientRect().y),close:{x:num(close.getBoundingClientRect().x),y:num(close.getBoundingClientRect().y)},heading:panel.querySelector('#trade-others-title').textContent,
-      rows:rows.map(row=>({box:box(row),dot:box(row.firstElementChild),name:getComputedStyle(row.querySelector('.trade-other-name')),label:row.getAttribute('aria-label'),
-       chips:[...row.querySelectorAll('.trade-other-chip')].map(c=>({...box(c),text:c.textContent,bg:getComputedStyle(c).backgroundColor,border:getComputedStyle(c).borderTopWidth,contrast:ratio(getComputedStyle(c).color,getComputedStyle(c).backgroundColor)})),
-       none:row.querySelector('.trade-other-none')?{...box(row.querySelector('.trade-other-none')),contrast:ratio(getComputedStyle(row.querySelector('.trade-other-none')).color,sheet)}:null,
-       nameClip:(n=>({overflow:getComputedStyle(n).textOverflow,nowrap:getComputedStyle(n).whiteSpace,w:n.clientWidth,font:getComputedStyle(n).fontSize,lh:getComputedStyle(n).lineHeight,contrast:ratio(getComputedStyle(n).color,sheet),lines:n.getClientRects().length}))(row.querySelector('.trade-other-name')),
-       cols:getComputedStyle(row).gridTemplateColumns,gap:getComputedStyle(row).columnGap,animation:getComputedStyle(row).animationName+'/'+getComputedStyle(row).transitionDuration})).map(r=>({...r,name:undefined})),
-      focus:[...panel.querySelectorAll('button,a,input,[tabindex]')].map(e=>(e.getAttribute('aria-label')||`${e.tagName}.${e.className}`)+(e.closest('[data-testid="other-need-row"]')?'#IN-ROW':'')),
-      hscroll:document.documentElement.scrollWidth>innerWidth||panel.scrollWidth>panel.clientWidth,rowGaps:rows.slice(1).map((r,i)=>num(r.getBoundingClientRect().y-rows[i].getBoundingClientRect().bottom))};
+     return {top:num(panel.getBoundingClientRect().y),close:{x:num(close.getBoundingClientRect().x),y:num(close.getBoundingClientRect().y)},othersHeading:[...panel.querySelectorAll('h3')].some(h=>h.textContent==='Others need'),
+      tokens:tokens.map(token=>({box:box(token),kind:token.dataset.testid.replace('trade-want-',''),
+       dots:[...token.querySelectorAll('[data-testid="trade-need-dot"]')].map(d=>({...box(d),label:d.textContent,inside:(t=>{const r=d.getBoundingClientRect();return r.left>=t.left&&r.right<=t.right&&r.top>=t.top&&r.bottom<=t.bottom;})(token.getBoundingClientRect())}))})),
+      giveDots:panel.querySelectorAll('[data-testid="trade-give-row"] [data-testid="trade-need-dot"]').length,
+      focus:[...panel.querySelectorAll('button,a,input,[tabindex]')].map(e=>(e.getAttribute('aria-label')||`${e.tagName}.${e.className}`)+(e.closest('[data-testid="trade-need-dot"]')?'#IN-ROW':'')),
+      hscroll:document.documentElement.scrollWidth>innerWidth||panel.scrollWidth>panel.clientWidth,rowGaps:tokens.slice(1).map((t,i)=>num(t.getBoundingClientRect().x-tokens[i].getBoundingClientRect().right))};
     });
    }
-   const tag=`${width}x${height} ${names[1]}`,base=frames.none;
+   const tag=`${width}x${height} ${names[1]}`,base=frames.none,good={timber:'wood',clay:'brick',wool:'sheep',grain:'wheat',ore:'stone'};
    for(const [label,f] of Object.entries(frames)){
     const at=`${tag} ${label}`;
-    if(f.heading!=='Others need')fixedProblems.push(`${at}: heading ${f.heading}`);
-    if(f.rows.length!==3)fixedProblems.push(`${at}: ${f.rows.length} rows, expected one per other seat`);
+    if(f.othersHeading)fixedProblems.push(`${at}: the Others need heading is still shown`);
+    if(f.tokens.length!==5)fixedProblems.push(`${at}: ${f.tokens.length} Get tokens, expected five`);
     if(f.top!==base.top||f.close.x!==base.close.x||f.close.y!==base.close.y)fixedProblems.push(`${at}: Trade window top/Close moved ${JSON.stringify([f.top,f.close])} vs ${JSON.stringify([base.top,base.close])}`);
-    if(JSON.stringify(f.rows.map(r=>[r.box.x,r.box.y,r.box.w]))!==JSON.stringify(base.rows.map(r=>[r.box.x,r.box.y,r.box.w])))fixedProblems.push(`${at}: a row moved or resized`);
-    if(f.rows.some(r=>r.box.h!==32))fixedProblems.push(`${at}: a row is not 32px`);
-    if(f.rowGaps.some(g=>g!==8))fixedProblems.push(`${at}: row gap not 8px ${f.rowGaps}`);
-    if(f.rows.some(r=>r.box.w>324))fixedProblems.push(`${at}: row wider than 324`);
-    if(f.rows.some(r=>r.dot.w!==12||r.dot.h!==12))fixedProblems.push(`${at}: seat dot not 12px`);
-    if(f.rows.some(r=>r.nameClip.overflow!=='ellipsis'||r.nameClip.nowrap!=='nowrap'||r.nameClip.w>160||r.nameClip.font!=='12px'||r.nameClip.lh!=='16px'||r.nameClip.lines!==1||r.nameClip.contrast<4.5))fixedProblems.push(`${at}: name not one 12/16 ellipsised readable line ${JSON.stringify(f.rows.map(r=>r.nameClip))}`);
-    const slotX=f.rows[0].box.x+f.rows[0].box.w-136;
-    for(const r of f.rows){
-     if(r.chips.length>2)fixedProblems.push(`${at}: more than two chips`);
-     r.chips.forEach((c,i)=>{if(c.w!==64||c.h!==32||c.x!==slotX+i*72||c.bg!=='rgb(255, 255, 255)'||c.border!=='1px'||c.contrast<4.5)fixedProblems.push(`${at}: chip ${c.text} off its slot ${JSON.stringify(c)}`);});
-     if(!r.chips.length&&(!r.none||r.none.x!==slotX||r.none.contrast<4.5))fixedProblems.push(`${at}: None yet missing or off slot 1`);
-     if(r.chips.length&&r.none)fixedProblems.push(`${at}: None yet beside chips`);
+    if(JSON.stringify(f.tokens.map(t=>[t.box.x,t.box.y,t.box.w]))!==JSON.stringify(base.tokens.map(t=>[t.box.x,t.box.y,t.box.w])))fixedProblems.push(`${at}: a Get token moved or resized`);
+    if(f.tokens.some(t=>t.box.h!==64))fixedProblems.push(`${at}: a Get token is not 64px`);
+    if(f.rowGaps.some(g=>g!==8))fixedProblems.push(`${at}: token gap not 8px ${f.rowGaps}`);
+    if(f.tokens.some(t=>t.dots.some(d=>!d.inside)))fixedProblems.push(`${at}: a dot leaves its token`);
+    if(f.tokens.some(t=>t.dots.some(d=>d.w!==8||d.h!==8)))fixedProblems.push(`${at}: need dot not 8px`);
+    const expected=Object.fromEntries(f.tokens.map(t=>[t.kind,names.filter((_,i)=>configs[label][`p${i}`]?.includes(t.kind)).map(name=>`${name} needs ${good[t.kind]}`)]));
+    if(f.tokens.some(t=>JSON.stringify(t.dots.map(d=>d.label))!==JSON.stringify(expected[t.kind])))fixedProblems.push(`${at}: dot labels are not one full "<name> needs <good>" per seat ${JSON.stringify(f.tokens.map(t=>t.dots.map(d=>d.label)))}`);
+    for(const t of f.tokens){
+     if(t.dots.length>3)fixedProblems.push(`${at}: more dots than other seats`);
+     t.dots.forEach((d,i)=>{if(i&&(d.x!==t.dots[i-1].x+10||d.y!==t.dots[0].y))fixedProblems.push(`${at}: dot ${d.label} off its place in the row ${JSON.stringify(d)}`);});
+     if(!t.dots.length&&expected[t.kind].length)fixedProblems.push(`${at}: a needed good shows no dot`);
+     if(f.giveDots)fixedProblems.push(`${at}: need dots on Give tokens`);
     }
     if(f.hscroll)fixedProblems.push(`${at}: horizontal overflow`);
     if(JSON.stringify(f.focus)!==JSON.stringify(base.focus)||f.focus.some(x=>x.endsWith('#IN-ROW')))fixedProblems.push(`${at}: tab order changed or a row is focusable ${JSON.stringify([f.focus,base.focus]).slice(0,300)}`);
    }
-   if(frames.sharedFirst.rows.map(r=>r.chips.map(c=>c.text).join('+')).join('|')!=='Wood+Stone|Wood|Wood')fixedProblems.push(`${tag}: shared first need not shown on every seat`);
-   if(!frames.twoSeatsBoth.rows[0].label.includes(' needs Wood and Stone')||!frames.none.rows[0].label.endsWith('has not shared a need'))fixedProblems.push(`${tag}: row labels`);
-   fixedSummary.push({tag,top:base.top,close:base.close,rowYs:base.rows.map(r=>r.box.y)});
+   if(frames.sharedFirst.tokens.map(t=>t.dots.length).join('|')!=='3|0|0|0|1')fixedProblems.push(`${tag}: shared first need not shown for every seat`);
+   if(!frames.twoSeatsBoth.tokens[0].dots[0]?.label.endsWith(' needs wood')||frames.none.tokens.some(t=>t.dots.length))fixedProblems.push(`${tag}: dot labels`);
+   fixedSummary.push({tag,top:base.top,close:base.close,tokenYs:base.tokens.map(t=>t.box.y)});
   }
   await context.close();
  }
- console.log('fixed Others need rows',JSON.stringify(fixedSummary));
+ console.log('fixed Get tokens with need dots',JSON.stringify(fixedSummary));
  assert.deepEqual(fixedProblems,[],'Others need rows keep the Trade window, Close and every row still across 0/1/2 needs and shared firsts, with 16-letter names');
- console.log('ok Others need: fixed 32px rows, 64px chip slots, window and Close identical across needs, no overflow, contrast, tab order:320x568,390x844,844x390,1280x720');
+ console.log('ok need dots: 8px labelled dots inside fixed 64px Get tokens, window and Close identical across needs, no overflow, tab order:320x568,390x844,844x390,1280x720');
  assert.deepEqual(errors,[]);console.log('needs browser prove ok');
 }finally{
  await browser?.close();await vite?.close();
