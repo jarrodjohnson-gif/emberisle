@@ -189,7 +189,7 @@
 }
 /* names share one box per seat so the own (editable) name lines up with the others; its 44 px hit area starts at the seat's outer top edge, is centred on the same text, and overlaps the non-interactive status line */
 .lobby-player > .lobby-name { height: var(--seat-row); align-self: start; }
-.lobby-name > button[data-testid="rename-seat"], .lobby-name > input[data-testid="rename-input"] {
+.lobby-name > button, .lobby-name > input[data-testid="rename-input"] {
   box-sizing: border-box;
   height: 44px;
   margin: calc(-1px - var(--seat-pad)) 0 calc(var(--seat-row) - 44px + 1px + var(--seat-pad));
@@ -198,7 +198,9 @@
   font-size: 17px;
   font-weight: 600;
 }
-.lobby-name > button[data-testid="rename-seat"] { display: block; min-width: 44px; cursor: pointer; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: underline dotted; text-underline-offset: 4px; }
+/* #1350: another player's name is a button too, with the same box; only your own name carries the dotted "edit me" underline */
+.lobby-name > button { display: block; min-width: 44px; cursor: pointer; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lobby-name > button[data-testid="rename-seat"] { text-decoration: underline dotted; text-underline-offset: 4px; }
 .lobby-name > input[data-testid="rename-input"] { min-width: 0; flex: 1; border: 1px solid #cbcfc6; border-radius: 8px; background: #fff9f0; color: #263d3c; }
 .lobby-layout .dot { width: 12px; height: 12px; }
 .lobby-summary [data-testid="victory-target"] { gap: 8px; font-size: 13px; line-height: 18px; font-weight: 500; color: #46524e; }
@@ -206,14 +208,14 @@
   .lobby-layout { inset: max(8px, env(safe-area-inset-top)) 16px max(8px, env(safe-area-inset-bottom)); }
 }
 @media (max-width: 600px) and (orientation: portrait) {
-  .lobby-name, .lobby-name > button[data-testid="rename-seat"], .lobby-name > input[data-testid="rename-input"] { font-size: 14px; }
+  .lobby-name, .lobby-name > button, .lobby-name > input[data-testid="rename-input"] { font-size: 14px; }
   .lobby-summary > p, .lobby-layout .lobby-action-buttons > button:not(:last-child) { font-size: 14px; line-height: 20px; }
   .lobby-chat-panel [data-testid="chat-log"] > li { font-size: 0.875rem; line-height: 1.1875rem; }
   .lobby-layout input { font-size: 16px !important; }
   .lobby-layout .lobby-player:has(> [data-testid="add-bot"]) > button { padding: 0 10px; font-size: 13px; line-height: 16px; }
 }
 @media (max-width: 390px) and (orientation: portrait) {
-  .lobby-name, .lobby-name > button[data-testid="rename-seat"], .lobby-name > input[data-testid="rename-input"] { font-size: 13px; }
+  .lobby-name, .lobby-name > button, .lobby-name > input[data-testid="rename-input"] { font-size: 13px; }
   .lobby-summary > p, .lobby-layout .lobby-action-buttons > button:not(:last-child) { font-size: 13px; }
 }
 @media (max-width: 380px) and (orientation: portrait) {

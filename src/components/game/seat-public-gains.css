@@ -1,0 +1,72 @@
+/* #827 (owner q1530-gain-finalists A, docs/research/gain-redesign-round2-2026-11-11.md): another seat's public goods
+   change is a solid tag tucked behind the seat's bottom edge, exactly as wide as the seat. Each good is upright, icon over
+   number, in a solid cell: green (--gain) for a gain and red (--loss) for a loss, white numerals, gains on the left and
+   losses on the right. Always one row and 40 px below the seat; 17 px numerals for one or two goods, 15 px for three,
+   13 px for four (the floor is 12 px). No shadow, no outline, no word. On a wide seat (sideways) the tag stays compact
+   and left-aligned; on the desktop rail it comes out of the seat's right side. The seat's button sits above the tag and
+   hides its top 12 px, so the name and the score are never covered. The fade is the goods cue; the tag slides 24 px out
+   from behind the seat in 220 ms (no motion under reduced motion: styles.css stops every animation). */
+@keyframes goods-cue {
+  0% { opacity: 0; }
+  4%, 83.3334% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes seat-tag-down { from { transform: translateY(-24px); } }
+@keyframes seat-tag-right { from { transform: translateX(-24px); } }
+.seat-card:has(> .seat-public-gains) > button { position: relative; z-index: 1; background: inherit; box-shadow: inherit; }
+.seat-public-gains {
+  position: absolute;
+  top: calc(100% - 12px);
+  left: 0;
+  z-index: 0;
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  pointer-events: none;
+  animation: seat-tag-down 220ms var(--ease-out) both;
+}
+.seat-public-pill {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 52px;
+  padding: 12px 1px 0;
+  white-space: nowrap;
+  font: 700 17px/19px var(--font-numeral);
+  font-variant-numeric: tabular-nums;
+  background: var(--gain);
+  color: #fff;
+  animation: goods-cue 3000ms var(--ease-out) both;
+}
+.seat-public-pill[data-sign="-"] { background: var(--loss); }
+.seat-public-pill > svg { display: block; flex: none; width: 17px; height: 17px; }
+.seat-public-gains:has(> :nth-child(3)) > .seat-public-pill { font-size: 15px; }
+.seat-public-gains:has(> :nth-child(4)) > .seat-public-pill { font-size: 13px; letter-spacing: -0.3px; }
+.seat-public-gains:has(> :nth-child(4)) > .seat-public-pill > svg { width: 15px; height: 15px; }
+@container (min-width: 130px) {
+  .seat-public-gains[data-scope="seat"] { width: auto; }
+  .seat-public-gains[data-scope="seat"] > .seat-public-pill { flex: 0 0 auto; min-width: 40px; padding: 12px 6px 0; }
+}
+.seat-public-gains[data-scope="rail"] {
+  top: 0;
+  left: calc(100% - 12px);
+  width: auto;
+  height: 100%;
+  border-radius: inherit;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  animation-name: seat-tag-right;
+}
+.seat-public-gains[data-scope="rail"] > .seat-public-pill { flex: 0 0 auto; height: auto; min-width: 40px; padding: 0 8px; font-size: 18px; line-height: 20px; }
+.seat-public-gains[data-scope="rail"] > .seat-public-pill:first-child { min-width: 52px; padding-left: 20px; }
+.seat-public-gains[data-scope="rail"] > .seat-public-pill > svg { width: 18px; height: 18px; }
+/* A chat bubble on a seat with a tag hangs clear of it: below it on the strip, right of it on the rail. */
+.seat-card:has(> .seat-public-gains[data-scope="seat"]) .seat-bubble { margin-top: calc(var(--seat-cue-reach, 52px) - 4px); }
+.seat-card:has(> .seat-public-gains[data-scope="rail"]) .seat-bubble { margin-left: calc(var(--seat-cue-reach, 0px) - 4px); }
