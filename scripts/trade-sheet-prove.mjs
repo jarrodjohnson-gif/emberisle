@@ -421,12 +421,20 @@ async function primaryButton(page, tag) {
   await open(page);
   await more(page, "give", "grain").click();
   await more(page, "want", "ore").click();
-  const style = await askFor(page).evaluate((b) => { const s = getComputedStyle(b), r = b.getBoundingClientRect(); return { bg: s.backgroundColor, color: s.color, h: r.height, size: s.fontSize, weight: s.fontWeight }; });
-  assert.deepEqual(style, { bg: INK, color: WHITE, h: 48, size: "16px", weight: "600" }, `${tag}: Ask the table is the 48 px ink button with white text`);
+  const style = await askFor(page).evaluate((b) => { const s = getComputedStyle(b), r = b.getBoundingClientRect(); return { bg: s.backgroundColor, color: s.color, h: r.height, size: s.fontSize, line: s.lineHeight, weight: s.fontWeight }; });
+  assert.deepEqual(style, { bg: INK, color: WHITE, h: 48, size: "15px", line: "22px", weight: "600" }, `${tag}: Ask the table is the 48 px ink button with white text in the button system's type`);
   const bank = await bankFor(page).evaluate((b) => b.getBoundingClientRect().height);
   assert.equal(bank, 48, `${tag}: the bank button is 48 px high`);
-  const order = await panelFor(page).evaluate((panel) => [...panel.querySelectorAll("footer > button")].map((b) => b.getBoundingClientRect().left));
-  assert.ok(order[0] < order[1], `${tag}: Ask the table left, bank right`);
+  const row = await panelFor(page).evaluate((panel) => [...panel.querySelectorAll("footer > button")].map((b) => { const r = b.getBoundingClientRect(); return { left: r.left, width: r.width }; }));
+  assert.ok(row[0].left < row[1].left, `${tag}: Ask the table left, bank right`);
+  assert.ok(Math.abs(row[0].width / row[1].width - 7 / 5) <= 0.02, `${tag}: with a short bank label the row splits 7:5 as in the mock ${JSON.stringify(row)}`);
+  for (const label of ["Bank: one kind each", "Bank has no stone"]) {
+    if (label === "Bank: one kind each") await more(page, "want", "wool").click();
+    else { await minus(page, "want", "wool").click(); await change(page, { hand: { grain: 4 }, bank: { ore: 0 } }); }
+    await bankIs(page, label, false, label === "Bank has no stone" ? "The bank has no stone." : "Pick one kind to give and one to get.", `${tag} long label`);
+    const fit = await bankFor(page).evaluate((b) => ({ scroll: b.scrollWidth, client: b.clientWidth, range: (() => { const r = document.createRange(); r.selectNodeContents(b); return r.getClientRects().length; })() }));
+    assert.ok(fit.scroll <= fit.client + 1 && fit.range === 1, `${tag}: "${label}" fits on one line ${JSON.stringify(fit)}`);
+  }
   await page.keyboard.press("Escape");
   await panelFor(page).waitFor({ state: "detached" });
 }

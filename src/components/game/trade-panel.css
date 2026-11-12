@@ -5,7 +5,7 @@
 .trade-composer-header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; padding-right: max(8px, env(safe-area-inset-right)); }
 .trade-title { font-size: 24px; line-height: 28px; font-weight: 750; }
 .trade-composer-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-top: 4px; padding-bottom: 4px; }
-.trade-composer-scroll:focus-visible { outline: 2px solid #1f3d3b; outline-offset: -2px; }
+.trade-composer-scroll:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
 .trade-half + .trade-half { margin-top: 14px; }
 .trade-label { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
 .trade-label h3 { color: var(--give); font-size: 16px; line-height: 20px; font-weight: 700; }
@@ -21,7 +21,6 @@
 .trade-resource[data-selected] .trade-add { color: #1f3331; font-weight: 700; }
 .trade-add:disabled { opacity: 0.5; }
 .trade-add:disabled > svg { color: var(--muted); }
-.trade-add:focus-visible, .trade-remove:focus-visible > span { outline: 2px solid #1f3d3b; outline-offset: 2px; }
 .trade-badge { position: absolute; top: -10px; right: -6px; min-width: 28px; height: 24px; padding: 0 6px; border-radius: 12px; background: var(--edge); box-shadow: 0 0 0 2px #fbfdfc; color: #fff; font-size: 14px; line-height: 24px; font-weight: 700; text-align: center; pointer-events: none; }
 /* The minus hangs half below the token, so the row stays 64 px; its 44 px hit area runs into the space under the row. */
 .trade-remove { position: absolute; top: 50px; left: 50%; z-index: 1; display: flex; width: 44px; height: 44px; margin-left: -22px; justify-content: center; padding-top: 4px; }
@@ -32,8 +31,9 @@
 .trade-give-text { color: var(--give); }
 .trade-get-text { color: var(--get); }
 .trade-empty { color: #52625f; font-size: 14px; font-weight: 400; }
-.trade-composer-footer { display: grid; flex-shrink: 0; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 8px; padding-top: 14px; padding-bottom: 16px; }
-.trade-composer-footer > button { height: 48px; padding: 0 12px; border: 0; border-radius: var(--radius-chip); background: #e9f0ee; color: #1f3331; font-size: 16px; line-height: 20px; white-space: normal; }
+/* Ask the table and the bank button: the bank keeps the mock's 5/12 of the row and widens only when its reason is longer. */
+.trade-composer-footer { display: grid; flex-shrink: 0; grid-template-columns: minmax(0, 1fr) minmax(calc((100% - 8px) * 5 / 12), auto); gap: 8px; padding-top: 14px; padding-bottom: 16px; }
+.trade-composer-footer > button { height: 48px; padding: 0 12px; border: 0; border-radius: var(--radius-chip); background: #e9f0ee; color: #1f3331; white-space: nowrap; }
 .trade-composer-footer > .trade-ask { background: #1f3d3b; color: #fff; }
 .trade-composer-footer > button:disabled { background: #e9f0ee; color: #52625f; }
 .trade-bank:first-child { grid-column: 1 / -1; }
