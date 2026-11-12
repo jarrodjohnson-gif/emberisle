@@ -9,7 +9,7 @@
 //   build (or buys the fortune) and closes the list; a blocked row plays the refusal, arms nothing, sends no move and stays
 //   open; Escape and Close each return the focus to Build;
 // - armed: the action row is Cancel alone, 48 px high, and it disarms;
-// - a held fortune adds "Fortune · N" as the fourth equal column (outside the column);
+// - a held fortune adds "Fortune · N" as the fourth button of the row (the third in the sideways column);
 // - before the roll the action row is Roll; on another seat's turn there is no action row;
 // - the measured bottom inset (`__isle.liveInsets()`) is within 4 px of the declared one (`__isle.insets()`) on my main turn
 //   at 390x844, 430x932 and 1280x720;
@@ -196,7 +196,7 @@ try {
     let at = `${tag} main`;
     check(s.banner === "Your turn", `${at}: the status in the stack reads "${s.banner}", want "Your turn"`);
     check(s.hand.length === 5 && s.hand.every((h) => h.name === RESOURCE_LABEL[h.kind] && h.size >= 12 && /^\d+$/.test(h.count)), `${at}: five hand numbers named at 12 px or more ${JSON.stringify(s.hand)}`);
-    check(s.tray === !v.column, `${at}: the stack is${s.tray ? "" : " not"} the hud-tray`);
+    check(s.tray, `${at}: the stack is the hud-tray at every size`);
     const trades = s.buttons.filter((b) => b.name === "Trade").length;
     check(trades === 1, `${at}: ${trades} Trade buttons in the stack, want one`);
     if (!v.column) {
@@ -340,8 +340,8 @@ try {
       check(fortune.trim() === "Fortune · 1", `${at}: the button reads "${fortune.trim()}", want "Fortune · 1"`);
       const row = s.actions.map((b) => b.name);
       check(JSON.stringify(row) === JSON.stringify(["build-open", "Trade", "fortunes-button", "End turn"]), `${at}: the action row is ${JSON.stringify(row)}`);
-      check(new Set(s.actions.map((b) => b.top)).size === 1 && Math.max(...s.actions.map((b) => b.w)) - Math.min(...s.actions.map((b) => b.w)) <= 1, `${at}: four equal columns in one row ${JSON.stringify(s.actions)}`);
-    } else check(/^(Play fortune|Fortunes) · 1$/.test(fortune.trim()), `${at}: the column's button reads "${fortune.trim()}"`);
+      check(new Set(s.actions.map((b) => b.top)).size === 1 && Math.min(...s.actions.map((b) => b.w)) >= 44, `${at}: four buttons in one row, none under 44 px wide ${JSON.stringify(s.actions)}`);
+    } else check(fortune.trim() === "Fortune · 1", `${at}: the column's button reads "${fortune.trim()}", want "Fortune · 1"`);
     sizeRules(s, at);
 
     // 6. Before the roll: Roll.

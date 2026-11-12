@@ -538,7 +538,7 @@ export function Hud() {
 
             {/* #643: on a sideways phone the seat's numbers are one quiet line under the action row. A desktop has them in
                 the tray's top line; the upright phone table has none (#1509). */}
-            {phone && !spectator && !upright && !tradeVisible ? <div className="flex h-5 shrink-0 items-center gap-1">{numbers}</div> : null}
+            {phone && !spectator && !upright && !tradeVisible ? <div className="tray-numbers flex h-5 shrink-0 items-center gap-1">{numbers}</div> : null}
             {pinEnd ? endRow : null}
             {tradeVisible ? (
               <LazyBoundary failed={null}>
@@ -572,7 +572,7 @@ export function Hud() {
             <div
               data-testid="hud-more-below"
               aria-hidden
-              className={cn("pointer-events-none absolute inset-x-0 h-8 bg-gradient-to-t from-zinc-900/40 to-transparent", pinEnd ? "bottom-13" : "bottom-0")}
+              className={cn("pointer-events-none absolute inset-x-0 h-8 bg-gradient-to-t from-zinc-900/40 to-transparent", pinEnd ? "bottom-[58px]" : "bottom-0")}
             />
           ) : null}
         </div>

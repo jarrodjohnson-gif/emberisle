@@ -43,7 +43,7 @@ The mocks draw the island about 20% wider than today. The tray alone does not do
 - A wider island on phones comes from [#1526](https://github.com/jarrodjohnson-gif/emberisle/issues/1526) (side goods moved inward), which the owner already chose.
 - What the tray adds on a phone is height: about 100 px less chrome under the island at 390 wide.
   The island sits in the middle of the sea, not pushed to the top.
-- On desktop the island is limited by height. The tray is close to today's height, so the island grows little.
+- On desktop the island is limited by height. As built (#1539) the desktop tray is one row, the hand beside the buttons, so the island keeps 18 px more height than before (the declared bottom is 168 px, was 186).
 
 Slice B measures the real island before and after. Nobody quotes the mock's width as a result.
 
@@ -64,14 +64,14 @@ One rule: a box marks one thing you can press. Nothing else gets a border.
 
 - Use the repo's existing tokens where one matches. Add a token only for Give and Get.
 - The tray has a 22 px top radius and one soft shadow. Buttons have a 12 px radius.
-- Type: 26 px bold numbers, 16 px semibold buttons, 14 px status, 12 or 13 px quiet text. Nothing under 12 px.
+- Type: 26 px bold numbers, 15 px semibold buttons (the button system, #1418), 14 px status, 12 or 13 px quiet text. Nothing under 12 px.
 - Every button and every token is at least 44 px in both directions. Main buttons are 48 px high.
 - The sea gets darker toward the screen edges, by a CSS overlay above the canvas. The scene itself does not change.
 
 ## The tray
 
-One surface at the bottom of the screen. On a phone it spans the width. On desktop it is 520 px wide and centred, 16 px above the bottom edge.
-In a sideways phone it keeps today's left column and uses the same three parts.
+One surface at the bottom of the screen. On a phone it spans the width. On desktop it is centred, up to 720 px wide, 12 px above the bottom edge, and the hand sits beside the action row in one row (as built in #1539; the mock above shows the earlier stacked sketch).
+In a sideways phone it is the same tray in today's left column, as tall as its rows: Build and Trade share a row and End turn has its own, with the dice beside it.
 
 Three parts, top to bottom:
 
@@ -83,11 +83,11 @@ What leaves the main screen, and where it goes:
 
 | Today | New home |
 |---|---|
-| Dice row | The top line's right side: "Rolled 6 + 5". The centre-screen roll moment stays. |
+| Dice row | The top line's right side, in the roll line's words: "Ember rolled 11!". A sideways phone keeps the two dice beside End turn. The centre-screen roll moment stays. |
 | Log line | The top line's right side, when no roll is newer. Red 6 and 8 and the green own roll stay (2026-10-22). |
 | Deck count | The Fortune row of the Build list, and the Fortunes sheet. |
 | Build costs | The Build list. |
-| My numbers (desktop) | One quiet line under the action row, desktop only. Phones do not show it today. |
+| My numbers (desktop) | In the top line on desktop, between the status and the newest event. A sideways phone keeps its quiet line under the action row; an upright phone shows none, as today. |
 | Turn countdown | The top line's right side in the last 30 s. It replaces the event text. |
 
 ### The action row in every state
@@ -115,7 +115,7 @@ What leaves the main screen, and where it goes:
 - A long press on a hand column still opens the rates sheet.
 - Gains and losses still flash +N and −N on the number. The column tints with the good's colour for the same time as today.
 - The vote for more time keeps its wording. It takes the action row while it is open.
-- In hotseat the top line names the seat, as today.
+- In hotseat the top line names a seat only when it owes a discard on another seat's turn, as today.
 
 ### Fortune
 

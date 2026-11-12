@@ -271,7 +271,7 @@ body {
 .hud-col .end-footer { gap: 8px; padding: 0; background: #fbfdfc !important; }
 .hud-stack.hud-col > .end-footer > button { height: 48px; border: 0; border-radius: 12px; background: #1f3d3b; color: #fff; }
 /* an empty row (the turn clock with no clock running) takes no gap */
-.hud-tray > div:empty { display: none; }
+.hud-tray > div:empty:not(.tray-numbers) { display: none; }
 .hud-tray .turn-instruction { padding-top: 0; padding-bottom: 0; }
 @media (min-width: 768px) and (pointer: fine) {
   /* a desktop has the width for one row: the hand on the left, the action row beside it */
@@ -279,7 +279,7 @@ body {
   .hud-tray > * { grid-column: 1 / -1; }
   .hud-tray > [data-testid="hand-dock"] { grid-column: 1; }
   .hud-tray > [data-testid="hand-dock"] + .hud-actions, .hud-tray > [data-testid="hand-dock"] + .hud-roll { grid-column: 2; }
-  .hud-tray .hand-resource-card-slot { flex-basis: 64px; }
+  .hud-tray .hand-resource-card-slot { flex: 0 0 64px; }
   .hud-tray .goods-card { height: 62px; }
   .hud-tray .goods-card, .hud-tray .goods-lit { padding-top: 2px; }
   .hud-tray .goods-icon { width: 20px; height: 20px; }
@@ -465,3 +465,6 @@ input, select, textarea { border-color: var(--control-line); }
 .help-wash { --gutter: 16px; background: color-mix(in srgb, var(--ground) 70%, transparent); padding: max(var(--gutter), env(safe-area-inset-top)) max(var(--gutter), env(safe-area-inset-right)) max(var(--gutter), env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left)); }
 @media (min-width: 1024px) { .help-wash { --gutter: 24px; } }
 .help-scroll { scrollbar-width: thin; scrollbar-color: var(--control-line) transparent; }
+.hud-col .goods-tray { padding-left: 0; padding-right: 0; }
+.hud-tray .action-utilities[data-fortunes] > .tray-end { display: contents; }
+.hud-tray .action-utilities[data-fortunes] button { flex: 1 1 auto; width: auto; }
