@@ -395,7 +395,8 @@ try {
       const s = window.__emberisle.getState();
       return { text: s.gameLog.at(-1)?.text, banner: s.banner, hud: document.querySelector('[data-testid="log-line"]')?.textContent };
     })));
-    if (new Set(events.map((e) => e.text)).size !== 1 || events.some((e) => e.banner || e.hud !== e.text)) throw new Error(`roll event differs or repeats: ${JSON.stringify(events)}`);
+    // #1539: the tray's event line rests on the roll online too ("Ember rolled 8!"), the same on every tab; the goods line stays the log's newest.
+    if (new Set(events.map((e) => e.text)).size !== 1 || new Set(events.map((e) => e.hud)).size !== 1 || events.some((e) => e.banner || !/ rolled (1[0-2]|[2-9])!$/.test(e.hud ?? ""))) throw new Error(`roll event differs or repeats: ${JSON.stringify(events)}`);
     const d = JSON.parse(vs[0].shared).dice;
     dice.push(d);
     const roller = await tabs[i].page.evaluate((id) => window.__emberisle.getState().state.players.find((p) => p.id === id)?.name, cur);
@@ -433,6 +434,18 @@ try {
       if (!faces.label.endsWith(`rolled ${x} and ${y}: ${sum}.`)) throw new Error(`${t.name} roll read-out "${faces.label}"`);
       const want = t === c ? "none" : "roll-in";
       if (faces.motion !== want) throw new Error(`${t.name} roll moment animation ${faces.motion}, want ${want}`);
+      // #1539: the roll rests on screen on every tab, online too: the tray's event line holds the sum (a sideways phone keeps the dice row).
+      const rest = await until(
+        () => t.page.evaluate(() => {
+          const row = document.querySelector('[data-testid="dice-row"]');
+          if (row) return { where: "dice-row", sum: [...row.querySelectorAll('[data-testid="die"]')].reduce((n, e) => n + Number(e.dataset.value), 0) };
+          const el = document.querySelector('[data-testid="log-roll-sum"]');
+          const box = el?.getBoundingClientRect();
+          return el && box.width > 0 && box.height > 0 ? { where: "log-roll-sum", sum: Number(el.textContent.trim()) } : null;
+        }),
+        `the roll at rest on ${t.name} after roll ${r + 1}`,
+      );
+      if (rest.sum !== sum) throw new Error(`${t.name} resting roll shows ${rest.sum} in ${rest.where}, want ${sum}`);
     }
     diceMatch++;
 

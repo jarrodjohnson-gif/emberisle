@@ -717,7 +717,7 @@ try {
     await ds.page.waitForFunction(() => document.querySelector('[data-testid="resource-wool"]')?.textContent.includes("2"), null, { timeout: STEP_MS });
     await ds.page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"], [data-testid="goods-lit"], [data-testid="goods-lost"]'), null, { timeout: STEP_MS });
     const rest = await box();
-    // #1539: the desk tray is 520 px wide, so the card is 92.8x62 in a 70 px tray.
+    // #1539: the desk tray is one row with 64 px hand columns, so the card is 64x62 in a 70 px tray.
     for (const c of rest) assert.deepEqual([c.w, c.h, c.tray], [c.r === "timber" ? 64 : 63, 62, 70], `deskshort ${c.r}: card is the tray's 64x62 column (63 after a divider) in a 70 px tray (${JSON.stringify(c)})`);
     const during = [];
     for (const hand of [{ timber: 5 }, { wool: 1 }]) {

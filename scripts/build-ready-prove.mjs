@@ -10,7 +10,8 @@
 //   aria-description names the full shortfall;
 // - on a phone (390x844, 360x640, 844x390) each row (and on desktop too) is at least 44 px square, and the bottom stack's content height is
 //   at most main's (MAIN_STACK, measured on e61d665 with the same hand) plus 2 px, so the island's hole is no smaller;
-// - a build that just became ready pulses the Build button once (class build-ready); under reduced motion the pulse has no
+// - a build that just became ready pulses the Build button once (class build-ready); one with no spot or none left never
+//   does, however the hand changes; under reduced motion the pulse has no
 //   animation;
 // - #535: a press on a row short of goods arms nothing and sends no move; its "You need …" reason is on screen before the
 //   press and stays, inside the list, with the list open; the row stays aria-disabled and focusable, and with the goods it
@@ -310,6 +311,20 @@ try {
       assert.deepEqual(rich.classes, ["open"], `${tag}: the ready builds pulse the Build button`);
       // The pulse clears on its own (reduced motion has no animationend to clear it).
       await page.waitForFunction(() => !document.querySelector('[data-testid="build-open"]').classList.contains("build-ready"));
+      // A build with no spot never pulses, however the hand changes: with a path already payable, the goods for an Outpost
+      // arrive, the Outpost reads blocked, and the Build button gets no pulse for 800 ms.
+      await craft({ hand: { ...NONE, timber: 1, clay: 1 }, pathsLeft: 5, deckLeft: 5 });
+      await page.waitForFunction(() => document.querySelector('[data-testid="build-path"]').dataset.build === "ready");
+      await page.waitForFunction(() => !document.querySelector('[data-testid="build-open"]').classList.contains("build-ready"));
+      await page.evaluate(() => {
+        window.__noSpotPulse = false;
+        const b = document.querySelector('[data-testid="build-open"]');
+        new MutationObserver(() => { if (b.classList.contains("build-ready")) window.__noSpotPulse = true; }).observe(b, { attributes: true, attributeFilter: ["class"] });
+      });
+      await craft({ hand: { ...NONE, timber: 1, clay: 1, wool: 1, grain: 1 }, pathsLeft: 5, deckLeft: 5 });
+      await page.waitForFunction(() => document.querySelector('[data-testid="build-outpost"]').dataset.build === "blocked");
+      await page.waitForTimeout(800);
+      assert.equal(await page.evaluate(() => window.__noSpotPulse), false, `${tag}: an Outpost that becomes affordable with no free spot does not pulse the Build button`);
 
       // #535 (A-1): a tap on a build the hand cannot pay for hangs "Need ..." above it for 1.6 s, worded from COST and the hand.
       // It is up within 300 ms of the pointer going down, gone by 2 s, and arms nothing and sends nothing; the button stays
