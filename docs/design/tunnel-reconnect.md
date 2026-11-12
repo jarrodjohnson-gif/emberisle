@@ -55,13 +55,13 @@ node scripts/named-tunnel.mjs --run
 1. Play two complete turns on the mobile phone.
 2. Lock the phone screen during the third turn.
 3. Keep the phone screen locked for 60 seconds.
-4. Observe the host console output.
-5. Verify the host prints: `"<PhonePlayer> lost connection."`.
+4. Observe the game log on the table.
+5. Verify the game log shows: `"<PhonePlayer> lost connection."`.
 6. Verify the seat rail marks the phone player as away.
 7. Unlock the phone screen after 60 seconds.
 8. Open the active browser tab.
 9. Observe the phone reconnect automatically using its saved seat secret.
-10. Verify the host prints: `"<PhonePlayer> is back."`.
+10. Verify the game log shows: `"<PhonePlayer> is back."`.
 11. Confirm the phone player remains human without a `(bot)` suffix.
 12. Take the next legal action on the phone to confirm synchronization.
 
@@ -71,10 +71,10 @@ node scripts/named-tunnel.mjs --run
 2. Roll the dice on the laptop.
 3. Switch the laptop to the secondary Wi-Fi network immediately after rolling.
 4. Observe the brief `Reconnecting...` status message on the laptop screen.
-5. Verify the host prints: `"<LaptopPlayer> lost connection."`.
+5. Verify the game log shows: `"<LaptopPlayer> lost connection."`.
 6. Allow the operating system to establish the new Wi-Fi connection.
 7. Confirm the laptop browser reconnects automatically once the network restores.
-8. Verify the host prints: `"<LaptopPlayer> is back."`.
+8. Verify the game log shows: `"<LaptopPlayer> is back."`.
 9. Verify the board remains mounted and turn actions remain available.
 10. Complete the turn actions on the laptop and end the turn.
 
@@ -85,11 +85,11 @@ node scripts/named-tunnel.mjs --run
 3. Check the player names on the final score summary.
 4. Confirm both the phone and laptop players occupy their original seats.
 5. Confirm neither player name carries a `(bot)` suffix.
-6. Post the device models and host log lines to issue #197.
+6. Post the device models and game log lines to issue #197.
 
-## Expected Host Log Signatures
+## Expected Game Log Signatures
 
-The host console must log these exact status transitions:
+The game log on the table displays these exact status transitions:
 
 - Phone disconnect: `"<PhonePlayer> lost connection."`
 - Phone reconnect: `"<PhonePlayer> is back."`
