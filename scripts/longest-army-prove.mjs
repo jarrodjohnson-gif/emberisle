@@ -1,13 +1,13 @@
 // #645: every seat shows two public tallies, "🛤 n" (its longest continuous path) and "⚔ n" (wayfarers it has played), and the
 // seat that holds Longest Path (5+) or Largest Army (3+) wears a gold badge on that tally with an accessible name ("Longest
-// path, 7"). At 440x956 and 956x440 (the phone seat strip) and 1280x720 (the desktop rail), on states the real rules produce
+// path, 7"). On the desktop rail at 1024x768, 1440x900, 1280x720 and 1280x800 (#1509: the phone strip has none), on states the real rules produce
 // (rules.ts applyAction, loaded through vite, then pushed into the page, as the other proofs do):
 // - path lengths 4, 5 and 7 across seats: the badge sits on the seat with 7, and on nobody while the top is 4;
 // - an army of 3 against 2: the badge sits on the seat with 3;
 // - a tie for path length (5 and 5) or army (3 and 3) leaves the badge on the current holder, and the badge moves, with a
 //   short pulse (none under reduced motion), only when a seat passes the holder;
 // - every count reads what the rules hold (roadLength, knightsPlayed), the log carries the rules' own "holds" lines, and the
-//   seat cards keep one size whatever they hold (<= 44 px tall, the same box with and without a badge), with each tally inside
+//   seat cards keep one size whatever they hold (44 to 52 px tall, the same box with and without a badge), with each tally inside
 //   its card and clear of the points.
 // Zero console errors. Saves test-results/longest-army-<size>.png. Run: node scripts/longest-army-prove.mjs
 import assert from "node:assert/strict";
@@ -17,10 +17,12 @@ import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8453;
 const VIEWS = [
-  { tag: "440x956", width: 440, height: 956 },
-  { tag: "956x440", width: 956, height: 440 },
+  // #1509: the phone strip has no tallies (option A, owner card q1508-table-goal); the seat sheet carries them there
+  // (upright-table-prove). The tallies are drawn on the desktop rail, so the rail is read at four widths.
+  { tag: "1024x768", width: 1024, height: 768, mouse: true },
+  { tag: "1440x900", width: 1440, height: 900, mouse: true },
   { tag: "1280x720", width: 1280, height: 720, mouse: true }, // the desktop rail, with goods and fortunes beside the tallies
-  { tag: "390x844", width: 390, height: 844 },
+  { tag: "1280x800", width: 1280, height: 800, mouse: true },
 ];
 
 mkdirSync("test-results", { recursive: true });
@@ -221,7 +223,8 @@ try {
           if (!t.badge) assert.equal(a, 0, `${tag}: ${kind} has no fill without the badge`);
         }
         assert.ok(s.path.box.r <= s.army.box.l + 0.5, `${tag}: the tallies do not overlap`);
-        assert.ok(s.card.h <= 44, `${tag}: card is ${s.card.h} px tall`);
+        // #1544: a rail seat is two lines, its row at least 44 px and at most 52 px tall.
+        assert.ok(s.card.h >= 44 && s.card.h <= 52, `${tag}: card is ${s.card.h} px tall`);
         // Fixed size: the card is the same box whatever it holds.
         const key = `${sel}-${s.id}`;
         const was = sizes.get(key);

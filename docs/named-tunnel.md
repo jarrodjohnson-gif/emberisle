@@ -59,12 +59,14 @@ In a second terminal, from the same checkout:
 node scripts/named-tunnel.mjs --run
 ```
 
-The launcher reads the saved settings and starts the same named tunnel through `cloudflared`.
+The launcher reads saved settings and starts the named tunnel through `cloudflared`.
 No rotating quick-tunnel URL is created in named mode.
 Open the permanent HTTPS link yourself before hosting a table.
-Tap the table code in the lobby to copy the join link; its room code changes with the table, while the website hostname stays fixed.
-Friends can bookmark the website and enter the current table code.
-They must open the permanent link, rather than an old quick-tunnel link or a localhost invitation.
+Tap the table code in the lobby to copy the join link.
+The room code changes each game, while the hostname stays fixed.
+Friends open the copied link, pick a name and colour, and press Join table.
+Friends can also bookmark the website and enter the 4-character code on the title card.
+They must open the permanent link, rather than an old quick-tunnel link or localhost invitation.
 
 To inspect startup instructions without starting a host:
 

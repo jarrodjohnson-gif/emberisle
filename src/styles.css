@@ -199,14 +199,12 @@ body {
      While the keyboard is up or an offer or steal prompt is showing, the band is 0 (Chat.tsx), so the input and the choice fit. */
   --chat-sheet-height: min(420px, calc(100dvh - max(12px, env(safe-area-inset-top)) - 68px - var(--chat-bubble-band, 40px) - var(--active-offer-height, 0px) - var(--active-prompt-height, 0px) - var(--keyboard-inset, 0px)));
 }
-.seat-card { background: var(--table); color: var(--table-ink); box-shadow: inset 0 0 0 1px var(--table-line); }
-.seat-card [class*='text-zinc-700'] { color: var(--table-muted); }
-.seat-card.seat-turn { background: var(--paper); color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent), inset 0 0 0 1px var(--table-line); }
-.seat-card.seat-turn [class*='text-zinc-700'] { color: var(--muted); }
-.seat-card button:hover { background: var(--table-raised); color: var(--table-ink); }
-.seat-card.seat-turn button:hover { background: var(--ground); color: var(--ink); }
-.seat-turn .seat-dot { animation: none; outline: 2px solid var(--ink); outline-offset: 2px; }
-.seat-card [data-testid='seat-vp'] { font-weight: 750; }
+/* #1544: seats sit on the sea with no box; the seat on turn is the one white pill. The quiet ink holds 4.5:1 on the sea's
+   lightest tone (#c4e3df) and on the pill. */
+.seat-card { color: #1f3331; }
+.seat-card [class*='text-zinc-700'] { color: #334744; }
+.seat-card.seat-turn { background: #fbfdfc; box-shadow: 0 2px 10px rgb(14 60 66 / 0.18); }
+@media (hover: hover) { .seat-card:not(.seat-turn) button:hover { background: rgb(251 253 252 / 0.45); } }
 .hud-header > div > div > button[aria-label='Table menu'] { background: var(--table); color: var(--table-ink); border: 1px solid var(--table-line); }
 .hud-stack { scrollbar-width: thin; scrollbar-color: var(--table-line) var(--table); }
 .turn-instruction, .table-log { background: var(--table); color: var(--table-muted); }
@@ -218,6 +216,18 @@ body {
 .turn-instruction-move::before { background: #fff; }
 .goods-tray { background: transparent; }
 .hud-actions { display: flex; align-items: center; gap: 4px; padding: 4px; background: var(--table); border-radius: var(--radius-control); }
+/* #1509 (option A, owner card q1508-table-goal): the upright phone table. 16 px gutters (q1274-11); the turn line is plain
+   centred ink with no box (another seat's colour is a dot before it; the mover's dark line, #1112, stays); the hand and the
+   build row have no tray round them. Hud.tsx puts the class on the header, the bottom stack and the chat button's row. */
+.upright-table { padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
+.hud-utilities.upright-table { padding: 0; right: max(1rem, env(safe-area-inset-right)); }
+.upright-table .turn-instruction { border-left-width: 0; padding-left: 0; padding-right: 0; text-align: center; }
+.upright-table .turn-instruction:not(.turn-instruction-move) { background: transparent; color: var(--ink); }
+.upright-table .turn-instruction-move { padding-left: 12px; padding-right: 12px; }
+.upright-table .turn-instruction.border-l-4::before { content: ''; display: inline-block; width: 8px; height: 8px; background: var(--seat); box-shadow: 0 0 0 1px var(--ink); border-radius: 50%; margin-right: 8px; vertical-align: 1px; }
+.upright-table .hud-actions { background: transparent; padding: 0; }
+.upright-table .hud-stack [data-testid="dice-row"] { background: transparent; }
+.upright-table .goods-tray { padding-left: 0; padding-right: 0; }
 /* #1418: a tile is never narrower than its own caption; while there is room all four stay equal. */
 .build-grid { display: grid; grid-template-columns: repeat(4, minmax(min-content, 1fr)); gap: 4px; flex: 1; min-width: 0; }
 .build-tile { width: 100%; background: var(--table-raised); color: var(--table-ink); border-color: var(--table-line); }
@@ -230,6 +240,51 @@ body {
 .build-tile[data-build-state='ready']:not([aria-pressed='true']) { background: #e6f4e4; color: var(--ink); border-color: #2f8f5b; box-shadow: inset 0 0 0 1px #2f8f5b; }
 .build-tile[data-build-state='missing'] { color: var(--table-muted); }
 .build-ready-mark { background: #25784a; color: #fff; }
+/* #1539 one tray (docs/design/one-tray): the Build list is a sheet that rises from the tray; only its rows and pills are boxes */
+.build-wash { background: rgba(20, 50, 54, 0.28); }
+.tray-sheet { gap: 8px; padding: 14px 16px max(18px, env(safe-area-inset-bottom)); border-radius: 22px 22px 0 0; background: #fbfdfc; color: #1f3331; box-shadow: 0 -8px 28px rgba(14, 60, 66, 0.22); }
+.build-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; width: 100%; min-height: 56px; padding: 6px 0; border-top: 1px solid #e3eae7; text-align: left; }
+.build-row[aria-disabled='true'] { cursor: not-allowed; }
+.build-row[aria-disabled='true'] b { color: var(--color-muted); }
+.build-pill { padding: 6px 12px; border-radius: 999px; background: #1f3d3b; color: #fff; font-size: 13px; line-height: 20px; font-weight: 600; white-space: nowrap; }
+.hud-actions > .action-utilities { flex: 1; }
+.hud-tray { gap: 10px; padding: 12px 14px 14px; border-radius: 22px; background: #fbfdfc; box-shadow: 0 -8px 28px rgba(14, 60, 66, 0.22); }
+.hud-tray .hud-actions { background: transparent; padding: 0; }
+.hud-tray .action-utilities { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
+/* four buttons (a fortune is held) share the row by their words, not in equal columns, so none wraps on a 375 px phone */
+.hud-tray .action-utilities[data-fortunes] { display: flex; flex-wrap: nowrap; }
+.hud-tray .action-utilities[data-fortunes] > * { flex: 1 1 auto; }
+.hud-tray .action-utilities[data-fortunes] button { padding-left: 6px; padding-right: 6px; white-space: nowrap; }
+.hud-tray .action-utilities[data-fortunes] button > svg { display: none; }
+.hud-tray .action-utilities > .tray-end { display: block; margin: 0; }
+.hud-tray .action-utilities button, .hud-tray .hud-actions > button { width: 100%; height: 48px; border: 0; border-radius: 12px; background: #e9f0ee; color: #1f3331; }
+.hud-tray .action-utilities button.bg-fg { background: #1f3d3b; color: #fff; }
+.hud-tray .turn-instruction { flex: 0 0 auto; max-width: 100%; }
+.hud-tray .tray-event { flex: 0 1 auto; }
+.tray-event { color: #52625f; text-align: right; }
+/* the sideways phone column is 260 px wide: the status and the newest event stack */
+.hud-col { gap: 8px; padding: 10px; border-radius: 16px; box-shadow: 0 4px 20px rgba(14, 60, 66, 0.18); }
+.hud-col > .tray-top { flex-direction: column; align-items: stretch; gap: 2px; }
+.hud-col > .tray-top > .tray-event { text-align: left; }
+.hud-col .end-footer { gap: 8px; padding: 0; background: #fbfdfc !important; }
+.hud-stack.hud-col > .end-footer > button { height: 48px; border: 0; border-radius: 12px; background: #1f3d3b; color: #fff; }
+/* an empty row (the turn clock with no clock running) takes no gap */
+.hud-tray > div:empty:not(.tray-numbers) { display: none; }
+.hud-tray .turn-instruction { padding-top: 0; padding-bottom: 0; }
+@media (min-width: 768px) and (pointer: fine) {
+  /* a desktop has the width for one row: the hand on the left, the action row beside it */
+  .hud-tray { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px 14px; padding: 10px 14px 12px; }
+  .hud-tray > * { grid-column: 1 / -1; }
+  .hud-tray > [data-testid="hand-dock"] { grid-column: 1; }
+  .hud-tray > [data-testid="hand-dock"] + .hud-actions, .hud-tray > [data-testid="hand-dock"] + .hud-roll { grid-column: 2; }
+  .hud-tray .hand-resource-card-slot { flex: 0 0 64px; }
+  .hud-tray .goods-card { height: 62px; }
+  .hud-tray .goods-card, .hud-tray .goods-lit { padding-top: 2px; }
+  .hud-tray .goods-icon { width: 20px; height: 20px; }
+  .hud-tray .goods-count { font-size: 26px; line-height: 26px; }
+}
+.hud-tray .turn-instruction:not(.turn-instruction-move) { background: transparent; padding-left: 0; padding-right: 0; text-align: left; }
+@media (min-width: 768px) and (pointer: fine) { .tray-sheet { margin-bottom: 16px; border-radius: 22px; } }
 .action-utilities button, .hud-stack > .sticky button { background: var(--table-raised); color: var(--table-ink); border: 1px solid var(--table-line); }
 .action-utilities button.bg-fg { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .action-utilities .sticky, .action-utilities > div { background: transparent; }
@@ -408,3 +463,15 @@ input, select, textarea { border-color: var(--control-line); }
 .help-wash { --gutter: 16px; background: color-mix(in srgb, var(--ground) 70%, transparent); padding: max(var(--gutter), env(safe-area-inset-top)) max(var(--gutter), env(safe-area-inset-right)) max(var(--gutter), env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left)); }
 @media (min-width: 1024px) { .help-wash { --gutter: 24px; } }
 .help-scroll { scrollbar-width: thin; scrollbar-color: var(--control-line) transparent; }
+.hud-col .goods-tray { padding-left: 0; padding-right: 0; }
+.hud-tray .action-utilities[data-fortunes] > .tray-end { display: contents; }
+.hud-tray .action-utilities[data-fortunes] button { flex: 1 1 auto; width: auto; }
+/* before the roll a held fortune shares the row with Roll, which is twice as wide */
+.hud-tray .hud-roll > div { flex-wrap: nowrap; }
+.hud-tray .hud-roll [data-testid='fortunes-button'] { flex: 1 1 0; height: 48px; border: 0; border-radius: 12px; background: #e9f0ee; color: #1f3331; }
+.hud-tray .hud-roll [data-after-fortune] { flex: 2 1 0; }
+.hud-tray .hud-place > button { width: auto; }
+.hud-tray .hud-place > [data-testid='place-chip'] { background: #1f3d3b; color: #fff; }
+/* the newest event always keeps room in the top line; the numbers strip gives way and scrolls */
+.hud-tray .tray-top > .my-numbers { flex-shrink: 1; }
+.hud-tray .tray-top > .tray-event:not(:empty) { min-width: 9rem; }

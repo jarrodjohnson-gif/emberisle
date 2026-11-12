@@ -214,6 +214,10 @@ try {
     Stronghold: "Pick a home to upgrade · Esc cancels",
   };
   const arm = async (name, heading) => {
+    // #1539: the builds are rows in the Build list, opened from the tray's Build button.
+    await page.getByTestId("build-open").focus({ timeout: STEP_MS });
+    await page.keyboard.press("Enter");
+    await page.getByTestId("build-list").waitFor({ timeout: STEP_MS });
     await page.getByRole("button", { name, exact: true }).focus({ timeout: STEP_MS });
     await page.keyboard.press("Enter");
     const g = page.getByRole("group", { name: heading });
@@ -226,7 +230,7 @@ try {
   await arm("Path", "Lay a path");
   await page.keyboard.press("Escape");
   await page.getByRole("group", { name: "Lay a path" }).waitFor({ state: "detached", timeout: STEP_MS });
-  console.log(`Escape: banner "${await bannerIs("Build, trade, or end your turn")}"`);
+  console.log(`Escape: banner "${await bannerIs("Your turn")}"`);
   // #558: a tap on a spot the armed build cannot use says which rule it broke, on the HUD's error line, and changes nothing.
   // The ids are picked from the state the table holds: a corner next to our outpost, one of an opponent's, a built edge, and an
   // edge that joins nothing of ours.
