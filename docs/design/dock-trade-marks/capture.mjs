@@ -27,7 +27,7 @@ const SIZES = [
 ];
 const LITE = process.env.LITE === "1";
 try {
-  for (const [w, h, touch] of SIZES) {
+  for (const [w, h, touch] of SIZES.filter(([w, h]) => !process.env.ONLY || process.env.ONLY === `${w}x${h}`)) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1, hasTouch: touch, isMobile: touch, reducedMotion: "reduce" });
     await ctx.addInitScript(([option, lite]) => {
       localStorage.setItem("emberisle-jelly", lite ? "lite" : "full");
@@ -85,7 +85,20 @@ try {
           i.tags();
         }
       }, [make.toString(), home]);
-      await page.waitForTimeout(900);
+      // A new pose can rebuild the land (plain piers back) until the shore swaps in again: wait for it every time.
+      await page.waitForFunction(
+        (lite) => {
+          const i = window.__isle;
+          const swapped = lite || (i.shore?.group.parent && i.piers.every((p) => !p.visible));
+          return swapped && !i.refitDue && !i.glide;
+        },
+        LITE,
+        { timeout: 120_000 },
+      );
+      await page.waitForTimeout(1500);
+      const ok = await page.evaluate((lite) => lite || window.__isle.piers.every((p) => !p.visible), LITE);
+      if (process.env.DEBUG) console.log("DEBUG", name, JSON.stringify(await page.evaluate(() => { const i = window.__isle; let h = null; i.shore.group.traverse((o) => { if (o.name === "harbors") h = o.visible; }); let vis = true; for (let o = i.shore.group; o; o = o.parent) vis &&= o.visible; return { piersHidden: i.piers.filter((p) => !p.visible).length, piers: i.piers.length, harbors: h, shoreChainVisible: vis, inScene: !!i.shore.group.parent }; })));
+      if (!ok) throw new Error(`${label} ${tag} ${name}: the shore is not in`);
       const file = path.join(outDir, `${label}-${tag}-${name}.jpg`);
       await page.screenshot({ path: file, type: "jpeg", quality: 86 });
       console.log("saved", path.basename(file));
