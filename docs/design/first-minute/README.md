@@ -74,8 +74,22 @@ On a sideways phone the buttons are the right column. Back, your seat and Game o
 |---|---|
 | Join link (`?code=K7QP`) | Its own tray, as today: wordmark, name field, colours, "Join table K7QP" as the primary, and a quiet "Host a table". |
 | Watch link (`?watch=K7QP`) | The Play page, with Watch as the primary and Play with bots as a soft button. |
-| Back from a table | The Play page. The front page shows once per visit, and again after Back. |
+| Start on the loading screen | The Play page. A first game is two taps: Start, then Play with bots. |
+| A load that skips the loading screen | The front page. |
+| Back from a table | The Play page. |
 | Short code | "Enter the 4-letter code." under the buttons, as today. |
+
+### When the front page shows
+
+The owner chose that Start lands on the Play page, and that the front page still shows on later visits and after Back.
+In code, "later visit" means any time the title opens without the Start press:
+
+- Start on the loading screen opens the Play page. Every full page load at the title has the loading screen, so every new visit lands there.
+- A title that opens with no loading screen shows the front page. Today that is a failed loading-screen download, and the proofs that ask for it.
+- Back on the Play page shows the front page. It stays until Play is pressed.
+- Leaving a table opens the Play page.
+
+Nothing is stored. A reload starts again at the loading screen.
 
 ### Words that changed
 
@@ -98,7 +112,7 @@ On a sideways phone the buttons are the right column. Back, your seat and Game o
 
 - Every action: the same store calls, the same prefetch on hover, the same lazy chunks.
 - The seat settings, the Profile sheet, the open or private switch and the open tables list.
-- The loading screen (#1281). It still ends on the title, now the front page.
+- The loading screen (#1281). It still ends on the title, now on its Play page.
 - The title camera. The island still turns slowly behind the tray.
 
 ### How proofs open the title
@@ -107,7 +121,7 @@ On a sideways phone the buttons are the right column. Back, your seat and Game o
 - With the value `true`, the title also opens on its Play page. Every choice is one press away, as before.
 - `chromium.launch({ front: true })` sets the value `"front"`. The loading screen is skipped and the front page shows.
 - `first-minute-prove` uses `front: true`. It proves the front page, the Play press, Back, and two taps to a bot game.
-- `loading-screen-prove` sets nothing. It goes through the loading screen, the front page and the Play page.
+- `loading-screen-prove` sets nothing. It presses Start, checks the Play page shows, presses Back for the front page, then plays.
 
 ### Proof
 
@@ -146,8 +160,14 @@ On an upright phone the title camera shows about five hexes. The island is the h
 - Pull the title and lobby camera back until the island fits above the tray, as the table's fit does.
 - This changes `isle-renderer.ts` and the camera proofs. It is its own PR.
 
-## Questions for the owner
+## Owner answers
 
-1. A new visit is three taps to a bot game: Start (loading screen), Play, Play with bots. Should Start open the Play page directly?
-2. "Pass and play" replaces "Four seats, one table". Say if you want other words.
-3. The Wayfarer choices still say Practice, Online and Hotseat inside Game options. Slice 2 can rename them, or move them into the game itself.
+The owner answered three cards for #1151 on the Decisions page on 2026-11-12. He chose A on each.
+
+| Question | Answer | Where it is built |
+|---|---|---|
+| Should Start open the Play page directly? | Yes. A new visitor is two taps from a game: Start, then Play with bots. The front page still shows on later visits and after Back. | "When the front page shows", above. |
+| What is the one-device button called? | Pass and play. | The Play page. |
+| Where do the Wayfarer on or off choices go? | They stay under Game options on the Play page. | The Play page. |
+
+No question is open for slice 1.

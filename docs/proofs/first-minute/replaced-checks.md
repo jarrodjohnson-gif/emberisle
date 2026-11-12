@@ -27,4 +27,4 @@ Lines that are not checks also changed. They are presses and waits, with the but
 - "Four seats, one table" became "Pass and play" in 31 proof files.
 - `scripts/chrome-prove.mjs:72` and `scripts/contrast-prove.mjs:64` read the 12 px caption from "Code for private tables". They read it from "3 bots, no network" before.
 - `scripts/chrome-prove.mjs:55` reads the white surface from the tray itself at every size. On desktop it read an inner panel that no longer exists.
-- `scripts/loading-screen-prove.mjs:213` presses Play, then Play with bots. It is the one proof that walks the real path from the loading screen.
+- `scripts/loading-screen-prove.mjs:211-217` walks the real path from the loading screen. Start lands on the Play page (a new check). It presses Back to read the front page's 56 px wordmark (the old check, unchanged), then Play, then Play with bots.

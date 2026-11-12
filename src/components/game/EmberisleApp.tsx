@@ -115,7 +115,8 @@ function Restoring() {
 }
 
 const PEEK_CODE = JOIN_CODE;
-// The front page shows until Play is pressed. Back shows it again. A return from a table opens on the Play page.
+// The loading screen's Start lands on the Play page (owner, 2026-11-12). The front page shows on a load that skips the loading
+// screen, and after Back. A return from a table opens on the Play page.
 let pastFront = false;
 // A join link is read on the first Title of a page load only: later visits to the title (goTitle) start empty.
 let linkRead = false;
@@ -186,7 +187,7 @@ function Title({ arrive }: { arrive: boolean }) {
   const [shortCode, setShortCode] = useState(false);
   const [openMode, setOpenMode] = useState(false);
   // docs/design/first-minute: the front page is the wordmark and Play. Play opens the choices in the same tray.
-  const [open, setOpen] = useState(() => pastFront || (window as { __emberisleSkipIntro?: unknown }).__emberisleSkipIntro === true);
+  const [open, setOpen] = useState(() => (pastFront ||= arrive) || (window as { __emberisleSkipIntro?: unknown }).__emberisleSkipIntro === true);
   // #766: the Profile sheet is open while this holds the button that opened it, where focus returns on close.
   const [profileOpener, setProfileOpener] = useState<HTMLElement | null>(null);
   const watchTable = useGame.getState().watchTable;

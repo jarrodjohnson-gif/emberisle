@@ -208,6 +208,10 @@ try {
     check(arrive >= 1500 && arrive <= 5000, `${tag}: Start pushes through the clouds and the title card arrives near the end of the 2.4 s push`, { ms: arrive });
     await page.getByTestId("loading-card").waitFor({ state: "detached", timeout: 6000 });
     check((await page.locator(".loading-sky").count()) === 0, `${tag}: the clouds and the loading card are gone once the camera settles`);
+    // docs/design/first-minute: Start lands on the Play page, two taps from a bot game. Back shows the front page and its wordmark.
+    const landed = [await page.getByRole("button", { name: "Play with bots", exact: true }).count(), await page.getByTestId("front-play").count()];
+    check(landed[0] === 1 && landed[1] === 0, `${tag}: Start lands on the Play page, not the front page`, landed);
+    await page.getByRole("button", { name: "Back", exact: true }).click();
     const wordmark = await page.getByTestId("title-card").locator("h1").evaluate((el) => getComputedStyle(el).fontSize);
     check(wordmark === "56px", `${tag}: the title wordmark is 56 px`, wordmark);
     await page.getByRole("button", { name: "Play", exact: true }).click();
