@@ -3,6 +3,7 @@
 Refs [#779](https://github.com/jarrodjohnson-gif/emberisle/issues/779). Design stage only.
 Nothing here deploys, creates an account, or changes `src/` or `server/`.
 Written 2026-10-31 by Claude Opus 5.5 (desk subagent builder).
+Corrected 2026-11-12 by Claude Fable 5.2: the Oracle VM can drop a game, so the recommendation changed.
 
 ## Owner request
 
@@ -191,43 +192,64 @@ The only deployment environment in use is `github-pages`.
 
 ### Summary
 
-| Option | Free forever | Card | Always on | Unchanged host | Bill risk |
-|---|---|---|---|---|---|
-| A. Oracle A1 VM | Yes | Most users | Yes, but idle reclaim likely | Yes | Low unless upgraded |
-| B. Google e2-micro | Yes | Billing account | Yes | Yes; 1 GB traffic cap | Real |
-| C. Render, Koyeb, Fly.io | Render, Koyeb yes; Fly.io trial | Varies | No: they sleep | No: no disk, proxy | Low |
-| D. Cloudflare DO | Yes | Not verified | Yes, within quota | No: full port | None |
-| E. Mac + named tunnel | Yes | No | While the Mac runs | Yes | None |
+| Option | Free forever | Card | Always on | Can the provider stop a game mid-play? | Unchanged host | Bill risk |
+|---|---|---|---|---|---|---|
+| A. Oracle A1 VM | Yes | Most users | Yes, but idle reclaim likely | Yes: reclaim can come at any time | Yes | Low unless upgraded |
+| B. Google e2-micro | Yes | Billing account | Yes | Not checked | Yes; 1 GB traffic cap | Real |
+| C. Render, Koyeb, Fly.io | Render, Koyeb yes; Fly.io trial | Varies | No: they sleep | Yes: they sleep | No: no disk, proxy | Low |
+| D. Cloudflare DO | Yes | Not verified | Yes, within quota | Not checked | No: full port | None |
+| E. Mac + named tunnel | Yes | No | While the Mac runs | No: there is no provider | Yes | None |
 
 ## 3. Recommendation
 
-Move the unchanged host to one Oracle Always Free A1 VM.
-Run `cloudflared` on that VM with a named tunnel to the public link.
-Keep the account Always Free, never Pay As You Go, so it cannot bill.
-Expect Oracle to treat the VM as idle; it may be reclaimed.
-Plan B is nightly backups plus the Mac, switched over by hand on the same public link.
-Leave #789–795 parked unless Oracle fails.
+Host game nights on Jarrod's Mac with the named tunnel.
+Treat the Oracle VM as an optional extra that keeps the link up between game nights.
+Never treat the Oracle VM as a zero-drop host.
+Leave #789–795 parked.
 
 Reasons:
 
-- It is the only verified free, always-on option that runs the host unchanged.
-- The tunnel keeps the loopback rules, so profiles and per-address limits work as tested.
-- The tunnel is outbound only, so the VM opens no inbound port.
-- Measured memory is a small part of the free allowance.
-- Its weak point is idle reclaim. Plan B covers it at no cost.
+- The owner's rule is zero drops during a game. Only the Mac with the named tunnel can meet it.
+- The Mac has no provider that can take the machine away.
+- The Mac needs no card, no cloud account and no data on someone else's machine.
+- The named tunnel gives one stable public link. It keeps the loopback rules, so profiles work as tested.
+- The Oracle VM is free and stays on while the Mac sleeps. That is all it adds.
+- Oracle may reclaim the VM at any time. That can end a game mid-play.
 
 ### Meeting the "no drops during a game" requirement
 
 The owner requires zero drops while a game is being played.
-This shapes the hosting choices and operational design:
 
-1. **No mid-game idle reclaim.** Oracle's idle reclaim evaluates a 7-day trailing average. It never terminates a VM mid-game while active play occurs.
-2. **Process stability.** The host runs under systemd with `Restart=always`. It flushes room states on `SIGTERM`.
-3. **No proxy timeouts.** The Cloudflare named tunnel runs on loopback beside the host. It preserves WebSocket ping intervals without external proxy cutoffs.
-4. **The Mac question.** Because 24/7 uptime is not required, Jarrod's Mac with the named tunnel completely satisfies the requirement. The Mac has zero cloud idle-reclaim risk. It gives zero drops during scheduled game sessions.
-5. **Combined model.** The Oracle VM provides casual on-demand access between sessions. The Mac with the named tunnel serves as the zero-drop anchor for scheduled game nights.
+1. **The Oracle VM cannot promise this.**
+   Oracle reclaims a VM that looks idle over seven days: CPU, network and memory each under 20%.
+   That test is a seven-day figure. It does not check whether a game is on.
+   A game does not lift the figure. The measured host used 2.57% of a core and 143 MB at its busiest.
+   So Oracle may reclaim the VM at any time, including mid-game.
+   Oracle does not say when.
+2. **What a reclaim does to a game.**
+   Every player drops at once.
+   The host saves each room to disk within 250 ms of a change, so the saved game is current.
+   The page retries for 10 minutes, then gives up.
+   If the VM can be started again, players open the link and rejoin their seats.
+   If the VM is gone, Jarrod restores last night's backup on the Mac. The game in progress is lost.
+   Whether Oracle stops a reclaimed VM or deletes it is not verified.
+3. **The Mac with the named tunnel can promise it.**
+   No provider can take the Mac away, so nothing outside the house ends the game.
+   A drop can then come only from the Mac itself: sleep, a restart, a power cut or home internet loss.
+   On game night, keep the Mac plugged in and awake, and skip macOS updates.
+4. **Today's `play` command does not meet the rule yet.**
+   It opens a quick tunnel. Cloudflare says quick tunnels "have no uptime guarantee".
+   The named tunnel (#746, `docs/named-tunnel.md`) is built but not live.
+   It needs a domain on Cloudflare DNS (question 2). That is the one step left.
+5. **If the owner also wants the Oracle VM.**
+   Use it only between game nights, for casual play that may drop.
+   Before a game night, switch the public link to the Mac by hand, as the fallback guide below says.
+   Only one host and one tunnel connector may run at a time.
 
 ### Runbook
+
+This runbook is for the Oracle VM. Use it only if the owner picks option B at the end of this page.
+For the Mac alone, follow `docs/named-tunnel.md`; nothing here is needed.
 
 #### Jarrod does these himself
 
@@ -249,7 +271,7 @@ Never paste a password, key, token or tunnel credential into chat, an issue or t
 10. Run the `cloudflared tunnel route dns ...` line that the setup script prints.
 11. Turn on a boot volume backup policy in the Oracle console (it counts against the five free backups).
 12. Set an Oracle budget with an alert at $1 of actual spend. This is a tripwire, not a cap.
-13. For plan B, copy the tunnel credentials file to the Mac over SSH.
+13. For the fallback, copy the tunnel credentials file to the Mac over SSH.
     Keep it in `~/.cloudflared/` on the Mac. Never put it in the repo, chat or an issue.
 
 If A1 shows "out of host capacity", retry later or in another availability domain. Do not upgrade.
@@ -272,9 +294,9 @@ If A1 shows "out of host capacity", retry later or in another availability domai
    - Deleting the public hostname in the Cloudflare dashboard works from a phone.
    - Stopping the VM in the Oracle console stops everything.
 8. A restore guide. Run one host per profile store; never two (`docs/design/profiles.md`, #1029).
-9. A plan B guide for the manual switch, below.
+9. A fallback guide for the manual switch, below.
 
-#### Plan B: switch to the Mac by hand
+#### Fallback: switch to the Mac by hand
 
 Only one host and one tunnel connector may run at any time.
 Cloudflare sends each request to the "geographically closest replica" of a tunnel.
@@ -332,18 +354,19 @@ Those proofs run against stubs in CI. Only the live checks below need the VM.
   Oracle says idle VMs "may be reclaimed"; it does not say when.
   A smaller memory shape is the only honest lever (question 4). It may still not be enough.
   Do not create fake load to avoid reclaim (`docs/research/free-hosting.md`).
-- **Plan B:** nightly backups plus the Mac, switched by hand as above.
+- **A reclaim can come mid-game.** Every player drops. See "What a reclaim does to a game" above.
+  This is why game nights run on the Mac.
+- **Fallback:** nightly backups plus the Mac, switched by hand as above.
   The health timer shows when the VM is gone. The provision script rebuilds a new VM.
 - **Capacity:** a rebuilt VM may face "out of host capacity". The Mac covers that gap.
 - **Personal data:** profiles and pictures would live on the VM. That needs Jarrod's OK (question 3).
 
 ## 4. Questions for Jarrod
 
-1. **Which home: Oracle Always Free VM, or keep the Mac only?**
-   The owner clarified that 24/7 uptime is not needed, but zero drops during games are essential.
-   The Mac with a named tunnel gives zero drops during games with no cloud setup.
-   The Oracle VM stays online when the Mac is asleep, but faces potential 7-day idle reclaim.
-   Recommendation: use the Mac with the named tunnel for game sessions, or Oracle VM with Mac fallback.
+1. **Which home?** This is the one card at the end of this page.
+   Recommendation: the Mac with the named tunnel for game nights.
+   The Oracle VM is only an always-on extra, not a zero-drop guarantee.
+   Questions 3, 4 and 5 matter only if the Oracle VM is added.
 2. **Which domain for the public link?**
    Options: `play.hightidewash.net` after moving its Webflow records to Cloudflare, or a new domain.
    Recommendation: `hightidewash.net`, since it is free. A new domain costs money (price not checked).
@@ -357,7 +380,7 @@ Those proofs run against stubs in CI. Only the live checks below need the VM.
    CPU and network will stay under 20% either way, so even this may not prevent reclaim.
    Oracle's smallest A1 memory for 1 OCPU is not verified.
    Recommendation: the smallest A1 memory Oracle allows for 1 OCPU.
-   The game loses nothing at 143 MB, and it is the only lever against reclaim. Plan B still stands.
+   The game loses nothing at 143 MB, and it is the only lever against reclaim. The fallback still stands.
 5. **How should new code reach the VM?**
    Options: the VM pulls `main` nightly; on every merge; or only when you say so.
    Recommendation: nightly, like the Pages publish, so a bad merge rarely hits a live game night.
@@ -371,3 +394,22 @@ Those proofs run against stubs in CI. Only the live checks below need the VM.
 - Fly.io: [Free trial](https://docs.fly.io/about/free-trial).
 - Cloudflare: [DO pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/), [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), [Tunnel](https://developers.cloudflare.com/tunnel/), [Tunnel FAQ](https://developers.cloudflare.com/cloudflare-one/faq/cloudflare-tunnels-faq/), [Tunnel availability](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/configure-tunnels/tunnel-availability/), [Named tunnel guide](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/create-local-tunnel/), [cloudflared login source](https://github.com/cloudflare/cloudflared/blob/master/token/transfer.go), [Quick tunnels](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/trycloudflare/).
 - Repo: `server/host.mjs`, `server/profile-protocol.mjs`, `server/package.json`, `.github/workflows/pages.yml`, `docs/named-tunnel.md`, `docs/research/free-hosting.md`, #746, #779.
+
+## Owner decision needed
+
+One card.
+
+**Card: "Where should the game be hosted?"**
+
+TLDR: You said the game need not be on all week, but a game must never drop.
+Only your Mac can promise that. The free Oracle server can be switched off by Oracle at any time, even mid-game.
+
+- **A (recommended): your Mac, with one permanent link.** Nothing outside your house can end a game.
+  The Mac must be on and awake on game night. One step is left: move a domain to Cloudflare.
+- **B: your Mac for game nights, plus the free Oracle server between them.** The link also works while the Mac sleeps.
+  Games on the Oracle server may drop. It needs a card to sign up and about 1–2 hours of setup (an estimate).
+- **C: the free Oracle server only.** Always on, no Mac needed. Oracle can end a game mid-play. This breaks your rule.
+- **D: none of these.** Say what is missing and I will look again.
+
+If you pick A or B, one more question follows: which domain to use for the link (question 2).
+If you pick B, questions 3, 4 and 5 follow too.
