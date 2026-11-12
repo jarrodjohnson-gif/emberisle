@@ -101,7 +101,7 @@ try {
         assert.ok(l.inView, `${v.tag} ${phase}: ${l.id} is off screen ${JSON.stringify(l.box)}`);
         assert.equal(l.spill, 0, `${v.tag} ${phase}: ${l.id} has ${l.spill} text nodes outside its box`);
         // #420: a strip cell under 100 px shows the die without the points during the roll-off.
-        if (l.vpShown) assert.ok(v.seat === "rail" ? l.vpFont === 15 && Number(l.vpWeight) >= 700 : l.vpFont === 12 && /^\d+ pts/.test(l.vp), `${v.tag} ${phase}: ${l.id} points ${l.vpFont}px/${l.vpWeight} "${l.vp}"`);
+        if (l.vpShown) assert.ok(v.seat === "rail" ? l.vpFont === 15 && l.vpFont === l.maxFont && Number(l.vpWeight) >= 700 : l.vpFont === 12 && /^\d+ pts/.test(l.vp), `${v.tag} ${phase}: ${l.id} points ${l.vpFont}px/${l.vpWeight} "${l.vp}"`);
         else assert.ok(phase === "rollOff" && l.die === 1 && l.box.r - l.box.l < 100, `${v.tag} ${phase}: ${l.id} hides its points outside a narrow roll-off cell`);
         assert.doesNotMatch(l.text, /0 goods|0 fortunes|goods ·| vp\b/, `${v.tag} ${phase}: ${l.id} says "${l.text}"`);
       }
@@ -198,7 +198,7 @@ try {
     if (!counts) assert.ok(ls.every((l) => l.goods === null && l.fortunes === null), `${v.tag} main: the strip leaves the counts to the seat sheet`);
     assert.equal(by(mid.c).fortunes, null, `${v.tag} main: seat c has no fortune and shows no fortunes count`);
     assert.match(by(mid.me).vp, counts ? /^\d+ points, plus 2 hidden\+2$/ : /^\d+ pts points, plus 2 hidden$/, `${v.tag} main: your seat shows your hidden points, got ${JSON.stringify(by(mid.me).vp)}`);
-    assert.ok(ls.filter((l) => l.id !== `${v.seat}-${mid.me}`).every((l) => !l.vp.includes("+")), `${v.tag} main: nobody else's hidden points show`);
+    assert.ok(ls.filter((l) => l.id !== `${v.seat}-${mid.me}`).every((l) => !/\+|hidden/.test(l.vp)), `${v.tag} main: nobody else's hidden points show, on screen or in the read-out`);
     await page.screenshot({ path: `test-results/seat-rail-${v.tag}.png` });
 
     // A tap opens the seat's facts, which match the line; the same tap closes them.

@@ -208,7 +208,7 @@ try {
         if (on) check(s.bg === PILL && s.shadow === SHADOW && s.radius === "14px", `${at}: ${s.id} on turn is not the white pill ${JSON.stringify({ bg: s.bg, shadow: s.shadow, radius: s.radius })}`);
         else check(s.bg === CLEAR && s.shadow === "none", `${at}: ${s.id} has a box ${JSON.stringify({ bg: s.bg, shadow: s.shadow })}`);
         for (const t of s.texts) check(t.size >= 12, `${at}: ${s.id} "${t.text}" is ${t.size}px, under 12 px`);
-        if (v.seat === "seat") check(!/\(bot\)/.test(s.line), `${at}: ${s.id} shows "(bot)": ${s.line}`);
+        if (v.seat === "seat") check(!s.texts.some((t) => /\(bot\)/.test(t.text)), `${at}: ${s.id} shows "(bot)" on screen: ${JSON.stringify(s.texts.map((t) => t.text))}`);
       }
       return seats;
     };
