@@ -25,20 +25,19 @@ const PLAYWRIGHT_EXEMPT = new Set(["loading-screen-prove.mjs", "registered-prove
 ### Exemptions
 - **`loading-screen-prove.mjs`:** Tests the production loading screen and must launch raw Chromium.
 - **`registered-prove.mjs`:** Contains inline unit test fixtures validating regex detection.
-- Utility asset generators (`make-icons.mjs` and `emote.mjs`) do not run as CI proofs.
+- **Picture and asset scripts:** `make-icons.mjs`, `emote.mjs`, and `scripts/seat-gains-pictures.mjs` import Playwright directly. They are picture and asset generation scripts, not registered `-prove.mjs` scripts.
 
 ## Audit Findings Across Current Proof Suite
 
-1. **Total Proof Scripts Analyzed:** 221 registered proofs.
-2. **Direct Browser Proofs:** 54 scripts launch browser contexts.
-3. **Compliance Rate:** 100% of registered proofs in `origin/main` take chromium from `./proof-browser.mjs`.
-4. **Third-Party / Stale PR Impact:**
-   - PR #905 (`keyboard-fit-prove`) currently imports from `playwright` directly.
-   - PR #905 cannot pass clean CI until migrated to `./proof-browser.mjs`.
+Basis commit: commit 3475e541.
+
+1. **Total Proof Scripts Analyzed:** all 224 registered proofs verified by `scripts/registered-prove.mjs`.
+2. **Compliance Rate:** 100% of registered `-prove.mjs` scripts take chromium from `./proof-browser.mjs`.
+3. **Stale PR Impact:** PR #905 (`keyboard-fit-prove`) imports from `playwright` directly. PR #905 cannot pass clean CI until migrated to `./proof-browser.mjs`.
 
 ## Proof Verification
 
-- `npm run registered-prove` passed all 221 proof registration checks and raw Playwright assertions.
+- `npm run registered-prove` passed all 224 proof registration checks and raw Playwright assertions.
 - `npm run loading-screen-prove` passed all curtain and skip assertions cleanly.
 
 ## Conclusion
