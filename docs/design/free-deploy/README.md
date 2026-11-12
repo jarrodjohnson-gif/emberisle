@@ -4,6 +4,7 @@ Refs [#779](https://github.com/jarrodjohnson-gif/emberisle/issues/779). Design s
 Nothing here deploys, creates an account, or changes `src/` or `server/`.
 Written 2026-10-31 by Claude Opus 5.5 (desk subagent builder).
 Corrected 2026-11-12 by Claude Fable 5.2: the Oracle VM can drop a game, so the recommendation changed.
+Reworked 2026-11-12 after the owner's answer (D): the Mac is a stopgap, not the home. The recommendation is now a server.
 
 ## Owner request
 
@@ -11,6 +12,7 @@ Jarrod asked: "get this game deployed permanently somewhere free".
 `docs/DECISIONS.md` (2026-10-27) parks the Cloudflare papers #789–795 and keeps hosting on his Mac.
 That row states the goal: hosting that runs 24/7 or starts on command.
 The reason is sharing the game on Threads and Instagram.
+On 2026-11-12 the owner ruled the Mac out as the long-term home: it will not be on all day.
 The owner clarified the requirement on 2026-11-03 (card `q1240-plan`).
 Hosting need not run 24/7 throughout the week.
 However, during active play it must stay up with zero drops.
@@ -88,7 +90,7 @@ Room files are deleted after 24 hours (`ROOM_TTL`), so rooms do not grow without
 
 ## 2. Options for the unchanged host
 
-All provider facts were checked on **2026-10-31** on the official page linked beside them.
+All provider facts were checked on **2026-10-31** on the official page linked beside them, unless a line says 2026-11-12.
 "Not verified" means the page did not state it or could not be fetched.
 Setup times are estimates, not measurements.
 
@@ -124,19 +126,24 @@ Treat those three points as unconfirmed until someone re-reads the FAQ.
 - **Machine:** e2-micro is 2 vCPUs at a 0.25 share and 1 GB memory. ([Machine types](https://docs.cloud.google.com/compute/docs/general-purpose-machines))
 - **Traffic:** 1 GB outbound per month from North America. (Free features)
 - **Card?** "A Google Cloud billing account is required." The page does not say whether a card is required for the Free Tier alone.
-- **Always on?** Yes, with no idle reclaim rule on that page.
+- **Always on?** Yes. The free VM is "non-preemptible", and the page has no idle reclaim rule. (Rechecked 2026-11-12. A missing rule is not a promise.)
+- **Maintenance:** "By default, most instances are set to live migrate during host events." ([Host maintenance](https://docs.cloud.google.com/compute/docs/instances/host-maintenance-overview))
+- Google calls a live migration "transparent to the guest OS and anything communicating with it", with a pause "typically much less than 1 second". ([Live migration](https://docs.cloud.google.com/compute/docs/instances/live-migration-process))
+- That page does not list E2 among the types that cannot migrate. It does not mention open connections by name. The e2-micro's own default setting is not verified (the settings page returned 404).
+- **CPU:** the two vCPUs sustain 25% of CPU time in total and can burst to 100% for about 30 seconds. The measured host used 2.57% of one core. (Machine types)
 - **WebSocket and disk:** a normal VM, so both work.
 - **Surprise bill risk:** real. It is a billing account.
 - Alerts-only budgets "don't automatically cap" spending. ([Budgets](https://docs.cloud.google.com/billing/docs/how-to/budgets))
 - A spend-cap budget pauses services "until you manually lift the cap." (same page)
 - Spend caps exist only "if supported for your service." Support for Compute Engine is not verified.
-- **External IPv4 price:** not verified. The [network pricing](https://cloud.google.com/vpc/network-pricing) page did not load in full.
+- **External IPv4 price:** not verified. The [network pricing](https://cloud.google.com/vpc/network-pricing) page did not load in full, on 2026-10-31 and again on 2026-11-12. The free-tier page does not say the address is free, so expect a possible small monthly charge.
 - **Who does what:** as A.
 - **Setup time (estimate):** 1–2 hours for Jarrod.
 - **Failure modes:** the host peaked at 143 MB.
 - Headroom beside the OS and `cloudflared` is not measured.
-- Outbound traffic over 1 GB a month is billed. The price was not checked.
+- Outbound traffic over 1 GB a month is billed. The price per GB is not verified.
 - 1 GB is about 1,500 four-player turns.
+- **Can Google end a game mid-play?** No rule found that stops a running or idle free VM. Google can change the offer with 30 days' notice. A hardware fault can still restart any VM.
 
 ### C. Free app platforms
 
@@ -190,66 +197,85 @@ The only deployment environment in use is `github-pages`.
 - **Surprise bill risk:** none.
 - **Failure modes:** sleep, reboots, home network loss, macOS updates.
 
+### F. A small paid VM
+
+Checked 2026-11-12 on each provider's own page. The owner is in the US, so US regions matter.
+
+| Plan | Price a month | Memory | Traffic included | IPv4 included | US region |
+|---|---|---|---|---|---|
+| DigitalOcean Basic ([pricing](https://www.digitalocean.com/pricing/droplets)) | $4.00 | 512 MiB | 500 GiB out | Yes | Yes |
+| AWS Lightsail ([pricing](https://aws.amazon.com/lightsail/pricing/)) | $5.00 | 0.5 GB | 1 TB | Yes | Yes |
+| Fly.io shared-cpu-1x ([pricing](https://docs.fly.io/about/pricing)) | $2.19 | 256 MB | None; $0.02 a GB | Shared only | Yes |
+| Hetzner CX23 ([pricing](https://www.hetzner.com/cloud/cost-optimized/)) | €5.99 | 4 GB | 20 TB | Yes | No: Europe only |
+| Hetzner CPX11 ([pricing](https://www.hetzner.com/cloud/regular-performance/)) | €17.99 | 2 GB | 1 TB | Yes | Yes |
+
+- Vultr, Scaleway and OVH: not verified. Their pages did not load.
+- **Fit:** the host peaked at 143 MB. 512 MiB should hold it with the OS and `cloudflared`, but that is not measured. 256 MB on Fly.io is too tight to trust.
+- **Always on?** Yes. A paid VM has no idle rule and no sleep.
+- **Can the provider end a game mid-play?** DigitalOcean moves a VM without a restart for maintenance. If that fails, it sends a notice that it must "briefly shut down the Droplet". ([Live migration](https://docs.digitalocean.com/products/droplets/details/live-migration/)) Its uptime promise is not verified (the page returned 404). Lightsail and Fly.io maintenance rules are not verified.
+- **Bill:** a fixed monthly price. DigitalOcean bills by the second with a monthly cap.
+- **Other free offers checked and ruled out:** AWS's free plan for new accounts "ends after six months or when your credits are fully used". ([AWS](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans.html)) Azure's credit lasts 30 days. ([Azure](https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/avoid-charges-free-account)) Fly.io has no free tier for new accounts. Railway's free plan is $1 of credit a month. ([Railway](https://docs.railway.com/reference/pricing/plans)) Each can end a game when the credit ends.
+
 ### Summary
 
 | Option | Free forever | Card | Always on | Can the provider stop a game mid-play? | Unchanged host | Bill risk |
 |---|---|---|---|---|---|---|
 | A. Oracle A1 VM | Yes | Most users | Yes, but idle reclaim likely | Yes: reclaim can come at any time | Yes | Low unless upgraded |
-| B. Google e2-micro | Yes | Billing account | Yes | Not checked | Yes; 1 GB traffic cap | Real |
+| B. Google e2-micro | Yes, until Google changes it (30 days' notice) | Billing account | Yes | No rule found; maintenance moves the VM without a restart | Yes; 1 GB free traffic a month | Real |
 | C. Render, Koyeb, Fly.io | Render, Koyeb yes; Fly.io trial | Varies | No: they sleep | Yes: they sleep | No: no disk, proxy | Low |
 | D. Cloudflare DO | Yes | Not verified | Yes, within quota | Not checked | No: full port | None |
 | E. Mac + named tunnel | Yes | No | While the Mac runs | No: there is no provider | Yes | None |
+| F. Paid VM (DigitalOcean, $4) | No: $4 a month | Yes | Yes | No rule found; a failed move means a short shutdown, with notice | Yes | Fixed price |
 
 ## 3. Recommendation
 
-Host game nights on Jarrod's Mac with the named tunnel.
-Treat the Oracle VM as an optional extra that keeps the link up between game nights.
-Never treat the Oracle VM as a zero-drop host.
-Leave #789–795 parked.
+The owner ruled out the Mac as the long-term home on 2026-11-12: it will not be on all day.
+The Mac with the named tunnel is a stopgap only, until a server is up.
+
+Host the game on the free Google e2-micro VM, behind the named tunnel.
+If the owner would rather pay for plainer terms, use the $4 DigitalOcean VM instead.
+Do not use the Oracle VM. Leave #789–795 parked.
 
 Reasons:
 
-- The owner's rule is zero drops during a game. The Mac with the named tunnel comes closest: no provider can end a game.
-- The Mac has no provider that can take the machine away.
-- The Mac needs no card, no cloud account and no data on someone else's machine.
-- The named tunnel gives one stable public link. It keeps the loopback rules, so profiles work as tested.
-- The Oracle VM is free and stays on while the Mac sleeps. That is all it adds.
-- Oracle may reclaim the VM at any time. That can end a game mid-play.
+- The owner's rule: the host need not run all week, but no game may drop while it is being played.
+- Google's free VM is not preemptible and has no idle rule. Oracle's has one. Free app platforms sleep or restart.
+- Google and DigitalOcean both move a VM for maintenance without a restart.
+- The host runs unchanged on either VM. The named tunnel gives one stable link and keeps the loopback rules.
+- Google is free. Its costs are the risks below.
+- DigitalOcean costs $4 a month. Its price is fixed, with 500 GiB of traffic and an IPv4 address included.
 
 ### Meeting the "no drops during a game" requirement
 
-The owner requires zero drops while a game is being played.
-
-1. **The Oracle VM cannot promise this.**
-   Oracle reclaims a VM that looks idle over seven days: CPU, network and memory each under 20%.
-   That test is a seven-day figure. It does not check whether a game is on.
-   A game does not lift the figure. The measured host used 2.57% of a core and 143 MB at its busiest.
-   So Oracle may reclaim the VM at any time, including mid-game.
-   Oracle does not say when.
-2. **What a reclaim does to a game.**
+1. **No host can promise zero drops.**
+   A hardware fault or a provider outage can restart any server.
+   What a host can offer is no rule that switches a running game off. Google's free VM and a paid VM both offer that. Oracle and the free app platforms do not.
+2. **What can still go wrong on the Google VM.**
+   - Google "reserves the right to change the offering", with 30 days' notice. That is time to move.
+   - Only 1 GB of outbound traffic a month is free. At the measured rate that is about 1,500 four-player turns. More is billed, at a price that is not verified.
+   - The external IPv4 address may carry a small monthly charge. Not verified.
+   - It is a billing account, so a mistake can cost money. A budget alert warns but does not cap.
+   - Whether a live migration keeps every open connection is Google's claim ("transparent"), not something measured here.
+3. **What can still go wrong on the paid VM.**
+   If a maintenance move fails, DigitalOcean shuts the VM down briefly, with notice. Its uptime promise is not verified.
+   512 MiB of memory is not measured with the host, the OS and `cloudflared` together.
+4. **What a drop does to a game, on any host.**
    Every player drops at once.
    The host saves each room to disk within 250 ms of a change, so the saved game is current.
-   The page retries for 10 minutes, then gives up.
-   If the VM can be started again, players open the link and rejoin their seats.
-   If the VM is gone, Jarrod restores last night's backup on the Mac. The game in progress is lost.
-   Whether Oracle stops a reclaimed VM or deletes it is not verified.
-3. **The Mac with the named tunnel comes closest.**
-   No provider can switch the Mac off.
-   A drop can still come from the Mac sleeping, a restart, a power cut, home internet loss or a Cloudflare outage.
-   On game night, keep the Mac plugged in and awake, and skip macOS updates.
-4. **Today's `play` command does not meet the rule yet.**
-   It opens a quick tunnel. Cloudflare says quick tunnels "have no uptime guarantee".
-   The named tunnel (#746, `docs/named-tunnel.md`) is built but not live.
-   It needs a domain on Cloudflare DNS (question 2). That is the one step left.
-5. **If the owner also wants the Oracle VM.**
-   Use it only between game nights, for casual play that may drop.
-   Before a game night, switch the public link to the Mac by hand, as the fallback guide below says.
-   Only one host and one tunnel connector may run at a time.
+   The page retries for 10 minutes. When the server is back, players open the link and rejoin their seats.
+5. **The Oracle VM cannot meet the rule.**
+   Oracle reclaims a VM that looks idle over seven days: CPU, network and memory each under 20%.
+   A game does not lift that figure. The measured host used 2.57% of a core and 143 MB at its busiest.
+   So Oracle may reclaim the VM at any time, including mid-game. Whether it stops or deletes the VM is not verified.
+6. **Until the server is up.**
+   The Mac with the named tunnel (#746, `docs/named-tunnel.md`) is the stopgap. It needs a domain on Cloudflare DNS (question 2).
+   Today's `play` command opens a quick tunnel, which Cloudflare says has "no uptime guarantee".
 
 ### Runbook
 
-This runbook is for the Oracle VM. Use it only if the owner picks option B at the end of this page.
-For the Mac alone, follow `docs/named-tunnel.md`; nothing here is needed.
+This runbook was written for the Oracle VM. Use it only if the owner picks option C at the end of this page.
+The Google and DigitalOcean steps are the same in shape (sign up, make the VM, run the provision script, point the tunnel at it). They are written as their own issue once the owner picks.
+For the Mac stopgap, follow `docs/named-tunnel.md`; nothing here is needed.
 
 #### Jarrod does these himself
 
@@ -364,16 +390,15 @@ Those proofs run against stubs in CI. Only the live checks below need the VM.
 ## 4. Questions for Jarrod
 
 1. **Which home?** This is the one card at the end of this page.
-   Recommendation: the Mac with the named tunnel for game nights.
-   The Oracle VM is only an always-on extra, not a zero-drop guarantee.
-   Questions 3, 4 and 5 matter only if the Oracle VM is added.
+   Recommendation: the free Google VM. The $4 DigitalOcean VM is the paid choice.
+   Questions 3 and 5 follow for either. Question 4 matters only for the Oracle VM.
 2. **Which domain for the public link?**
    Options: `play.hightidewash.net` after moving its Webflow records to Cloudflare, or a new domain.
    Recommendation: `hightidewash.net`, since it is free. A new domain costs money (price not checked).
-3. **May real profiles, pictures and results live on the Oracle VM?**
-   The 2026-10-18 OK on #779 covered Cloudflare storage after #795's checks, not Oracle.
+3. **May real profiles, pictures and results live on the VM?**
+   The 2026-10-18 OK on #779 covered Cloudflare storage after #795's checks, not a VM at Google, DigitalOcean or Oracle.
    Recommendation: yes, with backups only on the VM and your Mac, never in the repo.
-4. **How much memory for the VM?**
+4. **Oracle only: how much memory for the VM?**
    Options: 1 OCPU with 6 GB, as the 2026-10-18 research chose, or the smallest A1 memory for 1 OCPU.
    The host needs about 143 MB. On 6 GB that is about 2%, so the VM is idle by Oracle's test.
    A smaller shape raises the memory share, one of the three idle tests. It adds no fake load.
@@ -386,6 +411,8 @@ Those proofs run against stubs in CI. Only the live checks below need the VM.
    Recommendation: nightly, like the Pages publish, so a bad merge rarely hits a live game night.
 
 ## Sources checked 2026-10-31
+
+Rechecked or added on 2026-11-12: Google [Free features](https://docs.cloud.google.com/free/docs/free-cloud-features), [Host maintenance](https://docs.cloud.google.com/compute/docs/instances/host-maintenance-overview), [Live migration](https://docs.cloud.google.com/compute/docs/instances/live-migration-process), [Machine types](https://docs.cloud.google.com/compute/docs/general-purpose-machines); DigitalOcean [pricing](https://www.digitalocean.com/pricing/droplets) and [live migration](https://docs.digitalocean.com/products/droplets/details/live-migration/); AWS [Lightsail pricing](https://aws.amazon.com/lightsail/pricing/) and [free plans](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans.html); Fly.io [pricing](https://docs.fly.io/about/pricing); Hetzner [cost-optimized](https://www.hetzner.com/cloud/cost-optimized/) and [regular](https://www.hetzner.com/cloud/regular-performance/); Azure [free account](https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/avoid-charges-free-account); Railway [plans](https://docs.railway.com/reference/pricing/plans). Did not load: Google network pricing, Google host maintenance settings, DigitalOcean SLA, Vultr, Scaleway, OVH.
 
 - Oracle: [Free Tier](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier.htm), [Always Free resources](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm), [Budgets](https://docs.oracle.com/en-us/iaas/Content/Billing/Concepts/budgetsoverview.htm). FAQ and Free page: HTTP 403.
 - Google: [Free features](https://docs.cloud.google.com/free/docs/free-cloud-features), [Machine types](https://docs.cloud.google.com/compute/docs/general-purpose-machines), [Budgets](https://docs.cloud.google.com/billing/docs/how-to/budgets). Network pricing: did not load in full.
@@ -401,15 +428,15 @@ One card.
 
 **Card: "Where should the game be hosted?"**
 
-TLDR: You said the game need not be on all week, but a game must never drop.
-Your Mac comes closest: no provider can switch it off. The free Oracle server can be switched off by Oracle at any time, even mid-game.
+TLDR: You said the Mac will not be on all day, and a game must never drop.
+No host can promise zero drops. Two kinds of server have no rule that switches a running game off: Google's free one and a small paid one.
 
-- **A (recommended): your Mac, with one permanent link.** No provider can switch the game off.
-  The Mac sleeping, a power cut or home internet can still drop it. One step is left: move a domain to Cloudflare.
-- **B: your Mac for game nights, plus the free Oracle server between them.** The link also works while the Mac sleeps.
-  Games on the Oracle server may drop. It needs a card to sign up and about 1–2 hours of setup (an estimate).
-- **C: the free Oracle server only.** Always on, no Mac needed. Oracle can end a game mid-play. This breaks your rule.
+- **A (recommended): Google's free server.** Free. No rule that stops it, and Google moves it for upkeep without a restart.
+  It needs a billing account. Only 1 GB of traffic a month is free (about 1,500 four-player turns); more is billed, price not verified. The address may cost a little each month, not verified.
+- **B: a paid server, $4 a month (DigitalOcean).** A fixed price with plenty of traffic. No rule that stops it.
+  If an upkeep move fails, it shuts down briefly, with notice.
+- **C: the free Oracle server.** Free and always on. Oracle can end a game mid-play. This breaks your rule.
 - **D: none of these.** Say what is missing and I will look again.
 
-If you pick A or B, one more question follows: which domain to use for the link (question 2).
-If you pick B, questions 3, 4 and 5 follow too.
+Until the server is up, the Mac with one permanent link is the stopgap.
+After A or B, three questions follow: which domain (question 2), may profiles live on the server (question 3), and how new code reaches it (question 5).
