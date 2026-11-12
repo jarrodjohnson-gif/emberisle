@@ -497,7 +497,7 @@ export function Hud() {
                 fortunes and End turn. The builds themselves, with their costs and reasons, are in the Build list. */}
             {armedNow ? (
               <div className="hud-actions">
-                <Button size="sm" variant="secondary" data-testid="build-cancel" className="h-12 flex-1" onClick={() => setBuildMode("none")}>Cancel</Button>
+                <Button size="sm" variant="secondary" data-testid="build-cancel" className="h-12 w-full" onClick={() => setBuildMode("none")}>Cancel</Button>
               </div>
             ) : state.phase === "main" && mine ? (
               <div className="hud-actions">
