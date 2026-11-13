@@ -36,7 +36,26 @@ const SEATS = [["red", "#e23d2e"], ["ivory", "#f3ecd9"]];
 mkdirSync("test-results", { recursive: true });
 if (SHOTS) mkdirSync(SHOT_DIR, { recursive: true });
 
-const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
+// Observe the lazy component commit and the actual exit-style write before asynchronous recorder delivery.
+// This Vite-only hook never enters a production build or changes game state.
+const commitObserver = {
+  name: "your-turn-proof-commit-observer",
+  enforce: "pre",
+  transform(source, id) {
+    if (!id.split("?")[0].endsWith("/src/components/game/TurnMoment.tsx")) return;
+    const anchor = "export function TurnMoment() {";
+    const exit = 'el.style.opacity = "0";';
+    if (source.split(exit).length !== 2) throw new Error("TurnMoment proof exit anchor changed");
+    if (source.split(anchor).length !== 2) throw new Error("TurnMoment proof observer anchor changed");
+    return { code: source.replace(anchor, anchor + `
+      useEffect(() => {
+        window.__yourTurnCommit = { mounted: true, seq: useGame.getState().state?.seq, synced: useGame.getState().synced };
+        return () => { window.__yourTurnCommit.mounted = false; };
+      }, []);
+    `).replace(exit, 'window.__turnExitStarts.set(el, performance.now()); ' + exit), map: null };
+  },
+};
+const vite = await createServer({ plugins: [commitObserver], server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
@@ -65,33 +84,40 @@ const contrast = (a, b) => {
 // clear of are measured with the animation paused at its steady part (no transform), the way a player sees it held.
 function recorders() {
   window.__yt = [];
+  window.__turnExitStarts = new WeakMap();
   window.__exits = [];
   const exiting = new Map();
-  new MutationObserver((records) => {
-    for (const record of records) {
-      const el = record.target;
-      if (record.type !== "attributes" || !el.matches?.('[data-testid="turn-moment"][data-leaving]') || exiting.has(el)) continue;
-      const css = getComputedStyle(el);
-      const entry = { at: performance.now(), pointer: css.pointerEvents, hidden: el.parentElement?.getAttribute("aria-hidden"),
-        animation: css.animationName, duration: css.transitionDuration, easing: css.transitionTimingFunction };
-      exiting.set(el, entry);
-      window.__exits.push(entry);
-    }
-    for (const [el, entry] of exiting) if (!el.isConnected) { entry.gone = performance.now(); exiting.delete(el); }
-  }).observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-leaving"] });
-  // The fade starts a frame after data-leaving is set, so a timer from that moment can land before it began or after it ended on a
-  // loaded runner. Sample the transition itself: when it runs, put it at 80 ms of its 160, read the frame, then let it carry on.
-  document.addEventListener("transitionrun", (e) => {
-    const el = e.target;
-    const entry = exiting.get(el);
-    if (!entry) return;
-    (entry.runs ??= []).push(e.propertyName);
+  // Read the existing real transition after the exit style write, before a delayed event can miss it.
+  // No transition means no midpoint: the original fade assertions must still fail.
+  const sampleFade = (el, entry) => {
     if (entry.mid) return;
-    const fades = el.getAnimations().filter((a) => a.transitionProperty);
+    const fades = el.getAnimations().filter(a => a.transitionProperty);
+    if (!fades.length) return;
     for (const a of fades) { a.pause(); a.currentTime = 80; }
     const mid = getComputedStyle(el);
     entry.mid = { opacity: Number(mid.opacity), transform: mid.transform, target: el.style.transform };
     for (const a of fades) a.play();
+  };
+  new MutationObserver(records => {
+    for (const record of records) {
+      const el = record.target;
+      if (record.type !== "attributes" || !el.matches?.('[data-testid="turn-moment"][data-leaving]')) continue;
+      let entry = exiting.get(el);
+      if (!entry) {
+        if (!window.__turnExitStarts.has(el)) throw new Error("TurnMoment exit start was not observed");
+        const css = getComputedStyle(el);
+        entry = { at: window.__turnExitStarts.get(el), pointer: css.pointerEvents, hidden: el.parentElement?.getAttribute("aria-hidden"),
+          animation: css.animationName, duration: css.transitionDuration, easing: css.transitionTimingFunction };
+        exiting.set(el, entry); window.__exits.push(entry);
+      }
+      if (el.style.opacity === "0") sampleFade(el, entry);
+    }
+    for (const [el, entry] of exiting) if (!el.isConnected) { entry.gone = performance.now(); exiting.delete(el); }
+  }).observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-leaving", "style"] });
+  document.addEventListener("transitionrun", e => {
+    const el = e.target, entry = exiting.get(el);
+    if (!entry) return;
+    (entry.runs ??= []).push(e.propertyName); sampleFade(el, entry);
   }, true);
   const OBSTACLES = 'header > div, [data-testid="seat-strip"] > *, [data-testid^="rail-"], [data-hud-stack], [data-testid="banner"], [data-testid="turn-banner"], .hud-utilities, [data-testid="resource-flash"]';
   const box = (el) => {
@@ -246,6 +272,7 @@ async function online(me, { cap = false } = {}) {
   const sent = { welcomes: 0 };
   let states = [];
   let sockets = [];
+  let seatSocket;
   const requested = [];
   const { ctx, page, tag } = await open(view, {
     path: "/?host=ws://127.0.0.1:9",
@@ -257,6 +284,9 @@ async function online(me, { cap = false } = {}) {
         sockets.push(ws);
         ws.onMessage(async (raw) => {
           if (JSON.parse(String(raw)).type !== "hello") return;
+          // Discovery may dial this host after the seat. Game states and the deliberate
+          // drop belong to the connection that sent hello, not the newest list client.
+          seatSocket = ws;
           sent.welcomes++;
           ws.send(JSON.stringify({ type: "welcome", code: "ABCD", you: me, host: false, secret: "s3cret", chat: [] }));
           while (!states.length) await new Promise((r) => setTimeout(r, 20));
@@ -275,7 +305,7 @@ async function online(me, { cap = false } = {}) {
     const seatHex = base.players.find((p) => p.id === me).color;
     let seq = 20;
     const at = (patch) => ({ type: "state", you: me, legal, game: { ...base, ...patch, seq: ++seq } });
-    const push = (m) => sockets.at(-1).send(JSON.stringify(m));
+    const push = (m) => seatSocket.send(JSON.stringify(m));
     const loaded = () => page.waitForFunction((n) => window.__emberisle.getState().state?.seq === n, seq, { timeout: STEP_MS });
     // Nothing new shows for a while after the state has loaded.
     const stays = async (label, n0) => {
@@ -284,7 +314,8 @@ async function online(me, { cap = false } = {}) {
       const now = { mounts: await bannerCount(page), up: await up(page) };
       check(now.mounts === n0 && now.up === 0, `${tg} ${label}: no moment`, now);
     };
-    const gone = (ms = 1000) => page.waitForFunction(() => !document.querySelector('[data-testid="turn-moment"]'), null, { timeout: ms });
+    // DOM dismissal must be observable even when animation-frame callbacks are delayed.
+    const gone = (ms = 1000) => page.waitForFunction(() => !document.querySelector('[data-testid="turn-moment"]'), null, { timeout: ms, polling: 50 });
     const shows = async (n) => {
       try {
         await page.waitForFunction((n) => window.__yt.length === n && document.querySelector('[data-testid="turn-moment"]'), n, { timeout: STEP_MS });
@@ -292,19 +323,14 @@ async function online(me, { cap = false } = {}) {
         console.log(`shows(${n}) timed out`, JSON.stringify(await page.evaluate(() => {
           const g = window.__emberisle.getState();
           return { yt: window.__yt.length, element: !!document.querySelector('[data-testid="turn-moment"]'), seq: g.state?.seq, phase: g.state?.phase,
-            current: g.state?.current, localId: g.localId, synced: g.synced, spectator: g.spectator };
+            commit: window.__yourTurnCommit, current: g.state?.current, localId: g.localId, synced: g.synced, spectator: g.spectator };
         })), JSON.stringify({ momentsRequested: requested }));
         throw e;
       }
     };
     // TurnMoment is lazy (the moments chunk) and takes the first move it sees as its baseline, so the turn must not arrive before the
     // chunk is in and the component has mounted: a turn that lands first is the baseline and shows nothing.
-    const momentsMounted = async () => {
-      await page.evaluate(async () => {
-        await import("/src/components/game/moments.ts");
-        for (let i = 0; i < 3; i++) await new Promise((r) => requestAnimationFrame(r));
-      });
-    };
+    const momentsMounted = () => page.waitForFunction(() => window.__yourTurnCommit?.mounted, null, { timeout: STEP_MS, polling: 50 });
     // The entry fade (turn-stay-in) has finished, so an exit starts from the full pill: ended mid-entry it freezes at the fade's
     // current opacity, which is near 0 on a loaded runner and leaves no opacity to fade.
     const settled = () => page.waitForFunction(() => {
@@ -321,8 +347,17 @@ async function online(me, { cap = false } = {}) {
     // A first load onto a move under way (the baseline) shows nothing, not even on the person's own roll.
     states = [{ type: "state", you: me, legal, game: { ...base, seq: 20, turn: 2, phase: "roll", current: me } }];
     await page.waitForFunction(() => window.__emberisle?.getState().state?.seq === 20, null, { timeout: STEP_MS });
+    await momentsMounted();
     await page.waitForTimeout(700);
     check((await bannerCount(page)) === 0, `${tg} first load onto own roll at seq 20: no moment`);
+
+    // Keep the late-discovery ordering explicit so routing cannot silently regress.
+    await page.evaluate(() => new Promise((resolve, reject) => {
+      const ws = new WebSocket("ws://127.0.0.1:9/");
+      ws.onopen = () => { ws.send(JSON.stringify({ type: "list" })); resolve(); };
+      ws.onerror = () => reject(new Error("online fixture discovery socket failed"));
+      window.__yourTurnDiscoverySocket = ws;
+    }));
 
     // Another seat's move, and a bot's, show none.
     push(at({ turn: 2, phase: "main", current: me }));
@@ -335,7 +370,6 @@ async function online(me, { cap = false } = {}) {
     await shows(1);
     await page.waitForFunction(() => window.__yt[0]?.bg, null, { timeout: STEP_MS });
     readable(tg, "the turn arrives", await page.evaluate(() => window.__yt[0]), seatHex);
-    const t0 = Date.now();
     push(at({ turn: 3, phase: "roll", current: me }));
     push(at({ turn: 3, phase: "roll", current: me }));
     await loaded();
@@ -343,7 +377,8 @@ async function online(me, { cap = false } = {}) {
     check((await bannerCount(page)) === 1 && (await up(page)) === 1, `${tg} repeat pushes add none, and it is still up 2.6 s later (no timed fade)`, [await bannerCount(page), await up(page)]);
     if (cap) {
       await gone(9000);
-      const held = Date.now() - t0;
+      // Both endpoints come from the browser, so CDP/host delay cannot move the start of the measured lifetime.
+      const held = await page.evaluate(() => window.__exits[0].gone - window.__yt[0].at);
       check(held >= 7500 && held <= 8800, `${tg} untouched, it leaves at its 8 s cap (timed from just after it mounted)`, held);
       await faded("8 s cap");
       push(at({ turn: 3, phase: "roll", current: me }));
@@ -399,7 +434,7 @@ async function online(me, { cap = false } = {}) {
 
     // A drop and a rejoin onto the person's own move under way: none. A live turn after it: one.
     states = [at({ turn: 8, phase: "roll", current: me })];
-    sockets.at(-1).close();
+    seatSocket.close();
     await page.waitForFunction(() => /Reconnecting/.test(window.__emberisle.getState().error ?? ""), null, { timeout: STEP_MS });
     await page.waitForFunction((n) => window.__emberisle.getState().state?.seq === n, seq, { timeout: STEP_MS });
     check(sent.welcomes === 2, `${tg} the seat was re-welcomed through the redial`, sent);
