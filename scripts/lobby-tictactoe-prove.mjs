@@ -136,7 +136,7 @@ try {
   await ember.getByRole("tab", { name: "Play games" }).click();
   await tile(ember).waitFor();
   assert.equal(await line(ember).textContent(), "With a table-mate");
-  await tile(ember).getByRole("button", { name: "Play with bots", exact: true }).click();
+  await tile(ember).getByRole("button", { name: "Play", exact: true }).click();
   assert.equal(await line(ember).textContent(), "Play with…");
   const picks = await tile(ember).locator(".lx-pick button").allTextContents();
   assert.deepEqual(picks, ["Tide"], "the picker names Tide and not the bot");
@@ -157,7 +157,7 @@ try {
   assert.equal(await line(tide).textContent(), "Ember wants to play");
   await contrast(tide, "invited 390");
   await tide.screenshot({ path: `${out}/390x844-invited.png` });
-  await tile(tide).getByRole("button", { name: "Play with bots", exact: true }).click();
+  await tile(tide).getByRole("button", { name: "Play", exact: true }).click();
   await tide.getByTestId("ttt").waitFor();
   await ember.getByTestId("ttt").waitFor();
   assert.equal(await tide.locator(".lb").count(), 0, "the badge goes once the invite is taken");
@@ -208,7 +208,7 @@ try {
   console.log("ok  Play again with Tide first, Hide keeps the game, Quit closes it for both");
 
   // A decline.
-  await tile(ember).getByRole("button", { name: "Play with bots", exact: true }).click();
+  await tile(ember).getByRole("button", { name: "Play", exact: true }).click();
   await tile(ember).getByRole("button", { name: "Tide", exact: true }).click();
   await tile(tide).getByRole("button", { name: "No", exact: true }).click();
   await ember.waitForFunction(() => window.__emberisle.getState().ttt?.reason === "declined");
@@ -216,9 +216,9 @@ try {
   console.log("ok  decline: Ember's tile says Tide said no.");
 
   // Ready leaves the game open; Start closes it on both tabs.
-  await tile(ember).getByRole("button", { name: "Play with bots", exact: true }).click();
+  await tile(ember).getByRole("button", { name: "Play", exact: true }).click();
   await tile(ember).getByRole("button", { name: "Tide", exact: true }).click();
-  await tile(tide).getByRole("button", { name: "Play with bots", exact: true }).click();
+  await tile(tide).getByRole("button", { name: "Play", exact: true }).click();
   await ember.getByTestId("ttt").waitFor();
   await tide.getByRole("button", { name: "Ready", exact: true }).click();
   await ember.getByRole("button", { name: "Ready", exact: true }).click();
