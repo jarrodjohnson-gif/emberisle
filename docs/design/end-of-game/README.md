@@ -40,10 +40,12 @@ Owner decision 2026-11-12 (`q1536-game-log`, A): the full log lives in the Table
 - A turn is one heading: the seat's colour dot, the seat's name (16 px, semibold), and the roll as the number (26 px, bold) on the right.
 - Under the heading are that turn's lines, in the log's own words, at 14 px in quiet text.
 - A 6 or an 8 is red. Your own turn's name and roll are green. Both follow the 2026-10-22 roll-line decision.
+- In hotseat the green turn is the seat whose turn it is now. A watcher has no green turn.
 - A line that starts with your name is in full ink, so you can find what you did and what you got.
 - Lines from before the first turn sit under "Setup". Once the log is full (200 lines) and has dropped its oldest lines, that last group is "Earlier".
 - The sheet updates while it is open.
 - Escape, Close and a tap outside the sheet close it. The focus goes back to the menu button.
+- One Escape closes one thing. With a build armed, the first Escape closes the log and the build stays armed.
 
 ### The exact words
 
@@ -64,6 +66,7 @@ The heading already says whose turn it is and what was rolled. So inside a turn:
 | The log's line | In the sheet |
 |---|---|
 | `Tide's turn.` | The heading: Tide |
+| `Bot passed for Pine; Tide's turn.` (a bot ended Pine's turn) | The heading: Tide |
 | `Tide rolled 9!` | The heading's number: 9 |
 | `Pine gains 1 wheat; Ember gains 1 wheat — Tide's roll.` | Two lines: `Pine gains 1 wheat.` and `Ember gains 1 wheat.` |
 | `Nobody gains goods — Tide's roll.` | `Nobody gains goods.` |
@@ -88,15 +91,18 @@ Real game, device scale 2, written by `SHOTS=1 npm run game-log-prove` into [`do
 | Mid-game | [log](../../proofs/end-of-game/log-430x932.png) | [log](../../proofs/end-of-game/log-390x844.png) | [log](../../proofs/end-of-game/log-844x390.png) | [log](../../proofs/end-of-game/log-1280x720.png) |
 | Scrolled to the oldest lines | [end](../../proofs/end-of-game/log-end-430x932.png) | [end](../../proofs/end-of-game/log-end-390x844.png) | [end](../../proofs/end-of-game/log-end-844x390.png) | [end](../../proofs/end-of-game/log-end-1280x720.png) |
 | A new game | [setup](../../proofs/end-of-game/log-setup-430x932.png) | [setup](../../proofs/end-of-game/log-setup-390x844.png) | [setup](../../proofs/end-of-game/log-setup-844x390.png) | [setup](../../proofs/end-of-game/log-setup-1280x720.png) |
+| A practice game with the store's own bots | | [practice](../../proofs/end-of-game/log-practice-390x844.png) | | |
+| Online seat, and a watcher | | | | [seat](../../proofs/end-of-game/log-online-1280x720.png), [watcher](../../proofs/end-of-game/log-watcher-1280x720.png) |
 | After the game | | [over](../../proofs/end-of-game/log-over-390x844.png) | [over](../../proofs/end-of-game/log-over-844x390.png) | [over](../../proofs/end-of-game/log-over-1280x720.png) |
 
 ![The Game log at 390x844](../../proofs/end-of-game/log-390x844.png)
 
 ### Build notes
 
-- `GameLog.tsx` is a new lazy chunk, fetched as the menu opens. Measured 1,369 B gzip. Proposed ceiling 1,550 B; the desk sets the real one.
-- `index` grows by 231 B (the menu row, its icon and the mount), inside its 400 B allowance. No ceiling or allowance moved.
-- If the chunk cannot load, the sheet does not open and the next press tries again.
+- `GameLog.tsx` is a new lazy chunk, fetched as the menu opens. Measured 1,401 B gzip. Proposed ceiling 1,550 B; the desk sets the real one.
+- `index` grows by 258 B against `main` at `06f0a509` (the menu row, its icon, the mount and the Escape rule), inside its 400 B allowance. No ceiling or allowance moved.
+- The sheet's own rules are in `src/components/game/game-log.css`, loaded with the chunk. `styles.css` is not changed.
+- If the chunk cannot load, the sheet does not open, the focus goes back to the menu button, and the next press tries again.
 - Proof: `npm run game-log-prove`.
 
 ## Slice 2: the win screen (planned)
