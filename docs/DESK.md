@@ -161,7 +161,7 @@ When `Rotate now` arrives, or an early-rotation rule below fires:
 
 1. Call `create_session` with `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, `model` `claude-opus-5-5`, `title` `Emberisle desk <UTC date>`, and `prompt` set to "The next desk's prompt" below, with your session id filled in.
 2. Write `Next desk: <its session id>` in the ledger. Add a `handover` row and set one `send_later` for 20 minutes.
-3. Then follow "If you are the old desk" as soon as its `Desk rotation` message arrives.
+3. Start "If you are the old desk" right away. Don't wait for a message from the new desk.
 4. If `create_session` fails, tell Jarrod once: "The desk could not start its successor. Please start a new one." Give him the start line from the top of this file.
 
 **You are the desk only while the ledger's `Desk:` line names your session.** Check it at every wake and before every merge. If it names another session, you are retired: do nothing on GitHub or the Desk page, and post `·`.
@@ -171,7 +171,7 @@ When `Rotate now` arrives, or an early-rotation rule below fires:
 Follow "Start a desk session" below. In short:
 
 1. Check that the ledger's `Next desk:` line names you. If it is empty, write your session id there.
-2. Send the old desk one message with `send_message`: `Desk rotation: hand over to <your session id>. Follow "If you are the old desk" in docs/DESK.md.`
+2. Send the old desk one message with `send_message`: `Desk rotation: hand over to <your session id>. Follow "If you are the old desk" in docs/DESK.md.` If `send_message` is denied, skip this step. The old desk starts on its own when the ledger names you.
 3. Add a `handover` row and set one `send_later` for 20 minutes.
 4. Until the handover ends, only read. Don't merge, review, post, or add cards.
 5. When `Handover done` arrives, archive the old session with `archive_session`.
@@ -189,7 +189,7 @@ Follow "Start a desk session" below. In short:
 
 ### If you are the old desk
 
-A `Desk rotation` message is valid only if the ledger's `Next desk:` line names its sender. Otherwise ignore it.
+Start these steps as soon as the ledger's `Next desk:` line names another session, whether or not a `Desk rotation` message arrives. On 2026-11-12 the new desk's message was blocked and the handover stalled for 18 hours. A `Desk rotation` message is valid only if the `Next desk:` line names its sender. Otherwise ignore it.
 
 1. Start nothing new: no review, card, merge or label sweep.
 2. If Jarrod asked you something, answer it first.
