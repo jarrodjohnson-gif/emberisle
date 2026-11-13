@@ -87,9 +87,9 @@ The ledger is a marked block at the top of #916's body. A new desk resumes from 
 ```
 <!-- desk-ledger:start -->
 ## Desk ledger
-Desk: <session id> (Opus 5.5), since <UTC date and time>
+Desk: <session id> (Opus 5.5), since <YYYY-MM-DD HH:MM> UTC
 Next desk: none
-Next rotation: <send_later id>, due <UTC time>
+Next rotation: <send_later id>, due <YYYY-MM-DDTHH:MMZ>
 Inbox handled through: <created_at of the last handled #699 comment> (comment <id>)
 Hub read through: <created_at of the last #854 comment read>
 
@@ -203,6 +203,11 @@ Start these steps as soon as the ledger's `Next desk:` line names another sessio
 
 After that, answer every wake with `·`.
 
+### The watchdog and permissions
+
+- **The desk-board is the watchdog.** It runs on GitHub after every CI run and three times a day, and needs no session. If the desk has run for more than 26 hours, or `Next rotation:` is missing or over an hour late, it posts one `To desk: desk-board watchdog:` line to the inbox each day, and shows the alert in #916. Keep the `Desk:` and `Next rotation:` lines in the exact formats above, or it can't read them.
+- **The desk's own tools need allow rules** in the repo's `.claude/settings.json`: `send_message`, `send_later`, `get_session`, `create_session` and `archive_session`. Only Jarrod adds them; no agent edits permission settings. If one is denied, tell Jarrod once which tool, then carry on with work that doesn't need it. Use these tools only for the desk's work in this file. A builder never archives, messages or starts sessions.
+
 ### When to rotate early
 
 - Check your context size with `get_session` after each merge.
@@ -286,7 +291,7 @@ A different model from the builder: Sonnet 5.5 by default, never the builder's o
 - **Sound, renderer and HUD work** don't need Opus for their area alone. Sonnet checks the code, and Jarrod judges the look and sound on the Desk page.
 - **The desk-board's `Route` column is a hint.** The issue's `tier:` label decides, not the file paths.
 
-A desk review comment starts with `<!-- review-desk -->`. A clean one then says `Clean.`. Every review ends with `Reviewer: <model> · Builder: <model> · Head: <sha>`. Copy the SHA from the API. Never type it.
+A desk review comment starts with `<!-- review-desk -->`. A clean one then says `Clean.`, and the next line is the machine tag `<!-- review-desk: clean <head sha> -->`. Every review ends with `Reviewer: <model> · Builder: <model> · Head: <sha>`. The tag and the footer carry the same SHA, copied from the API, never typed. The desk-board reads the tag, so a clean review without it never shows as ready to merge.
 
 A builder with several open PRs lists them in priority order in a `To desk:` comment. The desk reviews them in that order.
 
