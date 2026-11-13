@@ -1,0 +1,8 @@
+/* The Game log sheet (docs/design/end-of-game): the tray-sheet surface with one group per turn. Only Close is a box. */
+.game-log { max-height: min(72dvh, 620px); }
+@media (max-height: 480px) { .game-log { max-height: calc(100dvh - 24px); } }
+.gl-turn { padding: 10px 0; border-top: 1px solid #e3eae7; }
+.gl-turn p { padding-left: 20px; color: #52625f; font-size: 14px; line-height: 20px; overflow-wrap: anywhere; }
+.gl-turn p.text-fg { color: #1f3331; }
+.game-log ol { padding-bottom: 8px; }
+.gl-roll { font-family: var(--font-numeral); font-size: 26px; line-height: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
