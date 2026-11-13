@@ -309,7 +309,8 @@ body {
 /* The discard picker: each column you can tap is a soft box; a good you hold none of is grey with no box. */
 .discard-pick, .discard-back { display: flex; flex-shrink: 0; gap: 4px; padding: 0 8px; }
 .discard-pick { padding-top: 8px; padding-bottom: 8px; }
-.discard-pick > button { position: relative; height: 62px; min-width: 0; flex: 1 1 0; border: 0; border-radius: 12px; background: #e9f0ee; }
+.discard-pick > button { position: relative; height: 62px; min-width: 0; flex: 1 1 0; border-radius: 12px; background: #e9f0ee; }
+.hud-tray .discard-pick > button { border: 0; }
 .discard-pick > button.goods-empty { background: transparent; }
 .discard-back > button { display: flex; flex: 1 1 0; min-width: 0; height: 44px; align-items: center; justify-content: center; border-radius: 12px; background: #e9f0ee; color: #1f3331; font: 700 20px/1 var(--font-ui); }
 .discard-back > button[aria-disabled] { background: transparent; color: #9aa6a3; }
@@ -320,6 +321,7 @@ body {
   /* the desktop tray is one row: the hand (or the picker) on the left, the takeover's action row beside it */
   .tray-takeover > * { grid-column: 1 / -1; }
   .tray-takeover > .tray-row { grid-column: 2; }
+  .hud-tray .trade-dock > .trade-answers { grid-row: auto; }
   .discard-bar > .discard-pick { grid-column: 1; grid-row: 2; }
   .discard-bar > .tray-row { grid-row: 2; }
   .discard-bar > .discard-back { grid-column: 1; grid-row: 3; }
