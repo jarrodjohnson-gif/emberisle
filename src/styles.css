@@ -326,6 +326,7 @@ body {
 .discard-goods, .discard-back { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .discard-good { position: relative; display: flex; height: 44px; min-width: 0; align-items: center; justify-content: center; gap: 4px; border: 0; border-radius: 12px; background: #e9f0ee; color: #1f3331; font: 600 17px/22px var(--font-numeral); font-variant-numeric: tabular-nums; }
 .discard-good:disabled { background: transparent; color: #9aa6a3; }
+.discard-good > svg { width: 20px; height: 20px; }
 .discard-good[aria-disabled] { cursor: default; }
 .discard-back > button { display: flex; height: 44px; min-width: 0; align-items: center; justify-content: center; border: 0; border-radius: 12px; background: #e9f0ee; color: #1f3331; font: 700 20px/1 var(--font-ui); }
 .discard-back > button[aria-disabled] { background: transparent; color: #9aa6a3; cursor: default; }

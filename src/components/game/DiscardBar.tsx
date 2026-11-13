@@ -4,7 +4,6 @@ import { RESOURCE_ICON } from "@/components/game/ResourceSymbols";
 import { setDiscardPicked } from "@/lib/game/discard-pick";
 import { RESOURCES, RESOURCE_LABEL, type Resource } from "@/lib/game/types";
 import { useGame } from "@/lib/game/store";
-import "./trade-panel.css";
 
 const NONE: Record<Resource, number> = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
 
@@ -18,8 +17,10 @@ export function DiscardBar({ id, n }: { id: string; n: number }) {
   const [counts, setCounts] = useState(NONE);
   const picked = RESOURCES.reduce((sum, r) => sum + counts[r], 0);
   const left = n - picked;
-  useEffect(() => setDiscardPicked(picked), [picked]);
-  useEffect(() => () => setDiscardPicked(0), []);
+  useEffect(() => {
+    setDiscardPicked(picked);
+    return () => setDiscardPicked(0);
+  }, [picked]);
   const pick = (r: Resource, d: number) => setCounts({ ...counts, [r]: counts[r] + d });
   return (
     <div className="discard-pick" data-testid="discard-pick">
@@ -39,7 +40,7 @@ export function DiscardBar({ id, n }: { id: string; n: number }) {
               onClick={() => off || pick(r, 1)}
               className={`discard-good goods-${r}${have ? "" : " goods-empty"}`}
             >
-              <Icon aria-hidden className="size-5" />
+              <Icon aria-hidden />
               <span className="discard-keep">{have - counts[r]}</span>
             </button>
           );
