@@ -1,6 +1,6 @@
-// #820: an open trade offer raises the hand cards it changes. What this seat gives rises with a red edge and "-N";
-// what it gets rises with a green edge and "+N". Both clear when the offer closes or this seat answers it. Under
-// reduced motion the edge and label stay and nothing lifts.
+// #820: an open trade offer raises the hand cards it changes. What this seat gives rises with a "−N" tag in the Give
+// colours; what it gets rises with a "+N" tag in the Get colours (#1546: no edge, since only what can be pressed gets a
+// box). Both clear when the offer closes or this seat answers it. Under reduced motion the tag stays and nothing lifts.
 import assert from "node:assert/strict";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
@@ -8,8 +8,9 @@ import { createServer } from "vite";
 const PORT = Number(process.env.VITE_PORT) || 8820;
 const STEP_MS = 15_000;
 const RESOURCES = ["timber", "clay", "wool", "grain", "ore"];
-const RED = "rgb(138, 34, 25)"; // --loss #8a2219
-const GREEN = "rgb(16, 86, 42)"; // --gain #10562a
+const RED = "rgb(179, 38, 30)"; // #1546: Give #b3261e
+const GREEN = "rgb(30, 122, 70)"; // #1546: Get #1e7a46
+const EDGES = ["rgb(138, 34, 25)", "rgb(16, 86, 42)", RED, GREEN]; // the old --loss and --gain edges, and the new tag inks
 
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
@@ -76,21 +77,21 @@ try {
         assert.equal(g.lift, w ? lifted : 0, `${tag}: ${r} lift`);
         if (w) {
           assert.equal(g.color, w[0] === "give" ? RED : GREEN, `${tag}: ${r} label colour`);
-          assert.ok(g.edge.includes(w[0] === "give" ? RED : GREEN), `${tag}: ${r} edge ${g.edge}`);
-        } else assert.ok(!g.edge.includes(RED) && !g.edge.includes(GREEN), `${tag}: ${r} has no edge`);
+          assert.ok(!EDGES.some((c) => g.edge.includes(c)), `${tag}: ${r} has no edge, the tag carries it: ${g.edge}`);
+        } else assert.ok(!EDGES.some((c) => g.edge.includes(c)), `${tag}: ${r} has no edge`);
       }
     };
     const tag = reduced ? "reduced" : "motion";
 
     // Another seat offers 1 clay for 1 timber: this seat gives timber and gets clay.
     await setOffer({ give: { clay: 1 }, want: { timber: 1 } });
-    check(await settled({ timber: 1, clay: 1 }), { timber: ["give", "-1"], clay: ["get", "+1"] }, `${tag} received`);
+    check(await settled({ timber: 1, clay: 1 }), { timber: ["give", "−1"], clay: ["get", "+1"] }, `${tag} received`);
     // This seat answers: it clears at once.
     await setOffer({ give: { clay: 1 }, want: { timber: 1 } }, true);
     check(await settled({}), {}, `${tag} answered`);
     // This seat's own offer reads from its own side: it gives `give` and gets `want`.
     await setOffer({ mine: true, give: { grain: 2 }, want: { ore: 1 } });
-    check(await settled({ grain: 1, ore: 1 }), { grain: ["give", "-2"], ore: ["get", "+1"] }, `${tag} own`);
+    check(await settled({ grain: 1, ore: 1 }), { grain: ["give", "−2"], ore: ["get", "+1"] }, `${tag} own`);
     // The offer ends.
     await setOffer(null);
     check(await settled({}), {}, `${tag} closed`);
