@@ -10,19 +10,21 @@ import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useBackdropClose } from "@/lib/backdrop-close";
 import { useFocusTrap } from "@/lib/focus-trap";
-import { useGame } from "@/lib/game/store";
+import { GAME_LOG_MAX, useGame } from "@/lib/game/store";
 import { play } from "@/lib/sound";
 import "@/components/game/game-log.css";
 
 type Turn = { name: string; sum?: number; lines: string[] };
 
-// rules.ts writes "<name>'s turn." as a turn starts and "<name> rolled <sum>!" for its roll. The first turn of a game has
-// no turn line, and a full log may have dropped one, so a roll with no open heading of its own starts that seat's turn.
+// rules.ts writes "<name>'s turn." as a turn starts and "<name> rolled <sum>!" for its roll. When a bot ends a turn, ai.ts
+// (logBotAction) puts "Bot passed for <seat>; " in front of that turn line, in practice and for a host's stand-in bot: the
+// heading is still the next seat's name. The first turn of a game has no turn line, and a full log may have dropped one,
+// so a roll with no open heading of its own starts that seat's turn.
 export function turnsOf(lines: { text: string }[]): Turn[] {
   const turns: Turn[] = [{ name: "", lines: [] }];
   for (const { text } of lines) {
     const turn = turns[0]!;
-    const start = /^(.+)'s turn\.$/.exec(text);
+    const start = /^(?:Bot passed for [^;]+; )?(.+)'s turn\.$/.exec(text);
     const roll = /^(.+) rolled (\d+)!$/.exec(text);
     if (start) turns.unshift({ name: start[1]!, lines: [] });
     else if (roll && roll[1] === turn.name && !turn.sum) turn.sum = Number(roll[2]);
@@ -41,8 +43,8 @@ export function turnsOf(lines: { text: string }[]): Turn[] {
 export function GameLog({ opener, onClose }: { opener: HTMLElement | null; onClose: () => void }) {
   const log = useGame((s) => s.gameLog);
   const players = useGame((s) => s.state?.players);
-  // This seat, the same test as the tray's roll line (Hud.tsx): a watcher has none.
-  const mine = useGame((s) => (s.spectator ? undefined : s.state?.players.find((p) => p.id === s.localId)?.name));
+  // This seat: a watcher has none, and in hotseat it is the seat whose turn it is (the actor, as Hud.tsx has it).
+  const mine = useGame((s) => (s.spectator ? undefined : s.state?.players.find((p) => p.id === (s.mode === "hotseat" ? s.state!.current : s.localId))?.name));
   const root = useRef<HTMLDivElement>(null);
   useFocusTrap(root, true, undefined, opener);
   const backdrop = useBackdropClose(onClose);
@@ -73,7 +75,7 @@ export function GameLog({ opener, onClose }: { opener: HTMLElement | null; onClo
             <li key={turns.length - i} data-testid="gl-turn" className="gl-turn">
               <div className={`flex min-h-7 items-center gap-2 ${t.name && t.name === mine ? "text-gain" : ""}`}>
                 {t.name ? <SeatDot color={players?.find((p) => p.name === t.name)?.color ?? "transparent"} className="size-3" /> : null}
-                <b className="min-w-0 flex-1 truncate text-[16px] font-semibold leading-6">{t.name || (log.length < 200 ? "Setup" : "Earlier")}</b>
+                <b className="min-w-0 flex-1 truncate text-[16px] font-semibold leading-6">{t.name || (log.length < GAME_LOG_MAX ? "Setup" : "Earlier")}</b>
                 {t.sum ? <span data-testid="gl-roll" aria-label={`rolled ${t.sum}`} className={`gl-roll ${t.sum === 6 || t.sum === 8 ? "text-danger" : ""}`}>{t.sum}</span> : null}
               </div>
               {t.lines.map((line, j) => (

@@ -5,7 +5,7 @@
 // back on the button. Leaving an online seat asks first (the seat goes to a bot for good), and so does leaving hotseat (#1449:
 // the game ends, with nothing saved); Stay, Escape or 5 s cancels.
 // #669: Sound opens the Sound panel (SoundSheet.tsx) in the same place, with every level showing; Back and Escape return to the rows.
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BookOpen, Box, Bug, Copy, Ellipsis, Eye, Hammer, History, LogOut, ScrollText, Volume2, VolumeX, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConnectionOverlay, GameLog, gameLog as logSheet, SoundSheet, soundSheet } from "@/components/game/chunks";
@@ -58,6 +58,11 @@ export function TableMenu() {
     if (refocus) trigger.current?.focus();
   };
   const back = () => setSound(false);
+  // The log chunk could not load: the sheet never took the focus, so the menu button gets it back; the next press tries again.
+  const closeLog = useCallback(() => {
+    setLog(false);
+    trigger.current?.focus();
+  }, []);
   const stay = () => {
     refocusLeave.current = true;
     setAsking(false);
@@ -305,7 +310,7 @@ export function TableMenu() {
         </div>
       ) : null}
       {log ? (
-        <LazyBoundary failed={<TrayFailed close={() => setLog(false)} />}>
+        <LazyBoundary failed={<TrayFailed close={closeLog} />}>
           <GameLog opener={trigger.current} onClose={() => setLog(false)} />
         </LazyBoundary>
       ) : null}
