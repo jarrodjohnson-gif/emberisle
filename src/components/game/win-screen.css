@@ -2,7 +2,8 @@
 .win-screen { padding: max(12px, env(safe-area-inset-top)) env(safe-area-inset-right) 0 env(safe-area-inset-left); }
 /* One surface: while the sheet is up it stands in for the tray, which keeps its place (the island's fit) but does not show. */
 body:has(.win-screen) [data-hud-stack] { visibility: hidden; }
-.win-sheet { max-height: 100%; gap: 4px; }
+/* White, as the score surfaces are (public-score-prove), a shade off the tray's #fbfdfc. */
+.win-sheet { max-height: 100%; gap: 4px; background: #fff; }
 .win-head { font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.01em; }
 .win-how { color: #52625f; font-size: 14px; line-height: 20px; }
 /* The tray's buttons: a soft fill for the quiet ones, ink for the one primary. */
