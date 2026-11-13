@@ -466,6 +466,7 @@ try {
     const page = await open(sizes[2].opts, [seat("SOLO", "p0")]);
     await goto(page, nextHost());
     await page.getByTestId("win-screen").waitFor();
+    await page.getByTestId("win-row").first().waitFor();
     assert.equal(await page.getByTestId("win-untracked").innerText(), "This game isn't tracked.");
     assert.equal(await page.getByTestId("win-profile").count(), 0, "no row claims a profile win");
     await page.context().close();
@@ -489,6 +490,8 @@ try {
     const page = await open(sizes[2].opts, [seat("GONE", "p1")]);
     await goto(page, nextHost());
     await page.getByTestId("win-screen").waitFor();
+    // The list is its own chunk on the desktop too; its rows land a moment after the sheet.
+    await page.getByTestId("win-row").first().waitFor();
     assert.deepEqual(await notes(page), { p1: "1 profile win", p0: "Not tracked", p2: "Not tracked" }, "the deleted profile's row says Not tracked");
     await page.context().close();
   }
