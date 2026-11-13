@@ -7,6 +7,7 @@
 // - Each state (front, Play, seat open, a code typed, a join link, a watch link): every control is 44 px or more both ways,
 //   all text is 12 px or more, nothing is off screen, and the tray does not scroll at first paint.
 // - Two taps start a bot game. Back returns to the front. Leaving a table opens the Play page, not the front.
+// - #1151: six open tables show a page at a time (3, or 1 on a sideways phone) with More, and the tray still does not scroll.
 // Zero page errors. Run: npm run first-minute-prove. SHOTS=1 also writes device-scale-2 PNGs (and adds 430x932) to
 // docs/proofs/first-minute/.
 import assert from "node:assert/strict";
@@ -196,8 +197,30 @@ try {
     assert.deepEqual(watch.primary, ["Watch"], `${tag} watch link: Watch is the primary`);
     await watching.close();
 
+    // #1151: six open tables. A page of 3 (1 on a sideways phone) and More, so the tray still does not scroll; More walks
+    // every table and comes back to the first.
+    const listing = await ctx.newPage();
+    listing.on("pageerror", (e) => errors.push(String(e)));
+    const six = ["Ember", "Tide", "Dune", "Fern", "Ash", "Moss"].map((n, i) => ({ code: `K7Q${i}`, name: `${n}'s table`, seated: 1, total: 4, status: "lobby" }));
+    await listing.routeWebSocket(/127\.0\.0\.1:9\//, (ws) => ws.onMessage((m) => JSON.parse(String(m)).type === "list" && ws.send(JSON.stringify({ type: "openTables", tables: six }))));
+    await listing.goto(`${base}?host=ws://127.0.0.1:9`);
+    await listing.getByRole("button", { name: "Play", exact: true }).click();
+    await listing.getByTestId("open-tables").waitFor();
+    const per = v.height < 500 ? 1 : 3;
+    const seen = [];
+    for (let i = 0; i < 6 / per; i++) {
+      const names = await listing.getByTestId("open-table-entry").locator("p.truncate").allInnerTexts();
+      assert.equal(names.length, per, `${tag} six tables: ${per} on a page, found ${JSON.stringify(names)}`);
+      if (i === 0) await state(listing, tag, "six open tables", "six-tables");
+      seen.push(...names);
+      await listing.getByRole("button", { name: "More", exact: true }).click();
+    }
+    assert.deepEqual(seen, six.map((t) => t.name), `${tag} six tables: More walks every table once`);
+    assert.equal(await listing.getByTestId("open-table-entry").locator("p.truncate").first().innerText(), "Ember's table", `${tag} six tables: More comes back to the first`);
+    await listing.close();
+
     assert.deepEqual(errors, [], `${tag}: page errors`);
-    console.log(`ok   ${tag}: front (Emberisle, Play), Play page, seat open, code typed, Back, two taps to a bot game, join link, watch link`);
+    console.log(`ok   ${tag}: front (Emberisle, Play), Play page, seat open, code typed, Back, two taps to a bot game, join link, watch link, six open tables`);
     await ctx.close();
   }
   console.log(`first-minute-prove: ok${SHOTS ? `, pictures in ${OUT}/` : ""}`);

@@ -11,10 +11,6 @@ import { Button } from "@/components/ui/button";
 const Globe = createLucideIcon("g", [["circle", { cx: "12", cy: "12", r: "10", key: "a" }], ["path", { d: "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20", key: "b" }], ["path", { d: "M2 12h20", key: "c" }]]);
 const Lock = createLucideIcon("l", [["rect", { width: "18", height: "11", x: "3", y: "11", rx: "2", ry: "2", key: "a" }], ["path", { d: "M7 11V7a5 5 0 0 1 10 0v4", key: "b" }]]);
 
-// Only the rules host marks its served HTML. Static root builds also support offline play.
-function hostExpected(): boolean {
-  return new URLSearchParams(location.search).has("host") || !!document.querySelector('meta[name="emberisle-host"]');
-}
 
 export function OpenTables() {
   const [openTables, setOpenTables] = useState<OpenTableEntry[]>([]);
@@ -22,7 +18,8 @@ export function OpenTables() {
   const watchTable = useGame((s) => s.watchTable);
 
   useEffect(() => {
-    if (!hostExpected()) return;
+    // Only the rules host marks its served HTML. Static root builds also support offline play.
+    if (!new URLSearchParams(location.search).has("host") && !document.querySelector('meta[name="emberisle-host"]')) return;
     let alive = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let client: ReturnType<typeof connectTable>;
@@ -59,13 +56,17 @@ export function OpenTables() {
     };
   }, []);
 
+  // #1151: nothing scrolls on a phone. A page of 3 tables, 1 on a sideways phone; More shows the next page, then the first.
+  const [from, setFrom] = useState(0);
+  const per = innerHeight < 500 ? 1 : 3;
+  const at = from < openTables.length ? from : 0;
   if (!openTables.length) return null;
 
   return (
     <div data-testid="open-tables" className="mt-2 border-t border-border pt-2">
       <p className="mb-1 text-xs font-medium text-muted">Open tables</p>
       <ul className="flex flex-col gap-1">
-        {openTables.map((t) => {
+        {openTables.slice(at, at + per).map((t) => {
           return (
             <li
               key={t.code}
@@ -95,6 +96,11 @@ export function OpenTables() {
           );
         })}
       </ul>
+      {openTables.length > per && (
+        <Button size="sm" variant="ghost" className="h-11 min-w-0 px-3" onClick={() => setFrom(at + per)}>
+          More
+        </Button>
+      )}
     </div>
   );
 }

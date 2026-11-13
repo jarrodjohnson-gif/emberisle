@@ -62,7 +62,7 @@ The same tray grows. Top to bottom on an upright phone:
 | Code, Join | Joins a table by its four-letter code. |
 | Code for private tables | The approved helper line under the code field. 12 px. |
 | Watch | Appears only when the code field holds four characters, as today. |
-| Open tables | The list of open tables appears under the buttons when there is one, as today. |
+| Open tables | The list of open tables appears under the buttons when there is one. It shows 3 at a time (1 on a sideways phone), with a quiet More under them that shows the next ones, then the first again, so the tray never scrolls. |
 | Your seat (dot and name) | Closed by default. Opens the name field, the four colours and Profile. |
 | Game options | Closed by default. Opens the three Wayfarer on or off choices. |
 
