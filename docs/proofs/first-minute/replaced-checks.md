@@ -28,3 +28,4 @@ Lines that are not checks also changed. They are presses and waits, with the but
 - `scripts/chrome-prove.mjs:72` and `scripts/contrast-prove.mjs:64` read the 12 px caption from "Code for private tables". They read it from "3 bots, no network" before.
 - `scripts/chrome-prove.mjs:55` reads the white surface from the tray itself at every size. On desktop it read an inner panel that no longer exists.
 - `scripts/loading-screen-prove.mjs:211-217` walks the real path from the loading screen. Start lands on the Play page (a new check). It presses Back to read the front page's 56 px wordmark (the old check, unchanged), then Play, then Play with bots.
+- `scripts/haptics-startup-prove.mjs:25, :44, :84` wait for the title's first render by its "Play with bots" button. They waited for the "Emberisle" heading, which the Play page does not have. The three asserts after the waits are unchanged.
