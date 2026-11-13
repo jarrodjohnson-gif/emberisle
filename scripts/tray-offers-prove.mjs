@@ -92,6 +92,33 @@ const check = (ok, msg) => {
 let code = 0;
 
 // Everything the rules read off the bottom stack.
+// #1595: an offered hand column has no border (no inset ring), and its "−N" or "+N" tag sits above the column, clear of the
+// column's symbol and number.
+const handMarks = async (page) => {
+  // Measured at rest: a hand column's gain or loss motion moves its symbol while it runs.
+  await page.waitForFunction(() => (document.querySelector('[data-testid="hand-dock"]')?.getAnimations({ subtree: true }).length ?? 0) === 0, null, { timeout: 10_000 });
+  return page.evaluate(() => [...document.querySelectorAll("[data-hud-stack] [data-offer]")].map((slot) => {
+    const card = slot.querySelector(".goods-card");
+    const tag = slot.querySelector('[data-testid="offer-delta"]').getBoundingClientRect();
+    const parts = [...card.querySelectorAll(":scope > .goods-icon, :scope > .goods-count, :scope > .goods-label")].filter((el) => el.getBoundingClientRect().height > 1);
+    const over = parts.filter((el) => { const r = el.getBoundingClientRect(); return r.left < tag.right && tag.left < r.right && r.top < tag.bottom && tag.top < r.bottom; });
+    const top = (r) => Math.round(r.top), bot = (r) => Math.round(r.bottom);
+    return { kind: slot.dataset.offer, ring: /inset/.test(getComputedStyle(card).boxShadow), above: tag.top < card.getBoundingClientRect().top, hit: over.length > 0, tag: [top(tag), bot(tag)], over: over.map((el) => `${el.getAttribute("class")} ${top(el.getBoundingClientRect())}-${bot(el.getBoundingClientRect())}`) };
+  }));
+};
+// #1595: the top line's dot, if any, is a seat's colour: in a discard and in "take from whom" there is none, or the seat's own.
+const lineDot = (page) =>
+  page.evaluate(() => {
+    const b = document.querySelector('[data-hud-stack] [data-testid="turn-banner"]');
+    const cs = getComputedStyle(b, "::before");
+    const seats = window.__emberisle.getState().state.players.map((p) => p.color);
+    const probe = document.createElement("i");
+    document.body.append(probe);
+    const rgb = seats.map((c) => { probe.style.color = c; return getComputedStyle(probe).color; });
+    probe.remove();
+    return { shown: cs.content !== "none" && cs.display !== "none", color: cs.backgroundColor, seat: rgb.includes(cs.backgroundColor) };
+  });
+
 const readStack = (page) =>
   page.evaluate(() => {
     const s = document.querySelector("[data-hud-stack]");
@@ -225,6 +252,9 @@ try {
     check(s.hand === 5 && s.handBox && s.line && s.answers[0] && s.line.bottom <= s.handBox.top + 1 && (v.width >= 768 && !v.touch ? s.answers[0].left >= s.handBox.right : s.answers[0].top >= s.handBox.bottom - 1), `${at}: the sentence is above the hand and the buttons ${v.touch ? "under" : "beside"} it ${JSON.stringify({ line: s.line, hand: s.handBox, row: s.answers[0] })}`);
     const deltas = await page.evaluate(() => [...document.querySelectorAll('[data-testid="offer-delta"]')].map((d) => d.textContent.trim()).sort());
     check(JSON.stringify(deltas) === JSON.stringify(["+1", "−1"]), `${at}: the hand marks ${JSON.stringify(deltas)}, want −1 and +1`);
+    const marks = await handMarks(page);
+    check(marks.length === 2 && marks.every((m) => !m.ring), `${at}: an offered hand column has a border ${JSON.stringify(marks)}`);
+    check(marks.every((m) => m.above && !m.hit), `${at}: a hand tag is not above its column, clear of the symbol and number ${JSON.stringify(marks)}`);
     await rules(s, at);
     await shot("offer");
     if (v.full) {
@@ -281,6 +311,8 @@ try {
     check(JSON.stringify(s.answers.map((b) => b.text)) === JSON.stringify(["Cancel"]) && !s.answers[0].primary, `${at}: the action row is ${JSON.stringify(s.answers.map((b) => b.text))}, want Cancel alone`);
     check(!s.buttons.some((b) => ["build-open", "Trade", "End turn"].includes(b.name)), `${at}: the turn's buttons show beside Cancel ${JSON.stringify(s.buttons.map((b) => b.name))}`);
     oneRow(s.answers, at);
+    const mine = await handMarks(page);
+    check(mine.length === 2 && mine.every((m) => !m.ring && m.above && !m.hit), `${at}: my offer's hand columns have a border or a tag on the symbol ${JSON.stringify(mine)}`);
     await rules(s, at);
     await shot("offer-mine");
     if (v.full) {
@@ -318,6 +350,10 @@ try {
     check(s.banner === "Discard 4: ready" && !s.discard[0].disabled && s.discard[0].primary, `${at}: at four the status reads "${s.banner}" and Discard is ${JSON.stringify(s.discard[0])}`);
     const minus = s.buttons.filter((b) => /^discard-back-/.test(b.name));
     check(minus.length === 5 && minus.every((m) => m.bottom <= s.discard[0].top || m.right <= s.discard[0].left), `${at}: a take-back button's target overlaps Discard ${JSON.stringify({ minus, discard: s.discard[0] })}`);
+    check(minus.every((m) => m.w >= 44 && m.h >= 44), `${at}: a take-back target is under 44 px ${JSON.stringify(minus)}`);
+    check(minus.every((m) => s.tokens.every((t) => m.bottom <= t.top || m.top >= t.bottom || m.right <= t.left || m.left >= t.right)), `${at}: a take-back target overlaps a number ${JSON.stringify({ minus, tokens: s.tokens })}`);
+    const pickedDot = await lineDot(page);
+    check(!pickedDot.shown || pickedDot.seat, `${at}: the top line has a dot that is no seat's colour ${JSON.stringify(pickedDot)}`);
     await rules(s, `${at}, picked`);
     await shot("discard-picked");
     // A fifth tap adds nothing.
@@ -352,6 +388,9 @@ try {
       check(s.banner === "Take from whom?", `${at}: the status reads "${s.banner}", want "Take from whom?"`);
       check(JSON.stringify(s.takes.map((b) => b.text.replace(/\d+$/, ""))) === JSON.stringify(names) && s.takes.every((b) => b.dot && !b.primary && Math.abs(b.h - 48) <= 0.5), `${at}: the action row is ${JSON.stringify(s.takes)}, want one 48 px button per seat with its dot: ${names.join(", ")}`);
       check(s.buttons.filter((b) => !/^resource-/.test(b.name)).length === names.length, `${at}: other buttons show beside the seats ${JSON.stringify(s.buttons.map((b) => b.name))}`);
+      check(s.takes.every((b) => !/\(bot\)/.test(b.text) && /\d$/.test(b.text)), `${at}: a take-from button says "(bot)" or shows no card count ${JSON.stringify(s.takes.map((b) => b.text))}`);
+      const takeDot = await lineDot(page);
+      check(!takeDot.shown || takeDot.seat, `${at}: the top line has a dot that is no seat's colour ${JSON.stringify(takeDot)}`);
       await rules(s, at);
       await shot(hotseat ? "take-from-hotseat" : "take-from");
       const before = sum(g.players.find((p) => p.id === targets[1]).resources);
