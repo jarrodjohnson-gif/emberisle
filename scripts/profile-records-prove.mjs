@@ -420,7 +420,7 @@ try {
     await phone.waitForFunction(() => document.querySelector('[data-player="p1"]')?.closest("li")?.textContent.includes("1 profile win"), null, { timeout: 30000 });
     const committed = { p1: "1 profile win", p0: "2 profile wins", p2: "Not tracked" };
     assert.deepEqual(await notes(phone), committed, "phone list: the committed totals");
-    await desk.waitForFunction(() => document.querySelector('[data-player="p1"]')?.closest("tr")?.textContent.includes("1 profile win"), null, { timeout: 5000 });
+    await desk.waitForFunction(() => document.querySelector('[data-player="p1"]')?.closest("li")?.textContent.includes("1 profile win"), null, { timeout: 5000 });
     assert.deepEqual(await notes(desk), committed, "desktop table: the committed totals");
     assert.deepEqual(lastState(cy).result, { tracked: true, wins: { p0: 2, p1: 1 } });
     // More terminal pushes (a rejoin, and another) re-read the store; none adds a win.
