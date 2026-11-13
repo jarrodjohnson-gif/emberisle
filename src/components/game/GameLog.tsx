@@ -86,18 +86,18 @@ export function GameLog({ opener, onClose }: { opener: HTMLElement | null; onClo
   return createPortal(
     <div className="build-wash fixed inset-0 z-50 flex items-end justify-center" {...backdrop}>
       <div ref={root} role="dialog" aria-modal="true" aria-labelledby="game-log-title" data-testid="game-log" className="tray-sheet game-log flex w-full max-w-[520px] flex-col">
-        <div className="flex shrink-0 items-center justify-between gap-3">
-          <h2 id="game-log-title" className="text-[20px] font-bold leading-7">Game log</h2>
+        <div className="gl-top">
+          <h2 id="game-log-title">Game log</h2>
           <Button variant="ghost" className="-mr-3 size-11 p-0" onClick={onClose} aria-label="Close" back>
             <X className="size-5" />
           </Button>
         </div>
-        <ol ref={list} tabIndex={0} aria-label="Turns, oldest first" onScroll={({ currentTarget: el }) => { if (el.clientHeight === pinned.current) stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 8; }} className="min-h-0 overflow-y-auto">
+        <ol ref={list} tabIndex={0} aria-label="Turns, oldest first" onScroll={({ currentTarget: el }) => { if (el.clientHeight === pinned.current) stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 8; }}>
           {turns.map((t, i) => (
             <li key={i} data-testid="gl-turn" className="gl-turn">
-              <div className={`flex min-h-7 items-center gap-2 ${t.name && t.name === mine ? "text-gain" : ""}`}>
+              <div className={t.name && t.name === mine ? "text-gain" : undefined}>
                 {t.name ? <SeatDot color={players?.find((p) => p.name === t.name)?.color ?? "transparent"} className="size-3" /> : null}
-                <b className="min-w-0 flex-1 truncate text-[16px] font-semibold leading-6">{t.name || (log.length < GAME_LOG_MAX ? "Setup" : "Earlier")}</b>
+                <b>{t.name || (log.length < GAME_LOG_MAX ? "Setup" : "Earlier")}</b>
                 {t.sum ? <span data-testid="gl-roll" aria-label={`rolled ${t.sum}`} className={`gl-roll ${t.sum === 6 || t.sum === 8 ? "text-danger" : ""}`}>{t.sum}</span> : null}
               </div>
               {t.lines.map((line, j) => (
