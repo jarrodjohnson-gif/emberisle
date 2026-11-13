@@ -697,7 +697,7 @@ try {
   await page.keyboard.press("Escape");
   await page.getByTestId("win-chip").waitFor({ timeout: 2000 });
   console.log("win dialog:", JSON.stringify({ focused, modal }));
-  if (focused?.trim() !== "Back to menu" || modal !== "true") throw new Error(`win dialog: ${JSON.stringify({ focused, modal })}`);
+  if (focused?.trim() !== "Menu" || modal !== "true") throw new Error(`win dialog: ${JSON.stringify({ focused, modal })}`);
 
   // #253/#565: reduced motion retains the readable hand delta fade; the banner fade is cut short.
   await page.emulateMedia({ reducedMotion: "reduce" });

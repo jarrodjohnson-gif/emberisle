@@ -146,7 +146,7 @@ const view = (t) =>
       title: document.title,
       turnBanner: document.querySelector('[data-testid="turn-banner"]')?.textContent ?? null,
       alert: document.querySelector('[role="alert"]')?.textContent ?? null,
-      winRows: [...document.querySelectorAll('[data-testid="win-row"]')].map((r) => [...r.querySelectorAll("td")].map((c) => c.textContent.trim())),
+      winRows: [...document.querySelectorAll('[data-testid="win-row"]')].map((r) => [r.dataset.player, r.querySelector('[data-testid="win-total"]').textContent.trim(), ...[...document.querySelectorAll(`#win-part-${r.dataset.player} dd`)].map((c) => c.textContent.trim())]),
       winHeadline: document.querySelector('[data-testid="win-headline"]')?.textContent ?? null,
     };
   });
