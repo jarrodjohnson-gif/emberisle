@@ -65,13 +65,13 @@ export function OpenTables() {
   return (
     <div data-testid="open-tables" className="mt-2 border-t border-border pt-2">
       <p className="mb-1 text-xs font-medium text-muted">Open tables</p>
-      <ul className="flex flex-col gap-1">
+      <ul className="divide-y divide-border">
         {openTables.slice(at, at + per).map((t) => {
           return (
             <li
               key={t.code}
               data-testid="open-table-entry"
-              className="flex items-center justify-between gap-2 rounded-[10px] border border-border bg-surface px-2.5 py-1.5"
+              className="flex min-h-11 items-center justify-between gap-2 py-1"
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium leading-tight">{t.name}</p>

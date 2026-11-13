@@ -449,9 +449,12 @@ function Title({ arrive }: { arrive: boolean }) {
                 <summary className="flex min-h-11 cursor-pointer items-center justify-between text-sm font-semibold">
                   Game options<svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg>
                 </summary>
+                {/* #1151: what the three choices switch, in the words the title uses. */}
+                <p className="text-xs font-medium leading-3 text-muted">Wayfarer</p>
                 <LazyBoundary failed={null}>
                   <WayfarerOptions rules={rules} choose={useGame.getState().setWayfarerChoice} />
                 </LazyBoundary>
+                <p id="wayfarer-help" className="pt-2 text-xs text-muted">Off: the Wayfarer never moves or blocks. Sevens still discard. Off fortunes add to the army.</p>
               </details>
             </div>
           </>

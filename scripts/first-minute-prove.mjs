@@ -159,6 +159,15 @@ try {
     assert.equal(await page.getByRole("radio").count(), 4, `${tag} seat: four colours`);
     await page.locator("summary[aria-label='Your seat']").click();
 
+    // #1151: Game options says what it switches: the Wayfarer, With bots, Online, Pass and play. No "Hotseat" or "Practice".
+    await page.locator("[data-testid='wayfarer-setup'] summary").click();
+    await page.getByRole("combobox", { name: "Pass and play wayfarer" }).waitFor();
+    const options = await state(page, tag, "game options open");
+    const section = await page.getByTestId("wayfarer-setup").innerText();
+    assert.match(section.replace(/\s+/g, " "), /^Game options Wayfarer With bots On Off Online On Off Pass and play On Off Off: the Wayfarer never moves or blocks\./, `${tag} game options: its words`);
+    assert.ok(!/Hotseat|Practice/i.test(options.words), `${tag} game options: an old word is back: ${options.words}`);
+    await page.locator("[data-testid='wayfarer-setup'] summary").click();
+
     // A code typed: Watch joins the list. It is not a second primary.
     await page.getByRole("textbox", { name: "Join code" }).fill("ABCD");
     await page.getByRole("button", { name: "Watch", exact: true }).waitFor();
@@ -211,7 +220,12 @@ try {
     for (let i = 0; i < 6 / per; i++) {
       const names = await listing.getByTestId("open-table-entry").locator("p.truncate").allInnerTexts();
       assert.equal(names.length, per, `${tag} six tables: ${per} on a page, found ${JSON.stringify(names)}`);
-      if (i === 0) await state(listing, tag, "six open tables", "six-tables");
+      if (i === 0) {
+        await state(listing, tag, "six open tables", "six-tables");
+        // One box per thing to press: rows are not boxes (no side border; a 1 px divider between them), Join is the box, and each row is 44 px or more.
+        const rows = await listing.getByTestId("open-table-entry").evaluateAll((els) => els.map((el) => ({ border: getComputedStyle(el).borderLeftWidth, h: el.getBoundingClientRect().height })));
+        assert.ok(rows.every((r) => r.border === "0px" && r.h >= 43.5), `${tag} six tables: borderless rows of 44 px or more, found ${JSON.stringify(rows)}`);
+      }
       seen.push(...names);
       await listing.getByRole("button", { name: "More", exact: true }).click();
     }

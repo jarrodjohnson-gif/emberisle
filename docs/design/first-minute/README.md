@@ -62,9 +62,9 @@ The same tray grows. Top to bottom on an upright phone:
 | Code, Join | Joins a table by its four-letter code. |
 | Code for private tables | The approved helper line under the code field. 12 px. |
 | Watch | Appears only when the code field holds four characters, as today. |
-| Open tables | The list of open tables appears under the buttons when there is one. It shows 3 at a time (1 on a sideways phone), with a quiet More under them that shows the next ones, then the first again, so the tray never scrolls. |
+| Open tables | The list of open tables appears under the buttons when there is one. It shows 3 at a time (1 on a sideways phone), with a quiet More under them that shows the next ones, then the first again, so the tray never scrolls. Rows are not boxes: a 1 px divider separates them, Join is the one box, and a full table says Full in quiet text. |
 | Your seat (dot and name) | Closed by default. Opens the name field, the four colours and Profile. |
-| Game options | Closed by default. Opens the three Wayfarer on or off choices. |
+| Game options | Closed by default. Opens a quiet "Wayfarer" heading, then three on or off choices: With bots, Online, Pass and play, and one help line: "Off: the Wayfarer never moves or blocks. Sevens still discard. Off fortunes add to the army." |
 
 On a sideways phone the buttons are the right column. Back, your seat and Game options are the left column.
 
@@ -87,6 +87,7 @@ On a sideways phone the buttons are the right column. Back, your seat and Game o
 | 3 bots, no network | removed | "Play with bots" says it. |
 | Four seats, one table | Pass and play | The plain name for one device passed around. |
 | Wayfarer, with "Practice: On · Online: On · Hotseat: On" | Game options | The owner asked for no jargon here. The status line is gone. |
+| Practice, Online, Hotseat (inside Game options) | With bots, Online, Pass and play, under a "Wayfarer" heading | Fable's review: the choices name the three ways to play, in the title's own words. |
 
 ### What is removed
 
