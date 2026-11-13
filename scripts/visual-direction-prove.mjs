@@ -102,7 +102,9 @@ try {
         const covered = window.__emberisle.getState().state.vertices.map(v => v.id).filter(id => { const p = r.screenOf(id); return document.elementFromPoint(p.x, p.y)?.tagName !== 'CANVAS'; });
         const offer = document.querySelector('[data-testid="trade-toast"]');
         const stack = document.querySelector('[data-hud-stack]').getBoundingClientRect();
-        const b = offer?.getBoundingClientRect();
+        // #1546: in the tray the offer draws no box of its own (display: contents); its top line and its answers are the rect.
+        const parts = offer ? (getComputedStyle(offer).display === 'contents' ? [...offer.children].map(c => c.getBoundingClientRect()).filter(r => r.width > 1 && r.height > 1) : [offer.getBoundingClientRect()]) : [];
+        const b = parts.length ? { top: Math.min(...parts.map(r => r.top)), bottom: Math.max(...parts.map(r => r.bottom)), left: Math.min(...parts.map(r => r.left)), right: Math.max(...parts.map(r => r.right)) } : null;
         return { scale, hole, out, covered, offer: b ? { top: b.top, bottom: b.bottom, left: b.left, right: b.right, insideStack: b.top >= stack.top && b.bottom <= stack.bottom + 0.5, modal: offer.getAttribute('aria-modal') } : null };
       }, holeFor);
       if (phase === "main") { mainFit = fitNow; mainHole = geometry.hole; }
