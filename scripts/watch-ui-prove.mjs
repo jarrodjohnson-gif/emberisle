@@ -457,6 +457,7 @@ try {
   if (wv.hasSeed || !av.hasSeed) throw new Error(`seed/rng: watcher ${wv.hasSeed}, seat ${av.hasSeed}`);
   // A row is a button now and may carry a seat's "Play again" tag; the watcher has no button that is Play again itself.
   if (wv.buttons.some((t) => /^(✓)?(I'll )?play again$/i.test(t))) throw new Error("the watcher has Play again");
+  if (await w1.page.getByTestId("win-again").count()) throw new Error("the watcher has the Play again button");
   if (wv.resources !== 0) throw new Error("the watcher grew a hand at the win");
   console.log(`win: "${wv.winHeadline}" at seq ${wv.seq}; the watcher's ${wv.winRows.length} rows equal Ember's (hidden ${JSON.stringify(wv.hiddenVp)}, hands ${JSON.stringify(wv.hands)}); no seed or rng, no Play again`);
 
