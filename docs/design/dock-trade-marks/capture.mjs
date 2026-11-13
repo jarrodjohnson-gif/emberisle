@@ -20,14 +20,18 @@ const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
+// [width, height, touch, which shots]. Jarrod's phone (440x956) and desktop (1280x720) were added in review: the phone zoomed
+// out and close up, the desktop at the home view.
 const SIZES = [
-  [390, 844, true],
-  [820, 1180, true],
-  [844, 390, true],
+  [390, 844, true, ["1-out", "2-home", "3-close"]],
+  [820, 1180, true, ["1-out", "2-home", "3-close"]],
+  [844, 390, true, ["1-out", "2-home", "3-close"]],
+  [440, 956, true, ["1-out", "3-close"]],
+  [1280, 720, false, ["2-home"]],
 ];
 const LITE = process.env.LITE === "1";
 try {
-  for (const [w, h, touch] of SIZES.filter(([w, h]) => !process.env.ONLY || process.env.ONLY === `${w}x${h}`)) {
+  for (const [w, h, touch, want] of SIZES.filter(([w, h]) => !process.env.ONLY || process.env.ONLY === `${w}x${h}`)) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1, hasTouch: touch, isMobile: touch, reducedMotion: "reduce" });
     await ctx.addInitScript(([option, lite]) => {
       localStorage.setItem("emberisle-jelly", lite ? "lite" : "full");
@@ -72,7 +76,7 @@ try {
       }],
     ];
     const home = await page.evaluate(() => window.__isle.pose());
-    for (const [name, make] of shots) {
+    for (const [name, make] of shots.filter(([n]) => want.includes(n))) {
       await page.evaluate(([src, home]) => {
         const i = window.__isle;
         i.applyPose(home);

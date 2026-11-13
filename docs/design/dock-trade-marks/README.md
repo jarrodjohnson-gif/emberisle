@@ -19,21 +19,44 @@ Author: Claude Opus 5.5 (builder 2), 2026-11-12. Base: `main` at `2486e10`.
 | **An owned dock** | A swallow-tailed pennant in the owner's colour on the pier head. | The same pennant, under the flag. | The same pennant, on top of the sign. |
 | **Zoomed out** | A small coloured plank at the end of each pier, smaller than the goods pile; it scales with the island, so it never covers a hex. At this size it reads as the good's colour, not its symbol. | A small coloured flag above the pier head. The mast barely shows from the camera's height, so the flag looks as if it floats. | A small coloured sign at the shoreline beside the dockhouse. |
 | **Close up** | The clearest: symbol and pips are largest, flat on the deck like a painted sign. | Clear, upright. | Clear, upright, but partly in front of the dockhouse on some docks. |
+| **On the lite board** | A smaller plank (0.24 × 0.12) on each plain pier's root. The owner shows by the sail's colour only, as today (no pennant on lite). On piers facing the camera the sail can hide part of it. | Nothing new: the sail's rate text and colour, as today. | Nothing new: the sail's rate text and colour, as today. |
+| **Against owner decisions** | None. | None. | **Goes against the 2026-10-19 row (#846)**, which says a dock shows its good with a goods pile on the pier, "not a big sign". If C is picked, it replaces that row. |
 
 In all three:
 - **A 3:1 dock's symbol** is a ring of five dots in the five goods' colours, meaning any good.
 - **No cream.** The marks use white and the goods' colours. Today's plank has a cream border, which this replaces.
 - **Ownership is public,** so nothing hidden is shown.
-- **An owned dock reads by shape as well as colour:** the pennant is only there when the dock is owned, and it has a swallow tail. The boat's sail already wears the owner's colour today; that stays.
+- **On the full board, an owned dock reads by shape as well as colour:** the pennant is only there when the dock is owned, and it has a swallow tail. The boat's sail already wears the owner's colour today; that stays.
+- **On the lite board,** ownership still shows by the sail's colour only, in every option (see the row above). A shape for lite would be a separate addition.
 
 ## Pictures
 
 Each picture comes from the real build:
 - **The game:** seed 14, four seats on one device, Ember to play. Ember owns the 3:1 dock (an outpost) and the wood dock (a stronghold); Tide owns the brick dock.
-- **Sizes:** 390×844, 820×1180 and 844×390, each zoomed right out (the game's least zoom, 0.8), at the home view, and close up on Ember's wood dock at the game's most zoom (2.4).
+- **Sizes:**
+  - 390×844, 820×1180 and 844×390, each zoomed right out (the game's least zoom, 0.8), at the home view, and close up on Ember's wood dock at the game's most zoom (2.4);
+  - Jarrod's phone, 440×956, zoomed right out and close up;
+  - desktop 1280×720 at the home view, for main, A, B and C.
 - **Rows:** *Main* is today's board. *Old tags* is the branch `codex/560-owned-dock-labels` (PR #881) at `29675fbb`, for comparison.
 
-All 63 pictures are in [`pictures/`](pictures/), named `<option>-<size>-<1-out|2-home|3-close>.jpg`; each is under 300 KB. The old-tags branch is older than main, so its HUD differs; only the docks are being compared.
+All 75 pictures are in [`pictures/`](pictures/), named `<option>-<size>-<1-out|2-home|3-close>.jpg`, plus one side-by-side crop, `compare-close-820x1180.png`; each is under 300 KB. The old-tags branch is older than main, so its HUD differs; only the docks are being compared.
+
+### On Jarrod's phone (440×956)
+
+| | Zoomed right out | Close up on Ember's wood dock |
+|---|---|---|
+| Main today | ![](pictures/main-440x956-1-out.jpg) | ![](pictures/main-440x956-3-close.jpg) |
+| A. Painted plank | ![](pictures/a-painted-plank-440x956-1-out.jpg) | ![](pictures/a-painted-plank-440x956-3-close.jpg) |
+| B. Flag on a mast | ![](pictures/b-flag-on-mast-440x956-1-out.jpg) | ![](pictures/b-flag-on-mast-440x956-3-close.jpg) |
+| C. Standing sign | ![](pictures/c-standing-sign-440x956-1-out.jpg) | ![](pictures/c-standing-sign-440x956-3-close.jpg) |
+
+### Desktop, the home view (1280×720)
+
+| Main today | A. Painted plank |
+|---|---|
+| ![](pictures/main-1280x720-2-home.jpg) | ![](pictures/a-painted-plank-1280x720-2-home.jpg) |
+| **B. Flag on a mast** | **C. Standing sign** |
+| ![](pictures/b-flag-on-mast-1280x720-2-home.jpg) | ![](pictures/c-standing-sign-1280x720-2-home.jpg) |
 
 ### Zoomed right out (the case Jarrod raised)
 
@@ -71,16 +94,20 @@ All 63 pictures are in [`pictures/`](pictures/), named `<option>-<size>-<1-out|2
 
 ## The lite board (software GPU)
 
-The lite board has no harbour shore: plain piers and boats, and no plank. Today a lite dock shows its trade only on the boat's sail: "2:1" or "3:1" in text, with the 2:1 sail banded in its good's colour. Option A carries over to lite: the prototype draws the same painted plank on each plain pier's root (on piers facing the camera, the sail covers the pier's end), so no dock is left without a mark. The sail keeps the owner's colour, as today. B and C were not drawn on lite; each would need the same small addition.
+The lite board has no harbour shore: plain piers and boats, and no plank. Today a lite dock shows its trade only on the boat's sail: "2:1" or "3:1" in text, with the 2:1 sail banded in its good's colour. The owner shows by the sail's colour.
+
+What each option adds on lite:
+- **A:** a smaller plank (0.24 × 0.12, not the full-board size) on each plain pier's root, drawn in the prototype. On piers facing the camera, the boat's sail can hide part of it. There is no pennant on lite, so the owner still shows by sail colour only.
+- **B and C:** nothing; lite keeps today's sail. Each would need its own addition.
 
 | | 390×844 | 820×1180 | 844×390 |
 |---|---|---|---|
+| Lite today, zoomed right out | ![](pictures/lite-main-390x844-1-out.jpg) | ![](pictures/lite-main-820x1180-1-out.jpg) | ![](pictures/lite-main-844x390-1-out.jpg) |
 | Lite today, home view | ![](pictures/lite-main-390x844-2-home.jpg) | ![](pictures/lite-main-820x1180-2-home.jpg) | ![](pictures/lite-main-844x390-2-home.jpg) |
 | Lite today, close up | ![](pictures/lite-main-390x844-3-close.jpg) | ![](pictures/lite-main-820x1180-3-close.jpg) | ![](pictures/lite-main-844x390-3-close.jpg) |
+| Lite with A, zoomed right out | ![](pictures/lite-a-painted-plank-390x844-1-out.jpg) | ![](pictures/lite-a-painted-plank-820x1180-1-out.jpg) | ![](pictures/lite-a-painted-plank-844x390-1-out.jpg) |
 | Lite with A, home view | ![](pictures/lite-a-painted-plank-390x844-2-home.jpg) | ![](pictures/lite-a-painted-plank-820x1180-2-home.jpg) | ![](pictures/lite-a-painted-plank-844x390-2-home.jpg) |
 | Lite with A, close up | ![](pictures/lite-a-painted-plank-390x844-3-close.jpg) | ![](pictures/lite-a-painted-plank-820x1180-3-close.jpg) | ![](pictures/lite-a-painted-plank-844x390-3-close.jpg) |
-
-The zoomed-out lite pictures are in `pictures/` too (`lite-*-1-out.jpg`).
 
 ## Cost
 
