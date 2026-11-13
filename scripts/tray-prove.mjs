@@ -213,6 +213,15 @@ try {
       check(Math.abs(m.live.bottom - m.hole.bottom) <= 4, `${at}: measured bottom inset ${m.live.bottom} is not within 4 px of the declared ${m.hole.bottom}`);
       console.log(`${at}: bottom inset measured ${m.live.bottom}, declared ${m.hole.bottom}`);
     }
+    // #1589: the sideways phone's tray is the left column, so its hole is measured on the left (the column and its gap) and
+    // at the bottom, against what mobile-fit declares for a phone on its side.
+    if (v.column) {
+      const m = await page.evaluate(() => ({ live: window.__isle.liveInsets(), hole: window.__isle.insets() }));
+      console.log(`${tag}: left inset measured ${m.live.left}, declared ${m.hole.left}`);
+      console.log(`${tag}: bottom inset measured ${m.live.bottom}, declared ${m.hole.bottom}`);
+      check(Math.abs(m.live.left - m.hole.left) <= 4, `${at}: measured left inset ${m.live.left} is not within 4 px of the declared ${m.hole.left}`);
+      check(Math.abs(m.live.bottom - m.hole.bottom) <= 4, `${at}: measured bottom inset ${m.live.bottom} is not within 4 px of the declared ${m.hole.bottom}`);
+    }
     await shot("table");
     if (!v.full) {
       // 430x932 is here for the inset and the pictures.
