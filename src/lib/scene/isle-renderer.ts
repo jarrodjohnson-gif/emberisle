@@ -1885,6 +1885,25 @@ export class IsleRenderer {
       this.living.add(boat);
       this.boats.push(boat);
     }
+    // #1593: the lite board (no harbour shore) paints the same dock mark on each plain pier.
+    if (this.lite) {
+      const docks = [...this.docks];
+      const land = this.land;
+      void import("./harbor-jelly").then(({ markAtlas, PLATE_KINDS }) => {
+        const atlas = markAtlas();
+        const mat = new THREE.MeshStandardMaterial({ map: atlas, emissive: 0x6a645a, emissiveMap: atlas, roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2 });
+        for (const d of docks) {
+          const pl = new THREE.PlaneGeometry(0.24, 0.12);
+          const row = PLATE_KINDS.indexOf(d.kind);
+          const uv = pl.attributes.uv as THREE.BufferAttribute;
+          for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - (row + 1 - uv.getY(i)) / PLATE_KINDS.length);
+          // At the pier's root: the boat's sail stands in front of the pier's end on piers that face the camera.
+          pl.rotateX(-Math.PI / 2).translate(d.cx + d.mx * 0.29, 0.128, d.cz + d.mz * 0.29);
+          land.add(new THREE.Mesh(pl, mat));
+        }
+        this.wake();
+      });
+    }
   }
 
   // A new board (or a first one, as on a reconnect) is drawn standing; only pieces added since the last board land.
@@ -1953,6 +1972,13 @@ export class IsleRenderer {
       if (sail && sail.material instanceof THREE.MeshStandardMaterial) {
         sail.material.color.set(claimed ? pmap.get(claimed)?.color ?? "#eee" : "#f4efe4");
       }
+    }
+    // #1593: a claimed dock's pennant goes up in the claiming seat's colour.
+    for (const pen of (this.shore?.group.userData.pennants as THREE.Group[] | undefined) ?? []) {
+      const claimed = ((pen.userData.vids as string[]).map((id) => vmap.get(id)).find((v) => v?.building) ?? null)?.building?.playerId;
+      pen.visible = Boolean(claimed);
+      const cloth = pen.children[1] as THREE.Mesh;
+      if (claimed) (cloth.material as THREE.MeshStandardMaterial).color.set(pmap.get(claimed)?.color ?? "#ccc");
     }
   }
 
