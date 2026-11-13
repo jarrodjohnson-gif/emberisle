@@ -121,7 +121,7 @@ const readStack = (page) =>
       if (!seen(el) || el.closest("button, [role='button'], .trade-resource, svg, [data-testid='dice-row']")) continue;
       const r = el.getBoundingClientRect();
       // A mark (a dot, a badge, one of my numbers' 20 px chips) is not a surface.
-      if (r.height <= 24) continue;
+      if (r.height <= 24.5) continue;
       const cs = getComputedStyle(el);
       // A line on one side (the divider between hand columns, another seat's colour beside the status) is not a box.
       const border = ["Top", "Right", "Bottom", "Left"].filter((k) => parseFloat(cs[`border${k}Width`]) > 0 && !clear(cs[`border${k}Color`])).length > 1;
@@ -277,7 +277,7 @@ try {
     at = `${tag} my offer`;
     check(s.line?.text === "You offer 1 wood for 1 stone", `${at}: the top line reads "${s.line?.text}"`);
     const refuser = g.players.find((p) => p.id === "p2").name;
-    check(s.wait === `${refuser} said no`, `${at}: who said no reads "${s.wait}", want "${refuser} said no"`);
+    check(s.wait === `${refuser.replace(/ \(bot\)$/, "")} said no`, `${at}: who said no reads "${s.wait}", want the name without "(bot)" and "said no"`);
     check(JSON.stringify(s.answers.map((b) => b.text)) === JSON.stringify(["Cancel"]) && !s.answers[0].primary, `${at}: the action row is ${JSON.stringify(s.answers.map((b) => b.text))}, want Cancel alone`);
     check(!s.buttons.some((b) => ["build-open", "Trade", "End turn"].includes(b.name)), `${at}: the turn's buttons show beside Cancel ${JSON.stringify(s.buttons.map((b) => b.name))}`);
     oneRow(s.answers, at);

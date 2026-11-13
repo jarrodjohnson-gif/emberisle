@@ -35,8 +35,9 @@ const takeFocus = (el: HTMLButtonElement | null) => {
   if (el) requestAnimationFrame(settle);
 };
 
+// One short line that never wraps the tray's top line: the name alone (no "(bot)"), or a count once two have answered.
 function declinedLine(names: string[]) {
-  return `${names.length > 1 ? `${names.slice(0, -1).join(", ")} and ` : ""}${names[names.length - 1]} said no`;
+  return names.length > 1 ? `${names.length} said no` : `${names[0]!.replace(/ \(bot\)$/, "")} said no`;
 }
 
 export function TradeToast() {
