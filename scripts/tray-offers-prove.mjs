@@ -145,7 +145,7 @@ const readStack = (page) =>
       answers: actionRow(s.querySelector(".trade-answers")),
       takes: actionRow(s.querySelector(".take-row")),
       discard: actionRow(s.querySelector(".discard-pick"))?.filter((b) => /^Discard/.test(b.text)),
-      tokens: [...s.querySelectorAll(".discard-pick .trade-resource")].map((t) => ({ kind: t.dataset.testid.replace("trade-discard-", ""), owned: t.querySelector('[data-testid="trade-owned"]')?.lastChild.textContent, badge: t.querySelector('[data-testid="trade-badge"]')?.textContent ?? null, ...box(t) })),
+      tokens: [...s.querySelectorAll(".discard-pick .discard-good")].map((t) => { const kind = t.dataset.testid.replace("discard-", ""); const back = s.querySelector(`[data-testid="discard-back-${kind}"]`); return { kind, owned: t.querySelector(".discard-keep")?.textContent, badge: back && !back.hasAttribute("aria-disabled") ? back.textContent.trim() : null, ...box(t) }; }),
       hand: [...s.querySelectorAll('[data-testid^="resource-"]')].filter((c) => /^resource-(timber|clay|wool|grain|ore)$/.test(c.dataset.testid) && seen(c)).length,
       handBox: (() => { const h = s.querySelector('[data-testid="hand-dock"]'); return h && seen(h) ? box(h) : null; })(),
       count: s.querySelector('[data-testid="discard-count"]')?.textContent ?? null,
@@ -224,7 +224,7 @@ try {
     oneRow(s.answers, at);
     check(s.hand === 5 && s.handBox && s.line && s.answers[0] && s.line.bottom <= s.handBox.top + 1 && (v.width >= 768 && !v.touch ? s.answers[0].left >= s.handBox.right : s.answers[0].top >= s.handBox.bottom - 1), `${at}: the sentence is above the hand and the buttons ${v.touch ? "under" : "beside"} it ${JSON.stringify({ line: s.line, hand: s.handBox, row: s.answers[0] })}`);
     const deltas = await page.evaluate(() => [...document.querySelectorAll('[data-testid="offer-delta"]')].map((d) => d.textContent.trim()).sort());
-    check(JSON.stringify(deltas) === JSON.stringify(["+1", "-1"]), `${at}: the hand marks ${JSON.stringify(deltas)}, want -1 and +1`);
+    check(JSON.stringify(deltas) === JSON.stringify(["+1", "−1"]), `${at}: the hand marks ${JSON.stringify(deltas)}, want −1 and +1`);
     await rules(s, at);
     await shot("offer");
     if (v.full) {
@@ -298,37 +298,37 @@ try {
     await settle();
     s = await readStack(page);
     at = `${tag} discard`;
-    check(s.banner === "Discard 4 goods", `${at}: the status reads "${s.banner}", want "Discard 4 goods"`);
+    check(s.banner === "Discard 4: pick 4 more", `${at}: the status reads "${s.banner}", want "Discard 4: pick 4 more"`);
     check(s.hand === 0 && s.tokens.length === 5 && s.tokens.every((t) => +t.owned === EIGHT[t.kind]), `${at}: five tokens with the counts held take the hand's place ${JSON.stringify({ hand: s.hand, tokens: s.tokens })}`);
     check(s.tokens.every((t) => t.w >= 44 && t.h >= 44), `${at}: a token is under 44 px ${JSON.stringify(s.tokens)}`);
     check(s.discard.length === 1 && s.discard[0].text === "Discard 4" && s.discard[0].disabled && !s.discard[0].primary, `${at}: one Discard 4 button, off ${JSON.stringify(s.discard)}`);
     await rules(s, at);
     await shot("discard");
-    const add = async (kind) => press(pick.getByRole("button", { name: new RegExp(`^More .* to discard$`) }).nth(RESOURCES.indexOf(kind)));
+    const add = async (kind) => press(pick.getByTestId(`discard-${kind}`));
     await add("timber");
     await add("timber");
     await add("clay");
     await settle();
     s = await readStack(page);
-    check(s.count === "3 of 4" && s.discard[0].disabled, `${at}: after three taps the count reads "${s.count}" and Discard is ${s.discard[0].disabled ? "off" : "on"}`);
+    check(s.banner === "Discard 4: pick 1 more" && s.discard[0].disabled, `${at}: after three taps the status reads "${s.banner}" and Discard is ${s.discard[0].disabled ? "off" : "on"}`);
     check(s.tokens.find((t) => t.kind === "timber").badge === "−2" && s.tokens.find((t) => t.kind === "clay").badge === "−1", `${at}: the badges read ${JSON.stringify(s.tokens.map((t) => t.badge))}`);
     await add("grain");
     await settle();
     s = await readStack(page);
-    check(s.count === "4 of 4" && !s.discard[0].disabled && s.discard[0].primary, `${at}: at four the count reads "${s.count}" and Discard is ${JSON.stringify(s.discard[0])}`);
-    const minus = s.buttons.filter((b) => /^trade-minus-discard-/.test(b.name));
-    check(minus.length === 3 && minus.every((m) => m.bottom <= s.discard[0].top || m.right <= s.discard[0].left), `${at}: a minus button's target overlaps Discard ${JSON.stringify({ minus, discard: s.discard[0] })}`);
+    check(s.banner === "Discard 4: ready" && !s.discard[0].disabled && s.discard[0].primary, `${at}: at four the status reads "${s.banner}" and Discard is ${JSON.stringify(s.discard[0])}`);
+    const minus = s.buttons.filter((b) => /^discard-back-/.test(b.name));
+    check(minus.length === 5 && minus.every((m) => m.bottom <= s.discard[0].top || m.right <= s.discard[0].left), `${at}: a take-back button's target overlaps Discard ${JSON.stringify({ minus, discard: s.discard[0] })}`);
     await rules(s, `${at}, picked`);
     await shot("discard-picked");
     // A fifth tap adds nothing.
     await add("grain");
     await add("ore");
-    check((await readStack(page)).count === "4 of 4", `${at}: a tap past the count changed it to ${(await readStack(page)).count}`);
+    check((await readStack(page)).banner === "Discard 4: ready", `${at}: a tap past the count changed the status to ${(await readStack(page)).banner}`);
     // Undo: the minus takes one back and turns Discard off again.
-    await press(page.getByTestId("trade-minus-discard-clay"));
+    await press(page.getByTestId("discard-back-clay"));
     await settle();
     s = await readStack(page);
-    check(s.count === "3 of 4" && s.discard[0].disabled && s.tokens.find((t) => t.kind === "clay").badge === null, `${at}: after the minus the count reads "${s.count}" ${JSON.stringify(s.discard[0])}`);
+    check(s.banner === "Discard 4: pick 1 more" && s.discard[0].disabled && s.tokens.find((t) => t.kind === "clay").badge === null, `${at}: after the take-back the status reads "${s.banner}" ${JSON.stringify(s.discard[0])}`);
     if (v.full) {
       await add("ore");
       await press(pick.getByRole("button", { name: "Discard 4" }));
@@ -348,14 +348,14 @@ try {
       await group.waitFor();
       await settle();
       const s = await readStack(page);
-      const names = targets.map((id) => g.players.find((p) => p.id === id).name);
+      const names = targets.map((id) => g.players.find((p) => p.id === id).name.replace(/ \(bot\)$/, ""));
       check(s.banner === "Take from whom?", `${at}: the status reads "${s.banner}", want "Take from whom?"`);
-      check(JSON.stringify(s.takes.map((b) => b.text)) === JSON.stringify(names) && s.takes.every((b) => b.dot && !b.primary && Math.abs(b.h - 48) <= 0.5), `${at}: the action row is ${JSON.stringify(s.takes)}, want one 48 px button per seat with its dot: ${names.join(", ")}`);
+      check(JSON.stringify(s.takes.map((b) => b.text.replace(/\d+$/, ""))) === JSON.stringify(names) && s.takes.every((b) => b.dot && !b.primary && Math.abs(b.h - 48) <= 0.5), `${at}: the action row is ${JSON.stringify(s.takes)}, want one 48 px button per seat with its dot: ${names.join(", ")}`);
       check(s.buttons.filter((b) => !/^resource-/.test(b.name)).length === names.length, `${at}: other buttons show beside the seats ${JSON.stringify(s.buttons.map((b) => b.name))}`);
       await rules(s, at);
       await shot(hotseat ? "take-from-hotseat" : "take-from");
       const before = sum(g.players.find((p) => p.id === targets[1]).resources);
-      await press(group.getByRole("button", { name: names[1] }));
+      await press(group.getByRole("button", { name: new RegExp(`^${names[1]}, \\d+ cards$`) }));
       await page.waitForFunction(() => window.__emberisle.getState().state.phase === "main");
       const after = await page.evaluate((id) => { const st = window.__emberisle.getState(); const p = st.state.players.find((x) => x.id === id); return { robber: st.state.robberHex, cards: Object.values(p.resources).reduce((a, b) => a + b, 0), pending: st.pendingSteal, mine: Object.values(st.state.players.find((x) => x.id === "p0").resources).reduce((a, b) => a + b, 0) }; }, targets[1]);
       check(after.robber === hexId && after.cards === before - 1 && after.pending === null && after.mine === sum(HAND) + 1, `${at}: the pick left ${JSON.stringify(after)}, want the wayfarer on ${hexId} and one good from ${names[1]}`);
@@ -371,7 +371,7 @@ try {
       await settle();
       s = await readStack(page);
       at = `${tag} hotseat discard`;
-      check(s.banner === `Discard 4 goods · ${owes}`, `${at}: the status reads "${s.banner}", want "Discard 4 goods · ${owes}"`);
+      check(s.banner === `Discard 4: pick 4 more · ${owes}`, `${at}: the status reads "${s.banner}", want "Discard 4: pick 4 more · ${owes}"`);
       check(s.tokens.length === 5 && s.tokens.every((t) => +t.owned === EIGHT[t.kind]) && s.hand === 0, `${at}: the tokens show ${owes}'s goods ${JSON.stringify(s.tokens)}`);
       await rules(s, at);
       await shot("discard-hotseat");
