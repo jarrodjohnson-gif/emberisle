@@ -185,40 +185,48 @@ try {
   });
 
   const p2Name = await page.evaluate(() => window.__emberisle.getState().state.players.find((p) => p.id === "p2").name);
-  const label = await page.getByText(`${p2Name}: discard 4`).textContent({ timeout: STEP_MS });
+  // #1546: the discard takes over the tray; its top line is the turn banner, names the seat and counts what is left to pick.
+  const label = await page.getByText(`Discard 4 · ${p2Name}: pick 4 more`).textContent({ timeout: STEP_MS });
   console.log("bar:", label);
   const bannerIs = (want) =>
     page.waitForFunction((t) => document.querySelector('[data-testid="turn-banner"]')?.textContent === t, want, { timeout: STEP_MS })
       .catch(async () => { throw new Error(`banner: want "${want}", got "${await page.getByTestId("turn-banner").textContent()}"`); });
-  await bannerIs(`Discard 4 goods · ${p2Name}`);
+  await bannerIs(`Discard 4 · ${p2Name}: pick 4 more`);
   console.log(`banner while ${p2Name} discards on p0's turn: "${await page.getByTestId("turn-banner").textContent()}"`);
 
-  const form = page.locator("form", { hasText: "discard 4" });
-  // #255: the bar counts what is picked, clamps each count to what the seat holds, and keeps Discard off until the total is exact.
-  const count = form.getByTestId("discard-count");
-  const submit = form.getByRole("button", { name: "Discard" });
+  const form = page.locator("form.discard-bar");
+  // #255: the bar counts what is picked, holds each count to what the seat holds, and keeps Discard off until the total is exact.
+  // #1546: a tap on a column picks one; a column picked down to nothing refuses; a take-back button returns one.
+  const count = page.getByTestId("discard-count");
+  const submit = form.getByRole("button", { name: "Discard 4" });
   const countState = async () => ({ text: (await count.textContent()).trim(), disabled: await submit.isDisabled() });
+  const kept = (r) => form.getByTestId(`discard-${r}`).locator(".goods-count").textContent();
+  // A refused pick is aria-disabled, which Playwright will not click unless forced; a person can still tap it.
+  const tap = (r, n = 1) => (async () => { for (let i = 0; i < n; i++) await form.getByTestId(`discard-${r}`).click({ force: true }); })();
+  const back = (r, n = 1) => (async () => { for (let i = 0; i < n; i++) await form.getByTestId(`discard-back-${r}`).click({ force: true }); })();
   const start = await countState();
-  if (start.text !== "0 of 4" || !start.disabled) throw new Error(`empty bar: ${JSON.stringify(start)}`);
-  await form.getByLabel("Wood").fill("3");
+  if (start.text !== "pick 4 more" || !start.disabled) throw new Error(`empty bar: ${JSON.stringify(start)}`);
+  await tap("timber", 3);
   const part = await countState();
-  if (part.text !== "3 of 4" || !part.disabled) throw new Error(`3 picked: ${JSON.stringify(part)}`);
-  await form.getByLabel("Stone").fill("5"); // holds 1: clamped
-  const clamped = await form.getByLabel("Stone").inputValue();
+  if (part.text !== "pick 1 more" || !part.disabled) throw new Error(`3 picked: ${JSON.stringify(part)}`);
+  await tap("ore", 2); // holds 1: the second tap is refused
+  const clamped = await kept("ore");
   const over = await countState();
-  if (clamped !== "1" || over.text !== "4 of 4" || over.disabled) throw new Error(`clamp/exact: ${clamped} ${JSON.stringify(over)}`);
-  await form.getByLabel("Wood").fill("4"); // holds 3: clamped, total still 4
-  const tooMany = await form.getByLabel("Wood").inputValue();
-  if (tooMany !== "3") throw new Error(`timber not clamped: ${tooMany}`);
-  await form.getByLabel("Wood").fill("2");
+  if (clamped !== "0" || over.text !== "ready" || over.disabled) throw new Error(`clamp/exact: ${clamped} ${JSON.stringify(over)}`);
+  await back("ore");
+  await tap("timber"); // holds 3, all picked: refused, total still 3
+  const tooMany = await kept("timber");
+  if (tooMany !== "0") throw new Error(`timber not held to what the seat holds: keeps ${tooMany}`);
+  await tap("ore");
+  await back("timber");
   const short = await countState();
-  if (short.text !== "3 of 4" || !short.disabled) throw new Error(`short again: ${JSON.stringify(short)}`);
+  if (short.text !== "pick 1 more" || !short.disabled) throw new Error(`short again: ${JSON.stringify(short)}`);
   console.log("discard count:", JSON.stringify({ start, part, clamped, over, short }));
-  await form.getByLabel("Wood").fill("0");
-  await form.getByLabel("Stone").fill("0");
-  await form.locator('input[name="timber"]').fill("3");
-  await form.locator('input[name="clay"]').fill("1");
-  await form.getByRole("button", { name: "Discard" }).click();
+  await back("timber", 2);
+  await back("ore");
+  await tap("timber", 3);
+  await tap("clay");
+  await submit.click();
   await page.waitForFunction(() => window.__emberisle.getState().state.phase === "robber", null, { timeout: STEP_MS });
   const after = await page.evaluate(() => {
     const st = window.__emberisle.getState().state;
@@ -231,7 +239,7 @@ try {
   console.log(`banner after the discard: "${await page.getByTestId("turn-banner").textContent()}"`);
   if (after.cards !== 5) throw new Error(`p2 should hold 5 cards, has ${after.cards}`);
 
-  // Two seats owe a discard: the second bar must not inherit what the first typed.
+  // Two seats owe a discard: the second bar must not inherit what the first picked.
   // Hotseat bars go in seat order, which the roll-off shuffles (#232): the earlier of p1 and p2 owes 4, the later 5.
   const [first, second] = await page.evaluate(() => {
     const g = window.__emberisle;
@@ -246,19 +254,17 @@ try {
     return [x, y];
   });
   const name = (id) => page.evaluate((i) => window.__emberisle.getState().state.players.find((p) => p.id === i).name, id);
-  await page.getByText(`${await name(first)}: discard 4`).waitFor({ timeout: STEP_MS });
-  let f = page.locator("form", { hasText: "discard 4" });
-  await f.locator('input[name="timber"]').fill("3");
-  await f.locator('input[name="clay"]').fill("1");
-  await f.getByRole("button", { name: "Discard" }).click();
-  await page.getByText(`${await name(second)}: discard 5`).waitFor({ timeout: STEP_MS });
-  f = page.locator("form", { hasText: "discard 5" });
-  const vals = await f.locator("input").evaluateAll((els) => els.map((e) => e.value));
-  console.log("second bar inputs:", vals.join(","));
-  if (vals.some((v) => v !== "0")) throw new Error(`second bar kept the first seat's numbers: ${vals}`);
-  await f.locator('input[name="timber"]').fill("4");
-  await f.locator('input[name="clay"]').fill("1");
-  await f.getByRole("button", { name: "Discard" }).click();
+  await page.getByText(`Discard 4 · ${await name(first)}: pick 4 more`).waitFor({ timeout: STEP_MS });
+  await tap("timber", 3);
+  await tap("clay");
+  await form.getByRole("button", { name: "Discard 4" }).click();
+  await page.getByText(`Discard 5 · ${await name(second)}: pick 5 more`).waitFor({ timeout: STEP_MS });
+  const vals = await form.evaluate((el) => [...el.querySelectorAll(".discard-back > button")].map((b) => (b.getAttribute("aria-disabled") === "true" ? "0" : "picked")));
+  console.log("second bar picks:", vals.join(","));
+  if (vals.some((v) => v !== "0")) throw new Error(`second bar kept the first seat's picks: ${vals}`);
+  await tap("timber", 4);
+  await tap("clay");
+  await form.getByRole("button", { name: "Discard 5" }).click();
   await page.waitForFunction(() => window.__emberisle.getState().state.phase === "robber", null, { timeout: STEP_MS });
   console.log("two seats: phase robber");
 
@@ -273,8 +279,8 @@ try {
     st.seq += 1;
     g.setState({ state: st, pendingSteal: null, error: null });
   });
-  const curName = await page.evaluate(() => { const st = window.__emberisle.getState().state; return st.players.find((p) => p.id === st.current).name; });
-  await page.getByText(`${curName}: discard 5`).waitFor({ timeout: STEP_MS });
+  // #1546: on its own turn the seat is not named.
+  await bannerIs("Discard 5: pick 5 more");
   await page.waitForTimeout(300);
   console.log("roller discards: bar and banner side by side");
 
