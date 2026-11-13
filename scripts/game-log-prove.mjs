@@ -275,6 +275,15 @@ try {
     check(last.inside, `${at}: scrolled up, the oldest group is not inside the sheet ${JSON.stringify(last)}`);
     await shot("log-end");
     await sheet.evaluate((el) => { const list = el.querySelector("ol"); list.scrollTop = list.scrollHeight; });
+    if (v.tag === "390x844") {
+      // The phone turns with the sheet open (390x844 to 844x390 and back): the newest turn stays in view at the bottom.
+      for (const [w, h] of [[844, 390], [390, 844]]) {
+        await page.setViewportSize({ width: w, height: h });
+        await page.evaluate(async () => { for (let i = 0; i < 6; i++) await new Promise((r) => requestAnimationFrame(r)); });
+        const turned = await readSheet(page);
+        check(turned.newest?.inView && turned.scroll.top + turned.scroll.client >= turned.scroll.height - 1, `${at}: turned to ${w}x${h} with the sheet open, the newest turn left the view ${JSON.stringify({ newest: turned.newest, scroll: turned.scroll })}`);
+      }
+    }
 
     if (v.full) {
       // One Escape closes one thing: with a build armed the log closes and the build stays armed; the next Escape disarms.
