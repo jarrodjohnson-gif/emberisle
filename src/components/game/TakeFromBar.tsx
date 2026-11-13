@@ -41,15 +41,18 @@ export function TakeFromBar() {
       className={above ? "take-from-above" : "tray-takeover"}
     >
       <span className="tray-line">Take from whom?</span>
-      <div className="tray-row">
+      <div className="tray-row take-row">
         {pendingSteal.targets.map((id) => {
           const p = state.players.find((x) => x.id === id);
           if (!p) return null;
+          // #1546: the seat as its chip names it (no "(bot)"), and its card count in quiet text: "Tide 2".
+          const name = p.name.replace(/ \(bot\)$/, "");
+          const n = p.goods ?? Object.values(p.resources).reduce((a, b) => a + b, 0);
           return (
-            <Button key={id} variant="secondary" onClick={() => chooseSteal(id)}>
-              <SeatDot color={p.color} className="size-3" />
-              <span className="truncate">{p.name}</span>
-              <span className="tray-quiet">· {p.goods ?? Object.values(p.resources).reduce((a, b) => a + b, 0)}</span>
+            <Button key={id} variant="secondary" aria-label={`${name}, ${n} cards`} onClick={() => chooseSteal(id)}>
+              <SeatDot color={p.color} className="size-2" />
+              <span className="truncate">{name}</span>
+              <span className="tray-quiet">{n}</span>
             </Button>
           );
         })}

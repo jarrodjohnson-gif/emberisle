@@ -21,6 +21,8 @@ export { offerLine } from "./offer-line";
 
 // "1 wood", "1 sheep and 1 stone".
 const and = (bag: Bag) => bagText(bag).replace(/, (?=[^,]*$)/, " and ");
+// #1546: a tray line names a seat as its chip does, without "(bot)".
+const bare = (name: string) => name.replace(/ \(bot\)$/, "");
 
 // "Pine declined", "Pine and Tide declined".
 function declinedLine(names: string[]) {
@@ -98,7 +100,7 @@ export function TradeToast() {
   const fading = leaving || (hadOffer.current && !shown && !outcome);
   const me = players?.find((p) => p.id === localId);
   if ((!me && !spectator) || (!offer && !outcome && !fading)) return null;
-  const name = (id: string) => players?.find((p) => p.id === id)?.name ?? "Someone";
+  const name = (id: string) => bare(players?.find((p) => p.id === id)?.name ?? "Someone");
 
   let body;
   let answering = false;
@@ -128,22 +130,22 @@ export function TradeToast() {
     why = compact && me ? `You need ${short.map((r) => `${offer.want[r]! - me.resources[r]} more ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ")} to accept` : null;
     const fromColor = players?.find((p) => p.id === offer.from)?.color ?? "transparent";
     // #1546: the seat that can pay reads the offer from its own side, "Tide: give 1 wood, get 1 brick", Give red and Get green.
-    const [give, get] = [and(offer.want), and(offer.give)];
+    const [give, get, from] = [and(offer.want), and(offer.give), bare(offer.fromName)];
     const line = compact
-      ? `${offer.fromName} is looking for ${bagText(offer.want)}`
+      ? `${from} is looking for ${bagText(offer.want)}`
       : answering
-        ? `${offer.fromName}: give ${give}, get ${get}`
-        : offerLine(asker ? null : offer.fromName, offer.give, offer.want);
+        ? `${from}: give ${give}, get ${get}`
+        : offerLine(asker ? null : from, offer.give, offer.want);
     body = (
       <>
-        {/* #1546: the offer takes the tray's top line; the asker sees who has said no at its right. */}
-        <div className="tray-top tray-line flex min-w-0 items-center justify-between gap-3">
-          <p id={lineId} className="min-w-0 truncate text-[15px] font-medium leading-5" title={line} data-testid={compact ? "trade-demand" : answering ? "trade-receipt" : undefined}>
+        {/* #1546: the offer takes the tray's top line, never cut (it may wrap); the asker reads who has said no under it. */}
+        <div className="tray-top tray-line">
+          <p id={lineId} className="min-w-0" title={line} data-testid={compact ? "trade-demand" : answering ? "trade-receipt" : undefined}>
             {!asker || compact ? <SeatDot color={fromColor} className="mr-1.5 size-3 align-[-1px]" /> : null}
-            {answering && !compact ? <>{offer.fromName}: <span className="trade-give-text">give {give}</span>, <span className="trade-get-text">get {get}</span></> : line}
+            {answering && !compact ? <>{from}: <span className="trade-give-text">give {give}</span>, <span className="trade-get-text">get {get}</span></> : line}
           </p>
           {asker ? (
-            <p role="status" className="trade-wait tray-event shrink-0 truncate text-[13px] leading-5">
+            <p role="status" className="trade-wait tray-event">
               {declined.length ? declinedLine(declined.map(name)) : "Waiting…"}
             </p>
           ) : null}

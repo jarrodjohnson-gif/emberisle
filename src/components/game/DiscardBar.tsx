@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RESOURCE_ICON } from "@/components/game/ResourceSymbols";
+import { SeatDot } from "@/components/game/SeatDot";
 import { RESOURCES, RESOURCE_LABEL, type Resource } from "@/lib/game/types";
 import { useGame } from "@/lib/game/store";
 
 const NONE: Record<Resource, number> = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
 
 // #1546 (docs/design/one-tray): the discard takes over the tray. The top line counts down what is left to pick; the hand's
-// five columns are the picker (a tap adds one of that good, the number shows what you keep); a fixed row of minus buttons
-// under them takes one back; the action row is one button, off until the count is exact.
+// five columns are the picker (a tap adds one of that good, the number shows what you keep, the name is in its label); a
+// fixed row of minus buttons stands where the names were and takes one back; the action row is one button, off until the
+// count is exact. The tray stays the height of the my-turn tray.
 export function DiscardBar({ id, n }: { id: string; n: number }) {
   const me = useGame((s) => s.state!.players.find((p) => p.id === id)!);
   // In hotseat a seat that owes a discard on another seat's turn is named (#430).
@@ -26,7 +28,9 @@ export function DiscardBar({ id, n }: { id: string; n: number }) {
         if (!left) dispatch({ type: "discard", resources: counts }, id);
       }}
     >
-      <p data-testid="turn-banner" className="tray-line turn-instruction turn-instruction-own">
+      {/* #1546: a dot in the top line always means a seat, so only a named hotseat seat gets one, in its own colour. */}
+      <p data-testid="turn-banner" className="tray-line turn-instruction">
+        {named ? <SeatDot color={me.color} className="mr-2 size-2.5" /> : null}
         Discard {n}{named ? ` · ${me.name}` : ""}: <span data-testid="discard-count" aria-live="polite">{left ? `pick ${left} more` : "ready"}</span>
       </p>
       <div className="discard-pick goods-tray">
@@ -47,7 +51,6 @@ export function DiscardBar({ id, n }: { id: string; n: number }) {
             >
               <Icon className="goods-icon" aria-hidden />
               <span className="goods-count">{have - counts[r]}</span>
-              <span className="goods-label">{RESOURCE_LABEL[r]}</span>
               {counts[r] ? <span aria-hidden className="tray-tag">−{counts[r]}</span> : null}
             </button>
           );
