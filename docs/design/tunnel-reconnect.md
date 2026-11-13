@@ -55,7 +55,7 @@ node scripts/named-tunnel.mjs --run
 1. Play two complete turns on the mobile phone.
 2. Lock the phone screen during the third turn.
 3. Keep the phone screen locked for 60 seconds.
-4. Observe the game log on the table.
+4. Verify the game log shows connection updates on the table.
 5. Verify the game log shows: `"<PhonePlayer> lost connection."`.
 6. Verify the seat rail marks the phone player as away.
 7. Unlock the phone screen after 60 seconds.
