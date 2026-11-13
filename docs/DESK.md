@@ -206,7 +206,7 @@ After that, answer every wake with `·`.
 ### The watchdog and permissions
 
 - **The desk-board is the watchdog.** It runs on GitHub after every CI run and three times a day, and needs no session. If the desk has run for more than 26 hours, or `Next rotation:` is missing or over an hour late, it posts one `To desk: desk-board watchdog:` line to the inbox each day, and shows the alert in #916. Keep the `Desk:` and `Next rotation:` lines in the exact formats above, or it can't read them.
-- **The desk's own tools need allow rules** in the repo's `.claude/settings.json`: `send_message`, `send_later`, `get_session`, `create_session` and `archive_session`. Only Jarrod adds them; no agent edits permission settings. If one is denied, tell Jarrod once which tool, then carry on with work that doesn't need it. Use these tools only for the desk's work in this file. A builder never archives, messages or starts sessions.
+- **The desk's own tools are allowed** in the repo's `.claude/settings.json`: `send_message`, `send_later`, `get_session`, `create_session` and `archive_session`. Jarrod asked for these rules on 2026-11-13. Only Jarrod changes them; no agent edits permission settings on its own. If one is denied, tell Jarrod once which tool, then carry on with work that doesn't need it. Use these tools only for the desk's work in this file. A builder never archives, messages or starts sessions.
 
 ### When to rotate early
 
