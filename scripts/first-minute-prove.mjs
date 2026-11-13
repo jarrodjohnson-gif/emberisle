@@ -88,9 +88,10 @@ const read = (page) =>
 // The rules every state keeps. Returns the reading, for the state's own checks.
 async function state(page, tag, name, shot) {
   // A pointer left on a button tints it (hover), and the primary is found by its resting fill. The fill eases back over
-  // 80 ms, so wait for it to rest.
+  // 80 ms of frames, and on a busy machine a frame can come late, so wait until no button is still easing.
   await page.mouse.move(1, 1);
   await page.waitForTimeout(300);
+  await page.waitForFunction(() => document.querySelector('[data-testid="title-card"]').getAnimations({ subtree: true }).every((a) => a.playState !== "running" || !(a.effect?.target instanceof HTMLButtonElement)));
   const r = await read(page);
   assert.deepEqual(r.small, [], `${tag} ${name}: a control under 44 px`);
   assert.deepEqual(r.tiny, [], `${tag} ${name}: text under 12 px`);
