@@ -224,25 +224,25 @@ try {
   const joint = await phone.evaluate(() => {
     const offer = document.querySelector('[data-testid="trade-toast"]').getBoundingClientRect();
     const chat = document.querySelector('[data-testid="chat-sheet"]').getBoundingClientRect();
-    const details = document.querySelector(".trade-details");
-    const detailsBox = details.getBoundingClientRect();
-    const receipt = document.querySelector('[data-testid="trade-receipt"]').getBoundingClientRect();
+    // #1546: the offer is one sentence in the tray's style; a long one wraps and nothing of it is cut.
+    const line = document.querySelector('[data-testid="trade-toast"] .trade-line');
+    const lineBox = line.getBoundingClientRect();
     const buttons = [...document.querySelectorAll(".trade-answers button")].map((b) => {
       const r = b.getBoundingClientRect();
       return { w: r.width, h: r.height, tappable: b.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)) };
     });
     return { top: offer.top, bottom: offer.bottom, chatTop: chat.top, chatHeight: chat.height,
-      scrollable: details.scrollHeight > details.clientHeight,
-      receiptVisible: receipt.top >= detailsBox.top && receipt.bottom <= detailsBox.bottom + 0.5, buttons };
+      text: line.textContent, uncut: line.scrollWidth <= line.clientWidth + 0.5 && line.scrollHeight <= line.clientHeight + 0.5,
+      lineInside: lineBox.top >= offer.top - 0.5 && lineBox.bottom <= offer.bottom + 0.5, buttons };
   });
   assert(joint.top >= 68 && joint.bottom <= joint.chatTop - 7.5 && joint.chatHeight >= 128, JSON.stringify(joint));
-  assert(joint.scrollable, "long details should scroll within the available space");
-  assert(joint.receiptVisible, "show the full payment and receipt before acceptance");
+  assert(joint.uncut && joint.lineInside, `a long offer's sentence is shown whole: ${JSON.stringify(joint)}`);
+  assert(/give 6 sheep, 6 stone/.test(joint.text) && /get 6 wood, 6 brick, 6 wheat/.test(joint.text), `show the full payment and receipt before acceptance: ${joint.text}`);
   assert(joint.buttons.every((b) => b.w >= 44 && b.h >= 44 && b.tappable), "rotated trade controls must remain tappable");
   await phone.screenshot({ path: "test-results/trade-map-long-chat-landscape.png" });
   errors.push(...await phone.evaluate(() => window.__tradeErrors));
   await phone.close();
-  console.log("long mixed offers: desktop board stays clear; rotated phone chat stays open with scrollable details and tappable 44px answers");
+  console.log("long mixed offers: desktop board stays clear; rotated phone chat stays open with the whole sentence shown and tappable 44px answers");
 
   // Use the actual practice store, rules, and bot answer timer.
   // Two human recipients keep the offer open after the bot declines.
@@ -266,13 +266,14 @@ try {
   await ask().click();
   const toast = page.getByTestId("trade-toast");
   await toast.waitFor();
-  assert.equal(await toast.getByTestId("trade-response-p1").getAttribute("data-response"), "waiting");
-  await page.waitForFunction(() => document.querySelector('[data-testid="trade-response-p3"]')?.getAttribute("data-response") === "declined");
+  // #1546: the asker's offer says who has said no in one line; until someone has, the status reads "Waiting…".
+  assert.equal((await toast.getByRole("status").textContent()).trim(), "Waiting…");
+  const botName = await page.evaluate(() => window.__emberisle.getState().state.players[3].name.replace(/ \(bot\)$/, ""));
+  await page.waitForFunction((n) => document.querySelector('[data-testid="trade-toast"] [role="status"]')?.textContent.trim() === `${n} said no`, botName);
   assert(await page.evaluate(() => performance.now() - window.__declineAt < 1000), "bot cross took over 1 second to render");
   await page.screenshot({ path: "test-results/trade-map-responses.png" });
   await page.evaluate(() => window.__emberisle.setState({ localId: "p1" }));
-  await textHas(page.getByTestId("trade-receipt"), "Give: 1 sheep, 1 stone");
-  await textHas(page.getByTestId("trade-receipt"), "Get: 1 wood, 1 brick");
+  await page.waitForFunction(() => { const t = document.querySelector('[data-testid="trade-toast"] .trade-line')?.textContent ?? ""; return t.includes("give 1 sheep, 1 stone") && t.includes("get 1 wood, 1 brick"); });
   // #537: a short hand switches to compact demand (no Accept), then recovers to Yes/No when goods return.
   await change('g.players[1].resources.ore = 0');
   await page.waitForFunction(() => document.querySelector('[data-testid="trade-toast"]')?.getAttribute("data-compact") === "true");
