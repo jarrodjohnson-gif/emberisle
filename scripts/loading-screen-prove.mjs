@@ -1,7 +1,7 @@
 // #1281: the startup loading screen, on the built page. A fresh visit opens on the loading card, not the title; the bar is
 // determinate and only moves forward as the island's real parts arrive (the island chunk is held here, so the bar waits on
 // it); Start before 100% shows its waiting line and nothing else; at 100% Start opens; tapping it pushes through the clouds
-// for 2.4 s and the title card rises in, with the 56 px wordmark; with reduced motion it is a short cross-fade. A failed
+// for 2.4 s and the title card rises in (the Play page on a first visit, the 56 px wordmark later); with reduced motion it is a short cross-fade. A failed
 // island download shows an error and Try again with Start still closed, and Try again loads it once the network is back; a
 // slow connection fills the bar in steps with no error. A page with `__emberisleSkipIntro` set before load (every other
 // proof, through scripts/proof-browser.mjs) opens on the title as before. Sizes: 320x568, 390x844, 844x390, 1280x720.
@@ -209,8 +209,8 @@ try {
     check(arrive >= 1500 && arrive <= 5000, `${tag}: Start pushes through the clouds and the title card arrives near the end of the 2.4 s push`, { ms: arrive });
     await page.getByTestId("loading-card").waitFor({ state: "detached", timeout: 6000 });
     check((await page.locator(".loading-sky").count()) === 0, `${tag}: the clouds and the loading card are gone once the camera settles`);
-    const wordmark = await page.getByTestId("title-card").locator("h1").evaluate((el) => getComputedStyle(el).fontSize);
-    check(wordmark === "56px", `${tag}: the title wordmark is 56 px`, wordmark);
+    const wordmark = await page.getByTestId("title-card").locator("h1").count();
+    check(wordmark === 0, `${tag}: a first visit lands past the wordmark, on the Play page (a later visit's front page shows it at 56 px)`, wordmark);
     check((await page.getByTestId("title-card").getAttribute("data-page")) === "play", `${tag}: a first visit's Start opens the Play page`);
     await page.getByRole("button", { name: "Play with bots", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle.getState().screen === "play");
@@ -365,6 +365,8 @@ try {
     await start(again).click();
     await again.getByTestId("title-card").waitFor();
     check((await again.getByTestId("title-card").getAttribute("data-page")) === "front", "a later visit: Start opens the front page");
+    const frontMark = await again.getByTestId("title-card").locator("h1").evaluate((el) => getComputedStyle(el).fontSize);
+    check(frontMark === "56px", "a later visit: the front page's wordmark is 56 px", frontMark);
     await again.getByRole("button", { name: "Play", exact: true }).click();
     await again.getByRole("button", { name: "Back", exact: true }).click();
     check((await again.getByTestId("title-card").getAttribute("data-page")) === "front", "a later visit: Back from the Play page shows the front page");
