@@ -59,7 +59,7 @@ try {
   assert.ok(await titleCard.isVisible(), "title card is visible");
 
   // 2. Play (practice game) works
-  const playBtn = page1.getByRole("button", { name: "Play", exact: true });
+  const playBtn = page1.getByRole("button", { name: "Play with bots", exact: true });
   await playBtn.click();
   await page1.waitForFunction(() => window.__emberisle?.getState().screen === "play" && window.__emberisle?.getState().state !== null);
   assert.ok(await page1.getByTestId("log-line").isVisible(), "game log-line is visible after Play");
