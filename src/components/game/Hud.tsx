@@ -302,9 +302,7 @@ export function Hud() {
   const armedNow = !!armed && !spectator;
   const phaseText = armed
     ? matchMedia("(pointer: coarse)").matches ? armed[0] : `${armed[0]} · Esc cancels`
-    : state.phase === "discard"
-      ? `Discard ${state.discardNeeded[subject] ?? 0} goods`
-      : phaseCopy(state.phase);
+    : phaseCopy(state.phase);
   const waiting = mode !== "hotseat" && !yours;
   // #430: in hotseat a seat that owes a discard on another seat's turn is named, not given the turn.
   const turnText =
@@ -323,7 +321,8 @@ export function Hud() {
   // A watcher's `me` has no `resources` online (docs/design/spectator.md) and buys nothing, so it is checked first.
   const canBuy = !spectator && PRICES.some((k) => buildStatus(state, me, k).ready);
 
-  const instruction = state.phase === "over" ? null : (
+  // #1546: a discard owner's status line is the discard's own top line (DiscardBar), which counts what is left to pick.
+  const instruction = state.phase === "over" || discarder ? null : (
     <p key={`turn-${state.current}`} data-testid="turn-banner"
       // #1509: on the upright table the line has no box, so another seat's colour is a dot before it (styles.css, --seat).
       style={{ borderLeftColor: yours ? undefined : subjectPlayer.color, ...(yours ? {} : { "--seat": subjectPlayer.color }) } as CSSProperties}
@@ -556,7 +555,7 @@ export function Hud() {
             ) : null}
 
             {!mine || !["main", "roll", "rollOff"].includes(state.phase) ? (
-              fortunes || (column && dice) ? <div className="flex flex-wrap items-center gap-2">{fortunes}{column ? dice : null}</div> : null
+              fortunes || (column && dice) ? <div className="tray-fortunes flex flex-wrap items-center gap-2">{fortunes}{column ? dice : null}</div> : null
             ) : diceInBar || !column ? null : dice}
 
             {/* #643: on a sideways phone the seat's numbers are one quiet line under the action row. A desktop has them in

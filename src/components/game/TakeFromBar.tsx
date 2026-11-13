@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { useGame } from "@/lib/game/store";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useViewport } from "@/lib/viewport";
-import { cn } from "@/lib/utils";
 
 export function TakeFromBar() {
   const state = useGame((s) => s.state);
@@ -31,30 +30,32 @@ export function TakeFromBar() {
     return () => { observer.disconnect(); root.style.removeProperty("--active-prompt-height"); };
   }, [pendingSteal, phone, aboveChat]);
   if (!state || !pendingSteal) return null;
+  const above = phone && aboveChat;
   const prompt = (
     // #557: the phone's chat sheet (z-30, min(48vh, 320px) tall) would hide this choice, so while it is open the bar rides just above it.
+    // #1546: otherwise it takes over the tray: the question is the top line, one button per seat is the action row (styles.css).
     <div
       ref={bar}
       role="group"
       aria-label="The wayfarer takes a card"
-      className={cn(
-        "flex flex-wrap items-center gap-2 rounded-[16px] border border-accent/40 bg-surface p-2",
-        phone && aboveChat && "pointer-events-auto fixed left-safe right-safe bottom-[calc(var(--chat-sheet-height)+var(--keyboard-inset,0px)+var(--active-offer-height,0px)+0.5rem)] z-40",
-      )}
+      className={above ? "take-from-above" : "tray-takeover"}
     >
-      <span className="text-sm">Take from whom?</span>
-      {pendingSteal.targets.map((id) => {
-        const p = state.players.find((x) => x.id === id);
-        if (!p) return null;
-        return (
-          <Button key={id} size="sm" variant="secondary" className={phone ? "h-11" : undefined} onClick={() => chooseSteal(id)}>
-            <SeatDot color={p.color} className="mr-1 size-3" />
-            {p.name}
-          </Button>
-        );
-      })}
+      <span className="tray-line">Take from whom?</span>
+      <div className="tray-row">
+        {pendingSteal.targets.map((id) => {
+          const p = state.players.find((x) => x.id === id);
+          if (!p) return null;
+          return (
+            <Button key={id} variant="secondary" onClick={() => chooseSteal(id)}>
+              <SeatDot color={p.color} className="size-3" />
+              <span className="truncate">{p.name}</span>
+              <span className="tray-quiet">· {p.goods ?? Object.values(p.resources).reduce((a, b) => a + b, 0)}</span>
+            </Button>
+          );
+        })}
+      </div>
     </div>
   );
   const shell = document.querySelector("[data-game-shell]");
-  return phone && aboveChat && shell ? createPortal(prompt, shell) : prompt;
+  return above && shell ? createPortal(prompt, shell) : prompt;
 }

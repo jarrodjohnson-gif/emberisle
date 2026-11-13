@@ -284,6 +284,47 @@ body {
   .hud-tray .goods-count { font-size: 26px; line-height: 26px; }
 }
 .hud-tray .turn-instruction:not(.turn-instruction-move) { background: transparent; padding-left: 0; padding-right: 0; text-align: left; }
+/* #1546 one tray, slice C: an offer, a discard and "take from whom" take over the tray instead of adding a box. The takeover's
+   wrapper draws nothing: its top line stands in for the tray's (order -1 puts it first), its action row for the tray's, and a
+   discard's picker for the hand. Give is red and Get is green, in words as well as colour. */
+.hud-tray, .trade-dock { --give: #b3261e; --give-bg: #fdecea; --get: #1e7a46; --get-bg: #e4f4ea; }
+.hud-tray .tray-takeover { display: contents; }
+.tray-takeover > * { opacity: inherit; }
+.hud-tray:has(> .tray-takeover) > :is(.tray-top, .hud-actions, .hud-roll, .end-footer, .tray-numbers, .tray-fortunes) { display: none; }
+.hud-tray:has(> .discard-bar) > [data-testid="hand-dock"] { display: none; }
+.tray-line { order: -1; display: block; min-height: 32px; align-items: flex-start; color: #1f3331; font-size: 15px; line-height: 20px; font-weight: 500; }
+.tray-line.tray-top { display: flex; }
+.hud-col .tray-line.tray-top { flex-direction: column; align-items: stretch; gap: 2px; }
+.hud-col .tray-line > .tray-event { text-align: left; }
+.tray-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
+.tray-row > button { min-width: 0; height: 48px; padding: 0 10px; border: 0; border-radius: 12px; background: #e9f0ee; color: #1f3331; }
+.tray-row > button.bg-fg:not(:disabled) { background: #1f3d3b; color: #fff; }
+.tray-row > button:disabled { background: #e9f0ee; color: #52625f; }
+.tray-row .truncate { min-width: 0; }
+.tray-quiet { flex-shrink: 0; color: #52625f; font-weight: 500; }
+/* What would move: a "−N" or "+N" tag hangs over the column's top edge, like the gain and loss tab. */
+.tray-tag, .hud-tray .hand-offer-delta { position: absolute; top: -14px; left: 50%; right: auto; z-index: 1; min-width: 28px; height: 18px; padding: 0 6px; border-radius: 9px; transform: translateX(-50%); background: var(--give-bg); color: var(--give); font: 700 12px/18px var(--font-numeral); font-variant-numeric: tabular-nums; text-align: center; white-space: nowrap; }
+.hud-tray [data-offer="get"] > .hand-offer-delta { background: var(--get-bg); color: var(--get); }
+.hud-tray .hand-resource-card-slot[data-offer] > .goods-card { box-shadow: none; }
+/* The discard picker: each column you can tap is a soft box; a good you hold none of is grey with no box. */
+.discard-pick, .discard-back { display: flex; flex-shrink: 0; gap: 4px; padding: 0 8px; }
+.discard-pick { padding-top: 8px; padding-bottom: 8px; }
+.discard-pick > button { position: relative; height: 62px; min-width: 0; flex: 1 1 0; border: 0; border-radius: 12px; background: #e9f0ee; }
+.discard-pick > button.goods-empty { background: transparent; }
+.discard-back > button { display: flex; flex: 1 1 0; min-width: 0; height: 44px; align-items: center; justify-content: center; border-radius: 12px; background: #e9f0ee; color: #1f3331; font: 700 20px/1 var(--font-ui); }
+.discard-back > button[aria-disabled] { background: transparent; color: #9aa6a3; }
+@media (max-height: 480px) { .discard-pick { padding: 4px; } .discard-back { padding: 0 4px; } .discard-pick > button { height: 44px; } }
+/* above the phone's open chat the question and its seats are a card, as the offer is (#557) */
+.take-from-above { position: fixed; left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: calc(var(--chat-sheet-height) + var(--keyboard-inset, 0px) + var(--active-offer-height, 0px) + 0.5rem); z-index: 40; display: flex; flex-direction: column; gap: 8px; padding: 8px; border-radius: 16px; background: var(--color-surface); pointer-events: auto; }
+@media (min-width: 768px) and (pointer: fine) {
+  /* the desktop tray is one row: the hand (or the picker) on the left, the takeover's action row beside it */
+  .tray-takeover > * { grid-column: 1 / -1; }
+  .tray-takeover > .tray-row { grid-column: 2; }
+  .discard-bar > .discard-pick { grid-column: 1; grid-row: 2; }
+  .discard-bar > .tray-row { grid-row: 2; }
+  .discard-bar > .discard-back { grid-column: 1; grid-row: 3; }
+  .hud-tray .discard-back > button { flex: 0 0 64px; }
+}
 @media (min-width: 768px) and (pointer: fine) { .tray-sheet { margin-bottom: 16px; border-radius: 22px; } }
 .action-utilities button, .hud-stack > .sticky button { background: var(--table-raised); color: var(--table-ink); border: 1px solid var(--table-line); }
 .action-utilities button.bg-fg { background: var(--ink); color: var(--paper); border-color: var(--ink); }
