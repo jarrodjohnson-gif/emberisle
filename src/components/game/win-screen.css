@@ -9,8 +9,9 @@ body:has(.win-screen) [data-hud-stack] { visibility: hidden; }
 .win-actions > button { height: 48px; border: 0; border-radius: 12px; background: #e9f0ee; color: #1f3331; }
 .win-actions > button.bg-fg { background: #1f3d3b; color: #fff; }
 @media (max-height: 480px) {
-  .win-screen { padding-top: env(safe-area-inset-top); }
-  .win-sheet { gap: 2px; padding-top: 6px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+  /* A sideways phone: the sheet floats inside the safe area, whole, as the tray's column does. */
+  .win-screen { padding-top: env(safe-area-inset-top); padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+  .win-sheet { gap: 2px; padding-top: 6px; padding-bottom: 6px; margin-bottom: 0; border-radius: 22px; }
   .win-head { font-size: 18px; line-height: 28px; }
   .win-how { font-size: 12px; line-height: 16px; }
   .win-actions > button { height: 44px; }
