@@ -30,14 +30,16 @@ function runs(line) {
 
 // In the page: each dock's mark, read from the meshes that use the mark atlas, and the atlas row it shows.
 const readMarks = async (lite) => {
-  const { markCanvas, PLATE_KINDS } = await import("/src/lib/scene/dock-marks.ts");
+  const { PLATE_KINDS } = await import("/src/lib/scene/dock-marks.ts");
   const { PAINT } = await import("/src/lib/scene/palette.ts");
   const isle = window.__isle;
   const st = window.__emberisle.getState().state;
-  // The one cached atlas canvas both boards wrap in their own texture.
-  const atlas = markCanvas(PAINT);
+  // The mark atlas is the one 256-wide canvas with a 128 px row per trade; both boards wrap it in their own texture. Found by
+  // its shape on the meshes themselves, so the check does not lean on which copy of the module the page loaded.
+  const isMark = (o) => o.isMesh && o.visible && o.material?.map?.image instanceof HTMLCanvasElement && o.material.map.image.width === 256 && o.material.map.image.height === 128 * PLATE_KINDS.length;
   const meshes = [];
-  isle.scene.traverse((o) => { if (o.isMesh && o.material?.map?.image === atlas && o.visible) meshes.push(o); });
+  isle.scene.traverse((o) => { if (isMark(o)) meshes.push(o); });
+  const atlas = meshes[0]?.material.map.image ?? document.createElement("canvas");
   const docks = isle.docks.map((d) => ({ cx: d.cx, cz: d.cz, kinds: d.vids.map((id) => st.vertices.find((v) => v.id === id)?.harbor), verts: [] }));
   for (const m of meshes) {
     m.updateMatrixWorld(true);
@@ -97,6 +99,21 @@ const readMarks = async (lite) => {
   };
 };
 
+// The board can be rebuilt under the proof (a refit after the first frames brings the plain piers back until the shore swaps in
+// again), so read the marks once they are all in: the full board's merged plates mesh, or the lite board's nine planks, with a
+// plank at every dock. The last read is returned either way, and checkMarks says what is missing.
+async function readSettled(page, lite) {
+  const until = Date.now() + STEP_MS;
+  let r;
+  do {
+    await page.waitForFunction(() => window.__isle.landReady && !window.__isle.refitDue, null, { timeout: STEP_MS });
+    r = await page.evaluate(readMarks, lite);
+    if (r.meshes >= (lite ? 9 : 1) && r.docks.every((d) => d.verts >= 4)) return r;
+    await page.waitForTimeout(250);
+  } while (Date.now() < until);
+  return r;
+}
+
 function checkMarks(tag, r) {
   check(`${tag}: nine docks`, r.docks.length === 9, { docks: r.docks.length });
   check(`${tag}: mark meshes drawn`, r.meshes >= 1, { meshes: r.meshes });
@@ -125,12 +142,11 @@ async function open(lite, width, height) {
   // The full board's harbour shore swaps in for the plain piers; the lite board paints its planks after a lazy import.
   await page.waitForFunction(async (lite) => {
     const i = window.__isle;
-    if (!lite) return Boolean(i.shore?.group.parent) && i.piers.every((p) => !p.visible);
-    const { markCanvas } = await import("/src/lib/scene/dock-marks.ts");
-    const { PAINT } = await import("/src/lib/scene/palette.ts");
+    if (!lite && !(i.shore?.group.parent && i.piers.every((p) => !p.visible))) return false;
+    // The mark meshes are in: the full board's one merged plates mesh, or the lite board's nine planks.
     let n = 0;
-    i.scene.traverse((o) => { if (o.isMesh && o.material?.map?.image === markCanvas(PAINT)) n++; });
-    return n >= 9;
+    i.scene.traverse((o) => { const c = o.isMesh && o.visible && o.material?.map?.image; if (c instanceof HTMLCanvasElement && c.width === 256 && c.height === 768) n++; });
+    return n >= (lite ? 9 : 1);
   }, lite, { timeout: STEP_MS, polling: 250 });
   return { ctx, page };
 }
@@ -144,7 +160,7 @@ try {
   // Full board.
   {
     const { ctx, page } = await open(false, 1280, 720);
-    checkMarks("full", await page.evaluate(readMarks, false));
+    checkMarks("full", await readSettled(page, false));
 
     // Pennants: none before anyone builds on a dock.
     const pennants = () => page.evaluate(() => {
@@ -206,7 +222,7 @@ try {
   // Lite board, on a phone.
   {
     const { ctx, page } = await open(true, 390, 844);
-    checkMarks("lite", await page.evaluate(readMarks, true));
+    checkMarks("lite", await readSettled(page, true));
     // The lite board loads the small dock-marks chunk, never the harbour shore's.
     const loaded = await page.evaluate(() => performance.getEntriesByType("resource").map((e) => e.name).filter((n) => /harbor-jelly|dock-marks/.test(n)));
     check("lite: the marks come from the dock-marks module, and harbor-jelly is never fetched", loaded.some((n) => n.includes("dock-marks")) && !loaded.some((n) => n.includes("harbor-jelly")), loaded);
@@ -214,7 +230,7 @@ try {
     await page.evaluate(() => { const g = window.__emberisle.getState(); g.startAi(); window.__emberisle.getState().startAi(); });
     await page.waitForFunction(() => window.__isle.landReady && !window.__isle.refitDue, null, { timeout: STEP_MS });
     await page.waitForTimeout(1500);
-    const again = await page.evaluate(readMarks, true);
+    const again = await readSettled(page, true);
     check("lite, two boards back to back: exactly nine planks, none left from the first board", again.meshes === 9, { meshes: again.meshes });
     checkMarks("lite, second board", again);
     await page.evaluate(() => { const i = window.__isle; i.draw(); i.renderer.getContext().finish(); });
