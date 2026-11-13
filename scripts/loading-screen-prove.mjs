@@ -211,7 +211,7 @@ try {
     check((await page.locator(".loading-sky").count()) === 0, `${tag}: the clouds and the loading card are gone once the camera settles`);
     const wordmark = await page.getByTestId("title-card").locator("h1").evaluate((el) => getComputedStyle(el).fontSize);
     check(wordmark === "56px", `${tag}: the title wordmark is 56 px`, wordmark);
-    await page.getByRole("button", { name: "Play", exact: true }).click();
+    check((await page.getByTestId("title-card").getAttribute("data-page")) === "play", `${tag}: a first visit's Start opens the Play page`);
     await page.getByRole("button", { name: "Play with bots", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle.getState().screen === "play");
     check(true, `${tag}: Play still starts a game after the loading screen`);

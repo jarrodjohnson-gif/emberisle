@@ -28,3 +28,11 @@ Lines that are not checks also changed. They are presses and waits, with the but
 - `scripts/chrome-prove.mjs:72` and `scripts/contrast-prove.mjs:64` read the 12 px caption from "Code for private tables". They read it from "3 bots, no network" before.
 - `scripts/chrome-prove.mjs:55` reads the white surface from the tray itself at every size. On desktop it read an inner panel that no longer exists.
 - `scripts/loading-screen-prove.mjs:213` presses Play, then Play with bots. It is the one proof that walks the real path from the loading screen.
+
+## After the owner's answers (card A on #1151)
+
+A first visit's Start now opens the Play page, so the press of Play after Start no longer exists on a first visit.
+
+| File:line | Old | New | Why |
+|---|---|---|---|
+| `scripts/loading-screen-prove.mjs:214` | `await page.getByRole("button", { name: "Play", exact: true }).click();` | `check(… data-page === "play", "a first visit's Start opens the Play page")` | Card A: Start lands on the Play page for a new visitor. The line now proves that. The next line still presses Play with bots and line 217 still proves the game starts. A later visit's front page is a new check in the same proof. |
