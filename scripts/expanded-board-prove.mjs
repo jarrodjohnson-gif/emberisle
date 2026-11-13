@@ -150,6 +150,10 @@ for (let seed = 0; seed < 200; seed++) {
     eq(sorted(docks.flatMap((e) => [e.va, e.vb])), sorted(harborCorners.map((v) => v.id)), `${tag}: every dock corner is on a dock edge`);
     ok(docks.every((e) => byId.get(e.va).hexes.length >= 1 && byId.get(e.vb).hexes.length >= 1), `${tag}: two land corners per dock`);
     eq(tally(docks.map((e) => byId.get(e.va).harbor)), dockWant, `${tag}: dock kinds`);
+    // isle-renderer.ts pairs neighbouring same-kind harbor corners into one dock, which holds only while docks sit at least
+    // three coast edges apart.
+    const at = coastLoop(g.edges, counts).flatMap((e, i) => (docks.includes(e) ? [i] : [])).sort((a, b) => a - b);
+    ok(at.every((x, i) => ((at[(i + 1) % at.length] - x + 38) % 38) >= 3), `${tag}: docks at least three coast edges apart`);
     // Supplies and seats.
     eq(g.bank, { timber: 24, clay: 24, wool: 24, grain: 24, ore: 24 }, `${tag}: bank 24 each`);
     eq(Object.values(g.bank).reduce((s, n) => s + n, 0), 120, `${tag}: 120 bank cards`);
