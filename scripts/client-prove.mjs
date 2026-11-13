@@ -436,8 +436,8 @@ try {
   for (const r of winRows.rows) if (r.total !== winRows.want[r.id]) throw new Error(`win screen total: ${JSON.stringify(winRows)}`);
   if (new Set(winRows.rows.map((r) => r.total)).size < 3) throw new Error("win screen: totals should differ");
   if (!winRows.headline?.endsWith(" wins")) throw new Error(`win headline: ${winRows.headline}`);
-  // #266: practice has no table to keep, so no Play again.
-  if (await page.getByTestId("win-again").count()) throw new Error("win screen: practice shows Play again");
+  // Owner 2026-11-12 (q1563-play-again): a practice game ends with Play again (it replaces #266's "no Play again").
+  if ((await page.getByTestId("win-again").count()) !== 1 || (await page.getByTestId("win-again").textContent()).trim() !== "Play again") throw new Error("win screen: practice has no Play again");
   // #379: aria-modal is a promise to the keyboard too. Tab cycles among the dialog's buttons and never reaches the HUD behind it.
   const winFocus = () =>
     page.evaluate(() => {
@@ -450,18 +450,24 @@ try {
     await page.keyboard.press("Tab");
     tabs.push(await winFocus());
   }
-  await page.getByTestId("win-look").focus();
+  // The dialog's stops are the four rows, Hide scores, Menu and Play again: Tab on the last wraps to the first row, and
+  // Shift+Tab there wraps back.
+  await page.getByTestId("win-again").focus();
+  await page.keyboard.press("Tab");
+  const wrapped = await winFocus();
   await page.keyboard.press("Shift+Tab");
   const back = await winFocus();
-  console.log("win tab order:", JSON.stringify({ tabs, back }));
+  console.log("win tab order:", JSON.stringify({ tabs, wrapped, back }));
   if (tabs.some((t) => !t.inDialog)) throw new Error(`win screen: Tab left the dialog: ${JSON.stringify(tabs)}`);
-  if (back.id !== "win-menu") throw new Error(`win screen: Shift+Tab from Look around went to ${back.id}`);
+  if (wrapped.id !== "win-row" || !wrapped.inDialog) throw new Error(`win screen: Tab from Play again went to ${wrapped.id}`);
+  if (back.id !== "win-again") throw new Error(`win screen: Shift+Tab from the first row went to ${back.id}`);
   const negativeTabStop = await page.getByTestId("win-look").evaluate((el) => {
     const original = el.getAttribute("tabindex");
     el.setAttribute("tabindex", "-1");
     return original;
   });
-  await page.getByTestId("win-menu").focus();
+  // Hide scores sits between the last row and Menu: with tabindex -1 it is stepped over both ways.
+  await page.locator('button[data-testid="win-row"]').last().focus();
   await page.keyboard.press("Tab");
   const afterNegativeTab = await winFocus();
   await page.keyboard.press("Shift+Tab");
@@ -471,7 +477,7 @@ try {
     else el.setAttribute("tabindex", original);
   }, negativeTabStop);
   console.log("win negative tabindex:", JSON.stringify({ afterTab: afterNegativeTab, afterShiftTab: afterNegativeShiftTab }));
-  if (afterNegativeTab.id !== "win-menu" || afterNegativeShiftTab.id !== "win-menu") {
+  if (afterNegativeTab.id !== "win-menu" || afterNegativeShiftTab.id !== "win-row") {
     throw new Error(`win screen: negative tabindex button entered the Tab sequence: ${JSON.stringify({ afterNegativeTab, afterNegativeShiftTab })}`);
   }
   await page.getByTestId("win-look").click();
