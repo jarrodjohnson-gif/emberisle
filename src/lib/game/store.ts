@@ -158,7 +158,7 @@ export interface GameLogLine {
   at: number;
   text: string;
 }
-const GAME_LOG_MAX = 200;
+export const GAME_LOG_MAX = 200;
 const WATER_KEY = "emberisle-water";
 const VIEW_KEY = "emberisle-view";
 
