@@ -1,0 +1,17 @@
+/* The end of a game (docs/design/end-of-game, slice 2): the tray-sheet surface, the winner's name as the one big line. */
+.win-screen { padding: max(12px, env(safe-area-inset-top)) env(safe-area-inset-right) 0 env(safe-area-inset-left); }
+/* One surface: while the sheet is up it stands in for the tray, which keeps its place (the island's fit) but does not show. */
+body:has(.win-screen) [data-hud-stack] { visibility: hidden; }
+.win-sheet { max-height: 100%; gap: 4px; }
+.win-head { font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.01em; }
+.win-how { color: #52625f; font-size: 14px; line-height: 20px; }
+/* The tray's buttons: a soft fill for the quiet ones, ink for the one primary. */
+.win-actions > button { height: 48px; border: 0; border-radius: 12px; background: #e9f0ee; color: #1f3331; }
+.win-actions > button.bg-fg { background: #1f3d3b; color: #fff; }
+@media (max-height: 480px) {
+  .win-screen { padding-top: env(safe-area-inset-top); }
+  .win-sheet { gap: 2px; padding-top: 6px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+  .win-head { font-size: 18px; line-height: 28px; }
+  .win-how { font-size: 12px; line-height: 16px; }
+  .win-actions > button { height: 44px; }
+}
