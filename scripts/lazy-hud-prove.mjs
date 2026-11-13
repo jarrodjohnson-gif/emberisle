@@ -137,7 +137,7 @@ try {
   check("first trade offer appears without delay (< 250ms)", tradeElapsed < 250, { tradeElapsed });
 
   const toastText = await toast.innerText();
-  check("trade offer contains correct prompt", toastText.includes("Dune offers") && toastText.includes("Yes") && toastText.includes("No"), toastText);
+  check("trade offer contains correct prompt", toastText.includes("Dune: give 1 sheep, get 1 wheat") && toastText.includes("Yes") && toastText.includes("No"), toastText);
 
   // Clear offer
   await page.evaluate(() => {
