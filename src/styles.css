@@ -335,9 +335,11 @@ body {
 .hud-col .discard-goods, .hud-col .discard-back { gap: 4px; }
 /* #1595: what would move is a small tag above the column, clear of its symbol and number: "−N" in Give colours, "+N" in Get
    colours. An offered hand column keeps its plain look; it has no border, since it is not a thing to press for the offer. */
-.hud-tray .hand-offer-delta { position: absolute; top: -10px; left: 50%; right: auto; z-index: 1; min-width: 28px; height: 18px; padding: 0 6px; border-radius: 9px; transform: translateX(-50%); background: var(--give-bg); color: var(--give); font: 700 12px/18px var(--font-numeral); font-variant-numeric: tabular-nums; text-align: center; white-space: nowrap; }
+.hud-tray .hand-offer-delta { position: absolute; top: -21px; left: 50%; right: auto; z-index: 1; min-width: 28px; height: 18px; padding: 0 6px; border-radius: 9px; transform: translateX(-50%); background: var(--give-bg); color: var(--give); font: 700 12px/18px var(--font-numeral); font-variant-numeric: tabular-nums; text-align: center; white-space: nowrap; }
 .hud-tray [data-offer="get"] > .hand-offer-delta { background: var(--get-bg); color: var(--get); }
-.hud-tray .hand-resource-card-slot[data-offer] > .goods-card { box-shadow: var(--shadow-control); }
+.hud-tray .hand-resource-card-slot[data-offer] > .goods-card { box-shadow: none; }
+/* the tag hangs wholly above the column (the symbol's place shifts with the column's size), so the hand drops 8 px while an offer is open */
+.hud-tray:has(.hand-offer-delta) [data-testid="hand-dock"] { padding-top: 8px; }
 /* #1595 take-from: the seat's name and, in quiet text, its card count ("Pine 3") */
 .take-row > button { gap: 6px; }
 .take-count { flex-shrink: 0; color: #52625f; font-weight: 500; }
