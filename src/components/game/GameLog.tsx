@@ -64,11 +64,25 @@ export function GameLog({ opener, onClose }: { opener: HTMLElement | null; onClo
   // turnsOf reads newest first; the sheet lists oldest first.
   const turns = turnsOf(log).reverse();
   const list = useRef<HTMLOListElement>(null);
+  // As Chat.tsx: a resize (a turned phone, the sheet settling) re-pins the newest turn unless the reader scrolled up, and a
+  // scroll at another list height than the last one measured is the resize's, not the reader's.
   const stuck = useRef(true);
+  const pinned = useRef(0);
+  const toEnd = () => {
+    const el = list.current!;
+    if (stuck.current) el.scrollTop = el.scrollHeight;
+  };
+  // Every render: a new turn keeps the list at the newest one.
+  useEffect(toEnd);
   useEffect(() => {
-    const el = list.current;
-    if (el && stuck.current) el.scrollTop = el.scrollHeight;
-  }, [log]);
+    const el = list.current!;
+    const observer = new ResizeObserver(() => {
+      pinned.current = el.clientHeight;
+      toEnd();
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
   return createPortal(
     <div className="build-wash fixed inset-0 z-50 flex items-end justify-center" {...backdrop}>
       <div ref={root} role="dialog" aria-modal="true" aria-labelledby="game-log-title" data-testid="game-log" className="tray-sheet game-log flex w-full max-w-[520px] flex-col">
@@ -78,7 +92,7 @@ export function GameLog({ opener, onClose }: { opener: HTMLElement | null; onClo
             <X className="size-5" />
           </Button>
         </div>
-        <ol ref={list} tabIndex={0} aria-label="Turns, oldest first" onScroll={(e) => { const el = e.currentTarget; stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 8; }} className="min-h-0 overflow-y-auto">
+        <ol ref={list} tabIndex={0} aria-label="Turns, oldest first" onScroll={({ currentTarget: el }) => { if (el.clientHeight === pinned.current) stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 8; }} className="min-h-0 overflow-y-auto">
           {turns.map((t, i) => (
             <li key={i} data-testid="gl-turn" className="gl-turn">
               <div className={`flex min-h-7 items-center gap-2 ${t.name && t.name === mine ? "text-gain" : ""}`}>
