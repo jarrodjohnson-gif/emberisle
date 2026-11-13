@@ -1889,8 +1889,11 @@ export class IsleRenderer {
     if (this.lite) {
       const docks = [...this.docks];
       const land = this.land;
-      void import("./harbor-jelly").then(({ markAtlas, PLATE_KINDS }) => {
-        const atlas = markAtlas();
+      // The small dock-marks chunk, not the harbour shore's. A rebuild or a dispose before it lands drops it (as growScenes).
+      void import("./dock-marks").then(({ markCanvas, PLATE_KINDS }) => {
+        if (gen !== this.landGen || this.stopped) return;
+        const atlas = new THREE.CanvasTexture(markCanvas(PAINT));
+        atlas.colorSpace = THREE.SRGBColorSpace;
         const mat = new THREE.MeshStandardMaterial({ map: atlas, emissive: 0x6a645a, emissiveMap: atlas, roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2 });
         for (const d of docks) {
           const pl = new THREE.PlaneGeometry(0.24, 0.12);
