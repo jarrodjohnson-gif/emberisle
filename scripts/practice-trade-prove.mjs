@@ -1,7 +1,7 @@
 // #363 / #445: practice versus the isle trades with its bots, in the browser, with no host.
 //   1. The person opens Trade, steps 1 grain to give and 1 wool to want, and presses Ask the table. The bot that needs
 //      grain takes it after its delay: the toast reads "<bot> takes it." and the goods move.
-//   2. A bot one grain short asks on its own turn: the toast is one line ("<bot> offers 1 wool for 1 grain") with Yes and
+//   2. A bot one grain short asks on its own turn: the toast is one line ("<bot>: give 1 wheat, get 1 sheep") with Yes and
 //      No, the bot's turn waits on it, the person's Yes moves the goods, and the bot plays on.
 //   3. The same ask, and the person says No: once every seat has declined it closes, and the bot still plays on.
 // Every wait is on the store or the page, never a fixed sleep. Zero console errors.
@@ -100,12 +100,13 @@ try {
 
   // 2. The bot asks on its turn; the person answers from the toast.
   await load(gC);
-  const dialog = page.getByRole("region", { name: /offers/ });
+  // #1546: the offer is named by its sentence, worded from the reader's side ("<bot>: give 1 wheat, get 1 sheep").
+  const dialog = page.getByRole("region", { name: /: give \d/ });
   await dialog.waitFor({ timeout: STEP_MS });
   await watchClose();
   const line = await dialog.locator("p").first().textContent();
   const buttons = await dialog.getByRole("button").allTextContents();
-  const want = `${bot} offers 1 ${RESOURCE_LABEL[Object.keys(askC.give)[0]].toLowerCase()} for 1 ${RESOURCE_LABEL[Object.keys(askC.want)[0]].toLowerCase()}`;
+  const want = `${bot}: give 1 ${RESOURCE_LABEL[Object.keys(askC.want)[0]].toLowerCase()}, get 1 ${RESOURCE_LABEL[Object.keys(askC.give)[0]].toLowerCase()}`;
   console.log(`bot asks: "${line}" [${buttons.join(" / ")}]`);
   if (line !== want || buttons.join(",") !== "No,Yes") throw new Error(`the bot's ask reads ${JSON.stringify({ line, buttons })}, wanted "${want}" + No/Yes`);
   const waiting = await page.evaluate(() => {
