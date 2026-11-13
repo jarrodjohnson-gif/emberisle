@@ -293,7 +293,8 @@ try {
   if (await A.page.getByTestId("trade-panel").isVisible()) throw new Error("the panel stayed open after the ask");
   const afterAsk = await focusIs(A);
   if (afterAsk.label !== "Trade") throw new Error(`#378: the ask closed the panel but focus went to "${afterAsk.label}", not the Trade button`);
-  const line = `${A.name} offers 1 ${RESOURCE_LABEL[give].toLowerCase()} for 1 ${RESOURCE_LABEL[want].toLowerCase()}`;
+  // #1546: a seat that can pay reads the offer from its own side.
+  const line = `${A.name}: give 1 ${RESOURCE_LABEL[want].toLowerCase()}, get 1 ${RESOURCE_LABEL[give].toLowerCase()}`;
   const demand1 = `${A.name} is looking for 1 ${RESOURCE_LABEL[want].toLowerCase()}`;
   for (const t of [B, C]) {
     const v = vs[tabs.indexOf(t)];
@@ -419,7 +420,7 @@ try {
   const again = await ask(want, give, n2);
   const tradeId2 = again[0].offer.tradeId;
   if (tradeId2 === tradeId) throw new Error("second ask reused the tradeId");
-  const line2 = `${A.name} offers 1 ${RESOURCE_LABEL[want].toLowerCase()} for ${n2} ${RESOURCE_LABEL[give].toLowerCase()}`;
+  const line2 = `${A.name}: give ${n2} ${RESOURCE_LABEL[give].toLowerCase()}, get 1 ${RESOURCE_LABEL[want].toLowerCase()}`;
   for (const t of [B, C]) {
     if (!(await answerable(t, again[tabs.indexOf(t)], line2, give, n2))) throw new Error(`${t.name} can pay ${n2} ${RESOURCE_LABEL[give].toLowerCase()}`);
   }
@@ -484,7 +485,7 @@ try {
   const need = want === "ore" ? "timber" : "ore";
   const needLabel = RESOURCE_LABEL[need].toLowerCase();
   const demand = `${A.name} is looking for 2 ${needLabel}`;
-  const line3 = `${A.name} offers 1 ${RESOURCE_LABEL[offerRes].toLowerCase()} for 2 ${needLabel}`;
+  const line3 = `${A.name}: give 2 ${needLabel}, get 1 ${RESOURCE_LABEL[offerRes].toLowerCase()}`;
   // Sets this tab's own count of `need`, the way a state from the host would: the toast reads it from the store.
   const setLocal = (t, count) =>
     t.page.evaluate(({ res, n }) => {
