@@ -136,6 +136,12 @@ const readSheet = (page) =>
       small,
       scroll: { top: list.scrollTop, height: list.scrollHeight, client: list.clientHeight },
       wide: list.scrollWidth > list.clientWidth + 1,
+      // #1601: the newest turn is the list's last; it is in view when its bottom shows inside the list's box.
+      newest: (() => {
+        const t = list.lastElementChild?.getBoundingClientRect();
+        const b = list.getBoundingClientRect();
+        return t ? { inView: t.bottom <= b.bottom + 0.5 && t.bottom > b.top, bottom: t.bottom, listTop: b.top, listBottom: b.bottom } : null;
+      })(),
       turns: [...el.querySelectorAll('[data-testid="gl-turn"]')].map((t) => {
         const roll = t.querySelector('[data-testid="gl-roll"]');
         const head = t.querySelector("b");
@@ -252,6 +258,7 @@ try {
     check(ink.length > 0 && JSON.stringify(ink) === JSON.stringify(lines.filter((l) => l.startsWith("Ember "))), `${at}: the lines that start with this seat's name, and only those, are ink ${JSON.stringify(ink.slice(0, 3))}`);
     check(lines.some((l) => / gains \d+ \w+\.$/.test(l)) && !s.turns.some((t) => t.lines.some((l) => l.includes(` — ${t.name}'s roll`))), `${at}: each roll gain is its own line and none repeats its heading's roll`);
     check(s.scroll.top + s.scroll.client >= s.scroll.height - 1 && s.scroll.height > s.scroll.client, `${at}: the list opens scrolled to the newest turn at the bottom, and scrolls ${JSON.stringify(s.scroll)}`);
+    check(s.newest?.inView, `${at}: the sheet opens with the newest turn in view ${JSON.stringify(s.newest)}`);
     const passes = s.store.filter((l) => l.startsWith("Bot passed for ")).length;
     check(s.store.length === 200 && passes > 0, `${at}: the store's log is full at 200 lines, ${passes} of them a bot's pass`);
     check(s.turns.filter((t) => t.sum !== null).length >= s.turns.length - 2, `${at}: every turn but the open one and the oldest group has its roll ${JSON.stringify(s.turns.filter((t) => t.sum === null).map((t) => t.name))}`);
@@ -290,6 +297,7 @@ try {
       at = `${tag} after End turn`;
       sameAsStore(s, at);
       const next = await page.evaluate(() => { const g = window.__emberisle.getState().state; return g.players.find((p) => p.id === g.current).name; });
+      check(s.newest?.inView && s.scroll.top + s.scroll.client >= s.scroll.height - 1, `${at}: the list stays at the bottom and the new turn is in view ${JSON.stringify({ newest: s.newest, scroll: s.scroll })}`);
       check(s.turns.at(-1).name === next && s.turns.at(-2).name === "Ember", `${at}: the last turns are ${s.turns.at(-2).name}, ${s.turns.at(-1).name}; want Ember, ${next}`);
 
       // 4. Escape, Close and the backdrop each close it; the focus goes back to the menu button.

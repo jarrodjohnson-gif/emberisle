@@ -1,5 +1,6 @@
 // The full game log (docs/design/end-of-game, owner decision 2026-11-12 `q1536-game-log`): a sheet in the tray's style,
-// opened from the Table menu. The newest turn is on top. A turn is one seat's name with its roll as the number, and
+// opened from the Table menu. Turns run oldest first, like the online chat, and the sheet opens scrolled to the newest turn at
+// the bottom (it stays there as turns come in, unless the reader has scrolled up: #1601). A turn is one seat's name with its roll as the number, and
 // under it what happened, in the log's own words. Lines from before the first turn sit under "Setup" ("Earlier" once the
 // log is full and has dropped its oldest lines). Focus lands on Close and goes back to the menu button; Escape and a tap on
 // the backdrop close it. Its own chunk (chunks.ts), fetched as the menu opens.
@@ -60,7 +61,14 @@ export function GameLog({ opener, onClose }: { opener: HTMLElement | null; onClo
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
   }, []);
-  const turns = turnsOf(log);
+  // turnsOf reads newest first; the sheet lists oldest first.
+  const turns = turnsOf(log).reverse();
+  const list = useRef<HTMLOListElement>(null);
+  const stuck = useRef(true);
+  useEffect(() => {
+    const el = list.current;
+    if (el && stuck.current) el.scrollTop = el.scrollHeight;
+  }, [log]);
   return createPortal(
     <div className="build-wash fixed inset-0 z-50 flex items-end justify-center" {...backdrop}>
       <div ref={root} role="dialog" aria-modal="true" aria-labelledby="game-log-title" data-testid="game-log" className="tray-sheet game-log flex w-full max-w-[520px] flex-col">
@@ -70,9 +78,9 @@ export function GameLog({ opener, onClose }: { opener: HTMLElement | null; onClo
             <X className="size-5" />
           </Button>
         </div>
-        <ol tabIndex={0} aria-label="Turns, newest first" className="min-h-0 overflow-y-auto">
+        <ol ref={list} tabIndex={0} aria-label="Turns, oldest first" onScroll={(e) => { const el = e.currentTarget; stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 8; }} className="min-h-0 overflow-y-auto">
           {turns.map((t, i) => (
-            <li key={turns.length - i} data-testid="gl-turn" className="gl-turn">
+            <li key={i} data-testid="gl-turn" className="gl-turn">
               <div className={`flex min-h-7 items-center gap-2 ${t.name && t.name === mine ? "text-gain" : ""}`}>
                 {t.name ? <SeatDot color={players?.find((p) => p.name === t.name)?.color ?? "transparent"} className="size-3" /> : null}
                 <b className="min-w-0 flex-1 truncate text-[16px] font-semibold leading-6">{t.name || (log.length < GAME_LOG_MAX ? "Setup" : "Earlier")}</b>
