@@ -24,7 +24,7 @@ import type {
 } from "./types";
 import { PLAYER_COLORS, PLAYER_NAMES, RESOURCES } from "./types";
 
-function shuffle<T>(arr: T[], rand: () => number): T[] {
+export function shuffle<T>(arr: T[], rand: () => number): T[] {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
@@ -37,7 +37,7 @@ function emptyRes(): Record<Resource, number> {
   return { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
 }
 
-function makePlayer(i: number, name: string, kind: PlayerKind): PlayerState {
+export function makePlayer(i: number, name: string, kind: PlayerKind): PlayerState {
   return {
     id: `p${i}`,
     name,
@@ -53,7 +53,7 @@ function makePlayer(i: number, name: string, kind: PlayerKind): PlayerState {
   };
 }
 
-function adjacentPips(hexes: HexCell[], id: string, pip: number): boolean {
+export function adjacentPips(hexes: HexCell[], id: string, pip: number): boolean {
   const h = hexes.find((x) => x.id === id);
   if (!h) return false;
   for (const [dq, dr] of AXIAL_DIRS) {
@@ -63,6 +63,9 @@ function adjacentPips(hexes: HexCell[], id: string, pip: number): boolean {
   return false;
 }
 
+export type GameOptions = Parameters<typeof createGame>[0];
+
+// The classic island for three or four seats. Five and six seats take the expanded island in expanded.ts (#1604).
 export function createGame(opts: {
   seed?: number;
   humans: { name: string }[];
