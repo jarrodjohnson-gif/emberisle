@@ -439,6 +439,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run tray-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
+        run: npm run tray-offers-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run game-log-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run connection-health-prove
