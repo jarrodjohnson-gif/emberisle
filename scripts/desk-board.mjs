@@ -69,9 +69,10 @@ export function watchdog(body, now) {
   if (!ledger) return null;
   const since = /^Desk: .*?since (\d{4}-\d\d-\d\d)[ T](\d\d:\d\d)/m.exec(ledger);
   if (since && now - Date.parse(`${since[1]}T${since[2]}:00Z`) > 26 * 3600e3) return 'the desk has run for more than 26 hours';
-  const next = /^Next rotation: .*?due (\d{4}-\d\d-\d\dT\d\d:\d\d(?::\d\d)?Z)/m.exec(ledger);
+  // The ledger writes either "due 2026-11-14T12:43Z" or "due 2026-11-14 12:43 UTC".
+  const next = /^Next rotation: .*?due (\d{4}-\d\d-\d\d)[ T](\d\d:\d\d)(?::\d\d)?\s*(?:Z|UTC)/m.exec(ledger);
   if (!next) return 'no next rotation is set';
-  if (now - Date.parse(next[1]) > 3600e3) return 'the next rotation is overdue';
+  if (now - Date.parse(`${next[1]}T${next[2]}:00Z`) > 3600e3) return 'the next rotation is overdue';
   return null;
 }
 export const watchLine = reason => `${WATCH} ${reason}. Jarrod: if no desk answers within an hour, start one with "Run the Emberisle review desk. Read docs/DESK.md."`;

@@ -165,6 +165,9 @@ eq(watchdog(ledger(['Desk: s1 (Opus 5.5), since 2026-10-28 01:00 UTC', 'Next rot
 eq(watchdog(ledger(['Desk: s1 (Opus 5.5), since 2026-10-28 01:00 UTC', 'Next rotation: t1, due 2026-10-28T12:43Z']), now), null);
 eq(watchdog(ledger(['Desk: s1 (Opus 5.5), since 2026-10-28 01:00 UTC', 'Next rotation: t1, due 2026-10-28T01:30Z']), now), 'the next rotation is overdue');
 eq(watchdog(ledger(['Desk: s1 (Opus 5.5), since 2026-10-28 01:00 UTC', 'Next rotation: t1, due 2026-10-28T02:30Z']), now), null);
+// The live ledger's spaced form: "due YYYY-MM-DD HH:MM UTC".
+eq(watchdog(ledger(['Desk: s1 (Opus 5.5), since 2026-10-28 01:00 UTC', 'Next rotation: trig_1, due 2026-10-28 12:43 UTC']), now), null);
+eq(watchdog(ledger(['Desk: s1 (Opus 5.5), since 2026-10-28 01:00 UTC', 'Next rotation: trig_1, due 2026-10-28 01:30 UTC']), now), 'the next rotation is overdue');
 eq(notifications([], [], now, 'no next rotation is set'), [watchLine('no next rotation is set')]);
 eq(notifications([], [comment(watchLine('no next rotation is set'))].map(c => ({ ...c, created_at: now.toISOString() })), now, 'the next rotation is overdue'), []);
 eq(notifications([], [comment(watchLine('x'))].map(c => ({ ...c, created_at: '2026-10-27T03:00:00Z' })), now, 'x'), [watchLine('x')]);
