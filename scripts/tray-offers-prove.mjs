@@ -343,11 +343,13 @@ try {
     await settle();
     s = await readStack(page);
     check(s.banner === "Discard 4: pick 1 more" && s.discard[0].disabled, `${at}: after three taps the status reads "${s.banner}" and Discard is ${s.discard[0].disabled ? "off" : "on"}`);
+    check(s.count === "Pick 1 more", `${at}: after three taps the screen-reader count reads "${s.count}", want "Pick 1 more"`);
     check(s.tokens.find((t) => t.kind === "timber").badge === "−2" && s.tokens.find((t) => t.kind === "clay").badge === "−1", `${at}: the badges read ${JSON.stringify(s.tokens.map((t) => t.badge))}`);
     await add("grain");
     await settle();
     s = await readStack(page);
     check(s.banner === "Discard 4: ready" && !s.discard[0].disabled && s.discard[0].primary, `${at}: at four the status reads "${s.banner}" and Discard is ${JSON.stringify(s.discard[0])}`);
+    check(s.count === "Ready", `${at}: at four the screen-reader count reads "${s.count}", want "Ready"`);
     const minus = s.buttons.filter((b) => /^discard-back-/.test(b.name));
     check(minus.length === 5 && minus.every((m) => m.bottom <= s.discard[0].top || m.right <= s.discard[0].left), `${at}: a take-back button's target overlaps Discard ${JSON.stringify({ minus, discard: s.discard[0] })}`);
     check(minus.every((m) => m.w >= 44 && m.h >= 44), `${at}: a take-back target is under 44 px ${JSON.stringify(minus)}`);
@@ -365,6 +367,7 @@ try {
     await settle();
     s = await readStack(page);
     check(s.banner === "Discard 4: pick 1 more" && s.discard[0].disabled && s.tokens.find((t) => t.kind === "clay").badge === null, `${at}: after the take-back the status reads "${s.banner}" ${JSON.stringify(s.discard[0])}`);
+    check(s.count === "Pick 1 more", `${at}: after the take-back the screen-reader count reads "${s.count}", want "Pick 1 more"`);
     if (v.full) {
       await add("ore");
       await press(pick.getByRole("button", { name: "Discard 4" }));
