@@ -1,0 +1,7 @@
+
+> hole-prove
+> node scripts/hole-prove.mjs
+
+ok   styles.css breaks the action row at 400 px, as the fit declares
+600 size/phase pairs: live hole inside the declared hole on every side except 0
+hole-prove: ok

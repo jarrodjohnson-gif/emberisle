@@ -1,0 +1,6 @@
+PASS five-file implementation scope; other runtime/proofs/lockfiles/budgets main-exact
+PASS keyboard proof byte-identical ad27897 SHA256 2c9079e86814ce83733844557cb3021eefcd0ddbad55faeff5847514029f01e7
+PASS every main hole error/assertion guard line retained; width sweep widened and safe cases added
+PASS every main package script/CI condition preserved plus own proof once
+Tested merge e2397f2b7c7c1f8cc0c5be5d7375d865932554f9
+Parents ad27897ae46ab40dec147316aeba6fd64ada0e58 3db641d6744617ebc55a3dbb6add1ce34855a72b

@@ -1,0 +1,176 @@
+[
+  {
+    "source": "/workspace/905-refresh-output/build-f13f523.log",
+    "file": "raw/build-f13f523.log.gz",
+    "bytes": 3250,
+    "sha256": "0d8ae22fb2b69996bcee950ea4f5cb8290935891cc20deca7ad0fc2a3ec890a0"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-base-build.log",
+    "file": "raw/frozen-base-build.log.gz",
+    "bytes": 3250,
+    "sha256": "6a1befda9f0ecfa3533ea71174bcf816652cc9e464e9c6e4c1e5af0fae1f75d6"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-base-install.log",
+    "file": "raw/frozen-base-install.log.gz",
+    "bytes": 25,
+    "sha256": "e8e036a88ee38b3a1c3bea82e6522198ce0c2f607104bcb0da7f5080685b4549"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-base-server-install.log",
+    "file": "raw/frozen-base-server-install.log.gz",
+    "bytes": 26,
+    "sha256": "0b5128962ca21fc79c6aa83f25fead19cda055a2c521c5f6138160789c713013"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-board-look.log",
+    "file": "raw/frozen-board-look.log.gz",
+    "bytes": 14436,
+    "sha256": "88ad8a631030c7dcef43a26a073e6e12ab055ecb7ef8f93dff0beba1308352a2"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-build.log",
+    "file": "raw/frozen-build.log.gz",
+    "bytes": 3250,
+    "sha256": "c16e7566da14d4eca2747d033d7eee3aec1e51d886daf5edbecdcccadfc1bc59"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-client.log",
+    "file": "raw/frozen-client.log.gz",
+    "bytes": 6635,
+    "sha256": "98d6b2dc07f4dc87c86d60437454610600fd28e8471cfbb1b5a9c4e3e7c6543b"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-hole.log",
+    "file": "raw/frozen-hole.log.gz",
+    "bytes": 209,
+    "sha256": "5a8dda2c714445cce6bb34de4f450e35d9e431ffb48dbb48b30cc59446adb5cd"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-install.log",
+    "file": "raw/frozen-install.log.gz",
+    "bytes": 25,
+    "sha256": "6a07a3eb0ce867fcf0cd98bcd59724d470e29219fe74ba0febfa280bcf7bd9bd"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-keyboard.log",
+    "file": "raw/frozen-keyboard.log.gz",
+    "bytes": 8617,
+    "sha256": "a87ee802c5069ed456ea7961fb6e529e99ccd2f41133c1e69f4ce9db988d78b4"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-loosen.log",
+    "file": "raw/frozen-loosen.log.gz",
+    "bytes": 882,
+    "sha256": "652c6c72100857603312445eb05ea004332f0d33905505438bd57bf79ad04e29"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-registered.log",
+    "file": "raw/frozen-registered.log.gz",
+    "bytes": 689,
+    "sha256": "3fb2514335c73a8429a9371fbf88e7d9d1fbfe69873c763b8c0607e6d65836cd"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-render-recovery.log",
+    "file": "raw/frozen-render-recovery.log.gz",
+    "bytes": 6460,
+    "sha256": "b990c2ad367f541831991274bb356067732547974dfbbbfd27906da8a7e6a17a"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-robber-prompt.log",
+    "file": "raw/frozen-robber-prompt.log.gz",
+    "bytes": 366,
+    "sha256": "3d45c01fe45e27d77d050ac0955007d7564c1abd42758b98848096ab83300eea"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-rotate-overlays.log",
+    "file": "raw/frozen-rotate-overlays.log.gz",
+    "bytes": 27227,
+    "sha256": "147fd8ce1c55018c3927e74990b168dcb686194ba5d9c60f14bd28786786e498"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-server-install.log",
+    "file": "raw/frozen-server-install.log.gz",
+    "bytes": 26,
+    "sha256": "bf1ac7f73409638cccfd4ad329b3c42f9fffbdc35e276330b348d115c69efc80"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-size-delta.log",
+    "file": "raw/frozen-size-delta.log.gz",
+    "bytes": 513,
+    "sha256": "4ddd70352987c74fdda87edfd35e774f84a13d5ae4b3009b699993a4bcdd74d5"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-size.log",
+    "file": "raw/frozen-size.log.gz",
+    "bytes": 2655,
+    "sha256": "b5df936c6b98d3252cc5a7ee512b0810ea0258477d4e8434420b257579f8868e"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-stage.log",
+    "file": "raw/frozen-stage.log.gz",
+    "bytes": 5697,
+    "sha256": "ae2e2cf167dec01fca8726ad0c50bd8f59b43c26f4a4316b10aaccbdec6f32df"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-typecheck.log",
+    "file": "raw/frozen-typecheck.log.gz",
+    "bytes": 29,
+    "sha256": "8fa1cf5506304e8abac55868e7f1a136c9b1dde57a3981a382da4c21ea129a6f"
+  },
+  {
+    "source": "/workspace/905-refresh-output/frozen-webgl-recovery.log",
+    "file": "raw/frozen-webgl-recovery.log.gz",
+    "bytes": 10188,
+    "sha256": "38cc7235c2ca4bc2b76236878ad1f2bab255830393fb75e9155edbc5604b32bc"
+  },
+  {
+    "source": "/workspace/905-refresh-output/loosen-f13f523.log",
+    "file": "raw/loosen-f13f523.log.gz",
+    "bytes": 834,
+    "sha256": "6a10da57544dbfedf6499ff281ee3b1ae09f00314c269e655b754aaa0a2fb04d"
+  },
+  {
+    "source": "/workspace/905-refresh-output/loosen-sandbox-first-failure.log",
+    "file": "raw/loosen-sandbox-first-failure.log.gz",
+    "bytes": 447,
+    "sha256": "f0a83b7a3df629ca08f0fc3cbd345db025dfa5d11a27217941ff74350401f976"
+  },
+  {
+    "source": "/workspace/905-refresh-output/registered-f13f523.log",
+    "file": "raw/registered-f13f523.log.gz",
+    "bytes": 689,
+    "sha256": "3fb2514335c73a8429a9371fbf88e7d9d1fbfe69873c763b8c0607e6d65836cd"
+  },
+  {
+    "source": "/workspace/905-refresh-output/size-delta-escalated.log",
+    "file": "raw/size-delta-escalated.log.gz",
+    "bytes": 513,
+    "sha256": "4ddd70352987c74fdda87edfd35e774f84a13d5ae4b3009b699993a4bcdd74d5"
+  },
+  {
+    "source": "/workspace/905-refresh-output/size-delta-f13f523.log",
+    "file": "raw/size-delta-f13f523.log.gz",
+    "bytes": 513,
+    "sha256": "4ddd70352987c74fdda87edfd35e774f84a13d5ae4b3009b699993a4bcdd74d5"
+  },
+  {
+    "source": "/workspace/905-refresh-output/size-delta-sandbox-first-failure.log",
+    "file": "raw/size-delta-sandbox-first-failure.log.gz",
+    "bytes": 1166,
+    "sha256": "c7e1d5f1cc0a7a374df8f852da413ab55abd304af35be0b230d75fecfa7ae662"
+  },
+  {
+    "source": "/workspace/905-refresh-output/size-f13f523.log",
+    "file": "raw/size-f13f523.log.gz",
+    "bytes": 1268,
+    "sha256": "255a1a3c5f7126d5d547ffae484218eb6d7319ea058af22559dde3c8b1761756"
+  },
+  {
+    "source": "/workspace/905-refresh-output/typecheck-f13f523.log",
+    "file": "raw/typecheck-f13f523.log.gz",
+    "bytes": 29,
+    "sha256": "8fa1cf5506304e8abac55868e7f1a136c9b1dde57a3981a382da4c21ea129a6f"
+  }
+]

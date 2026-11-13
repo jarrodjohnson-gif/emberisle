@@ -1,0 +1,73 @@
+$ npm run loosen-prove -- --base b90290abf4a3cd8c63bddf1e7f939e75b71c2418
+
+> loosen-prove
+> node scripts/loosen-prove.mjs --base b90290abf4a3cd8c63bddf1e7f939e75b71c2418
+
+ok   self-test: an unchanged proof passes
+ok   self-test: re-indenting passes
+ok   self-test: an added check passes
+ok   self-test: editing only the block comment passes
+ok   self-test: a removed assert fails
+ok   self-test: a removed assert lowers the count
+ok   self-test: a wider tolerance fails
+ok   self-test: a //-commented assert fails
+ok   self-test: a /* */-commented assert fails
+ok   self-test: a check wrapped in a multi-line /* */ fails
+ok   self-test: a removed throw fails
+ok   self-test: a removed expect fails
+ok   self-test: a fail() that no longer sets exitCode 1 fails
+ok   self-test: an added process.exit(0) fails
+ok   self-test: an added process.exit() fails
+ok   self-test: a new .skip fails
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!f.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(f.writes().some(call => call.method === 'DELETE' && call.path.endsWith('/labels/stale')));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!f.calls.some(call => call.path.includes('/git/refs') || (call.method === 'DELETE' && !call.path.endsWith('/labels/stale'))));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(many.pulls.filter(p => p.state === 'closed').length, dryRun ? 0 : MAX_CLOSES);
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(logs.filter(line => line.includes('deferred close; run cap 5 reached')).length, 2);
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(logs.filter(line => line.includes(dryRun ? 'would close' : 'closed; branch')).length, 5);
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!many.writes().some(c => /\/(issues|pulls)\/[67](?:\/|$)/.test(c.path)));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(unwarned.pulls[0].state, 'open');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(unwarned.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!unwarned.writes().some(c => c.path.endsWith('/comments') || c.body?.state === 'closed'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: await run(unwarned); assert.equal(unwarned.pulls[0].state, 'closed');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(reopened.pulls[0].state, 'open');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!reopened.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(reopened.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(reopened.pulls[0].state, 'open');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!retryCleanup.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(lateDuplicate.writes().length, 0);
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!newHead.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(activity(newHead.comments).sha, newer);
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(newHead.pulls[0].state, 'open');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!newHead.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(newHead.pulls[0].state, 'open');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(newHead.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(newHead.writes().some(c => c.method === 'POST' && c.body?.labels?.includes('stale')));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(newHead.pulls[0].state, 'open');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: await run(newHead, { now: now + 10 * DAY }); assert.equal(newHead.pulls[0].state, 'closed');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!racing.writes().some(c => c.method === 'DELETE'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(racing.pulls[0].labels.some(label => label.name === 'stale'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(workflow.includes("if: vars.STALE_PR_SWEEPER == 'on' && !inputs.permission_probe"));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(workflow.includes("group: stale-pr-sweeper-${{ github.event.pull_request.number || 'sweep' }}"));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(path.startsWith('/repos/owner/repo/'));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: else if (method !== 'GET') throw new Error('Unexpected mutation: ' + method + path);
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: if (scenario.startsWith('wrong-')) { assert(caught); assert.equal(mutations.length, 0); }
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(Boolean(caught), scenario === 'failure');
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.deepEqual([...labels].sort(), scenario === 'existing' ? ['original', 'stale'] : ['original']);
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert(!mutations.some(m => m.path.includes('/pulls/') || m.path.includes('/git/refs')));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(result.status, 0, `${scenario}: ${result.stderr}`);
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: const empty = githubApi('fake-token', async () => ({ ok: true, status: 204, json: () => { throw new Error('204 must not parse JSON'); } }));
+FAIL scripts/stale-pr-sweeper-prove.mjs: removed or edited check line: assert.equal(await empty('DELETE', '/repos/owner/repo/issues/1/labels/stale'), null);
+FAIL scripts/stale-pr-sweeper-prove.mjs: check count fell from 87 to 47
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("explicit create binds the authenticated host", aliasWelcome.type === "welcome" && aliasWelcome.host === true, aliasWelcome);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("explicit join binds a non-host seat", aliasJoined.type === "welcome" && aliasJoined.host === false && aliasJoined.code === aliasWelcome.code, aliasJoined);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check(`${label} alias uses the public profile allowlist`, Object.keys(projected).sort().join() === "displayName,profileId" && projected.profileId === profile.id && projected.displayName === name, projected);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check("both explicit aliases persist their authenticated profile IDs", aliasSaved.seats.map((s) => s.profileId).join() === [A.id, B.id].join(), aliasSaved.seats);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check(`${type} refuses a mismatched HTTPS Origin before credential validity`, isErr(reply, "origin") && refused.welcome === null, reply);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: if (first) check(`${type} origin refusal exposes no credential-validity distinction`, JSON.stringify(reply) === JSON.stringify(first), reply);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check(`${type} origin refusal leaves existing seats unchanged`, JSON.stringify(aliasHost.seats.seats) === beforeSeats);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check(`${type} refused socket can retry as a guest`, guest.type === "welcome" && guest.host === (type === "create"), guest);
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check(`${type} guest retry attaches no profile`, !("profile" in seatOf(refused, guest.you)), seatOf(refused, guest.you));
+FAIL server/profile-seat-prove.mjs: removed or edited check line: check(`${type} guest retry persists no profile binding`, !("profileId" in guestSaved.seats.find((s) => s.id === guest.you)));
+FAIL server/profile-seat-prove.mjs: check count fell from 134 to 124
+2 proof(s) loosened against b90290abf4a3. Restore the checks, or keep them and add new ones (AGENTS.md rule 7).

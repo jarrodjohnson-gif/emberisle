@@ -1,0 +1,111 @@
+
+> pan-prove
+> node scripts/pan-prove.mjs
+
+ok   430x932: starts home in the overhead {"tx":0,"tz":3.3101337568874754,"ty":0.35000000000000003,"dist":0,"max":3.685714285714285,"zoom":1,"cx":215,"cy":361.1479163916093,"inHole":true,"w":430,"h":932,"azimuth":0,"view":"overhead","offX":0}
+ok   430x932: portrait, the island is centred across the screen (within 2 % of the width) {"offX":0}
+ok   430x932: ... and in the hole's width {"cx":215,"holeX":215}
+ok   430x932: ... and in the hole's height {"cy":361.1479163916093,"holeY":361}
+ok   440x956: starts home in the overhead {"tx":0,"tz":2.9844250827322,"ty":0.3499999999999999,"dist":0,"max":3.68076923076923,"zoom":1,"cx":220.00000000000003,"cy":381.1515596524864,"inHole":true,"w":440,"h":956,"azimuth":0,"view":"overhead","offX":2.842170943040401e-14}
+ok   440x956: portrait, the island is centred across the screen (within 2 % of the width) {"offX":2.842170943040401e-14}
+ok   440x956: ... and in the hole's width {"cx":220.00000000000003,"holeX":220}
+ok   440x956: ... and in the hole's height {"cy":381.1515596524864,"holeY":381}
+ok   360x640: starts home in the overhead {"tx":0,"tz":6.225827163311333,"ty":0.35,"dist":0,"max":4.723966581365603,"zoom":1,"cx":179.99999999999994,"cy":191.0966195917814,"inHole":true,"w":360,"h":640,"azimuth":0,"view":"overhead","offX":-5.684341886080802e-14}
+ok   360x640: portrait, the island is centred across the screen (within 2 % of the width) {"offX":-5.684341886080802e-14}
+ok   360x640: ... and in the hole's width {"cx":179.99999999999994,"holeX":180}
+ok   360x640: ... and in the hole's height {"cy":191.0966195917814,"holeY":191}
+ok   844x390: starts home in the overhead {"tx":-4.720580225393298,"tz":-1.0723555264038123,"ty":0.35,"dist":0,"max":4.061087399786881,"zoom":1,"cx":557.9999999999999,"cy":223.12175639614722,"inHole":true,"w":844,"h":390,"azimuth":0,"view":"overhead","offX":135.9999999999999}
+ok   844x390: two-finger drag moves the target along the ground {"dist":4.061087399786881,"ty":0.3500000000000001}
+ok   844x390: the island follows the fingers about 1:1 {"ratio":0.975}
+ok   844x390: a pan does not orbit {"a0":0,"a1":0}
+ok   844x390: an unchanged refit leaves the pan alone {}
+ok   844x390: drag (1,0) from Home carries the island that way, stops at the limit, stays in the hole {"dist":4.061087399786881,"max":4.061087399786881,"moved":117,"inHole":true}
+ok   844x390: drag (-1,0) from Home carries the island that way, stops at the limit, stays in the hole {"dist":4.061087399786881,"max":4.061087399786881,"moved":116.99999999999994,"inHole":true}
+ok   844x390: drag (0,1) from Home carries the island that way, stops at the limit, stays in the hole {"dist":4.061087399786881,"max":4.061087399786881,"moved":106.03801108328807,"inHole":true}
+ok   844x390: drag (0,-1) from Home carries the island that way, stops at the limit, stays in the hole {"dist":4.061087399786881,"max":4.061087399786881,"moved":106.03801108328801,"inHole":true}
+ok   844x390: a pinch zooms and (inside the dead zone) does not pan {"z0":1,"z1":2.4,"dist":2.220446049250313e-16}
+ok   844x390: an off-centre pinch (7 px of midpoint drift) does not pan {"dx":0,"dz":0}
+ok   844x390: zoomed in, a pan still reaches the same limit {"dist":4.061087399786881,"max":4.061087399786881,"max1":4.061087399786881}
+ok   844x390: one finger leaves the target alone {}
+ok   844x390: Home glides back to the fit {}
+ok   844x390: a panel docking in the hole leaves the pan, zoom and fit alone {"holeChanged":true}
+ok   844x390: opening and closing the Fortunes tray leaves the camera and scale alone {"sc0":28.810017732231017,"sc1":28.810017732231017}
+ok   844x390: pinch, pan and orbit leave every HUD box where it was {}
+ok   844x390: a legal corner is on the canvas after the pan {"id":"-2.91,-0.56","x":430.5518434527008,"y":208.49974008353163}
+ok   844x390: tapping it after a pan selects that very corner {"want":"-2.91,-0.56","got":"-2.91,-0.56"}
+ok   844x390: panned before the turn {"dist":4.061087399786881,"sq":{"x":292,"y":163}}
+ok   844x390 -> 390x844: rotation refit returns home {"tx":0,"tz":4.511187753922056,"ty":0.35,"dist":0,"max":3.7081967213114755,"zoom":1,"cx":194.9999999999999,"cy":293.1333433481009,"inHole":true,"w":390,"h":844,"azimuth":0,"view":"overhead","offX":-1.1368683772161603e-13}
+ok   390x844: starts home in the overhead {"tx":0,"tz":4.511187753922056,"ty":0.35,"dist":0,"max":3.7081967213114755,"zoom":1,"cx":194.9999999999999,"cy":293.1333433481009,"inHole":true,"w":390,"h":844,"azimuth":0,"view":"overhead","offX":-1.1368683772161603e-13}
+ok   390x844: portrait, the island is centred across the screen (within 2 % of the width) {"offX":-1.1368683772161603e-13}
+ok   390x844: ... and in the hole's width {"cx":194.9999999999999,"holeX":195}
+ok   390x844: ... and in the hole's height {"cy":293.1333433481009,"holeY":293}
+ok   390x844: two-finger drag moves the target along the ground {"dist":3.7081967213114755,"ty":0.35000000000000014}
+ok   390x844: the island follows the fingers about 1:1 {"ratio":0.9750000000000004}
+ok   390x844: a pan does not orbit {"a0":0,"a1":0}
+ok   390x844: an unchanged refit leaves the pan alone {}
+ok   390x844: drag (1,0) from Home carries the island that way, stops at the limit, stays in the hole {"dist":3.708196721311475,"max":3.7081967213114755,"moved":117.00000000000006,"inHole":true}
+ok   390x844: drag (-1,0) from Home carries the island that way, stops at the limit, stays in the hole {"dist":3.708196721311475,"max":3.7081967213114755,"moved":116.99999999999986,"inHole":true}
+ok   390x844: drag (0,1) from Home carries the island that way, stops at the limit, stays in the hole {"dist":3.7081967213114755,"max":3.7081967213114755,"moved":106.03801108328787,"inHole":true}
+ok   390x844: drag (0,-1) from Home carries the island that way, stops at the limit, stays in the hole {"dist":3.7081967213114764,"max":3.7081967213114755,"moved":106.03801108328787,"inHole":true}
+ok   390x844: a pinch zooms and (inside the dead zone) does not pan {"z0":1,"z1":2.4,"dist":0}
+ok   390x844: an off-centre pinch (7 px of midpoint drift) does not pan {"dx":0,"dz":0}
+ok   390x844: zoomed in, a pan still reaches the same limit {"dist":3.7081967213114755,"max":3.7081967213114755,"max1":3.7081967213114755}
+ok   390x844: one finger leaves the target alone {}
+ok   390x844: Home glides back to the fit {}
+ok   390x844: a panel docking in the hole leaves the pan, zoom and fit alone {"holeChanged":true}
+ok   390x844: opening and closing the Fortunes tray leaves the camera and scale alone {"sc0":31.55172413793099,"sc1":31.55172413793099}
+ok   390x844: pinch, pan and orbit leave every HUD box where it was {}
+ok   390x844: a legal corner is on the canvas after the pan {"id":"-2.91,-0.56","x":59.573901798596836,"y":277.1198223109431}
+ok   390x844: tapping it after a pan selects that very corner {"want":"-2.91,-0.56","got":"-2.91,-0.56"}
+ok   390x844: panned before the turn {"dist":3.7081967213114755,"sq":{"x":20,"y":233}}
+ok   390x844 -> 844x390: rotation refit returns home {"tx":-4.720580225393298,"tz":-1.0723555264038123,"ty":0.35,"dist":0,"max":4.061087399786881,"zoom":1,"cx":557.9999999999999,"cy":223.12175639614722,"inHole":true,"w":844,"h":390,"azimuth":0,"view":"overhead","offX":135.9999999999999}
+ok   956x440: starts home in the overhead {"tx":-4.3167547783832525,"tz":-0.6128875611821204,"ty":0.35,"dist":0,"max":4.18979140254845,"zoom":1,"cx":614.0000000000002,"cy":237.63314651062555,"inHole":true,"w":956,"h":440,"azimuth":0,"view":"overhead","offX":136.00000000000023}
+ok   956x440: two-finger drag moves the target along the ground {"dist":3.7520391404110054,"ty":0.3499999999999996}
+ok   956x440: the island follows the fingers about 1:1 {"ratio":0.9850712500726625}
+ok   956x440: a pan does not orbit {"a0":0,"a1":0}
+ok   956x440: an unchanged refit leaves the pan alone {}
+ok   956x440: drag (1,0) from Home carries the island that way, stops at the limit, stays in the hole {"dist":4.189791402548449,"max":4.18979140254845,"moved":131.99999999999977,"inHole":true}
+ok   956x440: drag (-1,0) from Home carries the island that way, stops at the limit, stays in the hole {"dist":4.18979140254845,"max":4.18979140254845,"moved":131.99999999999994,"inHole":true}
+ok   956x440: drag (0,1) from Home carries the island that way, stops at the limit, stays in the hole {"dist":4.18979140254845,"max":4.18979140254845,"moved":119.63262788883756,"inHole":true}
+ok   956x440: drag (0,-1) from Home carries the island that way, stops at the limit, stays in the hole {"dist":4.18979140254845,"max":4.18979140254845,"moved":119.63262788883785,"inHole":true}
+ok   956x440: a pinch zooms and (inside the dead zone) does not pan {"z0":1,"z1":2.4,"dist":2.220446049250313e-16}
+ok   956x440: an off-centre pinch (7 px of midpoint drift) does not pan {"dx":0,"dz":0}
+ok   956x440: zoomed in, a pan still reaches the same limit {"dist":4.189791402548449,"max":4.18979140254845,"max1":4.18979140254845}
+ok   956x440: one finger leaves the target alone {}
+ok   956x440: Home glides back to the fit {}
+ok   956x440: a panel docking in the hole leaves the pan, zoom and fit alone {"holeChanged":true}
+ok   956x440: opening and closing the Fortunes tray leaves the camera and scale alone {"sc0":31.505148423310743,"sc1":31.505148423310743}
+ok   956x440: pinch, pan and orbit leave every HUD box where it was {}
+ok   956x440: a legal corner is on the canvas after the pan {"id":"-2.91,-0.56","x":478.70942992552057,"y":221.64326415586203}
+ok   956x440: tapping it after a pan selects that very corner {"want":"-2.91,-0.56","got":"-2.91,-0.56"}
+ok   956x440: panned before the turn {"dist":4.189791402548449,"sq":{"x":354,"y":177.5}}
+ok   956x440 -> 440x956: rotation refit returns home {"tx":0,"tz":2.9844250827322,"ty":0.3499999999999999,"dist":0,"max":3.68076923076923,"zoom":1,"cx":220.00000000000003,"cy":381.1515596524864,"inHole":true,"w":440,"h":956,"azimuth":0,"view":"overhead","offX":2.842170943040401e-14}
+ok   1280x720: starts home in the diorama {"tx":0,"tz":0,"ty":0.35,"dist":0,"max":2.703054770604905,"zoom":18.839811646455136,"cx":765.5347952307769,"cy":344.09357065398245,"inHole":true,"w":1280,"h":720,"azimuth":0.34906585039886584,"view":"diorama","offX":125.53479523077692}
+ok   1280x720: two-finger drag moves the target along the ground {"dist":1.4792786343859214,"ty":0.3499999999999998}
+ok   1280x720: the island follows the fingers about 1:1 {"ratio":0.9969187724947062}
+ok   1280x720: a pan does not orbit {"a0":0.34906585039886584,"a1":0.34906585039886584}
+ok   1280x720: an unchanged refit leaves the pan alone {}
+ok   1280x720: drag (1,0) from Home carries the island that way, stops at the limit, stays in the hole {"dist":2.7030547706049046,"max":2.703054770604905,"moved":218.59784745821412,"inHole":true}
+ok   1280x720: drag (-1,0) from Home carries the island that way, stops at the limit, stays in the hole {"dist":2.7030547706049046,"max":2.703054770604905,"moved":218.59784745821423,"inHole":true}
+ok   1280x720: drag (0,1) from Home carries the island that way, stops at the limit, stays in the hole {"dist":2.7030547706049046,"max":2.703054770604905,"moved":156.39803773781318,"inHole":true}
+ok   1280x720: drag (0,-1) from Home carries the island that way, stops at the limit, stays in the hole {"dist":2.703054770604904,"max":2.703054770604905,"moved":123.54943449535506,"inHole":true}
+ok   1280x720: a pinch zooms and (inside the dead zone) does not pan {"z0":18.839811646455136,"z1":7.849921519356306,"dist":0}
+ok   1280x720: an off-centre pinch (7 px of midpoint drift) does not pan {"dx":0,"dz":0}
+ok   1280x720: zoomed in, a pan still reaches the same limit {"dist":2.703054770604905,"max":2.703054770604905,"max1":2.703054770604905}
+ok   1280x720: one finger leaves the target alone {}
+ok   1280x720: Home glides back to the fit {}
+ok   1280x720: a panel docking in the hole leaves the pan, zoom and fit alone {"holeChanged":true}
+ok   1280x720: opening and closing the Fortunes tray leaves the camera and scale alone {"sc0":79.9095905672907,"sc1":79.9095905672907}
+ok   1280x720: pinch, pan and orbit leave every HUD box where it was {}
+ok   1280x720: a legal corner is on the canvas after the pan {"id":"-2.91,-0.56","x":533.5605923668635,"y":259.1614148077474}
+ok   1280x720: tapping it after a pan selects that very corner {"want":"-2.91,-0.56","got":"-2.91,-0.56"}
+ok   1280x720: panned before the turn {"dist":1.9508880315531627,"sq":{"x":292,"y":328}}
+ok   1280x720 -> 720x1280: rotation refit returns home {"tx":0,"tz":1.9309113581843604,"ty":0.35000000000000037,"dist":2.220446049250313e-16,"max":3.5999999999999996,"zoom":1,"cx":360.00000000000006,"cy":535.2535709570446,"inHole":true,"w":720,"h":1280,"azimuth":0,"view":"overhead","offX":5.684341886080802e-14}
+ok   900x700: PlaceList focus and an offer leave the camera and scale alone {"s0":56.43614833814911}
+ok   900x700: ...and still do once closed {}
+ok   900x700 -> 940x730: resizing with the PlaceList focused fits like a fresh load {}
+ok   1024x768: PlaceList focus and an offer leave the camera and scale alone {"s0":44.95754476945609}
+ok   1024x768: ...and still do once closed {}
+ok   1024x768 -> 1064x798: resizing with the PlaceList focused fits like a fresh load {}
+ok   zero console errors []
+pan-prove: ok

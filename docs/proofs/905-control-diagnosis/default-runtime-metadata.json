@@ -1,0 +1,17 @@
+{
+  "node": "v22.23.4",
+  "CHROMIUM_PATH": null,
+  "browser": "153.0.8010.12",
+  "actualSpawnfile": "/home/agent/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell",
+  "args": [
+    "--use-gl=angle",
+    "--use-angle=swiftshader",
+    "--enable-unsafe-swiftshader"
+  ],
+  "screen": {
+    "width": 1280,
+    "height": 720,
+    "dpr": 1,
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+  }
+}

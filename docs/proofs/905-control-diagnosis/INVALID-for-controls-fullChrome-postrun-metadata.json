@@ -1,0 +1,16 @@
+{
+  "node": "v22.23.4",
+  "browser": "153.0.8010.12",
+  "executablePath": "/home/agent/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome",
+  "args": [
+    "--use-gl=angle",
+    "--use-angle=swiftshader",
+    "--enable-unsafe-swiftshader"
+  ],
+  "screen": {
+    "width": 1280,
+    "height": 720,
+    "dpr": 1,
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36"
+  }
+}
