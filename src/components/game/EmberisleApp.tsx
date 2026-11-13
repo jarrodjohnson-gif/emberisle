@@ -1,7 +1,7 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { OpenModeToggle, HowTo, island, LoadingScreen, Lobby, online, OpenTables, ProfileSheet, profileSheet, SetupPipHints, sheets, WayfarerOptions } from "@/components/game/chunks";
+import { OpenModeToggle, HowTo, island, LoadingScreen, Lobby, online, openTables, OpenTables, ProfileSheet, profileSheet, SetupPipHints, sheets, WayfarerOptions } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
@@ -188,6 +188,7 @@ function Title({ arrive }: { arrive: boolean }) {
   const watchTable = useGame.getState().watchTable;
   // A ?watch= link makes Watch the primary button for this visit (docs/design/spectator.md).
   const [watchLink, setWatchLink] = useState(false);
+  const [discoveryReady, setDiscoveryReady] = useState(false);
   const peekTable = useGame.getState().peekTable;
   const peekedCode = useGame((s) => s.code);
   const peekedSeats = useGame((s) => s.seats);
@@ -208,6 +209,14 @@ function Title({ arrive }: { arrive: boolean }) {
       clearInterval(again);
     };
   }, [join, peekTable]);
+
+  // Optional discovery keeps its null fallback when a dependency fails (#1493).
+  // Resolve the load outside render so a known rejection never enters React's concurrent render.
+  useEffect(() => {
+    let mounted = true;
+    void openTables.load().then(() => { if (mounted) setDiscoveryReady(true); }, () => {});
+    return () => { mounted = false; };
+  }, []);
 
   // #304: a join link (?code=K7QP) fills the field so the peek above runs; nothing is sent until Join is pressed. A watch
   // link (?watch=K7QP) does the same and makes Watch the primary button. #492: the link stays in the URL until the online
@@ -340,7 +349,7 @@ function Title({ arrive }: { arrive: boolean }) {
                   Host a table
                 </Button>
                 <LazyBoundary failed={null}>
-                  <OpenModeToggle openMode={openMode} setOpenMode={setOpenMode} />
+                  {discoveryReady ? <OpenModeToggle openMode={openMode} setOpenMode={setOpenMode} /> : null}
                 </LazyBoundary>
               </div>
               <form
@@ -399,7 +408,7 @@ function Title({ arrive }: { arrive: boolean }) {
               </p>
             ) : null}
             <LazyBoundary failed={null}>
-              <OpenTables />
+              {discoveryReady ? <OpenTables /> : null}
             </LazyBoundary>
             </>
             )}

@@ -1,0 +1,21 @@
+2026-11-10T01:13:33.3916074Z 
+2026-11-10T01:13:39.8810972Z 640x400 outpost: drop + jelly squash + dust verified
+2026-11-10T01:13:39.8836787Z 640x400 dust.step: motion, fade, and expiry verified
+2026-11-10T01:13:39.8894527Z AssertionError [ERR_ASSERTION]: 640x400 outpost: sound fires before a same-delay timer set right after the pick
+2026-11-10T01:13:39.9038450Z     at runMotionSuite (file:///home/runner/work/emberisle/emberisle/scripts/landing-dust-prove.mjs:169:10)
+2026-11-10T01:13:39.9039334Z     at async file:///home/runner/work/emberisle/emberisle/scripts/landing-dust-prove.mjs:431:5 {
+2026-11-10T01:13:39.9046858Z   generatedMessage: false,
+2026-11-10T01:13:39.9057750Z   code: 'ERR_ASSERTION',
+2026-11-10T01:13:39.9062780Z   actual: false,
+2026-11-10T01:13:39.9063518Z   expected: true,
+2026-11-10T01:13:39.9063749Z   operator: '==',
+2026-11-10T01:13:39.9064011Z   diff: 'simple'
+2026-11-10T01:13:39.9064253Z }
+2026-11-10T01:13:40.0398148Z ##[error]Process completed with exit code 1.
+2026-11-10T01:13:40.0607418Z ##[group]Run actions/upload-artifact@v4
+2026-11-10T01:13:40.0607587Z with:
+2026-11-10T01:13:40.0607722Z   name: browser-b-flows-a-test-results
+2026-11-10T01:13:40.0607881Z   path: test-results/
+2026-11-10T01:13:40.0608024Z   if-no-files-found: ignore
+2026-11-10T01:13:40.0608170Z   compression-level: 6
+

@@ -1,0 +1,21 @@
+2026-11-10T01:23:17.3717009Z ok   1280x720 reduced: each line readable for at least 1.2 s ["3009"]
+2026-11-10T01:23:24.6252149Z ok   1280x720 hotseat: the moment names the seat taking the device {"text":"Seat 2's turn","next":"Seat 2"}
+2026-11-10T01:23:26.2696712Z ok   390x844 first load, seq 20: nothing shown {"turns":0,"lines":0,"up":false}
+2026-11-10T01:23:56.2787254Z 390x844 reconnect: page.waitForSelector: Timeout 30000ms exceeded.
+2026-11-10T01:23:56.2842633Z Call log:
+2026-11-10T01:23:56.2865630Z   - waiting for locator('[data-testid="resource-flash"]') to be visible
+2026-11-10T01:23:56.2881028Z 
+2026-11-10T01:23:56.2889550Z     at reconnect (/home/runner/work/emberisle/emberisle/scripts/turn-gain-prove.mjs:858:16)
+2026-11-10T01:23:56.2890465Z ok   zero console errors []
+2026-11-10T01:23:56.2927440Z     at async file:///home/runner/work/emberisle/emberisle/scripts/turn-gain-prove.mjs:891:38 {
+2026-11-10T01:23:56.2945406Z   log: [
+2026-11-10T01:23:56.2985652Z     `  - waiting for locator('[data-testid="resource-flash"]') to be visible`
+2026-11-10T01:23:56.2986718Z   ],
+2026-11-10T01:23:56.3015651Z   name: 'TimeoutError'
+2026-11-10T01:23:56.3045178Z }
+2026-11-10T01:23:56.4082935Z turn-gain-prove: 1 failed
+2026-11-10T01:23:56.4459742Z ##[error]Process completed with exit code 1.
+2026-11-10T01:23:56.4625762Z ##[group]Run actions/upload-artifact@v4
+2026-11-10T01:23:56.4626089Z with:
+2026-11-10T01:23:56.4626343Z   name: browser-b-presentation-3-test-results
+

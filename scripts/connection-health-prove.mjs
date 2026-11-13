@@ -16,7 +16,17 @@ if (nodeMajor === 22 && nodeMinor < 23) {
 if (process.argv.includes("--host-fixture")) {
   // Test-only observation of timer identity: no production exports, endpoint, or environment switch.
   const { registerHooks } = await import("node:module");
-  registerHooks({ load(url, context, next) {
+  // Keep fixture loading on one synchronous hook chain. Mixing this load hook with
+  // register.mjs's asynchronous resolver can stall before host evaluation (#1493).
+  // Mirror its ESM-only alias/extension rules; leave CommonJS package requires alone.
+  registerHooks({
+    resolve(specifier, context, next) {
+      if (context.conditions.includes("require")) return next(specifier, context);
+      if (specifier.startsWith("@/")) specifier = new URL(specifier.slice(2), new URL("../src/", import.meta.url)).href;
+      if ((specifier.startsWith("./") || specifier.startsWith("../") || specifier.startsWith("file:")) && !/\.[a-z]+$/i.test(specifier)) return next(`${specifier}.ts`, context);
+      return next(specifier, context);
+    },
+    load(url, context, next) {
     const result = next(url, context);
     if (url === new URL("../server/host.mjs", import.meta.url).href) return { ...result, source: readFileSync(new URL(url), "utf8") + `
       process.on('message', ({id, code}) => {
@@ -29,11 +39,10 @@ if (process.argv.includes("--host-fixture")) {
       });` };
     return result;
   }});
-  await import("../server/register.mjs");
   await import("../server/host.mjs");
 } else {
   const { chromium } = await import("./proof-browser.mjs");
-  const { createServer, build, preview } = await import("vite");
+  const { createServer, preview } = await import("vite");
   const resultsDir = fileURLToPath(new URL("../test-results/", import.meta.url));
   mkdirSync(resultsDir, { recursive: true });
   const dir = mkdtempSync(path.join(tmpdir(), "emberisle-health-"));
@@ -78,7 +87,19 @@ if (process.argv.includes("--host-fixture")) {
     browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH, args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     const errors = [];
-    page.on("pageerror", e => errors.push(String(e)));
+    async function observeErrors(p, label) {
+      p.on("pageerror", error => { errors.push(String(error)); console.log("HEALTH_PAGE_ERROR", label, error.stack); });
+      p.on("console", message => { if (message.text().startsWith("HEALTH_ERROR_CAUSE")) console.log(message.text()); });
+      await p.addInitScript(label => {
+        const describe = (value, depth=0) => {
+          if (value == null || depth > 4) return value == null ? value : "depth limit";
+          if (typeof value !== "object") return String(value);
+          return { name:value.name, message:value.message, stack:value.stack, cause:describe(value.cause,depth+1), errors:Array.isArray(value.errors) ? value.errors.slice(0,4).map(e=>describe(e,depth+1)) : undefined };
+        };
+        window.addEventListener("error", event => console.log("HEALTH_ERROR_CAUSE " + JSON.stringify({ label, error:describe(event.error) })));
+      }, label);
+    }
+    await observeErrors(page, "transport/main");
     await page.addInitScript(() => {
       localStorage.setItem("emberisle-name", "Ember"); localStorage.setItem("emberisle-water", "simple");
       const h = window.__health = { sockets: [], sent: [], pongs: [], held: [], hold: true, notices: [], messages: [] };
@@ -107,8 +128,12 @@ if (process.argv.includes("--host-fixture")) {
     });
     await page.goto(`http://127.0.0.1:8113/?host=ws://127.0.0.1:${port}`);
     await page.waitForFunction(() => window.__emberisle);
-    await page.clock.install();
-    await page.clock.pauseAt(new Date());
+    // Hold Date during setup so pauseAt cannot receive an already-past target (#1493).
+    // Then restore Date advancement while timers stay paused; retain a normal monotonic origin.
+    const clockStart = new Date();
+    await page.clock.setFixedTime(clockStart);
+    await page.clock.pauseAt(clockStart);
+    await page.clock.setSystemTime(clockStart);
     // Exercise the transport without the store: a duplicate welcome cannot cancel a pending challenge's timeout.
     await page.evaluate(async () => {
       const { connectTable } = await import("/src/lib/net/table.ts");
@@ -334,7 +359,7 @@ if (process.argv.includes("--host-fixture")) {
     await lobby.close();
     // Four ready seats maximize the lobby footer. Status shares the caption's row on short landscapes.
     const layout = await browser.newPage({ viewport: { width: 667, height: 375 }, isMobile: true, hasTouch: true });
-    layout.on("pageerror", e => errors.push(String(e)));
+    await observeErrors(layout, "lobby/layout");
     await layout.goto("http://127.0.0.1:8113/");
     await layout.waitForFunction(() => window.__emberisle);
     await layout.evaluate(() => window.__emberisle.setState({
@@ -384,7 +409,16 @@ if (process.argv.includes("--host-fixture")) {
     await layout.close();
     console.log("ok lobby: four ready seats and every health state fit 320/390/667/844px layouts; no landscape scrolling");
     // Production demand loading: the protocol itself remains synchronous once imported.
-    await build({ logLevel: "error" });
+    // createServer sets this process to development. Build in a separate production
+    // process so the preview tests production React rather than a development bundle.
+    const buildProcess = spawn(process.execPath, [fileURLToPath(new URL("../node_modules/vite/bin/vite.js", import.meta.url)), "build", "--logLevel", "error"], {
+      cwd: fileURLToPath(new URL("../", import.meta.url)),
+      env: { ...process.env, NODE_ENV: "production" }, stdio: "inherit",
+    });
+    await new Promise((resolve, reject) => {
+      buildProcess.once("error", reject);
+      buildProcess.once("exit", (code, signal) => code === 0 ? resolve() : reject(Error(`production build failed: ${code ?? signal}`)));
+    });
     const asset = readdirSync("dist/assets").find(name => /^table-[^/]+\.js$/.test(name));
     assert.ok(asset, "production has a separately budgeted table client");
     production = await preview({ preview: { host: "127.0.0.1", port: 0, strictPort: false }, logLevel: "error" });
@@ -398,7 +432,7 @@ if (process.argv.includes("--host-fixture")) {
     async function cold({ seed = null, fail = false } = {}) {
       const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
       const p = await context.newPage();
-      p.on("pageerror", e => errors.push(String(e)));
+      await observeErrors(p, `production/${seed ? "seeded" : "fresh"}/${fail ? "failed-load" : "held-load"}`);
       p.on("console", message => { if (message.text().startsWith("COLD preload")) console.log(message.text()); });
       const intents = [], requests = [], held = [];
       let open = false, failNext = fail;

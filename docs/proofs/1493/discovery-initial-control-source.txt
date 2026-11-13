@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import { readdirSync } from 'node:fs';
+import { chromium } from './proof-browser.mjs';
+import { preview } from 'vite';
+const dist=process.env.DISCOVERY_DIST || '/workspace/work/resume-nov9/1493-baseline-discovery-dist';
+const assets=readdirSync(dist+'/assets');
+const table=assets.find(n=>/^table-.*\.js$/.test(n));
+const discovery=assets.find(n=>/^OpenTables-.*\.js$/.test(n));
+assert.ok(table&&discovery);
+const server=await preview({build:{outDir:dist},preview:{host:'127.0.0.1',port:0},logLevel:'error'});
+const origin='http://127.0.0.1:'+server.httpServer.address().port;
+const browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+try {
+ for(let trial=1;trial<=20;trial++) {
+  const context=await browser.newContext({viewport:{width:1280,height:720}});const page=await context.newPage();const errors=[];
+  const abortDelayMs=[0,1,5,25,100][(trial-1)%5];
+  page.on('pageerror',error=>errors.push(String(error)));
+  await context.route('**/assets/table-*.js*',async route=>{if(abortDelayMs)await new Promise(resolve=>setTimeout(resolve,abortDelayMs));await route.abort('failed')});
+  await page.addInitScript(({table,discovery,origin})=>{
+    sessionStorage.setItem('emberisle-chunk-reloaded',JSON.stringify([origin+'/assets/'+table,origin+'/assets/'+discovery]));
+    localStorage.setItem('emberisle-water','simple');
+    // Controlled synthetic saved seat; no real account or credential is used or logged.
+    localStorage.setItem('emberisle-seat',JSON.stringify({code:'ABCD',secret:'0'.repeat(32)}));localStorage.setItem('emberisle-seat-live','ABCD');
+    window.__discoveryCauses=[];window.__discoveryPreloads=[];
+    window.addEventListener('error',event=>window.__discoveryCauses.push({message:event.error?.message,cause:event.error?.cause?.message}));
+    window.addEventListener('vite:preloadError',event=>window.__discoveryPreloads.push(String(event.payload)));
+  },{table,discovery,origin});
+  await page.goto(origin+'/?host=ws://127.0.0.1:9');
+  await page.waitForFunction(()=>window.__emberisle?.getState().error==='Online play could not load. Try again.');
+  await page.getByRole('button',{name:'Host a table',exact:true}).waitFor();
+  await page.waitForFunction(()=>window.__discoveryPreloads.length>=2);
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  const observed=await page.evaluate(()=>({causes:window.__discoveryCauses,preloadCount:window.__discoveryPreloads.length,saved:!!localStorage.getItem('emberisle-seat'),restoring:window.__emberisle.getState().restoring}));
+  assert.equal(observed.saved,true);assert.equal(observed.restoring,false);
+  console.log(JSON.stringify({trial,abortDelayMs,errors,...observed}));await context.close();
+ }
+}finally{await browser.close();await new Promise(resolve=>server.httpServer.close(resolve))}

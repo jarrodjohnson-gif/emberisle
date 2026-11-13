@@ -1,0 +1,97 @@
+ok transport: no pre-welcome probe; duplicate welcome keeps one challenge and its 3s timeout; close cancels probing
+ok browser: nonce matched 137ms monotonic RTT; 30s spacing, one outstanding, 3s timeout, full-state recovery once; host timers/save bytes unchanged
+ok lobby: four ready seats and every health state fit 320/390/667/844px layouts; no landscape scrolling
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":1,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":2,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":3,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":4,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":5,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":6,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":7,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":8,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":9,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+HEALTH_ERROR_CAUSE {"label":"production/seeded/failed-load","error":{"name":"Error","message":"There was an error during concurrent rendering but React was able to recover by instead synchronously rendering the entire root.","stack":"Error: There was an error during concurrent rendering but React was able to recover by instead synchronously rendering the entire root.\n    at As (http://127.0.0.1:36737/assets/index-BUSKy-mv.js:134:2594)\n    at vu (http://127.0.0.1:36737/assets/index-BUSKy-mv.js:160:48225)\n    at pu (http://127.0.0.1:36737/assets/index-BUSKy-mv.js:160:46634)\n    at Zl (http://127.0.0.1:36737/assets/index-BUSKy-mv.js:160:38791)\n    at Qu (http://127.0.0.1:36737/assets/index-BUSKy-mv.js:182:2070)\n    at MessagePort.t (http://127.0.0.1:36737/assets/index-BUSKy-mv.js:14:13282)","cause":{"name":"TypeError","message":"Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js","stack":"TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js"}}}
+HEALTH_PAGE_ERROR production/seeded/failed-load Error: There was an error during concurrent rendering but React was able to recover by instead synchronously rendering the entire root.
+    at As (http://127.0.0.1:36737/assets/index-BUSKy-mv.js:134:2594)
+    at vu (http://127.0.0.1:36737/assets/index-BUSKy-mv.js:160:48225)
+    at pu (http://127.0.0.1:36737/assets/index-BUSKy-mv.js:160:46634)
+    at Zl (http://127.0.0.1:36737/assets/index-BUSKy-mv.js:160:38791)
+    at Qu (http://127.0.0.1:36737/assets/index-BUSKy-mv.js:182:2070)
+    at MessagePort.t (http://127.0.0.1:36737/assets/index-BUSKy-mv.js:14:13282)
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js?retry=1
+FAILED_RECOVERY_SAMPLE {"sample":10,"newErrors":["Error: There was an error during concurrent rendering but React was able to recover by instead synchronously rendering the entire root."]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":11,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":12,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":13,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":14,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":15,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":16,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":17,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":18,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":19,"newErrors":[]}
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/table-CAc3IEcU.js
+COLD preload TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:36737/assets/OpenTables-CYX4cnzH.js
+FAILED_RECOVERY_SAMPLE {"sample":20,"newErrors":[]}
+ok production startup: cancelled Host/rejoin stay offline; latest intent/selected host win; 3s fallback and saved seat survive held/failed load; explicit retry recovers
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+
++ [
++   'Error: There was an error during concurrent rendering but React was able to recover by instead synchronously rendering the entire root.'
++ ]
+- []
+
+    at file:///workspace/work/1493/scripts/discovery-recovery-repeat-diagnostic.mjs:538:12 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: [
+    'Error: There was an error during concurrent rendering but React was able to recover by instead synchronously rendering the entire root.'
+  ],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.4

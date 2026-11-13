@@ -1,0 +1,19 @@
+import assert from 'node:assert/strict';
+import { chromium } from './scripts/proof-browser.mjs';
+const browser=await chromium.launch();
+try {
+ let failures=0;
+ for(let i=0;i<20;i++) {
+  const page=await browser.newPage();await page.goto('about:blank');
+  await page.clock.install();
+  try {await page.clock.pauseAt(new Date());}catch(e){assert.match(e.message,/Cannot fast-forward to the past/);failures++}
+  await page.close();
+ }
+ console.log(JSON.stringify({control:'original exact API sequence, blank page; no intervening evaluation',failures,trials:20}));
+ for(let i=0;i<20;i++) {
+  const page=await browser.newPage();await page.goto('about:blank');
+  const target=new Date();await page.clock.pauseAt(target);
+  assert.equal(await page.evaluate(()=>Date.now()),+target);await page.close();
+ }
+ console.log(JSON.stringify({control:'direct pause exact API sequence, blank page',passes:20,trials:20}));
+}finally{await browser.close()}
