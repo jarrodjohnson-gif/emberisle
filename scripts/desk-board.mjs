@@ -29,7 +29,8 @@ export function reviewOf(comments) {
   const conflict = marker && footer && marker !== footer;
   // Legacy prose verdicts are accepted only in the review heading, never arbitrary mentions of "clean".
   const heading = body.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n')[0].replace(/\*\*/g, '');
-  const clean = !conflict && (marker === sha || (/\bre-?review\b|\breview\b/i.test(heading)
+  // DESK.md's own format: the first line after the marker is exactly "Clean.".
+  const clean = !conflict && (marker === sha || /^clean[.!]?$/i.test(heading.trim()) || (/\bre-?review\b|\breview\b/i.test(heading)
     && /(?:\(clean\)(?:\s*[.!](?:\s|$)|\s*$)|:\s*clean(?:\s*[.!](?:\s|$)|\s*$))/i.test(heading) && !/\bnot clean\b/i.test(heading)));
   const visual = /(?:Jarrod|owner)[^\n.]{0,100}(?:must see|sign.off|approval|accept)|(?:waiting|pending|needs?)[^\n.]{0,60}(?:Jarrod|owner)|(?:visual|pictures?|audio)[^\n.]{0,80}(?:first|pending|approval|sign.off)/i.test(body) || /(?:[Jj]arrod|[Oo]wner)[^\n.]{0,100}\bOK\b/.test(body);
   return { sha: conflict ? null : sha ?? null, clean: Boolean(clean), missing: !sha || Boolean(conflict), visual };
@@ -57,10 +58,13 @@ export function classify({ pr, files, checks, comments, current = pr }) {
   if (review.sha !== sha) return { ...row, bucket: 'Ready for desk', reason: 'unreviewed head' };
   if (!review.clean) return no('desk findings or unrecognized verdict');
   if (review.visual) return { ...row, bucket: 'Ready for Jarrod', reason: 'visual / audio sign-off pending' };
-  return no('clean review; desk merge decision pending');
+  return { ...row, bucket: 'Ready to merge', reason: 'clean review at head; checks green' };
 }
 
 export const wakeLine = row => `review-desk: PR #${row.number} green on ${row.sha}, unreviewed`;
+export const mergeLine = row => `review-desk: PR #${row.number} clean and green on ${row.sha}, ready to merge`;
+const WAKES = { 'Ready for desk': wakeLine, 'Ready to merge': mergeLine };
+export const lineFor = row => WAKES[row.bucket]?.(row);
 const botOrTrusted = c => trusted(c) || c.user?.login === 'github-actions[bot]';
 export function notifications(rows, inbox, now) {
   const day = now.toISOString().slice(0, 10);
@@ -72,8 +76,8 @@ export function notifications(rows, inbox, now) {
     out.push(MISSING); remaining--;
   }
   for (const row of rows) {
-    const line = wakeLine(row);
-    if (row.bucket === 'Ready for desk' && !history.some(c => c.body.split('\n').includes(line)) && remaining) {
+    const line = lineFor(row);
+    if (line && !history.some(c => c.body.split('\n').includes(line)) && remaining) {
       out.push(line); remaining--;
     }
   }
@@ -128,8 +132,9 @@ export async function sweep(api, { now = new Date(), dryRun = false, only } = {}
   if (!dryRun) {
     // Recheck immediately before each wake. A new head or new review suppresses stale notifications.
     for (const message of messages) {
-      const row = rows.find(r => wakeLine(r) === message);
+      const row = rows.find(r => lineFor(r) === message);
       if (row) {
+        const want = row.bucket;
         const pr = await api(`/pulls/${row.number}`);
         const checks = await all(`/commits/${row.sha}/check-runs?check_name=checks&filter=latest`, 'check_runs');
         const comments = await all(`/issues/${row.number}/comments`);
@@ -137,7 +142,7 @@ export async function sweep(api, { now = new Date(), dryRun = false, only } = {}
         const current = await api(`/pulls/${row.number}`);
         const fresh = classify({ pr: { ...pr, head: { sha: row.sha } }, current, files, checks, comments });
         Object.assign(row, fresh);
-        if (fresh.bucket !== 'Ready for desk') continue;
+        if (fresh.bucket !== want) continue;
       }
       // Retain old SHA receipts, but refresh only today's comments before each write.
       const day = now.toISOString().slice(0, 10);
