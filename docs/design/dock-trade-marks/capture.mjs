@@ -72,7 +72,11 @@ try {
       ["2-home", (i) => i.pose()],
       ["3-close", (i) => {
         const d = i.docks.find((x) => x.kind === "timber");
-        return { ...i.pose(), tx: d.cx - d.mx * 0.35, tz: d.cz - d.mz * 0.35, zoom: i.orbit.maxZoom };
+        // Aim a little inland, so the dock sits above the HUD. On the taller 440x956 phone the camera's pan limit keeps that
+        // dock behind the HUD at the most zoom, so that size is taken at zoom 1.9, aimed at the dock.
+        const tall = innerWidth === 440;
+        const k = tall ? 0.25 : -0.35;
+        return { ...i.pose(), tx: d.cx + d.mx * k, tz: d.cz + d.mz * k, zoom: tall ? 1.9 : i.orbit.maxZoom };
       }],
     ];
     const home = await page.evaluate(() => window.__isle.pose());

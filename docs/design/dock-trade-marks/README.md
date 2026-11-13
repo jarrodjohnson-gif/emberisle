@@ -35,7 +35,7 @@ Each picture comes from the real build:
 - **The game:** seed 14, four seats on one device, Ember to play. Ember owns the 3:1 dock (an outpost) and the wood dock (a stronghold); Tide owns the brick dock.
 - **Sizes:**
   - 390×844, 820×1180 and 844×390, each zoomed right out (the game's least zoom, 0.8), at the home view, and close up on Ember's wood dock at the game's most zoom (2.4);
-  - Jarrod's phone, 440×956, zoomed right out and close up;
+  - Jarrod's phone, 440×956, zoomed right out and close up. That close-up is at zoom 1.9, not 2.4: at 2.4 the camera's pan limit keeps Ember's wood dock behind the HUD on this taller screen;
   - desktop 1280×720 at the home view, for main, A, B and C.
 - **Rows:** *Main* is today's board. *Old tags* is the branch `codex/560-owned-dock-labels` (PR #881) at `29675fbb`, for comparison.
 
@@ -43,7 +43,7 @@ All 75 pictures are in [`pictures/`](pictures/), named `<option>-<size>-<1-out|2
 
 ### On Jarrod's phone (440×956)
 
-| | Zoomed right out | Close up on Ember's wood dock |
+| | Zoomed right out | Close up on Ember's wood dock (zoom 1.9) |
 |---|---|---|
 | Main today | ![](pictures/main-440x956-1-out.jpg) | ![](pictures/main-440x956-3-close.jpg) |
 | A. Painted plank | ![](pictures/a-painted-plank-440x956-1-out.jpg) | ![](pictures/a-painted-plank-440x956-3-close.jpg) |
