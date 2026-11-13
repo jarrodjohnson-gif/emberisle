@@ -74,7 +74,9 @@ On a sideways phone the buttons are the right column. Back, your seat and Game o
 |---|---|
 | Join link (`?code=K7QP`) | Its own tray, as today: wordmark, name field, colours, "Join table K7QP" as the primary, and a quiet "Host a table". |
 | Watch link (`?watch=K7QP`) | The Play page, with Watch as the primary and Play with bots as a soft button. |
-| Back from a table | The Play page. The front page shows once per visit, and again after Back. |
+| First visit, after Start | The Play page: Start, then Play with bots, is two taps to a first game (owner, card A on #1151). |
+| Later visits, after Start | The front page. |
+| Back from a table | The Play page. The front page shows again after Back. |
 | Short code | "Enter the 4-letter code." under the buttons, as today. |
 
 ### Words that changed
@@ -98,7 +100,7 @@ On a sideways phone the buttons are the right column. Back, your seat and Game o
 
 - Every action: the same store calls, the same prefetch on hover, the same lazy chunks.
 - The seat settings, the Profile sheet, the open or private switch and the open tables list.
-- The loading screen (#1281). It still ends on the title, now the front page.
+- The loading screen (#1281). It still ends on the title: the Play page on a first visit, the front page after that.
 - The title camera. The island still turns slowly behind the tray.
 
 ### How proofs open the title
@@ -107,7 +109,7 @@ On a sideways phone the buttons are the right column. Back, your seat and Game o
 - With the value `true`, the title also opens on its Play page. Every choice is one press away, as before.
 - `chromium.launch({ front: true })` sets the value `"front"`. The loading screen is skipped and the front page shows.
 - `first-minute-prove` uses `front: true`. It proves the front page, the Play press, Back, and two taps to a bot game.
-- `loading-screen-prove` sets nothing. It goes through the loading screen, the front page and the Play page.
+- `loading-screen-prove` sets nothing. A first visit goes through the loading screen to the Play page; a second visit in the same browser goes to the front page.
 
 ### Proof
 
@@ -146,8 +148,8 @@ On an upright phone the title camera shows about five hexes. The island is the h
 - Pull the title and lobby camera back until the island fits above the tray, as the table's fit does.
 - This changes `isle-renderer.ts` and the camera proofs. It is its own PR.
 
-## Questions for the owner
+## The owner's answers (Decisions page, 2026-11-12, A on all three)
 
-1. A new visit is three taps to a bot game: Start (loading screen), Play, Play with bots. Should Start open the Play page directly?
-2. "Pass and play" replaces "Four seats, one table". Say if you want other words.
-3. The Wayfarer choices still say Practice, Online and Hotseat inside Game options. Slice 2 can rename them, or move them into the game itself.
+1. Start opens the Play page on a first visit: two taps to a first game. Later visits, and Back, show the front page. The browser remembers the first visit in `emberisle-seen-title`; with no storage every visit counts as a first one.
+2. The one-device button reads "Pass and play".
+3. The three Wayfarer on or off choices stay closed under "Game options" on the Play page. The front page shows no Wayfarer status.

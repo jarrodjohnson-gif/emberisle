@@ -117,6 +117,21 @@ function Restoring() {
 const PEEK_CODE = JOIN_CODE;
 // The front page shows until Play is pressed. Back shows it again. A return from a table opens on the Play page.
 let pastFront = false;
+// #1151 (owner, card A): a first visit's Start opens the Play page, two taps to a first game. Later visits show the front
+// page. Read once per page load, so StrictMode's second render reads the same answer. Without storage, every visit is first.
+const SEEN_KEY = "emberisle-seen-title";
+let firstVisit: boolean | undefined;
+function isFirstVisit(): boolean {
+  if (firstVisit === undefined) {
+    try {
+      firstVisit = !localStorage.getItem(SEEN_KEY);
+      localStorage.setItem(SEEN_KEY, "1");
+    } catch {
+      firstVisit = true;
+    }
+  }
+  return firstVisit;
+}
 // A join link is read on the first Title of a page load only: later visits to the title (goTitle) start empty.
 let linkRead = false;
 function stripLink() {
@@ -186,7 +201,11 @@ function Title({ arrive }: { arrive: boolean }) {
   const [shortCode, setShortCode] = useState(false);
   const [openMode, setOpenMode] = useState(false);
   // docs/design/first-minute: the front page is the wordmark and Play. Play opens the choices in the same tray.
-  const [open, setOpen] = useState(() => pastFront || (window as { __emberisleSkipIntro?: unknown }).__emberisleSkipIntro === true);
+  // `__emberisleSkipIntro` (the proofs): true opens the Play page and "front" the front page, whatever the visit.
+  const [open, setOpen] = useState(() => {
+    const skip = (window as { __emberisleSkipIntro?: unknown }).__emberisleSkipIntro;
+    return pastFront || skip === true || (!skip && isFirstVisit());
+  });
   // #766: the Profile sheet is open while this holds the button that opened it, where focus returns on close.
   const [profileOpener, setProfileOpener] = useState<HTMLElement | null>(null);
   const watchTable = useGame.getState().watchTable;

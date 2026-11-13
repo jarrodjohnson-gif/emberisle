@@ -5,6 +5,7 @@
 // island download shows an error and Try again with Start still closed, and Try again loads it once the network is back; a
 // slow connection fills the bar in steps with no error. A page with `__emberisleSkipIntro` set before load (every other
 // proof, through scripts/proof-browser.mjs) opens on the title as before. Sizes: 320x568, 390x844, 844x390, 1280x720.
+// #1151: a first visit's Start opens the Play page (two taps to a game); a later visit's Start opens the front page.
 // This proof imports chromium from playwright itself, so its pages get the real screen.
 //   node scripts/loading-screen-prove.mjs            the proof (needs `npm run build`)
 //   node scripts/loading-screen-prove.mjs --shots    also writes the pictures to docs/proofs/1281/
@@ -347,6 +348,27 @@ try {
     check(steps[0] < 100 && steps.length >= 3 && steps.every((v, i) => i === 0 || v > steps[i - 1]) && (await start(page).getAttribute("aria-disabled")) === "false",
       "slow connection: the card shows below 100%, the bar fills forward in steps with no error, and Start opens at 100%", { steps, ms: Date.now() - t0 });
     check(errors.length === 0, "slow connection: no browser errors", errors);
+    await ctx.close();
+  }
+
+  // #1151 (owner, card A): a later visit's Start opens the front page. Back from the Play page shows it too.
+  {
+    const { ctx, page, errors } = await open({ width: 390, height: 844 });
+    await page.waitForFunction(() => document.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow") === "100", null, { timeout: 60_000 });
+    await start(page).click();
+    await page.getByTestId("title-card").waitFor();
+    await page.close();
+    const again = await ctx.newPage();
+    again.on("pageerror", (e) => errors.push(String(e)));
+    await again.goto(URL_, { waitUntil: "domcontentloaded" });
+    await again.waitForFunction(() => document.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow") === "100", null, { timeout: 60_000 });
+    await start(again).click();
+    await again.getByTestId("title-card").waitFor();
+    check((await again.getByTestId("title-card").getAttribute("data-page")) === "front", "a later visit: Start opens the front page");
+    await again.getByRole("button", { name: "Play", exact: true }).click();
+    await again.getByRole("button", { name: "Back", exact: true }).click();
+    check((await again.getByTestId("title-card").getAttribute("data-page")) === "front", "a later visit: Back from the Play page shows the front page");
+    check(errors.length === 0, "a later visit: no browser errors", errors);
     await ctx.close();
   }
 
