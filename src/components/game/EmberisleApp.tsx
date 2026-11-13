@@ -1,4 +1,4 @@
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OpenModeToggle, HowTo, island, LoadingScreen, Lobby, online, OpenTables, ProfileSheet, profileSheet, SetupPipHints, sheets, WayfarerOptions } from "@/components/game/chunks";
@@ -188,6 +188,14 @@ function Title({ arrive }: { arrive: boolean }) {
   const [openMode, setOpenMode] = useState(false);
   // docs/design/first-minute: the front page is the wordmark and Play. Play opens the choices in the same tray.
   const [open, setOpen] = useState(() => (pastFront ||= arrive) || (window as { __emberisleSkipIntro?: unknown }).__emberisleSkipIntro === true);
+  // Play and Back each remove the button that was pressed, so focus follows the page: Back on the Play page, Play on the front.
+  const backButton = useRef<HTMLButtonElement>(null);
+  const frontPlay = useRef<HTMLButtonElement>(null);
+  const turned = useRef(false);
+  useEffect(() => {
+    if (turned.current) (open ? backButton : frontPlay).current?.focus();
+    turned.current = true;
+  }, [open]);
   // #766: the Profile sheet is open while this holds the button that opened it, where focus returns on close.
   const [profileOpener, setProfileOpener] = useState<HTMLElement | null>(null);
   const watchTable = useGame.getState().watchTable;
@@ -322,7 +330,7 @@ function Title({ arrive }: { arrive: boolean }) {
           <>
             <h1 className="title-wordmark text-center font-display">Emberisle</h1>
             {alert}
-            <Button size="lg" variant="primary" className="mt-3 w-full" data-testid="front-play" onClick={() => setOpen((pastFront = true))}>
+            <Button ref={frontPlay} size="lg" variant="primary" className="mt-3 w-full" data-testid="front-play" onClick={() => setOpen((pastFront = true))}>
               Play
             </Button>
             {tools}
@@ -330,7 +338,7 @@ function Title({ arrive }: { arrive: boolean }) {
         ) : (
           <>
             <div className="flex items-center justify-between">
-              <Button variant="ghost" back className="-ml-2 px-3" onClick={() => setOpen((pastFront = false))}>
+              <Button ref={backButton} variant="ghost" back className="-ml-2 px-3" onClick={() => setOpen((pastFront = false))}>
                 Back
               </Button>
               {tools}

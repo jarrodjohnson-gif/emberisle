@@ -143,6 +143,8 @@ try {
     await press("Play");
     const play = await state(page, tag, "play", "play");
     assert.equal(play.page, "play", `${tag}: Play opens the Play page`);
+    // Play removed the button that was pressed: focus moves to the Play page's first control, Back.
+    assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), "Back", `${tag}: after Play, focus is on Back`);
     assert.deepEqual(play.headings, [], `${tag} play: no wordmark`);
     assert.deepEqual(play.primary, ["Play with bots"], `${tag} play: Play with bots is the primary`);
     for (const name of ["Back", "How to play", "Play with bots", "Pass and play", "Host a table", "Join"]) {
@@ -164,11 +166,14 @@ try {
     await page.getByRole("button", { name: "Watch", exact: true }).waitFor();
     const typed = await state(page, tag, "code typed", "code");
     assert.deepEqual(typed.primary, ["Play with bots"], `${tag} code typed: the primary stays`);
-    await page.getByRole("textbox", { name: "Join code" }).fill("");
-
-    // Back shows the front again.
+    // Back shows the front again, with focus on its Play button. A typed code is still there after Back and Play.
     await press("Back");
     assert.equal((await state(page, tag, "front again")).page, "front", `${tag}: Back returns to the front page`);
+    assert.equal(await page.evaluate(() => document.activeElement?.dataset.testid), "front-play", `${tag}: after Back, focus is on Play`);
+    await press("Play");
+    assert.equal(await page.getByRole("textbox", { name: "Join code" }).inputValue(), "ABCD", `${tag}: a typed code survives Back and Play`);
+    await page.getByRole("textbox", { name: "Join code" }).fill("");
+    await press("Back");
 
     // Two taps start a bot game.
     await press("Play");
