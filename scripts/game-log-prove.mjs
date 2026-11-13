@@ -2,17 +2,17 @@
 // mid-game table and on to its end, at 390x844 and 844x390 (touch) and 1280x720:
 // - the Table menu has a "Game log" row, at least 44 px high; pressing it closes the menu and opens the sheet;
 // - the sheet lies inside the viewport, Close is at least 44 px, and no visible text in it is under 12 px;
-// - the turns are listed newest first, and together they hold every line of the store's log: each "<name>'s turn." is a
+// - the turns are listed oldest first, like the online chat (#1601), and together they hold every line of the store's log: each "<name>'s turn." is a
 //   heading, each "<name> rolled <sum>!" is that heading's number (a roll with no heading of its own, the game's first,
 //   opens one), and every other line is shown once, in order,
 //   in the log's own words;
 // - a roll's gains are one line per seat, without the "— <name>'s roll" the heading already says; a short bank keeps its line;
 // - a 6 or an 8 is red, this seat's own turn is green, and a line that starts with this seat's name is ink, the rest quiet;
-// - the list scrolls to the oldest turn, which stays inside the sheet;
-// - a move made while the sheet is open (End turn, through the store) adds the next seat's turn on top;
+// - the list opens scrolled to the newest turn at the bottom, and scrolls up to the oldest turn, which stays inside the sheet;
+// - a move made while the sheet is open (End turn, through the store) adds the next seat's turn at the bottom, in view;
 // - Escape, Close and a tap on the backdrop each close it, and the focus goes back to the Table menu button;
 // - each state: a new game (one "Setup" group), mid-game with a full log ("Earlier"), and the finished game, opened
-//   from the menu after Hide scores, with the winning line in the newest turn;
+//   from the menu after Hide scores, with the winning line in the newest (last) turn;
 // - with a build armed, one Escape closes the log and leaves the build armed; the next one disarms;
 // - hotseat has the row too, and the green turn there is the seat whose turn it is now; a log chunk that cannot load leaves
 //   the table and its menu working, with the focus back on the menu button;
@@ -89,7 +89,7 @@ function expected(lines) {
       }
     }
   }
-  return groups.filter((g) => g.name || g.lines.length).reverse();
+  return groups.filter((g) => g.name || g.lines.length);
 }
 
 const { mid, over } = play();
@@ -156,9 +156,9 @@ const readSheet = (page) =>
 const sameAsStore = (s, at) => {
   const want = expected(s.store);
   const got = s.turns.map((t) => ({ name: t.name, sum: t.sum, lines: t.lines }));
-  const named = want.map((g) => ({ ...g, name: g.name || s.turns.at(-1).name }));
-  check(JSON.stringify(got) === JSON.stringify(named), `${at}: the sheet's ${got.length} turns are not the store's log read newest first (${named.length} turns)`);
-  const odd = s.turns.filter((t, i) => /Bot passed|;|'s turn/.test(t.name) || (!t.dot && !(i === s.turns.length - 1 && /^(Setup|Earlier)$/.test(t.name))));
+  const named = want.map((g) => ({ ...g, name: g.name || s.turns[0].name }));
+  check(JSON.stringify(got) === JSON.stringify(named), `${at}: the sheet's ${got.length} turns are not the store's log read oldest first (${named.length} turns)`);
+  const odd = s.turns.filter((t, i) => /Bot passed|;|'s turn/.test(t.name) || (!t.dot && !(i === 0 && /^(Setup|Earlier)$/.test(t.name))));
   check(odd.length === 0, `${at}: a heading is not one seat's name with its dot: ${JSON.stringify(odd.map((t) => t.name))}`);
   return want;
 };
@@ -238,9 +238,9 @@ try {
     const want = sameAsStore(s, at);
     sizeRules(s, at);
     check(s.turns.every((t) => !t.lines.some((l) => / rolled \d+!$/.test(l))), `${at}: no roll is left as a plain line`);
-    check(s.turns[0].name === "Ember", `${at}: the newest turn on top is ${s.turns[0].name}, want Ember`);
-    check(s.turns.at(-1).name === "Earlier" && !s.turns.at(-1).dot, `${at}: a full log's oldest lines sit under "${s.turns.at(-1).name}", want Earlier`);
-    check(s.turns.slice(0, -1).every((t) => t.dot), `${at}: every seat's turn has its colour dot`);
+    check(s.turns.at(-1).name === "Ember", `${at}: the newest turn, at the bottom, is ${s.turns.at(-1).name}, want Ember`);
+    check(s.turns[0].name === "Earlier" && !s.turns[0].dot, `${at}: a full log's oldest lines, at the top, sit under "${s.turns[0].name}", want Earlier`);
+    check(s.turns.slice(1).every((t) => t.dot), `${at}: every seat's turn has its colour dot`);
     const hot = s.turns.filter((t) => t.sum === 6 || t.sum === 8);
     const cool = s.turns.filter((t) => t.sum && t.sum !== 6 && t.sum !== 8 && t.name !== "Ember");
     const own = s.turns.filter((t) => t.name === "Ember");
@@ -251,23 +251,23 @@ try {
     const ink = s.turns.flatMap((t) => t.ink);
     check(ink.length > 0 && JSON.stringify(ink) === JSON.stringify(lines.filter((l) => l.startsWith("Ember "))), `${at}: the lines that start with this seat's name, and only those, are ink ${JSON.stringify(ink.slice(0, 3))}`);
     check(lines.some((l) => / gains \d+ \w+\.$/.test(l)) && !s.turns.some((t) => t.lines.some((l) => l.includes(` — ${t.name}'s roll`))), `${at}: each roll gain is its own line and none repeats its heading's roll`);
-    check(s.scroll.top === 0 && s.scroll.height > s.scroll.client, `${at}: the list opens at the newest turn and scrolls ${JSON.stringify(s.scroll)}`);
+    check(s.scroll.top + s.scroll.client >= s.scroll.height - 1 && s.scroll.height > s.scroll.client, `${at}: the list opens scrolled to the newest turn at the bottom, and scrolls ${JSON.stringify(s.scroll)}`);
     const passes = s.store.filter((l) => l.startsWith("Bot passed for ")).length;
     check(s.store.length === 200 && passes > 0, `${at}: the store's log is full at 200 lines, ${passes} of them a bot's pass`);
     check(s.turns.filter((t) => t.sum !== null).length >= s.turns.length - 2, `${at}: every turn but the open one and the oldest group has its roll ${JSON.stringify(s.turns.filter((t) => t.sum === null).map((t) => t.name))}`);
     await shot("log");
 
-    // The oldest turn is reached by scrolling and stays inside the sheet.
+    // The oldest turn is reached by scrolling up and stays inside the sheet.
     const last = await sheet.evaluate((el) => {
       const list = el.querySelector("ol");
-      list.scrollTop = list.scrollHeight;
-      const r = list.lastElementChild.getBoundingClientRect();
-      const b = el.getBoundingClientRect();
-      return { inside: r.bottom <= b.bottom + 0.5 && r.left >= b.left && r.right <= b.right, bottom: r.bottom, sheet: b.bottom };
+      list.scrollTop = 0;
+      const r = list.firstElementChild.getBoundingClientRect();
+      const b = list.getBoundingClientRect();
+      return { inside: r.top >= b.top - 0.5 && r.left >= b.left && r.right <= b.right, top: r.top, list: b.top };
     });
-    check(last.inside, `${at}: scrolled down, the oldest group is not inside the sheet ${JSON.stringify(last)}`);
+    check(last.inside, `${at}: scrolled up, the oldest group is not inside the sheet ${JSON.stringify(last)}`);
     await shot("log-end");
-    await sheet.evaluate((el) => (el.querySelector("ol").scrollTop = 0));
+    await sheet.evaluate((el) => { const list = el.querySelector("ol"); list.scrollTop = list.scrollHeight; });
 
     if (v.full) {
       // One Escape closes one thing: with a build armed the log closes and the build stays armed; the next Escape disarms.
@@ -283,14 +283,14 @@ try {
       check(armed === "none", `${tag}: the second Escape disarms (${armed})`);
       await openLog();
 
-      // 3. A move while the sheet is open: Ember ends the turn through the store, and the next seat is on top.
+      // 3. A move while the sheet is open: Ember ends the turn through the store, and the next seat's turn is added at the bottom.
       await page.evaluate(() => window.__emberisle.getState().dispatch({ type: "endTurn" }));
-      await page.waitForFunction(() => document.querySelector('[data-testid="gl-turn"] b')?.textContent !== "Ember");
+      await page.waitForFunction(() => [...document.querySelectorAll('[data-testid="gl-turn"] b')].at(-1)?.textContent !== "Ember");
       s = await readSheet(page);
       at = `${tag} after End turn`;
       sameAsStore(s, at);
       const next = await page.evaluate(() => { const g = window.__emberisle.getState().state; return g.players.find((p) => p.id === g.current).name; });
-      check(s.turns[0].name === next && s.turns[1].name === "Ember", `${at}: the top turns are ${s.turns[0].name}, ${s.turns[1].name}; want ${next}, Ember`);
+      check(s.turns.at(-1).name === next && s.turns.at(-2).name === "Ember", `${at}: the last turns are ${s.turns.at(-2).name}, ${s.turns.at(-1).name}; want Ember, ${next}`);
 
       // 4. Escape, Close and the backdrop each close it; the focus goes back to the menu button.
       for (const how of ["Escape", "Close", "backdrop"]) {
@@ -317,7 +317,7 @@ try {
       sameAsStore(s, at);
       sizeRules(s, at);
       const winner = over.players.find((p) => p.id === over.winner).name;
-      check(s.turns[0].name === winner && / claims the isle with \d+ points\.$/.test(s.turns[0].lines.at(-1) ?? ""), `${at}: the newest turn is ${s.turns[0].name} ending "${s.turns[0].lines.at(-1)}"`);
+      check(s.turns.at(-1).name === winner && / claims the isle with \d+ points\.$/.test(s.turns.at(-1).lines.at(-1) ?? ""), `${at}: the newest (last) turn is ${s.turns.at(-1).name} ending "${s.turns.at(-1).lines.at(-1)}"`);
       await shot("log-over");
       await page.keyboard.press("Escape");
       await sheet.waitFor({ state: "detached" });
@@ -417,7 +417,7 @@ try {
     const bots = s.store.filter((l) => l.startsWith("Bot passed for "));
     check(bots.every((l) => s.turns.some((t) => l.endsWith(`; ${t.name}'s turn.`))), `${at}: each "Bot passed for …; <next>'s turn." line is the next seat's heading`);
     check(s.turns.every((t) => !t.lines.some((l) => /'s turn\.$/.test(l))), `${at}: no turn line is left as a plain line`);
-    check(s.turns[0].name === "Ember" && s.turns.at(-1).name === "Setup" && want.length === s.turns.length, `${at}: Ember's turn is on top and Setup is last ${JSON.stringify(s.turns.map((t) => t.name))}`);
+    check(s.turns.at(-1).name === "Ember" && s.turns[0].name === "Setup" && want.length === s.turns.length, `${at}: Setup is first and Ember's turn is last ${JSON.stringify(s.turns.map((t) => t.name))}`);
     check(s.turns.filter((t) => t.name === "Ember").every((t) => t.nameColor === "rgb(16, 86, 42)") && s.turns.filter((t) => t.name !== "Ember").every((t) => t.nameColor !== "rgb(16, 86, 42)"), `${at}: only Ember's turns are green`);
     if (SHOTS) {
       await page.waitForTimeout(900);
