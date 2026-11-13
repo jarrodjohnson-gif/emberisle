@@ -93,6 +93,10 @@ export interface PlayerState {
   pathsLeft: number;
   outpostsLeft: number;
   strongholdsLeft: number;
+  // #1608: the seat's number, 1 to 6, on five and six seat tables only (docs/design/six-players.md, "Colours and non-colour
+  // identification"). It never changes in a game, and a rematch carries it with the seat. Classic games leave it out, so a
+  // classic seat shows no number.
+  seat?: number;
 }
 
 export interface TradeOffer {
