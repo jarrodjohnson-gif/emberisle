@@ -397,7 +397,16 @@ async function practice(viewport, touch) {
   const column = viewport.height < 500 && viewport.width > viewport.height;
   // The roll comes to rest within a second of the skip (the line can be a frame behind the moment leaving); on a miss the
   // message says what was on screen.
-  const rested = await page.getByTestId(column ? "dice-row" : "log-line").waitFor({ state: "visible", timeout: 1000 }).then(() => true, () => false);
+  // #1591: in the sideways column a discard or take-from owns the tray and its extra row (the dice) steps aside, so on a 7
+  // the roll rests in the event line, which must then show the roll's sum.
+  const rested = await page.waitForFunction((column) => {
+    const seen = (el) => { const b = el?.getBoundingClientRect(); return !!el && !el.hidden && b.width > 0 && b.height > 0; };
+    if (!column) return seen(document.querySelector('[data-testid="log-line"]'));
+    if (seen(document.querySelector('[data-testid="dice-row"]'))) return true;
+    const st = window.__emberisle.getState().state;
+    const sum = document.querySelector('[data-testid="log-roll-sum"]');
+    return !!document.querySelector(".discard-pick, .take-row") && seen(sum) && Number(sum.textContent) === st.dice[0] + st.dice[1];
+  }, column, { timeout: 1000 }).then(() => true, () => false);
   const restInfo = rested ? "" : await page.evaluate(() => { const el = document.querySelector('[data-testid="log-line"]'); const b = el?.getBoundingClientRect(); const st = window.__emberisle.getState(); return JSON.stringify({ text: el?.textContent, hidden: el?.hidden, w: b?.width, h: b?.height, phase: st.state.phase, dice: st.state.dice, log: st.gameLog.slice(-3).map((l) => l.text), trade: !!st.offer }); });
   check(rested, `${tag}: after a skip the resting ${column ? "row" : "event line"} shows ${restInfo}`);
 
