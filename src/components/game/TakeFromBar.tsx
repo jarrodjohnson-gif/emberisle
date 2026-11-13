@@ -41,10 +41,14 @@ export function TakeFromBar() {
       {pendingSteal.targets.map((id) => {
         const p = state.players.find((x) => x.id === id);
         if (!p) return null;
+        // #1595: the seat as its chip names it (no "(bot)"), with its card count in quiet text: "Pine 3".
+        const name = p.name.replace(/ \(bot\)$/, "");
+        const cards = p.goods ?? Object.values(p.resources).reduce((a, b) => a + b, 0);
         return (
-          <Button key={id} variant="secondary" onClick={() => chooseSteal(id)}>
+          <Button key={id} variant="secondary" aria-label={`${name}, ${cards} cards`} onClick={() => chooseSteal(id)}>
             <SeatDot color={p.color} className="size-3" />
-            {p.name}
+            <span className="truncate">{name}</span>
+            <span className="take-count">{cards}</span>
           </Button>
         );
       })}
