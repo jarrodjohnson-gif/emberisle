@@ -125,14 +125,14 @@ try {
     check(await settings.getByRole("combobox").count() === 0, "held settings body is isolated from core title controls");
     check(await page.getByRole("button", { name: "Host a table", exact: true }).isVisible(), "held settings retain Host");
     release();
-    for (const label of ["Practice", "Online", "Hotseat"]) {
+    for (const label of ["With bots", "Online", "Pass and play"]) {
       const select = page.getByRole("combobox", { name: label + " wayfarer" });
       await select.waitFor(); check(await select.inputValue() === "on", label + " keeps its existing default");
     }
     await page.getByRole("combobox", { name: "Online wayfarer" }).selectOption("off");
     check(await page.getByRole("combobox", { name: "Online wayfarer" }).inputValue() === "off" &&
       await page.evaluate(() => window.__emberisle.getState().wayfarerChoices.online === "off"), "loaded settings preserve their existing store action and show the choice");
-    check((await page.locator("#wayfarer-help").textContent()) === "Off never moves or blocks. Sevens still discard. Off fortunes add to the army.", "existing settings help text retained");
+    check((await page.locator("#wayfarer-help").textContent()) === "Off: the Wayfarer never moves or blocks. Sevens still discard. Off fortunes add to the army.", "existing settings help text retained");
   });
   await controlled("WayfarerOptions", true, async page => {
     await page.getByRole("button", { name: "Host a table", exact: true }).click();

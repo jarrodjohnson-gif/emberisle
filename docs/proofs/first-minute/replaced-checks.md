@@ -37,3 +37,19 @@ A first visit's Start now opens the Play page, so the press of Play after Start 
 |---|---|---|---|
 | `scripts/loading-screen-prove.mjs:214` | `await page.getByRole("button", { name: "Play", exact: true }).click();` | `check(… data-page === "play", "a first visit's Start opens the Play page")` | Card A: Start lands on the Play page for a new visitor. The line now proves that. The next line still presses Play with bots and line 217 still proves the game starts. A later visit's front page is a new check in the same proof. |
 | `scripts/loading-screen-prove.mjs:212-213` | `wordmark = …locator("h1").evaluate(fontSize)`; `check(wordmark === "56px", "the title wordmark is 56 px")` | `wordmark = …locator("h1").count()`; `check(wordmark === 0, "a first visit lands past the wordmark, on the Play page …")` | A first visit's Start lands on the Play page, which has no wordmark. The 56 px check moves, unchanged, to the later visit's front page in the same proof (new lines 368-369). |
+
+## After Fable's review: Game options words (#1151)
+
+The three Wayfarer choices now read "With bots", "Online" and "Pass and play" under a "Wayfarer" heading, and the help line starts "Off: the Wayfarer…". The selects, their store calls and their test ids did not change; their accessible names follow the visible words (`${label} wayfarer`). Each line checks the same thing with the new words.
+
+| File:line | Old | New | Why |
+|---|---|---|---|
+| `scripts/title-chunks-prove.mjs:128` | `for (const label of ["Practice", "Online", "Hotseat"])` (feeds the "keeps its existing default" check on 130) | `for (const label of ["With bots", "Online", "Pass and play"])` | Same three selects, new names. The check on line 130 is unchanged. |
+| `scripts/title-chunks-prove.mjs:135` | help text `=== "Off never moves or blocks. Sevens still discard. Off fortunes add to the army."` | `=== "Off: the Wayfarer never moves or blocks. Sevens still discard. Off fortunes add to the army."` | The line now names what is off. Still an exact match. |
+| `scripts/wayfarer-setup-prove.mjs:62` | `getByLabel('Practice wayfarer')…'on'`, `getByLabel('Hotseat wayfarer')…'on'` | `getByLabel('With bots wayfarer')…'on'`, `getByLabel('Pass and play wayfarer')…'on'` | Same three defaults, new names. The Online assert is unchanged. |
+| `scripts/wayfarer-setup-prove.mjs:63` | `{ai:'Practice',hotseat:'Hotseat',online:'Online'}` | `{ai:'With bots',hotseat:'Pass and play',online:'Online'}` | The map from store context to the select's name. |
+| `scripts/wayfarer-setup-prove.mjs:85` | `for(const label of ['Practice','Hotseat','Online'])…selectOption('off')` | `for(const label of ['With bots','Pass and play','Online'])…` | Same three selects set to Off. |
+| `scripts/wayfarer-setup-prove.mjs:93` | `for(const label of ['Practice','Hotseat','Online'])assert.equal(…,'on')` | `for(const label of ['With bots','Pass and play','Online'])assert.equal(…,'on')` | Same reset check, new names. |
+| `scripts/wayfarer-setup-prove.mjs:97` | `getByLabel('Practice wayfarer').selectOption('off')` | `getByLabel('With bots wayfarer').selectOption('off')` | Same select. |
+
+New checks, not replacements: `first-minute-prove` opens Game options at every size (its words in order, no "Hotseat" or "Practice", 44 px and 12 px rules, no scroll) and checks that six open tables are borderless rows of 44 px or more.

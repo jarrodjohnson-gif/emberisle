@@ -59,8 +59,8 @@ try{
  await start();await vite.listen();browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});mkdirSync('test-results',{recursive:true});
  for(const contextName of ['ai','hotseat','online'])for(const mode of ['on','off']){
   const {context,page}=await pageAt();await setup(page);
-  assert.equal(await page.getByLabel('Practice wayfarer',{exact:true}).inputValue(),'on');assert.equal(await page.getByLabel('Online wayfarer',{exact:true}).inputValue(),'on');assert.equal(await page.getByLabel('Hotseat wayfarer',{exact:true}).inputValue(),'on');
-  const label={ai:'Practice',hotseat:'Hotseat',online:'Online'}[contextName],select=page.getByLabel(`${label} wayfarer`,{exact:true});await select.selectOption(mode);
+  assert.equal(await page.getByLabel('With bots wayfarer',{exact:true}).inputValue(),'on');assert.equal(await page.getByLabel('Online wayfarer',{exact:true}).inputValue(),'on');assert.equal(await page.getByLabel('Pass and play wayfarer',{exact:true}).inputValue(),'on');
+  const label={ai:'With bots',hotseat:'Pass and play',online:'Online'}[contextName],select=page.getByLabel(`${label} wayfarer`,{exact:true});await select.selectOption(mode);
   const b=await select.boundingBox();assert.ok(b.height>=44&&b.width>=44&&b.x>=0&&b.x+b.width<=390,'44px safe setup target');
   const contrast=await select.evaluate(el=>{const s=getComputedStyle(el),c=document.createElement('canvas').getContext('2d');const l=css=>{c.fillStyle=css;c.fillRect(0,0,1,1);const a=[...c.getImageData(0,0,1,1).data].slice(0,3).map(v=>{v/=255;return v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4;});return .2126*a[0]+.7152*a[1]+.0722*a[2];};const r=(a,b)=>(Math.max(a,b)+.05)/(Math.min(a,b)+.05),bg=l(s.backgroundColor);return{text:r(l(s.color),bg),border:r(l(s.borderTopColor),bg)};});assert.ok(contrast.text>=4.5&&contrast.border>=3,`AA setup control: ${JSON.stringify(contrast)}`);
   await page.screenshot({path:`test-results/wayfarer-setup-${contextName}-${mode}-390.png`});
@@ -82,7 +82,7 @@ try{
  }
 // The choice sticks across games made without the title menu and resets to On only on returning to it.
  {const {context:stickyContext,page:sticky}=await pageAt();await setup(sticky);
-  for(const label of ['Practice','Hotseat','Online'])await sticky.getByLabel(`${label} wayfarer`,{exact:true}).selectOption('off');
+  for(const label of ['With bots','Pass and play','Online'])await sticky.getByLabel(`${label} wayfarer`,{exact:true}).selectOption('off');
   const mode=()=>sticky.evaluate(()=>window.__emberisle.getState().state.wayfarerMode);
   await sticky.getByRole('button',{name:'Play with bots',exact:true}).click();assert.equal(await mode(),'off');
   await sticky.evaluate(()=>window.__emberisle.getState().startAi());assert.equal(await mode(),'off','new practice game without the menu keeps Off');
@@ -90,11 +90,11 @@ try{
   await sticky.evaluate(()=>{const g=window.__emberisle,s=structuredClone(g.getState().state);s.phase='over';s.winner='p0';g.setState({state:s});g.getState().playAgain();});assert.equal(await mode(),'off','hotseat play again keeps Off');
   await sticky.evaluate(()=>window.__emberisle.getState().startAi());assert.equal(await mode(),'off');
   await sticky.evaluate(()=>window.__emberisle.getState().goTitle());await sticky.getByRole('button',{name:'Play with bots',exact:true}).waitFor();await setup(sticky);
-  for(const label of ['Practice','Hotseat','Online'])assert.equal(await sticky.getByLabel(`${label} wayfarer`,{exact:true}).inputValue(),'on',`${label} resets to the default on the menu`);
+  for(const label of ['With bots','Pass and play','Online'])assert.equal(await sticky.getByLabel(`${label} wayfarer`,{exact:true}).inputValue(),'on',`${label} resets to the default on the menu`);
   await sticky.getByRole('button',{name:'Play with bots',exact:true}).click();assert.equal(await mode(),'on');
   await stickyContext.close();console.log('ok sticky choice: Off survives new/play-again games, menu resets to On');}
  for(const [width,height] of [[390,844],[1280,720],[844,390]]){
-  const {context,page}=await pageAt(width,height);await setup(page);await page.getByLabel('Practice wayfarer',{exact:true}).selectOption('off');await page.getByRole('button',{name:'Play with bots',exact:true}).click();
+  const {context,page}=await pageAt(width,height);await setup(page);await page.getByLabel('With bots wayfarer',{exact:true}).selectOption('off');await page.getByRole('button',{name:'Play with bots',exact:true}).click();
   // The tray's entrance transform can make a 44px button measure fractionally below 44px during animation.
   watchMusterBox(page,width,height); // #1059: diagnostics only; see watchMusterBox.
   await page.evaluate(()=>{const g=window.__emberisle,s=structuredClone(g.getState().state),p=s.players.find(p=>p.id===g.getState().localId);s.current=p.id;s.phase='roll';s.playedCard=false;p.hidden.knight=1;p.boughtThisTurn.knight=0;g.setState({state:s,banner:null});});await page.getByTestId('fortunes-button').click();await page.getByTestId('fortune-play-knight').waitFor();await page.getByTestId('fortune-tray').evaluate(el=>Promise.all(el.getAnimations().map(animation=>animation.finished)));assert.equal(await page.getByTestId('fortune-tray').evaluate(el=>el.getAnimations().some(animation=>animation.playState==='running')),false,'tray animation settled before geometry');assert.equal(await page.getByTestId('fortune-play-knight').innerText(),'Muster');assert.match(await page.getByTestId('fortune-row-knight').innerText(),/No target needed/);const b=await page.getByTestId('fortune-play-knight').boundingBox();assert.ok(b.width>=44&&b.height>=44&&b.y>=0&&b.y+b.height<=height);await page.screenshot({path:`test-results/wayfarer-muster-${width}.png`});await page.getByTestId('fortune-play-knight').click();const played=await page.evaluate(()=>{const g=window.__emberisle.getState();return{phase:g.state.phase,army:g.state.players.find(p=>p.id===g.localId).knightsPlayed,mode:g.buildMode,pending:g.pendingSteal,blocked:g.state.hexes.some(h=>h.blocked)};});assert.deepEqual(played,{phase:'roll',army:1,mode:'none',pending:null,blocked:false});await context.close();console.log(`ok ${width}x${height}: Off fortune adds army immediately; no picker, blocker or lost roll`);
