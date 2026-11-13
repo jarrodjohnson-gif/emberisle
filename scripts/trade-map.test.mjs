@@ -268,7 +268,7 @@ try {
   await toast.waitFor();
   // #1546: the asker's offer says who has said no in one line; until someone has, the status reads "Waiting…".
   assert.equal((await toast.getByRole("status").textContent()).trim(), "Waiting…");
-  const botName = await page.evaluate(() => window.__emberisle.getState().state.players[3].name);
+  const botName = await page.evaluate(() => window.__emberisle.getState().state.players[3].name.replace(/ \(bot\)$/, ""));
   await page.waitForFunction((n) => document.querySelector('[data-testid="trade-toast"] [role="status"]')?.textContent.trim() === `${n} said no`, botName);
   assert(await page.evaluate(() => performance.now() - window.__declineAt < 1000), "bot cross took over 1 second to render");
   await page.screenshot({ path: "test-results/trade-map-responses.png" });
