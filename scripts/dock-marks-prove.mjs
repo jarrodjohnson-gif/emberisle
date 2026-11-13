@@ -30,13 +30,14 @@ function runs(line) {
 
 // In the page: each dock's mark, read from the meshes that use the mark atlas, and the atlas row it shows.
 const readMarks = async (lite) => {
-  const { markAtlas, PLATE_KINDS } = await import("/src/lib/scene/harbor-jelly.ts");
+  const { markCanvas, PLATE_KINDS } = await import("/src/lib/scene/dock-marks.ts");
   const { PAINT } = await import("/src/lib/scene/palette.ts");
   const isle = window.__isle;
   const st = window.__emberisle.getState().state;
-  const atlas = markAtlas();
+  // The one cached atlas canvas both boards wrap in their own texture.
+  const atlas = markCanvas(PAINT);
   const meshes = [];
-  isle.scene.traverse((o) => { if (o.isMesh && o.material?.map === atlas && o.visible) meshes.push(o); });
+  isle.scene.traverse((o) => { if (o.isMesh && o.material?.map?.image === atlas && o.visible) meshes.push(o); });
   const docks = isle.docks.map((d) => ({ cx: d.cx, cz: d.cz, kinds: d.vids.map((id) => st.vertices.find((v) => v.id === id)?.harbor), verts: [] }));
   for (const m of meshes) {
     m.updateMatrixWorld(true);
@@ -52,7 +53,7 @@ const readMarks = async (lite) => {
       best.verts.push({ v: uv.getY(i), dist: bd });
     }
   }
-  const c = atlas.image.getContext("2d");
+  const c = atlas.getContext("2d");
   const rgb = (x, y) => [...c.getImageData(x, y, 1, 1).data.slice(0, 3)];
   const hex = (a) => "#" + a.map((n) => n.toString(16).padStart(2, "0")).join("");
   const near = (a, b, tol = 24) => a.every((n, i) => Math.abs(n - b[i]) <= tol);
@@ -125,9 +126,10 @@ async function open(lite, width, height) {
   await page.waitForFunction(async (lite) => {
     const i = window.__isle;
     if (!lite) return Boolean(i.shore?.group.parent) && i.piers.every((p) => !p.visible);
-    const { markAtlas } = await import("/src/lib/scene/harbor-jelly.ts");
+    const { markCanvas } = await import("/src/lib/scene/dock-marks.ts");
+    const { PAINT } = await import("/src/lib/scene/palette.ts");
     let n = 0;
-    i.scene.traverse((o) => { if (o.isMesh && o.material?.map === markAtlas()) n++; });
+    i.scene.traverse((o) => { if (o.isMesh && o.material?.map?.image === markCanvas(PAINT)) n++; });
     return n >= 9;
   }, lite, { timeout: STEP_MS, polling: 250 });
   return { ctx, page };
@@ -205,6 +207,16 @@ try {
   {
     const { ctx, page } = await open(true, 390, 844);
     checkMarks("lite", await page.evaluate(readMarks, true));
+    // The lite board loads the small dock-marks chunk, never the harbour shore's.
+    const loaded = await page.evaluate(() => performance.getEntriesByType("resource").map((e) => e.name).filter((n) => /harbor-jelly|dock-marks/.test(n)));
+    check("lite: the marks come from the dock-marks module, and harbor-jelly is never fetched", loaded.some((n) => n.includes("dock-marks")) && !loaded.some((n) => n.includes("harbor-jelly")), loaded);
+    // Two new boards dealt back to back, the first one's marks still loading: only the last board's planks land.
+    await page.evaluate(() => { const g = window.__emberisle.getState(); g.startAi(); window.__emberisle.getState().startAi(); });
+    await page.waitForFunction(() => window.__isle.landReady && !window.__isle.refitDue, null, { timeout: STEP_MS });
+    await page.waitForTimeout(1500);
+    const again = await page.evaluate(readMarks, true);
+    check("lite, two boards back to back: exactly nine planks, none left from the first board", again.meshes === 9, { meshes: again.meshes });
+    checkMarks("lite, second board", again);
     await page.evaluate(() => { const i = window.__isle; i.draw(); i.renderer.getContext().finish(); });
     await page.screenshot({ path: "test-results/dock-marks-lite-390x844.png" });
     await ctx.close();
