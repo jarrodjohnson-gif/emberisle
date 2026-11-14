@@ -15,6 +15,7 @@ import { TrayFailed } from "@/components/game/TrayFailed";
 import { TradeButton } from "@/components/game/TradeButton";
 import { buildStatus, type Price } from "@/components/game/BuildCost";
 import { useEscapeDisarm } from "@/components/game/escape-disarm";
+import { useMenuCancel } from "@/components/game/menu-cancel";
 import { COST, RESOURCES, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
 import { playable, totalVP } from "@/lib/game/rules";
 import { useDiscardPicked } from "@/lib/game/discard-pick";
@@ -176,6 +177,7 @@ export function Hud() {
   const [timerHeader, setTimerHeader] = useState<HTMLDivElement | null>(null);
   const [sheetsLost, setSheetsLost] = useState<string | null>(null);
   useEscapeDisarm();
+  useMenuCancel();
   const [stackRef, moreBelow] = useMoreBelow();
   const [lossesRetry, setLossesRetry] = useState(0);
   useEffect(() => {
