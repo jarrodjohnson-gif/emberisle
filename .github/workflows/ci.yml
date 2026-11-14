@@ -235,11 +235,15 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run spiral-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run expanded-board-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run wayfarer-modes-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run game-text-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run stickers-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run sticker-host-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bug-report-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -436,6 +440,10 @@ jobs:
         run: npm run hud-safe-area-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run tray-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
+        run: npm run tray-offers-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
+        run: npm run game-log-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run connection-health-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
@@ -641,6 +649,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run title-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run first-minute-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run join-link-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run storage-blocked-prove
@@ -684,6 +694,8 @@ jobs:
         run: npm run win-action-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run win-list-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run win-sheet-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run play-again-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'

@@ -300,7 +300,9 @@ export function Hud() {
   const armed = mine && (state.phase === "main" || fortuneArmed) ? armedCopy(buildMode, roadPicks.length) : null;
   // #1539: an armed build or fortune has its own Cancel button in the action row, so a touch screen needs no hint.
   const armedNow = !!armed && !spectator;
-  const phaseText = armed
+  const phaseText = choosing
+    ? "Take from whom?"
+    : armed
     ? matchMedia("(pointer: coarse)").matches ? armed[0] : `${armed[0]} · Esc cancels`
     : state.phase === "discard"
       ? `Discard ${state.discardNeeded[subject] ?? 0} goods`
@@ -308,7 +310,7 @@ export function Hud() {
   const waiting = mode !== "hotseat" && !yours;
   // #430: in hotseat a seat that owes a discard on another seat's turn is named, not given the turn.
   const turnText =
-    mode === "hotseat" && subject !== state.current
+    mode === "hotseat" && (subject !== state.current || state.phase === "discard")
       ? `${phaseText} · ${subjectPlayer.name}`
       : waiting
         ? waitingCopy(state.phase, subjectPlayer.name)
@@ -468,6 +470,12 @@ export function Hud() {
                   </span>
                 ) : gameLog.at(-1)?.text}
               </p>
+              {/* Slice C: an open offer is the top line and, for a seat that can answer or cancel, the action row (styles.css). */}
+              {tradeVisible ? (
+                <LazyBoundary failed={null}>
+                  <TradeToast />
+                </LazyBoundary>
+              ) : null}
               <span data-testid="deck-count" data-deck-left={deckLeft} title={`${deckLeft} fortunes left in the deck`} className={cn("shrink-0 text-[13px] leading-5 tabular-nums", !spectator && "sr-only")}>Deck {deckLeft}</span>
             </div>
             <TurnCountdown header={phone ? null : timerHeader} />
@@ -556,18 +564,13 @@ export function Hud() {
             ) : null}
 
             {!mine || !["main", "roll", "rollOff"].includes(state.phase) ? (
-              fortunes || (column && dice) ? <div className="flex flex-wrap items-center gap-2">{fortunes}{column ? dice : null}</div> : null
+              fortunes || (column && dice) ? <div className="tray-extra flex flex-wrap items-center gap-2">{fortunes}{column ? dice : null}</div> : null
             ) : diceInBar || !column ? null : dice}
 
             {/* #643: on a sideways phone the seat's numbers are one quiet line under the action row. A desktop has them in
                 the tray's top line; the upright phone table has none (#1509). */}
             {phone && !spectator && !upright && !tradeVisible ? <div className="tray-numbers flex h-5 shrink-0 items-center gap-1">{numbers}</div> : null}
             {pinEnd ? endRow : null}
-            {tradeVisible ? (
-              <LazyBoundary failed={null}>
-                <TradeToast />
-              </LazyBoundary>
-            ) : null}
           </div>
           {/* #423: the tray rises over the stack from its bottom edge and may cover the island, like a sheet, but never the
               header or the portrait seat strip; it is inside the sheets chunk, which the table prefetched on idle (#488). */}

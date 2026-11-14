@@ -106,6 +106,16 @@ export type WayfarerMode = "on" | "off";
 export type VictoryTarget = 7 | 10;
 export type WinTrigger = "outpost" | "stronghold" | "longestPath" | "largestArmy" | "pointFortune" | "turnStart" | "points";
 
+// The five and six seat island (#1604, src/lib/game/expanded.ts). Versioned so a later format can be told apart.
+export interface ExpandedVariant {
+  kind: "expanded";
+  version: 1;
+  // The official letter spiral's starting corner hex and direction; absent for the random token layout.
+  spiral?: { start: string; direction: 1 | -1 };
+  // Both wastes, which the token spiral skips. The wayfarer starts on the first when it is enabled.
+  wastes: string[];
+}
+
 export interface GameState {
   // Legacy saves use classic On. Fixed when the table is created.
   wayfarerMode?: WayfarerMode;
@@ -145,6 +155,8 @@ export interface GameState {
   rolls?: number;
   lastProduction?: { hex: string; player: string; res: Resource; n: number; vertex?: string }[];
   hostId: string;
+  // Absent means the classic island, as in every game saved before #1604; never inferred from the seat count.
+  variant?: ExpandedVariant;
 }
 
 export type Action =

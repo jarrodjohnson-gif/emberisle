@@ -2,43 +2,45 @@
 
 ## Overview
 
-This analysis investigates the run 14 failures recorded during loaded execution of your-turn-stay-prove.
-The issue was split from PR #1527 per review desk instructions.
+This note documents observations from the run 14 failure of `your-turn-stay-prove`.
+The failure occurred during loaded execution on issue #1525.
+The root cause of run 14 remains unknown.
+Issue #1575 tracks finding the actual cause.
 
-## Incident Symptoms
+## Observed Failure Symptoms
 
-The run 14 failure produced three distinct timeout symptoms under 2-CPU synthetic load.
-First, seat p0 timed out at 1000 ms waiting for turn-moment removal.
-Second, seat p1 timed out at 30000 ms waiting for state seq 20 arrival.
-Third, seat p2 timed out at 30000 ms during browser page navigation.
+Run 14 produced three distinct timeout symptoms during 2-CPU synthetic load execution:
+1. Seat p0 timed out at 1000 ms waiting for the turn-moment element to unmount.
+2. Seat p1 timed out at 30,000 ms waiting for state sequence 20 arrival.
+3. Seat p2 timed out at 30,000 ms during initial browser page navigation.
 
-## Causal Analysis
+## Unconfirmed Hypotheses
 
-Under 2-CPU quota and synthetic CPU load, three compounding mechanisms induce these timeouts.
+The following hypotheses are unconfirmed working theories.
+None has been reproduced in isolation.
 
-### 1. Exit Timer Scheduling Latency (p0 gone timeout)
+### Hypothesis 1: Exit Timer Latency (Unconfirmed)
 
-TurnMoment dismissal uses a 160 ms timer: setTimeout(() => onDismiss(), 160).
-When timer execution fires, React state updates and unmounts the element.
-Under CPU throttling, Node and browser event loops experience dispatch delays.
-Timer delivery and DOM reconciliation can exceed 1000 ms wall clock.
+TurnMoment dismissal uses a 160 ms timer (`setTimeout(() => onDismiss(), 160)`).
+Under CPU contention, timer dispatch or React unmounting could delay beyond 1000 ms.
+Confirming check: log wall-clock deltas around timer firing and DOM removal under CPU load.
+Ruling-out check: reproduce 1000 ms timeout when timer dispatch delta measures under 200 ms.
 
-### 2. Event-Loop Contention During State Loading (p1 loaded timeout)
+### Hypothesis 2: Event-Loop Contention During State Loading (Unconfirmed)
 
-The proof fixture handles client hello messages with a polling wait.
-Meanwhile, dynamic import of /src/lib/game/board.ts runs concurrently on the page.
-On a 2-CPU system, frequent timer wakeups compete with JavaScript module compilation.
-This contention delays state initialization beyond the step timeout.
+The proof fixture polls incoming messages while the client imports dynamic modules.
+Frequent timer polling could compete with script compilation on 2-CPU systems.
+Confirming check: measure event loop lag while tracking dynamic import completion times.
+Ruling-out check: prove state arrival delays occur without any dynamic import in flight.
 
-### 3. Vite Compilation Latency (p2 navigation timeout)
+### Hypothesis 3: Dev Server Bundling Latency (Unconfirmed)
 
-The test server uses an on-demand Vite dev server instance.
-Cold browser navigations trigger on-the-fly bundling of client modules.
-When CPU quotas are constrained, initial page load latency increases substantially.
-Browser navigation times out after 30 seconds before client scripts finish executing.
+Cold browser navigations trigger on-demand module bundling by Vite.
+CPU throttling could extend bundling time beyond the 30-second navigation deadline.
+Confirming check: inspect Vite request timestamps during failed page navigations.
+Ruling-out check: observe navigation timeouts when all modules are already cached and warm.
 
-## Stability Findings
+## Next Steps
 
-Under normal CI conditions, your-turn-stay-prove executes cleanly across all viewports.
-All assertions and deadlines remain intact and must not be loosened.
-Process isolation and dedicated CPU headroom resolve the run 14 failure modes.
+Issue #1575 remains open to isolate and reproduce the failure mechanism.
+Assertions and timeouts in `your-turn-stay-prove.mjs` must not be loosened.
