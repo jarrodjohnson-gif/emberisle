@@ -7,6 +7,7 @@
 import * as THREE from "three";
 import type { HarborKind } from "@/lib/game/types";
 import { BLOCK_H, TILE_Y } from "@/lib/scene/jelly-dims";
+import { markCanvas, PLATE_KINDS } from "@/lib/scene/dock-marks";
 import { PAINT } from "@/lib/scene/palette";
 import { rng32, setBoardDetail, shoreKit } from "@/lib/scene/hex-jelly";
 
@@ -79,38 +80,6 @@ function sailMap(kind: HarborKind) {
   return tex;
 }
 
-// The rate plates painted on the T-heads, read from above: one atlas, a row per kind (the good's colour, the rate in cream).
-const PLATE_KINDS: HarborKind[] = ["any", "timber", "clay", "wool", "grain", "ore"];
-let plates: THREE.CanvasTexture | null = null;
-function plateAtlas() {
-  if (plates) return plates;
-  const c = document.createElement("canvas");
-  c.width = 256;
-  c.height = 128 * PLATE_KINDS.length;
-  const x = c.getContext("2d")!;
-  PLATE_KINDS.forEach((k, i) => {
-    const y = i * 128;
-    x.fillStyle = "#a87448";
-    x.fillRect(0, y, 256, 128);
-    x.fillStyle = "#f4ead6";
-    x.beginPath();
-    x.roundRect(4, y + 4, 248, 120, 40);
-    x.fill();
-    x.fillStyle = goodOf(k);
-    x.beginPath();
-    x.roundRect(12, y + 12, 232, 104, 32);
-    x.fill();
-    x.fillStyle = k === "wool" || k === "grain" ? "#263d3c" : "#fbf6ea";
-    x.font = "900 76px system-ui, sans-serif";
-    x.textAlign = "center";
-    x.textBaseline = "middle";
-    x.fillText(k === "any" ? "3:1" : "2:1", 128, y + 68);
-  });
-  plates = new THREE.CanvasTexture(c);
-  plates.colorSpace = THREE.SRGBColorSpace;
-  plates.anisotropy = 4;
-  return plates;
-}
 
 // Darken and cool every vertex under the waterline (weed, mussels, wet wood or stone), and the wet band just above it.
 function wetBand(g: THREE.BufferGeometry, top = 0.012) {
@@ -683,13 +652,32 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     for (let k = 0; k < 7; k++) P(K.part(box, k % 2 ? "#a46e42" : "#b07a4c", [0, DECK, tv - 0.07 + k * 0.025], [0, 0, 0], [0.44, 0.016, 0.022]));
     for (const x of [-W / 2, W / 2]) P(K.part(box, "#7a5236", [x, DECK - 0.014, v0 + len / 2], [0, 0, 0], [0.014, 0.018, len]));
     // The rate plate, flat on the T-head, its text upright on screen whichever side of the island (the camera looks north).
-    {
-      const pl = new THREE.PlaneGeometry(0.36, 0.165);
+    const markRow = (pl: THREE.PlaneGeometry) => {
       const row = PLATE_KINDS.indexOf(d.kind);
       const uv = pl.attributes.uv as THREE.BufferAttribute;
       for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - (row + 1 - uv.getY(i)) / PLATE_KINDS.length);
+      return pl;
+    };
+    {
+      const pl = markRow(new THREE.PlaneGeometry(0.42, 0.21));
       const at = world(0, DECK + 0.0085, tv);
       plateParts.push(pl.rotateX(-Math.PI / 2).translate(at.x, at.y, at.z));
+    }
+    // #1593: an owned dock flies a swallow-tail pennant in the owner's colour on the T-head, away from the moored ship (it lies
+    // on shipSide, below). The renderer shows and colours it from the game state.
+    {
+      const away = di % 2 ? -1 : 1;
+      const pen = new THREE.Group();
+      const pole = new THREE.Mesh(K.merge([K.part(K.cyl(1, 1, 6), "#6a4a30", [0, 0.11, 0], [0, 0, 0], [0.006, 0.22, 0.006])]), cm);
+      // A swallow-tail cut, so a claimed dock reads by its shape as well as its colour.
+      const cloth = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(0.17, 0), new THREE.Vector2(0.12, -0.035), new THREE.Vector2(0.17, -0.07), new THREE.Vector2(0, -0.07)])), new THREE.MeshStandardMaterial({ color: "#ffffff", side: THREE.DoubleSide, roughness: 0.8 }));
+      cloth.position.set(0.004, 0.22, 0);
+      pen.add(pole, cloth);
+      pen.position.copy(world(away * 0.2, DECK, tv + 0.06));
+      pen.visible = false;
+      pen.userData.vids = d.vids;
+      group.add(pen);
+      (group.userData.pennants ??= []).push(pen);
     }
     P(K.part(box, "#7a5236", [0, DECK - 0.014, tv + 0.08], [0, 0, 0], [0.45, 0.018, 0.014]));
     P(K.part(box, "#7a5236", [0, DECK - 0.014, tv - 0.082], [0, 0, 0], [0.45, 0.018, 0.014]));
@@ -999,7 +987,10 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
   if (plateParts.length) {
     const g = K.merge(plateParts);
     geos.push(g);
-    const pm = new THREE.MeshStandardMaterial({ map: plateAtlas(), emissive: 0x6a645a, emissiveMap: plateAtlas(), roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2 });
+    const atlas = new THREE.CanvasTexture(markCanvas(PAINT));
+    atlas.colorSpace = THREE.SRGBColorSpace;
+    atlas.anisotropy = 4;
+    const pm = new THREE.MeshStandardMaterial({ map: atlas, emissive: 0x6a645a, emissiveMap: atlas, roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2, side: THREE.FrontSide });
     mats.push(pm);
     const me = new THREE.Mesh(g, pm);
     me.receiveShadow = true;

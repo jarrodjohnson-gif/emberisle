@@ -734,6 +734,8 @@ jobs:
         run: npm run dock-piles-many-seeds-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
         run: npm run dock-piles-visibility-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
+        run: npm run dock-marks-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run seat-rail-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
