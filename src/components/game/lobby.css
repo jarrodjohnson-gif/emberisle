@@ -149,7 +149,8 @@
   .lobby-action-buttons > button:not(:last-child) { padding: 0 6px; }
 }
 @media (max-width: 340px) and (orientation: portrait) {
-  .lobby-action-buttons > button:last-child { padding: 0 6px; }
+  .lobby-action-buttons > button { padding: 0 4px; }
+  .lobby-action-buttons > button:last-child { font-size: 13px; }
 }
 @media (max-height: 600px) and (orientation: landscape) {
   .lobby-layout { inset: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); width: auto; }
