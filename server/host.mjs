@@ -778,7 +778,8 @@ async function load() {
         // Avatars live in memory only, so a restored seat has none.
         // G9: the saved window rides in `resume` until the seat is back and waited on; older files have none.
         const at = (n) => (Number.isFinite(n) ? n : null);
-        room.seats.push({ ...s, needs: restoredNeed(s.needs), turnDeadline: null, turnStartedAt: at(s.turnStartedAt), resume: at(s.turnDeadline), avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
+        // A saved window belongs to the saved activation (#1612), so a restart mid paired turn keeps its budget.
+        room.seats.push({ ...s, needs: restoredNeed(s.needs), turnDeadline: null, turnStartedAt: at(s.turnStartedAt), resume: at(s.turnDeadline), turnActivation: g?.activation, avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
       }
       // A profile binding must be a UUID on a human seat, once per room; anything else leaves that seat a guest (#764).
       const bound = new Set();
@@ -922,8 +923,10 @@ function runBots(room) {
     // Once per bot turn, before its other moves, the bot may ask the table (#363). A partner asks nobody (#1611): the
     // paired-turn choice is the classic one whenever the game has no partner activation.
     const recovery = (room.recoveryPids ?? []).includes(waiting.id);
-    if (!recovery && g.phase === "main" && !room.offer && room.botAsked !== `${g.turn}:${waiting.id}`) {
-      room.botAsked = `${g.turn}:${waiting.id}`;
+    // Keyed by activation under paired turns (#1612): a seat's partner activation must not use up its own turn's ask.
+    const asked = `${g.turn}:${waiting.id}${g.role ? `:${g.activation}` : ""}`;
+    if (!recovery && g.phase === "main" && !room.offer && room.botAsked !== asked) {
+      room.botAsked = asked;
       const ask = pairedTradeAsk(g, waiting.id, room.botDeclined?.[waiting.id]);
       if (ask) return openOffer(room, waiting.id, ask.give, ask.want);
     }
@@ -968,6 +971,14 @@ function armTurns(room) {
     const bonus = extensionBudget(seat, room.game, TURN_EXTENSION_MS).extra;
     const human = room.game?.players.find((p) => p.id === seat.pid)?.kind === "human";
     const waited = human && waitedOn(room.game, seat.pid);
+    // Paired turns (#1612): each activation starts its own window and budget, even when bots played every activation
+    // between two of this seat's, so no state push saw it unwaited in between.
+    if (waited && room.game.role && seat.turnActivation !== room.game.activation) {
+      disarmTurn(seat);
+      seat.turnStartedAt = null;
+      seat.resume = null;
+      seat.turnActivation = room.game.activation;
+    }
     if (!waited) {
       seat.turnStartedAt = null;
       seat.resume = null;
