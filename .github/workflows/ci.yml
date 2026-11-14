@@ -239,8 +239,6 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run expanded-turns-prove
       - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run expanded-bots-prove
-      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run wayfarer-modes-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run game-text-prove
@@ -256,8 +254,26 @@ jobs:
         run: npm run bot-action-order-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run rules-view-helpers-prove
+      # #1673: dice-prove and expanded-bots-prove run beside npm test. Both are Node only: no host, port, file or env
+      # var shared with anything else. npm test mostly waits on host timers. Their output prints after npm test ends,
+      # and a failure in either side fails the step.
       - if: needs.changes.outputs.docs_only != 'true'
-        run: npm test
+        name: npm test, with dice-prove and expanded-bots-prove beside it
+        run: |
+          side="$RUNNER_TEMP/side-proofs.log"
+          (
+            status=0
+            npm run dice-prove || status=$?
+            npm run expanded-bots-prove || status=$?
+            exit "$status"
+          ) > "$side" 2>&1 &
+          pid=$!
+          status=0
+          npm test || status=$?
+          wait "$pid" || status=$?
+          echo "----- dice-prove and expanded-bots-prove -----"
+          cat "$side"
+          exit "$status"
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-songs-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -318,8 +334,6 @@ jobs:
         run: npm run label-commands-prove
       - name: Desk gate proof
         run: npm run desk-gate-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run dice-prove
       # #1073: measures every file in public/audio with ffmpeg.
       # #1186: the apt mirror sometimes hangs; bound each attempt, retry, and fail loudly if ffmpeg is still missing.
       - if: needs.changes.outputs.docs_only != 'true'
