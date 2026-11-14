@@ -429,6 +429,39 @@ try {
         const off = sea && [sea.coast[0] - sea.wash[0], sea.wash[1] - sea.coast[1], sea.coast[2] - sea.wash[2], sea.wash[3] - sea.coast[3]];
         check(`${tag}: the crystal sea's wash is traced round the expanded coast`, !!off && off.every((d) => d > 0 && d < 1.5), sea);
       }
+      // Expanded -> classic in the same page: the classic board again fits exactly as on origin/main, and its coast, beach,
+      // foam (and, on the crystal sea, the wash) are the classic island's once more.
+      await load(page, false);
+      await waitBoard(page, 9);
+      const back = await fitNumbers(page);
+      const backDiff = [];
+      if (back.view !== want.view) backDiff.push(`view ${back.view} not ${want.view}`);
+      for (const k of Object.keys(want.fit)) if (Math.abs(back.fit[k] - want.fit[k]) > 1e-6) backDiff.push(`fit.${k} ${back.fit[k]} not ${want.fit[k]}`);
+      want.target.forEach((v, j) => Math.abs(back.target[j] - v) > 1e-6 && backDiff.push(`target[${j}] ${back.target[j]} not ${v}`));
+      for (const [id, p] of Object.entries(want.hexes)) if (Math.abs(back.hexes[id][0] - p[0]) > 0.01 || Math.abs(back.hexes[id][1] - p[1]) > 0.01) backDiff.push(`hex ${id} at ${back.hexes[id]} not ${p}`);
+      check(`${tag}: back to the classic board in the same page: the ${back.view} fit, the look-at point and all 19 hex centres equal origin/main's again`, backDiff.length === 0 && Object.keys(back.hexes).length === 19, backDiff.length ? backDiff.slice(0, 6).join("; ") : `${JSON.stringify(back.fit)} at ${back.target}`);
+      const shoreBack = await page.evaluate(() => {
+        const i = window.__isle;
+        const box = (g) => {
+          if (!g) return null;
+          g.computeBoundingBox();
+          const b = g.boundingBox;
+          return [b.min.x, b.max.x, b.min.z, b.max.z].map((v) => +v.toFixed(2));
+        };
+        const xs = i.coast.map((v) => v.x);
+        const zs = i.coast.map((v) => v.z);
+        return {
+          corners: i.coast.length,
+          middle: [i.isle.cx, i.isle.cz, i.isle.grow],
+          coast: [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)].map((v) => +v.toFixed(2)),
+          foam: box(i.foam.geometry),
+          wash: i.waterPath === "crystal" ? box(i.crystal?.wash.geometry) : undefined,
+        };
+      });
+      const around = (b, lo, hi) => !!b && [shoreBack.coast[0] - b[0], b[1] - shoreBack.coast[1], shoreBack.coast[2] - b[2], b[3] - shoreBack.coast[3]].every((d) => d > lo && d < hi);
+      check(`${tag}: back on the classic board, the coast is the classic island's 30 corners (x ±4.85, z ±4.48) about the origin, and the foam is traced round it`,
+        shoreBack.corners === 30 && shoreBack.middle.every((v) => v === 0) && JSON.stringify(shoreBack.coast) === JSON.stringify([-4.85, 4.85, -4.48, 4.48]) && around(shoreBack.foam, 0.2, 0.5), shoreBack);
+      if (!size.phone) check(`${tag}: back on the classic board, the crystal sea's wash is traced round the classic coast`, around(shoreBack.wash, 0, 1.5), shoreBack.wash);
       await ctx.close();
     }
     check("zero page errors", errors.length === 0, errors.slice(0, 5).join("\n"));
