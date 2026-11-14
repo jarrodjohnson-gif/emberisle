@@ -404,7 +404,7 @@ body:has([data-testid='banner'], [data-testid='first-game-coach']) aside:has(> d
 .win-dice rect { fill: color-mix(in srgb, var(--color-muted) 30%, var(--color-surface)); }
 .win-dice rect.hot { fill: var(--color-sea-ink); }
 .win-dice polyline { fill: none; stroke: var(--color-fg); stroke-opacity: 0.28; stroke-width: 1.5; stroke-dasharray: 3 3; }
-.win-dice text { font-size: 10px; fill: var(--color-muted); text-anchor: middle; }
+.win-dice text { font-size: 12px; fill: var(--color-muted); text-anchor: middle; }
 .win-dice p { margin: 2px 0 0; text-align: center; font-size: 13px; line-height: 20px; color: var(--color-fg); }
 /* #1411: who wants to play again (docs/design/play-again-1411, option A). On the desktop table it sits under the name. */
 .win-tag { flex: none; display: inline-flex; align-items: center; height: 22px; padding: 0 7px; border: 1px solid var(--color-accent); border-radius: var(--radius-chip); background: color-mix(in srgb, var(--color-sea) 10%, var(--color-surface)); color: var(--color-accent-ink); font-size: var(--text-caption); line-height: var(--text-caption--line-height); font-weight: 600; white-space: nowrap; }
