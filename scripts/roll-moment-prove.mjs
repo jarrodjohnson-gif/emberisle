@@ -492,6 +492,20 @@ async function reduced() {
   const page = await open({ width: 1280, height: 720 }, { reduced: true });
   await page.getByRole("button", { name: "Play with bots", exact: true }).click();
   await playUntil(page, myRoll);
+  // #1666: the roll stays random, but on a 7 a hand over 7 goods must discard, and a bot does it on the app's 700 ms timer,
+  // inside the moment's hold: its line then rightly owns the event line the checks read. Hand any goods over 7 to the bank.
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    for (const p of st.players) {
+      for (const r of Object.keys(p.resources)) {
+        const over = Math.min(p.resources[r], Object.values(p.resources).reduce((a, b) => a + b, 0) - 7);
+        if (over > 0) { p.resources[r] -= over; st.bank[r] += over; }
+      }
+    }
+    g.setState({ state: st });
+  });
+  await frames(page);
   await settleChecks(page, tag, await clickRoll(page), { reduced: true });
   await page.close();
 }
