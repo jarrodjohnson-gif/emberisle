@@ -56,7 +56,7 @@ try {
       st.phase="discard";st.discardNeeded={[st.players.find(p=>p.id!==st.current).id]:3};st.seq++;
       g.setState({state:st});
     });
-    await prompt("Discard 3 goods · ");
+    await prompt("Discard 3: pick 3 more · ");
     await page.evaluate(() => {
       const g=window.__emberisle,st=g.getState().state;
       g.setState({mode:"ai",localId:st.current});
@@ -86,7 +86,7 @@ try {
       const g=window.__emberisle, st=structuredClone(g.getState().state);
       st.phase="discard";st.discardNeeded={[st.current]:3};st.seq++;g.setState({state:st});
     });
-    await prompt("Discard 3 goods");
+    await prompt("Discard 3: pick 3 more");
     await page.evaluate(() => window.__emberisle.getState().dispatch({type:"discard",resources:{timber:3}}));
     await prompt("Move the wayfarer");
     await page.evaluate(() => {

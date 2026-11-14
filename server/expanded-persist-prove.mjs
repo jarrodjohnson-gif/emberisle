@@ -430,6 +430,16 @@ try {
   }
   const refused = refusals(g5);
   for (const r of refused) writeFileSync(file(A, r.code), r.text);
+  // #1654: two refused files in one load whose first names are already taken by files kept aside before. Each takes the next
+  // free name, and every older one stays as it was.
+  const taken = [
+    { code: "DUPA", text: JSON.stringify({ shape: 98, savedAt: 0 }), old: { ".unsupported": "kept before, 1", ".1.unsupported": "kept before, 2" }, lands: ".2.unsupported" },
+    { code: "DUPB", text: JSON.stringify({ shape: 97, savedAt: 0 }), old: { ".unsupported": "kept before, 3" }, lands: ".1.unsupported" },
+  ];
+  for (const t of taken) {
+    writeFileSync(file(A, t.code), t.text);
+    for (const [end, text] of Object.entries(t.old)) writeFileSync(`${file(A, t.code)}${end}`, text);
+  }
   console.log(`built: ${fixtures.length} classic fixtures, ${X5} (5 seats, ${g5.primary} primary), ${X6} (6 seats, discard owed by ${Object.keys(g6.discardNeeded).join(" ")}), ${refused.length} files to refuse`);
 
   // ---- First boot. ----
@@ -444,6 +454,13 @@ try {
     ok(!a.out.includes(r.code), `${r.code} is not restored`);
   }
   console.log(`refused: ${refused.length} files kept aside as <code>.json.unsupported byte for byte (${refused.map((r) => r.code).join(" ")}), none restored`);
+  for (const t of taken) {
+    ok(!existsSync(file(A, t.code)), `${t.code}.json is no longer a live room file`);
+    eq(readFileSync(`${file(A, t.code)}${t.lands}`, "utf8"), t.text, `${t.code} is kept as ${t.code}.json${t.lands}, byte for byte`);
+    for (const [end, text] of Object.entries(t.old)) eq(readFileSync(`${file(A, t.code)}${end}`, "utf8"), text, `${t.code}.json${end}, kept before, is untouched`);
+    ok(a.err.includes(`kept as ${t.code}.json${t.lands}`), `the host says ${t.code} went to ${t.code}.json${t.lands}`);
+  }
+  console.log(`refused onto taken names: ${taken.map((t) => `${t.code} -> ${t.code}.json${t.lands}`).join(", ")}, the older files untouched`);
 
   // 1. Classic: migrated with nothing but the shape changed, then restored exactly.
   for (const f of fixtures) {
