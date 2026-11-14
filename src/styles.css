@@ -205,6 +205,23 @@ body {
 .seat-card [class*='text-zinc-700'] { color: #334744; }
 .seat-card.seat-turn { background: #fbfdfc; box-shadow: 0 2px 10px rgb(14 60 66 / 0.18); }
 @media (hover: hover) { .seat-card:not(.seat-turn) button:hover { background: rgb(251 253 252 / 0.45); } }
+/* #1608 (docs/design/six-players.md, "Six seats at 440×956"): only five and six seat tables number their seats (.seat-no),
+   so nothing here reaches a classic table. The number takes the name's type; every seat dot gets the 1 px #1c1915 outline. */
+.seat-no { flex-shrink: 0; font-size: 13px; font-weight: 600; line-height: 16px; font-variant-numeric: tabular-nums; }
+aside .seat-no { font-size: 15px; line-height: 20px; }
+[data-testid='menu-seat'] .seat-no { font-size: 14px; line-height: 20px; }
+body:has(.seat-no) :is(.seat-dot, [data-testid='menu-seat'] > :first-child) { box-shadow: inset 0 0 0 1px #1c1915; }
+/* A numbered strip cell too narrow for its short name keeps as many whole letters as fit: each letter is a flex item, one
+   that does not fit wraps to a second line, and the one-line box hides that line. Measured by the browser, so it holds
+   for any font (six seats on a 390 px phone show two letters in Inter, fewer in a wider font). */
+.seat-card [data-testid='seat-name'][aria-hidden]:not(.hidden):has(> span) { display: flex; flex-wrap: wrap; height: 16px; }
+/* The rail keeps its 192 px cards at 12 px from the left and 80 px from the top, and scrolls inside itself, stopping above
+   the tray (152 px tall with its margin at rest) with 8 px to spare. The 212 px of padding on the right keeps a seat's
+   192 px chat bubble inside the scroll box, and the padding all round keeps the pill's shadow. The rail ignores the pointer,
+   so the padding never blocks the island. */
+aside:has(> div > .seat-card .seat-no) { top: 4.25rem; left: 0; width: 26rem; max-height: calc(100dvh - 14.25rem); padding: 0.75rem 13.25rem 0.75rem 0.75rem; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+/* A turn banner or a first-game tip floats 46 px above the tray while it shows: the rail stops above it too. */
+body:has([data-testid='banner'], [data-testid='first-game-coach']) aside:has(> div > .seat-card .seat-no) { max-height: calc(100dvh - 17.25rem); }
 .hud-header > div > div > button[aria-label='Table menu'] { background: var(--table); color: var(--table-ink); border: 1px solid var(--table-line); }
 .hud-stack { scrollbar-width: thin; scrollbar-color: var(--table-line) var(--table); }
 .turn-instruction, .table-log { background: var(--table); color: var(--table-muted); }

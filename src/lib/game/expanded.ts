@@ -40,7 +40,7 @@ export const EXPANDED_BANK = 24;
 export const EXPANDED_DECK: Record<DevKind, number> = { knight: 20, vp: 5, road: 3, plenty: 3, monopoly: 3 };
 
 // The six official colour families (accepted decision 4) with the design's candidate swatches, in seat order: red, blue,
-// white, orange, green, brown. Classic games keep PLAYER_COLORS. Piece 5 owns the contrast proof for these swatches.
+// white, orange, green, brown. Classic games keep PLAYER_COLORS. scripts/contrast-prove.mjs and six-seats-prove certify them (#1608).
 export const EXPANDED_COLORS = ["#e23d2e", "#2d6ee8", "#f3ecd9", "#dd6b20", "#216d3c", "#805532"] as const;
 // Two default names past the classic four, so a fifth or sixth bot never reads "undefined (bot)".
 export const EXPANDED_NAMES = [...PLAYER_NAMES, "Moss", "Flint"] as const;
@@ -194,6 +194,7 @@ export function createExpandedGame(opts: GameOptions): GameState {
     const human = i < opts.humans.length;
     const p = makePlayer(i, human ? opts.humans[i]!.name || EXPANDED_NAMES[i]! : `${EXPANDED_NAMES[i]} (bot)`, human ? "human" : "bot");
     p.color = EXPANDED_COLORS[i]!;
+    p.seat = i + 1;
     players.push(p);
   }
   const pending = players.slice(opts.winnerFirst ? 1 : 0).map((p) => p.id);
