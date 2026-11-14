@@ -754,6 +754,8 @@ jobs:
         run: npm run seat-menu-sheet-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run upright-table-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run expanded-fit-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run hand-hidden-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
