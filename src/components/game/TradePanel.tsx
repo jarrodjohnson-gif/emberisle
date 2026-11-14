@@ -10,6 +10,7 @@ import { play } from "@/lib/sound";
 import { bagText } from "@/lib/game/trade";
 import { chunk, LazyBoundary } from "@/lib/lazy";
 import "./trade-panel.css";
+import { useCounter } from "./counter-proto";
 import { NeedDots } from "./SeatNeeds";
 import { setPlayerNeeds } from "./need-state";
 
@@ -31,15 +32,19 @@ export function TradePanel() {
   const [draftGive, setGive] = useState(ZERO);
   const [want, setWant] = useState(ZERO);
   const panel = useRef<HTMLElement>(null);
+  // Prototype: the sheet opened by Counter, on another seat's turn.
+  const offer = useGame((s) => s.offer);
+  const counterSheet = useCounter((s) => s.counterSheet) && !!offer;
+  const closeSheet = () => counterSheet ? useCounter.setState({ counterSheet: false }) : setTradeOpen(false);
 
   const actor = mode === "hotseat" ? state?.current : localId;
   const me = state?.players.find((p) => p.id === actor);
   const mine = Boolean(state && me && state.phase === "main" && state.current === actor);
-  const shown = open && mine;
+  const shown = (open && mine) || counterSheet;
 
   // Clamp both the rendered offer and its draft when a live hand loses goods.
   const give = { ...draftGive };
-  for (const r of RESOURCES) give[r] = Math.min(give[r], me?.resources[r] ?? 0);
+  if (!counterSheet) for (const r of RESOURCES) give[r] = Math.min(give[r], me?.resources[r] ?? 0);
   useEffect(() => {
     if (!me) return;
     setGive((old) => {
@@ -58,19 +63,25 @@ export function TradePanel() {
   }, [open, mine, setTradeOpen]);
   useEffect(() => {
     if (open) return;
+    if (counterSheet && offer) {
+      // The offer's terms, turned to my side.
+      setGive({ ...ZERO, ...offer.want });
+      setWant({ ...ZERO, ...offer.give });
+      return;
+    }
     setGive(ZERO);
     setWant(ZERO);
-  }, [open]);
+  }, [open, counterSheet]);
   useEffect(() => {
-    if (!open) return;
+    if (!open && !counterSheet) return;
     const key = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       play("ui_back");
-      setTradeOpen(false);
+      closeSheet();
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [open, setTradeOpen]);
+  }, [open, counterSheet, setTradeOpen]);
 
   if (!shown || !state || !me) return null;
 
@@ -104,9 +115,21 @@ export function TradePanel() {
     setPlayerNeeds(me.id, wanting.slice(0, 2));
     askTable(give, want);
   };
+  // Prototype: "Send counter" is off, with its reason, until the terms differ from the offer, hold both sides and are paid for.
+  const short = RESOURCES.find((r) => give[r] > me.resources[r]);
+  const counterReason = !counterSheet || !offer ? null
+    : RESOURCES.every((r) => give[r] === (offer.want[r] ?? 0) && want[r] === (offer.give[r] ?? 0)) ? "Change something first."
+      : !asking ? "Pick what to give and what to get."
+        : short ? `You need ${give[short] - me.resources[short]} more ${low(short)}.` : null;
+  const sendCounter = () => {
+    if (!offer || counterReason) return;
+    // Bags from the asker's side: what I give reaches the asker.
+    const counter = { counterId: "proto", by: me.id, name: me.name, give: { ...want }, want: { ...give } };
+    useCounter.setState({ counterSheet: false, counterUsed: true, myCounter: counter });
+  };
 
   return (
-    <div className="absolute inset-0 z-30 flex items-end justify-center bg-black/15" onClick={() => setTradeOpen(false)}>
+    <div className="absolute inset-0 z-30 flex items-end justify-center bg-black/15" onClick={closeSheet}>
       <section
         ref={panel}
         role="dialog"
@@ -118,7 +141,7 @@ export function TradePanel() {
       >
         <header className="trade-composer-header">
           <h2 id="trade-title" className="trade-title">Trade</h2>
-          <Button variant="ghost" size="icon" onClick={() => setTradeOpen(false)} aria-label="Close" back>
+          <Button variant="ghost" size="icon" onClick={closeSheet} aria-label="Close" back>
             <X className="size-5" />
           </Button>
         </header>
@@ -149,7 +172,8 @@ export function TradePanel() {
           {mode !== "hotseat" ? (
             <p className="trade-sentence" data-testid="trade-player-preview" aria-live="polite">
               {giveText || getText ? <>
-                {giveText ? <span className="trade-give-text">Give {giveText}</span> : null}
+                {counterSheet ? `To ${offer!.fromName} ` : null}
+                {giveText ?<span className="trade-give-text">Give {giveText}</span> : null}
                 {giveText && getText ? " · " : null}
                 {getText ? <span className="trade-get-text">Get {getText}</span> : null}
               </> : <span className="trade-empty">Pick what to give and what to get.</span>}
@@ -157,11 +181,16 @@ export function TradePanel() {
           ) : null}
         </div>
 
-        <footer className="trade-composer-footer">
-          {mode !== "hotseat" ? <Button className="trade-ask" disabled={!asking} onClick={ask}>Ask the table</Button> : null}
+        {counterSheet ? (
+          <footer className="trade-composer-footer">
+            <Button className="trade-ask trade-send" disabled={!!counterReason} aria-describedby="trade-counter-why" onClick={sendCounter}>Send counter</Button>
+            {counterReason ? <p className="trade-reason" id="trade-counter-why" data-testid="trade-counter-why">{counterReason}</p> : null}
+          </footer>
+        ) : <footer className="trade-composer-footer">
+          {mode !== "hotseat" ?<Button className="trade-ask" disabled={!asking} onClick={ask}>Ask the table</Button> : null}
           <Button variant="secondary" className="trade-bank" aria-describedby="trade-bank-quote" disabled={refusal !== null} onClick={bank}>{bankLabel}</Button>
           <p className="sr-only" id="trade-bank-quote" data-testid="trade-hint" aria-live="polite">{bankHint}</p>
-        </footer>
+        </footer>}
       </section>
     </div>
   );

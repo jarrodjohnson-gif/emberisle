@@ -2,9 +2,9 @@
 // wood, get 1 brick", and the action row is No and Yes. The asker reads "You offer 2 sheep for 1 ore", who has said no,
 // and Cancel; then the outcome for a moment, where the newest event sits.
 // #537: a seat that cannot pay reads "Ember is looking for 2 ore" with Dismiss only.
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Check, X } from "lucide-react";
+import { Check, ChevronRight, X } from "lucide-react";
 import { useViewport } from "@/lib/viewport";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
@@ -13,6 +13,7 @@ import { useGame } from "@/lib/game/store";
 import { RESOURCES, RESOURCE_LABEL } from "@/lib/game/types";
 import type { Bag } from "@/lib/net/table";
 import "./trade-panel.css";
+import { useCounter } from "./counter-proto";
 
 const DISMISS_MS = 150;
 const calm = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -54,6 +55,7 @@ export function TradeToast() {
   const spectator = useGame((s) => s.spectator);
   const answerTrade = useGame((s) => s.answerTrade);
   const cancelTrade = useGame((s) => s.cancelTrade);
+  const proto = useCounter();
   const [leaving, setLeaving] = useState(false);
   const fadeMs = calm() ? 0 : DISMISS_MS;
   const lineId = useId();
@@ -115,6 +117,14 @@ export function TradeToast() {
   let answering = false;
   let compact = false;
   let why: string | null = null;
+  if (offer && proto.counterNo && offer.from !== localId) {
+    // Prototype: the sender's counter was refused; the outcome line shows for 2.5 s, then the first offer comes back.
+    return (
+      <p className="trade-result" role="status" data-testid="trade-outcome">
+        <X aria-hidden="true" className="size-3.5" />{proto.counterNo}
+      </p>
+    );
+  }
   if (!offer) {
     if (!fading || outcome) {
       const taker = players?.find((p) => p.id === takerId);
@@ -135,6 +145,15 @@ export function TradeToast() {
     // #537: the compact signal drops the visible "Need" line, so keyboard and screen-reader users still get the reason.
     why = compact && me ? `You need ${short.map((r) => `${offer.want[r]! - me.resources[r]} more ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ")} to accept` : null;
     const fromColor = players?.find((p) => p.id === offer.from)?.color ?? "transparent";
+    // Prototype: Counter shows when the offer allows counters and this seat has not used its one.
+    const counterable = answering && proto.counterAllowed && !proto.counterUsed && !proto.myCounter;
+    const counterButton = counterable && !proto.optionB
+      ? <Button variant="secondary" data-testid="trade-counter" onClick={() => useCounter.setState({ counterSheet: true })}>Counter</Button>
+      : null;
+    const tapLine = counterable && proto.optionB && !compact;
+    const Wrap = tapLine ? "span" : Fragment;
+    const waiting = asker ? proto.counters[0] : undefined;
+    const mine = answering ? proto.myCounter : null;
     const gives = bagText(offer.want);
     const gets = bagText(offer.give);
     // What this seat would give is red and what it would get is green, as on the trade sheet.
@@ -143,18 +162,51 @@ export function TradeToast() {
       : answering
         ? `${offer.fromName}: ${gives ? `give ${gives}` : ""}${gives && gets ? ", " : ""}${gets ? `get ${gets}` : ""}`
         : offerLine(asker ? null : offer.fromName, offer.give, offer.want);
-    body = (
+    if (waiting) {
+      const by = players?.find((p) => p.id === waiting.by);
+      body = (
+        <>
+          <div className="trade-summary">
+            <p id={lineId} className="trade-line" data-testid="trade-counter-line">
+              <SeatDot color={by?.color ?? "transparent"} className="mr-1.5 size-3 align-[-1px]" />
+              {waiting.name} counters: <b className="trade-give-text">give {bagText(waiting.give)}</b>, <b className="trade-get-text">get {bagText(waiting.want)}</b>
+            </p>
+            {proto.counters.length > 1 ? <p role="status" className="trade-wait">1 of {proto.counters.length}</p> : null}
+          </div>
+          <div className="trade-answers">
+            <Button variant="secondary" onClick={() => useCounter.setState({ counters: proto.counters.slice(1) })}>No</Button>
+            <Button className="trade-yes" onClick={() => useCounter.setState({ counters: [] })}>Yes</Button>
+          </div>
+        </>
+      );
+    } else if (mine) {
+      body = (
+        <>
+          <div className="trade-summary">
+            <p id={lineId} className="trade-line" data-testid="trade-my-counter">
+              You counter: <b className="trade-give-text">give {bagText(mine.want)}</b>, <b className="trade-get-text">get {bagText(mine.give)}</b>
+            </p>
+            <p role="status" className="trade-wait">Waiting for {offer.fromName}</p>
+          </div>
+          <div className="trade-answers">
+            <Button variant="secondary" data-testid="trade-take-back" onClick={() => useCounter.setState({ myCounter: null })}>Take back</Button>
+          </div>
+        </>
+      );
+    } else body = (
       <>
         <div className="trade-summary">
-          <p id={lineId} className="trade-line" title={line} data-testid={compact ? "trade-demand" : undefined}>
+          <p id={lineId} className="trade-line" title={line} data-testid={compact ? "trade-demand" : undefined}
+            {...(tapLine ? { role: "button", tabIndex: 0, "data-tap": "", onClick: () => useCounter.setState({ counterSheet: true }) } : {})}>
             {asker ? null : <SeatDot color={fromColor} className="mr-1.5 size-3 align-[-1px]" />}
             {answering && !compact ? (
-              <>
+              <Wrap>
                 {offer.fromName}: {gives ? <b className="trade-give-text">give {gives}</b> : null}
                 {gives && gets ? ", " : null}
                 {gets ? <b className="trade-get-text">get {gets}</b> : null}
-              </>
+              </Wrap>
             ) : line}
+            {tapLine ? <ChevronRight aria-hidden="true" className="trade-chevron" /> : null}
           </p>
           {asker ? (
             <p role="status" className={declined.length ? "trade-wait" : "sr-only"}>
@@ -166,13 +218,17 @@ export function TradeToast() {
         {spectator ? null : (
           <div className="trade-answers">
             {compact ? (
-              <Button variant="secondary" data-testid="trade-dismiss" aria-describedby={whyId} onClick={() => answerTrade(false)}>Dismiss</Button>
+              <>
+                <Button variant="secondary" data-testid="trade-dismiss" aria-describedby={whyId} onClick={() => answerTrade(false)}>Dismiss</Button>
+                {counterButton}
+              </>
             ) : asker ? (
               // #1245: a person's offer holds until answered, so the asker can always take it back.
               <Button ref={takeFocus} variant="secondary" data-testid="trade-cancel" onClick={cancelTrade}>Cancel</Button>
             ) : (
               <>
                 <Button variant="secondary" onClick={() => answerTrade(false)}>No</Button>
+                {counterButton}
                 <Button className="trade-yes" onClick={() => answerTrade(true)}>Yes</Button>
               </>
             )}
