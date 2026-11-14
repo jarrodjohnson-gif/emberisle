@@ -117,6 +117,15 @@ const CEILINGS = [
   // #1609: the five and six seat island and paired turns (src/lib/game/expanded.ts), loaded only for those games; measured
   // 2,952 B gzip. New chunk; the desk set this ceiling (PR #1655, 2026-11-14, with q1655-five-six-start A).
   { name: "expanded", gzipBytes: 3300 },
+  // #1665, 2026-11-14: the seat menu, loaded on idle and on the first seat press; measured 2,726 B gzip. New chunk; the desk
+  // set this ceiling (PR #1674).
+  { name: "PlayerMenu", gzipBytes: 3000 },
+  // #1665, 2026-11-14: the fortune card table the seat menu shares with the hand; measured 543 B gzip. New chunk; the desk set
+  // this ceiling (PR #1674).
+  { name: "fortunes", gzipBytes: 600 },
+  // #1665, 2026-11-14: the message icon the seat menu shares with chat; measured 248 B gzip. New chunk; the desk set this
+  // ceiling (PR #1674).
+  { name: "message-square", gzipBytes: 280 },
   // #827: other seats' public roll and trade gains load lazily (online only); a new chunk, so this ceiling is its only limit.
   { name: "SeatPublicGains", gzipBytes: 1800 },
 ];
