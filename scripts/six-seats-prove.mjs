@@ -3,7 +3,7 @@
 // 390x844 and 956x440 (touch, the phone strip) and 1280x720 (the desktop rail):
 // - five or six seats, all inside the viewport, none overlapping, each one button at least 44x44 px;
 // - each seat shows its number, 1 to n, beside its dot and reads "Seat N" in its accessible name; the numbers stay with
-//   their seats after the turn moves and after a rematch-style reorder of the seats;
+//   their seats after the turn moves and after the seats are reordered, as the roll-off does;
 // - exactly one white pill, on the seat in `current`, also during a partner activation;
 // - each seat shows a name that is not empty and is not cut (no ellipsis, no overflow), and no two seats read the same
 //   (number and name), also with six names that share an initial and a three-letter start, and with long names;
@@ -351,7 +351,7 @@ try {
       const partner = order[(order.indexOf("p1") + 3) % n];
       await change(page, "st.primary = 'p1'; st.role = 'partner'; st.current = arg;", partner);
       await rules(partner, `${tag} partner ${partner} for p1`);
-      // A rematch-style reorder: the seats come round in a new order, and each number stays with its seat.
+      // A reorder, as the roll-off does: the seats come round in a new order, and each number stays with its seat.
       await change(page, "st.players = [...st.players.slice(2), ...st.players.slice(0, 2)].reverse(); st.current = st.players[0].id; st.primary = st.current; st.role = 'primary';");
       const first = await page.evaluate(() => window.__emberisle.getState().state.players[0].id);
       seats = await rules(first, `${tag} after a reorder`);
