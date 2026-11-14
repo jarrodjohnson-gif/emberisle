@@ -40,7 +40,7 @@ export function DiscardBar({ id, n }: { id: string; n: number }) {
               onClick={() => off || pick(r, 1)}
               className={`discard-good goods-${r}${have ? "" : " goods-empty"}`}
             >
-              <Icon aria-hidden />
+              <Icon className="goods-icon" aria-hidden />
               <span className="discard-keep">{have - counts[r]}</span>
             </button>
           );

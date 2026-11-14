@@ -7,6 +7,7 @@
 //   then sits where the newest event does, in the top line;
 // - a discard: the top line says how many, the hand becomes five tokens, a tap adds one, the minus takes one back, the
 //   count never passes what is owed, and "Discard N" is off until the count is right, then discards exactly those goods;
+//   each token's symbol has the hand's colour for that good (#1595);
 // - take-from: the top line asks "Take from whom?" and the action row is one button per seat with its colour dot; a
 //   press moves the wayfarer and takes one good from that seat;
 // - hotseat: a seat that owes a discard on another seat's turn is named in the top line and picks from its own goods;
@@ -172,7 +173,7 @@ const readStack = (page) =>
       answers: actionRow(s.querySelector(".trade-answers")),
       takes: actionRow(s.querySelector(".take-row")),
       discard: actionRow(s.querySelector(".discard-pick"))?.filter((b) => /^Discard/.test(b.text)),
-      tokens: [...s.querySelectorAll(".discard-pick .discard-good")].map((t) => { const kind = t.dataset.testid.replace("discard-", ""); const back = s.querySelector(`[data-testid="discard-back-${kind}"]`); return { kind, owned: t.querySelector(".discard-keep")?.textContent, badge: back && !back.hasAttribute("aria-disabled") ? back.textContent.trim() : null, ...box(t) }; }),
+      tokens: [...s.querySelectorAll(".discard-pick .discard-good")].map((t) => { const kind = t.dataset.testid.replace("discard-", ""); const back = s.querySelector(`[data-testid="discard-back-${kind}"]`); return { kind, owned: t.querySelector(".discard-keep")?.textContent, badge: back && !back.hasAttribute("aria-disabled") ? back.textContent.trim() : null, icon: getComputedStyle(t.querySelector("svg")).color, handIcon: (() => { const h = s.querySelector(`[data-testid="resource-${kind}"] > .goods-icon`); return h ? getComputedStyle(h).color : null; })(), ink: getComputedStyle(t).color, ...box(t) }; }),
       hand: [...s.querySelectorAll('[data-testid^="resource-"]')].filter((c) => /^resource-(timber|clay|wool|grain|ore)$/.test(c.dataset.testid) && seen(c)).length,
       handBox: (() => { const h = s.querySelector('[data-testid="hand-dock"]'); return h && seen(h) ? box(h) : null; })(),
       count: s.querySelector('[data-testid="discard-count"]')?.textContent ?? null,
@@ -334,6 +335,8 @@ try {
     check(s.hand === 0 && s.tokens.length === 5 && s.tokens.every((t) => +t.owned === EIGHT[t.kind]), `${at}: five tokens with the counts held take the hand's place ${JSON.stringify({ hand: s.hand, tokens: s.tokens })}`);
     check(s.tokens.every((t) => t.w >= 44 && t.h >= 44), `${at}: a token is under 44 px ${JSON.stringify(s.tokens)}`);
     check(s.discard.length === 1 && s.discard[0].text === "Discard 4" && s.discard[0].disabled && !s.discard[0].primary, `${at}: one Discard 4 button, off ${JSON.stringify(s.discard)}`);
+    // #1595 (q1597-tray-polish, D): each token's symbol is in the same colour as the hand's symbol for that good, not the token's ink.
+    check(s.tokens.every((t) => t.handIcon && t.icon === t.handIcon && t.icon !== t.ink), `${at}: a token's symbol is not the hand's colour ${JSON.stringify(s.tokens.map(({ kind, icon, handIcon, ink }) => ({ kind, icon, handIcon, ink })))}`);
     await rules(s, at);
     await shot("discard");
     const add = async (kind) => press(pick.getByTestId(`discard-${kind}`));
@@ -356,6 +359,7 @@ try {
     check(minus.every((m) => s.tokens.every((t) => m.bottom <= t.top || m.top >= t.bottom || m.right <= t.left || m.left >= t.right)), `${at}: a take-back target overlaps a number ${JSON.stringify({ minus, tokens: s.tokens })}`);
     const pickedDot = await lineDot(page);
     check(!pickedDot.shown || pickedDot.seat, `${at}: the top line has a dot that is no seat's colour ${JSON.stringify(pickedDot)}`);
+    check(s.tokens.every((t) => t.icon === t.handIcon && t.icon !== t.ink), `${at}, picked: a token's symbol is not the hand's colour ${JSON.stringify(s.tokens.map(({ kind, icon, handIcon }) => ({ kind, icon, handIcon })))}`);
     await rules(s, `${at}, picked`);
     await shot("discard-picked");
     // A fifth tap adds nothing.
@@ -415,6 +419,7 @@ try {
       at = `${tag} hotseat discard`;
       check(s.banner === `Discard 4: pick 4 more · ${owes}`, `${at}: the status reads "${s.banner}", want "Discard 4: pick 4 more · ${owes}"`);
       check(s.tokens.length === 5 && s.tokens.every((t) => +t.owned === EIGHT[t.kind]) && s.hand === 0, `${at}: the tokens show ${owes}'s goods ${JSON.stringify(s.tokens)}`);
+      check(s.tokens.every((t) => t.owned === "0" || t.icon !== t.ink), `${at}: a held good's symbol is in the token's ink, not its colour ${JSON.stringify(s.tokens.map(({ kind, icon, ink }) => ({ kind, icon, ink })))}`);
       await rules(s, at);
       await shot("discard-hotseat");
       for (const k of ["timber", "timber", "timber", "clay"]) await add(k);
