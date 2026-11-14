@@ -509,6 +509,7 @@ function partnerRoom(code, g, human) {
     }
     throw new Error(`no saved game at seq ${seq}`);
   };
+  const STALE = "The table has updated. Please try again.";
   const mine = (st) => st.game.phase !== "over" && (st.legal.actions.length || st.legal.outpost.length || st.legal.path.length || st.legal.wayfarer.length || st.legal.discard);
   const stop = Date.now() + 240_000;
   let answered = 0;
@@ -533,6 +534,9 @@ function partnerRoom(code, g, human) {
     await h.until(() => h.state.game.seq !== st.game.seq || h.inbox.some((x) => x.type === "error"), "an answer to my move", 5000);
     if (h.state.game.seq === st.game.seq) {
       const err = h.inbox.find((x) => x.type === "error");
+      // The host answers this while the room is busy (it is saving, or the table moved between my read and my send). It
+      // is not a refusal of the move itself: read the state again and choose again. On CI it hit a roll (#1660).
+      if (err?.message === STALE) continue;
       assert.ok(st.game.phase === "main", `my ${intent.type} refused outside main: ${err?.message}`);
       h.act({ type: "pass" });
       await h.until(() => h.state.game.seq !== st.game.seq, "my pass");
