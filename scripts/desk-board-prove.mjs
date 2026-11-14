@@ -1,7 +1,7 @@
 // #1180: classification, stale-head suppression, once-per-head delivery, and workflow boundaries.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { classify, reviewOf, routeFor, notifications, wakeLine, mergeLine, MISSING, DAILY_LIMIT, tableFor, updateBody, sweep } from './desk-board.mjs';
+import { classify, reviewOf, routeFor, notifications, wakeLine, mergeLine, watchdog, watchLine, WATCH, MISSING, DAILY_LIMIT, tableFor, updateBody, sweep } from './desk-board.mjs';
 const A = 'a'.repeat(40), B = 'b'.repeat(40);
 const now = new Date('2026-10-28T03:00:00Z');
 const pr = { number: 1, state: 'open', draft: false, head: { sha: A }, changed_files: 1 };
@@ -57,8 +57,8 @@ eq(updateBody(`before\n${table}\nafter`, 'replacement'), 'before\nreplacement\na
 assert.throws(() => updateBody('<!-- desk-board:start -->', table)); assertions++;
 
 // Stateful API fixture: observe actual writes on repeat sweeps and a changed head.
-function fixture({ moved = false, failedPost = false, many = false, reviewComments = [] } = {}) {
-  let head = A, body = 'Desk notes must survive.', readCount = 0;
+function fixture({ moved = false, failedPost = false, many = false, reviewComments = [], startBody = 'Desk notes must survive.' } = {}) {
+  let head = A, body = startBody, readCount = 0;
   const inbox = [], writes = [], pageReads = [], inboxReads = [];
   const api = async (path, method = 'GET', payload) => {
     const url = new URL('https://example.test' + path), page = Number(url.searchParams.get('page') ?? 1), p = url.pathname;
@@ -156,6 +156,32 @@ eq(mergeSweep.inbox.map(c => c.body), [mergeLine(mergeable)]);
 await sweep(mergeSweep.api, { now });
 eq(mergeSweep.inbox.length, 1);
 eq(mergeSweep.body().includes('Ready to merge'), true);
+// Watchdog: a stale desk, a missing rotation or an overdue one raises one alert per UTC day.
+const ledger = lines => `notes\n<!-- desk-ledger:start -->\n## Desk ledger\n${lines.join('\n')}\n<!-- desk-ledger:end -->\n`;
+eq(watchdog('no ledger here', now), null);
+eq(watchdog(ledger(['Desk: s1 (Opus 5.5), since 2026-10-27 00:00 UTC', 'Next rotation: t1, due 2026-10-28T12:43Z']), now), 'the desk has run for more than 26 hours');
+eq(watchdog(ledger(['Desk: s1 (Opus 5.5), since 2026-10-28 01:00 UTC']), now), 'no next rotation is set');
+eq(watchdog(ledger(['Desk: s1 (Opus 5.5), since 2026-10-28 01:00 UTC', 'Next rotation: none']), now), 'no next rotation is set');
+eq(watchdog(ledger(['Desk: s1 (Opus 5.5), since 2026-10-28 01:00 UTC', 'Next rotation: t1, due 2026-10-28T12:43Z']), now), null);
+eq(watchdog(ledger(['Desk: s1 (Opus 5.5), since 2026-10-28 01:00 UTC', 'Next rotation: t1, due 2026-10-28T01:30Z']), now), 'the next rotation is overdue');
+eq(watchdog(ledger(['Desk: s1 (Opus 5.5), since 2026-10-28 01:00 UTC', 'Next rotation: t1, due 2026-10-28T02:30Z']), now), null);
+// The live ledger's spaced form: "due YYYY-MM-DD HH:MM UTC".
+eq(watchdog(ledger(['Desk: s1 (Opus 5.5), since 2026-10-28 01:00 UTC', 'Next rotation: trig_1, due 2026-10-28 12:43 UTC']), now), null);
+eq(watchdog(ledger(['Desk: s1 (Opus 5.5), since 2026-10-28 01:00 UTC', 'Next rotation: trig_1, due 2026-10-28 01:30 UTC']), now), 'the next rotation is overdue');
+eq(notifications([], [], now, 'no next rotation is set'), [watchLine('no next rotation is set')]);
+eq(notifications([], [comment(watchLine('no next rotation is set'))].map(c => ({ ...c, created_at: now.toISOString() })), now, 'the next rotation is overdue'), []);
+eq(notifications([], [comment(watchLine('x'))].map(c => ({ ...c, created_at: '2026-10-27T03:00:00Z' })), now, 'x'), [watchLine('x')]);
+eq(watchLine('x').startsWith(WATCH), true);
+const staleBody = ledger(['Desk: s1 (Sonnet 5.5), since 2026-10-20 02:20 UTC']);
+const watchSweep = fixture({ startBody: staleBody });
+await sweep(watchSweep.api, { now });
+eq(watchSweep.inbox.map(c => c.body).includes(watchLine('the desk has run for more than 26 hours')), true);
+eq(watchSweep.body().includes('watchdog: ALERT: the desk has run for more than 26 hours'), true);
+eq(watchSweep.body().startsWith('notes\n<!-- desk-ledger:start -->'), true);
+const alerts = () => watchSweep.inbox.filter(c => c.body.startsWith(WATCH)).length;
+await sweep(watchSweep.api, { now });
+eq(alerts(), 1);
+eq(fixture().body().includes('watchdog'), false);
 const workflow = readFileSync('.github/workflows/desk-board.yml', 'utf8');
 for (const required of ['workflows: [CI]', 'types: [completed]', 'types: [ready_for_review]', "cron: '17 0,8,16 * * *'", 'group: desk-board', 'cancel-in-progress: true', 'ref: ${{ github.event.repository.default_branch }}', 'persist-credentials: false', 'sparse-checkout: scripts/desk-board.mjs', 'sparse-checkout-cone-mode: false', 'issues: write']) {
   eq(workflow.includes(required), true);
