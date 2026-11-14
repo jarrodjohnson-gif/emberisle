@@ -8,6 +8,7 @@
 // 6. Tapping Try again recovers once the network failure clears.
 // #1665: the player menu is its own chunk. The title never asks for it; the table fetches it on idle, so the first open
 // shows without delay (< 250ms); a refused load closes the menu with the table standing, and the next press opens it.
+// #1679: an Escape or an outside tap while the chunk is still held cancels the open, at 1280x720 and 390x844.
 // Run: npm run lazy-hud-prove
 import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
@@ -108,6 +109,103 @@ const timeToAppear = (kind, trigger) =>
       }),
     [kind, trigger, Object.fromEntries(Object.entries(FIND).map(([k, f]) => [k, f.toString()]))],
   );
+
+// #1679: an Escape or an outside tap after a seat press, while the player menu's chunk is still on its way, cancels the open:
+// the seat says collapsed, and the menu does not show when the chunk lands. Desktop rail and phone sheet, each way.
+async function menuCancelCase(g, phone, how) {
+  const tag = `${phone ? "390x844" : "1280x720"} ${how}`;
+  const context = await browser.newContext(phone ? { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true } : { viewport: { width: 1280, height: 720 } });
+  const holdPage = await context.newPage();
+  holdPage.on("console", (m) => {
+    if (m.type() === "error") errors.push(m.text());
+  });
+  holdPage.on("pageerror", (e) => errors.push(String(e)));
+  // Every request for the menu's module waits here until it is released, the table's idle prefetch included.
+  let release;
+  const gate = new Promise((r) => (release = r));
+  let held = 0;
+  let released = 0;
+  await holdPage.route(/\/PlayerMenu\.tsx/, async (route) => {
+    held++;
+    await gate;
+    released++;
+    await route.continue();
+  });
+  await holdPage.goto(`http://127.0.0.1:${PORT}/`);
+  await holdPage.getByRole("button", { name: "Play with bots", exact: true }).click({ timeout: STEP_MS });
+  await holdPage.waitForFunction(() => window.__emberisle?.getState().state);
+  await holdPage.evaluate((state) => {
+    window.__emberisle.getState().startAi();
+    window.__emberisle.setState({ state });
+  }, g);
+  // The idle prefetch has asked and is held, so the press below waits on a chunk that is not in memory.
+  const heldDeadline = Date.now() + STEP_MS;
+  while (held === 0 && Date.now() < heldDeadline) await new Promise((r) => setTimeout(r, 50));
+  const seat = holdPage.locator(`[data-testid="${phone ? "seat" : "rail"}-p1"] [data-menu-trigger]`);
+  await seat.waitFor({ state: "visible", timeout: STEP_MS });
+  if (phone) await seat.tap();
+  else await seat.click();
+  const pressed = await holdPage.evaluate(() => ({
+    menuFor: window.__emberisle.getState().menuFor,
+    expanded: document.querySelector('[data-menu-trigger="p1"]').getAttribute("aria-expanded"),
+    menus: document.querySelectorAll('[data-testid="player-menu"]').length,
+  }));
+  check(`${tag}: the press waits on a held chunk`, held >= 1 && released === 0 && pressed.menuFor === "p1" && pressed.expanded === "true" && pressed.menus === 0, { held, released, ...pressed });
+
+  // Any menu that mounts from here on is seen, however briefly.
+  await holdPage.evaluate(() => {
+    window.__menuSeen = false;
+    new MutationObserver(() => {
+      if (document.querySelector('[data-testid="player-menu"]')) window.__menuSeen = true;
+    }).observe(document.body, { childList: true, subtree: true });
+  });
+  if (how === "Escape") {
+    // The press focused the seat; focus leaves it first, so the check below sees the cancel put it back.
+    const focusBefore = await holdPage.evaluate(() => {
+      document.activeElement?.blur();
+      return document.activeElement?.getAttribute("data-menu-trigger") ?? document.activeElement?.tagName ?? null;
+    });
+    check(`${tag}: focus is off the seat before Escape`, focusBefore !== "p1", { focusBefore });
+    await holdPage.keyboard.press("Escape");
+  } else {
+    // A tap on the island, clear of the seats, the header and the menu's place (seat-menu-sheet-prove's spot).
+    const at = await holdPage.evaluate(() => ({ x: innerWidth > innerHeight ? innerWidth * 0.75 : innerWidth / 2, y: innerHeight * 0.3 }));
+    if (phone) await holdPage.touchscreen.tap(at.x, at.y);
+    else await holdPage.mouse.click(at.x, at.y);
+  }
+  const cancelled = await holdPage.evaluate(() => ({
+    menuFor: window.__emberisle.getState().menuFor,
+    expanded: document.querySelector('[data-menu-trigger="p1"]').getAttribute("aria-expanded"),
+    focus: document.activeElement?.getAttribute("data-menu-trigger") ?? document.activeElement?.tagName ?? null,
+  }));
+  check(`${tag} before the chunk lands: the open is cancelled and the seat says collapsed`, cancelled.menuFor === null && cancelled.expanded === "false", cancelled);
+  if (how === "Escape") check(`${tag} before the chunk lands: Escape puts focus on the seat`, cancelled.focus === "p1", cancelled);
+
+  // Let the chunk through, then wait for it to land: its response finishes, the app's import of it settles (one module
+  // record per URL, as above) and two frames render. Only then is "no menu" a fact.
+  const finished = holdPage.waitForEvent("requestfinished", { predicate: (r) => /\/PlayerMenu\.tsx/.test(r.url()), timeout: STEP_MS });
+  release();
+  await finished;
+  await holdPage.evaluate(() => import(/* @vite-ignore */ "/src/components/game/PlayerMenu.tsx"));
+  await holdPage.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  const landed = await holdPage.evaluate(() => ({
+    seen: window.__menuSeen,
+    menus: document.querySelectorAll('[data-testid="player-menu"]').length,
+    menuFor: window.__emberisle.getState().menuFor,
+    expanded: document.querySelector('[data-menu-trigger="p1"]').getAttribute("aria-expanded"),
+  }));
+  check(`${tag} after the chunk lands: no menu appears`, landed.seen === false && landed.menus === 0 && landed.menuFor === null && landed.expanded === "false", { ...landed, released });
+
+  // The cancel leaves the seat working: the next press opens the menu, and its own Escape closes it and hands focus back.
+  if (phone) await seat.tap();
+  else await seat.click();
+  const reopened = await holdPage.getByTestId("player-menu").waitFor({ state: "visible", timeout: STEP_MS }).then(() => true, () => false);
+  await holdPage.keyboard.press("Escape");
+  const closed = await holdPage.getByTestId("player-menu").waitFor({ state: "detached", timeout: STEP_MS }).then(() => true, () => false);
+  const after = await holdPage.evaluate(() => document.activeElement?.getAttribute("data-menu-trigger") ?? null);
+  check(`${tag}: the next press opens the menu, and its Escape closes it with focus on the seat`, reopened && closed && after === "p1", { reopened, closed, focus: after });
+  await context.close();
+}
 
 try {
   // The title's own idle prefetch (the sheets) has run by the time its request is seen; the player menu is not asked for.
@@ -333,6 +431,11 @@ try {
   await recoveredMenu.waitFor({ state: "visible", timeout: STEP_MS });
   check("once the route recovers, the next press opens the player menu", (await recoveredMenu.isVisible()) && (await menuTrigger.getAttribute("aria-expanded")) === "true");
   await menuFailPage.close();
+
+  // --- 7. A cancel while the player menu chunk is held (#1679) ---
+  for (const phone of [false, true]) {
+    for (const how of ["Escape", "outside tap"]) await menuCancelCase(g, phone, how);
+  }
 
 } finally {
   check("zero console errors", errors.length === 0, errors.slice(0, 5));
