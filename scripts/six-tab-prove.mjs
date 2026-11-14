@@ -40,7 +40,8 @@ const VIEWS = [
   { tag: "844x390", width: 844, height: 390, touch: true },
 ];
 const NAMES = ["Hana", "Gus", "Ivy", "Olaf", "Pia", "Rex"];
-// Only these two tabs draw the island, and only for pictures: software WebGL at scale 2 is slow.
+// Only these two tabs are pictured. Software WebGL at scale 2 is slow, so no tab draws the island except while its
+// picture is taken: six tabs drawing all game long would run the turn windows out.
 const DRAWN = [0, 1];
 const t0 = Date.now();
 
@@ -120,7 +121,6 @@ const snap = (t) => store(t, () => { const g = window.__emberisle.getState(); re
 async function tab(i) {
   const v = VIEWS[i];
   const name = NAMES[i];
-  const drawn = SHOTS && DRAWN.includes(i);
   const ctx = await browser.newContext({ viewport: { width: v.width, height: v.height }, hasTouch: !!v.touch, isMobile: !!v.touch, deviceScaleFactor: SHOTS ? 2 : 1 });
   ctx.setDefaultTimeout(SHOTS ? 120_000 : 30_000);
   const page = await ctx.newPage();
@@ -160,10 +160,14 @@ async function tab(i) {
       }
     };
   }, name);
-  if (!drawn)
-    await page.addInitScript(() => {
-      for (const fn of ["drawElements", "drawArrays", "drawElementsInstanced", "drawArraysInstanced"]) WebGL2RenderingContext.prototype[fn] = function () {};
-    });
+  await page.addInitScript(() => {
+    for (const fn of ["drawElements", "drawArrays", "drawElementsInstanced", "drawArraysInstanced"]) {
+      const draw = WebGL2RenderingContext.prototype[fn];
+      WebGL2RenderingContext.prototype[fn] = function (...a) {
+        return window.__draw ? draw.apply(this, a) : undefined;
+      };
+    }
+  });
   await page.goto(url);
   await page.getByTestId("title-card").waitFor();
   return t;
@@ -176,8 +180,10 @@ async function playPage(t) {
 
 async function shot(t, name) {
   if (!SHOTS) return;
-  await sleep(800);
+  await t.page.evaluate(() => (window.__draw = true));
+  await sleep(1500);
   await t.page.screenshot({ path: `${SHOT_DIR}/${name}-${t.v.tag}.png` });
+  await t.page.evaluate(() => (window.__draw = false));
   console.log(`shot ${SHOT_DIR}/${name}-${t.v.tag}.png`);
 }
 
@@ -343,16 +349,16 @@ try {
     if (g.phase === "roll" || g.phase === "main") await turnView(tabs, snaps, label);
     const actor = seatOf(snaps, g.current);
     if (g.role === "partner") {
+      if (!reloadedPartner) {
+        snaps = await reloadKeeps(tabs, `${label} partner reload`);
+        reloadedPartner = true;
+      }
       for (const k of DRAWN) {
         const kind = k === actor ? "partner-actor" : "partner-other";
         if (!shotsDone.has(`${kind}-${k}`)) {
           shotsDone.add(`${kind}-${k}`);
           await shot(tabs[k], kind);
         }
-      }
-      if (!reloadedPartner) {
-        snaps = await reloadKeeps(tabs, `${label} partner reload`);
-        reloadedPartner = true;
       }
     }
     if (g.role === "primary" && g.phase === "roll" && !reloadedPrimary && activations > 0) {
@@ -433,6 +439,36 @@ try {
   snaps = await same(tabs, "after the discards");
   check(snaps[0].state.phase === "robber", `after the discards the roller moves the wayfarer (${snaps[0].state.phase})`);
 
+  // ---- Play on to the win: every move the practice bot's choice. ----
+  for (let n = 0; n < 6000; n++) {
+    snaps = await same(tabs, "play on");
+    if (snaps[0].state.phase === "over") break;
+    const move = nextMove(snaps, false);
+    if (move) await send(tabs, move.k, move.action);
+  }
+  snaps = await same(tabs, "the win");
+  const gw = snaps[0].state;
+  check(gw.phase === "over" && gw.winner, `the game is won by ${gw.winner && nameOf(gw, gw.winner)} at activation ${gw.activation}`);
+  for (const t of tabs) {
+    await t.page.getByTestId("win-screen").waitFor();
+    check(await t.page.getByTestId("win-screen").isVisible(), `${t.label} shows the win screen: "${(await t.page.getByTestId("win-headline").textContent()).trim()}"`);
+    check((await t.page.getByTestId("win-row").count()) === 6, `${t.label}'s win screen lists six seats`);
+  }
+  for (const k of DRAWN) await shot(tabs[k], "win");
+  console.log(`win: ${((Date.now() - t0) / 1000).toFixed(0)} s in`);
+
+  // ---- The host presses Play again: every seat keeps its number and colour. ----
+  check((await tabs[0].page.getByTestId("win-again").count()) === 1, "the host has Play again");
+  await tap(tabs[0], tabs[0].page.getByTestId("win-again"));
+  snaps = await until(async () => {
+    const all = await Promise.all(tabs.map(snap));
+    return all.every((s) => s.state && s.state.phase !== "over" && s.state.seq < gw.seq) ? all : null;
+  }, "the rematch on every tab");
+  const gr = snaps[0].state;
+  check(gr.variant?.kind === "expanded" && gr.players.length === 6, "the rematch is a six-seat expanded game");
+  check(gr.players.every((p) => identity[p.name]?.seat === p.seat && identity[p.name]?.color === p.color), `every seat keeps its number and colour (${gr.players.map((p) => `${p.name} ${p.seat}`).join(", ")})`);
+  check(gr.players[0].name === nameOf(gw, gw.winner), `the winner, ${nameOf(gw, gw.winner)}, goes first`);
+  check(snaps.every((s) => s.screen === "play" && s.state.players.length === 6), "every tab is in the rematch");
   for (const t of tabs) check(!t.leaks.length, `${t.label}: none of ${t.messages} frames carried another seat's hand ${t.leaks.slice(0, 3).join(" | ")}`);
 } catch (e) {
   failures.push(String(e?.stack ?? e));
