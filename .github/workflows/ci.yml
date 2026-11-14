@@ -257,14 +257,16 @@ jobs:
       # #1673: dice-prove and expanded-bots-prove run beside npm test. Both are Node only: no host, port, file or env
       # var shared with anything else. npm test mostly waits on host timers. Their output prints after npm test ends,
       # and a failure in either side fails the step.
+      # #1682: each side proof has a time limit, about twice its slowest run on main (dice 140 s, bots 46 s), so a hang
+      # ends with exit 124, fails the step and still prints the side log well inside the job's timeout.
       - if: needs.changes.outputs.docs_only != 'true'
         name: npm test, with dice-prove and expanded-bots-prove beside it
         run: |
           side="$RUNNER_TEMP/side-proofs.log"
           (
             status=0
-            npm run dice-prove || status=$?
-            npm run expanded-bots-prove || status=$?
+            timeout -k 10 300 npm run dice-prove || status=$?
+            timeout -k 10 120 npm run expanded-bots-prove || status=$?
             exit "$status"
           ) > "$side" 2>&1 &
           pid=$!
