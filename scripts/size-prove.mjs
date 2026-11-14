@@ -33,7 +33,9 @@ const CEILINGS = [
   // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
   { name: "haptics", gzipBytes: 1200 },
   // #1283: raised from 125,200 B to 127,000 B per owner decision 2026-11-03.
-  { name: "index", gzipBytes: 127000 },
+  // #1609: raised from 127,000 B to 128,000 B by the owner (q1655-five-six-start A, 2026-11-14): five and six seat games
+  // start from the Play page; index measured 127,203 B.
+  { name: "index", gzipBytes: 128000 },
   { name: "IslandCanvas", gzipBytes: 203500 }, // #1307, 2026-11-04: raised from 202,500 B to 203,500 B
   { name: "jelly-board", gzipBytes: 9000 },
   { name: "hex-jelly", gzipBytes: 50000 },
