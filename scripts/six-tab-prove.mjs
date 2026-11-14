@@ -374,6 +374,66 @@ try {
   check(reloadedPartner && reloadedPrimary, "the acting tab was reloaded on a partner turn and on a primary turn");
   console.log(`turns: ${((Date.now() - t0) / 1000).toFixed(0)} s in`);
 
+  // ---- A seven: the two drawn tabs only roll and pass, the others build as the bot would, until the two hold over seven
+  // and another tab does not; then a 3 and a 4. ----
+  const hand = (s) => Object.values(s.state.players.find((p) => p.id === s.localId).resources).reduce((a, b) => a + b, 0);
+  for (let n = 0; n < 600; n++) {
+    snaps = await same(tabs, "hands grow");
+    const g = snaps[0].state;
+    if (g.role === "primary" && g.phase === "roll" && DRAWN.every((k) => hand(snaps[k]) >= 8) && snaps.some((x) => hand(x) < 8)) break;
+    const move = nextMove(snaps, DRAWN.includes(seatOf(snaps, g.current)));
+    if (move) await send(tabs, move.k, move.action);
+  }
+  snaps = await same(tabs, "before the seven");
+  const gs = snaps[0].state;
+  const roller = seatOf(snaps, gs.current);
+  const sizes = snaps.map(hand);
+  check(DRAWN.every((k) => sizes[k] >= 8) && sizes.some((n) => n < 8), `hands before the seven: ${sizes.join(" ")}`);
+  queueDice(3, 4);
+  await tap(tabs[roller], tabs[roller].page.getByRole("button", { name: "Roll", exact: true }));
+  snaps = await until(async () => {
+    const all = await same(tabs, "the seven");
+    return all[0].state.phase === "discard" ? all : null;
+  }, "the discard phase");
+  const owe = snaps.map((s, k) => (s.state.discardNeeded[s.localId] ?? 0) > 0 ? k : -1).filter((k) => k >= 0);
+  check(owe.length >= 2 && DRAWN.every((k) => owe.includes(k)) && snaps.every((s, k) => owe.includes(k) === sizes[k] >= 8), `a seven: ${owe.map((k) => tabs[k].label).join(", ")} owe a discard, every tab over seven and no other`);
+  for (const [k, t] of tabs.entries()) {
+    const s = snaps[k];
+    const picker = t.page.getByTestId("discard-pick");
+    if (owe.includes(k)) {
+      await picker.waitFor();
+      const n = s.state.discardNeeded[s.localId];
+      check((await t.page.getByTestId("turn-banner").textContent()) === `Discard ${n} goods`, `${t.label} reads "Discard ${n} goods"`);
+      const owned = await t.page.$$eval('[data-testid="discard-pick"] [data-testid="trade-owned"]', (els) => els.map((e) => Number(e.lastChild.textContent)));
+      const mine = s.state.players.find((p) => p.id === s.localId).resources;
+      check(JSON.stringify(owned) === JSON.stringify(["timber", "clay", "wool", "grain", "ore"].map((r) => mine[r])), `${t.label}'s picker shows its own hand (${owned.join(" ")})`);
+      check((await t.page.getByTestId("discard-count").textContent()) === `0 of ${n}`, `${t.label}'s picker counts 0 of ${n}`);
+    } else {
+      check((await picker.count()) === 0, `${t.label} has no discard picker`);
+      check((await t.page.getByTestId("turn-banner").textContent()) === "Wait for discards", `${t.label} reads "Wait for discards"`);
+    }
+    const others = s.state.players.filter((p) => p.id !== s.localId);
+    check(others.every((p) => !("resources" in p)), `${t.label}'s store holds no other seat's hand`);
+  }
+  for (const k of DRAWN) if (owe.includes(k)) await shot(tabs[k], "discard");
+  // Each discard through the real picker: one tap per card, then "Discard N".
+  for (const k of owe) {
+    const t = tabs[k];
+    const s = await snap(t);
+    let n = s.state.discardNeeded[s.localId];
+    const mine = s.state.players.find((p) => p.id === s.localId).resources;
+    for (const r of ["timber", "clay", "wool", "grain", "ore"]) {
+      for (let c = 0; c < mine[r] && n > 0; c++, n--) await tap(t, t.page.locator(`[data-testid="trade-discard-${r}"] .trade-add`));
+    }
+    const need = s.state.discardNeeded[s.localId];
+    await tap(t, t.page.getByRole("button", { name: `Discard ${need}`, exact: true }));
+    await until(async () => !((await snap(t)).state.discardNeeded[s.localId] > 0), `${t.label} discards`);
+    check(hand(await snap(t)) === sizes[k] - need, `${t.label} discarded ${need} through the picker`);
+  }
+  snaps = await same(tabs, "after the discards");
+  check(snaps[0].state.phase === "robber", `after the discards the roller moves the wayfarer (${snaps[0].state.phase})`);
+
+  for (const t of tabs) check(!t.leaks.length, `${t.label}: none of ${t.messages} frames carried another seat's hand ${t.leaks.slice(0, 3).join(" | ")}`);
 } catch (e) {
   failures.push(String(e?.stack ?? e));
   console.log(`FAIL ${e?.stack ?? e}`);
