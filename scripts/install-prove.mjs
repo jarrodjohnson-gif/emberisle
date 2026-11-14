@@ -201,8 +201,9 @@ try {
   console.log(`ok   ?watch=${tableCode} fills the field and shows Watch inside the safe area`);
 
   // In game: every button the HUD shows sits inside the safe area.
-  await p.page.getByRole("button", { name: "Leave the table" }).click();
-  await p.page.getByRole("button", { name: "Play with bots", exact: true }).click();
+  // In game: every button the HUD shows sits inside the safe area.
+  await p.page.getByRole("button", { name: "Leave table" }).click();
+  await p.page.getByRole("button", { name: "Play", exact: true }).click();
   await p.page.getByTestId("seat-strip").waitFor();
   await p.page.waitForTimeout(500);
   const out = await p.page.evaluate(({ top, bottom }) => {

@@ -59,49 +59,112 @@
     ],
     "controls": [
       {
-        "label": "Copy",
-        "x": 145.609375,
+        "label": "Table code H Z R A. Copy link",
+        "x": 29,
         "y": 29,
-        "right": 201.703125,
+        "right": 119.203125,
         "bottom": 73,
-        "width": 56.09375,
-        "height": 44
+        "width": 90.203125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 29,
+          "y": 29,
+          "right": 119.203125,
+          "bottom": 73,
+          "width": 90.203125,
+          "height": 44
+        }
       },
       {
-        "label": "Copy link",
-        "x": 209.703125,
-        "y": 29,
-        "right": 295.15625,
-        "bottom": 73,
-        "width": 85.453125,
-        "height": 44
-      },
-      {
-        "label": "Invite",
-        "x": 303.15625,
-        "y": 29,
-        "right": 361,
-        "bottom": 73,
-        "width": 57.84375,
-        "height": 44
-      },
-      {
-        "label": "Rules",
+        "label": "Table",
         "x": 29,
         "y": 81,
-        "right": 208,
+        "right": 85.484375,
         "bottom": 125,
-        "width": 179,
-        "height": 44
+        "width": 56.484375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 29,
+          "y": 81,
+          "right": 85.484375,
+          "bottom": 125,
+          "width": 56.484375,
+          "height": 44
+        }
+      },
+      {
+        "label": "Play games",
+        "x": 93.484375,
+        "y": 81,
+        "right": 169.484375,
+        "bottom": 125,
+        "width": 76,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 93.484375,
+          "y": 81,
+          "right": 169.484375,
+          "bottom": 125,
+          "width": 76,
+          "height": 44
+        }
+      },
+      {
+        "label": "How to play",
+        "x": 177.484375,
+        "y": 81,
+        "right": 279.4375,
+        "bottom": 125,
+        "width": 101.953125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 177.484375,
+          "y": 81,
+          "right": 279.4375,
+          "bottom": 125,
+          "width": 101.953125,
+          "height": 44
+        }
       },
       {
         "label": "Your name is Jarrod. Change it",
         "x": 61,
         "y": 133,
-        "right": 109.09375,
+        "right": 108.03125,
         "bottom": 177,
-        "width": 48.09375,
-        "height": 44
+        "width": 47.03125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 61,
+          "y": 133,
+          "right": 108.03125,
+          "bottom": 177,
+          "width": 47.03125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Josh",
+        "x": 231,
+        "y": 133,
+        "right": 275,
+        "bottom": 177,
+        "width": 44,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 231,
+          "y": 133,
+          "right": 275,
+          "bottom": 177,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Remove Bot",
@@ -110,7 +173,16 @@
         "right": 179,
         "bottom": 241,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 135,
+          "y": 197,
+          "right": 179,
+          "bottom": 241,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Remove Bot 2",
@@ -119,25 +191,52 @@
         "right": 349,
         "bottom": 241,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 305,
+          "y": 197,
+          "right": 349,
+          "bottom": 241,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Chat",
         "x": 38,
         "y": 262,
-        "right": 108.15625,
+        "right": 107.921875,
         "bottom": 306,
-        "width": 70.15625,
-        "height": 44
+        "width": 69.921875,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 38,
+          "y": 262,
+          "right": 107.921875,
+          "bottom": 306,
+          "width": 69.921875,
+          "height": 44
+        }
       },
       {
         "label": "Sounds & stickers",
-        "x": 116.15625,
+        "x": 115.921875,
         "y": 262,
-        "right": 281.984375,
+        "right": 280.734375,
         "bottom": 306,
-        "width": 165.828125,
-        "height": 44
+        "width": 164.8125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 115.921875,
+          "y": 262,
+          "right": 280.734375,
+          "bottom": 306,
+          "width": 164.8125,
+          "height": 44
+        }
       },
       {
         "label": "React angry",
@@ -146,7 +245,16 @@
         "right": 83.65625,
         "bottom": 650,
         "width": 45.65625,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 38,
+          "y": 606,
+          "right": 83.65625,
+          "bottom": 650,
+          "width": 45.65625,
+          "height": 44
+        }
       },
       {
         "label": "React happy",
@@ -155,7 +263,16 @@
         "right": 137.328125,
         "bottom": 650,
         "width": 45.671875,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 91.65625,
+          "y": 606,
+          "right": 137.328125,
+          "bottom": 650,
+          "width": 45.671875,
+          "height": 44
+        }
       },
       {
         "label": "React clap",
@@ -164,7 +281,16 @@
         "right": 191,
         "bottom": 650,
         "width": 45.671875,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 145.328125,
+          "y": 606,
+          "right": 191,
+          "bottom": 650,
+          "width": 45.671875,
+          "height": 44
+        }
       },
       {
         "label": "React laugh",
@@ -173,7 +299,16 @@
         "right": 244.65625,
         "bottom": 650,
         "width": 45.65625,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 199,
+          "y": 606,
+          "right": 244.65625,
+          "bottom": 650,
+          "width": 45.65625,
+          "height": 44
+        }
       },
       {
         "label": "React fire",
@@ -182,7 +317,16 @@
         "right": 298.328125,
         "bottom": 650,
         "width": 45.671875,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 252.65625,
+          "y": 606,
+          "right": 298.328125,
+          "bottom": 650,
+          "width": 45.671875,
+          "height": 44
+        }
       },
       {
         "label": "React sheep",
@@ -191,25 +335,52 @@
         "right": 352,
         "bottom": 650,
         "width": 45.671875,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 306.328125,
+          "y": 606,
+          "right": 352,
+          "bottom": 650,
+          "width": 45.671875,
+          "height": 44
+        }
       },
       {
         "label": "Say something…",
         "x": 38,
         "y": 658,
-        "right": 282.828125,
+        "right": 283.34375,
         "bottom": 702,
-        "width": 244.828125,
-        "height": 44
+        "width": 245.34375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 38,
+          "y": 658,
+          "right": 283.34375,
+          "bottom": 702,
+          "width": 245.34375,
+          "height": 44
+        }
       },
       {
         "label": "Send",
-        "x": 290.828125,
+        "x": 291.34375,
         "y": 658,
         "right": 352,
         "bottom": 702,
-        "width": 61.171875,
-        "height": 44
+        "width": 60.65625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 291.34375,
+          "y": 658,
+          "right": 352,
+          "bottom": 702,
+          "width": 60.65625,
+          "height": 44
+        }
       },
       {
         "label": "7 points",
@@ -218,7 +389,16 @@
         "right": 309,
         "bottom": 763,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 265,
+          "y": 719,
+          "right": 309,
+          "bottom": 763,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "10 points",
@@ -227,25 +407,70 @@
         "right": 361,
         "bottom": 763,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 317,
+          "y": 719,
+          "right": 361,
+          "bottom": 763,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Ready",
         "x": 29,
         "y": 771,
-        "right": 220.65625,
+        "right": 136.265625,
         "bottom": 815,
-        "width": 191.65625,
-        "height": 44
+        "width": 107.265625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 29,
+          "y": 771,
+          "right": 136.265625,
+          "bottom": 815,
+          "width": 107.265625,
+          "height": 44
+        }
       },
       {
-        "label": "Leave the table",
-        "x": 228.65625,
+        "label": "Start",
+        "x": 144.265625,
+        "y": 771,
+        "right": 249.546875,
+        "bottom": 815,
+        "width": 105.28125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 144.265625,
+          "y": 771,
+          "right": 249.546875,
+          "bottom": 815,
+          "width": 105.28125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Leave table",
+        "x": 257.546875,
         "y": 771,
         "right": 361,
         "bottom": 815,
-        "width": 132.34375,
-        "height": 44
+        "width": 103.453125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 257.546875,
+          "y": 771,
+          "right": 361,
+          "bottom": 815,
+          "width": 103.453125,
+          "height": 44
+        }
       }
     ],
     "background": "rgb(243, 246, 245)",
@@ -263,11 +488,11 @@
     },
     "chat": {
       "x": 332.75,
-      "y": 77,
+      "y": 25,
       "right": 819,
       "bottom": 313,
       "width": 486.25,
-      "height": 236
+      "height": 288
     },
     "overflow": [
       0,
@@ -311,49 +536,112 @@
     ],
     "controls": [
       {
-        "label": "Copy",
-        "x": 585.609375,
+        "label": "Table code E E C 6. Copy link",
+        "x": 25,
         "y": 25,
-        "right": 647.703125,
+        "right": 126.921875,
         "bottom": 69,
-        "width": 62.09375,
-        "height": 44
+        "width": 101.921875,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 25,
+          "y": 25,
+          "right": 126.921875,
+          "bottom": 69,
+          "width": 101.921875,
+          "height": 44
+        }
       },
       {
-        "label": "Copy link",
-        "x": 655.703125,
-        "y": 25,
-        "right": 747.15625,
-        "bottom": 69,
-        "width": 91.453125,
-        "height": 44
-      },
-      {
-        "label": "Invite",
-        "x": 755.15625,
-        "y": 25,
-        "right": 819,
-        "bottom": 69,
-        "width": 63.84375,
-        "height": 44
-      },
-      {
-        "label": "Rules",
+        "label": "Table",
         "x": 25,
         "y": 77,
-        "right": 183.875,
+        "right": 81.484375,
         "bottom": 121,
-        "width": 158.875,
-        "height": 44
+        "width": 56.484375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 25,
+          "y": 77,
+          "right": 81.484375,
+          "bottom": 121,
+          "width": 56.484375,
+          "height": 44
+        }
+      },
+      {
+        "label": "Play games",
+        "x": 89.484375,
+        "y": 77,
+        "right": 165.484375,
+        "bottom": 121,
+        "width": 76,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 89.484375,
+          "y": 77,
+          "right": 165.484375,
+          "bottom": 121,
+          "width": 76,
+          "height": 44
+        }
+      },
+      {
+        "label": "How to play",
+        "x": 173.484375,
+        "y": 77,
+        "right": 275.4375,
+        "bottom": 121,
+        "width": 101.953125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 173.484375,
+          "y": 77,
+          "right": 275.4375,
+          "bottom": 121,
+          "width": 101.953125,
+          "height": 44
+        }
       },
       {
         "label": "Your name is Jarrod. Change it",
         "x": 57,
         "y": 129,
-        "right": 105.09375,
+        "right": 104.03125,
         "bottom": 173,
-        "width": 48.09375,
-        "height": 44
+        "width": 47.03125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 57,
+          "y": 129,
+          "right": 104.03125,
+          "bottom": 173,
+          "width": 47.03125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Josh",
+        "x": 206.875,
+        "y": 129,
+        "right": 250.875,
+        "bottom": 173,
+        "width": 44,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 206.875,
+          "y": 129,
+          "right": 250.875,
+          "bottom": 173,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Remove Bot",
@@ -362,7 +650,16 @@
         "right": 154.875,
         "bottom": 237,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 110.875,
+          "y": 193,
+          "right": 154.875,
+          "bottom": 237,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Remove Bot 2",
@@ -371,25 +668,52 @@
         "right": 304.75,
         "bottom": 237,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 260.75,
+          "y": 193,
+          "right": 304.75,
+          "bottom": 237,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Chat",
         "x": 341.75,
-        "y": 86,
-        "right": 411.90625,
-        "bottom": 130,
-        "width": 70.15625,
-        "height": 44
+        "y": 34,
+        "right": 411.671875,
+        "bottom": 78,
+        "width": 69.921875,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 341.75,
+          "y": 34,
+          "right": 411.671875,
+          "bottom": 78,
+          "width": 69.921875,
+          "height": 44
+        }
       },
       {
         "label": "Sounds & stickers",
-        "x": 419.90625,
-        "y": 86,
-        "right": 585.734375,
-        "bottom": 130,
-        "width": 165.828125,
-        "height": 44
+        "x": 419.671875,
+        "y": 34,
+        "right": 584.484375,
+        "bottom": 78,
+        "width": 164.8125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 419.671875,
+          "y": 34,
+          "right": 584.484375,
+          "bottom": 78,
+          "width": 164.8125,
+          "height": 44
+        }
       },
       {
         "label": "React angry",
@@ -398,7 +722,16 @@
         "right": 413.125,
         "bottom": 252,
         "width": 71.375,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 341.75,
+          "y": 208,
+          "right": 413.125,
+          "bottom": 252,
+          "width": 71.375,
+          "height": 44
+        }
       },
       {
         "label": "React happy",
@@ -407,7 +740,16 @@
         "right": 492.5,
         "bottom": 252,
         "width": 71.375,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 421.125,
+          "y": 208,
+          "right": 492.5,
+          "bottom": 252,
+          "width": 71.375,
+          "height": 44
+        }
       },
       {
         "label": "React clap",
@@ -416,7 +758,16 @@
         "right": 571.875,
         "bottom": 252,
         "width": 71.375,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 500.5,
+          "y": 208,
+          "right": 571.875,
+          "bottom": 252,
+          "width": 71.375,
+          "height": 44
+        }
       },
       {
         "label": "React laugh",
@@ -425,7 +776,16 @@
         "right": 651.25,
         "bottom": 252,
         "width": 71.375,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 579.875,
+          "y": 208,
+          "right": 651.25,
+          "bottom": 252,
+          "width": 71.375,
+          "height": 44
+        }
       },
       {
         "label": "React fire",
@@ -434,7 +794,16 @@
         "right": 730.625,
         "bottom": 252,
         "width": 71.375,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 659.25,
+          "y": 208,
+          "right": 730.625,
+          "bottom": 252,
+          "width": 71.375,
+          "height": 44
+        }
       },
       {
         "label": "React sheep",
@@ -443,34 +812,70 @@
         "right": 810,
         "bottom": 252,
         "width": 71.375,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 738.625,
+          "y": 208,
+          "right": 810,
+          "bottom": 252,
+          "width": 71.375,
+          "height": 44
+        }
       },
       {
         "label": "Say something…",
         "x": 341.75,
         "y": 260,
-        "right": 740.828125,
+        "right": 741.34375,
         "bottom": 304,
-        "width": 399.078125,
-        "height": 44
+        "width": 399.59375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 341.75,
+          "y": 260,
+          "right": 741.34375,
+          "bottom": 304,
+          "width": 399.59375,
+          "height": 44
+        }
       },
       {
         "label": "Send",
-        "x": 748.828125,
+        "x": 749.34375,
         "y": 260,
         "right": 810,
         "bottom": 304,
-        "width": 61.171875,
-        "height": 44
+        "width": 60.65625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 749.34375,
+          "y": 260,
+          "right": 810,
+          "bottom": 304,
+          "width": 60.65625,
+          "height": 44
+        }
       },
       {
         "label": "7 points",
-        "x": 220.75,
+        "x": 216.75,
         "y": 321,
-        "right": 264.75,
+        "right": 260.75,
         "bottom": 365,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 216.75,
+          "y": 321,
+          "right": 260.75,
+          "bottom": 365,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "10 points",
@@ -479,29 +884,74 @@
         "right": 316.75,
         "bottom": 365,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 272.75,
+          "y": 321,
+          "right": 316.75,
+          "bottom": 365,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Ready",
         "x": 332.75,
         "y": 321,
-        "right": 678.65625,
+        "right": 513.140625,
         "bottom": 365,
-        "width": 345.90625,
-        "height": 44
+        "width": 180.390625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 332.75,
+          "y": 321,
+          "right": 513.140625,
+          "bottom": 365,
+          "width": 180.390625,
+          "height": 44
+        }
       },
       {
-        "label": "Leave the table",
-        "x": 686.65625,
+        "label": "Start",
+        "x": 525.140625,
+        "y": 321,
+        "right": 703.546875,
+        "bottom": 365,
+        "width": 178.40625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 525.140625,
+          "y": 321,
+          "right": 703.546875,
+          "bottom": 365,
+          "width": 178.40625,
+          "height": 44
+        }
+      },
+      {
+        "label": "Leave table",
+        "x": 715.546875,
         "y": 321,
         "right": 819,
         "bottom": 365,
-        "width": 132.34375,
-        "height": 44
+        "width": 103.453125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 715.546875,
+          "y": 321,
+          "right": 819,
+          "bottom": 365,
+          "width": 103.453125,
+          "height": 44
+        }
       }
     ],
     "background": "rgb(243, 246, 245)",
-    "share": 0.39475947381456916
+    "share": 0.481740374824559
   },
   {
     "viewport": "1280x720",
@@ -563,49 +1013,112 @@
     ],
     "controls": [
       {
-        "label": "Copy",
-        "x": 345.609375,
+        "label": "Table code X G N C. Copy link",
+        "x": 61,
         "y": 45,
-        "right": 407.703125,
+        "right": 171.015625,
         "bottom": 89,
-        "width": 62.09375,
-        "height": 44
+        "width": 110.015625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 61,
+          "y": 45,
+          "right": 171.015625,
+          "bottom": 89,
+          "width": 110.015625,
+          "height": 44
+        }
       },
       {
-        "label": "Copy link",
-        "x": 415.703125,
-        "y": 45,
-        "right": 507.15625,
-        "bottom": 89,
-        "width": 91.453125,
-        "height": 44
-      },
-      {
-        "label": "Invite",
-        "x": 515.15625,
-        "y": 45,
-        "right": 579,
-        "bottom": 89,
-        "width": 63.84375,
-        "height": 44
-      },
-      {
-        "label": "Rules",
+        "label": "Table",
         "x": 61,
         "y": 97,
-        "right": 333,
+        "right": 117.484375,
         "bottom": 141,
-        "width": 272,
-        "height": 44
+        "width": 56.484375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 61,
+          "y": 97,
+          "right": 117.484375,
+          "bottom": 141,
+          "width": 56.484375,
+          "height": 44
+        }
+      },
+      {
+        "label": "Play games",
+        "x": 125.484375,
+        "y": 97,
+        "right": 223.515625,
+        "bottom": 141,
+        "width": 98.03125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 125.484375,
+          "y": 97,
+          "right": 223.515625,
+          "bottom": 141,
+          "width": 98.03125,
+          "height": 44
+        }
+      },
+      {
+        "label": "How to play",
+        "x": 231.515625,
+        "y": 97,
+        "right": 333.46875,
+        "bottom": 141,
+        "width": 101.953125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 231.515625,
+          "y": 97,
+          "right": 333.46875,
+          "bottom": 141,
+          "width": 101.953125,
+          "height": 44
+        }
       },
       {
         "label": "Your name is Jarrod. Change it",
         "x": 93,
         "y": 149,
-        "right": 141.09375,
+        "right": 140.03125,
         "bottom": 193,
-        "width": 48.09375,
-        "height": 44
+        "width": 47.03125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 93,
+          "y": 149,
+          "right": 140.03125,
+          "bottom": 193,
+          "width": 47.03125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Josh",
+        "x": 356,
+        "y": 149,
+        "right": 400,
+        "bottom": 193,
+        "width": 44,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 356,
+          "y": 149,
+          "right": 400,
+          "bottom": 193,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Remove Bot",
@@ -614,7 +1127,16 @@
         "right": 304,
         "bottom": 257,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 260,
+          "y": 213,
+          "right": 304,
+          "bottom": 257,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Remove Bot 2",
@@ -623,25 +1145,52 @@
         "right": 567,
         "bottom": 257,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 523,
+          "y": 213,
+          "right": 567,
+          "bottom": 257,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Chat",
         "x": 70,
         "y": 278,
-        "right": 140.15625,
+        "right": 139.921875,
         "bottom": 322,
-        "width": 70.15625,
-        "height": 44
+        "width": 69.921875,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 70,
+          "y": 278,
+          "right": 139.921875,
+          "bottom": 322,
+          "width": 69.921875,
+          "height": 44
+        }
       },
       {
         "label": "Sounds & stickers",
-        "x": 148.15625,
+        "x": 147.921875,
         "y": 278,
-        "right": 313.984375,
+        "right": 312.734375,
         "bottom": 322,
-        "width": 165.828125,
-        "height": 44
+        "width": 164.8125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 147.921875,
+          "y": 278,
+          "right": 312.734375,
+          "bottom": 322,
+          "width": 164.8125,
+          "height": 44
+        }
       },
       {
         "label": "React angry",
@@ -650,7 +1199,16 @@
         "right": 146.65625,
         "bottom": 510,
         "width": 76.65625,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 70,
+          "y": 466,
+          "right": 146.65625,
+          "bottom": 510,
+          "width": 76.65625,
+          "height": 44
+        }
       },
       {
         "label": "React happy",
@@ -659,7 +1217,16 @@
         "right": 231.328125,
         "bottom": 510,
         "width": 76.671875,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 154.65625,
+          "y": 466,
+          "right": 231.328125,
+          "bottom": 510,
+          "width": 76.671875,
+          "height": 44
+        }
       },
       {
         "label": "React clap",
@@ -668,7 +1235,16 @@
         "right": 315.984375,
         "bottom": 510,
         "width": 76.65625,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 239.328125,
+          "y": 466,
+          "right": 315.984375,
+          "bottom": 510,
+          "width": 76.65625,
+          "height": 44
+        }
       },
       {
         "label": "React laugh",
@@ -677,7 +1253,16 @@
         "right": 400.65625,
         "bottom": 510,
         "width": 76.671875,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 323.984375,
+          "y": 466,
+          "right": 400.65625,
+          "bottom": 510,
+          "width": 76.671875,
+          "height": 44
+        }
       },
       {
         "label": "React fire",
@@ -686,7 +1271,16 @@
         "right": 485.328125,
         "bottom": 510,
         "width": 76.671875,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 408.65625,
+          "y": 466,
+          "right": 485.328125,
+          "bottom": 510,
+          "width": 76.671875,
+          "height": 44
+        }
       },
       {
         "label": "React sheep",
@@ -695,34 +1289,70 @@
         "right": 569.984375,
         "bottom": 510,
         "width": 76.65625,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 493.328125,
+          "y": 466,
+          "right": 569.984375,
+          "bottom": 510,
+          "width": 76.65625,
+          "height": 44
+        }
       },
       {
         "label": "Say something…",
         "x": 70,
         "y": 518,
-        "right": 500.828125,
+        "right": 501.34375,
         "bottom": 562,
-        "width": 430.828125,
-        "height": 44
+        "width": 431.34375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 70,
+          "y": 518,
+          "right": 501.34375,
+          "bottom": 562,
+          "width": 431.34375,
+          "height": 44
+        }
       },
       {
         "label": "Send",
-        "x": 508.828125,
+        "x": 509.34375,
         "y": 518,
         "right": 570,
         "bottom": 562,
-        "width": 61.171875,
-        "height": 44
+        "width": 60.65625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 509.34375,
+          "y": 518,
+          "right": 570,
+          "bottom": 562,
+          "width": 60.65625,
+          "height": 44
+        }
       },
       {
         "label": "7 points",
-        "x": 483,
+        "x": 479,
         "y": 579,
-        "right": 527,
+        "right": 523,
         "bottom": 623,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 479,
+          "y": 579,
+          "right": 523,
+          "bottom": 623,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "10 points",
@@ -731,25 +1361,70 @@
         "right": 579,
         "bottom": 623,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 535,
+          "y": 579,
+          "right": 579,
+          "bottom": 623,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Ready",
         "x": 61,
         "y": 631,
-        "right": 438.65625,
+        "right": 257.265625,
         "bottom": 675,
-        "width": 377.65625,
-        "height": 44
+        "width": 196.265625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 61,
+          "y": 631,
+          "right": 257.265625,
+          "bottom": 675,
+          "width": 196.265625,
+          "height": 44
+        }
       },
       {
-        "label": "Leave the table",
-        "x": 446.65625,
+        "label": "Start",
+        "x": 269.265625,
+        "y": 631,
+        "right": 463.546875,
+        "bottom": 675,
+        "width": 194.28125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 269.265625,
+          "y": 631,
+          "right": 463.546875,
+          "bottom": 675,
+          "width": 194.28125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Leave table",
+        "x": 475.546875,
         "y": 631,
         "right": 579,
         "bottom": 675,
-        "width": 132.34375,
-        "height": 44
+        "width": 103.453125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 475.546875,
+          "y": 631,
+          "right": 579,
+          "bottom": 675,
+          "width": 103.453125,
+          "height": 44
+        }
       }
     ],
     "background": "rgb(243, 246, 245)",
@@ -815,85 +1490,184 @@
     ],
     "controls": [
       {
-        "label": "Copy",
-        "x": 134.609375,
+        "label": "Table code 8 A R Z. Copy link",
+        "x": 25,
         "y": 25,
-        "right": 190.703125,
+        "right": 113.09375,
         "bottom": 69,
-        "width": 56.09375,
-        "height": 44
+        "width": 88.09375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 25,
+          "y": 25,
+          "right": 113.09375,
+          "bottom": 69,
+          "width": 88.09375,
+          "height": 44
+        }
       },
       {
-        "label": "Copy link",
-        "x": 198.703125,
-        "y": 25,
-        "right": 284.15625,
-        "bottom": 69,
-        "width": 85.453125,
-        "height": 44
-      },
-      {
-        "label": "Invite",
-        "x": 292.15625,
-        "y": 25,
-        "right": 350,
-        "bottom": 69,
-        "width": 57.84375,
-        "height": 44
-      },
-      {
-        "label": "Rules",
+        "label": "Table",
         "x": 25,
         "y": 77,
-        "right": 200.5,
+        "right": 81.484375,
         "bottom": 121,
-        "width": 175.5,
-        "height": 44
+        "width": 56.484375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 25,
+          "y": 77,
+          "right": 81.484375,
+          "bottom": 121,
+          "width": 56.484375,
+          "height": 44
+        }
+      },
+      {
+        "label": "Play games",
+        "x": 89.484375,
+        "y": 77,
+        "right": 165.484375,
+        "bottom": 121,
+        "width": 76,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 89.484375,
+          "y": 77,
+          "right": 165.484375,
+          "bottom": 121,
+          "width": 76,
+          "height": 44
+        }
+      },
+      {
+        "label": "How to play",
+        "x": 173.484375,
+        "y": 77,
+        "right": 275.4375,
+        "bottom": 121,
+        "width": 101.953125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 173.484375,
+          "y": 77,
+          "right": 275.4375,
+          "bottom": 121,
+          "width": 101.953125,
+          "height": 44
+        }
       },
       {
         "label": "Your name is Jarrod. Change it",
         "x": 57,
         "y": 129,
-        "right": 105.09375,
+        "right": 104.03125,
         "bottom": 173,
-        "width": 48.09375,
-        "height": 44
+        "width": 47.03125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 57,
+          "y": 129,
+          "right": 104.03125,
+          "bottom": 173,
+          "width": 47.03125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Josh",
+        "x": 223.5,
+        "y": 129,
+        "right": 267.5,
+        "bottom": 173,
+        "width": 44,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 223.5,
+          "y": 129,
+          "right": 267.5,
+          "bottom": 173,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Add bot",
-        "x": 106.109375,
+        "x": 99.6875,
         "y": 181,
         "right": 171.5,
         "bottom": 225,
-        "width": 65.390625,
-        "height": 44
+        "width": 71.8125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 99.6875,
+          "y": 181,
+          "right": 171.5,
+          "bottom": 225,
+          "width": 71.8125,
+          "height": 44
+        }
       },
       {
         "label": "Add bot",
-        "x": 272.609375,
+        "x": 266.1875,
         "y": 181,
         "right": 338,
         "bottom": 225,
-        "width": 65.390625,
-        "height": 44
+        "width": 71.8125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 266.1875,
+          "y": 181,
+          "right": 338,
+          "bottom": 225,
+          "width": 71.8125,
+          "height": 44
+        }
       },
       {
         "label": "Chat",
         "x": 34,
         "y": 242,
-        "right": 104.15625,
+        "right": 103.921875,
         "bottom": 286,
-        "width": 70.15625,
-        "height": 44
+        "width": 69.921875,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 34,
+          "y": 242,
+          "right": 103.921875,
+          "bottom": 286,
+          "width": 69.921875,
+          "height": 44
+        }
       },
       {
         "label": "Sounds & stickers",
-        "x": 112.15625,
+        "x": 111.921875,
         "y": 242,
-        "right": 277.984375,
+        "right": 276.734375,
         "bottom": 286,
-        "width": 165.828125,
-        "height": 44
+        "width": 164.8125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 111.921875,
+          "y": 242,
+          "right": 276.734375,
+          "bottom": 286,
+          "width": 164.8125,
+          "height": 44
+        }
       },
       {
         "label": "React angry",
@@ -902,7 +1676,16 @@
         "right": 78.5,
         "bottom": 477,
         "width": 44.5,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 34,
+          "y": 433,
+          "right": 78.5,
+          "bottom": 477,
+          "width": 44.5,
+          "height": 44
+        }
       },
       {
         "label": "React happy",
@@ -911,7 +1694,16 @@
         "right": 131,
         "bottom": 477,
         "width": 44.5,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 86.5,
+          "y": 433,
+          "right": 131,
+          "bottom": 477,
+          "width": 44.5,
+          "height": 44
+        }
       },
       {
         "label": "React clap",
@@ -920,7 +1712,16 @@
         "right": 183.5,
         "bottom": 477,
         "width": 44.5,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 139,
+          "y": 433,
+          "right": 183.5,
+          "bottom": 477,
+          "width": 44.5,
+          "height": 44
+        }
       },
       {
         "label": "React laugh",
@@ -929,7 +1730,16 @@
         "right": 236,
         "bottom": 477,
         "width": 44.5,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 191.5,
+          "y": 433,
+          "right": 236,
+          "bottom": 477,
+          "width": 44.5,
+          "height": 44
+        }
       },
       {
         "label": "React fire",
@@ -938,7 +1748,16 @@
         "right": 288.5,
         "bottom": 477,
         "width": 44.5,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 244,
+          "y": 433,
+          "right": 288.5,
+          "bottom": 477,
+          "width": 44.5,
+          "height": 44
+        }
       },
       {
         "label": "React sheep",
@@ -947,25 +1766,52 @@
         "right": 341,
         "bottom": 477,
         "width": 44.5,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 296.5,
+          "y": 433,
+          "right": 341,
+          "bottom": 477,
+          "width": 44.5,
+          "height": 44
+        }
       },
       {
         "label": "Say something…",
         "x": 34,
         "y": 485,
-        "right": 271.828125,
+        "right": 272.34375,
         "bottom": 529,
-        "width": 237.828125,
-        "height": 44
+        "width": 238.34375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 34,
+          "y": 485,
+          "right": 272.34375,
+          "bottom": 529,
+          "width": 238.34375,
+          "height": 44
+        }
       },
       {
         "label": "Send",
-        "x": 279.828125,
+        "x": 280.34375,
         "y": 485,
         "right": 341,
         "bottom": 529,
-        "width": 61.171875,
-        "height": 44
+        "width": 60.65625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 280.34375,
+          "y": 485,
+          "right": 341,
+          "bottom": 529,
+          "width": 60.65625,
+          "height": 44
+        }
       },
       {
         "label": "7 points",
@@ -974,7 +1820,16 @@
         "right": 298,
         "bottom": 590,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 254,
+          "y": 546,
+          "right": 298,
+          "bottom": 590,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "10 points",
@@ -983,25 +1838,70 @@
         "right": 350,
         "bottom": 590,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 306,
+          "y": 546,
+          "right": 350,
+          "bottom": 590,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Ready",
         "x": 25,
         "y": 598,
-        "right": 209.65625,
+        "right": 128.765625,
         "bottom": 642,
-        "width": 184.65625,
-        "height": 44
+        "width": 103.765625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 25,
+          "y": 598,
+          "right": 128.765625,
+          "bottom": 642,
+          "width": 103.765625,
+          "height": 44
+        }
       },
       {
-        "label": "Leave the table",
-        "x": 217.65625,
+        "label": "Start",
+        "x": 136.765625,
+        "y": 598,
+        "right": 238.546875,
+        "bottom": 642,
+        "width": 101.78125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 136.765625,
+          "y": 598,
+          "right": 238.546875,
+          "bottom": 642,
+          "width": 101.78125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Leave table",
+        "x": 246.546875,
         "y": 598,
         "right": 350,
         "bottom": 642,
-        "width": 132.34375,
-        "height": 44
+        "width": 103.453125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 246.546875,
+          "y": 598,
+          "right": 350,
+          "bottom": 642,
+          "width": 103.453125,
+          "height": 44
+        }
       }
     ],
     "background": "rgb(243, 246, 245)",
@@ -1067,85 +1967,184 @@
     ],
     "controls": [
       {
-        "label": "Copy",
-        "x": 145.609375,
+        "label": "Table code 5 4 Y 8. Copy link",
+        "x": 29,
         "y": 29,
-        "right": 201.703125,
+        "right": 115.5625,
         "bottom": 73,
-        "width": 56.09375,
-        "height": 44
+        "width": 86.5625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 29,
+          "y": 29,
+          "right": 115.5625,
+          "bottom": 73,
+          "width": 86.5625,
+          "height": 44
+        }
       },
       {
-        "label": "Copy link",
-        "x": 209.703125,
-        "y": 29,
-        "right": 295.15625,
-        "bottom": 73,
-        "width": 85.453125,
-        "height": 44
-      },
-      {
-        "label": "Invite",
-        "x": 303.15625,
-        "y": 29,
-        "right": 361,
-        "bottom": 73,
-        "width": 57.84375,
-        "height": 44
-      },
-      {
-        "label": "Rules",
+        "label": "Table",
         "x": 29,
         "y": 81,
-        "right": 208,
+        "right": 85.484375,
         "bottom": 125,
-        "width": 179,
-        "height": 44
+        "width": 56.484375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 29,
+          "y": 81,
+          "right": 85.484375,
+          "bottom": 125,
+          "width": 56.484375,
+          "height": 44
+        }
+      },
+      {
+        "label": "Play games",
+        "x": 93.484375,
+        "y": 81,
+        "right": 169.484375,
+        "bottom": 125,
+        "width": 76,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 93.484375,
+          "y": 81,
+          "right": 169.484375,
+          "bottom": 125,
+          "width": 76,
+          "height": 44
+        }
+      },
+      {
+        "label": "How to play",
+        "x": 177.484375,
+        "y": 81,
+        "right": 279.4375,
+        "bottom": 125,
+        "width": 101.953125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 177.484375,
+          "y": 81,
+          "right": 279.4375,
+          "bottom": 125,
+          "width": 101.953125,
+          "height": 44
+        }
       },
       {
         "label": "Your name is Jarrod. Change it",
         "x": 61,
         "y": 133,
-        "right": 109.09375,
+        "right": 108.03125,
         "bottom": 177,
-        "width": 48.09375,
-        "height": 44
+        "width": 47.03125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 61,
+          "y": 133,
+          "right": 108.03125,
+          "bottom": 177,
+          "width": 47.03125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Josh",
+        "x": 231,
+        "y": 133,
+        "right": 275,
+        "bottom": 177,
+        "width": 44,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 231,
+          "y": 133,
+          "right": 275,
+          "bottom": 177,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Add bot",
-        "x": 113.609375,
+        "x": 107.1875,
         "y": 185,
         "right": 179,
         "bottom": 229,
-        "width": 65.390625,
-        "height": 44
+        "width": 71.8125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 107.1875,
+          "y": 185,
+          "right": 179,
+          "bottom": 229,
+          "width": 71.8125,
+          "height": 44
+        }
       },
       {
         "label": "Add bot",
-        "x": 283.609375,
+        "x": 277.1875,
         "y": 185,
         "right": 349,
         "bottom": 229,
-        "width": 65.390625,
-        "height": 44
+        "width": 71.8125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 277.1875,
+          "y": 185,
+          "right": 349,
+          "bottom": 229,
+          "width": 71.8125,
+          "height": 44
+        }
       },
       {
         "label": "Chat",
         "x": 38,
         "y": 246,
-        "right": 108.15625,
+        "right": 107.921875,
         "bottom": 290,
-        "width": 70.15625,
-        "height": 44
+        "width": 69.921875,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 38,
+          "y": 246,
+          "right": 107.921875,
+          "bottom": 290,
+          "width": 69.921875,
+          "height": 44
+        }
       },
       {
         "label": "Sounds & stickers",
-        "x": 116.15625,
+        "x": 115.921875,
         "y": 246,
-        "right": 281.984375,
+        "right": 280.734375,
         "bottom": 290,
-        "width": 165.828125,
-        "height": 44
+        "width": 164.8125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 115.921875,
+          "y": 246,
+          "right": 280.734375,
+          "bottom": 290,
+          "width": 164.8125,
+          "height": 44
+        }
       },
       {
         "label": "React angry",
@@ -1154,7 +2153,16 @@
         "right": 83.65625,
         "bottom": 446,
         "width": 45.65625,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 38,
+          "y": 402,
+          "right": 83.65625,
+          "bottom": 446,
+          "width": 45.65625,
+          "height": 44
+        }
       },
       {
         "label": "React happy",
@@ -1163,7 +2171,16 @@
         "right": 137.328125,
         "bottom": 446,
         "width": 45.671875,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 91.65625,
+          "y": 402,
+          "right": 137.328125,
+          "bottom": 446,
+          "width": 45.671875,
+          "height": 44
+        }
       },
       {
         "label": "React clap",
@@ -1172,7 +2189,16 @@
         "right": 191,
         "bottom": 446,
         "width": 45.671875,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 145.328125,
+          "y": 402,
+          "right": 191,
+          "bottom": 446,
+          "width": 45.671875,
+          "height": 44
+        }
       },
       {
         "label": "React laugh",
@@ -1181,7 +2207,16 @@
         "right": 244.65625,
         "bottom": 446,
         "width": 45.65625,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 199,
+          "y": 402,
+          "right": 244.65625,
+          "bottom": 446,
+          "width": 45.65625,
+          "height": 44
+        }
       },
       {
         "label": "React fire",
@@ -1190,7 +2225,16 @@
         "right": 298.328125,
         "bottom": 446,
         "width": 45.671875,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 252.65625,
+          "y": 402,
+          "right": 298.328125,
+          "bottom": 446,
+          "width": 45.671875,
+          "height": 44
+        }
       },
       {
         "label": "React sheep",
@@ -1199,25 +2243,52 @@
         "right": 352,
         "bottom": 446,
         "width": 45.671875,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 306.328125,
+          "y": 402,
+          "right": 352,
+          "bottom": 446,
+          "width": 45.671875,
+          "height": 44
+        }
       },
       {
         "label": "Say something…",
         "x": 38,
         "y": 454,
-        "right": 282.828125,
+        "right": 283.34375,
         "bottom": 498,
-        "width": 244.828125,
-        "height": 44
+        "width": 245.34375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 38,
+          "y": 454,
+          "right": 283.34375,
+          "bottom": 498,
+          "width": 245.34375,
+          "height": 44
+        }
       },
       {
         "label": "Send",
-        "x": 290.828125,
+        "x": 291.34375,
         "y": 454,
         "right": 352,
         "bottom": 498,
-        "width": 61.171875,
-        "height": 44
+        "width": 60.65625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 291.34375,
+          "y": 454,
+          "right": 352,
+          "bottom": 498,
+          "width": 60.65625,
+          "height": 44
+        }
       },
       {
         "label": "7 points",
@@ -1226,7 +2297,16 @@
         "right": 309,
         "bottom": 559,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 265,
+          "y": 515,
+          "right": 309,
+          "bottom": 559,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "10 points",
@@ -1235,25 +2315,70 @@
         "right": 361,
         "bottom": 559,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 317,
+          "y": 515,
+          "right": 361,
+          "bottom": 559,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Ready",
         "x": 29,
         "y": 567,
-        "right": 220.65625,
+        "right": 136.265625,
         "bottom": 611,
-        "width": 191.65625,
-        "height": 44
+        "width": 107.265625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 29,
+          "y": 567,
+          "right": 136.265625,
+          "bottom": 611,
+          "width": 107.265625,
+          "height": 44
+        }
       },
       {
-        "label": "Leave the table",
-        "x": 228.65625,
+        "label": "Start",
+        "x": 144.265625,
+        "y": 567,
+        "right": 249.546875,
+        "bottom": 611,
+        "width": 105.28125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 144.265625,
+          "y": 567,
+          "right": 249.546875,
+          "bottom": 611,
+          "width": 105.28125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Leave table",
+        "x": 257.546875,
         "y": 567,
         "right": 361,
         "bottom": 611,
-        "width": 132.34375,
-        "height": 44
+        "width": 103.453125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 257.546875,
+          "y": 567,
+          "right": 361,
+          "bottom": 611,
+          "width": 103.453125,
+          "height": 44
+        }
       }
     ],
     "background": "rgb(243, 246, 245)",
@@ -1319,157 +2444,328 @@
     ],
     "controls": [
       {
-        "label": "Copy",
-        "x": 114.6875,
+        "label": "Table code C 4 Z 2. Copy link",
+        "x": 25,
         "y": 17,
-        "right": 161.171875,
+        "right": 98.515625,
         "bottom": 61,
-        "width": 46.484375,
-        "height": 44
+        "width": 73.515625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 25,
+          "y": 17,
+          "right": 98.515625,
+          "bottom": 61,
+          "width": 73.515625,
+          "height": 44
+        }
       },
       {
-        "label": "Copy link",
-        "x": 169.171875,
-        "y": 17,
-        "right": 239.125,
-        "bottom": 61,
-        "width": 69.953125,
-        "height": 44
-      },
-      {
-        "label": "Invite",
-        "x": 247.125,
-        "y": 17,
-        "right": 295,
-        "bottom": 61,
-        "width": 47.875,
-        "height": 44
-      },
-      {
-        "label": "Rules",
+        "label": "Table",
         "x": 25,
         "y": 69,
-        "right": 173,
+        "right": 81.484375,
         "bottom": 113,
-        "width": 148,
-        "height": 44
+        "width": 56.484375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 25,
+          "y": 69,
+          "right": 81.484375,
+          "bottom": 113,
+          "width": 56.484375,
+          "height": 44
+        }
+      },
+      {
+        "label": "Play games",
+        "x": 89.484375,
+        "y": 69,
+        "right": 165.484375,
+        "bottom": 113,
+        "width": 76,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 89.484375,
+          "y": 69,
+          "right": 165.484375,
+          "bottom": 113,
+          "width": 76,
+          "height": 44
+        }
+      },
+      {
+        "label": "How to play",
+        "x": 173.484375,
+        "y": 69,
+        "right": 275.4375,
+        "bottom": 113,
+        "width": 101.953125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 173.484375,
+          "y": 69,
+          "right": 275.4375,
+          "bottom": 113,
+          "width": 101.953125,
+          "height": 44
+        }
       },
       {
         "label": "Your name is Jarrod. Change it",
         "x": 57,
         "y": 121,
-        "right": 105.09375,
+        "right": 104.03125,
         "bottom": 165,
-        "width": 48.09375,
-        "height": 44
+        "width": 47.03125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 57,
+          "y": 121,
+          "right": 104.03125,
+          "bottom": 165,
+          "width": 47.03125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Josh",
+        "x": 196,
+        "y": 121,
+        "right": 240,
+        "bottom": 165,
+        "width": 44,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 196,
+          "y": 121,
+          "right": 240,
+          "bottom": 165,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Add bot",
-        "x": 92.109375,
+        "x": 85.375,
         "y": 173,
         "right": 144,
         "bottom": 217,
-        "width": 51.890625,
-        "height": 44
+        "width": 58.625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 85.375,
+          "y": 173,
+          "right": 144,
+          "bottom": 217,
+          "width": 58.625,
+          "height": 44
+        }
       },
       {
         "label": "Add bot",
-        "x": 231.109375,
+        "x": 224.375,
         "y": 173,
         "right": 283,
         "bottom": 217,
-        "width": 51.890625,
-        "height": 44
+        "width": 58.625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 224.375,
+          "y": 173,
+          "right": 283,
+          "bottom": 217,
+          "width": 58.625,
+          "height": 44
+        }
       },
       {
         "label": "Chat",
         "x": 34,
         "y": 234,
-        "right": 104.15625,
+        "right": 103.921875,
         "bottom": 278,
-        "width": 70.15625,
-        "height": 44
+        "width": 69.921875,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 34,
+          "y": 234,
+          "right": 103.921875,
+          "bottom": 278,
+          "width": 69.921875,
+          "height": 44
+        }
       },
       {
         "label": "Sounds & stickers",
-        "x": 112.15625,
+        "x": 111.921875,
         "y": 234,
-        "right": 277.984375,
+        "right": 276.734375,
         "bottom": 278,
-        "width": 165.828125,
-        "height": 44
+        "width": 164.8125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 111.921875,
+          "y": 234,
+          "right": 276.734375,
+          "bottom": 278,
+          "width": 164.8125,
+          "height": 44
+        }
       },
       {
         "label": "React angry",
         "x": 34,
-        "y": 294,
-        "right": 112.65625,
-        "bottom": 338,
-        "width": 78.65625,
-        "height": 44
+        "y": 342,
+        "right": 78,
+        "bottom": 386,
+        "width": 44,
+        "height": 44,
+        "scrolled": true,
+        "reach": {
+          "x": 34,
+          "y": 342,
+          "right": 78,
+          "bottom": 386,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "React happy",
-        "x": 120.65625,
-        "y": 294,
-        "right": 199.328125,
-        "bottom": 338,
-        "width": 78.671875,
-        "height": 44
+        "x": 90,
+        "y": 342,
+        "right": 134,
+        "bottom": 386,
+        "width": 44,
+        "height": 44,
+        "scrolled": true,
+        "reach": {
+          "x": 90,
+          "y": 342,
+          "right": 134,
+          "bottom": 386,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "React clap",
-        "x": 207.328125,
-        "y": 294,
-        "right": 285.984375,
-        "bottom": 338,
-        "width": 78.65625,
-        "height": 44
+        "x": 146,
+        "y": 342,
+        "right": 190,
+        "bottom": 386,
+        "width": 44,
+        "height": 44,
+        "scrolled": true,
+        "reach": {
+          "x": 146,
+          "y": 342,
+          "right": 190,
+          "bottom": 386,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "React laugh",
-        "x": 34,
-        "y": 346,
-        "right": 112.65625,
-        "bottom": 390,
-        "width": 78.65625,
-        "height": 44
+        "x": 202,
+        "y": 342,
+        "right": 246,
+        "bottom": 386,
+        "width": 44,
+        "height": 44,
+        "scrolled": true,
+        "reach": {
+          "x": 202,
+          "y": 342,
+          "right": 246,
+          "bottom": 386,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "React fire",
-        "x": 120.65625,
-        "y": 346,
-        "right": 199.328125,
-        "bottom": 390,
-        "width": 78.671875,
-        "height": 44
+        "x": 258,
+        "y": 342,
+        "right": 302,
+        "bottom": 386,
+        "width": 44,
+        "height": 44,
+        "scrolled": true,
+        "reach": {
+          "x": 258,
+          "y": 342,
+          "right": 302,
+          "bottom": 386,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "React sheep",
-        "x": 207.328125,
-        "y": 346,
-        "right": 285.984375,
-        "bottom": 390,
-        "width": 78.65625,
-        "height": 44
+        "x": 314,
+        "y": 342,
+        "right": 358,
+        "bottom": 386,
+        "width": 44,
+        "height": 44,
+        "scrolled": true,
+        "reach": {
+          "x": 242,
+          "y": 342,
+          "right": 286,
+          "bottom": 386,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Say something…",
         "x": 34,
-        "y": 398,
-        "right": 216.828125,
-        "bottom": 442,
-        "width": 182.828125,
-        "height": 44
+        "y": 394,
+        "right": 217.34375,
+        "bottom": 438,
+        "width": 183.34375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 34,
+          "y": 394,
+          "right": 217.34375,
+          "bottom": 438,
+          "width": 183.34375,
+          "height": 44
+        }
       },
       {
         "label": "Send",
-        "x": 224.828125,
-        "y": 398,
+        "x": 225.34375,
+        "y": 394,
         "right": 286,
-        "bottom": 442,
-        "width": 61.171875,
-        "height": 44
+        "bottom": 438,
+        "width": 60.65625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 225.34375,
+          "y": 394,
+          "right": 286,
+          "bottom": 438,
+          "width": 60.65625,
+          "height": 44
+        }
       },
       {
         "label": "7 points",
@@ -1478,7 +2774,16 @@
         "right": 243,
         "bottom": 499,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 199,
+          "y": 455,
+          "right": 243,
+          "bottom": 499,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "10 points",
@@ -1487,28 +2792,1027 @@
         "right": 295,
         "bottom": 499,
         "width": 44,
-        "height": 44
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 251,
+          "y": 455,
+          "right": 295,
+          "bottom": 499,
+          "width": 44,
+          "height": 44
+        }
       },
       {
         "label": "Ready",
         "x": 25,
         "y": 507,
-        "right": 154.65625,
+        "right": 101.265625,
         "bottom": 551,
-        "width": 129.65625,
-        "height": 44
+        "width": 76.265625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 25,
+          "y": 507,
+          "right": 101.265625,
+          "bottom": 551,
+          "width": 76.265625,
+          "height": 44
+        }
       },
       {
-        "label": "Leave the table",
-        "x": 162.65625,
+        "label": "Start",
+        "x": 109.265625,
+        "y": 507,
+        "right": 183.546875,
+        "bottom": 551,
+        "width": 74.28125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 109.265625,
+          "y": 507,
+          "right": 183.546875,
+          "bottom": 551,
+          "width": 74.28125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Leave table",
+        "x": 191.546875,
         "y": 507,
         "right": 295,
         "bottom": 551,
-        "width": 132.34375,
-        "height": 44
+        "width": 103.453125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 191.546875,
+          "y": 507,
+          "right": 295,
+          "bottom": 551,
+          "width": 103.453125,
+          "height": 44
+        }
       }
     ],
     "background": "rgb(243, 246, 245)",
     "share": 0.37703804347826086
+  },
+  {
+    "viewport": "430x932",
+    "card": {
+      "x": 16,
+      "y": 16,
+      "right": 414,
+      "bottom": 916,
+      "width": 398,
+      "height": 900
+    },
+    "chat": {
+      "x": 29,
+      "y": 253,
+      "right": 401,
+      "bottom": 799,
+      "width": 372,
+      "height": 546
+    },
+    "overflow": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "seats": [
+      {
+        "x": 29,
+        "y": 133,
+        "right": 211,
+        "bottom": 185,
+        "width": 182,
+        "height": 52
+      },
+      {
+        "x": 219,
+        "y": 133,
+        "right": 401,
+        "bottom": 185,
+        "width": 182,
+        "height": 52
+      },
+      {
+        "x": 29,
+        "y": 193,
+        "right": 211,
+        "bottom": 245,
+        "width": 182,
+        "height": 52
+      },
+      {
+        "x": 219,
+        "y": 193,
+        "right": 401,
+        "bottom": 245,
+        "width": 182,
+        "height": 52
+      }
+    ],
+    "controls": [
+      {
+        "label": "Table code V 5 K 4. Copy link",
+        "x": 29,
+        "y": 29,
+        "right": 116.453125,
+        "bottom": 73,
+        "width": 87.453125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 29,
+          "y": 29,
+          "right": 116.453125,
+          "bottom": 73,
+          "width": 87.453125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Table",
+        "x": 29,
+        "y": 81,
+        "right": 85.484375,
+        "bottom": 125,
+        "width": 56.484375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 29,
+          "y": 81,
+          "right": 85.484375,
+          "bottom": 125,
+          "width": 56.484375,
+          "height": 44
+        }
+      },
+      {
+        "label": "Play games",
+        "x": 93.484375,
+        "y": 81,
+        "right": 169.484375,
+        "bottom": 125,
+        "width": 76,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 93.484375,
+          "y": 81,
+          "right": 169.484375,
+          "bottom": 125,
+          "width": 76,
+          "height": 44
+        }
+      },
+      {
+        "label": "How to play",
+        "x": 177.484375,
+        "y": 81,
+        "right": 279.4375,
+        "bottom": 125,
+        "width": 101.953125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 177.484375,
+          "y": 81,
+          "right": 279.4375,
+          "bottom": 125,
+          "width": 101.953125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Your name is Jarrod. Change it",
+        "x": 61,
+        "y": 133,
+        "right": 108.03125,
+        "bottom": 177,
+        "width": 47.03125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 61,
+          "y": 133,
+          "right": 108.03125,
+          "bottom": 177,
+          "width": 47.03125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Josh",
+        "x": 251,
+        "y": 133,
+        "right": 295,
+        "bottom": 177,
+        "width": 44,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 251,
+          "y": 133,
+          "right": 295,
+          "bottom": 177,
+          "width": 44,
+          "height": 44
+        }
+      },
+      {
+        "label": "Add bot",
+        "x": 127.1875,
+        "y": 197,
+        "right": 199,
+        "bottom": 241,
+        "width": 71.8125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 127.1875,
+          "y": 197,
+          "right": 199,
+          "bottom": 241,
+          "width": 71.8125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Add bot",
+        "x": 317.1875,
+        "y": 197,
+        "right": 389,
+        "bottom": 241,
+        "width": 71.8125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 317.1875,
+          "y": 197,
+          "right": 389,
+          "bottom": 241,
+          "width": 71.8125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Chat",
+        "x": 38,
+        "y": 262,
+        "right": 107.921875,
+        "bottom": 306,
+        "width": 69.921875,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 38,
+          "y": 262,
+          "right": 107.921875,
+          "bottom": 306,
+          "width": 69.921875,
+          "height": 44
+        }
+      },
+      {
+        "label": "Sounds & stickers",
+        "x": 115.921875,
+        "y": 262,
+        "right": 280.734375,
+        "bottom": 306,
+        "width": 164.8125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 115.921875,
+          "y": 262,
+          "right": 280.734375,
+          "bottom": 306,
+          "width": 164.8125,
+          "height": 44
+        }
+      },
+      {
+        "label": "React angry",
+        "x": 38,
+        "y": 694,
+        "right": 90.328125,
+        "bottom": 738,
+        "width": 52.328125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 38,
+          "y": 694,
+          "right": 90.328125,
+          "bottom": 738,
+          "width": 52.328125,
+          "height": 44
+        }
+      },
+      {
+        "label": "React happy",
+        "x": 98.328125,
+        "y": 694,
+        "right": 150.65625,
+        "bottom": 738,
+        "width": 52.328125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 98.328125,
+          "y": 694,
+          "right": 150.65625,
+          "bottom": 738,
+          "width": 52.328125,
+          "height": 44
+        }
+      },
+      {
+        "label": "React clap",
+        "x": 158.65625,
+        "y": 694,
+        "right": 210.984375,
+        "bottom": 738,
+        "width": 52.328125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 158.65625,
+          "y": 694,
+          "right": 210.984375,
+          "bottom": 738,
+          "width": 52.328125,
+          "height": 44
+        }
+      },
+      {
+        "label": "React laugh",
+        "x": 218.984375,
+        "y": 694,
+        "right": 271.328125,
+        "bottom": 738,
+        "width": 52.34375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 218.984375,
+          "y": 694,
+          "right": 271.328125,
+          "bottom": 738,
+          "width": 52.34375,
+          "height": 44
+        }
+      },
+      {
+        "label": "React fire",
+        "x": 279.328125,
+        "y": 694,
+        "right": 331.65625,
+        "bottom": 738,
+        "width": 52.328125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 279.328125,
+          "y": 694,
+          "right": 331.65625,
+          "bottom": 738,
+          "width": 52.328125,
+          "height": 44
+        }
+      },
+      {
+        "label": "React sheep",
+        "x": 339.65625,
+        "y": 694,
+        "right": 391.984375,
+        "bottom": 738,
+        "width": 52.328125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 339.65625,
+          "y": 694,
+          "right": 391.984375,
+          "bottom": 738,
+          "width": 52.328125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Say something…",
+        "x": 38,
+        "y": 746,
+        "right": 323.34375,
+        "bottom": 790,
+        "width": 285.34375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 38,
+          "y": 746,
+          "right": 323.34375,
+          "bottom": 790,
+          "width": 285.34375,
+          "height": 44
+        }
+      },
+      {
+        "label": "Send",
+        "x": 331.34375,
+        "y": 746,
+        "right": 392,
+        "bottom": 790,
+        "width": 60.65625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 331.34375,
+          "y": 746,
+          "right": 392,
+          "bottom": 790,
+          "width": 60.65625,
+          "height": 44
+        }
+      },
+      {
+        "label": "7 points",
+        "x": 305,
+        "y": 807,
+        "right": 349,
+        "bottom": 851,
+        "width": 44,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 305,
+          "y": 807,
+          "right": 349,
+          "bottom": 851,
+          "width": 44,
+          "height": 44
+        }
+      },
+      {
+        "label": "10 points",
+        "x": 357,
+        "y": 807,
+        "right": 401,
+        "bottom": 851,
+        "width": 44,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 357,
+          "y": 807,
+          "right": 401,
+          "bottom": 851,
+          "width": 44,
+          "height": 44
+        }
+      },
+      {
+        "label": "Ready",
+        "x": 29,
+        "y": 859,
+        "right": 156.265625,
+        "bottom": 903,
+        "width": 127.265625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 29,
+          "y": 859,
+          "right": 156.265625,
+          "bottom": 903,
+          "width": 127.265625,
+          "height": 44
+        }
+      },
+      {
+        "label": "Start",
+        "x": 164.265625,
+        "y": 859,
+        "right": 289.546875,
+        "bottom": 903,
+        "width": 125.28125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 164.265625,
+          "y": 859,
+          "right": 289.546875,
+          "bottom": 903,
+          "width": 125.28125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Leave table",
+        "x": 297.546875,
+        "y": 859,
+        "right": 401,
+        "bottom": 903,
+        "width": 103.453125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 297.546875,
+          "y": 859,
+          "right": 401,
+          "bottom": 903,
+          "width": 103.453125,
+          "height": 44
+        }
+      }
+    ],
+    "background": "rgb(243, 246, 245)",
+    "share": 0.567035175879397
+  },
+  {
+    "viewport": "375x812",
+    "card": {
+      "x": 16,
+      "y": 16,
+      "right": 359,
+      "bottom": 796,
+      "width": 343,
+      "height": 780
+    },
+    "chat": {
+      "x": 25,
+      "y": 249,
+      "right": 350,
+      "bottom": 683,
+      "width": 325,
+      "height": 434
+    },
+    "overflow": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "seats": [
+      {
+        "x": 25,
+        "y": 129,
+        "right": 183.5,
+        "bottom": 181,
+        "width": 158.5,
+        "height": 52
+      },
+      {
+        "x": 191.5,
+        "y": 129,
+        "right": 350,
+        "bottom": 181,
+        "width": 158.5,
+        "height": 52
+      },
+      {
+        "x": 25,
+        "y": 189,
+        "right": 183.5,
+        "bottom": 241,
+        "width": 158.5,
+        "height": 52
+      },
+      {
+        "x": 191.5,
+        "y": 189,
+        "right": 350,
+        "bottom": 241,
+        "width": 158.5,
+        "height": 52
+      }
+    ],
+    "controls": [
+      {
+        "label": "Table code H 3 M Q. Copy link",
+        "x": 25,
+        "y": 25,
+        "right": 121.171875,
+        "bottom": 69,
+        "width": 96.171875,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 25,
+          "y": 25,
+          "right": 121.171875,
+          "bottom": 69,
+          "width": 96.171875,
+          "height": 44
+        }
+      },
+      {
+        "label": "Table",
+        "x": 25,
+        "y": 77,
+        "right": 81.484375,
+        "bottom": 121,
+        "width": 56.484375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 25,
+          "y": 77,
+          "right": 81.484375,
+          "bottom": 121,
+          "width": 56.484375,
+          "height": 44
+        }
+      },
+      {
+        "label": "Play games",
+        "x": 89.484375,
+        "y": 77,
+        "right": 165.484375,
+        "bottom": 121,
+        "width": 76,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 89.484375,
+          "y": 77,
+          "right": 165.484375,
+          "bottom": 121,
+          "width": 76,
+          "height": 44
+        }
+      },
+      {
+        "label": "How to play",
+        "x": 173.484375,
+        "y": 77,
+        "right": 275.4375,
+        "bottom": 121,
+        "width": 101.953125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 173.484375,
+          "y": 77,
+          "right": 275.4375,
+          "bottom": 121,
+          "width": 101.953125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Your name is Jarrod. Change it",
+        "x": 57,
+        "y": 129,
+        "right": 104.03125,
+        "bottom": 173,
+        "width": 47.03125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 57,
+          "y": 129,
+          "right": 104.03125,
+          "bottom": 173,
+          "width": 47.03125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Josh",
+        "x": 223.5,
+        "y": 129,
+        "right": 267.5,
+        "bottom": 173,
+        "width": 44,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 223.5,
+          "y": 129,
+          "right": 267.5,
+          "bottom": 173,
+          "width": 44,
+          "height": 44
+        }
+      },
+      {
+        "label": "Add bot",
+        "x": 99.6875,
+        "y": 193,
+        "right": 171.5,
+        "bottom": 237,
+        "width": 71.8125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 99.6875,
+          "y": 193,
+          "right": 171.5,
+          "bottom": 237,
+          "width": 71.8125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Add bot",
+        "x": 266.1875,
+        "y": 193,
+        "right": 338,
+        "bottom": 237,
+        "width": 71.8125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 266.1875,
+          "y": 193,
+          "right": 338,
+          "bottom": 237,
+          "width": 71.8125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Chat",
+        "x": 34,
+        "y": 258,
+        "right": 103.921875,
+        "bottom": 302,
+        "width": 69.921875,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 34,
+          "y": 258,
+          "right": 103.921875,
+          "bottom": 302,
+          "width": 69.921875,
+          "height": 44
+        }
+      },
+      {
+        "label": "Sounds & stickers",
+        "x": 111.921875,
+        "y": 258,
+        "right": 276.734375,
+        "bottom": 302,
+        "width": 164.8125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 111.921875,
+          "y": 258,
+          "right": 276.734375,
+          "bottom": 302,
+          "width": 164.8125,
+          "height": 44
+        }
+      },
+      {
+        "label": "React angry",
+        "x": 34,
+        "y": 578,
+        "right": 78.5,
+        "bottom": 622,
+        "width": 44.5,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 34,
+          "y": 578,
+          "right": 78.5,
+          "bottom": 622,
+          "width": 44.5,
+          "height": 44
+        }
+      },
+      {
+        "label": "React happy",
+        "x": 86.5,
+        "y": 578,
+        "right": 131,
+        "bottom": 622,
+        "width": 44.5,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 86.5,
+          "y": 578,
+          "right": 131,
+          "bottom": 622,
+          "width": 44.5,
+          "height": 44
+        }
+      },
+      {
+        "label": "React clap",
+        "x": 139,
+        "y": 578,
+        "right": 183.5,
+        "bottom": 622,
+        "width": 44.5,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 139,
+          "y": 578,
+          "right": 183.5,
+          "bottom": 622,
+          "width": 44.5,
+          "height": 44
+        }
+      },
+      {
+        "label": "React laugh",
+        "x": 191.5,
+        "y": 578,
+        "right": 236,
+        "bottom": 622,
+        "width": 44.5,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 191.5,
+          "y": 578,
+          "right": 236,
+          "bottom": 622,
+          "width": 44.5,
+          "height": 44
+        }
+      },
+      {
+        "label": "React fire",
+        "x": 244,
+        "y": 578,
+        "right": 288.5,
+        "bottom": 622,
+        "width": 44.5,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 244,
+          "y": 578,
+          "right": 288.5,
+          "bottom": 622,
+          "width": 44.5,
+          "height": 44
+        }
+      },
+      {
+        "label": "React sheep",
+        "x": 296.5,
+        "y": 578,
+        "right": 341,
+        "bottom": 622,
+        "width": 44.5,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 296.5,
+          "y": 578,
+          "right": 341,
+          "bottom": 622,
+          "width": 44.5,
+          "height": 44
+        }
+      },
+      {
+        "label": "Say something…",
+        "x": 34,
+        "y": 630,
+        "right": 272.34375,
+        "bottom": 674,
+        "width": 238.34375,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 34,
+          "y": 630,
+          "right": 272.34375,
+          "bottom": 674,
+          "width": 238.34375,
+          "height": 44
+        }
+      },
+      {
+        "label": "Send",
+        "x": 280.34375,
+        "y": 630,
+        "right": 341,
+        "bottom": 674,
+        "width": 60.65625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 280.34375,
+          "y": 630,
+          "right": 341,
+          "bottom": 674,
+          "width": 60.65625,
+          "height": 44
+        }
+      },
+      {
+        "label": "7 points",
+        "x": 254,
+        "y": 691,
+        "right": 298,
+        "bottom": 735,
+        "width": 44,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 254,
+          "y": 691,
+          "right": 298,
+          "bottom": 735,
+          "width": 44,
+          "height": 44
+        }
+      },
+      {
+        "label": "10 points",
+        "x": 306,
+        "y": 691,
+        "right": 350,
+        "bottom": 735,
+        "width": 44,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 306,
+          "y": 691,
+          "right": 350,
+          "bottom": 735,
+          "width": 44,
+          "height": 44
+        }
+      },
+      {
+        "label": "Ready",
+        "x": 25,
+        "y": 743,
+        "right": 128.765625,
+        "bottom": 787,
+        "width": 103.765625,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 25,
+          "y": 743,
+          "right": 128.765625,
+          "bottom": 787,
+          "width": 103.765625,
+          "height": 44
+        }
+      },
+      {
+        "label": "Start",
+        "x": 136.765625,
+        "y": 743,
+        "right": 238.546875,
+        "bottom": 787,
+        "width": 101.78125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 136.765625,
+          "y": 743,
+          "right": 238.546875,
+          "bottom": 787,
+          "width": 101.78125,
+          "height": 44
+        }
+      },
+      {
+        "label": "Leave table",
+        "x": 246.546875,
+        "y": 743,
+        "right": 350,
+        "bottom": 787,
+        "width": 103.453125,
+        "height": 44,
+        "scrolled": false,
+        "reach": {
+          "x": 246.546875,
+          "y": 743,
+          "right": 350,
+          "bottom": 787,
+          "width": 103.453125,
+          "height": 44
+        }
+      }
+    ],
+    "background": "rgb(243, 246, 245)",
+    "share": 0.5272108843537415
   }
 ]

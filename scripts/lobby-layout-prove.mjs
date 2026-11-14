@@ -201,6 +201,7 @@ async function safeArea(page, label, expected) {
     const edges = await page.getByTestId("lobby-card").evaluate(el => { const r = el.getBoundingClientRect(); return { top: r.top, right: innerWidth - r.right, bottom: innerHeight - r.bottom, left: r.left }; });
     for (const [side, value] of Object.entries(expected)) assert.ok(Math.abs(edges[side] - value) <= .5, `${label}: card ${side} edge at ${value} px with a ${insets[side]} px safe area (${edges[side]})`);
     console.log(`${label}: card clears the safe area (${Object.keys(expected).join(", ")})`);
+    if (label.includes("667x375")) await howToPlayFits(page, `${label} with safe area`);
   } finally {
     await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 0, right: 0, bottom: 0, left: 0 } });
     await cdp.detach();
@@ -300,30 +301,76 @@ async function supportedCodeFits(page, label) {
   }
   console.log(`${label}: valid codes fully visible; code/Copied, 44px targets, 8px padding, focus and responsive fits passed`);
 }
+async function startState(page, disabled, reason) {
+  await page.getByTestId("lobby-status").getByText(reason, { exact: true }).waitFor();
+  const start = page.getByRole("button", { name: "Start", exact: true });
+  await start.waitFor({ timeout: 5000 });
+  assert.equal(await start.count(), 1, "the host always has one Start button");
+  assert.equal(await start.isDisabled(), disabled, reason);
+  assert.equal(await start.getAttribute("aria-describedby"), "lobby-status", "Start names the visible status as its reason");
+  assert.equal(await start.evaluate(el => document.getElementById(el.getAttribute("aria-describedby"))?.textContent), reason, "the reason resolves to the live status");
+}
+
+async function howToPlayFits(page, label) {
+  await page.evaluate(() => document.fonts.ready);
+  const m = await page.getByRole("button", { name: "How to play", exact: true }).evaluate(el => {
+    const range = document.createRange(); range.selectNodeContents(el);
+    const text = range.getBoundingClientRect(), box = el.getBoundingClientRect(), row = el.parentElement.getBoundingClientRect();
+    const isNarrowLandscape = window.innerWidth <= 700 && window.innerWidth > window.innerHeight;
+    const maxLines = isNarrowLandscape ? 2 : 1;
+    return {
+      lines: range.getClientRects().length,
+      lineHeight: parseFloat(getComputedStyle(el).lineHeight),
+      textHeight: text.height,
+      inside: text.left >= box.left && text.right <= box.right && box.left >= row.left && box.right <= row.right,
+      scroll: el.scrollWidth <= el.clientWidth,
+      maxLines,
+    };
+  });
+  const linesMatch = m.maxLines === 1 ? m.lines === 1 : m.lines === 2;
+  const heightOk = m.maxLines === 1 ? m.textHeight <= m.lineHeight + 1 : m.textHeight <= m.lineHeight * m.maxLines + 2;
+  assert.ok(linesMatch && heightOk && m.inside && m.scroll, `${label}: How to play fits its row: ${JSON.stringify(m)}`);
+  console.log(`${label}: How to play fits its row (${m.lines} line${m.lines === 1 ? "" : "s"}, inside: ${m.inside})`);
+}
+
 try {
   for (const [width, height, minimum] of [[390, 844, .52], [844, 390, .39], [1280, 720, .40]]) {
     const page = await client("Jarrod", { width, height }, width < 1000);
     await page.evaluate(() => window.__emberisle.getState().hostTable());
     await page.getByTestId("lobby-card").waitFor();
+    await startState(page, true, "Need 2 more players");
+    await page.getByRole("button", { name: "Start", exact: true }).evaluate(el => el.click());
+    assert.equal(await page.evaluate(() => window.__emberisle.getState().screen), "lobby", "disabled Start cannot start a one-seat table");
+    await howToPlayFits(page, `${width}x${height}`);
     const code = (await page.getByTestId("table-code").textContent()).trim();
     const guest = await client("Josh", { width: 390, height: 844 }, true);
     await guest.evaluate(code => window.__emberisle.getState().joinTable(code), code);
     await guest.getByTestId("lobby-card").waitFor();
     await page.waitForFunction(() => window.__emberisle.getState().seats.length === 2);
+    await startState(page, true, "Need 1 more player");
     await page.evaluate(() => document.fonts.ready);
     await emptySeatsFit(page, `${width}x${height}`);
     await page.getByTestId("add-bot").first().click();
+    await page.waitForFunction(() => window.__emberisle.getState().seats.length === 3);
+    await startState(page, true, "1 of 3 ready");
+    await page.getByRole("button", { name: "Ready", exact: true }).click();
+    await guest.getByRole("button", { name: "Ready", exact: true }).click();
+    await startState(page, false, "All ready");
+    await guest.getByRole("button", { name: "Cancel ready", exact: true }).click();
+    await startState(page, true, "2 of 3 ready");
+    await page.getByRole("button", { name: "Cancel ready", exact: true }).click();
+    await startState(page, true, "1 of 3 ready");
     await page.getByTestId("add-bot").first().click();
     await page.waitForFunction(() => window.__emberisle.getState().seats.length === 4);
     await page.evaluate(() => document.fonts.ready);
-    for (const label of [`Table code ${[...code].join(" ")}. Copy link`, "Rules", "Ready", "Leave the table"]) {
+    for (const label of [`Table code ${[...code].join(" ")}. Copy link`, "How to play", "Ready", "Leave table"]) {
       assert.equal(await page.getByRole("button", { name: label, exact: true }).count(), 1, label);
     }
     for (const gone of ["Copy", "Copy link", "Invite"]) assert.equal(await page.getByRole("button", { name: gone, exact: true }).count(), 0, `${gone} is gone`);
     assert.equal(await page.getByTestId("lobby-chat").getByRole("tab").count(), 2);
     assert.equal(await page.getByRole("tablist", { name: "Lobby" }).getByRole("tab").count(), 2);
     assert.equal(await page.getByTestId("emoji-row").locator("button").count(), 6);
-    assert.equal(await page.getByRole("button", { name: "Start", exact: true }).count(), 0, "host sees no Start until everyone is ready");
+    assert.equal(await page.getByRole("button", { name: "Start", exact: true }).isDisabled(), true, "host sees disabled Start until everyone is ready");
     assert.equal(await guest.getByRole("button", { name: "Start", exact: true }).count(), 0, "guest cannot start");
     assert.equal(await guest.getByRole("radio").count(), 0, "guest cannot change target");
     assert.equal(await guest.getByTestId("remove-bot").count(), 0, "guest cannot remove bots");
@@ -335,6 +382,16 @@ try {
       await page.setViewportSize({ width: 667, height: 375 });
       try {
         await safeArea(page, "667x375", { top: 47, right: 21, bottom: 34, left: 59 });
+        await howToPlayFits(page, "667x375");
+        const cdp = await page.context().newCDPSession(page);
+        try {
+          await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { left: 47, right: 47, top: 0, bottom: 21 } });
+          await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+          await howToPlayFits(page, "667x375 with 94 px side safe area");
+        } finally {
+          await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 0, right: 0, bottom: 0, left: 0 } });
+          await cdp.detach();
+        }
       } finally {
         await page.setViewportSize({ width, height });
       }
@@ -359,7 +416,7 @@ try {
     await page.locator(".lobby-code").click();
     await page.waitForFunction(n => window.__copies.length > n, copies);
     assert.ok((await page.evaluate(() => window.__copies.at(-1))).includes(`code=${code}`) && await page.evaluate(() => window.__invitation === undefined), "the code copies the join link and never opens a share sheet");
-    await page.getByRole("button", { name: "Rules", exact: true }).click();
+    await page.getByRole("button", { name: "How to play", exact: true }).click();
     await page.getByRole("dialog").waitFor();
     await page.getByRole("button", { name: "Close", exact: true }).click();
     await page.getByRole("radio", { name: "7 points" }).click();
@@ -388,10 +445,12 @@ try {
     await page.getByRole("tab", { name: "Chat", exact: true }).click();
     await page.getByRole("button", { name: "Ready", exact: true }).click();
     await page.getByTestId("lobby-status").getByText("3 of 4 ready").waitFor();
+    await startState(page, true, "3 of 4 ready");
     await page.waitForFunction(() => !!window.__isle);
     await page.screenshot({ path: `${out}/${width}x${height}.png` });
     await guest.getByRole("button", { name: "Ready", exact: true }).click();
-    await page.getByRole("button", { name: "Start", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Start", exact: true }).and(page.locator(":enabled")).waitFor();
+    await startState(page, false, "All ready");
     await geometry(page, minimum);
     await page.getByRole("button", { name: "Start", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle.getState().screen === "play");
@@ -405,6 +464,8 @@ try {
     const page = await client("Jarrod", { width, height }, true);
     await page.evaluate(() => window.__emberisle.getState().hostTable());
     await page.getByTestId("lobby-card").waitFor();
+    await startState(page, true, "Need 2 more players");
+    await howToPlayFits(page, `${width}x${height}`);
     const code = (await page.getByTestId("table-code").textContent()).trim();
     const guest = await client("Josh", { width: 390, height: 844 }, true);
     await guest.evaluate(code => window.__emberisle.getState().joinTable(code), code);

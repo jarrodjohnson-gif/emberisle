@@ -149,7 +149,7 @@ async function tabs(page, tag) {
   await page.keyboard.press("ArrowLeft");
   assert.deepEqual(await picked(), [true, false], `${tag}: Left picks Table`);
   await page.keyboard.press("Tab");
-  assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Rules", `${tag}: Tab leaves the tabs for Rules`);
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), "How to play", `${tag}: Tab leaves the tabs for How to play`);
   await games.click();
   await page.locator(".ly").waitFor();
   await table.click();

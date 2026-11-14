@@ -356,7 +356,7 @@ if (process.argv.includes("--host-fixture")) {
           const card = document.querySelector('[data-testid="lobby-card"]');
           const cover = card.querySelector(".lobby-cover");
           const inside = el => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; };
-          const controls = [...card.querySelectorAll("button")].filter(b => ["Cancel ready", "Start", "Leave the table"].includes(b.textContent.trim()));
+          const controls = [...card.querySelectorAll("button")].filter(b => ["Cancel ready", "Start", "Leave table"].includes(b.textContent.trim()));
           const statusEl = card.querySelector('[data-testid="connection-status"]');
           return {
             status: statusEl ? inside(statusEl) : healthy,

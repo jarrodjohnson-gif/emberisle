@@ -145,6 +145,15 @@
   .lobby-layout .lobby-layout-cover { padding: 12px; }
   .lobby-code > [data-testid="table-code"] { font-size: 22px; line-height: 28px; }
 }
+@media (max-width: 350px) and (orientation: portrait) {
+  .lobby-action-buttons > button:not(:last-child) { padding: 0 6px; }
+}
+@media (max-width: 340px) and (orientation: portrait) {
+  .lobby-rules > button { font-size: 13px; padding-inline: 4px; }
+  .lobby-layout .lm button { padding-inline: 6px; }
+  .lobby-action-buttons > button { padding: 0 4px; }
+  .lobby-action-buttons > button:last-child { font-size: 13px; }
+}
 @media (max-height: 600px) and (orientation: landscape) {
   .lobby-layout { inset: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); width: auto; }
   .lobby-layout .lobby-layout-cover {
@@ -169,10 +178,18 @@
 }
 @media (max-width: 700px) and (orientation: landscape) {
   .lobby-layout { inset: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
-  .lobby-layout .lobby-layout-cover { padding: 8px; column-gap: 8px; grid-template-columns: minmax(0, 42fr) minmax(0, 58fr); }
+  .lobby-layout .lobby-layout-cover { padding: 8px; column-gap: 8px; grid-template-columns: minmax(0, 44fr) minmax(0, 56fr); }
   .lobby-players { grid-template-rows: repeat(2, 44px); }
   .lobby-player { grid-template-rows: 18px 18px; --seat-row: 18px; }
-  .lobby-actions { grid-template-columns: minmax(0, 42fr) minmax(0, 58fr); column-gap: 8px; }
+  .lobby-actions { grid-template-columns: minmax(0, 44fr) minmax(0, 56fr); column-gap: 8px; }
+  .lobby-rules > button:not([role="tab"]) {
+    width: 76px;
+    height: 44px;
+    padding-inline: 8px;
+    padding-block: 0;
+    white-space: normal;
+    line-height: 1.1;
+  }
 }
 
 .lobby-bubble [data-seat-bubble] > div { max-width: 100%; padding: 0; background: none; box-shadow: none; backdrop-filter: none; }
