@@ -8,7 +8,7 @@
 }
 .lobby-layout .lobby-layout-cover {
   display: grid;
-  grid-template: 44px 44px 112px minmax(0, 1fr) 96px / minmax(0, 1fr);
+  grid-template: 44px 44px var(--seats-h, 112px) minmax(0, 1fr) 96px / minmax(0, 1fr);
   gap: 8px;
   height: 100%;
   padding: 20px;
@@ -76,6 +76,10 @@
   gap: 8px;
   min-height: 0;
 }
+/* #1611: an expanded table's six seats take a third row of the same height, and the seats' track grows to hold it. */
+.lobby-players { grid-auto-rows: 52px; }
+.lobby-layout-cover:has(> .lobby-players > :nth-child(5)) { --seats-h: auto; }
+.lobby-name > .seat-no { margin-right: 6px; }
 .lobby-player {
   position: relative;
   display: grid;
@@ -162,15 +166,15 @@
   .lobby-chat-panel [data-testid="chat-log"] { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12px); mask-image: linear-gradient(to bottom, transparent 0, #000 12px); }
 }
 @media (max-height: 700px) and (orientation: portrait) {
-  .lobby-layout .lobby-layout-cover { grid-template-rows: 44px 44px 96px minmax(148px, 1fr) 96px; overflow-y: auto; }
-  .lobby-players { grid-template-rows: repeat(2, 44px); }
+  .lobby-layout .lobby-layout-cover { grid-template-rows: 44px 44px var(--seats-h, 96px) minmax(148px, 1fr) 96px; overflow-y: auto; }
+  .lobby-players { grid-template-rows: repeat(2, 44px); grid-auto-rows: 44px; }
   .lobby-player { grid-template-rows: 22px 18px; --seat-row: 22px; --seat-pad: 1px; }
   .lobby-player .lobby-bubble [data-seat-bubble="react"] .size-8 { width: 22px; height: 22px; font-size: 18px; line-height: 22px; }
 }
 @media (max-width: 700px) and (orientation: landscape) {
   .lobby-layout { inset: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
   .lobby-layout .lobby-layout-cover { padding: 8px; column-gap: 8px; grid-template-columns: minmax(0, 42fr) minmax(0, 58fr); }
-  .lobby-players { grid-template-rows: repeat(2, 44px); }
+  .lobby-players { grid-template-rows: repeat(2, 44px); grid-auto-rows: 44px; }
   .lobby-player { grid-template-rows: 18px 18px; --seat-row: 18px; }
   .lobby-actions { grid-template-columns: minmax(0, 42fr) minmax(0, 58fr); column-gap: 8px; }
 }
@@ -185,7 +189,7 @@
   .lobby-code > [data-testid="table-code"] { font-size: 18px; line-height: 28px; letter-spacing: 0; }
   .lobby-chat-panel [data-testid="emoji-row"] { display: flex; gap: 12px; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
   .lobby-chat-panel [data-testid="emoji-row"] > button { flex: 0 0 44px; scroll-snap-align: start; }
-  .lobby-layout .lobby-layout-cover { grid-template-rows: 44px 44px 96px minmax(218px, 1fr) 96px; padding: 8px; }
+  .lobby-layout .lobby-layout-cover { grid-template-rows: 44px 44px var(--seats-h, 96px) minmax(218px, 1fr) 96px; padding: 8px; }
 }
 /* names share one box per seat so the own (editable) name lines up with the others; its 44 px hit area starts at the seat's outer top edge, is centred on the same text, and overlaps the non-interactive status line */
 .lobby-player > .lobby-name { height: var(--seat-row); align-self: start; }

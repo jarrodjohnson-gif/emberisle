@@ -59,6 +59,11 @@ function Panel() {
   const isHost = useGame((s) => s.seats.find((x) => x.id === s.seatId)?.host ?? s.isHost);
   const hostName = useGame((s) => s.seats.find((x) => x.host)?.name);
   const seats = useGame((s) => s.seats);
+  // #1611 (accepted decision 7, answers A to E of 2026-11-06): an expanded game with fewer than five at the table. The host
+  // picks: fill with bots up to five, the classic map (three or four only), or Cancel, which changes nothing. The others
+  // read that the host is choosing.
+  // Only online: the last table's choice is not cleared when the host leaves it (#1611).
+  const choose = useGame((s) => (s.mode === "online" ? s.rematchChoice : undefined));
   // docs/design/rematch.md: the online host, hotseat and practice start another; an online guest asks, a watcher cannot.
   const canAgain = mode !== "online" || (isHost && !spectator);
   const waiting = mode === "online" && !isHost && !spectator && hostName;
@@ -121,7 +126,7 @@ function Panel() {
           Show scores
         </Button>
         {canAgain ? (
-          <Button size="sm" className="whitespace-nowrap" data-testid="win-again-chip" onClick={playAgain}>
+          <Button size="sm" className="whitespace-nowrap" data-testid="win-again-chip" onClick={() => playAgain()}>
             Play again
           </Button>
         ) : null}
@@ -187,7 +192,7 @@ function Panel() {
         </div>
         {waiting ? (
           <p data-testid="win-waiting" className="win-how">
-            Waiting for {hostName} to start another.
+            {choose ? "The host is choosing how to rematch." : `Waiting for ${hostName} to start another.`}
           </p>
         ) : null}
         {mode === "online" ? <LazyBoundary failed={null}><WantCount n={seats.filter(yes).length} seats={seats} /></LazyBoundary> : null}
@@ -215,8 +220,19 @@ function Panel() {
           <Button variant={canAgain || waiting ? "secondary" : "default"} className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-menu" onClick={goTitle}>
             Menu
           </Button>
-          {canAgain ? (
-            <Button className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-again" onClick={playAgain}>
+          {canAgain && choose ? (
+            <>
+              {choose.map((c) => (
+                <Button key={c} className="min-w-fit flex-1 whitespace-nowrap" data-testid={`win-again-${c}`} onClick={() => playAgain(c)}>
+                  {c === "bots" ? "Fill with bots" : "Classic map"}
+                </Button>
+              ))}
+              <Button variant="secondary" className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-again-cancel" onClick={() => playAgain("dismiss")}>
+                Cancel
+              </Button>
+            </>
+          ) : canAgain ? (
+            <Button className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-again" onClick={() => playAgain()}>
               Play again
             </Button>
           ) : null}

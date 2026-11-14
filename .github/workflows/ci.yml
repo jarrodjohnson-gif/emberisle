@@ -293,6 +293,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run expanded-persist-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run expanded-lobby-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run touch-place-prove
@@ -740,6 +742,8 @@ jobs:
         run: npm run six-seats-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run paired-hud-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run expanded-lobby-ui-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run seat-dot-ring-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'

@@ -121,7 +121,8 @@ async function client(port, hello, label = hello.secret ?? hello.name) {
     ws.once("open", res);
     ws.once("error", rej);
   });
-  ws.send(JSON.stringify({ type: "hello", ...hello }));
+  // Today's pages say they can show the expanded island; a host refuses a rejoin into an expanded room without it (#1611).
+  ws.send(JSON.stringify({ type: "hello", caps: ["expanded"], ...hello }));
   c.welcome = await c.next("welcome");
   return c;
 }
