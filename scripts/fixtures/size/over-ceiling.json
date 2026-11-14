@@ -2,7 +2,7 @@
   "LobbyView": 2300,
   "LobbyWaitBox": 1800,
   "LobbyTicTacToe": 1390,
-  "index": 127100,
+  "index": 128100,
   "IslandCanvas": 199000,
   "jelly-board": 7600,
   "hex-jelly": 46800,
@@ -43,6 +43,7 @@
   "PlayAgain": 412,
   "BuildList": 1439,
   "GameLog": 1369,
+  "expanded": 2952,
   "OtherProfileCard": 1078,
   "ambience": 461
 }
