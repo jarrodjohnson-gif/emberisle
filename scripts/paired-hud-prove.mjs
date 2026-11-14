@@ -7,8 +7,9 @@
 // - Seats 5 and 6 start practice and pass and play games on the 30-hex island with paired turns, each seat numbered
 //   1 to n in its own colour;
 // - practice: on the person's own primary turn the tray has Roll before the roll; while another seat is primary the
-//   status names it; while another seat is partner the status reads "<name>'s partner turn"; on the person's partner
-//   turn the status reads "Your partner turn", the event line "Build or trade with the bank. No dice.", there is no
+//   status names it; while another seat is partner the status reads "<name>'s partner turn" and the event line under it
+//   neither says "partner" nor is cut off; on the person's partner turn the status reads "Your partner turn", the event
+//   line "No roll this turn." in full (also in the wide font), there is no
 //   Roll, Build buys a fortune, Trade shows the bank only and a bank trade goes through, and End turn passes to the next
 //   primary; a partner bot never rolls and never asks the table; the game is played to the win screen, and Play again
 //   keeps the seat count, the expanded island and each seat's number and colour;
@@ -38,7 +39,7 @@ const VIEWS = [
   { tag: "844x390 wide font", width: 844, height: 390, touch: true, wide: true },
   { tag: "1280x720 wide font", width: 1280, height: 720, wide: true },
 ];
-const HINT = "Build or trade with the bank. No dice.";
+const HINT = "No roll this turn.";
 
 if (SHOTS) mkdirSync(SHOT_DIR, { recursive: true });
 // Every source file is scanned for its dependencies up front: one found only as the win screen loads would make the dev
@@ -101,6 +102,8 @@ async function layout(page, tag, roots) {
 const TRAY = ["[data-hud-stack]", "header.hud-header"];
 const status = (page) => page.getByTestId("turn-banner").textContent();
 const eventLine = (page) => page.getByTestId("log-line").textContent();
+// The event line shows all of its text: it is one truncating line, so a cut shows as more content than width.
+const eventCut = (page) => page.getByTestId("log-line").evaluate((el) => el.scrollWidth > el.clientWidth);
 const rollShown = (page) => page.getByRole("button", { name: "Roll", exact: true }).isVisible();
 const store = (page, fn, arg) => page.evaluate(fn, arg);
 const snap = (page) => store(page, () => { const g = window.__emberisle.getState(); return { state: g.state, mode: g.mode, offer: g.offer }; });
@@ -214,7 +217,8 @@ async function partnerTurn(page, v, tag, { shotName, full }) {
   const me = st.current;
   check(st.role === "partner" && st.phase === "main", `${tag}: not a partner turn (${st.role} ${st.phase})`);
   check((await status(page)) === "Your partner turn", `${tag}: status reads "${await status(page)}"`);
-  if (st.turn === 1) check((await eventLine(page)) === HINT, `${tag}: event line reads "${await eventLine(page)}"`);
+  check((await eventLine(page)) === HINT, `${tag}: event line reads "${await eventLine(page)}"`);
+  check(!(await eventCut(page)), `${tag}: the event line "${await eventLine(page)}" is cut off`);
   check(!(await rollShown(page)), `${tag}: Roll is shown on a partner turn`);
   for (const name of ["Build", "Trade", "End turn"]) check(await page.getByRole("button", { name, exact: true }).isVisible(), `${tag}: no ${name} on a partner turn`);
   await layout(page, `${tag} partner turn`, TRAY);
@@ -353,7 +357,8 @@ try {
       st = (await snap(page)).state;
       who = st.players.find((p) => p.id === st.current).name;
       check((await status(page)) === `${who}'s partner turn`, `${t}: another seat's partner status "${await status(page)}"`);
-      check((await eventLine(page)) !== HINT, `${t}: the partner hint shows on another seat's partner turn`);
+      check(!(await eventLine(page)).includes("partner"), `${t}: the event line repeats the status: "${await eventLine(page)}"`);
+      check(!(await eventCut(page)), `${t}: the event line "${await eventLine(page)}" is cut off on another seat's partner turn`);
       check(!(await rollShown(page)), `${t}: Roll on another seat's partner turn`);
       await layout(page, `${t} another seat's partner turn`, TRAY);
       if (full) await shot(page, `partner-other-${tag}`);

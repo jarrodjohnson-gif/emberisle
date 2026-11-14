@@ -838,8 +838,8 @@ export const useGame = create<GameStore>((set, get) => ({
     // A bot's own ask is open: its turn waits for the answers, and the offer's close plays on (EmberisleApp re-runs this).
     const { offer } = get();
     if (offer?.from === cur.id) return;
-    // Once per bot turn, before its other moves, the bot may ask the table (#363). A partner asks nobody (#1609; #1648 brings
-    // expanded.ts's pairedTradeAsk for this).
+    // Once per bot turn, before its other moves, the bot may ask the table (#363). A partner asks nobody: expanded.ts's
+    // pairedTradeAsk, inline here because calling it through the loaded module costs the index chunk more (#1609).
     if (state.phase === "main" && !offer && state.role !== "partner" && botAsked !== `${state.turn}:${cur.id}`) {
       botAsked = `${state.turn}:${cur.id}`;
       const ask = chooseTradeAsk(state, cur.id, botDeclined.get(cur.id));
@@ -1166,7 +1166,7 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
     if (p.kind !== "bot" || p.id === from) continue;
     const answer = () => {
       if (get().offer?.tradeId !== tradeId) return;
-      // Every bot says No during a partner turn, which takes no player trades (#1609; #1648 brings pairedAcceptTrade).
+      // Every bot says No during a partner turn, which takes no player trades (pairedAcceptTrade, inline as above).
       const yes = get().state!.role !== "partner" && shouldAcceptTrade(get().state!, p.id, { from, give, want });
       if (yes && peopleWaiting(get)) heldYes.push(p.id);
       else respond(set, get, p.id, yes);

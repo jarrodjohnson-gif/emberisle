@@ -280,14 +280,14 @@ export function pairedStep(prev: GameState, actor: string, action: Action, base:
   state.trade = null;
   const n = state.players.length;
   const at = state.players.findIndex((p) => p.id === state.primary);
-  const primary = state.players[at]!;
   let next: PlayerState;
   if (state.role === "primary") {
-    // The partner acts in the action phase straight away; the primary's dice stay on the table for this paired turn.
+    // The partner acts in the action phase straight away; the primary's dice stay on the table for this paired turn. The
+    // line is the tray's event line under "<name>'s partner turn", so it names nobody and stays short (#1609).
     next = state.players[(at + 3) % n]!;
     state.role = "partner";
     state.phase = "main";
-    log(state, `${next.name}'s turn as ${primary.name}'s partner.`);
+    log(state, "No roll this turn.");
   } else {
     const i = (at + 1) % n;
     next = state.players[i]!;

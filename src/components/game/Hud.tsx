@@ -470,7 +470,7 @@ export function Hud() {
                     <span data-testid="log-roll-sum" className={rollChip.hot ? "text-danger" : undefined}>{rollChip.sum}</span>
                     !
                   </span>
-                ) : partner && mine && state.turn < 2 ? "Build or trade with the bank. No dice." : gameLog.at(-1)?.text}
+                ) : gameLog.at(-1)?.text}
               </p>
               {/* Slice C: an open offer is the top line and, for a seat that can answer or cancel, the action row (styles.css). */}
               {tradeVisible ? (
