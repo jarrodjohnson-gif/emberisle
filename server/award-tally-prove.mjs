@@ -87,6 +87,15 @@ assert.equal(base.players.some((p) => p.tally), false, "setup goods are not good
   const old = ok(applyAction({ ...structuredClone(base), rolls: 40 }, base.current, { type: "roll" }), "an older game's roll");
   assert.equal(old.rollSums, undefined, "an older game part-way through starts no count");
   assert.equal(old.rolls, 41);
+  // #1452 (desk, 2026-11-12): nor any award count, so a game part-way through at deploy shows no false "Dry spell".
+  assert.equal(old.players.some((p) => p.tally), false, "an older game part-way through starts no award counts");
+  {
+    const g = structuredClone(base);
+    Object.assign(g, { phase: "discard", dice: [3, 4], rolls: 40, discardNeeded: { [g.players[1].id]: 4 } });
+    g.players[1].resources = bag({ timber: 5, ore: 3 });
+    const d = ok(applyAction(g, g.players[1].id, { type: "discard", resources: { timber: 3, ore: 1 } }), "an older game's discard");
+    assert.equal(d.players.some((p) => p.tally), false, "an older game's discard counts nothing");
+  }
   console.log(`rules: a roll adds 1 to its sum (${paid} paying rolls and ${seven} sevens checked), a 7 adds no goods from rolls, the roll-off and an older game count no sums`);
 }
 

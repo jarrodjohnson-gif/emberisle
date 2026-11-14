@@ -369,7 +369,7 @@ function produce(state: GameState, total: number) {
     if (short.has(grant.res)) continue;
     const got = give(state, grant.p, grant.res, grant.n);
     if (got) {
-      tally(grant.p).earned[grant.res] += got;
+      tally(state, grant.p).earned[grant.res] += got;
       log(state, `${grant.p.name} gathers ${got} ${RESOURCE_LABEL[grant.res].toLowerCase()} from the ${grant.pip}.`);
       (state.lastProduction ??= []).push({ hex: grant.hex, player: grant.p.id, res: grant.res, n: got, vertex: grant.vertex });
     }
@@ -413,9 +413,12 @@ function grantSecondSettlement(state: GameState, vid: string, pid: string) {
   }
 }
 
-// #1452: the seat's award counts, made on its first count. Online the host strips them from every view until the win.
-function tally(p: PlayerState) {
-  return (p.tally ??= { earned: { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 }, discarded: 0, stole: 0, tableTrades: 0, bankTrades: 0 });
+// #1452: the seat's award counts, made on its first count. Only a game counted from its first roll keeps them (it has
+// rollSums, #1453): a game part-way through at deploy keeps none, rather than a partial count that would name a false
+// "Dry spell"; its counts are dropped. Online the host strips them from every view until the win.
+function tally(state: GameState, p: PlayerState) {
+  const fresh = { earned: { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 }, discarded: 0, stole: 0, tableTrades: 0, bankTrades: 0 };
+  return state.rollSums ? (p.tally ??= fresh) : fresh;
 }
 
 function stealOne(state: GameState, fromId: string, toId: string) {
@@ -428,7 +431,7 @@ function stealOne(state: GameState, fromId: string, toId: string) {
   from.resources[pick] -= 1;
   to.resources[pick] += 1;
   from.goodsLost = (from.goodsLost ?? 0) + 1;
-  tally(to).stole += 1;
+  tally(state, to).stole += 1;
   // The table hears that a card moved, not which one: only the two hands change (#187).
   log(state, `${to.name} steals a card from ${from.name}.`);
 }
@@ -638,7 +641,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
         state.bank[r] += k;
       }
       delete state.discardNeeded[actor];
-      tally(me).discarded += need;
+      tally(state, me).discarded += need;
       log(state, `${me.name} discards ${need}.`);
       if (Object.keys(state.discardNeeded).length === 0) state.phase = wayfarerMode(state) === "off" ? "main" : "robber";
       return { state };
@@ -801,7 +804,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       me.resources[action.give] -= rate;
       state.bank[action.give] += rate;
       give(state, me, action.want, 1);
-      tally(me).bankTrades += 1;
+      tally(state, me).bankTrades += 1;
       log(state, `${me.name} trades ${rate} ${RESOURCE_LABEL[action.give].toLowerCase()} for ${RESOURCE_LABEL[action.want].toLowerCase()}.`);
       return { state };
     }
@@ -840,8 +843,8 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
         me.resources[r] -= w;
         from.resources[r] += w;
       }
-      tally(from).tableTrades += 1;
-      tally(me).tableTrades += 1;
+      tally(state, from).tableTrades += 1;
+      tally(state, me).tableTrades += 1;
       log(state, `${me.name} accepts ${from.name}'s trade.`);
       state.trade = null;
       return { state };
