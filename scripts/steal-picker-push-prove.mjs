@@ -130,6 +130,8 @@ try {
 
   await a.evaluate((id) => window.__emberisle.getState().pickHex(id), hex.id);
   await a.getByText("Take from whom?").waitFor();
+  // #1546: the question is the tray's status line, up before the seat buttons' chunk has drawn them, so wait for a button.
+  await a.getByRole("group", { name: "The wayfarer takes a card" }).getByRole("button").first().waitFor();
   const open = await peek(a);
   check("picker opens with both victims", open.picker?.targets.length === 2 && open.bar === 2, open);
 
@@ -182,7 +184,8 @@ try {
   await knightPage.getByText("Take from whom?").waitFor();
   const knightOpen = await knightPage.evaluate(id => { const s = window.__emberisle.getState(); return { phase: s.state.phase, current: s.state.current, picker: s.pendingSteal, targets: s.legal.steal[id] }; }, hex.id);
   check("Knight picker opens before roll with two victims", knightOpen.phase === "roll" && knightOpen.current === "p0" && knightOpen.picker?.kind === "playKnight" && knightOpen.targets.length === 2, knightOpen);
-  await knightPage.getByRole("button", { name: "Roll", exact: true }).click();
+  // #1539: an armed fortune leaves Cancel alone in the action row, so the roll is the Roll button's own dispatch.
+  await knightPage.evaluate(() => window.__emberisle.getState().dispatch({ type: "roll" }));
   await knightPage.waitForFunction(() => window.__emberisle.getState().state.phase === "main");
   const knightAfter = await knightPage.evaluate(id => { const s = window.__emberisle.getState(); return { phase: s.state.phase, current: s.state.current, knight: s.state.players.find(p => p.id === s.localId).hidden.knight, picker: s.pendingSteal, targets: s.legal.steal[id], bar: document.querySelectorAll('[aria-label="The wayfarer takes a card"] button').length, dice: s.state.dice }; }, hex.id);
   check("real host uses the same non-seven dice as the setup", knightAfter.dice?.[0] === rolled.state.dice[0] && knightAfter.dice?.[1] === rolled.state.dice[1] && knightAfter.dice[0] === 4 && knightAfter.dice[1] === 4, knightAfter.dice);

@@ -55,6 +55,7 @@ const LIST = [
   [844, 390, true],
   [667, 375, true, { top: 0, right: 44, bottom: 21, left: 44 }],
   [700, 900, false], // The phone rule's narrow half: a mouse under 768 px wide.
+  [1280, 720, false], // Owner 2026-11-12 (q1563-results-desktop): the desktop shows the same list.
 ];
 
 const vite = await createServer({ server: { host: "127.0.0.1", port, strictPort: true }, logLevel: "error" });
@@ -253,15 +254,15 @@ try {
   {
     const { context, page } = await open(390, 844, true, null, { block: true });
     const wrap = page.getByTestId("win-table-wrap");
-    await wrap.locator("table").waitFor();
+    await wrap.locator('li[data-testid="win-row"]').first().waitFor();
     assert.equal(await wrap.locator('[role="region"]').count(), 0, "failed chunk: no list");
-    assert.deepEqual(await page.locator('tr[data-testid="win-row"]').evaluateAll((els) => els.map((el) => [el.dataset.player, Number(el.querySelector('[data-testid="win-total"]').textContent)])), order.map((id) => [id, expected[id].total]), "failed chunk: the table shows every total");
+    assert.deepEqual(await page.locator('li[data-testid="win-row"]').evaluateAll((els) => els.map((el) => [el.dataset.player, Number(el.querySelector('[data-testid="win-total"]').textContent)])), order.map((id) => [id, expected[id].total]), "failed chunk: the plain list shows every total");
     await page.unroute(LIST_CHUNK);
     await page.getByTestId("win-look").click();
     await page.getByTestId("win-show").click();
     await page.locator('button[data-testid="win-row"]').first().waitFor();
     assert.equal(await page.locator('button[data-testid="win-row"]').count(), 4, "retry: Show scores brings the list");
-    assert.equal(await wrap.locator("table").count(), 0, "retry: the table is gone");
+    assert.equal(await wrap.locator('li[data-testid="win-row"]').count(), 0, "retry: the plain list is gone");
     await page.locator('button[data-testid="win-row"][data-player="p2"]').tap();
     assert.equal(await page.locator('[data-testid="win-hidden"]').nth(2).textContent(), "3", "retry: the list works");
     await context.close();
@@ -271,12 +272,13 @@ try {
   // Desktop with a mouse keeps the full table, and never asks for the list chunk.
   {
     const { context, page, listLoads } = await open(1280, 720, false, null);
-    assert.deepEqual(listLoads, [], "desktop: the list chunk is not loaded");
+    assert.ok(listLoads.length > 0, "desktop: the list chunk is loaded");
     const wrap = page.getByTestId("win-table-wrap");
-    assert.equal(await wrap.locator("table").count(), 1, "desktop: the table stays");
-    assert.equal(await wrap.locator("thead th").count(), 7, "desktop: seven columns");
-    assert.equal(await wrap.locator('[role="region"]').count(), 0, "desktop: no list");
-    assert.deepEqual(await page.locator('tr[data-testid="win-row"]').evaluateAll((els) => els.map((el) => [el.dataset.player, Number(el.querySelector('[data-testid="win-total"]').textContent)])), order.map((id) => [id, expected[id].total]));
+    await page.locator('button[data-testid="win-row"]').first().waitFor();
+    assert.equal(await page.locator("table").count(), 0, "desktop: no table");
+    assert.equal(await wrap.locator("thead th").count(), 0, "desktop: no column heads");
+    assert.equal(await wrap.locator('[role="region"]').count(), 4, "desktop: the list, one part per player");
+    assert.deepEqual(await page.locator('button[data-testid="win-row"]').evaluateAll((els) => els.map((el) => [el.dataset.player, Number(el.querySelector('[data-testid="win-total"]').textContent)])), order.map((id) => [id, expected[id].total]));
     await shot(page, "table-1280x720");
     await context.close();
     console.log("ok 1280x720 mouse: the desktop table stays");

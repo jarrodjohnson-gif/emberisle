@@ -39,14 +39,17 @@ const PAINT = {
 // The cue's whole life: FLASH_MS (2500) held, then a 500 ms fade (Hand.tsx CUE_MS).
 const CUE_MS = 3000;
 // Each layout's fixed card: upright and short as today; the wide, fine-pointer layout at 1.3x the upright mock.
+// #1539 one tray: five numbers in the tray, no card box; a 1 px divider takes its pixel from every column after the first
+// (`divided`). The desk tray is one row, the hand in 64 px columns beside the buttons: 20 px symbols, 26 px counts, 62 px tall; upright the tray's 14 px padding leaves
+// 62 px columns; the sideways column keeps its 44 px short card. Names are 12 px sentence case (hand-motion.css).
 const SIZE = {
-  desk: { box: [88, 80], symbol: 22, count: 30, name: 12 },
-  // #1509: upright, the hand has no tray padding and 16 px gutters, so five cards share 358 px: 68.4 px each, not 66.8.
-  port: { box: [68.4, 62], symbol: 18, count: 24, name: 10 },
-  short: { box: [47.2, 44], symbol: 14, count: 24, name: 0 },
+  desk: { box: [64, 62], divided: 63, symbol: 20, count: 26, name: 12 },
+  port: { box: [62, 62], divided: 62, symbol: 18, count: 24, name: 12 },
+  short: { box: [44, 44], divided: 44, symbol: 14, count: 24, name: 0 },
 };
 // A gain lifts by the tray's --goods-lift: 6 px upright, 4 px short and where the hand heads a wide screen's stack.
-const LIFT = { desk: -4, port: -6, short: -4 };
+// #1539: on desktop the status line now heads the tray, so the hand no longer heads the stack and lifts the full 6 px.
+const LIFT = { desk: -6, port: -6, short: -4 };
 // The +N / −N pill (#825): 24 px tall with 14 px text, 20 px above the card; 28 px, 17.5 px and 24 px on the wide fine-pointer layout.
 const TAB = {
   desk: { font: ["17.5px", "700"], h: 28, above: 24 },
@@ -493,7 +496,7 @@ async function open(v, reducedMotion) {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("button", { name: "Four seats, one table" }).focus();
+  await page.getByRole("button", { name: "Pass and play" }).focus();
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
   const roll = page.getByRole("button", { name: "Roll", exact: true });
@@ -535,8 +538,11 @@ try {
             .filter((e) => e.textContent.trim() && !e.querySelector("*"))
             .map((e) => ({ t: e.textContent.trim(), px: parseFloat(getComputedStyle(e).fontSize) }));
           const visible = [...el.querySelectorAll("*")].filter((e) => e.textContent.trim() && !e.querySelector("*") && e.getBoundingClientRect().width > 1);
+          // #1539: the card has no fill, so its count is read against the first opaque surface behind it.
+          let paper = null;
+          for (let n = el; n && !paper; n = n.parentElement) { const m = getComputedStyle(n).backgroundColor.match(/[\d.]+/g)?.map(Number) ?? []; if (m.length === 3 || m[3] >= 0.99) paper = `rgb(${m.slice(0, 3).join(", ")})`; }
           return [r, {
-            fill: cs.backgroundColor, opacity: cs.opacity, title: el.title, text: count.textContent, color: cc.color,
+            fill: cs.backgroundColor, paper, opacity: cs.opacity, title: el.title, text: count.textContent, color: cc.color,
             size: cc.fontSize, weight: cc.fontWeight, tabular: cc.fontVariantNumeric, sizes,
             visibleText: visible.map((e) => e.textContent.trim()), icon: !!el.querySelector("svg"),
             iconOpacity: el.querySelector("svg") && getComputedStyle(el.querySelector("svg")).opacity,
@@ -551,9 +557,9 @@ try {
     const want = { timber: 3, clay: 0, wool: 12, grain: 1, ore: 0 };
     for (const r of RESOURCES) {
       const c = cards[r];
-      const fill = parse(c.fill);
-      assert.deepEqual(fill, rgb(want[r] === 0 ? "#f3f6f5" : "#ffffff"), `${v.tag} ${r}: fill ${c.fill}`);
-      assert.deepEqual(parse(c.color), rgb("#263d3c"), `${v.tag} ${r}: count colour ${c.color}`);
+      const fill = parse(c.paper);
+      assert.equal(c.fill, "rgba(0, 0, 0, 0)", `${v.tag} ${r}: no card fill ${c.fill}`);
+      assert.deepEqual(parse(c.color), rgb(want[r] === 0 ? "#64736f" : "#263d3c"), `${v.tag} ${r}: count colour ${c.color} (a zero is greyed)`);
       const cr = ratio(parse(c.color), fill);
       assert.ok(cr >= 4.5, `${v.tag} ${r}: count contrast ${cr.toFixed(2)}`);
       assert.equal(c.text, String(want[r]), `${v.tag} ${r}: count`);
@@ -562,10 +568,10 @@ try {
       assert.match(c.tabular, /tabular-nums/, `${v.tag} ${r}: tabular`);
       assert.ok(c.sizes.every((s) => s.px <= SIZE[v.tag].count), `${v.tag} ${r}: count is the largest text ${JSON.stringify(c.sizes)}`);
       assert.ok(c.sizes.filter((s) => s.px === parseFloat(c.size)).length === 1, `${v.tag} ${r}: only the count is ${c.size}`);
-      // V1: an 18 px symbol (14 px in the short card), a 24 px count, and a 10 px tracked uppercase name.
+      // #1539: the layout's symbol and count, and a 12 px sentence-case name.
       assert.deepEqual(c.symbol, [SIZE[v.tag].symbol, SIZE[v.tag].symbol], `${v.tag} ${r}: symbol size`);
-      if (SIZE[v.tag].name) assert.deepEqual(c.label, { size: `${SIZE[v.tag].name}px`, weight: "700", spacing: `${+(SIZE[v.tag].name * 0.08).toFixed(2)}px`, transform: "uppercase" }, `${v.tag} ${r}: tracked name`);
-      assert.deepEqual(c.box, SIZE[v.tag].box, `${v.tag} ${r}: card footprint is its layout's fixed size`);
+      if (SIZE[v.tag].name) assert.deepEqual(c.label, { size: `${SIZE[v.tag].name}px`, weight: "500", spacing: "normal", transform: "none" }, `${v.tag} ${r}: sentence-case name`);
+      assert.deepEqual(c.box, [r === "timber" ? SIZE[v.tag].box[0] : SIZE[v.tag].divided, SIZE[v.tag].box[1]], `${v.tag} ${r}: card footprint is its layout's fixed size`);
       assert.equal(c.opacity, "1", `${v.tag} ${r}: opacity`);
       assert.ok(c.icon && c.iconOpacity === "1", `${v.tag} ${r}: icon at 70 % (${c.iconOpacity})`);
       assert.deepEqual(c.visibleText, v.tag === "short" ? [String(want[r])] : [String(want[r]), {timber:"Wood",clay:"Brick",wool:"Sheep",grain:"Wheat",ore:"Stone"}[r]], `${v.tag} ${r}: only the count is visible text`);
@@ -669,7 +675,7 @@ try {
     assert.equal(await page.locator('[data-testid="hand-ring"]').count(), 0, `${v.tag}: no ring on the page`);
     assert.deepEqual(errors, [], `${v.tag}: console errors`);
     console.log(`${v.tag} ${v.width}x${v.height}: ${SIZE[v.tag].box.join("x")} cards, ${SIZE[v.tag].symbol} px symbols, ${SIZE[v.tag].count} px tabular counts; fills ${RESOURCES.map((r) => cards[r].fill).join(" ")}; contrast ` +
-      RESOURCES.map((r) => ratio(parse(cards[r].color), parse(cards[r].fill)).toFixed(1)).join(" ") + `; symbol, count and name centred within ${still.worst.toFixed(3)} px at rest, ${lit.worst.toFixed(3)} px lit; ` +
+      RESOURCES.map((r) => ratio(parse(cards[r].color), parse(cards[r].paper)).toFixed(1)).join(" ") + `; symbol, count and name centred within ${still.worst.toFixed(3)} px at rest, ${lit.worst.toFixed(3)} px lit; ` +
       `gain fill ${gain.fill}, count ${ratio(parse(gain.count), parse(gain.fill)).toFixed(2)}:1, +2 tab ${gain.tab.font.join(" ")} ${gain.tab.h} px tall ${ratio(parse(gain.tab.color), parse(gain.tab.bg)).toFixed(2)}:1, −1 tab ${ratio(parse(loss.color), parse(loss.bg)).toFixed(2)}:1; 1 cue per change; 0 console errors`);
     await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
     await proveResourceMotion(page, v.tag);
@@ -711,7 +717,8 @@ try {
     await ds.page.waitForFunction(() => document.querySelector('[data-testid="resource-wool"]')?.textContent.includes("2"), null, { timeout: STEP_MS });
     await ds.page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"], [data-testid="goods-lit"], [data-testid="goods-lost"]'), null, { timeout: STEP_MS });
     const rest = await box();
-    for (const c of rest) assert.deepEqual([c.w, c.h, c.tray], [139.2, 52, 60], `deskshort ${c.r}: card is main's 139.2x52 in a 60 px tray (${JSON.stringify(c)})`);
+    // #1539: the desk tray is one row with 64 px hand columns, so the card is 64x62 in a 70 px tray.
+    for (const c of rest) assert.deepEqual([c.w, c.h, c.tray], [c.r === "timber" ? 64 : 63, 62, 70], `deskshort ${c.r}: card is the tray's 64x62 column (63 after a divider) in a 70 px tray (${JSON.stringify(c)})`);
     const during = [];
     for (const hand of [{ timber: 5 }, { wool: 1 }]) {
       await ds.page.evaluate(() => (window.__holdCues = true));

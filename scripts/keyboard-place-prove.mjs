@@ -25,7 +25,7 @@ try {
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  const four = page.getByRole("button", { name: "Four seats, one table" });
+  const four = page.getByRole("button", { name: "Pass and play" });
   await four.focus();
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
@@ -214,6 +214,10 @@ try {
     Stronghold: "Pick a home to upgrade · Esc cancels",
   };
   const arm = async (name, heading) => {
+    // #1539: the builds are rows in the Build list, opened from the tray's Build button.
+    await page.getByTestId("build-open").focus({ timeout: STEP_MS });
+    await page.keyboard.press("Enter");
+    await page.getByTestId("build-list").waitFor({ timeout: STEP_MS });
     await page.getByRole("button", { name, exact: true }).focus({ timeout: STEP_MS });
     await page.keyboard.press("Enter");
     const g = page.getByRole("group", { name: heading });
@@ -226,7 +230,7 @@ try {
   await arm("Path", "Lay a path");
   await page.keyboard.press("Escape");
   await page.getByRole("group", { name: "Lay a path" }).waitFor({ state: "detached", timeout: STEP_MS });
-  console.log(`Escape: banner "${await bannerIs("Build, trade, or end your turn")}"`);
+  console.log(`Escape: banner "${await bannerIs("Your turn")}"`);
   // #558: a tap on a spot the armed build cannot use says which rule it broke, on the HUD's error line, and changes nothing.
   // The ids are picked from the state the table holds: a corner next to our outpost, one of an opponent's, a built edge, and an
   // edge that joins nothing of ours.
@@ -370,7 +374,7 @@ try {
   const still = await browser.newPage({ viewport: { width: 1280, height: 720 }, reducedMotion: "reduce" });
   still.on("pageerror", (e) => errors.push(String(e)));
   await still.goto(`http://127.0.0.1:${PORT}/`);
-  await still.getByRole("button", { name: "Four seats, one table" }).focus();
+  await still.getByRole("button", { name: "Pass and play" }).focus();
   await still.keyboard.press("Enter");
   await still.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
   for (let i = 0; i < 40; i++) {

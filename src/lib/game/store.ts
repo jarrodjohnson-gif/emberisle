@@ -158,7 +158,7 @@ export interface GameLogLine {
   at: number;
   text: string;
 }
-const GAME_LOG_MAX = 200;
+export const GAME_LOG_MAX = 200;
 const WATER_KEY = "emberisle-water";
 const VIEW_KEY = "emberisle-view";
 
@@ -207,7 +207,7 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
 }
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
-import type { Bag, ChatLine, Legal, Me, Reaction, Seat, TableClient, TttMsg } from "@/lib/net/table";
+import type { Bag, ChatLine, Legal, Me, ProfileCardReply, Reaction, Seat, TableClient, TttMsg } from "@/lib/net/table";
 import type { ProfileAttachment } from "@/lib/net/profiles";
 import { chunk } from "@/lib/lazy";
 import { PROTO } from "@/lib/net/proto";
@@ -221,7 +221,8 @@ import type { PlayView } from "@/lib/scene/mobile-fit";
 const tradeSounds = import("../trade-sound");
 
 // The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when a bot's offer runs out
-// (20 s); it is null for a person's offer, which holds until it is answered (#1245).
+// (20 s); it is null for a person's offer, which holds until it is answered (#1245). The toast never shows a countdown
+// for either (#1507, owner q1517-bot-offer-stall A).
 interface OpenOffer {
   tradeId: string;
   from: string;
@@ -529,6 +530,9 @@ function savedColor(): string | null {
     return null;
   }
 }
+
+// #1350: the open profile card listens here for the host's answer; the lazy card chunk sets and clears `on`.
+export const cardReply: { on?: (msg: ProfileCardReply) => void } = {};
 
 export const useGame = create<GameStore>((set, get) => ({
   screen: "title",
@@ -1363,6 +1367,8 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     tradeClosed: ({ tradeId, taker }) => {
       if (get().offer?.tradeId === tradeId) endOffer(set, get, taker ?? null);
     },
+    tableProfileCard: (msg) => cardReply.on?.(msg),
+    profileError: (msg) => cardReply.on?.(msg),
     error: (message, request) => {
       if (!pending && kind !== "peek") {
         set({ announcement: null, error: message, toast: message, errorSeq: get().errorSeq + 1, needError: get().needError + Number(request === "need") });
