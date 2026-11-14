@@ -13,6 +13,9 @@
 //    activation in the same round, even with no state push between them; a seat's budget restarts even when bots played
 //    every activation in between; and a bot that was a partner earlier in the round still asks the table on its own turn.
 // 6. The classic three-seat room times out, rolls, passes, reconnects and keys its extensions exactly as before.
+// 7. Classic three and four seats, one person with bots (#1661): every new turn of the person gets a full window and
+//    budget though the bots play every turn in between in one go, also after a discard owed in a bot's turn and after
+//    answering a bot's ask.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { appendFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -256,6 +259,18 @@ let tri = createGame({ humans: NAMES.slice(0, 3).map((name) => ({ name })), bots
 tri = primaryMain(setupBy(tri));
 hands(tri, { [at(tri, 0)]: { timber: 4 } }, 19);
 writeRoom("CTRI", tri);
+// CB3: classic three seats, one person (players[0], in its action phase, holding 8 cards so a seven makes it discard) and
+// two bots with nothing, the bank paying nobody: the bots roll and pass straight through to the person's next turn.
+const cb3 = primaryMain(setupBy(createGame({ humans: NAMES.slice(0, 3).map((name) => ({ name })), bots: 0, seed: 1661 })));
+hands(cb3, { [at(cb3, 0)]: { grain: 4, ore: 4 } }, 0);
+writeRoom("CB3", cb3, [1, 2].map((i) => at(cb3, i)));
+// CB4: classic four seats, one person (players[0], in its action phase, holding grain) and three bots. players[1] is one
+// grain short of a stronghold, so on its turn it asks the table, and the person answers between two of its own turns.
+const cb4 = primaryMain(setupBy(createGame({ humans: NAMES.slice(0, 4).map((name) => ({ name })), bots: 0, seed: 1661 })));
+const cbAsker = at(cb4, 1);
+hands(cb4, { [at(cb4, 0)]: { grain: 2 }, [cbAsker]: { timber: 1, grain: 2, ore: 2 } }, 0);
+writeRoom("CB4", cb4, [1, 2, 3].map((i) => at(cb4, i)));
+ok(pairedTradeAsk({ ...structuredClone(cb4), current: cbAsker }, cbAsker, undefined), "CB4: on its turn the bot asks the table");
 
 const t0 = Date.now();
 try {
@@ -301,6 +316,100 @@ try {
     checks++;
     for (const c of Object.values(cs)) c.ws.terminate();
     console.log(`classic: CTRI times out ${nameOf(g, A)} in the action phase (passes), rolls then passes for ${nameOf(g, B)}, windows ${TURN} ms, a rejoin keeps the capped deadline, extension key "${ext}"`);
+  }
+
+  // ---- 7. Classic, one person and bots (#1661). ----
+  // The rule: a seat gets a TURN_MS inactivity window inside a total waited-on budget, the same for rolling, discarding and
+  // the action phase, and an action renews the window but never the budget (docs/design/turn-timer-presets.md, "Current
+  // behavior"); only a turn that moves on clears the budget (host.mjs, armTurns). So every new turn of the person starts
+  // with a full window and a full budget, though the bots play every turn in between in one go and no state push sees the
+  // person unwaited. A discard owed in a bot's turn is in another turn, so it gets a full window of its own, and neither it
+  // nor answering a bot's ask carries into the person's next turn.
+  {
+    const budget = async (code, pid) => (await saved(code, (r) => r.seats.find((x) => x.pid === pid).turnDeadline, `${code}: ${pid}'s window`)).seats.find((x) => x.pid === pid);
+    const until = (t) => sleep(Math.max(0, t - Date.now()));
+    const next = (c, seq, phase, what) => c.until(() => c.state.game.seq > seq && c.state.game.phase === phase && c.state, what, TOTAL + 3000);
+    const nextRoll = (c, seq, what) => c.until(() => c.state.game.seq > seq && c.state.game.phase === "roll" && c.state.game.current === c.pid && c.state, what, TOTAL + 3000);
+    const lines = [];
+    {
+      const g = cb3;
+      const H = at(g, 0);
+      const c = await client("CB3", H);
+      // Turn 1: the person passes 0.8 of its window in.
+      let start = (await budget("CB3", H)).turnStartedAt;
+      await until(start + 0.8 * TURN);
+      let did = Date.now();
+      c.send({ type: "pass" });
+      let s = await nextRoll(c, g.seq, "classic bots: two bot turns, then the person rolls");
+      eq(s.game.turn, g.turn + 1, "classic bots: the two bots played their turns in between, and the round moved on");
+      await fresh("CB3", H, s, "classic bots, three seats: a new turn gets a full window and budget after the last used 0.8 of its window", did);
+      lines.push(`CB3 turn after a late pass: ${left(s)} ms`);
+      // Turn 2: a late roll, then a late pass, so the turn uses nearly all of its budget.
+      start = (await budget("CB3", H)).turnStartedAt;
+      await until(start + 0.8 * TURN);
+      c.send({ type: "roll" });
+      s = await next(c, s.game.seq, "main", "classic bots: the person's late roll");
+      near(s.turnDeadline, start + TOTAL, "classic bots: after a late roll the window is what the turn's budget has left");
+      await until(s.turnDeadline - 300);
+      did = Date.now();
+      c.send({ type: "pass" });
+      s = await nextRoll(c, s.game.seq, "classic bots: the person's next turn after a late roll and a late pass");
+      await fresh("CB3", H, s, "classic bots, three seats: a new turn gets a full window and budget after the last used nearly all of its budget", did);
+      lines.push(`CB3 turn after a ${TOTAL - 300} ms turn: ${left(s)} ms`);
+      // Turn 3: the first bot rolls a seven and the person owes a discard in that bot's turn.
+      c.send({ type: "roll" });
+      s = await next(c, s.game.seq, "main", "classic bots: the person rolls");
+      queueDice(3, 4);
+      await until(s.turnDeadline - 0.2 * TURN);
+      did = Date.now();
+      c.send({ type: "pass" });
+      s = await next(c, s.game.seq, "discard", "classic bots: a bot's seven");
+      eq([s.game.current, Object.keys(s.game.discardNeeded), s.turnPlayer], [at(g, 1), [H], H], "classic bots: in the bot's turn only the person owes a discard, and its window runs");
+      await fresh("CB3", H, s, "classic bots, three seats: a discard owed in a bot's turn gets a full window of its own", did);
+      lines.push(`CB3 discard in a bot's turn: ${left(s)} ms`);
+      start = (await budget("CB3", H)).turnStartedAt;
+      await until(start + 0.8 * TURN);
+      did = Date.now();
+      c.send({ type: "discard", cards: discardOf(s.game.players.find((p) => p.id === H).resources, s.game.discardNeeded[H]) });
+      s = await nextRoll(c, s.game.seq, "classic bots: the person's next turn after its discard");
+      await fresh("CB3", H, s, "classic bots, three seats: after a discard in a bot's turn the person's new turn gets a full window and budget", did);
+      lines.push(`CB3 turn after a discard: ${left(s)} ms`);
+      c.ws.terminate();
+    }
+    {
+      const g = cb4;
+      const H = at(g, 0);
+      const c = await client("CB4", H);
+      // Turn 1: the person passes late; the first bot asks the table, and the person takes the offer.
+      let start = (await budget("CB4", H)).turnStartedAt;
+      await until(start + 0.8 * TURN);
+      c.send({ type: "pass" });
+      const offer = await c.until(() => c.inbox.find((m) => m.type === "tradeOffer" && m.from === cbAsker), "classic bots: the bot asks the table");
+      const asked = (await saved("CB4", (r) => r.game.current === cbAsker && r.game.phase === "main", "classic bots: the bot's ask saved")).seats.find((x) => x.pid === H);
+      lines.push(`CB4 while the person answers a bot's ask: turnDeadline ${asked.turnDeadline}, turnStartedAt ${asked.turnStartedAt}`);
+      await sleep(0.5 * TURN);
+      let did = Date.now();
+      const seq = c.state.game.seq;
+      c.send({ type: "tradeAnswer", tradeId: offer.tradeId, yes: true });
+      let s = await nextRoll(c, seq, "classic bots: three bot turns after the trade, then the person rolls");
+      eq(s.game.players.find((p) => p.id === H).resources.grain, 1, "classic bots: the person gave the bot its grain");
+      await fresh("CB4", H, s, "classic bots, four seats: after answering a bot's ask the person's new turn gets a full window and budget", did);
+      lines.push(`CB4 turn after a late pass and a trade answer: ${left(s)} ms`);
+      // Turn 2: a late roll, then a late pass.
+      start = (await budget("CB4", H)).turnStartedAt;
+      await until(start + 0.8 * TURN);
+      c.send({ type: "roll" });
+      s = await next(c, s.game.seq, "main", "classic bots: the person's late roll");
+      await until(s.turnDeadline - 300);
+      did = Date.now();
+      c.send({ type: "pass" });
+      s = await nextRoll(c, s.game.seq, "classic bots: the person's next turn, four seats");
+      eq(s.game.turn, g.turn + 2, "classic bots: two rounds of four turns");
+      await fresh("CB4", H, s, "classic bots, four seats: a new turn gets a full window and budget after the last used nearly all of its budget", did);
+      lines.push(`CB4 turn after a ${TOTAL - 300} ms turn: ${left(s)} ms`);
+      c.ws.terminate();
+    }
+    console.log(`classic bots: one person with bots, every new turn a full ${TURN} ms window; ${lines.join("; ")}`);
   }
 
   // ---- 1 and 2 on five seats. ----
