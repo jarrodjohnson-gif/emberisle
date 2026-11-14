@@ -1,10 +1,9 @@
 import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { Dices } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BuildList, buildList, ChatControls, ChatDock, ChromeLanded, CostCard, DiscardBar, FirstGameCoach, FortuneTray, HowTo, losses, MyNumbers, sheets, TakeFromBar, TradePanel, tradeToast, TradeToast, TurnMoment, WinScreen } from "@/components/game/chunks";
+import { BuildList, buildList, ChatControls, ChatDock, ChromeLanded, CostCard, DiscardBar, FirstGameCoach, FortuneTray, HowTo, losses, MyNumbers, PlayerMenu, playerMenu, sheets, TakeFromBar, TradePanel, tradeToast, TradeToast, TurnMoment, WinScreen } from "@/components/game/chunks";
 import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
-import { PlayerMenu } from "@/components/game/PlayerMenu";
 import { SeatRail, SeatStrip } from "@/components/game/SeatRail";
 import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice, RollMoment } from "@/components/game/Dice";
@@ -180,7 +179,7 @@ export function Hud() {
   const [stackRef, moreBelow] = useMoreBelow();
   const [lossesRetry, setLossesRetry] = useState(0);
   useEffect(() => {
-    const cancelSheets = preloadOnIdle(() => (void buildList.prefetch(), sheets.prefetch()));
+    const cancelSheets = preloadOnIdle(() => (void buildList.prefetch(), void playerMenu.prefetch(), sheets.prefetch()));
     const cancelToast = preloadOnIdle(tradeToast.prefetch);
     const cancelLosses = preloadOnIdle(losses.prefetch);
     return () => {
@@ -393,15 +392,17 @@ export function Hud() {
       {/* #1420: a bottom sheet, so the trade rows sit under the thumb. Upright it spans the screen and its top edge stays in
           the bottom half; sideways it is 320 px at the left, over the dock column and clear of the island. */}
       {phone && menuPlayer ? (
-        <PlayerMenu
-          player={menuPlayer}
-          sheet
-          className={cn(
-            // The bottom room is a border, not padding: a border is outside the scrollport, so rows that scroll never pass under the home bar.
-            "absolute bottom-0 z-30 rounded-b-none border-b-[length:max(1rem,env(safe-area-inset-bottom))] border-b-surface p-4 pb-0 shadow-[var(--shadow-sheet)]",
-            portrait ? "inset-x-0 max-h-[50dvh] border-x-0 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]" : "left-safe max-h-[70dvh] w-80",
-          )}
-        />
+        <LazyBoundary failed={<TrayFailed close={() => openMenu(null)} />}>
+          <PlayerMenu
+            player={menuPlayer}
+            sheet
+            className={cn(
+              // The bottom room is a border, not padding: a border is outside the scrollport, so rows that scroll never pass under the home bar.
+              "absolute bottom-0 z-30 rounded-b-none border-b-[length:max(1rem,env(safe-area-inset-bottom))] border-b-surface p-4 pb-0 shadow-[var(--shadow-sheet)]",
+              portrait ? "inset-x-0 max-h-[50dvh] border-x-0 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]" : "left-safe max-h-[70dvh] w-80",
+            )}
+          />
+        </LazyBoundary>
       ) : null}
 
       {phone ? null : <SeatRail actor={actor} />}

@@ -8,9 +8,10 @@
 // #1608: a five or six seat table numbers its seats (SeatNo, `PlayerState.seat`) beside each dot; a classic seat has no number.
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { type LucideIcon, Route, Swords } from "lucide-react";
-import { SeatBubbles } from "@/components/game/chunks";
+import { PlayerMenu, SeatBubbles } from "@/components/game/chunks";
 import { chunk, LazyBoundary } from "@/lib/lazy";
-import { PlayerMenu, seatAway } from "@/components/game/PlayerMenu";
+import { seatAway } from "@/components/game/seat-away";
+import { TrayFailed } from "@/components/game/TrayFailed";
 import { SeatDot, SeatNo } from "@/components/game/SeatDot";
 import type { GameState, PlayerState } from "@/lib/game/types";
 import { cards, hiddenCount, publicVP, roadLength } from "@/lib/game/rules";
@@ -194,12 +195,18 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
 export function SeatRail({ actor }: { actor: string }) {
   const players = useGame((s) => s.state!.players);
   const menuFor = useGame((s) => s.menuFor);
+  const openMenu = useGame((s) => s.openMenu);
   return (
     <aside className={cn("pointer-events-none absolute left-3 top-20 hidden w-48 flex-col gap-1 md:flex", menuFor ? "z-20" : "z-10")}>
       {players.map((p) => (
         <div key={p.id} className="pointer-events-auto flex flex-col gap-1">
           <SeatCard p={p} actor={actor} className="rounded-[14px]" />
-          {menuFor === p.id ? <PlayerMenu player={p} /> : null}
+          {/* If the menu's chunk cannot load, the menu closes, so the next press on the card tries again. */}
+          {menuFor === p.id ? (
+            <LazyBoundary failed={<TrayFailed close={() => openMenu(null)} />}>
+              <PlayerMenu player={p} />
+            </LazyBoundary>
+          ) : null}
         </div>
       ))}
       <LazyBoundary failed={null}><SeatPublicGains scope="rail" /></LazyBoundary>
