@@ -919,8 +919,10 @@ function runBots(room) {
     // Once per bot turn, before its other moves, the bot may ask the table (#363). A partner asks nobody (#1611): the
     // paired-turn choice is the classic one whenever the game has no partner activation.
     const recovery = (room.recoveryPids ?? []).includes(waiting.id);
-    if (!recovery && g.phase === "main" && !room.offer && room.botAsked !== `${g.turn}:${waiting.id}`) {
-      room.botAsked = `${g.turn}:${waiting.id}`;
+    // Keyed by activation under paired turns (#1612): a seat's partner activation must not use up its own turn's ask.
+    const asked = `${g.turn}:${waiting.id}${g.role ? `:${g.activation}` : ""}`;
+    if (!recovery && g.phase === "main" && !room.offer && room.botAsked !== asked) {
+      room.botAsked = asked;
       const ask = pairedTradeAsk(g, waiting.id, room.botDeclined?.[waiting.id]);
       if (ask) return openOffer(room, waiting.id, ask.give, ask.want);
     }

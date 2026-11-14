@@ -10,7 +10,8 @@
 // 4. A reconnect mid partner activation keeps the remaining time and the budget; a kill -9 restart mid partner activation
 //    and mid discard keeps every remaining deadline.
 // 5. Each activation is its own turn: an extension granted on a seat's partner activation is not spent on its primary
-//    activation in the same round, a seat's budget restarts even when bots played every activation in between.
+//    activation in the same round, a seat's budget restarts even when bots played every activation in between, and a bot
+//    that was a partner earlier in the round still asks the table on its own turn.
 // 6. The classic three-seat room times out, rolls, passes, reconnects and keys its extensions exactly as before.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -21,7 +22,7 @@ import { fileURLToPath } from "node:url";
 import WebSocket from "ws";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
-import { createExpandedGame } from "../src/lib/game/expanded.ts";
+import { createExpandedGame, pairedTradeAsk } from "../src/lib/game/expanded.ts";
 import { applyAction } from "../src/lib/game/rules.ts";
 import { RESOURCES } from "../src/lib/game/types.ts";
 
@@ -219,6 +220,18 @@ const lone = primaryMain(expanded(5, 1614));
 Object.assign(lone, { role: "partner", current: at(lone, 3), activation: lone.activation + 1 });
 hands(lone, {}, 0);
 writeRoom("XBOT", lone, [0, 1, 2, 4].map((i) => at(lone, i)));
+// XASK: players[3] is a bot, partner of players[0]; everyone else is a person. As a partner the bot only passes; as the
+// primary later in the same round it is one card short of a stronghold and asks the table.
+const asks = primaryMain(expanded(5, 1615));
+const asker = at(asks, 3);
+hands(asks, { [asker]: { timber: 1, grain: 2, ore: 2 } }, 0);
+writeRoom("XASK", asks, [asker]);
+{
+  const partner = { ...structuredClone(asks), role: "partner", current: asker };
+  const primary = { ...structuredClone(asks), role: "primary", current: asker, primary: asker };
+  eq(chooseBotAction(partner, asker), { type: "endTurn" }, "XASK: as a partner the bot passes");
+  ok(pairedTradeAsk(primary, asker, undefined), "XASK: as the primary the bot asks the table");
+}
 // CTRI: a classic three-seat room, players[0] in its action phase, holding 4 timber for a bank trade.
 let tri = createGame({ humans: NAMES.slice(0, 3).map((name) => ({ name })), bots: 0, seed: 1612 });
 tri = primaryMain(setupBy(tri));
@@ -314,6 +327,34 @@ try {
     ok(f.seats.find((x) => x.pid === H).turnStartedAt >= started + 0.8 * TURN, "bots: the budget restarted with the activation", f.seats.find((x) => x.pid === H).turnStartedAt - started);
     cs[H].ws.terminate();
     console.log(`bots: XBOT ${H} passed its partner activation ${Math.round(0.8 * TURN)} ms in; after 4 bot activations its primary window is ${left(s)} ms`);
+  }
+
+  // ---- 5. A bot that was a partner earlier in the round still asks on its own turn. ----
+  {
+    const g = asks;
+    const people = g.players.map((p) => p.id).filter((pid) => pid !== asker);
+    const cs = await seatAll("XASK", people);
+    const P = at(g, 0);
+    // P passes; the bot's partner activation passes; then P+1 and P+2 roll and pass, each with its partner passing.
+    const step = async (pid, type) => {
+      const seq = cs[pid].state.game.seq;
+      cs[pid].send({ type });
+      await settled(cs, (x) => x.game.seq > seq, `${pid} ${type}`);
+    };
+    await step(P, "pass");
+    let s = newest(cs);
+    eq([s.game.role, s.game.current, s.game.primary], ["primary", at(g, 1), at(g, 1)], "ask: the bot's partner activation passed");
+    for (const i of [1, 2]) {
+      await step(at(g, i), "roll");
+      await step(at(g, i), "pass");
+      await step(at(g, i + 3), "pass");
+    }
+    s = newest(cs);
+    eq([s.game.turn, s.game.primary, s.game.role], [g.turn, asker, "primary"], "ask: the bot is the primary in the same round");
+    const offer = await cs[P].until(() => cs[P].inbox.find((m) => m.type === "tradeOffer" && m.from === asker), "ask: the bot asks the table");
+    eq([offer.give, offer.want], [{ timber: 1 }, { grain: 1 }], "ask: the bot's ask");
+    for (const c of Object.values(cs)) c.ws.terminate();
+    console.log(`ask: XASK bot ${asker} passed as ${P}'s partner, then asked the table on its own turn in round ${g.turn}`);
   }
 
   // ---- 1 to 5 on six seats, with a restart mid discard and mid partner activation. ----
