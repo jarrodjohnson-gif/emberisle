@@ -235,6 +235,7 @@ function expandedGames(seats, humans, seeds) {
       }
       tally.actions++;
       if (kind === "pass") assert.fail(`${tag}: the rules refused a bot's pick (${prev.role}, ${prev.phase})`);
+      if (kind === "ask") assert.equal(e.error, undefined, `${tag}: the rules refused bot ${actor}'s offer as ${prev.role ?? "setup"}: ${e.error}`);
       if (kind === "bot" || kind === "answer") assert.equal(e.error, undefined, `${tag}: ${action.type} by bot ${actor} (${prev.role ?? "setup"}): ${e.error}`);
       if (kind === "human" && prev.role === "partner" && action.type === "offerTrade") {
         assert.equal(e.error, PARTNER_NO_TRADE, `${tag}: a human partner's offer is refused`);
