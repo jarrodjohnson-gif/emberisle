@@ -1,0 +1,769 @@
+ok lobby status on Ember: "Need 2 more players" +31.0s
+ok lobby status on Ember: "Need 1 more player" +46.0s
+ok lobby status on Tide: "Need 1 more player" +46.1s
+ok lobby status on Ember: "0 of 3 ready" +47.8s
+ok lobby status on Tide: "0 of 3 ready" +47.8s
+ok host tag on Ember's row only, seen by Ember +47.8s
+ok host tag on Ember's row only, seen by Tide +47.9s
+ok host tag on Ember's row only, seen by Pine +48.0s
+ok phone title card is 410 px tall, at most 55% of 844 +48.1s
+ok phone title card is full width minus 12 px, at the bottom +48.1s
+CAPTURE start 1495-bounded-phone-title.jpg {
+  renders: 27,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-phone-title.jpg 2104 {
+  renders: 31,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+ok phone lobby card is 358x812, inside the 390x844 screen with the approved 16 px margins +51.1s
+CAPTURE start 1495-bounded-phone-lobby.jpg {
+  renders: 44,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-phone-lobby.jpg 737 {
+  renders: 47,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-1-844.jpg {
+  renders: 47,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE complete 1495-bounded-1-844.jpg 1055 {
+  renders: 50,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-1-640.jpg {
+  renders: 51,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-1-640.jpg 690 {
+  renders: 53,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-2-844.jpg {
+  renders: 53,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE complete 1495-bounded-2-844.jpg 789 {
+  renders: 55,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-2-640.jpg {
+  renders: 56,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-2-640.jpg 706 {
+  renders: 58,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-3-844.jpg {
+  renders: 59,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-3-844.jpg 982 {
+  renders: 62,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-3-640.jpg {
+  renders: 63,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37144
+}
+CAPTURE complete 1495-bounded-3-640.jpg 871 {
+  renders: 66,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-4-844.jpg {
+  renders: 66,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE complete 1495-bounded-4-844.jpg 826 {
+  renders: 70,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-4-640.jpg {
+  renders: 72,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-4-640.jpg 944 {
+  renders: 75,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-5-844.jpg {
+  renders: 76,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-5-844.jpg 689 {
+  renders: 78,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-5-640.jpg {
+  renders: 79,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-5-640.jpg 654 {
+  renders: 82,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-6-844.jpg {
+  renders: 83,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37144
+}
+CAPTURE complete 1495-bounded-6-844.jpg 825 {
+  renders: 87,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-6-640.jpg {
+  renders: 88,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-6-640.jpg 714 {
+  renders: 90,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-7-844.jpg {
+  renders: 90,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE complete 1495-bounded-7-844.jpg 787 {
+  renders: 92,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-7-640.jpg {
+  renders: 93,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-7-640.jpg 927 {
+  renders: 98,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-8-844.jpg {
+  renders: 98,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE complete 1495-bounded-8-844.jpg 845 {
+  renders: 101,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-8-640.jpg {
+  renders: 103,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37144
+}
+CAPTURE complete 1495-bounded-8-640.jpg 666 {
+  renders: 105,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-9-844.jpg {
+  renders: 105,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE complete 1495-bounded-9-844.jpg 954 {
+  renders: 107,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-9-640.jpg {
+  renders: 108,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-9-640.jpg 783 {
+  renders: 111,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-10-844.jpg {
+  renders: 111,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE complete 1495-bounded-10-844.jpg 870 {
+  renders: 113,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-10-640.jpg {
+  renders: 114,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-10-640.jpg 754 {
+  renders: 117,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-11-844.jpg {
+  renders: 118,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37144
+}
+CAPTURE complete 1495-bounded-11-844.jpg 1010 {
+  renders: 121,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-11-640.jpg {
+  renders: 122,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-11-640.jpg 753 {
+  renders: 124,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-12-844.jpg {
+  renders: 124,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE complete 1495-bounded-12-844.jpg 805 {
+  renders: 126,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-12-640.jpg {
+  renders: 128,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-12-640.jpg 760 {
+  renders: 131,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-13-844.jpg {
+  renders: 131,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE complete 1495-bounded-13-844.jpg 912 {
+  renders: 136,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-13-640.jpg {
+  renders: 136,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE complete 1495-bounded-13-640.jpg 773 {
+  renders: 139,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-14-844.jpg {
+  renders: 141,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37144
+}
+CAPTURE complete 1495-bounded-14-844.jpg 744 {
+  renders: 143,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-14-640.jpg {
+  renders: 144,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-14-640.jpg 644 {
+  renders: 146,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-15-844.jpg {
+  renders: 146,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE complete 1495-bounded-15-844.jpg 805 {
+  renders: 149,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-15-640.jpg {
+  renders: 150,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-15-640.jpg 655 {
+  renders: 152,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-16-844.jpg {
+  renders: 154,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-16-844.jpg 785 {
+  renders: 157,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-16-640.jpg {
+  renders: 159,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37144
+}
+CAPTURE complete 1495-bounded-16-640.jpg 745 {
+  renders: 162,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-17-844.jpg {
+  renders: 162,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE complete 1495-bounded-17-844.jpg 887 {
+  renders: 165,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-17-640.jpg {
+  renders: 165,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE complete 1495-bounded-17-640.jpg 800 {
+  renders: 169,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-18-844.jpg {
+  renders: 170,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37144
+}
+CAPTURE complete 1495-bounded-18-844.jpg 891 {
+  renders: 173,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-18-640.jpg {
+  renders: 173,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE complete 1495-bounded-18-640.jpg 754 {
+  renders: 177,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-19-844.jpg {
+  renders: 179,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37145
+}
+CAPTURE complete 1495-bounded-19-844.jpg 1040 {
+  renders: 183,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-19-640.jpg {
+  renders: 184,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: 37144
+}
+CAPTURE complete 1495-bounded-19-640.jpg 885 {
+  renders: 187,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-20-844.jpg {
+  renders: 187,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE complete 1495-bounded-20-844.jpg 814 {
+  renders: 189,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 844 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE start 1495-bounded-20-640.jpg {
+  renders: 189,
+  draw: false,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+CAPTURE complete 1495-bounded-20-640.jpg 756 {
+  renders: 191,
+  draw: true,
+  fonts: 'loaded',
+  viewport: [ 390, 640 ],
+  water: 'simple',
+  contextLost: false,
+  fence: null
+}
+ok zero browser errors in capture-only replay +86.7s
+CAPTURE replay20 pairs complete, not20 full chat proofs

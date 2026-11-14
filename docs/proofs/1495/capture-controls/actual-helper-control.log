@@ -1,0 +1,29 @@
+ok lobby status on Ember: "Need 2 more players" +13.9s
+ok lobby status on Ember: "Need 1 more player" +15.8s
+ok lobby status on Tide: "Need 1 more player" +15.9s
+ok lobby status on Ember: "0 of 3 ready" +17.3s
+ok lobby status on Tide: "0 of 3 ready" +17.3s
+ok host tag on Ember's row only, seen by Ember +17.4s
+ok host tag on Ember's row only, seen by Tide +17.4s
+ok host tag on Ember's row only, seen by Pine +17.4s
+ok phone title card is 410 px tall, at most 55% of 844 +17.6s
+ok phone title card is full width minus 12 px, at the bottom +17.6s
+ACTUAL HELPER clock witness {
+  date: 2214,
+  perf: 2213.9000000059605,
+  frames: 125,
+  timer: true,
+  firedAt: 2002.6000000089407,
+  renders: 28,
+  initialRenders: 28
+}
+ok actual helper preserves Date/performance/native2s timer/DOM RAF while scene draws wait +22.4s
+ok phone lobby card is 358x812, inside the 390x844 screen with the approved 16 px margins +23.4s
+ok actual helper success restores original draw and GL suppression +24.2s
+ok actual helper preserves capture error identity and restores after failure +24.9s
+FAIL capture cleanup Error: controlled cleanup failure
+    at file:///workspace/work/1495/scripts/.1495-actual-helper-control.mjs:565:68
+ok actual helper retains primary capture error when cleanup also fails +25.7s
+ok actual helper fails on cleanup-only error instead of passing +26.4s
+ok zero browser errors in actual helper controls +26.4s
+ACTUAL HELPER controls complete; expected negative errors are fixture checks, not full chat validation

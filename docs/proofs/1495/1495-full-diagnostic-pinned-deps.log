@@ -1,0 +1,18 @@
+ok lobby status on Ember: "Need 2 more players" +12.0s
+ok lobby status on Ember: "Need 1 more player" +13.4s
+ok lobby status on Tide: "Need 1 more player" +13.4s
+ok lobby status on Ember: "0 of 3 ready" +14.5s
+ok lobby status on Tide: "0 of 3 ready" +14.6s
+ok host tag on Ember's row only, seen by Ember +14.6s
+ok host tag on Ember's row only, seen by Tide +14.6s
+ok host tag on Ember's row only, seen by Pine +14.6s
+ok phone title card is 410 px tall, at most 55% of 844 +14.8s
+ok phone title card is full width minus 12 px, at the bottom +14.8s
+ok phone lobby card is 358x812, inside the 390x844 screen with the approved 16 px margins +18.7s
+ok phone lobby 390x844, 4 seats scrolled down: footer keeps the approved 12 px bottom padding (gap 12), nothing below it, Leave inside it +24.9s
+FAIL page.screenshot: Timeout 30000ms exceeded.
+Call log:
+[2m  - taking page screenshot[22m
+[2m  - waiting for fonts to load...[22m
+[2m  - fonts loaded[22m
+

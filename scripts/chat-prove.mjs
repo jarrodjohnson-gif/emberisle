@@ -89,13 +89,72 @@ const store = (t, fn) => t.page.evaluate(fn);
 // Capture after actual rendered frames, including the lazy island's first mount.
 async function shot(t, file) {
   await t.page.waitForFunction(() => Boolean(window.__isle));
-  const before = await t.page.evaluate(() => {
-    window.__draw = true;
-    return window.__isle.renders;
-  });
-  await t.page.waitForFunction((n) => window.__isle.renders >= n + 2, before, { timeout: 15_000 });
-  await t.page.screenshot({ path: `${SHOTS}${file}`, type: "jpeg", quality: 70 });
-  await t.page.evaluate(() => (window.__draw = false));
+  let failed = false, failure, baseline;
+  try {
+    baseline = await t.page.evaluate(() => {
+      const isle = window.__isle, draw = isle.draw;
+      if (typeof draw !== "function") throw new Error("chat capture: scene draw hook missing");
+      const capture = window.__chatShot = { isle, draw, own: Object.hasOwn(isle, "draw"), attempts: 0, completed: 0 };
+      // Retain the two actual frames required below, then let the compositor capture them without
+      // competing with further scene draws. DOM RAFs, clocks and reaction expiry keep running.
+      let remaining = 2;
+      isle.draw = function (...args) {
+        capture.attempts++;
+        if (!remaining) return;
+        remaining--;
+        const result = draw.apply(this, args);
+        capture.completed++;
+        return result;
+      };
+      window.__draw = true;
+      return { renders: isle.renders, origin: performance.timeOrigin };
+    });
+    await t.page.waitForFunction((n) => window.__isle.renders >= n + 2, baseline.renders, { timeout: 15_000 });
+    await t.page.screenshot({ path: `${SHOTS}${file}`, type: "jpeg", quality: 70 });
+  } catch (error) {
+    failed = true;
+    failure = error;
+    // Reporting happens after the original guard failed; it cannot make that failed check pass.
+    let reportTimer;
+    try {
+      const context = await Promise.race([
+        t.page.evaluate(() => {
+          const capture = window.__chatShot, saved = capture?.isle, current = window.__isle;
+          const gl = saved?.renderer?.getContext();
+          return {
+            origin: performance.timeOrigin, sameRenderer: saved === current,
+            savedRenders: saved?.renders, currentRenders: current?.renders,
+            attempts: capture?.attempts, completed: capture?.completed,
+            hidden: document.hidden, motionReduced: matchMedia("(prefers-reduced-motion: reduce)").matches,
+            rendererCalm: saved?.calm(), stopped: saved?.stopped, connected: saved?.renderer?.domElement?.isConnected,
+            busyUntil: saved?.busyUntil, lastFrame: saved?.lastFrame, now: performance.now(),
+            contextLost: gl?.isContextLost(), fence: saved?.fence && !gl.isContextLost() ? gl.getSyncParameter(saved.fence, gl.SYNC_STATUS) : null,
+          };
+        }),
+        new Promise((resolve) => { reportTimer = setTimeout(() => resolve({ reportTimedOut: true }), 3000); }),
+      ]);
+      console.log("capture failure context", file, { baseline, ...context });
+    } catch (reportError) {
+      console.log("capture failure context unavailable", file, reportError.message);
+    } finally {
+      clearTimeout(reportTimer);
+    }
+  }
+  try {
+    await t.page.evaluate(() => {
+      const saved = window.__chatShot;
+      if (saved) {
+        if (saved.own) saved.isle.draw = saved.draw;
+        else delete saved.isle.draw;
+        delete window.__chatShot;
+      }
+      window.__draw = false;
+    });
+  } catch (error) {
+    if (failed) console.log("FAIL capture cleanup", error.stack ?? error.message);
+    else { failed = true; failure = error; }
+  }
+  if (failed) throw failure;
 }
 const check = (ok, what) => {
   if (!ok) throw new Error(what);
@@ -644,31 +703,38 @@ try {
   }
   // #899: the lobby has the six emoji too. One tap from Tide shows a bubble mid-row on Tide's seat, clear of the name, and a
   // light line in every log; a sound from Pine's Sounds & stickers tab shows its own bubble and line.
+  // Observe transient bubbles while the sender action completes, within their original lifetime (#1495).
   const tideSeat = await store(b, () => window.__emberisle.getState().seatId);
   const pineSeat = await store(c, () => window.__emberisle.getState().seatId);
-  await b.page.getByTestId("emoji-row").getByRole("button", { name: "React happy", exact: true }).click();
-  for (const t of tabs) {
-    await t.page.getByTestId(`lobby-seat-${tideSeat}`).locator('[data-testid="reaction"][data-emote="😊"]').waitFor({ timeout: 5000 });
-    const name = await clearOfName(t, `lobby-seat-${tideSeat}`);
-    check(name.ok, `lobby: ${t.name} shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect ${name.why}`);
-    await t.page.getByTestId("chat-log").locator('[data-testid="react-line"][data-emote="😊"]', { hasText: "Tide" }).waitFor({ timeout: 5000 });
-  }
+  await Promise.all([
+    ...tabs.map(async (t) => {
+      await t.page.getByTestId(`lobby-seat-${tideSeat}`).locator('[data-testid="reaction"][data-emote="😊"]').waitFor({ timeout: 5000 });
+      const name = await clearOfName(t, `lobby-seat-${tideSeat}`);
+      check(name.ok, `lobby: ${t.name} shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect ${name.why}`);
+      await t.page.getByTestId("chat-log").locator('[data-testid="react-line"][data-emote="😊"]', { hasText: "Tide" }).waitFor({ timeout: 5000 });
+    }),
+    b.page.getByTestId("emoji-row").getByRole("button", { name: "React happy", exact: true }).click(),
+  ]);
   check(true, "lobby: Tide's one-tap emoji is a light line in all 3 logs");
   await c.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
-  await c.page.getByRole("button", { name: "Play sound Wololo", exact: true }).click();
-  for (const t of tabs) {
-    await t.page.getByTestId(`lobby-seat-${pineSeat}`).locator('[data-testid="sound-bubble"][data-sound="sb_wololo"]').waitFor({ timeout: 5000 });
-    const name = await clearOfName(t, `lobby-seat-${pineSeat}`);
-    check(name.ok, `lobby: ${t.name} shows Pine's Wololo bubble, clear of the name ${name.why}`);
-  }
+  await Promise.all([
+    ...tabs.map(async (t) => {
+      await t.page.getByTestId(`lobby-seat-${pineSeat}`).locator('[data-testid="sound-bubble"][data-sound="sb_wololo"]').waitFor({ timeout: 5000 });
+      const name = await clearOfName(t, `lobby-seat-${pineSeat}`);
+      check(name.ok, `lobby: ${t.name} shows Pine's Wololo bubble, clear of the name ${name.why}`);
+    }),
+    c.page.getByRole("button", { name: "Play sound Wololo", exact: true }).click(),
+  ]);
   await c.page.getByRole("tab", { name: "Chat", exact: true }).click();
   for (const t of tabs) await t.page.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: "Wololo" }).waitFor({ timeout: 5000 });
   check(true, "lobby: Pine's sound is a bubble and a light line on all 3 tabs");
   // #1129: the two newest chips, one from each of two other seats, are a bubble and a sound line on every seat.
   for (const [sender, senderSeat, id, label] of [[b, tideSeat, "sb_real_badman", "Real badman"], [a, await store(a, () => window.__emberisle.getState().seatId), "sb_gong", "Gong"]]) {
     await sender.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
-    await sender.page.getByRole("button", { name: `Play sound ${label}`, exact: true }).click();
-    for (const t of tabs) await t.page.getByTestId(`lobby-seat-${senderSeat}`).locator(`[data-testid="sound-bubble"][data-sound="${id}"]`).waitFor({ timeout: 5000 });
+    await Promise.all([
+      ...tabs.map((t) => t.page.getByTestId(`lobby-seat-${senderSeat}`).locator(`[data-testid="sound-bubble"][data-sound="${id}"]`).waitFor({ timeout: 5000 })),
+      sender.page.getByRole("button", { name: `Play sound ${label}`, exact: true }).click(),
+    ]);
     await sender.page.getByRole("tab", { name: "Chat", exact: true }).click();
     for (const t of tabs) await t.page.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: label }).waitFor({ timeout: 5000 });
     check(true, `lobby: ${label} from ${sender.name} is a bubble and a sound line on all 3 tabs`);
@@ -760,7 +826,6 @@ try {
   await a.page.getByRole("button", { name: "Mute player Pine", exact: true }).click();
   await openChat(c);
   await c.page.getByTestId("emoji-row").getByRole("button", { name: "React fire", exact: true }).click();
-  await closeChat(c);
   await a.page.waitForFunction(({ seat, emote }) => window.__emberisle.getState().reactions.some((r) => r.seat === seat && r.emote === emote), { seat: mutedSeat, emote: "🔥" });
   const mutedFloat = a.page.locator(`[data-testid="rail-${mutedPlayer}"] [data-testid="reaction"][data-emote="🔥"]`);
   const mutedReactLine = a.page.getByTestId("chat-log").locator('[data-testid="react-line"][data-emote="🔥"]').filter({ hasText: "Pine" });
@@ -769,6 +834,10 @@ try {
   await mutedFloat.waitFor({ timeout: 1500 });
   await mutedReactLine.first().waitFor({ timeout: 1500 });
   check(true, "mute: unmuting Pine restores the active reaction and its log line");
+
+  // The receiver must observe restoration during the original 2s reaction lifetime.
+  // Closing the sender first can spend that lifetime waiting for unrelated UI (#1495).
+  await closeChat(c);
 
   await a.page.getByRole("button", { name: "Mute player Pine", exact: true }).click();
   await a.page.getByRole("button", { name: "Close chat" }).click();
@@ -1544,7 +1613,7 @@ try {
   check(errors.length === 0, "zero console errors in all tabs");
   console.log("chat prove ok");
 } catch (e) {
-  console.log("FAIL", e.message);
+  console.log("FAIL", e.stack ?? e.message);
   if (errors.length) console.log(errors.join("\n"));
   code = 1;
 } finally {

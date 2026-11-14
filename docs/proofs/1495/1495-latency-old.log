@@ -1,0 +1,13 @@
+MUTE_DIAG {"ms":754.9000000059605,"name":"reaction-store","details":[]}
+MUTE_DIAG {"ms":801.5,"name":"fire-dom","details":[]}
+MUTE_DIAG {"ms":1079.2000000029802,"name":"mute-button-click","details":"Mute players"}
+MUTE_DIAG {"ms":1308.7999999970198,"name":"mute-button-click","details":"Mute player Pine"}
+ok mute: Pine is muted in this chat dock +23.7s
+ok chat polish 1280x720 mute panel: 4 controls, 4 texts, minimum 10.43:1, glass over black rgb(255,255,255)
+ok mute: Pine's chat line is hidden only in Ember's view +23.9s
+MUTE_DIAG {"ms":1708,"name":"mute-button-click","details":"Unmute player Pine"}
+ok mute: unmuting Pine restores the earlier chat line +24.0s
+MUTE_DIAG {"ms":1810.2999999970198,"name":"mute-button-click","details":"Mute player Pine"}
+MUTE_DIAG {"ms":2185.9000000059605,"name":"reaction-store","details":[{"type":"react","seat":"s2","player":"p2","emote":"🔥","to":null,"at":1794267296582}]}
+MUTE_DIAG {"ms":4190.0999999940395,"name":"reaction-store","details":[]}
+FAIL page.waitForFunction: Timeout 30000ms exceeded.

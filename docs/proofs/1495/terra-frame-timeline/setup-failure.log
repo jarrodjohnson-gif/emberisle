@@ -1,0 +1,6 @@
+Warning: Detected unsettled top-level await at file:///workspace/emberisle-adopt1502/scripts/.codex-terra-1495-frame-timeline.mjs:37
+const hostPort = await new Promise((resolve) =>
+                 ^
+
+
+

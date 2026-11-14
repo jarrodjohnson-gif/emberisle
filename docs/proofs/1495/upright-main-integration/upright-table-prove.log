@@ -1,0 +1,15 @@
+
+> upright-table-prove
+> node scripts/upright-table-prove.mjs
+
+430x932: overhead at 40.0°, shore 19.8 / 19.8 px from the edges, docks inside the hole's height, nine dock buttons and nine goods piles on screen, island 390 px wide, 53 px over the dock and 205 px under the seats
+430x932: 16 px gutters, full names on their own line, no tallies, no boxes, no number chips, the last event 333 px wide; clear height 59.3 %
+430x932: the seat sheet lists the path length and wayfarers played, and names an award on its holder
+390x844: overhead at 40.0°, shore 18.1 / 18.1 px from the edges, docks inside the hole's height, nine dock buttons and nine goods piles on screen, island 354 px wide, 48 px over the dock and 145 px under the seats
+390x844: 16 px gutters, full names on their own line, no tallies, no boxes, no number chips, the last event 293 px wide; clear height 60.7 %
+390x844: the seat sheet lists the path length and wayfarers played, and names an award on its holder
+turned: 25° sideways, 40° upright again
+375x812: overhead at 40.0°, shore 17.5 / 17.5 px from the edges, docks inside the hole's height, nine dock buttons and nine goods piles on screen, island 340 px wide, 46 px over the dock and 92 px under the seats
+375x812: 16 px gutters, full names on their own line, no tallies, no boxes, no number chips, the last event 278 px wide; clear height 55.2 %
+375x812: the seat sheet lists the path length and wayfarers played, and names an award on its holder
+upright-table-prove: ok

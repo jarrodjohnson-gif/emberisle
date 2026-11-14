@@ -1,0 +1,198 @@
+ok lobby status on Ember: "Need 2 more players" +62.2s
+ok lobby status on Ember: "Need 1 more player" +64.4s
+ok lobby status on Tide: "Need 1 more player" +64.5s
+ok lobby status on Ember: "0 of 3 ready" +66.1s
+ok lobby status on Tide: "0 of 3 ready" +66.1s
+ok host tag on Ember's row only, seen by Ember +66.2s
+ok host tag on Ember's row only, seen by Tide +66.2s
+ok host tag on Ember's row only, seen by Pine +66.2s
+ok phone title card is 410 px tall, at most 55% of 844 +66.5s
+ok phone title card is full width minus 12 px, at the bottom +66.5s
+ok phone lobby card is 358x812, inside the 390x844 screen with the approved 16 px margins +70.0s
+ok phone lobby 390x844, 4 seats scrolled down: footer keeps the approved 12 px bottom padding (gap 12), nothing below it, Leave inside it +71.6s
+ok phone lobby 390x640, 4 seats scrolled down: footer keeps the approved 12 px bottom padding (gap 12), nothing below it, Leave inside it +72.8s
+ok phone lobby: the card starts unscrolled +72.8s
+ok phone lobby: Ready is inside the card and the 390x844 viewport without scrolling +73.0s
+ok phone lobby: Start is inside the card and the 390x844 viewport without scrolling +98.6s
+ok phone lobby: the Ready/Start row is wholly on screen +98.7s
+ok phone lobby 390x844: 8 whole chat lines on screen, newest ("Guslobby line 8") visible, 14px text +107.9s
+ok phone lobby 390x844: Ready/Start stay on screen beside the chat +108.0s
+ok phone lobby 390x844: the Sounds & stickers tab shows all 8 listed chips at 15px with no sideways scroll +109.4s
+ok phone lobby 390x844: the Sounds & stickers tab shows all 15 chips inside the box +109.4s
+ok 390x844: sticker monkey-pet is in the Sounds & stickers tab, loaded, on screen, 44x44 +110.7s
+ok 390x844: sticker side-eye is in the Sounds & stickers tab, loaded, on screen, 44x44 +111.0s
+ok 390x844: sticker banana-guy is in the Sounds & stickers tab, loaded, on screen, 44x44 +111.2s
+ok 390x844: sticker glasses-glance is in the Sounds & stickers tab, loaded, on screen, 44x44 +111.7s
+ok 390x844: sticker dark-smile is in the Sounds & stickers tab, loaded, on screen, 44x44 +111.9s
+ok 390x844: chip "Play sound Real badman" is on screen at 44 px tall +112.4s
+ok 390x844: chip "Play sound Gong" is on screen at 44 px tall +113.0s
+ok phone lobby 390x844: back on the Chat tab, 8 chat lines and the newest are on screen +113.2s
+ok phone lobby 440x956: 8 whole chat lines on screen, newest ("Guslobby line 8") visible, 14px text +113.3s
+ok phone lobby 440x956: Ready/Start stay on screen beside the chat +114.0s
+ok phone lobby 440x956: the Sounds & stickers tab shows all 8 listed chips at 15px with no sideways scroll +116.4s
+ok phone lobby 440x956: the Sounds & stickers tab shows all 15 chips inside the box +116.4s
+ok phone lobby 440x956: back on the Chat tab, 8 chat lines and the newest are on screen +116.6s
+ok phone lobby: a line that arrives while the log is at the bottom is scrolled into view +117.4s
+ok phone landscape 844x390, 4 seats all ready: status, Ready, Start and Leave are on screen without scrolling +142.1s
+ok phone landscape 844x390: all four seat rows are on screen +142.1s
+ok phone landscape 844x390: nothing in the card scrolls () +142.1s
+ok phone landscape 844x390: the rename button is 44.7x44.0, at least 44x44 +142.2s
+ok phone landscape 844x390: Sounds & stickers shows 8 listed chips and 5 presets at 44 px, in a 218 px scroll box (scrollHeight 464) +142.8s
+ok phone landscape 844x390: Sounds & stickers shows the 15 chips and 5 presets at 44 px +142.8s
+ok 844x390: sticker monkey-pet is in the Sounds & stickers tab, loaded, on screen, 44x44 +143.2s
+ok 844x390: sticker side-eye is in the Sounds & stickers tab, loaded, on screen, 44x44 +143.8s
+ok 844x390: sticker banana-guy is in the Sounds & stickers tab, loaded, on screen, 44x44 +144.1s
+ok 844x390: sticker glasses-glance is in the Sounds & stickers tab, loaded, on screen, 44x44 +145.2s
+ok 844x390: sticker dark-smile is in the Sounds & stickers tab, loaded, on screen, 44x44 +145.5s
+ok 844x390: chip "Play sound Real badman" is on screen at 44 px tall +145.7s
+ok 844x390: chip "Play sound Gong" is on screen at 44 px tall +146.0s
+ok phone landscape 667x375, 4 seats all ready: status, Ready, Start and Leave are on screen without scrolling +147.7s
+ok phone landscape 667x375: all four seat rows are on screen +147.7s
+ok phone landscape 667x375: nothing in the card scrolls () +147.7s
+ok phone landscape 667x375: the rename button is 44.7x44.0, at least 44x44 +147.8s
+ok phone landscape 667x375: Sounds & stickers shows 8 listed chips and 5 presets at 44 px, in a 219 px scroll box (scrollHeight 620) +148.2s
+ok phone landscape 667x375: Sounds & stickers shows the 15 chips and 5 presets at 44 px +148.2s
+ok lobby status on Ember: "0 of 4 ready" +148.8s
+ok lobby: Ember shows "hello" from Ember +149.1s
+ok lobby: Tide shows "hello" from Ember +149.1s
+ok lobby: Pine shows "hello" from Ember +149.1s
+ok lobby: Pine shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect  +149.6s
+ok lobby: Tide shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect  +149.6s
+ok lobby: Ember shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect  +149.6s
+ok lobby: Tide's one-tap emoji is a light line in all 3 logs +149.7s
+ok lobby: Ember shows Pine's Wololo bubble, clear of the name  +150.8s
+ok lobby: Tide shows Pine's Wololo bubble, clear of the name  +150.9s
+ok lobby: Pine shows Pine's Wololo bubble, clear of the name  +151.0s
+ok lobby: Pine's sound is a bubble and a light line on all 3 tabs +151.2s
+ok lobby: Real badman from Tide is a bubble and a sound line on all 3 tabs +152.5s
+ok lobby: Gong from Ember is a bubble and a sound line on all 3 tabs +154.0s
+ok lobby: input cleared after Enter +154.0s
+ok desktop lobby 1280x720 (host, before Ready): a hit test reaches the input, Send and both tabs, none under the footer {"input":"ok","Send":"ok","Chat tab":"ok","Sounds & stickers tab":"ok"} +154.0s
+ok desktop lobby 1280x720 (guest, before Ready): a hit test reaches the input, Send and both tabs, none under the footer {"input":"ok","Send":"ok","Chat tab":"ok","Sounds & stickers tab":"ok"} +154.1s
+ok lobby status on Ember: "1 of 4 ready" +157.2s
+ok lobby status on Ember: "2 of 4 ready" +157.5s
+ok lobby status on Ember: "3 of 4 ready" +157.8s
+ok lobby status on Ember: "Everyone is ready" +158.0s
+ok desktop lobby: the card starts unscrolled +158.1s
+ok desktop lobby at 1280x720: Start is inside the card (bottom 675 <= card 696) without scrolling +158.2s
+ok desktop lobby at 1280x720: Leave the table is inside the card (bottom 675 <= card 696) without scrolling +158.2s
+ok desktop lobby 1280x720 (host, everyone ready, Start showing): a hit test reaches the input, Send and both tabs, none under the footer {"input":"ok","Send":"ok","Chat tab":"ok","Sounds & stickers tab":"ok"} +158.3s
+ok desktop lobby 1280x720 (host, Sounds & stickers tab): all 8 listed chips with no sideways scroll, both tabs reachable; 8 of 8 chips in view without scrolling the tab +158.6s
+ok desktop lobby 1280x720 (host, Sounds & stickers tab): all 15 chips with no sideways scroll, both tabs reachable; 15 of 15 chips in view without scrolling the tab +158.6s
+ok 1280x720: sticker monkey-pet is in the Sounds & stickers tab, loaded, on screen, 44x44 +158.7s
+ok 1280x720: sticker side-eye is in the Sounds & stickers tab, loaded, on screen, 44x44 +159.0s
+ok 1280x720: sticker banana-guy is in the Sounds & stickers tab, loaded, on screen, 44x44 +159.2s
+ok 1280x720: sticker glasses-glance is in the Sounds & stickers tab, loaded, on screen, 44x44 +159.3s
+ok 1280x720: sticker dark-smile is in the Sounds & stickers tab, loaded, on screen, 44x44 +159.6s
+ok 1280x720: chip "Play sound Real badman" is on screen at 44 px tall +159.7s
+ok 1280x720: chip "Play sound Gong" is on screen at 44 px tall +159.9s
+ok game: every tab shows the minimized dock, and the lobby lines did not count as unread +163.8s
+ok game: Ember has no unread badge +163.9s
+ok game: Tide has no unread badge +163.9s
+ok game: Pine has no unread badge +164.1s
+ok phone: Play starts with the sheet closed although chat was remembered open +164.5s
+ok phone: the remembered open state is left in storage +164.5s
+ok chat panel: first Escape (from the input) minimizes chat and keeps Path armed +166.1s
+ok chat panel: second Escape disarms Path +166.2s
+ok chat panel: Ember has no separate quick-reaction button +166.2s
+ok chat panel: Ember starts with chat closed +166.2s
+ok chat panel: Ember opens on the Chat tab +166.4s
+ok chat panel: Ember has no speaker or smile toggle in the chat box +166.5s
+ok chat polish 1280x720 chat tab: 12 controls, 26 texts, minimum 10.43:1, glass over black rgb(255,255,255)
+ok chat panel: Ember has the six 44 px emoji in the viewport, right above the input +166.6s
+ok chat panel: Moss has no separate quick-reaction button +169.1s
+ok chat panel: Moss starts with chat closed +169.1s
+ok chat panel: phone Open chat leaves the rotate hint unobscured +169.2s
+ok chat panel: Moss opens on the Chat tab +169.7s
+ok chat panel: Moss has no speaker or smile toggle in the chat box +169.8s
+ok chat polish 390x844 chat tab: 12 controls, 24 texts, minimum 10.43:1, glass over black rgb(255,255,255)
+ok chat panel: Moss has the six 44 px emoji in the viewport, right above the input +169.8s
+ok quick reactions: 😠 from Ember reaches another seat through the host +172.9s
+ok chat panel: one tap on angry sends it and keeps the panel open +172.9s
+ok chat panel: the emoji dim and disable during the cooldown +172.9s
+ok quick reactions: 😊 from Ember reaches another seat through the host +173.9s
+ok chat panel: one tap on happy sends it and keeps the panel open +173.9s
+ok quick reactions: 👏 from Ember reaches another seat through the host +174.9s
+ok chat panel: one tap on clap sends it and keeps the panel open +174.9s
+ok quick reactions: 😂 from Ember reaches another seat through the host +176.0s
+ok chat panel: one tap on laugh sends it and keeps the panel open +176.0s
+ok quick reactions: 🔥 from Ember reaches another seat through the host +177.1s
+ok chat panel: one tap on fire sends it and keeps the panel open +177.1s
+ok quick reactions: 🐑 from Ember reaches another seat through the host +178.1s
+ok chat panel: one tap on sheep sends it and keeps the panel open +178.2s
+ok quick reactions: 🔥 from Ember reaches another seat through the host +179.2s
+ok chat panel: key 5 sends fire while the panel is open +179.3s
+ok chat panel: an emote writes a light line in the log +179.3s
+ok chat panel: typing 1 in chat types it and sends no reaction +180.7s
+ok chat panel: Escape from the chat input minimizes chat +180.8s
+ok quick reactions: ben-10 from Ember reaches another seat through the host +181.6s
+ok chat panel: the sticker sends from the Sounds & stickers tab +181.6s
+ok quick reactions: monkey-pet from Ember reaches another seat through the host +182.7s
+ok chat panel: sticker monkey-pet is sent and seen by another seat +182.8s
+ok quick reactions: side-eye from Ember reaches another seat through the host +184.0s
+ok chat panel: sticker side-eye is sent and seen by another seat +184.0s
+ok quick reactions: banana-guy from Ember reaches another seat through the host +185.1s
+ok chat panel: sticker banana-guy is sent and seen by another seat +185.1s
+ok quick reactions: glasses-glance from Ember reaches another seat through the host +186.2s
+ok chat panel: sticker glasses-glance is sent and seen by another seat +186.2s
+ok quick reactions: dark-smile from Ember reaches another seat through the host +187.2s
+ok chat panel: sticker dark-smile is sent and seen by another seat +187.2s
+ok quick reactions: 🐑 from Moss reaches another seat through the host +188.5s
+ok chat panel: a phone tap sends from the open sheet and keeps it open +188.6s
+ok quick reactions: host drops an unknown id, unlisted emoji, and URL +188.8s
+ok quick reactions: repeats coalesce at Tide's sender seat +189.0s
+ok quick reactions: Tide float, badge and target fit at every sampled animation frame +189.1s
+ok seat bubble: at Tide's rail the bubble box and the name box don't intersect  +189.1s
+ok seat bubble: at Tide it sits right of the rail card +189.2s
+ok quick reactions: repeats coalesce at Moss's sender seat +189.2s
+ok quick reactions: Moss float, badge and target fit at every sampled animation frame +189.2s
+ok seat bubble: at Moss's seat the bubble box and the name box don't intersect  +189.2s
+ok seat bubble: at Moss it sits under the strip cell +189.2s
+ok quick reactions: reduced motion stays fully static +189.5s
+ok mute: Pine is muted in this chat dock +192.9s
+ok chat polish 1280x720 mute panel: 4 controls, 4 texts, minimum 10.43:1, glass over black rgb(255,255,255)
+ok mute: Pine's chat line is hidden only in Ember's view +193.0s
+ok mute: unmuting Pine restores the earlier chat line +193.2s
+ok mute: Pine's reaction bubble and its log line are hidden only in Ember's view +193.6s
+ok mute: unmuting Pine restores the active reaction and its log line +193.8s
+ok mute: a muted player's line does not add to unread +194.3s
+ok mute: unread counts only the unmuted player's line +194.4s
+ok mute: blocked storage still mutes in the current tab +194.9s
+ok mute: blocked storage still hides Pine's chat line +194.9s
+ok mute: blocked-storage preference can be cleared in the current tab +195.0s
+ok closed chat: Tide sees Ember's line as a bubble at the seat; bubble box and name box don't intersect  +199.2s
+ok closed chat: the bubble fades out (its animation ends at opacity 0) +199.2s
+ok open chat: Pine, chat open, shows the line in the log and no bubble +199.2s
+ok chat polish 1280x720 minimized: 1 controls, 1 texts, minimum 4.77:1, glass over black rgb(255,255,255)
+ok closed chat (owner decision): no preview pills under the top-right icons, only the unread badge on the chat button +199.4s
+ok minimized dock: 73 legal corners, edges, and hexes are on screen +199.5s
+ok minimized dock: no target is covered by chat (73 reach the canvas, the rest sit under the HUD) +199.5s
+ok closed chat: the line's bubble is gone after its lifetime +203.1s
+ok presets: Ember's "gg" shows as a closed-chat bubble on Tide +203.5s
+ok presets: Ember's "gg" is a chat line in all 3 logs +204.6s
+ok reaction: Ember shows ben-10 beside Pine's card +208.1s
+ok reaction: Ember image is 48 px wide +208.2s
+ok reaction: Tide shows ben-10 beside Pine's card +208.2s
+ok reaction: Tide image is 48 px wide +208.3s
+ok reaction: gone after its lifetime on Ember +210.3s
+ok reaction: gone after its lifetime on Tide +210.4s
+ok reaction: gone after its lifetime on Pine +210.4s
+ok menu: Tide's card is a button with aria-expanded +210.5s
+ok menu: 4 facts [0,0,0,0] equal the card's numbers +210.6s
+ok menu: sits in the rail column under the card and pushes the cards below it down +210.6s
+ok menu: no Trade row outside your main phase +210.6s
+ok menu: no sticker or reaction buttons; reactions come only from the chat panel +211.8s
+ok menu: Esc closes it and the focus returns to the card +212.3s
+ok menu: the same card closes it +212.6s
+ok menu: a click outside closes it +212.8s
+ok menu: Mention puts "@Tide " in the input +213.1s
+ok menu: Mention focuses the input +213.1s
+ok minimize: localStorage["emberisle-chat-open"] is "0" +213.5s
+ok reduced motion: the closed-chat bubble is fully static +214.3s
+ok reduced motion: the closed-chat bubble goes after its lifetime, with no movement +218.5s
+ok unread: tab 1's badge shows 1 +218.6s
+ok unread: the minimized button is named "Open chat, 1 unread" +218.7s
+ok open: badge cleared and the value is "1" +219.6s
+FAIL page.waitForFunction: Timeout 15000ms exceeded.
+    at shot (/workspace/work/1495/scripts/chat-prove.mjs:113:18)
+    at async file:///workspace/work/1495/scripts/chat-prove.mjs:1044:3

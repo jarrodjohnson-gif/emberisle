@@ -1,0 +1,19 @@
+ok lobby status on Ember: "Need 2 more players" +16.5s
+ok lobby status on Ember: "Need 1 more player" +18.3s
+ok lobby status on Tide: "Need 1 more player" +18.3s
+ok lobby status on Ember: "0 of 3 ready" +19.8s
+ok lobby status on Tide: "0 of 3 ready" +19.8s
+ok host tag on Ember's row only, seen by Ember +19.9s
+ok host tag on Ember's row only, seen by Tide +19.9s
+ok host tag on Ember's row only, seen by Pine +19.9s
+ok phone title card is 410 px tall, at most 55% of 844 +20.2s
+ok phone title card is full width minus 12 px, at the bottom +20.2s
+ok phone lobby card is 358x812, inside the 390x844 screen with the approved 16 px margins +26.2s
+FAIL page.screenshot: Timeout 30000ms exceeded.
+Call log:
+[2m  - taking page screenshot[22m
+[2m  - waiting for fonts to load...[22m
+[2m  - fonts loaded[22m
+
+    at shot (/workspace/work/1495/scripts/chat-prove.mjs:101:16)
+    at async file:///workspace/work/1495/scripts/chat-prove.mjs:516:5
