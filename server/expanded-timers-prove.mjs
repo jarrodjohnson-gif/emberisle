@@ -9,9 +9,9 @@
 //    deadline; the actor gets no build choices meanwhile; a timeout halves the hand as classic.
 // 4. A reconnect mid partner activation keeps the remaining time and the budget; a kill -9 restart mid partner activation
 //    and mid discard keeps every remaining deadline.
-// 5. Each activation is its own turn: an extension granted on a seat's partner activation is not spent on its primary
-//    activation in the same round, a seat's budget restarts even when bots played every activation in between, and a bot
-//    that was a partner earlier in the round still asks the table on its own turn.
+// 5. Each activation is its own turn: an extension granted on a seat's partner activation is not in force on its primary
+//    activation in the same round, even with no state push between them; a seat's budget restarts even when bots played
+//    every activation in between; and a bot that was a partner earlier in the round still asks the table on its own turn.
 // 6. The classic three-seat room times out, rolls, passes, reconnects and keys its extensions exactly as before.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -152,6 +152,18 @@ async function saved(code, pred = () => true, what = "saved room") {
   }
 }
 const left = (s) => s.turnDeadline - s.serverNow;
+// A fresh full window for `pid`, as the host armed it: in the state it sent, no more than TURN left and not much less
+// (both times are the host's, but a later push may carry the same deadline); in the saved room, exactly TURN from the
+// start of the seat's budget, a start no earlier than `after`. A budget carried over from an earlier activation starts
+// before `after` and ends TOTAL after its start.
+async function fresh(code, pid, s, msg, after = 0) {
+  ok(left(s) <= TURN && left(s) >= TURN - 1500, `${msg}: ${left(s)} ms left as the host sent it`);
+  const r = await saved(code, (x) => x.game.seq >= s.game.seq && x.seats.find((y) => y.pid === pid).turnDeadline, `${msg}: the saved window`);
+  const seat = r.seats.find((y) => y.pid === pid);
+  eq(seat.turnDeadline - seat.turnStartedAt, TURN, `${msg}: the host armed a full window at the start of the seat's budget`);
+  ok(seat.turnStartedAt >= after, `${msg}: the budget started with this activation`, { startedAt: seat.turnStartedAt, after });
+  return seat;
+}
 const newest = (cs) => Object.values(cs).reduce((a, c) => (!a || c.state.game.seq > a.state.game.seq ? c : a), null).state;
 // Every socket at `seq` or later, and the state they share.
 async function settled(cs, pred, what) {
@@ -220,6 +232,13 @@ const lone = primaryMain(expanded(5, 1614));
 Object.assign(lone, { role: "partner", current: at(lone, 3), activation: lone.activation + 1 });
 hands(lone, {}, 0);
 writeRoom("XBOT", lone, [0, 1, 2, 4].map((i) => at(lone, i)));
+// XEXT: six seats, people at players[0] and players[3], bots elsewhere with nothing and a bank that pays nobody.
+// players[3] is on its partner activation (players[0] primary); the bots then play players 1 and 2's paired turns in one
+// go, so no state push sees another seat act before players[3] is the primary, in the same round.
+const ext = primaryMain(expanded(6, 1616));
+Object.assign(ext, { role: "partner", current: at(ext, 3), activation: ext.activation + 1 });
+hands(ext, {}, 0);
+writeRoom("XEXT", ext, [1, 2, 4, 5].map((i) => at(ext, i)));
 // XASK: players[3] is a bot, partner of players[0]; everyone else is a person. As a partner the bot only passes; as the
 // primary later in the same round it is one card short of a stronghold and asks the table.
 const asks = primaryMain(expanded(5, 1615));
@@ -249,7 +268,7 @@ try {
     const cs = await seatAll("CTRI", [A, B, C]);
     let s = newest(cs);
     eq(s.turnPlayer, A, "classic: the window is on the seat in its action phase");
-    near(left(s), TURN, "classic: a full window");
+    await fresh("CTRI", A, s, "classic: a full window");
     // A acts late in its window: the next window is capped by the budget, and a drop and rejoin keeps it.
     const started = (await saved("CTRI", (r) => r.seats.find((x) => x.pid === A).turnStartedAt)).seats.find((x) => x.pid === A).turnStartedAt;
     await sleep(Math.max(0, started + 0.6 * TURN - Date.now()));
@@ -269,7 +288,7 @@ try {
     near(Date.now(), before, "classic: the timeout lands on the deadline");
     ok(cs[B].logs.includes(tooLong(g, A)), "classic: the table hears the timeout");
     eq([s.game.phase, s.turnPlayer], ["roll", B], "classic: the next seat rolls next and its window runs");
-    near(left(s), TURN, "classic: the next seat gets a full window");
+    await fresh("CTRI", B, s, "classic: the next seat gets a full window");
     const bStart = s.turnDeadline - TURN;
     await saved("CTRI", (r) => r.game.current === B && r.seats.find((x) => x.pid === A).turnStartedAt === null, "classic: the passed seat's budget is cleared");
     // B idles twice: the timer rolls, then passes.
@@ -293,10 +312,11 @@ try {
     let s = newest(cs);
     eq([s.game.role, s.turnPlayer], ["primary", P], "five: the window is on the primary");
     for (const c of Object.values(cs)) eq([c.state.turnPlayer, c.state.legal.actions.length > 0], [P, c.pid === P], `five: ${c.pid} sees the primary's window, and only the primary may act`);
+    const passed = Date.now();
     cs[P].send({ type: "pass" });
     s = await settled(cs, (x) => x.game.role === "partner", "five: the partner starts");
     eq([s.game.current, s.turnPlayer], [M, M], "five: the window follows the partner");
-    near(left(s), TURN, "five: the partner gets a full window");
+    await fresh("XFIV", M, s, "five: the partner gets a full window", passed);
     const r = await saved("XFIV", (x) => x.game.role === "partner" && x.seats.find((y) => y.pid === M).turnDeadline);
     eq([r.seats.find((y) => y.pid === P).turnDeadline, r.seats.find((y) => y.pid === P).turnStartedAt], [null, null], "five: the primary's window and budget are cleared");
     eq(r.seats.filter((y) => y.turnDeadline).map((y) => y.pid), [M], "five: only the partner's window is armed");
@@ -305,7 +325,7 @@ try {
     near(Date.now(), deadline, "five: the partner's timeout lands on its deadline");
     ok(cs[P].logs.includes(tooLong(g, M)), "five: the table hears the partner's timeout");
     eq([s.game.phase, s.turnPlayer], ["roll", Q], "five: a partner timeout passes to the next primary, whose window runs");
-    near(left(s), TURN, "five: the next primary gets a full window");
+    await fresh("XFIV", Q, s, "five: the next primary gets a full window", deadline - TOL);
     for (const c of Object.values(cs)) c.ws.terminate();
     console.log(`five: XFIV window on primary ${P}, then partner ${M} (primary cleared), partner timeout after ${TURN} ms passes to primary ${Q}`);
   }
@@ -319,14 +339,43 @@ try {
     eq([s.game.role, s.game.current, s.turnPlayer], ["partner", H, H], "bots: the person's partner window runs");
     const started = (await saved("XBOT", (r) => r.seats.find((x) => x.pid === H).turnStartedAt)).seats.find((x) => x.pid === H).turnStartedAt;
     await sleep(Math.max(0, started + 0.8 * TURN - Date.now()));
+    const passed = Date.now();
     cs[H].send({ type: "pass" });
     s = await cs[H].until(() => cs[H].state.game.role === "primary" && cs[H].state.game.current === H && cs[H].state, "bots: four bot activations, then the person is primary");
     eq(s.game.activation, g.activation + 5, "bots: four bot activations ran in between");
-    near(left(s), TURN, "bots: the person's primary activation gets a full window, not what its partner budget left");
+    await fresh("XBOT", H, s, "bots: the person's primary activation gets a full window, not what its partner budget left", passed);
     const f = await saved("XBOT", (r) => r.game.activation === g.activation + 5);
     ok(f.seats.find((x) => x.pid === H).turnStartedAt >= started + 0.8 * TURN, "bots: the budget restarted with the activation", f.seats.find((x) => x.pid === H).turnStartedAt - started);
     cs[H].ws.terminate();
     console.log(`bots: XBOT ${H} passed its partner activation ${Math.round(0.8 * TURN)} ms in; after 4 bot activations its primary window is ${left(s)} ms`);
+  }
+
+  // ---- 5. An extension granted on a seat's partner activation is not in force on its primary activation, same round. ----
+  // (The other way round cannot be set up: between a seat's primary and its partner activation in one round every other
+  // seat acts, so none is left to vote without a push in between; XSIX checks the partner-to-primary case with people.)
+  {
+    const g = ext;
+    const [V, H] = [at(g, 0), at(g, 3)];
+    const cs = await seatAll("XEXT", [V, H]);
+    let s = cs[H].state;
+    eq([s.game.role, s.game.current, s.turnExtension.target, s.turnExtension.used], ["partner", H, H, false], "extension: the partner's window runs, its extension unused");
+    const plain = s.turnDeadline;
+    const token = s.turnExtension.key;
+    cs[V].send({ type: "turnExtensionAsk", target: H, key: token });
+    s = await cs[H].until(() => cs[H].state.turnExtension?.result?.outcome === "passed" && cs[H].state, "extension: the vote passes");
+    near(s.turnDeadline, plain + EXTRA, "extension: the partner's window grew by the extension", 50);
+    const passed = Date.now();
+    cs[H].send({ type: "pass" });
+    s = await cs[H].until(() => cs[H].state.game.role === "primary" && cs[H].state.game.current === H && cs[H].state, "extension: bots play two paired turns, then the person is primary");
+    eq([s.game.turn, s.game.activation], [g.turn, g.activation + 5], "extension: the primary activation is in the same round, four bot activations later");
+    eq([s.turnExtension.target, s.turnExtension.used, s.turnExtension.key === token], [H, false, false], "extension: the primary activation has its own unspent extension");
+    const seat = await fresh("XEXT", H, s, "extension: the primary activation gets a plain window", passed);
+    eq(seat.extension.extra, 0, "extension: no granted time carried into the primary activation");
+    cs[V].send({ type: "turnExtensionAsk", target: H, key: s.turnExtension.key });
+    await cs[H].until(() => cs[H].state.turnExtension?.vote || cs[H].state.turnExtension?.result?.outcome === "passed", "extension: the primary activation can ask again");
+    checks++;
+    for (const c of Object.values(cs)) c.ws.terminate();
+    console.log(`extension: XEXT ${H}'s partner extension (+${EXTRA} ms) is not in force on its primary activation in round ${g.turn}, which may ask again`);
   }
 
   // ---- 5. A bot that was a partner earlier in the round still asks on its own turn. ----
@@ -365,10 +414,11 @@ try {
     let cs = await seatAll("XSIX", pids);
     let s = newest(cs);
     eq([s.game.role, s.turnPlayer], ["primary", P1], "six: the window is on the primary");
+    const passed = Date.now();
     cs[P1].send({ type: "pass" });
     s = await settled(cs, (x) => x.game.role === "partner", "six: the partner starts");
     eq([s.game.current, s.turnPlayer], [M1, M1], "six: the window follows the partner");
-    near(left(s), TURN, "six: the partner gets a full window");
+    await fresh("XSIX", M1, s, "six: the partner gets a full window", passed);
     let r = await saved("XSIX", (x) => x.game.role === "partner" && x.seats.find((y) => y.pid === M1).turnStartedAt);
     eq([r.seats.find((y) => y.pid === P1).turnDeadline, r.seats.find((y) => y.pid === P1).turnStartedAt], [null, null], "six: the primary's window and budget are cleared");
     const started = r.seats.find((y) => y.pid === M1).turnStartedAt;
@@ -397,7 +447,7 @@ try {
     near(Date.now(), before, "six: the partner's timeout lands on its deadline");
     ok(cs[P1].logs.includes(tooLong(g, M1)), "six: the table hears the partner's timeout");
     eq([s.game.phase, s.turnPlayer], ["roll", P2], "six: the next primary rolls next");
-    near(left(s), TURN, "six: the next primary gets a full window");
+    await fresh("XSIX", P2, s, "six: the next primary gets a full window", before - TOL);
     const p2Start = s.turnDeadline - TURN;
     // A primary timeout as classic: a roll, a fresh window, then a pass to its partner.
     s = await settled(cs, (x) => x.game.phase === "main" && x.game.current === P2, "six: the primary's roll times out");
@@ -430,7 +480,7 @@ try {
     s = newest(cs);
     eq([s.game.turn, s.game.primary, s.game.phase], [g.turn, J, "roll"], "six: J is the primary in the same round");
     eq([s.turnExtension.target, s.turnExtension.used, s.turnExtension.key === vote.key], [J, false, false], "six: J's primary activation has its own unspent extension");
-    near(left(s), TURN, "six: J's primary activation gets a plain window");
+    await fresh("XSIX", J, s, "six: J's primary activation gets a plain window");
     // 3. A seven while players 1, 2 and 5 hold more than seven cards.
     const over = [1, 2, 5].map((i) => at(g, i));
     const handOf = (pid) => cs[pid].state.game.players.find((p) => p.id === pid).resources;

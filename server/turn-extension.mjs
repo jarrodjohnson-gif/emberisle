@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 
-// A round contains several turns. Setup's two placements are separate turn occurrences.
+// A round contains several turns. Setup's two placements are separate turn occurrences. Under paired turns a seat is
+// `current` twice in one `turn`, as a primary and as a partner, so each activation is its own occurrence (#1612).
 export function extensionKey(game) {
   if (!game || game.phase === "over") return null;
   const stage = game.phase === "rollOff" ? "rollOff" : game.phase.startsWith("setup") ? `setup:${game.setupIndex}` : "play";
-  return `${game.turn}:${game.current}:${stage}`;
+  return `${game.turn}:${game.current}:${stage}${game.role ? `:${game.activation}` : ""}`;
 }
 
 export function extensionBudget(seat, game, extensionMs = 60_000) {
