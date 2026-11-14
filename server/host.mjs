@@ -969,8 +969,9 @@ function disarmTurn(seat) {
 // RESUME_MIN_MS left, is spent at once so a timeout never lands mid-rejoin.
 const RESUME_MIN_MS = Math.min(5000, TURN_MS / 10);
 // The turn a window and budget belong to: the activation under paired turns, else the round and whose turn it is, so a
-// discard owed in another seat's turn is not part of the seat's own.
-const turnOf = (game) => (game.role ? game.activation : `${game.turn}:${game.current}`);
+// discard owed in another seat's turn is not part of the seat's own. Setup and the roll-off stay in round 0, so there
+// the seat's roll-off roll and each setup step (an outpost and its path) are a turn of their own (#1671).
+const turnOf = (game) => (game.role ? game.activation : `${game.turn}:${game.current}${game.phase === "rollOff" ? ":rollOff" : game.phase.startsWith("setup") ? `:setup:${game.setupIndex}` : ""}`);
 function armTurns(room) {
   for (const seat of room.seats) {
     const bonus = extensionBudget(seat, room.game, TURN_EXTENSION_MS).extra;
