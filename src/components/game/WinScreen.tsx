@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, Suspense, use, useEffect, useMemo, useRef, useState } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
@@ -38,10 +38,14 @@ export function WinScreen() {
     if (useGame.getState().mode === "online") void playAgain.prefetch();
   }, []);
   const winnerId = useGame((s) => s.state?.phase === "over" ? s.state.winner : null);
-  return winnerId ? <Panel key={winnerId} /> : null;
+  // #1695: a table already over when it lands (a join, a rejoin or a watch) may not have the list yet. The dialog waits for
+  // the list's chunk to run or fail, so it never paints with the list empty; nothing shows meanwhile, as while this loads.
+  const list = useMemo(() => (winnerId ? winList.ready() : null), [winnerId]);
+  return list ? <Suspense fallback={null}><Panel key={winnerId} list={list} /></Suspense> : null;
 }
 
-function Panel() {
+function Panel({ list }: { list: Promise<void> }) {
+  use(list);
   const { phone, portrait } = useViewport();
   const state = useGame((s) => s.state)!;
   const target = useGame((s) => s.tableVictoryTarget);

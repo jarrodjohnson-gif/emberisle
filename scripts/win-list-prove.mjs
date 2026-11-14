@@ -2,7 +2,8 @@
 // A finished four-player game with long names, buildings, both awards, hidden points, a tie and a zero total.
 // Every row opens by tap and keyboard, one at a time; the open row scrolls to the top of the list and fits the
 // list and the screen; every value matches the game state; nothing scrolls sideways; every result action stays reachable.
-// The list is its own chunk: a real game fetches it while the table plays (no empty first paint), a refused chunk leaves
+// The list is its own chunk: a real game fetches it while the table plays (no empty first paint), a table already over as
+// it lands paints the dialog with its list too (#1695), a refused chunk leaves
 // the table with every total until Show scores tries again, and the desktop never asks for it.
 // With SHOTS=1 it writes the closed and one-open pictures in docs/proofs/748/ at device scale 2.
 import assert from "node:assert/strict";
@@ -250,6 +251,64 @@ try {
     assert.equal(await page.evaluate(() => window.__rowsAtFirstPaint), 4, "no flash: the list is in the dialog's first DOM update");
     await context.close();
     console.log("ok 390x844 live table: list chunk fetched before the end, all four rows in the dialog's first paint");
+  }
+
+  // #1695: a table already over when it lands (the first state of a join, a rejoin or a watch), its list chunk never fetched
+  // before. The list's response is held until the sheets chunk (the win screen) has run and the page has drawn a frame
+  // since, so the dialog could have painted first; its first DOM update still holds every row. The sheets chunk is in memory
+  // from the title's idle fetch, or still loading as the table lands.
+  const SHEETS_CHUNK = /\/src\/components\/game\/sheets\.ts(\?|$)/;
+  for (const loading of [false, true]) {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: "reduce" });
+    const page = await context.newPage();
+    const tag = `390x844 landing, sheets ${loading ? "loading" : "in memory"}`;
+    page.on("pageerror", (e) => errors.push(`${tag}: ${e.message}`));
+    page.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
+    const frame = () => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r())));
+    let ran;
+    const sheetsRan = new Promise((r) => (ran = r));
+    const listLoads = [];
+    await page.route(LIST_CHUNK, async (r) => {
+      listLoads.push(r.request().url());
+      await sheetsRan;
+      await frame();
+      await r.continue();
+    });
+    let freeSheets;
+    const sheetsHeld = new Promise((r) => (freeSheets = r));
+    const sheetsAsked = page.waitForRequest(SHEETS_CHUNK);
+    if (loading) await page.route(SHEETS_CHUNK, async (r) => (await sheetsHeld, r.continue()));
+    await page.goto(`http://127.0.0.1:${port}/`);
+    await page.waitForFunction(() => !!window.__emberisle);
+    // The title's idle fetch of the sheets chunk; held in the loading case.
+    const sheetsUrl = (await sheetsAsked).url();
+    const sheetsIn = () => page.evaluate((url) => import(url).then(() => {}), sheetsUrl).then(ran);
+    if (!loading) await sheetsIn();
+    assert.deepEqual(listLoads, [], `${tag}: the list chunk is not fetched before the table lands`);
+    await page.evaluate(() => {
+      window.__rowsAtFirstPaint = null;
+      new MutationObserver((_, o) => {
+        const screen = document.querySelector('[data-testid="win-screen"]');
+        if (!screen) return;
+        window.__rowsAtFirstPaint = screen.querySelectorAll('[data-testid="win-row"]').length;
+        o.disconnect();
+      }).observe(document.body, { childList: true, subtree: true });
+    });
+    await page.evaluate((game) => {
+      const s = window.__emberisle;
+      s.setState({ spectator: false, isHost: true, menuFor: null, chatOpen: false });
+      s.getState().loadState(game, "p0", true, "WLST");
+    }, structuredClone(g));
+    if (loading) {
+      await frame();
+      freeSheets();
+      await sheetsIn();
+    }
+    await page.getByTestId("win-menu").waitFor();
+    assert.equal(await page.evaluate(() => window.__rowsAtFirstPaint), 4, `${tag}: no flash, the list is in the dialog's first DOM update`);
+    assert.equal(await page.locator('button[data-testid="win-row"]').count(), 4, `${tag}: the list, not the plain stand-in`);
+    await context.close();
+    console.log(`ok ${tag}: a finished table on landing, list chunk held past the win screen's chunk and a frame, all four rows in the dialog's first paint`);
   }
 
   // The list chunk cannot load: the table stands in with every total; once it can, Show scores brings the list.
