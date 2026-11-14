@@ -90,6 +90,8 @@ export interface PlayerState {
   // Goods this seat lost to successful wayfarer steals (#550); absent reads as 0. Online the host keeps it out of every
   // view until the game is won, then sends it to every seat and watcher with the rest of the final state (server/host.mjs).
   goodsLost?: number;
+  // #1452: what the results screen's awards count, kept like goodsLost: hidden from every view until the win.
+  tally?: Tally;
   pathsLeft: number;
   outpostsLeft: number;
   strongholdsLeft: number;
@@ -97,6 +99,16 @@ export interface PlayerState {
   // identification"). It never changes in a game. A five or six seat rematch must copy it to the new player (owed to piece 8). Classic games leave it out, so a
   // classic seat shows no number.
   seat?: number;
+}
+
+// #1452: goods gathered from rolls per good, goods thrown away on 7s, goods stolen with the wayfarer, accepted table trades
+// (as asker or answerer) and bank or dock trades. Absent in an old save; every count then reads 0.
+export interface Tally {
+  earned: Record<Resource, number>;
+  discarded: number;
+  stole: number;
+  tableTrades: number;
+  bankTrades: number;
 }
 
 export interface TradeOffer {
@@ -159,6 +171,9 @@ export interface GameState {
   playedCard: boolean;
   // Dice rolls so far (not the roll-off) and what the latest one paid, per hex; a missing field in an old save reads as none.
   rolls?: number;
+  // #1453: how often each sum 2 to 12 came up (not the roll-off), started at a game's first roll; absent in an older game.
+  // Public, like every roll in the log; only the results screen draws it.
+  rollSums?: number[];
   lastProduction?: { hex: string; player: string; res: Resource; n: number; vertex?: string }[];
   hostId: string;
   // Absent means the classic island, as in every game saved before #1604; never inferred from the seat count.

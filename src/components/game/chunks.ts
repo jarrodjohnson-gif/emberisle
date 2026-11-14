@@ -54,6 +54,10 @@ export const BuildList = buildList.pick((m) => m.BuildList);
 // #748: the win screen's compact list on touch and narrow screens; the win screen fetches it on phones as the table starts.
 export const winList = chunk(() => import("@/components/game/WinList"));
 export const WinList = winList.pick((m) => m.WinList);
+// #1452 and #1453: the results screen's awards and dice strip; the win screen fetches it as the table starts.
+export const resultsStory = chunk(() => import("@/components/game/ResultsStory"));
+export const Award = resultsStory.pick((m) => m.Award);
+export const DiceStrip = resultsStory.pick((m) => m.DiceStrip);
 // #1411: a guest's I'll play again and the win screen's count; the win screen fetches it as an online table starts.
 export const playAgain = chunk(() => import("@/components/game/PlayAgain"));
 export const WantAgain = playAgain.pick((m) => m.WantAgain);

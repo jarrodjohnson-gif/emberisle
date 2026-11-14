@@ -98,6 +98,9 @@ const CEILINGS = [
   // #1363, 2026-11-07: a sticker as the tray, seat bubble and chat log draw it (animated loop, reduced-motion still), loaded
   // with the first sticker; measured 949 B gzip. New chunk only; the desk sets this ceiling.
   { name: "Sticker", gzipBytes: 1050 },
+  // #1452 and #1453, 2026-11-09: the results screen's island awards and dice strip, one chunk the win screen fetches as the
+  // table starts; measured 2,048 B gzip. New chunk only; the desk set this ceiling on #1452 (q-size-standing, option A).
+  { name: "ResultsStory", gzipBytes: 2200 },
   // #662, 2026-11-08: the sea-and-wind ambience loop, loaded on its first start after the first gesture; measured 461 B gzip.
   // New chunk only; the desk sets this ceiling.
   { name: "ambience", gzipBytes: 550 },

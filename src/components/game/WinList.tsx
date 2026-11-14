@@ -55,6 +55,7 @@ export function WinList({ rows }: { rows: Row[] }) {
                 </button>
               </h3>
               <div id={`win-part-${id}`} role="region" aria-label={`${r.p.name}'s score`} data-player={id} hidden={!on} className="pr-9 pb-2.5 pl-[30px]">
+                {r.award}
                 <dl className="grid grid-cols-[1fr_auto_auto] gap-y-0.5 text-[13px] leading-5 text-muted">
                   {lines.map(([label, count, n, testId]) => (
                     <div key={label} className="contents">

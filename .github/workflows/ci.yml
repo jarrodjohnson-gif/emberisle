@@ -289,6 +289,10 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run server-needs-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run server-award-tally-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run results-story-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run server-play-again-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run expanded-persist-prove
@@ -702,6 +706,8 @@ jobs:
         run: npm run win-action-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run win-list-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run results-story-ui-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run win-sheet-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'

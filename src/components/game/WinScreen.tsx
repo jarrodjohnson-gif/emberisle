@@ -6,14 +6,18 @@ import { totalVP, victoryTarget } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
 import { useViewport } from "@/lib/viewport";
 import { LazyBoundary } from "@/lib/lazy";
-import { playAgain, WantAgain, WantCount, WinList, winList } from "@/components/game/chunks";
+import { Award, DiceStrip, playAgain, resultsStory, WantAgain, WantCount, WinList, winList } from "@/components/game/chunks";
 import { useFocusTrap } from "@/lib/focus-trap";
 import type { PlayerState } from "@/lib/game/types";
 import type { Seat } from "@/lib/net/table";
 import "./win-screen.css";
 
-// `note` is the row's profile line (#767), only when a seat in this game started bound to a profile; `tag` says who wants to play again (#1411).
-export type Row = { p: PlayerState; outposts: number; strongholds: number; path: boolean; army: boolean; hiddenVp: number; total: number; note?: string; tag?: ReactNode };
+// `note` is the row's profile line (#767), only when a seat in this game started bound to a profile; `tag` says who wants to play again (#1411);
+// `award` is the player's island award (#1452), from its own lazy chunk.
+export type Row = { p: PlayerState; outposts: number; strongholds: number; path: boolean; army: boolean; hiddenVp: number; total: number; note?: string; tag?: ReactNode; award?: ReactNode };
+
+// #1452 and #1453: a part of the results story; if its chunk cannot load, the results show without it.
+const story = (el: ReactNode) => <LazyBoundary failed={null}>{el}</LazyBoundary>;
 
 // #1411 (design docs/design/play-again-1411, option A): the host and bots are always in; an away seat is left out of the next game.
 const yes = (x: Seat) => !x.away && (x.host || x.bot || x.again);
@@ -34,6 +38,7 @@ export function WinScreen() {
   // #748: the list is its own chunk; fetch it while the table plays, so it is in memory before the game ends.
   useEffect(() => {
     void winList.prefetch();
+    void resultsStory.prefetch();
     // #1411: the guest's I'll play again and the count, in memory before the game ends.
     if (useGame.getState().mode === "online") void playAgain.prefetch();
   }, []);
@@ -102,6 +107,7 @@ function Panel() {
         army: state.largestArmy === p.id,
         hiddenVp: p.hidden.vp,
         total: totalVP(state, p.id),
+        award: story(<Award id={p.id} />),
         tag: tagOf(seatOf(p.id)),
         note: !result?.tracked
           ? undefined
@@ -189,6 +195,7 @@ function Panel() {
         {result && !result.tracked ? <p data-testid="win-untracked" className="win-how">This game isn't tracked.</p> : null}
         <div data-testid="win-table-wrap" className="mt-1 min-h-0 overflow-auto border-t border-border text-left short:mt-0">
           <LazyBoundary failed={plain}><WinList rows={rows} /></LazyBoundary>
+          {story(<DiceStrip />)}
         </div>
         {waiting ? (
           <p data-testid="win-waiting" className="win-how">
