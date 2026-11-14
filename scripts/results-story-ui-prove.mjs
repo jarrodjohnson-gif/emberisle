@@ -5,8 +5,9 @@
 //     with the player's title and fact; each player's award matches islandAwards
 //   - the dice strip sits under the list inside its scrolling area: 11 bars, the sum labels, the odds line and the sentence
 //   - rows stay 44 px, nothing scrolls sideways, every result button stays on screen
-// Desktop with a mouse: the table keeps no opened row; each award is a muted line under the name; the strip is under it.
-// A short mouse screen (480 px tall or less) shows no award line, so its table still fits.
+// Desktop with a mouse, at 1280x800 and the short 956x440: the same single list as on a phone (the owner's one list on every
+// screen, q1563-results-desktop A): no award while closed, one in a clicked row, the strip under the list; nothing scrolls
+// sideways and the buttons stay on screen.
 // An unusual spread colours one bar in sea ink and says so; an older game with no counts draws no strip, and its losers
 // share "Dry spell".
 // The chunk is fetched while the table plays, so the results never wait for it.
@@ -126,6 +127,8 @@ try {
     onScreen(m, `${tag} closed`);
     strip(m, `${tag} closed`);
     measured[tag] = { strip: Math.round(m.dice.height), closedListScrolls: m.wrap.scrollHeight - m.wrap.clientHeight };
+    // An upright phone shows the closed list and its strip whole (desk, 2026-11-12); a sideways one may scroll.
+    if (height > width) assert.equal(measured[tag].closedListScrolls, 0, `${tag}: the closed list and the strip fit without scrolling`);
     await shot(page, `closed-${tag}`);
 
     // Each row in turn: exactly one award, in its own region, above the breakdown.
@@ -164,48 +167,34 @@ try {
     console.log(`ok ${tag} touch: no award while closed, one in each opened row (${award(OPEN)}), dice strip under the list (${measured[tag].strip} px), rows 44 px, no sideways scroll, buttons on screen`);
   }
 
-  // Desktop with a mouse: a muted line under each name, the strip under the table.
-  {
-    const { context, page, tag, storyLoads } = await open(1280, 800, false);
+  // Desktop with a mouse: the single list, as on a phone (no table since #1596).
+  for (const [width, height] of [[1280, 800], [956, 440]]) {
+    const { context, page, tag, storyLoads } = await open(width, height, false);
+    const rows = page.getByTestId("win-row");
+    await rows.first().waitFor();
     await page.getByTestId("win-dice").waitFor();
-    assert.ok(storyLoads.length >= 1, "desktop: the story chunk loads");
-    assert.equal(await page.locator('[data-testid="win-table-wrap"] table').count(), 1, "desktop: the table stays");
-    const lines = await page.locator('tr[data-testid="win-row"]').evaluateAll((trs) => trs.map((tr) => [tr.dataset.player, tr.querySelector('[data-testid="win-award"]')?.textContent ?? null, tr.querySelector('[data-testid="win-award"]') && getComputedStyle(tr.querySelector('[data-testid="win-award"]')).color, getComputedStyle(tr.querySelector("td")).color, tr.querySelector('[data-testid="win-award"]')?.closest("td") === tr.querySelector("td")]));
-    for (const [id, text, color, nameColor, inName] of lines) {
-      assert.equal(text, award(id), `desktop ${id}: the award line`);
-      assert.ok(inName, `desktop ${id}: under the name`);
-      assert.notEqual(color, nameColor, `desktop ${id}: muted, not the name's colour`);
-    }
-    assert.equal(await page.locator('[role="region"]').count(), 0, "desktop: no opened row");
-    const m = await measure(page);
-    // Bartholomew Featherstonehaugh's long name already widens today's table at this size (#1406, PR #1446), so the
-    // check here is that the award lines add no width to it, and that the strip fits the panel.
-    const wide = await page.getByTestId("win-table-wrap").evaluate((el) => {
-      const lines = [...el.querySelectorAll('[data-testid="win-award"]')];
-      const withLines = el.scrollWidth;
-      lines.forEach((l) => (l.style.display = "none"));
-      const without = el.scrollWidth;
-      lines.forEach((l) => (l.style.display = ""));
-      return { withLines, without };
-    });
-    assert.equal(wide.withLines, wide.without, `desktop: the award lines add no width ${JSON.stringify(wide)}`);
-    assert.ok(m.dice.left >= m.wrap.left - 1 && m.dice.right <= m.wrap.left + m.wrap.clientWidth + 1, "desktop: the strip fits the panel");
-    assert.ok(m.page.scrollWidth <= m.page.innerWidth, "desktop: the page does not scroll sideways");
-    onScreen(m, "desktop");
-    strip(m, "desktop");
-    await shot(page, "table-1280x800");
+    assert.ok(storyLoads.length >= 1, `${tag} mouse: the story chunk loads`);
+    assert.equal(await page.locator('[data-testid="win-table-wrap"] table').count(), 0, `${tag} mouse: no table, the one list`);
+    let m = await measure(page);
+    assert.deepEqual(m.awardsShown, [], `${tag} mouse: no award shows while every row is closed`);
+    noSideways(m, `${tag} mouse closed`);
+    onScreen(m, `${tag} mouse closed`);
+    strip(m, `${tag} mouse`);
+    const row = rows.and(page.locator(`[data-player="${OPEN}"]`));
+    await row.scrollIntoViewIfNeeded();
+    await row.click();
+    assert.equal(await row.getAttribute("aria-expanded"), "true", `${tag} mouse: a click opens the row`);
+    m = await measure(page);
+    assert.equal(m.awardsShown.length, 1, `${tag} mouse: one award shows`);
+    const [a] = m.awardsShown;
+    assert.equal(a.region, `win-part-${OPEN}`, `${tag} mouse: inside the opened row`);
+    assert.equal(a.text, award(OPEN).replace(" · ", ""), `${tag} mouse: the player's own title and fact`);
+    assert.ok(a.right <= m.wrap.right + 1, `${tag} mouse: the award never cuts off`);
+    noSideways(m, `${tag} mouse open`);
+    onScreen(m, `${tag} mouse open`);
+    await shot(page, `open-${tag}-mouse`);
     await context.close();
-    console.log(`ok 1280x800 mouse: a muted award line under each name (${lines.map((l) => l[1]).join("; ")}), strip under the table`);
-  }
-
-  // A short mouse screen keeps the desktop table from scrolling (win-action-prove), so it shows no award line there.
-  {
-    const { context, page } = await open(956, 440, false);
-    await page.getByTestId("win-dice").waitFor();
-    assert.equal(await page.locator('tr[data-testid="win-row"] [data-testid="win-award"]').count(), 4, "short desktop: the award lines are in the table");
-    assert.equal(await page.locator('[data-testid="win-award"]:visible').count(), 0, "short desktop: no award line shows");
-    await context.close();
-    console.log("ok 956x440 mouse: the short desktop table shows no award line");
+    console.log(`ok ${tag} mouse: the one list, no award while closed, one in the clicked row (${award(OPEN)}), strip under the list`);
   }
 
   // An unusual spread: the named sum's bar is sea ink and the sentence says so.
