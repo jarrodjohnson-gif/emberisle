@@ -281,8 +281,7 @@ ok(pairedTradeAsk({ ...structuredClone(cb4), current: cbAsker }, cbAsker, undefi
 // nor answering a bot's ask carries into the person's next turn.
 // CB3 and CB4 run beside the classic and the five-seat cases, on the same host, and are done before the six-seat case
 // queues its seven and kills the host. The dice are shared, so CB3 rolls its seven first: CB4 and the five-seat cases
-// start after it, and CTRI rolls nothing before its A times out on its budget and B's roll window runs out (TOTAL + TURN
-// in). The bot's roll is checked to be the queued seven.
+// and CTRI start after it. The bot's roll is checked to be the queued seven.
 const budget = async (code, pid) => (await saved(code, (r) => r.seats.find((x) => x.pid === pid).turnDeadline, `${code}: ${pid}'s window`)).seats.find((x) => x.pid === pid);
 const until = (t) => sleep(Math.max(0, t - Date.now()));
 const next = (c, seq, phase, what) => c.until(() => c.state.game.seq > seq && c.state.game.phase === phase && c.state, what, TOTAL + 3000);
@@ -388,6 +387,8 @@ try {
   });
 
   // ---- 6. Classic first: the behaviour every expanded check is compared against. ----
+  // After CB3's seven, like every other room: the dice are shared, and no room may roll while that seven is queued.
+  await seven;
   {
     const g = tri;
     const [A, B, C] = [0, 1, 2].map((i) => at(g, i));
