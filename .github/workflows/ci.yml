@@ -382,7 +382,7 @@ jobs:
       - run: npm run proof-retirement-prove
 
   # #1653: advisory, like `loosen`, so it is not in `checks.needs`. Flags a commit in this PR that changes nothing
-  # (AGENTS.md: never push an empty commit to kick CI). HEAD is the merge commit: its first parent is the base and its
+  # (docs/LOOPING.md: do not make empty commits to kick CI). HEAD is the merge commit: its first parent is the base and its
   # second is the PR's head. Commits only (no trees' files or blobs), so the full history is a small fetch.
   empty-commits:
     if: github.event_name == 'pull_request' && !github.event.pull_request.draft

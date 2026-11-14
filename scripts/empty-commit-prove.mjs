@@ -1,4 +1,4 @@
-// #1653: flag an empty commit in a pull request. AGENTS.md forbids pushing one to kick CI, and #1496 carried one
+// #1653: flag an empty commit in a pull request. docs/LOOPING.md forbids making one to kick CI, and #1496 carried one
 // (a58ca967, "ci: trigger fresh run") that only a review caught.
 // Lists the PR's own non-merge commits (git rev-list --no-merges <base>..<head>) and fails on any whose tree equals its
 // parent's. Merge commits are left out: merging main into a branch is how a PR catches up, and can change nothing.
@@ -19,7 +19,8 @@ export function emptyCommits(cwd, base, head) {
   const empty = [];
   for (const line of out.split("\n")) {
     if (!line || line.startsWith("commit ")) continue;
-    const [ids, subject = ""] = line.split("\t");
+    const tab = line.indexOf("\t"); // the subject may hold tabs of its own
+    const [ids, subject] = [line.slice(0, tab), line.slice(tab + 1)];
     const [sha, tree, parent] = ids.split(" ");
     if (!parent) continue; // a root commit has no parent to match
     if (git(cwd, "rev-parse", `${parent}^{tree}`) === tree) empty.push({ sha, subject });
@@ -91,7 +92,7 @@ const head = arg("--head", "HEAD");
 const empty = emptyCommits(process.cwd(), base, head);
 for (const { sha, subject } of empty) console.log(`FAIL ${sha.slice(0, 8)} changes nothing: "${subject}"`);
 if (empty.length) {
-  console.log(`empty-commit-prove: ${empty.length} empty commit(s) in ${base}..${head}. AGENTS.md: never push an empty commit to kick CI.`);
+  console.log(`empty-commit-prove: ${empty.length} empty commit(s) in ${base}..${head}. docs/LOOPING.md: do not make empty commits to kick CI.`);
   process.exit(1);
 }
 console.log(`empty-commit-prove: no empty commits in ${base}..${head}`);
