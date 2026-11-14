@@ -313,7 +313,7 @@ export function Hud() {
     : armed
     ? matchMedia("(pointer: coarse)").matches ? armed[0] : `${armed[0]} · Esc cancels`
     : state.phase === "discard"
-      ? discardLine(state.discardNeeded[subject] ?? 0, discarder === subject ? discardPicked : 0)
+      ? discardLine(state.discardNeeded[subject] ?? 0, discardPicked)
       : phaseCopy(state.phase);
   const waiting = mode !== "hotseat" && !yours;
   // #430: in hotseat a seat that owes a discard on another seat's turn is named, not given the turn.
