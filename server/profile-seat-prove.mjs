@@ -650,6 +650,7 @@ const rosterCases = [
   // #1650: rows match the game's players by pid, in any order (a roll-off reorders the players), and each pid once.
   ["player order", (r) => { [r.players[0], r.players[1]] = [r.players[1], r.players[0]]; }, true],
   ["player twice", (r) => { r.players[1].pid = r.players[0].pid; }],
+  ["player stray", (r) => { r.players[0].pid = "p99"; }],
   ["seat type", (r) => { r.players[0].seat = null; }],
   ["profile UUID", (r) => { r.players[0].profileId = "not-a-uuid"; }],
   ["name type", (r) => { r.players[0].name = 42; }],

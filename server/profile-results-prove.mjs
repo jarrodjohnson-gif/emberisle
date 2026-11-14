@@ -124,12 +124,13 @@ function seedRoom(d, code, rows, { roster: withRoster = true } = {}) {
 }
 
 // Proof-only host dice (#1650): each roll-off die takes the next face queued in ROLL_FACES, then the host rolls its own.
+// start() clears ROLL_FACES, so only a value a scenario passes itself reaches a host.
 const DICE = `data:text/javascript,${encodeURIComponent('const q = (process.env.ROLL_FACES ?? "").split(",").filter(Boolean).map(Number); const own = crypto.getRandomValues.bind(crypto); crypto.getRandomValues = (b) => (q.length && b.length === 1 ? ((b[0] = q.shift() - 1), b) : own(b));')}`;
 
 function start(d, env = {}, preload = []) {
   const h = spawn(process.execPath, ["--import", "./register.mjs", ...preload.flatMap((p) => ["--import", p]), "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR: d.rooms, PROFILES_DIR: d.profiles, RESULTS_DIR: d.results, PROFILES_DEV: "", ACT_CAP: "1000", ACT_RATE: "1000", GRACE_MS: "60000", HOLD_MS: "60000", TURN_MS: "60000", SAVE_MS: "50", RESULT_FAULT: "", ...env },
+    env: { ...process.env, PORT: "0", ROOMS_DIR: d.rooms, PROFILES_DIR: d.profiles, RESULTS_DIR: d.results, PROFILES_DEV: "", ACT_CAP: "1000", ACT_RATE: "1000", GRACE_MS: "60000", HOLD_MS: "60000", TURN_MS: "60000", SAVE_MS: "50", RESULT_FAULT: "", ROLL_FACES: "", ...env },
     stdio: ["ignore", "pipe", "pipe"],
   });
   hosts.add(h);
@@ -652,6 +653,16 @@ try {
       await playOut(cs);
       await recorded(d, roster.gameId);
       for (const c of cs) await c.until(() => c.state.result?.tracked === true && Object.values(c.state.result.wins).every((n) => n !== null), `${label}: the table sees the game counted`);
+      // The win goes to the profile of the seat that won, as every seat saw it, and to no other profile.
+      const winner = cs[0].state.game.winner;
+      assert(cs.every((c) => c.state.game.winner === winner), `${label}: every seat saw the same winner`);
+      const champ = who[cs.findIndex((c) => c.state.you === winner)];
+      assert(champ, `${label}: the winner ${winner} is one of the seats`);
+      const when = restart ? " after the restart" : "";
+      const frozen = readJson(file).outcome.players.filter((p) => p.won);
+      assert.deepEqual(frozen.map((p) => [p.pid, p.profileId]), [[winner, champ.id]], `${label}${when}: the frozen winner is ${winner}, signed in as ${champ.name}`);
+      assert.deepEqual(store(d).results[roster.gameId].players.filter((p) => p.won).map((p) => p.profileId), [champ.id], `${label}${when}: the recorded winner is ${champ.name}`);
+      assert.deepEqual(who.map((p) => store(d).records[p.id].wins), who.map((p) => (p === champ ? 1 : 0)), `${label}${when}: only ${champ.name} has the win`);
       runs.push(counted(d, roster.gameId, who));
       await h.stop();
     }

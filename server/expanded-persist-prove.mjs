@@ -486,6 +486,7 @@ try {
       eq({ ...restOf(now), roster: undefined }, { ...restOf(f.saved), roster: undefined }, `${f.name}: room fields restored`);
       // The roster is frozen before the roll-off reorders game.players, so its rows match the players by id (#1650): the
       // shape-2 file's roster comes back as it was saved, though its order is not the game's.
+      ok(Array.isArray(f.saved.roster?.players), `${f.name}: the fixture holds a roster`);
       ok(f.saved.roster.players.some((p, i) => p.pid !== f.saved.game.players[i].id), `${f.name}: the roll-off reordered the players after the roster was frozen`);
       eq(now.roster, f.saved.roster, `${f.name}: roster restored as saved`);
       eq(now.seats.map(seatCore), f.saved.seats.map(seatCore), `${f.name}: seats, colours and secrets restored`);
