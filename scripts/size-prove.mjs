@@ -113,7 +113,11 @@ const CEILINGS = [
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
-const ALLOWANCE = { index: 400 };
+const ALLOWANCE = {
+  index: 400,
+  // #1595, 2026-11-13: the tray polish may grow losses by up to 300 B, for this change only (owner, q1597-losses-size, A).
+  losses: 300,
+};
 const ALLOWANCE_RATE = 0.0033;
 const ALLOWANCE_MIN = 200;
 const allowanceFor = (name, baseBytes) => ALLOWANCE[name] ?? Math.max(ALLOWANCE_MIN, Math.round(baseBytes * ALLOWANCE_RATE));
