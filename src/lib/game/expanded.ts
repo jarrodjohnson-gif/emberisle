@@ -5,6 +5,7 @@ import { mulberry32 } from "./random";
 import { AXIAL_DIRS, axialKey, edgeId, hexCorners, hexToWorld, vertexId } from "./hex";
 import { adjacentPips, createGame, makePlayer, shuffle, type GameOptions } from "./board";
 import { totalVP, turnRules, victoryTarget } from "./rules";
+import { chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import type { Action, DevKind, Edge, ExpandedVariant, GameState, HarborKind, HexCell, PlayerState, Terrain, Vertex } from "./types";
 import { PLAYER_NAMES } from "./types";
 
@@ -318,3 +319,16 @@ function log(state: GameState, line: string) {
 }
 
 turnRules.paired = pairedStep;
+
+// Bots under paired turns (#1606; design "Bots and local modes"). chooseBotAction needs no role: a partner starts in the
+// action phase, so it never rolls, it never offers a player trade, and with nothing to do it ends its turn. The two trade
+// choices do need it, since the rules refuse every player offer and acceptance on a partner activation: a partner bot asks
+// nobody, and every bot says No to an ask then. They live here so the classic bot in the index chunk stays as it is; a
+// seat runner for five or six seats calls these in place of chooseTradeAsk and shouldAcceptTrade.
+export function pairedTradeAsk(...args: Parameters<typeof chooseTradeAsk>): ReturnType<typeof chooseTradeAsk> {
+  return args[0].role === "partner" ? null : chooseTradeAsk(...args);
+}
+
+export function pairedAcceptTrade(...args: Parameters<typeof shouldAcceptTrade>): boolean {
+  return args[0].role !== "partner" && shouldAcceptTrade(...args);
+}
