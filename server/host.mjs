@@ -1731,6 +1731,7 @@ async function replay(ws, room, live, isLive, variant) {
   room.choose = null;
   // #1411: every "play again" was for the game that just ended.
   for (const seat of room.seats) seat.again = undefined;
+  for (const seat of room.seats) seat.turnKey = undefined;
   // Reclaim a finished open room's slot only if no successor has taken it (#986).
   if (room.visibility === "open") registerOpenTable(room);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
