@@ -175,6 +175,11 @@ export class OceanLife {
   private fishTime = 0;
   private visitorFlee: Flee | null = null;
   private dummy = new THREE.Object3D();
+  // #1607: the island's middle and how much farther its coast reaches than the classic island's; the lanes and the schools
+  // circle that middle, that much farther out. The classic island: the origin, and 0.
+  private ox = 0;
+  private oz = 0;
+  private grow = 0;
 
   constructor() {
     this.group.name = "ocean-life";
@@ -200,6 +205,11 @@ export class OceanLife {
     this.swim();
   }
 
+  setIsle(ox: number, oz: number, grow: number) {
+    [this.ox, this.oz, this.grow] = [ox, oz, grow];
+    this.swim();
+  }
+
   reset(seed: string) {
     this.rng = mulberry32(hashStr(`ocean:${seed}`));
     this.next = 8 + this.rng() * 8;
@@ -218,7 +228,7 @@ export class OceanLife {
       const angle = first + i * Math.PI / 16;
       if ([0, 0.5, 1].every(u => {
         const a = angle + (u - 0.5) * arc * direction;
-        return visible(Math.cos(a) * s.radius, Math.sin(a) * s.radius, s.reach);
+        return visible(this.ox + Math.cos(a) * (s.radius + this.grow), this.oz + Math.sin(a) * (s.radius + this.grow), s.reach);
       })) return { angle, arc, direction };
     }
     return null;
@@ -226,7 +236,7 @@ export class OceanLife {
 
   private begin(species: OceanSpecies, lane: Lane) {
     const s = SETTINGS[species];
-    this.active = { ...lane, species, age: 0, duration: s.duration, radius: s.radius };
+    this.active = { ...lane, species, age: 0, duration: s.duration, radius: s.radius + this.grow };
     this.visits++;
     this.creatures[species].root.visible = true;
     this.creatures[species].wake.visible = true;
@@ -275,11 +285,11 @@ export class OceanLife {
   /** A splash at (x, z): fish and the visitor within reach dart away from it, and come back a few seconds later. */
   scatter(x: number, z: number, sinceFrame = 0) {
     this.fishAt().forEach((p, i) => {
-      const f = flee(p.x, p.z, x, z);
+      const f = flee(p.x - this.ox, p.z - this.oz, x - this.ox, z - this.oz);
       if (f) { f.pending = sinceFrame; this.fishFlee[i] = f; }
     });
     const root = this.active && this.creatures[this.active.species].root;
-    const f = root && flee(root.position.x, root.position.z, x, z);
+    const f = root && flee(root.position.x - this.ox, root.position.z - this.oz, x - this.ox, z - this.oz);
     if (f) { f.pending = sinceFrame; this.visitorFlee = f; }
   }
 
@@ -297,7 +307,7 @@ export class OceanLife {
   private swim() {
     const d = this.dummy;
     this.schools.forEach((s, si) => {
-      const cx = Math.cos(s.angle) * FISH.radius, cz = Math.sin(s.angle) * FISH.radius;
+      const cx = this.ox + Math.cos(s.angle) * (FISH.radius + this.grow), cz = this.oz + Math.sin(s.angle) * (FISH.radius + this.grow);
       for (let j = 0; j < FISH.per; j++) {
         const i = si * FISH.per + j;
         const a = s.turn * (this.fishTime * FISH.speed - j * 0.32) + si;
@@ -322,7 +332,7 @@ export class OceanLife {
     const visible = Math.min(1, v.age / 2, (v.duration - v.age) / 2);
     // A visitor startled by a splash darts off its lane and dips, then comes back to it.
     const f = this.visitorFlee, off = fled(f);
-    const x = Math.cos(a) * v.radius + (f ? f.dx * off : 0), z = Math.sin(a) * v.radius + (f ? f.dz * off : 0);
+    const x = this.ox + Math.cos(a) * v.radius + (f ? f.dx * off : 0), z = this.oz + Math.sin(a) * v.radius + (f ? f.dz * off : 0);
     const sea = this.surface(x, z);
     c.root.position.set(x, -0.48 + visible * (0.46 + sea) - 0.15 * off, z);
     c.root.rotation.y = -a + (v.direction > 0 ? 0 : Math.PI);

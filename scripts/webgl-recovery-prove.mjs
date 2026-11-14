@@ -53,7 +53,7 @@ try {
     await page.waitForFunction(() => window.__emberisle);
 
     // Start a hotseat game
-    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.getByRole("button", { name: "Pass and play" }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().screen === "play");
 
     // Trigger render failure
@@ -115,7 +115,7 @@ try {
     );
 
     // Start a hotseat game
-    const hotseatBtn = page.getByRole("button", { name: "Four seats, one table" });
+    const hotseatBtn = page.getByRole("button", { name: "Pass and play" });
     await hotseatBtn.waitFor();
     await hotseatBtn.click();
 
@@ -307,7 +307,7 @@ try {
     await page.waitForFunction(() => window.__emberisle);
 
     // Start a hotseat game and wait for play screen
-    const hotseatBtn = page.getByRole("button", { name: "Four seats, one table" });
+    const hotseatBtn = page.getByRole("button", { name: "Pass and play" });
     await hotseatBtn.waitFor();
     await hotseatBtn.click();
     await page.waitForFunction(() => window.__emberisle?.getState().screen === "play" && window.__isle);

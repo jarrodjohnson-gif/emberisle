@@ -3,7 +3,8 @@ import { useGame } from "@/lib/game/store";
 import { play } from "@/lib/sound";
 
 // Escape, topmost layer first. One press closes exactly one thing:
-//   1. TableMenu (and its Leave question): window capture + stopPropagation (it closes whenever HowTo opens, so the two never stack).
+//   1. TableMenu (and its Leave question), and the Game log it opens: window capture + stopPropagation (the menu closes whenever
+//      HowTo or the log opens, so they never stack).
 //   2. HowTo and the Costs card: modal, so window capture + stopPropagation; nothing behind it hears the key.
 //   3. TradePanel (window) and PlayerMenu (document), bubble phase, each closes itself; PlaceChip's pending tap (window) likewise.
 //   4. (Was the quick-reaction picker; #899 moved reactions into the chat panel, whose input minimizes itself.)
@@ -17,7 +18,7 @@ export function useEscapeDisarm() {
       const s = useGame.getState();
       if (s.buildMode === "none" || s.tradeOpen || s.menuFor || s.pendingPlace || s.howTo || s.costs) return;
       if ((e.target as HTMLElement | null)?.closest("input, select, textarea")) return;
-      if (document.querySelector('[data-testid="table-menu"]')) return;
+      if (document.querySelector('[data-testid="table-menu"], [data-testid="game-log"]')) return;
       play("ui_back");
       setBuildMode("none");
     };

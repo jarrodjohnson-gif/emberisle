@@ -1,5 +1,5 @@
 // #381: UI text meets WCAG 1.4.3 (4.5:1). Reads computed colours of the title's Play (primary), Host a table and Join (secondary)
-// buttons, the quiet row (Four seats, one table, How to play; #454) and the 12 px "3 bots, no network" line, and checks white on the `sea-ink` and `accent-ink` fills that Start
+// buttons, the quiet row (Pass and play, How to play; #454) and the 12 px "Code for private tables" line, and checks white on the `sea-ink` and `accent-ink` fills that Start
 // and the 7 use (#444 took them off the title; End turn is now the ink primary or a secondary).
 // #424: text chips over the island, sampled from screenshots. With the chip's text made transparent, its box (inside the
 // border and in from the rounded corners) is screenshotted; the computed text colour is measured against the mean and the darkest 5 % of those background pixels (both >= 4.5:1).
@@ -8,6 +8,7 @@
 // composited over black (the darkest board the blur can show).
 // #513: the win headline (dark text, seat colour as a dot) for each seat colour as winner, same text-transparent sampling.
 // #1419: How to play and Costs on the grey-green wash: each sheet is opaque, and its title, body, rows and win line read >= 4.5:1.
+// #1608: the six colours of a five or six seat table: the win headline for each as winner, and each seat dot's edge (3:1).
 // Run: npm run contrast-prove
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -61,13 +62,13 @@ try {
       const s = getComputedStyle(el);
       return { fg: px(s.color), bg: px(s.backgroundColor) };
     };
-    const caption = getComputedStyle([...document.querySelectorAll("p")].find((p) => p.textContent === "3 bots, no network"));
+    const caption = getComputedStyle([...document.querySelectorAll("p")].find((p) => p.textContent === "Code for private tables"));
     const root = getComputedStyle(document.documentElement);
     return {
-      play: btn("Play"),
+      play: btn("Play with bots"),
       join: btn("Join"),
       host: btn("Host a table"),
-      quietSeats: btn("Four seats, one table"),
+      quietSeats: btn("Pass and play"),
       quietHow: btn("How to play"),
       caption: px(caption.color),
       seaInk: px(root.getPropertyValue("--color-sea-ink").trim()),
@@ -88,8 +89,8 @@ try {
     ["Play (primary) on fill", ratio(read.play.fg, read.play.bg)],
     ["Join (secondary) on fill", ratio(read.join.fg, read.join.bg)],
     ["Host a table (secondary) on fill", ratio(read.host.fg, read.host.bg)],
-    ["Four seats, one table (quiet) on surface", ratio(read.quietSeats.fg, read.surface)],
-    ["Four seats, one table (quiet) on bg", ratio(read.quietSeats.fg, read.bg)],
+    ["Pass and play (quiet) on surface", ratio(read.quietSeats.fg, read.surface)],
+    ["Pass and play (quiet) on bg", ratio(read.quietSeats.fg, read.bg)],
     ["How to play (quiet) on surface", ratio(read.quietHow.fg, read.surface)],
     ["How to play (quiet) on bg", ratio(read.quietHow.fg, read.bg)],
     ["white on sea-ink (Start)", ratio([255, 255, 255], read.seaInk)],
@@ -109,6 +110,20 @@ try {
     const r = ratio(read.controlLine, bg);
     console.log(`${r.toFixed(2)}:1  seat-dot ring rgb(${read.controlLine}) on ${name} (needs 3:1)`);
     if (r < 3) bad.push(`seat-dot ring on ${name} is ${r.toFixed(2)}:1`);
+  }
+  // #1608: the six seat colours of a five or six seat table (expanded.ts). A seat dot there wears a 1 px #1c1915 outline
+  // (styles.css), a non-text edge: on white (the pill and the menu sheet) and on mist, the outline or the fill itself must
+  // read at least 3:1, whichever is the dot's edge against that ground.
+  {
+    const six = readFileSync("src/lib/game/expanded.ts", "utf8").match(/EXPANDED_COLORS = \[([^\]]+)\]/)[1].match(/#[0-9a-f]{6}/g);
+    if (six?.length !== 6) bad.push(`expected six expanded colours, read ${six}`);
+    for (const c of six ?? []) {
+      for (const [name, bg] of [["white", [255, 255, 255]], ["mist (--ground)", read.ground], ["bg", read.bg]]) {
+        const r = Math.max(ratio(hex("#1c1915"), bg), ratio(hex(c), bg));
+        console.log(`${r.toFixed(2)}:1  six-seat dot ${c} with its #1c1915 outline on ${name} (needs 3:1)`);
+        if (r < 3) bad.push(`six-seat dot ${c} on ${name} is ${r.toFixed(2)}:1`);
+      }
+    }
   }
   // The source must use the ink tokens where the error line and eyebrows are drawn.
   const app = readFileSync("src/components/game/EmberisleApp.tsx", "utf8");
@@ -243,7 +258,7 @@ try {
     console.log(`  ${tag}: ${worst.out.length} texts on glass chips, glass over black rgb(${worst.glass})`);
     // Versus the isle: the human rolls off when up, then waits on its own first corner (the bots act on the app's timer).
     await pg.evaluate(() => window.__emberisle.getState().goTitle());
-    await pg.getByRole("button", { name: "Play", exact: true }).click();
+    await pg.getByRole("button", { name: "Play with bots", exact: true }).click();
     await pg.waitForFunction(() => {
       const s = window.__emberisle.getState();
       if (s.state?.phase === "rollOff" && s.state.current === s.localId) s.dispatch({ type: "roll" });
@@ -276,6 +291,35 @@ try {
       const expectedText = `${seat.name} wins`;
       await pg.getByTestId('win-headline').and(pg.getByText(expectedText, { exact: true })).waitFor();
       sampled.push(...(await sample(pg, 'win-headline', `win headline, winner ${seat.color}`, expectedText)));
+    }
+    await pg.close();
+  }
+  // #1608: the win headline for each of the six colours of a five or six seat table as the winner, on a six-seat game built
+  // in the page from expanded.ts, sampled as above.
+  {
+    const pg = await openPage({ viewport: { width: 1280, height: 720 } });
+    pg.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+    pg.on("pageerror", (e) => errors.push(String(e)));
+    await pg.goto(`http://127.0.0.1:${PORT}/`);
+    await pg.getByRole("button", { name: "Join", exact: true }).waitFor();
+    await pg.evaluate(() => window.__emberisle.getState().startHotseat(4));
+    await pg.waitForFunction(() => window.__isle?.landReady && window.__isle.lastState === window.__emberisle.getState().state);
+    const six = await pg.evaluate(async () => {
+      const { createExpandedGame } = await import("/src/lib/game/expanded.ts");
+      return createExpandedGame({ humans: ["Ember", "Tide", "Dune", "Pine", "Moss", "Flint"].map((name) => ({ name })), bots: 0, seed: 7 });
+    });
+    for (let i = 0; i < 6; i++) {
+      const seat = await pg.evaluate(([six, i]) => {
+        const st = structuredClone(six);
+        st.phase = "over";
+        st.winner = st.players[i].id;
+        st.seq = window.__emberisle.getState().state.seq + 1;
+        window.__emberisle.setState({ state: st });
+        return { color: st.players[i].color, name: st.players[i].name };
+      }, [six, i]);
+      const expectedText = `${seat.name} wins`;
+      await pg.getByTestId('win-headline').and(pg.getByText(expectedText, { exact: true })).waitFor();
+      sampled.push(...(await sample(pg, 'win-headline', `six seats: win headline, winner ${seat.color}`, expectedText)));
     }
     await pg.close();
   }

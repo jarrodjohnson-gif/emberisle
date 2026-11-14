@@ -22,7 +22,8 @@ try {
     await route.fulfill({ response, headers, body: `${await response.text()}\nwindow.__hapticsReady = true;` });
   });
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("heading", { name: "Emberisle" }).waitFor({ timeout: 4000 });
+  // #1151: the proofs open the title on its Play page, which has no wordmark; its primary button marks the first render.
+  await page.getByRole("button", { name: "Play with bots", exact: true }).waitFor({ timeout: 4000 });
   assert.equal(await page.evaluate(() => window.__hapticsReady), true, "fast haptics import must finish before the first render");
   await page.mouse.click(2, 2);
   await page.evaluate(() => window.__emberisle.setState({ offer: {
@@ -41,7 +42,7 @@ try {
   });
   const started = Date.now();
   await stalled.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: "domcontentloaded" });
-  await stalled.getByRole("heading", { name: "Emberisle" }).waitFor({ timeout: 5000 });
+  await stalled.getByRole("button", { name: "Play with bots", exact: true }).waitFor({ timeout: 5000 });
   const elapsed = Date.now() - started;
   assert(elapsed >= 2700 && elapsed < 5000, `stalled haptics must release startup near 3s, got ${elapsed}ms`);
   console.log(`stalled haptics chunk: title rendered after ${elapsed}ms while import remained pending`);
@@ -81,7 +82,7 @@ try {
     try {
       await Promise.race([lateRequested, new Promise((_, reject) => { requestTimer = setTimeout(() => reject(new Error("late haptics request was not made")), 5000); })]);
     } finally { clearTimeout(requestTimer); }
-    await late.getByRole("heading", { name: "Emberisle" }).waitFor({ timeout: 5000 });
+    await late.getByRole("button", { name: "Play with bots", exact: true }).waitFor({ timeout: 5000 });
     assert.equal(await late.evaluate(() => window.__registrations), 0, "title is interactive before late module registration");
     await late.getByRole("button", { name: "How to play" }).click();
     const howTo = late.getByRole("dialog", { name: "How to play" });
