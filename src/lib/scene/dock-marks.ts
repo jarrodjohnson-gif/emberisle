@@ -68,3 +68,74 @@ export function markCanvas(paint: typeof PAINT) {
   });
   return (marks = c);
 }
+
+// Prototype (?dockfix=1|2|3): the three fixes the designer asked for. No param is the look above.
+export const DOCK_FIX = typeof location === "undefined" ? 0 : Number(new URLSearchParams(location.search).get("dockfix") ?? 0);
+const FIVE = ["timber", "clay", "wool", "grain", "ore"] as const;
+function glyph(x: CanvasRenderingContext2D, k: Exclude<HarborKind, "any">, ox: number, oy: number, s: number, ink: string) {
+  x.save();
+  x.translate(ox, oy);
+  x.scale(s, s);
+  x.fillStyle = x.strokeStyle = ink;
+  x.lineWidth = 2;
+  x.lineCap = x.lineJoin = "round";
+  for (const d of ICON[k].fill) x.fill(new Path2D(d));
+  for (const d of ICON[k].stroke) x.stroke(new Path2D(d));
+  x.restore();
+}
+function dot(x: CanvasRenderingContext2D, cx: number, cy: number, r: number, fill: string) {
+  x.fillStyle = fill;
+  x.beginPath();
+  x.arc(cx, cy, r, 0, 7);
+  x.fill();
+}
+// Fix 1 and 3: only the paint that goes on the boards, on a clear ground, a 256x192 row per kind: the symbol on the left, the
+// pips in a column on the right. A 3:1 dock's boards carry the five colours in bands, so its row is three pips in a row.
+let paintOnly: HTMLCanvasElement | null = null;
+export function boardPaintCanvas() {
+  if (paintOnly) return paintOnly;
+  const c = document.createElement("canvas");
+  c.width = 256;
+  c.height = 192 * PLATE_KINDS.length;
+  const x = c.getContext("2d")!;
+  PLATE_KINDS.forEach((k, i) => {
+    const y = i * 192;
+    if (k === "any") {
+      for (let j = 0; j < 3; j++) dot(x, 128 + (j - 1) * 62, y + 96, 22, "#ffffff");
+      return;
+    }
+    glyph(x, k, 6, y + 12, 7, "#ffffff");
+    for (let j = 0; j < 2; j++) dot(x, 222, y + 96 + (j - 0.5) * 56, 19, "#ffffff");
+  });
+  return (paintOnly = c);
+}
+// Fix 2: a plank of the good's colour (passed in, already toned to the terrain), its edge a few texels darker of the same hue,
+// no rim; the symbol and pips laid out as in markCanvas.
+let plank: HTMLCanvasElement | null = null;
+export function plankCanvas(colour: (k: HarborKind) => string, edge: (k: HarborKind) => string) {
+  if (plank) return plank;
+  const c = document.createElement("canvas");
+  c.width = 256;
+  c.height = 128 * PLATE_KINDS.length;
+  const x = c.getContext("2d")!;
+  PLATE_KINDS.forEach((k, i) => {
+    const y = i * 128;
+    x.fillStyle = edge(k);
+    x.beginPath();
+    x.roundRect(0, y, 256, 128, 14);
+    x.fill();
+    x.fillStyle = colour(k);
+    x.beginPath();
+    x.roundRect(4, y + 4, 248, 120, 11);
+    x.fill();
+    if (k === "any") {
+      FIVE.forEach((g, j) => {
+        const a = -Math.PI / 2 + (j * 2 * Math.PI) / 5;
+        dot(x, 70 + Math.cos(a) * 30, y + 64 + Math.sin(a) * 30, 15, colour(g));
+      });
+    } else glyph(x, k, 22, y + 16, 4, "#ffffff");
+    const n = k === "any" ? 3 : 2;
+    for (let j = 0; j < n; j++) dot(x, n === 3 ? 158 + j * 32 : 172 + j * 36, y + 64, 13, "#ffffff");
+  });
+  return (plank = c);
+}
