@@ -202,7 +202,7 @@ try {
     assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Profile", `${size.name}: Escape returns focus to Profile`);
     await page.getByRole("textbox", { name: "Join code" }).fill("K7QP");
     assert.equal(await page.getByRole("textbox", { name: "Join code" }).inputValue(), "K7QP", `${size.name}: typed join code kept`);
-    for (const name of ["Play", "Host a table", "Join"]) assert.ok(await page.getByRole("button", { name, exact: true }).isEnabled(), `${size.name}: ${name} usable`);
+    for (const name of ["Play with bots", "Host a table", "Join"]) assert.ok(await page.getByRole("button", { name, exact: true }).isEnabled(), `${size.name}: ${name} usable`);
     assert.equal((await wire(page)).filter((f) => f.dir === "out" && /"profile(?!Hello)/.test(f.raw)).length, 0, `${size.name}: opening and closing sends no credential request`);
     await page.context().close();
   }
@@ -348,7 +348,7 @@ try {
   await saveCode(blocked);
   await sheet(blocked).getByText("Not remembered on this device.").waitFor();
   await sheet(blocked).getByRole("button", { name: "Close", exact: true }).click();
-  assert.ok(await blocked.getByRole("button", { name: "Play", exact: true }).isEnabled());
+  assert.ok(await blocked.getByRole("button", { name: "Play with bots", exact: true }).isEnabled());
   await blocked.context().close();
   ok("blocked storage signs in for this page only and keeps guest play");
 
@@ -365,7 +365,7 @@ try {
     const sent = (await wire(page)).filter((f) => f.dir === "out").map((f) => JSON.parse(f.raw));
     assert.ok(sent.every((m) => !m.credential && !m.pin && (m.type === "profileHello" || !m.type.startsWith("profile"))), `${label}: only the capability check is sent`);
     assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-seat")), "seat-recovery-sentinel");
-    assert.ok(await page.getByRole("button", { name: "Play", exact: true }).isEnabled());
+    assert.ok(await page.getByRole("button", { name: "Play with bots", exact: true }).isEnabled());
     await page.context().close();
   }
   ok("unsupported and offline hosts say so, send no credential and leave guest play and the saved seat");
