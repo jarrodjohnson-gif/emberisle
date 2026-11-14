@@ -1277,36 +1277,36 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
   let firstState = false;
   let held: Parameters<TableEvents["state"]>[0][] | null = null;
   const applyState: TableEvents["state"] = ({ you, game, legal, turnDeadline, turnPlayer, serverNow, result }) => {
-      set({ gameResult: game.phase === "over" ? gameResult(result) : null });
-      // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
-      const me = you ?? "";
-      const rollOff = rollOffLine(get().state, game);
-      // hear first: it is what claims a match point, and the banner line is read off that claim on this same state.
-      hear(get().state, game, me, "online", firstState);
-      const swing = awardLine(get().state, game) ?? takeMatchPointLine();
-      // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
-      // Every push carries the same window, and the skew wobbles by however long this tab took to get to the message:
-      // the timer we hold stays while the host's deadline is the same, so the chip neither remounts nor announces twice.
-      const skew = typeof serverNow === "number" ? serverNow - Date.now() : 0;
-      const prev = get().turnTimer;
-      // A new connection starts the estimate over: a rejoin may reach a different host clock.
-      const clockSkew = firstState ? skew : Math.max(skew, get().clockSkew);
-      firstState = false;
-      const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline, host: serverNow as number };
-      // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
-      set({ legal, turnTimer, clockSkew, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
-      // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
-      if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
-      get().loadState(game, me, get().isHost, get().code);
-      if (recovery && !get().spectator) {
-        recovery = false;
-        set({ announcement: "Back at the table", toast: "Back at the table", connectionHealth: { status: "Reachable", rtt: get().connectionHealth.rtt } });
-      }
-      if (!get().spectator) rememberLive(get().code);
-      if (outdated) set({ announcement: null, error: outdated, toast: outdated });
-      if (rollOff) showBanner(set, rollOff);
-      else if (swing) showBanner(set, swing);
-    };
+    set({ gameResult: game.phase === "over" ? gameResult(result) : null });
+    // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
+    const me = you ?? "";
+    const rollOff = rollOffLine(get().state, game);
+    // hear first: it is what claims a match point, and the banner line is read off that claim on this same state.
+    hear(get().state, game, me, "online", firstState);
+    const swing = awardLine(get().state, game) ?? takeMatchPointLine();
+    // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
+    // Every push carries the same window, and the skew wobbles by however long this tab took to get to the message:
+    // the timer we hold stays while the host's deadline is the same, so the chip neither remounts nor announces twice.
+    const skew = typeof serverNow === "number" ? serverNow - Date.now() : 0;
+    const prev = get().turnTimer;
+    // A new connection starts the estimate over: a rejoin may reach a different host clock.
+    const clockSkew = firstState ? skew : Math.max(skew, get().clockSkew);
+    firstState = false;
+    const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline, host: serverNow as number };
+    // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
+    set({ legal, turnTimer, clockSkew, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
+    // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
+    if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
+    get().loadState(game, me, get().isHost, get().code);
+    if (recovery && !get().spectator) {
+      recovery = false;
+      set({ announcement: "Back at the table", toast: "Back at the table", connectionHealth: { status: "Reachable", rtt: get().connectionHealth.rtt } });
+    }
+    if (!get().spectator) rememberLive(get().code);
+    if (outdated) set({ announcement: null, error: outdated, toast: outdated });
+    if (rollOff) showBanner(set, rollOff);
+    else if (swing) showBanner(set, swing);
+  };
   let table: TableClient;
   try { table = connectTable(hostUrl(selectedHost), {
     health: (connectionHealth) => {
