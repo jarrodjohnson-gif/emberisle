@@ -32,6 +32,60 @@ function mainGame(seed = 11) {
   return g;
 }
 
+// #1678: section 6 on a phone. The seat strip's chip opens the bottom sheet in Hud.tsx, which has its own LazyBoundary: a
+// refused load closes the sheet with the table standing and the chip collapsed, and the next press opens it.
+async function phoneMenuRefused(g) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const phonePage = await context.newPage();
+  // The refused load is expected, as are React's report of it reaching the boundary; any other error counts.
+  phonePage.on("console", (m) => {
+    const text = m.text();
+    if (m.type() === "error" && !text.includes("Failed to load resource") && !text.includes("net::ERR_FAILED") && !text.includes("Failed to fetch dynamically imported module")) errors.push(text);
+  });
+  phonePage.on("pageerror", (e) => {
+    const text = String(e);
+    if (!text.includes("Failed to fetch dynamically imported module") && !text.includes("error loading dynamically imported module")) errors.push(text);
+  });
+  let fail = true;
+  let blocked = 0;
+  await phonePage.route(/\/PlayerMenu\.tsx/, async (route) => {
+    if (fail) {
+      blocked++;
+      await route.abort("failed");
+    } else {
+      await route.continue();
+    }
+  });
+  await phonePage.goto(`http://127.0.0.1:${PORT}/`);
+  await phonePage.getByRole("button", { name: "Play with bots", exact: true }).click({ timeout: STEP_MS });
+  await phonePage.waitForFunction(() => window.__emberisle?.getState().state);
+  await phonePage.evaluate((state) => {
+    window.__emberisle.getState().startAi();
+    window.__emberisle.setState({ state });
+  }, g);
+  const chip = phonePage.getByTestId("seat-p1").locator("[data-menu-trigger]");
+  await chip.waitFor({ state: "visible", timeout: STEP_MS });
+  const before = blocked;
+  await chip.tap();
+  const closed = await phonePage
+    .waitForFunction(() => window.__emberisle.getState().menuFor === null && document.querySelector('[data-testid="seat-p1"] [data-menu-trigger]').getAttribute("aria-expanded") === "false", null, { timeout: STEP_MS })
+    .then(() => true, () => false);
+  const refused = await phonePage.evaluate(() => ({
+    menus: document.querySelectorAll('[data-testid="player-menu"]').length,
+    expanded: document.querySelector('[data-testid="seat-p1"] [data-menu-trigger]')?.getAttribute("aria-expanded") ?? null,
+    screen: window.__emberisle.getState().screen,
+    header: !!document.querySelector("header.hud-header"),
+    strip: !!document.querySelector('[data-testid="seat-strip"] [data-testid="seat-p1"]'),
+  }));
+  check("390x844 failed player menu chunk: the press is refused, the sheet closes, the chip is collapsed and the table stands", closed && blocked > before && refused.menus === 0 && refused.expanded === "false" && refused.screen === "play" && refused.header && refused.strip, { ...refused, closed, blocked, before });
+  fail = false;
+  const pressed = await chip.tap({ timeout: STEP_MS }).then(() => true, () => false);
+  const opened = pressed && (await phonePage.getByTestId("player-menu").waitFor({ state: "visible", timeout: STEP_MS }).then(() => true, () => false));
+  const expanded = opened ? await chip.getAttribute("aria-expanded") : null;
+  check("390x844 once the route recovers, the next press opens the player menu sheet", opened && expanded === "true", { pressed, opened, expanded });
+  await context.close();
+}
+
 mkdirSync("docs/proofs/1285", { recursive: true });
 
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
@@ -296,6 +350,9 @@ try {
   await recoveredStealBar.waitFor({ state: "visible", timeout: STEP_MS });
   check("tapping Try again recovers steal picker", await recoveredStealBar.isVisible());
   await stealFailPage.close();
+
+  // --- 6, phone: the same through the seat strip and the bottom sheet (#1678) ---
+  await phoneMenuRefused(g);
 
   // --- 6. Failed player menu chunk: the menu closes, the table stands, and the next press opens it ---
   const menuFailPage = await browser.newPage({ viewport: { width: 1280, height: 720 } });
