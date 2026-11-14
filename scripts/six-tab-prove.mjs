@@ -116,7 +116,17 @@ const until = async (fn, what, ms = SHOTS ? 120_000 : 20_000) => {
 };
 const tap = (t, loc) => (t.v.touch ? loc.tap() : loc.click());
 const store = (t, fn, arg) => t.page.evaluate(fn, arg);
-const snap = (t) => store(t, () => { const g = window.__emberisle.getState(); return { state: g.state, localId: g.localId, legal: g.legal, screen: g.screen, timer: g.turnTimer }; });
+// Every snapshot also walks the tab's store for another seat's hand (window.__privacy), except a finished game's.
+async function snap(t) {
+  const s = await store(t, () => {
+    const g = window.__emberisle.getState();
+    const leak = g.state && g.state.phase !== "over" ? window.__privacy({ game: g.state }, g.localId) : [];
+    return { state: g.state, localId: g.localId, legal: g.legal, screen: g.screen, timer: g.turnTimer, leak };
+  });
+  t.snaps++;
+  if (s.leak.length) t.storeLeaks.push(`seq ${s.state.seq}: ${s.leak.join(", ")}`);
+  return s;
+}
 
 async function tab(i) {
   const v = VIEWS[i];
@@ -124,38 +134,61 @@ async function tab(i) {
   const ctx = await browser.newContext({ viewport: { width: v.width, height: v.height }, hasTouch: !!v.touch, isMobile: !!v.touch, deviceScaleFactor: SHOTS ? 2 : 1 });
   ctx.setDefaultTimeout(SHOTS ? 120_000 : 30_000);
   const page = await ctx.newPage();
-  const t = { i, ctx, page, name, v, label: `${name} ${v.tag}`, messages: 0, leaks: [] };
+  const t = { i, ctx, page, name, v, label: `${name} ${v.tag}`, messages: 0, overFrames: 0, leaks: [], snaps: 0, storeLeaks: [] };
   page.on("console", (m) => m.type() === "error" && errors.push(`${t.label}: ${m.text()}`));
   page.on("pageerror", (e) => errors.push(`${t.label}: ${e}`));
-  // Every frame the host sends this tab, read before the app sees it: a player record other than this seat's that carries
-  // its hand (`resources`) is a leak. Reported to the proof, so a reload keeps the tally.
-  await page.exposeFunction("__frame", (leak) => {
+  // Every frame the host sends this tab, read before the app sees it, and walked whole (window.__privacy): another seat's
+  // hand or fortunes, under any key, is a leak. Reported to the proof, so a reload keeps the tally.
+  await page.exposeFunction("__frame", (leak, over) => {
     t.messages++;
+    if (over) t.overFrames++;
     if (leak) t.leaks.push(leak);
   });
   await page.addInitScript((name) => {
     localStorage.setItem("emberisle-name", name);
+    // Anything shaped like a hand, wherever it sits and whatever its key: a map with all five goods, a map with all five
+    // fortune kinds holding any card, or a list of fortune cards. Its owner is the nearest enclosing player record
+    // (id p0 to p5). Allowed: this seat's own, and the bank. Card counts (`goods`, `fortunes`) are public totals, and a
+    // seat's zeroed fortune placeholders carry nothing.
+    const GOODS = ["timber", "clay", "wool", "grain", "ore"];
+    const FORTUNES = ["knight", "road", "plenty", "monopoly", "vp"];
+    window.__privacy = (root, me) => {
+      const bad = [];
+      const walk = (x, at, owner) => {
+        if (!x || typeof x !== "object") return;
+        if (Array.isArray(x)) {
+          if (x.length && x.every((y) => FORTUNES.includes(y)) && owner !== me) bad.push(`${at}: fortune cards of ${owner ?? "no seat"}`);
+          return x.forEach((y, k) => walk(y, `${at}[${k}]`, owner));
+        }
+        if (typeof x.id === "string" && /^p\d$/.test(x.id)) owner = x.id;
+        if (GOODS.every((r) => typeof x[r] === "number") && at !== ".game.bank" && owner !== me) bad.push(`${at}: goods of ${owner ?? "no seat"}`);
+        if (FORTUNES.every((f) => typeof x[f] === "number") && FORTUNES.some((f) => x[f] > 0) && owner !== me) bad.push(`${at}: fortunes of ${owner ?? "no seat"}`);
+        for (const [k, y] of Object.entries(x)) walk(y, `${at}.${k}`, owner);
+      };
+      walk(root, "", null);
+      return bad;
+    };
     let me = null;
+    // The host reveals every seat's record with the finished game on purpose (viewFor and watchView, "over"; the win screen
+    // shows each seat's hidden points), so only a state frame whose game is over is exempt. Every other frame is walked.
     const scan = (m) => {
       if (m?.type === "state" && typeof m.you === "string") me = m.you;
-      const bad = [];
-      const walk = (x, at) => {
-        if (!x || typeof x !== "object") return;
-        if (Array.isArray(x)) return x.forEach((y, k) => walk(y, `${at}[${k}]`));
-        if (typeof x.id === "string" && /^p\d$/.test(x.id) && "resources" in x && x.id !== me && m.game?.phase !== "over") bad.push(`${m.type} ${at} ${x.id}`);
-        for (const [k, y] of Object.entries(x)) walk(y, `${at}.${k}`);
-      };
-      walk(m, "");
-      return bad.length ? `${bad.join(", ")} (seat ${me})` : null;
+      if (m?.type === "state" && m.game?.phase === "over") return [null, true];
+      const bad = window.__privacy(m, me);
+      return [bad.length ? `${m.type}: ${bad.join(", ")} (seat ${me})` : null, false];
     };
     const Socket = window.WebSocket;
     window.WebSocket = class extends Socket {
       constructor(...a) {
         super(...a);
         this.addEventListener("message", (e) => {
+          let out;
           try {
-            window.__frame(scan(JSON.parse(e.data)));
-          } catch {}
+            out = scan(JSON.parse(e.data));
+          } catch (err) {
+            out = [`a frame the scan could not read: ${err}`, false];
+          }
+          window.__frame(...out);
         });
       }
     };
@@ -469,7 +502,11 @@ try {
   check(gr.players.every((p) => identity[p.name]?.seat === p.seat && identity[p.name]?.color === p.color), `every seat keeps its number and colour (${gr.players.map((p) => `${p.name} ${p.seat}`).join(", ")})`);
   check(gr.players[0].name === nameOf(gw, gw.winner), `the winner, ${nameOf(gw, gw.winner)}, goes first`);
   check(snaps.every((s) => s.screen === "play" && s.state.players.length === 6), "every tab is in the rematch");
-  for (const t of tabs) check(!t.leaks.length, `${t.label}: none of ${t.messages} frames carried another seat's hand ${t.leaks.slice(0, 3).join(" | ")}`);
+  for (const t of tabs) {
+    check(t.messages >= 200, `${t.label} received ${t.messages} frames from the host (${t.overFrames} of a finished game)`);
+    check(!t.leaks.length, `${t.label}: none of ${t.messages - t.overFrames} walked frames carried another seat's hand ${t.leaks.slice(0, 3).join(" | ")}`);
+    check(t.snaps >= 100 && !t.storeLeaks.length, `${t.label}: none of ${t.snaps} store snapshots held another seat's hand ${t.storeLeaks.slice(0, 3).join(" | ")}`);
+  }
 } catch (e) {
   failures.push(String(e?.stack ?? e));
   console.log(`FAIL ${e?.stack ?? e}`);
