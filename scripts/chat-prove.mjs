@@ -825,12 +825,37 @@ try {
 
   await a.page.getByRole("button", { name: "Mute player Pine", exact: true }).click();
   await openChat(c);
+  // #1495: the reaction's 2 s lifetime runs in real time from Ember's receipt. Waits that need Ember's frames (store polling,
+  // the Unmute click's actionability) took longer than that on a starved runner, so the reaction left before Unmute.
+  // Do them before Pine sends: check Unmute is actionable, and arm an in-page watch that reads the muted view on receipt.
+  const unmute = a.page.getByRole("button", { name: "Unmute player Pine", exact: true });
+  await unmute.click({ trial: true });
+  const unmuteBox = await unmute.boundingBox();
+  const unmuteAt = { x: unmuteBox.x + unmuteBox.width / 2, y: unmuteBox.y + unmuteBox.height / 2 };
+  const mutedView = a.page.evaluate(
+    ({ seat, player, emote, at }) =>
+      new Promise((resolve, reject) => {
+        const read = () => ({
+          float: document.querySelectorAll(`[data-testid="rail-${player}"] [data-testid="reaction"][data-emote="${emote}"]`).length,
+          line: [...document.querySelectorAll(`[data-testid="chat-log"] [data-testid="react-line"][data-emote="${emote}"]`)].filter((el) => el.textContent.includes("Pine")).length,
+          hit: document.elementFromPoint(at.x, at.y)?.closest("button")?.getAttribute("aria-label") ?? null,
+        });
+        const landed = (s) => s.reactions.some((r) => r.seat === seat && r.emote === emote);
+        const timer = setTimeout(() => (off(), reject(new Error("Timeout 30000ms exceeded waiting for Pine's reaction in Ember's store"))), 30_000);
+        // After the store update's render has committed.
+        const done = () => (clearTimeout(timer), off(), setTimeout(() => resolve(read())));
+        const off = window.__emberisle.subscribe((s) => landed(s) && done());
+        if (landed(window.__emberisle.getState())) done();
+      }),
+    { seat: mutedSeat, player: mutedPlayer, emote: "🔥", at: unmuteAt },
+  );
   await c.page.getByTestId("emoji-row").getByRole("button", { name: "React fire", exact: true }).click();
-  await a.page.waitForFunction(({ seat, emote }) => window.__emberisle.getState().reactions.some((r) => r.seat === seat && r.emote === emote), { seat: mutedSeat, emote: "🔥" });
+  const hidden = await mutedView;
   const mutedFloat = a.page.locator(`[data-testid="rail-${mutedPlayer}"] [data-testid="reaction"][data-emote="🔥"]`);
   const mutedReactLine = a.page.getByTestId("chat-log").locator('[data-testid="react-line"][data-emote="🔥"]').filter({ hasText: "Pine" });
-  check((await mutedFloat.count()) === 0 && (await mutedReactLine.count()) === 0, "mute: Pine's reaction bubble and its log line are hidden only in Ember's view");
-  await a.page.getByRole("button", { name: "Unmute player Pine", exact: true }).click();
+  check(hidden.float === 0 && hidden.line === 0, "mute: Pine's reaction bubble and its log line are hidden only in Ember's view");
+  if (hidden.hit !== "Unmute player Pine") throw new Error(`mute: Unmute moved before the click (${hidden.hit} at its centre)`);
+  await a.page.mouse.click(unmuteAt.x, unmuteAt.y);
   await mutedFloat.waitFor({ timeout: 1500 });
   await mutedReactLine.first().waitFor({ timeout: 1500 });
   check(true, "mute: unmuting Pine restores the active reaction and its log line");
