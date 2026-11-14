@@ -235,11 +235,19 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run spiral-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run expanded-board-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run expanded-turns-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run expanded-bots-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run wayfarer-modes-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run game-text-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run stickers-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run sticker-host-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bug-report-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -282,6 +290,8 @@ jobs:
         run: npm run server-needs-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run server-play-again-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run expanded-persist-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -436,6 +446,10 @@ jobs:
         run: npm run hud-safe-area-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run tray-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
+        run: npm run tray-offers-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
+        run: npm run game-log-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run connection-health-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
@@ -641,6 +655,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run title-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run first-minute-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run join-link-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run storage-blocked-prove
@@ -685,6 +701,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run win-list-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run win-sheet-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run play-again-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run lobby-overflow-prove
@@ -719,6 +737,10 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run seat-tray-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run six-seats-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run paired-hud-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run seat-dot-ring-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run longest-army-prove
@@ -732,6 +754,8 @@ jobs:
         run: npm run seat-menu-sheet-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run upright-table-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run expanded-fit-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run hand-hidden-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'

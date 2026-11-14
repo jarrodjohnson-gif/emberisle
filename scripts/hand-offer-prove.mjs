@@ -1,6 +1,6 @@
-// #820: an open trade offer raises the hand cards it changes. What this seat gives rises with a red edge and "-N";
-// what it gets rises with a green edge and "+N". Both clear when the offer closes or this seat answers it. Under
-// reduced motion the edge and label stay and nothing lifts.
+// #820: an open trade offer raises the hand cards it changes. What this seat gives rises with a red "−N" tag; what it gets
+// rises with a green "+N" tag (#1595: the tag carries the colour, the column itself has no edge, since a box marks only what
+// you can press). Both clear when the offer closes or this seat answers it. Under reduced motion the tag stays and nothing lifts.
 import assert from "node:assert/strict";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
@@ -10,6 +10,9 @@ const STEP_MS = 15_000;
 const RESOURCES = ["timber", "clay", "wool", "grain", "ore"];
 const RED = "rgb(138, 34, 25)"; // --loss #8a2219
 const GREEN = "rgb(16, 86, 42)"; // --gain #10562a
+// #1595: in the tray the tag is in the Give and Get colours (styles.css, .hud-tray --give and --get).
+const GIVE = "rgb(179, 38, 30)"; // --give #b3261e
+const GET = "rgb(30, 122, 70)"; // --get #1e7a46
 
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
@@ -25,7 +28,7 @@ try {
     page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
     page.on("pageerror", (e) => errors.push(String(e)));
     await page.goto(`http://127.0.0.1:${PORT}/`);
-    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play with bots", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
     // Hold a good of each kind so the hand is on the table, then open and close offers straight on the store.
     await page.evaluate(() => {
@@ -75,8 +78,8 @@ try {
         assert.equal(g.label, w?.[1] ?? null, `${tag}: ${r} label`);
         assert.equal(g.lift, w ? lifted : 0, `${tag}: ${r} lift`);
         if (w) {
-          assert.equal(g.color, w[0] === "give" ? RED : GREEN, `${tag}: ${r} label colour`);
-          assert.ok(g.edge.includes(w[0] === "give" ? RED : GREEN), `${tag}: ${r} edge ${g.edge}`);
+          assert.equal(g.color, w[0] === "give" ? GIVE : GET, `${tag}: ${r} label colour`);
+          assert.ok(![RED, GREEN, GIVE, GET].some((c) => g.edge.includes(c)), `${tag}: ${r} column has no edge (the tag carries the colour) ${g.edge}`);
         } else assert.ok(!g.edge.includes(RED) && !g.edge.includes(GREEN), `${tag}: ${r} has no edge`);
       }
     };
@@ -84,13 +87,13 @@ try {
 
     // Another seat offers 1 clay for 1 timber: this seat gives timber and gets clay.
     await setOffer({ give: { clay: 1 }, want: { timber: 1 } });
-    check(await settled({ timber: 1, clay: 1 }), { timber: ["give", "-1"], clay: ["get", "+1"] }, `${tag} received`);
+    check(await settled({ timber: 1, clay: 1 }), { timber: ["give", "−1"], clay: ["get", "+1"] }, `${tag} received`);
     // This seat answers: it clears at once.
     await setOffer({ give: { clay: 1 }, want: { timber: 1 } }, true);
     check(await settled({}), {}, `${tag} answered`);
     // This seat's own offer reads from its own side: it gives `give` and gets `want`.
     await setOffer({ mine: true, give: { grain: 2 }, want: { ore: 1 } });
-    check(await settled({ grain: 1, ore: 1 }), { grain: ["give", "-2"], ore: ["get", "+1"] }, `${tag} own`);
+    check(await settled({ grain: 1, ore: 1 }), { grain: ["give", "−2"], ore: ["get", "+1"] }, `${tag} own`);
     // The offer ends.
     await setOffer(null);
     check(await settled({}), {}, `${tag} closed`);
@@ -105,7 +108,7 @@ try {
     page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
     page.on("pageerror", (e) => errors.push(String(e)));
     await page.goto(`http://127.0.0.1:${PORT}/`);
-    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play with bots", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
     const setHand = (resources) =>
       page.evaluate((resources) => {

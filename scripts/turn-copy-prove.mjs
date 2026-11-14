@@ -16,7 +16,7 @@ try {
     page.on("pageerror", e => errors.push(e.message));
     page.on("console", m => m.type() === "error" && errors.push(m.text()));
     await page.goto(`http://127.0.0.1:${port}`);
-    await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
+    await page.getByRole("button", { name: "Pass and play", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state);
     const prompt = async (prefix) => {
       await page.waitForFunction(prefix => document.querySelector('[data-testid="turn-banner"]')?.textContent.startsWith(prefix), prefix);
@@ -56,7 +56,7 @@ try {
       st.phase="discard";st.discardNeeded={[st.players.find(p=>p.id!==st.current).id]:3};st.seq++;
       g.setState({state:st});
     });
-    await prompt("Discard 3 goods · ");
+    await prompt("Discard 3: pick 3 more · ");
     await page.evaluate(() => {
       const g=window.__emberisle,st=g.getState().state;
       g.setState({mode:"ai",localId:st.current});
@@ -86,7 +86,7 @@ try {
       const g=window.__emberisle, st=structuredClone(g.getState().state);
       st.phase="discard";st.discardNeeded={[st.current]:3};st.seq++;g.setState({state:st});
     });
-    await prompt("Discard 3 goods");
+    await prompt("Discard 3: pick 3 more");
     await page.evaluate(() => window.__emberisle.getState().dispatch({type:"discard",resources:{timber:3}}));
     await prompt("Move the wayfarer");
     await page.evaluate(() => {

@@ -18,6 +18,7 @@ import { buildStatus, type Price } from "@/components/game/BuildCost";
 import { useEscapeDisarm } from "@/components/game/escape-disarm";
 import { COST, RESOURCES, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
 import { playable, totalVP } from "@/lib/game/rules";
+import { useDiscardPicked } from "@/lib/game/discard-pick";
 import { useGame } from "@/lib/game/store";
 import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
 import { useViewport } from "@/lib/viewport";
@@ -133,6 +134,12 @@ function LossesFailed({ message, onRetry }: { message: string; onRetry: () => vo
   );
 }
 
+// #1595: the discard's top line counts what is left to pick: "Discard 4: pick 1 more", then "Discard 4: ready".
+function discardLine(owed: number, picked: number) {
+  const left = owed - picked;
+  return `Discard ${owed}: ${left > 0 ? `pick ${left} more` : "ready"}`;
+}
+
 export function Hud() {
   const gameLog = useGame((s) => s.gameLog);
   const state = useGame((s) => s.state);
@@ -151,6 +158,7 @@ export function Hud() {
   const tradeOpen = useGame((s) => s.tradeOpen);
   const dispatch = useGame((s) => s.dispatch);
   const choosing = useGame((s) => !!s.pendingSteal);
+  const discardPicked = useDiscardPicked();
   const setBuildMode = useGame((s) => s.setBuildMode);
   const setHowTo = useGame((s) => s.setHowTo);
   const menuFor = useGame((s) => s.menuFor);
@@ -300,18 +308,22 @@ export function Hud() {
   const armed = mine && (state.phase === "main" || fortuneArmed) ? armedCopy(buildMode, roadPicks.length) : null;
   // #1539: an armed build or fortune has its own Cancel button in the action row, so a touch screen needs no hint.
   const armedNow = !!armed && !spectator;
-  const phaseText = armed
+  // #1609: a partner turn (paired turns, five and six seats) has no dice, so the line only says whose it is.
+  const partner = state.role === "partner";
+  const phaseText = choosing
+    ? "Take from whom?"
+    : armed
     ? matchMedia("(pointer: coarse)").matches ? armed[0] : `${armed[0]} · Esc cancels`
     : state.phase === "discard"
-      ? `Discard ${state.discardNeeded[subject] ?? 0} goods`
-      : phaseCopy(state.phase);
+      ? discardLine(state.discardNeeded[subject] ?? 0, discardPicked)
+      : partner ? "Your partner turn" : phaseCopy(state.phase);
   const waiting = mode !== "hotseat" && !yours;
   // #430: in hotseat a seat that owes a discard on another seat's turn is named, not given the turn.
   const turnText =
-    mode === "hotseat" && subject !== state.current
+    mode === "hotseat" && (subject !== state.current || state.phase === "discard")
       ? `${phaseText} · ${subjectPlayer.name}`
       : waiting
-        ? waitingCopy(state.phase, subjectPlayer.name)
+        ? partner ? `${subjectPlayer.name}'s partner turn` : waitingCopy(state.phase, subjectPlayer.name)
         : phaseText;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
   const menuPlayer = menuFor ? state.players.find((p) => p.id === menuFor) : null;
@@ -327,7 +339,7 @@ export function Hud() {
     <p key={`turn-${state.current}`} data-testid="turn-banner"
       // #1509: on the upright table the line has no box, so another seat's colour is a dot before it (styles.css, --seat).
       style={{ borderLeftColor: yours ? undefined : subjectPlayer.color, ...(yours ? {} : { "--seat": subjectPlayer.color }) } as CSSProperties}
-      className={cn("turn-instruction rounded-control px-3 py-1.5 text-[15px] font-medium leading-5", yours ? "turn-instruction-own" : "border-l-4", !waiting && !choosing && (state.phase === "robber" || buildMode === "knight") && "turn-instruction-move")}
+      className={cn("turn-instruction rounded-control px-3 py-1.5 text-[15px] font-medium leading-5", yours ? "turn-instruction-own" : "border-l-4", !waiting && !choosing && (state.phase === "robber" || buildMode === "knight") && "turn-instruction-move", (choosing || discarder) && "turn-instruction-plain")}
     >{turnText}</p>
   );
 
@@ -468,6 +480,12 @@ export function Hud() {
                   </span>
                 ) : gameLog.at(-1)?.text}
               </p>
+              {/* Slice C: an open offer is the top line and, for a seat that can answer or cancel, the action row (styles.css). */}
+              {tradeVisible ? (
+                <LazyBoundary failed={null}>
+                  <TradeToast />
+                </LazyBoundary>
+              ) : null}
               <span data-testid="deck-count" data-deck-left={deckLeft} title={`${deckLeft} fortunes left in the deck`} className={cn("shrink-0 text-[13px] leading-5 tabular-nums", !spectator && "sr-only")}>Deck {deckLeft}</span>
             </div>
             <TurnCountdown header={phone ? null : timerHeader} />
@@ -556,18 +574,13 @@ export function Hud() {
             ) : null}
 
             {!mine || !["main", "roll", "rollOff"].includes(state.phase) ? (
-              fortunes || (column && dice) ? <div className="flex flex-wrap items-center gap-2">{fortunes}{column ? dice : null}</div> : null
+              fortunes || (column && dice) ? <div className="tray-extra flex flex-wrap items-center gap-2">{fortunes}{column ? dice : null}</div> : null
             ) : diceInBar || !column ? null : dice}
 
             {/* #643: on a sideways phone the seat's numbers are one quiet line under the action row. A desktop has them in
                 the tray's top line; the upright phone table has none (#1509). */}
             {phone && !spectator && !upright && !tradeVisible ? <div className="tray-numbers flex h-5 shrink-0 items-center gap-1">{numbers}</div> : null}
             {pinEnd ? endRow : null}
-            {tradeVisible ? (
-              <LazyBoundary failed={null}>
-                <TradeToast />
-              </LazyBoundary>
-            ) : null}
           </div>
           {/* #423: the tray rises over the stack from its bottom edge and may cover the island, like a sheet, but never the
               header or the portrait seat strip; it is inside the sheets chunk, which the table prefetched on idle (#488). */}

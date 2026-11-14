@@ -5,12 +5,13 @@
 // #645: the rail's quiet line carries two public tallies (longest continuous path, wayfarers played); the Longest Path /
 // Largest Army holder wears a gold badge on its tally (see Tally). The strip leaves them to the seat sheet (#1509).
 // Your fortunes by kind, a dropped seat's state and "Hidden fortunes may add points." are in the player menu, one tap away.
+// #1608: a five or six seat table numbers its seats (SeatNo, `PlayerState.seat`) beside each dot; a classic seat has no number.
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { type LucideIcon, Route, Swords } from "lucide-react";
 import { SeatBubbles } from "@/components/game/chunks";
 import { chunk, LazyBoundary } from "@/lib/lazy";
 import { PlayerMenu, seatAway } from "@/components/game/PlayerMenu";
-import { SeatDot } from "@/components/game/SeatDot";
+import { SeatDot, SeatNo } from "@/components/game/SeatDot";
 import type { GameState, PlayerState } from "@/lib/game/types";
 import { cards, hiddenCount, publicVP, roadLength } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
@@ -66,19 +67,20 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
   const fortunes = p.fortunes ?? hiddenCount(p);
   const path = useMemo(() => roadLength(state, p.id), [state, p.id]);
   // #1509: the strip draws the whole name when it fits its line, and the short form when it would be cut, measured, not
-  // guessed: a name never shows an ellipsis. The full name stays for screen readers. 14 px is the dot and its gap.
+  // guessed: a name never shows an ellipsis. The full name stays for screen readers. 14 px is the dot and its gap; a seat
+  // number (#1608) and its gap come off too, with 1 px for the rounding of offsetWidth.
   const line = useRef<HTMLSpanElement>(null);
   const full = useRef<HTMLSpanElement>(null);
   const [fits, setFits] = useState(true);
   const label = strip ? p.name.replace(/ \(bot\)$/, "") : p.name;
   useLayoutEffect(() => {
     if (!strip || !line.current || !full.current) return;
-    const measure = () => setFits(full.current!.scrollWidth <= line.current!.clientWidth - 14);
+    const measure = () => setFits(full.current!.scrollWidth <= line.current!.clientWidth - 14 - (p.seat ? (line.current!.children[1] as HTMLElement).offsetWidth + 5 : 0));
     measure();
     const watch = new ResizeObserver(measure);
     watch.observe(line.current);
     return () => watch.disconnect();
-  }, [strip, label]);
+  }, [strip, label, p.seat]);
   // #420: a strip cell under 100 px shows the die without the points during the roll-off.
   const awayMark = away ? (
     <span data-testid="seat-away" className="seat-away flex min-w-3 shrink-[9] items-center gap-0.5 text-zinc-700">
@@ -107,12 +109,15 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
       <>
         <span ref={line} className="flex w-full items-center justify-center gap-1">
           <SeatDot color={p.color} className="seat-dot size-2.5" />
+          <SeatNo n={p.seat} />
           <span ref={full} data-testid="seat-name" className={cn("min-w-0 truncate text-[13px] font-semibold leading-4", !fits && "sr-only")}>
             {label}
             {label !== p.name ? <span className="sr-only"> (bot)</span> : null}
           </span>
           <span data-testid="seat-name" aria-hidden="true" className={cn("min-w-0 truncate text-[13px] font-semibold leading-4", fits && "hidden")}>
-            {short}
+            {/* #1608: on a numbered table each letter is its own box, and a letter that does not fit wraps out of sight
+                (styles.css), so the cell shows as many whole letters as fit with this device's font; the number tells the seats apart. */}
+            {p.seat ? [...short!].map((c, i) => <span key={i}>{c}</span>) : short}
           </span>
         </span>
         <span className="flex w-full items-center justify-center gap-1.5 leading-4">
@@ -126,6 +131,7 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
     <>
       <span className="flex w-full items-center gap-2">
         <SeatDot color={p.color} className="seat-dot size-3" />
+        <SeatNo n={p.seat} />
         <span data-testid="seat-name" className="min-w-0 truncate text-[15px] font-semibold leading-5">
           {p.name}
           {p.id === actor ? <span className="font-medium"> · you</span> : null}
@@ -209,16 +215,17 @@ function shortName(name: string) {
 }
 
 // Three letters is what a narrow cell holds, so seats that still share a short form ("Ember", "Emberly") fall back to
-// the initial and the seat number ("E1", "E2").
-function shortNames(names: string[]) {
+// the initial and the seat number ("E1", "E2"): the cell's own number on a numbered table (#1608), else its place.
+function shortNames(players: PlayerState[]) {
+  const names = players.map((p) => p.name.replace(/ \(bot\)$/, ""));
   const short = names.map(shortName);
-  return short.map((s, i) => (short.some((o, j) => j !== i && o === s) ? `${names[i]![0]}${i + 1}` : s));
+  return short.map((s, i) => (short.some((o, j) => j !== i && o === s) ? `${names[i]![0]}${players[i]!.seat ?? i + 1}` : s));
 }
 
 // Phone seat strip (docs/design/mobile-hud.md): 44 px, one cell per seat.
 export function SeatStrip({ actor, className }: { actor: string; className: string }) {
   const players = useGame((s) => s.state!.players);
-  const short = shortNames(players.map((p) => p.name.replace(/ \(bot\)$/, "")));
+  const short = shortNames(players);
   return (
     <div data-testid="seat-strip" className={cn("pointer-events-auto flex h-11 gap-1", className)}>
       {players.map((p, i) => (

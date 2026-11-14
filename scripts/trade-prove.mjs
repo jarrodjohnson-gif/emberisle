@@ -291,9 +291,13 @@ try {
   if (!same(await trades(A), offerHeard(give, want, true))) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for its own offer`);
   console.log(`#609/#1107: offer of ${give} for ${want} heard as ${JSON.stringify(offerHeard(give, want, false))} on the other seats and ${JSON.stringify(offerHeard(give, want, true))} on the asker`);
   if (await A.page.getByTestId("trade-panel").isVisible()) throw new Error("the panel stayed open after the ask");
+  // The sheet hands focus back to a Trade button that the offer has replaced, so Cancel takes it on the next frame.
+  await A.page.waitForFunction(() => document.activeElement?.dataset.testid === "trade-cancel", null, { timeout: 1000 }).catch(() => {});
   const afterAsk = await focusIs(A);
-  if (afterAsk.label !== "Trade") throw new Error(`#378: the ask closed the panel but focus went to "${afterAsk.label}", not the Trade button`);
-  const line = `${A.name} offers 1 ${RESOURCE_LABEL[give].toLowerCase()} for 1 ${RESOURCE_LABEL[want].toLowerCase()}`;
+  // #1546: while my offer is open the action row is Cancel alone, so focus lands there, not on a Trade button that is gone.
+  if (afterAsk.label !== "Cancel") throw new Error(`#378: the ask closed the panel but focus went to "${afterAsk.label}", not the offer's Cancel button`);
+  // #1546: a seat that can answer reads what it would give (the asker's want) and get (the asker's give).
+  const line = `${A.name}: give 1 ${RESOURCE_LABEL[want].toLowerCase()}, get 1 ${RESOURCE_LABEL[give].toLowerCase()}`;
   const demand1 = `${A.name} is looking for 1 ${RESOURCE_LABEL[want].toLowerCase()}`;
   for (const t of [B, C]) {
     const v = vs[tabs.indexOf(t)];
@@ -376,9 +380,9 @@ try {
   await until(async () => ((await C.page.getByTestId("trade-toast").count()) === 0 ? true : null), `${C.name}'s card leaves after the fade`, 2_000);
   vs = await views(tabs);
   if (vs[k].toast !== null) throw new Error(`${C.name} still has a toast after No: "${vs[k].toast}"`);
-  if (!vs[i].toast.includes(`${C.name} declined`)) throw new Error(`asker toast after No: "${vs[i].toast}"`);
+  if (!vs[i].toast.includes(`${C.name} said no`)) throw new Error(`asker toast after No: "${vs[i].toast}"`);
   if (!vs[j].toast || vs.some((v) => !v.offer || v.offer.tradeId !== tradeId)) throw new Error("the offer closed on a single No");
-  console.log(`${C.name} declined: asker sees "${C.name} declined", offer still open for ${B.name}`);
+  console.log(`${C.name} declined: asker sees "${C.name} said no", offer still open for ${B.name}`);
 
   await forget(tabs);
   // 3. B says Yes (Enter on the focused button, the spy's positive control for #366): the goods move in every tab's next state.
@@ -419,7 +423,7 @@ try {
   const again = await ask(want, give, n2);
   const tradeId2 = again[0].offer.tradeId;
   if (tradeId2 === tradeId) throw new Error("second ask reused the tradeId");
-  const line2 = `${A.name} offers 1 ${RESOURCE_LABEL[want].toLowerCase()} for ${n2} ${RESOURCE_LABEL[give].toLowerCase()}`;
+  const line2 = `${A.name}: give ${n2} ${RESOURCE_LABEL[give].toLowerCase()}, get 1 ${RESOURCE_LABEL[want].toLowerCase()}`;
   for (const t of [B, C]) {
     if (!(await answerable(t, again[tabs.indexOf(t)], line2, give, n2))) throw new Error(`${t.name} can pay ${n2} ${RESOURCE_LABEL[give].toLowerCase()}`);
   }
@@ -484,7 +488,7 @@ try {
   const need = want === "ore" ? "timber" : "ore";
   const needLabel = RESOURCE_LABEL[need].toLowerCase();
   const demand = `${A.name} is looking for 2 ${needLabel}`;
-  const line3 = `${A.name} offers 1 ${RESOURCE_LABEL[offerRes].toLowerCase()} for 2 ${needLabel}`;
+  const line3 = `${A.name}: give 2 ${needLabel}, get 1 ${RESOURCE_LABEL[offerRes].toLowerCase()}`;
   // Sets this tab's own count of `need`, the way a state from the host would: the toast reads it from the store.
   const setLocal = (t, count) =>
     t.page.evaluate(({ res, n }) => {
