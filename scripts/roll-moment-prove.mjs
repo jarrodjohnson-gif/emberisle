@@ -18,7 +18,8 @@
 //   shows nothing, one roll on shows one moment (a 7 in danger, read out by name), a jump of two rolls shows none.
 // Hotseat at 1280x720: a seat's roll shows one moment and is read out by the seat's name, not "You".
 // Reduced motion at 1280x720: the moment still shows centred and large, with no entry animation and no flight, and goes
-// after its hold. Zero console errors throughout.
+// after its hold. #1687: a 3+4 with a bot on 9 goods: the bot's discard line takes the event line inside the moment's hold,
+// at 1280x720, 390x844 and reduced motion. Zero console errors throughout.
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -510,6 +511,104 @@ async function reduced() {
   await page.close();
 }
 
+// #1687: a 7 while a bot holds more than 7 goods. The bot discards on the app's 700 ms timer, inside the moment's 900 ms
+// hold, and its line ("<bot> discards 4 goods.") takes the event line from the roll. The roll is 3+4, the bot holds 9 and
+// every other hand at most 7. Checked the frame the discard line lands, and again once the moment has gone.
+async function discardSeven(viewport, { reduced = false, touch = false } = {}) {
+  const tag = `bot discards on a 7 ${viewport.width}x${viewport.height}${reduced ? " reduced" : ""}`;
+  const page = await open(viewport, { reduced, touch });
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
+  await playUntil(page, myRoll);
+  const bot = await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const total = (p) => Object.values(p.resources).reduce((a, b) => a + b, 0);
+    for (const p of st.players) {
+      for (const r of Object.keys(p.resources)) {
+        const over = Math.min(p.resources[r], total(p) - 7);
+        if (over > 0) { p.resources[r] -= over; st.bank[r] += over; }
+      }
+    }
+    const bot = st.players.find((p) => p.kind === "bot");
+    for (const r of Object.keys(bot.resources)) { st.bank[r] += bot.resources[r]; bot.resources[r] = 0; }
+    // Nine goods from the bank, spread so no kind runs short: 2+2+2+2+1.
+    Object.keys(bot.resources).forEach((r, i) => { const k = i < 4 ? 2 : 1; bot.resources[r] = k; st.bank[r] -= k; });
+    g.setState({ state: st });
+    // The clicked roll's two dice: 3 and 4.
+    const original = crypto.getRandomValues;
+    const faces = [2, 3];
+    crypto.getRandomValues = function (values) {
+      if (values instanceof Uint32Array && values.length === 1) {
+        values[0] = faces.shift();
+        if (!faces.length) crypto.getRandomValues = original;
+        return values;
+      }
+      return original.call(this, values);
+    };
+    // Every distinct state of the table from here on: the moment's sum, the event line, the banner, where a 7 shows, the
+    // log's newest lines and the bot's hand, stamped by the mutation that drew it.
+    window.__timeline = [];
+    let last = "";
+    const snap = () => {
+      const m = document.querySelector('[data-testid="roll-moment"]');
+      const line = document.querySelector('[data-testid="log-line"]');
+      const s = {
+        moment: m ? m.querySelector('[data-testid="roll-sum"]')?.textContent ?? "" : null,
+        line: (line?.textContent ?? "").replace(/\s+/g, " ").trim(),
+        lineRoll: line?.dataset.roll ?? null,
+        banner: document.querySelector('[data-testid="banner"]')?.textContent ?? null,
+        shown: window.__sumShown(7),
+        log: g.getState().gameLog.slice(-3).map((l) => l.text),
+        botGoods: total(g.getState().state.players.find((p) => p.id === bot.id)),
+      };
+      const key = JSON.stringify(s);
+      if (key !== last) window.__timeline.push({ at: performance.now(), ...s });
+      last = key;
+    };
+    new MutationObserver(snap).observe(document, { subtree: true, childList: true, characterData: true, attributes: true });
+    return { id: bot.id, name: bot.name, goods: total(bot), me: st.players.find((p) => p.id === g.getState().localId).name };
+  });
+  await frames(page);
+  const roll = await clickRoll(page);
+  // The bot's discard itself (its hand drops to 5), not its line, so a missing line fails the checks below rather than a wait.
+  const discarded = await page.waitForFunction((id) => !window.__emberisle.getState().state.discardNeeded[id], bot.id, { timeout: STEP_MS, polling: 50 }).then(() => true, () => false);
+  await page.waitForFunction((n) => window.__moments.find((m) => m.n === n)?.gone, roll.applied.n, { timeout: STEP_MS, polling: 50 });
+  await frames(page);
+  const after = await page.evaluate((n) => {
+    const line = document.querySelector('[data-testid="log-line"]');
+    return {
+      moments: window.__moments.filter((m) => m.n === n),
+      line: (line?.textContent ?? "").replace(/\s+/g, " ").trim(),
+      lineVisible: line?.checkVisibility({ visibilityProperty: true }) ?? false,
+      lineRoll: line?.dataset.roll ?? null,
+      banner: document.querySelector('[data-testid="banner"]')?.textContent ?? null,
+      shown: window.__sumShown(7),
+      log: window.__emberisle.getState().gameLog.slice(-3).map((l) => l.text),
+      timeline: window.__timeline,
+    };
+  }, roll.applied.n);
+  const t0 = roll.applied.at;
+  const m = after.moments[0];
+  const rows = after.timeline.map(({ at, ...s }) => ({ ms: Math.round(at - t0), ...s }));
+  // The first frame of the moment, and the first frame drawn after the bot's hand dropped.
+  const up = rows.find((r) => r.moment !== null && r.ms >= 0);
+  const drop = rows.find((r) => r.botGoods === 5);
+  console.log(`${tag}: ${bot.name} held ${bot.goods}; rolled ${roll.dice.join("+")}; moment up ${(m?.at - t0).toFixed(0)} ms, gone ${(m?.gone - t0).toFixed(0)} ms; timeline ${JSON.stringify(rows.filter((r) => r.ms >= 0))}`);
+  const line = `${bot.name} discards 4 goods.`;
+  const rolled = [`${bot.me} rolled 7!`, `Nobody gains goods — ${bot.me}'s roll.`];
+  check(roll.dice.join() === "3,4" && bot.goods === 9, `${tag}: the fixture rolled 3+4 with the bot on 9 goods (${roll.dice}, ${bot.goods})`);
+  check(after.moments.length === 1 && m.sum === 7 && m.dice.join() === "3,4", `${tag}: one moment, showing 3+4 and 7`);
+  check(up?.moment === "7" && up.line === `${bot.me} rolled 7!` && up.lineRoll === "7" && up.shown.join() === "roll-sum,log-roll-sum", `${tag}: as the moment comes up the event line shows the roll, the chip's sum beside the centre one (#954) (${JSON.stringify(up)})`);
+  check(discarded && drop?.botGoods === 5, `${tag}: the bot discards 4 of its 9 goods (${drop?.botGoods ?? "no drop drawn"})`);
+  check(drop?.line === line && drop.lineRoll === null, `${tag}: the frame the discard lands, the event line shows the bot's discard line ("${drop?.line}")`);
+  check(drop?.moment === "7" && drop.shown.join() === "roll-sum", `${tag}: the moment is still up then, and the roll's sum is on screen once, in the moment (${JSON.stringify(drop?.shown)})`);
+  check(drop?.log.join("|") === [...rolled, line].join("|"), `${tag}: the log's newest line is the discard, with the roll's line still before it (${JSON.stringify(drop?.log)})`);
+  check(rows.every((r) => r.ms < 0 || r.banner === null), `${tag}: no goods banner at any point from the roll on`);
+  check(after.lineVisible && after.line === line && after.lineRoll === null && after.log.join("|") === [...rolled, line].join("|"), `${tag}: once the moment has gone the event line still shows the discard line (${JSON.stringify(after.line)})`);
+  check(after.shown.length === 0 && after.banner === null, `${tag}: once the moment has gone no 7 shows on the table and no banner (${JSON.stringify(after.shown)})`);
+  await page.close();
+}
+
 try {
   await practice({ width: 1280, height: 720 }, false);
   await practice({ width: 390, height: 844 }, true);
@@ -518,6 +617,9 @@ try {
   await hotseat();
   await noFlight();
   await reduced();
+  await discardSeven({ width: 1280, height: 720 });
+  await discardSeven({ width: 390, height: 844 }, { touch: true });
+  await discardSeven({ width: 1280, height: 720 }, { reduced: true });
   check(errors.length === 0, `zero console errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);
 } catch (e) {
   console.error(e);
