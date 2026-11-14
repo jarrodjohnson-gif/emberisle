@@ -344,10 +344,12 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     }, 3000);
   };
 
-  // When the last hello went out, on this clock: its welcome measures the skew from it (#1664).
+  // When the last hello went out on this socket, on this clock, and how many have gone out since the last welcome. A welcome
+  // measures the skew from its hello only when that hello is the one out: one may be answered by an error instead (#1664).
   let helloAt = 0;
+  let hellos = 0;
   const raw = (msg: Record<string, unknown>) => {
-    if (msg.type === "hello") helloAt = Date.now();
+    if (msg.type === "hello") helloAt = Date.now(), hellos++;
     ws.send(JSON.stringify(msg));
   };
   const send = (msg: Record<string, unknown> | (() => Record<string, unknown>)) => {
@@ -396,6 +398,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   const dial = () => {
     timer = null;
     const sock = (ws = new Ctor(url));
+    hellos = 0;
     ws.onopen = () => {
       // The rejoin hello goes out here only, never through the queue, so it is sent once per socket.
       if (seat && (attempt > 0 || rejoining)) {
@@ -438,7 +441,8 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         taken = false;
         attempt = 0;
         on.welcome?.(m);
-        if (typeof m.serverNow === "number") on.clock?.(m.serverNow - helloAt);
+        if (typeof m.serverNow === "number" && hellos === 1) on.clock?.(m.serverNow - helloAt);
+        hellos = 0;
         break;
       }
       case "turnExtension":

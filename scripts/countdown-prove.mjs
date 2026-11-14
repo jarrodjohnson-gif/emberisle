@@ -95,6 +95,25 @@ const view = (t) =>
   });
 const views = (tabs) => Promise.all(tabs.map(view));
 
+// #1664: the chip at four of its changes, each beside the host's time left then. The host's clock and the page's are the
+// machine's one clock; a page whose Date.now was stepped keeps the real one as window.__realNow.
+const chipReadings = (page) =>
+  page.evaluate(() => new Promise((resolve) => {
+    const got = [];
+    const read = (force) => {
+      const chip = document.querySelector('[data-testid="turn-countdown"]');
+      const timer = window.__emberisle.getState().turnTimer;
+      if (!force && (!chip || !timer || got.at(-1)?.secs === Number(chip.dataset.seconds))) return;
+      got.push({ player: chip?.dataset.player, secs: Number(chip?.dataset.seconds), host: timer && Math.ceil((timer.deadline - (window.__realNow ?? Date.now)()) / 1000) });
+      if (got.length === 4 || force) resolve(got);
+    };
+    // A chip stuck for 8 s is read as it stands, which fails the four-readings check.
+    setTimeout(() => read(true), 8000);
+    new MutationObserver(() => read()).observe(document.body, { attributes: true, attributeFilter: ["data-seconds"], childList: true, subtree: true });
+  }));
+// Four readings, of which at most one (a render a busy page committed late) is more than a second off the host, for `pid`.
+const chipMatches = (readings, pid) => readings.length === 4 && readings.filter((r) => r.player !== pid || Math.abs(r.secs - r.host) > 1).length <= 1;
+
 async function until(check, what, ms = 10_000) {
   const end = Date.now() + ms;
   while (Date.now() < end) {
@@ -334,22 +353,57 @@ try {
   // Read at the moment the chip changes, after the reload's first renders settle. A page this busy can still commit a tick's
   // render late, so one reading of the four may show the second before; the 3 s hold would put all four off.
   await new Promise((r) => setTimeout(r, 1500));
-  const readings = await actorTab.page.evaluate(() => new Promise((resolve, reject) => {
-    const got = [];
-    setTimeout(() => reject(new Error(`the chip changed ${got.length} times in 8 s`)), 8000);
-    new MutationObserver(() => {
-      const chip = document.querySelector('[data-testid="turn-countdown"]');
-      const timer = window.__emberisle.getState().turnTimer;
-      if (!chip || !timer || got.at(-1)?.secs === Number(chip.dataset.seconds)) return;
-      got.push({ player: chip.dataset.player, secs: Number(chip.dataset.seconds), host: Math.ceil((timer.deadline - Date.now()) / 1000) });
-      if (got.length === 4) resolve(got);
-    }).observe(document.body, { attributes: true, attributeFilter: ["data-seconds"], childList: true, subtree: true });
-  }));
-  // The host's clock and this tab's are the machine's one clock. A reading may round to the other side of a second it just
-  // crossed: one second either way.
-  const off = readings.filter((r) => r.player !== actor || Math.abs(r.secs - r.host) > 1);
-  if (off.length > 1) throw new Error(`after a reload whose welcome and first state were read ${HOLD} ms late, ${actorTab.name}'s chip read ${readings.map((r) => `${r.secs}/${r.host}`).join(", ")} s (chip/host)`);
+  const readings = await chipReadings(actorTab.page);
+  if (!chipMatches(readings, actor)) throw new Error(`after a reload whose welcome and first state were read ${HOLD} ms late, ${actorTab.name}'s chip read ${readings.map((r) => `${r.secs}/${r.host}`).join(", ")} s (chip/host)`);
   console.log(`reload with the welcome and first state read ${HOLD} ms late: ${actorTab.name}'s chip read ${readings.map((r) => `${r.secs}/${r.host}`).join(", ")} s (chip/host)`);
+
+  // #1664: a tab's clock steps 30 s forward mid-connection (a clock sync, a wake from sleep with the socket still up). The
+  // chip of the next window must count the host's time again, not 30 s less.
+  const stepTab = tabs.find((t) => t !== actorTab);
+  const stepSeq = (await view(stepTab)).seq;
+  await stepTab.page.evaluate(() => {
+    const real = (window.__realNow = Date.now);
+    Date.now = () => real() + 30_000;
+  });
+  const next = await until(async () => {
+    const v = await view(stepTab);
+    return v?.seq > stepSeq && v.chip?.player === v.current ? v : null;
+  }, `the next window on ${stepTab.name} after its clock stepped`, TURN + 10_000);
+  const stepped = await chipReadings(stepTab.page);
+  if (!chipMatches(stepped, next.current)) throw new Error(`after ${stepTab.name}'s clock stepped 30 s forward, its next window's chip read ${stepped.map((r) => `${r.secs}/${r.host}`).join(", ")} s (chip/host)`);
+  console.log(`clock stepped 30 s forward on ${stepTab.name}: the next window's chip read ${stepped.map((r) => `${r.secs}/${r.host}`).join(", ")} s (chip/host)`);
+
+  // #1664: each welcome measures the skew from its own hello. A second hello going out before the first one's welcome comes
+  // (a re-hello on the same socket) must not measure that welcome from the later hello, which reads the chip high by the gap.
+  const samples = await a.page.evaluate(async () => {
+    const { connectTable } = await import("/src/lib/net/table.ts");
+    const hellos = [];
+    const got = [];
+    let socket;
+    class Socket {
+      readyState = 1;
+      constructor() { socket = this; }
+      send(raw) { if (JSON.parse(raw).type === "hello") hellos.push(Date.now()); }
+      close() {}
+    }
+    const client = connectTable("ws://fixture", { clock: (s) => got.push(s) }, Socket);
+    socket.onopen?.({});
+    // The host answers each hello at once, on this same clock: the true skew is 0.
+    const welcome = (i) => socket.onmessage({ data: JSON.stringify({ type: "welcome", code: "ABCD", serverNow: hellos[i] }) });
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    client.join("ABCD", { name: "Ember", color: "red", avatarId: null });
+    await wait(1500);
+    client.rejoin("ABCD", "s");
+    welcome(0);
+    welcome(1);
+    await wait(100);
+    client.rejoin("ABCD", "s");
+    welcome(2);
+    client.close();
+    return got;
+  });
+  if (!samples.length || samples.some((s) => Math.abs(s) > 100)) throw new Error(`overlapping hellos measured the skew as ${samples.join(", ")} ms (true 0)`);
+  console.log(`overlapping hellos: the welcomes measured ${samples.join(", ")} ms of skew (true 0)`);
 
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   console.log("PASS countdown-prove");

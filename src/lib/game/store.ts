@@ -1279,7 +1279,8 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
   let outdated: string | null = null;
   let firstState = false;
   let held: Parameters<TableEvents["state"]>[0][] | null = null;
-  // The best clock estimate on this connection. A welcome starts it over: a rejoin may reach a different host clock.
+  // The best clock estimate: the largest sample since this socket's welcome or the start of the window shown, whichever is later.
+  // A redial starts it over (a rejoin may reach a different host clock); a new window does too, so a clock step heals there.
   let bestSkew = -Infinity;
   const applyState: TableEvents["state"] = ({ you, game, legal, turnDeadline, turnPlayer, serverNow, result }) => {
     set({ gameResult: game.phase === "over" ? gameResult(result) : null });
@@ -1294,9 +1295,10 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     // the timer we hold stays while the host's deadline is the same, so the chip neither remounts nor announces twice.
     const skew = typeof serverNow === "number" ? serverNow - Date.now() : 0;
     const prev = get().turnTimer;
-    const clockSkew = (bestSkew = Math.max(skew, bestSkew));
-    firstState = false;
     const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline, host: serverNow as number };
+    // The first state after a welcome keeps the welcome's sample (#1664), which a busy page cannot spoil.
+    const clockSkew = (bestSkew = turnTimer !== prev && !firstState ? skew : Math.max(skew, bestSkew));
+    firstState = false;
     // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
     set({ legal, turnTimer, clockSkew, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
     // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
@@ -1323,7 +1325,6 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       if (variant) void expanded.prefetch();
       welcomed = true;
       firstState = true;
-      bestSkew = -Infinity;
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
       set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
@@ -1367,6 +1368,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     reconnecting: (attempt) => {
       recovery = true;
       firstState = true;
+      bestSkew = -Infinity;
       set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null });
     },
     chat: (line) => {
