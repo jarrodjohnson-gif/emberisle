@@ -156,7 +156,7 @@ try {
     return out;
   });
   assert.deepEqual(env, ["47px", "34px"], "the inset emulation reached env()");
-  await inSafe(p, p.page.getByRole("button", { name: "Play", exact: true }), `${p.tag} title Play`);
+  await inSafe(p, p.page.getByRole("button", { name: "Play with bots", exact: true }), `${p.tag} title Play`);
   await inSafe(p, p.page.getByTestId("title-card"), `${p.tag} title card`);
   const page = await p.page.evaluate(() => ({
     scroll: document.scrollingElement.scrollHeight - innerHeight,
@@ -201,6 +201,7 @@ try {
   console.log(`ok   ?watch=${tableCode} fills the field and shows Watch inside the safe area`);
 
   // In game: every button the HUD shows sits inside the safe area.
+  // In game: every button the HUD shows sits inside the safe area.
   await p.page.getByRole("button", { name: "Leave table" }).click();
   await p.page.getByRole("button", { name: "Play", exact: true }).click();
   await p.page.getByTestId("seat-strip").waitFor();
@@ -222,7 +223,7 @@ try {
   // Held sideways: the notch is on a side and the home bar is shorter.
   const l = await phone(844, 390, { top: 0, bottom: 21, left: 47, right: 47 });
   await l.page.goto(HOST);
-  await inSafe(l, l.page.getByRole("button", { name: "Play", exact: true }), `${l.tag} title Play`);
+  await inSafe(l, l.page.getByRole("button", { name: "Play with bots", exact: true }), `${l.tag} title Play`);
   await inSafe(l, l.page.getByTestId("title-card"), `${l.tag} title card`);
   await l.page.getByRole("button", { name: "Host a table" }).click();
   await inSafe(l, l.page.getByRole("button", { name: "Ready", exact: true }), `${l.tag} lobby Ready`);

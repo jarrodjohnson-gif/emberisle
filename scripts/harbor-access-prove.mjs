@@ -43,7 +43,7 @@ try {
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.waitForFunction(() => window.__isle?.renders > 0, null, { timeout: STEP_MS });
-  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await page.getByRole("button", { name: "Pass and play" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState && window.__isle.landReady && !window.__isle.refitDue, null, { timeout: STEP_MS });
   await page.waitForFunction(() => { let found = false; window.__isle.scene.traverse((o) => { if (o.name === "harbors") found = true; }); return found; }, null, { timeout: STEP_MS });
   await page.waitForFunction((r0) => window.__isle.renders > r0 + 2, await page.evaluate(() => window.__isle.renders), { timeout: STEP_MS });
@@ -186,7 +186,7 @@ try {
   phone.on("pageerror", (e) => errors.push(String(e)));
   await phone.goto(`http://127.0.0.1:${PORT}/`);
   await phone.waitForFunction(() => window.__isle?.renders > 0, null, { timeout: STEP_MS });
-  await phone.getByRole("button", { name: "Four seats, one table" }).click();
+  await phone.getByRole("button", { name: "Pass and play" }).click();
   await phone.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState && window.__isle.landReady && !window.__isle.refitDue, null, { timeout: STEP_MS });
   await phone.waitForFunction(() => { let found = false; window.__isle.scene.traverse((o) => { if (o.name === "plates") found = true; }); return found; }, null, { timeout: STEP_MS });
   await phone.waitForFunction((r0) => window.__isle.renders > r0 + 2, await phone.evaluate(() => window.__isle.renders), { timeout: STEP_MS });

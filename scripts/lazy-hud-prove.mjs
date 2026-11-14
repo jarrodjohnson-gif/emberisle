@@ -73,7 +73,8 @@ await page.route(/(TradeToast|losses)/, async (route) => {
 // frames. The 250 ms bound is unchanged.
 const FIND = {
   trade: () => document.querySelector('[data-testid="trade-toast"]'),
-  discard: () => [...document.querySelectorAll("form")].find((f) => f.textContent.includes("Discard 2")),
+  // #1546: the discard is the tray's token picker with its "Discard N" button, no longer a form.
+  discard: () => [...document.querySelectorAll('[data-testid="discard-pick"]')].find((f) => f.textContent.includes("Discard 2")),
   steal: () => document.querySelector('[role="group"][aria-label="The wayfarer takes a card"]'),
 };
 const timeToAppear = (kind, trigger) =>
@@ -101,7 +102,7 @@ const timeToAppear = (kind, trigger) =>
 
 try {
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("button", { name: "Play", exact: true }).click({ timeout: STEP_MS });
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click({ timeout: STEP_MS });
   await page.waitForFunction(() => window.__emberisle?.getState().state);
 
   const g = mainGame();
@@ -137,7 +138,7 @@ try {
   check("first trade offer appears without delay (< 250ms)", tradeElapsed < 250, { tradeElapsed });
 
   const toastText = await toast.innerText();
-  check("trade offer contains correct prompt", toastText.includes("Dune offers") && toastText.includes("Yes") && toastText.includes("No"), toastText);
+  check("trade offer contains correct prompt", /^Dune: give \d+ \w+, get \d+ \w+/.test(toastText) && toastText.includes("Yes") && toastText.includes("No"), toastText);
 
   // Clear offer
   await page.evaluate(() => {
@@ -150,7 +151,7 @@ try {
     "discard",
     `const s = window.__emberisle; const st = structuredClone(s.getState().state); st.phase = "discard"; st.discardNeeded = { p0: 2 }; s.setState({ state: st });`,
   );
-  const discardBar = page.locator('form:has-text("Discard 2")');
+  const discardBar = page.locator('[data-testid="discard-pick"]:has-text("Discard 2")');
   await discardBar.waitFor({ state: "visible", timeout: STEP_MS });
   check("discard prompt appears without delay (< 250ms)", discardElapsed < 250, { discardElapsed });
 
@@ -193,7 +194,7 @@ try {
   });
 
   await failPage.goto(`http://127.0.0.1:${PORT}/`);
-  await failPage.getByRole("button", { name: "Play", exact: true }).click({ timeout: STEP_MS });
+  await failPage.getByRole("button", { name: "Play with bots", exact: true }).click({ timeout: STEP_MS });
   await failPage.waitForFunction(() => window.__emberisle?.getState().state);
 
   await failPage.evaluate((state) => {
@@ -219,7 +220,7 @@ try {
   // Unblock losses chunk and tap Try again to recover:
   failLosses = false;
   await discardFailedAlert.getByRole("button", { name: "Try again" }).click();
-  const recoveredDiscardBar = failPage.locator('form:has-text("Discard 2")');
+  const recoveredDiscardBar = failPage.locator('[data-testid="discard-pick"]:has-text("Discard 2")');
   await recoveredDiscardBar.waitFor({ state: "visible", timeout: STEP_MS });
   check("tapping Try again recovers discard bar", await recoveredDiscardBar.isVisible());
   await failPage.close();
@@ -236,7 +237,7 @@ try {
   });
 
   await stealFailPage.goto(`http://127.0.0.1:${PORT}/`);
-  await stealFailPage.getByRole("button", { name: "Play", exact: true }).click({ timeout: STEP_MS });
+  await stealFailPage.getByRole("button", { name: "Play with bots", exact: true }).click({ timeout: STEP_MS });
   await stealFailPage.waitForFunction(() => window.__emberisle?.getState().state);
 
   await stealFailPage.evaluate((state) => {

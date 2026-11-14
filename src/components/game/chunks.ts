@@ -22,6 +22,9 @@ export const OpenModeToggle = openTables.pick((m) => m.OpenModeToggle);
 // #669: the Sound panel in the Table menu; the menu asks for it when it opens, so it is in memory before Sound is pressed.
 export const soundSheet = chunk(() => import("@/components/game/SoundSheet"));
 export const SoundSheet = soundSheet.pick((m) => m.SoundSheet);
+// The full game log, a sheet opened from the Table menu (docs/design/end-of-game); fetched with the Sound panel as the menu opens.
+export const gameLog = chunk(() => import("@/components/game/GameLog"));
+export const GameLog = gameLog.pick((m) => m.GameLog);
 export const SetupReference =chunk(() => import("@/components/game/SetupReference")).pick(m => m.SetupReference);
 export const WayfarerOptions = chunk(() => import("@/components/game/WayfarerOptions")).pick(m => m.WayfarerOptions);
 // #766: the title's profile sheet and its profile client load only when Profile is pointed at, focused or pressed.

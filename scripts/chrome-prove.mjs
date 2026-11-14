@@ -52,8 +52,8 @@ try {
       await page.goto(`http://127.0.0.1:${vite.httpServer.address().port}/`);
       const card = page.getByTestId("title-card");
       await card.waitFor();
-      // Desktop white paper is the card's inner panel; phones paint the containing sheet.
-      await surface(width >= 1000 ? card.locator(":scope > div").first() : card, `${tag} title`);
+      // The title is one tray at every size (docs/design/first-minute), so the card itself is the white paper.
+      await surface(card, `${tag} title`);
       await inside(card, `${tag} title`);
       const tokens = await page.evaluate(() => {
         const s = getComputedStyle(document.documentElement);
@@ -69,9 +69,9 @@ try {
       });
       for (const name of ["--ground", "--color-bg", "--table-raised"]) assert.equal(tokens[name], `rgb(${mist.join(", ")})`, `${tag}: ${name} is mist`);
       for (const [name, rgb] of Object.entries({ timber: [47, 106, 79], clay: [184, 83, 61], wool: [178, 206, 128], grain: [227, 196, 98], ore: [99, 116, 138] })) assert.equal(tokens[`--color-${name}`], `rgb(${rgb.join(", ")})`, `${tag}: ${name} keeps its terrain identity`);
-      const caption = page.getByText("3 bots, no network", { exact: true });
+      const caption = page.getByText("Code for private tables", { exact: true });
       assert.ok(contrast((await paint(caption)).fg, white) >= 4.5, `${tag}: small muted title text remains readable`);
-      for (const name of ["Play", "Host a table", "Join", "How to play"]) {
+      for (const name of ["Play with bots", "Host a table", "Join", "How to play"]) {
         const control = page.getByRole("button", { name, exact: true });
         await control.scrollIntoViewIfNeeded();
         await control.click({ trial: true });
