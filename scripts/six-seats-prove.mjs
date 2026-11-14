@@ -16,7 +16,8 @@
 // - where the rail and the tray share a column (768 to 1127 px wide), at 720, 600 and 500 px tall, no seat card meets
 //   the tray or a banner over it, at rest, with an incoming offer or a discard pick, and every seat scrolls into view;
 // - each seat's accessible name is exactly "Seat N " and then its whole name;
-// - a four-seat classic table's strip (390x844) and rail (1280x720) measure the same boxes and texts as on main
+// - a four-seat classic table's strip (390x844) and rail (1280x720) measure the same seat boxes and texts (content, size,
+//   weight, colour) as on main
 //   (CLASSIC below, measured on origin/main with MEASURE_CLASSIC=1), and show no seat number;
 // - zero page errors.
 // Every failure is listed before the run fails. SHOTS=1 also writes real-game PNGs at device scale 2 into docs/proofs/1608/
@@ -34,7 +35,13 @@ const VIEWS = [
   { tag: "390x844", width: 390, height: 844, touch: true, seat: "seat" },
   { tag: "956x440", width: 956, height: 440, touch: true, seat: "seat" },
   { tag: "1280x720", width: 1280, height: 720, seat: "rail" },
+  // The same with the UI in DejaVu Sans, the wider face CI's Chromium falls back to ("Ember" at 13 px semibold is about
+  // 47 px there, 40.5 px in Inter), so every machine checks the narrow cells with a wide font too.
+  { tag: "440x956 wide font", width: 440, height: 956, touch: true, seat: "seat", wide: true },
+  { tag: "390x844 wide font", width: 390, height: 844, touch: true, seat: "seat", wide: true },
+  { tag: "1280x720 wide font", width: 1280, height: 720, seat: "rail", wide: true },
 ];
+const WIDE = 'html, body { font-family: "DejaVu Sans", sans-serif !important; }';
 const SHOT_VIEWS = [
   { tag: "430x932", width: 430, height: 932, touch: true },
   { tag: "390x844", width: 390, height: 844, touch: true },
@@ -47,20 +54,20 @@ const COLORS = { "#e23d2e": "red", "#2d6ee8": "blue", "#f3ecd9": "white", "#dd6b
 const SAME_START = ["Ember", "Emberly", "Emma", "Emmett", "Elm", "Eve"];
 const LONG = ["Bartholomew the Bold", "Wilhelmina Featherstonehaugh", "Maximilian", "Anastasia Brightwater", "Christopher", "Evangeline"];
 
-// A four-seat classic table on origin/main (b35f6234, Six players 1), measured with MEASURE_CLASSIC=1: each seat's box
-// and every visible text in it (text, px size, colour, box), rounded to 0.1 px.
+// A four-seat classic table on origin/main (1c22d6d8), measured with MEASURE_CLASSIC=1: each seat's box, rounded to
+// 0.1 px, and every drawn text in it (text, px size, weight, colour). Text boxes are left out: they follow the font.
 const CLASSIC = {
   "390x844": [
-    {"id":"seat-p0","box":[16,12,74.5,44],"texts":[["Ember",13,"rgb(31, 51, 49)",40,18,40.5,16],["2",12,"rgb(51, 71, 68)",39,34,7.8,15],["pts",12,"rgb(51, 71, 68)",46.8,34,20.7,15]],"number":null},
-    {"id":"seat-p1","box":[94.5,12,74.5,44],"texts":[["Tide",13,"rgb(31, 51, 49)",124.8,18,27.8,16],["2",12,"rgb(51, 71, 68)",117.5,34,7.8,15],["pts",12,"rgb(51, 71, 68)",125.3,34,20.7,15]],"number":null},
-    {"id":"seat-p2","box":[173,12,74.5,44],"texts":[["Dune",13,"rgb(31, 51, 49)",200.8,18,33,16],["2",12,"rgb(51, 71, 68)",196,34,7.8,15],["pts",12,"rgb(51, 71, 68)",203.8,34,20.7,15]],"number":null},
-    {"id":"seat-p3","box":[251.5,12,74.5,44],"texts":[["Pine",13,"rgb(31, 51, 49)",282,18,27.4,16],["2",12,"rgb(51, 71, 68)",274.5,34,7.8,15],["pts",12,"rgb(51, 71, 68)",282.3,34,20.7,15]],"number":null},
+    {"id":"seat-p0","box":[16,12,74.5,44],"texts":[["Ember",13,"600","rgb(31, 51, 49)"],["2",12,"400","rgb(51, 71, 68)"],["pts",12,"400","rgb(51, 71, 68)"]],"number":null},
+    {"id":"seat-p1","box":[94.5,12,74.5,44],"texts":[["Tide",13,"600","rgb(31, 51, 49)"],["2",12,"400","rgb(51, 71, 68)"],["pts",12,"400","rgb(51, 71, 68)"]],"number":null},
+    {"id":"seat-p2","box":[173,12,74.5,44],"texts":[["Dune",13,"600","rgb(31, 51, 49)"],["2",12,"400","rgb(51, 71, 68)"],["pts",12,"400","rgb(51, 71, 68)"]],"number":null},
+    {"id":"seat-p3","box":[251.5,12,74.5,44],"texts":[["Pine",13,"600","rgb(31, 51, 49)"],["2",12,"400","rgb(51, 71, 68)"],["pts",12,"400","rgb(51, 71, 68)"]],"number":null},
   ],
   "1280x720": [
-    {"id":"rail-p0","box":[12,80,192,50],"texts":[["Ember",15,"rgb(31, 51, 49)",40,86,46.8,19],["\u00b7 you",15,"rgb(31, 51, 49)",86.8,86,39,19],["2",15,"rgb(31, 51, 49)",186.3,86,9.7,19],["3 cards",12,"rgb(51, 71, 68)",20,107,42.5,15],["1",12,"rgb(51, 71, 68)",159.5,107,4.9,15],["0",12,"rgb(51, 71, 68)",186.4,107,7.6,15]],"number":null},
-    {"id":"rail-p1","box":[12,134,192,50],"texts":[["Tide (bot)",15,"rgb(31, 51, 49)",40,140,71,19],["2",15,"rgb(31, 51, 49)",186.3,140,9.7,19],["4 cards",12,"rgb(51, 71, 68)",20,161,42.8,15],["1",12,"rgb(51, 71, 68)",159.5,161,4.9,15],["0",12,"rgb(51, 71, 68)",186.4,161,7.6,15]],"number":null},
-    {"id":"rail-p2","box":[12,188,192,50],"texts":[["Dune (bot)",15,"rgb(31, 51, 49)",40,194,77,19],["2",15,"rgb(31, 51, 49)",186.3,194,9.7,19],["5 cards",12,"rgb(51, 71, 68)",20,215,42.4,15],["1",12,"rgb(51, 71, 68)",159.5,215,4.9,15],["0",12,"rgb(51, 71, 68)",186.4,215,7.6,15]],"number":null},
-    {"id":"rail-p3","box":[12,242,192,50],"texts":[["Pine (bot)",15,"rgb(31, 51, 49)",40,248,70.6,19],["2",15,"rgb(31, 51, 49)",186.3,248,9.7,19],["6 cards",12,"rgb(51, 71, 68)",20,269,42.5,15],["1",12,"rgb(51, 71, 68)",159.5,269,4.9,15],["0",12,"rgb(51, 71, 68)",186.4,269,7.6,15]],"number":null},
+    {"id":"rail-p0","box":[12,80,192,50],"texts":[["Ember",15,"600","rgb(31, 51, 49)"],["\u00b7 you",15,"500","rgb(31, 51, 49)"],["2",15,"700","rgb(31, 51, 49)"],["3 cards",12,"400","rgb(51, 71, 68)"],["1",12,"400","rgb(51, 71, 68)"],["0",12,"400","rgb(51, 71, 68)"]],"number":null},
+    {"id":"rail-p1","box":[12,134,192,50],"texts":[["Tide (bot)",15,"600","rgb(31, 51, 49)"],["2",15,"700","rgb(31, 51, 49)"],["4 cards",12,"400","rgb(51, 71, 68)"],["1",12,"400","rgb(51, 71, 68)"],["0",12,"400","rgb(51, 71, 68)"]],"number":null},
+    {"id":"rail-p2","box":[12,188,192,50],"texts":[["Dune (bot)",15,"600","rgb(31, 51, 49)"],["2",15,"700","rgb(31, 51, 49)"],["5 cards",12,"400","rgb(51, 71, 68)"],["1",12,"400","rgb(51, 71, 68)"],["0",12,"400","rgb(51, 71, 68)"]],"number":null},
+    {"id":"rail-p3","box":[12,242,192,50],"texts":[["Pine (bot)",15,"600","rgb(31, 51, 49)"],["2",15,"700","rgb(31, 51, 49)"],["6 cards",12,"400","rgb(51, 71, 68)"],["1",12,"400","rgb(51, 71, 68)"],["0",12,"400","rgb(51, 71, 68)"]],"number":null},
   ],
 };
 
@@ -104,6 +111,9 @@ const readSeats = (page, sel) =>
     const seen = (el) => {
       const r = el.getBoundingClientRect();
       const cs = getComputedStyle(el);
+      // A letter of a short name that wrapped out of its one-line box is not drawn (styles.css, #1608).
+      const name = el.parentElement?.closest("[data-testid='seat-name']");
+      if (name && name !== el && r.top >= name.getBoundingClientRect().bottom - 0.5) return false;
       return r.width > 1 && r.height > 1 && cs.visibility !== "hidden" && cs.display !== "none" && !el.closest(".sr-only");
     };
     const box = (r) => ({ left: r.left, top: r.top, right: r.right, bottom: r.bottom, w: r.width, h: r.height });
@@ -117,7 +127,7 @@ const readSeats = (page, sel) =>
         const ecs = getComputedStyle(el);
         const rects = [...el.childNodes].filter((n) => n.nodeType === 3 && n.textContent.trim()).map((n) => { const r = document.createRange(); r.selectNodeContents(n); return r.getBoundingClientRect(); });
         const l = Math.min(...rects.map((r) => r.left)), t = Math.min(...rects.map((r) => r.top)), rgt = Math.max(...rects.map((r) => r.right)), btm = Math.max(...rects.map((r) => r.bottom));
-        texts.push({ text, size: parseFloat(ecs.fontSize), color: ecs.color, box: box(new DOMRect(l, t, rgt - l, btm - t)) });
+        texts.push({ text, size: parseFloat(ecs.fontSize), weight: ecs.fontWeight, color: ecs.color, box: box(new DOMRect(l, t, rgt - l, btm - t)) });
       }
       const dot = card.querySelector("button [aria-hidden='true'].rounded-full");
       const shown = [...card.querySelectorAll("[data-testid='seat-name']")].filter(seen);
@@ -135,6 +145,8 @@ const readSeats = (page, sel) =>
         // Only the name's own drawn text: a read-out child (sr-only " (bot)") is not part of what shows.
         name: shown.map((n) => [...n.childNodes].map((c) => (c.nodeType === 3 ? c.textContent : seen(c) ? c.textContent : "")).join("")).join("").trim(),
         cut: shown.some((n) => n.scrollWidth > n.clientWidth + 0.5),
+        // Every drawn letter of a short name lies inside the name's box: none is clipped at the side.
+        letterCut: shown.some((n) => [...n.children].filter(seen).some((c) => c.getBoundingClientRect().right > n.getBoundingClientRect().right + 0.5 || c.getBoundingClientRect().left < n.getBoundingClientRect().left - 0.5)),
         nameWidth: Math.min(...shown.map((n) => n.getBoundingClientRect().width)),
         dot: dot && { box: box(dot.getBoundingClientRect()), ring: getComputedStyle(dot).boxShadow, fill: dot.style.background },
       };
@@ -196,6 +208,20 @@ const newPage = async (v, dpr) => {
   page.on("console", (m) => m.type() === "error" && errors.push(`${v.tag}: ${m.text()}`));
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.waitForFunction(() => window.__emberisle && window.__isle?.renders > 0);
+  if (v.wide) {
+    await page.addStyleTag({ content: WIDE });
+    const w = await page.evaluate(() => {
+      const t = document.createElement("span");
+      t.textContent = "Ember";
+      t.style.cssText = "position:absolute;font-size:13px;font-weight:600;white-space:nowrap";
+      document.body.append(t);
+      const w = t.getBoundingClientRect().width;
+      t.remove();
+      return w;
+    });
+    check(w >= 45, `${v.tag}: the wide font did not apply, "Ember" at 13 px is ${w.toFixed(1)} px`);
+    console.log(`${v.tag}: "Ember" at 13 px semibold is ${w.toFixed(1)} px wide`);
+  }
   return { ctx, page };
 };
 
@@ -237,12 +263,13 @@ const change = async (page, fn, arg) => {
   await settle(page);
 };
 
-// The classic table's measurement: boxes and texts, rounded, for the parity check.
+// The classic table's measurement for the parity check: each seat's box, and each drawn text's content, size, weight and
+// colour. A text's own box follows the machine's font (CI's fallback face is wider than this one), so it is not compared.
 const classicRead = async (page, sel) =>
   (await readSeats(page, sel)).map((s) => ({
     id: s.id,
     box: [s.box.left, s.box.top, s.box.w, s.box.h].map((n) => +n.toFixed(1)),
-    texts: s.texts.map((t) => [t.text, t.size, t.color, ...[t.box.left, t.box.top, t.box.w, t.box.h].map((n) => +n.toFixed(1))]),
+    texts: s.texts.map((t) => [t.text, t.size, t.weight, t.color]),
     number: s.number,
   }));
 
@@ -307,6 +334,7 @@ try {
           // The strip never cuts a name (#1509). The rail's 192 px row ends a long name in an ellipsis, as a classic rail does;
           // it never squeezes a name to nothing.
           if (v.seat === "seat") check(s.name.length > 0 && !s.cut && !/…|\.\.\./.test(s.name), `${at}: ${s.id} name "${s.name}" is empty or cut`);
+          if (v.seat === "seat") check(!s.letterCut, `${at}: ${s.id} name "${s.name}" has a letter cut at the side`);
           else check(s.name.length > 0 && s.nameWidth >= 40, `${at}: ${s.id} name "${s.name}" is squeezed to ${s.nameWidth.toFixed(1)} px`);
           labels.add(`${s.number} ${s.name}`);
           for (const t of s.texts) check(t.size >= 12, `${at}: ${s.id} "${t.text}" is ${t.size}px, under 12 px`);

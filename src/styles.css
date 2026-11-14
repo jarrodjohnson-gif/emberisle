@@ -211,8 +211,10 @@ body {
 aside .seat-no { font-size: 15px; line-height: 20px; }
 [data-testid='menu-seat'] .seat-no { font-size: 14px; line-height: 20px; }
 body:has(.seat-no) :is(.seat-dot, [data-testid='menu-seat'] > :first-child) { box-shadow: inset 0 0 0 1px #1c1915; }
-/* A strip cell under 54 px (six seats on a 390 px phone) shows two letters of the short name beside the number. */
-@container (max-width: 53.9px) { .seat-3rd { display: none; } }
+/* A numbered strip cell too narrow for its short name keeps as many whole letters as fit: each letter is a flex item, one
+   that does not fit wraps to a second line, and the one-line box hides that line. Measured by the browser, so it holds
+   for any font (six seats on a 390 px phone show two letters in Inter, fewer in a wider font). */
+.seat-card [data-testid='seat-name'][aria-hidden]:not(.hidden):has(> span) { display: flex; flex-wrap: wrap; height: 16px; }
 /* The rail keeps its 192 px cards at 12 px from the left and 80 px from the top, and scrolls inside itself, stopping above
    the tray (152 px tall with its margin at rest) with 8 px to spare. The 212 px of padding on the right keeps a seat's
    192 px chat bubble inside the scroll box, and the padding all round keeps the pill's shadow. The rail ignores the pointer,

@@ -115,8 +115,9 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
             {label !== p.name ? <span className="sr-only"> (bot)</span> : null}
           </span>
           <span data-testid="seat-name" aria-hidden="true" className={cn("min-w-0 truncate text-[13px] font-semibold leading-4", fits && "hidden")}>
-            {/* #1608: a numbered cell too narrow for three letters drops the third (styles.css); the number tells the seats apart. */}
-            {p.seat ? <>{short!.slice(0, 2)}<span className="seat-3rd">{short!.slice(2)}</span></> : short}
+            {/* #1608: on a numbered table each letter is its own box, and a letter that does not fit wraps out of sight
+                (styles.css), so the cell shows as many whole letters as fit with this device's font; the number tells the seats apart. */}
+            {p.seat ? [...short!].map((c, i) => <span key={i}>{c}</span>) : short}
           </span>
         </span>
         <span className="flex w-full items-center justify-center gap-1.5 leading-4">
