@@ -4,7 +4,8 @@
 import { mulberry32 } from "./random";
 import { AXIAL_DIRS, axialKey, edgeId, hexCorners, hexToWorld, vertexId } from "./hex";
 import { adjacentPips, createGame, makePlayer, shuffle, type GameOptions } from "./board";
-import type { DevKind, Edge, ExpandedVariant, GameState, HarborKind, HexCell, PlayerState, Terrain, Vertex } from "./types";
+import { totalVP, turnRules, victoryTarget } from "./rules";
+import type { Action, DevKind, Edge, ExpandedVariant, GameState, HarborKind, HexCell, PlayerState, Terrain, Vertex } from "./types";
 import { PLAYER_NAMES } from "./types";
 
 // The 30 hexes in seven staggered rows of 3, 4, 5, 6, 5, 4, 3: axial r with its inclusive q range (design table).
@@ -130,7 +131,7 @@ export function createExpandedGame(opts: GameOptions): GameState {
   // The wayfarer starts on one waste; the other starts unblocked. With the wayfarer off, both stay unblocked.
   if (opts.wayfarerMode !== "off") hexes.find((h) => h.id === robberHex)!.blocked = true;
 
-  const variant: ExpandedVariant = { kind: "expanded", version: 1, wastes };
+  const variant: ExpandedVariant = { kind: "expanded", version: 1, wastes, turns: { rule: "paired", version: 1 } };
   if (opts.numberTokens !== "random") {
     const corners = cornerHexes(EXPANDED_COORDS);
     const corner = corners[Math.floor(rand() * 6)]!;
@@ -240,3 +241,77 @@ export function createExpandedGame(opts: GameOptions): GameState {
 export function createAnyGame(opts: GameOptions): GameState {
   return opts.humans.length + opts.bots >= 5 ? createExpandedGame(opts) : createGame(opts);
 }
+
+// Paired turns (#1605; docs/design/six-players.md, "Rules, setup, turns, and scoring"; accepted decision 1). The primary at
+// `players` position i acts first, then the partner at (i + 3) % n; the partner's endTurn makes (i + 1) % n the next
+// primary. Only primaries roll, so production, sevens and discards happen only on primary activations. rules.ts calls this
+// for every action on a game with a variant, through `turnRules`.
+export const PARTNER_NO_TRADE = "No player trades on a partner turn.";
+
+type Step = (prev: GameState, actor: string, action: Action) => { state: GameState; error?: string };
+
+export function pairedStep(prev: GameState, actor: string, action: Action, base: Step): ReturnType<Step> {
+  if (prev.variant?.turns?.rule !== "paired") return base(prev, actor, action);
+  // A partner never trades with players: no offer, and no acceptance, even of an offer left open from before.
+  if (prev.role === "partner" && (action.type === "offerTrade" || (action.type === "respondTrade" && action.accept))) {
+    return { state: prev, error: PARTNER_NO_TRADE };
+  }
+  if (action.type !== "endTurn" || !prev.role) {
+    const result = base(prev, actor, action);
+    const next = result.state;
+    // Setup has just ended: the first player in order starts the first primary activation.
+    if (!result.error && !next.role && next.phase === "roll") {
+      next.primary = next.current;
+      next.role = "primary";
+      next.activation = 1;
+    }
+    return result;
+  }
+  if (prev.phase === "over") return { state: prev, error: "The game is over." };
+  if (prev.current !== actor) return { state: prev, error: "Not your turn." };
+  if (prev.phase !== "main") return { state: prev, error: "Finish your turn first." };
+  const state = structuredClone(prev);
+  state.seq += 1;
+  // Offers close before either actor changes.
+  state.trade = null;
+  const n = state.players.length;
+  const at = state.players.findIndex((p) => p.id === state.primary);
+  const primary = state.players[at]!;
+  let next: PlayerState;
+  if (state.role === "primary") {
+    // The partner acts in the action phase straight away; the primary's dice stay on the table for this paired turn.
+    next = state.players[(at + 3) % n]!;
+    state.role = "partner";
+    state.phase = "main";
+    log(state, `${next.name}'s turn as ${primary.name}'s partner.`);
+  } else {
+    const i = (at + 1) % n;
+    next = state.players[i]!;
+    state.primary = next.id;
+    state.role = "primary";
+    state.phase = "roll";
+    state.dice = null;
+    if (i === 0) state.turn += 1;
+    log(state, `${next.name}'s turn.`);
+  }
+  state.current = next.id;
+  state.activation = (state.activation ?? 1) + 1;
+  // Each activation may play one fortune; what this actor bought at an earlier activation is now playable.
+  state.playedCard = false;
+  next.boughtThisTurn = { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 };
+  // Points can arrive while another seat acts (an award handed over by a cut); they win as this activation starts.
+  const points = totalVP(state, next.id);
+  if (points >= victoryTarget(state)) {
+    state.phase = "over";
+    state.winner = next.id;
+    state.winReason = { trigger: "turnStart", points, target: victoryTarget(state) };
+    log(state, `${next.name} claims the isle with ${points} points.`);
+  }
+  return { state };
+}
+
+function log(state: GameState, line: string) {
+  state.log = [...state.log.slice(-199), line];
+}
+
+turnRules.paired = pairedStep;

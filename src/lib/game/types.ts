@@ -114,6 +114,8 @@ export interface ExpandedVariant {
   spiral?: { start: string; direction: 1 | -1 };
   // Both wastes, which the token spiral skips. The wayfarer starts on the first when it is enabled.
   wastes: string[];
+  // The turn rule, fixed before setup (#1605): the official paired turns. Versioned so a later rule can be told apart.
+  turns: { rule: "paired"; version: 1 };
 }
 
 export interface GameState {
@@ -157,6 +159,12 @@ export interface GameState {
   hostId: string;
   // Absent means the classic island, as in every game saved before #1604; never inferred from the seat count.
   variant?: ExpandedVariant;
+  // Paired turns only (#1605, src/lib/game/expanded.ts); classic games never have them. Set when setup ends. `current`
+  // is still the seat that may act now; `primary` is the seat whose dice this paired turn is, and `role` says whether
+  // `current` is that primary or its partner. `activation` counts actor activations from 1, the first primary's.
+  primary?: string;
+  role?: "primary" | "partner";
+  activation?: number;
 }
 
 export type Action =
