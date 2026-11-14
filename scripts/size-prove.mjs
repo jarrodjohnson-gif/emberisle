@@ -23,7 +23,9 @@ const DIR = "dist/assets";
 const CEILINGS = [
   // #646: lazy public needs and picker; reviewed ceiling retained.
   { name: "SeatNeeds", gzipBytes: 1900 },
-  { name: "LobbyView", gzipBytes: 2500 },
+  // #1611: raised from 2,500 B to 2,600 B by the owner (q1656-online-six A, 2026-11-14): six lobby rows with seat numbers;
+  // measured 2,527 B.
+  { name: "LobbyView", gzipBytes: 2600 },
   // #1262: Sandwich Stacker shelf and player, measured 1867 B gzip. The owner must OK this new ceiling before merge.
   { name: "LobbyWaitBox", gzipBytes: 2100 }, // #1366, 2026-11-07: back to 2,100 B after the trim in PR #1373
   // #1263: tic-tac-toe tile and board, loaded with the shelf; measured 1390 B gzip. Decided 2026-11-07, q-size-standing.
