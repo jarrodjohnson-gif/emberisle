@@ -381,6 +381,23 @@ jobs:
           node scripts/loosen-prove.mjs --base "$BASE_SHA"
       - run: npm run proof-retirement-prove
 
+  # #1653: advisory, like `loosen`, so it is not in `checks.needs`. Flags a commit in this PR that changes nothing
+  # (AGENTS.md: never push an empty commit to kick CI). HEAD is the merge commit: its first parent is the base and its
+  # second is the PR's head. Commits only (no trees' files or blobs), so the full history is a small fetch.
+  empty-commits:
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run empty-commit-prove -- --base "$(git rev-parse HEAD^1)" --head "$(git rev-parse HEAD^2)"
+
   browser-a-suites:
     name: browser-a (${{ matrix.suite }})
     needs: [changes, dependencies]
