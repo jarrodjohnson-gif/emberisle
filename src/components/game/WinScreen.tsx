@@ -62,7 +62,8 @@ function Panel() {
   // #1611 (accepted decision 7, answers A to E of 2026-11-06): an expanded game with fewer than five at the table. The host
   // picks: fill with bots up to five, the classic map (three or four only), or Cancel, which changes nothing. The others
   // read that the host is choosing.
-  const choose = useGame((s) => s.rematchChoice);
+  // Only online: the last table's choice is not cleared when the host leaves it (#1611).
+  const choose = useGame((s) => (s.mode === "online" ? s.rematchChoice : undefined));
   // docs/design/rematch.md: the online host, hotseat and practice start another; an online guest asks, a watcher cannot.
   const canAgain = mode !== "online" || (isHost && !spectator);
   const waiting = mode === "online" && !isHost && !spectator && hostName;

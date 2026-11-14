@@ -543,17 +543,21 @@ function partnerRoom(code, g, human) {
   await watcher.until(() => watcher.state.game.phase === "over", "watcher sees the win");
   // Every bot ask came on a primary activation, from the seat acting: the state pushed right after an ask is the game at it.
   const seq = h.all;
+  // One check over every ask (and one over every trade below), so the count of checks does not hang on how the game went.
   let asks = 0;
+  const offPrimary = [];
   for (const [i, m] of seq.entries()) {
     if (m.type !== "tradeOffer") continue;
     asks++;
     const after = seq.slice(i + 1).find((x) => x.type === "state");
-    ok(after && after.game.role === "primary" && after.game.current === m.from, `ask ${m.tradeId} by ${m.from} on a primary activation (${after?.game.role} ${after?.game.current})`);
+    if (!(after && after.game.role === "primary" && after.game.current === m.from)) offPrimary.push(`${m.tradeId} by ${m.from} on ${after?.game.role} ${after?.game.current}`);
   }
+  eq(offPrimary, [], "every bot ask came on a primary activation, from the seat acting");
   // No player trade went through on a partner activation: the game's own lines, in order.
   let role = null;
   let partnerTurns = 0;
   let trades = 0;
+  const offTrades = [];
   for (const line of h.logs) {
     if (line === "No roll this turn.") {
       role = "partner";
@@ -561,9 +565,10 @@ function partnerRoom(code, g, human) {
     } else if (/'s turn\.$/.test(line)) role = "primary";
     if (/ accepts .+'s trade\.$/.test(line)) {
       trades++;
-      ok(role === "primary", `trade on a ${role} activation: ${line}`);
+      if (role !== "primary") offTrades.push(`${role}: ${line}`);
     }
   }
+  eq(offTrades, [], "no player trade went through on a partner activation");
   ok(asks > 0 && partnerTurns > 0, `full game exercised asks (${asks}) and partner activations (${partnerTurns})`);
   // Privacy all game long: the person never sees another hand, the watcher sees none until the win.
   for (const st of h.all.filter((m) => m.type === "state" && m.game.phase !== "over")) for (const p of st.game.players) if (p.id !== me) assert.ok(!("resources" in p), `seat view leaked ${p.id}'s goods`);
@@ -588,6 +593,14 @@ function partnerRoom(code, g, human) {
   const G4 = overRoom("AGNB", 5, { bots: [2, 3] });
   const GC = overRoom("AGNC", 5, { bots: [2, 3] });
   const G2 = overRoom("AGN2", 5, { winner: 0 });
+  overRoom("AGND", 5, { bots: [2, 3] });
+  {
+    // A finished classic game, all three at the table.
+    const g = createGame({ humans: [{ name: "Ember" }, { name: "Tide" }, { name: "Dune" }], bots: 0, seed: 5 });
+    Object.assign(g, { rollOff: null, phase: "over", current: "p0", winner: "p1" });
+    const seats = g.players.map((p, i) => ({ id: `s${i}`, name: p.name, color: p.color, ready: true, pid: p.id, secret: `AGNK-${i}`, turnDeadline: null, turnStartedAt: null }));
+    writeFileSync(path.join(C, "AGNK.json"), JSON.stringify({ code: "AGNK", visibility: "private", host: "s0", next: 3, botDeclined: {}, recoveryPids: [], chat: [], chatSeq: 0, game: g, victoryTarget: 10, wayfarerMode: "on", seats, roster: null, outcome: null, assisted: [], shape: 3, savedAt: Date.now() }));
+  }
   const hc = await boot(C);
   const back = (code, i) => client(hc.port, { code, secret: `${code}-${i}`, ...CAPS });
   // Seat id -> [number, colour] in a game, through the seat list's player ids.
@@ -702,6 +715,31 @@ function partnerRoom(code, g, human) {
     b.ws.terminate();
     summary.push("rematch two live: only the bot fill offered, a classic pick re-asks, three bots fill to five with numbers 3-5");
   }
+  // Cancel never starts a game: not when a fifth seat came back while the choice was up, not at a classic table.
+  {
+    const a = await back("AGND", 0);
+    const b = await back("AGND", 1);
+    await a.until(() => a.state?.game.phase === "over", "the finished game");
+    a.send({ type: "again" });
+    await a.until(() => a.seats.choose, "the choice");
+    const fifth = await back("AGND", 4);
+    await a.until(() => a.seats.seats.filter((s) => s.bot || !s.away).length === 5, "five at the table");
+    a.send({ type: "again", choice: "dismiss" });
+    await a.until(() => !a.seats.choose, "the choice closed");
+    await sleep(300);
+    eq([a.state.game.phase, roomFile(C, "AGND").game.phase], ["over", "over"], "cancel after a fifth seat came back: no game starts");
+    for (const c of [a, b, fifth]) c.ws.terminate();
+  }
+  {
+    const cs = [];
+    for (let i = 0; i < 3; i++) cs.push(await client(hc.port, { code: "AGNK", secret: `AGNK-${i}` }));
+    await cs[0].until(() => cs[0].state?.game.phase === "over", "the finished classic game");
+    cs[0].send({ type: "again", choice: "dismiss" });
+    await sleep(300);
+    eq([cs[0].state.game.phase, roomFile(C, "AGNK").game.phase], ["over", "over"], "cancel at a classic table: no game starts");
+    for (const c of cs) c.ws.terminate();
+  }
+  summary.push("rematch cancel: a fifth seat back while choosing, then Cancel, starts nothing; Cancel at a classic table starts nothing");
   await kill9(hc);
 }
 

@@ -1643,16 +1643,17 @@ async function rematch(ws, room, choice) {
   if (room.game?.phase !== "over") return send(ws, { type: "error", message: "Game is not over." });
   if (room.busy) return send(ws, { type: "error", message: "Game is not over." });
   if (unsettled(room)) return send(ws, { type: "error", message: "Couldn't save the result. Retrying…" });
+  // Cancel first, at any table: it only closes the choice, so a seat that came back meanwhile never turns it into a start.
+  if (choice === "dismiss") {
+    if (!room.choose) return;
+    room.choose = null;
+    return publish(room);
+  }
   const isLive = (s) => s.bot || (s.ws && s.ws.readyState === s.ws.OPEN);
   const live = room.seats.filter(isLive);
   if (!expandedRoom(room) || live.length >= 5) {
     if (live.length < 3) return send(ws, { type: "error", message: "Need 3 or 4 at the table." });
     return replay(ws, room, live, isLive, room.variant);
-  }
-  if (choice === "dismiss") {
-    if (!room.choose) return;
-    room.choose = null;
-    return publish(room);
   }
   const choices = live.length >= 3 ? ["bots", "classic"] : ["bots"];
   if (!choices.includes(choice)) {

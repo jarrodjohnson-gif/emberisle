@@ -13,6 +13,9 @@
 //   to join this table." on the Play page, and gets no seat;
 // - the win screen's rematch choice (store-injected at 1280x720, the host's rules are in the node proof): the host gets
 //   Fill with bots, Classic map and Cancel in place of Play again, a guest reads "The host is choosing how to rematch.";
+// - after the host leaves with the choice up, a practice game's win shows Play again and none of the choice;
+// - a seat that rejoins a started expanded game and leaves while expanded.ts is still on its way (held in this tab) has
+//   nothing applied when it lands: still the title, no game, no live-table mark, no game log, no sound;
 // - zero page errors.
 // Every failure is listed before the run fails. SHOTS=1 writes real PNGs at device scale 2 into docs/proofs/1611/: the
 // six-seat lobby from the host and from a guest, and the refused page, at each size.
@@ -91,6 +94,15 @@ async function tab(v, name, { old = false, drawn = SHOTS } = {}) {
     localStorage.setItem("emberisle-name", name);
   }, name);
   // An old page: the same client with the capability taken out of every hello it sends.
+  // Every sound the page starts, for the late-state check.
+  await page.addInitScript(() => {
+    window.__plays = [];
+    const play = HTMLMediaElement.prototype.play;
+    HTMLMediaElement.prototype.play = function () {
+      window.__plays.push(this.src);
+      return play.call(this);
+    };
+  });
   if (old)
     await page.addInitScript(() => {
       const send = WebSocket.prototype.send;
@@ -308,8 +320,47 @@ try {
       check((await g1.page.getByTestId("win-again-bots").count()) === 0, `${v.tag}: a guest gets no choice`);
       await over(h, ["bots"]);
       check((await h.page.getByTestId("win-again-classic").count()) === 0, `${v.tag}: under three only the bot fill shows`);
+
+      // The host leaves with the choice up and wins a practice game: Play again, and none of the old table's choice.
+      await store(h.page, () => window.__emberisle.getState().goTitle());
+      await store(h.page, () => window.__emberisle.getState().startAi());
+      await h.page.waitForFunction(() => window.__emberisle.getState().mode === "ai" && window.__emberisle.getState().state);
+      await store(h.page, () => { const g = window.__emberisle; const st = g.getState().state; g.setState({ state: { ...st, phase: "over", winner: st.players[0].id } }); });
+      await h.page.getByTestId("win-again").waitFor();
+      check(await h.page.getByTestId("win-again").isVisible(), `${v.tag}: after leaving, a practice win shows Play again`);
+      check((await h.page.locator('[data-testid^="win-again-"]:not([data-testid="win-again-chip"])').count()) === 0, `${v.tag}: after leaving, a practice win shows none of the old table's choice`);
+
+      // A seat back in the started game leaves while expanded.ts is held on the way: nothing is applied when it lands.
+      const seat = await g2.page.evaluate(() => localStorage.getItem("emberisle-seat"));
+      await g2.ctx.close();
+      const r = await tab(v, "Rex", { drawn: false });
+      await playPage(r);
+      let release;
+      const landed = new Promise((res) => (release = res));
+      let asked = false;
+      await r.page.route(/\/src\/lib\/game\/expanded\.ts/, async (route) => {
+        asked = true;
+        await landed;
+        await route.continue();
+      });
+      await r.page.evaluate((seat) => {
+        localStorage.setItem("emberisle-seat", seat);
+        window.__emberisle.getState().rejoinTable();
+      }, seat);
+      await until(async () => asked && (await store(r.page, () => window.__emberisle.getState().code)), "the rejoin welcome, expanded.ts held");
+      await sleep(800);
+      check((await store(r.page, () => window.__emberisle.getState().state)) === null, `${v.tag}: the expanded state waits for expanded.ts`);
+      await store(r.page, () => window.__emberisle.getState().goTitle());
+      const plays = await r.page.evaluate(() => window.__plays.length);
+      release();
+      await sleep(1500);
+      const after = await store(r.page, () => { const g = window.__emberisle.getState(); return { screen: g.screen, state: g.state, log: g.gameLog.length, live: localStorage.getItem("emberisle-seat-live"), plays: window.__plays.length }; });
+      check(after.screen === "title" && after.state === null, `${v.tag}: after leaving, the late chunk applies no game (screen ${after.screen})`);
+      check(after.live === null && after.log === 0, `${v.tag}: after leaving, no live-table mark and no game log from the late state`);
+      check(after.plays === plays, `${v.tag}: after leaving, the late state plays no sound`);
+      await r.ctx.close();
     }
-    for (const t of [h, g1, g2]) await t.ctx.close();
+    for (const t of [h, g1, g2]) await t.ctx.close().catch(() => {});
   }
 } catch (e) {
   failures.push(String(e?.stack ?? e));

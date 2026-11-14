@@ -1248,6 +1248,8 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
 // seat this browser saved for another table.
 type ConnectKind = "normal" | "quiet" | "peek" | "watch";
 async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, kind: ConnectKind = "normal") {
+  // A new table drops whatever an earlier one (or a local deal) still has on its way (#1611). A peek carries no game.
+  if (kind !== "peek") dropDeal();
   clearWake();
   // Not a leave: a rejoin after a crash dials the same seat, which the host must still be holding.
   get().net?.close(false);
@@ -1391,14 +1393,16 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     rolled: () => {},
     // #1611: an expanded state is shown and applied only once expanded.ts (paired turns) is in, through the same chunk as
     // a local deal. States that come meanwhile wait behind it, in order; a failed load says so and the next state asks again.
+    // They hold piece 6's deal token: leaving, another table or a local game meanwhile drops them unapplied.
     state: (msg) => {
       if (held) return void held.push(msg);
       const load = msg.game.variant && expanded.load();
       if (!load || load.status === "fulfilled") return applyState(msg);
       held = [msg];
+      const n = deals;
       load.then(
-        () => held?.forEach(applyState),
-        () => set({ error: "Could not load. Try again.", toast: "Could not load. Try again." }),
+        () => n === deals && held?.forEach(applyState),
+        () => n === deals && set({ error: "Could not load. Try again.", toast: "Could not load. Try again." }),
       ).finally(() => (held = null));
     },
     log: (text) => set({ lobbyLog: text, gameLog: appendLog(get().gameLog, [text]) }),
