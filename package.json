@@ -192,6 +192,7 @@
     "public-score-prove": "node --import ./server/register.mjs scripts/public-score-prove.mjs",
     "seat-menu-sheet-prove": "node scripts/seat-menu-sheet-prove.mjs",
     "upright-table-prove": "node scripts/upright-table-prove.mjs",
+    "expanded-fit-prove": "node scripts/expanded-fit-prove.mjs",
     "fortune-tray-prove": "node scripts/fortune-tray-prove.mjs",
     "fortune-cue-prove": "node scripts/fortune-cue-prove.mjs",
     "fortune-count-prove": "node --import ./server/register.mjs scripts/fortune-count-prove.mjs",

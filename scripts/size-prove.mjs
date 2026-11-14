@@ -23,17 +23,23 @@ const DIR = "dist/assets";
 const CEILINGS = [
   // #646: lazy public needs and picker; reviewed ceiling retained.
   { name: "SeatNeeds", gzipBytes: 1900 },
-  { name: "LobbyView", gzipBytes: 2500 },
+  // #1611: raised from 2,500 B to 2,600 B by the owner (q1656-online-six A, 2026-11-14): six lobby rows with seat numbers;
+  // measured 2,527 B.
+  { name: "LobbyView", gzipBytes: 2600 },
   // #1262: Sandwich Stacker shelf and player, measured 1867 B gzip. The owner must OK this new ceiling before merge.
   { name: "LobbyWaitBox", gzipBytes: 2100 }, // #1366, 2026-11-07: back to 2,100 B after the trim in PR #1373
   // #1263: tic-tac-toe tile and board, loaded with the shelf; measured 1390 B gzip. Decided 2026-11-07, q-size-standing.
   { name: "LobbyTicTacToe", gzipBytes: 1600 },
   // #553: shared on-demand table transport, measured 2.08 kB; existing caps stay fixed.
-  { name: "table", gzipBytes: 2200 }, // #1366, 2026-11-07: back to 2,200 B after the trim in PR #1373
+  // #1611: raised from 2,200 B to 2,300 B by the owner (q1656-online-six A, 2026-11-14): the capability in every hello and
+  // the rematch choice; measured 2,222 B.
+  { name: "table", gzipBytes: 2300 }, // #1366, 2026-11-07: back to 2,200 B after the trim in PR #1373
   // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
   { name: "haptics", gzipBytes: 1200 },
   // #1283: raised from 125,200 B to 127,000 B per owner decision 2026-11-03.
-  { name: "index", gzipBytes: 127000 },
+  // #1609: raised from 127,000 B to 128,000 B by the owner (q1655-five-six-start A, 2026-11-14): five and six seat games
+  // start from the Play page; index measured 127,203 B.
+  { name: "index", gzipBytes: 128000 },
   { name: "IslandCanvas", gzipBytes: 203500 }, // #1307, 2026-11-04: raised from 202,500 B to 203,500 B
   { name: "jelly-board", gzipBytes: 9000 },
   { name: "hex-jelly", gzipBytes: 50000 },
@@ -108,6 +114,9 @@ const CEILINGS = [
   // New chunk only; proposed, the desk sets this ceiling. Raised to 1,750 B by the owner on 2026-11-13 (q1617-gamelog-ceiling,
   // A): it sat at its 1,550 B ceiling and builds flipped on a byte of gzip variation.
   { name: "GameLog", gzipBytes: 1750 },
+  // #1609: the five and six seat island and paired turns (src/lib/game/expanded.ts), loaded only for those games; measured
+  // 2,952 B gzip. New chunk; the desk set this ceiling (PR #1655, 2026-11-14, with q1655-five-six-start A).
+  { name: "expanded", gzipBytes: 3300 },
   // #827: other seats' public roll and trade gains load lazily (online only); a new chunk, so this ceiling is its only limit.
   { name: "SeatPublicGains", gzipBytes: 1800 },
 ];
