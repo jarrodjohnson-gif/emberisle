@@ -12,7 +12,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { applyAction } from "../src/lib/game/rules.ts";
-import { AWARDS, bins, diceLine, islandAwards, MIN_ROLLS, unusual } from "../src/lib/game/story.ts";
+import { AWARDS, bins, chance, diceLine, islandAwards, MIN_ROLLS, unusual } from "../src/lib/game/story.ts";
 
 // ---- The pictured game ---------------------------------------------------------------------------------------------------
 const fixture = JSON.parse(readFileSync(new URL("./fixtures/results-story-game.json", import.meta.url), "utf8"));
@@ -61,7 +61,8 @@ function rules(g, why) {
   }
   const w = a[g.winner];
   assert(!w || !["Dry spell", "Good sport"].includes(w.title), `${why}: the winner never gets a fallback`);
-  assert.equal(Object.keys(a).length, new Set(Object.keys(a)).size);
+  for (const id of Object.keys(a)) assert(g.players.some((p) => p.id === id), `${why}: a title goes only to a seat at the table (${id})`);
+  if (w) assert(!Object.entries(a).some(([id, x]) => id !== g.winner && x.title === w.title), `${why}: the winner's title is one no loser holds (${w.title})`);
   return titles(g);
 }
 
@@ -168,7 +169,14 @@ function rate(rolls) {
     const sums = Array(11).fill(0);
     for (let r = 0; r < rolls; r++) sums[die() + die() - 2]++;
     if (unusual(sums)) flagged++;
-    if (diceLine(sums).sum !== null) assert(unusual(sums), "only an unusual spread colours a bar");
+    // The coloured bar is exactly the unusual spread's sum furthest from its odds, counted here apart from diceLine.
+    const hot = diceLine(sums).sum;
+    if (!unusual(sums)) assert.equal(hot, null, "only an unusual spread colours a bar");
+    else {
+      const total = sums.reduce((x, y) => x + y, 0);
+      const z = sums.map((k, i) => Math.abs(k - total * chance(i + 2)) / Math.sqrt(total * chance(i + 2)));
+      assert.equal(hot, z.indexOf(Math.max(...z)) + 2, "an unusual spread colours the sum furthest from its odds");
+    }
   }
   return flagged / GAMES;
 }
