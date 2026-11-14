@@ -16,6 +16,7 @@
 //     a failed transaction leaves memory unchanged; pages of 20 with a cursor.
 // 11. #1650: a signed-in table started from the lobby, whose roll-off reorders the players, killed -9 and restarted right
 //     after the roll-off, keeps its frozen roster and is counted for every profile as the same game without a restart.
+//     A saved roster matches its game's players by id in any order; a row for no player, or a player's row twice, is refused.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
@@ -662,6 +663,32 @@ try {
     assert.deepEqual(unwon(restarted), unwon(straight), `${label}: after the restart the game is recorded for every profile as without one`);
     assert.deepEqual(restarted.records.map((r) => [r.games, r.wins]), restarted.records.map((r) => [1, r.wonHere ? 1 : 0]), `${label}: after the restart each profile has the game, and the win only if it won`);
   }
+
+  await scenario("a saved roster matches its game by player id, each once", async () => {
+    const d = folders();
+    const P = seedStore(d, ["Ash", "Brook", "Cove"]);
+    const seeded = (code, change) => {
+      const { gameId } = seedRoom(d, code, [P.Ash.id, P.Brook.id, P.Cove.id]);
+      const file = path.join(d.rooms, `${code}.json`);
+      const room = readJson(file);
+      change(room.roster.players);
+      writeFileSync(file, JSON.stringify(room));
+      return gameId;
+    };
+    const moved = seeded("MOVD", (r) => r.reverse()); // the order a roll-off leaves: counted
+    const stray = seeded("STRY", (r) => (r[2].pid = "p9")); // a row for no player of the game: refused
+    const twice = seeded("TWCE", (r) => (r[2].pid = "p0")); // one player's row twice, another's missing: refused
+    const h = start(d);
+    const port = await h.port;
+    await until(() => h.err.split("bad roster in room file").length - 1 === 2, "the stray and the doubled rosters are refused");
+    for (const code of ["MOVD", "STRY", "TWCE"]) await win(port, code);
+    await recorded(d, moved);
+    await sleep(300);
+    assert.deepEqual(receipts(d), [moved], "only the reordered roster's game is recorded");
+    assert(!existsSync(pendingFile(d, stray)) && !existsSync(pendingFile(d, twice)), "the refused rosters' games are never journalled");
+    assert.deepEqual([(await record(port, P.Ash)).losses, (await record(port, P.Brook)).wins, (await record(port, P.Cove)).losses], [1, 1, 1], "the reordered roster credits each profile its own row");
+    await h.stop();
+  });
 
   await scenario("a restart after the roll-off keeps the roster of a classic game, and it counts", async () => {
     await rolledOffRuns("classic", ["Ember", "Tide", "Pine"], [2, 4, 6]);
