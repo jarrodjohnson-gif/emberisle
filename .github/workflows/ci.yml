@@ -239,6 +239,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run expanded-turns-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run expanded-bots-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run wayfarer-modes-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run game-text-prove
