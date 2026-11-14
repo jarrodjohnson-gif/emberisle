@@ -37,15 +37,19 @@ function mainGame(seed = 11) {
 async function phoneMenuRefused(g) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   const phonePage = await context.newPage();
-  // The refused load is expected, as are React's report of it reaching the boundary; any other error counts.
+  // Only the refused PlayerMenu.tsx load is expected: the browser's line for that URL (the prefetch's, then the retry's) and
+  // React's report of it reaching the LazyBoundary. Any other console error or page error counts.
+  const menuUrl = `http://127.0.0.1:${PORT}/src/components/game/PlayerMenu\\.tsx(\\?retry=\\d+)?`;
+  const refusedLine = new RegExp(`^${menuUrl}$`);
+  const boundaryReport = new RegExp(`^%o\\n\\n%s\\n\\n%s\\n TypeError: Failed to fetch dynamically imported module: ${menuUrl} The above error occurred in the <Lazy> component\\. React will try to recreate this component tree from scratch using the error boundary you provided, LazyBoundary\\.$`);
   phonePage.on("console", (m) => {
+    if (m.type() !== "error") return;
     const text = m.text();
-    if (m.type() === "error" && !text.includes("Failed to load resource") && !text.includes("net::ERR_FAILED") && !text.includes("Failed to fetch dynamically imported module")) errors.push(text);
+    if (text === "Failed to load resource: net::ERR_FAILED" && refusedLine.test(m.location().url)) return;
+    if (boundaryReport.test(text)) return;
+    errors.push(text);
   });
-  phonePage.on("pageerror", (e) => {
-    const text = String(e);
-    if (!text.includes("Failed to fetch dynamically imported module") && !text.includes("error loading dynamically imported module")) errors.push(text);
-  });
+  phonePage.on("pageerror", (e) => errors.push(String(e)));
   let fail = true;
   let blocked = 0;
   await phonePage.route(/\/PlayerMenu\.tsx/, async (route) => {
