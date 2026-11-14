@@ -68,6 +68,23 @@ async function tab(name, opts = {}) {
       return Promise.resolve();
     };
   });
+  // #1664: `window.__holdNext = ms` makes the next state, and every message after it for `ms`, reach the page that late, in order.
+  await page.addInitScript(() => {
+    const d = Object.getOwnPropertyDescriptor(WebSocket.prototype, "onmessage");
+    const queue = [];
+    let free = 0;
+    Object.defineProperty(WebSocket.prototype, "onmessage", {
+      configurable: true,
+      get() { return d.get.call(this); },
+      set(fn) {
+        d.set.call(this, (ev) => {
+          if (window.__holdNext && /^\{"type":"state"/.test(ev.data)) free = Date.now() + window.__holdNext, window.__holdNext = 0;
+          if (Date.now() >= free) return fn.call(this, ev);
+          if (queue.push(() => fn.call(this, ev)) === 1) setTimeout(() => queue.splice(0).forEach((f) => f()), free - Date.now());
+        });
+      },
+    });
+  });
   await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
   return { name, page };
 }
@@ -111,6 +128,13 @@ const chipReadings = (page) =>
     setTimeout(() => read(true), 8000);
     new MutationObserver(() => read()).observe(document.body, { attributes: true, attributeFilter: ["data-seconds"], childList: true, subtree: true });
   }));
+// #1664: steps the page's Date.now 30 s further forward; the real clock stays as window.__realNow.
+const stepClock = (t) =>
+  t.page.evaluate(() => {
+    const real = (window.__realNow ??= Date.now);
+    const ahead = (window.__ahead = (window.__ahead ?? 0) + 30_000);
+    Date.now = () => real() + ahead;
+  });
 // Four readings, of which at most one (a render a busy page committed late) is more than a second off the host, for `pid`.
 const chipMatches = (readings, pid) => readings.length === 4 && readings.filter((r) => r.player !== pid || Math.abs(r.secs - r.host) > 1).length <= 1;
 
@@ -360,18 +384,62 @@ try {
   // #1664: a tab's clock steps 30 s forward mid-connection (a clock sync, a wake from sleep with the socket still up). The
   // chip of the next window must count the host's time again, not 30 s less.
   const stepTab = tabs.find((t) => t !== actorTab);
-  const stepSeq = (await view(stepTab)).seq;
-  await stepTab.page.evaluate(() => {
-    const real = (window.__realNow = Date.now);
-    Date.now = () => real() + 30_000;
-  });
+  const { seq: stepSeq, current: stepFrom } = await view(stepTab);
+  await stepClock(stepTab);
   const next = await until(async () => {
     const v = await view(stepTab);
     return v?.seq > stepSeq && v.chip?.player === v.current ? v : null;
   }, `the next window on ${stepTab.name} after its clock stepped`, TURN + 10_000);
   const stepped = await chipReadings(stepTab.page);
   if (!chipMatches(stepped, next.current)) throw new Error(`after ${stepTab.name}'s clock stepped 30 s forward, its next window's chip read ${stepped.map((r) => `${r.secs}/${r.host}`).join(", ")} s (chip/host)`);
-  console.log(`clock stepped 30 s forward on ${stepTab.name}: the next window's chip read ${stepped.map((r) => `${r.secs}/${r.host}`).join(", ")} s (chip/host)`);
+  console.log(`clock stepped 30 s forward on ${stepTab.name}, the window passing from ${stepFrom} to ${next.current}: the next window's chip read ${stepped.map((r) => `${r.secs}/${r.host}`).join(", ")} s (chip/host)`);
+
+  // #1664: a passed vote moves the deadline of the window shown, for the same seat. The waited-on tab reads that state 3 s
+  // late; its clock estimate, which the chip, the cues and the vote's own time all use, must not fall back to that one sample.
+  const waited = tabs[(await views(tabs)).findIndex((v) => v.you === next.current)];
+  const [asker, voter] = tabs.filter((t) => t !== waited);
+  const ext = (t) => t.page.evaluate(() => {
+    const s = window.__emberisle.getState();
+    return { e: s.net.getTurnExtension(), deadline: s.turnTimer?.deadline, skew: s.clockSkew, seq: s.state.seq };
+  });
+  const was = await ext(waited);
+  await waited.page.evaluate((ms) => (window.__holdNext = ms), HOLD);
+  const ask = await until(async () => ((await ext(asker)).e?.key ? ext(asker) : null), `${asker.name} can ask for more time`);
+  await asker.page.evaluate(([target, key]) => window.__emberisle.getState().net.requestTurnExtension(target, key), [ask.e.target, ask.e.key]);
+  const vote = await until(async () => (await ext(voter)).e?.vote, `${voter.name} sees the vote`);
+  await voter.page.evaluate((id) => window.__emberisle.getState().net.answerTurnExtension(id, true), vote.id);
+  const extended = await until(async () => {
+    const x = await ext(waited);
+    return x.deadline >= was.deadline + 50_000 ? x : null;
+  }, `${waited.name} gets the extended deadline`, 20_000);
+  if (extended.seq !== was.seq || Math.abs(extended.skew - was.skew) > 500) throw new Error(`${waited.name}'s clock estimate went from ${was.skew} to ${extended.skew} ms on the extension's late state`);
+  // The chip shows again in the window's last 30 s.
+  await until(async () => (await view(waited))?.chip?.player === next.current, `${waited.name}'s chip after the extension`, 70_000);
+  const lengthened = await chipReadings(waited.page);
+  if (!chipMatches(lengthened, next.current)) throw new Error(`after a passed vote whose state ${waited.name} read ${HOLD} ms late, its chip read ${lengthened.map((r) => `${r.secs}/${r.host}`).join(", ")} s (chip/host)`);
+  console.log(`extension read ${HOLD} ms late on ${waited.name}: clock estimate ${was.skew} -> ${extended.skew} ms, chip read ${lengthened.map((r) => `${r.secs}/${r.host}`).join(", ")} s (chip/host)`);
+
+  // #1664: the same seat waited on twice in a row (a setup outpost, then its path) is a new window too. Play the path in hand
+  // if there is one, so the next seat places an outpost; that seat's clock steps 30 s forward, then it places it.
+  vs = await views(tabs);
+  if (vs[0].phase === "setupRoad") {
+    const k = vs.findIndex((v) => v.you === vs[0].current);
+    await act(tabs[k], "pickEdge", vs[k].legal.path[0]);
+    vs = await synced(tabs, vs[0].seq, "the path is placed");
+  }
+  if (vs[0].phase !== "setupSettle") throw new Error(`wanted an outpost to place, the table is in ${vs[0].phase}`);
+  const twice = vs[0].current;
+  const twiceTab = tabs[vs.findIndex((v) => v.you === twice)];
+  const twiceSeq = vs[0].seq;
+  await stepClock(twiceTab);
+  await act(twiceTab, "pickVertex", vs[tabs.indexOf(twiceTab)].legal.outpost[0]);
+  await until(async () => {
+    const v = await view(twiceTab);
+    return v?.seq > twiceSeq && v.phase === "setupRoad" && v.current === twice && v.chip?.player === twice ? v : null;
+  }, `${twiceTab.name}'s path window after its outpost`);
+  const again = await chipReadings(twiceTab.page);
+  if (!chipMatches(again, twice)) throw new Error(`after ${twiceTab.name}'s clock stepped 30 s forward, its own next window's chip read ${again.map((r) => `${r.secs}/${r.host}`).join(", ")} s (chip/host)`);
+  console.log(`clock stepped 30 s forward on ${twiceTab.name}, waited on twice in a row: its path window's chip read ${again.map((r) => `${r.secs}/${r.host}`).join(", ")} s (chip/host)`);
 
   // #1664: each welcome measures the skew from its own hello. A second hello going out before the first one's welcome comes
   // (a re-hello on the same socket) must not measure that welcome from the later hello, which reads the chip high by the gap.

@@ -1296,8 +1296,10 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     const skew = typeof serverNow === "number" ? serverNow - Date.now() : 0;
     const prev = get().turnTimer;
     const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline, host: serverNow as number };
-    // The first state after a welcome keeps the welcome's sample (#1664), which a busy page cannot spoil.
-    const clockSkew = (bestSkew = turnTimer !== prev && !firstState ? skew : Math.max(skew, bestSkew));
+    // A new window starts the estimate over: a new seat waited on, or the same one after a move. A vote that moves the deadline
+    // is the same window, and the first state after a welcome keeps the welcome's sample, which a busy page cannot spoil (#1664).
+    const fresh = turnTimer !== prev && (!prev || prev.player !== turnPlayer || game.seq !== get().state?.seq);
+    const clockSkew = (bestSkew = fresh && !firstState ? skew : Math.max(skew, bestSkew));
     firstState = false;
     // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
     set({ legal, turnTimer, clockSkew, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
