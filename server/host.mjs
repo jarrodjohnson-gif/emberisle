@@ -9,6 +9,8 @@ import { randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto
 import { WebSocketServer } from "ws";
 import { chooseBotAction, chooseRecoveryAction, chooseTradeAsk, logBotAction, shouldAcceptTrade } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
+// Also registers the paired turns, so applyAction can play a restored five or six seat game (#1605, #1610).
+import { EXPANDED_COORDS } from "../src/lib/game/expanded.ts";
 import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, totalVP, validBag } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
 import { JOIN_CODE, PROTO } from "../src/lib/net/proto.ts";
@@ -137,9 +139,13 @@ const ROOMS = path.resolve(process.env.ROOMS_DIR ?? fileURLToPath(new URL("./roo
 // kill -9 or a power cut can lose at most the last SAVE_MS of changes. The proofs shorten it through env.
 const SAVE_MS = Number(process.env.SAVE_MS ?? 250);
 const ROOM_TTL = 24 * 60 * 60 * 1000;
-// Stamped on every saved room. Bump it whenever GameState, the seat record or the chat record changes
-// shape: load() drops files with any other stamp (including none), so a bump ends the saved rooms on the next restart.
-const ROOM_SHAPE = 2;
+// Stamped on every saved room. Shape 3 (#1610) adds the five and six seat game: `game.variant` and the paired-turn fields
+// `primary`, `role` and `activation`. load() reads a shape-2 room as classic, unchanged, and rewrites it as shape 3 once it
+// validates. It drops a file older than shape 2 (or unstamped). A newer file, or one whose game does not validate, is kept
+// aside as `<code>.json.unsupported`, never deleted.
+const ROOM_SHAPE = 3;
+// The oldest shape this host reads.
+const LEGACY_SHAPE = 2;
 // A seat's soundboard taps are at least this far apart (the host's word; the client greys the buttons for the same time).
 const SOUND_MS = envMs("SOUND_MS", 3000);
 // A seat's accepted renames are at least this far apart, on top of the ordinary action limit.
@@ -368,7 +374,7 @@ function snapshot(room, over = {}) {
     host: room.host,
     next: room.next,
     botDeclined: room.botDeclined ?? {},
-    recoveryPids: [...new Set(room.recoveryPids ?? [])].slice(-4),
+    recoveryPids: [...new Set(room.recoveryPids ?? [])].slice(-recoveryCap(room.game)),
     chat: room.chat,
     chatSeq: room.chatSeq,
     game: room.game,
@@ -477,6 +483,60 @@ function savedRoster(saved) {
   }
 }
 
+// A recovery pid is a game seat the bot took over, so a room keeps at most one per player: four at a classic table (#1610).
+function recoveryCap(game) {
+  return Math.max(4, Array.isArray(game?.players) ? game.players.length : 0);
+}
+
+const count = (n) => Number.isSafeInteger(n) && n >= 0;
+const PAIRED = ["primary", "role", "activation"];
+const FORTUNES = ["knight", "road", "plenty", "monopoly", "vp"];
+
+// Why a saved game cannot be read as its room shape says, or null (#1610). A shape-2 game is classic: absent `variant`
+// means classic, as in every game saved before #1604. A classic game has no variant, no paired-turn fields and at most four
+// players; a variant is never inferred from the seat count. An expanded game carries the one variant this host knows, its
+// 30-hex island, five or six players, and a paired-turn state that names its own actor.
+function gameProblem(g, shape) {
+  if (g === null) return null;
+  if (!Array.isArray(g.players)) return "bad players";
+  if (g.variant === undefined) {
+    if (PAIRED.some((k) => k in g)) return "paired-turn fields in a classic game";
+    if (g.players.length > 4) return `${g.players.length} players in a classic game`;
+    return null;
+  }
+  if (shape === LEGACY_SHAPE) return "a variant in a shape-2 room";
+  if (!g.players.every((p) => p && typeof p.id === "string" && p.hidden && p.boughtThisTurn)) return "bad players";
+  const ids = g.players.map((p) => p.id);
+  if (new Set(ids).size !== ids.length || !ids.includes(g.current)) return "bad players";
+  const v = g.variant;
+  if (v?.kind !== "expanded" || v.version !== 1 || v.turns?.rule !== "paired" || v.turns.version !== 1) return `unknown variant ${JSON.stringify(v)}`;
+  if (ids.length < 5 || ids.length > 6) return `${ids.length} players in an expanded game`;
+  const hexes = new Map((Array.isArray(g.hexes) ? g.hexes : []).map((h) => [h?.id, h]));
+  if (hexes.size !== EXPANDED_COORDS.length || !EXPANDED_COORDS.every((c) => hexes.has(`${c.q},${c.r}`))) return "not the expanded island";
+  if (!Array.isArray(v.wastes) || v.wastes.length !== 2 || !v.wastes.every((id) => hexes.get(id)?.terrain === "waste")) return "bad wastes";
+  if (v.spiral !== undefined && (!hexes.has(v.spiral?.start) || (v.spiral.direction !== 1 && v.spiral.direction !== -1))) return "bad spiral";
+  if (!RESOURCES.every((r) => count(g.bank?.[r])) || !Array.isArray(g.deck) || !g.deck.every((k) => FORTUNES.includes(k))) return "bad inventory";
+  if (!g.players.every((p) => FORTUNES.every((k) => count(p.hidden[k]) && count(p.boughtThisTurn[k])))) return "bad fortunes";
+  if (g.role === undefined) {
+    // Setup: the paired turns start when it ends.
+    if (g.primary !== undefined || g.activation !== undefined || !["rollOff", "setupSettle", "setupRoad"].includes(g.phase)) return "no turn role after setup";
+    return null;
+  }
+  const at = ids.indexOf(g.primary);
+  if (at < 0 || !Number.isSafeInteger(g.activation) || g.activation < 1) return "bad paired turn";
+  const actor = g.role === "primary" ? g.primary : g.role === "partner" ? ids[(at + 3) % ids.length] : null;
+  if (g.current !== actor) return `bad paired turn: ${g.current} acts as ${g.role}`;
+  return null;
+}
+
+// A room file this host must not read as it stands: set aside for recovery by hand, never deleted (#1610), and never
+// overwritten by a later room with the same code.
+function keepAside(file, name, why) {
+  const kept = existsSync(`${file}.unsupported`) ? `${file}.${Date.now()}.unsupported` : `${file}.unsupported`;
+  renameSync(file, kept);
+  console.error(`unsupported room file: ${name} (${why}); kept as ${path.basename(kept)}`);
+}
+
 function alive(pid) {
   try {
     process.kill(pid, 0);
@@ -539,7 +599,7 @@ async function load() {
   let redacted = 0;
   // Files kept only for repair by hand (#1393) are redacted too. A fenced room keeps its suffix, so it never plays again, and
   // an unreadable pending outcome keeps its name, so it still fences its game.
-  for (const [dir, name] of [...journal.unreadable().map((id) => [journal.dir, `${id}.json`]), ...names.filter((n) => n.endsWith(".json.fenced")).map((n) => [ROOMS, n])]) {
+  for (const [dir, name] of [...journal.unreadable().map((id) => [journal.dir, `${id}.json`]), ...names.filter((n) => n.endsWith(".json.fenced") || n.endsWith(".unsupported")).map((n) => [ROOMS, n])]) {
     let text;
     try {
       text = readFileSync(path.join(dir, name), "utf8");
@@ -620,12 +680,17 @@ async function load() {
       fenced++;
       continue;
     }
+    // A newer host wrote this: kept for it, whatever its age or fields (#1610).
+    if (typeof saved?.shape === "number" && saved.shape > ROOM_SHAPE) {
+      keepAside(file, name, `shape ${saved.shape}, this host reads ${LEGACY_SHAPE} to ${ROOM_SHAPE}`);
+      continue;
+    }
     if (typeof saved?.code !== "string" || !Array.isArray(saved.seats) || !(Date.now() - saved.savedAt < ROOM_TTL) || saved.seats.length === 0) {
       rmSync(file, { force: true });
       continue;
     }
-    if (saved.shape !== ROOM_SHAPE) {
-      console.error(`stale room file: ${name} (shape ${saved.shape}, want ${ROOM_SHAPE})`);
+    if (saved.shape !== ROOM_SHAPE && saved.shape !== LEGACY_SHAPE) {
+      console.error(`stale room file: ${name} (shape ${saved.shape}, want ${LEGACY_SHAPE})`);
       rmSync(file, { force: true });
       continue;
     }
@@ -633,6 +698,11 @@ async function load() {
     if (g !== null && (typeof g !== "object" || !["players", "vertices", "edges", "seq", "phase"].every((k) => k in g))) {
       console.error(`bad game in room file: ${name}`);
       rmSync(file, { force: true });
+      continue;
+    }
+    const problem = gameProblem(g, saved.shape);
+    if (problem) {
+      keepAside(file, name, problem);
       continue;
     }
     // A file that parses but does not rebuild (a null seat, say) is skipped like one that does not parse.
@@ -649,7 +719,7 @@ async function load() {
         visibility: saved.visibility === "open" ? "open" : "private",
         wayfarerMode: saved.wayfarerMode === "off" ? "off" : "on",
         // Legacy hosted snapshots had no practice-bot seats, so a bot linked to a held seat means takeover.
-        recoveryPids: [...new Set([...(Array.isArray(saved.recoveryPids) ? saved.recoveryPids : []), ...legacyRecovery])].slice(-4),
+        recoveryPids: [...new Set([...(Array.isArray(saved.recoveryPids) ? saved.recoveryPids : []), ...legacyRecovery])].slice(-recoveryCap(saved.game)),
         roster,
         assisted: Array.isArray(saved.assisted) ? saved.assisted.filter((pid) => typeof pid === "string") : [],
         seats: [],
@@ -687,6 +757,16 @@ async function load() {
     if (!room.seats.some((s) => !s.bot)) {
       rmSync(file, { force: true });
       continue;
+    }
+    // A validated shape-2 room is rewritten as shape 3 with nothing else changed, in one atomic write. If the write fails the
+    // original file stays as it was, the room still plays, and its next save writes shape 3.
+    if (saved.shape === LEGACY_SHAPE) {
+      try {
+        await writeDurable(ROOMS, name, JSON.stringify({ ...saved, shape: ROOM_SHAPE }));
+        console.log(`migrated room file: ${name} (shape ${LEGACY_SHAPE} to ${ROOM_SHAPE}, classic)`);
+      } catch (err) {
+        console.error(`cannot migrate room file ${name}: ${err.message}`);
+      }
     }
     rooms.set(room.code, room);
   }
@@ -2100,7 +2180,7 @@ function takeOver(room, seat) {
     closeOffer(room);
     broadcast(room, { type: "tradeClosed", tradeId });
   }
-  room.recoveryPids = [...new Set([...(room.recoveryPids ?? []), seat.pid])].slice(-4);
+  room.recoveryPids = [...new Set([...(room.recoveryPids ?? []), seat.pid])].slice(-recoveryCap(room.game));
   // Assistance is marked for the outcome and never cleared by a rejoin; the frozen roster keeps the seat human (#889).
   room.assisted = [...new Set([...(room.assisted ?? []), seat.pid])];
   room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "bot", name: `${x.name} (bot)` } : x)) };

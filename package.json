@@ -196,6 +196,7 @@
     "proto-prove": "node --import ./server/register.mjs server/proto-prove.mjs",
     "cap-prove": "node --import ./server/register.mjs server/cap-prove.mjs",
     "restart-prove": "node --import ./server/register.mjs server/restart-prove.mjs",
+    "expanded-persist-prove": "node --import ./server/register.mjs server/expanded-persist-prove.mjs",
     "result-journal-prove": "node --import ./server/register.mjs server/result-journal-prove.mjs",
     "profile-results-prove": "node --import ./server/register.mjs server/profile-results-prove.mjs",
     "profile-deletion-prove": "node --import ./server/register.mjs server/profile-deletion-prove.mjs",
