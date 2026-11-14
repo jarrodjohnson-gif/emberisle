@@ -26,7 +26,8 @@
 // - zero page errors.
 // Classic parity in the same run: with the classic four-seat state the fit (frustum or lens), the eye's look-at point and
 // every hex centre on screen equal the values measured on origin/main at ec897a9d (CLASSIC_MAIN below).
-// SHOTS=1 writes real-game PNGs at device scale 2 for 430x932, 390x844, 844x390 and 1280x720 into docs/proofs/1607/.
+// SHOTS=1 writes real-game PNGs of a five- and a six-seat board at device scale 2 for 430x932, 390x844, 844x390 and
+// 1280x720 into docs/proofs/1607/, each after checking the island, its coast and its docks are in the hole and clear of the HUD.
 // MEASURE_CLASSIC=1 prints the classic numbers only (how CLASSIC_MAIN was taken). Run: npm run expanded-fit-prove
 import assert from "node:assert/strict";
 import { mkdirSync } from "node:fs";
@@ -64,7 +65,7 @@ const check = (name, ok, detail) => {
 const frames = (page, n) => page.evaluate(async (n) => { for (let i = 0; i < n; i++) await new Promise((r) => requestAnimationFrame(r)); }, n);
 
 // Into the store as a crafted state: a main phase on seat p0's turn. `expanded` deals the 30-hex island for six seats.
-async function load(page, expanded, patch = "main") {
+async function load(page, expanded, patch = "main", seats = 6) {
   await page.evaluate(async ({ expanded, names, patch }) => {
     const game = window.__emberisle;
     const st = expanded
@@ -86,7 +87,7 @@ async function load(page, expanded, patch = "main") {
     }
     st.seq++;
     game.setState({ state: st, localId: st.players[0].id, mode: "ai", spectator: false, buildMode: patch === "paths" ? "path" : "none", banner: null, error: null, menuFor: null, pendingPlace: null });
-  }, { expanded, names: NAMES, patch });
+  }, { expanded, names: NAMES.slice(0, seats), patch });
   await page.waitForFunction(() => window.__isle.lastState === window.__emberisle.getState().state, null, { timeout: 60_000 });
   await frames(page, 3);
   await page.waitForFunction(() => !window.__isle.refitDue && !window.__isle.glide && window.__isle.fit, null, { timeout: 60_000 });
@@ -248,14 +249,21 @@ try {
   } else if (SHOTS) {
     mkdirSync("docs/proofs/1607", { recursive: true });
     for (const size of SHOT_VIEWS) {
-      const { ctx, page, tag } = await open(size, "crystal");
-      await load(page, true);
-      await waitBoard(page, 11);
-      await page.waitForTimeout(500);
-      await page.screenshot({ path: `docs/proofs/1607/expanded-${tag}.png` });
-      console.log(`wrote docs/proofs/1607/expanded-${tag}.png`);
-      await ctx.close();
+      for (const seats of [5, 6]) {
+        const { ctx, page, tag } = await open(size, "crystal");
+        await load(page, true, "main", seats);
+        await waitBoard(page, 11);
+        await page.waitForTimeout(500);
+        const m = await measure(page);
+        // Whole island and coast in the hole, nothing of it under the HUD.
+        check(`${tag} ${seats} seats: hexes, coast corners and docks inside the hole, none under the HUD`, m.hexOut.length + m.coastOut.length + m.docksOutTB.length + m.covered.length === 0, { hex: m.hexOut, coast: m.coastOut, docks: m.docksOutTB, covered: m.covered });
+        const file = `docs/proofs/1607/expanded-${seats}-seats-${tag}.png`;
+        await page.screenshot({ path: file });
+        console.log(`wrote ${file}`);
+        await ctx.close();
+      }
     }
+    if (fails.length) throw new Error(`${fails.length} check(s) failed`);
     if (errors.length) throw new Error(errors.join("\n"));
   } else {
     // Node: the classic shape is the classic constants.
