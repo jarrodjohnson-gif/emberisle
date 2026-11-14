@@ -179,6 +179,8 @@ try {
     };
     const offer = (from, give, want, g) => ({ tradeId: `proof-${from}`, from, fromName: g.players.find((p) => p.id === from).name, give, want, until: null });
     const store = (fn) => page.evaluate(fn);
+    const activeName = () => page.evaluate(() => { const a = document.activeElement; return a?.dataset?.testid ?? a?.getAttribute("aria-label") ?? a?.textContent?.trim()?.slice(0, 24); });
+    const activeId = () => page.evaluate(() => document.activeElement?.id);
     const press = async (loc) => {
       if (v.touch) await loc.tap({ force: true });
       else await loc.click({ force: true });
@@ -266,6 +268,51 @@ try {
       await press(page.getByTestId("trade-dismiss"));
       await page.getByTestId("trade-toast").waitFor({ state: "detached" });
       check((await store(() => window.__emberisle.getState().declined)).includes("p0"), `${at}: Dismiss did not decline`);
+
+      // Focus return on Yes, No, Dismiss when Trade is present (#1592).
+      g = await load(game());
+      await page.evaluate((o) => window.__emberisle.setState({ offer: o, declined: [] }), offer("p1", { clay: 1 }, { timber: 1 }, g));
+      await press(page.getByTestId("trade-toast").getByRole("button", { name: "Yes", exact: true }));
+      await page.waitForFunction(() => !window.__emberisle.getState().offer);
+      await page.getByTestId("trade-outcome").waitFor();
+      await page.waitForFunction(() => { const a = document.activeElement; const n = a?.dataset?.testid ?? a?.getAttribute("aria-label") ?? a?.textContent?.trim()?.slice(0, 24); return n === "Trade" || n === "End turn"; });
+      check((await activeName()) === "Trade" || (await activeName()) === "End turn", `${at}: after Yes focused "${await activeName()}", want Trade or End turn`);
+
+      g = await load(game());
+      await page.evaluate((o) => window.__emberisle.setState({ offer: o, declined: [] }), offer("p1", { clay: 1 }, { timber: 1 }, g));
+      await press(page.getByTestId("trade-toast").getByRole("button", { name: "No", exact: true }));
+      await page.getByTestId("trade-toast").waitFor({ state: "detached" });
+      await page.waitForFunction(() => { const a = document.activeElement; const n = a?.dataset?.testid ?? a?.getAttribute("aria-label") ?? a?.textContent?.trim()?.slice(0, 24); return n === "Trade" || n === "End turn"; });
+      check((await activeName()) === "Trade" || (await activeName()) === "End turn", `${at}: after No focused "${await activeName()}", want Trade or End turn`);
+
+      g = await load(game());
+      await page.evaluate((o) => window.__emberisle.setState({ offer: o, declined: [] }), offer("p1", { clay: 1 }, { ore: 2 }, g));
+      await press(page.getByTestId("trade-dismiss"));
+      await page.getByTestId("trade-toast").waitFor({ state: "detached" });
+      await page.waitForFunction(() => { const a = document.activeElement; const n = a?.dataset?.testid ?? a?.getAttribute("aria-label") ?? a?.textContent?.trim()?.slice(0, 24); return n === "Trade" || n === "End turn"; });
+      check((await activeName()) === "Trade" || (await activeName()) === "End turn", `${at}: after Dismiss focused "${await activeName()}", want Trade or End turn`);
+
+      // Focus in chat input is left alone when an offer leaves (#1592).
+      await page.evaluate(async () => {
+        const { online } = await import("/src/components/game/chunks.ts");
+        await online.prefetch();
+        window.__emberisle.setState({ mode: "online", offer: null, declined: [], tradeOutcome: null });
+      });
+      const chatBtn = page.getByRole("button", { name: /^Open chat/ });
+      await chatBtn.waitFor({ state: "visible" });
+      await press(chatBtn);
+      const chatInput = page.locator("#chat-input");
+      await chatInput.waitFor({ state: "visible" });
+      await chatInput.focus();
+      check((await activeId()) === "chat-input", `${at}: chat input not initially focused`);
+
+      await page.evaluate((o) => window.__emberisle.setState({ offer: o, declined: [] }), offer("p1", { clay: 1 }, { timber: 1 }, g));
+      await page.getByTestId("trade-toast").waitFor();
+      await page.evaluate(() => window.__emberisle.setState({ offer: null }));
+      await page.getByTestId("trade-toast").waitFor({ state: "detached" });
+      await settle();
+      check((await activeId()) === "chat-input", `${at}: chat input lost focus when offer left`);
+      await page.evaluate(() => window.__emberisle.setState({ mode: "practice", chatOpen: false }));
     }
 
     // 3. My own offer is out: who has said no, and Cancel.
@@ -289,10 +336,12 @@ try {
       await page.getByTestId("build-open").waitFor();
       s = await readStack(page);
       check(s.outcome?.text === "Nobody took it." && s.banner === "Your turn", `${at}: after Cancel the top line reads "${s.banner}" and "${s.outcome?.text}"`);
+      await page.waitForFunction(() => { const a = document.activeElement; const n = a?.dataset?.testid ?? a?.getAttribute("aria-label") ?? a?.textContent?.trim()?.slice(0, 24); return n === "Trade" || n === "End turn"; });
+      check((await activeName()) === "Trade" || (await activeName()) === "End turn", `${at}: after Cancel focused "${await activeName()}", want Trade or End turn`);
     }
 
     // 4. A discard: 4 of 8.
-    g = await load(game({ hand: EIGHT, phase: "discard", patch: (g) => (g.discardNeeded = { p0: 4 }) }));
+    g = await load(game({ hand: EIGHT, phase: "discard", patch: (g) => { g.wayfarerMode = "off"; g.discardNeeded = { p0: 4 }; } }));
     const pick = page.getByTestId("discard-pick");
     await pick.waitFor();
     await settle();
@@ -337,6 +386,8 @@ try {
       check(JSON.stringify(left) === JSON.stringify({ timber: 1, clay: 2, wool: 0, grain: 1, ore: 0 }), `${at}: the discard left ${JSON.stringify(left)}, want 2 wood, 1 wheat and 1 stone gone`);
       await pick.waitFor({ state: "detached" });
       check((await readStack(page)).hand === 5, `${at}: the hand is back after the discard`);
+      await page.waitForFunction(() => { const a = document.activeElement; const n = a?.dataset?.testid ?? a?.getAttribute("aria-label") ?? a?.textContent?.trim()?.slice(0, 24); return n === "Trade" || n === "End turn"; });
+      check((await activeName()) === "Trade" || (await activeName()) === "End turn", `${at}: after Discard focused "${await activeName()}", want Trade or End turn`);
     }
 
     // 5. Take-from: one button per seat.
@@ -359,6 +410,11 @@ try {
       await page.waitForFunction(() => window.__emberisle.getState().state.phase === "main");
       const after = await page.evaluate((id) => { const st = window.__emberisle.getState(); const p = st.state.players.find((x) => x.id === id); return { robber: st.state.robberHex, cards: Object.values(p.resources).reduce((a, b) => a + b, 0), pending: st.pendingSteal, mine: Object.values(st.state.players.find((x) => x.id === "p0").resources).reduce((a, b) => a + b, 0) }; }, targets[1]);
       check(after.robber === hexId && after.cards === before - 1 && after.pending === null && after.mine === sum(HAND) + 1, `${at}: the pick left ${JSON.stringify(after)}, want the wayfarer on ${hexId} and one good from ${names[1]}`);
+      if (!hotseat) {
+        await group.waitFor({ state: "detached" });
+        await page.waitForFunction(() => { const a = document.activeElement; const n = a?.dataset?.testid ?? a?.getAttribute("aria-label") ?? a?.textContent?.trim()?.slice(0, 24); return n === "Trade" || n === "End turn"; });
+        check((await activeName()) === "Trade" || (await activeName()) === "End turn", `${at}: after take-from focused "${await activeName()}", want Trade or End turn`);
+      }
     };
     await takeFrom(`${tag} take-from`);
 

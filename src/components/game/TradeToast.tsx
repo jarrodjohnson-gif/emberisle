@@ -14,6 +14,37 @@ import { RESOURCES, RESOURCE_LABEL } from "@/lib/game/types";
 import type { Bag } from "@/lib/net/table";
 import "./trade-panel.css";
 
+// Return focus to Trade if present, else End turn, when an offer ends (#1592).
+function returnTrayFocus() {
+  let tries = 0;
+  const settle = () => {
+    if (tries++ > 30) return;
+    const at = document.activeElement;
+    if (at && at !== document.body && at !== document.documentElement) {
+      if (at.closest("input, textarea, select, [role='dialog'], [data-testid='chat-dock'], [data-testid='chat-input']")) return;
+    }
+    const stack = document.querySelector("[data-hud-stack]");
+    if (!stack) return void requestAnimationFrame(settle);
+    const buttons = [...stack.querySelectorAll<HTMLButtonElement>("button")].filter((b) => {
+      const r = b.getBoundingClientRect();
+      const cs = getComputedStyle(b);
+      return r.width > 1 && r.height > 1 && cs.visibility !== "hidden" && cs.display !== "none" && !b.closest(".sr-only,[hidden]");
+    });
+    const trade = buttons.find((b) => b.textContent?.trim().includes("Trade"));
+    if (trade) {
+      trade.focus();
+      return;
+    }
+    const endTurn = buttons.find((b) => b.textContent?.trim() === "End turn");
+    if (endTurn) {
+      endTurn.focus();
+      return;
+    }
+    if (tries < 15) requestAnimationFrame(settle);
+  };
+  requestAnimationFrame(settle);
+}
+
 const DISMISS_MS = 150;
 const calm = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -60,6 +91,7 @@ export function TradeToast() {
   const whyId = useId();
   const dock = useRef<HTMLElement>(null);
   const hadOffer = useRef(false);
+  const hadFocus = useRef(false);
   // The last offer body, so the dismiss fade shows the card going away instead of an empty one.
   const lastBody = useRef<ReactNode>(null);
   const shown = !!offer && !declined.includes(localId);
@@ -72,6 +104,10 @@ export function TradeToast() {
     }
     // The offer is over and its outcome line shows: nothing is left to fade, and the old card must not come back when the line clears.
     if (outcome) {
+      if (hadFocus.current) {
+        hadFocus.current = false;
+        returnTrayFocus();
+      }
       hadOffer.current = false;
       setLeaving(false);
       return;
@@ -79,9 +115,25 @@ export function TradeToast() {
     if (!hadOffer.current) return;
     // #537: 150 ms dismiss fade; reduced motion clears at once.
     setLeaving(true);
-    const t = window.setTimeout(() => { setLeaving(false); hadOffer.current = false; }, fadeMs);
+    const t = window.setTimeout(() => {
+      setLeaving(false);
+      hadOffer.current = false;
+      if (hadFocus.current) {
+        hadFocus.current = false;
+        returnTrayFocus();
+      }
+    }, fadeMs);
     return () => window.clearTimeout(t);
   }, [shown, outcome, fadeMs]);
+
+  useEffect(() => {
+    return () => {
+      if (hadFocus.current) {
+        hadFocus.current = false;
+        returnTrayFocus();
+      }
+    };
+  }, []);
 
   useLayoutEffect(() => {
     const el = dock.current;
@@ -203,6 +255,14 @@ export function TradeToast() {
       aria-label="Trade offer"
       aria-labelledby={offer ? lineId : undefined}
       aria-describedby={why ? whyId : undefined}
+      onFocusCapture={() => { hadFocus.current = true; }}
+      onPointerDownCapture={() => { hadFocus.current = true; }}
+      onBlurCapture={(e) => {
+        const next = e.relatedTarget as Element | null;
+        if (next?.closest?.("input, textarea, select, [role='dialog'], [data-testid='chat-dock'], [data-testid='chat-input']")) {
+          hadFocus.current = false;
+        }
+      }}
       onKeyDown={(e) => { if (answering && e.key === "Escape") answerTrade(false); }}
     >
       {body ?? lastBody.current}
