@@ -134,6 +134,8 @@ async function tab(i) {
   const ctx = await browser.newContext({ viewport: { width: v.width, height: v.height }, hasTouch: !!v.touch, isMobile: !!v.touch, deviceScaleFactor: SHOTS ? 2 : 1 });
   ctx.setDefaultTimeout(SHOTS ? 120_000 : 30_000);
   const page = await ctx.newPage();
+  // CPU_THROTTLE=N slows every tab N times (Chrome's CPU throttling), to look at the proof as a busy CI runner runs it.
+  if (process.env.CPU_THROTTLE) await (await ctx.newCDPSession(page)).send("Emulation.setCPUThrottlingRate", { rate: Number(process.env.CPU_THROTTLE) });
   const t = { i, ctx, page, name, v, label: `${name} ${v.tag}`, messages: 0, overFrames: 0, leaks: [], snaps: 0, storeLeaks: [] };
   page.on("console", (m) => m.type() === "error" && errors.push(`${t.label}: ${m.text()}`));
   page.on("pageerror", (e) => errors.push(`${t.label}: ${e}`));
@@ -437,6 +439,7 @@ try {
   const sizes = snaps.map(hand);
   check(DRAWN.every((k) => sizes[k] >= 8) && sizes.some((n) => n < 8), `hands before the seven: ${sizes.join(" ")}`);
   queueDice(3, 4);
+  const sevenAt = Date.now();
   await tap(tabs[roller], tabs[roller].page.getByRole("button", { name: "Roll", exact: true }));
   snaps = await until(async () => {
     const all = await same(tabs, "the seven");
@@ -450,11 +453,19 @@ try {
     if (owe.includes(k)) {
       await picker.waitFor();
       const n = s.state.discardNeeded[s.localId];
-      check((await t.page.getByTestId("turn-banner").textContent()) === `Discard ${n} goods`, `${t.label} reads "Discard ${n} goods"`);
-      const owned = await t.page.$$eval('[data-testid="discard-pick"] [data-testid="trade-owned"]', (els) => els.map((e) => Number(e.lastChild.textContent)));
+      // What this tab shows, for a failure's message.
+      const seen = await t.page.evaluate((seven) => {
+        const g = window.__emberisle.getState();
+        const q = (id) => document.querySelector(`[data-testid="${id}"]`);
+        return `${Date.now() - seven} ms after the seven: store ${g.state.phase} seq ${g.state.seq} owes ${g.state.discardNeeded[g.localId] ?? 0}; banner "${q("turn-banner")?.textContent}"; pickers ${document.querySelectorAll('[data-testid="discard-pick"]').length}, goods ${document.querySelectorAll('[data-testid="discard-pick"] .discard-good').length}; count "${q("discard-count")?.textContent}"; picker ${q("discard-pick")?.outerHTML.slice(0, 160)}`;
+      }, sevenAt);
+      // #1595's picker: one column per good, each showing what this seat keeps, nothing picked yet.
+      const reads = (await t.page.getByTestId("turn-banner").textContent()) === `Discard ${n}: pick ${n} more`;
+      check(reads, `${t.label} reads "Discard ${n}: pick ${n} more"${reads ? "" : ` (${seen})`}`);
+      const kept = await t.page.$$eval('[data-testid="discard-pick"] .discard-good', (els) => els.map((e) => [e.dataset.testid, Number(e.querySelector(".discard-keep").textContent)]));
       const mine = s.state.players.find((p) => p.id === s.localId).resources;
-      check(JSON.stringify(owned) === JSON.stringify(["timber", "clay", "wool", "grain", "ore"].map((r) => mine[r])), `${t.label}'s picker shows its own hand (${owned.join(" ")})`);
-      check((await t.page.getByTestId("discard-count").textContent()) === `0 of ${n}`, `${t.label}'s picker counts 0 of ${n}`);
+      check(JSON.stringify(kept) === JSON.stringify(["timber", "clay", "wool", "grain", "ore"].map((r) => [`discard-${r}`, mine[r]])), `${t.label}'s picker shows its own hand (${kept.map(([, n]) => n).join(" ")})`);
+      check((await t.page.getByTestId("discard-count").textContent()) === `Pick ${n} more`, `${t.label}'s picker reads "Pick ${n} more"`);
     } else {
       check((await picker.count()) === 0, `${t.label} has no discard picker`);
       check((await t.page.getByTestId("turn-banner").textContent()) === "Wait for discards", `${t.label} reads "Wait for discards"`);
@@ -470,9 +481,10 @@ try {
     let n = s.state.discardNeeded[s.localId];
     const mine = s.state.players.find((p) => p.id === s.localId).resources;
     for (const r of ["timber", "clay", "wool", "grain", "ore"]) {
-      for (let c = 0; c < mine[r] && n > 0; c++, n--) await tap(t, t.page.locator(`[data-testid="trade-discard-${r}"] .trade-add`));
+      for (let c = 0; c < mine[r] && n > 0; c++, n--) await tap(t, t.page.getByTestId(`discard-${r}`));
     }
     const need = s.state.discardNeeded[s.localId];
+    check((await t.page.getByTestId("discard-count").textContent()) === "Ready" && (await t.page.getByTestId("turn-banner").textContent()) === `Discard ${need}: ready`, `${t.label}'s picker is ready after ${need} taps`);
     await tap(t, t.page.getByRole("button", { name: `Discard ${need}`, exact: true }));
     await until(async () => !((await snap(t)).state.discardNeeded[s.localId] > 0), `${t.label} discards`);
     check(hand(await snap(t)) === sizes[k] - need, `${t.label} discarded ${need} through the picker`);
