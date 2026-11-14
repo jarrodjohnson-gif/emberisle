@@ -1296,6 +1296,10 @@ export class IsleRenderer {
     this.pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     this.pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     this.raycaster.setFromCamera(this.pointer, this.cam());
+    // #1607: every store push rebuilds the marks' pick volumes, and the ray meets a mesh by its world matrix, which only a
+    // draw brings up to date: a tap between a push and the next frame (12 fps idle, or a software GPU behind) met nothing.
+    this.land.updateMatrixWorld();
+    this.marks.updateMatrixWorld();
     return this.view === "diorama" ? this.reachHits(coarse) : this.raycaster
       .intersectObjects(this.pickables, true)
       .filter((h) => h.object.userData.id)

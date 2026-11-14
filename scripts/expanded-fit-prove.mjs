@@ -375,6 +375,21 @@ try {
       const vIds = await page.evaluate(() => [...window.__isle.legalIds].filter((id) => window.__isle.lastState.vertices.some((v) => v.id === id)));
       const vMiss = await picks(page, vIds, coarse);
       check(`${tag}: all ${vIds.length} corners are the renderer's pick`, vIds.length === (await page.evaluate(() => window.__isle.lastState.vertices.length)) && vMiss.length === 0, vMiss);
+      // A store push rebuilds the marks' pick volumes; a tap before the next frame is drawn still meets each corner (CI on
+      // PR #1621: the overhead ray met the new volumes by world matrices that only a draw had set, and missed them).
+      const pushMiss = await page.evaluate(async ({ ids, coarse }) => {
+        const { pickBest } = await import("/src/lib/scene/mobile-fit.ts");
+        const g = window.__emberisle;
+        const i = window.__isle;
+        const rect = document.querySelector("canvas").getBoundingClientRect();
+        const st = structuredClone(g.getState().state);
+        st.seq++;
+        g.setState({ state: st });
+        const drawn = i.renders;
+        const miss = ids.filter((id) => { const p = i.screenOf(id); return pickBest(i.hitsAt({ clientX: rect.left + p.x, clientY: rect.top + p.y }, coarse))?.id !== id; });
+        return { miss, drawnBetween: i.renders - drawn };
+      }, { ids: vIds, coarse });
+      check(`${tag}: right after a store push, before a frame is drawn, all ${vIds.length} corners are still the renderer's pick`, pushMiss.drawnBetween === 0 && pushMiss.miss.length === 0, pushMiss.miss.slice(0, 8));
       // A real tap or click on each extreme coast corner selects (touch) or builds (mouse) that very corner.
       const ends = await page.evaluate(() => {
         const i = window.__isle;
