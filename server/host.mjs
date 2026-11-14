@@ -532,8 +532,12 @@ function gameProblem(g, shape) {
 // A room file this host must not read as it stands: set aside for recovery by hand, never deleted (#1610), and never
 // overwritten by a later room with the same code.
 function keepAside(file, name, why) {
-  const kept = existsSync(`${file}.unsupported`) ? `${file}.${Date.now()}.unsupported` : `${file}.unsupported`;
-  // A rename that fails (a read-only disk) must not stop the host from starting: the file stays where it is, unread.
+  // #1654: the first free name, <code>.json.unsupported, then .1, .2 and so on, so a file set aside never lands on one kept
+  // before (a timestamp could repeat within a millisecond).
+  let kept = `${file}.unsupported`;
+  for (let n = 1; existsSync(kept); n++) kept = `${file}.${n}.unsupported`;
+  // A rename that fails (a read-only disk) must not stop the host from starting: the file stays where it is. load() has already
+  // parsed it and skips it for this boot; the next boot reads and refuses it again.
   try {
     renameSync(file, kept);
     console.error(`unsupported room file: ${name} (${why}); kept as ${path.basename(kept)}`);
