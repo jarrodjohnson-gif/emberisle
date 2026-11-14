@@ -6,3 +6,9 @@
 .gl-turn p.text-fg { color: #1f3331; }
 .game-log ol { padding-bottom: 8px; }
 .gl-roll { font-family: var(--font-numeral); font-size: 26px; line-height: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* #1617: the sheet's own layout, moved out of utility classes to keep the GameLog chunk under its ceiling; the same values. */
+.gl-top { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.gl-top h2 { font-size: 20px; font-weight: 700; line-height: 1.75rem; }
+.game-log ol { min-height: 0; overflow-y: auto; }
+.gl-turn > div { display: flex; min-height: 1.75rem; align-items: center; gap: 0.5rem; }
+.gl-turn b { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; font-weight: 600; line-height: 1.5rem; }
