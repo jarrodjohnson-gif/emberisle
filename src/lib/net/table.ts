@@ -102,11 +102,15 @@ export type ConnectionHealth = { status: "Reachable" | "Reconnecting" | "Offline
 
 export interface TableEvents {
   health(value: ConnectionHealth): void;
+  // #1664: the host clock less this one as the hello went out, from the welcome that answers it. Never below the true skew,
+  // above it only by the hello's trip to the host, and true however late a busy page reads the welcome.
+  clock(skew: number): void;
   // A watcher's welcome (docs/design/spectator.md) has `spectator: true` and no `you`, `host` or `secret`. `proto` is the
   // host's wire protocol (G2): newer than PROTO means this page is out of date.
   // `holdMs`/`lobbyHoldMs`: how long the host holds this seat after a drop, in a game and in the lobby (G7).
   // `variant` is set only at an expanded table (#1611), five or six seats on the expanded island.
-  welcome(msg: { proto?: number; serverSha?: string; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode; variant?: "expanded" }): void;
+  // `serverNow` is the host's clock as it answered the hello.
+  welcome(msg: { proto?: number; serverSha?: string; serverNow?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode; variant?: "expanded" }): void;
   // `watching`: how many spectators the table has (#347). `choose`: the host is choosing how to rematch an expanded game
   // with fewer than five at the table, from these choices (#1611; only the host may pick).
   seats(msg: { code: string; seats: Seat[] | PeekSeat[]; watching?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode; variant?: "expanded"; choose?: Rematch[] }): void;
@@ -340,7 +344,14 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     }, 3000);
   };
 
-  const raw = (msg: Record<string, unknown>) => ws.send(JSON.stringify(msg));
+  // When the last hello went out on this socket, on this clock, and how many have gone out since the last welcome. A welcome
+  // measures the skew from its hello only when that hello is the one out: one may be answered by an error instead (#1664).
+  let helloAt = 0;
+  let hellos = 0;
+  const raw = (msg: Record<string, unknown>) => {
+    if (msg.type === "hello") helloAt = Date.now(), hellos++;
+    ws.send(JSON.stringify(msg));
+  };
   const send = (msg: Record<string, unknown> | (() => Record<string, unknown>)) => {
     const fn = typeof msg === "function" ? msg : () => msg;
     if (ws.readyState === 1) raw(fn());
@@ -387,6 +398,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   const dial = () => {
     timer = null;
     const sock = (ws = new Ctor(url));
+    hellos = 0;
     ws.onopen = () => {
       // The rejoin hello goes out here only, never through the queue, so it is sent once per socket.
       if (seat && (attempt > 0 || rejoining)) {
@@ -429,6 +441,8 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         taken = false;
         attempt = 0;
         on.welcome?.(m);
+        if (typeof m.serverNow === "number" && hellos === 1) on.clock?.(m.serverNow - helloAt);
+        hellos = 0;
         break;
       }
       case "turnExtension":

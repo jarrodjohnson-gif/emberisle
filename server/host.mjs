@@ -780,8 +780,8 @@ async function load() {
         // Avatars live in memory only, so a restored seat has none.
         // G9: the saved window rides in `resume` until the seat is back and waited on; older files have none.
         const at = (n) => (Number.isFinite(n) ? n : null);
-        // A saved window belongs to the saved activation (#1612), so a restart mid paired turn keeps its budget.
-        room.seats.push({ ...s, needs: restoredNeed(s.needs), turnDeadline: null, turnStartedAt: at(s.turnStartedAt), resume: at(s.turnDeadline), turnActivation: g?.activation, avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
+        // A saved window belongs to the saved turn (#1612, #1661), so a restart mid turn keeps its budget.
+        room.seats.push({ ...s, needs: restoredNeed(s.needs), turnDeadline: null, turnStartedAt: at(s.turnStartedAt), resume: at(s.turnDeadline), turnKey: g && turnOf(g), avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
       }
       // A profile binding must be a UUID on a human seat, once per room; anything else leaves that seat a guest (#764).
       const bound = new Set();
@@ -968,18 +968,21 @@ function disarmTurn(seat) {
 // restart (`resume`, G9) is kept: the remainder is armed, and one that ran out while the host was down, or has under
 // RESUME_MIN_MS left, is spent at once so a timeout never lands mid-rejoin.
 const RESUME_MIN_MS = Math.min(5000, TURN_MS / 10);
+// The turn a window and budget belong to: the activation under paired turns, else the round and whose turn it is, so a
+// discard owed in another seat's turn is not part of the seat's own.
+const turnOf = (game) => (game.role ? game.activation : `${game.turn}:${game.current}`);
 function armTurns(room) {
   for (const seat of room.seats) {
     const bonus = extensionBudget(seat, room.game, TURN_EXTENSION_MS).extra;
     const human = room.game?.players.find((p) => p.id === seat.pid)?.kind === "human";
     const waited = human && waitedOn(room.game, seat.pid);
-    // Paired turns (#1612): each activation starts its own window and budget, even when bots played every activation
-    // between two of this seat's, so no state push saw it unwaited in between.
-    if (waited && room.game.role && seat.turnActivation !== room.game.activation) {
+    // Each turn starts its own window and budget, even when bots played every turn between two of this seat's, so no
+    // state push saw it unwaited in between (#1612, #1661).
+    if (waited && seat.turnKey !== turnOf(room.game)) {
       disarmTurn(seat);
       seat.turnStartedAt = null;
       seat.resume = null;
-      seat.turnActivation = room.game.activation;
+      seat.turnKey = turnOf(room.game);
     }
     if (!waited) {
       seat.turnStartedAt = null;
@@ -1478,7 +1481,7 @@ function openTable(ws, msg) {
   }
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -1509,7 +1512,7 @@ function sitDown(ws, msg) {
   room.seats.push(seat);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -1525,7 +1528,7 @@ function watch(ws, msg) {
   if (room.watchers.size >= SPECTATOR_MAX) return send(ws, { type: "error", message: "Table is full to watch." });
   room.watchers.add(ws);
   ws.watch = room;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
   watchersChanged(room, "Someone is watching.");
   // A finished game still being saved reaches this watcher with everyone else, through the terminal gate (#889).
   if (unsettled(room)) return;
@@ -1728,6 +1731,7 @@ async function replay(ws, room, live, isLive, variant) {
   room.choose = null;
   // #1411: every "play again" was for the game that just ended.
   for (const seat of room.seats) seat.again = undefined;
+  for (const seat of room.seats) seat.turnKey = undefined;
   // Reclaim a finished open room's slot only if no successor has taken it (#986).
   if (room.visibility === "open") registerOpenTable(room);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
@@ -2215,7 +2219,7 @@ function rejoin(ws, msg) {
   if (room.visibility === "open" && room.game?.phase !== "over") registerOpenTable(room);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
   say(room, `${seat.name} is back.`);
   publish(room);
   resendTtt(seat, send);
