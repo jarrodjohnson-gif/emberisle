@@ -9,6 +9,11 @@
 // 4. Hands stay private for seats 5 and 6 and for a watcher; a restart mid-lobby and mid-game keeps the variant.
 // 5. Host bots never ask or accept a player trade on a partner activation, a person cannot ask the table then, and a full
 //    online expanded game of one person and five host bots reaches a winner.
+// 6. Rematch (accepted decision 7, Jarrod's answers A to E on #666, 2026-11-06): five or six at the table keep the expanded
+//    island, numbers and colours; with fewer the host chooses, every seat and watcher sees the choice, nothing changes until
+//    the host picks, and a dismiss changes nothing; bots fill to five with the lowest free numbers; the classic pick plays
+//    classic with classic colours (kept where the palette has them), keeps the numbers and leaves the room classic; under
+//    three only the bot fill is offered.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -565,6 +570,139 @@ function partnerRoom(code, g, human) {
   for (const st of watcher.all.filter((m) => m.type === "state" && m.game.phase !== "over")) for (const p of st.game.players) assert.ok(!("resources" in p), `watcher view leaked ${p.id}'s goods`);
   checks += 2;
   summary.push(`full game: 1 person + 5 host bots, ${g.winner} won at turn ${g.turn} (seq ${g.seq}); ${asks} bot asks, all on primary activations; ${trades} player trades, none on ${partnerTurns} partner activations; ${answered} asks answered No by the person; no hand leaked to the seat or the watcher`);
+}
+
+// ---- 8. Rematch. ----
+{
+  const C = tmp("again");
+  // A finished expanded game; `bots` are the seat indexes the host plays, `winner` the index of the last winner.
+  function overRoom(code, n, { bots = [], winner = 1 } = {}) {
+    const g = createExpandedGame({ humans: ["Ember", "Tide", "Dune", "Pine", "Moss", "Flint"].slice(0, n).map((name) => ({ name })), bots: 0, seed: 77 + n, wayfarerMode: "on" });
+    Object.assign(g, { rollOff: null, phase: "over", current: g.players[0].id, primary: g.players[0].id, role: "primary", activation: 9, winner: g.players[winner].id, turn: 9 });
+    g.players.forEach((p, i) => (p.kind = bots.includes(i) ? "bot" : "human"));
+    const seats = g.players.map((p, i) => ({ id: `s${i}`, name: p.name, color: p.color, ready: true, pid: p.id, secret: `${code}-${i}`, ...(bots.includes(i) ? { bot: true } : {}), turnDeadline: null, turnStartedAt: null }));
+    writeFileSync(path.join(C, `${code}.json`), JSON.stringify({ code, visibility: "private", host: "s0", next: n, botDeclined: {}, recoveryPids: [], chat: [], chatSeq: 0, game: g, victoryTarget: 10, wayfarerMode: "on", variant: "expanded", seats, roster: null, outcome: null, assisted: [], shape: 3, savedAt: Date.now() }));
+    return g;
+  }
+  const G6 = overRoom("AGN6", 6, { bots: [2, 3, 4, 5] });
+  const G4 = overRoom("AGNB", 5, { bots: [2, 3] });
+  const GC = overRoom("AGNC", 5, { bots: [2, 3] });
+  const G2 = overRoom("AGN2", 5, { winner: 0 });
+  const hc = await boot(C);
+  const back = (code, i) => client(hc.port, { code, secret: `${code}-${i}`, ...CAPS });
+  // Seat id -> [number, colour] in a game, through the seat list's player ids.
+  const marks = (c) => Object.fromEntries(c.seats.seats.map((s) => { const p = c.state.game.players.find((x) => x.id === s.player); return [s.id, [p.seat, p.color]]; }));
+  const before = (g) => Object.fromEntries(g.players.map((p, i) => [`s${i}`, [p.seat, p.color]]));
+  const newGame = (c, seq) => c.until(() => c.state && c.state.game.phase !== "over" && c.state.actionStamp?.connection !== seq, "the new game", 8000);
+
+  // Six live (two people, four bots): expanded again, every seat its number and colour, the winner first.
+  {
+    const a = await back("AGN6", 0);
+    const b = await back("AGN6", 1);
+    await a.until(() => a.state?.game.phase === "over", "the finished game");
+    const conn = a.state.actionStamp.connection;
+    a.send({ type: "again" });
+    await newGame(a, conn);
+    const g = a.state.game;
+    eq([g.variant?.kind, g.players.length, g.hexes.length], ["expanded", 6, 30], "rematch six: the expanded island again, six seats");
+    eq(marks(a), before(G6), "rematch six: every seat keeps its number and colour");
+    eq(g.players[0].name, G6.players[1].name, "rematch six: the last winner places first");
+    ok(!a.seats.choose, "rematch six: no choice is asked");
+    eq(roomFile(C, "AGN6").variant, "expanded", "rematch six: the room stays expanded on disk");
+    a.ws.terminate();
+    b.ws.terminate();
+    summary.push("rematch six live: expanded again, every seat keeps number and colour, winner first, no choice asked");
+  }
+
+  // Four live of five: the host chooses; every seat and a watcher see it; dismiss and a guest change nothing.
+  {
+    const a = await back("AGNB", 0);
+    const b = await back("AGNB", 1);
+    const w = await client(hc.port, { code: "AGNB", watch: true, ...CAPS });
+    await a.until(() => a.state?.game.phase === "over", "the finished game");
+    // Seat 5 (s4) never came back, so it is held and away: four live, two people and two bots.
+    a.send({ type: "again" });
+    await a.until(() => a.seats.choose, "the choice");
+    eq(a.seats.choose, ["bots", "classic"], "rematch four: the host is offered the bot fill and the classic map");
+    await b.until(() => b.seats.choose, "the choice on a guest");
+    await w.until(() => w.seats?.choose, "the choice on a watcher");
+    ok(b.seats.choose && w.seats.choose, "rematch four: a guest and a watcher see that the host is choosing");
+    eq([a.state.game.phase, roomFile(C, "AGNB").game.phase], ["over", "over"], "rematch four: nothing changes until the host picks");
+    eq(await refusal(b, { type: "again", choice: "bots" }), "Only the host can start.", "rematch four: a guest cannot pick");
+    a.send({ type: "again", choice: "dismiss" });
+    await b.until(() => !b.seats.choose, "the choice closed");
+    eq([b.state.game.phase, b.seats.seats.length], ["over", 5], "rematch four: dismiss leaves the finished game and its seats");
+    a.send({ type: "again" });
+    await a.until(() => a.seats.choose, "the choice again");
+    const conn = a.state.actionStamp.connection;
+    a.send({ type: "again", choice: "bots" });
+    await newGame(a, conn);
+    const g = a.state.game;
+    eq([g.variant?.kind, g.players.length], ["expanded", 5], "bot fill: an expanded game for five, never six");
+    const m = marks(a);
+    for (const id of ["s0", "s1", "s2", "s3"]) eq(m[id], before(G4)[id], `bot fill: ${id} keeps its number and colour`);
+    const added = a.seats.seats.filter((s) => !["s0", "s1", "s2", "s3"].includes(s.id));
+    eq(added.map((s) => [s.bot, m[s.id][0]]), [[true, 5]], "bot fill: one bot, with the lowest free number (5)");
+    ok(!added.some((s) => [G4.players[0].color, G4.players[1].color, G4.players[2].color, G4.players[3].color].includes(s.color)) && EXPANDED_COLORS.includes(added[0].color), "bot fill: the bot takes a free six-colour swatch");
+    ok(!a.seats.seats.some((s) => s.id === "s4"), "bot fill: the absent seat is let go");
+    ok(!a.seats.choose && !w.seats.choose, "bot fill: the choice is gone everywhere");
+    await w.until(() => w.state.game.phase !== "over", "the watcher's new game");
+    eq(roomFile(C, "AGNB").variant, "expanded", "bot fill: the room stays expanded on disk");
+    for (const c of [a, b, w]) c.ws.terminate();
+    summary.push("rematch four live: host offered bots/classic, guest and watcher see it, guest cannot pick, dismiss changes nothing; bots fill to five with the lowest free number, numbers and colours kept");
+  }
+
+  // The classic pick: classic island, classic colours (kept where the palette has them), numbers kept, room classic.
+  {
+    const a = await back("AGNC", 0);
+    const b = await back("AGNC", 1);
+    await a.until(() => a.state?.game.phase === "over", "the finished game");
+    a.send({ type: "again" });
+    await a.until(() => a.seats.choose, "the choice");
+    const conn = a.state.actionStamp.connection;
+    a.send({ type: "again", choice: "classic" });
+    await newGame(a, conn);
+    const g = a.state.game;
+    eq([g.variant, g.players.length, g.hexes.length], [undefined, 4, 19], "classic pick: a four-seat classic game");
+    const m = marks(a);
+    const was = before(GC);
+    for (const id of ["s0", "s1", "s2", "s3"]) eq(m[id][0], was[id][0], `classic pick: ${id} keeps seat number ${was[id][0]}`);
+    for (const id of ["s0", "s1", "s2", "s3"]) if (PLAYER_COLORS.includes(was[id][1])) eq(m[id][1], was[id][1], `classic pick: ${id} keeps its colour, which the classic palette has`);
+    const colors = Object.values(m).map((x) => x[1]);
+    ok(colors.every((c) => PLAYER_COLORS.includes(c)) && new Set(colors).size === 4, `classic pick: four unique classic colours (${colors.join(" ")})`);
+    eq(m.s3[1], PLAYER_COLORS[3], "classic pick: the orange seat takes the first free classic slot");
+    eq(a.seats.seats.find((s) => s.id === "s3").color, PLAYER_COLORS[3], "classic pick: the seat's colour follows");
+    ok(!("variant" in a.seats), "classic pick: the seat list no longer says expanded");
+    await sleep(100);
+    ok(!("variant" in roomFile(C, "AGNC")), "classic pick: the room is classic on disk, for later rematches");
+    a.ws.terminate();
+    b.ws.terminate();
+    summary.push("rematch classic pick: 4-seat classic game, classic colours (red/blue/white kept, orange to purple), seat numbers kept, room classic on wire and disk");
+  }
+
+  // Under three live: only the bot fill is offered; a classic pick asks again.
+  {
+    const a = await back("AGN2", 0);
+    const b = await back("AGN2", 1);
+    await a.until(() => a.state?.game.phase === "over", "the finished game");
+    a.send({ type: "again" });
+    await a.until(() => a.seats.choose, "the choice");
+    eq(a.seats.choose, ["bots"], "under three: only the bot fill is offered");
+    a.send({ type: "again", choice: "classic" });
+    await sleep(200);
+    eq([a.state.game.phase, a.seats.choose], ["over", ["bots"]], "under three: a classic pick changes nothing and asks again");
+    const conn = a.state.actionStamp.connection;
+    a.send({ type: "again", choice: "bots" });
+    await newGame(a, conn);
+    const m = marks(a);
+    const bots = a.seats.seats.filter((s) => s.bot);
+    eq([a.state.game.players.length, bots.map((s) => m[s.id][0])], [5, [3, 4, 5]], "under three: three bots fill to five with the lowest free numbers");
+    eq([m.s0, m.s1], [before(G2).s0, before(G2).s1], "under three: the two people keep their numbers and colours");
+    a.ws.terminate();
+    b.ws.terminate();
+    summary.push("rematch two live: only the bot fill offered, a classic pick re-asks, three bots fill to five with numbers 3-5");
+  }
+  await kill9(hc);
 }
 
 for (const line of summary) console.log(line);
