@@ -102,7 +102,7 @@ function Panel() {
         army: state.largestArmy === p.id,
         hiddenVp: p.hidden.vp,
         total: totalVP(state, p.id),
-        award: story(<Award id={p.id} line={!phone} />),
+        award: story(<Award id={p.id} />),
         tag: tagOf(seatOf(p.id)),
         note: !result?.tracked
           ? undefined

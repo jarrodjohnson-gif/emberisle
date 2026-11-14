@@ -3,16 +3,12 @@
 import { chance, diceLine, islandAwards } from "@/lib/game/story";
 import { useGame } from "@/lib/game/store";
 
-// One player's title. In the touch list's opened row it is a chip (styles.css draws its award icon) with the fact beside it; under a name in the desktop
-// table (`line`) it is one muted line. A winner with no title left gets nothing.
-export function Award({ id, line }: { id: string; line?: boolean }) {
+// One player's title, at the top of the results list's opened row: a chip (styles.css draws its award icon) with the fact beside
+// it. A winner with no title left gets nothing.
+export function Award({ id }: { id: string }) {
   const a = islandAwards(useGame((s) => s.state)!)[id];
   if (!a) return null;
-  return line ? (
-    <span data-testid="win-award" className="win-award-line">
-      {a.title} · {a.fact}
-    </span>
-  ) : (
+  return (
     <p data-testid="win-award" className="win-award">
       <span className="win-award-chip">{a.title}</span>
       {a.fact}

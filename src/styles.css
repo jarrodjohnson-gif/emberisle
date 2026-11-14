@@ -397,8 +397,6 @@ body:has([data-testid='banner'], [data-testid='first-game-coach']) aside:has(> d
   background: color-mix(in srgb, var(--color-sea) 12%, var(--color-surface)); color: var(--color-sea-ink); font-weight: 600; white-space: nowrap; }
 .win-award-chip::before { content: ""; width: 14px; height: 14px; flex: none; background: currentColor;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='6'/%3E%3Cpath d='M15.48 12.89 17 22l-5-3-5 3 1.52-9.11'/%3E%3C/svg%3E") center / contain no-repeat; }
-/* #1452: the award under a name in the desktop table, like the profile line (#767). */
-.win-award-line { display: block; padding-left: 18px; font-size: 12px; line-height: 16px; font-weight: 400; white-space: normal; color: var(--color-muted); }
 /* #1453: the dice strip under the results list, inside its scrolling area. Pale bars; only an unusual sum is sea ink. */
 .win-dice { margin: 6px 0 2px; padding: 10px 8px 4px; border-top: 1px solid var(--color-border); text-align: left; }
 .win-dice figcaption { display: flex; justify-content: space-between; font-size: 12px; line-height: 16px; color: var(--color-muted); }
@@ -419,8 +417,6 @@ td > .win-tag { display: flex; width: fit-content; margin: 2px 0 0 18px; }
 @media (max-height: 480px) {
   .win-total-hero { font-size: 26px; line-height: 28px; }
   .win-equation { margin-top: 2px; font-size: 11px; gap: 2px 6px; }
-  /* #1452: a short mouse screen keeps the desktop table without scrolling (win-action-prove), so it shows no award line. */
-  .win-award-line { display: none; }
 }
 
 @media (max-width: 767px), (pointer: coarse) {
