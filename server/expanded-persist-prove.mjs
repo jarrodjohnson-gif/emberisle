@@ -484,10 +484,11 @@ try {
       const now = roomFile(A, code);
       eq(gameText(now), gameText(f.saved), `${f.name}: the game is byte for byte the saved one`);
       eq({ ...restOf(now), roster: undefined }, { ...restOf(f.saved), roster: undefined }, `${f.name}: room fields restored`);
-      // The shape-2 host keeps a roster only while its rows follow game.players (loadRoster), so one frozen before the roll-off
-      // reordered the players is dropped on any restart; the parent commit's host does the same with these fixtures.
-      const kept = f.saved.roster?.players.every((p, i) => p.pid === f.saved.game.players[i].id);
-      eq(now.roster, kept ? f.saved.roster : null, `${f.name}: roster treated as the shape-2 host treats it`);
+      // The roster is frozen before the roll-off reorders game.players, so its rows match the players by id (#1650): the
+      // shape-2 file's roster comes back as it was saved, though its order is not the game's.
+      ok(Array.isArray(f.saved.roster?.players), `${f.name}: the fixture holds a roster`);
+      ok(f.saved.roster.players.some((p, i) => p.pid !== f.saved.game.players[i].id), `${f.name}: the roll-off reordered the players after the roster was frozen`);
+      eq(now.roster, f.saved.roster, `${f.name}: roster restored as saved`);
       eq(now.seats.map(seatCore), f.saved.seats.map(seatCore), `${f.name}: seats, colours and secrets restored`);
       ok(after.shape === 3, `${f.name}: saved again as shape 3`);
       for (const c of back) {
