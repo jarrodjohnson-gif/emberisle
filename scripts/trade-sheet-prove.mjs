@@ -68,7 +68,7 @@ const count = (page, side, r) => token(page, side, r).locator("output").textCont
 
 async function load(page, mode = "ai", game = base) {
   await page.evaluate(() => window.__emberisle.getState().goTitle());
-  await page.getByRole("button", { name: "Play", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Play with bots", exact: true }).waitFor();
   await page.evaluate(async ([game, mode]) => {
     const api = window.__emberisle;
     api.getState().startAi();

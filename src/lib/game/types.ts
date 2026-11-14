@@ -95,6 +95,10 @@ export interface PlayerState {
   pathsLeft: number;
   outpostsLeft: number;
   strongholdsLeft: number;
+  // #1608: the seat's number, 1 to 6, on five and six seat tables only (docs/design/six-players.md, "Colours and non-colour
+  // identification"). It never changes in a game. A five or six seat rematch must copy it to the new player (owed to piece 8). Classic games leave it out, so a
+  // classic seat shows no number.
+  seat?: number;
 }
 
 // #1452: goods gathered from rolls per good, goods thrown away on 7s, goods stolen with the wayfarer, accepted table trades
@@ -117,6 +121,18 @@ export interface TradeOffer {
 export type WayfarerMode = "on" | "off";
 export type VictoryTarget = 7 | 10;
 export type WinTrigger = "outpost" | "stronghold" | "longestPath" | "largestArmy" | "pointFortune" | "turnStart" | "points";
+
+// The five and six seat island (#1604, src/lib/game/expanded.ts). Versioned so a later format can be told apart.
+export interface ExpandedVariant {
+  kind: "expanded";
+  version: 1;
+  // The official letter spiral's starting corner hex and direction; absent for the random token layout.
+  spiral?: { start: string; direction: 1 | -1 };
+  // Both wastes, which the token spiral skips. The wayfarer starts on the first when it is enabled.
+  wastes: string[];
+  // The turn rule, fixed before setup (#1605): the official paired turns. Versioned so a later rule can be told apart.
+  turns: { rule: "paired"; version: 1 };
+}
 
 export interface GameState {
   // Legacy saves use classic On. Fixed when the table is created.
@@ -160,6 +176,14 @@ export interface GameState {
   rollSums?: number[];
   lastProduction?: { hex: string; player: string; res: Resource; n: number; vertex?: string }[];
   hostId: string;
+  // Absent means the classic island, as in every game saved before #1604; never inferred from the seat count.
+  variant?: ExpandedVariant;
+  // Paired turns only (#1605, src/lib/game/expanded.ts); classic games never have them. Set when setup ends. `current`
+  // is still the seat that may act now; `primary` is the seat whose dice this paired turn is, and `role` says whether
+  // `current` is that primary or its partner. `activation` counts actor activations from 1, the first primary's.
+  primary?: string;
+  role?: "primary" | "partner";
+  activation?: number;
 }
 
 export type Action =

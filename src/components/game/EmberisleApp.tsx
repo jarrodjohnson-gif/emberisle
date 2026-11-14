@@ -1,12 +1,12 @@
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { OpenModeToggle, HowTo, island, LoadingScreen, Lobby, online, OpenTables, ProfileSheet, profileSheet, SetupPipHints, sheets, WayfarerOptions } from "@/components/game/chunks";
+import { OpenModeToggle, HowTo, island, LoadingScreen, Lobby, online, OpenTables, ProfileSheet, profileSheet, SeatChoice, SetupPipHints, sheets, WayfarerOptions } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
 import { SeatDot } from "@/components/game/SeatDot";
-import { useGame } from "@/lib/game/store";
+import { dropDeal, useGame } from "@/lib/game/store";
 import { JOIN_CODE, LazyBoundary, preloadOnIdle, reloadOnStaleChunk } from "@/lib/lazy";
 import { play, setMusicWanted, setMuted, useMuted } from "@/lib/sound";
 import { useTurnTitle } from "@/lib/turn-title";
@@ -37,9 +37,9 @@ export function EmberisleApp() {
   const offerOpen = useGame((s) => s.offer !== null);
   // #1281: a page load that opens at the title opens on the loading screen ("load"), and the title card rises in at the end
   // of the push ("arrive"). A reload into a held seat skips it, and so does a page that sets `__emberisleSkipIntro` before it
-  // loads (the proofs, through scripts/proof-browser.mjs).
+  // loads (the proofs, through scripts/proof-browser.mjs). `true` also opens the title on its Play page; "front" does not.
   const [intro, setIntro] = useState(() =>
-    screen === "title" && !restoring && !(window as { __emberisleSkipIntro?: boolean }).__emberisleSkipIntro ? "load" : "",
+    screen === "title" && !restoring && !(window as { __emberisleSkipIntro?: unknown }).__emberisleSkipIntro ? "load" : "",
   );
   const [tries, setTries] = useState(0);
   useTurnTitle();
@@ -115,6 +115,9 @@ function Restoring() {
 }
 
 const PEEK_CODE = JOIN_CODE;
+// The loading screen's Start lands on the Play page (owner, 2026-11-12). The front page shows on a load that skips the loading
+// screen, and after Back. A return from a table opens on the Play page.
+let pastFront = false;
 // A join link is read on the first Title of a page load only: later visits to the title (goTitle) start empty.
 let linkRead = false;
 function stripLink() {
@@ -183,6 +186,16 @@ function Title({ arrive }: { arrive: boolean }) {
   // #1449: Join or Watch with fewer than four characters says why nothing was sent, until the field changes.
   const [shortCode, setShortCode] = useState(false);
   const [openMode, setOpenMode] = useState(false);
+  // docs/design/first-minute: the front page is the wordmark and Play. Play opens the choices in the same tray.
+  const [open, setOpen] = useState(() => (pastFront ||= arrive) || (window as { __emberisleSkipIntro?: unknown }).__emberisleSkipIntro === true);
+  // Play and Back each remove the button that was pressed, so focus follows the page: Back on the Play page, Play on the front.
+  const backButton = useRef<HTMLButtonElement>(null);
+  const frontPlay = useRef<HTMLButtonElement>(null);
+  const turned = useRef(false);
+  useEffect(() => {
+    if (turned.current) (open ? backButton : frontPlay).current?.focus();
+    turned.current = true;
+  }, [open]);
   // #766: the Profile sheet is open while this holds the button that opened it, where focus returns on close.
   const [profileOpener, setProfileOpener] = useState<HTMLElement | null>(null);
   const watchTable = useGame.getState().watchTable;
@@ -224,212 +237,216 @@ function Title({ arrive }: { arrive: boolean }) {
     if (!PEEK_CODE.test(fill)) return stripLink();
     setJoin(fill);
     void online.prefetch().then((ok) => ok && stripLink());
-    if (code === undefined) setWatchLink(true);
-    else setLinkedCode(fill);
+    if (code === undefined) {
+      setWatchLink(true);
+      setOpen(true);
+    } else setLinkedCode(fill);
   }, []);
 
   // #488: How to play is a lazy chunk; idle time on the title fetches it, and so does a pointer or focus on its button.
   useEffect(() => preloadOnIdle(sheets.prefetch), []);
 
-  // One primary per screen (docs/design/polish.md): Play, or Watch on a watch link. Watch only shows once there is a code.
-  // A join link's one primary is Join table, on its own card.
+  // One primary per screen (docs/design/polish.md). Front: Play. Play page: Play with bots, or Watch on a watch link.
+  // A join link's one primary is Join table. Watch only shows once there is a code.
   const showWatch = watchLink || (!linkedCode && join.length === 4);
+  const wide = landscape && open && !linkedCode;
+  const alert = shortCode || error ? (
+    <p role="alert" className="text-sm text-accent-ink">
+      {shortCode ? "Enter the 4-letter code." : error}
+    </p>
+  ) : null;
+  const tools = (
+    <div className="flex items-center justify-center">
+      <Button variant="ghost" className="px-3" onPointerEnter={sheets.prefetch} onFocus={sheets.prefetch} onClick={(e) => setHowTo(!howTo, e.currentTarget)}>
+        How to play
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        data-testid="sound-toggle"
+        aria-label={muted ? "Table sounds off" : "Table sounds on"}
+        aria-pressed={!muted}
+        title={muted ? "Table sounds off" : "Table sounds on"}
+        silent
+        onClick={() => {
+          setMuted(!muted);
+          if (muted) play("ui_click");
+        }}
+      >
+        {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+      </Button>
+    </div>
+  );
 
   return (
     <>
-      {/* On a phone the card itself scrolls: a portrait sheet, or in landscape (#421) a wide two-column card capped at the
-          viewport (name left, buttons right). `phone` is a coarse pointer or under 768 px wide, so a tablet held sideways
-          gets the two-column card too, on purpose: it keeps the island's centre clear. The desktop card is capped as well so
-          a short window (1280x500) never pushes the wordmark above the top edge. */}
+      {/* One tray, like the table's (docs/design/first-minute). It scrolls inside itself if a short window cuts it.
+          Upright phone: across the bottom. Sideways phone (`phone` is a coarse pointer or under 768 px wide): bottom left,
+          and the Play page is two columns. Desktop: bottom centre. */}
       <div
         data-testid="title-card"
+        data-page={linkedCode ? undefined : open ? "play" : "front"}
         data-join-link={linkedCode || undefined}
         className={cn(
-          "title-cover absolute z-10",
+          "title-cover absolute z-10 max-h-[calc(100dvh_-_max(0.75rem,env(safe-area-inset-top))_-_max(0.75rem,env(safe-area-inset-bottom)))] overflow-y-auto",
           arrive && "title-arrive",
-          phone && "overflow-y-auto rounded-[20px] border border-white/50 bg-surface p-5 backdrop-blur-md",
+          wide && "grid grid-cols-2 grid-rows-[auto_1fr] items-start gap-x-6",
           sheet
-            ? `inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] ${linkedCode ? "max-h-[calc(100dvh-max(0.75rem,env(safe-area-inset-top))-max(0.75rem,env(safe-area-inset-bottom)))]" : "max-h-[55vh]"}`
+            ? "inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))]"
             : phone
-              ? "bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] w-[min(44rem,calc(100%-1.5rem))] max-h-[calc(100dvh_-_max(0.75rem,env(safe-area-inset-top))_-_max(0.75rem,env(safe-area-inset-bottom)))]"
-              : "bottom-5 left-5 max-h-[calc(100dvh-2.5rem)] w-full max-w-sm overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:bottom-10 sm:left-10 sm:max-h-[calc(100dvh-5rem)]",
+              ? `bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] ${wide ? "w-[min(44rem,calc(100%-1.5rem))]" : "w-80"}`
+              : "bottom-3 left-1/2 w-96 -translate-x-1/2",
         )}
       >
-        <div
-          className={cn(
-            !phone && "rounded-sheet bg-surface p-5 sm:p-6",
-            landscape && "grid grid-cols-2 items-center gap-x-6",
-          )}
-        >
-          <div>
+        {linkedCode ? (
+          <>
             <h1 className="title-wordmark font-display">Emberisle</h1>
-            {linkedCode ? (
-              <input
-                value={joinName}
-                onChange={(e) => setJoinName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key !== "Enter") return;
-                  e.preventDefault();
-                  joinLinked();
-                }}
-                placeholder="Your name"
-                aria-label="Your name"
-                autoComplete="off"
-                data-testid="join-name"
-                className="mt-5 h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg"
-              />
-            ) : null}
-            {linkedCode ? <SeatColors taken={taken} color={color} /> : (
-            <details className="seat-settings">
-              <summary aria-label="Your seat">
-                <SeatDot color={color ?? PLAYER_COLORS[0]!} className="size-4" />
-                <span>{name || "Your seat"}</span>
-              </summary>
             <input
-              value={name}
-              onChange={(e) => useGame.getState().setName(e.target.value)}
-              onBlur={useGame.getState().commitName}
+              value={joinName}
+              onChange={(e) => setJoinName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                joinLinked();
+              }}
               placeholder="Your name"
               aria-label="Your name"
-              className="mt-5 h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg"
+              autoComplete="off"
+              data-testid="join-name"
+              className="mt-3 h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg"
             />
             <SeatColors taken={taken} color={color} />
-            {/* #766: inside the seat settings, so the closed title card keeps its height (title-prove at 1280x500). */}
-            <Button variant="ghost" className="mt-2 px-3" onPointerEnter={profileSheet.prefetch} onFocus={profileSheet.prefetch} onClick={(e) => setProfileOpener(e.currentTarget)}>
-              Profile
+            <Button size="lg" variant="primary" className="mt-3 w-full" data-testid="join-table" onPointerEnter={online.prefetch} onFocus={online.prefetch} onClick={joinLinked}>
+              {`Join table ${linkedCode}`}
             </Button>
-            </details>
-            )}
-            {linkedCode ? null : <details data-testid="wayfarer-setup" className="group border-t border-border">
-              <summary className="flex min-h-11 cursor-pointer flex-col justify-center text-xs text-muted">
-                <span className="flex w-full items-center justify-between text-sm font-medium text-fg">Wayfarer<svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg></span>
-                <span className="capitalize">Practice: {rules.ai} · Online: {rules.online} · Hotseat: {rules.hotseat}</span>
-              </summary>
-              <LazyBoundary failed={null}>
-                <WayfarerOptions rules={rules} choose={useGame.getState().setWayfarerChoice} />
-              </LazyBoundary>
-            </details>}
-          </div>
-          <div className="mt-2 flex flex-col gap-1">
-            {linkedCode ? (
-              <>
-                <Button size="lg" variant="primary" className="w-full" data-testid="join-table" onPointerEnter={online.prefetch} onFocus={online.prefetch} onClick={joinLinked}>
-                  {`Join table ${linkedCode}`}
-                </Button>
-                <div className="flex justify-center">
-                  <Button type="button" variant="ghost" data-testid="join-host" className="underline decoration-fg/40 underline-offset-4" onPointerEnter={online.prefetch} onFocus={online.prefetch} onClick={() => { applyJoinName(); useGame.getState().hostTable(); }}>
+            <div className="flex justify-center">
+              <Button type="button" variant="ghost" data-testid="join-host" className="underline decoration-fg/40 underline-offset-4" onPointerEnter={online.prefetch} onFocus={online.prefetch} onClick={() => { applyJoinName(); useGame.getState().hostTable(); }}>
+                Host a table
+              </Button>
+            </div>
+            {error ? <p role="alert" className="text-sm text-accent-ink">{error}</p> : null}
+          </>
+        ) : !open ? (
+          <>
+            <h1 className="title-wordmark text-center font-display">Emberisle</h1>
+            {alert}
+            <Button ref={frontPlay} size="lg" variant="primary" className="mt-3 w-full" data-testid="front-play" onClick={() => setOpen((pastFront = true))}>
+              Play
+            </Button>
+            {tools}
+          </>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <Button ref={backButton} variant="ghost" back className="-ml-2 px-3" onClick={() => (dropDeal(), setOpen((pastFront = false)))}>
+                Back
+              </Button>
+              {tools}
+            </div>
+            <div className={cn("flex flex-col gap-2", wide && "col-start-2 row-span-2 row-start-1")}>
+              <Button size="lg" variant={watchLink ? "secondary" : "primary"} className="w-full" onClick={useGame.getState().startAi}>
+                Play with bots
+              </Button>
+              <Button size="lg" variant="secondary" className="w-full" title="Pass one device around" onClick={() => useGame.getState().startHotseat(useGame.getState().seatCount ?? 4)}>
+                Pass and play
+              </Button>
+              {/* #488: a pointer or focus on Host or Join fetches the online chunk (lobby and chat) before either is pressed. */}
+              <div className="flex flex-wrap gap-x-2" onPointerEnter={online.prefetch} onFocus={online.prefetch}>
+                <div className="relative flex min-w-max flex-1 overflow-hidden rounded-control border border-control-line">
+                  <Button size="lg" variant="secondary" className="mr-11 flex-1 whitespace-nowrap rounded-none border-0 px-2"
+                    onClick={() => useGame.getState().hostTable(openMode ? "open" : undefined)}>
                     Host a table
                   </Button>
+                  <LazyBoundary failed={null}>
+                    <OpenModeToggle openMode={openMode} setOpenMode={setOpenMode} />
+                  </LazyBoundary>
                 </div>
-                {error ? <p role="alert" className="text-sm text-accent-ink">{error}</p> : null}
-              </>
-            ) : (
-            <>
-            <div className="flex flex-col items-center gap-1">
-              <Button size="lg" variant={watchLink ? "secondary" : "primary"} className="w-full" onClick={useGame.getState().startAi}>
-                Play
-              </Button>
-              {/* #411: the offline button says what it is in one tiny muted line. */}
-              <p className="text-xs text-muted">3 bots, no network</p>
-            </div>
-            {/* #488: a pointer or focus on Host or Join fetches the online chunk (lobby and chat) before either is pressed. */}
-            <div className="flex flex-wrap gap-x-2" onPointerEnter={online.prefetch} onFocus={online.prefetch}>
-              <div className="relative flex min-w-max flex-1 overflow-hidden rounded-control border border-control-line">
-                <Button size="lg" variant="secondary" className="mr-11 flex-1 whitespace-nowrap rounded-none border-0 px-2"
-                  onClick={() => useGame.getState().hostTable(openMode ? "open" : undefined)}>
-                  Host a table
-                </Button>
-                <LazyBoundary failed={null}>
-                  <OpenModeToggle openMode={openMode} setOpenMode={setOpenMode} />
-                </LazyBoundary>
-              </div>
-              <form
-                aria-label="Join code"
-                className="flex flex-1 gap-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (join.length !== 4) return setShortCode(true);
-                  // Enter does what the primary button does.
-                  if (watchLink) watchTable(join);
-                  else useGame.getState().joinTable(join);
-                }}
-              >
-                <input
-                  value={join}
-                  onChange={(e) => {
-                    setJoin(e.target.value.toUpperCase());
-                    setShortCode(false);
-                  }}
-                  placeholder="Code"
+                <form
                   aria-label="Join code"
-                  aria-describedby="code-help"
-                  autoCapitalize="characters"
-                  autoComplete="off"
-                  maxLength={4}
-                  className="h-12 w-0 min-w-[4.5rem] flex-1 rounded-[12px] border border-border bg-surface px-3 tracking-[0.3em]"
-                />
-                <Button size="lg" variant="secondary" type="submit" className="px-2">
-                  Join
+                  className="flex flex-1 gap-2"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (join.length !== 4) return setShortCode(true);
+                    // Enter does what the primary button does.
+                    if (watchLink) watchTable(join);
+                    else useGame.getState().joinTable(join);
+                  }}
+                >
+                  <input
+                    value={join}
+                    onChange={(e) => {
+                      setJoin(e.target.value.toUpperCase());
+                      setShortCode(false);
+                    }}
+                    placeholder="Code"
+                    aria-label="Join code"
+                    aria-describedby="code-help"
+                    autoCapitalize="characters"
+                    autoComplete="off"
+                    maxLength={4}
+                    className="h-12 w-0 min-w-[4.5rem] flex-1 rounded-[12px] border border-border bg-surface px-3 tracking-[0.3em]"
+                  />
+                  <Button size="lg" variant="secondary" type="submit" className="px-2">
+                    Join
+                  </Button>
+                </form>
+                <p id="code-help" className="w-full text-xs text-muted">Code for private tables</p>
+              </div>
+              {showWatch ? (
+                <Button
+                  size="lg"
+                  variant={watchLink ? "primary" : "secondary"}
+                  type="button"
+                  onPointerEnter={online.prefetch}
+                  onFocus={online.prefetch}
+                  onClick={() => {
+                    if (join.length === 4) watchTable(join);
+                    else setShortCode(true);
+                  }}
+                >
+                  Watch
                 </Button>
-              </form>
-              <p id="code-help" className="w-full text-xs text-muted">Code for private tables</p>
-            </div>
-            {showWatch ? (
-              <Button
-                size="lg"
-                variant={watchLink ? "primary" : "secondary"}
-                type="button"
-                onPointerEnter={online.prefetch}
-                onFocus={online.prefetch}
-                onClick={() => {
-                  if (join.length === 4) watchTable(join);
-                  else setShortCode(true);
-                }}
-              >
-                Watch
-              </Button>
-            ) : null}
-            {/* Always mounted, so the text arriving is what a screen reader hears when the Watch button appears. */}
-            <p className="sr-only" aria-live="polite" data-testid="watch-announce">
-              {showWatch ? "Watch available" : ""}
-            </p>
-            {shortCode || error ? (
-              <p role="alert" className="text-sm text-accent-ink">
-                {shortCode ? "Enter the 4-letter code." : error}
+              ) : null}
+              {/* Always mounted, so the text arriving is what a screen reader hears when the Watch button appears. */}
+              <p className="sr-only" aria-live="polite" data-testid="watch-announce">
+                {showWatch ? "Watch available" : ""}
               </p>
-            ) : null}
-            <LazyBoundary failed={null}>
-              <OpenTables />
-            </LazyBoundary>
-            </>
-            )}
-            {/* #1418: the quiet row may use the card's side padding (its buttons have no fill), so at 15 px / 600 the sound
-                button keeps its place beside How to play and a short window (1280x500) gains no line. */}
-            <div className="-mx-5 flex flex-wrap items-center justify-center">
-              {linkedCode ? null : <Button variant="ghost" className="px-3" title="Pass one device around" onClick={() => useGame.getState().startHotseat(4)}>
-                Four seats, one table
-              </Button>}
-              <Button variant="ghost" className="px-3" onPointerEnter={sheets.prefetch} onFocus={sheets.prefetch} onClick={(e) => setHowTo(!howTo, e.currentTarget)}>
-                How to play
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                data-testid="sound-toggle"
-                aria-label={muted ? "Table sounds off" : "Table sounds on"}
-                aria-pressed={!muted}
-                title={muted ? "Table sounds off" : "Table sounds on"}
-                silent
-                onClick={() => {
-                  setMuted(!muted);
-                  if (muted) play("ui_click");
-                }}
-              >
-                {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
-              </Button>
+              {alert}
+              <LazyBoundary failed={null}>
+                <OpenTables />
+              </LazyBoundary>
             </div>
-          </div>
-        </div>
+            <div>
+              <details className="seat-settings">
+                <summary aria-label="Your seat">
+                  <SeatDot color={color ?? PLAYER_COLORS[0]!} className="size-4" />
+                  <span>{name || "Your seat"}</span>
+                </summary>
+                <input
+                  value={name}
+                  onChange={(e) => useGame.getState().setName(e.target.value)}
+                  onBlur={useGame.getState().commitName}
+                  placeholder="Your name"
+                  aria-label="Your name"
+                  className="mt-1 h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg"
+                />
+                <SeatColors taken={taken} color={color} />
+                <Button variant="ghost" className="mt-2 px-3" onPointerEnter={profileSheet.prefetch} onFocus={profileSheet.prefetch} onClick={(e) => setProfileOpener(e.currentTarget)}>
+                  Profile
+                </Button>
+              </details>
+              <details data-testid="wayfarer-setup" className="group border-t border-border">
+                <summary className="flex min-h-11 cursor-pointer items-center justify-between text-sm font-semibold">
+                  Game options<svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg>
+                </summary>
+                <LazyBoundary failed={null}>
+                  <SeatChoice />
+                  <WayfarerOptions rules={rules} choose={useGame.getState().setWayfarerChoice} />
+                </LazyBoundary>
+              </details>
+            </div>
+          </>
+        )}
       </div>
       {/* Beside the card, not inside it: the card is absolute (and scrolls on a phone), so a dialog inside it is
           clipped to the card's box and its Close can sit off-screen. */}

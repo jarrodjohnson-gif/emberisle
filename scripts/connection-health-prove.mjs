@@ -107,8 +107,12 @@ if (process.argv.includes("--host-fixture")) {
     });
     await page.goto(`http://127.0.0.1:8113/?host=ws://127.0.0.1:${port}`);
     await page.waitForFunction(() => window.__emberisle);
-    await page.clock.install();
-    await page.clock.pauseAt(new Date());
+    // Hold Date during setup so pauseAt cannot receive an already-past target (#1493).
+    // Then restore Date advancement while timers stay paused; retain a normal monotonic origin.
+    const clockStart = new Date();
+    await page.clock.setFixedTime(clockStart);
+    await page.clock.pauseAt(clockStart);
+    await page.clock.setSystemTime(clockStart);
     // Exercise the transport without the store: a duplicate welcome cannot cancel a pending challenge's timeout.
     await page.evaluate(async () => {
       const { connectTable } = await import("/src/lib/net/table.ts");
@@ -449,7 +453,7 @@ if (process.argv.includes("--host-fixture")) {
     try {
       await cancelled.p.getByRole("button", { name: "Host a table", exact: true }).click();
       await until(() => cancelled.requests.length > 0, "held table-client request");
-      await cancelled.p.getByRole("button", { name: "Play", exact: true }).click();
+      await cancelled.p.getByRole("button", { name: "Play with bots", exact: true }).click();
       await cancelled.release(); await cancelled.settled();
       assert.deepEqual(await cancelled.p.evaluate(() => { const s = window.__emberisle.getState(); return [s.screen, s.mode, s.net]; }), ["play", "ai", null], "late client load cannot pull practice back online");
       assert.deepEqual(cancelled.intents, [], "cancelled Host sends no hello after module arrival");
@@ -492,7 +496,7 @@ if (process.argv.includes("--host-fixture")) {
       await until(() => quiet.p.evaluate(() => !window.__emberisle.getState().restoring), "original 3s fallback includes module fetch");
       assert.deepEqual(await quiet.p.evaluate(() => window.__coldDeadlines), [3000], "quiet fallback keeps the original 3000ms delay");
       assert.equal(await quiet.p.evaluate(() => localStorage.getItem("emberisle-seat")), savedSeatRecord, "held loader preserves the exact saved seat");
-      await quiet.p.getByRole("button", { name: "Play", exact: true }).click();
+      await quiet.p.getByRole("button", { name: "Play with bots", exact: true }).click();
       await quiet.release(); await quiet.settled();
       assert.deepEqual(quiet.intents, [], "offline escape cancels pending saved-seat rejoin");
       assert.equal(await quiet.p.evaluate(() => window.__emberisle.getState().mode), "ai");
