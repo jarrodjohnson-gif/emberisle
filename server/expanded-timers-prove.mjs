@@ -30,7 +30,7 @@ import WebSocket from "ws";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
 import { createExpandedGame, pairedTradeAsk } from "../src/lib/game/expanded.ts";
-import { applyAction } from "../src/lib/game/rules.ts";
+import { applyAction, totalVP } from "../src/lib/game/rules.ts";
 import { RESOURCES } from "../src/lib/game/types.ts";
 
 const SERVER = fileURLToPath(new URL(".", import.meta.url));
@@ -312,6 +312,46 @@ const budget = async (code, pid) => (await saved(code, (r) => r.seats.find((x) =
 const until = (t) => sleep(Math.max(0, t - Date.now()));
 const next = (c, seq, phase, what) => c.until(() => c.state.game.seq > seq && c.state.game.phase === phase && c.state, what, TOTAL + 3000);
 const nextRoll = (c, seq, what) => c.until(() => c.state.game.seq > seq && c.state.game.phase === "roll" && c.state.game.current === c.pid && c.state, what, TOTAL + 3000);
+
+// ---- A rematch, one person and bots (#1672). ----
+// The new game's turns are numbered from round 0 again, so a turn key saved in the last game must not carry its window or
+// budget into the new one (replay forgets every seat's key). The person's first wait in the new game, its roll-off roll,
+// gets a full window and budget, though its last turn in the finished game used 0.8 of a window. The finished game's
+// push already leaves the person no window and no budget, checked here too, so replay's reset is a second guard.
+// CRM: classic three seats, the person (players[0], the table's host) in its action phase and two bots. players[1] already
+// holds the points to win, so it wins as its turn starts when the person passes; the finished game rolls no die.
+const crm = primaryMain(setupBy(createGame({ humans: NAMES.slice(0, 3).map((name) => ({ name })), bots: 0, seed: 1672 })));
+hands(crm, {}, 0);
+crm.players[1].hidden.vp = 10 - totalVP(crm, at(crm, 1));
+writeRoom("CRM", crm, [1, 2].map((i) => at(crm, i)));
+{
+  const r = roomFile("CRM");
+  r.host = r.seats.find((s) => s.pid === at(crm, 0)).id;
+  writeFileSync(path.join(dir, "CRM.json"), JSON.stringify(r));
+}
+// Starts after CB3's seven and is done before the six-seat case queues its own: a bot's roll-off roll in the new game takes
+// an unqueued die.
+async function classicRematch() {
+  const g = crm;
+  const [H, W] = [at(g, 0), at(g, 1)];
+  const c = await client("CRM", H);
+  const start = (await budget("CRM", H)).turnStartedAt;
+  await until(start + 0.8 * TURN);
+  c.send({ type: "pass" });
+  let s = await c.until(() => c.state.game.phase === "over" && c.state, "rematch: the bot wins as its turn starts");
+  eq(s.game.winner, W, "rematch: the bot after the person won");
+  const over = (await saved("CRM", (r) => r.game.phase === "over", "rematch: the finished game saved")).seats.find((x) => x.pid === H);
+  eq([over.turnDeadline, over.turnStartedAt], [null, null], "rematch: the finished game leaves the person no window and no budget");
+  const did = Date.now();
+  c.send({ type: "again" });
+  s = await c.until(() => c.state.game.phase === "rollOff" && c.state.game.current === c.state.you && c.state, "rematch: the person's roll-off roll in the new game", TOTAL + 3000);
+  const P = s.you;
+  eq([s.game.turn, s.turnPlayer], [0, P], "rematch: the new game is in round 0 and the person's window runs");
+  await fresh("CRM", P, s, "rematch: the person's first wait in the new game gets a full window and budget", did);
+  c.ws.terminate();
+  await saved("CRM", (r) => r.seats.find((x) => x.pid === P).turnDeadline === null, "rematch: the dropped seat is disarmed");
+  console.log(`rematch: CRM, one person with two bots, its roll-off roll after a rematch a full ${TURN} ms window (${left(s)} ms), its last turn in the finished game ${Math.round(0.8 * TURN)} ms in`);
+}
 async function classicBots3(rolled) {
   const lines = [];
   const g = cb3;
@@ -492,6 +532,12 @@ try {
     if (host) console.error(host.err.slice(-2000));
     process.exit(1);
   });
+  const rematch = seven.then(classicRematch);
+  rematch.catch((err) => {
+    console.error(err);
+    if (host) console.error(host.err.slice(-2000));
+    process.exit(1);
+  });
 
   // ---- 6. Classic first: the behaviour every expanded check is compared against. ----
   // After CB3's seven, like every other room: the dice are shared, and no room may roll while that seven is queued.
@@ -642,6 +688,7 @@ try {
   }
 
   await classicBots;
+  await rematch;
 
   // ---- 1 to 5 on six seats, with a restart mid discard and mid partner activation. ----
   {
