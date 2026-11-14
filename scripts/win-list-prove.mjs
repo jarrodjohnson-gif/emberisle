@@ -92,8 +92,10 @@ try {
     if (live) {
       const fetched = page.waitForResponse((r) => LIST_CHUNK.test(r.url()));
       await load({ ...structuredClone(g), phase: "main", winner: null, winReason: undefined });
-      await fetched;
-      await page.waitForLoadState("networkidle");
+      // #1686: the response only starts the chunk; it is in memory once the module has run. Importing the same URL settles
+      // then, and the app's own import marks the chunk loaded in the same turn, before the next evaluate below. (The old
+      // wait for "networkidle" resolved at once, as the page had reached it before.)
+      await page.evaluate((url) => import(url).then(() => {}), (await fetched).url());
       // Record how many rows the dialog holds in the DOM update that first adds it, before the browser paints it.
       await page.evaluate(() => {
         window.__rowsAtFirstPaint = null;
