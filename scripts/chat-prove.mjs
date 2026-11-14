@@ -113,7 +113,7 @@ async function newContent(t, size) {
     await button.scrollIntoViewIfNeeded();
     // #1685: the tab draws each button before its picture, which needs the Sticker chunk and then the image file. Wait for the
     // image to finish loading; if it never does, the check below fails and says so.
-    await t.page.waitForFunction((el) => { const img = el.querySelector("img"); return Boolean(img && img.complete && img.naturalWidth > 0); }, await button.elementHandle()).catch(() => {});
+    await t.page.waitForFunction((el) => { const img = el.querySelector("img"); return Boolean(img && img.complete && img.naturalWidth > 0); }, await button.elementHandle(), { timeout: 10_000 }).catch(() => {});
     const m = await button.evaluate((el) => {
       const r = el.getBoundingClientRect();
       const img = el.querySelector("img");
