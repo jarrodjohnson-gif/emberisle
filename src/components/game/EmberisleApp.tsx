@@ -6,7 +6,7 @@ import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
 import { SeatDot } from "@/components/game/SeatDot";
-import { useGame } from "@/lib/game/store";
+import { dropDeal, useGame } from "@/lib/game/store";
 import { JOIN_CODE, LazyBoundary, preloadOnIdle, reloadOnStaleChunk } from "@/lib/lazy";
 import { play, setMusicWanted, setMuted, useMuted } from "@/lib/sound";
 import { useTurnTitle } from "@/lib/turn-title";
@@ -338,7 +338,7 @@ function Title({ arrive }: { arrive: boolean }) {
         ) : (
           <>
             <div className="flex items-center justify-between">
-              <Button ref={backButton} variant="ghost" back className="-ml-2 px-3" onClick={() => setOpen((pastFront = false))}>
+              <Button ref={backButton} variant="ghost" back className="-ml-2 px-3" onClick={() => (dropDeal(), setOpen((pastFront = false)))}>
                 Back
               </Button>
               {tools}

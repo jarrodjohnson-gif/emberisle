@@ -15,6 +15,11 @@
 //   keeps the seat count, the expanded island and each seat's number and colour;
 // - pass and play: the partner turn reads "Your partner turn" with no Roll, and Play again after a played-out game keeps
 //   the seat count, the expanded island, and each player's seat number and colour, with the winner first;
+// - a five or six seat deal (the expanded module still on its way, in a fresh page each): a failed download shows "Could
+//   not load. Try again." and the next press starts the game; a double tap deals one game; Play then Back leaves the
+//   person on the title; Play with five seats then a classic start keeps the classic game when the module lands;
+// - practice refuses the person's ask of the table on a partner turn, and the store's partner guards answer as
+//   expanded.ts's pairedTradeAsk and pairedAcceptTrade do, on a partner and on a primary turn;
 // - no visible text under 12 px, every control at least 44 px each way, the status line never clipped;
 // - zero page errors.
 // The person's moves (and the pass and play seats') are the bots' own choices (chooseBotAction), sent through the store's
@@ -267,6 +272,178 @@ async function partnerTurn(page, v, tag, { shotName, full }) {
   check(st.role === "primary" && st.current === next.id && st.phase === "roll", `${tag}: End turn gave ${st.current} (${st.role} ${st.phase}), not the next primary ${next.id}`);
 }
 
+// On the person's partner turn: practice refuses the person's ask; and the store's inline partner guards (runBots' ask,
+// a bot's answer in openOffer) answer as expanded.ts's pairedTradeAsk and pairedAcceptTrade do, on a primary and a
+// partner turn of the same table. The bots' answers come on their own timers; the proof only waits for them.
+async function guardCases(page, tag) {
+  const asked = await store(page, () => {
+    const e = window.__emberisle;
+    e.getState().askTable({ timber: 1 }, { clay: 1 });
+    return { error: e.getState().error, offer: e.getState().offer };
+  });
+  check(asked.error === "No player trades on a partner turn." && !asked.offer, `${tag}: an ask on a partner turn: ${JSON.stringify(asked)}`);
+
+  const ask = await store(page, async () => {
+    const { pairedTradeAsk } = await import("/src/lib/game/expanded.ts");
+    const { chooseTradeAsk } = await import("/src/lib/game/ai.ts");
+    const e = window.__emberisle, base = e.getState().state;
+    const HANDS = [{ grain: 2, ore: 2, wool: 2 }, { grain: 1, ore: 3, wool: 2 }, { timber: 1, wool: 1, grain: 1, ore: 2 }, { clay: 1, wool: 1, grain: 1, ore: 2 }, { timber: 2, wool: 1, grain: 1 }];
+    const table = (bot, role, turn, hand) => {
+      const st = structuredClone(base), n = st.players.length, at = st.players.findIndex((p) => p.id === bot);
+      Object.assign(st, { phase: "main", current: bot, role, primary: st.players[role === "primary" ? at : (at + n - 3) % n].id, turn, trade: null });
+      st.players.find((p) => p.id === bot).resources = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0, ...hand };
+      return st;
+    };
+    const out = [];
+    for (const b of base.players.filter((p) => p.kind === "bot")) {
+      const hand = HANDS.find((h) => chooseTradeAsk(table(b.id, "primary", 1, h), b.id));
+      if (!hand) continue;
+      for (const [i, role] of ["primary", "partner"].entries()) {
+        // A fresh turn number, so the store's once-a-turn ask is not already spent.
+        const st = table(b.id, role, 900 + i, hand);
+        e.setState({ state: st, offer: null });
+        window.__runBots();
+        out.push({ role, paired: !!pairedTradeAsk(st, b.id), store: e.getState().offer?.from === b.id });
+        // The bot's offer is dropped; its timers find no offer and do nothing.
+        e.setState({ offer: null, state: base });
+      }
+      break;
+    }
+    return out;
+  });
+  check(ask.length === 2 && ask.every((x) => x.paired === x.store) && ask[0].store && !ask[1].store, `${tag}: the store's ask guard against pairedTradeAsk: ${JSON.stringify(ask)}`);
+
+  // The person asks on a primary turn and the table answers; the same ask left open as the turn becomes a partner turn
+  // (a stale offer) gets every bot's No.
+  const accept = await store(page, async () => {
+    const { pairedAcceptTrade } = await import("/src/lib/game/expanded.ts");
+    const e = window.__emberisle, base = e.getState().state, me = e.getState().localId;
+    const RES = ["timber", "clay", "wool", "grain", "ore"];
+    const bots = base.players.filter((p) => p.kind === "bot");
+    const table = (role) => {
+      const st = structuredClone(base);
+      Object.assign(st, { phase: "main", current: me, role, primary: role === "primary" ? me : bots[0].id, trade: null });
+      for (const p of st.players) p.resources = p.id === me ? { timber: 2, clay: 2, wool: 2, grain: 2, ore: 2 } : { timber: 1, clay: 1, wool: 1, grain: 1, ore: 0 };
+      return st;
+    };
+    const primary = table("primary");
+    let offer;
+    for (const g of RES) for (const w of RES) if (!offer && g !== w && bots.some((b) => pairedAcceptTrade(primary, b.id, { from: me, give: { [g]: 1 }, want: { [w]: 1 } }))) offer = { give: { [g]: 1 }, want: { [w]: 1 } };
+    if (!offer) return { offer: null };
+    const answer = async (role) => {
+      e.setState({ state: table("primary"), offer: null, tradeOutcome: null, tradeTaker: null });
+      const lines = e.getState().gameLog.length;
+      e.getState().askTable(offer.give, offer.want);
+      if (role === "partner") e.setState({ state: { ...e.getState().state, role, primary: bots[0].id } });
+      const st = e.getState().state;
+      const yes = bots.filter((b) => pairedAcceptTrade(st, b.id, { from: me, ...offer })).map((b) => b.name);
+      for (let t = 0; t < 120 && e.getState().offer; t++) await new Promise((r) => setTimeout(r, 100));
+      const taker = e.getState().tradeTaker ? st.players.find((p) => p.id === e.getState().tradeTaker).name : null;
+      const declined = e.getState().gameLog.slice(lines).filter((l) => / declines\.$/.test(l.text)).length;
+      return { role, yes, taker, declined };
+    };
+    return { offer, primary: await answer("primary"), partner: await answer("partner"), bots: bots.length };
+  });
+  check(!!accept.offer, `${tag}: no offer any bot would take`);
+  if (accept.offer) {
+    check(accept.primary.yes.length > 0 && accept.primary.yes.includes(accept.primary.taker), `${tag}: on a primary turn pairedAcceptTrade says ${accept.primary.yes}, the store's taker is ${accept.primary.taker}`);
+    check(accept.partner.yes.length === 0 && accept.partner.taker === null && accept.partner.declined === accept.bots, `${tag}: on a partner turn pairedAcceptTrade says ${accept.partner.yes}, the store's taker is ${accept.partner.taker}, ${accept.partner.declined} of ${accept.bots} declined`);
+  }
+}
+
+// The deal of a five or six seat game while expanded.ts is still on its way (each case in a fresh page, so the module is
+// not yet loaded): a failed download, a double tap, Play then Back, and a classic start in between.
+const EXPANDED_URL = /\/src\/lib\/game\/expanded\.ts/;
+async function dealCases() {
+  const v = { tag: "390x844 deal", width: 390, height: 844, touch: true };
+  const fresh = async (seats) => {
+    const { ctx, page } = await newPage(v);
+    await openPlayPage(page);
+    await tap(v, page.getByTestId("wayfarer-setup").locator("summary"));
+    await page.getByRole("combobox", { name: "Seats", exact: true }).selectOption(String(seats));
+    return { ctx, page };
+  };
+  // Holds the module's download until `release`; `landed` waits for it to arrive and a few frames more.
+  const hold = async (page) => {
+    let release;
+    const gate = new Promise((r) => (release = r));
+    await page.route(EXPANDED_URL, async (route) => {
+      await gate;
+      await route.continue();
+    });
+    const landed = async () => {
+      const arrived = page.waitForResponse(EXPANDED_URL);
+      release();
+      await arrived;
+      await page.waitForTimeout(500);
+    };
+    return landed;
+  };
+  const play = (page) => page.getByRole("button", { name: "Play with bots", exact: true });
+  const now = (page) => store(page, () => { const g = window.__emberisle.getState(); return { screen: g.screen, seats: g.state?.players.length ?? 0, variant: !!g.state?.variant, dealt: g.gameLog.filter((l) => l.text.startsWith("The isle is dealt")).length }; });
+
+  // A failed download: the message, then the next press starts the game.
+  {
+    const { ctx, page } = await fresh(6);
+    let aborted = 0;
+    await page.route(EXPANDED_URL, (route) => (aborted++ ? route.continue() : route.abort()));
+    const seen = errors.length;
+    await tap(v, play(page));
+    const alert = page.getByRole("alert").filter({ hasText: "Could not load. Try again." }).first();
+    await alert.waitFor();
+    check(await alert.isVisible(), `${v.tag}: a failed download shows no message`);
+    check((await now(page)).screen === "title", `${v.tag}: a failed download left the title`);
+    // The browser's own report of the aborted download is the one expected error.
+    errors.splice(seen, errors.length - seen, ...errors.slice(seen).filter((e) => !/expanded\.ts|Failed to fetch dynamically imported module|ERR_FAILED/.test(e)));
+    await tap(v, play(page));
+    await page.waitForFunction(() => window.__emberisle.getState().state?.players.length === 6);
+    const s = await now(page);
+    check(s.screen === "play" && s.seats === 6 && s.variant, `${v.tag}: the press after a failed download: ${JSON.stringify(s)}`);
+    await ctx.close();
+  }
+  // A double tap: one game, its first log line once.
+  {
+    const { ctx, page } = await fresh(6);
+    const landed = await hold(page);
+    await store(page, () => {
+      window.__seeds = new Set();
+      window.__emberisle.subscribe((s) => s.state && s.screen === "play" && window.__seeds.add(s.state.seed));
+    });
+    await tap(v, play(page));
+    await tap(v, play(page));
+    await landed();
+    const s = await now(page);
+    const seeds = await store(page, () => window.__seeds.size);
+    check(s.screen === "play" && s.seats === 6 && seeds === 1 && s.dealt === 1, `${v.tag}: a double tap dealt ${seeds} games, ${JSON.stringify(s)}`);
+    await ctx.close();
+  }
+  // Play, then Back before the module lands: the person stays on the title.
+  {
+    const { ctx, page } = await fresh(6);
+    const landed = await hold(page);
+    await tap(v, play(page));
+    await tap(v, page.getByRole("button", { name: "Back", exact: true }));
+    await landed();
+    const s = await now(page);
+    check(s.screen === "title" && s.seats === 0, `${v.tag}: Play then Back: ${JSON.stringify(s)}`);
+    await ctx.close();
+  }
+  // Play with five seats, then a classic game before the module lands: the classic game stays.
+  {
+    const { ctx, page } = await fresh(5);
+    const landed = await hold(page);
+    await tap(v, play(page));
+    await page.getByRole("combobox", { name: "Seats", exact: true }).selectOption("4");
+    await tap(v, play(page));
+    await page.waitForFunction(() => window.__emberisle.getState().screen === "play");
+    await landed();
+    const s = await now(page);
+    check(s.screen === "play" && s.seats === 4 && !s.variant && s.dealt === 1, `${v.tag}: five seats then classic: ${JSON.stringify(s)}`);
+    await ctx.close();
+  }
+  console.log(`${v.tag}: done`);
+}
+
 const newPage = async (v) => {
   const ctx = await browser.newContext({ viewport: { width: v.width, height: v.height }, hasTouch: !!v.touch, isMobile: !!v.touch, deviceScaleFactor: SHOTS ? 2 : 1 });
   await ctx.addInitScript(() => {
@@ -299,6 +476,7 @@ const newPage = async (v) => {
 };
 
 try {
+  await dealCases();
   for (const v of VIEWS) {
     const { ctx, page, expandedAsked } = await newPage(v);
     const tag = v.tag;
@@ -366,6 +544,7 @@ try {
       r = await play(page, `st.role === "partner" && st.current === me`);
       check(!r.over && !r.stuck, `${t}: never reached the person's partner turn ${JSON.stringify(r)}`);
       await partnerTurn(page, v, t, { shotName: full ? `partner-yours-${tag}` : null, full: full || v.wide });
+      if (!full && tag === "390x844") await guardCases(page, t);
 
       if (!full) continue;
       // To the win screen, then Play again.

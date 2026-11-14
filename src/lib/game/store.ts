@@ -233,10 +233,20 @@ interface OpenOffer {
 }
 
 // #1609: five or six seats deal the expanded island. expanded.ts loads only then, and registers the paired turn rules
-// (`turnRules.paired`) before the game exists, so no action reaches an expanded state without them.
+// (`turnRules.paired`) before the game exists, so no action reaches an expanded state without them. Only the newest deal
+// lands: another start, Back on the Play page, or leaving a game (`dropDeal`) while the module is on its way drops the
+// earlier one. A failed load says so, and the next press asks again (chunk retries the file).
+const expanded = chunk(() => import("./expanded"));
+let deals = 0;
+export const dropDeal = () => deals++;
 function deal(o: GameOptions, go: (s: GameState) => void) {
+  const n = ++deals;
   if (o.humans.length + o.bots < 5) return go(createGame(o));
-  void import("./expanded").then((m) => go(m.createExpandedGame(o)));
+  const error = "Could not load. Try again.";
+  expanded.load().then(
+    (m) => n === deals && go(m.createExpandedGame(o)),
+    () => n === deals && useGame.setState({ error, toast: error }),
+  );
 }
 
 // The client is needed only for discovery or an explicit online journey.
@@ -733,6 +743,7 @@ export const useGame = create<GameStore>((set, get) => ({
     });
   },
   goTitle: () => {
+    dropDeal();
     resetTradePlease();
     stopEndMusic();
     // Leaving on purpose frees the seat; only a drop keeps it. A watcher never held one, and the saved seat may be another table's.
@@ -1096,11 +1107,13 @@ export const useGame = create<GameStore>((set, get) => ({
     const error =
       state?.phase !== "main" || state.current !== localId
         ? "Not your turn."
-        : RESOURCES.some((r) => (give[r] ?? 0) > (me?.resources[r] ?? 0))
-          ? "You lack those goods."
-          : RESOURCES.every((r) => !give[r] && !want[r])
-            ? "Offer something."
-            : null;
+        : state.role === "partner"
+          ? "No player trades on a partner turn."
+          : RESOURCES.some((r) => (give[r] ?? 0) > (me?.resources[r] ?? 0))
+            ? "You lack those goods."
+            : RESOURCES.every((r) => !give[r] && !want[r])
+              ? "Offer something."
+              : null;
     if (error) {
       set({ announcement: null, error, toast: error, errorSeq: get().errorSeq + 1 });
       play("ui_error");
