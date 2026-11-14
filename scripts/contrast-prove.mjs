@@ -308,6 +308,47 @@ try {
       const { createExpandedGame } = await import("/src/lib/game/expanded.ts");
       return createExpandedGame({ humans: ["Ember", "Tide", "Dune", "Pine", "Moss", "Flint"].map((name) => ({ name })), bots: 0, seed: 7 });
     });
+    // #1651: each of the six seat dots as drawn, its fill and its outline read apart. A fill under 3:1 on a ground needs a 1 px
+    // outline that itself reads 3:1 there. Grounds: white (the pill and the menu sheet), mist (--ground), the page (--bg) and the
+    // panel the dot actually sits on.
+    {
+      await pg.evaluate((six) => {
+        const st = structuredClone(six);
+        st.phase = "main";
+        st.seq = window.__emberisle.getState().state.seq + 1;
+        window.__emberisle.setState({ state: st });
+      }, six);
+      await pg.waitForFunction(() => new Set([...document.querySelectorAll(".seat-dot")].map((d) => getComputedStyle(d).backgroundColor)).size >= 6);
+      const dots = await pg.evaluate(() => {
+        const px = (c) => (c.match(/\d+(\.\d+)?/g) ?? []).slice(0, 4).map(Number);
+        const out = {};
+        for (const d of document.querySelectorAll(".seat-dot")) {
+          const cs = getComputedStyle(d);
+          const fill = px(cs.backgroundColor).slice(0, 3).join(",");
+          // A 1 px inset ring: "rgb(r, g, b) 0px 0px 0px 1px inset".
+          const ring = /^(rgba?\([^)]*\)) 0px 0px 0px 1px inset$/.exec(cs.boxShadow);
+          let g = d.parentElement;
+          while (g && px(getComputedStyle(g).backgroundColor)[3] === 0) g = g.parentElement;
+          const ground = g ? px(getComputedStyle(g).backgroundColor).slice(0, 3) : [255, 255, 255];
+          (out[fill] ??= []).push({ ring: ring ? px(ring[1]) : null, ringAlpha: ring ? (px(ring[1])[3] ?? 1) : 0, ground });
+        }
+        return out;
+      });
+      const sixHex = readFileSync("src/lib/game/expanded.ts", "utf8").match(/EXPANDED_COLORS = \[([^\]]+)\]/)[1].match(/#[0-9a-f]{6}/g);
+      for (const c of sixHex) {
+        const fill = hex(c);
+        const drawn = dots[fill.join(",")] ?? [];
+        if (!drawn.length) bad.push(`six-seat dot ${c} is not drawn in the seat rail`);
+        for (const [i, dot] of drawn.entries()) {
+          for (const [name, bg] of [["white", [255, 255, 255]], ["mist (--ground)", read.ground], ["bg", read.bg], ["its panel", dot.ground]]) {
+            const f = ratio(fill, bg);
+            const o = dot.ring && dot.ringAlpha === 1 ? ratio(dot.ring.slice(0, 3), bg) : 0;
+            console.log(`  six-seat dot ${c} #${i + 1} on ${name} rgb(${bg}): fill ${f.toFixed(2)}:1, outline ${dot.ring ? `rgb(${dot.ring.slice(0, 3)}) ${o.toFixed(2)}:1` : "none"} (an edge needs 3:1)`);
+            if (f < 3 && o < 3) bad.push(`six-seat dot ${c} on ${name}: fill ${f.toFixed(2)}:1 and ${dot.ring ? `outline ${o.toFixed(2)}:1` : "no outline"}, needs 3:1`);
+          }
+        }
+      }
+    }
     for (let i = 0; i < 6; i++) {
       const seat = await pg.evaluate(([six, i]) => {
         const st = structuredClone(six);
