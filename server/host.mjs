@@ -915,11 +915,12 @@ function runBots(room) {
     if (!waiting) return;
     // A bot's own ask is open: its turn waits for the answers, and the offer's close plays on (botsOn).
     if (room.offer?.from === waiting.id) return;
-    // Once per bot turn, before its other moves, the bot may ask the table (#363).
+    // Once per bot turn, before its other moves, the bot may ask the table (#363). A partner asks nobody (#1611): the
+    // paired-turn choice is the classic one whenever the game has no partner activation.
     const recovery = (room.recoveryPids ?? []).includes(waiting.id);
     if (!recovery && g.phase === "main" && !room.offer && room.botAsked !== `${g.turn}:${waiting.id}`) {
       room.botAsked = `${g.turn}:${waiting.id}`;
-      const ask = chooseTradeAsk(g, waiting.id, room.botDeclined?.[waiting.id]);
+      const ask = pairedTradeAsk(g, waiting.id, room.botDeclined?.[waiting.id]);
       if (ask) return openOffer(room, waiting.id, ask.give, ask.want);
     }
     const action = recovery ? chooseRecoveryAction(g, waiting.id) : chooseBotAction(g, waiting.id);
@@ -1773,7 +1774,8 @@ function openOffer(room, from, give, want) {
 function botAnswer(room, offer, pid) {
   if (room.offer !== offer || room.game.players.find((p) => p.id === pid)?.kind !== "bot") return;
   const recovery = (room.recoveryPids ?? []).includes(pid);
-  const yes = !recovery && shouldAcceptTrade(room.game, pid, offer);
+  // Every bot says No on a partner activation, which the rules refuse a player trade on (#1611).
+  const yes = !recovery && pairedAcceptTrade(room.game, pid, offer);
   if (yes && peopleWaiting(room, offer)) return void offer.heldYes.push(pid);
   respond(room, pid, yes);
 }
@@ -1796,6 +1798,8 @@ function ask(ws, room, msg) {
   if (room.game.phase !== "main" || room.game.current !== actor) {
     return send(ws, { type: "error", message: "Cannot trade now." });
   }
+  // A partner may trade with the bank, never the table (#1611; six-players.md, paired turns).
+  if (room.game.role === "partner") return send(ws, { type: "error", message: PARTNER_NO_TRADE });
   if (!validBag(msg.give) || !validBag(msg.want)) return send(ws, { type: "error", message: "Bad trade." });
   const asker = room.game.players.find((p) => p.id === actor);
   if (RESOURCES.some((r) => (msg.give[r] ?? 0) > asker.resources[r])) return send(ws, { type: "error", message: "You lack those goods." });

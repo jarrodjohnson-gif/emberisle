@@ -7,6 +7,8 @@
 // 3. A client that does not advertise the expanded capability is refused on join, watch and rejoin before any of the room
 //    reaches it, keeps its held seat, and still plays a classic room.
 // 4. Hands stay private for seats 5 and 6 and for a watcher; a restart mid-lobby and mid-game keeps the variant.
+// 5. Host bots never ask or accept a player trade on a partner activation, a person cannot ask the table then, and a full
+//    online expanded game of one person and five host bots reaches a winner.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -14,8 +16,11 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import WebSocket from "ws";
+import { chooseBotAction, chooseTradeAsk } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
-import { EXPANDED_COLORS } from "../src/lib/game/expanded.ts";
+import { createExpandedGame, EXPANDED_COLORS, PARTNER_NO_TRADE } from "../src/lib/game/expanded.ts";
+import { applyAction } from "../src/lib/game/rules.ts";
+import { toIntent } from "../src/lib/net/table.ts";
 import { PLAYER_COLORS } from "../src/lib/game/types.ts";
 import { PROTO } from "../src/lib/net/proto.ts";
 
@@ -419,6 +424,147 @@ const six = await (async () => {
   privateView(back[5].state, "seat 6 after restart");
   six.cs = back;
   summary.push("restart: kill -9 mid-lobby and mid-game keeps expanded (file, welcome, seats, cap 6, palette, game); old rejoin still refused; no-variant room loads classic; bad or mismatched room variants kept aside");
+}
+
+// ---- 6. Host bots and the table ask on paired turns. ----
+// A five-seat game driven by the rules to its first partner activation, with that partner one good short of a build, so the
+// classic bot would ask the table (checked below with chooseTradeAsk itself).
+function partnerFixture() {
+  let g = createExpandedGame({ humans: ["Ember", "Tide", "Dune", "Pine", "Moss"].map((name) => ({ name })), bots: 0, seed: 1611, wayfarerMode: "on" });
+  for (let i = 0; i < 400 && g.role !== "partner"; i++) {
+    const actor = g.phase === "discard" ? Object.keys(g.discardNeeded).find((pid) => g.discardNeeded[pid] > 0) : g.current;
+    const action = g.role === "primary" && g.phase === "main" ? { type: "endTurn" } : chooseBotAction(g, actor) ?? { type: "endTurn" };
+    const r = applyAction(g, actor, action);
+    assert.ok(!r.error, `fixture: ${actor} ${action.type}: ${r.error}`);
+    g = r.state;
+  }
+  assert.equal(g.role, "partner", "fixture reaches a partner activation");
+  const partner = g.current;
+  const me = g.players.find((p) => p.id === partner);
+  // The first small hand, by a fixed order, with which the classic bot would ask.
+  const R = ["timber", "clay", "wool", "grain", "ore"];
+  for (let n = 0; n < 4 ** 5 && chooseTradeAsk(g, partner) === null; n++) me.resources = Object.fromEntries(R.map((r, i) => [r, Math.floor(n / 4 ** i) % 4]));
+  return { g, partner };
+}
+function partnerRoom(code, g, human) {
+  const game = structuredClone(g);
+  for (const p of game.players) p.kind = p.id === human ? "human" : "bot";
+  const seats = game.players.map((p, i) => ({ id: `s${i}`, name: p.name, color: p.color, ready: true, pid: p.id, secret: `${code}-${p.id}`, ...(p.id === human ? {} : { bot: true }), turnDeadline: null, turnStartedAt: null }));
+  const host = seats.find((s) => s.pid === human).id;
+  return { code, visibility: "private", host, next: seats.length, botDeclined: {}, recoveryPids: [], chat: [], chatSeq: 0, game, victoryTarget: 10, wayfarerMode: "on", variant: "expanded", seats, roster: null, outcome: null, assisted: [], shape: 3, savedAt: Date.now() };
+}
+{
+  const { g, partner } = partnerFixture();
+  ok(chooseTradeAsk(g, partner) !== null, `fixture: the classic bot would ask the table as partner ${partner}`);
+  const human = g.primary;
+  const B = tmp("paired");
+  writeFileSync(path.join(B, "PBOT.json"), JSON.stringify(partnerRoom("PBOT", g, human)));
+  writeFileSync(path.join(B, "PHUM.json"), JSON.stringify(partnerRoom("PHUM", g, partner)));
+  const h2 = await boot(B);
+  // A bot partner: the rejoin runs the bots. It asks nobody and its activation ends.
+  const c = await client(h2.port, { code: "PBOT", secret: `PBOT-${human}`, ...CAPS });
+  await c.until(() => c.state, "state");
+  const offers = c.all.filter((m) => m.type === "tradeOffer");
+  ok(!offers.some((m) => m.from === partner), `bot partner ${partner} asked nobody (${offers.length} asks in all)`);
+  ok(c.state.game.activation > g.activation, `bot partner ${partner} ended its activation (activation ${g.activation} to ${c.state.game.activation})`);
+  // A person as partner: the table ask is refused, nothing goes out.
+  const p = await client(h2.port, { code: "PHUM", secret: `PHUM-${partner}`, ...CAPS });
+  await p.until(() => p.state, "state");
+  eq([p.state.game.role, p.state.game.current], ["partner", partner], "person partner: it is their partner activation");
+  p.inbox = [];
+  p.act({ type: "tradeAsk", give: { ore: 1 }, want: { grain: 1 } });
+  eq((await p.next("error")).message, PARTNER_NO_TRADE, "person partner: the table ask is refused");
+  await sleep(150);
+  ok(!p.all.some((m) => m.type === "tradeOffer"), "person partner: no offer reached the table");
+  await kill9(h2);
+  summary.push(`paired: a bot partner (${partner}) that would ask as a classic bot asks nobody and ends its activation; a person partner's tradeAsk is refused with "${PARTNER_NO_TRADE}"`);
+}
+
+// ---- 7. A full online expanded game: one person and five host bots, with a watcher. ----
+{
+  const h = await client(port, { name: "Ember", variant: "expanded", ...CAPS });
+  const code = h.welcome.code;
+  for (let i = 0; i < 5; i++) h.send({ type: "addBot" });
+  await seatsNow(h, 6);
+  h.send({ type: "ready", value: true });
+  await h.until(() => h.seats.seats.every((s) => s.ready), "ready");
+  h.send({ type: "start" });
+  await h.until(() => h.state, "state");
+  const watcher = await client(port, { code, watch: true, ...CAPS });
+  await watcher.until(() => watcher.state, "watcher state");
+  // The person plays its own seat as the bot would, from the host's saved game (its view hides the other hands).
+  const me = h.state.you;
+  const diskGame = async (seq) => {
+    for (let i = 0; i < 200; i++) {
+      try {
+        const g = roomFile(A, code).game;
+        if (g.seq === seq) return g;
+      } catch {}
+      await sleep(10);
+    }
+    throw new Error(`no saved game at seq ${seq}`);
+  };
+  const mine = (st) => st.game.phase !== "over" && (st.legal.actions.length || st.legal.outpost.length || st.legal.path.length || st.legal.wayfarer.length || st.legal.discard);
+  const stop = Date.now() + 240_000;
+  let answered = 0;
+  let moves = 0;
+  while (h.state.game.phase !== "over") {
+    if (Date.now() > stop) throw new Error(`no winner in time: seq ${h.state.game.seq} turn ${h.state.game.turn}`);
+    for (const m of h.inbox.filter((x) => x.type === "tradeOffer" && x.from !== me)) {
+      h.act({ type: "tradeAnswer", tradeId: m.tradeId, yes: false });
+      answered++;
+    }
+    h.inbox = h.inbox.filter((x) => x.type !== "tradeOffer" && x.type !== "error");
+    const st = h.state;
+    if (!mine(st)) {
+      await sleep(5);
+      continue;
+    }
+    const g = await diskGame(st.game.seq);
+    const action = st.game.phase === "main" && g.role === "partner" && moves % 3 === 0 ? { type: "endTurn" } : chooseBotAction(g, me) ?? { type: "endTurn" };
+    const intent = toIntent(action) ?? { type: "pass" };
+    h.act(intent);
+    moves++;
+    await h.until(() => h.state.game.seq !== st.game.seq || h.inbox.some((x) => x.type === "error"), "an answer to my move", 5000);
+    if (h.state.game.seq === st.game.seq) {
+      const err = h.inbox.find((x) => x.type === "error");
+      assert.ok(st.game.phase === "main", `my ${intent.type} refused outside main: ${err?.message}`);
+      h.act({ type: "pass" });
+      await h.until(() => h.state.game.seq !== st.game.seq, "my pass");
+    }
+  }
+  const g = h.state.game;
+  ok(g.winner && g.variant?.kind === "expanded" && g.players.length === 6, `full game: ${g.winner} wins a six-seat expanded game`);
+  await watcher.until(() => watcher.state.game.phase === "over", "watcher sees the win");
+  // Every bot ask came on a primary activation, from the seat acting: the state pushed right after an ask is the game at it.
+  const seq = h.all;
+  let asks = 0;
+  for (const [i, m] of seq.entries()) {
+    if (m.type !== "tradeOffer") continue;
+    asks++;
+    const after = seq.slice(i + 1).find((x) => x.type === "state");
+    ok(after && after.game.role === "primary" && after.game.current === m.from, `ask ${m.tradeId} by ${m.from} on a primary activation (${after?.game.role} ${after?.game.current})`);
+  }
+  // No player trade went through on a partner activation: the game's own lines, in order.
+  let role = null;
+  let partnerTurns = 0;
+  let trades = 0;
+  for (const line of h.logs) {
+    if (line === "No roll this turn.") {
+      role = "partner";
+      partnerTurns++;
+    } else if (/'s turn\.$/.test(line)) role = "primary";
+    if (/ accepts .+'s trade\.$/.test(line)) {
+      trades++;
+      ok(role === "primary", `trade on a ${role} activation: ${line}`);
+    }
+  }
+  ok(asks > 0 && partnerTurns > 0, `full game exercised asks (${asks}) and partner activations (${partnerTurns})`);
+  // Privacy all game long: the person never sees another hand, the watcher sees none until the win.
+  for (const st of h.all.filter((m) => m.type === "state" && m.game.phase !== "over")) for (const p of st.game.players) if (p.id !== me) assert.ok(!("resources" in p), `seat view leaked ${p.id}'s goods`);
+  for (const st of watcher.all.filter((m) => m.type === "state" && m.game.phase !== "over")) for (const p of st.game.players) assert.ok(!("resources" in p), `watcher view leaked ${p.id}'s goods`);
+  checks += 2;
+  summary.push(`full game: 1 person + 5 host bots, ${g.winner} won at turn ${g.turn} (seq ${g.seq}); ${asks} bot asks, all on primary activations; ${trades} player trades, none on ${partnerTurns} partner activations; ${answered} asks answered No by the person; no hand leaked to the seat or the watcher`);
 }
 
 for (const line of summary) console.log(line);
