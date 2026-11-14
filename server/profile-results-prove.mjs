@@ -14,6 +14,8 @@
 //  9. Two rooms finishing together keep both receipts and the right totals.
 // 10. On the store: equal-time and late results order streaks deterministically; duplicate, conflicting and refused outcomes;
 //     a failed transaction leaves memory unchanged; pages of 20 with a cursor.
+// 11. #1650: a signed-in table started from the lobby, whose roll-off reorders the players, killed -9 and restarted right
+//     after the roll-off, keeps its frozen roster and is counted for every profile as the same game without a restart.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
@@ -24,6 +26,8 @@ import WebSocket from "ws";
 import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction } from "../src/lib/game/rules.ts";
+import { toIntent } from "../src/lib/net/table.ts";
+import { PROTO } from "../src/lib/net/proto.ts";
 import { PLAYER_COLORS } from "../src/lib/game/types.ts";
 import { HISTORY_PAGE, openProfiles, ProfileError } from "./profiles.mjs";
 
@@ -118,8 +122,11 @@ function seedRoom(d, code, rows, { roster: withRoster = true } = {}) {
   return { gameId, text };
 }
 
-function start(d, env = {}) {
-  const h = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+// Proof-only host dice (#1650): each roll-off die takes the next face queued in ROLL_FACES, then the host rolls its own.
+const DICE = `data:text/javascript,${encodeURIComponent('const q = (process.env.ROLL_FACES ?? "").split(",").filter(Boolean).map(Number); const own = crypto.getRandomValues.bind(crypto); crypto.getRandomValues = (b) => (q.length && b.length === 1 ? ((b[0] = q.shift() - 1), b) : own(b));')}`;
+
+function start(d, env = {}, preload = []) {
+  const h = spawn(process.execPath, ["--import", "./register.mjs", ...preload.flatMap((p) => ["--import", p]), "host.mjs"], {
     cwd: new URL(".", import.meta.url),
     env: { ...process.env, PORT: "0", ROOMS_DIR: d.rooms, PROFILES_DIR: d.profiles, RESULTS_DIR: d.results, PROFILES_DEV: "", ACT_CAP: "1000", ACT_RATE: "1000", GRACE_MS: "60000", HOLD_MS: "60000", TURN_MS: "60000", SAVE_MS: "50", RESULT_FAULT: "", ...env },
     stdio: ["ignore", "pipe", "pipe"],
@@ -207,6 +214,54 @@ async function win(port, code, pid = "p0") {
   a.act({ type: "pass" });
   await a.until(() => a.state.game.phase === "over", `${code} win`);
   return a;
+}
+
+// #1650: a table opened from the lobby, every seat signed in to its own profile, started by its host. `hello` goes on
+// every seat's first message (the expanded variant and capability, say).
+async function signedInTable(port, who, hello = {}) {
+  const cs = [];
+  for (const [i, p] of who.entries()) {
+    const c = await client(port, { type: "hello", ...hello, ...(i ? { code: cs[0].welcome.code } : {}), name: p.name, credential: p.token }, tunnel());
+    await c.until(() => c.welcome || c.errors.length, `${p.name} sits down`);
+    assert(c.welcome, `${p.name} sat down: ${JSON.stringify(c.errors)}`);
+    cs.push(c);
+  }
+  for (const c of cs) c.send({ type: "ready", value: true });
+  const seats = () => cs[0].frames.findLast((m) => m.type === "seats")?.seats ?? [];
+  await cs[0].until(() => seats().length === who.length && seats().every((s) => s.ready), "everyone ready");
+  cs[0].send({ type: "start" });
+  for (const c of cs) await c.until(() => c.state?.game.phase === "rollOff", "the roll-off");
+  return cs;
+}
+
+// Every seat acts as the practice bot would, through the host, until the game is over or `stop` holds.
+async function playOut(cs, stop = (g) => g.phase === "over") {
+  for (let n = 0; !stop(cs[0].state.game); n++) {
+    assert(n < 5000, "no winner after 5000 actions");
+    const g = cs[0].state.game;
+    const c = g.phase === "discard" ? cs.find((x) => x.state.legal.discard > 0) : cs.find((x) => x.state.you === g.current);
+    assert(c, `nobody to act at seq ${g.seq} (${g.phase})`);
+    // The seat's view hides the deck order and the bot reads only its size.
+    const view = { ...c.state.game, deck: Array.from({ length: c.state.game.deckLeft }) };
+    for (const action of [chooseBotAction(view, c.state.you) ?? { type: "endTurn" }, { type: "endTurn" }]) {
+      const errors = c.errors.length;
+      c.act(toIntent(action));
+      for (const x of [c, ...cs]) await x.until(() => x.state.game.seq > g.seq || c.errors.length > errors, `${c.state.you} ${action.type} at seq ${g.seq}`);
+      if (c.errors.length === errors) break;
+      assert(action.type !== "endTurn", `${c.state.you} could not pass at seq ${g.seq}: ${c.errors.at(-1)}`);
+    }
+  }
+}
+
+// What the profile store holds for one finished game, with nothing that differs between two runs of it: per row, the
+// name of its profile, its starting name, colour and kind, and whether it won; each profile's games and wins.
+function counted(d, gameId, who) {
+  const s = store(d);
+  return {
+    receipts: Object.keys(s.receipts ?? {}).length,
+    players: s.results[gameId].players.map((p) => ({ profile: who.find((w) => w.id === p.profileId)?.name, name: p.name, color: p.color, kind: p.kind, won: p.won })),
+    records: who.map((p) => ({ name: p.name, games: s.records[p.id]?.games ?? 0, wins: s.records[p.id]?.wins ?? 0, wonHere: s.results[gameId].players.find((r) => r.profileId === p.id)?.won })),
+  };
 }
 
 const RECORD_KEYS = "games,lastPlayed,losses,streak,winRate,wins";
@@ -557,6 +612,63 @@ try {
     assert.throws(() => s.ownHistory(P.Y.token, gid(5)), (e) => e.code === "invalid", "another profile's game is no cursor");
     assert.deepEqual(s.ownHistory(P.Y.token), { rows: [], next: null });
     assert.throws(() => s.ownHistory("nope"), (e) => e.code === "signedOut");
+  });
+
+  // #1650: a game played from the lobby whose roll-off reorders the players, once straight through and once with a kill -9
+  // and restart right after the roll-off. The roster is frozen in lobby order, so only a load that matches its rows to the
+  // game's players by player id keeps it; the restarted game must be counted exactly as the one that never restarted.
+  // Lobby order is seat order: the roll-off faces go to each player's first die in that order.
+  async function rolledOffRuns(label, names, faces, hello = {}, env = {}) {
+    const runs = [];
+    for (const restart of [false, true]) {
+      const d = folders();
+      const P = seedStore(d, names);
+      const who = names.map((name) => ({ name, ...P[name] }));
+      let h = start(d, { ROLL_FACES: faces.join(","), ...env }, [DICE]);
+      let port = await h.port;
+      let cs = await signedInTable(port, who, hello);
+      const code = cs[0].welcome.code;
+      await playOut(cs, (g) => g.phase !== "rollOff");
+      const lobby = names.map((_, i) => `p${i}`);
+      const placed = [...lobby].sort((a, b) => faces[Number(b.slice(1))] - faces[Number(a.slice(1))]);
+      assert.deepEqual(cs[0].state.game.players.map((p) => p.id), placed, `${label}: the roll-off put the players in die order`);
+      assert.notDeepEqual(placed, lobby, `${label}: not the lobby order`);
+      const file = path.join(d.rooms, `${code}.json`);
+      await until(() => readJson(file).game.phase === "setupSettle", `${label}: the reordered game on disk`);
+      const { roster } = readJson(file);
+      assert.deepEqual(roster.players.map((p) => [p.pid, p.profileId]), who.map((p, i) => [`p${i}`, p.id]), `${label}: the roster keeps the lobby order`);
+      if (restart) {
+        await h.stop();
+        h = start(d, env);
+        port = await h.port;
+        const back = [];
+        for (const c of cs) back.push(await client(port, { type: "hello", ...hello, code, secret: c.welcome.secret }));
+        for (const c of back) await c.until(() => c.state, `${label}: state after the restart`);
+        cs = back;
+        assert(!h.err.includes("bad roster in room file"), `${label}: the restart kept the roster: ${h.err}`);
+        assert.deepEqual(readJson(file).roster, roster, `${label}: the roster on disk after the restart is the frozen one`);
+      }
+      await playOut(cs);
+      await recorded(d, roster.gameId);
+      for (const c of cs) await c.until(() => c.state.result?.tracked === true && Object.values(c.state.result.wins).every((n) => n !== null), `${label}: the table sees the game counted`);
+      runs.push(counted(d, roster.gameId, who));
+      await h.stop();
+    }
+    const [straight, restarted] = runs;
+    assert.equal(straight.receipts, 1, `${label}: the game without a restart is recorded once`);
+    assert.deepEqual(straight.records.map((r) => [r.games, r.wins]), straight.records.map((r) => [1, r.wonHere ? 1 : 0]), `${label}: each profile has the game, and the win only if it won`);
+    // The dice after the roll-off are the host's own, so the winner may differ; everything else is the same.
+    const unwon = (run) => ({ ...run, players: run.players.map((p) => ({ ...p, won: undefined })), records: run.records.map((r) => ({ ...r, wins: undefined, wonHere: undefined })) });
+    assert.deepEqual(unwon(restarted), unwon(straight), `${label}: after the restart the game is recorded for every profile as without one`);
+    assert.deepEqual(restarted.records.map((r) => [r.games, r.wins]), restarted.records.map((r) => [1, r.wonHere ? 1 : 0]), `${label}: after the restart each profile has the game, and the win only if it won`);
+  }
+
+  await scenario("a restart after the roll-off keeps the roster of a classic game, and it counts", async () => {
+    await rolledOffRuns("classic", ["Ember", "Tide", "Pine"], [2, 4, 6]);
+  });
+
+  await scenario("a restart after the roll-off keeps the roster of a five-seat game, and it counts", async () => {
+    await rolledOffRuns("expanded", ["Ember", "Tide", "Pine", "Cove", "Dune"], [3, 6, 1, 5, 2], { variant: "expanded", proto: PROTO, caps: ["expanded"] });
   });
 
   console.log(`profile results prove ok: ${done.length} scenarios`);

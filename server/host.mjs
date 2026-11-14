@@ -323,9 +323,11 @@ function unsettled(room) {
 }
 
 // A saved roster that does not match its game is dropped, leaving that game untracked; a legacy room has none (#764).
+// Its rows are in starting order and the roll-off reorders the game's players, so a row matches by player id, once each (#1650).
 function loadRoster(r, game) {
   if (!game || r === undefined || r === null) return null;
-  const row = (p, i) => p && typeof p === "object" && p.pid === game.players[i].id && typeof p.seat === "string" && (p.profileId === null || (typeof p.profileId === "string" && UUID.test(p.profileId))) && typeof p.name === "string" && typeof p.color === "string" && (p.kind === "human" || p.kind === "bot");
+  const pids = new Set(game.players.map((p) => p.id));
+  const row = (p) => p && typeof p === "object" && pids.delete(p.pid) && typeof p.seat === "string" && (p.profileId === null || (typeof p.profileId === "string" && UUID.test(p.profileId))) && typeof p.name === "string" && typeof p.color === "string" && (p.kind === "human" || p.kind === "bot");
   const ok = typeof r === "object" && r.v === ROSTER_V && typeof r.gameId === "string" && UUID.test(r.gameId) && isTime(r.startedAt) && Number.isSafeInteger(r.policy) && typeof r.eligible === "boolean" && Array.isArray(r.players) && r.players.length === game.players.length && r.players.every(row);
   const ids = ok ? r.players.map((p) => p.profileId).filter(Boolean) : [];
   if (ok && new Set(ids).size === ids.length) return r;
