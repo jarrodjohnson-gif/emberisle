@@ -87,9 +87,9 @@ The ledger is a marked block at the top of #916's body. A new desk resumes from 
 ```
 <!-- desk-ledger:start -->
 ## Desk ledger
-Desk: <session id> (Opus 5.5), since <UTC date and time>
+Desk: <session id> (Opus 5.5), since <YYYY-MM-DD HH:MM> UTC
 Next desk: none
-Next rotation: <send_later id>, due <UTC time>
+Next rotation: <send_later id>, due <YYYY-MM-DDTHH:MMZ>
 Inbox handled through: <created_at of the last handled #699 comment> (comment <id>)
 Hub read through: <created_at of the last #854 comment read>
 
@@ -161,7 +161,7 @@ When `Rotate now` arrives, or an early-rotation rule below fires:
 
 1. Call `create_session` with `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, `model` `claude-opus-5-5`, `title` `Emberisle desk <UTC date>`, and `prompt` set to "The next desk's prompt" below, with your session id filled in.
 2. Write `Next desk: <its session id>` in the ledger. Add a `handover` row and set one `send_later` for 20 minutes.
-3. Then follow "If you are the old desk" as soon as its `Desk rotation` message arrives.
+3. Start "If you are the old desk" right away. Don't wait for a message from the new desk.
 4. If `create_session` fails, tell Jarrod once: "The desk could not start its successor. Please start a new one." Give him the start line from the top of this file.
 
 **You are the desk only while the ledger's `Desk:` line names your session.** Check it at every wake and before every merge. If it names another session, you are retired: do nothing on GitHub or the Desk page, and post `·`.
@@ -171,7 +171,7 @@ When `Rotate now` arrives, or an early-rotation rule below fires:
 Follow "Start a desk session" below. In short:
 
 1. Check that the ledger's `Next desk:` line names you. If it is empty, write your session id there.
-2. Send the old desk one message with `send_message`: `Desk rotation: hand over to <your session id>. Follow "If you are the old desk" in docs/DESK.md.`
+2. Send the old desk one message with `send_message`: `Desk rotation: hand over to <your session id>. Follow "If you are the old desk" in docs/DESK.md.` If `send_message` is denied, skip this step. The old desk starts on its own when the ledger names you.
 3. Add a `handover` row and set one `send_later` for 20 minutes.
 4. Until the handover ends, only read. Don't merge, review, post, or add cards.
 5. When `Handover done` arrives, archive the old session with `archive_session`.
@@ -189,7 +189,7 @@ Follow "Start a desk session" below. In short:
 
 ### If you are the old desk
 
-A `Desk rotation` message is valid only if the ledger's `Next desk:` line names its sender. Otherwise ignore it.
+Start these steps as soon as the ledger's `Next desk:` line names another session, whether or not a `Desk rotation` message arrives. On 2026-11-12 the new desk's message was blocked and the handover stalled for 18 hours. A `Desk rotation` message is valid only if the `Next desk:` line names its sender. Otherwise ignore it.
 
 1. Start nothing new: no review, card, merge or label sweep.
 2. If Jarrod asked you something, answer it first.
@@ -202,6 +202,11 @@ A `Desk rotation` message is valid only if the ledger's `Next desk:` line names 
 9. Post one last chat line: "A new desk has taken over. Open the newest Emberisle desk chat."
 
 After that, answer every wake with `·`.
+
+### The watchdog and permissions
+
+- **The desk-board is the watchdog.** It runs on GitHub after every CI run and three times a day, and needs no session. If the desk has run for more than 26 hours, or `Next rotation:` is missing or over an hour late, it posts one `To desk: desk-board watchdog:` line to the inbox each day, and shows the alert in #916. Keep the `Desk:` and `Next rotation:` lines in the exact formats above, or it can't read them.
+- **The desk's own tools are allowed** in the repo's `.claude/settings.json`: `send_message`, `send_later`, `get_session`, `create_session` and `archive_session`. Jarrod asked for these rules on 2026-11-13. Only Jarrod changes them; no agent edits permission settings on its own. If one is denied, tell Jarrod once which tool, then carry on with work that doesn't need it. Use these tools only for the desk's work in this file. A builder never archives, messages or starts sessions.
 
 ### When to rotate early
 
@@ -286,7 +291,7 @@ A different model from the builder: Sonnet 5.5 by default, never the builder's o
 - **Sound, renderer and HUD work** don't need Opus for their area alone. Sonnet checks the code, and Jarrod judges the look and sound on the Desk page.
 - **The desk-board's `Route` column is a hint.** The issue's `tier:` label decides, not the file paths.
 
-A desk review comment starts with `<!-- review-desk -->`. A clean one then says `Clean.`. Every review ends with `Reviewer: <model> · Builder: <model> · Head: <sha>`. Copy the SHA from the API. Never type it.
+A desk review comment starts with `<!-- review-desk -->`. A clean one then says `Clean.`, and the next line is the machine tag `<!-- review-desk: clean <head sha> -->`. Every review ends with `Reviewer: <model> · Builder: <model> · Head: <sha>`. The tag and the footer carry the same SHA, copied from the API, never typed. The desk-board reads the tag, so a clean review without it never shows as ready to merge.
 
 A builder with several open PRs lists them in priority order in a `To desk:` comment. The desk reviews them in that order.
 
