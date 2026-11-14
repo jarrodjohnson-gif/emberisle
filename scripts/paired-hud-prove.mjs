@@ -26,7 +26,7 @@
 // dispatch as a tap would; the bots move only when this proof runs the store's runBots, so a state holds while it is read.
 // Every failure is listed before the run fails. SHOTS=1 writes real-game PNGs at device scale 2 into docs/proofs/1609/:
 // the Play page with the seat choice, and the tray on the person's partner turn and on another seat's.
-// Run: npm run paired-hud-prove
+// Run: npm run paired-hud-prove. ONLY=guards runs just the guard cases (390x844, practice to the person's partner turn).
 import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
@@ -36,6 +36,7 @@ const SHOTS = process.env.SHOTS === "1";
 const SHOT_DIR = "docs/proofs/1609";
 const WIDE = 'html, body { font-family: "DejaVu Sans", sans-serif !important; }';
 // `full` plays that seat count's practice game to the win; the other count only to the person's first partner turn.
+const ONLY_GUARDS = process.env.ONLY === "guards";
 const VIEWS = [
   { tag: "390x844", width: 390, height: 844, touch: true, full: 5, hotseat: 6 },
   { tag: "844x390", width: 844, height: 390, touch: true, full: 6, hotseat: 5 },
@@ -294,6 +295,10 @@ async function guardCases(page, tag) {
       st.players.find((p) => p.id === bot).resources = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0, ...hand };
       return st;
     };
+    // The store also skips an ask the same as that bot's last one the whole table declined (botDeclined, passed to
+    // chooseTradeAsk), which the game so far may have left behind. Leaving clears that memory; the table comes back as it was.
+    e.getState().goTitle();
+    e.setState({ screen: "play", state: base });
     const out = [];
     for (const b of base.players.filter((p) => p.kind === "bot")) {
       const hand = HANDS.find((h) => chooseTradeAsk(table(b.id, "primary", 1, h), b.id));
@@ -476,8 +481,8 @@ const newPage = async (v) => {
 };
 
 try {
-  await dealCases();
-  for (const v of VIEWS) {
+  if (!ONLY_GUARDS) await dealCases();
+  for (const v of ONLY_GUARDS ? VIEWS.slice(0, 1) : VIEWS) {
     const { ctx, page, expandedAsked } = await newPage(v);
     const tag = v.tag;
 
@@ -544,7 +549,10 @@ try {
       r = await play(page, `st.role === "partner" && st.current === me`);
       check(!r.over && !r.stuck, `${t}: never reached the person's partner turn ${JSON.stringify(r)}`);
       await partnerTurn(page, v, t, { shotName: full ? `partner-yours-${tag}` : null, full: full || v.wide });
-      if (!full && tag === "390x844") await guardCases(page, t);
+      if (!full && tag === "390x844") {
+        await guardCases(page, t);
+        if (ONLY_GUARDS) break;
+      }
 
       if (!full) continue;
       // To the win screen, then Play again.
@@ -563,7 +571,7 @@ try {
       check(JSON.stringify(identity(st)) === JSON.stringify(was), `${t} play again: seats ${JSON.stringify(identity(st))}, were ${JSON.stringify(was)}`);
     }
 
-    if (!v.wide) {
+    if (!v.wide && !ONLY_GUARDS) {
       // Pass and play: both counts start; one is played out and dealt again.
       for (const seats of [5, 6]) {
         const t = `${tag} pass and play ${seats}`;
