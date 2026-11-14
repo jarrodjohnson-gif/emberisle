@@ -275,6 +275,7 @@ try {
     check(last.inside, `${at}: scrolled up, the oldest group is not inside the sheet ${JSON.stringify(last)}`);
     await shot("log-end");
     await sheet.evaluate((el) => { const list = el.querySelector("ol"); list.scrollTop = list.scrollHeight; });
+    await settle();
     if (v.tag === "390x844") {
       // The phone turns with the sheet open (390x844 to 844x390 and back): the newest turn stays in view at the bottom.
       for (const [w, h] of [[844, 390], [390, 844]]) {
