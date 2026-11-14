@@ -336,22 +336,43 @@ body:has([data-testid='banner'], [data-testid='first-game-coach']) aside:has(> d
 .take-row { flex-wrap: wrap; }
 .take-row > button { flex: 1 1 auto; padding: 0 12px; }
 .hud-tray:has(.take-row) > :is(.hud-actions, .tray-extra), .hud-tray:has(.discard-pick) > :is([data-testid="hand-dock"], .tray-extra) { display: none; }
-/* discard: the hand's five numbers become tokens. The 14 px under them and the row gap hold each minus button's 44 px target clear of Discard. */
-.discard-pick { display: flex; flex-direction: column; gap: 10px; }
-.discard-pick > .trade-resource-grid { padding-bottom: 14px; }
-.discard-pick .trade-remove { top: 44px; }
+/* #1595 discard: the hand's five columns are the picker. A column you can tap is a soft box with its symbol and what you keep;
+   a good you hold none of is grey with no box. A "−N" tag hangs above a picked column. The take-back row stands where the names
+   were: five 44 px targets, off (no fill) until their good is picked, so nothing overlaps a number and nothing jumps. */
+.discard-pick { display: flex; flex-direction: column; gap: 4px; }
+.discard-goods, .discard-back { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.discard-good { position: relative; display: flex; height: 44px; min-width: 0; align-items: center; justify-content: center; gap: 4px; border: 0; border-radius: 12px; background: #e9f0ee; color: #1f3331; font: 600 17px/22px var(--font-numeral); font-variant-numeric: tabular-nums; }
+.discard-good:disabled { background: transparent; color: #9aa6a3; }
+.discard-good > svg { width: 20px; height: 20px; }
+.discard-good[aria-disabled] { cursor: default; }
+.discard-back > button { display: flex; height: 44px; min-width: 0; align-items: center; justify-content: center; border: 0; border-radius: 12px; background: #e9f0ee; color: #1f3331; font: 700 20px/1 var(--font-ui); }
+.discard-back > button[aria-disabled] { background: transparent; color: #9aa6a3; cursor: default; }
 .discard-pick > button { height: 48px; border: 0; border-radius: 12px; }
 /* still a target while off, so the tray stays one solid box for the island's fit (isle-renderer solidRects) */
 .discard-pick > button:disabled { background: #e9f0ee; color: #52625f; pointer-events: auto; cursor: default; }
-.hud-col .discard-pick > .trade-resource-grid { gap: 4px; }
+.hud-col .discard-goods, .hud-col .discard-back { gap: 4px; }
+/* #1595: what would move is a small tag above the column, clear of its symbol and number: "−N" in Give colours, "+N" in Get
+   colours. An offered hand column keeps its plain look; it has no border, since it is not a thing to press for the offer. */
+.hud-tray .hand-offer-delta { position: absolute; top: -21px; left: 50%; right: auto; z-index: 1; min-width: 28px; height: 18px; padding: 0 6px; border-radius: 9px; transform: translateX(-50%); background: var(--give-bg); color: var(--give); font: 700 12px/18px var(--font-numeral); font-variant-numeric: tabular-nums; text-align: center; white-space: nowrap; }
+.hud-tray [data-offer="get"] > .hand-offer-delta { background: var(--get-bg); color: var(--get); }
+.hud-tray .hand-resource-card-slot[data-offer] > .goods-card { box-shadow: none; }
+/* the tag hangs wholly above the column (the symbol's place shifts with the column's size), so the hand drops 8 px while an offer is open */
+.hud-tray:has(.hand-offer-delta) [data-testid="hand-dock"] { padding-top: 8px; }
+/* #1595 take-from: the seat's name and, in quiet text, its card count ("Pine 3") */
+.take-row > button { gap: 6px; }
+.take-count { flex-shrink: 0; color: #52625f; font-weight: 500; }
+/* #1595: in a discard and in "take from whom" a top-line dot would read as a seat; teal is no seat, so there is none. */
+.turn-instruction-plain::before { display: none !important; }
 @media (min-width: 768px) and (pointer: fine) {
   .hud-tray:has(.trade-answers) { grid-template-columns: auto minmax(0, 1fr); }
   .hud-tray .trade-dock:has(.trade-answers) { grid-row: 1 / span 2; }
   .hud-tray .trade-answers { grid-area: 2 / 2; }
   .hud-tray > .take-row { grid-column: 2; }
-  .discard-pick { flex-direction: row; gap: 14px; }
-  .discard-pick > .trade-resource-grid { grid-template-columns: repeat(5, 64px); }
-  .discard-pick > button { flex: 1; margin-top: 12px; }
+  .discard-pick { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 14px; row-gap: 8px; }
+  .discard-goods, .discard-back { grid-column: 1; grid-template-columns: repeat(5, 64px); }
+  .discard-pick > button { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+  /* the two 44 px rows take the hand's place, so the discard's top line drops its spare height to keep the tray's hole */
+  .hud-tray:has(.discard-pick) .turn-instruction { min-height: 20px; }
 }
 .turn-stamp { background: #fff; border: 1px solid #cbd3d3; border-radius: 20px; box-shadow: var(--shadow-sheet); padding: 16px 24px; color: var(--ink); font-size: 28px; line-height: 32px; font-weight: 700; letter-spacing: -0.8px; }
 .turn-stamp[data-leaving] { animation: none !important; transition: opacity 160ms var(--ease-in), transform 160ms var(--ease-in); }

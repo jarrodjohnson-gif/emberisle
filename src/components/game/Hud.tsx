@@ -18,6 +18,7 @@ import { buildStatus, type Price } from "@/components/game/BuildCost";
 import { useEscapeDisarm } from "@/components/game/escape-disarm";
 import { COST, RESOURCES, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
 import { playable, totalVP } from "@/lib/game/rules";
+import { useDiscardPicked } from "@/lib/game/discard-pick";
 import { useGame } from "@/lib/game/store";
 import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
 import { useViewport } from "@/lib/viewport";
@@ -133,6 +134,12 @@ function LossesFailed({ message, onRetry }: { message: string; onRetry: () => vo
   );
 }
 
+// #1595: the discard's top line counts what is left to pick: "Discard 4: pick 1 more", then "Discard 4: ready".
+function discardLine(owed: number, picked: number) {
+  const left = owed - picked;
+  return `Discard ${owed}: ${left > 0 ? `pick ${left} more` : "ready"}`;
+}
+
 export function Hud() {
   const gameLog = useGame((s) => s.gameLog);
   const state = useGame((s) => s.state);
@@ -151,6 +158,7 @@ export function Hud() {
   const tradeOpen = useGame((s) => s.tradeOpen);
   const dispatch = useGame((s) => s.dispatch);
   const choosing = useGame((s) => !!s.pendingSteal);
+  const discardPicked = useDiscardPicked();
   const setBuildMode = useGame((s) => s.setBuildMode);
   const setHowTo = useGame((s) => s.setHowTo);
   const menuFor = useGame((s) => s.menuFor);
@@ -307,7 +315,7 @@ export function Hud() {
     : armed
     ? matchMedia("(pointer: coarse)").matches ? armed[0] : `${armed[0]} · Esc cancels`
     : state.phase === "discard"
-      ? `Discard ${state.discardNeeded[subject] ?? 0} goods`
+      ? discardLine(state.discardNeeded[subject] ?? 0, discardPicked)
       : partner ? "Your partner turn" : phaseCopy(state.phase);
   const waiting = mode !== "hotseat" && !yours;
   // #430: in hotseat a seat that owes a discard on another seat's turn is named, not given the turn.
@@ -331,7 +339,7 @@ export function Hud() {
     <p key={`turn-${state.current}`} data-testid="turn-banner"
       // #1509: on the upright table the line has no box, so another seat's colour is a dot before it (styles.css, --seat).
       style={{ borderLeftColor: yours ? undefined : subjectPlayer.color, ...(yours ? {} : { "--seat": subjectPlayer.color }) } as CSSProperties}
-      className={cn("turn-instruction rounded-control px-3 py-1.5 text-[15px] font-medium leading-5", yours ? "turn-instruction-own" : "border-l-4", !waiting && !choosing && (state.phase === "robber" || buildMode === "knight") && "turn-instruction-move")}
+      className={cn("turn-instruction rounded-control px-3 py-1.5 text-[15px] font-medium leading-5", yours ? "turn-instruction-own" : "border-l-4", !waiting && !choosing && (state.phase === "robber" || buildMode === "knight") && "turn-instruction-move", (choosing || discarder) && "turn-instruction-plain")}
     >{turnText}</p>
   );
 
