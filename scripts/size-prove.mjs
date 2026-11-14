@@ -110,6 +110,9 @@ const CEILINGS = [
   // New chunk only; proposed, the desk sets this ceiling. Raised to 1,750 B by the owner on 2026-11-13 (q1617-gamelog-ceiling,
   // A): it sat at its 1,550 B ceiling and builds flipped on a byte of gzip variation.
   { name: "GameLog", gzipBytes: 1750 },
+  // #1609: the five and six seat island and paired turns (src/lib/game/expanded.ts), loaded only for those games; measured
+  // 2,952 B gzip. New chunk; the desk set this ceiling (PR #1655, 2026-11-14, with q1655-five-six-start A).
+  { name: "expanded", gzipBytes: 3300 },
   // #827: other seats' public roll and trade gains load lazily (online only); a new chunk, so this ceiling is its only limit.
   { name: "SeatPublicGains", gzipBytes: 1800 },
 ];
