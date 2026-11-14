@@ -286,7 +286,9 @@ async function turnView(tabs, snaps, label) {
 }
 
 // The acting tab reloads mid turn: it is back on the same deadline, and its countdown carries on.
-async function reloadKeeps(tabs, label) {
+// `slow`: the reloaded page gets expanded.ts 3 s late, so the state that rejoins it waits behind the chunk; the countdown
+// must still read the host's time, not run late by the wait.
+async function reloadKeeps(tabs, label, slow = false) {
   let snaps = await same(tabs, `${label} before the reload`);
   const g = snaps[0].state;
   const k = seatOf(snaps, g.current);
@@ -296,10 +298,16 @@ async function reloadKeeps(tabs, label) {
   // Some way into the window, so a fresh one would show.
   await until(async () => Number(await chip.getAttribute("data-seconds")) <= TURN / 1000 - 6, `${t.label} countdown 6 s in`);
   const before = { secs: Number(await chip.getAttribute("data-seconds")), deadline: snaps[k].timer.deadline, at: Date.now() };
+  const chunk = /\/src\/lib\/game\/expanded\.ts/;
+  if (slow) await t.page.route(chunk, async (route) => {
+    await sleep(3000);
+    await route.continue();
+  });
   await t.page.reload();
   await t.page.waitForFunction(() => window.__emberisle?.getState().screen === "play" && window.__emberisle.getState().turnTimer, null, { timeout: 30_000 });
   await until(async () => (await chip.count()) && (await chip.getAttribute("data-player")) === g.current, `${t.label} countdown after the reload`);
   const after = { secs: Number(await chip.getAttribute("data-seconds")), deadline: (await snap(t)).timer.deadline, at: Date.now() };
+  if (slow) await t.page.unroute(chunk);
   const gone = Math.floor((after.at - before.at) / 1000);
   snaps = await same(tabs, `${label} after the reload`);
   check(snaps[k].state.current === g.current && snaps[k].state.seq === g.seq, `${label}: ${t.label} reloads into the same turn (seq ${g.seq})`);
@@ -383,7 +391,7 @@ try {
     const actor = seatOf(snaps, g.current);
     if (g.role === "partner") {
       if (!reloadedPartner) {
-        snaps = await reloadKeeps(tabs, `${label} partner reload`);
+        snaps = await reloadKeeps(tabs, `${label} partner reload, expanded.ts 3 s late`, true);
         reloadedPartner = true;
       }
       for (const k of DRAWN) {
