@@ -314,9 +314,44 @@ try {
       check(`${tag}: the classic island measured from its own coast fits as the constants do (upright or play overhead, 25° overhead, diorama, free dolly)`, same.worst < 1e-9 && Math.abs(same.grow) < 1e-9, same);
       classicTokens[tag] = cm;
 
+      // #1652: a whale mid-lane on the classic board's east side, where the expanded island grows. When the board changes, no
+      // visitor is left on the old lane: either its visit ends with the old board (buildLand resets the ocean life), or neither
+      // where it is nor any point left on its lane is inside the new coast's foam line.
+      let visitor = null;
+      if (!shaped) await page.evaluate(() => {
+        const o = window.__isle.oceanLife;
+        o.begin("whale", { angle: 0, arc: 0.32, direction: 1 });
+        o.active.age = o.active.duration / 2;
+        o.pose(o.active);
+      });
+
       // The expanded island.
       await load(page, true);
       await waitBoard(page, 11);
+      if (!shaped) {
+        visitor = await page.evaluate(() => {
+          const i = window.__isle, o = i.oceanLife, v = o.active;
+          if (!v) return { ended: true, shown: Object.values(o.creatures).filter((c) => c.root.visible).length };
+          // The coast's outer foam edge (traceCoast's foam strip runs 0.22 to 0.42 out along each corner's miter).
+          const ring = i.coast.map((c) => [c.x + c.mx * 0.42, c.z + c.mz * 0.42]);
+          const inside = ([x, z]) => {
+            let hit = false;
+            for (let a = 0, b = ring.length - 1; a < ring.length; b = a++) {
+              const [xa, za] = ring[a], [xb, zb] = ring[b];
+              if (za > z !== zb > z && x < ((xb - xa) * (z - za)) / (zb - za) + xa) hit = !hit;
+            }
+            return hit;
+          };
+          const lane = [];
+          for (let u = v.age / v.duration; u <= 1; u += 0.05) {
+            const a = v.angle + (u - 0.5) * v.arc * v.direction;
+            lane.push([o.ox + Math.cos(a) * v.radius, o.oz + Math.sin(a) * v.radius]);
+          }
+          const root = o.creatures[v.species].root.position;
+          return { radius: v.radius, grow: o.grow, at: [root.x, root.z].map((n) => +n.toFixed(2)), atInside: inside([root.x, root.z]), laneInside: lane.filter(inside).length, lane: lane.length };
+        });
+        check("a visitor mid-lane when the board grows: its visit ends with the old board, or it and the rest of its lane are outside the new coast", visitor.ended ? visitor.shown === 0 : !visitor.atInside && visitor.laneInside === 0 && visitor.lane > 0, visitor);
+      }
       const m = await measure(page);
       if (!shaped) {
         shaped = true;
