@@ -303,6 +303,54 @@ try {
   }
   console.log(`${secondTab.name}'s window ran out on a muted tab: no tab played a cue`);
 
+  // #1664: the waited-on tab reloads mid window on a page too busy to read its rejoin for 3 s. Every message from the welcome
+  // on, the first state too, reaches the page 3 s late, in order. The chip must still read the host's time left, not 3 s more.
+  vs = await until(async () => {
+    const vs = await views(tabs);
+    return vs.every((v) => v && v.seq > seq2 && v.chip?.player === v.current) ? vs : null;
+  }, "the next window arms", TURN);
+  const actor = vs[0].current;
+  const actorTab = tabs[vs.findIndex((v) => v.you === actor)];
+  await until(async () => (await view(actorTab))?.chip?.seconds <= TURN / 1000 - 4, `${actorTab.name}'s window is 4 s in`, TURN);
+  const HOLD = 3000;
+  await actorTab.page.addInitScript((hold) => {
+    const d = Object.getOwnPropertyDescriptor(WebSocket.prototype, "onmessage");
+    const queue = [];
+    let free = 0;
+    Object.defineProperty(WebSocket.prototype, "onmessage", {
+      configurable: true,
+      get() { return d.get.call(this); },
+      set(fn) {
+        d.set.call(this, (ev) => {
+          if (!free && /^\{"type":"welcome"/.test(ev.data)) free = Date.now() + hold;
+          if (Date.now() >= free) return fn.call(this, ev);
+          if (queue.push(() => fn.call(this, ev)) === 1) setTimeout(() => queue.splice(0).forEach((f) => f()), free - Date.now());
+        });
+      },
+    });
+  }, HOLD);
+  await actorTab.page.reload();
+  await actorTab.page.waitForFunction(() => window.__emberisle?.getState().screen === "play" && document.querySelector('[data-testid="turn-countdown"]'), null, { timeout: 30_000 });
+  // Read at the moment the chip changes, after the reload's first renders settle. A page this busy can still commit a tick's
+  // render late, so one reading of the four may show the second before; the 3 s hold would put all four off.
+  await new Promise((r) => setTimeout(r, 1500));
+  const readings = await actorTab.page.evaluate(() => new Promise((resolve, reject) => {
+    const got = [];
+    setTimeout(() => reject(new Error(`the chip changed ${got.length} times in 8 s`)), 8000);
+    new MutationObserver(() => {
+      const chip = document.querySelector('[data-testid="turn-countdown"]');
+      const timer = window.__emberisle.getState().turnTimer;
+      if (!chip || !timer || got.at(-1)?.secs === Number(chip.dataset.seconds)) return;
+      got.push({ player: chip.dataset.player, secs: Number(chip.dataset.seconds), host: Math.ceil((timer.deadline - Date.now()) / 1000) });
+      if (got.length === 4) resolve(got);
+    }).observe(document.body, { attributes: true, attributeFilter: ["data-seconds"], childList: true, subtree: true });
+  }));
+  // The host's clock and this tab's are the machine's one clock. A reading may round to the other side of a second it just
+  // crossed: one second either way.
+  const off = readings.filter((r) => r.player !== actor || Math.abs(r.secs - r.host) > 1);
+  if (off.length > 1) throw new Error(`after a reload whose welcome and first state were read ${HOLD} ms late, ${actorTab.name}'s chip read ${readings.map((r) => `${r.secs}/${r.host}`).join(", ")} s (chip/host)`);
+  console.log(`reload with the welcome and first state read ${HOLD} ms late: ${actorTab.name}'s chip read ${readings.map((r) => `${r.secs}/${r.host}`).join(", ")} s (chip/host)`);
+
   if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);
   console.log("PASS countdown-prove");
 } catch (e) {
