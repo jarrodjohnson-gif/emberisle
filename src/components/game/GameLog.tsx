@@ -65,19 +65,20 @@ export function GameLog({ opener, onClose }: { opener: HTMLElement | null; onClo
   const turns = turnsOf(log).reverse();
   const list = useRef<HTMLOListElement>(null);
   // As Chat.tsx: a resize (a turned phone, the sheet settling) re-pins the newest turn unless the reader scrolled up, and a
-  // scroll at another list height than the last one measured is the resize's, not the reader's.
+  // scroll at another list dimension than the last one measured is the resize's, not the reader's.
   const stuck = useRef(true);
-  const pinned = useRef(0);
+  const pinned = useRef({ w: 0, h: 0 });
   const toEnd = () => {
-    const el = list.current!;
-    if (stuck.current) el.scrollTop = el.scrollHeight;
+    const el = list.current;
+    if (el && stuck.current) el.scrollTop = el.scrollHeight;
   };
   // Every render: a new turn keeps the list at the newest one.
   useEffect(toEnd);
   useEffect(() => {
     const el = list.current!;
+    pinned.current = { w: el.clientWidth, h: el.clientHeight };
     const observer = new ResizeObserver(() => {
-      pinned.current = el.clientHeight;
+      pinned.current = { w: el.clientWidth, h: el.clientHeight };
       toEnd();
     });
     observer.observe(el);
@@ -92,7 +93,7 @@ export function GameLog({ opener, onClose }: { opener: HTMLElement | null; onClo
             <X className="size-5" />
           </Button>
         </div>
-        <ol ref={list} tabIndex={0} aria-label="Turns, oldest first" onScroll={({ currentTarget: el }) => { if (el.clientHeight === pinned.current) stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 8; }}>
+        <ol ref={list} tabIndex={0} aria-label="Turns, oldest first" onScroll={({ currentTarget: el }) => { const b = el.scrollHeight - el.scrollTop - el.clientHeight < 8; if (b || (el.clientWidth === pinned.current.w && el.clientHeight === pinned.current.h)) stuck.current = b; }}>
           {turns.map((t, i) => (
             <li key={i} data-testid="gl-turn" className="gl-turn">
               <div className={t.name && t.name === mine ? "text-gain" : undefined}>

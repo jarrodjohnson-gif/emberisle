@@ -61,12 +61,27 @@ export function classify({ pr, files, checks, comments, current = pr }) {
   return { ...row, bucket: 'Ready to merge', reason: 'clean review at head; checks green' };
 }
 
+// Watchdog: the desk rotates itself daily (DESK.md rule 6). A dead or stale desk can't
+// report its own death, so this script, which needs no session tools, checks the ledger.
+export const WATCH = 'To desk: desk-board watchdog:';
+export function watchdog(body, now) {
+  const ledger = /<!-- desk-ledger:start -->([\s\S]*?)<!-- desk-ledger:end -->/.exec(body ?? '')?.[1];
+  if (!ledger) return null;
+  const since = /^Desk: .*?since (\d{4}-\d\d-\d\d)[ T](\d\d:\d\d)/m.exec(ledger);
+  if (since && now - Date.parse(`${since[1]}T${since[2]}:00Z`) > 26 * 3600e3) return 'the desk has run for more than 26 hours';
+  // The ledger writes either "due 2026-11-14T12:43Z" or "due 2026-11-14 12:43 UTC".
+  const next = /^Next rotation: .*?due (\d{4}-\d\d-\d\d)[ T](\d\d:\d\d)(?::\d\d)?\s*(?:Z|UTC)/m.exec(ledger);
+  if (!next) return 'no next rotation is set';
+  if (now - Date.parse(`${next[1]}T${next[2]}:00Z`) > 3600e3) return 'the next rotation is overdue';
+  return null;
+}
+export const watchLine = reason => `${WATCH} ${reason}. Jarrod: if no desk answers within an hour, start one with "Run the Emberisle review desk. Read docs/DESK.md."`;
 export const wakeLine = row => `review-desk: PR #${row.number} green on ${row.sha}, unreviewed`;
 export const mergeLine = row => `review-desk: PR #${row.number} clean and green on ${row.sha}, ready to merge`;
 const WAKES = { 'Ready for desk': wakeLine, 'Ready to merge': mergeLine };
 export const lineFor = row => WAKES[row.bucket]?.(row);
 const botOrTrusted = c => trusted(c) || c.user?.login === 'github-actions[bot]';
-export function notifications(rows, inbox, now) {
+export function notifications(rows, inbox, now, alarm = null) {
   const day = now.toISOString().slice(0, 10);
   const history = inbox.filter(botOrTrusted);
   const count = history.filter(c => c.created_at?.startsWith(day) && /^(review-desk: |To desk: desk-board )/.test(c.body)).length;
@@ -74,6 +89,9 @@ export function notifications(rows, inbox, now) {
   const out = [];
   if (rows.some(r => r.missing) && !history.some(c => c.body === MISSING && c.created_at?.startsWith(day)) && remaining) {
     out.push(MISSING); remaining--;
+  }
+  if (alarm && !history.some(c => c.body.startsWith(WATCH) && c.created_at?.startsWith(day)) && remaining) {
+    out.push(watchLine(alarm)); remaining--;
   }
   for (const row of rows) {
     const line = lineFor(row);
@@ -84,9 +102,9 @@ export function notifications(rows, inbox, now) {
   return out;
 }
 
-export function tableFor(rows, now) {
+export function tableFor(rows, now, alarm = null) {
   const safe = s => String(s ?? 'none').replace(/[|\r\n<>]/g, ' ');
-  return `${START}\n## Desk board\nchecked: ${now.toISOString()}\n\n| PR | Head | checks | Reviewed head | State | Route | Reason |\n|---|---|---|---|---|---|---|\n` +
+  return `${START}\n## Desk board\nchecked: ${now.toISOString()}\nwatchdog: ${alarm ? `ALERT: ${alarm}` : 'ok'}\n\n| PR | Head | checks | Reviewed head | State | Route | Reason |\n|---|---|---|---|---|---|---|\n` +
     rows.map(r => `| #${r.number} | ${safe(r.sha)} | ${r.checks} | ${safe(r.reviewed)} | ${r.bucket} | ${r.route} | ${safe(r.reason)} |`).join('\n') + `\n${END}`;
 }
 export function updateBody(body, table) {
@@ -128,7 +146,8 @@ export async function sweep(api, { now = new Date(), dryRun = false, only } = {}
     rows.push(classify({ pr, files, comments, checks, current }));
   }
   const inbox = await all('/issues/699/comments');
-  let messages = notifications(rows, inbox, now);
+  const alarm = watchdog((await api('/issues/916')).body, now);
+  let messages = notifications(rows, inbox, now, alarm);
   if (!dryRun) {
     // Recheck immediately before each wake. A new head or new review suppresses stale notifications.
     for (const message of messages) {
@@ -148,13 +167,13 @@ export async function sweep(api, { now = new Date(), dryRun = false, only } = {}
       const day = now.toISOString().slice(0, 10);
       const recent = await all(`/issues/699/comments?since=${day}T00:00:00Z`);
       const latestInbox = [...inbox.filter(c => !c.created_at?.startsWith(day)), ...recent];
-      if (notifications(rows, latestInbox, now).includes(message)) await api('/issues/699/comments', 'POST', { body: message });
+      if (notifications(rows, latestInbox, now, alarm).includes(message)) await api('/issues/699/comments', 'POST', { body: message });
     }
     // Read latest body after all potentially slow calls; preserve every byte outside our block.
     const board = await api('/issues/916');
-    await api('/issues/916', 'PATCH', { body: updateBody(board.body ?? '', tableFor(rows, now)) });
+    await api('/issues/916', 'PATCH', { body: updateBody(board.body ?? '', tableFor(rows, now, alarm)) });
   }
-  return { rows, table: tableFor(rows, now), messages };
+  return { rows, table: tableFor(rows, now, alarm), messages, alarm };
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const only = process.env.PR_NUMBER ? Number(process.env.PR_NUMBER) : undefined;
