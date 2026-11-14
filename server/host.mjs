@@ -533,8 +533,13 @@ function gameProblem(g, shape) {
 // overwritten by a later room with the same code.
 function keepAside(file, name, why) {
   const kept = existsSync(`${file}.unsupported`) ? `${file}.${Date.now()}.unsupported` : `${file}.unsupported`;
-  renameSync(file, kept);
-  console.error(`unsupported room file: ${name} (${why}); kept as ${path.basename(kept)}`);
+  // A rename that fails (a read-only disk) must not stop the host from starting: the file stays where it is, unread.
+  try {
+    renameSync(file, kept);
+    console.error(`unsupported room file: ${name} (${why}); kept as ${path.basename(kept)}`);
+  } catch (e) {
+    console.error(`unsupported room file: ${name} (${why}); left in place, could not set it aside: ${e.message}`);
+  }
 }
 
 function alive(pid) {
