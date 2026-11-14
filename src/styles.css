@@ -218,6 +218,8 @@ body:has(.seat-no) :is(.seat-dot, [data-testid='menu-seat'] > :first-child) { bo
    192 px chat bubble inside the scroll box, and the padding all round keeps the pill's shadow. The rail ignores the pointer,
    so the padding never blocks the island. */
 aside:has(> div > .seat-card .seat-no) { top: 4.25rem; left: 0; width: 26rem; max-height: calc(100dvh - 14.25rem); padding: 0.75rem 13.25rem 0.75rem 0.75rem; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+/* A turn banner or a first-game tip floats 46 px above the tray while it shows: the rail stops above it too. */
+body:has([data-testid='banner'], [data-testid='first-game-coach']) aside:has(> div > .seat-card .seat-no) { max-height: calc(100dvh - 17.25rem); }
 .hud-header > div > div > button[aria-label='Table menu'] { background: var(--table); color: var(--table-ink); border: 1px solid var(--table-line); }
 .hud-stack { scrollbar-width: thin; scrollbar-color: var(--table-line) var(--table); }
 .turn-instruction, .table-log { background: var(--table); color: var(--table-muted); }

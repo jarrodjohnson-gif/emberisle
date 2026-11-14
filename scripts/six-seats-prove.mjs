@@ -13,6 +13,9 @@
 //   on the sea and, as the turn walks round the table, on the pill;
 // - a tap opens that seat's player menu; on a phone its heading shows the seat number and the name;
 // - at 1280x600 the rail scrolls inside itself with a menu open, and never reaches the tray;
+// - where the rail and the tray share a column (768 to 1127 px wide), at 720, 600 and 500 px tall, no seat card meets
+//   the tray or a banner over it, at rest, with an incoming offer or a discard pick, and every seat scrolls into view;
+// - each seat's accessible name is exactly "Seat N " and then its whole name;
 // - a four-seat classic table's strip (390x844) and rail (1280x720) measure the same boxes and texts as on main
 //   (CLASSIC below, measured on origin/main with MEASURE_CLASSIC=1), and show no seat number;
 // - zero page errors.
@@ -316,6 +319,14 @@ try {
           const mine = await page.locator(`[data-testid="${s.id}"]`).getByRole("button", { name: new RegExp(`^Seat ${seatOf[s.pid]}(?!\\d)`) }).count();
           check(count === 1 && mine === 1, `${at}: ${count} buttons named "Seat ${seatOf[s.pid]} ...", ${mine} in ${s.id}`);
         }
+        // Exactly: the accessible name starts "Seat N " and then the seat's whole name (with " (bot)"), with nothing joined on.
+        const nameOf = await page.evaluate(() => Object.fromEntries(window.__emberisle.getState().state.players.map((p) => [p.id, p.name])));
+        for (const s of seats) {
+          const snap = await page.locator(`[data-testid="${s.id}"] > button`).ariaSnapshot();
+          const name = /button "((?:[^"\\]|\\.)*)"/.exec(snap)?.[1] ?? "";
+          const want = `Seat ${seatOf[s.pid]} ${nameOf[s.pid]}`;
+          check(name.startsWith(want) && !/[\p{L}\p{N}]/u.test(name.charAt(want.length)), `${at}: ${s.id} is named "${name}", want "${want}" and then a break`);
+        }
         return seats;
       };
 
@@ -427,6 +438,79 @@ try {
     check(m.cardLeft === 12 && m.cardW === 192, `1280x600 ${n} seats: cards at ${m.cardLeft}, ${m.cardW} px wide`);
     console.log(`1280x600 ${n} seats: rail ends at ${m.bottom} px, tray starts at ${m.tray} px, scrolled ${m.scroll} of ${m.overflow} px`);
     await ctx.close();
+  }
+
+  // The rail and the tray share a column on desktop widths from 768 px (the phone breakpoint) up to 1127 px: the tray is at
+  // most 720 px wide and centred, so its left edge, (width - 720) / 2, falls left of the cards' right edge (204 px) until
+  // 1128 px. At 768 and 1127 px wide, 720, 600 and 500 px tall, six seats, with the tray at rest and in its tallest real
+  // states (an incoming offer, a discard pick, a turn banner over it), no seat card's box meets the tray's box or the banner,
+  // and every seat can be scrolled into the rail's view clear of both. The Build list and the trade window are modal sheets
+  // on a wash over the whole table (aria-modal, z-30 over the rail's z-10/20): they cover the rail as they cover the island,
+  // so there only the tray itself is checked. At 1128 px the tray's left edge clears the cards.
+  {
+    const hit = (a, b) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5;
+    const edge = { tag: "1128x600", width: 1128, height: 600 };
+    {
+      const { ctx, page } = await newPage(edge, 1);
+      await put(page, await expanded(page, 6));
+      await page.locator('[data-testid="rail-p0"]').waitFor();
+      const m = await page.evaluate(() => ({ tray: document.querySelector("[data-hud-stack]").getBoundingClientRect().left, card: document.querySelector('[data-testid="rail-p0"]').getBoundingClientRect().right }));
+      check(m.tray >= m.card, `1128x600: the tray's left edge ${m.tray} is left of the cards' right edge ${m.card}`);
+      console.log(`1128x600: tray left ${m.tray} px, cards end at ${m.card} px, so the column is shared only below 1128 px`);
+      await ctx.close();
+    }
+    for (const [width, height] of [[768, 720], [768, 600], [768, 500], [1127, 720], [1127, 600], [1127, 500]]) {
+      const v = { tag: `${width}x${height}`, width, height };
+      const { ctx, page } = await newPage(v, 1);
+      const g = await expanded(page, 6);
+      g.players.find((p) => p.id === "p0").resources = { timber: 3, clay: 3, wool: 2, grain: 2, ore: 2 };
+      await put(page, g);
+      await page.locator('[data-testid="rail-p0"]').waitFor();
+      await page.mouse.move(width - 4, 120);
+      const reset = () => page.evaluate((g) => {
+        const e = window.__emberisle;
+        e.setState({ state: { ...g, seq: e.getState().state.seq + 1 }, offer: null, banner: null, tradeOpen: false, menuFor: null });
+      }, g);
+      const states = [
+        ["at rest", async () => {}],
+        ["an incoming offer", () => page.evaluate(() => window.__emberisle.setState({ offer: { tradeId: "six-offer", from: "p2", fromName: "Dune", give: { wool: 2 }, want: { ore: 1 }, until: Date.now() + 60000 }, declined: [] }))],
+        ["a discard pick", () => page.evaluate(() => { const e = window.__emberisle; const st = structuredClone(e.getState().state); st.phase = "discard"; st.discardNeeded = { p0: 6 }; st.seq += 1; e.setState({ state: st }); })],
+        ["a turn banner", () => page.evaluate(() => window.__emberisle.setState({ banner: "Dune's turn" }))],
+        ["the Build list", () => page.getByTestId("build-open").click().then(() => page.getByTestId("build-list").waitFor())],
+        ["the trade window", () => page.evaluate(() => window.__emberisle.getState().setTradeOpen(true))],
+      ];
+      const report = [];
+      for (const [name, open] of states) {
+        await reset();
+        await settle(page);
+        await open();
+        await page.waitForTimeout(250);
+        const at = `${v.tag} 6 seats, ${name}`;
+        const m = await page.evaluate(() => {
+          const box = (el) => { const r = el.getBoundingClientRect(); return { left: r.left, top: r.top, right: r.right, bottom: r.bottom }; };
+          const aside = document.querySelector("aside");
+          const banner = document.querySelector('[data-testid="banner"], [data-testid="first-game-coach"]');
+          const modal = document.querySelector('[role="dialog"][aria-modal="true"]');
+          const cards = [];
+          for (const c of aside.querySelectorAll(".seat-card")) {
+            c.scrollIntoView({ block: "nearest" });
+            cards.push({ id: c.dataset.testid, box: box(c), view: box(aside), pad: parseFloat(getComputedStyle(aside).paddingBottom) });
+          }
+          aside.scrollTop = 0;
+          return { tray: box(document.querySelector("[data-hud-stack]")), banner: banner && box(banner), modal: modal && { label: modal.getAttribute("aria-labelledby") ?? modal.getAttribute("aria-label"), z: getComputedStyle(modal.parentElement).zIndex }, cards };
+        });
+        const modal = name === "the Build list" || name === "the trade window";
+        if (modal) check(m.modal && Number(m.modal.z) >= 30, `${at}: the sheet is not a modal over the rail ${JSON.stringify(m.modal)}`);
+        for (const c of m.cards) {
+          check(!hit(c.box, m.tray), `${at}: ${c.id} ${JSON.stringify(c.box)} meets the tray ${JSON.stringify(m.tray)}`);
+          if (m.banner && !modal) check(!hit(c.box, m.banner), `${at}: ${c.id} ${JSON.stringify(c.box)} meets the banner ${JSON.stringify(m.banner)}`);
+          check(c.box.top >= c.view.top - 0.5 && c.box.bottom <= c.view.bottom + 0.5, `${at}: ${c.id} cannot be scrolled into the rail's view ${JSON.stringify(c)}`);
+        }
+        report.push(`${name}: tray top ${Math.round(m.tray.top)}${m.banner ? `, banner top ${Math.round(m.banner.top)}` : ""}, rail ends ${Math.round(m.cards[0].view.bottom)}`);
+      }
+      console.log(`${v.tag} 6 seats: ${report.join("; ")}`);
+      await ctx.close();
+    }
   }
 
   if (SHOTS) {
