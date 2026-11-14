@@ -388,7 +388,8 @@ interface GameStore {
   // `host` is the host's clock on the push that opened this window (0 when the push carried none).
   turnTimer: { at: number; player: string; deadline: number; host: number } | null;
   // The host clock minus this one, as best this tab has measured it (0 before any push). A push shows the skew less the time it
-  // spent on the way, so the largest one seen is the closest. The final-countdown cues are timed from it, not from `at`.
+  // spent on the way, so the largest one seen is the closest. The chip and its final-countdown cues count down by it (#1664);
+  // `at` only tells one window from the next.
   clockSkew: number;
   lobbyLog: string;
   hostTable: (visibility?: "open" | "private") => void;
@@ -1278,6 +1279,8 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
   let outdated: string | null = null;
   let firstState = false;
   let held: Parameters<TableEvents["state"]>[0][] | null = null;
+  // The best clock estimate on this connection. A welcome starts it over: a rejoin may reach a different host clock.
+  let bestSkew = -Infinity;
   const applyState: TableEvents["state"] = ({ you, game, legal, turnDeadline, turnPlayer, serverNow, result }) => {
     set({ gameResult: game.phase === "over" ? gameResult(result) : null });
     // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
@@ -1291,8 +1294,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     // the timer we hold stays while the host's deadline is the same, so the chip neither remounts nor announces twice.
     const skew = typeof serverNow === "number" ? serverNow - Date.now() : 0;
     const prev = get().turnTimer;
-    // A new connection starts the estimate over: a rejoin may reach a different host clock.
-    const clockSkew = firstState ? skew : Math.max(skew, get().clockSkew);
+    const clockSkew = (bestSkew = Math.max(skew, bestSkew));
     firstState = false;
     const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline, host: serverNow as number };
     // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
@@ -1321,6 +1323,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       if (variant) void expanded.prefetch();
       welcomed = true;
       firstState = true;
+      bestSkew = -Infinity;
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
       set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
@@ -1358,6 +1361,8 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
         }, 1500);
       set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0, ttt: null });
     },
+    // #1664: the welcome is timed from when the hello went out, so a page busy when it comes still measures true, before any state.
+    clock: (skew) => set({ clockSkew: (bestSkew = Math.max(skew, bestSkew)) }),
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
     reconnecting: (attempt) => {
       recovery = true;

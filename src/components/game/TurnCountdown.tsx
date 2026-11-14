@@ -26,15 +26,20 @@ export function TurnCountdown({ header }: { header?: HTMLElement | null }) {
   const at = timer?.at ?? null;
   const player = state?.players.find((p) => p.id === timer?.player);
   const who = !player ? null : player.id === localId ? "You" : player.name;
+  const deadline = timer?.deadline ?? null;
+  // The number and the cues run off the best clock estimate, which a late push cannot spoil (#1664). It only ever grows within a
+  // connection, so a better one moves the count down a little, never up; the chip keeps `at` as its key so it never remounts.
+  const skew = useGame((s) => s.clockSkew);
+  const cueAt = (deadline ?? 0) - skew;
 
+  useEffect(() => setSaid(null), [at]);
   useEffect(() => {
-    setSaid(null);
     if (at === null) return setSecs(null);
-    const tick = () => setSecs(Math.max(0, Math.ceil((at - Date.now()) / 1000)));
+    const tick = () => setSecs(Math.max(0, Math.ceil((cueAt - Date.now()) / 1000)));
     tick();
     const id = setInterval(tick, 250);
     return () => clearInterval(id);
-  }, [at]);
+  }, [at, cueAt]);
 
   // #661: only the seat the timer waits on hears it, online. A tick as the count reaches each of 5..1 and a knock at 0, once per
   // value. The cues are timed from the deadline itself, not from the 250 ms read-out above: the host moves the turn on at the
@@ -48,10 +53,6 @@ export function TurnCountdown({ header }: { header?: HTMLElement | null }) {
   // The deadline and the lowest count already ticked for it. A re-arm (the clock estimate improved) clears the pending timers, so
   // a count counts as heard only once it has played, never because it was armed.
   const ticked = useRef<[number, number]>([0, 6]);
-  const deadline = timer?.deadline ?? null;
-  // The cues run off the best clock estimate, which a late push cannot spoil; the chip keeps its own `at` so it never remounts.
-  const skew = useGame((s) => s.clockSkew);
-  const cueAt = (deadline ?? 0) - skew;
   useEffect(() => {
     if (!mine || deadline === null) return;
     const tick = (n: number) => {
