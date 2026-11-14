@@ -6,6 +6,8 @@
 // 4. A steal victim pick appears immediately (< 250ms) with no visible delay.
 // 5. Network failure for losses chunk renders visible alert with Try again.
 // 6. Tapping Try again recovers once the network failure clears.
+// #1665: the player menu is its own chunk. The title never asks for it; the table fetches it on idle, so the first open
+// shows without delay (< 250ms); a refused load closes the menu with the table standing, and the next press opens it.
 // Run: npm run lazy-hud-prove
 import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
@@ -68,6 +70,12 @@ await page.route(/(TradeToast|losses)/, async (route) => {
   await route.continue();
 });
 
+// #1665: every request the page makes for the player menu's module, from the title on.
+const menuRequests = [];
+page.on("request", (r) => {
+  if (/\/PlayerMenu\.tsx/.test(r.url())) menuRequests.push(r.url());
+});
+
 // Time from the store update to the prompt being in the DOM, measured inside the page: a MutationObserver fires at React's
 // commit, so the figure leaves out Playwright's polling and its round trips, which a starved runner stretches by whole
 // frames. The 250 ms bound is unchanged.
@@ -76,6 +84,7 @@ const FIND = {
   // #1546: the discard is the tray's token picker with its "Discard N" button, no longer a form.
   discard: () => [...document.querySelectorAll('[data-testid="discard-pick"]')].find((f) => f.textContent.includes("Discard 2")),
   steal: () => document.querySelector('[role="group"][aria-label="The wayfarer takes a card"]'),
+  menu: () => document.querySelector('[data-testid="player-menu"]'),
 };
 const timeToAppear = (kind, trigger) =>
   page.evaluate(
@@ -101,7 +110,11 @@ const timeToAppear = (kind, trigger) =>
   );
 
 try {
+  // The title's own idle prefetch (the sheets) has run by the time its request is seen; the player menu is not asked for.
+  const titleIdle = page.waitForRequest(/\/src\/components\/game\/sheets\.ts(\?|$)/, { timeout: STEP_MS });
   await page.goto(`http://127.0.0.1:${PORT}/`);
+  await titleIdle;
+  check("title does not request the player menu chunk", menuRequests.length === 0, menuRequests);
   await page.getByRole("button", { name: "Play with bots", exact: true }).click({ timeout: STEP_MS });
   await page.waitForFunction(() => window.__emberisle?.getState().state);
 
@@ -127,6 +140,20 @@ try {
       import(/* @vite-ignore */ "/src/components/game/losses.ts"),
     ]),
   );
+
+  // The table's idle prefetch asks for the player menu; this import settles once that load has evaluated (see above).
+  const menuDeadline = Date.now() + STEP_MS;
+  while (menuRequests.length === 0 && Date.now() < menuDeadline) await new Promise((r) => setTimeout(r, 50));
+  check("table idle prefetch requests the player menu chunk", menuRequests.length >= 1, menuRequests);
+  await page.evaluate(() => import(/* @vite-ignore */ "/src/components/game/PlayerMenu.tsx"));
+
+  // --- 0. First player menu open ---
+  const menuElapsed = await timeToAppear("menu", `document.querySelector('[data-testid="rail-p1"] [data-menu-trigger]').click()`);
+  const menu = page.getByTestId("player-menu");
+  await menu.waitFor({ state: "visible", timeout: STEP_MS });
+  check("first player menu opens without delay (< 250ms)", menuElapsed < 250, { menuElapsed });
+  await page.keyboard.press("Escape");
+  await menu.waitFor({ state: "hidden", timeout: STEP_MS });
 
   // --- 1. First trade offer ---
   const tradeElapsed = await timeToAppear(
@@ -269,6 +296,43 @@ try {
   await recoveredStealBar.waitFor({ state: "visible", timeout: STEP_MS });
   check("tapping Try again recovers steal picker", await recoveredStealBar.isVisible());
   await stealFailPage.close();
+
+  // --- 6. Failed player menu chunk: the menu closes, the table stands, and the next press opens it ---
+  const menuFailPage = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  let failMenu = true;
+  let menuBlocked = 0;
+  await menuFailPage.route(/\/PlayerMenu\.tsx/, async (route) => {
+    if (failMenu) {
+      menuBlocked++;
+      await route.abort("failed");
+    } else {
+      await route.continue();
+    }
+  });
+  await menuFailPage.goto(`http://127.0.0.1:${PORT}/`);
+  await menuFailPage.getByRole("button", { name: "Play with bots", exact: true }).click({ timeout: STEP_MS });
+  await menuFailPage.waitForFunction(() => window.__emberisle?.getState().state);
+  await menuFailPage.evaluate((state) => {
+    window.__emberisle.getState().startAi();
+    window.__emberisle.setState({ state });
+  }, g);
+  const menuTrigger = menuFailPage.getByTestId("rail-p1").locator("[data-menu-trigger]");
+  const blockedBefore = menuBlocked;
+  await menuTrigger.click();
+  await menuFailPage.waitForFunction(() => window.__emberisle.getState().menuFor === null && document.querySelector('[data-testid="rail-p1"] [data-menu-trigger]').getAttribute("aria-expanded") === "false", null, { timeout: STEP_MS });
+  const menuFailed = await menuFailPage.evaluate(() => ({
+    menus: document.querySelectorAll('[data-testid="player-menu"]').length,
+    screen: window.__emberisle.getState().screen,
+    header: !!document.querySelector("header.hud-header"),
+    rail: !!document.querySelector('[data-testid="rail-p1"]'),
+  }));
+  check("failed player menu chunk: the press is refused, the menu closes and the table stands", menuBlocked > blockedBefore && menuFailed.menus === 0 && menuFailed.screen === "play" && menuFailed.header && menuFailed.rail, { ...menuFailed, blocked: menuBlocked, before: blockedBefore });
+  failMenu = false;
+  await menuTrigger.click();
+  const recoveredMenu = menuFailPage.getByTestId("player-menu");
+  await recoveredMenu.waitFor({ state: "visible", timeout: STEP_MS });
+  check("once the route recovers, the next press opens the player menu", (await recoveredMenu.isVisible()) && (await menuTrigger.getAttribute("aria-expanded")) === "true");
+  await menuFailPage.close();
 
 } finally {
   check("zero console errors", errors.length === 0, errors.slice(0, 5));

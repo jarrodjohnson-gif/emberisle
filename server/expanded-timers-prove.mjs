@@ -16,6 +16,10 @@
 // 7. Classic three and four seats, one person with bots (#1661): every new turn of the person gets a full window and
 //    budget though the bots play every turn in between in one go, also after a discard owed in a bot's turn and after
 //    answering a bot's ask. These two rooms run beside 6 and the five-seat cases.
+// 8. Setup with one person and bots (#1671): each setup step of the person (an outpost, then its path) gets a full window
+//    and budget, though setup stays in round 0: after its own roll-off roll, after bots placed in between (classic three
+//    seats, and five seats), and on the last seat's two steps back to back (four seats). The path shares its outpost's
+//    budget, also across a reconnect. These rooms run beside 7.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { appendFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -271,6 +275,28 @@ const cbAsker = at(cb4, 1);
 hands(cb4, { [at(cb4, 0)]: { grain: 2 }, [cbAsker]: { timber: 1, grain: 2, ore: 2 } }, 0);
 writeRoom("CB4", cb4, [1, 2, 3].map((i) => at(cb4, i)));
 ok(pairedTradeAsk({ ...structuredClone(cb4), current: cbAsker }, cbAsker, undefined), "CB4: on its turn the bot asks the table");
+// CS3: classic three seats in the roll-off, one person (players[0]) and two bots that rolled a 1 and a 2. The person's roll
+// (an unqueued die is a 3) wins, so it places first, then the bots place four steps in between, then the person again.
+const cs3 = createGame({ humans: NAMES.slice(0, 3).map((name) => ({ name })), bots: 0, seed: 1671 });
+Object.assign(cs3, { current: at(cs3, 0), rollOff: { rolls: { [at(cs3, 1)]: 1, [at(cs3, 2)]: 2 }, pending: [at(cs3, 0)] } });
+writeRoom("CS3", cs3, [1, 2].map((i) => at(cs3, i)));
+// Played locally up to `setupIndex` `i`, its outpost next.
+function setupTo(g, i) {
+  for (let k = 0; g.phase === "rollOff" || !(g.phase === "setupSettle" && g.setupIndex === i); k++) {
+    assert(k < 200, `setup reaches step ${i}`);
+    g = act(g, g.current, chooseBotAction(g, g.current));
+  }
+  return g;
+}
+// CS4: classic four seats, one person at the last seat (players[3]), whose two setup steps come back to back; the bots
+// placed the first three.
+const cs4 = setupTo(createGame({ humans: NAMES.slice(0, 4).map((name) => ({ name })), bots: 0, seed: 1671 }), 3);
+eq(cs4.current, at(cs4, 3), "CS4: the last seat places step 3");
+writeRoom("CS4", cs4, [0, 1, 2].map((i) => at(cs4, i)));
+// XS5: five seats, one person placing first (players[0]) and four bots placing eight steps in between.
+const xs5 = setupTo(createExpandedGame({ humans: NAMES.slice(0, 5).map((name) => ({ name })), bots: 0, seed: 1671 }), 0);
+eq([xs5.current, xs5.role ?? null], [at(xs5, 0), null], "XS5: the first seat places, with no paired turn in setup");
+writeRoom("XS5", xs5, [1, 2, 3, 4].map((i) => at(xs5, i)));
 
 // ---- 7. Classic, one person and bots (#1661). ----
 // The rule: a seat gets a TURN_MS inactivity window inside a total waited-on budget, the same for rolling, discarding and
@@ -413,13 +439,94 @@ async function classicBots4() {
   console.log(`classic bots: CB4, one person with three bots, every new turn a full ${TURN} ms window; ${lines.join("; ")}`);
 }
 
+// ---- 8. Setup, one person and bots (#1671). ----
+// Setup stays in round 0, so a seat's turn there is its setup step: an outpost, then its path. Each step starts its own
+// window and budget, as a turn does (7); the path is the same step, so an outpost renews the window, never the budget.
+const placeOf = (g, pid) => {
+  const a = chooseBotAction(g, pid);
+  return a.type === "setupSettle" ? { type: "place", kind: "outpost", id: a.vertexId } : { type: "place", kind: "path", id: a.edgeId };
+};
+const setupStep = (c, seq, i, what) => c.until(() => c.state.game.seq > seq && c.state.game.phase === "setupSettle" && c.state.game.setupIndex === i && c.state.game.current === c.pid && c.state, what, TOTAL + 3000);
+const seatAt = async (code, pid, s) => (await saved(code, (r) => r.game.seq >= s.game.seq && r.seats.find((x) => x.pid === pid).turnDeadline, `${code}: ${pid}'s window at ${s.game.seq}`)).seats.find((x) => x.pid === pid);
+// The person's outpost 0.8 of a window into its step: the path's window is what the step's budget has left.
+async function lateOutpost(code, c, s, what) {
+  const start = (await seatAt(code, c.pid, s)).turnStartedAt;
+  await until(start + 0.8 * TURN);
+  c.send(placeOf(s.game, c.pid));
+  s = await next(c, s.game.seq, "setupRoad", `${what}: the person's late outpost`);
+  near(s.turnDeadline, start + TOTAL, `${what}: after a late outpost the path's window is what the step's budget has left`);
+  eq((await seatAt(code, c.pid, s)).turnStartedAt, start, `${what}: the path shares its outpost's budget`);
+  return [s, start];
+}
+async function setupFirst3() {
+  const g = cs3;
+  const H = at(g, 0);
+  const c = await client("CS3", H);
+  let s = c.state;
+  const start = (await seatAt("CS3", H, s)).turnStartedAt;
+  await until(start + 0.8 * TURN);
+  let did = Date.now();
+  c.send({ type: "roll" });
+  s = await setupStep(c, s.game.seq, 0, "setup, three seats: the person's roll-off roll wins");
+  eq(s.game.players[0].id, H, "setup, three seats: the person places first");
+  await fresh("CS3", H, s, "setup, three seats: the first outpost after the person's late roll-off roll gets a full window and budget", did);
+  const first = left(s);
+  [s] = await lateOutpost("CS3", c, s, "setup, three seats");
+  await until(s.turnDeadline - 300);
+  did = Date.now();
+  c.send(placeOf(s.game, H));
+  s = await setupStep(c, s.game.seq, 5, "setup, three seats: the bots place four steps, then the person again");
+  await fresh("CS3", H, s, "setup, three seats: the person's second step, after bots placed in between, gets a full window and budget", did);
+  c.ws.terminate();
+  console.log(`setup: CS3 first outpost after a late roll-off roll ${first} ms; second step after a ${TOTAL - 300} ms first step and four bot steps ${left(s)} ms`);
+}
+async function setupLast4() {
+  const H = at(cs4, 3);
+  let c = await client("CS4", H);
+  let s = c.state;
+  eq([s.game.phase, s.game.setupIndex, s.turnPlayer], ["setupSettle", 3, H], "setup, four seats: the last seat's first step");
+  let start;
+  [s, start] = await lateOutpost("CS4", c, s, "setup, four seats");
+  // A reconnect between the outpost and its path keeps the step's budget.
+  const before = s.turnDeadline;
+  c.ws.terminate();
+  await saved("CS4", (r) => r.seats.find((x) => x.pid === H).turnDeadline === null, "setup, four seats: the dropped seat is disarmed");
+  c = await client("CS4", H);
+  s = c.state;
+  near(s.turnDeadline, before, "setup, four seats: a reconnect before the path keeps the step's deadline");
+  eq((await seatAt("CS4", H, s)).turnStartedAt, start, "setup, four seats: a reconnect before the path keeps the step's budget");
+  await until(s.turnDeadline - 300);
+  const did = Date.now();
+  c.send(placeOf(s.game, H));
+  s = await setupStep(c, s.game.seq, 4, "setup, four seats: the last seat's second step, back to back");
+  await fresh("CS4", H, s, "setup, four seats: the last seat's second step, straight after its first, gets a full window and budget", did);
+  c.ws.terminate();
+  console.log(`setup: CS4 last seat's second step straight after a ${TOTAL - 300} ms first step (a reconnect in it) ${left(s)} ms`);
+}
+async function setupExpanded5() {
+  const H = at(xs5, 0);
+  const c = await client("XS5", H);
+  let s = c.state;
+  eq([s.game.phase, s.game.setupIndex, s.turnPlayer], ["setupSettle", 0, H], "setup, five seats: the person places first");
+  [s] = await lateOutpost("XS5", c, s, "setup, five seats");
+  await until(s.turnDeadline - 300);
+  const did = Date.now();
+  c.send(placeOf(s.game, H));
+  s = await setupStep(c, s.game.seq, 9, "setup, five seats: the bots place eight steps, then the person again");
+  eq(s.game.role ?? null, null, "setup, five seats: no paired turn yet");
+  await fresh("XS5", H, s, "setup, five seats: the person's second step, after bots placed in between, gets a full window and budget", did);
+  c.ws.terminate();
+  console.log(`setup: XS5 second step after a ${TOTAL - 300} ms first step and eight bot steps ${left(s)} ms`);
+}
+
 
 const t0 = Date.now();
 try {
   host = await boot();
   let rolled;
   const seven = new Promise((r) => (rolled = r));
-  const classicBots = Promise.all([classicBots3(rolled), seven.then(classicBots4)]);
+  // CS3's roll-off roll waits for the seven too; CS4 and XS5 roll no dice.
+  const classicBots = Promise.all([classicBots3(rolled), seven.then(classicBots4), seven.then(setupFirst3), setupLast4(), setupExpanded5()]);
   classicBots.catch((err) => {
     console.error(err);
     if (host) console.error(host.err.slice(-2000));
