@@ -262,6 +262,70 @@ try {
     await ctx.close();
   }
 
+  // --- #976: the climb reads as climbing (rope, hands and feet in turn), and a fall ends at the foot, inside the hex ---
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    await ctx.addInitScript(() => {
+      localStorage.setItem("emberisle-jelly", "full");
+      localStorage.setItem("emberisle-water", "simple");
+    });
+    page = await ctx.newPage();
+    page.on("pageerror", (e) => errors.push(String(e)));
+    await page.goto(`http://127.0.0.1:${port}/`);
+    await page.waitForFunction(() => typeof window.__emberisle?.getState().startHotseat === "function", null, { timeout: 30_000 });
+    // Seed 677: this island's first climber falls (seed 676's reaches the top first time).
+    await page.evaluate(() => {
+      const random = Math.random;
+      Math.random = () => 677 / 1e9;
+      try { window.__emberisle.getState().startHotseat(4); } finally { Math.random = random; }
+    });
+    await page.waitForFunction(() => window.__emberisle.getState().screen === "play" && window.__isle?.landReady && window.__isle.jellyBoard && !window.__isle.titleMode, null, { timeout: 180_000 });
+    const story = await page.evaluate(() => {
+      const jelly = window.__isle.jellyBoard;
+      const tile = [...jelly.byHex.values()].find((e) => e.k.kind === "ore").k.tile;
+      const p0 = tile.layout.peaks[0];
+      const find = (ref) => { const out = []; tile.group.traverse((o) => { if (o.userData?.ref === ref) out.push(o); }); return out; };
+      const [rope] = find("climber-rope");
+      const [stake] = find("climber-stake");
+      const arms = find("climber-arm");
+      const read = (a) => {
+        jelly.setAge(a);
+        return { rope: !!rope?.visible, ropeLen: rope ? +rope.scale.y.toFixed(4) : 0, arms: arms.map((o) => +o.rotation.z.toFixed(3)) };
+      };
+      // The first fall: the first age (1 s steps) at which a skeleton lies on the ground.
+      let fall = -1, bones = null;
+      for (let a = 0; a <= 600 && fall < 0; a++) {
+        jelly.setAge(a);
+        const shown = find("skeleton").filter((o) => o.visible);
+        if (shown.length) (fall = a), (bones = shown[0].position);
+      }
+      // The hex is a flat-sided hexagon of inradius CORNER_R * sqrt(3) / 2 = 0.97 around the tile's centre.
+      const hexDist = (x, z) => Math.max(Math.abs(x), Math.abs(0.5 * x + (Math.sqrt(3) / 2) * z), Math.abs(0.5 * x - (Math.sqrt(3) / 2) * z));
+      return {
+        stake: !!stake?.visible,
+        arms: arms.length,
+        a20: read(20), a214: read(21.4), a4: read(4), a160: read(160),
+        fall,
+        land: bones && { fromPeak: +Math.hypot(bones.x - p0.x, bones.z - p0.z).toFixed(4), hexDist: +hexDist(bones.x, bones.z).toFixed(4), peakR: +p0.r.toFixed(4) },
+      };
+    });
+    console.log("976", JSON.stringify(story));
+    check("976: the stake stands at the foot of the face", story.stake, story);
+    check("976: the climber has two arms on their own pivots", story.arms === 2, story.arms);
+    check("976: climbing at age 20, he is roped to the stake", story.a20.rope && story.a20.ropeLen > 0.05, story.a20);
+    check("976: during gear-out (age 4) the rope is still coiled", !story.a4.rope, story.a4);
+    check(
+      "976: hands in turn, the reaching arm swaps from one step (1.4 s) to the next",
+      story.a20.arms[0] !== story.a20.arms[1] && Math.sign(story.a20.arms[0] - story.a20.arms[1]) !== Math.sign(story.a214.arms[0] - story.a214.arms[1]),
+      { a20: story.a20.arms, a214: story.a214.arms },
+    );
+    check("976: seed 677's climber falls", story.fall > 0, story.fall);
+    check("976: the fall ends inside the hex", story.land && story.land.hexDist < 0.97, story.land);
+    // At the base of the peak: within two of its radii of its centre (the old landing, by the pack, was 0.71 here).
+    check("976: the fall ends at the base of the peak, not out across the hex", story.land && story.land.fromPeak < story.land.peakR * 2, story.land);
+    await ctx.close();
+  }
+
   // --- Reduced motion: holds still at the foot ---
   {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, reducedMotion: "reduce" });
