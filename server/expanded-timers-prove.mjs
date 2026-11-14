@@ -20,6 +20,9 @@
 //    and budget, though setup stays in round 0: after its own roll-off roll, after bots placed in between (classic three
 //    seats, and five seats), and on the last seat's two steps back to back (four seats). The path shares its outpost's
 //    budget, also across a reconnect. These rooms run beside 7.
+// 9. A roll-off tie with one person and bots (#1681): the person's re-roll after a slow roll and a tie gets a full window
+//    and budget, also when the same seats tie twice; a reconnect within one roll keeps the deadline. Classic three seats
+//    and five seats, beside 7.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { appendFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -297,6 +300,17 @@ writeRoom("CS4", cs4, [0, 1, 2].map((i) => at(cs4, i)));
 const xs5 = setupTo(createExpandedGame({ humans: NAMES.slice(0, 5).map((name) => ({ name })), bots: 0, seed: 1671 }), 0);
 eq([xs5.current, xs5.role ?? null], [at(xs5, 0), null], "XS5: the first seat places, with no paired turn in setup");
 writeRoom("XS5", xs5, [1, 2, 3, 4].map((i) => at(xs5, i)));
+// CRO: classic three seats in the roll-off, one person (players[0]) to roll last, the bots on a 3 and a 1. An unqueued die
+// is a 3, so the person ties the first bot, and both roll again with the person first; every re-roll ties again the same
+// way, so the saved roll-off is the same from the second round on. XRO: the same on five seats, before any paired turn.
+function tiedRollOff(g, code) {
+  const [H, ...bots] = g.players.map((p) => p.id);
+  Object.assign(g, { current: H, rollOff: { rolls: Object.fromEntries(bots.map((b, i) => [b, i ? 1 : 3])), pending: [H] } });
+  writeRoom(code, g, bots);
+  return g;
+}
+const cro = tiedRollOff(createGame({ humans: NAMES.slice(0, 3).map((name) => ({ name })), bots: 0, seed: 1681 }), "CRO");
+const xro = tiedRollOff(createExpandedGame({ humans: NAMES.slice(0, 5).map((name) => ({ name })), bots: 0, seed: 1681 }), "XRO");
 
 // ---- 7. Classic, one person and bots (#1661). ----
 // The rule: a seat gets a TURN_MS inactivity window inside a total waited-on budget, the same for rolling, discarding and
@@ -519,14 +533,52 @@ async function setupExpanded5() {
   console.log(`setup: XS5 second step after a ${TOTAL - 300} ms first step and eight bot steps ${left(s)} ms`);
 }
 
+// ---- 9. A roll-off tie, one person and bots (#1681). ----
+// Each roll-off roll is a turn of its own, so a re-roll after a tie gets a full window and budget, though the person rolls
+// again at once and the saved roll-off is the same when the same seats tie twice. Only the seat to roll is waited on, so
+// within one roll nothing else moves the game; a reconnect there keeps the deadline and the budget.
+const reRoll = (c, seq, what) => c.until(() => c.state.game.seq > seq && c.state.game.phase === "rollOff" && c.state.game.current === c.pid && c.state, what, TOTAL + 3000);
+async function slowRoll(code, c, s, what) {
+  const start = (await seatAt(code, c.pid, s)).turnStartedAt;
+  await until(start + 0.8 * TURN);
+  const did = Date.now();
+  c.send({ type: "roll" });
+  s = await reRoll(c, s.game.seq, `${what}: the person ties and rolls again`);
+  eq([s.game.rollOff.pending, s.game.rollOff.tied, s.turnPlayer], [[c.pid, s.game.players[1].id], [c.pid, s.game.players[1].id], c.pid], `${what}: the person and the first bot tied and roll again, the person first, its window running`);
+  await fresh(code, c.pid, s, `${what}: the person's re-roll after a slow roll and a tie gets a full window and budget`, did);
+  return s;
+}
+async function rollOffTie(code, g, what) {
+  const H = at(g, 0);
+  let c = await client(code, H);
+  let s = c.state;
+  eq([s.game.phase, s.turnPlayer], ["rollOff", H], `${what}: the person's roll-off roll`);
+  s = await slowRoll(code, c, s, `${what}, first tie`);
+  const first = left(s);
+  const tied = s.game.rollOff;
+  s = await slowRoll(code, c, s, `${what}, second tie`);
+  eq(s.game.rollOff, tied, `${what}: the second tie leaves the same saved roll-off as the first`);
+  const second = left(s);
+  // A reconnect within the roll keeps its deadline and budget.
+  const seat = await seatAt(code, H, s);
+  c.ws.terminate();
+  await saved(code, (r) => r.seats.find((x) => x.pid === H).turnDeadline === null, `${what}: the dropped seat is disarmed`);
+  c = await client(code, H);
+  s = c.state;
+  near(s.turnDeadline, seat.turnDeadline, `${what}: a reconnect within the roll keeps its deadline`);
+  eq((await seatAt(code, H, s)).turnStartedAt, seat.turnStartedAt, `${what}: a reconnect within the roll keeps its budget`);
+  c.ws.terminate();
+  console.log(`roll-off tie: ${code} re-roll after a slow roll and a tie ${first} ms; after a second identical tie ${second} ms; a reconnect kept the deadline`);
+}
+
 
 const t0 = Date.now();
 try {
   host = await boot();
   let rolled;
   const seven = new Promise((r) => (rolled = r));
-  // CS3's roll-off roll waits for the seven too; CS4 and XS5 roll no dice.
-  const classicBots = Promise.all([classicBots3(rolled), seven.then(classicBots4), seven.then(setupFirst3), setupLast4(), setupExpanded5()]);
+  // CS3's roll-off roll and CRO's and XRO's wait for the seven too; CS4 and XS5 roll no dice.
+  const classicBots = Promise.all([classicBots3(rolled), seven.then(classicBots4), seven.then(setupFirst3), setupLast4(), setupExpanded5(), seven.then(() => rollOffTie("CRO", cro, "roll-off tie, three seats")), seven.then(() => rollOffTie("XRO", xro, "roll-off tie, five seats"))]);
   classicBots.catch((err) => {
     console.error(err);
     if (host) console.error(host.err.slice(-2000));
