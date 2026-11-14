@@ -33,6 +33,64 @@ function mainGame(seed = 11) {
   return g;
 }
 
+// #1678: section 6 on a phone. The seat strip's chip opens the bottom sheet in Hud.tsx, which has its own LazyBoundary: a
+// refused load closes the sheet with the table standing and the chip collapsed, and the next press opens it.
+async function phoneMenuRefused(g) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const phonePage = await context.newPage();
+  // Only the refused PlayerMenu.tsx load is expected: the browser's line for that URL (the prefetch's, then the retry's) and
+  // React's report of it reaching the LazyBoundary. Any other console error or page error counts.
+  const menuUrl = `http://127.0.0.1:${PORT}/src/components/game/PlayerMenu\\.tsx(\\?retry=\\d+)?`;
+  const refusedLine = new RegExp(`^${menuUrl}$`);
+  const boundaryReport = new RegExp(`^%o\\n\\n%s\\n\\n%s\\n TypeError: Failed to fetch dynamically imported module: ${menuUrl} The above error occurred in the <Lazy> component\\. React will try to recreate this component tree from scratch using the error boundary you provided, LazyBoundary\\.$`);
+  phonePage.on("console", (m) => {
+    if (m.type() !== "error") return;
+    const text = m.text();
+    if (text === "Failed to load resource: net::ERR_FAILED" && refusedLine.test(m.location().url)) return;
+    if (boundaryReport.test(text)) return;
+    errors.push(text);
+  });
+  phonePage.on("pageerror", (e) => errors.push(String(e)));
+  let fail = true;
+  let blocked = 0;
+  await phonePage.route(/\/PlayerMenu\.tsx/, async (route) => {
+    if (fail) {
+      blocked++;
+      await route.abort("failed");
+    } else {
+      await route.continue();
+    }
+  });
+  await phonePage.goto(`http://127.0.0.1:${PORT}/`);
+  await phonePage.getByRole("button", { name: "Play with bots", exact: true }).click({ timeout: STEP_MS });
+  await phonePage.waitForFunction(() => window.__emberisle?.getState().state);
+  await phonePage.evaluate((state) => {
+    window.__emberisle.getState().startAi();
+    window.__emberisle.setState({ state });
+  }, g);
+  const chip = phonePage.getByTestId("seat-p1").locator("[data-menu-trigger]");
+  await chip.waitFor({ state: "visible", timeout: STEP_MS });
+  const before = blocked;
+  await chip.tap();
+  const closed = await phonePage
+    .waitForFunction(() => window.__emberisle.getState().menuFor === null && document.querySelector('[data-testid="seat-p1"] [data-menu-trigger]').getAttribute("aria-expanded") === "false", null, { timeout: STEP_MS })
+    .then(() => true, () => false);
+  const refused = await phonePage.evaluate(() => ({
+    menus: document.querySelectorAll('[data-testid="player-menu"]').length,
+    expanded: document.querySelector('[data-testid="seat-p1"] [data-menu-trigger]')?.getAttribute("aria-expanded") ?? null,
+    screen: window.__emberisle.getState().screen,
+    header: !!document.querySelector("header.hud-header"),
+    strip: !!document.querySelector('[data-testid="seat-strip"] [data-testid="seat-p1"]'),
+  }));
+  check("390x844 failed player menu chunk: the press is refused, the sheet closes, the chip is collapsed and the table stands", closed && blocked > before && refused.menus === 0 && refused.expanded === "false" && refused.screen === "play" && refused.header && refused.strip, { ...refused, closed, blocked, before });
+  fail = false;
+  const pressed = await chip.tap({ timeout: STEP_MS }).then(() => true, () => false);
+  const opened = pressed && (await phonePage.getByTestId("player-menu").waitFor({ state: "visible", timeout: STEP_MS }).then(() => true, () => false));
+  const expanded = opened ? await chip.getAttribute("aria-expanded") : null;
+  check("390x844 once the route recovers, the next press opens the player menu sheet", opened && expanded === "true", { pressed, opened, expanded });
+  await context.close();
+}
+
 mkdirSync("docs/proofs/1285", { recursive: true });
 
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
@@ -394,6 +452,9 @@ try {
   await recoveredStealBar.waitFor({ state: "visible", timeout: STEP_MS });
   check("tapping Try again recovers steal picker", await recoveredStealBar.isVisible());
   await stealFailPage.close();
+
+  // --- 6, phone: the same through the seat strip and the bottom sheet (#1678) ---
+  await phoneMenuRefused(g);
 
   // --- 6. Failed player menu chunk: the menu closes, the table stands, and the next press opens it ---
   const menuFailPage = await browser.newPage({ viewport: { width: 1280, height: 720 } });
