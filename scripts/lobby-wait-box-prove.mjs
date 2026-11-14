@@ -326,6 +326,7 @@ try {
   const sideways = await client({ width: 844, height: 390 }, true);
   await openShelf(sideways);
   await openStacker(sideways);
+  await sideways.screenshot({ path: `${out}/844x390.png` });
   await sideways.context().close();
   console.log("ok  844x390: shelf and header logo checked");
 
