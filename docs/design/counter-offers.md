@@ -105,7 +105,7 @@ With three buttons at 390 px wide, the row gives each button about 108 px. The b
 | State | Top line | Row |
 |---|---|---|
 | An offer I can pay | "Tide: give 1 stone, get 2 wheat" | No, Counter, Yes. Yes stays the primary button. |
-| An offer I cannot pay | "Tide is looking for stone" | Dismiss, Counter |
+| An offer I cannot pay | "Tide is looking for 1 stone", today's words | Dismiss, Counter |
 | My counter is out | "You counter: give 1 brick, get 2 wheat". Quiet status: "Waiting for Tide". | Take back |
 | Tide said no to my counter | "Tide said no" for 2.5 s, then the first offer again. | No, Yes. Counter is gone. |
 | I took my counter back | The first offer again. | No, Yes. Counter is gone. |
@@ -121,9 +121,11 @@ Counter opens the trade sheet that Trade opens today, with three differences:
 
 | Part | Trade today | Counter |
 |---|---|---|
+| Title | "Trade" | "Counter" |
 | Start | Empty rows | Tide's terms, turned to my side: Give 1 stone, Get 2 wheat |
-| Sentence under the rows | "Give 2 wheat · Get 1 stone" | The same sentence, with "To Tide" before it |
-| Main button | "Ask the table" | "Send counter" |
+| Sentence under the rows | "Give 2 wheat · Get 1 stone" | "To Tide: Give 1 brick · Get 2 wheat" |
+| Main button | "Ask the table" | "Send counter", across the whole footer |
+| Bank button | Shown | Hidden. The bank does not trade off your turn. |
 
 "Send counter" is off, with a reason under it, in three cases:
 
@@ -132,6 +134,8 @@ Counter opens the trade sheet that Trade opens today, with three differences:
 | The terms equal Tide's offer | "Change something first." |
 | A side is empty, or a good is on both sides | "Pick what to give and what to get." |
 | I do not hold what I would give | "You need 1 more brick." |
+
+The reason line always keeps its 20 px of height, so the sheet does not move as you edit.
 
 Closing the sheet sends nothing and answers nothing. The offer is still in the tray.
 
@@ -149,6 +153,11 @@ If the offer closes while the sheet is open, the sheet closes and the tray shows
 | I said Yes | "Pine takes it." for 2.5 s, as today | None |
 
 A counter takes the asker's tray until it is answered. Cancel comes back with the offer line.
+
+### Two rules for every state
+
+- **The hand marks follow the top line.** The "−1" and "+2" tags on the hand show the deal the line names. On a counter they show the counter's goods, not the first offer's.
+- **A give phrase or a get phrase never breaks in the middle.** On a sideways phone the line may wrap after the comma. "get 2 wheat" stays whole.
 
 The asker hears the offer chime when a counter arrives. Nobody else does.
 
@@ -280,4 +289,31 @@ Each is one card. A is the recommendation.
 - B. Bots also send counters. Needs a pricing rule first, and its own design.
 - C. Bots refuse every counter.
 
-The pictures for these cards come from a prototype of slice 3 at 440x956, 390x844, 844x390 and 1280x720. They go in `docs/design/counter-offers/`.
+## Pictures
+
+These are the real game with a prototype of slice 3 on top (`counter-offers/prototype.patch`). The tray, the sheet and their classes are the real ones. No host code exists yet.
+
+| Got an offer (question 1, A) | The counter sheet | The asker sees the counter |
+|---|---|---|
+| ![offer](counter-offers/recv-offer-390x844.png) | ![sheet](counter-offers/recv-sheet-390x844.png) | ![asker](counter-offers/ask-counter-390x844.png) |
+
+| Cannot pay the offer | My counter is out | Question 1, B: tap the line |
+|---|---|---|
+| ![cannot pay](counter-offers/recv-cannot-pay-390x844.png) | ![waiting](counter-offers/recv-waiting-390x844.png) | ![option B](counter-offers/recv-optionB-390x844.png) |
+
+Sideways phone and desktop:
+
+| 844x390 | 1280x720 |
+|---|---|
+| ![sideways](counter-offers/recv-offer-844x390.png) | ![desktop](counter-offers/recv-offer-1280x720.png) |
+
+Every state at every size is in [`counter-offers/`](counter-offers/). The measured sizes are in [`counter-offers/measures.md`](counter-offers/measures.md).
+
+Measured at 390x844: No, Counter and Yes are 104.7 x 48 px each. The narrowest row is the sideways phone, at 74.7 x 48 px each. Every top line is one line at 390 px.
+
+Where the prototype differs from this design:
+
+- Its hand marks still show the first offer on the counter states. The build follows the rule above.
+- Its sheet title reads "Trade", and its sentence has no colon after "To Tide".
+- Its reason line makes the sheet 22 px taller. The build keeps the height fixed.
+- On the sideways phone, "You counter: give 1 brick, get 2 wheat" breaks inside "get 2 wheat". The build keeps the phrase whole.
