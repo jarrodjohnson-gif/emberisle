@@ -1,6 +1,6 @@
 // The expanded island for five and six seats (#1604; docs/design/six-players.md, "Expanded board and components" and
-// "Board generator, coast, docks, and camera"). Nothing in the client imports this file yet, so it adds nothing to the
-// index chunk. createGame in board.ts keeps the classic island byte for byte; createAnyGame picks between them.
+// "Board generator, coast, docks, and camera"). The client loads it only for a five or six seat game (store.ts `deal`), so
+// it adds nothing to the index chunk. createGame in board.ts keeps the classic island byte for byte; createAnyGame picks between them.
 import { mulberry32 } from "./random";
 import { AXIAL_DIRS, axialKey, edgeId, hexCorners, hexToWorld, vertexId } from "./hex";
 import { adjacentPips, createGame, makePlayer, shuffle, type GameOptions } from "./board";
@@ -192,9 +192,11 @@ export function createExpandedGame(opts: GameOptions): GameState {
   const players: PlayerState[] = [];
   for (let i = 0; i < total; i++) {
     const human = i < opts.humans.length;
-    const p = makePlayer(i, human ? opts.humans[i]!.name || EXPANDED_NAMES[i]! : `${EXPANDED_NAMES[i]} (bot)`, human ? "human" : "bot");
-    p.color = EXPANDED_COLORS[i]!;
-    p.seat = i + 1;
+    // A rematch passes last game's players as `humans` (store.ts playAgain): each keeps its seat number and colour (#1609).
+    const was: Partial<PlayerState> = human ? opts.humans[i]! : {};
+    const p = makePlayer(i, human ? was.name || EXPANDED_NAMES[i]! : `${EXPANDED_NAMES[i]} (bot)`, human ? "human" : "bot");
+    p.color = was.color ?? EXPANDED_COLORS[i]!;
+    p.seat = was.seat ?? i + 1;
     players.push(p);
   }
   const pending = players.slice(opts.winnerFirst ? 1 : 0).map((p) => p.id);
@@ -278,14 +280,14 @@ export function pairedStep(prev: GameState, actor: string, action: Action, base:
   state.trade = null;
   const n = state.players.length;
   const at = state.players.findIndex((p) => p.id === state.primary);
-  const primary = state.players[at]!;
   let next: PlayerState;
   if (state.role === "primary") {
-    // The partner acts in the action phase straight away; the primary's dice stay on the table for this paired turn.
+    // The partner acts in the action phase straight away; the primary's dice stay on the table for this paired turn. The
+    // line is the tray's event line under "<name>'s partner turn", so it names nobody and stays short (#1609).
     next = state.players[(at + 3) % n]!;
     state.role = "partner";
     state.phase = "main";
-    log(state, `${next.name}'s turn as ${primary.name}'s partner.`);
+    log(state, "No roll this turn.");
   } else {
     const i = (at + 1) % n;
     next = state.players[i]!;

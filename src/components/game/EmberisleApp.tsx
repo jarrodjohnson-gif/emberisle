@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { OpenModeToggle, HowTo, island, LoadingScreen, Lobby, online, OpenTables, ProfileSheet, profileSheet, SetupPipHints, sheets, WayfarerOptions } from "@/components/game/chunks";
+import { OpenModeToggle, HowTo, island, LoadingScreen, Lobby, online, OpenTables, ProfileSheet, profileSheet, SeatChoice, SetupPipHints, sheets, WayfarerOptions } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
 import { SeatDot } from "@/components/game/SeatDot";
-import { useGame } from "@/lib/game/store";
+import { dropDeal, useGame } from "@/lib/game/store";
 import { JOIN_CODE, LazyBoundary, preloadOnIdle, reloadOnStaleChunk } from "@/lib/lazy";
 import { play, setMusicWanted, setMuted, useMuted } from "@/lib/sound";
 import { useTurnTitle } from "@/lib/turn-title";
@@ -338,7 +338,7 @@ function Title({ arrive }: { arrive: boolean }) {
         ) : (
           <>
             <div className="flex items-center justify-between">
-              <Button ref={backButton} variant="ghost" back className="-ml-2 px-3" onClick={() => setOpen((pastFront = false))}>
+              <Button ref={backButton} variant="ghost" back className="-ml-2 px-3" onClick={() => (dropDeal(), setOpen((pastFront = false)))}>
                 Back
               </Button>
               {tools}
@@ -347,7 +347,7 @@ function Title({ arrive }: { arrive: boolean }) {
               <Button size="lg" variant={watchLink ? "secondary" : "primary"} className="w-full" onClick={useGame.getState().startAi}>
                 Play with bots
               </Button>
-              <Button size="lg" variant="secondary" className="w-full" title="Pass one device around" onClick={() => useGame.getState().startHotseat(4)}>
+              <Button size="lg" variant="secondary" className="w-full" title="Pass one device around" onClick={() => useGame.getState().startHotseat(useGame.getState().seatCount ?? 4)}>
                 Pass and play
               </Button>
               {/* #488: a pointer or focus on Host or Join fetches the online chunk (lobby and chat) before either is pressed. */}
@@ -440,6 +440,7 @@ function Title({ arrive }: { arrive: boolean }) {
                   Game options<svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg>
                 </summary>
                 <LazyBoundary failed={null}>
+                  <SeatChoice />
                   <WayfarerOptions rules={rules} choose={useGame.getState().setWayfarerChoice} />
                 </LazyBoundary>
               </details>
