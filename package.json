@@ -183,6 +183,7 @@
     "six-seats-prove": "node scripts/six-seats-prove.mjs",
     "paired-hud-prove": "node scripts/paired-hud-prove.mjs",
     "expanded-lobby-ui-prove": "node scripts/expanded-lobby-ui-prove.mjs",
+    "six-tab-prove": "node scripts/six-tab-prove.mjs",
     "seat-dot-ring-prove": "node scripts/seat-dot-ring-prove.mjs",
     "longest-army-prove": "node scripts/longest-army-prove.mjs",
     "roll-log-prove": "node scripts/roll-log-prove.mjs",

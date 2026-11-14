@@ -746,6 +746,9 @@ jobs:
         run: npm run paired-hud-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run expanded-lobby-ui-prove
+      # #1612: a whole six-tab game, about 6 minutes here; scene-life is the shortest leg (3 minutes of 30).
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
+        run: npm run six-tab-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run seat-dot-ring-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
