@@ -300,20 +300,22 @@ export function Hud() {
   const armed = mine && (state.phase === "main" || fortuneArmed) ? armedCopy(buildMode, roadPicks.length) : null;
   // #1539: an armed build or fortune has its own Cancel button in the action row, so a touch screen needs no hint.
   const armedNow = !!armed && !spectator;
+  // #1609: a partner turn (paired turns, five and six seats) has no dice, so the line only says whose it is.
+  const partner = state.role === "partner";
   const phaseText = choosing
     ? "Take from whom?"
     : armed
     ? matchMedia("(pointer: coarse)").matches ? armed[0] : `${armed[0]} · Esc cancels`
     : state.phase === "discard"
       ? `Discard ${state.discardNeeded[subject] ?? 0} goods`
-      : phaseCopy(state.phase);
+      : partner ? "Your partner turn" : phaseCopy(state.phase);
   const waiting = mode !== "hotseat" && !yours;
   // #430: in hotseat a seat that owes a discard on another seat's turn is named, not given the turn.
   const turnText =
     mode === "hotseat" && (subject !== state.current || state.phase === "discard")
       ? `${phaseText} · ${subjectPlayer.name}`
       : waiting
-        ? waitingCopy(state.phase, subjectPlayer.name)
+        ? partner ? `${subjectPlayer.name}'s partner turn` : waitingCopy(state.phase, subjectPlayer.name)
         : phaseText;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
   const menuPlayer = menuFor ? state.players.find((p) => p.id === menuFor) : null;
@@ -468,7 +470,7 @@ export function Hud() {
                     <span data-testid="log-roll-sum" className={rollChip.hot ? "text-danger" : undefined}>{rollChip.sum}</span>
                     !
                   </span>
-                ) : gameLog.at(-1)?.text}
+                ) : partner && mine && state.turn < 2 ? "Build or trade with the bank. No dice." : gameLog.at(-1)?.text}
               </p>
               {/* Slice C: an open offer is the top line and, for a seat that can answer or cancel, the action row (styles.css). */}
               {tradeVisible ? (

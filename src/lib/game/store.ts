@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { createGame } from "./board";
+import { createGame, type GameOptions } from "./board";
 import { logBotAction } from "./ai";
 import { applyAction, legalCities, legalRoads, legalSettle, publicVP, stealTargets, victoryTarget } from "./rules";
 
@@ -232,6 +232,13 @@ interface OpenOffer {
   until: number | null;
 }
 
+// #1609: five or six seats deal the expanded island. expanded.ts loads only then, and registers the paired turn rules
+// (`turnRules.paired`) before the game exists, so no action reaches an expanded state without them.
+function deal(o: GameOptions, go: (s: GameState) => void) {
+  if (o.humans.length + o.bots < 5) return go(createGame(o));
+  void import("./expanded").then((m) => go(m.createExpandedGame(o)));
+}
+
 // The client is needed only for discovery or an explicit online journey.
 const tableModule = chunk(() => import("@/lib/net/table"));
 
@@ -326,6 +333,8 @@ interface GameStore {
   wayfarerChoices: Partial<Record<"ai" | "online" | "hotseat", WayfarerMode>>;
   setWayfarerChoice: (context: "ai" | "online" | "hotseat", mode: WayfarerMode) => void;
   tableWayfarerMode: WayfarerMode;
+  // #1609: the seats Play with bots and Pass and play deal, set from Game options (SeatChoice); absent is four.
+  seatCount?: number;
   startAi: () => void;
   startHotseat: (count: number) => void;
   loadState: (s: GameState, localId: string, host: boolean, table?: string) => void;
@@ -647,26 +656,27 @@ export const useGame = create<GameStore>((set, get) => ({
     botAsked = "";
     botDeclined.clear();
     const name = get().commitName();
-    const state = createGame({ humans: [{ name }], bots: 3, wayfarerMode: get().wayfarerChoices.ai ?? "on" });
-    set({
-      screen: "play",
-      mode: "ai",
-      host: true,
-      localId: "p0",
-      state,
-      gameLog: stamp(state.log),
-      error: null,
-      announcement: null,
-      toast: null,
-      buildMode: "none",
-      net: null,
-      peeking: false,
-      spectator: false,
-      offer: null,
-      declined: [],
-      tradeOutcome: null, tradeTaker: null,
+    deal({ humans: [{ name }], bots: (get().seatCount ?? 4) - 1, wayfarerMode: get().wayfarerChoices.ai ?? "on" }, (state) => {
+      set({
+        screen: "play",
+        mode: "ai",
+        host: true,
+        localId: "p0",
+        state,
+        gameLog: stamp(state.log),
+        error: null,
+        announcement: null,
+        toast: null,
+        buildMode: "none",
+        net: null,
+        peeking: false,
+        spectator: false,
+        offer: null,
+        declined: [],
+        tradeOutcome: null, tradeTaker: null,
+      });
+      play("game_start");
     });
-    play("game_start");
   },
   startHotseat: (count) => {
     resetTradePlease();
@@ -680,25 +690,26 @@ export const useGame = create<GameStore>((set, get) => ({
     const humans = Array.from({ length: count }, (_, i) => ({
       name: i === 0 ? get().commitName() : `Seat ${i + 1}`,
     }));
-    const state = createGame({ humans, bots: 0, wayfarerMode: get().wayfarerChoices.hotseat ?? "on" });
-    set({
-      screen: "play",
-      mode: "hotseat",
-      host: true,
-      localId: "p0",
-      state,
-      gameLog: stamp(state.log),
-      error: null,
-      announcement: null,
-      toast: null,
-      buildMode: "none",
-      net: null,
-      peeking: false,
-      spectator: false,
-      offer: null,
-      declined: [],
-      tradeOutcome: null, tradeTaker: null,
-    });
+    deal({ humans, bots: 0, wayfarerMode: get().wayfarerChoices.hotseat ?? "on" }, (state) =>
+      set({
+        screen: "play",
+        mode: "hotseat",
+        host: true,
+        localId: "p0",
+        state,
+        gameLog: stamp(state.log),
+        error: null,
+        announcement: null,
+        toast: null,
+        buildMode: "none",
+        net: null,
+        peeking: false,
+        spectator: false,
+        offer: null,
+        declined: [],
+        tradeOutcome: null, tradeTaker: null,
+      }),
+    );
   },
   restoring: typeof window !== "undefined" && inPlayAtSavedSeat(),
   loadState: (s, localId, host, table) => {
@@ -827,8 +838,9 @@ export const useGame = create<GameStore>((set, get) => ({
     // A bot's own ask is open: its turn waits for the answers, and the offer's close plays on (EmberisleApp re-runs this).
     const { offer } = get();
     if (offer?.from === cur.id) return;
-    // Once per bot turn, before its other moves, the bot may ask the table (#363).
-    if (state.phase === "main" && !offer && botAsked !== `${state.turn}:${cur.id}`) {
+    // Once per bot turn, before its other moves, the bot may ask the table (#363). A partner asks nobody (#1609; #1648 brings
+    // expanded.ts's pairedTradeAsk for this).
+    if (state.phase === "main" && !offer && state.role !== "partner" && botAsked !== `${state.turn}:${cur.id}`) {
       botAsked = `${state.turn}:${cur.id}`;
       const ask = chooseTradeAsk(state, cur.id, botDeclined.get(cur.id));
       if (ask) return openOffer(set, get, cur.id, ask.give, ask.want);
@@ -1016,20 +1028,22 @@ export const useGame = create<GameStore>((set, get) => ({
     resetTradePlease();
     const winner = state.players.find((p) => p.id === state.winner)!;
     const ordered = [winner, ...state.players.filter((p) => p !== winner)];
-    const next = createGame({ humans: ordered.map((p) => ({ name: p.name })), bots: 0, winnerFirst: true, wayfarerMode: state.wayfarerMode ?? "on" });
-    set({
-      state: next,
-      localId: "p0",
-      gameLog: appendLog(get().gameLog, next.log),
-      error: null,
-      announcement: null,
-      toast: null,
-      buildMode: "none",
-      roadPicks: [],
-      pendingPlace: null,
-      pendingSteal: null,
-      tradeOpen: false,
-    });
+    // Five or six seats keep the expanded island, and each player keeps its seat number and colour (createExpandedGame).
+    deal({ humans: ordered, bots: 0, winnerFirst: true, wayfarerMode: state.wayfarerMode ?? "on" }, (next) =>
+      set({
+        state: next,
+        localId: "p0",
+        gameLog: appendLog(get().gameLog, next.log),
+        error: null,
+        announcement: null,
+        toast: null,
+        buildMode: "none",
+        roadPicks: [],
+        pendingPlace: null,
+        pendingSteal: null,
+        tradeOpen: false,
+      }),
+    );
   },
   setChatOpen: (v) => {
     try {
@@ -1152,7 +1166,8 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
     if (p.kind !== "bot" || p.id === from) continue;
     const answer = () => {
       if (get().offer?.tradeId !== tradeId) return;
-      const yes = shouldAcceptTrade(get().state!, p.id, { from, give, want });
+      // Every bot says No during a partner turn, which takes no player trades (#1609; #1648 brings pairedAcceptTrade).
+      const yes = get().state!.role !== "partner" && shouldAcceptTrade(get().state!, p.id, { from, give, want });
       if (yes && peopleWaiting(get)) heldYes.push(p.id);
       else respond(set, get, p.id, yes);
     };
