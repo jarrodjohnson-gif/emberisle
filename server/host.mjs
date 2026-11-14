@@ -970,8 +970,10 @@ function disarmTurn(seat) {
 const RESUME_MIN_MS = Math.min(5000, TURN_MS / 10);
 // The turn a window and budget belong to: the activation under paired turns, else the round and whose turn it is, so a
 // discard owed in another seat's turn is not part of the seat's own. Setup and the roll-off stay in round 0, so there
-// the seat's roll-off roll and each setup step (an outpost and its path) are a turn of their own (#1671).
-const turnOf = (game) => (game.role ? game.activation : `${game.turn}:${game.current}${game.phase === "rollOff" ? ":rollOff" : game.phase.startsWith("setup") ? `:setup:${game.setupIndex}` : ""}`);
+// the seat's roll-off roll and each setup step (an outpost and its path) are a turn of their own (#1671). A roll-off roll
+// is keyed by `seq`, so a re-roll after a tie is a new turn even when the same seats tie twice and the saved roll-off is
+// the same (#1681); only the seat to roll is waited on, and its roll is the only move, so `seq` holds within one roll.
+const turnOf = (game) => (game.role ? game.activation : `${game.turn}:${game.current}${game.phase === "rollOff" ? `:rollOff:${game.seq}` : game.phase.startsWith("setup") ? `:setup:${game.setupIndex}` : ""}`);
 function armTurns(room) {
   for (const seat of room.seats) {
     const bonus = extensionBudget(seat, room.game, TURN_EXTENSION_MS).extra;
