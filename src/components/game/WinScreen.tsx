@@ -121,7 +121,7 @@ function Panel() {
           Show scores
         </Button>
         {canAgain ? (
-          <Button size="sm" className="whitespace-nowrap" data-testid="win-again-chip" onClick={playAgain}>
+          <Button size="sm" className="whitespace-nowrap" data-testid="win-again-chip" onClick={() => playAgain()}>
             Play again
           </Button>
         ) : null}
@@ -216,7 +216,7 @@ function Panel() {
             Menu
           </Button>
           {canAgain ? (
-            <Button className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-again" onClick={playAgain}>
+            <Button className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-again" onClick={() => playAgain()}>
               Play again
             </Button>
           ) : null}

@@ -207,7 +207,7 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
 }
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
-import type { Bag, ChatLine, Legal, Me, ProfileCardReply, Reaction, Seat, TableClient, TttMsg } from "@/lib/net/table";
+import type { Bag, ChatLine, Legal, Me, ProfileCardReply, Reaction, Rematch, Seat, TableClient, TableEvents, TttMsg } from "@/lib/net/table";
 import type { ProfileAttachment } from "@/lib/net/profiles";
 import { chunk } from "@/lib/lazy";
 import { PROTO } from "@/lib/net/proto";
@@ -376,6 +376,10 @@ interface GameStore {
   code: string;
   isHost: boolean;
   tableVictoryTarget: VictoryTarget;
+  // #1611: set at an expanded table (five or six seats), from its seat list.
+  tableVariant?: "expanded";
+  // #1611: the host is choosing how to rematch an expanded game with fewer than five at the table, from these.
+  rematchChoice?: Rematch[];
   setVictoryTarget: (value: VictoryTarget) => void;
   seats: Seat[];
   legal: Legal | null;
@@ -413,8 +417,9 @@ interface GameStore {
   addBot: () => void;
   removeBot: (id: string) => void;
   startTable: () => void;
-  // A rematch (#266): online the host asks for it; hotseat deals it here, the last winner first.
-  playAgain: () => void;
+  // A rematch (#266): online the host asks for it; hotseat deals it here, the last winner first. `choice` answers the
+  // host's rematch choice at an expanded table (#1611).
+  playAgain: (choice?: Rematch | "dismiss") => void;
   // #1411: an online player who is not the host says they want another game, or takes it back.
   wantAgain: (value: boolean) => void;
   // Table chat (docs/design/chat.md)
@@ -975,7 +980,9 @@ export const useGame = create<GameStore>((set, get) => ({
   hostTable: (visibility) => {
     get().commitName();
     const wayfarerMode = get().wayfarerChoices.online ?? "on";
-    connect(set, get, (t, me) => t.open(me, { wayfarerMode, visibility }));
+    // #1611: five or six on the Play page's Seats choice open an expanded table.
+    const variant = (get().seatCount ?? 4) > 4 ? "expanded" : undefined;
+    connect(set, get, (t, me) => t.open(me, { wayfarerMode, visibility, variant }));
   },
   joinTable: (code) => {
     get().commitName();
@@ -1031,10 +1038,10 @@ export const useGame = create<GameStore>((set, get) => ({
   wantAgain: (value) => {
     if (!get().spectator) get().net?.wantAgain(value);
   },
-  playAgain: () => {
+  playAgain: (choice) => {
     const { mode, state, net, spectator } = get();
     if (spectator) return;
-    if (mode === "online") return net?.again();
+    if (mode === "online") return net?.again(choice);
     if (mode !== "hotseat" || state?.phase !== "over") return;
     resetTradePlease();
     const winner = state.players.find((p) => p.id === state.winner)!;
@@ -1268,14 +1275,48 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
   let welcomed = false;
   let outdated: string | null = null;
   let firstState = false;
+  let held: Parameters<TableEvents["state"]>[0][] | null = null;
+  const applyState: TableEvents["state"] = ({ you, game, legal, turnDeadline, turnPlayer, serverNow, result }) => {
+      set({ gameResult: game.phase === "over" ? gameResult(result) : null });
+      // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
+      const me = you ?? "";
+      const rollOff = rollOffLine(get().state, game);
+      // hear first: it is what claims a match point, and the banner line is read off that claim on this same state.
+      hear(get().state, game, me, "online", firstState);
+      const swing = awardLine(get().state, game) ?? takeMatchPointLine();
+      // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
+      // Every push carries the same window, and the skew wobbles by however long this tab took to get to the message:
+      // the timer we hold stays while the host's deadline is the same, so the chip neither remounts nor announces twice.
+      const skew = typeof serverNow === "number" ? serverNow - Date.now() : 0;
+      const prev = get().turnTimer;
+      // A new connection starts the estimate over: a rejoin may reach a different host clock.
+      const clockSkew = firstState ? skew : Math.max(skew, get().clockSkew);
+      firstState = false;
+      const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline, host: serverNow as number };
+      // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
+      set({ legal, turnTimer, clockSkew, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
+      // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
+      if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
+      get().loadState(game, me, get().isHost, get().code);
+      if (recovery && !get().spectator) {
+        recovery = false;
+        set({ announcement: "Back at the table", toast: "Back at the table", connectionHealth: { status: "Reachable", rtt: get().connectionHealth.rtt } });
+      }
+      if (!get().spectator) rememberLive(get().code);
+      if (outdated) set({ announcement: null, error: outdated, toast: outdated });
+      if (rollOff) showBanner(set, rollOff);
+      else if (swing) showBanner(set, swing);
+    };
   let table: TableClient;
   try { table = connectTable(hostUrl(selectedHost), {
     health: (connectionHealth) => {
       if (recovery && (get().restoring || get().state !== null) && connectionHealth.status === "Reachable") return;
       set({ connectionHealth });
     },
-    welcome: ({ proto, serverSha, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode }) => {
+    welcome: ({ proto, serverSha, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode, variant }) => {
       pending = false;
+      // An expanded table's island needs expanded.ts: it starts loading now, so its first state rarely waits (#1611).
+      if (variant) void expanded.prefetch();
       welcomed = true;
       firstState = true;
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
@@ -1339,45 +1380,26 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
     // A peek answers id/color/ready only (G10); the lobby is not shown until the full broadcast after sitting replaces it.
-    seats: ({ code, seats, watching, victoryTarget, wayfarerMode }) => {
+    seats: ({ code, seats, watching, victoryTarget, wayfarerMode, variant, choose }) => {
       const before = get().seats;
       const after = seats as Seat[];
       const me = get().localId;
       void tradeSounds.then(({ diggerBell }) => diggerBell(play, before, after, me));
-      set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
+      set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on", tableVariant: variant, rematchChoice: choose });
     },
     // Dice and gain floats present the roll; its words live only in the persistent log.
     rolled: () => {},
-    state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow, result }) => {
-      set({ gameResult: game.phase === "over" ? gameResult(result) : null });
-      // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
-      const me = you ?? "";
-      const rollOff = rollOffLine(get().state, game);
-      // hear first: it is what claims a match point, and the banner line is read off that claim on this same state.
-      hear(get().state, game, me, "online", firstState);
-      const swing = awardLine(get().state, game) ?? takeMatchPointLine();
-      // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
-      // Every push carries the same window, and the skew wobbles by however long this tab took to get to the message:
-      // the timer we hold stays while the host's deadline is the same, so the chip neither remounts nor announces twice.
-      const skew = typeof serverNow === "number" ? serverNow - Date.now() : 0;
-      const prev = get().turnTimer;
-      // A new connection starts the estimate over: a rejoin may reach a different host clock.
-      const clockSkew = firstState ? skew : Math.max(skew, get().clockSkew);
-      firstState = false;
-      const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline, host: serverNow as number };
-      // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
-      set({ legal, turnTimer, clockSkew, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
-      // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
-      if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
-      get().loadState(game, me, get().isHost, get().code);
-      if (recovery && !get().spectator) {
-        recovery = false;
-        set({ announcement: "Back at the table", toast: "Back at the table", connectionHealth: { status: "Reachable", rtt: get().connectionHealth.rtt } });
-      }
-      if (!get().spectator) rememberLive(get().code);
-      if (outdated) set({ announcement: null, error: outdated, toast: outdated });
-      if (rollOff) showBanner(set, rollOff);
-      else if (swing) showBanner(set, swing);
+    // #1611: an expanded state is shown and applied only once expanded.ts (paired turns) is in, through the same chunk as
+    // a local deal. States that come meanwhile wait behind it, in order; a failed load says so and the next state asks again.
+    state: (msg) => {
+      if (held) return void held.push(msg);
+      const load = msg.game.variant && expanded.load();
+      if (!load || load.status === "fulfilled") return applyState(msg);
+      held = [msg];
+      load.then(
+        () => held?.forEach(applyState),
+        () => set({ error: "Could not load. Try again.", toast: "Could not load. Try again." }),
+      ).finally(() => (held = null));
     },
     log: (text) => set({ lobbyLog: text, gameLog: appendLog(get().gameLog, [text]) }),
     ttt: (ttt) => set({ ttt }),

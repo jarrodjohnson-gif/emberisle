@@ -339,7 +339,7 @@ function visibleProfiles(room) {
 }
 
 function seatsMsg(room) {
-  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) };
+  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room), ...(room.choose ? { choose: room.choose } : {}) };
 }
 
 // A room's variant (#1611; six-players.md, "Lobby and network limits"): fixed when the table opens, before the first seat
@@ -1520,13 +1520,15 @@ function watch(ws, msg) {
 // roster reach disk, synced, before the game is put in place, so no game message goes out first. While it is written the
 // room is busy (no second start, again or lobby change), and a table that changed meanwhile is told to try again. A failed
 // write keeps the lobby or the finished game as it was. Returns false when the new game was not put in place.
-async function durableStart(ws, room, order, game, unchanged) {
-  const seats = order.map((s, i) => ({ ...s, pid: game.players[i].id }));
+// `variant` is the room's after this start: only the rematch choice changes it (#1611). A seat takes its player's colour,
+// which differs from the seat's only when the classic map is picked at an expanded table.
+async function durableStart(ws, room, order, game, unchanged, variant = room.variant) {
+  const seats = order.map((s, i) => ({ ...s, pid: game.players[i].id, color: game.players[i].color }));
   const roster = freezeRoster(seats);
   const before = room.game;
   room.busy = true;
   try {
-    await commitRoom(room, "start", { game, roster, outcome: null, assisted: [], botDeclined: {}, recoveryPids: [], seats });
+    await commitRoom(room, "start", { game, roster, outcome: null, assisted: [], botDeclined: {}, recoveryPids: [], seats, variant });
   } catch (err) {
     console.error("start save failed:", err.message);
     save(room);
@@ -1541,7 +1543,8 @@ async function durableStart(ws, room, order, game, unchanged) {
     send(ws, { type: "error", message: "The table changed. Try again." });
     return false;
   }
-  seats.forEach((s, i) => (order[i].pid = s.pid));
+  seats.forEach((s, i) => Object.assign(order[i], { pid: s.pid, color: s.color }));
+  room.variant = variant;
   room.game = game;
   room.roster = roster;
   room.outcome = null;
@@ -1630,20 +1633,60 @@ function renameSeat(ws, room, msg) {
 // roll off behind it (Jarrod, 2026-10-03). Seats with no socket are let go; watchers stay and get the new game.
 // #889: the finished game's pending outcome is durable before `again` can replace it, and the new game, with its own UUID
 // and roster, is durable before its first message. The room is busy meanwhile, so no second again lands on a stale game.
-async function rematch(ws, room) {
+// #1611 (six-players.md, "Lobby and network limits"; accepted decision 7 and Jarrod's answers A to E of 2026-11-06 on
+// #666): an expanded table with five or six at it keeps the expanded island, each seat its number and colour. With fewer,
+// the host chooses (`choice`), and nothing changes until then: fill with bots up to five and play expanded, or play the
+// classic map with those present (offered only with three or four, C). The choice rides on the seat list, so every seat
+// and watcher sees that the host is choosing (A); it has no timeout and "dismiss" closes it (B).
+async function rematch(ws, room, choice) {
   if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can start." });
   if (room.game?.phase !== "over") return send(ws, { type: "error", message: "Game is not over." });
   if (room.busy) return send(ws, { type: "error", message: "Game is not over." });
   if (unsettled(room)) return send(ws, { type: "error", message: "Couldn't save the result. Retrying…" });
   const isLive = (s) => s.bot || (s.ws && s.ws.readyState === s.ws.OPEN);
   const live = room.seats.filter(isLive);
-  if (live.length < 3) return send(ws, { type: "error", message: "Need 3 or 4 at the table." });
-  const winner = live.find((s) => s.pid === room.game.winner);
-  const order = winner ? [winner, ...live.filter((s) => s !== winner)] : live;
-  const game = createGame({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), victoryTarget: room.victoryTarget ?? room.game.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game.wayfarerMode ?? "on" });
+  if (!expandedRoom(room) || live.length >= 5) {
+    if (live.length < 3) return send(ws, { type: "error", message: "Need 3 or 4 at the table." });
+    return replay(ws, room, live, isLive, room.variant);
+  }
+  if (choice === "dismiss") {
+    if (!room.choose) return;
+    room.choose = null;
+    return publish(room);
+  }
+  const choices = live.length >= 3 ? ["bots", "classic"] : ["bots"];
+  if (!choices.includes(choice)) {
+    room.choose = choices;
+    return publish(room);
+  }
+  return replay(ws, room, live, isLive, choice === "bots" ? "expanded" : "classic");
+}
+
+// The next game for the `live` seats, as a `variant` game. An expanded game under five seats takes bots, numbered with the
+// lowest free seat numbers (E). A classic game picked at an expanded table makes the room classic for later rematches; each
+// seat keeps its colour if the classic palette has it, else takes the first free classic slot (D). Seat numbers are kept.
+async function replay(ws, room, live, isLive, variant) {
+  const old = room.game;
+  const winner = live.find((s) => s.pid === old.winner);
+  const numberOf = new Map(old.players.map((p) => [p.id, p.seat]));
+  const bots = [];
+  const free = [1, 2, 3, 4, 5, 6].filter((n) => !live.some((s) => numberOf.get(s.pid) === n));
+  while (variant === "expanded" && live.length + bots.length < 5) {
+    const all = { seats: [...live, ...bots] };
+    bots.push({ id: `s${room.next++}`, name: seatName(all, "Bot", "Bot"), color: EXPANDED_COLORS.find((c) => !all.seats.some((s) => s.color === c)), avatarId: null, ready: true, bot: true, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() }, secret: randomBytes(16).toString("hex"), no: free[bots.length] });
+  }
+  const colors = new Map();
+  if (variant !== "expanded" && expandedRoom(room)) {
+    for (const s of live) if (PLAYER_COLORS.includes(s.color)) colors.set(s, s.color);
+    for (const s of live) if (!colors.has(s)) colors.set(s, PLAYER_COLORS.find((c) => ![...colors.values()].includes(c)));
+  }
+  const order = [...(winner ? [winner, ...live.filter((s) => s !== winner)] : live), ...bots];
+  const game = (variant === "expanded" ? createExpandedGame : createGame)({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), victoryTarget: room.victoryTarget ?? old.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? old.wayfarerMode ?? "on" });
   order.forEach((s, i) => {
     s.needs = undefined;
-    game.players[i].color = s.color;
+    game.players[i].color = colors.get(s) ?? s.color;
+    const n = s.no ?? numberOf.get(s.pid);
+    if (n) game.players[i].seat = n;
     if (s.bot) game.players[i].kind = "bot";
   });
   const unchanged = () => {
@@ -1653,7 +1696,7 @@ async function rematch(ws, room) {
   // Seats get new pids, so no offer (or a bot's answer timer on it) may outlive the old game.
   if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
   closeOffer(room);
-  if (!(await durableStart(ws, room, order, game, unchanged))) return;
+  if (!(await durableStart(ws, room, order, game, unchanged, variant))) return;
   for (const seat of room.seats) {
     if (live.includes(seat)) continue;
     clearTimeout(seat.graceTimer);
@@ -1662,13 +1705,16 @@ async function rematch(ws, room) {
     forgetAvatar(seat);
     seat.ws = null;
   }
-  room.seats = live;
+  for (const b of bots) delete b.no;
+  room.seats = [...live, ...bots];
+  room.choose = null;
   // #1411: every "play again" was for the game that just ended.
   for (const seat of room.seats) seat.again = undefined;
   // Reclaim a finished open room's slot only if no successor has taken it (#986).
   if (room.visibility === "open") registerOpenTable(room);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
+  for (const b of bots) say(room, `${b.name} sat down.`);
   say(room, winner ? `${winner.name} won last time and places first. The rest roll for their order.` : "Roll for first place.");
   const seen = room.game.log;
   runBots(room);
@@ -2107,7 +2153,7 @@ function handle(ws, raw) {
   if (msg.type === "addBot") return addBot(ws, room);
   if (msg.type === "removeBot") return removeBot(ws, room, msg);
   if (msg.type === "start") return room.game ? send(ws, { type: "error", message: "Game already started." }) : void startGame(ws, room).catch((err) => console.error("start failed:", err));
-  if (msg.type === "again") return void rematch(ws, room).catch((err) => console.error("again failed:", err));
+  if (msg.type === "again") return void rematch(ws, room, msg.choice).catch((err) => console.error("again failed:", err));
   if (!room.game) return send(ws, { type: "error", message: "not ready" });
   if (!freshAction(ws, room, msg)) return;
   if (msg.type === "turnExtensionAsk" || msg.type === "turnExtensionAnswer") {
