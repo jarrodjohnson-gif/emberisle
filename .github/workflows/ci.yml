@@ -293,6 +293,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run expanded-persist-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run expanded-lobby-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run touch-place-prove
