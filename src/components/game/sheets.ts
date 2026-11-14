@@ -2,5 +2,6 @@
 export { CostCard } from "@/components/game/CostCard";
 export { FortuneTray } from "@/components/game/FortuneTray";
 export { HowTo } from "@/components/game/HowTo";
+export { SeatChoice } from "@/components/game/SeatChoice";
 export { TradePanel } from "@/components/game/TradePanel";
 export { WinScreen } from "@/components/game/WinScreen";

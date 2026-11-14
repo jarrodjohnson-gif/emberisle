@@ -300,20 +300,22 @@ export function Hud() {
   const armed = mine && (state.phase === "main" || fortuneArmed) ? armedCopy(buildMode, roadPicks.length) : null;
   // #1539: an armed build or fortune has its own Cancel button in the action row, so a touch screen needs no hint.
   const armedNow = !!armed && !spectator;
+  // #1609: a partner turn (paired turns, five and six seats) has no dice, so the line only says whose it is.
+  const partner = state.role === "partner";
   const phaseText = choosing
     ? "Take from whom?"
     : armed
     ? matchMedia("(pointer: coarse)").matches ? armed[0] : `${armed[0]} · Esc cancels`
     : state.phase === "discard"
       ? `Discard ${state.discardNeeded[subject] ?? 0} goods`
-      : phaseCopy(state.phase);
+      : partner ? "Your partner turn" : phaseCopy(state.phase);
   const waiting = mode !== "hotseat" && !yours;
   // #430: in hotseat a seat that owes a discard on another seat's turn is named, not given the turn.
   const turnText =
     mode === "hotseat" && (subject !== state.current || state.phase === "discard")
       ? `${phaseText} · ${subjectPlayer.name}`
       : waiting
-        ? waitingCopy(state.phase, subjectPlayer.name)
+        ? partner ? `${subjectPlayer.name}'s partner turn` : waitingCopy(state.phase, subjectPlayer.name)
         : phaseText;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
   const menuPlayer = menuFor ? state.players.find((p) => p.id === menuFor) : null;
