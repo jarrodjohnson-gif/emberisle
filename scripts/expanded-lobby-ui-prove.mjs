@@ -11,6 +11,8 @@
 //   seen from two tabs: "Your partner turn" on the partner's, "<name>'s partner turn" on another;
 // - a page that leaves the expanded capability out of its hello (stripped in that tab) is refused with "Update Emberisle
 //   to join this table." on the Play page, and gets no seat;
+// - the win screen's rematch choice (store-injected at 1280x720, the host's rules are in the node proof): the host gets
+//   Fill with bots, Classic map and Cancel in place of Play again, a guest reads "The host is choosing how to rematch.";
 // - zero page errors.
 // Every failure is listed before the run fails. SHOTS=1 writes real PNGs at device scale 2 into docs/proofs/1611/: the
 // six-seat lobby from the host and from a guest, and the refused page, at each size.
@@ -294,6 +296,19 @@ try {
     check((await partner.page.getByTestId("turn-banner").textContent()) === "Your partner turn", `${v.tag}: ${partner.name}'s tab reads "Your partner turn"`);
     await until(async () => (await other.page.getByTestId("turn-banner").textContent()) === `${name}'s partner turn`, "another tab's status");
     check((await other.page.getByTestId("turn-banner").textContent()) === `${name}'s partner turn`, `${v.tag}: ${other.name}'s tab reads "${name}'s partner turn"`);
+    if (v.tag === "1280x720") {
+      // The finished game with the host choosing, as the host's seat list says it (only this tab's store is changed).
+      const over = (t, choose) => store(t.page, (choose) => { const g = window.__emberisle; const st = g.getState().state; g.setState({ state: { ...st, phase: "over", winner: st.players[0].id }, rematchChoice: choose }); }, choose);
+      await over(h, ["bots", "classic"]);
+      await over(g1, ["bots", "classic"]);
+      await h.page.getByTestId("win-again-bots").waitFor();
+      check(await h.page.getByTestId("win-again-bots").textContent() === "Fill with bots" && await h.page.getByTestId("win-again-classic").textContent() === "Classic map" && await h.page.getByTestId("win-again-cancel").isVisible(), `${v.tag}: the host is offered Fill with bots, Classic map and Cancel`);
+      check((await h.page.getByTestId("win-again").count()) === 0, `${v.tag}: no Play again while the host chooses`);
+      check((await g1.page.getByTestId("win-waiting").textContent()) === "The host is choosing how to rematch.", `${v.tag}: a guest reads that the host is choosing`);
+      check((await g1.page.getByTestId("win-again-bots").count()) === 0, `${v.tag}: a guest gets no choice`);
+      await over(h, ["bots"]);
+      check((await h.page.getByTestId("win-again-classic").count()) === 0, `${v.tag}: under three only the bot fill shows`);
+    }
     for (const t of [h, g1, g2]) await t.ctx.close();
   }
 } catch (e) {
