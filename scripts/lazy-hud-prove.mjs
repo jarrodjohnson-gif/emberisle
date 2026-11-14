@@ -117,7 +117,7 @@ async function menuCancelCase(g, phone, how) {
   const context = await browser.newContext(phone ? { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true } : { viewport: { width: 1280, height: 720 } });
   const holdPage = await context.newPage();
   holdPage.on("console", (m) => {
-    if (m.type() === "error" && !m.text().includes("Failed to load resource")) errors.push(m.text());
+    if (m.type() === "error") errors.push(m.text());
   });
   holdPage.on("pageerror", (e) => errors.push(String(e)));
   // Every request for the menu's module waits here until it is released, the table's idle prefetch included.
@@ -159,8 +159,15 @@ async function menuCancelCase(g, phone, how) {
       if (document.querySelector('[data-testid="player-menu"]')) window.__menuSeen = true;
     }).observe(document.body, { childList: true, subtree: true });
   });
-  if (how === "Escape") await holdPage.keyboard.press("Escape");
-  else {
+  if (how === "Escape") {
+    // The press focused the seat; focus leaves it first, so the check below sees the cancel put it back.
+    const focusBefore = await holdPage.evaluate(() => {
+      document.activeElement?.blur();
+      return document.activeElement?.getAttribute("data-menu-trigger") ?? document.activeElement?.tagName ?? null;
+    });
+    check(`${tag}: focus is off the seat before Escape`, focusBefore !== "p1", { focusBefore });
+    await holdPage.keyboard.press("Escape");
+  } else {
     // A tap on the island, clear of the seats, the header and the menu's place (seat-menu-sheet-prove's spot).
     const at = await holdPage.evaluate(() => ({ x: innerWidth > innerHeight ? innerWidth * 0.75 : innerWidth / 2, y: innerHeight * 0.3 }));
     if (phone) await holdPage.touchscreen.tap(at.x, at.y);
@@ -172,7 +179,7 @@ async function menuCancelCase(g, phone, how) {
     focus: document.activeElement?.getAttribute("data-menu-trigger") ?? document.activeElement?.tagName ?? null,
   }));
   check(`${tag} before the chunk lands: the open is cancelled and the seat says collapsed`, cancelled.menuFor === null && cancelled.expanded === "false", cancelled);
-  if (how === "Escape") check(`${tag} before the chunk lands: focus stays on the seat`, cancelled.focus === "p1", cancelled);
+  if (how === "Escape") check(`${tag} before the chunk lands: Escape puts focus on the seat`, cancelled.focus === "p1", cancelled);
 
   // Let the chunk through, then wait for it to land: its response finishes, the app's import of it settles (one module
   // record per URL, as above) and two frames render. Only then is "no menu" a fact.
