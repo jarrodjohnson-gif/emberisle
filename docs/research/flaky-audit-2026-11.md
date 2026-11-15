@@ -9,13 +9,13 @@
 
 | Entry (proof: pattern) | Issue | Hits | Last hit |
 | --- | --- | --- | --- |
-| `hotseat-prove`: `Error: Leave played [click, click], not click_001.wav once` | #860 | 0 | none since 2026-11-01 |
-| `turn-gain-prove`: `FAIL …: no gain line is up while "Your turn" is` | #860 | 0 | none since 2026-11-01 |
-| `chat-prove`: `FAIL phone game 390x844 {…"newest":false…}: N whole chat lines on screen` | #860 | 0 | none since 2026-11-01 |
-| `tokens-prove`: `FAIL 7 no numeral behind the scenery (1280x720): the N: 1 of 5 points` | #1511 | 0 | none since 2026-11-01 |
-| `board-touch-prove`: `setup: a tap on a Pasture hex plays nothing` | #1510 | 0 | none since 2026-11-01 |
-| `lobby-layout-prove`: `"Copy" has at least 8 px between text and button edge (7.x / 7.x)` | #1176 | 0 | none since 2026-11-01 |
-| `connection-health-prove`: `+   saving: false,` / `-   saving: true,` | #1200 | 0 | none since 2026-11-01 |
+| `hotseat-prove`: `Error: Leave played [click, click], not click_001.wav once` | #860 | 0 | 0 in window |
+| `turn-gain-prove`: `FAIL …: no gain line is up while "Your turn" is` | #860 | 0 | 0 in window |
+| `chat-prove`: `FAIL phone game 390x844 {…"newest":false…}: N whole chat lines on screen` | #860 | 0 | 0 in window |
+| `tokens-prove`: `FAIL 7 no numeral behind the scenery (1280x720): the N: 1 of 5 points` | #1511 | 0 | 0 in window |
+| `board-touch-prove`: `setup: a tap on a Pasture hex plays nothing` | #1510 | 0 | 0 in window |
+| `lobby-layout-prove`: `"Copy" has at least 8 px between text and button edge (7.x / 7.x)` | #1176 | 0 | 0 in window |
+| `connection-health-prove`: `+   saving: false,` / `-   saving: true,` | #1200 | 0 | 0 in window |
 | `server-needs-prove`: `Error: timeout p0 state:` | #1326 | 10 | [run 42758315547](https://github.com/jarrodjohnson-gif/emberisle/actions/runs/42758315547), 2026-11-10, PR #1520 |
 
 The table shortens each pattern. The search used the exact `pattern` string from `.github/flaky.json`.
@@ -61,7 +61,8 @@ Each hit is the `server` job, run attempt 1.
 - The re-run is a new attempt with new job ids. The attempt 1 job keeps its red result and its log.
 - So a run can end green while its attempt 1 job holds a matched pattern.
 - `jobs?filter=all` returns the jobs of every attempt, so the search saw those attempt 1 jobs.
-- No proof of the eight retries itself, and `ci.yml` has no `continue-on-error`. A green job cannot hold a hit.
+- None of the eight proofs re-runs itself after a failure. A grep of the eight files for `retry` and `attempt` found none.
+- `ci.yml` has no `continue-on-error`. So a green job cannot hold a hit.
 - flake-rerun prints one line per failed job, for example `"server": known flake server-needs-prove`.
 - That line appears 5 times in the 258 logs, all for `server-needs-prove`. All 5 match a hit above.
 - 4 of those 5 runs printed `re-running failed jobs`. Run 42714895644 did not, because `loosen` also failed.
@@ -161,7 +162,8 @@ server-needs-prove	#1326	10
 A zero can mean the proof's message changed, so the regex can no longer match.
 This audit grepped the 309 logs and the current proofs for a short fixed part of each message.
 
-- `hotseat-prove`: two clicks is now the passing result. The log prints `Leave played [click, click]`, then `hotseat-prove: ok` (18 logs).
+- `hotseat-prove`: two clicks is now the passing result. The log prints `Leave played ["/audio/click_001.wav","/audio/click_001.wav"]`, then `hotseat-prove: ok`.
+- That two-click line is in 18 logs. Six more logs print one click, the older passing result.
 - `hotseat-prove`: the error now reads `Leave table and Leave played …, not click_001.wav once each`. The pattern cannot match it.
 - `turn-gain-prove`: `no gain line is up` is no longer in `scripts/turn-gain-prove.mjs`. It is only in `scripts/flake-rerun-prove.mjs`.
 - `chat-prove`: one log failed on `phone lobby 390x844`. The pattern covers only `phone game`, so it did not match.
@@ -170,7 +172,8 @@ This audit grepped the 309 logs and the current proofs for a short fixed part of
 
 ## What the counts suggest
 
-- Seven entries had no hit since 2026-11-01. They are candidates for removal; the desk decides.
+- Seven entries had no hit since 2026-11-01. The desk decides whether any of them stay.
+- The window is 15 days. A flake rarer than that could still be live.
 - Those seven are `hotseat-prove`, `turn-gain-prove`, `chat-prove`, `tokens-prove`, `board-touch-prove`, `lobby-layout-prove` and `connection-health-prove`.
 - For `hotseat-prove` and `turn-gain-prove`, the current proof can no longer print the matched message.
 - `server-needs-prove` still fires: 10 hits, 5 after #1326 closed. The last was 2026-11-10.
