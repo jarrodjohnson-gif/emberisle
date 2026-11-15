@@ -613,9 +613,16 @@ async function rollOffQuiet() {
   cs[B].ws.terminate();
   await cs[A].until(() => cs[A].logs.includes(`${nameOf(crq, B)} lost connection.`), "roll-off quiet: the other person drops");
   await same("the other person's drop", t);
-  let n = cs[A].states.length;
+  // #1702: the host says "is back." before the rejoin's push, on the same socket, so count the pushes up to that line: a
+  // late push from the drop comes before it.
+  const from = cs[A].inbox.length;
   t = Date.now();
   cs[B] = await client(code, B);
+  const backAt = await cs[A].until(() => {
+    const i = cs[A].inbox.findIndex((m, j) => j >= from && m.type === "log" && m.text === `${nameOf(crq, B)} is back.`);
+    return i >= 0 && i + 1;
+  }, "roll-off quiet: the other person is back");
+  let n = cs[A].inbox.slice(0, backAt).filter((m) => m.type === "state").length;
   await pushed("the other person's rejoin", n);
   await same("the other person's rejoin", t);
   // A timer vote that fails: the roller asks for more time, the other person votes no.
