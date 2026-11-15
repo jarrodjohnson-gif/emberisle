@@ -35,13 +35,13 @@ for (const f of flakes) {
   assert.ok(Number.isInteger(f.issue), `${f.id} has a tracking issue`);
   assert.ok(f.regex.test(failures[f.id]), `${f.id} signature matches its failure`);
 }
-// The lobby-layout-prove signature covers every viewport, not only 375x667 (#1237).
+// The turn-gain-prove signature covers every seat and viewport, not only host 844x390.
 for (const line of [
-  `${at}AssertionError [ERR_ASSERTION]: 390x844: "Copy" has at least 8 px between text and button edge (7.9 / 7.9)`,
-  `${at}AssertionError [ERR_ASSERTION]: 320x568: "Copy" has at least 8 px between text and button edge (7.3 / 7.2)`,
-]) assert.ok(flakes.find((f) => f.id === "lobby-layout-prove").regex.test(line), `lobby-layout-prove signature matches ${JSON.stringify(line)}`);
+  `${at}FAIL guest 390x844: no gain line is up while "Your turn" is [{"t":1}]`,
+  `${at}FAIL host 1280x720: no gain line is up while "Your turn" is []`,
+]) assert.ok(flakes.find((f) => f.id === "turn-gain-prove").regex.test(line), `turn-gain-prove signature matches ${JSON.stringify(line)}`);
 // The passing log line of the same text is not a failure.
-assert.equal(flakes.find((f) => f.id === "hotseat-prove").regex.test(`${at}Leave played ["/audio/click_001.wav"]`), false);
+assert.equal(flakes.find((f) => f.id === "turn-gain-prove").regex.test(`${at}ok   host 844x390: no gain line is up while "Your turn" is [{"t":1}]`), false);
 // The near misses of each signature that are not that flake: a passing line, a wider failure, or another step's timeout.
 const notFlake = {
   "chat-prove": [
