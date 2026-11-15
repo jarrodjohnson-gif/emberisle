@@ -91,7 +91,9 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
 }
 
 // #954: practice and hotseat have no chat. While the newest lines are that roll's goods and awards, the chip shows the roll.
-const HUD_ASIDE = / — .+'s roll[;.]| (holds|loses) the (longest path|largest army)\.$/;
+// #1699 (owner, 2026-11-14): a 7's discards are the roll's too, so "<name> rolled 7!" holds until the next other line (the
+// wayfarer's move, or with the wayfarer off the next move that logs).
+const HUD_ASIDE = / — .+'s roll[;.]| (holds|loses) the (longest path|largest army)\.$| discards \d+( goods)?\.$/;
 function hudRollChip(lines: { text: string }[], mine: string) {
   const last = lines.at(-1)?.text;
   if (!last || / claims the isle |^The isle is settled/.test(last)) return null;

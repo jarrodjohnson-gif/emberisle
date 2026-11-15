@@ -18,13 +18,16 @@
 //   shows nothing, one roll on shows one moment (a 7 in danger, read out by name), a jump of two rolls shows none.
 // Hotseat at 1280x720: a seat's roll shows one moment and is read out by the seat's name, not "You".
 // Reduced motion at 1280x720: the moment still shows centred and large, with no entry animation and no flight, and goes
-// after its hold. #1687: a 3+4 with a bot on 9 goods: the bot's discard line takes the event line inside the moment's hold,
-// at 1280x720, 390x844 and reduced motion. Zero console errors throughout.
+// after its hold. #1687, #1699: a 3+4 with a bot on 9 goods: the bot's discard goes in the log, and the event line keeps
+// "<name> rolled 7!" (owner decision 2026-11-14), at 1280x720, 390x844 and reduced motion. Zero console errors throughout.
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 // CI renders the island with software GL, where one frame can take a long time; a wait gets this long.
 const STEP_MS = 20_000;
+// With SHOTS=1 the bot-discard case writes the table after the discard in docs/proofs/1699/.
+const SHOTS = process.env.SHOTS === "1";
 
 const PORT = Number(process.env.ROLL_PORT || process.env.VITE_PORT) || 8440;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
@@ -512,8 +515,9 @@ async function reduced() {
 }
 
 // #1687: a 7 while a bot holds more than 7 goods. The bot discards on the app's 700 ms timer, inside the moment's 900 ms
-// hold, and its line ("<bot> discards 4 goods.") takes the event line from the roll. The roll is 3+4, the bot holds 9 and
-// every other hand at most 7. Checked the frame the discard line lands, and again once the moment has gone.
+// hold; its line ("<bot> discards 4 goods.") goes in the log, and (#1699, owner decision 2026-11-14) the event line keeps
+// "<name> rolled 7!". The roll is 3+4, the bot holds 9 and every other hand at most 7. Checked the frame the discard line
+// lands, and again once the moment has gone.
 async function discardSeven(viewport, { reduced = false, touch = false } = {}) {
   const tag = `bot discards on a 7 ${viewport.width}x${viewport.height}${reduced ? " reduced" : ""}`;
   const page = await open(viewport, { reduced, touch });
@@ -600,12 +604,37 @@ async function discardSeven(viewport, { reduced = false, touch = false } = {}) {
   check(after.moments.length === 1 && m.sum === 7 && m.dice.join() === "3,4", `${tag}: one moment, showing 3+4 and 7`);
   check(up?.moment === "7" && up.line === `${bot.me} rolled 7!` && up.lineRoll === "7" && up.shown.join() === "roll-sum,log-roll-sum", `${tag}: as the moment comes up the event line shows the roll, the chip's sum beside the centre one (#954) (${JSON.stringify(up)})`);
   check(discarded && drop?.botGoods === 5, `${tag}: the bot discards 4 of its 9 goods (${drop?.botGoods ?? "no drop drawn"})`);
-  check(drop?.line === line && drop.lineRoll === null, `${tag}: the frame the discard lands, the event line shows the bot's discard line ("${drop?.line}")`);
-  check(drop?.moment === "7" && drop.shown.join() === "roll-sum", `${tag}: the moment is still up then, and the roll's sum is on screen once, in the moment (${JSON.stringify(drop?.shown)})`);
+  check(drop?.line === `${bot.me} rolled 7!` && drop.lineRoll === "7", `${tag}: the frame the discard lands, the event line still shows the roll, not the discard (#1699) ("${drop?.line}")`);
+  check(drop?.moment === "7" && drop.shown.join() === "roll-sum,log-roll-sum", `${tag}: the moment is still up then, the chip's sum beside the centre one (${JSON.stringify(drop?.shown)})`);
   check(drop?.log.join("|") === [...rolled, line].join("|"), `${tag}: the log's newest line is the discard, with the roll's line still before it (${JSON.stringify(drop?.log)})`);
   check(rows.every((r) => r.ms < 0 || r.banner === null), `${tag}: no goods banner at any point from the roll on`);
-  check(after.lineVisible && after.line === line && after.lineRoll === null && after.log.join("|") === [...rolled, line].join("|"), `${tag}: once the moment has gone the event line still shows the discard line (${JSON.stringify(after.line)})`);
-  check(after.shown.length === 0 && after.banner === null, `${tag}: once the moment has gone no 7 shows on the table and no banner (${JSON.stringify(after.shown)})`);
+  check(after.lineVisible && after.line === `${bot.me} rolled 7!` && after.lineRoll === "7" && after.log.join("|") === [...rolled, line].join("|"), `${tag}: once the moment has gone the event line still shows the roll, and the log still ends with the discard (#1699) (${JSON.stringify(after.line)})`);
+  check(after.shown.join() === "log-roll-sum" && after.banner === null, `${tag}: once the moment has gone the 7 shows once, in the event line, and no banner (${JSON.stringify(after.shown)})`);
+  // #1699: the roll holds the event line in every state drawn from the moment up to the person's move, and the move takes it.
+  check(rows.every((r) => r.ms < up.ms || (r.line === `${bot.me} rolled 7!` && r.lineRoll === "7")), `${tag}: every frame from the moment on shows the roll in the event line, through the discard (${JSON.stringify([...new Set(rows.filter((r) => r.ms >= up.ms).map((r) => r.line))])})`);
+  if (SHOTS && !reduced) {
+    mkdirSync("docs/proofs/1699", { recursive: true });
+    await page.screenshot({ path: `docs/proofs/1699/after-discard-${viewport.width}x${viewport.height}.png` });
+  }
+  const before = await page.evaluate(() => {
+    const s = window.__emberisle.getState();
+    return { phase: s.state.phase, mine: s.state.current === s.localId, log: s.gameLog.length };
+  });
+  check(before.phase === "robber" && before.mine, `${tag}: the person moves the wayfarer next (${JSON.stringify(before)})`);
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = g.getState().state;
+    g.getState().pickHex(st.hexes.find((h) => h.id !== st.robberHex && h.terrain !== "waste").id);
+    const p = g.getState().pendingSteal;
+    if (p) g.getState().dispatch({ type: "moveRobber", hexId: p.hexId, stealFrom: p.targets[0] });
+  });
+  await page.waitForFunction((n) => window.__emberisle.getState().state.phase !== "robber" && window.__emberisle.getState().gameLog.length > n, before.log, { timeout: STEP_MS, polling: 50 });
+  await frames(page);
+  const moved = await page.evaluate(() => {
+    const line = document.querySelector('[data-testid="log-line"]');
+    return { line: (line?.textContent ?? "").replace(/\s+/g, " ").trim(), lineRoll: line?.dataset.roll ?? null, last: window.__emberisle.getState().gameLog.at(-1)?.text, shown: window.__sumShown(7) };
+  });
+  check(moved.lineRoll === null && moved.line === moved.last && !/ rolled 7!$/.test(moved.line) && moved.shown.length === 0, `${tag}: once the person moves the wayfarer the event line shows the newest log line, as before (${JSON.stringify(moved)})`);
   await page.close();
 }
 
