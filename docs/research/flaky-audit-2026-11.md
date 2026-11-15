@@ -9,13 +9,13 @@
 
 | Entry (proof: pattern) | Issue | Hits | Last hit |
 | --- | --- | --- | --- |
-| `hotseat-prove`: `Error: Leave played [click, click], not click_001.wav once` | #860 | 0 | none since 2026-11-01 |
-| `turn-gain-prove`: `FAIL …: no gain line is up while "Your turn" is` | #860 | 0 | none since 2026-11-01 |
-| `chat-prove`: `FAIL phone game 390x844 {…"newest":false…}: N whole chat lines on screen` | #860 | 0 | none since 2026-11-01 |
-| `tokens-prove`: `FAIL 7 no numeral behind the scenery (1280x720): the N: 1 of 5 points` | #1511 | 0 | none since 2026-11-01 |
-| `board-touch-prove`: `setup: a tap on a Pasture hex plays nothing` | #1510 | 0 | none since 2026-11-01 |
-| `lobby-layout-prove`: `"Copy" has at least 8 px between text and button edge (7.x / 7.x)` | #1176 | 0 | none since 2026-11-01 |
-| `connection-health-prove`: `+   saving: false,` / `-   saving: true,` | #1200 | 0 | none since 2026-11-01 |
+| `hotseat-prove`: `Error: Leave played [click, click], not click_001.wav once` | #860 | 0 | 0 in window |
+| `turn-gain-prove`: `FAIL …: no gain line is up while "Your turn" is` | #860 | 0 | 0 in window |
+| `chat-prove`: `FAIL phone game 390x844 {…"newest":false…}: N whole chat lines on screen` | #860 | 0 | 0 in window |
+| `tokens-prove`: `FAIL 7 no numeral behind the scenery (1280x720): the N: 1 of 5 points` | #1511 | 0 | 0 in window |
+| `board-touch-prove`: `setup: a tap on a Pasture hex plays nothing` | #1510 | 0 | 0 in window |
+| `lobby-layout-prove`: `"Copy" has at least 8 px between text and button edge (7.x / 7.x)` | #1176 | 0 | 0 in window |
+| `connection-health-prove`: `+   saving: false,` / `-   saving: true,` | #1200 | 0 | 0 in window |
 | `server-needs-prove`: `Error: timeout p0 state:` | #1326 | 10 | [run 42758315547](https://github.com/jarrodjohnson-gif/emberisle/actions/runs/42758315547), 2026-11-10, PR #1520 |
 
 The table shortens each pattern. The search used the exact `pattern` string from `.github/flaky.json`.
