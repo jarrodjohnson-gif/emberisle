@@ -131,12 +131,12 @@ check("step name must be the proof exactly", run([
   ["browser-b (flows-b)", "hotseat-prove-4", failures["hotseat-prove"]],
 ]), false);
 
-// #1326: the host proof's step is server-needs-prove. The browser proof's step is needs-prove.
-const serverNeeds = check("server-needs-prove timeout is a known flake", run([
-  ["server", "server-needs-prove", failures["server-needs-prove"]],
+// #1326: a known flake's step in the server job is matched as in a browser job. The browser proof's step is needs-prove.
+const serverNeeds = check("a known flake in the server job is re-run", run([
+  ["server", "turn-gain-prove", failures["turn-gain-prove"]],
 ]), true);
 assert.deepEqual(serverNeeds.jobs, [
-  { name: "server", flakes: ["server-needs-prove"] },
+  { name: "server", flakes: ["turn-gain-prove"] },
 ]);
 check("browser needs-prove is not the server timeout flake", run([
   ["browser-a (a3)", "needs-prove", failures["server-needs-prove"]],
