@@ -227,13 +227,14 @@ async function landscape(page, label) {
     const parts = [".lobby-wait-head", '[data-testid="lobby-wait-stage"]', ".lobby-wait-holds", '[data-testid="lobby-wait-status"]', '[data-testid="lobby-actions"]']
       .map((sel) => ({ label: sel, ...rect(document.querySelector(sel)) }));
     const controls = [...card.querySelectorAll("button, input, [role=tab]")].filter((el) => el.getBoundingClientRect().width > 0);
-    const small = [...card.querySelectorAll("*")].filter((el) => {
+    const texts = [...card.querySelectorAll("*")].filter((el) => {
       if (el.closest("ruffle-player, [data-testid=lobby-wait-stage]")) return false;
       const own = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
-      return own && el.getBoundingClientRect().width > 0 && parseFloat(getComputedStyle(el).fontSize) < 12;
-    }).map((el) => `${el.textContent.trim()} ${getComputedStyle(el).fontSize}`);
+      return own && el.getBoundingClientRect().width > 0;
+    });
+    const small = texts.filter((el) => parseFloat(getComputedStyle(el).fontSize) < 12).map((el) => `${el.textContent.trim()} ${getComputedStyle(el).fontSize}`);
     return {
-      parts, small, viewW: innerWidth, viewH: innerHeight,
+      parts, small, texts: texts.length, viewW: innerWidth, viewH: innerHeight,
       status: { height: status.clientHeight, scroll: status.scrollHeight, line: parseFloat(getComputedStyle(status).lineHeight) },
       controls: controls.map((el) => ({ label: el.getAttribute("aria-label") || el.textContent.trim(), ...rect(el) })),
     };
@@ -244,7 +245,10 @@ async function landscape(page, label) {
   }
   for (const p of data.parts) assert.ok(p.x >= 0 && p.y >= 0 && p.right <= data.viewW + 0.5 && p.bottom <= data.viewH + 0.5, `${label}: ${p.label} inside the viewport ${JSON.stringify(p)}`);
   assert.ok(data.status.height >= data.status.line && data.status.scroll <= data.status.height, `${label}: status line not clipped ${JSON.stringify(data.status)}`);
+  assert.ok(data.texts >= 8, `${label}: the text-size check saw the card's texts (${data.texts})`);
   assert.deepEqual(data.small, [], `${label}: text under 12 px`);
+  // The stage is the part that gives way here, so it has a floor: the game stays at least 120 px tall.
+  assert.ok(data.parts[1].height >= 120, `${label}: stage at least 120 px tall (${data.parts[1].height})`);
   const want = ["Sound off", "Close", "Left", "Right", "Ready", "Leave the table"];
   for (const name of want) assert.ok(data.controls.some((c) => c.label === name), `${label}: ${name} shown`);
   for (const c of data.controls) {
@@ -257,7 +261,7 @@ async function landscape(page, label) {
     assert.ok(gap >= 7.99, `${label}: ${a.label} / ${b.label} gap ${gap}`);
   }
   const stage = data.parts[1];
-  console.log(`ok  ${label}: stack ${data.parts.map((p) => `${p.label} ${p.y}-${p.bottom}`).join(", ")}; stage ${stage.width}x${stage.height}; status ${JSON.stringify(data.status)}`);
+  console.log(`ok  ${label}: stack ${data.parts.map((p) => `${p.label} ${p.y}-${p.bottom}`).join(", ")}; stage ${stage.width}x${stage.height}; status ${JSON.stringify(data.status)}; ${data.texts} texts checked`);
   console.log(`ok  ${label}: targets ${data.controls.map((c) => `${c.label} ${c.width}x${c.height}`).join(", ")}`);
 }
 
