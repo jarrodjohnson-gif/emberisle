@@ -18,8 +18,8 @@
 //   shows nothing, one roll on shows one moment (a 7 in danger, read out by name), a jump of two rolls shows none.
 // Hotseat at 1280x720: a seat's roll shows one moment and is read out by the seat's name, not "You".
 // Reduced motion at 1280x720: the moment still shows centred and large, with no entry animation and no flight, and goes
-// after its hold. #1687: a 3+4 with a bot on 9 goods: the bot's discard line takes the event line inside the moment's hold,
-// at 1280x720, 390x844 and reduced motion. Zero console errors throughout.
+// after its hold. #1687, #1699: a 3+4 with a bot on 9 goods: the bot's discard goes in the log, and the event line keeps
+// "<name> rolled 7!" (owner decision 2026-11-14), at 1280x720, 390x844 and reduced motion. Zero console errors throughout.
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -512,8 +512,9 @@ async function reduced() {
 }
 
 // #1687: a 7 while a bot holds more than 7 goods. The bot discards on the app's 700 ms timer, inside the moment's 900 ms
-// hold, and its line ("<bot> discards 4 goods.") takes the event line from the roll. The roll is 3+4, the bot holds 9 and
-// every other hand at most 7. Checked the frame the discard line lands, and again once the moment has gone.
+// hold; its line ("<bot> discards 4 goods.") goes in the log, and (#1699, owner decision 2026-11-14) the event line keeps
+// "<name> rolled 7!". The roll is 3+4, the bot holds 9 and every other hand at most 7. Checked the frame the discard line
+// lands, and again once the moment has gone.
 async function discardSeven(viewport, { reduced = false, touch = false } = {}) {
   const tag = `bot discards on a 7 ${viewport.width}x${viewport.height}${reduced ? " reduced" : ""}`;
   const page = await open(viewport, { reduced, touch });
@@ -600,12 +601,12 @@ async function discardSeven(viewport, { reduced = false, touch = false } = {}) {
   check(after.moments.length === 1 && m.sum === 7 && m.dice.join() === "3,4", `${tag}: one moment, showing 3+4 and 7`);
   check(up?.moment === "7" && up.line === `${bot.me} rolled 7!` && up.lineRoll === "7" && up.shown.join() === "roll-sum,log-roll-sum", `${tag}: as the moment comes up the event line shows the roll, the chip's sum beside the centre one (#954) (${JSON.stringify(up)})`);
   check(discarded && drop?.botGoods === 5, `${tag}: the bot discards 4 of its 9 goods (${drop?.botGoods ?? "no drop drawn"})`);
-  check(drop?.line === line && drop.lineRoll === null, `${tag}: the frame the discard lands, the event line shows the bot's discard line ("${drop?.line}")`);
-  check(drop?.moment === "7" && drop.shown.join() === "roll-sum", `${tag}: the moment is still up then, and the roll's sum is on screen once, in the moment (${JSON.stringify(drop?.shown)})`);
+  check(drop?.line === `${bot.me} rolled 7!` && drop.lineRoll === "7", `${tag}: the frame the discard lands, the event line still shows the roll, not the discard (#1699) ("${drop?.line}")`);
+  check(drop?.moment === "7" && drop.shown.join() === "roll-sum,log-roll-sum", `${tag}: the moment is still up then, the chip's sum beside the centre one (${JSON.stringify(drop?.shown)})`);
   check(drop?.log.join("|") === [...rolled, line].join("|"), `${tag}: the log's newest line is the discard, with the roll's line still before it (${JSON.stringify(drop?.log)})`);
   check(rows.every((r) => r.ms < 0 || r.banner === null), `${tag}: no goods banner at any point from the roll on`);
-  check(after.lineVisible && after.line === line && after.lineRoll === null && after.log.join("|") === [...rolled, line].join("|"), `${tag}: once the moment has gone the event line still shows the discard line (${JSON.stringify(after.line)})`);
-  check(after.shown.length === 0 && after.banner === null, `${tag}: once the moment has gone no 7 shows on the table and no banner (${JSON.stringify(after.shown)})`);
+  check(after.lineVisible && after.line === `${bot.me} rolled 7!` && after.lineRoll === "7" && after.log.join("|") === [...rolled, line].join("|"), `${tag}: once the moment has gone the event line still shows the roll, and the log still ends with the discard (#1699) (${JSON.stringify(after.line)})`);
+  check(after.shown.join() === "log-roll-sum" && after.banner === null, `${tag}: once the moment has gone the 7 shows once, in the event line, and no banner (${JSON.stringify(after.shown)})`);
   await page.close();
 }
 
