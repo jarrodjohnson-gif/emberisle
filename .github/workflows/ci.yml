@@ -723,7 +723,7 @@ jobs:
         run: npm run splash-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-water'
         run: npm run polish-tokens-prove
-      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run roll-moment-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
         run: npm run goods-log-prove
