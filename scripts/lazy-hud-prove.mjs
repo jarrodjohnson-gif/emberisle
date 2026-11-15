@@ -40,7 +40,7 @@ async function phoneMenuRefused(g) {
   const phonePage = await context.newPage();
   // Only the refused PlayerMenu.tsx load is expected: the browser's line for that URL (the prefetch's, then the retry's) and
   // React's report of it reaching the LazyBoundary. Any other console error or page error counts.
-  const menuUrl = `http://127.0.0.1:${PORT}/src/components/game/PlayerMenu\\.tsx(\\?retry=\\d+)?`;
+  const menuUrl = `http://127\\.0\\.0\\.1:${PORT}/src/components/game/PlayerMenu\\.tsx(\\?retry=\\d+)?`;
   const refusedLine = new RegExp(`^${menuUrl}$`);
   const boundaryReport = new RegExp(`^%o\\n\\n%s\\n\\n%s\\n TypeError: Failed to fetch dynamically imported module: ${menuUrl} The above error occurred in the <Lazy> component\\. React will try to recreate this component tree from scratch using the error boundary you provided, LazyBoundary\\.$`);
   phonePage.on("console", (m) => {
