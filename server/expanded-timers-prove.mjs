@@ -23,6 +23,9 @@
 // 9. A roll-off tie with one person and bots (#1681): the person's re-roll after a slow roll and a tie gets a full window
 //    and budget, also when the same seats tie twice; a reconnect within one roll keeps the deadline. Classic three seats
 //    and five seats, beside 7.
+// 10. Within one roll-off roll, two people and a bot (#1691): a chat line, the other person's drop and rejoin, a failed timer
+//    vote and the roller's own chat line leave the roller's deadline and budget exactly; its own rejoin keeps the budget.
+//    Beside 7, rolling no dice.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { appendFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -311,6 +314,11 @@ function tiedRollOff(g, code) {
 }
 const cro = tiedRollOff(createGame({ humans: NAMES.slice(0, 3).map((name) => ({ name })), bots: 0, seed: 1681 }), "CRO");
 const xro = tiedRollOff(createExpandedGame({ humans: NAMES.slice(0, 5).map((name) => ({ name })), bots: 0, seed: 1681 }), "XRO");
+// CRQ: classic three seats in the roll-off, two people and a bot. players[1] (a person) and the bot have rolled; players[0]
+// (a person) is the only seat left to roll.
+const crq = createGame({ humans: NAMES.slice(0, 3).map((name) => ({ name })), bots: 0, seed: 1691 });
+Object.assign(crq, { current: at(crq, 0), rollOff: { rolls: { [at(crq, 1)]: 1, [at(crq, 2)]: 2 }, pending: [at(crq, 0)] } });
+writeRoom("CRQ", crq, [at(crq, 2)]);
 
 // ---- 7. Classic, one person and bots (#1661). ----
 // The rule: a seat gets a TURN_MS inactivity window inside a total waited-on budget, the same for rolling, discarding and
@@ -571,14 +579,87 @@ async function rollOffTie(code, g, what) {
   console.log(`roll-off tie: ${code} re-roll after a slow roll and a tie ${first} ms; after a second identical tie ${second} ms; a reconnect kept the deadline`);
 }
 
+// ---- 10. Within one roll-off roll, nothing but the roll moves the timer (#1691). ----
+// The key is the roll-off's `seq`, and a chat line, a reconnect or a timer vote does not move `seq`: while one person waits
+// to roll, half its window used, the other person chats, drops and rejoins, and a timer vote fails; then the roller chats.
+// The roller's saved budget start and deadline, and the deadline each state push carries, stay exactly as they were. The
+// roller's own drop and rejoin keeps the budget start, and its window restarts capped by that budget (as CTRI), so past
+// TOTAL - TURN into the roll the deadline is exactly the budget's end. Rolls no dice: both sockets close before the window
+// ends, so the timer never rolls for the person.
+async function rollOffQuiet() {
+  const code = "CRQ";
+  const [A, B] = [at(crq, 0), at(crq, 1)];
+  const cs = await seatAll(code, [B, A]);
+  eq([cs[A].state.game.phase, cs[A].state.turnPlayer], ["rollOff", A], "roll-off quiet: the person to roll is waited on");
+  const armed = await seatAt(code, A, cs[A].state);
+  const [start, deadline] = [armed.turnStartedAt, armed.turnDeadline];
+  eq(deadline - start, TURN, "roll-off quiet: a full window");
+  const same = async (what, t, pred = () => true) => {
+    const seat = (await saved(code, (r) => r.savedAt >= t && pred(r), `roll-off quiet: saved after ${what}`)).seats.find((x) => x.pid === A);
+    eq([seat.turnStartedAt, seat.turnDeadline], [start, deadline], `roll-off quiet: ${what} leaves the roller's budget start and deadline`);
+  };
+  const pushed = async (what, n, pred = () => true) => {
+    const s = await cs[A].until(() => cs[A].states.length > n && pred(cs[A].state) && cs[A].state, `roll-off quiet: a state push after ${what}`);
+    eq([s.game.seq, s.turnPlayer, s.turnDeadline], [crq.seq, A, deadline], `roll-off quiet: the push after ${what} carries the roller's deadline`);
+  };
+  await until(start + 0.5 * TURN);
+  // The other person chats.
+  let t = Date.now();
+  cs[B].send({ type: "chat", text: "B waits" });
+  await cs[A].until(() => cs[A].inbox.some((m) => m.type === "chat" && m.text === "B waits"), "roll-off quiet: the other person's chat line");
+  await same("the other person's chat line", t, (r) => r.chat.some((l) => l.text === "B waits"));
+  // The other person drops and rejoins.
+  t = Date.now();
+  cs[B].ws.terminate();
+  await cs[A].until(() => cs[A].logs.includes(`${nameOf(crq, B)} lost connection.`), "roll-off quiet: the other person drops");
+  await same("the other person's drop", t);
+  let n = cs[A].states.length;
+  t = Date.now();
+  cs[B] = await client(code, B);
+  await pushed("the other person's rejoin", n);
+  await same("the other person's rejoin", t);
+  // A timer vote that fails: the roller asks for more time, the other person votes no.
+  const ext = cs[A].state.turnExtension;
+  eq([ext.target, ext.used], [A, false], "roll-off quiet: the vote targets the roller");
+  n = cs[A].states.length;
+  t = Date.now();
+  cs[A].send({ type: "turnExtensionAsk", target: A, key: ext.key });
+  await pushed("the vote opening", n, (s) => s.turnExtension?.vote);
+  await same("the vote opening", t);
+  const ballot = cs[A].state.turnExtension.vote;
+  eq(ballot.voters, [B], "roll-off quiet: the other person is the only voter");
+  n = cs[A].states.length;
+  t = Date.now();
+  cs[B].send({ type: "turnExtensionAnswer", voteId: ballot.id, yes: false });
+  await pushed("the failed vote", n, (s) => s.turnExtension?.result?.outcome === "failed");
+  await same("the failed vote", t);
+  // The roller chats.
+  t = Date.now();
+  cs[A].send({ type: "chat", text: "A waits" });
+  await cs[B].until(() => cs[B].inbox.some((m) => m.type === "chat" && m.text === "A waits"), "roll-off quiet: the roller's chat line");
+  await same("the roller's chat line", t, (r) => r.chat.some((l) => l.text === "A waits"));
+  // The roller drops and rejoins past TOTAL - TURN into its roll, so its new window ends at its budget's end.
+  await until(start + TOTAL - TURN + 50);
+  cs[A].ws.terminate();
+  await saved(code, (r) => r.seats.find((x) => x.pid === A).turnDeadline === null, "roll-off quiet: the dropped roller is disarmed");
+  cs[A] = await client(code, A);
+  const s = cs[A].state;
+  eq([s.game.seq, s.turnPlayer, s.turnDeadline], [crq.seq, A, start + TOTAL], "roll-off quiet: the roller's rejoin arms what its budget has left");
+  const back = await seatAt(code, A, s);
+  eq([back.turnStartedAt, back.turnDeadline], [start, start + TOTAL], "roll-off quiet: the roller's rejoin keeps its budget start");
+  for (const c of Object.values(cs)) c.ws.terminate();
+  await saved(code, (r) => r.seats.find((x) => x.pid === A).turnDeadline === null, "roll-off quiet: both people gone, the roller is disarmed");
+  console.log(`roll-off quiet: ${code}, two people and a bot, the roller ${Math.round(0.5 * TURN)} ms into its roll: a chat line, the other person's rejoin, a failed timer vote and its own chat line left its deadline and budget start exactly; its own rejoin kept the budget start`);
+}
+
 
 const t0 = Date.now();
 try {
   host = await boot();
   let rolled;
   const seven = new Promise((r) => (rolled = r));
-  // CS3's roll-off roll and CRO's and XRO's wait for the seven too; CS4 and XS5 roll no dice.
-  const classicBots = Promise.all([classicBots3(rolled), seven.then(classicBots4), seven.then(setupFirst3), setupLast4(), setupExpanded5(), seven.then(() => rollOffTie("CRO", cro, "roll-off tie, three seats")), seven.then(() => rollOffTie("XRO", xro, "roll-off tie, five seats"))]);
+  // CS3's roll-off roll and CRO's and XRO's wait for the seven too; CS4, XS5 and CRQ roll no dice.
+  const classicBots = Promise.all([classicBots3(rolled), seven.then(classicBots4), seven.then(setupFirst3), setupLast4(), setupExpanded5(), rollOffQuiet(), seven.then(() => rollOffTie("CRO", cro, "roll-off tie, three seats")), seven.then(() => rollOffTie("XRO", xro, "roll-off tie, five seats"))]);
   classicBots.catch((err) => {
     console.error(err);
     if (host) console.error(host.err.slice(-2000));
