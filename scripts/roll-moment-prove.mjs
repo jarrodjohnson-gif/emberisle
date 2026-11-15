@@ -695,10 +695,12 @@ async function myDiscardSeven(viewport, { touch = false, botRoll = false } = {})
         moment: m ? m.querySelector('[data-testid="roll-sum"]')?.textContent ?? "" : null,
         line: (line?.textContent ?? "").replace(/\s+/g, " ").trim(),
         lineRoll: line?.dataset.roll ?? null,
+        lineVisible: line?.checkVisibility({ visibilityProperty: true }) ?? false,
         banner: document.querySelector('[data-testid="banner"]')?.textContent ?? null,
         shown: window.__sumShown(7),
         log: g.getState().gameLog.slice(-3).map((l) => l.text),
         myGoods: total(g.getState().state.players.find((p) => p.id === me.id)),
+        phase: g.getState().state.phase,
       };
       const key = JSON.stringify(s);
       if (key !== last) window.__timeline.push({ at: performance.now(), ...s });
@@ -739,20 +741,23 @@ async function myDiscardSeven(viewport, { touch = false, botRoll = false } = {})
   check(dice.join() === "3,4" && seats.goods === 9 && seats.rollerKind === (botRoll ? "bot" : "human"), `${tag}: the fixture rolled 3+4 for ${seats.roller}, a ${seats.rollerKind} seat, with the person on 9 goods (${dice}, ${seats.goods})`);
   check(pending.phase === "discard" && pending.need === 4, `${tag}: once the moment has gone the person must discard 4 (${JSON.stringify(pending)})`);
   check(pending.lineVisible && pending.line === `${seats.roller} rolled 7!` && pending.lineRoll === "7" && pending.log.slice(-2).join("|") === rolled.join("|"), `${tag}: before the person's discard the event line shows the roll (#1699) (${JSON.stringify(pending.line)})`);
-  await page.evaluate((id) => {
+  // The log's length once the discard is in, read in the same task as the dispatch: the bot's 700 ms timer to move the
+  // wayfarer starts with it, so nothing after this may wait on the live table before the move.
+  let logged = await page.evaluate((id) => {
     const g = window.__emberisle;
     const me = g.getState().state.players.find((p) => p.id === id);
     // One each of the four kinds the person holds two of.
     g.getState().dispatch({ type: "discard", resources: Object.fromEntries(Object.keys(me.resources).slice(0, 4).map((r) => [r, 1])) }, id);
+    return g.getState().gameLog.length;
   }, seats.myId);
-  await page.waitForFunction((id) => !window.__emberisle.getState().state.discardNeeded[id], seats.myId, { timeout: STEP_MS, polling: 50 });
-  await frames(page);
-  const discarded = await read();
-  check(discarded.lineVisible && discarded.line === `${seats.roller} rolled 7!` && discarded.lineRoll === "7", `${tag}: after the person's discard the event line still shows the roll, not the discard (#1699) (${JSON.stringify(discarded.line)})`);
-  check(discarded.log.join("|") === [...rolled, line].join("|"), `${tag}: the log's newest line is the person's discard, with the roll's line still before it (${JSON.stringify(discarded.log)})`);
-  check(discarded.phase === "robber", `${tag}: ${seats.roller} moves the wayfarer next (${discarded.phase})`);
-  const logged = await page.evaluate(() => window.__emberisle.getState().gameLog.length);
   if (!botRoll) {
+    await page.waitForFunction((id) => !window.__emberisle.getState().state.discardNeeded[id], seats.myId, { timeout: STEP_MS, polling: 50 });
+    await frames(page);
+    const discarded = await read();
+    check(discarded.lineVisible && discarded.line === `${seats.roller} rolled 7!` && discarded.lineRoll === "7", `${tag}: after the person's discard the event line still shows the roll, not the discard (#1699) (${JSON.stringify(discarded.line)})`);
+    check(discarded.log.join("|") === [...rolled, line].join("|"), `${tag}: the log's newest line is the person's discard, with the roll's line still before it (${JSON.stringify(discarded.log)})`);
+    check(discarded.phase === "robber", `${tag}: ${seats.roller} moves the wayfarer next (${discarded.phase})`);
+    logged = await page.evaluate(() => window.__emberisle.getState().gameLog.length);
     await page.evaluate(() => {
       const g = window.__emberisle;
       const st = g.getState().state;
@@ -770,9 +775,17 @@ async function myDiscardSeven(viewport, { touch = false, botRoll = false } = {})
   const up = rows.find((r) => r.moment !== null && r.ms >= 0);
   const drop = rows.find((r) => r.ms >= 0 && r.myGoods === 5);
   const move = rows.find((r) => r.ms >= 0 && r.log.at(-1)?.startsWith(`${seats.roller} moves the wayfarer`));
+  if (botRoll) {
+    // The bot's move can come before the harness reads the table, so the state after the discard is the last frame drawn
+    // before the move (or the last frame of all, if the move never came).
+    const discarded = rows.filter((r) => r.ms >= (drop?.ms ?? Infinity) && r.ms < (move?.ms ?? Infinity)).at(-1);
+    check(discarded?.myGoods === 5 && discarded.lineVisible && discarded.line === `${seats.roller} rolled 7!` && discarded.lineRoll === "7", `${tag}: after the person's discard the event line still shows the roll, not the discard (#1699) (${JSON.stringify(discarded?.line)})`);
+    check(discarded?.log.join("|") === [...rolled, line].join("|"), `${tag}: the log's newest line is the person's discard, with the roll's line still before it (${JSON.stringify(discarded?.log)})`);
+    check(discarded?.phase === "robber", `${tag}: ${seats.roller} moves the wayfarer next (${discarded?.phase})`);
+  }
   check(up?.moment === "7" && up.line === `${seats.roller} rolled 7!` && up.lineRoll === "7", `${tag}: as the moment comes up the event line shows the roll (${JSON.stringify(up)})`);
   check(drop?.line === `${seats.roller} rolled 7!` && drop.lineRoll === "7" && drop.log.join("|") === [...rolled, line].join("|"), `${tag}: the frame the person's discard lands, the event line shows the roll and the log ends with the discard (#1699) (${JSON.stringify(drop)})`);
-  check(!!move && rows.every((r) => r.ms < up.ms || r.ms >= move.ms || (r.line === `${seats.roller} rolled 7!` && r.lineRoll === "7")), `${tag}: every frame from the moment until the wayfarer moves shows the roll in the event line, through the discard (${JSON.stringify([...new Set(rows.filter((r) => r.ms >= (up?.ms ?? 0) && r.ms < (move?.ms ?? Infinity)).map((r) => r.line))])})`);
+  check(!!move && !!up && rows.every((r) => r.ms < up.ms || r.ms >= move.ms || (r.line === `${seats.roller} rolled 7!` && r.lineRoll === "7")), `${tag}: every frame from the moment until the wayfarer moves shows the roll in the event line, through the discard (${JSON.stringify([...new Set(rows.filter((r) => r.ms >= (up?.ms ?? 0) && r.ms < (move?.ms ?? Infinity)).map((r) => r.line))])})`);
   check(move?.lineRoll === null && move.line === move.log.at(-1) && !/ rolled 7!$/.test(move.line) && move.shown.length === 0, `${tag}: once ${seats.roller} moves the wayfarer the event line shows the newest log line and no 7 shows (${JSON.stringify(move)})`);
   await page.close();
 }
