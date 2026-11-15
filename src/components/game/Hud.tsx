@@ -1,7 +1,7 @@
 import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { Dices } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BuildList, buildList, ChatControls, ChatDock, ChromeLanded, CostCard, DiscardBar, FirstGameCoach, FortuneTray, HowTo, losses, MyNumbers, PlayerMenu, playerMenu, sheets, TakeFromBar, TradePanel, tradeToast, TradeToast, TurnMoment, WinScreen } from "@/components/game/chunks";
+import { BuildList, buildList, ChatControls, ChatDock, ChromeLanded, CostCard, DiscardBar, FirstGameCoach, FortuneTray, HowTo, losses, MyNumbers, PlayerMenu, playerMenu, sheets, TakeFromBar, TradePanel, tradeToast, TradeToast, TurnMoment, winList, WinScreen } from "@/components/game/chunks";
 import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
 import { SeatRail, SeatStrip } from "@/components/game/SeatRail";
@@ -190,6 +190,11 @@ export function Hud() {
       cancelLosses();
     };
   }, []);
+  // #1695: a table already over as it lands asks for the win screen's list beside the sheets chunk, not after it.
+  const won = !!state?.winner;
+  useEffect(() => {
+    if (won) void winList.prefetch();
+  }, [won]);
   // #423: the fortune tray is open until a fortune is played, it is closed, the phase moves (a roll with the tray up) or the
   // turn moves on (hotseat: to the next seat); it never comes back on its own.
   const [fortunesOpen, setFortunesOpen] = useState(false);

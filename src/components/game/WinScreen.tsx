@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, Suspense, use, useEffect, useMemo, useRef, useState } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
@@ -38,10 +38,34 @@ export function WinScreen() {
     if (useGame.getState().mode === "online") void playAgain.prefetch();
   }, []);
   const winnerId = useGame((s) => s.state?.phase === "over" ? s.state.winner : null);
-  return winnerId ? <Panel key={winnerId} /> : null;
+  // #1695: a table already over when it lands (a join, a rejoin or a watch) may not have the list yet. The dialog waits for
+  // the list's chunk to run or fail, so it never paints with the list empty; nothing shows meanwhile, as while this loads.
+  // A chunk still in flight after LIST_WAIT_MS lets the dialog show with the plain list, which the list replaces once it lands.
+  // `ready()` returns a new promise per call while the chunk is in flight: the Suspense stays below WinScreen, which must
+  // never suspend, or its memo would be thrown away and `use` would loop on a fresh promise.
+  const wait = useMemo((): Wait | null => {
+    if (!winnerId) return null;
+    const list = winList.ready();
+    if ((list as { status?: string }).status) return { list, late: false };
+    const w: Wait = { list, late: false };
+    w.list = Promise.race([list, new Promise<void>((r) => (w.out = () => ((w.late = true), r())))]);
+    return w;
+  }, [winnerId]);
+  // The bound runs from the commit that starts the wait, and stops with the wait or the screen.
+  useEffect(() => {
+    if (!wait?.out) return;
+    const timer = window.setTimeout(wait.out, LIST_WAIT_MS);
+    void wait.list.then(() => clearTimeout(timer));
+    return () => clearTimeout(timer);
+  }, [wait]);
+  return wait ? <Suspense fallback={null}><Panel key={winnerId} wait={wait} /></Suspense> : null;
 }
 
-function Panel() {
+const LIST_WAIT_MS = 4000;
+type Wait = { list: Promise<void>; late: boolean; out?: () => void };
+
+function Panel({ wait }: { wait: Wait }) {
+  use(wait.list);
   const { phone, portrait } = useViewport();
   const state = useGame((s) => s.state)!;
   const target = useGame((s) => s.tableVictoryTarget);
@@ -188,7 +212,7 @@ function Panel() {
         </div>
         {result && !result.tracked ? <p data-testid="win-untracked" className="win-how">This game isn't tracked.</p> : null}
         <div data-testid="win-table-wrap" className="mt-1 min-h-0 overflow-auto border-t border-border text-left short:mt-0">
-          <LazyBoundary failed={plain}><WinList rows={rows} /></LazyBoundary>
+          <LazyBoundary failed={plain}><Suspense fallback={wait.late ? plain : null}><WinList rows={rows} /></Suspense></LazyBoundary>
         </div>
         {waiting ? (
           <p data-testid="win-waiting" className="win-how">
