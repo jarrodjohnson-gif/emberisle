@@ -1036,6 +1036,7 @@ async function wayfarerOff(viewport, { touch = false } = {}) {
   const drop = rows.find((r) => r.ms >= 0 && r.botGoods === 5);
   const move = rows.find((r) => r.ms >= 0 && r.log.at(-1)?.endsWith(`${seats.next}'s turn.`));
   const nextRoll = rows.find((r) => r.ms >= 0 && r.rolls === before.rolls + 1);
+  const nextMoment = await page.evaluate((n) => window.__moments.find((m) => m.n === n) ?? null, before.rolls + 1);
   check(seats.mode === "off" && roll.dice.join() === "3,4" && seats.goods === 9 && seats.nextKind === "bot", `${tag}: the fixture: a table with the wayfarer off, 3+4 for the person, a bot on 9 goods, a bot seat next (${seats.mode}, ${roll.dice}, ${seats.goods}, ${seats.nextKind})`);
   check(drop?.botGoods === 5 && drop.log.join("|") === [...rolled, line].join("|"), `${tag}: the bot discards 4 of its 9 goods and the log's newest line is the discard, with the roll's line before it (${JSON.stringify(drop?.log)})`);
   check(rows.every((r) => r.ms < 0 || r.phase !== "robber"), `${tag}: no wayfarer to move at any point (${JSON.stringify([...new Set(rows.filter((r) => r.ms >= 0).map((r) => r.phase))])})`);
@@ -1045,6 +1046,8 @@ async function wayfarerOff(viewport, { touch = false } = {}) {
   check(seven(before) && before.lineVisible && before.log.join("|") === [...rolled, line].join("|") && before.shown.join() === "log-roll-sum", `${tag}: once the moment has gone, before the next move, the event line still shows the roll and the 7 shows once there (${JSON.stringify(before.line)})`);
   check(!!up && !!move && rows.every((r) => r.ms < up.ms || r.ms >= move.ms || seven(r)), `${tag}: every frame from the moment until the next move that logs shows the roll in the event line (${JSON.stringify([...new Set(rows.filter((r) => r.ms >= (up?.ms ?? 0) && r.ms < (move?.ms ?? Infinity)).map((r) => r.line))])})`);
   check(move?.lineRoll === null && move.line === move.log.at(-1) && !/ rolled 7!$/.test(move.line) && move.shown.length === 0, `${tag}: once the person ends the turn the event line shows that line and no 7 shows (${JSON.stringify(move)})`);
+  // The roll after the move is the forced 1+2 by the next seat, so a missed force reads as a fixture failure, not as a 7.
+  check(!!nextRoll?.log.includes(`${seats.next} rolled 3!`) && nextMoment?.dice.join() === "1,2", `${tag}: the fixture: the roll after the move is ${seats.next}'s forced 1+2 (${JSON.stringify({ log: nextRoll?.log, dice: nextMoment?.dice })})`);
   check(rolledOn && !!nextRoll && !!move && rows.every((r) => r.ms < move.ms || r.rolls > before.rolls + 1 || (r.lineRoll !== "7" && !/ rolled 7!$/.test(r.line) && r.shown.length === 0)), `${tag}: no 7 shows from that move on, through ${seats.next}'s roll (${JSON.stringify([...new Set(rows.filter((r) => r.ms >= (move?.ms ?? Infinity) && r.rolls <= before.rolls + 1).map((r) => [r.moment, r.line, r.shown.join()].join(" / ")))])})`);
   await page.close();
 }
