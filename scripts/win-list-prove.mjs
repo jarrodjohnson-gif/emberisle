@@ -256,7 +256,8 @@ try {
   // #1695: a table already over when it lands (the first state of a join, a rejoin or a watch), its list chunk never fetched
   // before. The list's response is held until the sheets chunk (the win screen) has run and the page has drawn a frame
   // since, so the dialog could have painted first; its first DOM update still holds every row. The sheets chunk is in memory
-  // from the title's idle fetch, or still loading as the table lands.
+  // from the title's idle fetch, or still loading as the table lands. The loading sub-case also passes on main (no flash in
+  // that order there either): it is kept as a guard that the dialog does not hang in that order, not as proof of the fix.
   const SHEETS_CHUNK = /\/src\/components\/game\/sheets\.ts(\?|$)/;
   for (const loading of [false, true]) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: "reduce" });
@@ -309,6 +310,52 @@ try {
     assert.equal(await page.locator('button[data-testid="win-row"]').count(), 4, `${tag}: the list, not the plain stand-in`);
     await context.close();
     console.log(`ok ${tag}: a finished table on landing, list chunk held past the win screen's chunk and a frame, all four rows in the dialog's first paint`);
+  }
+
+  // #1701: the list chunk's request hangs, never answered and never failing. The dialog waits for it no longer than 4 s, then
+  // shows with the plain list, every total, as a refused chunk does: never before 3.5 s after landing, always by 4.6 s. When
+  // the held response is then let through, the list replaces the plain one.
+  {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: "reduce" });
+    const page = await context.newPage();
+    const tag = "390x844 landing, list chunk hangs";
+    page.on("pageerror", (e) => errors.push(`${tag}: ${e.message}`));
+    page.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
+    const listLoads = [];
+    const held = [];
+    await page.route(LIST_CHUNK, (r) => void (listLoads.push(r.request().url()), held.push(r)));
+    const sheetsAsked = page.waitForRequest(SHEETS_CHUNK);
+    await page.goto(`http://127.0.0.1:${port}/`);
+    await page.waitForFunction(() => !!window.__emberisle);
+    await page.evaluate((url) => import(url).then(() => {}), (await sheetsAsked).url());
+    await page.evaluate((game) => {
+      window.__shown = null;
+      new MutationObserver((_, o) => {
+        const screen = document.querySelector('[data-testid="win-screen"]');
+        if (!screen) return;
+        window.__shown = { at: performance.now() - window.__landed, rows: [...screen.querySelectorAll('li[data-testid="win-row"]')].map((el) => [el.dataset.player, Number(el.querySelector('[data-testid="win-total"]').textContent)]), list: screen.querySelectorAll('button[data-testid="win-row"]').length };
+        o.disconnect();
+      }).observe(document.body, { childList: true, subtree: true });
+      const s = window.__emberisle;
+      s.setState({ spectator: false, isHost: true, menuFor: null, chatOpen: false });
+      window.__landed = performance.now();
+      s.getState().loadState(game, "p0", true, "WLST");
+    }, structuredClone(g));
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
+    assert.equal(await page.getByTestId("win-screen").count(), 0, `${tag}: no dialog in the first frames, it waits for the list`);
+    await page.getByTestId("win-screen").waitFor({ timeout: 8000 });
+    const shown = await page.evaluate(() => window.__shown);
+    assert.ok(listLoads.length > 0, `${tag}: the list chunk was asked for`);
+    assert.ok(shown.at >= 3500 && shown.at <= 4600, `${tag}: the dialog shows 3.5 to 4.6 s after landing (${Math.round(shown.at)} ms)`);
+    assert.deepEqual(shown.rows, order.map((id) => [id, expected[id].total]), `${tag}: its first DOM update holds the plain list with every total`);
+    assert.equal(shown.list, 0, `${tag}: no list while its chunk hangs`);
+    // The chunk lands late after all: the list takes the plain list's place.
+    for (const r of held) await r.continue();
+    await page.locator('button[data-testid="win-row"]').first().waitFor();
+    assert.equal(await page.locator('button[data-testid="win-row"]').count(), 4, `${tag}: a late chunk brings the list`);
+    assert.equal(await page.locator('li[data-testid="win-row"]').count(), 0, `${tag}: and the plain list is gone`);
+    await context.close();
+    console.log(`ok ${tag}: no dialog while the list chunk hangs, then the plain list with every total at ${Math.round(shown.at)} ms; a late chunk then brings the list`);
   }
 
   // The list chunk cannot load: the table stands in with every total; once it can, Show scores brings the list.
