@@ -17,11 +17,12 @@ const failures = {
   "board-touch-prove": `${at}AssertionError [ERR_ASSERTION]: setup: a tap on a Pasture hex plays nothing\n${at}+ actual - expected`,
   "lobby-layout-prove": `${at}AssertionError [ERR_ASSERTION]: 375x667: "Copy" has at least 8 px between text and button edge (7.3 / 7.2)`,
   "connection-health-prove": `${at}+   saving: false,\n${at}-   saving: true,`,
-  "server-needs-prove": `${at}Error: timeout p0 state:`,
 };
 // Retired signatures (#1323): the fix landed and the tracking issue is closed, so each entry left .github/flaky.json.
 // The failure text each one matched is kept here: a failed job that prints it is a real failure and is not re-run.
 const retired = {
+  // #1733: #1522 fixed the stale-socket race behind this timeout; no CI hit since it landed.
+  "server-needs-prove": `${at}Error: timeout p0 state:`,
   "countdown-prove": `${at}FAIL Error: the waited-on seat heard timer_tick, timer_tick, timer_tick, timer_tick, timer_tick`,
   "rotate-overlays-prove": `${at}FAIL locator.waitFor: Timeout 120000ms exceeded.\n${at}  - waiting for getByTestId('chat-sheet') to be visible`,
   "tabs-prove-4": `${at}FAIL timed out: start\n${at}##[error]Process completed with exit code 1.`,
@@ -59,10 +60,6 @@ const notFlake = {
     `${at}AssertionError [ERR_ASSERTION]: 320x568: "Join" has at least 8 px between text and button edge (7.3 / 7.2)`,
     `${at}AssertionError [ERR_ASSERTION]: 375x667: "Copy" has at least 8 px between text and button edge (2.0 / 1.5)`,
     `${at}AssertionError [ERR_ASSERTION]: 375x667: "Send" has at least 8 px between text and button edge (7.3 / 7.2)`,
-  ],
-  "server-needs-prove": [
-    `${at}Error: timeout p1 state:`,
-    `${at}Error: timeout p0 welcome:`,
   ],
 };
 for (const [id, lines] of Object.entries(notFlake)) {
@@ -139,11 +136,12 @@ assert.deepEqual(serverNeeds.jobs, [
   { name: "server", flakes: ["turn-gain-prove"] },
 ]);
 check("browser needs-prove is not the server timeout flake", run([
-  ["browser-a (a3)", "needs-prove", failures["server-needs-prove"]],
+  ["browser-a (a3)", "needs-prove", retired["server-needs-prove"]],
 ]), false);
 
 // A retired signature is no longer a flake: its failed job is not re-run, and neither are the near misses it once excluded.
 const retiredNear = {
+  "server-needs-prove": [`${at}Error: timeout p1 state:`, `${at}Error: timeout p0 welcome:`],
   "tabs-prove-4": [`${at}FAIL timed out: start the game\n`, `${at}FAIL timed out: tab B notices the drop\n`],
   "flash-prove": [`${at}flash-prove failed: page.waitForFunction: Timeout 120000ms exceeded.\n${at}    at pieceProof (/x/scripts/flash-prove.mjs:216:9)`],
 };

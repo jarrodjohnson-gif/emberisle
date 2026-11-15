@@ -34,11 +34,6 @@
       "id": "connection-health-prove",
       "pattern": "Z \\+   saving: false,\\n\\S+ -   saving: true,",
       "issue": 1200
-    },
-    {
-      "id": "server-needs-prove",
-      "pattern": "Error: timeout p0 state:",
-      "issue": 1326
     }
   ]
 }
