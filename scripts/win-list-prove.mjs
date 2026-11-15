@@ -97,10 +97,13 @@ try {
       // then, and the app's own import marks the chunk loaded in the same turn, before the next evaluate below. (The old
       // wait for "networkidle" resolved at once, as the page had reached it before.)
       // #1697: bounded, so a chunk that never settles fails here instead of hanging the job.
-      await page.evaluate((url) => Promise.race([
-        import(url).then(() => {}),
-        new Promise((_, reject) => setTimeout(() => reject(new Error(`the WinList chunk ${url} did not finish loading within 15 s`)), 15_000)),
-      ]), (await fetched).url());
+      await page.evaluate((url) => {
+        let timer;
+        return Promise.race([
+          import(url).then(() => {}),
+          new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`the WinList chunk ${url} did not finish loading within 15 s`)), 15_000); }),
+        ]).finally(() => clearTimeout(timer));
+      }, (await fetched).url());
       // Record how many rows the dialog holds in the DOM update that first adds it, before the browser paints it.
       await page.evaluate(() => {
         window.__rowsAtFirstPaint = null;
