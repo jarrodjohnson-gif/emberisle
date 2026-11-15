@@ -214,6 +214,53 @@ async function geometry(page, label) {
   }
 }
 
+// #1639: a phone on its side. The stage may shrink to fit (Ruffle letterboxes it), but header, stage, Left/Right,
+// the status line and the footer stack without overlap, nothing is clipped, and every control is 44 px inside the view.
+async function landscape(page, label) {
+  const data = await page.evaluate(() => {
+    const rect = (el) => {
+      const r = el.getBoundingClientRect();
+      return { x: r.x, y: r.y, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+    };
+    const card = document.querySelector('[data-testid="lobby-card"]');
+    const status = document.querySelector('[data-testid="lobby-wait-status"]');
+    const parts = [".lobby-wait-head", '[data-testid="lobby-wait-stage"]', ".lobby-wait-holds", '[data-testid="lobby-wait-status"]', '[data-testid="lobby-actions"]']
+      .map((sel) => ({ label: sel, ...rect(document.querySelector(sel)) }));
+    const controls = [...card.querySelectorAll("button, input, [role=tab]")].filter((el) => el.getBoundingClientRect().width > 0);
+    const small = [...card.querySelectorAll("*")].filter((el) => {
+      if (el.closest("ruffle-player, [data-testid=lobby-wait-stage]")) return false;
+      const own = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+      return own && el.getBoundingClientRect().width > 0 && parseFloat(getComputedStyle(el).fontSize) < 12;
+    }).map((el) => `${el.textContent.trim()} ${getComputedStyle(el).fontSize}`);
+    return {
+      parts, small, viewW: innerWidth, viewH: innerHeight,
+      status: { height: status.clientHeight, scroll: status.scrollHeight, line: parseFloat(getComputedStyle(status).lineHeight) },
+      controls: controls.map((el) => ({ label: el.getAttribute("aria-label") || el.textContent.trim(), ...rect(el) })),
+    };
+  });
+  for (let i = 1; i < data.parts.length; i++) {
+    const [a, b] = [data.parts[i - 1], data.parts[i]];
+    assert.ok(a.height > 0 && a.bottom <= b.y + 0.5, `${label}: ${a.label} bottom ${a.bottom} above ${b.label} top ${b.y}`);
+  }
+  for (const p of data.parts) assert.ok(p.x >= 0 && p.y >= 0 && p.right <= data.viewW + 0.5 && p.bottom <= data.viewH + 0.5, `${label}: ${p.label} inside the viewport ${JSON.stringify(p)}`);
+  assert.ok(data.status.height >= data.status.line && data.status.scroll <= data.status.height, `${label}: status line not clipped ${JSON.stringify(data.status)}`);
+  assert.deepEqual(data.small, [], `${label}: text under 12 px`);
+  const want = ["Sound off", "Close", "Left", "Right", "Ready", "Leave the table"];
+  for (const name of want) assert.ok(data.controls.some((c) => c.label === name), `${label}: ${name} shown`);
+  for (const c of data.controls) {
+    assert.ok(c.width >= 44 && c.height >= 44, `${label}: ${c.label} target ${c.width}x${c.height}`);
+    assert.ok(c.x >= 0 && c.y >= 0 && c.right <= data.viewW + 0.5 && c.bottom <= data.viewH + 0.5, `${label}: ${c.label} inside the viewport ${JSON.stringify(c)}`);
+  }
+  for (let i = 0; i < data.controls.length; i++) for (const b of data.controls.slice(i + 1)) {
+    const a = data.controls[i];
+    const gap = Math.max(b.x - a.right, a.x - b.right, b.y - a.bottom, a.y - b.bottom);
+    assert.ok(gap >= 7.99, `${label}: ${a.label} / ${b.label} gap ${gap}`);
+  }
+  const stage = data.parts[1];
+  console.log(`ok  ${label}: stack ${data.parts.map((p) => `${p.label} ${p.y}-${p.bottom}`).join(", ")}; stage ${stage.width}x${stage.height}; status ${JSON.stringify(data.status)}`);
+  console.log(`ok  ${label}: targets ${data.controls.map((c) => `${c.label} ${c.width}x${c.height}`).join(", ")}`);
+}
+
 try {
   const desk = await client({ width: 1280, height: 720 }, false);
   assert.equal(await desk.locator(".lm button").count(), 2, "two lobby controls");
@@ -325,9 +372,15 @@ try {
 
   const sideways = await client({ width: 844, height: 390 }, true);
   await openShelf(sideways);
+  const play = await sideways.locator(".lt button").boundingBox();
+  assert.ok(play.width >= 44 && play.height >= 44 && play.x >= 0 && play.y >= 0 && play.x + play.width <= 844 && play.y + play.height <= 390, `844x390: shelf Play ${JSON.stringify(play)}`);
   await openStacker(sideways);
+  await landscape(sideways, "844x390");
+  await contrast(sideways, "game 844");
+  mkdirSync("docs/proofs/1639", { recursive: true });
+  await sideways.screenshot({ path: "docs/proofs/1639/844x390.png" });
   await sideways.context().close();
-  console.log("ok  844x390: shelf and header logo checked");
+  console.log("ok  844x390: shelf, header logo, stack without overlap, 44 px targets inside the view");
 
   assert.deepEqual(problems, [], `browser errors:\n${problems.join("\n")}`);
   console.log("lobby-wait-box-prove: ok");
