@@ -790,6 +790,147 @@ async function myDiscardSeven(viewport, { touch = false, botRoll = false } = {})
   await page.close();
 }
 
+// #1719: a bot's discard dispatched while the centre 7 is still up. As in the bot-discard case the person rolls 3+4 with a
+// bot on 9 goods, but the harness dispatches the bot's discard itself, in the task after the moment mounts, rather than
+// leave it to the app's 700 ms timer. The frame the bot's hand drops must still show the moment; "<name> rolled 7!" holds
+// the event line in that frame, in the frame after, once the moment has gone, and until the person moves the wayfarer.
+async function discardInMoment(viewport, { touch = false } = {}) {
+  const tag = `bot discards while the 7 is up ${viewport.width}x${viewport.height}`;
+  const page = await open(viewport, { touch });
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
+  await playUntil(page, myRoll);
+  const bot = await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const total = (p) => Object.values(p.resources).reduce((a, b) => a + b, 0);
+    for (const p of st.players) {
+      for (const r of Object.keys(p.resources)) {
+        const over = Math.min(p.resources[r], total(p) - 7);
+        if (over > 0) { p.resources[r] -= over; st.bank[r] += over; }
+      }
+    }
+    const bot = st.players.find((p) => p.kind === "bot");
+    for (const r of Object.keys(bot.resources)) { st.bank[r] += bot.resources[r]; bot.resources[r] = 0; }
+    // Nine goods from the bank, spread so no kind runs short: 2+2+2+2+1.
+    Object.keys(bot.resources).forEach((r, i) => { const k = i < 4 ? 2 : 1; bot.resources[r] = k; st.bank[r] -= k; });
+    g.setState({ state: st });
+    const original = crypto.getRandomValues;
+    const faces = [2, 3];
+    crypto.getRandomValues = function (values) {
+      if (values instanceof Uint32Array && values.length === 1) {
+        values[0] = faces.shift();
+        if (!faces.length) crypto.getRandomValues = original;
+        return values;
+      }
+      return original.call(this, values);
+    };
+    const read = () => {
+      const m = document.querySelector('[data-testid="roll-moment"]');
+      const line = document.querySelector('[data-testid="log-line"]');
+      return {
+        frame: window.__frame,
+        moment: m ? m.querySelector('[data-testid="roll-sum"]')?.textContent ?? "" : null,
+        line: (line?.textContent ?? "").replace(/\s+/g, " ").trim(),
+        lineRoll: line?.dataset.roll ?? null,
+        lineVisible: line?.checkVisibility({ visibilityProperty: true }) ?? false,
+        shown: window.__sumShown(7),
+        log: g.getState().gameLog.slice(-3).map((l) => l.text),
+        botGoods: total(g.getState().state.players.find((p) => p.id === bot.id)),
+        phase: g.getState().state.phase,
+      };
+    };
+    window.__timeline = [];
+    let last = "";
+    const snap = () => {
+      const s = read();
+      delete s.frame;
+      const key = JSON.stringify(s);
+      if (key !== last) window.__timeline.push({ at: performance.now(), frame: window.__frame, ...s });
+      last = key;
+    };
+    new MutationObserver(snap).observe(document, { subtree: true, childList: true, characterData: true, attributes: true });
+    // As soon as the 7's moment is in the page, the next task dispatches the bot's discard: one each of the four kinds it
+    // holds two of. Then the table as drawn in each of the next two frames.
+    const watch = new MutationObserver(() => {
+      if (document.querySelector('[data-testid="roll-moment"]')?.querySelector('[data-testid="roll-sum"]')?.textContent !== "7") return;
+      watch.disconnect();
+      setTimeout(() => {
+        const s = g.getState();
+        const me = s.state.players.find((p) => p.id === bot.id);
+        const at = performance.now();
+        const up = !!document.querySelector('[data-testid="roll-moment"]');
+        const res = s.dispatch({ type: "discard", resources: Object.fromEntries(Object.keys(me.resources).slice(0, 4).map((r) => [r, 1])) }, bot.id, true);
+        const frames = [];
+        window.__dispatched = { at, up, frame: window.__frame, ok: res?.ok ?? null, error: res?.error ?? null, goods: total(g.getState().state.players.find((p) => p.id === bot.id)), frames };
+        requestAnimationFrame(() => {
+          frames.push({ at: performance.now(), ...read() });
+          requestAnimationFrame(() => frames.push({ at: performance.now(), ...read() }));
+        });
+      });
+    });
+    watch.observe(document.body, { subtree: true, childList: true, characterData: true });
+    return { id: bot.id, name: bot.name, goods: total(bot), me: st.players.find((p) => p.id === g.getState().localId).name };
+  });
+  await frames(page);
+  const roll = await clickRoll(page);
+  await page.waitForFunction(() => window.__dispatched?.frames.length === 2, null, { timeout: STEP_MS, polling: 50 });
+  await page.waitForFunction((n) => window.__moments.find((m) => m.n === n)?.gone, roll.applied.n, { timeout: STEP_MS, polling: 50 });
+  await frames(page);
+  const after = await page.evaluate((n) => {
+    const line = document.querySelector('[data-testid="log-line"]');
+    const s = window.__emberisle.getState();
+    return {
+      moments: window.__moments.filter((m) => m.n === n),
+      dispatched: window.__dispatched,
+      line: (line?.textContent ?? "").replace(/\s+/g, " ").trim(),
+      lineVisible: line?.checkVisibility({ visibilityProperty: true }) ?? false,
+      lineRoll: line?.dataset.roll ?? null,
+      shown: window.__sumShown(7),
+      log: s.gameLog.slice(-3).map((l) => l.text),
+      phase: s.state.phase,
+      mine: s.state.current === s.localId,
+      logged: s.gameLog.length,
+    };
+  }, roll.applied.n);
+  const t0 = roll.applied.at;
+  const m = after.moments[0];
+  const d = after.dispatched;
+  const line = `${bot.name} discards 4 goods.`;
+  const rolled = [`${bot.me} rolled 7!`, `Nobody gains goods — ${bot.me}'s roll.`];
+  const seven = (r) => r?.line === `${bot.me} rolled 7!` && r.lineRoll === "7";
+  console.log(`${tag}: ${bot.name} held ${bot.goods}; rolled ${roll.dice.join("+")}; moment up ${(m?.at - t0).toFixed(0)} ms, gone ${(m?.gone - t0).toFixed(0)} ms; discard dispatched at ${(d.at - t0).toFixed(0)} ms (frame ${d.frame - roll.applied.frame} after the roll), ${JSON.stringify({ up: d.up, ok: d.ok, error: d.error, goods: d.goods })}; next two frames ${JSON.stringify(d.frames)}`);
+  check(roll.dice.join() === "3,4" && bot.goods === 9 && after.moments.length === 1 && m.sum === 7, `${tag}: the fixture rolled 3+4 with the bot on 9 goods, one moment showing 7 (${roll.dice}, ${bot.goods})`);
+  check(d.up && d.ok === true && d.goods === 5 && d.at < m.gone, `${tag}: the bot's discard is dispatched and taken while the moment is up (${(d.at - t0).toFixed(0)} ms, moment gone at ${(m.gone - t0).toFixed(0)} ms, ${d.error ?? "no error"})`);
+  // Then the person moves the wayfarer: the move ends the roll's hold on the event line.
+  check(after.phase === "robber" && after.mine, `${tag}: the person moves the wayfarer next (${after.phase})`);
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = g.getState().state;
+    g.getState().pickHex(st.hexes.find((h) => h.id !== st.robberHex && h.terrain !== "waste").id);
+    const p = g.getState().pendingSteal;
+    if (p) g.getState().dispatch({ type: "moveRobber", hexId: p.hexId, stealFrom: p.targets[0] });
+  });
+  await page.waitForFunction((n) => window.__emberisle.getState().state.phase !== "robber" && window.__emberisle.getState().gameLog.length > n, after.logged, { timeout: STEP_MS, polling: 50 });
+  await frames(page);
+  const rows = (await page.evaluate(() => window.__timeline)).map(({ at, ...s }) => ({ ms: Math.round(at - t0), ...s }));
+  console.log(`${tag}: timeline ${JSON.stringify(rows.filter((r) => r.ms >= 0))}`);
+  const up = rows.find((r) => r.moment !== null && r.ms >= 0);
+  const drop = rows.find((r) => r.ms >= 0 && r.botGoods === 5);
+  const move = rows.find((r) => r.ms >= 0 && r.log.at(-1)?.startsWith(`${bot.me} moves the wayfarer`));
+  check(drop?.moment === "7", `${tag}: the frame the bot's hand drops, the centre 7 is still up (${JSON.stringify(drop?.moment)} at ${drop?.ms} ms)`);
+  check(seven(drop) && drop.lineVisible, `${tag}: in that frame the event line shows the roll, not the discard (#1699) (${JSON.stringify(drop?.line)})`);
+  check(drop?.log.join("|") === [...rolled, line].join("|"), `${tag}: in that frame the log's newest line is the discard, with the roll's line still before it (${JSON.stringify(drop?.log)})`);
+  // A slow runner can draw the second of those frames after the moment's hold has ended: the centre 7 is judged only in the
+  // frames drawn before the moment went, and at least one of them must show it. The event line never depends on timing.
+  const held = d.frames.filter((f) => f.at < m.gone);
+  check(d.frames.every((f) => f.botGoods === 5 && seven(f) && f.lineVisible) && d.frames[1].frame > d.frames[0].frame, `${tag}: in the next two frames drawn after the discard, the event line shows the roll (${JSON.stringify(d.frames.map((f) => [f.frame, Math.round(f.at - t0), f.moment, f.line]))})`);
+  check(held.length >= 1 && held.every((f) => f.moment === "7"), `${tag}: of those frames, every one drawn before the moment went (${(m.gone - t0).toFixed(0)} ms) shows the centre 7, and at least one was (${held.length} of ${d.frames.length})`);
+  check(after.lineVisible && seven(after) && after.log.join("|") === [...rolled, line].join("|") && after.shown.join() === "log-roll-sum", `${tag}: once the moment has gone the event line still shows the roll, the 7 shows once there, and the log ends with the discard (${JSON.stringify(after.line)})`);
+  check(!!up && !!move && rows.every((r) => r.ms < up.ms || r.ms >= move.ms || seven(r)), `${tag}: every frame from the moment until the wayfarer moves shows the roll in the event line (${JSON.stringify([...new Set(rows.filter((r) => r.ms >= (up?.ms ?? 0) && r.ms < (move?.ms ?? Infinity)).map((r) => r.line))])})`);
+  check(move?.lineRoll === null && move.line === move.log.at(-1) && !/ rolled 7!$/.test(move.line) && move.shown.length === 0, `${tag}: once the person moves the wayfarer the event line shows the newest log line and no 7 shows (${JSON.stringify(move)})`);
+  await page.close();
+}
+
 try {
   await practice({ width: 1280, height: 720 }, false);
   await practice({ width: 390, height: 844 }, true);
@@ -805,6 +946,8 @@ try {
   await myDiscardSeven({ width: 390, height: 844 }, { touch: true });
   await myDiscardSeven({ width: 1280, height: 720 }, { botRoll: true });
   await myDiscardSeven({ width: 390, height: 844 }, { touch: true, botRoll: true });
+  await discardInMoment({ width: 1280, height: 720 });
+  await discardInMoment({ width: 390, height: 844 }, { touch: true });
   check(errors.length === 0, `zero console errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);
 } catch (e) {
   console.error(e);
