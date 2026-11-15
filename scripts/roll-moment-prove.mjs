@@ -863,8 +863,8 @@ async function discardInMoment(viewport, { touch = false } = {}) {
         const frames = [];
         window.__dispatched = { at, up, frame: window.__frame, ok: res?.ok ?? null, error: res?.error ?? null, goods: total(g.getState().state.players.find((p) => p.id === bot.id)), frames };
         requestAnimationFrame(() => {
-          frames.push(read());
-          requestAnimationFrame(() => frames.push(read()));
+          frames.push({ at: performance.now(), ...read() });
+          requestAnimationFrame(() => frames.push({ at: performance.now(), ...read() }));
         });
       });
     });
@@ -920,7 +920,11 @@ async function discardInMoment(viewport, { touch = false } = {}) {
   check(drop?.moment === "7", `${tag}: the frame the bot's hand drops, the centre 7 is still up (${JSON.stringify(drop?.moment)} at ${drop?.ms} ms)`);
   check(seven(drop) && drop.lineVisible, `${tag}: in that frame the event line shows the roll, not the discard (#1699) (${JSON.stringify(drop?.line)})`);
   check(drop?.log.join("|") === [...rolled, line].join("|"), `${tag}: in that frame the log's newest line is the discard, with the roll's line still before it (${JSON.stringify(drop?.log)})`);
-  check(d.frames.every((f) => f.botGoods === 5 && seven(f) && f.lineVisible) && d.frames[1].frame > d.frames[0].frame && d.frames[1].moment === "7", `${tag}: in the next two frames drawn, the moment still up, the event line shows the roll (${JSON.stringify(d.frames.map((f) => [f.frame, f.moment, f.line]))})`);
+  // A slow runner can draw the second of those frames after the moment's hold has ended: the centre 7 is judged only in the
+  // frames drawn before the moment went, and at least one of them must show it. The event line never depends on timing.
+  const held = d.frames.filter((f) => f.at < m.gone);
+  check(d.frames.every((f) => f.botGoods === 5 && seven(f) && f.lineVisible) && d.frames[1].frame > d.frames[0].frame, `${tag}: in the next two frames drawn after the discard, the event line shows the roll (${JSON.stringify(d.frames.map((f) => [f.frame, Math.round(f.at - t0), f.moment, f.line]))})`);
+  check(held.length >= 1 && held.every((f) => f.moment === "7"), `${tag}: of those frames, every one drawn before the moment went (${(m.gone - t0).toFixed(0)} ms) shows the centre 7, and at least one was (${held.length} of ${d.frames.length})`);
   check(after.lineVisible && seven(after) && after.log.join("|") === [...rolled, line].join("|") && after.shown.join() === "log-roll-sum", `${tag}: once the moment has gone the event line still shows the roll, the 7 shows once there, and the log ends with the discard (${JSON.stringify(after.line)})`);
   check(!!up && !!move && rows.every((r) => r.ms < up.ms || r.ms >= move.ms || seven(r)), `${tag}: every frame from the moment until the wayfarer moves shows the roll in the event line (${JSON.stringify([...new Set(rows.filter((r) => r.ms >= (up?.ms ?? 0) && r.ms < (move?.ms ?? Infinity)).map((r) => r.line))])})`);
   check(move?.lineRoll === null && move.line === move.log.at(-1) && !/ rolled 7!$/.test(move.line) && move.shown.length === 0, `${tag}: once the person moves the wayfarer the event line shows the newest log line and no 7 shows (${JSON.stringify(move)})`);
