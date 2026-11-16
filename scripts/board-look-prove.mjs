@@ -68,6 +68,23 @@ const drawn = (page, n, ms = 8000) =>
     await new Promise((res, rej) => {
       const poll = () => (isle.renders >= r0 + n ? res() : performance.now() - t0 > ms ? rej(new Error(`drawn: ${n} frame(s) never came`)) : requestAnimationFrame(poll));
       poll();
+    }).catch((error) => {
+      // Failure-only observation: do not wake, advance, replace or retry the renderer or its original guard.
+      try {
+        const current = window.__isle;
+        const now = performance.now();
+        console.log("drawn-timeout " + JSON.stringify({
+          requestedFrames: n, budgetMs: ms, startRenders: r0, endRenders: isle.renders,
+          renderDelta: isle.renders - r0, currentRenders: current?.renders ?? null, sameRenderer: current === isle,
+          startedAt: t0, observedAt: now, elapsedMs: now - t0, timeOrigin: performance.timeOrigin,
+          width: innerWidth, height: innerHeight, visibility: document.visibilityState, focused: document.hasFocus(),
+          reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches, wasCalm: isle.wasCalm ?? null,
+          stopped: isle.stopped ?? null, refitDue: Boolean(isle.refitDue), glide: Boolean(isle.glide),
+          lastFrame: isle.lastFrame ?? null, busyUntil: isle.busyUntil ?? null, view: isle.view ?? null,
+          lastSeq: isle.lastSeq ?? null, stateSeq: window.__emberisle?.getState().state?.seq ?? null,
+        }));
+      } catch {} // A diagnostic must never replace the original rejection.
+      throw error;
     });
   }, [n, ms]);
 
@@ -79,6 +96,7 @@ async function open(width, height, touch, water = "simple", view = null, jelly =
   if (view) await ctx.addInitScript((v) => localStorage.setItem("emberisle-view", v), view);
   const page = await ctx.newPage();
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  page.on("console", (m) => { if (m.type() === "log" && m.text().startsWith("drawn-timeout ")) console.log(m.text()); });
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
   // A wait that times out names its predicate.
