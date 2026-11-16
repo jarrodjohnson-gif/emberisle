@@ -82,6 +82,7 @@ const drawn = (page, n, ms = 8000) =>
           stopped: isle.stopped ?? null, refitDue: Boolean(isle.refitDue), glide: Boolean(isle.glide),
           lastFrame: isle.lastFrame ?? null, busyUntil: isle.busyUntil ?? null, view: isle.view ?? null,
           lastSeq: isle.lastSeq ?? null, stateSeq: window.__emberisle?.getState().state?.seq ?? null,
+          seed: window.__emberisle?.getState().state?.seed ?? null, hasFence: Boolean(isle.fence),
         }));
       } catch {} // A diagnostic must never replace the original rejection.
       throw error;
