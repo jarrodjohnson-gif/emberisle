@@ -1,0 +1,113 @@
+ok lobby status on Ember: "Need 2 more players" +15.9s
+ok lobby status on Ember: "Need 1 more player" +18.3s
+ok lobby status on Tide: "Need 1 more player" +18.4s
+ok lobby status on Ember: "0 of 3 ready" +20.1s
+ok lobby status on Tide: "0 of 3 ready" +20.2s
+ok host tag on Ember's row only, seen by Ember +20.2s
+ok host tag on Ember's row only, seen by Tide +20.3s
+ok host tag on Ember's row only, seen by Pine +20.3s
+ok phone title card is 410 px tall, at most 55% of 844 +20.6s
+ok phone title card is full width minus 12 px, at the bottom +20.6s
+ok phone lobby card is 358x812, inside the 390x844 screen with the approved 16 px margins +24.6s
+ok phone lobby 390x844, 4 seats scrolled down: footer keeps the approved 12 px bottom padding (gap 12), nothing below it, Leave inside it +27.0s
+ok phone lobby 390x640, 4 seats scrolled down: footer keeps the approved 12 px bottom padding (gap 12), nothing below it, Leave inside it +27.9s
+ok phone lobby: the card starts unscrolled +28.0s
+ok phone lobby: Ready is inside the card and the 390x844 viewport without scrolling +28.1s
+ok phone lobby: Start is inside the card and the 390x844 viewport without scrolling +54.8s
+ok phone lobby: the Ready/Start row is wholly on screen +54.8s
+ok phone lobby 390x844: 8 whole chat lines on screen, newest ("Guslobby line 8") visible, 14px text +63.7s
+ok phone lobby 390x844: Ready/Start stay on screen beside the chat +63.7s
+ok phone lobby 390x844: the Sounds & stickers tab shows all 8 listed chips at 15px with no sideways scroll +64.3s
+ok phone lobby 390x844: the Sounds & stickers tab shows all 15 chips inside the box +64.3s
+ok 390x844: sticker monkey-pet is in the Sounds & stickers tab, loaded, on screen, 44x44 +65.7s
+ok 390x844: sticker side-eye is in the Sounds & stickers tab, loaded, on screen, 44x44 +66.1s
+ok 390x844: sticker banana-guy is in the Sounds & stickers tab, loaded, on screen, 44x44 +66.5s
+ok 390x844: sticker glasses-glance is in the Sounds & stickers tab, loaded, on screen, 44x44 +66.8s
+ok 390x844: sticker dark-smile is in the Sounds & stickers tab, loaded, on screen, 44x44 +67.1s
+ok 390x844: chip "Play sound Real badman" is on screen at 44 px tall +67.5s
+ok 390x844: chip "Play sound Gong" is on screen at 44 px tall +67.9s
+ok phone lobby 390x844: back on the Chat tab, 8 chat lines and the newest are on screen +68.4s
+ok phone lobby 440x956: 8 whole chat lines on screen, newest ("Guslobby line 8") visible, 14px text +68.6s
+ok phone lobby 440x956: Ready/Start stay on screen beside the chat +68.7s
+ok phone lobby 440x956: the Sounds & stickers tab shows all 8 listed chips at 15px with no sideways scroll +70.8s
+ok phone lobby 440x956: the Sounds & stickers tab shows all 15 chips inside the box +70.8s
+ok phone lobby 440x956: back on the Chat tab, 8 chat lines and the newest are on screen +71.3s
+ok phone lobby: a line that arrives while the log is at the bottom is scrolled into view +72.1s
+ok phone landscape 844x390, 4 seats all ready: status, Ready, Start and Leave are on screen without scrolling +107.8s
+ok phone landscape 844x390: all four seat rows are on screen +107.8s
+ok phone landscape 844x390: nothing in the card scrolls () +107.8s
+ok phone landscape 844x390: the rename button is 44.7x44.0, at least 44x44 +107.9s
+ok phone landscape 844x390: Sounds & stickers shows 8 listed chips and 5 presets at 44 px, in a 218 px scroll box (scrollHeight 464) +110.1s
+ok phone landscape 844x390: Sounds & stickers shows the 15 chips and 5 presets at 44 px +110.1s
+ok 844x390: sticker monkey-pet is in the Sounds & stickers tab, loaded, on screen, 44x44 +110.4s
+ok 844x390: sticker side-eye is in the Sounds & stickers tab, loaded, on screen, 44x44 +110.8s
+ok 844x390: sticker banana-guy is in the Sounds & stickers tab, loaded, on screen, 44x44 +111.5s
+ok 844x390: sticker glasses-glance is in the Sounds & stickers tab, loaded, on screen, 44x44 +112.0s
+ok 844x390: sticker dark-smile is in the Sounds & stickers tab, loaded, on screen, 44x44 +112.5s
+ok 844x390: chip "Play sound Real badman" is on screen at 44 px tall +113.3s
+ok 844x390: chip "Play sound Gong" is on screen at 44 px tall +113.8s
+ok phone landscape 667x375, 4 seats all ready: status, Ready, Start and Leave are on screen without scrolling +116.2s
+ok phone landscape 667x375: all four seat rows are on screen +116.2s
+ok phone landscape 667x375: nothing in the card scrolls () +116.2s
+ok phone landscape 667x375: the rename button is 44.7x44.0, at least 44x44 +116.6s
+ok phone landscape 667x375: Sounds & stickers shows 8 listed chips and 5 presets at 44 px, in a 219 px scroll box (scrollHeight 620) +117.2s
+ok phone landscape 667x375: Sounds & stickers shows the 15 chips and 5 presets at 44 px +117.2s
+ok lobby status on Ember: "0 of 4 ready" +118.1s
+ok lobby: Ember shows "hello" from Ember +118.6s
+ok lobby: Tide shows "hello" from Ember +118.8s
+ok lobby: Pine shows "hello" from Ember +118.9s
+ok lobby: Tide shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect  +119.8s
+ok lobby: Ember shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect  +119.8s
+ok lobby: Pine shows Tide's 😊 bubble mid-row, and the bubble box and the name box don't intersect  +119.8s
+ok lobby: Tide's one-tap emoji is a light line in all 3 logs +119.9s
+ok lobby: Ember shows Pine's Wololo bubble, clear of the name  +121.3s
+ok lobby: Tide shows Pine's Wololo bubble, clear of the name  +121.3s
+ok lobby: Pine shows Pine's Wololo bubble, clear of the name  +121.5s
+ok lobby: Pine's sound is a bubble and a light line on all 3 tabs +122.1s
+ok lobby: Real badman from Tide is a bubble and a sound line on all 3 tabs +124.4s
+ok lobby: Gong from Ember is a bubble and a sound line on all 3 tabs +126.1s
+ok lobby: input cleared after Enter +126.1s
+ok desktop lobby 1280x720 (host, before Ready): a hit test reaches the input, Send and both tabs, none under the footer {"input":"ok","Send":"ok","Chat tab":"ok","Sounds & stickers tab":"ok"} +126.1s
+ok desktop lobby 1280x720 (guest, before Ready): a hit test reaches the input, Send and both tabs, none under the footer {"input":"ok","Send":"ok","Chat tab":"ok","Sounds & stickers tab":"ok"} +126.2s
+ok lobby status on Ember: "1 of 4 ready" +129.4s
+ok lobby status on Ember: "2 of 4 ready" +129.6s
+ok lobby status on Ember: "3 of 4 ready" +130.2s
+ok lobby status on Ember: "Everyone is ready" +130.5s
+ok desktop lobby: the card starts unscrolled +130.5s
+ok desktop lobby at 1280x720: Start is inside the card (bottom 675 <= card 696) without scrolling +130.6s
+ok desktop lobby at 1280x720: Leave the table is inside the card (bottom 675 <= card 696) without scrolling +130.7s
+ok desktop lobby 1280x720 (host, everyone ready, Start showing): a hit test reaches the input, Send and both tabs, none under the footer {"input":"ok","Send":"ok","Chat tab":"ok","Sounds & stickers tab":"ok"} +130.8s
+ok desktop lobby 1280x720 (host, Sounds & stickers tab): all 8 listed chips with no sideways scroll, both tabs reachable; 8 of 8 chips in view without scrolling the tab +131.3s
+ok desktop lobby 1280x720 (host, Sounds & stickers tab): all 15 chips with no sideways scroll, both tabs reachable; 15 of 15 chips in view without scrolling the tab +131.3s
+ok 1280x720: sticker monkey-pet is in the Sounds & stickers tab, loaded, on screen, 44x44 +131.5s
+ok 1280x720: sticker side-eye is in the Sounds & stickers tab, loaded, on screen, 44x44 +131.8s
+ok 1280x720: sticker banana-guy is in the Sounds & stickers tab, loaded, on screen, 44x44 +131.9s
+ok 1280x720: sticker glasses-glance is in the Sounds & stickers tab, loaded, on screen, 44x44 +132.3s
+ok 1280x720: sticker dark-smile is in the Sounds & stickers tab, loaded, on screen, 44x44 +132.6s
+ok 1280x720: chip "Play sound Real badman" is on screen at 44 px tall +132.8s
+ok 1280x720: chip "Play sound Gong" is on screen at 44 px tall +133.0s
+ok game: every tab shows the minimized dock, and the lobby lines did not count as unread +137.9s
+ok game: Ember has no unread badge +138.1s
+ok game: Tide has no unread badge +138.3s
+ok game: Pine has no unread badge +138.4s
+ok phone: Play starts with the sheet closed although chat was remembered open +138.7s
+ok phone: the remembered open state is left in storage +138.7s
+ok chat panel: first Escape (from the input) minimizes chat and keeps Path armed +140.3s
+ok chat panel: second Escape disarms Path +140.3s
+ok chat panel: Ember has no separate quick-reaction button +140.4s
+ok chat panel: Ember starts with chat closed +140.4s
+ok chat panel: Ember opens on the Chat tab +140.8s
+ok chat panel: Ember has no speaker or smile toggle in the chat box +140.9s
+ok chat polish 1280x720 chat tab: 12 controls, 26 texts, minimum 10.43:1, glass over black rgb(255,255,255)
+ok chat panel: Ember has the six 44 px emoji in the viewport, right above the input +140.9s
+ok chat panel: Moss has no separate quick-reaction button +143.9s
+ok chat panel: Moss starts with chat closed +143.9s
+ok chat panel: phone Open chat leaves the rotate hint unobscured +143.9s
+ok chat panel: Moss opens on the Chat tab +144.2s
+ok chat panel: Moss has no speaker or smile toggle in the chat box +144.3s
+ok chat polish 390x844 chat tab: 12 controls, 24 texts, minimum 10.43:1, glass over black rgb(255,255,255)
+ok chat panel: Moss has the six 44 px emoji in the viewport, right above the input +144.7s
+FRAME_TIMELINE_READY {"baseline":{"renders":856,"origin":1794346285789.3,"at":135691.40000000596},"nodeBoundaries":{"baseline":{"started":{"perfMs":148715.50908,"epochMs":1794346421476.179},"settled":{"perfMs":148722.785657,"epochMs":1794346421483.4556}},"wait":{"started":{"perfMs":148722.789997,"epochMs":1794346421483.46},"budgetMs":15000,"settled":{"perfMs":150665.095036,"epochMs":1794346423425.765}},"screenshot":{"started":{"perfMs":150665.102004,"epochMs":1794346423425.772},"budgetMs":30000,"settled":{"perfMs":151218.945523,"epochMs":1794346423979.6155}}},"browser":{"origin":1794346285789.3,"now":138194.80000001192,"timeline":{"baselineAt":135691.30000001192,"frames":[{"startedAt":135702,"completedAt":135703.59999999404,"renders":857},{"startedAt":137494.90000000596,"completedAt":137632.30000001192,"renders":858}],"polls":[{"at":135695.5,"renders":856,"ready":false},{"at":135703.59999999404,"renders":857,"ready":false},{"at":137632.40000000596,"renders":858,"ready":true}],"pollCount":3,"firstPoll":{"at":135695.5,"renders":856,"ready":false},"lastPoll":{"at":137632.40000000596,"renders":858,"ready":true},"firstReady":{"at":137632.40000000596,"renders":858,"ready":true}},"renders":858,"sameRenderer":true}}
+ok focused prefix recorded real frame timestamps +147.2s
+ok focused prefix zero console errors +147.2s
+frame timeline prefix complete (later full cases unrun)
