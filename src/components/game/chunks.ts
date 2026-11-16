@@ -16,7 +16,7 @@ export const SeatBubbles = online.pick((m) => m.SeatBubbles);
 export const ConnectionOverlay = online.pick((m) => m.Health);
 
 // #833: title-only list and mode controls share a lazy load; private Host/Join remain available in the index.
-const openTables = chunk(() => import("@/components/game/OpenTables"));
+export const openTables = chunk(() => import("@/components/game/OpenTables"));
 export const OpenTables = openTables.pick((m) => m.OpenTables);
 export const OpenModeToggle = openTables.pick((m) => m.OpenModeToggle);
 // #669: the Sound panel in the Table menu; the menu asks for it when it opens, so it is in memory before Sound is pressed.
