@@ -1,0 +1,17 @@
+WIN_TIMING {"landed":2406,"shown":{"at":6910.399999976158,"rows":[["p0",11],["p1",9],["p2",9],["p3",0]],"list":0},"events":[{"kind":"long-task","at":1572.1000000238419,"start":1511.800000011921,"duration":57},{"kind":"long-task","at":1936.800000011921,"start":1808.199999988079,"duration":123},{"kind":"long-task","at":2083.199999988079,"start":1998.3999999761581,"duration":50},{"kind":"win-commit","at":2555.699999988079},{"kind":"timer-scheduled","at":2555.699999988079,"delay":4000},{"kind":"win-commit","at":2562.699999988079},{"kind":"timer-scheduled","at":2562.699999988079,"delay":4000},{"kind":"long-task","at":2700.300000011921,"start":2398.600000023842,"duration":276},{"kind":"long-task","at":4921.600000023842,"start":3432.399999976158,"duration":781},{"kind":"long-task","at":4921.600000023842,"start":4214.100000023842,"duration":703},{"kind":"controlled-GL-block","started":7287.600000023842,"ended":9287.600000023842},{"kind":"long-task","at":9292.100000023842,"start":4994.100000023842,"duration":2284},{"kind":"long-task","at":9292.100000023842,"start":7283.899999976158,"duration":2008},{"kind":"timer-fired","at":9293.100000023842},{"kind":"long-task","at":9480,"start":9387.300000011921,"duration":92},{"kind":"long-task","at":9556.600000023842,"start":9480.199999988079,"duration":76},{"kind":"long-task","at":9623.5,"start":9565.399999976158,"duration":57},{"kind":"long-task","at":9857.600000023842,"start":9717.600000023842,"duration":100}],"now":9865.600000023842}
+WIN_FAILURE_TIMING {"landed":2406,"shown":{"at":6910.399999976158,"rows":[["p0",11],["p1",9],["p2",9],["p3",0]],"list":0},"events":[{"kind":"long-task","at":1572.1000000238419,"start":1511.800000011921,"duration":57},{"kind":"long-task","at":1936.800000011921,"start":1808.199999988079,"duration":123},{"kind":"long-task","at":2083.199999988079,"start":1998.3999999761581,"duration":50},{"kind":"win-commit","at":2555.699999988079},{"kind":"timer-scheduled","at":2555.699999988079,"delay":4000},{"kind":"win-commit","at":2562.699999988079},{"kind":"timer-scheduled","at":2562.699999988079,"delay":4000},{"kind":"long-task","at":2700.300000011921,"start":2398.600000023842,"duration":276},{"kind":"long-task","at":4921.600000023842,"start":3432.399999976158,"duration":781},{"kind":"long-task","at":4921.600000023842,"start":4214.100000023842,"duration":703},{"kind":"controlled-GL-block","started":7287.600000023842,"ended":9287.600000023842},{"kind":"long-task","at":9292.100000023842,"start":4994.100000023842,"duration":2284},{"kind":"long-task","at":9292.100000023842,"start":7283.899999976158,"duration":2008},{"kind":"timer-fired","at":9293.100000023842},{"kind":"long-task","at":9480,"start":9387.300000011921,"duration":92},{"kind":"long-task","at":9556.600000023842,"start":9480.199999988079,"duration":76},{"kind":"long-task","at":9623.5,"start":9565.399999976158,"duration":57},{"kind":"long-task","at":9857.600000023842,"start":9717.600000023842,"duration":100}],"now":9909.800000011921}
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: 390x844 landing, list chunk hangs: the dialog shows 3.5 to 4.6 s after landing (6910 ms)
+    at file:///workspace/work/current-p1/scripts/.codex-p-1740-old-control.mjs:135:12 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.4

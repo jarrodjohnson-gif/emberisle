@@ -1,0 +1,17 @@
+WIN_TIMING {"landed":2529.5,"shown":{"at":4943.800000011921,"rows":[["p0",11],["p1",9],["p2",9],["p3",0]],"list":0},"events":[{"kind":"long-task","at":2090.800000011921,"start":1957.1000000238419,"duration":129},{"kind":"win-commit","at":2739.900000035763},{"kind":"timer-scheduled","at":2740.100000023842,"delay":4000},{"kind":"win-commit","at":2743.800000011921},{"kind":"timer-scheduled","at":2743.900000035763,"delay":4000},{"kind":"long-task","at":2814.5,"start":2510.199999988079,"duration":295},{"kind":"long-task","at":5294.5,"start":3675.100000023842,"duration":740},{"kind":"long-task","at":5294.5,"start":4423,"duration":862},{"kind":"long-task","at":5431.100000023842,"start":5353.199999988079,"duration":55},{"kind":"long-task","at":5638.300000011921,"start":5546.900000035763,"duration":90},{"kind":"long-task","at":5748.100000023842,"start":5661.699999988079,"duration":84},{"kind":"long-task","at":5818,"start":5756.600000023842,"duration":61},{"kind":"long-task","at":5887.400000035763,"start":5830.199999988079,"duration":56},{"kind":"long-task","at":6008.100000023842,"start":5954,"duration":53},{"kind":"long-task","at":7121.600000023842,"start":6061.600000023842,"duration":1057},{"kind":"timer-fired","at":7121.800000011921},{"kind":"long-task","at":7464.100000023842,"start":7121.900000035763,"duration":335}],"now":7995}
+WIN_FAILURE_TIMING {"landed":2529.5,"shown":{"at":4943.800000011921,"rows":[["p0",11],["p1",9],["p2",9],["p3",0]],"list":0},"events":[{"kind":"long-task","at":2090.800000011921,"start":1957.1000000238419,"duration":129},{"kind":"win-commit","at":2739.900000035763},{"kind":"timer-scheduled","at":2740.100000023842,"delay":4000},{"kind":"win-commit","at":2743.800000011921},{"kind":"timer-scheduled","at":2743.900000035763,"delay":4000},{"kind":"long-task","at":2814.5,"start":2510.199999988079,"duration":295},{"kind":"long-task","at":5294.5,"start":3675.100000023842,"duration":740},{"kind":"long-task","at":5294.5,"start":4423,"duration":862},{"kind":"long-task","at":5431.100000023842,"start":5353.199999988079,"duration":55},{"kind":"long-task","at":5638.300000011921,"start":5546.900000035763,"duration":90},{"kind":"long-task","at":5748.100000023842,"start":5661.699999988079,"duration":84},{"kind":"long-task","at":5818,"start":5756.600000023842,"duration":61},{"kind":"long-task","at":5887.400000035763,"start":5830.199999988079,"duration":56},{"kind":"long-task","at":6008.100000023842,"start":5954,"duration":53},{"kind":"long-task","at":7121.600000023842,"start":6061.600000023842,"duration":1057},{"kind":"timer-fired","at":7121.800000011921},{"kind":"long-task","at":7464.100000023842,"start":7121.900000035763,"duration":335}],"now":8000}
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: 390x844 landing, list chunk hangs: the dialog shows 3.5 to 4.6 s after landing (4944 ms)
+    at file:///workspace/work/current-p1/scripts/.codex-p-1740-win-timing.mjs:123:12 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.4

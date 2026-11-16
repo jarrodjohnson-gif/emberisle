@@ -1,0 +1,38 @@
+
+> win-list-prove
+> node --import ./server/register.mjs scripts/win-list-prove.mjs
+
+ok 440x956 touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 956x440 touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 390x844 touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 430x932 touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 820x1180 touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 1180x820 touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 844x390 touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 667x375 insets touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 700x900 mouse: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 1280x720 mouse: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 390x844 spectator: list, no Play again or React
+ok 390x844 live table: list chunk fetched before the end, all four rows in the dialog's first paint
+ok 390x844 landing, sheets in memory: a finished table on landing, list chunk held past the win screen's chunk and a frame, all four rows in the dialog's first paint
+ok 390x844 landing, sheets loading: a finished table on landing, list chunk held past the win screen's chunk and a frame, all four rows in the dialog's first paint
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: 390x844 landing, list chunk hangs: the dialog shows 3.5 to 4.6 s after landing (6121 ms)
+    at file:///workspace/work/current-p1/scripts/win-list-prove.mjs:356:12 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.4
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

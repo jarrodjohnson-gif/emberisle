@@ -1,0 +1,1 @@
+Native focused case FAILED4943.8ms. Timer schedule214.4ms afterlanding; callback4377.9ms afterschedule; DOM351.5ms aftercallback. Candidate control suppresses onlyGLdraw calls in this temporary focused page; no product/permanent proof edit. Original assertions retained. Needs desk assessment before permanent adoption if it only isolates workload.
