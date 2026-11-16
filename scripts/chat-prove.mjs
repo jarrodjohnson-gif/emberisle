@@ -89,12 +89,13 @@ const store = (t, fn) => t.page.evaluate(fn);
 // Capture after actual rendered frames, including the lazy island's first mount.
 async function shot(t, file) {
   await t.page.waitForFunction(() => Boolean(window.__isle));
-  let failed = false, failure, baseline;
+  let failed = false, failure, baseline, waitStarted, waitSettled;
   try {
     baseline = await t.page.evaluate(() => {
       const isle = window.__isle, draw = isle.draw;
       if (typeof draw !== "function") throw new Error("chat capture: scene draw hook missing");
-      const capture = window.__chatShot = { isle, draw, own: Object.hasOwn(isle, "draw"), attempts: 0, completed: 0 };
+      const capture = window.__chatShot = { isle, draw, own: Object.hasOwn(isle, "draw"), attempts: 0, completed: 0,
+        timeline: { baselineAt: performance.now(), frames: [], polls: [], pollCount: 0 } };
       // Retain the two actual frames required below, then let the compositor capture them without
       // competing with further scene draws. DOM RAFs, clocks and reaction expiry keep running.
       let remaining = 2;
@@ -102,18 +103,32 @@ async function shot(t, file) {
         capture.attempts++;
         if (!remaining) return;
         remaining--;
+        const startedAt = performance.now();
         const result = draw.apply(this, args);
         capture.completed++;
+        capture.timeline.frames.push({ startedAt, completedAt: performance.now(), renders: this.renders });
         return result;
       };
       window.__draw = true;
-      return { renders: isle.renders, origin: performance.timeOrigin };
+      return { renders: isle.renders, origin: performance.timeOrigin, at: performance.now() };
     });
-    await t.page.waitForFunction((n) => window.__isle.renders >= n + 2, baseline.renders, { timeout: 15_000 });
+    waitStarted = { origin: performance.timeOrigin, at: performance.now() };
+    await t.page.waitForFunction((n) => {
+      const timeline = window.__chatShot?.timeline;
+      const poll = { at: performance.now(), renders: window.__isle.renders, ready: window.__isle.renders >= n + 2 };
+      if (timeline) {
+        timeline.pollCount++; timeline.firstPoll ??= poll; timeline.lastPoll = poll;
+        if (poll.ready) timeline.firstReady ??= poll;
+        if (timeline.polls.length < 120) timeline.polls.push(poll); else timeline.polls[119] = poll;
+      }
+      return window.__isle.renders >= n + 2;
+    }, baseline.renders, { timeout: 15_000 });
+    waitSettled = { origin: performance.timeOrigin, at: performance.now() };
     await t.page.screenshot({ path: `${SHOTS}${file}`, type: "jpeg", quality: 70 });
   } catch (error) {
     failed = true;
     failure = error;
+    const failedAt = { origin: performance.timeOrigin, at: performance.now() };
     // Reporting happens after the original guard failed; it cannot make that failed check pass.
     let reportTimer;
     try {
@@ -122,7 +137,7 @@ async function shot(t, file) {
           const capture = window.__chatShot, saved = capture?.isle, current = window.__isle;
           const gl = saved?.renderer?.getContext();
           return {
-            origin: performance.timeOrigin, sameRenderer: saved === current,
+            origin: performance.timeOrigin, frameTimeline: capture?.timeline, sameRenderer: saved === current,
             savedRenders: saved?.renders, currentRenders: current?.renders,
             attempts: capture?.attempts, completed: capture?.completed,
             hidden: document.hidden, motionReduced: matchMedia("(prefers-reduced-motion: reduce)").matches,
@@ -133,7 +148,9 @@ async function shot(t, file) {
         }),
         new Promise((resolve) => { reportTimer = setTimeout(() => resolve({ reportTimedOut: true }), 3000); }),
       ]);
-      console.log("capture failure context", file, { baseline, ...context });
+      console.log("capture failure context", file, JSON.stringify({ baseline,
+        phase: waitSettled ? "screenshot" : waitStarted ? "two-frames" : "baseline",
+        nodeWait: { started: waitStarted, settled: waitSettled, failedAt }, ...context }));
     } catch (reportError) {
       console.log("capture failure context unavailable", file, reportError.message);
     } finally {
