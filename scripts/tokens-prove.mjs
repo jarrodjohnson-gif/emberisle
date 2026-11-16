@@ -81,7 +81,7 @@ try {
   await page.waitForFunction(() => window.__isle?.landReady && window.__isle.land.children.length > 30, null, { timeout: 120_000 });
 
   const demo = await page.evaluate(readScene, true);
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle.getState().screen === "play" && window.__emberisle.getState().state && window.__isle.landReady, null, { timeout: 120_000 });
   await page.waitForTimeout(500);
   const practice = await page.evaluate(readScene, false);
@@ -135,7 +135,7 @@ try {
     p.on("console", (m) => m.type() === "error" && errors.push(m.text()));
     p.on("pageerror", (e) => errors.push(String(e)));
     await p.goto(`http://127.0.0.1:${PORT}/`);
-    await p.getByRole("button", { name: "Play", exact: true }).click();
+    await p.getByRole("button", { name: "Play with bots", exact: true }).click();
     await p.waitForFunction(() => window.__emberisle.getState().screen === "play" && window.__isle?.lastState && window.__isle.landReady && window.__isle.fit && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: 120_000 });
     await p.waitForFunction((r) => window.__isle.renders > r + 2, await p.evaluate(() => window.__isle.renders));
     const m = await p.evaluate(() => {
@@ -195,7 +195,7 @@ try {
           const top = rows[0], bottom = rows[rows.length - 1] + 1, mid = (top + bottom) / 2;
           const hits = [];
           for (const [cx, cy] of [[128, mid], [128, top + 4], [128, bottom - 4], [88, mid], [168, mid]]) {
-            const v = label.localToWorld(new V((cx / 128 - 1) * 0.245, (1 - cy / 128) * 0.245, 0));
+            const v = label.localToWorld(new V((cx / 128 - 1) * 0.245, (1 - cy / 128) * 0.245, 0.005));
             const hit = isle.jellyBoard.occludes(isle.persp.position, v);
             if (hit) hits.push(hit);
           }

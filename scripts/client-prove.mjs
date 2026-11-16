@@ -62,7 +62,7 @@ try {
       if (t && t !== window.__turns.at(-1)) window.__turns.push(t);
     }).observe(document.body, { subtree: true, childList: true, characterData: true });
   });
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
 
   // #232: roll off for first place. The human rolls on its turn; the bots roll on the app's timer.
   await page.evaluate(() => {
@@ -294,7 +294,7 @@ try {
   console.log("online bots + leave:", JSON.stringify(online));
 
   // #218: a knight can be played before the roll from the HUD; the phase stays roll and Roll still works.
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle.getState().state);
   await page.evaluate(() => {
     const g = window.__emberisle;
@@ -366,7 +366,7 @@ try {
   console.log("turn banner:", JSON.stringify(turn));
 
   // Jarrod's playtest: another seat's turn says whom you wait for, not what to do.
-  if (turn.theirs !== `Wait for ${turn.bot} to roll` || !/^(Roll|Place|Build|Move|Discard)\b/.test(turn.mineText ?? "") || turn.strip) {
+  if (turn.theirs !== `Wait for ${turn.bot} to roll` || !/^(Roll|Place|Build|Move|Discard|Your turn$)\b/.test(turn.mineText ?? "") || turn.strip) {
     throw new Error(`turn banner: ${JSON.stringify(turn)}`);
   }
   if (phase !== "roll" && phase !== "main" && phase !== "robber" && phase !== "discard") throw new Error(`setup: ${phase}`);
@@ -400,7 +400,7 @@ try {
   await page.evaluate(() => window.__emberisle.getState().goTitle());
   // #220: the win screen lists every player with totals that match totalVP, and Look around / Back to menu work.
   // The online step above left the table, so start a fresh practice game for this one.
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle.getState().state);
   await page.evaluate(async () => {
     const g = window.__emberisle;
@@ -436,8 +436,8 @@ try {
   for (const r of winRows.rows) if (r.total !== winRows.want[r.id]) throw new Error(`win screen total: ${JSON.stringify(winRows)}`);
   if (new Set(winRows.rows.map((r) => r.total)).size < 3) throw new Error("win screen: totals should differ");
   if (!winRows.headline?.endsWith(" wins")) throw new Error(`win headline: ${winRows.headline}`);
-  // #266: practice has no table to keep, so no Play again.
-  if (await page.getByTestId("win-again").count()) throw new Error("win screen: practice shows Play again");
+  // Owner 2026-11-12 (q1563-play-again): a practice game ends with Play again (it replaces #266's "no Play again").
+  if ((await page.getByTestId("win-again").count()) !== 1 || (await page.getByTestId("win-again").textContent()).trim() !== "Play again") throw new Error("win screen: practice has no Play again");
   // #379: aria-modal is a promise to the keyboard too. Tab cycles among the dialog's buttons and never reaches the HUD behind it.
   const winFocus = () =>
     page.evaluate(() => {
@@ -450,18 +450,24 @@ try {
     await page.keyboard.press("Tab");
     tabs.push(await winFocus());
   }
-  await page.getByTestId("win-look").focus();
+  // The dialog's stops are the four rows, Hide scores, Menu and Play again: Tab on the last wraps to the first row, and
+  // Shift+Tab there wraps back.
+  await page.getByTestId("win-again").focus();
+  await page.keyboard.press("Tab");
+  const wrapped = await winFocus();
   await page.keyboard.press("Shift+Tab");
   const back = await winFocus();
-  console.log("win tab order:", JSON.stringify({ tabs, back }));
+  console.log("win tab order:", JSON.stringify({ tabs, wrapped, back }));
   if (tabs.some((t) => !t.inDialog)) throw new Error(`win screen: Tab left the dialog: ${JSON.stringify(tabs)}`);
-  if (back.id !== "win-menu") throw new Error(`win screen: Shift+Tab from Look around went to ${back.id}`);
+  if (wrapped.id !== "win-row" || !wrapped.inDialog) throw new Error(`win screen: Tab from Play again went to ${wrapped.id}`);
+  if (back.id !== "win-again") throw new Error(`win screen: Shift+Tab from the first row went to ${back.id}`);
   const negativeTabStop = await page.getByTestId("win-look").evaluate((el) => {
     const original = el.getAttribute("tabindex");
     el.setAttribute("tabindex", "-1");
     return original;
   });
-  await page.getByTestId("win-menu").focus();
+  // Hide scores sits between the last row and Menu: with tabindex -1 it is stepped over both ways.
+  await page.locator('button[data-testid="win-row"]').last().focus();
   await page.keyboard.press("Tab");
   const afterNegativeTab = await winFocus();
   await page.keyboard.press("Shift+Tab");
@@ -471,7 +477,7 @@ try {
     else el.setAttribute("tabindex", original);
   }, negativeTabStop);
   console.log("win negative tabindex:", JSON.stringify({ afterTab: afterNegativeTab, afterShiftTab: afterNegativeShiftTab }));
-  if (afterNegativeTab.id !== "win-menu" || afterNegativeShiftTab.id !== "win-menu") {
+  if (afterNegativeTab.id !== "win-menu" || afterNegativeShiftTab.id !== "win-row") {
     throw new Error(`win screen: negative tabindex button entered the Tab sequence: ${JSON.stringify({ afterNegativeTab, afterNegativeShiftTab })}`);
   }
   await page.getByTestId("win-look").click();
@@ -546,7 +552,7 @@ try {
   const toTitle = () => page.evaluate(() => window.__emberisle.getState().goTitle());
   const freshPractice = async () => {
     await toTitle();
-    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play with bots", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle.getState().state);
   };
 
@@ -559,7 +565,7 @@ try {
   await page.reload();
   await page.waitForFunction(() => window.__emberisle);
   const stillOff = await speaker.getAttribute("aria-pressed");
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle.getState().state);
   await page.evaluate(async () => {
     const s = window.__emberisle.getState();
@@ -627,7 +633,7 @@ try {
 
   // #252: the tab title says when it is your move.
   await toTitle();
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle.getState().state);
   const titles = {};
   titles.start = await page.title();
@@ -697,7 +703,7 @@ try {
   await page.keyboard.press("Escape");
   await page.getByTestId("win-chip").waitFor({ timeout: 2000 });
   console.log("win dialog:", JSON.stringify({ focused, modal }));
-  if (focused?.trim() !== "Back to menu" || modal !== "true") throw new Error(`win dialog: ${JSON.stringify({ focused, modal })}`);
+  if (focused?.trim() !== "Menu" || modal !== "true") throw new Error(`win dialog: ${JSON.stringify({ focused, modal })}`);
 
   // #253/#565: reduced motion retains the readable hand delta fade; the banner fade is cut short.
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -801,18 +807,26 @@ try {
         ["Path", "Outpost", "Stronghold", "Fortune"].map((n) => {
           // The build buttons carry their cost chips and state in their text; the aria-description leads with the piece.
           const b = [...document.querySelectorAll("button")].find((x) => x.getAttribute("aria-description")?.startsWith(`${n} ·`));
-          return [n, { disabled: b?.getAttribute("aria-disabled") === "true", native: b?.disabled, cursor: b && getComputedStyle(b).cursor, title: b?.title, desc: b?.getAttribute("aria-description"), pressed: b?.getAttribute("aria-pressed") }];
+          // #1539: the rows carry no title; the price leads the description ("Path · 1 wood, 1 brick · Place").
+          return [n, { disabled: b?.getAttribute("aria-disabled") === "true", native: b?.disabled, cursor: b && getComputedStyle(b).cursor, title: b?.getAttribute("aria-description")?.split(" · ").slice(0, 2).join(" · "), desc: b?.getAttribute("aria-description"), pressed: b?.getAttribute("aria-pressed") }];
         }),
       ),
     );
   const price = { Path: "Path · 1 wood, 1 brick", Outpost: "Outpost · 1 wood, 1 brick, 1 sheep, 1 wheat", Stronghold: "Stronghold · 3 wheat, 2 stone", Fortune: "Fortune · 1 sheep, 1 wheat, 1 stone" };
   const storeNow = () => page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, tradeOpen: window.__emberisle.getState().tradeOpen, howTo: window.__emberisle.getState().howTo }));
+  // #1539: the builds are rows in the Build list, opened from the tray's Build button.
+  const openList = async () => {
+    if (await page.getByTestId("build-list").count()) return;
+    await page.getByTestId("build-open").click();
+    await page.getByTestId("build-list").waitFor({ timeout: 5000 });
+  };
   await setHand({});
+  await openList();
   await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });
   const empty = await buildRow();
   // #606: a build with no legal spot reads No spot before it reads Need.
   console.log("build row, empty hand:", JSON.stringify(empty));
-  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || !new RegExp(`^${p} · (Need|No spot)`).test(empty[n].desc)) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
+  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || !new RegExp(`^${p} · (You need|No free spot|No homes to upgrade)`).test(empty[n].desc)) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
   // #302: an unaffordable button is still in the Tab order, reports aria-disabled and its price, and a click neither arms nor buys.
   await page.evaluate(() => document.activeElement?.blur());
   let tabbedTo = null;
@@ -824,12 +838,12 @@ try {
   console.log("Tab to unaffordable Path:", JSON.stringify({ tabbedTo, ...tabFocus }));
   if (tabbedTo !== "Path" || tabFocus.aria !== "true" || !tabFocus.desc.startsWith(price.Path)) throw new Error(`Tab/aria-disabled: ${JSON.stringify({ tabbedTo, ...tabFocus })}`);
   const cardsBefore = await page.evaluate(() => window.__emberisle.getState().state.deck.length);
-  for (const n of ["Path", "Outpost", "Stronghold", "Fortune"]) await page.getByRole("button", n === "Fortune" ? { name: /^Fortune, \d+ left in deck$/ } : { name: n, exact: true }).click({ force: true });
+  for (const n of ["Path", "Outpost", "Stronghold", "Fortune"]) await page.getByRole("button", { name: n, exact: true }).click({ force: true });
   await page.keyboard.press("Enter");
   const clickRes = await page.evaluate(() => ({ buildMode: window.__emberisle.getState().buildMode, cards: window.__emberisle.getState().state.deck.length, error: window.__emberisle.getState().error, said: window.__emberisle.getState().announcement }));
   console.log("click unaffordable:", JSON.stringify({ ...clickRes, cardsBefore }));
   // A tap the hand cannot pay for builds and buys nothing, and says what is missing: to the screen reader and the error cue, with no HUD error line (#535: the chip over the build is the one message on screen).
-  if (clickRes.buildMode !== "none" || clickRes.cards !== cardsBefore || clickRes.error !== null || !/^Need \d+ more /.test(clickRes.said ?? "")) throw new Error(`unaffordable click acted: ${JSON.stringify(clickRes)}`);
+  if (clickRes.buildMode !== "none" || clickRes.cards !== cardsBefore || clickRes.error !== null || !/^You need \d+ more /.test(clickRes.said ?? "")) throw new Error(`unaffordable click acted: ${JSON.stringify(clickRes)}`);
   // #535 review: the quiet message is not left behind when `error` moves on. A quiet "x", then a refused move (error "y"), then
   // the error cleared: the alert region reads x, y, and then nothing, never x again.
   {
@@ -851,13 +865,16 @@ try {
   const pathBtn = page.getByRole("button", { name: "Path", exact: true });
   await pathBtn.click();
   const armed = await page.evaluate(() => ({ ...window.__emberisle.getState(), edges: window.__emberisle.getState().highlights().edges.length }));
-  const pressed = await pathBtn.getAttribute("aria-pressed");
+  // #1539: a ready row closes the list; armed, the tray's action row is Cancel alone (it stands for the old pressed button).
+  const cancelShown = async () => ((await page.getByTestId("build-cancel").count()) === 1 ? "true" : "false");
+  const pressed = await cancelShown();
   if (armed.buildMode !== "path" || pressed !== "true" || !armed.edges) throw new Error(`armed: ${JSON.stringify({ mode: armed.buildMode, pressed, edges: armed.edges })}`);
   await page.keyboard.press("Escape");
-  const disarmed = { ...(await storeNow()), pressed: await pathBtn.getAttribute("aria-pressed") };
+  const disarmed = { ...(await storeNow()), pressed: await cancelShown() };
   console.log("arm then Escape:", JSON.stringify({ armed: armed.buildMode, pressed, edges: armed.edges, disarmed }));
   if (disarmed.buildMode !== "none" || disarmed.pressed !== "false") throw new Error(`Escape did not disarm: ${JSON.stringify(disarmed)}`);
   // One Escape closes only the topmost thing: the trade panel first, then the arm.
+  await openList();
   await pathBtn.click();
   await page.evaluate(() => window.__emberisle.getState().setTradeOpen(true));
   await page.keyboard.press("Escape");
@@ -867,6 +884,7 @@ try {
   console.log("escape order, trade over arm:", JSON.stringify({ layer1, layer2 }));
   if (layer1.tradeOpen || layer1.buildMode !== "path" || layer2.buildMode !== "none") throw new Error(`trade/arm order: ${JSON.stringify({ layer1, layer2 })}`);
   // The How-to dialog is above an armed build: its Escape leaves the arm alone (#442: it opens from the table menu).
+  await openList();
   await pathBtn.click();
   await page.getByRole("button", { name: "Table menu" }).click();
   await page.getByRole("button", { name: "How to play" }).click();
@@ -879,11 +897,14 @@ try {
   // Phone: the four build buttons keep a 44 px target.
   await setHand({});
   await page.setViewportSize({ width: 390, height: 844 });
+  await openList();
   await page.getByRole("button", { name: "Path", exact: true }).waitFor({ timeout: 5000 });
   await page.waitForFunction(() => document.querySelector("[data-testid='seat-strip']"), null, { timeout: 5000 });
   const heights = await page.evaluate(() => ["Path", "Outpost", "Stronghold", "Fortune"].map((n) => [...document.querySelectorAll("button")].find((x) => x.getAttribute("aria-description")?.startsWith(`${n} ·`)).getBoundingClientRect().height));
   console.log("phone build button heights:", JSON.stringify(heights));
   if (heights.some((h) => h < 44)) throw new Error(`phone build buttons under 44 px: ${JSON.stringify(heights)}`);
+  await page.keyboard.press("Escape");
+  await page.getByTestId("build-list").waitFor({ state: "detached", timeout: 5000 });
   await page.setViewportSize({ width: 800, height: 500 });
 
   // #286: How to play is a dialog: focus goes to Close, Escape closes it, and focus returns to the opener (title and in-game).

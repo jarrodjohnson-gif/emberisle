@@ -12,6 +12,7 @@
 // an own Roll turn and another seat's turn, it is whole, in the safe area, clear of the menu and status, 12 px from every board target.
 // Design: docs/design/chat.md "Test plan". Screenshots go to test-results/.
 import { spawn } from "node:child_process";
+import { hostPort as waitForHostPort } from "./proof-host-port.mjs";
 import { once } from "node:events";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -34,12 +35,7 @@ const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"],
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
-const hostPort = await new Promise((resolve) =>
-  host.stdout.on("data", (d) => {
-    const m = String(d).match(/listening (\d+)/);
-    if (m) resolve(Number(m[1]));
-  }),
-);
+const hostPort = await waitForHostPort(host);
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch();
@@ -174,12 +170,20 @@ async function newContent(t, size) {
   for (const id of NEW_STICKERS) {
     const button = t.page.getByTestId("stickers").getByRole("button", { name: `React ${id}`, exact: true });
     await button.scrollIntoViewIfNeeded();
+    // #1685: the tab draws each button before its picture, which needs the Sticker chunk and then the image file. Wait for the
+    // image to finish loading; if it never does, the check below fails and says so.
+    await t.page.waitForFunction((el) => { const img = el.querySelector("img"); return Boolean(img && img.complete && img.naturalWidth > 0); }, await button.elementHandle(), { timeout: 10_000 }).catch(() => {});
     const m = await button.evaluate((el) => {
       const r = el.getBoundingClientRect();
       const img = el.querySelector("img");
       return { loaded: Boolean(img && img.complete && img.naturalWidth > 0), inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight, w: r.width, h: r.height };
     });
-    check(m.loaded && m.inView && m.w >= 32 - 0.5 && m.h >= 32 - 0.5, `${size}: sticker ${id} is in the Sounds & stickers tab, loaded, on screen, ${m.w.toFixed(0)}x${m.h.toFixed(0)}`);
+    // #1696: a failure also says which part failed.
+    try {
+      check(m.loaded && m.inView && m.w >= 32 - 0.5 && m.h >= 32 - 0.5, `${size}: sticker ${id} is in the Sounds & stickers tab, loaded, on screen, ${m.w.toFixed(0)}x${m.h.toFixed(0)}`);
+    } catch (e) {
+      throw new Error(`${e.message} (measured loaded=${m.loaded} inView=${m.inView} ${m.w.toFixed(0)}x${m.h.toFixed(0)})`);
+    }
   }
   for (const name of NEW_CHIPS) {
     const chip = t.page.getByTestId("soundboard").getByRole("button", { name, exact: true });
@@ -578,7 +582,7 @@ try {
       const row = document.querySelector('[data-testid="lobby-actions"]');
       const rb = row.getBoundingClientRect().bottom;
       const below = [...scroller.querySelectorAll("*")].filter((el) => !row.contains(el) && el !== row && el.getBoundingClientRect().height > 0 && el.getBoundingClientRect().bottom > rb + 0.5 && !el.contains(row)).map((el) => el.tagName);
-      const leave = [...row.querySelectorAll("button")].some((b) => b.textContent.trim() === "Leave the table");
+      const leave = [...row.querySelectorAll("button")].some((b) => b.textContent.trim() === "Leave table");
       return { gap: Math.round((scroller.getBoundingClientRect().bottom - 1 - rb) * 10) / 10, below, leave };
     });
     check(Math.abs(m.gap - 12) <= 0.1 && m.below.length === 0 && m.leave, `phone lobby 390x${h}, 4 seats scrolled down: footer keeps the approved 12 px bottom padding (gap ${m.gap}), nothing below it, Leave inside it`);
@@ -605,7 +609,7 @@ try {
   }
   for (const t of [hp, ...guests]) await t.page.getByRole("button", { name: "Ready", exact: true }).click();
   const startBtn = hp.page.getByRole("button", { name: "Start", exact: true });
-  await startBtn.waitFor({ timeout: 10_000 });
+  await startBtn.and(hp.page.locator(":enabled")).waitFor({ timeout: 10_000 });
   check(await startBtn.evaluate((el) => { const r = el.getBoundingClientRect(); const c = document.querySelector('[data-testid="lobby-card"]').getBoundingClientRect(); return r.top >= c.top && r.bottom <= c.bottom && r.bottom <= innerHeight; }), "phone lobby: Start is inside the card and the 390x844 viewport without scrolling");
   check(await inView(hp, '[data-testid="lobby-actions"]'), "phone lobby: the Ready/Start row is wholly on screen");
   await shot(hp, "chat-phone-lobby-host.jpg");
@@ -646,7 +650,7 @@ try {
   await fourth.page.getByTestId("table-code").waitFor();
   await fourth.page.getByRole("button", { name: "Ready", exact: true }).click();
   await until(async () => (await hp.page.locator("li", { hasText: "Fay" }).count()) === 1, "Hana sees four seats");
-  await until(async () => (await hp.page.getByTestId("lobby-status").textContent()).trim() === "Everyone is ready", "Hana sees Everyone is ready");
+  await until(async () => (await hp.page.getByTestId("lobby-status").textContent()).trim() === "All ready", "Hana sees All ready");
   for (const [w, h] of [[844, 390], [667, 375]]) {
     await hp.page.setViewportSize({ width: w, height: h });
     await shot(hp, `chat-phone-lobby-landscape-${w}x${h}.jpg`);
@@ -661,9 +665,9 @@ try {
       const scrollers = [card, ...card.querySelectorAll("*")].filter((el) => getComputedStyle(el).overflowY === "auto" && el.getAttribute("data-testid") !== "chat-log");
       return {
         status: inside(document.querySelector('[data-testid="lobby-status"]')),
-        ready: !!btn("Not ready") && inside(btn("Not ready")),
+        ready: !!btn("Cancel ready") && inside(btn("Cancel ready")),
         start: !!btn("Start") && inside(btn("Start")),
-        leave: !!btn("Leave the table") && inside(btn("Leave the table")),
+        leave: !!btn("Leave table") && inside(btn("Leave table")),
         seats: [...card.querySelectorAll("li")].filter((li) => !li.closest('[data-testid="chat-log"]') && li.querySelector("span.rounded-full") && inside(li)).length,
         scroll: scrollers.map((el) => el.scrollHeight - el.clientHeight),
         top: card.getBoundingClientRect().top,
@@ -770,11 +774,11 @@ try {
 
   for (const [i, t] of [...tabs, phone].entries()) {
     await t.page.getByRole("button", { name: "Ready", exact: true }).click();
-    await statusIs(a, i < 3 ? `${i + 1} of 4 ready` : "Everyone is ready");
+    await statusIs(a, i < 3 ? `${i + 1} of 4 ready` : "All ready");
   }
   // #417: on the 1280x720 desktop card every seat ready means code, four rows, the chat box and Ready/Start/Leave; Start and
   // Leave must still sit inside the card's visible box without scrolling.
-  await a.page.getByRole("button", { name: "Start", exact: true }).waitFor();
+  await a.page.getByRole("button", { name: "Start", exact: true }).and(a.page.locator(":enabled")).waitFor();
   check((await a.page.evaluate(() => document.querySelector('[data-testid="lobby-card"] > div').scrollTop)) === 0, "desktop lobby: the card starts unscrolled");
   const insideCard = (name) =>
     a.page.getByRole("button", { name, exact: true }).evaluate((el) => {
@@ -782,7 +786,7 @@ try {
       const c = document.querySelector('[data-testid="lobby-card"]').getBoundingClientRect();
       return { ok: r.top >= c.top && r.bottom <= c.bottom && r.bottom <= innerHeight, bottom: Math.round(r.bottom), card: Math.round(c.bottom) };
     });
-  for (const name of ["Start", "Leave the table"]) {
+  for (const name of ["Start", "Leave table"]) {
     const r = await insideCard(name);
     check(r.ok, `desktop lobby at 1280x720: ${name} is inside the card (bottom ${r.bottom} <= card ${r.card}) without scrolling`);
   }
@@ -1535,7 +1539,7 @@ try {
 
   // Versus bots the menu shows only the facts (and the bank trade on your main turn, not during setup).
   const { page: solo } = await tab("Solo");
-  await solo.getByRole("button", { name: "Play", exact: true }).click();
+  await solo.getByRole("button", { name: "Play with bots", exact: true }).click();
   // The human rolls off (#232) when it is up; the bots roll on the app's timer.
   await solo.waitForFunction(() => {
     const s = window.__emberisle.getState();

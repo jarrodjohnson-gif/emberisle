@@ -19,6 +19,8 @@ export interface Seat {
   needs?: Resource[];
   // #1411: the player said they want another game. Only once a game is over; the next game clears it.
   again?: boolean;
+  // #764: the public profile of a bound seat. A guest seat has no such field.
+  profile?: { profileId: string; displayName: string };
 }
 
 // What a peek answers (G10): enough to dim taken swatches, no names or pictures.
@@ -100,12 +102,18 @@ export type ConnectionHealth = { status: "Reachable" | "Reconnecting" | "Offline
 
 export interface TableEvents {
   health(value: ConnectionHealth): void;
+  // #1664: the host clock less this one as the hello went out, from the welcome that answers it. Never below the true skew,
+  // above it only by the hello's trip to the host, and true however late a busy page reads the welcome.
+  clock(skew: number): void;
   // A watcher's welcome (docs/design/spectator.md) has `spectator: true` and no `you`, `host` or `secret`. `proto` is the
   // host's wire protocol (G2): newer than PROTO means this page is out of date.
   // `holdMs`/`lobbyHoldMs`: how long the host holds this seat after a drop, in a game and in the lobby (G7).
-  welcome(msg: { proto?: number; serverSha?: string; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode }): void;
-  // `watching`: how many spectators the table has (#347).
-  seats(msg: { code: string; seats: Seat[] | PeekSeat[]; watching?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode }): void;
+  // `variant` is set only at an expanded table (#1611), five or six seats on the expanded island.
+  // `serverNow` is the host's clock as it answered the hello.
+  welcome(msg: { proto?: number; serverSha?: string; serverNow?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode; variant?: "expanded" }): void;
+  // `watching`: how many spectators the table has (#347). `choose`: the host is choosing how to rematch an expanded game
+  // with fewer than five at the table, from these choices (#1611; only the host may pick).
+  seats(msg: { code: string; seats: Seat[] | PeekSeat[]; watching?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode; variant?: "expanded"; choose?: Rematch[] }): void;
   // `you` is null on a watcher's state. `turnDeadline` is the host's clock (epoch ms) for the seat `turnPlayer`;
   // `serverNow` is the host's clock as it sent this.
   state(msg: { you: string | null; game: GameState; legal: Legal; actionStamp?: ActionStamp; turnDeadline?: number | null; turnPlayer?: string | null; serverNow?: number; result?: unknown }): void;
@@ -124,6 +132,16 @@ export interface TableEvents {
   // Open tables on this host (#833); never includes private codes. Seatless `list` replies only.
   openTables(tables: OpenTableEntry[]): void;
   ttt(msg: TttMsg): void;
+  // #1350: the host's answers to profileCard, carrying the request's `id`.
+  tableProfileCard(msg: ProfileCardReply): void;
+  profileError(msg: ProfileCardReply): void;
+}
+
+// A card holds public fields only (server/profiles.mjs publicCard); a profileError has no card.
+export interface ProfileCardReply {
+  type: "tableProfileCard" | "profileError";
+  id: number;
+  card?: { profileId: string; displayName: string; catchphrase: string };
 }
 
 export interface Me {
@@ -142,8 +160,12 @@ export interface OpenTableEntry {
   status: "lobby" | "playing" | "over";
 }
 
+// How the host rematches an expanded game with fewer than five at the table (#1611): fill with bots up to five, or the
+// classic island with those present. "dismiss" closes the choice and changes nothing.
+export type Rematch = "bots" | "classic";
+
 export interface TableClient {
-  open(me: Me, options?: { wayfarerMode?: WayfarerMode; visibility?: "open" | "private" }): void;
+  open(me: Me, options?: { wayfarerMode?: WayfarerMode; visibility?: "open" | "private"; variant?: "expanded" }): void;
   join(code: string, me: Me): void;
   // Watch a started table, read-only: hello {code, watch:true} (docs/design/spectator.md). No seat, no secret, so no redial.
   watch(code: string): void;
@@ -163,8 +185,8 @@ export interface TableClient {
   // Lobby, host only: seat a practice bot, or take the bot at seat `id` out.
   addBot(): void;
   removeBot(id: string): void;
-  // A rematch at the same table (#266). Host only, once the game is over.
-  again(): void;
+  // A rematch at the same table (#266). Host only, once the game is over; `choice` answers the host's rematch choice (#1611).
+  again(choice?: Rematch | "dismiss"): void;
   // #1411: say "I'll play again" (or take it back) on the results screen. It never starts the next game.
   wantAgain(value: boolean): void;
   act(action: Action): boolean;
@@ -181,7 +203,9 @@ export interface TableClient {
   sound(id: string): void;
   react(emote: string, to?: string): void;
   // Lobby tic-tac-toe: one of the five ttt messages, e.g. ttt("tttMove", { id, cell }).
-  ttt(type: "tttInvite" | "tttAnswer" | "tttMove" | "tttAgain" | "tttClose", fields: Record<string, unknown>): void;
+  // #1350: it also sends the card read, ttt("tableProfileCard", { id, profileId }); the host answers with the same `id`.
+  // The table chunk sits at its size ceiling, so the read shares this sender and adds no second one.
+  ttt(type: "tttInvite" | "tttAnswer" | "tttMove" | "tttAgain" | "tttClose" | "tableProfileCard", fields: Record<string, unknown>): void;
   // The browser says the network or the tab is back: if a backoff timer is pending, dial now. Otherwise nothing.
   wake(): void;
   // Leave on purpose: the host frees a lobby seat at once. `leave: false` only closes, and the seat is held as a drop.
@@ -257,7 +281,10 @@ const LAST_CALL_MS = 1000;
 // Both action IDs and health challenges use 128 random bits, including on plain-HTTP LAN joins.
 const randomNonce = () => crypto.getRandomValues(new Uint8Array(16)).reduce((hex, b) => hex + b.toString(16).padStart(2, "0"), "");
 
-const ALLOWED_EVENTS = ["seats", "rolled", "chat", "react", "tradeOffer", "tradeDeclined", "tradeClosed", "ttt"];
+// Every hello says this page can show the expanded island; a host refuses a page without it at an expanded table (#1611).
+const CAPS = ["expanded"];
+
+const ALLOWED_EVENTS = ["seats", "rolled", "chat", "react", "tradeOffer", "tradeDeclined", "tradeClosed", "ttt", "profileError", "tableProfileCard"];
 
 // `giveUpMs` is only for proofs that cannot wait 10 minutes: it stands in for both holds until a welcome says otherwise.
 export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor, giveUpMs?: number): TableClient {
@@ -317,7 +344,14 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     }, 3000);
   };
 
-  const raw = (msg: Record<string, unknown>) => ws.send(JSON.stringify(msg));
+  // When the last hello went out on this socket, on this clock, and how many have gone out since the last welcome. A welcome
+  // measures the skew from its hello only when that hello is the one out: one may be answered by an error instead (#1664).
+  let helloAt = 0;
+  let hellos = 0;
+  const raw = (msg: Record<string, unknown>) => {
+    if (msg.type === "hello") helloAt = Date.now(), hellos++;
+    ws.send(JSON.stringify(msg));
+  };
   const send = (msg: Record<string, unknown> | (() => Record<string, unknown>)) => {
     const fn = typeof msg === "function" ? msg : () => msg;
     if (ws.readyState === 1) raw(fn());
@@ -364,11 +398,12 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   const dial = () => {
     timer = null;
     const sock = (ws = new Ctor(url));
+    hellos = 0;
     ws.onopen = () => {
       // The rejoin hello goes out here only, never through the queue, so it is sent once per socket.
       if (seat && (attempt > 0 || rejoining)) {
         rejoining = true;
-        raw({ type: "hello", proto: PROTO, ...seat });
+        raw({ type: "hello", proto: PROTO, caps: CAPS, ...seat });
         // Anything sent while the socket was down is stale after a rejoin (a second roll, an old placement).
         queue.length = 0;
       }
@@ -406,6 +441,8 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         taken = false;
         attempt = 0;
         on.welcome?.(m);
+        if (typeof m.serverNow === "number" && hellos === 1) on.clock?.(m.serverNow - helloAt);
+        hellos = 0;
         break;
       }
       case "turnExtension":
@@ -451,7 +488,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
 
   const initialHello = (me: Me, extra?: Record<string, unknown>) =>
     send(() => ({
-      type: "hello", proto: PROTO, name: me.name, color: me.color, avatarId: me.avatarId, ...extra,
+      type: "hello", proto: PROTO, caps: CAPS, name: me.name, color: me.color, avatarId: me.avatarId, ...extra,
       credential: me.profile?.credentialForHost(url) || undefined,
     }));
 
@@ -460,7 +497,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   return {
     open: (me, options) => initialHello(me, options),
     join: (code, me) => initialHello(me, { code: up(code) }),
-    watch: (code) => send({ type: "hello", proto: PROTO, code: up(code), watch: true }),
+    watch: (code) => send({ type: "hello", proto: PROTO, caps: CAPS, code: up(code), watch: true }),
     peek: (code) => send({ type: "peek", code: up(code) }),
     list: () => send({ type: "list" }),
     rejoin: (code, secret) => {
@@ -468,7 +505,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       seat = { code: up(code), secret };
       rejoining = true;
       // Not queued: onopen sends it, so a failed first dial cannot leave a second hello behind.
-      if (ws.readyState === 1) raw({ type: "hello", proto: PROTO, ...seat });
+      if (ws.readyState === 1) raw({ type: "hello", proto: PROTO, caps: CAPS, ...seat });
     },
     ready: (value) => send({ type: "ready", value }),
     start: () => send({ type: "start" }),
@@ -476,7 +513,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     rename: (name) => send({ type: "rename", name }),
     addBot: () => send({ type: "addBot" }),
     removeBot: (id) => send({ type: "removeBot", id }),
-    again: () => send({ type: "again" }),
+    again: (choice) => send({ type: "again", choice }),
     wantAgain: (value) => send({ type: "wantAgain", value }),
     act: (action) => {
       const i = toIntent(action);

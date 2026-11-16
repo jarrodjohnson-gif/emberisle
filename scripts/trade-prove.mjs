@@ -4,8 +4,8 @@
 // stay put and the toast closes everywhere (#1245: a person's offer holds until answered). Zero console errors.
 // #366 / #537: every non-asker's toast is a named region for the offer (or compact demand) that does not take focus.
 // A seat that can pay sees Yes/No; a seat that cannot (#537) sees only "X is looking for …" with Dismiss — no Accept.
-// Escape answers No / Dismiss. A person's offer shows no countdown (#1245); a bot's still does, hidden from screen
-// readers, with a polite line that says "5 seconds left".
+// Escape answers No / Dismiss. No offer shows a countdown (#1245, #1507): a bot's offer still runs out on the host and
+// comes with `seconds`, but its card shows no clock and never says "5 seconds left".
 // Step 4 is the hold lifecycle: a second ask nobody takes is still open past the old 20 s and ends at the asker's Cancel
 // (C answers with Escape, the asker alone hears the No, hands unchanged). Steps 5 and 6 are #537: B has none of the goods asked for and sees the compact demand,
 // C can pay and sees the normal offer; changing B's hand flips its toast without a new offer; Dismiss from B and No from C
@@ -291,9 +291,13 @@ try {
   if (!same(await trades(A), offerHeard(give, want, true))) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for its own offer`);
   console.log(`#609/#1107: offer of ${give} for ${want} heard as ${JSON.stringify(offerHeard(give, want, false))} on the other seats and ${JSON.stringify(offerHeard(give, want, true))} on the asker`);
   if (await A.page.getByTestId("trade-panel").isVisible()) throw new Error("the panel stayed open after the ask");
+  // The sheet hands focus back to a Trade button that the offer has replaced, so Cancel takes it on the next frame.
+  await A.page.waitForFunction(() => document.activeElement?.dataset.testid === "trade-cancel", null, { timeout: 1000 }).catch(() => {});
   const afterAsk = await focusIs(A);
-  if (afterAsk.label !== "Trade") throw new Error(`#378: the ask closed the panel but focus went to "${afterAsk.label}", not the Trade button`);
-  const line = `${A.name} offers 1 ${RESOURCE_LABEL[give].toLowerCase()} for 1 ${RESOURCE_LABEL[want].toLowerCase()}`;
+  // #1546: while my offer is open the action row is Cancel alone, so focus lands there, not on a Trade button that is gone.
+  if (afterAsk.label !== "Cancel") throw new Error(`#378: the ask closed the panel but focus went to "${afterAsk.label}", not the offer's Cancel button`);
+  // #1546: a seat that can answer reads what it would give (the asker's want) and get (the asker's give).
+  const line = `${A.name}: give 1 ${RESOURCE_LABEL[want].toLowerCase()}, get 1 ${RESOURCE_LABEL[give].toLowerCase()}`;
   const demand1 = `${A.name} is looking for 1 ${RESOURCE_LABEL[want].toLowerCase()}`;
   for (const t of [B, C]) {
     const v = vs[tabs.indexOf(t)];
@@ -376,9 +380,9 @@ try {
   await until(async () => ((await C.page.getByTestId("trade-toast").count()) === 0 ? true : null), `${C.name}'s card leaves after the fade`, 2_000);
   vs = await views(tabs);
   if (vs[k].toast !== null) throw new Error(`${C.name} still has a toast after No: "${vs[k].toast}"`);
-  if (!vs[i].toast.includes(`${C.name} declined`)) throw new Error(`asker toast after No: "${vs[i].toast}"`);
+  if (!vs[i].toast.includes(`${C.name} said no`)) throw new Error(`asker toast after No: "${vs[i].toast}"`);
   if (!vs[j].toast || vs.some((v) => !v.offer || v.offer.tradeId !== tradeId)) throw new Error("the offer closed on a single No");
-  console.log(`${C.name} declined: asker sees "${C.name} declined", offer still open for ${B.name}`);
+  console.log(`${C.name} declined: asker sees "${C.name} said no", offer still open for ${B.name}`);
 
   await forget(tabs);
   // 3. B says Yes (Enter on the focused button, the spy's positive control for #366): the goods move in every tab's next state.
@@ -419,7 +423,7 @@ try {
   const again = await ask(want, give, n2);
   const tradeId2 = again[0].offer.tradeId;
   if (tradeId2 === tradeId) throw new Error("second ask reused the tradeId");
-  const line2 = `${A.name} offers 1 ${RESOURCE_LABEL[want].toLowerCase()} for ${n2} ${RESOURCE_LABEL[give].toLowerCase()}`;
+  const line2 = `${A.name}: give ${n2} ${RESOURCE_LABEL[give].toLowerCase()}, get 1 ${RESOURCE_LABEL[want].toLowerCase()}`;
   for (const t of [B, C]) {
     if (!(await answerable(t, again[tabs.indexOf(t)], line2, give, n2))) throw new Error(`${t.name} can pay ${n2} ${RESOURCE_LABEL[give].toLowerCase()}`);
   }
@@ -455,26 +459,23 @@ try {
   if (!same(await trades(A), [...offerHeard(want, give, true), "error_002.wav@1"])) throw new Error(`the asker heard ${JSON.stringify(await trades(A))} for the expiry`);
   for (const t of [B, C]) if (!same(await trades(t), offerHeard(want, give, false))) throw new Error(`${t.name} heard ${JSON.stringify(await trades(t))} for the expiry`);
   console.log("#609: trade_no plays for the asker only");
-  // #366 on a bot's offer, which keeps its run-out: the host sends it with seconds. Injected into B's socket as the host
-  // would send it (6 s here), the polite line stays silent while the clock ticks and says "5 seconds left" once, at 5 s.
-  // The client reads only `seconds`, so the asker's id stands in for a bot's; these three tabs are all people.
+  // #1507 (owner q1517-bot-offer-stall A): a bot's offer keeps its run-out, so the host sends it with seconds. Injected
+  // into B's socket as the host would send it (6 s here), its card shows no clock and never says "5 seconds left", even
+  // past the 5 s mark. The client reads only `seconds`, so the asker's id stands in for a bot's; these three tabs are all people.
   const botId = again[i].you;
   await B.page.evaluate(([from]) => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "tradeOffer", tradeId: "bot-clock", from, give: { grain: 1 }, want: { wool: 1 }, seconds: 6 }) }), [botId]);
-  await B.page.getByTestId("trade-countdown-live").waitFor({ state: "attached" });
-  // The ticking countdown on a bot's offer is hidden from screen readers and reads what is left of its window.
-  const botClock = await B.page.getByTestId("trade-countdown").evaluate((el) => ({ hidden: el.getAttribute("aria-hidden"), secs: Number(el.textContent.replace(/\D/g, "")) }));
-  if (botClock.hidden !== "true") throw new Error(`${B.name}: the ticking countdown on a bot's offer is not aria-hidden (${JSON.stringify(botClock)})`);
-  if (botClock.secs < 1 || botClock.secs > 6) throw new Error(`${B.name}: a 6 s bot offer's countdown reads ${botClock.secs} s`);
-  await B.page.evaluate(() => {
-    const live = document.querySelector('[data-testid="trade-countdown-live"]');
-    window.__said = [live.textContent];
-    new MutationObserver(() => window.__said.push(live.textContent)).observe(live, { childList: true, characterData: true, subtree: true });
-  });
-  await sleep(6_500);
+  if (await B.page.getByTestId("trade-toast").count() < 1) throw new Error("a bot's offer toast missing");
+  await sleep(1_500);
+  for (const at of ["at 1.5 s", "past 5 s"]) {
+    if (await B.page.getByTestId("trade-countdown").count()) throw new Error(`a bot's offer shows a countdown clock ${at}`);
+    if (await B.page.getByTestId("trade-countdown-live").count()) throw new Error(`a bot's offer has a polite countdown line ${at}`);
+    if (await B.page.locator(".trade-clock").count()) throw new Error(`a bot's offer has a trade-clock element ${at}`);
+    const text = await B.page.getByTestId("trade-toast").first().textContent();
+    if (/seconds? left|\b\d+ s\b/.test(text)) throw new Error(`a bot's offer card reads "${text}" ${at}`);
+    if (at === "at 1.5 s") await sleep(4_000);
+  }
   await B.page.evaluate(() => window.__sockets.at(-1).onmessage({ data: JSON.stringify({ type: "tradeClosed", tradeId: "bot-clock" }) }));
-  const heard = [...new Set((await B.page.evaluate(() => window.__said)).filter(Boolean))];
-  if (!same(heard, ["5 seconds left"])) throw new Error(`${B.name}'s polite countdown line said ${JSON.stringify(heard)}`);
-  console.log(`#366: on a bot's offer, ${B.name}'s polite line said only "5 seconds left"`);
+  console.log("#1507: a bot's offer with seconds shows no countdown and no polite countdown line, at 1.5 s and past 5 s");
   if (vs[0].seq !== again[0].seq) throw new Error("the timeout changed the game");
   for (const n of [0, 1, 2]) if (!same(vs[n].mine, again[n].mine)) throw new Error(`${tabs[n].name}'s hand changed on a timeout`);
   console.log("second offer ended at the asker's Cancel: hands unchanged, toast closed on all 3 tabs");
@@ -487,7 +488,7 @@ try {
   const need = want === "ore" ? "timber" : "ore";
   const needLabel = RESOURCE_LABEL[need].toLowerCase();
   const demand = `${A.name} is looking for 2 ${needLabel}`;
-  const line3 = `${A.name} offers 1 ${RESOURCE_LABEL[offerRes].toLowerCase()} for 2 ${needLabel}`;
+  const line3 = `${A.name}: give 2 ${needLabel}, get 1 ${RESOURCE_LABEL[offerRes].toLowerCase()}`;
   // Sets this tab's own count of `need`, the way a state from the host would: the toast reads it from the store.
   const setLocal = (t, count) =>
     t.page.evaluate(({ res, n }) => {

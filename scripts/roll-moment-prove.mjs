@@ -1,5 +1,7 @@
-// #440: each roll is shown once, big and centred, then the dice settle into the HUD. Practice versus the isle at 1280x720
-// and 390x844 (touch), played to the person's first roll through the real roll-off and setup:
+// #440: each roll is shown once, big and centred, then the dice settle into the HUD. Practice versus the isle at 1280x720,
+// 390x844 and 844x390 (touch), played to the person's first roll through the real roll-off and setup. #1539: only the
+// sideways-phone column keeps a dice row; elsewhere the moment holds 900 ms and goes with no flight, and the roll rests in
+// the tray's event line (log-line), the one other place its sum shows:
 // - the person's roll (a real click on Roll): the moment mounts in the same frame the roll is applied, so no frame shows the
 //   roll without it; it is centred within ±10 % of the viewport, the sum's computed font-size ≥ 48 px, and the resting dice
 //   row is hidden (the centre sum is up, and the chip may show it too, #954);
@@ -16,12 +18,16 @@
 //   shows nothing, one roll on shows one moment (a 7 in danger, read out by name), a jump of two rolls shows none.
 // Hotseat at 1280x720: a seat's roll shows one moment and is read out by the seat's name, not "You".
 // Reduced motion at 1280x720: the moment still shows centred and large, with no entry animation and no flight, and goes
-// after its hold. Zero console errors throughout.
+// after its hold. #1687, #1699: a 3+4 with a bot on 9 goods: the bot's discard goes in the log, and the event line keeps
+// "<name> rolled 7!" (owner decision 2026-11-14), at 1280x720, 390x844 and reduced motion. Zero console errors throughout.
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 // CI renders the island with software GL, where one frame can take a long time; a wait gets this long.
 const STEP_MS = 20_000;
+// With SHOTS=1 the bot-discard case writes the table after the discard in docs/proofs/1699/.
+const SHOTS = process.env.SHOTS === "1";
 
 const PORT = Number(process.env.ROLL_PORT || process.env.VITE_PORT) || 8440;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
@@ -209,6 +215,10 @@ const frames = (page) => page.evaluate(() => new Promise((r) => requestAnimation
 async function settleChecks(page, tag, { applied, dice }, { reduced = false } = {}) {
   const sum = dice[0] + dice[1];
   const t0 = applied.at;
+  // #1539: only the sideways-phone column keeps a dice row in the HUD. Elsewhere the moment holds and goes, and the tray's
+  // newest-event line (log-line) is where the roll rests.
+  const vp = page.viewportSize();
+  const column = vp.height < 500 && vp.width > vp.height;
   await page.waitForFunction((n) => window.__moments.find((m) => m.n === n)?.gone, applied.n, { timeout: STEP_MS, polling: 50 });
   await frames(page);
   const { m, flights, stall } = await page.evaluate((n) => {
@@ -231,6 +241,8 @@ async function settleChecks(page, tag, { applied, dice }, { reduced = false } = 
     // The goods line stays in the log. The chip shows the roll line (#954).
     log: window.__emberisle.getState().gameLog.at(-1)?.text ?? null,
     chip: document.querySelector('[data-testid="log-line"]')?.textContent ?? null,
+    chipVisible: document.querySelector('[data-testid="log-line"]')?.checkVisibility({ visibilityProperty: true }) ?? false,
+    chipSum: (() => { const el = document.querySelector('[data-testid="log-roll-sum"]'); return el ? { text: el.textContent.trim(), px: parseFloat(getComputedStyle(el).fontSize) } : null; })(),
   }), sum);
   const up = m.at - t0;
   const gone = m.gone - t0;
@@ -246,17 +258,26 @@ async function settleChecks(page, tag, { applied, dice }, { reduced = false } = 
   check(m.sumColor === (sum === 7 ? "rgb(179, 38, 30)" : "rgb(38, 61, 60)"), `${tag}: the sum is ${sum === 7 ? "danger on a 7" : "ink"} (${m.sumColor})`);
   // #954: the chip's roll sum is not a second dice readout. The checks below still mean the centre sum, then the dice row.
   m.shown = m.shown.filter((id) => id !== "log-roll-sum");
-  late.shown = late.shown.filter((id) => id !== "log-roll-sum");
-  check(m.rowHidden === true && m.shown.length === 1 && m.shown[0] === "roll-sum", `${tag}: while it is up the roll is on screen once (${JSON.stringify(m.shown)})`);
+  if (column) late.shown = late.shown.filter((id) => id !== "log-roll-sum");
+  check((column ? m.rowHidden === true : m.rowHidden !== false) && m.shown.length === 1 && m.shown[0] === "roll-sum", `${tag}: while it is up the roll is on screen once (${JSON.stringify(m.shown)})`);
   check(!late.moment && gone - stall.gone <= 1400, `${tag}: gone by 1400 ms of the roll being applied (${gone.toFixed(0)} ms, ${stall.gone.toFixed(0)} of them stalled)`);
-  check(late.rowVisible && late.row.join() === dice.join(), `${tag}: the resting row shows the same faces (${late.row})`);
-  check(late.shown.length === 1 && late.shown[0] === "dice-row", `${tag}: afterwards the sum is on screen once, in the row (${JSON.stringify(late.shown)})`);
+  check(column ? late.rowVisible && late.row.join() === dice.join() : late.chipVisible && late.chipSum?.text === String(sum), column ? `${tag}: the resting row shows the same faces (${late.row})` : `${tag}: the tray's event line shows the same roll (${JSON.stringify(late.chipSum)})`);
+  check(late.shown.length === 1 && late.shown[0] === (column ? "dice-row" : "log-roll-sum"), `${tag}: afterwards the sum is on screen once, in the ${column ? "row" : "event line"} (${JSON.stringify(late.shown)})`);
   check(!late.banner && / — .+'s roll[;.]/.test(late.log ?? ""), `${tag}: one persistent roll event and no duplicate goods banner`);
   check(/^.+ rolled \d+!$/.test((late.chip ?? "").replace(/\s+/g, " ").trim()) && / — .+'s roll[;.]/.test(late.log ?? ""), `${tag}: the HUD chip shows the roll line while the log's newest line stays the goods line (${JSON.stringify(late.chip)})`);
   if (reduced) {
     check(flights.length === 0, `${tag}: reduced motion, no flight (${flights.length})`);
     check(m.animation === "none", `${tag}: reduced motion, no entry animation (${m.animation})`);
     check(gone >= 898 && gone - stall.gone <= 900 + 200, `${tag}: reduced motion, it holds about 900 ms and goes (${gone.toFixed(0)} ms)`);
+    return;
+  }
+  if (!column) {
+    // No dice row outside the column, so no flight: the moment holds 900 ms and goes, and the roll rests in the event line.
+    check(flights.length === 0, `${tag}: one flight: none, there is no dice row outside the column (${flights.length})`);
+    check(gone >= 898, `${tag}: the moment holds its 900 ms (${gone.toFixed(0)} ms)`);
+    check(gone - stall.gone <= 900 + 200, `${tag}: the moment goes when its hold ends (${gone.toFixed(0)} ms, ${stall.gone.toFixed(0)} stalled)`);
+    check(!late.rowVisible && late.chipVisible, `${tag}: the roll lands in the tray's event line, no dice row shows`);
+    check(late.chipSum && m.fontSize > late.chipSum.px * 1.5, `${tag}: it starts large, the event line's sum is small (${m.fontSize} → ${late.chipSum?.px} px)`);
     return;
   }
   const f = flights[0];
@@ -282,7 +303,7 @@ async function practice(viewport, touch) {
   let ok = false;
   for (let deal = 0; deal < 10 && !ok; deal++) {
     page = await open(viewport, { touch });
-    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play with bots", exact: true }).click();
     await playUntil(page, myRoll);
     await frames(page);
     const producing = await page.evaluate(() => {
@@ -377,7 +398,21 @@ async function practice(viewport, touch) {
   const skipped = skip.m.gone - skip.at;
   console.log(`${tag}: ${touch ? "tap" : "key"} skip, gone ${skipped.toFixed(0)} ms after the press, page heard it ${skip.pressed}×`);
   check(skipped < 100 && skip.flights === 0 && skip.pressed === 1, `${tag}: a ${touch ? "touch pointerdown" : "key press"} skips the moment and still reaches the page`);
-  check(await page.getByTestId("dice-row").isVisible(), `${tag}: after a skip the resting row shows`);
+  const column = viewport.height < 500 && viewport.width > viewport.height;
+  // The roll comes to rest within a second of the skip (the line can be a frame behind the moment leaving); on a miss the
+  // message says what was on screen.
+  // #1591: in the sideways column a discard or take-from owns the tray and its extra row (the dice) steps aside, so on a 7
+  // the roll rests in the event line, which must then show the roll's sum.
+  const rested = await page.waitForFunction((column) => {
+    const seen = (el) => { const b = el?.getBoundingClientRect(); return !!el && !el.hidden && b.width > 0 && b.height > 0; };
+    if (!column) return seen(document.querySelector('[data-testid="log-line"]'));
+    if (seen(document.querySelector('[data-testid="dice-row"]'))) return true;
+    const st = window.__emberisle.getState().state;
+    const sum = document.querySelector('[data-testid="log-roll-sum"]');
+    return !!document.querySelector(".discard-pick, .take-row") && seen(sum) && Number(sum.textContent) === st.dice[0] + st.dice[1];
+  }, column, { timeout: 1000 }).then(() => true, () => false);
+  const restInfo = rested ? "" : await page.evaluate(() => { const el = document.querySelector('[data-testid="log-line"]'); const b = el?.getBoundingClientRect(); const st = window.__emberisle.getState(); return JSON.stringify({ text: el?.textContent, hidden: el?.hidden, w: b?.width, h: b?.height, phase: st.state.phase, dice: st.state.dice, log: st.gameLog.slice(-3).map((l) => l.text), trade: !!st.offer }); });
+  check(rested, `${tag}: after a skip the resting ${column ? "row" : "event line"} shows ${restInfo}`);
 
   // Online seats and watchers mount a table from the host's state and get each roll as a pushed state (the store's
   // loadState and state message). A table loaded with dice already on it shows nothing; one roll on shows one moment,
@@ -390,7 +425,8 @@ async function practice(viewport, touch) {
       for (let i = 0; i < 200 && !ok(); i++) await sleep(50);
       await frame();
     };
-    const row = () => [...document.querySelectorAll('[data-testid="dice-row"] [data-testid="die"]')].map((d) => d.dataset.value).join("+");
+    // #1539: outside the column there is no dice row; the state's dice stand in, and until() still waits a frame to render.
+    const row = () => document.querySelector('[data-testid="dice-row"]') ? [...document.querySelectorAll('[data-testid="dice-row"] [data-testid="die"]')].map((d) => d.dataset.value).join("+") : (g.getState().state?.dice ?? []).join("+");
     const saved = structuredClone(g.getState().state);
     const roller = saved.players.find((p) => p.id === saved.current).name;
     g.getState().goTitle();
@@ -425,11 +461,12 @@ async function practice(viewport, touch) {
   await page.close();
 }
 
-// #481 item 8: if the flight cannot start (`animate` throws), the moment still goes, on the settle timer.
+// #481 item 8: if the flight cannot start (`animate` throws), the moment still goes, on the settle timer. #1539: only the
+// sideways-phone column has a dice row to fly to, so this runs there.
 async function noFlight() {
-  const tag = "animate throws 1280x720";
-  const page = await open({ width: 1280, height: 720 });
-  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  const tag = "animate throws 844x390";
+  const page = await open({ width: 844, height: 390 }, { touch: true });
+  await page.getByRole("button", { name: "Pass and play" }).click();
   await playUntil(page, myRoll);
   await page.evaluate(() => (window.__animateThrows = true));
   const { applied } = await clickRoll(page);
@@ -445,7 +482,7 @@ async function noFlight() {
 async function hotseat() {
   const tag = "hotseat 1280x720";
   const page = await open({ width: 1280, height: 720 });
-  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await page.getByRole("button", { name: "Pass and play" }).click();
   await playUntil(page, myRoll);
   const roll = await clickRoll(page);
   await settleChecks(page, tag, roll);
@@ -457,18 +494,583 @@ async function hotseat() {
 async function reduced() {
   const tag = "reduced motion 1280x720";
   const page = await open({ width: 1280, height: 720 }, { reduced: true });
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
   await playUntil(page, myRoll);
+  // #1666: the roll stays random, but on a 7 a hand over 7 goods must discard, and a bot does it on the app's 700 ms timer,
+  // inside the moment's hold: its line then rightly owns the event line the checks read. Hand any goods over 7 to the bank.
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    for (const p of st.players) {
+      for (const r of Object.keys(p.resources)) {
+        const over = Math.min(p.resources[r], Object.values(p.resources).reduce((a, b) => a + b, 0) - 7);
+        if (over > 0) { p.resources[r] -= over; st.bank[r] += over; }
+      }
+    }
+    g.setState({ state: st });
+  });
+  await frames(page);
   await settleChecks(page, tag, await clickRoll(page), { reduced: true });
+  await page.close();
+}
+
+// #1687: a 7 while a bot holds more than 7 goods. The bot discards on the app's 700 ms timer, inside the moment's 900 ms
+// hold; its line ("<bot> discards 4 goods.") goes in the log, and (#1699, owner decision 2026-11-14) the event line keeps
+// "<name> rolled 7!". The roll is 3+4, the bot holds 9 and every other hand at most 7. Checked the frame the discard line
+// lands, and again once the moment has gone.
+async function discardSeven(viewport, { reduced = false, touch = false } = {}) {
+  const tag = `bot discards on a 7 ${viewport.width}x${viewport.height}${reduced ? " reduced" : ""}`;
+  const page = await open(viewport, { reduced, touch });
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
+  await playUntil(page, myRoll);
+  const bot = await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const total = (p) => Object.values(p.resources).reduce((a, b) => a + b, 0);
+    for (const p of st.players) {
+      for (const r of Object.keys(p.resources)) {
+        const over = Math.min(p.resources[r], total(p) - 7);
+        if (over > 0) { p.resources[r] -= over; st.bank[r] += over; }
+      }
+    }
+    const bot = st.players.find((p) => p.kind === "bot");
+    for (const r of Object.keys(bot.resources)) { st.bank[r] += bot.resources[r]; bot.resources[r] = 0; }
+    // Nine goods from the bank, spread so no kind runs short: 2+2+2+2+1.
+    Object.keys(bot.resources).forEach((r, i) => { const k = i < 4 ? 2 : 1; bot.resources[r] = k; st.bank[r] -= k; });
+    g.setState({ state: st });
+    // The clicked roll's two dice: 3 and 4.
+    const original = crypto.getRandomValues;
+    const faces = [2, 3];
+    crypto.getRandomValues = function (values) {
+      if (values instanceof Uint32Array && values.length === 1) {
+        values[0] = faces.shift();
+        if (!faces.length) crypto.getRandomValues = original;
+        return values;
+      }
+      return original.call(this, values);
+    };
+    // Every distinct state of the table from here on: the moment's sum, the event line, the banner, where a 7 shows, the
+    // log's newest lines and the bot's hand, stamped by the mutation that drew it.
+    window.__timeline = [];
+    let last = "";
+    const snap = () => {
+      const m = document.querySelector('[data-testid="roll-moment"]');
+      const line = document.querySelector('[data-testid="log-line"]');
+      const s = {
+        moment: m ? m.querySelector('[data-testid="roll-sum"]')?.textContent ?? "" : null,
+        line: (line?.textContent ?? "").replace(/\s+/g, " ").trim(),
+        lineRoll: line?.dataset.roll ?? null,
+        banner: document.querySelector('[data-testid="banner"]')?.textContent ?? null,
+        shown: window.__sumShown(7),
+        log: g.getState().gameLog.slice(-3).map((l) => l.text),
+        botGoods: total(g.getState().state.players.find((p) => p.id === bot.id)),
+      };
+      const key = JSON.stringify(s);
+      if (key !== last) window.__timeline.push({ at: performance.now(), ...s });
+      last = key;
+    };
+    new MutationObserver(snap).observe(document, { subtree: true, childList: true, characterData: true, attributes: true });
+    return { id: bot.id, name: bot.name, goods: total(bot), me: st.players.find((p) => p.id === g.getState().localId).name };
+  });
+  await frames(page);
+  const roll = await clickRoll(page);
+  // The bot's discard itself (its hand drops to 5), not its line, so a missing line fails the checks below rather than a wait.
+  const discarded = await page.waitForFunction((id) => !window.__emberisle.getState().state.discardNeeded[id], bot.id, { timeout: STEP_MS, polling: 50 }).then(() => true, () => false);
+  await page.waitForFunction((n) => window.__moments.find((m) => m.n === n)?.gone, roll.applied.n, { timeout: STEP_MS, polling: 50 });
+  await frames(page);
+  const after = await page.evaluate((n) => {
+    const line = document.querySelector('[data-testid="log-line"]');
+    return {
+      moments: window.__moments.filter((m) => m.n === n),
+      line: (line?.textContent ?? "").replace(/\s+/g, " ").trim(),
+      lineVisible: line?.checkVisibility({ visibilityProperty: true }) ?? false,
+      lineRoll: line?.dataset.roll ?? null,
+      banner: document.querySelector('[data-testid="banner"]')?.textContent ?? null,
+      shown: window.__sumShown(7),
+      log: window.__emberisle.getState().gameLog.slice(-3).map((l) => l.text),
+      timeline: window.__timeline,
+    };
+  }, roll.applied.n);
+  const t0 = roll.applied.at;
+  const m = after.moments[0];
+  const rows = after.timeline.map(({ at, ...s }) => ({ ms: Math.round(at - t0), ...s }));
+  // The first frame of the moment, and the first frame drawn after the bot's hand dropped.
+  const up = rows.find((r) => r.moment !== null && r.ms >= 0);
+  const drop = rows.find((r) => r.botGoods === 5);
+  console.log(`${tag}: ${bot.name} held ${bot.goods}; rolled ${roll.dice.join("+")}; moment up ${(m?.at - t0).toFixed(0)} ms, gone ${(m?.gone - t0).toFixed(0)} ms; timeline ${JSON.stringify(rows.filter((r) => r.ms >= 0))}`);
+  const line = `${bot.name} discards 4 goods.`;
+  const rolled = [`${bot.me} rolled 7!`, `Nobody gains goods — ${bot.me}'s roll.`];
+  check(roll.dice.join() === "3,4" && bot.goods === 9, `${tag}: the fixture rolled 3+4 with the bot on 9 goods (${roll.dice}, ${bot.goods})`);
+  check(after.moments.length === 1 && m.sum === 7 && m.dice.join() === "3,4", `${tag}: one moment, showing 3+4 and 7`);
+  check(up?.moment === "7" && up.line === `${bot.me} rolled 7!` && up.lineRoll === "7" && up.shown.join() === "roll-sum,log-roll-sum", `${tag}: as the moment comes up the event line shows the roll, the chip's sum beside the centre one (#954) (${JSON.stringify(up)})`);
+  check(discarded && drop?.botGoods === 5, `${tag}: the bot discards 4 of its 9 goods (${drop?.botGoods ?? "no drop drawn"})`);
+  check(drop?.line === `${bot.me} rolled 7!` && drop.lineRoll === "7", `${tag}: the frame the discard lands, the event line still shows the roll, not the discard (#1699) ("${drop?.line}")`);
+  check(drop?.moment === "7" && drop.shown.join() === "roll-sum,log-roll-sum", `${tag}: the moment is still up then, the chip's sum beside the centre one (${JSON.stringify(drop?.shown)})`);
+  check(drop?.log.join("|") === [...rolled, line].join("|"), `${tag}: the log's newest line is the discard, with the roll's line still before it (${JSON.stringify(drop?.log)})`);
+  check(rows.every((r) => r.ms < 0 || r.banner === null), `${tag}: no goods banner at any point from the roll on`);
+  check(after.lineVisible && after.line === `${bot.me} rolled 7!` && after.lineRoll === "7" && after.log.join("|") === [...rolled, line].join("|"), `${tag}: once the moment has gone the event line still shows the roll, and the log still ends with the discard (#1699) (${JSON.stringify(after.line)})`);
+  check(after.shown.join() === "log-roll-sum" && after.banner === null, `${tag}: once the moment has gone the 7 shows once, in the event line, and no banner (${JSON.stringify(after.shown)})`);
+  // #1699: the roll holds the event line in every state drawn from the moment up to the person's move, and the move takes it.
+  check(rows.every((r) => r.ms < up.ms || (r.line === `${bot.me} rolled 7!` && r.lineRoll === "7")), `${tag}: every frame from the moment on shows the roll in the event line, through the discard (${JSON.stringify([...new Set(rows.filter((r) => r.ms >= up.ms).map((r) => r.line))])})`);
+  if (SHOTS && !reduced) {
+    mkdirSync("docs/proofs/1699", { recursive: true });
+    await page.screenshot({ path: `docs/proofs/1699/after-discard-${viewport.width}x${viewport.height}.png` });
+  }
+  const before = await page.evaluate(() => {
+    const s = window.__emberisle.getState();
+    return { phase: s.state.phase, mine: s.state.current === s.localId, log: s.gameLog.length };
+  });
+  check(before.phase === "robber" && before.mine, `${tag}: the person moves the wayfarer next (${JSON.stringify(before)})`);
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = g.getState().state;
+    g.getState().pickHex(st.hexes.find((h) => h.id !== st.robberHex && h.terrain !== "waste").id);
+    const p = g.getState().pendingSteal;
+    if (p) g.getState().dispatch({ type: "moveRobber", hexId: p.hexId, stealFrom: p.targets[0] });
+  });
+  await page.waitForFunction((n) => window.__emberisle.getState().state.phase !== "robber" && window.__emberisle.getState().gameLog.length > n, before.log, { timeout: STEP_MS, polling: 50 });
+  await frames(page);
+  const moved = await page.evaluate(() => {
+    const line = document.querySelector('[data-testid="log-line"]');
+    return { line: (line?.textContent ?? "").replace(/\s+/g, " ").trim(), lineRoll: line?.dataset.roll ?? null, last: window.__emberisle.getState().gameLog.at(-1)?.text, shown: window.__sumShown(7) };
+  });
+  check(moved.lineRoll === null && moved.line === moved.last && !/ rolled 7!$/.test(moved.line) && moved.shown.length === 0, `${tag}: once the person moves the wayfarer the event line shows the newest log line, as before (${JSON.stringify(moved)})`);
+  await page.close();
+}
+
+// #1714: the person's own discard on a 7 (#1699). The person holds 9 goods and every other hand at most 7. With `botRoll`
+// off the person rolls 3+4; with it on the person rolls 1+2 and ends the turn, and the next seat, a bot, rolls 3+4. Either
+// way the person discards 4 once the moment has gone, and "<roller> rolled 7!" holds the event line before, during and
+// after that discard, until the roller moves the wayfarer; then the event line is the newest log line again.
+async function myDiscardSeven(viewport, { touch = false, botRoll = false } = {}) {
+  const tag = `${botRoll ? "a bot's 7, you discard" : "you discard on your 7"} ${viewport.width}x${viewport.height}`;
+  const page = await open(viewport, { touch });
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
+  await playUntil(page, myRoll);
+  // The two dice of the next roll in the given seat's roll phase: faces + 1. Any other draw goes to the real generator.
+  const force = (faces, seat) => {
+    const original = crypto.getRandomValues;
+    crypto.getRandomValues = function (values) {
+      const st = window.__emberisle.getState().state;
+      if (values instanceof Uint32Array && values.length === 1 && st.phase === "roll" && st.current === seat) {
+        values[0] = faces.shift();
+        if (!faces.length) crypto.getRandomValues = original;
+        return values;
+      }
+      return original.call(this, values);
+    };
+  };
+  if (botRoll) {
+    await page.evaluate(`(${force})([0, 1], window.__emberisle.getState().localId)`);
+    const mine = await clickRoll(page);
+    if (mine.dice.join() !== "1,2") throw new Error(`${tag}: the person's roll was not forced to 1+2 (${mine.dice})`);
+    await page.waitForFunction((n) => window.__moments.find((m) => m.n === n)?.gone && window.__emberisle.getState().state.phase === "main", mine.applied.n, { timeout: STEP_MS, polling: 50 });
+  }
+  const n = await page.evaluate(() => (window.__emberisle.getState().state.rolls ?? 0) + 1);
+  const seats = await page.evaluate(([force, botRoll]) => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const total = (p) => Object.values(p.resources).reduce((a, b) => a + b, 0);
+    for (const p of st.players) {
+      for (const r of Object.keys(p.resources)) {
+        const over = Math.min(p.resources[r], total(p) - 7);
+        if (over > 0) { p.resources[r] -= over; st.bank[r] += over; }
+      }
+    }
+    const me = st.players.find((p) => p.id === g.getState().localId);
+    for (const r of Object.keys(me.resources)) { st.bank[r] += me.resources[r]; me.resources[r] = 0; }
+    // Nine goods from the bank, spread so no kind runs short: 2+2+2+2+1.
+    Object.keys(me.resources).forEach((r, i) => { const k = i < 4 ? 2 : 1; me.resources[r] = k; st.bank[r] -= k; });
+    g.setState({ state: st });
+    const at = st.players.findIndex((p) => p.id === me.id);
+    const roller = botRoll ? st.players[(at + 1) % st.players.length] : me;
+    new Function(`return (${force})`)()([2, 3], roller.id);
+    // Every distinct state of the table from here on, as in the bot-discard case, with the person's hand.
+    window.__timeline = [];
+    let last = "";
+    const snap = () => {
+      const m = document.querySelector('[data-testid="roll-moment"]');
+      const line = document.querySelector('[data-testid="log-line"]');
+      const s = {
+        moment: m ? m.querySelector('[data-testid="roll-sum"]')?.textContent ?? "" : null,
+        line: (line?.textContent ?? "").replace(/\s+/g, " ").trim(),
+        lineRoll: line?.dataset.roll ?? null,
+        lineVisible: line?.checkVisibility({ visibilityProperty: true }) ?? false,
+        banner: document.querySelector('[data-testid="banner"]')?.textContent ?? null,
+        shown: window.__sumShown(7),
+        log: g.getState().gameLog.slice(-3).map((l) => l.text),
+        myGoods: total(g.getState().state.players.find((p) => p.id === me.id)),
+        phase: g.getState().state.phase,
+      };
+      const key = JSON.stringify(s);
+      if (key !== last) window.__timeline.push({ at: performance.now(), ...s });
+      last = key;
+    };
+    new MutationObserver(snap).observe(document, { subtree: true, childList: true, characterData: true, attributes: true });
+    // The bot rolls on the app's timer after this, so the hands and the forced dice are in before the turn passes.
+    if (botRoll) g.getState().dispatch({ type: "endTurn" });
+    return { me: me.name, myId: me.id, goods: total(me), roller: roller.name, rollerId: roller.id, rollerKind: roller.kind };
+  }, [force.toString(), botRoll]);
+  await frames(page);
+  let applied;
+  if (botRoll) {
+    await page.waitForFunction((n) => window.__applied.some((a) => a.n === n), n, { timeout: STEP_MS, polling: 50 });
+    applied = await page.evaluate((n) => window.__applied.find((a) => a.n === n), n);
+  } else {
+    ({ applied } = await clickRoll(page));
+  }
+  const dice = await page.evaluate(() => window.__emberisle.getState().state.dice);
+  await page.waitForFunction((n) => window.__moments.find((m) => m.n === n)?.gone, n, { timeout: STEP_MS, polling: 50 });
+  await frames(page);
+  const read = () => page.evaluate((id) => {
+    const s = window.__emberisle.getState();
+    const line = document.querySelector('[data-testid="log-line"]');
+    return {
+      phase: s.state.phase,
+      need: s.state.discardNeeded[id] ?? 0,
+      line: (line?.textContent ?? "").replace(/\s+/g, " ").trim(),
+      lineVisible: line?.checkVisibility({ visibilityProperty: true }) ?? false,
+      lineRoll: line?.dataset.roll ?? null,
+      shown: window.__sumShown(7),
+      log: s.gameLog.slice(-3).map((l) => l.text),
+    };
+  }, seats.myId);
+  const pending = await read();
+  const rolled = [`${seats.roller} rolled 7!`, `Nobody gains goods — ${seats.roller}'s roll.`];
+  const line = `${seats.me} discards 4 goods.`;
+  check(dice.join() === "3,4" && seats.goods === 9 && seats.rollerKind === (botRoll ? "bot" : "human"), `${tag}: the fixture rolled 3+4 for ${seats.roller}, a ${seats.rollerKind} seat, with the person on 9 goods (${dice}, ${seats.goods})`);
+  check(pending.phase === "discard" && pending.need === 4, `${tag}: once the moment has gone the person must discard 4 (${JSON.stringify(pending)})`);
+  check(pending.lineVisible && pending.line === `${seats.roller} rolled 7!` && pending.lineRoll === "7" && pending.log.slice(-2).join("|") === rolled.join("|"), `${tag}: before the person's discard the event line shows the roll (#1699) (${JSON.stringify(pending.line)})`);
+  // The log's length once the discard is in, read in the same task as the dispatch: the bot's 700 ms timer to move the
+  // wayfarer starts with it, so nothing after this may wait on the live table before the move.
+  let logged = await page.evaluate((id) => {
+    const g = window.__emberisle;
+    const me = g.getState().state.players.find((p) => p.id === id);
+    // One each of the four kinds the person holds two of.
+    g.getState().dispatch({ type: "discard", resources: Object.fromEntries(Object.keys(me.resources).slice(0, 4).map((r) => [r, 1])) }, id);
+    return g.getState().gameLog.length;
+  }, seats.myId);
+  if (!botRoll) {
+    await page.waitForFunction((id) => !window.__emberisle.getState().state.discardNeeded[id], seats.myId, { timeout: STEP_MS, polling: 50 });
+    await frames(page);
+    const discarded = await read();
+    check(discarded.lineVisible && discarded.line === `${seats.roller} rolled 7!` && discarded.lineRoll === "7", `${tag}: after the person's discard the event line still shows the roll, not the discard (#1699) (${JSON.stringify(discarded.line)})`);
+    check(discarded.log.join("|") === [...rolled, line].join("|"), `${tag}: the log's newest line is the person's discard, with the roll's line still before it (${JSON.stringify(discarded.log)})`);
+    check(discarded.phase === "robber", `${tag}: ${seats.roller} moves the wayfarer next (${discarded.phase})`);
+    logged = await page.evaluate(() => window.__emberisle.getState().gameLog.length);
+    await page.evaluate(() => {
+      const g = window.__emberisle;
+      const st = g.getState().state;
+      g.getState().pickHex(st.hexes.find((h) => h.id !== st.robberHex && h.terrain !== "waste").id);
+      const p = g.getState().pendingSteal;
+      if (p) g.getState().dispatch({ type: "moveRobber", hexId: p.hexId, stealFrom: p.targets[0] });
+    });
+  }
+  // The bot moves on the app's timer; it may play on after, so its move is read from the timeline below.
+  await page.waitForFunction((n) => window.__emberisle.getState().state.phase !== "robber" && window.__emberisle.getState().gameLog.length > n, logged, { timeout: STEP_MS, polling: 50 });
+  await frames(page);
+  const timeline = await page.evaluate(() => window.__timeline);
+  const rows = timeline.map(({ at, ...s }) => ({ ms: Math.round(at - applied.at), ...s }));
+  console.log(`${tag}: ${seats.me} held ${seats.goods}; ${seats.roller} rolled ${dice.join("+")}; timeline ${JSON.stringify(rows.filter((r) => r.ms >= 0))}`);
+  const up = rows.find((r) => r.moment !== null && r.ms >= 0);
+  const drop = rows.find((r) => r.ms >= 0 && r.myGoods === 5);
+  const move = rows.find((r) => r.ms >= 0 && r.log.at(-1)?.startsWith(`${seats.roller} moves the wayfarer`));
+  if (botRoll) {
+    // The bot's move can come before the harness reads the table, so the state after the discard is the last frame drawn
+    // before the move (or the last frame of all, if the move never came).
+    const discarded = rows.filter((r) => r.ms >= (drop?.ms ?? Infinity) && r.ms < (move?.ms ?? Infinity)).at(-1);
+    check(discarded?.myGoods === 5 && discarded.lineVisible && discarded.line === `${seats.roller} rolled 7!` && discarded.lineRoll === "7", `${tag}: after the person's discard the event line still shows the roll, not the discard (#1699) (${JSON.stringify(discarded?.line)})`);
+    check(discarded?.log.join("|") === [...rolled, line].join("|"), `${tag}: the log's newest line is the person's discard, with the roll's line still before it (${JSON.stringify(discarded?.log)})`);
+    check(discarded?.phase === "robber", `${tag}: ${seats.roller} moves the wayfarer next (${discarded?.phase})`);
+  }
+  check(up?.moment === "7" && up.line === `${seats.roller} rolled 7!` && up.lineRoll === "7", `${tag}: as the moment comes up the event line shows the roll (${JSON.stringify(up)})`);
+  check(drop?.line === `${seats.roller} rolled 7!` && drop.lineRoll === "7" && drop.log.join("|") === [...rolled, line].join("|"), `${tag}: the frame the person's discard lands, the event line shows the roll and the log ends with the discard (#1699) (${JSON.stringify(drop)})`);
+  check(!!move && !!up && rows.every((r) => r.ms < up.ms || r.ms >= move.ms || (r.line === `${seats.roller} rolled 7!` && r.lineRoll === "7")), `${tag}: every frame from the moment until the wayfarer moves shows the roll in the event line, through the discard (${JSON.stringify([...new Set(rows.filter((r) => r.ms >= (up?.ms ?? 0) && r.ms < (move?.ms ?? Infinity)).map((r) => r.line))])})`);
+  check(move?.lineRoll === null && move.line === move.log.at(-1) && !/ rolled 7!$/.test(move.line) && move.shown.length === 0, `${tag}: once ${seats.roller} moves the wayfarer the event line shows the newest log line and no 7 shows (${JSON.stringify(move)})`);
+  await page.close();
+}
+
+// #1719: a bot's discard dispatched while the centre 7 is still up. As in the bot-discard case the person rolls 3+4 with a
+// bot on 9 goods, but the harness dispatches the bot's discard itself, in the task after the moment mounts, rather than
+// leave it to the app's 700 ms timer. The frame the bot's hand drops must still show the moment; "<name> rolled 7!" holds
+// the event line in that frame, in the frame after, once the moment has gone, and until the person moves the wayfarer.
+async function discardInMoment(viewport, { touch = false } = {}) {
+  const tag = `bot discards while the 7 is up ${viewport.width}x${viewport.height}`;
+  const page = await open(viewport, { touch });
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
+  await playUntil(page, myRoll);
+  const bot = await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const total = (p) => Object.values(p.resources).reduce((a, b) => a + b, 0);
+    for (const p of st.players) {
+      for (const r of Object.keys(p.resources)) {
+        const over = Math.min(p.resources[r], total(p) - 7);
+        if (over > 0) { p.resources[r] -= over; st.bank[r] += over; }
+      }
+    }
+    const bot = st.players.find((p) => p.kind === "bot");
+    for (const r of Object.keys(bot.resources)) { st.bank[r] += bot.resources[r]; bot.resources[r] = 0; }
+    // Nine goods from the bank, spread so no kind runs short: 2+2+2+2+1.
+    Object.keys(bot.resources).forEach((r, i) => { const k = i < 4 ? 2 : 1; bot.resources[r] = k; st.bank[r] -= k; });
+    g.setState({ state: st });
+    const original = crypto.getRandomValues;
+    const faces = [2, 3];
+    crypto.getRandomValues = function (values) {
+      if (values instanceof Uint32Array && values.length === 1) {
+        values[0] = faces.shift();
+        if (!faces.length) crypto.getRandomValues = original;
+        return values;
+      }
+      return original.call(this, values);
+    };
+    const read = () => {
+      const m = document.querySelector('[data-testid="roll-moment"]');
+      const line = document.querySelector('[data-testid="log-line"]');
+      return {
+        frame: window.__frame,
+        moment: m ? m.querySelector('[data-testid="roll-sum"]')?.textContent ?? "" : null,
+        line: (line?.textContent ?? "").replace(/\s+/g, " ").trim(),
+        lineRoll: line?.dataset.roll ?? null,
+        lineVisible: line?.checkVisibility({ visibilityProperty: true }) ?? false,
+        shown: window.__sumShown(7),
+        log: g.getState().gameLog.slice(-3).map((l) => l.text),
+        botGoods: total(g.getState().state.players.find((p) => p.id === bot.id)),
+        phase: g.getState().state.phase,
+      };
+    };
+    window.__timeline = [];
+    let last = "";
+    const snap = () => {
+      const s = read();
+      delete s.frame;
+      const key = JSON.stringify(s);
+      if (key !== last) window.__timeline.push({ at: performance.now(), frame: window.__frame, ...s });
+      last = key;
+    };
+    new MutationObserver(snap).observe(document, { subtree: true, childList: true, characterData: true, attributes: true });
+    // As soon as the 7's moment is in the page, the next task dispatches the bot's discard: one each of the four kinds it
+    // holds two of. Then the table as drawn in each of the next two frames.
+    const watch = new MutationObserver(() => {
+      if (document.querySelector('[data-testid="roll-moment"]')?.querySelector('[data-testid="roll-sum"]')?.textContent !== "7") return;
+      watch.disconnect();
+      setTimeout(() => {
+        const s = g.getState();
+        const me = s.state.players.find((p) => p.id === bot.id);
+        const at = performance.now();
+        const up = !!document.querySelector('[data-testid="roll-moment"]');
+        const res = s.dispatch({ type: "discard", resources: Object.fromEntries(Object.keys(me.resources).slice(0, 4).map((r) => [r, 1])) }, bot.id, true);
+        const frames = [];
+        window.__dispatched = { at, up, frame: window.__frame, ok: res?.ok ?? null, error: res?.error ?? null, goods: total(g.getState().state.players.find((p) => p.id === bot.id)), frames };
+        requestAnimationFrame(() => {
+          frames.push({ at: performance.now(), ...read() });
+          requestAnimationFrame(() => frames.push({ at: performance.now(), ...read() }));
+        });
+      });
+    });
+    watch.observe(document.body, { subtree: true, childList: true, characterData: true });
+    return { id: bot.id, name: bot.name, goods: total(bot), me: st.players.find((p) => p.id === g.getState().localId).name };
+  });
+  await frames(page);
+  const roll = await clickRoll(page);
+  await page.waitForFunction(() => window.__dispatched?.frames.length === 2, null, { timeout: STEP_MS, polling: 50 });
+  await page.waitForFunction((n) => window.__moments.find((m) => m.n === n)?.gone, roll.applied.n, { timeout: STEP_MS, polling: 50 });
+  await frames(page);
+  const after = await page.evaluate((n) => {
+    const line = document.querySelector('[data-testid="log-line"]');
+    const s = window.__emberisle.getState();
+    return {
+      moments: window.__moments.filter((m) => m.n === n),
+      dispatched: window.__dispatched,
+      line: (line?.textContent ?? "").replace(/\s+/g, " ").trim(),
+      lineVisible: line?.checkVisibility({ visibilityProperty: true }) ?? false,
+      lineRoll: line?.dataset.roll ?? null,
+      shown: window.__sumShown(7),
+      log: s.gameLog.slice(-3).map((l) => l.text),
+      phase: s.state.phase,
+      mine: s.state.current === s.localId,
+      logged: s.gameLog.length,
+    };
+  }, roll.applied.n);
+  const t0 = roll.applied.at;
+  const m = after.moments[0];
+  const d = after.dispatched;
+  const line = `${bot.name} discards 4 goods.`;
+  const rolled = [`${bot.me} rolled 7!`, `Nobody gains goods — ${bot.me}'s roll.`];
+  const seven = (r) => r?.line === `${bot.me} rolled 7!` && r.lineRoll === "7";
+  console.log(`${tag}: ${bot.name} held ${bot.goods}; rolled ${roll.dice.join("+")}; moment up ${(m?.at - t0).toFixed(0)} ms, gone ${(m?.gone - t0).toFixed(0)} ms; discard dispatched at ${(d.at - t0).toFixed(0)} ms (frame ${d.frame - roll.applied.frame} after the roll), ${JSON.stringify({ up: d.up, ok: d.ok, error: d.error, goods: d.goods })}; next two frames ${JSON.stringify(d.frames)}`);
+  check(roll.dice.join() === "3,4" && bot.goods === 9 && after.moments.length === 1 && m.sum === 7, `${tag}: the fixture rolled 3+4 with the bot on 9 goods, one moment showing 7 (${roll.dice}, ${bot.goods})`);
+  check(d.up && d.ok === true && d.goods === 5 && d.at < m.gone, `${tag}: the bot's discard is dispatched and taken while the moment is up (${(d.at - t0).toFixed(0)} ms, moment gone at ${(m.gone - t0).toFixed(0)} ms, ${d.error ?? "no error"})`);
+  // Then the person moves the wayfarer: the move ends the roll's hold on the event line.
+  check(after.phase === "robber" && after.mine, `${tag}: the person moves the wayfarer next (${after.phase})`);
+  await page.evaluate(() => {
+    const g = window.__emberisle;
+    const st = g.getState().state;
+    g.getState().pickHex(st.hexes.find((h) => h.id !== st.robberHex && h.terrain !== "waste").id);
+    const p = g.getState().pendingSteal;
+    if (p) g.getState().dispatch({ type: "moveRobber", hexId: p.hexId, stealFrom: p.targets[0] });
+  });
+  await page.waitForFunction((n) => window.__emberisle.getState().state.phase !== "robber" && window.__emberisle.getState().gameLog.length > n, after.logged, { timeout: STEP_MS, polling: 50 });
+  await frames(page);
+  const rows = (await page.evaluate(() => window.__timeline)).map(({ at, ...s }) => ({ ms: Math.round(at - t0), ...s }));
+  console.log(`${tag}: timeline ${JSON.stringify(rows.filter((r) => r.ms >= 0))}`);
+  const up = rows.find((r) => r.moment !== null && r.ms >= 0);
+  const drop = rows.find((r) => r.ms >= 0 && r.botGoods === 5);
+  const move = rows.find((r) => r.ms >= 0 && r.log.at(-1)?.startsWith(`${bot.me} moves the wayfarer`));
+  check(drop?.moment === "7", `${tag}: the frame the bot's hand drops, the centre 7 is still up (${JSON.stringify(drop?.moment)} at ${drop?.ms} ms)`);
+  check(seven(drop) && drop.lineVisible, `${tag}: in that frame the event line shows the roll, not the discard (#1699) (${JSON.stringify(drop?.line)})`);
+  check(drop?.log.join("|") === [...rolled, line].join("|"), `${tag}: in that frame the log's newest line is the discard, with the roll's line still before it (${JSON.stringify(drop?.log)})`);
+  // A slow runner can draw the second of those frames after the moment's hold has ended: the centre 7 is judged only in the
+  // frames drawn before the moment went, and at least one of them must show it. The event line never depends on timing.
+  const held = d.frames.filter((f) => f.at < m.gone);
+  check(d.frames.every((f) => f.botGoods === 5 && seven(f) && f.lineVisible) && d.frames[1].frame > d.frames[0].frame, `${tag}: in the next two frames drawn after the discard, the event line shows the roll (${JSON.stringify(d.frames.map((f) => [f.frame, Math.round(f.at - t0), f.moment, f.line]))})`);
+  check(held.length >= 1 && held.every((f) => f.moment === "7"), `${tag}: of those frames, every one drawn before the moment went (${(m.gone - t0).toFixed(0)} ms) shows the centre 7, and at least one was (${held.length} of ${d.frames.length})`);
+  check(after.lineVisible && seven(after) && after.log.join("|") === [...rolled, line].join("|") && after.shown.join() === "log-roll-sum", `${tag}: once the moment has gone the event line still shows the roll, the 7 shows once there, and the log ends with the discard (${JSON.stringify(after.line)})`);
+  check(!!up && !!move && rows.every((r) => r.ms < up.ms || r.ms >= move.ms || seven(r)), `${tag}: every frame from the moment until the wayfarer moves shows the roll in the event line (${JSON.stringify([...new Set(rows.filter((r) => r.ms >= (up?.ms ?? 0) && r.ms < (move?.ms ?? Infinity)).map((r) => r.line))])})`);
+  check(move?.lineRoll === null && move.line === move.log.at(-1) && !/ rolled 7!$/.test(move.line) && move.shown.length === 0, `${tag}: once the person moves the wayfarer the event line shows the newest log line and no 7 shows (${JSON.stringify(move)})`);
+  await page.close();
+}
+
+// #1720: a practice table with the wayfarer off (Game options, Practice wayfarer: Off). The person rolls 3+4 with a bot on 9
+// goods; the bot discards on the app's timer and the turn goes back to the person's main phase, with no wayfarer to move.
+// "<name> rolled 7!" holds the event line through the discard, until the next move that logs (the person ends the turn);
+// from then on no 7 shows, through the next seat's roll (forced to 1+2), until the seat after it rolls.
+async function wayfarerOff(viewport, { touch = false } = {}) {
+  const tag = `wayfarer off, bot discards on a 7 ${viewport.width}x${viewport.height}`;
+  const page = await open(viewport, { touch });
+  await page.locator('[data-testid="wayfarer-setup"] > summary').click();
+  await page.getByLabel("Practice wayfarer", { exact: true }).selectOption("off");
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
+  await playUntil(page, myRoll);
+  // The two dice of the next roll in the given seat's roll phase: faces + 1, as in the person's-discard case.
+  const force = (faces, seat) => {
+    const original = crypto.getRandomValues;
+    crypto.getRandomValues = function (values) {
+      const st = window.__emberisle.getState().state;
+      if (values instanceof Uint32Array && values.length === 1 && st.phase === "roll" && st.current === seat) {
+        values[0] = faces.shift();
+        if (!faces.length) crypto.getRandomValues = original;
+        return values;
+      }
+      return original.call(this, values);
+    };
+  };
+  const seats = await page.evaluate((force) => {
+    const g = window.__emberisle;
+    const st = structuredClone(g.getState().state);
+    const total = (p) => Object.values(p.resources).reduce((a, b) => a + b, 0);
+    for (const p of st.players) {
+      for (const r of Object.keys(p.resources)) {
+        const over = Math.min(p.resources[r], total(p) - 7);
+        if (over > 0) { p.resources[r] -= over; st.bank[r] += over; }
+      }
+    }
+    const bot = st.players.find((p) => p.kind === "bot");
+    for (const r of Object.keys(bot.resources)) { st.bank[r] += bot.resources[r]; bot.resources[r] = 0; }
+    // Nine goods from the bank, spread so no kind runs short: 2+2+2+2+1.
+    Object.keys(bot.resources).forEach((r, i) => { const k = i < 4 ? 2 : 1; bot.resources[r] = k; st.bank[r] -= k; });
+    g.setState({ state: st });
+    const me = st.players.find((p) => p.id === g.getState().localId);
+    const next = st.players[(st.players.indexOf(me) + 1) % st.players.length];
+    new Function(`return (${force})`)()([2, 3], me.id);
+    window.__timeline = [];
+    let last = "";
+    const snap = () => {
+      const m = document.querySelector('[data-testid="roll-moment"]');
+      const line = document.querySelector('[data-testid="log-line"]');
+      const s = {
+        moment: m ? m.querySelector('[data-testid="roll-sum"]')?.textContent ?? "" : null,
+        line: (line?.textContent ?? "").replace(/\s+/g, " ").trim(),
+        lineRoll: line?.dataset.roll ?? null,
+        lineVisible: line?.checkVisibility({ visibilityProperty: true }) ?? false,
+        banner: document.querySelector('[data-testid="banner"]')?.textContent ?? null,
+        shown: window.__sumShown(7),
+        log: g.getState().gameLog.slice(-3).map((l) => l.text),
+        botGoods: total(g.getState().state.players.find((p) => p.id === bot.id)),
+        phase: g.getState().state.phase,
+        rolls: g.getState().state.rolls,
+      };
+      const key = JSON.stringify(s);
+      if (key !== last) window.__timeline.push({ at: performance.now(), ...s });
+      last = key;
+    };
+    new MutationObserver(snap).observe(document, { subtree: true, childList: true, characterData: true, attributes: true });
+    return { mode: st.wayfarerMode, me: me.name, myId: me.id, bot: bot.name, botId: bot.id, goods: total(bot), next: next.name, nextId: next.id, nextKind: next.kind };
+  }, force.toString());
+  await frames(page);
+  const roll = await clickRoll(page);
+  await page.waitForFunction((id) => !window.__emberisle.getState().state.discardNeeded[id], seats.botId, { timeout: STEP_MS, polling: 50 });
+  await page.waitForFunction((n) => window.__moments.find((m) => m.n === n)?.gone, roll.applied.n, { timeout: STEP_MS, polling: 50 });
+  await frames(page);
+  const rolled = [`${seats.me} rolled 7!`, `Nobody gains goods — ${seats.me}'s roll.`];
+  const line = `${seats.bot} discards 4 goods.`;
+  const seven = (r) => r?.line === `${seats.me} rolled 7!` && r.lineRoll === "7";
+  // The person's next move that logs: ending the turn. The next seat's roll is forced to 1+2 first, in the same task.
+  const before = await page.evaluate(([force, nextId]) => {
+    const g = window.__emberisle;
+    const s = g.getState();
+    const line = document.querySelector('[data-testid="log-line"]');
+    const read = {
+      phase: s.state.phase,
+      mine: s.state.current === s.localId,
+      line: (line?.textContent ?? "").replace(/\s+/g, " ").trim(),
+      lineRoll: line?.dataset.roll ?? null,
+      lineVisible: line?.checkVisibility({ visibilityProperty: true }) ?? false,
+      shown: window.__sumShown(7),
+      log: s.gameLog.slice(-3).map((l) => l.text),
+      logged: s.gameLog.length,
+      rolls: s.state.rolls,
+    };
+    if (read.phase === "main" && read.mine) {
+      new Function(`return (${force})`)()([0, 1], nextId);
+      s.dispatch({ type: "endTurn" });
+    }
+    return read;
+  }, [force.toString(), seats.nextId]);
+  // The next seat rolls on the app's timer (a person's seat would not, which fails the fixture check below).
+  const rolledOn = await page.waitForFunction((n) => window.__moments.find((m) => m.n === n)?.gone, before.rolls + 1, { timeout: STEP_MS, polling: 50 }).then(() => true, () => false);
+  await frames(page);
+  const rows = (await page.evaluate(() => window.__timeline)).map(({ at, ...s }) => ({ ms: Math.round(at - roll.applied.at), ...s }));
+  console.log(`${tag}: table wayfarer ${seats.mode}; ${seats.bot} held ${seats.goods}; ${seats.me} rolled ${roll.dice.join("+")}; before the move ${JSON.stringify(before)}; timeline ${JSON.stringify(rows.filter((r) => r.ms >= 0))}`);
+  const up = rows.find((r) => r.moment !== null && r.ms >= 0);
+  const drop = rows.find((r) => r.ms >= 0 && r.botGoods === 5);
+  const move = rows.find((r) => r.ms >= 0 && r.log.at(-1)?.endsWith(`${seats.next}'s turn.`));
+  const nextRoll = rows.find((r) => r.ms >= 0 && r.rolls === before.rolls + 1);
+  const nextMoment = await page.evaluate((n) => window.__moments.find((m) => m.n === n) ?? null, before.rolls + 1);
+  check(seats.mode === "off" && roll.dice.join() === "3,4" && seats.goods === 9 && seats.nextKind === "bot", `${tag}: the fixture: a table with the wayfarer off, 3+4 for the person, a bot on 9 goods, a bot seat next (${seats.mode}, ${roll.dice}, ${seats.goods}, ${seats.nextKind})`);
+  check(drop?.botGoods === 5 && drop.log.join("|") === [...rolled, line].join("|"), `${tag}: the bot discards 4 of its 9 goods and the log's newest line is the discard, with the roll's line before it (${JSON.stringify(drop?.log)})`);
+  check(rows.every((r) => r.ms < 0 || r.phase !== "robber"), `${tag}: no wayfarer to move at any point (${JSON.stringify([...new Set(rows.filter((r) => r.ms >= 0).map((r) => r.phase))])})`);
+  check(before.phase === "main" && before.mine, `${tag}: after the discard the turn is back in the person's main phase (${before.phase})`);
+  check(seven(up) && up.moment === "7", `${tag}: as the moment comes up the event line shows the roll (${JSON.stringify(up?.line)})`);
+  check(seven(drop) && drop.lineVisible, `${tag}: the frame the discard lands, the event line shows the roll, not the discard (#1699) (${JSON.stringify(drop?.line)})`);
+  check(seven(before) && before.lineVisible && before.log.join("|") === [...rolled, line].join("|") && before.shown.join() === "log-roll-sum", `${tag}: once the moment has gone, before the next move, the event line still shows the roll and the 7 shows once there (${JSON.stringify(before.line)})`);
+  check(!!up && !!move && rows.every((r) => r.ms < up.ms || r.ms >= move.ms || seven(r)), `${tag}: every frame from the moment until the next move that logs shows the roll in the event line (${JSON.stringify([...new Set(rows.filter((r) => r.ms >= (up?.ms ?? 0) && r.ms < (move?.ms ?? Infinity)).map((r) => r.line))])})`);
+  check(move?.lineRoll === null && move.line === move.log.at(-1) && !/ rolled 7!$/.test(move.line) && move.shown.length === 0, `${tag}: once the person ends the turn the event line shows that line and no 7 shows (${JSON.stringify(move)})`);
+  // The roll after the move is the forced 1+2 by the next seat, so a missed force reads as a fixture failure, not as a 7.
+  check(!!nextRoll?.log.includes(`${seats.next} rolled 3!`) && nextMoment?.dice.join() === "1,2", `${tag}: the fixture: the roll after the move is ${seats.next}'s forced 1+2 (${JSON.stringify({ log: nextRoll?.log, dice: nextMoment?.dice })})`);
+  check(rolledOn && !!nextRoll && !!move && rows.every((r) => r.ms < move.ms || r.rolls > before.rolls + 1 || (r.lineRoll !== "7" && !/ rolled 7!$/.test(r.line) && r.shown.length === 0)), `${tag}: no 7 shows from that move on, through ${seats.next}'s roll (${JSON.stringify([...new Set(rows.filter((r) => r.ms >= (move?.ms ?? Infinity) && r.rolls <= before.rolls + 1).map((r) => [r.moment, r.line, r.shown.join()].join(" / ")))])})`);
   await page.close();
 }
 
 try {
   await practice({ width: 1280, height: 720 }, false);
   await practice({ width: 390, height: 844 }, true);
+  // #1539: the dice row and the flight into it live on in the sideways-phone column.
+  await practice({ width: 844, height: 390 }, true);
   await hotseat();
   await noFlight();
   await reduced();
+  await discardSeven({ width: 1280, height: 720 });
+  await discardSeven({ width: 390, height: 844 }, { touch: true });
+  await discardSeven({ width: 1280, height: 720 }, { reduced: true });
+  await myDiscardSeven({ width: 1280, height: 720 });
+  await myDiscardSeven({ width: 390, height: 844 }, { touch: true });
+  await myDiscardSeven({ width: 1280, height: 720 }, { botRoll: true });
+  await myDiscardSeven({ width: 390, height: 844 }, { touch: true, botRoll: true });
+  await discardInMoment({ width: 1280, height: 720 });
+  await discardInMoment({ width: 390, height: 844 }, { touch: true });
+  await wayfarerOff({ width: 1280, height: 720 });
+  await wayfarerOff({ width: 390, height: 844 }, { touch: true });
   check(errors.length === 0, `zero console errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);
 } catch (e) {
   console.error(e);

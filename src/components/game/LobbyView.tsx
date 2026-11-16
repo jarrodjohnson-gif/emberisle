@@ -1,8 +1,8 @@
-import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { CopyFallback, useCopy } from "@/components/game/CopyText";
-import { SeatDot } from "@/components/game/SeatDot";
+import { SeatDot, SeatNo } from "@/components/game/SeatDot";
 import { useGame } from "@/lib/game/store";
 import type { Seat } from "@/lib/net/table";
 import { chunk, LazyBoundary } from "@/lib/lazy";
@@ -58,7 +58,7 @@ function OwnName({ seat }: { seat: Seat }) {
   );
 }
 
-export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefetchRules, fitCode }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; prefetchRules: () => Promise<boolean>; fitCode: (el: HTMLElement, code: string) => void }) {
+export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, SeatName, prefetchRules, fitCode }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; SeatName: (props: { seat?: Seat }) => ReactNode; prefetchRules: () => Promise<boolean>; fitCode: (el: HTMLElement, code: string) => void }) {
   const rule = useGame(s => s.tableWayfarerMode);
   const code = useGame(s => s.code);
   const seats = useGame(s => s.seats);
@@ -78,11 +78,15 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
   // #1263: a table-mate's tic-tac-toe invite is a badge on the tab, never a popup.
   const invited = useGame(s => s.ttt?.game?.status === "invited" && s.ttt.game.o === s.seatId);
   const [open, setOpen] = useState(false);
+  // #1611: an expanded table seats five or six, numbered; a classic one three or four.
+  const six = useGame(s => s.tableVariant);
+  const most = six ? 6 : 4;
+  const least = most - 1;
   const ready = seats.find(s => s.id === seatId)?.ready ?? false;
-  const canStart = isHost && seats.length >= 3 && seats.length <= 4 && seats.every(s => s.ready);
+  const canStart = isHost && seats.length >= least && seats.length <= most && seats.every(s => s.ready);
   const readyCount = seats.filter(s => s.ready).length;
-  const missing = 3 - seats.length;
-  const status = missing > 0 ? `Need ${missing} more player${missing === 1 ? "" : "s"}` : readyCount === seats.length ? "Everyone is ready" : `${readyCount} of ${seats.length} ready`;
+  const missing = least - seats.length;
+  const status = missing > 0 ? `Need ${missing} more player${missing === 1 ? "" : "s"}` : readyCount === seats.length ? "All ready" : `${readyCount} of ${seats.length} ready`;
   const { state: copied, copy } = useCopy<"link">();
   const codeElement = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
@@ -130,25 +134,26 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
               <button type="button" role="tab" aria-selected={!games} tabIndex={games ? -1 : 0} onClick={() => pick(false)}>Table</button>
               <button type="button" role="tab" aria-selected={games} tabIndex={games ? 0 : -1} aria-label={invited ? "Play games, 1 invite" : undefined} onClick={() => pick(true)}><span>Play games</span>{invited ? <b className="lb" aria-hidden="true">1</b> : null}</button>
             </div>
-            <Button variant="outline" onPointerEnter={prefetchRules} onFocus={prefetchRules} onClick={e => setHowTo(true, e.currentTarget)}>Rules</Button>
+            <Button variant="outline" className="px-2" onPointerEnter={prefetchRules} onFocus={prefetchRules} onClick={e => setHowTo(true, e.currentTarget)}>How to play</Button>
             <div className="lobby-rule-status">
               <span data-testid="lobby-caption" className="max-w-full truncate">Wayfarer {rule}</span>
               <ConnectionStatus />
             </div>
           </div>
-          {games ? <LazyBoundary failed={<button type="button" onClick={() => setGames(false)}>Close</button>}><Play onGame={setOpen} /></LazyBoundary> : (
+          {games ? <LazyBoundary failed={<Button variant="outline" onClick={() => setGames(false)}>Close</Button>}><Play onGame={setOpen} /></LazyBoundary> : (
           <>
           <ul data-testid="lobby-players" className="lobby-players">
-            {[0, 1, 2, 3].map(i => {
+            {[...Array(most).keys()].map(i => {
               const s = seats[i];
               return (
                 <li key={i} data-testid={s ? `lobby-seat-${s.id}` : undefined} className="lobby-player">
                   <SeatDot color={s?.color ?? "transparent"} className="dot" />
                   <span data-testid="lobby-name" className="lobby-name">
-                    {s?.id === seatId ? <OwnName seat={s} /> : <span className="truncate">{s ? s.name : "Empty"}</span>}
+                    <SeatNo n={six ? i + 1 : 0} />
+                    {s?.id === seatId ? <OwnName seat={s} /> : <SeatName seat={s} />}
                     {s?.host ? <span data-testid="host-tag" className="sr-only"> · host</span> : null}
                   </span>
-                  <span className="lobby-player-status">{s ? `${s.host ? "Host · " : ""}${s.bot ? "Bot" : s.away ? "reconnecting…" : s.ready ? "Ready" : "Waiting"}` : ""}</span>
+                  <span className="lobby-player-status">{s ? `${s.host ? "Host · " : ""}${s.bot ? "Bot" : s.away ? "Away" : s.ready ? "Ready" : "Waiting"}` : ""}</span>
                   {s ? <span className="lobby-bubble"><LazyBoundary failed={null}><SeatBubbles by="seat" id={s.id} at="lobby" /></LazyBoundary></span> : null}
                   {s?.bot && isHost ? <Button variant="outline" data-testid="remove-bot" aria-label={`Remove ${s.name}`} onClick={() => removeBot(s.id)}><svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 3l10 10M13 3L3 13" /></svg></Button> : null}
                   {!s && isHost ? <Button variant="outline" data-testid="add-bot" onClick={addBot}>Add bot</Button> : null}
@@ -163,18 +168,18 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, prefe
           )}
           <div data-testid="lobby-actions" className="lobby-actions">
             <div className="lobby-summary">
-              <p data-testid="lobby-status" aria-live="polite">{error ?? status}</p>
+              <p id="lobby-status" data-testid="lobby-status" aria-live="polite">{error ?? status}</p>
               <VictoryTargetSelect value={target} onChange={isHost ? setTarget : undefined} />
             </div>
             <div className="lobby-action-buttons">
-              <Button variant="outline" onClick={() => setReady(!ready)}>{ready ? "Not ready" : "Ready"}</Button>
-              {canStart ? <Button variant="sea" onClick={() => { setGames(false); setOpen(false); startTable(); }}>Start</Button> : null}
-              <Button variant="ghost" onClick={goTitle}>Leave the table</Button>
+              <Button variant="outline" onClick={() => setReady(!ready)}>{ready ? "Cancel ready" : "Ready"}</Button>
+              {isHost && (!six || canStart) ? <Button variant="sea" disabled={!canStart} aria-describedby="lobby-status" onClick={() => { setGames(false); setOpen(false); startTable(); }}>Start</Button> : null}
+              <Button variant="ghost" onClick={goTitle}>Leave table</Button>
             </div>
           </div>
         </div>
       </div>
-      {howTo ? <LazyBoundary failed={<Button onClick={() => setHowTo(false)}>Close rules</Button>}><HowTo onClose={() => setHowTo(false)} /></LazyBoundary> : null}
+      {howTo ? <LazyBoundary failed={<Button variant="outline" onClick={() => setHowTo(false)}>Close</Button>}><HowTo onClose={() => setHowTo(false)} /></LazyBoundary> : null}
     </>
   );
 }

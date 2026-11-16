@@ -1,22 +1,22 @@
 // Jarrod (playtest): "need some sort of indication on when you are eligible for building something. And a quick reference
 // card that in-game board comes with." In hotseat at 1280x720, 390x844 (touch, notch insets) and 844x390 (touch, notch
 // insets), with the seat on turn in `main` and its hand crafted through window.__emberisle:
-// - each build button (Path, Outpost, Stronghold, Fortune) reads ready, missing goods or no spot exactly as rules.ts says for
-//   that hand (#606: data-build-state ready | missing | nospot; a spot is judged before the hand, so no spot wins over
-//   missing goods): COST and the hand give the shortfall, legalRoads / legalSettle / legalCities say whether a spot exists,
-//   and the piece supply or the deck says "None left"; only a Ready build is pressable and wears the green paper fill
-//   (#e6f4e4), the 2 px #2f8f5b outline and the 16 px corner check; the others refuse a tap;
-// - a build missing goods rings each lacking good and hangs its own "-N" badge on it, visible with the pointer parked at
-//   0,0 (no hover); the aria-description names the full shortfall;
-// - on a phone (390x844, 360x640, 844x390) each build (and on desktop too) is a two-line tile at least 44 px square, and the bottom stack's content height is
+// - each row of the Build list (#1539: Path, Outpost, Stronghold, Fortune, opened from the tray's Build button) reads ready,
+//   missing goods or no spot exactly as rules.ts says for that hand (#606: data-build-state ready | missing | nospot; a spot
+//   is judged before the hand, so no spot wins over missing goods): COST and the hand give the shortfall, legalRoads /
+//   legalSettle / legalCities say whether a spot exists, and the piece supply or the deck says "None left."; only a Ready
+//   row is pressable and wears the ink Place or "Buy · N left" pill at its right end; the others refuse a tap;
+// - a row missing goods says "You need …" in danger red, visible with the pointer parked at 0,0 (no hover); the
+//   aria-description names the full shortfall;
+// - on a phone (390x844, 360x640, 844x390) each row (and on desktop too) is at least 44 px square, and the bottom stack's content height is
 //   at most main's (MAIN_STACK, measured on e61d665 with the same hand) plus 2 px, so the island's hole is no smaller;
-// - a build that just became ready pulses once (class build-ready); one with no spot or none left never does, however the
-//   hand changes; under reduced motion the pulse has no animation;
-// - #535: a press on a build short of goods hangs "Need 1 clay" / "Need 1 grain, 2 ore" above it, up within 300 ms and gone
-//   by 2 s, arming nothing and sending no move; the build stays aria-disabled and focusable, and with the goods it arms;
-//   the chip is the only message on screen (the HUD error line stays empty; the alert region and the error cue still get
-//   "Need 1 more clay"), it sits inside the HUD stack on every tile (Fortune hangs it from the right), and a change of hand
-//   takes it down at once;
+// - a build that just became ready pulses the Build button once (class build-ready); one with no spot or none left never
+//   does, however the hand changes; under reduced motion the pulse has no
+//   animation;
+// - #535: a press on a row short of goods arms nothing and sends no move; its "You need …" reason is on screen before the
+//   press and stays, inside the list, with the list open; the row stays aria-disabled and focusable, and with the goods it
+//   arms; the reason is the only message on screen (the HUD error line stays empty; the alert region and the error cue get
+//   the same sentence), and a change of hand takes it down at once;
 // - with Path armed, one Escape on the open Costs card closes the card and leaves Path armed;
 // - the Costs card opens from the Table menu: one row per build with the COST chips and the price as text for a screen
 //   reader, the POINTS lines, the win line; focus
@@ -124,6 +124,21 @@ try {
           g.setState({ state: st, buildMode: "none", error: null });
           return st;
         }, { hand, pathsLeft, deckLeft, phase });
+      // #1539: the builds live in the Build list, opened from the tray's Build button; Escape closes it and arms nothing.
+      const list = page.getByTestId("build-list");
+      const openList = async () => {
+        if (await list.count()) return;
+        await page.getByTestId("build-open").waitFor();
+        if (v.touch) await page.getByTestId("build-open").tap({ force: true });
+        else await page.getByTestId("build-open").click({ force: true });
+        await list.waitFor();
+      };
+      const closeList = async () => {
+        if (!(await list.count())) return;
+        await page.keyboard.press("Escape");
+        await list.waitFor({ state: "detached" });
+      };
+      const BLOCKED = { "None left": { path: "None left.", outpost: "None left.", stronghold: "None left.", card: "The deck is empty." }, "No spot": { path: "No free spot.", outpost: "No free spot. Build a path first.", stronghold: "No homes to upgrade." } };
       const readRow = () =>
         page.evaluate((KINDS) =>
           Object.fromEntries(
@@ -137,24 +152,25 @@ try {
                   disabled: b.getAttribute("aria-disabled") === "true",
                   description: b.getAttribute("aria-description"),
                   text: b.textContent.replace(/\s+/g, " ").trim(),
-                  dot: !!b.querySelector(".build-ready-mark"),
+                  dot: !!b.querySelector(".build-pill"),
                   buildState: b.dataset.buildState,
-                  fill: getComputedStyle(b).backgroundColor,
-                  outline: getComputedStyle(b).borderTopColor,
+                  fill: b.querySelector(".build-pill") ? getComputedStyle(b.querySelector(".build-pill")).backgroundColor : null,
+                  outline: b.querySelector(".build-pill")?.textContent.trim() ?? null,
                   badge: (() => {
-                    const m = b.querySelector(".build-ready-mark");
+                    const m = b.querySelector(".build-pill");
                     if (!m) return null;
                     const r = m.getBoundingClientRect();
                     const t = b.getBoundingClientRect();
-                    return { w: m.offsetWidth, h: m.offsetHeight, cx: r.left + r.width / 2 - t.right, cy: r.top + r.height / 2 - t.top };
+                    return { w: m.offsetWidth, h: m.offsetHeight, cx: r.right - t.right, cy: r.top + r.height / 2 - (t.top + t.height / 2) };
                   })(),
-                  ringed: [...b.querySelectorAll("[data-short]")].map((el) => el.dataset.testid.split("-")[2]),
+                  chips: b.querySelectorAll(`[data-testid^="cost-${k}-"]`).length,
+                  ringed: (() => { const w = b.querySelector(`[data-testid="build-why-${k}"]`); return w ? getComputedStyle(w).color : null; })(),
                   pulse: b.classList.contains("build-ready"),
                   animation: getComputedStyle(b).animationName,
-                  marks: [...b.querySelectorAll("[data-short]")].map((el) => ({
-                    text: el.lastElementChild.textContent.trim(),
-                    visible: visible(el.lastElementChild),
-                    opacity: Number(getComputedStyle(el.lastElementChild).opacity),
+                  marks: [...b.querySelectorAll(`[data-testid="build-why-${k}"]`)].map((el) => ({
+                    text: el.textContent.trim(),
+                    visible: visible(el),
+                    opacity: Number(getComputedStyle(el).opacity),
                     hover: el.matches(":hover") || b.matches(":hover"),
                   })),
                   // As far as it shows past the stack, which scrolls on a sideways phone (as hud-safe-area-prove measures).
@@ -172,6 +188,7 @@ try {
       for (const h of HANDS) {
         const st = await craft(h);
         const want = expected(st);
+        await openList();
         await page.getByTestId("build-card").waitFor();
         // Software GL can hold a frame long enough that two crafted hands land in one React commit: wait for the row to show
         // this hand (a wrong expectation still gets the assertions' detail below).
@@ -184,9 +201,11 @@ try {
         if (v.touch) await page.touchscreen.tap(2, 2);
         else await page.mouse.move(0, 0);
         await page.waitForFunction(() => !document.querySelector("[data-build-state]:hover"), null, { timeout: 5_000 }).catch(() => {});
-        // The fill eases in with the Button's colour transition; read it once it has landed.
+        // That corner tap lands on the Build list's backdrop, which closes the list: open it again to read the rows.
+        await openList();
+        // The pill shows with the row's state; read it once it has landed.
         await page
-          .waitForFunction(() => [...document.querySelectorAll("[data-build-state]")].every((b) => (getComputedStyle(b).backgroundColor === "rgb(230, 244, 228)") === (b.dataset.buildState === "ready")), null, { timeout: 5_000 })
+          .waitForFunction(() => [...document.querySelectorAll("[data-build-state]")].every((b) => !!b.querySelector(".build-pill") === (b.dataset.buildState === "ready")), null, { timeout: 5_000 })
           .catch(() => {});
         const row = await readRow();
         for (const k of KINDS) {
@@ -195,28 +214,28 @@ try {
           const at = `${tag} · ${h.name} · ${k}`;
           assert.equal(r.state, w.state, `${at}: reads ${r.state} (${r.text}), rules say ${w.state} ${JSON.stringify(w)}`);
           assert.equal(r.disabled, w.state !== "ready", `${at}: aria-disabled`);
-          assert.equal(r.dot, w.state === "ready", `${at}: the ready dot`);
+          assert.equal(r.dot, w.state === "ready", `${at}: the Place or Buy pill`);
           assert.equal(r.buildState, { ready: "ready", short: "missing", blocked: "nospot" }[w.state], `${at}: data-build-state ${r.buildState}`);
           if (w.state === "ready") {
-            assert.equal(r.fill, "rgb(230, 244, 228)", `${at}: green paper fill ${r.fill}`);
-            assert.equal(r.outline, "rgb(47, 143, 91)", `${at}: green outline ${r.outline}`);
-            assert.ok(r.badge.w === 16 && r.badge.h === 16 && Math.abs(r.badge.cx) <= 10 && Math.abs(r.badge.cy) <= 10, `${at}: 16 px check badge at the top-right corner ${JSON.stringify(r.badge)}`);
-          } else assert.notEqual(r.fill, "rgb(230, 244, 228)", `${at}: only Ready is green`);
+            assert.equal(r.fill, "rgb(31, 61, 59)", `${at}: ink pill fill ${r.fill}`);
+            assert.equal(r.outline, k === "card" ? `Buy · ${st.deckLeft ?? st.deck.length} left` : "Place", `${at}: pill text ${r.outline}`);
+            assert.ok(r.badge.h >= 24 && Math.abs(r.badge.cx) <= 1 && Math.abs(r.badge.cy) <= 2, `${at}: the pill sits at the row's right end, centred ${JSON.stringify(r.badge)}`);
+          } else assert.equal(r.fill, null, `${at}: only Ready has a pill`);
           if (w.state === "blocked") {
-            assert.match(r.text, new RegExp(w.why), `${at}: says "${w.why}" (${r.text})`);
-            assert.equal(r.marks.length, 0, `${at}: no shortfall marks on a blocked build`);
+            assert.equal(r.marks[0]?.text, BLOCKED[w.why][k], `${at}: says "${BLOCKED[w.why][k]}" (${r.text})`);
+            assert.equal(r.chips, 0, `${at}: the reason stands in for the cost chips on a blocked build`);
           } else if (w.state === "short") {
             // #606: every lacking good is ringed and carries its own "−N", on screen with no hover.
-            assert.deepEqual(r.marks.map((m) => m.text), w.short.map(([, n]) => `−${n}`), `${at}: the chips show the shortfall ${JSON.stringify(r.marks)}`);
-            assert.deepEqual(r.ringed, w.short.map(([res]) => res), `${at}: the lacking goods are ringed ${JSON.stringify(r.ringed)}`);
+            assert.deepEqual(r.marks.map((m) => m.text), [`You need ${w.short.map(([res, n]) => `${n} more ${RESOURCE_LABEL[res].toLowerCase()}`).join(" and ")}`], `${at}: the row names the shortfall ${JSON.stringify(r.marks)}`);
+            assert.equal(r.ringed, "rgb(179, 38, 30)", `${at}: the missing goods line is danger red ${JSON.stringify(r.ringed)}`);
             for (const m of r.marks) {
               assert.ok(m.visible && !m.hover, `${at}: the shortfall is on screen with no hover ${JSON.stringify(m)}`);
-              assert.equal(m.opacity, 1, `${at}: the "−N" is at full strength`);
+              assert.equal(m.opacity, 1, `${at}: the "You need" line is at full strength`);
             }
             for (const [res, n] of w.short) assert.match(r.description, new RegExp(`${n} more ${RESOURCE_LABEL[res].toLowerCase()}`), `${at}: aria-description names the shortfall (${r.description})`);
           } else {
-            assert.equal(r.marks.length, 0, `${at}: no shortfall on a ready build`);
-            assert.match(r.description, /Ready$/, `${at}: aria-description says Ready (${r.description})`);
+            assert.ok(r.marks.length === 0 && r.chips > 0, `${at}: no reason, the cost chips, on a ready build`);
+            assert.match(r.description, / · (Place|Buy, \d+ left)$/, `${at}: aria-description says Place or Buy (${r.description})`);
           }
           // The 44 px touch target (docs/design/polish.md) and the safe area.
           const { rect } = r;
@@ -225,17 +244,20 @@ try {
         }
         // The build row has not grown: the stack's content is no taller than on main, and the island's hole no smaller.
         if (h.name === "outpost goods, no spot") {
+          await closeList();
           const fit = await page.evaluate(() => ({
-            stack: document.querySelector('[data-testid="build-path"]').closest(".overflow-y-auto").scrollHeight,
+            stack: document.querySelector("[data-hud-stack]").scrollHeight,
             holeBottom: window.__isle.insets().bottom,
           }));
           const allow = MAIN_STACK[v.tag] + (v.touch ? 0 : DESKTOP_GROW) + 2;
           assert.ok(fit.stack <= allow, `${tag}: the stack is ${fit.stack} px tall, main's ${MAIN_STACK[v.tag]} (allowed ${allow})`);
           if (v.tag === "390x844") assert.ok(fit.holeBottom <= MAIN_HOLE_BOTTOM + 2, `${tag}: the island hole's bottom inset is ${fit.holeBottom}, main's ${MAIN_HOLE_BOTTOM}`);
           console.log(`${tag}: stack ${fit.stack} px (main ${MAIN_STACK[v.tag]}), hole bottom ${fit.holeBottom}`);
+          await openList();
         }
         // A ready build arms on a press, a short or blocked one refuses.
         for (const k of ["path", "outpost", "stronghold"]) {
+          await openList();
           const b = page.getByTestId(`build-${k}`);
           // aria-disabled, which Playwright reads as not enabled, is the point: the press itself must refuse.
           if (v.touch) await b.tap({ force: true });
@@ -244,6 +266,7 @@ try {
           assert.equal(mode, want[k].state === "ready" ? k : "none", `${tag} · ${h.name}: pressing ${k} (${want[k].state}) armed ${mode}`);
           if (mode !== "none") await page.evaluate(() => window.__emberisle.getState().setBuildMode("none"));
         }
+        await openList();
         // #606: one chip in each state on one table (Path Ready, Outpost No spot, Stronghold Missing).
         if (reducedMotion === "no-preference" && h.name === "path only" && (v.tag === "390x844" || v.tag === "1280x720")) {
           assert.deepEqual(KINDS.slice(0, 3).map((k) => want[k].state), ["ready", "blocked", "short"], `${tag}: the screenshot hand shows all three states`);
@@ -257,120 +280,146 @@ try {
       await craft({ hand: NONE, pathsLeft: 5, deckLeft: 5 });
       await page.waitForFunction(() => document.querySelector('[data-testid="build-path"]').dataset.build === "short");
       await craft({ hand: { ...NONE, timber: 1, clay: 1 }, pathsLeft: 5, deckLeft: 5 });
-      await page.waitForFunction(() => document.querySelector('[data-testid="build-path"]').classList.contains("build-ready"));
-      const classed = () => page.evaluate(() => ["path", "outpost", "stronghold", "card"].filter((k) => document.querySelector(`[data-testid="build-${k}"]`).classList.contains("build-ready")));
+      await page.waitForFunction(() => document.querySelector('[data-testid="build-open"]').classList.contains("build-ready"));
+      const classed = () => page.evaluate(() => ["open"].filter((k) => document.querySelector(`[data-testid="build-${k}"]`).classList.contains("build-ready")));
       if (reducedMotion === "reduce") {
-        const still = await page.evaluate(() => getComputedStyle(document.querySelector('[data-testid="build-path"]')).animationName);
+        const still = await page.evaluate(() => getComputedStyle(document.querySelector('[data-testid="build-open"]')).animationName);
         assert.equal(still, "none", `${tag}: the pulse is marked but runs no animation (${still})`);
       } else {
-        assert.deepEqual(await classed(), ["path"], `${tag}: only the newly payable Path pulses`);
+        assert.deepEqual(await classed(), ["open"], `${tag}: the newly payable Path pulses the Build button`);
       }
-      await page.waitForFunction(() => !document.querySelector('[data-testid="build-path"]').classList.contains("build-ready"));
+      await page.waitForFunction(() => !document.querySelector('[data-testid="build-open"]').classList.contains("build-ready"));
       // A roll: the row is not up in the roll phase and the goods come with main; that makes the Path newly payable too.
       await craft({ hand: NONE, pathsLeft: 5, deckLeft: 5, phase: "roll" });
-      await page.waitForFunction(() => !document.querySelector('[data-testid="build-path"]') && window.__emberisle.getState().state.phase === "roll");
+      await page.waitForFunction(() => !document.querySelector('[data-testid="build-open"]') && window.__emberisle.getState().state.phase === "roll");
       await page.waitForTimeout(300);
       await craft({ hand: { ...NONE, timber: 1, clay: 1 }, pathsLeft: 5, deckLeft: 5, phase: "main" });
-      await page.waitForFunction(() => document.querySelector('[data-testid="build-path"]').classList.contains("build-ready"));
-      await page.waitForFunction(() => !document.querySelector('[data-testid="build-path"]').classList.contains("build-ready"));
+      await page.waitForFunction(() => document.querySelector('[data-testid="build-open"]').classList.contains("build-ready"));
+      await page.waitForFunction(() => !document.querySelector('[data-testid="build-open"]').classList.contains("build-ready"));
       const pulsed = { animation: reducedMotion === "reduce" ? "none" : "build-ready" };
       // From nothing to everything: Path, Stronghold and Fortune become ready and pulse; Outpost, affordable with no spot, does not.
+      await openList();
       await craft({ hand: NONE, pathsLeft: 5, deckLeft: 5 });
       await page.waitForFunction(() => document.querySelector('[data-testid="build-path"]').dataset.build === "short");
       await craft({ hand: { timber: 5, clay: 5, wool: 5, grain: 5, ore: 5 }, pathsLeft: 5, deckLeft: 5 });
-      await page.waitForFunction(() => document.querySelector('[data-testid="build-path"]').classList.contains("build-ready"));
+      await page.waitForFunction(() => document.querySelector('[data-testid="build-open"]').classList.contains("build-ready"));
       const rich = await page.evaluate(() => ({
         outpost: document.querySelector('[data-testid="build-outpost"]').dataset.build,
-        classes: ["path", "outpost", "stronghold", "card"].filter((k) => document.querySelector(`[data-testid="build-${k}"]`).classList.contains("build-ready")),
+        classes: ["open"].filter((k) => document.querySelector(`[data-testid="build-${k}"]`).classList.contains("build-ready")),
       }));
       assert.equal(rich.outpost, "blocked", `${tag}: Outpost reads No spot with a full hand`);
-      assert.deepEqual(rich.classes, ["path", "stronghold", "card"], `${tag}: the ready builds pulse, No spot does not`);
+      assert.deepEqual(rich.classes, ["open"], `${tag}: the ready builds pulse the Build button`);
       // The pulse clears on its own (reduced motion has no animationend to clear it).
-      await page.waitForFunction(() => !document.querySelector('[data-testid="build-path"]').classList.contains("build-ready"));
+      await page.waitForFunction(() => !document.querySelector('[data-testid="build-open"]').classList.contains("build-ready"));
+      // A build with no spot never pulses, however the hand changes: with a path already payable, the goods for an Outpost
+      // arrive, the Outpost reads blocked, and the Build button gets no pulse for 800 ms.
+      await craft({ hand: { ...NONE, timber: 1, clay: 1 }, pathsLeft: 5, deckLeft: 5 });
+      await page.waitForFunction(() => document.querySelector('[data-testid="build-path"]').dataset.build === "ready");
+      await page.waitForFunction(() => !document.querySelector('[data-testid="build-open"]').classList.contains("build-ready"));
+      await page.evaluate(() => {
+        window.__noSpotPulse = false;
+        const b = document.querySelector('[data-testid="build-open"]');
+        new MutationObserver(() => { if (b.classList.contains("build-ready")) window.__noSpotPulse = true; }).observe(b, { attributes: true, attributeFilter: ["class"] });
+      });
+      await craft({ hand: { ...NONE, timber: 1, clay: 1, wool: 1, grain: 1 }, pathsLeft: 5, deckLeft: 5 });
+      await page.waitForFunction(() => document.querySelector('[data-testid="build-outpost"]').dataset.build === "blocked");
+      await page.waitForTimeout(800);
+      assert.equal(await page.evaluate(() => window.__noSpotPulse), false, `${tag}: an Outpost that becomes affordable with no free spot does not pulse the Build button`);
 
       // #535 (A-1): a tap on a build the hand cannot pay for hangs "Need ..." above it for 1.6 s, worded from COST and the hand.
       // It is up within 300 ms of the pointer going down, gone by 2 s, and arms nothing and sends nothing; the button stays
       // aria-disabled and focusable; once the goods come (no reload) the same tap arms the build and shows no hint.
       // Review: the chip is the only line on screen. The error cue and the screen reader still get the full sentence ("Need 1
       // more clay"), so the HUD's error line stays empty and the alert region says it.
-      const hintFor = (hand, k) => `Need ${RESOURCES.filter((r) => (COST[k][r] ?? 0) > hand[r]).map((r) => `${COST[k][r] - hand[r]} ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ")}`;
-      const saidFor = (hand, k) => `Need ${RESOURCES.filter((r) => (COST[k][r] ?? 0) > hand[r]).map((r) => `${COST[k][r] - hand[r]} more ${RESOURCE_LABEL[r].toLowerCase()}`).join(" and ")}`;
+      const hintFor = (hand, k) => `You need ${RESOURCES.filter((r) => (COST[k][r] ?? 0) > hand[r]).map((r) => `${COST[k][r] - hand[r]} more ${RESOURCE_LABEL[r].toLowerCase()}`).join(" and ")}`;
+      const saidFor = (hand, k) => `You need ${RESOURCES.filter((r) => (COST[k][r] ?? 0) > hand[r]).map((r) => `${COST[k][r] - hand[r]} more ${RESOURCE_LABEL[r].toLowerCase()}`).join(" and ")}`;
+      // #1539: the reason is on the open Build list's row before the press, and the press leaves it there.
       const tapHint = async (k) => {
+        await openList();
         await page.evaluate((k) => {
           const b = document.querySelector(`[data-testid="build-${k}"]`);
           window.__hintWatch?.disconnect();
           window.__hintProbe = { down: 0, shown: 0, gone: 0, text: "", seq: window.__emberisle.getState().state.seq, errSeq: window.__emberisle.getState().errorSeq };
           b.addEventListener("pointerdown", () => (window.__hintProbe.down = performance.now()), { once: true, capture: true });
           const look = () => {
-            const el = document.querySelector(`[data-testid="build-hint-${k}"]`);
+            const el = document.querySelector(`[data-testid="build-why-${k}"]`);
             const p = window.__hintProbe;
             if (el && !p.shown) {
               p.shown = performance.now();
               p.text = el.textContent.trim();
-              // Read the moment the chip appears: where it sits, what else is on screen, and what the alert region holds.
-              const r = el.getBoundingClientRect();
-              const s = el.closest("[data-hud-stack]").getBoundingClientRect();
-              p.rect = { left: r.left, right: r.right, top: r.top, bottom: r.bottom, stackLeft: s.left, stackRight: s.right, innerWidth, innerHeight };
-              const said = document.querySelector('[data-testid="announce-error"]').textContent.trim();
-              p.said = said;
-              p.errSeqNow = window.__emberisle.getState().errorSeq;
-              p.stateError = window.__emberisle.getState().error;
-              p.visibleLines = [...document.querySelectorAll("span")].filter((x) => x.textContent.trim() === said && !x.closest('[data-testid="announce-error"]')).length;
             }
             if (!el && p.shown && !p.gone) p.gone = performance.now();
           };
+          look();
           window.__hintWatch = new MutationObserver(look);
           window.__hintWatch.observe(document.body, { childList: true, subtree: true, characterData: true });
         }, k);
         const b = page.getByTestId(`build-${k}`);
         if (v.touch) await b.tap({ force: true });
         else await b.click({ force: true });
+        // Read what the press left: where the reason sits, what else is on screen, and what the alert region holds.
+        await page.evaluate((k) => {
+          const p = window.__hintProbe;
+          const el = document.querySelector(`[data-testid="build-why-${k}"]`);
+          if (!el) return;
+          const r = el.getBoundingClientRect();
+          const s = el.closest('[data-testid="build-list"]').getBoundingClientRect();
+          p.rect = { left: r.left, right: r.right, top: r.top, bottom: r.bottom, stackLeft: s.left, stackRight: s.right, innerWidth, innerHeight };
+          const said = document.querySelector('[data-testid="announce-error"]').textContent.trim();
+          p.said = said;
+          p.errSeqNow = window.__emberisle.getState().errorSeq;
+          p.stateError = window.__emberisle.getState().error;
+          p.visibleLines = [...document.querySelectorAll("span")].filter((x) => x.textContent.trim() === said && !x.closest('[data-testid="announce-error"]') && !x.matches(`[data-testid="build-why-${k}"]`)).length;
+        }, k);
       };
       for (const [name, hand, k] of [
         ["one good", { ...NONE, timber: 1 }, "path"],
         ["two goods", { ...NONE, wool: 1, grain: 1, ore: 1 }, "stronghold"],
-        // The last tile hangs its chip from the right edge (the first, Path, from the left).
+        // The last row of the list.
         ["last tile", { ...NONE, timber: 1 }, "card"],
       ]) {
         await craft({ hand, pathsLeft: 5, deckLeft: 5 });
+        await openList();
         await page.waitForFunction((k) => document.querySelector(`[data-testid="build-${k}"]`)?.dataset.build === "short", k);
         await tapHint(k);
-        await page.waitForFunction(() => window.__hintProbe.gone, null, { timeout: 4_000 });
-        const probe = await page.evaluate(() => ({ ...window.__hintProbe, mode: window.__emberisle.getState().buildMode, seqNow: window.__emberisle.getState().state.seq, pending: window.__emberisle.getState().pendingPlace }));
+        await page.waitForTimeout(2000);
+        const probe = await page.evaluate(() => ({ ...window.__hintProbe, mode: window.__emberisle.getState().buildMode, seqNow: window.__emberisle.getState().state.seq, pending: window.__emberisle.getState().pendingPlace, open: !!document.querySelector('[data-testid="build-list"]') }));
         const at = `${tag} · ${name} · ${k}`;
-        assert.equal(probe.text, hintFor(hand, k), `${at}: the hint names the missing goods from COST`);
-        assert.ok(probe.shown - probe.down <= 300, `${at}: the hint is up ${Math.round(probe.shown - probe.down)} ms after the press, within 300`);
-        assert.ok(probe.gone - probe.down <= 2000 && probe.gone - probe.shown >= 1400, `${at}: shown ${Math.round(probe.gone - probe.shown)} ms, gone ${Math.round(probe.gone - probe.down)} ms after the press`);
+        assert.equal(probe.text, hintFor(hand, k), `${at}: the row names the missing goods from COST`);
+        assert.ok(probe.shown && probe.shown <= probe.down, `${at}: the reason is on screen before the press (shown ${Math.round(probe.shown)}, press ${Math.round(probe.down)})`);
+        assert.ok(!probe.gone && probe.open, `${at}: 2 s after the press the reason is still on screen and the list is open`);
         const { rect } = probe;
-        assert.ok(rect.left >= rect.stackLeft - 0.5 && rect.right <= rect.stackRight + 0.5 && rect.top >= 0 && rect.left >= 0 && rect.right <= rect.innerWidth && rect.bottom <= rect.innerHeight, `${at}: the chip is on screen and inside the HUD stack ${JSON.stringify(rect)}`);
+        assert.ok(rect.left >= rect.stackLeft - 0.5 && rect.right <= rect.stackRight + 0.5 && rect.top >= 0 && rect.left >= 0 && rect.right <= rect.innerWidth && rect.bottom <= rect.innerHeight, `${at}: the reason is on screen and inside the Build list ${JSON.stringify(rect)}`);
         assert.equal(probe.said, saidFor(hand, k), `${at}: the screen reader gets the full sentence`);
         assert.equal(probe.errSeqNow, probe.errSeq + 1, `${at}: the error cue fired once (errorSeq)`);
         assert.equal(probe.stateError, null, `${at}: no error line is set for the HUD`);
-        assert.equal(probe.visibleLines, 0, `${at}: the chip is the only message on screen, no HUD error line`);
+        assert.equal(probe.visibleLines, 0, `${at}: the row's reason is the only message on screen, no HUD error line`);
         assert.equal(probe.mode, "none", `${at}: nothing is armed`);
         assert.equal(probe.pending, null, `${at}: no placement is pending`);
         assert.equal(probe.seqNow, probe.seq, `${at}: no move was sent`);
         const btn = await page.getByTestId(`build-${k}`).evaluate((el) => ({ aria: el.getAttribute("aria-disabled"), tab: el.tabIndex, disabled: el.disabled }));
         assert.deepEqual(btn, { aria: "true", tab: 0, disabled: false }, `${at}: still aria-disabled and focusable`);
       }
-      // Review: the chip names what was missing for this hand. When the hand changes under it (a trade, a steal) it comes down
-      // with the change, not 1.6 s later; with the clay in hand Path reads Ready and no chip hangs over it.
+      // Review: the reason names what is missing for this hand. When the hand changes under it (a trade, a steal) it goes
+      // with the change; with the clay in hand Path reads Ready and no reason is on its row.
       await craft({ hand: { ...NONE, timber: 1 }, pathsLeft: 5, deckLeft: 5 });
       await page.waitForFunction(() => document.querySelector('[data-testid="build-path"]').dataset.build === "short");
       await tapHint("path");
       await page.waitForFunction(() => window.__hintProbe.shown, null, { timeout: 4_000 });
+      await page.evaluate(() => (window.__hintProbe.shown = performance.now()));
       await craft({ hand: { ...NONE, timber: 1, clay: 1 }, pathsLeft: 5, deckLeft: 5 });
       await page.waitForFunction(() => window.__hintProbe.gone, null, { timeout: 4_000 });
-      const stale = await page.evaluate(() => ({ lived: window.__hintProbe.gone - window.__hintProbe.shown, ready: document.querySelector('[data-testid="build-path"]').dataset.build, chip: document.querySelectorAll('[data-testid="build-hint-path"]').length }));
-      assert.ok(stale.lived < 1400, `${tag}: the chip lived ${Math.round(stale.lived)} ms after the clay came, it should go with the hand (not at the 1.6 s timer)`);
-      assert.deepEqual({ ready: stale.ready, chip: stale.chip }, { ready: "ready", chip: 0 }, `${tag}: Path reads Ready with no chip over it`);
-      // The goods come with no reload: the same tap now arms Path and shows no hint.
+      const stale = await page.evaluate(() => ({ lived: window.__hintProbe.gone - window.__hintProbe.shown, ready: document.querySelector('[data-testid="build-path"]').dataset.build, chip: document.querySelectorAll('[data-testid="build-why-path"]').length }));
+      assert.ok(stale.lived < 1400, `${tag}: the reason lived ${Math.round(stale.lived)} ms after the clay came, it should go with the hand`);
+      assert.deepEqual({ ready: stale.ready, chip: stale.chip }, { ready: "ready", chip: 0 }, `${tag}: Path reads Ready with no reason on its row`);
+      // The goods come with no reload: the same press now arms Path, and its row showed no reason.
       await craft({ hand: { ...NONE, timber: 1, clay: 1 }, pathsLeft: 5, deckLeft: 5 });
       await page.waitForFunction(() => document.querySelector('[data-testid="build-path"]').dataset.build === "ready");
+      const reasonOnReady = await page.getByTestId("build-why-path").count();
       if (v.touch) await page.getByTestId("build-path").tap({ force: true });
       else await page.getByTestId("build-path").click({ force: true });
       assert.equal(await page.evaluate(() => window.__emberisle.getState().buildMode), "path", `${tag}: with the clay in hand the tap arms Path`);
-      assert.equal(await page.getByTestId("build-hint-path").count(), 0, `${tag}: a ready build shows no hint`);
+      assert.equal(reasonOnReady, 0, `${tag}: a ready build shows no reason`);
       await page.evaluate(() => window.__emberisle.getState().setBuildMode("none"));
 
       // The Costs card from the Table menu, with Path armed underneath: one Escape closes the card alone.
@@ -415,7 +464,7 @@ try {
       assert.ok(await trigger.evaluate((el) => document.activeElement === el), `${tag}: Escape returns the focus to the menu button`);
       assert.equal(await page.evaluate(() => window.__emberisle.getState().buildMode), "path", `${tag}: one Escape closed the card and left Path armed`);
       await page.evaluate(() => window.__emberisle.getState().setBuildMode("none"));
-      console.log(`${tag}: ${HANDS.length} hands read as rules.ts says; shortfall chips visible without hover; pulse ${pulsed.animation}; Costs card opens, fits, traps focus, closes on Escape`);
+      console.log(`${tag}: ${HANDS.length} hands read as rules.ts says; shortfall reasons visible without hover; pulse ${pulsed.animation}; Costs card opens, fits, traps focus, closes on Escape`);
       await ctx.close();
     }
   }

@@ -4,7 +4,8 @@
 // hand, a good the hand is short of dims and carries the shortfall, so a touch screen sees what is missing without a hover;
 // the build tile passes the hand whenever it reads missing goods (#606), ringing each lacking good in #b23a2e.
 import { RESOURCE_ICON, RESOURCE_PAINT } from "@/components/game/Hand";
-import { COST, RESOURCES, RESOURCE_LABEL, type Resource } from "@/lib/game/types";
+import { legalCities, legalRoads, legalSettle } from "@/lib/game/rules";
+import { COST, RESOURCES, RESOURCE_LABEL, type GameState, type PlayerState, type Resource } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 
 export type Price = keyof typeof COST;
@@ -24,6 +25,17 @@ export function shortfall(hand: Record<Resource, number>, kind: Price): Partial<
     if (n > 0) short[r] = n;
   }
   return short;
+}
+
+// Whether a build can happen now and, if not, why: the supply (or the deck), then a legal spot; a spot with a hand that cannot pay is missing goods (#606).
+export function buildStatus(state: GameState, me: PlayerState, kind: Price) {
+  const short = shortfall(me.resources, kind);
+  const missing = Object.values(short).reduce((a, b) => a + b, 0);
+  const left = { path: me.pathsLeft, outpost: me.outpostsLeft, stronghold: me.strongholdsLeft, card: state.deckLeft ?? state.deck.length }[kind];
+  const spot = () =>
+    kind === "path" ? legalRoads(state, me.id, false).length > 0 : kind === "outpost" ? legalSettle(state, me.id, false).length > 0 : kind === "stronghold" ? legalCities(state, me.id).length > 0 : true;
+  const why = left <= 0 ? "None left" : spot() ? null : "No spot";
+  return { short, missing, why, ready: !why && !missing };
 }
 
 const need = (short: Partial<Record<Resource, number>>, more: string, sep: string) =>

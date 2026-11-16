@@ -30,6 +30,8 @@ const SHOTS = process.env.SHOTS === "1" ? "docs/proofs/1437" : null;
 const FAILED = "Couldn't use that code. Check your login and code, or try again later.";
 const CODE = /^[2-9A-HJKMNP-TV-Z]{6}$/;
 let browser, vite, host, oldHost;
+// #1710: every socket the old host takes. closeAllConnections() leaves out upgraded WebSocket sockets, and close() waits for them.
+const oldSockets = new Set();
 const ok = (message) => console.log(`ok ${message}`);
 
 try {
@@ -66,6 +68,7 @@ try {
   });
   // A host that offers profiles but not recovery codes (profilesV1 only).
   oldHost = httpServer();
+  oldHost.on("connection", (socket) => { oldSockets.add(socket); socket.once("close", () => oldSockets.delete(socket)); });
   new WebSocketServer({ server: oldHost }).on("connection", (ws) => ws.on("message", (raw) => {
     const m = JSON.parse(String(raw));
     if (m.type === "profileHello") ws.send(JSON.stringify({ type: "profileHello", id: m.id, caps: ["profilesV1"], available: true, reason: null }));
@@ -377,7 +380,7 @@ try {
 } finally {
   await browser?.close();
   await vite?.close();
-  oldHost?.closeAllConnections();
+  for (const socket of oldSockets) socket.destroy();
   if (oldHost) await new Promise((resolve) => oldHost.close(resolve));
   if (host && host.exitCode === null) { host.kill("SIGTERM"); await new Promise((resolve) => { host.once("exit", resolve); setTimeout(() => { host.kill("SIGKILL"); resolve(); }, 5000).unref(); }); }
   rmSync(dir, { recursive: true, force: true });

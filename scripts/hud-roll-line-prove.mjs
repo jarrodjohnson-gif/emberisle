@@ -235,7 +235,8 @@ try {
         const chip = document.querySelector('[data-testid="log-line"]');
         return { text: (chip?.textContent ?? "").replace(/\s+/g, " ").trim(), spans: chip?.querySelectorAll('[data-testid="log-roll-sum"]').length ?? -1 };
       });
-      check(online.text === "Nobody gains goods — Ember's roll." && online.spans === 0, "online chip stays the plain goods line", online);
+      // #1539: online the tray's event line shows the roll too; the goods line is in the chat log.
+      check(online.text === "Ember rolled 8!" && online.spans === 1, "online chip shows the roll, as in practice and hotseat", online);
     }
     await page.close();
   }
