@@ -77,7 +77,7 @@ async function start(w, h, notch = false) {
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.waitForFunction(() => window.__isle?.renders > 0, null, { timeout: STEP_MS });
-  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await page.getByRole("button", { name: "Pass and play" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
   await page.evaluate(() => {
     const g = window.__emberisle;

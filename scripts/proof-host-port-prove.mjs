@@ -24,6 +24,30 @@ assert.equal(await port, 12345);
 clean(host);
 console.log("ok split banner resolves complete port and removes listeners");
 
+// Invalid complete banners must not start the browser at an unusable port.
+for (const invalid of [0, 65536]) {
+  const child = fixture();
+  const result = hostPort(child);
+  let resolved = false;
+  result.then(() => { resolved = true; });
+  child.stdout.write(`host listening ${invalid}\n`);
+  await Promise.resolve();
+  assert.equal(resolved, false, `invalid port ${invalid} must not settle startup`);
+  child.stdout.write("host listening 43210\n");
+  assert.equal(await result, 43210);
+  clean(child);
+}
+console.log("ok invalid ports stay pending until a valid banner arrives");
+
+for (const boundary of [1, 65535]) {
+  const child = fixture();
+  const result = hostPort(child);
+  child.stdout.write(`host listening ${boundary}\r\n`);
+  assert.equal(await result, boundary);
+  clean(child);
+}
+console.log("ok valid port boundaries accept CRLF and remove listeners");
+
 for (const [code, signal] of [[7, null], [null, "SIGTERM"]]) {
   const child = fixture();
   const result = hostPort(child);

@@ -205,6 +205,23 @@ body {
 .seat-card [class*='text-zinc-700'] { color: #334744; }
 .seat-card.seat-turn { background: #fbfdfc; box-shadow: 0 2px 10px rgb(14 60 66 / 0.18); }
 @media (hover: hover) { .seat-card:not(.seat-turn) button:hover { background: rgb(251 253 252 / 0.45); } }
+/* #1608 (docs/design/six-players.md, "Six seats at 440×956"): only five and six seat tables number their seats (.seat-no),
+   so nothing here reaches a classic table. The number takes the name's type; every seat dot gets the 1 px #1c1915 outline. */
+.seat-no { flex-shrink: 0; font-size: 13px; font-weight: 600; line-height: 16px; font-variant-numeric: tabular-nums; }
+aside .seat-no { font-size: 15px; line-height: 20px; }
+[data-testid='menu-seat'] .seat-no { font-size: 14px; line-height: 20px; }
+body:has(.seat-no) :is(.seat-dot, [data-testid='menu-seat'] > :first-child) { box-shadow: inset 0 0 0 1px #1c1915; }
+/* A numbered strip cell too narrow for its short name keeps as many whole letters as fit: each letter is a flex item, one
+   that does not fit wraps to a second line, and the one-line box hides that line. Measured by the browser, so it holds
+   for any font (six seats on a 390 px phone show two letters in Inter, fewer in a wider font). */
+.seat-card [data-testid='seat-name'][aria-hidden]:not(.hidden):has(> span) { display: flex; flex-wrap: wrap; height: 16px; }
+/* The rail keeps its 192 px cards at 12 px from the left and 80 px from the top, and scrolls inside itself, stopping above
+   the tray (152 px tall with its margin at rest) with 8 px to spare. The 212 px of padding on the right keeps a seat's
+   192 px chat bubble inside the scroll box, and the padding all round keeps the pill's shadow. The rail ignores the pointer,
+   so the padding never blocks the island. */
+aside:has(> div > .seat-card .seat-no) { top: 4.25rem; left: 0; width: 26rem; max-height: calc(100dvh - 14.25rem); padding: 0.75rem 13.25rem 0.75rem 0.75rem; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+/* A turn banner or a first-game tip floats 46 px above the tray while it shows: the rail stops above it too. */
+body:has([data-testid='banner'], [data-testid='first-game-coach']) aside:has(> div > .seat-card .seat-no) { max-height: calc(100dvh - 17.25rem); }
 .hud-header > div > div > button[aria-label='Table menu'] { background: var(--table); color: var(--table-ink); border: 1px solid var(--table-line); }
 .hud-stack { scrollbar-width: thin; scrollbar-color: var(--table-line) var(--table); }
 .turn-instruction, .table-log { background: var(--table); color: var(--table-muted); }
@@ -288,19 +305,82 @@ body {
 .action-utilities button, .hud-stack > .sticky button { background: var(--table-raised); color: var(--table-ink); border: 1px solid var(--table-line); }
 .action-utilities button.bg-fg { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .action-utilities .sticky, .action-utilities > div { background: transparent; }
-.trade-dock { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; background: var(--table); color: var(--table-ink); border: 1px solid var(--table-line); border-top: 2px solid var(--accent); box-shadow: var(--shadow-control); }
-.trade-clock { color: var(--accent); min-width: 3ch; text-align: right; }
-.trade-clock[data-urgent='true'] { font-weight: 800; font-size: 15px; }
-.trade-answers { min-width: 132px; }
-.trade-yes { background: var(--ink); color: var(--paper); }
-.trade-yes[aria-disabled='true'] { background: var(--table-raised); color: var(--table-muted); border: 1px solid var(--table-line); }
-.trade-no { background: var(--table-raised); color: var(--table-ink); border-color: var(--table-line); }
-.trade-wait { grid-column: 1 / -1; color: var(--table-muted); }
+/* One tray, slice C (docs/design/one-tray): an offer, a discard and a take-from each take the tray's own rows. No second box. */
+.trade-dock, .hud-tray { --give: #b3261e; --give-bg: #fdecea; --get: #1e7a46; --get-bg: #e4f4ea; }
+.trade-summary { display: flex; flex-wrap: wrap; min-width: 0; min-height: 32px; align-items: center; justify-content: space-between; gap: 4px 12px; }
+.trade-line { min-width: 0; color: #1f3331; font-size: 15px; line-height: 20px; font-weight: 500; overflow-wrap: anywhere; }
+.trade-line > b { font-weight: 600; }
+.trade-wait, .trade-result { flex-shrink: 0; color: #52625f; font-size: 13px; line-height: 20px; text-align: right; }
+.trade-result { display: flex; min-width: 0; flex-shrink: 1; align-items: center; gap: 4px; margin-left: auto; }
+.trade-answers, .take-row { display: flex; gap: 8px; }
+.trade-answers > button, .take-row > button { flex: 1 1 0; min-width: 0; height: 48px; border: 0; border-radius: 12px; background: #e9f0ee; color: #1f3331; }
+.trade-answers > .trade-yes, .discard-pick > button { background: #1f3d3b; color: #fff; }
+/* the offer is the tray's top line; the status, the numbers and the newest event sit out while it is there */
+.tray-top:has(.trade-dock) { display: contents; }
+.tray-top:has(.trade-dock) > :not(.trade-dock) { display: none; }
+/* with an answer to give, the offer spans the tray's rows: its sentence above the hand, its buttons where the action row was */
+.hud-tray:has(.trade-answers) { display: grid; grid-template-columns: minmax(0, 1fr); }
+.hud-tray:has(.trade-answers) > :is(.hud-actions, .hud-roll, .end-footer, .tray-extra, .tray-numbers) { display: none; }
+.hud-tray:has(.trade-answers) > [data-testid="hand-dock"] { grid-area: 2 / 1; }
+.hud-tray:has(.trade-answers) > [data-testid="hand-dock"] { position: relative; z-index: 1; }
+.hud-tray .trade-dock:has(.trade-answers) { display: grid; grid-area: 1 / 1 / span 3 / -1; grid-template: subgrid / subgrid; }
+.hud-tray .trade-dock > * { grid-column: 1 / -1; }
+.hud-tray .trade-answers { grid-row: 3; }
+/* #557: over the phone's open chat sheet the offer and the take-from ride as one card each, since the sheet covers the tray */
+.trade-above-chat, .take-over { position: fixed; left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); z-index: 40; padding: 10px; border-radius: 16px; background: #fbfdfc; box-shadow: 0 4px 20px rgba(14, 60, 66, 0.18); pointer-events: auto; }
+.trade-above-chat { bottom: calc(var(--chat-sheet-height) + var(--keyboard-inset, 0px) + 8px); display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 12px; }
+.trade-above-chat .trade-answers { min-width: 132px; }
+.take-over { bottom: calc(var(--chat-sheet-height) + var(--keyboard-inset, 0px) + var(--active-offer-height, 0px) + 8px); align-items: center; }
+.take-over > span { flex: 1 0 100%; color: #1f3331; font-size: 15px; line-height: 20px; font-weight: 500; }
+/* take-from: one button per seat, wrapping by their names */
+.take-row { flex-wrap: wrap; }
+.take-row > button { flex: 1 1 auto; padding: 0 12px; }
+.hud-tray:has(.take-row) > :is(.hud-actions, .tray-extra), .hud-tray:has(.discard-pick) > :is([data-testid="hand-dock"], .tray-extra) { display: none; }
+/* #1595 discard: the hand's five columns are the picker. A column you can tap is a soft box with its symbol and what you keep;
+   a good you hold none of is grey with no box. A "−N" tag hangs above a picked column. The take-back row stands where the names
+   were: five 44 px targets, off (no fill) until their good is picked, so nothing overlaps a number and nothing jumps. */
+.discard-pick { display: flex; flex-direction: column; gap: 4px; }
+.discard-goods, .discard-back { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.discard-good { position: relative; display: flex; height: 44px; min-width: 0; align-items: center; justify-content: center; gap: 4px; border: 0; border-radius: 12px; background: #e9f0ee; color: #1f3331; font: 600 17px/22px var(--font-numeral); font-variant-numeric: tabular-nums; }
+.discard-good:disabled { background: transparent; color: #9aa6a3; }
+.discard-good > svg { width: 20px; height: 20px; }
+.discard-good[aria-disabled] { cursor: default; }
+.discard-back > button { display: flex; height: 44px; min-width: 0; align-items: center; justify-content: center; border: 0; border-radius: 12px; background: #e9f0ee; color: #1f3331; font: 700 20px/1 var(--font-ui); }
+.discard-back > button[aria-disabled] { background: transparent; color: #9aa6a3; cursor: default; }
+.discard-pick > button { height: 48px; border: 0; border-radius: 12px; }
+/* still a target while off, so the tray stays one solid box for the island's fit (isle-renderer solidRects) */
+.discard-pick > button:disabled { background: #e9f0ee; color: #52625f; pointer-events: auto; cursor: default; }
+.hud-col .discard-goods, .hud-col .discard-back { gap: 4px; }
+/* #1595: what would move is a small tag above the column, clear of its symbol and number: "−N" in Give colours, "+N" in Get
+   colours. An offered hand column keeps its plain look; it has no border, since it is not a thing to press for the offer. */
+.hud-tray .hand-offer-delta { position: absolute; top: -21px; left: 50%; right: auto; z-index: 1; min-width: 28px; height: 18px; padding: 0 6px; border-radius: 9px; transform: translateX(-50%); background: var(--give-bg); color: var(--give); font: 700 12px/18px var(--font-numeral); font-variant-numeric: tabular-nums; text-align: center; white-space: nowrap; }
+.hud-tray [data-offer="get"] > .hand-offer-delta { background: var(--get-bg); color: var(--get); }
+.hud-tray .hand-resource-card-slot[data-offer] > .goods-card { box-shadow: none; }
+/* the tag hangs wholly above the column (the symbol's place shifts with the column's size), so the hand drops 8 px while an offer is open */
+.hud-tray:has(.hand-offer-delta) [data-testid="hand-dock"] { padding-top: 8px; }
+/* #1595 take-from: the seat's name and, in quiet text, its card count ("Pine 3") */
+.take-row > button { gap: 6px; }
+.take-count { flex-shrink: 0; color: #52625f; font-weight: 500; }
+/* #1595: in a discard and in "take from whom" a top-line dot would read as a seat; teal is no seat, so there is none. */
+.turn-instruction-plain::before { display: none !important; }
+@media (min-width: 768px) and (pointer: fine) {
+  .hud-tray:has(.trade-answers) { grid-template-columns: auto minmax(0, 1fr); }
+  .hud-tray .trade-dock:has(.trade-answers) { grid-row: 1 / span 2; }
+  .hud-tray .trade-answers { grid-area: 2 / 2; }
+  .hud-tray > .take-row { grid-column: 2; }
+  .discard-pick { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 14px; row-gap: 8px; }
+  .discard-goods, .discard-back { grid-column: 1; grid-template-columns: repeat(5, 64px); }
+  .discard-pick > button { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+  /* the two 44 px rows take the hand's place, so the discard's top line drops its spare height to keep the tray's hole */
+  .hud-tray:has(.discard-pick) .turn-instruction { min-height: 20px; }
+}
 .turn-stamp { background: #fff; border: 1px solid #cbd3d3; border-radius: 20px; box-shadow: var(--shadow-sheet); padding: 16px 24px; color: var(--ink); font-size: 28px; line-height: 32px; font-weight: 700; letter-spacing: -0.8px; }
 .turn-stamp[data-leaving] { animation: none !important; transition: opacity 160ms var(--ease-in), transform 160ms var(--ease-in); }
 .turn-stamp-dot { width: 20px; height: 20px; border: 2px solid var(--ink); box-shadow: none; }
 @media (max-width: 359px) { .turn-stamp { padding: 12px 20px; font-size: 20px; } .turn-stamp-dot { width: 16px; height: 16px; } }
-.title-cover { box-shadow: var(--shadow-sheet); }
+/* docs/design/first-minute: the title is one tray, the table tray's surface and soft fills (docs/design/one-tray). */
+.title-cover { padding: 14px 16px; border-radius: 22px; background: var(--color-surface); box-shadow: 0 -8px 28px rgba(14, 60, 66, 0.22); }
+.title-cover .border-control-line, .title-cover .bg-bg { border-color: transparent; background-color: #e9f0ee; }
 /* #1281: the owner-approved 56 px wordmark, on every screen size (docs/design/loading-screen-1281). */
 .title-wordmark { font: 400 56px/64px Georgia, "Times New Roman", serif; letter-spacing: -1.5px; }
 .seat-settings { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 4px; }
@@ -328,9 +408,6 @@ td > .win-tag { display: flex; width: fit-content; margin: 2px 0 0 18px; }
   .hud-actions { flex-direction: column; align-items: stretch; }
   .build-grid { flex: none; }
   .action-utilities { justify-content: flex-start; }
-  .trade-dock { grid-template-columns: minmax(0, 1fr); }
-  .trade-summary { min-height: 32px; }
-  .trade-answers { width: 100%; }
 }
 @media (max-height: 480px) and (pointer: coarse) {
   .hud-stack > .sticky { background: var(--table); }
@@ -339,9 +416,6 @@ td > .win-tag { display: flex; width: fit-content; margin: 2px 0 0 18px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .build-ready { transform: none; }
-}
-@media (min-width: 768px) and (pointer: fine) {
-  .trade-dock { padding: 6px 8px; }
 }
 .table-log[hidden] { display: none; }
 .action-utilities { flex-wrap: wrap; }
@@ -353,17 +427,14 @@ td > .win-tag { display: flex; width: fit-content; margin: 2px 0 0 18px; }
   .build-tile > span:first-child { font-size: 10.5px; letter-spacing: -0.2px; }
 }
 @media (max-height: 480px) {
-  .end-footer { bottom: var(--trade-height, 0px); background: var(--table) !important; }
-  .trade-summary { min-height: 24px; }
+  .end-footer { bottom: 0; background: var(--table) !important; }
 }
 .hud-stack .action-utilities, .end-footer { flex-shrink: 0; }
 /* #1418: Trade, the dice and End turn share the 260 px column's footer; at 15 px / 600 the buttons take 6 px sides to fit. */
 .end-footer > button { padding-left: 6px; padding-right: 6px; }
-.trade-above-chat { position: fixed; bottom: calc(var(--chat-sheet-height) + var(--keyboard-inset, 0px) + 8px); left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); z-index: 40; }
 .build-tile [data-testid^='cost-'] > span:first-child { height: 16px; padding-left: 1.5px; padding-right: 1.5px; }
 .build-tile [data-testid^='cost-'] svg { width: 9px; height: 9px; }
-.hud-stack > .trade-dock { position: sticky; bottom: 0; z-index: 12; }
-.hud-stack { scroll-padding-bottom: calc(var(--trade-height, 0px) + 52px); }
+.hud-stack { scroll-padding-bottom: 52px; }
 input, select, textarea { border-color: var(--control-line); }
 /* #1418: one keyboard focus colour, ink, on every button and tab (owner, #1298 option A). Base layer, so a control's own focus utility still wins. */
 @layer base {

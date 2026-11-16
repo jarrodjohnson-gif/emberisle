@@ -41,7 +41,7 @@ try {
     // socket and say nothing back.
     await page.routeWebSocket(/:8787\//, () => {});
     await page.goto(`http://127.0.0.1:${PORT}/`);
-    await page.getByRole("button", { name: "Play", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Play with bots", exact: true }).waitFor();
 
     const card = await page.evaluate(() => {
       const el = document.querySelector('[data-testid="title-card"]');
@@ -78,8 +78,8 @@ try {
         heightShare: c.height / innerHeight,
       };
     });
-    assert.deepEqual(card.primary, ["Play"], `${tag}: the one primary`);
-    assert.deepEqual([...card.filled].sort(), ["Host a table", "Join", "Play"], `${tag}: filled buttons`);
+    assert.deepEqual(card.primary, ["Play with bots"], `${tag}: the one primary`);
+    assert.deepEqual([...card.filled].sort(), ["Host a table", "Join", "Pass and play", "Play with bots"], `${tag}: filled buttons`);
     assert.ok(card.hostFits, `${tag}: Host a table label is not clipped`);
     assert.equal(card.uppercase, 0, `${tag}: uppercase text on the card`);
     assert.ok(!card.texts.some((t) => /living island|Claim hexes/.test(t)), `${tag}: eyebrow or tagline still there: ${card.texts}`);
@@ -102,7 +102,7 @@ try {
     await page.screenshot({ path: `test-results/title-prove-${v.width}x${v.height}.png` });
 
     assert.deepEqual(errors, [], `${tag}: console errors`);
-    console.log(`ok   ${tag}: one primary (Play), filled ${card.filled.join(" / ")}, card ${Math.round(card.heightShare * 100)} % tall, nothing clipped, Watch only at 4 characters`);
+    console.log(`ok   ${tag}: one primary (Play with bots), filled ${card.filled.join(" / ")}, card ${Math.round(card.heightShare * 100)} % tall, nothing clipped, Watch only at 4 characters`);
     await ctx.close();
   }
   console.log("title-prove: ok");

@@ -137,9 +137,9 @@ export const UPRIGHT_LEAN = (40 * Math.PI) / 180;
 
 // The overhead fit in play: on an upright phone the shore spans the screen and the island sits low in the hole, nearer
 // the thumb (`edge`); elsewhere the island and its docks are centred in the hole. The renderer and the proofs share this.
-export function playOrtho(cssW: number, cssH: number, insets: Insets, phone: boolean): OrthoFit {
+export function playOrtho(cssW: number, cssH: number, insets: Insets, phone: boolean, isle?: IsleShape): OrthoFit {
   const upright = phone && cssH > cssW;
-  return fitOrtho(cssW, cssH, insets, upright ? UPRIGHT_LEAN : OVERHEAD_LEAN, upright);
+  return fitOrtho(cssW, cssH, insets, upright ? UPRIGHT_LEAN : OVERHEAD_LEAN, upright, isle);
 }
 export function playLean(cssW: number, cssH: number, phone: boolean) {
   return phone && cssH > cssW ? UPRIGHT_LEAN : OVERHEAD_LEAN;
@@ -150,14 +150,15 @@ export function playLean(cssW: number, cssH: number, phone: boolean) {
 // island's screen depth by cos(lean), so a screen shift on the ground is that much longer.
 // `edge` (#1509): the shore spans the canvas's width less EDGE_GAP each side (past the hole's 12 px sides), unless that would
 // take a goods pile off the screen or the island and its docks past the hole's height; the island sits at the hole's bottom edge instead of its centre.
-export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0, edge = false): OrthoFit {
-  const halfZ = ISLE_HALF.z * Math.cos(lean) + LEAN_RISE * Math.sin(lean);
+// #1607: `isle` gives the island's measured extents; the fit is about its middle (the renderer adds (isle.cx, isle.cz)).
+export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0, edge = false, isle = CLASSIC_ISLE): OrthoFit {
+  const halfZ = isle.half.z * Math.cos(lean) + LEAN_RISE * Math.sin(lean);
   if (edge) {
     const sides = { left: Math.max(EDGE_GAP, insets.left - 12 + EDGE_GAP), right: Math.max(EDGE_GAP, insets.right - 12 + EDGE_GAP) };
     const holeW = Math.max(1, cssW - sides.left - sides.right);
     const holeH = Math.max(1, cssH - insets.top - insets.bottom);
     // A hole too short for that (a 375x667 phone) scales the island to its height instead, which is then centred in it.
-    const px = Math.min(holeW / (2 * SHORE_HALF_X), (cssW / 2 - PILE_GAP) / PILE_HALF_X, holeH / (2 * halfZ));
+    const px = Math.min(holeW / (2 * isle.shoreHalfX), (cssW / 2 - PILE_GAP) / isle.pileHalfX, holeH / (2 * halfZ));
     const hw = cssW / 2 / px;
     const hh = cssH / 2 / px;
     const cx = sides.left + holeW / 2;
@@ -169,7 +170,7 @@ export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0, e
   const holeW = Math.max(1, cssW - insets.left - insets.right);
   const holeH = Math.max(1, cssH - insets.top - insets.bottom);
   const aspect = holeW / holeH;
-  const halfX = ISLE_HALF.x;
+  const halfX = isle.half.x;
   // The frustum spans the whole canvas, so scale the hole's world size up by canvas / hole.
   let hw: number;
   let hh: number;
@@ -191,7 +192,7 @@ export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0, e
     right: worldW / 2,
     top: worldH / 2,
     bottom: -worldH / 2,
-    // Centered on the island (0, 0), not the 0.15 orbit target: ISLE_HALF is symmetric about the origin.
+    // Centered on the island's middle, not the 0.15 orbit target: its extents are symmetric about it.
     x: -ndcX * worldW * 0.5,
     z: (ndcY * worldH * 0.5) / Math.cos(lean),
     lean,
@@ -269,16 +270,61 @@ for (let q = -2; q <= 2; q++) {
 // #1509: how far across a dock's pier and boat can reach, at any coast corner (the diorama fit's DOCK_REACH along its miter).
 // The upright fit lets it pass the screen's side edges (q1515-table-look, B); proofs use it.
 export const DOCK_HALF_X = Math.max(...COAST.map(({ x, mx }) => Math.abs(x + mx * DOCK_REACH)));
-const COAST_POINTS: [number, number, number][] = COAST.map(({ x, z }) => [x, CAP_LEVEL, z]);
-const DIORAMA_POINTS: [number, number, number][] = [
-  ...COAST.flatMap(({ x, z, mx, mz }) => [
+type Pt = [number, number, number];
+type CoastPt = { x: number; z: number; mx: number; mz: number };
+const coastPoints = (coast: CoastPt[]) => coast.map(({ x, z }): Pt => [x, CAP_LEVEL, z]);
+const dioramaPoints = (coast: CoastPt[], ring: { x: number; z: number }[]): Pt[] => [
+  ...coast.flatMap(({ x, z, mx, mz }): Pt[] => [
     [x, CAP_LEVEL, z],
     [x + mx * DOCK_REACH, 0.1, z + mz * DOCK_REACH],
-  ] as [number, number, number][]),
-  ...OUTER_RING.flatMap(({ x, z }) =>
-    Array.from({ length: 12 }, (_, i) => [x + 0.86 * Math.cos((i * Math.PI) / 6), CAP_LEVEL + LEAN_RISE, z + 0.86 * Math.sin((i * Math.PI) / 6)] as [number, number, number]),
+  ]),
+  ...ring.flatMap(({ x, z }) =>
+    Array.from({ length: 12 }, (_, i): Pt => [x + 0.86 * Math.cos((i * Math.PI) / 6), CAP_LEVEL + LEAN_RISE, z + 0.86 * Math.sin((i * Math.PI) / 6)]),
   ),
 ];
+
+// #1607 (docs/design/six-players.md, "Board generator, coast, docks, and camera"): the island the fits measure. The classic
+// island is the constants above. Another island (the expanded one) is measured from the renderer's coast loop and the
+// centres of its hexes that touch the coast, taken from (cx, cz), the middle of its hex centres' bounds: the fits centre that
+// point, and the renderer looks at it. Its `half`, `shoreHalfX` and `pileHalfX` are the classic constants plus
+// how much farther its coast reaches than the classic coast on that axis, so it keeps the classic padding for its docks,
+// piles and trees; `grow` is the larger of the two gains (the visitors' lanes and the pan reach out by it).
+export type IsleShape = {
+  cx: number;
+  cz: number;
+  half: { x: number; z: number };
+  shoreHalfX: number;
+  pileHalfX: number;
+  grow: number;
+  coastPoints: Pt[];
+  dioramaPoints: Pt[];
+};
+export const CLASSIC_ISLE: IsleShape = {
+  cx: 0,
+  cz: 0,
+  half: ISLE_HALF,
+  shoreHalfX: SHORE_HALF_X,
+  pileHalfX: PILE_HALF_X,
+  grow: 0,
+  coastPoints: coastPoints(COAST),
+  dioramaPoints: dioramaPoints(COAST, OUTER_RING),
+};
+const reach = (coast: CoastPt[], k: "x" | "z") => Math.max(...coast.map((c) => Math.abs(c[k])));
+export function isleShape(coast: CoastPt[], ring: { x: number; z: number }[], cx: number, cz: number): IsleShape {
+  const local = coast.map((c) => ({ ...c, x: c.x - cx, z: c.z - cz }));
+  const gx = reach(local, "x") - reach(COAST, "x");
+  const gz = reach(local, "z") - reach(COAST, "z");
+  return {
+    cx,
+    cz,
+    half: { x: ISLE_HALF.x + gx, z: ISLE_HALF.z + gz },
+    shoreHalfX: SHORE_HALF_X + gx,
+    pileHalfX: PILE_HALF_X + gx,
+    grow: Math.max(gx, gz),
+    coastPoints: coastPoints(local),
+    dioramaPoints: dioramaPoints(local, ring.map((r) => ({ x: r.x - cx, z: r.z - cz }))),
+  };
+}
 
 // focal: px per unit of tan at the lens; dist: the eye's distance from the look-at point at zoom 1; cx, cy: where the lens
 // axis meets the canvas, in CSS px from its top left.
@@ -303,11 +349,11 @@ export function dioramaProject(f: DioramaFit, polar: number, azimuth: number, x:
   return { x: f.cx + (f.focal * xc) / depth, y: f.cy - (f.focal * yc) / depth, depth };
 }
 
-export function fitDiorama(cssW: number, cssH: number, insets: Insets, polar = DIORAMA_POLAR, azimuth = DIORAMA_AZIMUTH): DioramaFit {
+export function fitDiorama(cssW: number, cssH: number, insets: Insets, polar = DIORAMA_POLAR, azimuth = DIORAMA_AZIMUTH, isle = CLASSIC_ISLE): DioramaFit {
   const holeW = Math.max(1, cssW - insets.left - insets.right);
   const holeH = Math.max(1, cssH - insets.top - insets.bottom);
   const focal = holeH / 2 / Math.tan(DIORAMA_FOV / 2);
-  const span = (dist: number, pts = DIORAMA_POINTS) => {
+  const span = (dist: number, pts = isle.dioramaPoints) => {
     const lens = { focal, dist, cx: 0, cy: 0 };
     let [l, r, t, b] = [Infinity, -Infinity, Infinity, -Infinity];
     for (const [x, y, z] of pts) {
@@ -327,7 +373,7 @@ export function fitDiorama(cssW: number, cssH: number, insets: Insets, polar = D
     }
     return hi;
   };
-  const dist = Math.max(fit(COAST_FILL, COAST_POINTS), fit(1));
+  const dist = Math.max(fit(COAST_FILL, isle.coastPoints), fit(1));
   const s = span(dist);
   return {
     focal,
@@ -351,10 +397,10 @@ const FOV = (32 * Math.PI) / 180;
 // Free-mode farthest dolly: far enough to see the whole isle inside the hole, never below 18. Desktop keeps 18
 // exactly (the design's own formula gives ~29 there, which would change the shipped desktop view); the design's
 // worked values 23.6 / 26.4 disagree with its formula, so the formula wins: 31.0 portrait (top inset 116 with the #177 seat strip); landscape hits the 36 cap.
-export function freeMaxDistance(cssH: number, insets: Insets, coarse: boolean): number {
+export function freeMaxDistance(cssH: number, insets: Insets, coarse: boolean, isle = CLASSIC_ISLE): number {
   if (!coarse) return 18;
   const usable = Math.max(1, cssH - insets.top - insets.bottom) / cssH;
-  const d = (ISLE_HALF.z * 2) / usable / (2 * Math.tan(FOV / 2));
+  const d = (isle.half.z * 2) / usable / (2 * Math.tan(FOV / 2));
   return Math.min(36, Math.max(18, d));
 }
 
