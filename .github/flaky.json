@@ -4,11 +4,6 @@
       "id": "turn-gain-prove",
       "pattern": "FAIL .*: no gain line is up while \"Your turn\" is",
       "issue": 860
-    },
-    {
-      "id": "server-needs-prove",
-      "pattern": "Error: timeout p0 state:",
-      "issue": 1326
     }
   ]
 }

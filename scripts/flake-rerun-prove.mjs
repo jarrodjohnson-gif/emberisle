@@ -11,11 +11,12 @@ const workflow = readFileSync(new URL("../.github/workflows/flake-rerun.yml", im
 const at = "2026-10-19T01:00:00.0000000Z ";
 const failures = {
   "turn-gain-prove": `${at}FAIL host 844x390: no gain line is up while "Your turn" is [{"t":1}]`,
-  "server-needs-prove": `${at}Error: timeout p0 state:`,
 };
 // Retired signatures (#1323): the fix landed and the tracking issue is closed, so each entry left .github/flaky.json.
 // The failure text each one matched is kept here: a failed job that prints it is a real failure and is not re-run.
 const retired = {
+  // #1733: #1522 fixed the stale-socket race behind this timeout; no CI hit since it landed.
+  "server-needs-prove": `${at}Error: timeout p0 state:`,
   "countdown-prove": `${at}FAIL Error: the waited-on seat heard timer_tick, timer_tick, timer_tick, timer_tick, timer_tick`,
   "rotate-overlays-prove": `${at}FAIL locator.waitFor: Timeout 120000ms exceeded.\n${at}  - waiting for getByTestId('chat-sheet') to be visible`,
   "tabs-prove-4": `${at}FAIL timed out: start\n${at}##[error]Process completed with exit code 1.`,
@@ -45,10 +46,6 @@ for (const line of [
 assert.equal(flakes.find((f) => f.id === "turn-gain-prove").regex.test(`${at}ok   host 844x390: no gain line is up while "Your turn" is [{"t":1}]`), false);
 // The near misses of each signature that are not that flake: a passing line, a wider failure, or another step's timeout.
 const notFlake = {
-  "server-needs-prove": [
-    `${at}Error: timeout p1 state:`,
-    `${at}Error: timeout p0 welcome:`,
-  ],
 };
 for (const [id, lines] of Object.entries(notFlake)) {
   for (const line of lines) assert.equal(flakes.find((f) => f.id === id).regex.test(line), false, `${id} signature is not ${JSON.stringify(line)}`);
@@ -116,19 +113,20 @@ check("step name must be the proof exactly", run([
   ["browser-b (flows-b)", "turn-gain-prove-4", failures["turn-gain-prove"]],
 ]), false);
 
-// #1326: the host proof's step is server-needs-prove. The browser proof's step is needs-prove.
-const serverNeeds = check("server-needs-prove timeout is a known flake", run([
-  ["server", "server-needs-prove", failures["server-needs-prove"]],
+// #1326: a known flake's step in the server job is matched as in a browser job. The browser proof's step is needs-prove.
+const serverNeeds = check("a known flake in the server job is re-run", run([
+  ["server", "turn-gain-prove", failures["turn-gain-prove"]],
 ]), true);
 assert.deepEqual(serverNeeds.jobs, [
-  { name: "server", flakes: ["server-needs-prove"] },
+  { name: "server", flakes: ["turn-gain-prove"] },
 ]);
 check("browser needs-prove is not the server timeout flake", run([
-  ["browser-a (a3)", "needs-prove", failures["server-needs-prove"]],
+  ["browser-a (a3)", "needs-prove", retired["server-needs-prove"]],
 ]), false);
 
 // A retired signature is no longer a flake: its failed job is not re-run, and neither are the near misses it once excluded.
 const retiredNear = {
+  "server-needs-prove": [`${at}Error: timeout p1 state:`, `${at}Error: timeout p0 welcome:`],
   "tabs-prove-4": [`${at}FAIL timed out: start the game\n`, `${at}FAIL timed out: tab B notices the drop\n`],
   "flash-prove": [`${at}flash-prove failed: page.waitForFunction: Timeout 120000ms exceeded.\n${at}    at pieceProof (/x/scripts/flash-prove.mjs:216:9)`],
   "chat-prove": [
