@@ -383,11 +383,13 @@ try {
       try {
         await safeArea(page, "667x375", { top: 47, right: 21, bottom: 34, left: 59 });
         await howToPlayFits(page, "667x375");
+        await page.screenshot({ path: `${out}/667x375.png` });
         const cdp = await page.context().newCDPSession(page);
         try {
           await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { left: 47, right: 47, top: 0, bottom: 21 } });
           await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
           await howToPlayFits(page, "667x375 with 94 px side safe area");
+          await page.screenshot({ path: `${out}/667x375-safe-area.png` });
         } finally {
           await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 0, right: 0, bottom: 0, left: 0 } });
           await cdp.detach();
