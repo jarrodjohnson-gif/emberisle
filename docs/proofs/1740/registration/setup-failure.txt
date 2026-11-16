@@ -1,3 +1,0 @@
-Transcription from initial tool output (before .github was included in sparse checkout):
-Error: ENOENT: no such file or directory, open /workspace/work/current-p1/.github/workflows/ci.yml
-Node registered-prove failed; the node | tail pipeline overall exit was not treated as proof success. Restored existing .github via sparse-checkout, then actual registration command/exit in run.log and exit.
