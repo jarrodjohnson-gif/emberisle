@@ -14,6 +14,9 @@ function listed(text, what) {
   assert.ok(Array.isArray(raw), `${what}: flakes is an array`);
   for (const f of raw) {
     assert.equal(typeof f.id, "string", `${what}: ${JSON.stringify(f.id)} is a string id`);
+    // new RegExp(undefined) and new RegExp("") both compile, and match every log.
+    assert.ok(typeof f.pattern === "string" && f.pattern !== "", `${what}: ${f.id} has a non-empty pattern`);
+    assert.ok(Number.isInteger(f.issue), `${what}: ${f.id} has an integer issue`);
     assert.doesNotThrow(() => new RegExp(f.pattern), `${what}: ${f.id} pattern compiles`);
   }
   const ids = raw.map((f) => f.id);
@@ -21,6 +24,7 @@ function listed(text, what) {
   return loadFlakes(text);
 }
 const flakes = listed(realText, ".github/flaky.json");
+for (const f of flakes) assert.ok(f.id in scripts, `${f.id} is a proof in package.json`);
 
 // decide() runs on these made-up entries, through the same loadFlakes the workflow uses, so its scenarios hold
 // whatever the real list holds. fixture-alpha-prove is a prefix of the step fixture-alpha-prove-4; fixture-beta-prove's
@@ -161,6 +165,13 @@ check("signature in the log, another step failed", run([
 check("step name must be the proof exactly", run([
   ["browser-b (flows-b)", "fixture-alpha-prove-4", fixtureFailures["fixture-alpha-prove"]],
 ]), false);
+// Nor is a longer proof name that ends in the flaky proof's id, nor a step that only ends in "npm run <id>".
+check("a proof name ending in the flaky id is not that proof", run([
+  ["browser-b (flows-b)", "x-fixture-alpha-prove", fixtureFailures["fixture-alpha-prove"]],
+]), false);
+const pnpm = run([["browser-b (flows-b)", null, fixtureFailures["fixture-alpha-prove"]]]);
+pnpm.jobs[2].steps.splice(1, 0, { name: "Run pnpm run fixture-alpha-prove", conclusion: "failure" });
+check("npm run must start the step's command", pnpm, false);
 
 // #1326: a known flake's step in the server job is matched as in a browser job. The browser step that ends the same
 // way, fixture-gamma-prove (like needs-prove and server-needs-prove), is not that flake.
@@ -175,6 +186,7 @@ check("browser fixture-gamma-prove is not the server timeout flake", run([
 ]), false);
 
 // A retired signature is no longer a flake: its failed job is not re-run, and neither are the near misses it once excluded.
+// These run on the real list: they hold trivially while it has no such entry, and fail if one comes back.
 const retiredNear = {
   "server-needs-prove": [`${at}Error: timeout p1 state:`, `${at}Error: timeout p0 welcome:`],
   "tabs-prove-4": [`${at}FAIL timed out: start the game\n`, `${at}FAIL timed out: tab B notices the drop\n`],
@@ -199,15 +211,27 @@ const retiredNear = {
   ],
 };
 for (const [step, log] of Object.entries(retired)) {
-  check(`retired ${step} signature is not a known flake`, run([["browser-a (a3)", step, log]]), false);
+  check(`retired ${step} signature is not a known flake`, { ...run([["browser-a (a3)", step, log]]), flakes }, false);
 }
 for (const [step, logs] of Object.entries(retiredNear)) {
-  for (const log of logs) check(`retired ${step} near miss is not a known flake`, run([["browser-a (a3)", step, log]]), false);
+  for (const log of logs) check(`retired ${step} near miss is not a known flake`, { ...run([["browser-a (a3)", step, log]]), flakes }, false);
 }
 
 const timedOut = run([["browser-a (a3)", "fixture-alpha-prove", fixtureFailures["fixture-alpha-prove"]]]);
 timedOut.jobs[2].conclusion = "cancelled";
 check("a cancelled or timed-out job is not a flake", timedOut, false);
+// A timed-out job is a failed job that is never a flake, so it blocks the re-run of a flaky job beside it.
+const timedOutBeside = run([
+  ["browser-a (a3)", "fixture-alpha-prove", fixtureFailures["fixture-alpha-prove"]],
+  ["browser-b (presentation)", "fixture-beta-prove", fixtureFailures["fixture-beta-prove"]],
+]);
+timedOutBeside.jobs[3].conclusion = "timed_out";
+check("a timed-out job beside a known flake blocks the re-run", timedOutBeside, false);
+
+// A failed job with no failed step is not a flake, even when its log holds a signature.
+const noFailedStep = run([["browser-a (a3)", "fixture-alpha-prove", fixtureFailures["fixture-alpha-prove"]]]);
+noFailedStep.jobs[2].steps[1].conclusion = "success";
+check("a failed job with no failed step is not a flake", noFailedStep, false);
 
 check("a failed job with no log is not a flake", { ...allFlaky, logs: {} }, false);
 
