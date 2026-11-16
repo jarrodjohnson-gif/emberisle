@@ -44,11 +44,16 @@ export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);
 export const FortuneTray = sheets.pick((m) => m.FortuneTray);
 export const HowTo = sheets.pick((m) => m.HowTo);
+// #1609: the Seats choice in the title's Game options rides with the sheets the title fetches on idle.
+export const SeatChoice = sheets.pick((m) => m.SeatChoice);
 export const TradePanel = sheets.pick((m) => m.TradePanel);
 export const WinScreen = sheets.pick((m) => m.WinScreen);
 // #1539: the Build list opens from the tray's Build button; fetched on idle with the sheets.
 export const buildList = chunk(() => import("@/components/game/BuildList"));
 export const BuildList = buildList.pick((m) => m.BuildList);
+// #1665: the player menu opens from a seat card or chip; fetched on idle with the sheets once the table is up.
+export const playerMenu = chunk(() => import("@/components/game/PlayerMenu"));
+export const PlayerMenu = playerMenu.pick((m) => m.PlayerMenu);
 // #748: the win screen's compact list on touch and narrow screens; the win screen fetches it on phones as the table starts.
 export const winList = chunk(() => import("@/components/game/WinList"));
 export const WinList = winList.pick((m) => m.WinList);

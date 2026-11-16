@@ -107,8 +107,12 @@ if (process.argv.includes("--host-fixture")) {
     });
     await page.goto(`http://127.0.0.1:8113/?host=ws://127.0.0.1:${port}`);
     await page.waitForFunction(() => window.__emberisle);
-    await page.clock.install();
-    await page.clock.pauseAt(new Date());
+    // Hold Date during setup so pauseAt cannot receive an already-past target (#1493).
+    // Then restore Date advancement while timers stay paused; retain a normal monotonic origin.
+    const clockStart = new Date();
+    await page.clock.setFixedTime(clockStart);
+    await page.clock.pauseAt(clockStart);
+    await page.clock.setSystemTime(clockStart);
     // Exercise the transport without the store: a duplicate welcome cannot cancel a pending challenge's timeout.
     await page.evaluate(async () => {
       const { connectTable } = await import("/src/lib/net/table.ts");

@@ -111,12 +111,20 @@ async function newContent(t, size) {
   for (const id of NEW_STICKERS) {
     const button = t.page.getByTestId("stickers").getByRole("button", { name: `React ${id}`, exact: true });
     await button.scrollIntoViewIfNeeded();
+    // #1685: the tab draws each button before its picture, which needs the Sticker chunk and then the image file. Wait for the
+    // image to finish loading; if it never does, the check below fails and says so.
+    await t.page.waitForFunction((el) => { const img = el.querySelector("img"); return Boolean(img && img.complete && img.naturalWidth > 0); }, await button.elementHandle(), { timeout: 10_000 }).catch(() => {});
     const m = await button.evaluate((el) => {
       const r = el.getBoundingClientRect();
       const img = el.querySelector("img");
       return { loaded: Boolean(img && img.complete && img.naturalWidth > 0), inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight, w: r.width, h: r.height };
     });
-    check(m.loaded && m.inView && m.w >= 32 - 0.5 && m.h >= 32 - 0.5, `${size}: sticker ${id} is in the Sounds & stickers tab, loaded, on screen, ${m.w.toFixed(0)}x${m.h.toFixed(0)}`);
+    // #1696: a failure also says which part failed.
+    try {
+      check(m.loaded && m.inView && m.w >= 32 - 0.5 && m.h >= 32 - 0.5, `${size}: sticker ${id} is in the Sounds & stickers tab, loaded, on screen, ${m.w.toFixed(0)}x${m.h.toFixed(0)}`);
+    } catch (e) {
+      throw new Error(`${e.message} (measured loaded=${m.loaded} inView=${m.inView} ${m.w.toFixed(0)}x${m.h.toFixed(0)})`);
+    }
   }
   for (const name of NEW_CHIPS) {
     const chip = t.page.getByTestId("soundboard").getByRole("button", { name, exact: true });

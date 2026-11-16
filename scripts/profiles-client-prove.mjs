@@ -15,6 +15,7 @@ const dir = mkdtempSync(path.join(tmpdir(), "emberisle-profile-client-"));
 const hosts = [];
 const servers = [];
 let browser, legacyServer;
+const legacySockets = new Set();
 const ok = (message) => console.log(`ok ${message}`);
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function host(name, development = false) {
@@ -86,6 +87,7 @@ try {
   execFileSync("openssl", ["req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", path.join(dir, "key.pem"), "-out", path.join(dir, "cert.pem"), "-days", "1", "-subj", "/CN=localhost"], { stdio: "ignore" });
   const a = await host("a"), b = await host("b"), dev = await host("dev", true);
   legacyServer = httpServer();
+  legacyServer.on("connection", (socket) => { legacySockets.add(socket); socket.once("close", () => legacySockets.delete(socket)); });
   const legacy = new WebSocketServer({ server: legacyServer });
   legacy.on("connection", (ws, request) => ws.on("message", (raw) => {
     const message = JSON.parse(String(raw));
@@ -465,7 +467,7 @@ try {
 } finally {
   await browser?.close();
   for (const server of servers) await server.close();
-  legacyServer?.closeAllConnections();
+  for (const socket of legacySockets) socket.destroy();
   if (legacyServer) await new Promise((resolve) => legacyServer.close(resolve));
   for (const { proc } of hosts) if (proc.exitCode === null) { proc.kill("SIGTERM"); await new Promise((resolve) => { proc.once("exit", resolve); setTimeout(() => { proc.kill("SIGKILL"); resolve(); }, 5000).unref(); }); }
   rmSync(dir, { recursive: true, force: true });
