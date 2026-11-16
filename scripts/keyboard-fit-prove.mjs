@@ -122,7 +122,7 @@ try {
   check(!await page.evaluate(() => window.__isle.isKeyboardShrunk), "a focused title field cannot capture a play-camera keyboard baseline");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => { document.activeElement?.blur(); for (const id of ["test-keyboard-input", "test-keyboard-next"]) document.getElementById(id)?.remove(); });
-  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await page.getByRole("button", { name: "Pass and play" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
   await page.evaluate(() => { const g = window.__emberisle; while (g.getState().state.phase === "rollOff") g.getState().dispatch({ type: "roll" }); });
   await page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'), null, { timeout: STEP_MS });
@@ -326,7 +326,7 @@ try {
   tab.on("pageerror", (e) => errors.push(String(e)));
   await tab.goto(`http://127.0.0.1:${PORT}/`);
   await tab.waitForFunction(() => window.__isle?.renders > 0, null, { timeout: STEP_MS });
-  await tab.getByRole("button", { name: "Four seats, one table" }).click();
+  await tab.getByRole("button", { name: "Pass and play" }).click();
   await tab.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
   await tab.evaluate(() => { const g = window.__emberisle; while (g.getState().state.phase === "rollOff") g.getState().dispatch({ type: "roll" }); });
   await tab.waitForFunction(() => !document.querySelector('[data-testid="banner"]'), null, { timeout: STEP_MS });
