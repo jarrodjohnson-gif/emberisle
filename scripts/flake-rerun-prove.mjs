@@ -24,7 +24,7 @@ function listed(text, what) {
   return loadFlakes(text);
 }
 const flakes = listed(realText, ".github/flaky.json");
-for (const f of flakes) assert.ok(f.id in scripts, `${f.id} is a proof in package.json`);
+for (const f of flakes) assert.ok(Object.hasOwn(scripts, f.id), `${f.id} is a proof in package.json`);
 
 // decide() runs on these made-up entries, through the same loadFlakes the workflow uses, so its scenarios hold
 // whatever the real list holds. fixture-alpha-prove is a prefix of the step fixture-alpha-prove-4; fixture-beta-prove's
@@ -229,6 +229,13 @@ const timedOutBeside = run([
 ]);
 timedOutBeside.jobs[3].conclusion = "timed_out";
 check("a timed-out job beside a known flake blocks the re-run", timedOutBeside, false);
+// The same for a cancelled job: it is a failed job, and never a flake.
+const cancelledBeside = run([
+  ["browser-a (a3)", "fixture-alpha-prove", fixtureFailures["fixture-alpha-prove"]],
+  ["browser-b (presentation)", "fixture-beta-prove", fixtureFailures["fixture-beta-prove"]],
+]);
+cancelledBeside.jobs[3].conclusion = "cancelled";
+check("a cancelled job beside a known flake blocks the re-run", cancelledBeside, false);
 
 // A failed job with no failed step is not a flake, even when its log holds a signature.
 const noFailedStep = run([["browser-a (a3)", "fixture-alpha-prove", fixtureFailures["fixture-alpha-prove"]]]);
