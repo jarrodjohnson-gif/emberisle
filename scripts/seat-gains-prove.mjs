@@ -83,7 +83,7 @@ try {
  const baseline=await jarrod.evaluate(()=>window.__isle.insets());
  // #1725: the hold is timed from the cue's mount, not from when this process gets round to it: on a loaded runner the reads
  // below once took 750-870 ms of the 2.5 s, and a cue that was up 2.4 s measured under 1.9 s.
- await jarrod.evaluate(()=>{const seen=new MutationObserver(()=>{if(document.querySelector('[data-testid="rail-p1"] [data-testid="seat-public-gains"]')){window.__cueAt=performance.now();seen.disconnect();}});seen.observe(document,{subtree:true,childList:true});});
+ await jarrod.evaluate(()=>{const seen=new MutationObserver(()=>{const up=!!document.querySelector('[data-testid="rail-p1"] [data-testid="seat-public-gains"]');if(up&&window.__cueAt===undefined)window.__cueAt=performance.now();if(!up&&window.__cueAt!==undefined){window.__cueGone=performance.now();seen.disconnect();}});seen.observe(document,{subtree:true,childList:true});});
  await jarrod.evaluate(()=>window.__emberisle.getState().dispatch({type:'roll'}));
  await cue.waitFor();assert.equal(await cue.getAttribute('aria-label'),'Joshua: +2 Wheat');
  const rollPill=await cue.getByTestId('seat-public-pill').evaluate(el=>{const s=getComputedStyle(el);return{sign:el.getAttribute('data-sign'),bg:s.backgroundColor,fg:s.color,shadow:s.boxShadow};});
@@ -93,13 +93,15 @@ try {
  // The tag slides 24 px out from behind the seat in 220 ms; measure where it rests.
  await cue.evaluate(el=>Promise.all(el.getAnimations().map(a=>a.finished)));
  const railBox=await cue.boundingBox(),railSeat=await jarrod.getByTestId('rail-p1').boundingBox();assert(Math.abs(railBox.x-(railSeat.x+railSeat.width))<=0.5&&Math.abs(railBox.y-railSeat.y)<=0.5&&Math.abs(railBox.height-railSeat.height)<=0.5&&railBox.width>=40,`the rail tag comes out of the seat's right side at its edge (#1544: no box to tuck behind), as tall as the seat: ${JSON.stringify({railBox,railSeat})}`);
- const started=Date.now()-await jarrod.evaluate(()=>performance.now()-window.__cueAt);
+ const sinceMount=await jarrod.evaluate(()=>performance.now()-window.__cueAt);const started=Date.now()-sinceMount;
  assert.equal(await jarrod.getByTestId('rail-p0').getByTestId('seat-public-gains').count(),0);
  assert.equal(await jarrod.evaluate(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p1').resources),undefined,'other hand stays hidden');
  assert.deepEqual(await jarrod.evaluate(()=>window.__isle.insets()),baseline);
  mkdirSync('test-results',{recursive:true});await jarrod.screenshot({path:'test-results/seat-gains-desktop.png'});
  await cue.waitFor({state:'detached',timeout:3200});
  assert(Date.now()-started>=1900,'cue stays visible near 2.5 seconds');
+ // #1725: the page's own clock from mount to removal, so a cue that left early cannot pass because this process was slow to look.
+ const held=await jarrod.evaluate(()=>window.__cueGone-window.__cueAt);assert(held>=1900&&held<=3200,`the cue was up ${Math.round(held)} ms on the page's clock, near its 2.5 s hold`);
  console.log('ok real host, two clients: Joshua gains +2 Wheat on Jarrod\'s rail, then clears; hidden hand absent; map hole unchanged');
  await jarrod.emulateMedia({reducedMotion:'reduce'});await jarrod.setViewportSize({width:390,height:844});
  await jarrod.evaluate(()=>window.__emberisle.getState().askTable({timber:1},{grain:1}));
