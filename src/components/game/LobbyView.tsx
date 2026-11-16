@@ -173,7 +173,7 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, SeatN
             </div>
             <div className="lobby-action-buttons">
               <Button variant="outline" onClick={() => setReady(!ready)}>{ready ? "Cancel ready" : "Ready"}</Button>
-              {isHost ? <Button variant="sea" disabled={!canStart} aria-describedby="lobby-status" onClick={() => { setGames(false); setOpen(false); startTable(); }}>Start</Button> : null}
+              {isHost && (!six || canStart) ? <Button variant="sea" disabled={!canStart} aria-describedby="lobby-status" onClick={() => { setGames(false); setOpen(false); startTable(); }}>Start</Button> : null}
               <Button variant="ghost" onClick={goTitle}>Leave table</Button>
             </div>
           </div>
