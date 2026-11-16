@@ -1,16 +1,49 @@
 #!/usr/bin/env node
-// Fixture proof for scripts/flake-rerun.mjs's decision, against the real .github/flaky.json. No network.
+// Fixture proof for scripts/flake-rerun.mjs's decision, on a made-up flake list. No network.
+// The real .github/flaky.json is checked on its own: it may hold any entries, or none.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { decide, loadFlakes } from "./flake-rerun.mjs";
 
-const flakes = loadFlakes(readFileSync(new URL("../.github/flaky.json", import.meta.url), "utf8"));
+const realText = readFileSync(new URL("../.github/flaky.json", import.meta.url), "utf8");
+const scripts = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).scripts;
+
+// A flake list as flake-rerun.mjs reads it: an array of entries, each with its own string id and a pattern that compiles.
+function listed(text, what) {
+  const raw = JSON.parse(text).flakes;
+  assert.ok(Array.isArray(raw), `${what}: flakes is an array`);
+  for (const f of raw) {
+    assert.equal(typeof f.id, "string", `${what}: ${JSON.stringify(f.id)} is a string id`);
+    assert.doesNotThrow(() => new RegExp(f.pattern), `${what}: ${f.id} pattern compiles`);
+  }
+  const ids = raw.map((f) => f.id);
+  assert.equal(new Set(ids).size, ids.length, `${what}: no id is listed twice`);
+  return loadFlakes(text);
+}
+const flakes = listed(realText, ".github/flaky.json");
+
+// decide() runs on these made-up entries, through the same loadFlakes the workflow uses, so its scenarios hold
+// whatever the real list holds. fixture-alpha-prove is a prefix of the step fixture-alpha-prove-4; fixture-beta-prove's
+// signature spans two log lines; fixture-gamma-prove, a browser step, is a suffix of the server proof's id.
+const fixtures = listed(JSON.stringify({
+  flakes: [
+    { id: "fixture-alpha-prove", pattern: "FAIL (host|guest) \\d+x\\d+: the alpha marker is missing\\b", issue: 1 },
+    { id: "fixture-beta-prove", pattern: "Z FAIL timed out: beta start\\n\\S+ ##\\[error\\]Process completed", issue: 2 },
+    { id: "server-fixture-gamma-prove", pattern: "Error: gamma timeout p0 state:", issue: 3 },
+  ],
+}), "fixtures");
+for (const f of fixtures) assert.equal(f.id in scripts, false, `${f.id} is not a real proof`);
 const workflow = readFileSync(new URL("../.github/workflows/flake-rerun.yml", import.meta.url), "utf8");
 
 // Each signature matches the failure text its proof really prints, as it appears in a job log.
 const at = "2026-10-19T01:00:00.0000000Z ";
 const failures = {
   "turn-gain-prove": `${at}FAIL host 844x390: no gain line is up while "Your turn" is [{"t":1}]`,
+};
+const fixtureFailures = {
+  "fixture-alpha-prove": `${at}FAIL host 844x390: the alpha marker is missing [{"t":1}]`,
+  "fixture-beta-prove": `${at}FAIL timed out: beta start\n${at}##[error]Process completed with exit code 1.`,
+  "server-fixture-gamma-prove": `${at}Error: gamma timeout p0 state:`,
 };
 // Retired signatures (#1323): the fix landed and the tracking issue is closed, so each entry left .github/flaky.json.
 // The failure text each one matched is kept here: a failed job that prints it is a real failure and is not re-run.
@@ -36,19 +69,32 @@ assert.deepEqual(flakes.map((f) => f.id).sort(), Object.keys(failures).sort());
 for (const f of flakes) {
   assert.ok(Number.isInteger(f.issue), `${f.id} has a tracking issue`);
   assert.ok(f.regex.test(failures[f.id]), `${f.id} signature matches its failure`);
+  for (const [id, log] of Object.entries(retired)) assert.equal(f.regex.test(log), false, `${f.id} signature is not retired ${id}'s failure`);
 }
-// The turn-gain-prove signature covers every seat and viewport, not only host 844x390.
+for (const f of fixtures) assert.ok(f.regex.test(fixtureFailures[f.id]), `${f.id} signature matches its failure`);
+// A signature covers every seat and viewport, and any log timestamp, not only the one it was written from.
 for (const line of [
-  `${at}FAIL guest 390x844: no gain line is up while "Your turn" is [{"t":1}]`,
-  `${at}FAIL host 1280x720: no gain line is up while "Your turn" is []`,
-]) assert.ok(flakes.find((f) => f.id === "turn-gain-prove").regex.test(line), `turn-gain-prove signature matches ${JSON.stringify(line)}`);
+  `${at}FAIL guest 390x844: the alpha marker is missing [{"t":1}]`,
+  `${at}FAIL host 1280x720: the alpha marker is missing []`,
+]) assert.ok(fixtures.find((f) => f.id === "fixture-alpha-prove").regex.test(line), `fixture-alpha-prove signature matches ${JSON.stringify(line)}`);
+assert.ok(fixtures.find((f) => f.id === "fixture-beta-prove").regex.test(fixtureFailures["fixture-beta-prove"].replaceAll(at, "2026-11-16T09:30:00.1234567Z ")), "fixture-beta-prove signature matches at another timestamp");
 // The passing log line of the same text is not a failure.
-assert.equal(flakes.find((f) => f.id === "turn-gain-prove").regex.test(`${at}ok   host 844x390: no gain line is up while "Your turn" is [{"t":1}]`), false);
+assert.equal(fixtures.find((f) => f.id === "fixture-alpha-prove").regex.test(`${at}ok   host 844x390: the alpha marker is missing [{"t":1}]`), false);
 // The near misses of each signature that are not that flake: a passing line, a wider failure, or another step's timeout.
 const notFlake = {
+  "fixture-alpha-prove": [
+    `${at}FAIL spectator 844x390: the alpha marker is missing [{"t":1}]`,
+    `${at}FAIL host 844x390: the alpha marker is missingly drawn`,
+    `${at}FAIL host 844x390: the alpha marker and the beta marker are missing`,
+  ],
+  "fixture-beta-prove": [
+    `${at}FAIL timed out: beta start the game\n${at}##[error]Process completed with exit code 1.`,
+    `${at}FAIL timed out: beta start\n${at}FAIL timed out: beta end\n`,
+  ],
+  "server-fixture-gamma-prove": [`${at}Error: gamma timeout p1 state:`, `${at}Error: gamma timeout p0 welcome:`],
 };
 for (const [id, lines] of Object.entries(notFlake)) {
-  for (const line of lines) assert.equal(flakes.find((f) => f.id === id).regex.test(line), false, `${id} signature is not ${JSON.stringify(line)}`);
+  for (const line of lines) assert.equal(fixtures.find((f) => f.id === id).regex.test(line), false, `${id} signature is not ${JSON.stringify(line)}`);
 }
 
 let id = 0;
@@ -72,30 +118,33 @@ function run(spec) {
   return { jobs, logs };
 }
 const check = (label, input, want) => {
-  const got = decide({ flakes, runAttempt: 1, ...input });
+  const got = decide({ flakes: fixtures, runAttempt: 1, ...input });
   assert.equal(got.rerun, want, `${label}: ${got.reason}`);
   console.log(`ok   ${label}: ${got.rerun ? "re-run" : "no re-run"}, ${got.reason}`);
   return got;
 };
 
 const allFlaky = run([
-  ["browser-a (a3)", "turn-gain-prove", failures["turn-gain-prove"]],
-  ["browser-b (presentation)", "turn-gain-prove", failures["turn-gain-prove"]],
+  ["browser-a (a3)", "fixture-alpha-prove", fixtureFailures["fixture-alpha-prove"]],
+  ["browser-b (presentation)", "fixture-beta-prove", fixtureFailures["fixture-beta-prove"]],
   // The browser-a aggregate fails with its suites; like checks, it is not a flake of its own and is skipped.
   ["browser-a", "test", `${at}Process completed with exit code 1.`],
 ]);
 const got = check("every failed job is a known flake", allFlaky, true);
 assert.deepEqual(got.jobs, [
-  { name: "browser-a (a3)", flakes: ["turn-gain-prove"] },
-  { name: "browser-b (presentation)", flakes: ["turn-gain-prove"] },
+  { name: "browser-a (a3)", flakes: ["fixture-alpha-prove"] },
+  { name: "browser-b (presentation)", flakes: ["fixture-beta-prove"] },
 ]);
 
 check("one failed job is not a known flake", run([
-  ["browser-a (a3)", "turn-gain-prove", failures["turn-gain-prove"]],
+  ["browser-a (a3)", "fixture-alpha-prove", fixtureFailures["fixture-alpha-prove"]],
   ["server", "test", `${at}AssertionError: expected 3, got 4`],
 ]), false);
 
 check("attempt 2 is never re-run", { ...allFlaky, runAttempt: 2 }, false);
+check("attempt 3 is never re-run", { ...allFlaky, runAttempt: 3 }, false);
+
+check("an empty flake list never re-runs", { ...allFlaky, flakes: loadFlakes('{"flakes": []}') }, false);
 
 check("no failed jobs", run([]), false);
 
@@ -105,23 +154,24 @@ check("only the aggregate checks job failed", {
 
 // The signature is in the log, but a different step failed: not that flake.
 check("signature in the log, another step failed", run([
-  ["browser-a (a3)", "trade-prove", `${failures["turn-gain-prove"]}\n${at}FAIL trade-prove`],
+  ["browser-a (a3)", "trade-prove", `${fixtureFailures["fixture-alpha-prove"]}\n${at}FAIL trade-prove`],
 ]), false);
 
 // A suffix proof name is not the flaky proof.
 check("step name must be the proof exactly", run([
-  ["browser-b (flows-b)", "turn-gain-prove-4", failures["turn-gain-prove"]],
+  ["browser-b (flows-b)", "fixture-alpha-prove-4", fixtureFailures["fixture-alpha-prove"]],
 ]), false);
 
-// #1326: a known flake's step in the server job is matched as in a browser job. The browser proof's step is needs-prove.
+// #1326: a known flake's step in the server job is matched as in a browser job. The browser step that ends the same
+// way, fixture-gamma-prove (like needs-prove and server-needs-prove), is not that flake.
 const serverNeeds = check("a known flake in the server job is re-run", run([
-  ["server", "turn-gain-prove", failures["turn-gain-prove"]],
+  ["server", "server-fixture-gamma-prove", fixtureFailures["server-fixture-gamma-prove"]],
 ]), true);
 assert.deepEqual(serverNeeds.jobs, [
-  { name: "server", flakes: ["turn-gain-prove"] },
+  { name: "server", flakes: ["server-fixture-gamma-prove"] },
 ]);
-check("browser needs-prove is not the server timeout flake", run([
-  ["browser-a (a3)", "needs-prove", retired["server-needs-prove"]],
+check("browser fixture-gamma-prove is not the server timeout flake", run([
+  ["browser-a (a3)", "fixture-gamma-prove", fixtureFailures["server-fixture-gamma-prove"]],
 ]), false);
 
 // A retired signature is no longer a flake: its failed job is not re-run, and neither are the near misses it once excluded.
@@ -155,16 +205,19 @@ for (const [step, logs] of Object.entries(retiredNear)) {
   for (const log of logs) check(`retired ${step} near miss is not a known flake`, run([["browser-a (a3)", step, log]]), false);
 }
 
-const timedOut = run([["browser-a (a3)", "turn-gain-prove", failures["turn-gain-prove"]]]);
+const timedOut = run([["browser-a (a3)", "fixture-alpha-prove", fixtureFailures["fixture-alpha-prove"]]]);
 timedOut.jobs[2].conclusion = "cancelled";
 check("a cancelled or timed-out job is not a flake", timedOut, false);
 
 check("a failed job with no log is not a flake", { ...allFlaky, logs: {} }, false);
 
 // Every failed step in a job must be a flake, not just one of them.
-const twoSteps = run([["browser-a (a3)", "turn-gain-prove", `${failures["turn-gain-prove"]}\n${at}FAIL trade-prove`]]);
+const twoSteps = run([["browser-a (a3)", "fixture-alpha-prove", `${fixtureFailures["fixture-alpha-prove"]}\n${at}FAIL trade-prove`]]);
 twoSteps.jobs[2].steps.splice(2, 0, { name: "Run npm run trade-prove", conclusion: "failure" });
 check("one job, two failed steps, only one a known flake", twoSteps, false);
+
+// Each real entry, through the same decide(), re-runs a job that prints its failure.
+for (const f of flakes) check(`real ${f.id} is a known flake`, { ...run([["browser-a (a3)", f.id, failures[f.id]]]), flakes }, true);
 
 // The workflow never runs PR code: it checks out the default branch only, and has no head ref anywhere.
 assert.match(workflow, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
