@@ -68,7 +68,7 @@ const count = (page, side, r) => token(page, side, r).locator("output").textCont
 
 async function load(page, mode = "ai", game = base) {
   await page.evaluate(() => window.__emberisle.getState().goTitle());
-  await page.getByRole("button", { name: "Play", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Play with bots", exact: true }).waitFor();
   await page.evaluate(async ([game, mode]) => {
     const api = window.__emberisle;
     api.getState().startAi();
@@ -250,7 +250,9 @@ async function layoutAndAdd(page, tag) {
   await minus(page, "give", "grain").click();
   assert.equal(await count(page, "give", "grain"), 2, `${tag}: the minus button takes one away`);
   await more(page, "give", "grain").dispatchEvent("pointerdown");
-  await page.waitForTimeout(700);
+  // Hold until the 500 ms long press has fired. A fixed 700 ms wait lost the race on a loaded CI runner: the page's timer
+  // ran late, the press never counted and the click added one (count 3, #1660).
+  for (const until = Date.now() + 10000; Date.now() < until && (await count(page, "give", "grain")) !== 1; ) await page.waitForTimeout(50);
   await more(page, "give", "grain").dispatchEvent("pointerup");
   await more(page, "give", "grain").dispatchEvent("click");
   assert.equal(await count(page, "give", "grain"), 1, `${tag}: a long press takes one away, and its release does not add one back`);

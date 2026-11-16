@@ -37,6 +37,8 @@ The issue column lists numbers named in each script's opening comment.
 | `shots.mjs` | `node scripts/shots.mjs` | Writes screen captures under `test-results/shots/` and prints rendering measurements. | No | #125, #310 |
 | `stale-pr-sweeper.mjs` | `node scripts/stale-pr-sweeper.mjs` | Records activity and closes stale PRs when `STALE_PR_SWEEPER=on`; otherwise prints `disabled`. | Yes: `stale-pr-sweeper.yml` | None |
 | `trade-map.test.mjs` | `npm run trade-map-test` | Checks trade previews and settlement, writing `test-results/trade-map-*.png`. | Yes: `trade-map.yml`, `ci.yml` (`npm run trade-map-test`) | #536 |
+| `trade-sheet-prove.mjs` | `npm run trade-sheet-prove` | Verifies one-tray trade sheet tokens, sentence wording, need dots, and bank trade states. | Yes: `ci.yml` (`npm run trade-sheet-prove`) | #1537 |
+| `tray-prove.mjs` | `npm run tray-prove` | Verifies one-tray HUD three parts, BuildList sheet, armed actions, and insets across viewports. | Yes: `ci.yml` (`npm run tray-prove`) | #1539 |
 | `tunnel-reconnect-prove.mjs` | `npm run tunnel-reconnect-prove` | Simulates phone-lock and Wi-Fi switch reconnect flows against real host rules. | Yes: `ci.yml` (`npm run tunnel-reconnect-prove`) | #197 |
 | Libraries | Imported or loaded by scripts; no standalone command. | `audio-level-lib.mjs`, `proof-browser.mjs`, `proof-host-port.mjs`, `roll-off-oracle.mjs`, `fixtures/`, `hex-jelly.html`, `hex-jelly-lineup.html`, and `jelly-board.html` support scripts and proofs. | Through callers | #1073, #1281, #1286, #1556 |
 
