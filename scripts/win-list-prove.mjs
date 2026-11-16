@@ -325,6 +325,14 @@ try {
   {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: "reduce" });
     const page = await context.newPage();
+    // This case measures the chunk timer and DOM, not board pixels. A GL driver call can block the
+    // page across the timer's deadline; keep native clocks and DOM frames, but submit no scene draws.
+    // Other contexts (including every screenshot) still draw the real board.
+    await page.addInitScript(() => {
+      for (const key of ["drawElements", "drawArrays", "drawElementsInstanced", "drawArraysInstanced"]) {
+        WebGL2RenderingContext.prototype[key] = function () {};
+      }
+    });
     const tag = "390x844 landing, list chunk hangs";
     page.on("pageerror", (e) => errors.push(`${tag}: ${e.message}`));
     page.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
