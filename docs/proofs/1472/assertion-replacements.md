@@ -1,7 +1,7 @@
 # Owner-approved assertion and selector equivalents
 
 Authority: issue1472, owner answers A on1448/1449; DECISIONS2026-10-25.
-Runtime commit0df2f220 is separate from these replacements.
+Original runtime commit0df2f220 is separate from proof-only72e4e3f8; the newer landscape-label equivalent is in proof-only6cc97cf0.
 No geometry, accessibility, privacy, deadline or tolerance is dropped. Start-state and label-fit checks are additive.
 client-prove line595 already checks a fully-ready host versus a guest on current main; that valid assertion stays unchanged.
 
@@ -23,5 +23,4 @@ client-prove line595 already checks a fully-ready host versus a guest on current
 | scripts/lobby-layout-prove.mjs:394 | `` await page.getByRole("button", { name: "Start", exact: true }).waitFor(); `` | `` await page.getByRole("button", { name: "Start", exact: true }).and(page.locator(":enabled")).waitFor(); `` | Always-visible Start must become enabled; original timeout retained. |
 | scripts/lobby-wait-box-prove.mjs:313 | `` await phone.getByRole("button", { name: "Leave the table" }).click(); `` | `` await phone.getByRole("button", { name: "Leave table" }).click(); `` | Owner-approved wording equivalent; same behavior and geometry checks. |
 | scripts/shots.mjs:259 | `` await page.getByRole("button", { name: "Leave the table" }).click(); `` | `` await page.getByRole("button", { name: "Leave table" }).click(); `` | Owner-approved wording equivalent; same behavior and geometry checks. |
-
 | scripts/lobby-wait-box-prove.mjs:252 (new main landscape case) | `"Leave the table"` in the required-controls array | `"Leave table"` in the same array | Same required Leave action under approved1472 wording; target size, viewport and every pairwise-gap assertion remain unchanged. |
