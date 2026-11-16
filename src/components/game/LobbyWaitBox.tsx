@@ -36,7 +36,7 @@ export function LobbyPlay({ onGame }: { onGame: (open: boolean) => void }) {
   }, [stacker, board, onGame]);
   const missing = 3 - seats.length;
   const readyCount = seats.filter((s) => s.ready).length;
-  const status = missing > 0 ? `Need ${missing} more player${missing === 1 ? "" : "s"}` : readyCount === seats.length ? "Everyone is ready" : `${readyCount} of ${seats.length} ready`;
+  const status = missing > 0 ? `Need ${missing} more player${missing === 1 ? "" : "s"}` : readyCount === seats.length ? "All ready" : `${readyCount} of ${seats.length} ready`;
   return (
     <div className="ly">
       <p className="lr">{seats.map((s) => s.name).join(" · ")} · {status}</p>
