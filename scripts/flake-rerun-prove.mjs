@@ -41,8 +41,8 @@ const workflow = readFileSync(new URL("../.github/workflows/flake-rerun.yml", im
 
 // Each signature matches the failure text its proof really prints, as it appears in a job log.
 const at = "2026-10-19T01:00:00.0000000Z ";
+// Empty while .github/flaky.json has no entries; an entry that is added brings its failure text here.
 const failures = {
-  "turn-gain-prove": `${at}FAIL host 844x390: no gain line is up while "Your turn" is [{"t":1}]`,
 };
 const fixtureFailures = {
   "fixture-alpha-prove": `${at}FAIL host 844x390: the alpha marker is missing [{"t":1}]`,
@@ -67,6 +67,8 @@ const retired = {
   "board-touch-prove": `${at}AssertionError [ERR_ASSERTION]: setup: a tap on a Pasture hex plays nothing\n${at}+ actual - expected`,
   "lobby-layout-prove": `${at}AssertionError [ERR_ASSERTION]: 375x667: "Copy" has at least 8 px between text and button edge (7.3 / 7.2)`,
   "connection-health-prove": `${at}+   saving: false,\n${at}-   saving: true,`,
+  // #1726: this pattern no longer matches anything turn-gain-prove prints, so the entry left.
+  "turn-gain-prove": `${at}FAIL host 844x390: no gain line is up while "Your turn" is [{"t":1}]`,
 };
 for (const id of Object.keys(retired)) assert.equal(flakes.some((f) => f.id === id), false, `${id} is retired from flaky.json`);
 assert.deepEqual(flakes.map((f) => f.id).sort(), Object.keys(failures).sort());
