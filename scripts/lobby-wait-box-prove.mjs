@@ -249,7 +249,7 @@ async function landscape(page, label) {
   assert.deepEqual(data.small, [], `${label}: text under 12 px`);
   // The stage is the part that gives way here, so it has a floor: the game stays at least 120 px tall.
   assert.ok(data.parts[1].height >= 120, `${label}: stage at least 120 px tall (${data.parts[1].height})`);
-  const want = ["Sound off", "Close", "Left", "Right", "Ready", "Leave the table"];
+  const want = ["Sound off", "Close", "Left", "Right", "Ready", "Leave table"];
   for (const name of want) assert.ok(data.controls.some((c) => c.label === name), `${label}: ${name} shown`);
   for (const c of data.controls) {
     assert.ok(c.width >= 44 && c.height >= 44, `${label}: ${c.label} target ${c.width}x${c.height}`);
