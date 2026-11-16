@@ -1,14 +1,6 @@
-# Narrow lobby label measurements
+# Historical narrow-label comparisons
 
-Original source 72e4e3f8: 320x568 button right 297.05, row right 295; overflow 2.05 px.
-Runtime 05fb5d10 reduces How to play horizontal padding from 16 to 8 px.
-It preserves font, label, one line, 44 px height and at least 8 px padding.
-The real hosted 320x568 and ordinary 667x375 views then fit.
+These pictures record the earlier measured options, not the current validation. Desk answer6817389797 approved the narrow two-line option; current validated captures are in [current-layout](../current-layout/README.md). Raw measurements and the unused capture helper are retained outside the branch.
 
-At 667x375 with left/right 47 px and bottom 21 px safe-area insets:
-- Current single-line button right 312.05 versus row right 285.73: 26.32 px overflow.
-- Desk answered Option B on 2026-11-12.
-- Option B allows two-line 76x44 px with 8 px padding at width <= 700 px in landscape.
-- Option B right 281.48 fits cleanly inside row right 285.73.
-- Implemented in src/components/game/lobby.css.
-- 320x568, 390x844, 844x390 and 1280x720 remain single-line.
+- 320x568: [original](original/320x568-current.png), [8px padding](original/320x568-padding8.png).
+- 667x375 with side safe areas: [original](options/667x375-insets-current.png), [two-line option](options/667x375-insets-narrow-wrap-option.png).
