@@ -2143,7 +2143,7 @@ export class IsleRenderer {
     }
     // Ivory path bars need a dark rim on pale ground; keep it outside the pickable set, like the corner outlines.
     const edgeOutlines = seat.getHex() === 0xf3ecd9 && eset.size
-      ? new THREE.InstancedMesh(new THREE.BoxGeometry(0.24, 0.035, 1), new THREE.MeshBasicMaterial({ color: RIM.dark }), eset.size)
+      ? new THREE.InstancedMesh(new THREE.BoxGeometry(0.32, 0.068, 1), new THREE.MeshBasicMaterial({ color: RIM.dark }), eset.size)
       : null;
     if (edgeOutlines) {
       edgeOutlines.userData = { kind: "edge-outlines" };
@@ -2164,7 +2164,7 @@ export class IsleRenderer {
       m.userData = { kind: "edge", id: e.id, baseGlow: 0.45 };
       this.marks.add(m);
       if (edgeOutlines) {
-        dummy.position.set(m.position.x, m.position.y - 0.0175, m.position.z);
+        dummy.position.set(m.position.x, m.position.y - 0.001, m.position.z);
         dummy.rotation.copy(m.rotation);
         dummy.scale.set(1, 1, span * 0.8);
         dummy.updateMatrix();

@@ -17,7 +17,7 @@ const check = (name, ok, data) => {
 const median = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
 const luminance = (rgb) => rgb.map(v => v / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
-let browser;
+let browser, browserVersion;
 try {
   await vite.listen();
   const { createGame, worldOfHex } = await vite.ssrLoadModule("/src/lib/game/board.ts");
@@ -52,7 +52,6 @@ try {
   };
   const fixtures = Object.fromEntries(["p0", "p1", "p2", "p3"].map(id => [id, fixture(id)]));
   mkdirSync(OUT, { recursive: true });
-  browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
   const waitPaint = async (page) => {
     const expected = await page.evaluate(() => { const s = window.__emberisle.getState().state; return { seq: s.seq, seed: s.seed }; });
     await page.waitForFunction(({ seq, seed }) => {
@@ -67,6 +66,8 @@ try {
   for (const test of cases) {
     const { width, height, reduce, lead } = test, f = fixtures[lead], pale = lead === "p2";
     const tag = `${lead}-${width}x${height}-${reduce ? "reduce" : "motion"}`;
+    browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
+    browserVersion = browser.version();
     const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, isMobile: true, hasTouch: true, reducedMotion: reduce ? "reduce" : "no-preference" });
     try {
       await ctx.addInitScript(() => localStorage.setItem("emberisle-water", "simple"));
@@ -95,6 +96,8 @@ try {
       const corner = await page.evaluate(id => window.__isle.screenOf(id), f.vertexId);
       assert.ok(corner);
       await page.touchscreen.tap(corner.x, corner.y);
+      await page.waitForFunction(id => window.__emberisle.getState().pendingPlace?.kind === "vertex" && window.__emberisle.getState().pendingPlace?.id === id, f.vertexId, { timeout: STEP_MS });
+      await page.getByTestId("place-chip").tap();
       await page.waitForFunction(({ id, lead }) => {
         const s = window.__emberisle.getState().state;
         return s.phase === "setupRoad" && s.current === lead && s.vertices.find(v => v.id === id)?.building?.playerId === lead;
@@ -118,8 +121,22 @@ try {
           const span = Math.hypot(b.x - a.x, b.z - a.z), along = { x: (b.x - a.x) / span, z: (b.z - a.z) / span }, across = { x: along.z, z: -along.x };
           for (const h of s.hexes.filter(h => a.hexes.includes(h.id) && b.hexes.includes(h.id) && ["grain", "waste"].includes(h.terrain))) {
             const sign = Math.sign((centers[h.id].x - m.position.x) * across.x + (centers[h.id].z - m.position.z) * across.z) || 1;
-            const points = distance => [-0.18, -0.09, 0, 0.09, 0.18].map(t => i.screenAt(m.position.x + along.x * t * span + across.x * sign * distance, m.position.y, m.position.z + along.z * t * span + across.z * sign * distance));
-            samples.push({ edge: edge.id, terrain: h.terrain, rim: points(0.10), ground: points(0.20) });
+            // Measure outside the projected bar silhouette: a world-plane point can be
+            // hidden by the taller bar at this camera angle, even when the rim is visible.
+            const center = i.screenAt(m.position.x, m.position.y, m.position.z);
+            const tip = i.screenAt(m.position.x + along.x * span, m.position.y, m.position.z + along.z * span);
+            const length = Math.hypot(tip.x - center.x, tip.y - center.y);
+            const normal = { x: -(tip.y - center.y) / length, y: (tip.x - center.x) / length };
+            const terrainSide = i.screenAt(m.position.x + across.x * sign, m.position.y, m.position.z + across.z * sign);
+            if ((terrainSide.x - center.x) * normal.x + (terrainSide.y - center.y) * normal.y < 0) { normal.x *= -1; normal.y *= -1; }
+            const boundary = [-0.18, -0.09, 0, 0.09, 0.18].map(t => {
+              const core = i.screenAt(m.position.x + along.x * t * span, m.position.y, m.position.z + along.z * t * span);
+              const corners = [-1, 1].flatMap(side => [-1, 1].map(top => i.screenAt(m.position.x + along.x * t * span + across.x * side * 0.08, m.position.y + top * 0.035, m.position.z + along.z * t * span + across.z * side * 0.08)));
+              const extent = Math.max(...corners.map(p => (p.x - core.x) * normal.x + (p.y - core.y) * normal.y));
+              return { x: core.x + normal.x * extent, y: core.y + normal.y * extent };
+            });
+            const points = distance => boundary.map(p => ({ x: p.x + normal.x * distance, y: p.y + normal.y * distance }));
+            samples.push({ edge: edge.id, terrain: h.terrain, rim: points(1), ground: points(4) });
           }
           return { id: edge.id, x: m.position.x, y: m.position.y, z: m.position.z, width: m.geometry.parameters.width, height: m.geometry.parameters.height, length: m.geometry.parameters.depth, span, color: m.material.color.getHexString(), emissive: m.material.emissive.getHexString() };
         });
@@ -154,13 +171,27 @@ try {
       const edgeId = info.bars[0].id, point = await page.evaluate(id => window.__isle.screenOf(id), edgeId);
       assert.ok(point);
       await page.touchscreen.tap(point.x, point.y);
+      await page.waitForFunction(id => window.__emberisle.getState().pendingPlace?.kind === "edge" && window.__emberisle.getState().pendingPlace?.id === id, edgeId, { timeout: STEP_MS });
+      check(`${tag}: touch selects the intended path before confirmation`, true);
+      await page.getByTestId("place-chip").tap();
       await page.waitForFunction(({ id, lead }) => window.__emberisle.getState().state.edges.find(e => e.id === id)?.path === lead, { id: edgeId, lead }, { timeout: STEP_MS });
       check(`${tag}: a real touch still places that path`, true);
       records.push({ ...test, filename, info, contrasts });
-    } finally { await ctx.close(); }
+    } catch (error) {
+      try {
+        const page = ctx.pages()[0];
+        if (page) {
+          const state = await page.evaluate(() => { const g = window.__emberisle?.getState(), i = window.__isle; return { phase: g?.state?.phase, current: g?.state?.current, seq: g?.state?.seq, pendingPlace: g?.pendingPlace, screen: g?.screen, mode: g?.mode, lastSeq: i?.lastSeq, renders: i?.renders, painted: i?.__edgePaint }; });
+          writeFileSync(join(OUT, `${tag}-failure.json`), JSON.stringify(state, null, 2));
+          await page.screenshot({ path: join(OUT, `${tag}-failure.png`) });
+          console.error("legal-edge failure state", JSON.stringify(state));
+        }
+      } catch (captureError) { console.error("legal-edge diagnostic failed", String(captureError)); }
+      throw error;
+    } finally { await ctx.close(); await browser.close(); browser = undefined; }
   }
   check("zero console errors", errors.length === 0, errors);
-  writeFileSync(join(OUT, "measurements.json"), JSON.stringify({ seed: 590, node: process.version, browser: browser.version(), sourceSHA256: createHash("sha256").update(readFileSync("src/lib/scene/isle-renderer.ts")).digest("hex"), sampling: "median linear-sRGB luminance of five fixed core-rim pixels at 0.10 world units and adjacent ground pixels at 0.20 units; WCAG ratio", records, failures: fails, errors }, null, 2));
+  writeFileSync(join(OUT, "measurements.json"), JSON.stringify({ seed: 590, node: process.version, browser: browserVersion, sourceSHA256: createHash("sha256").update(readFileSync("src/lib/scene/isle-renderer.ts")).digest("hex"), sampling: "median linear-sRGB luminance of five fixed pixels 1 CSS pixel outside the projected bar silhouette and ground pixels 4 CSS pixels outside; WCAG ratio", records, failures: fails, errors }, null, 2));
   if (fails.length) { console.error(`legal-edge-prove: ${fails.length} failed checks`); process.exitCode = 1; }
   else console.log(`legal-edge-prove: ok (${cases.length} real-game cases)`);
 } catch (error) { console.error(error); process.exitCode = 1; }
