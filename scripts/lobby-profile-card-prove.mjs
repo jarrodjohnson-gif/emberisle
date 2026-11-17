@@ -98,6 +98,14 @@ async function run({ width, height }) {
     page.on("pageerror", (e) => errors.push(`${name}: ${e}`));
     page.on("console", (m) => { if (m.type() === "error") errors.push(`${name}: ${m.text()}`); });
     if (hold) {
+      // Each held reply keeps its receiving route; a later list connection cannot own it.
+      wire.release = (id) => {
+        const i = wire.held.findIndex(({ message }) => JSON.parse(message).id === id);
+        assert.ok(i >= 0, `${at}: the host answered request ${id}`);
+        const [held] = wire.held.splice(i, 1);
+        wire.got.push(JSON.parse(held.message));
+        held.owner.send(held.message);
+      };
       await page.routeWebSocket(/./, (ws) => {
         const server = ws.connectToServer();
         ws.onMessage((m) => {
@@ -107,17 +115,10 @@ async function run({ width, height }) {
         });
         server.onMessage((m) => {
           const frame = typeof m === "string" && cardFrame(m);
-          if (frame && wire.holding) return void wire.held.push(m);
+          if (frame && wire.holding) return void wire.held.push({ message: m, owner: ws });
           if (frame) wire.got.push(frame);
           ws.send(m);
         });
-        wire.release = (id) => {
-          const i = wire.held.findIndex((m) => JSON.parse(m).id === id);
-          assert.ok(i >= 0, `${at}: the host answered request ${id}`);
-          const [m] = wire.held.splice(i, 1);
-          wire.got.push(JSON.parse(m));
-          ws.send(m);
-        };
       });
     } else {
       page.on("websocket", (ws) => {
@@ -191,6 +192,20 @@ async function run({ width, height }) {
   await card(t).waitFor();
   await t.waitForFunction(() => document.querySelector('[data-testid="other-profile-loading"]'));
   const first = await asked(tide.wire, P.Ember.id);
+  // A real later discovery connection must not own the held seat reply.
+  const discovered = await t.evaluate((address) => new Promise((resolve, reject) => {
+    const ws = new WebSocket(address);
+    const timer = setTimeout(() => reject(new Error("late discovery list timed out")), 5000);
+    ws.onopen = () => ws.send(JSON.stringify({ type: "list" }));
+    ws.onerror = () => { clearTimeout(timer); reject(new Error("late discovery socket failed")); };
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      if (message.type === "openTables") { clearTimeout(timer); resolve(Array.isArray(message.tables)); }
+    };
+    window.__profileCardDiscoverySocket = ws;
+  }), new URL(appUrl).searchParams.get("host"));
+  assert.equal(discovered, true, `${at}: a later real list socket responds before the held card is released`);
+
   assert.deepEqual({ type: first.type, profileId: first.profileId, id: typeof first.id }, { type: "tableProfileCard", profileId: P.Ember.id, id: "number" }, `${at}: the request carries an id and the seat's profile`);
   assert.deepEqual(await lines(t), ["Ember", "Loading…"], `${at}: loading card`);
   assert.ok(!/\d/.test(await card(t).innerText()), `${at}: no number while loading`);
@@ -318,7 +333,7 @@ async function run({ width, height }) {
 // effects twice, so a card may send an earlier request too; its answer is one more stale answer the card must drop.
 async function asked(wire, profileId) {
   const last = () => wire.sent.at(-1);
-  await waitFor(() => last()?.profileId === profileId && wire.held.some((m) => JSON.parse(m).id === last().id), `the held answer for ${profileId}`);
+  await waitFor(() => last()?.profileId === profileId && wire.held.some(({ message }) => JSON.parse(message).id === last().id), `the held answer for ${profileId}`);
   await new Promise((r) => setTimeout(r, 100));
   assert.equal(last().profileId, profileId, "the newest request is for this profile");
   return last();
