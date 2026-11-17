@@ -4,6 +4,8 @@ import {
   DIORAMA_AZIMUTH,
   DIORAMA_POLAR,
   playOrtho,
+  CLASSIC_ISLE,
+  isleShape,
   TouchGesture,
   PICK_EDGE,
   PICK_VERTEX_RADIUS,
@@ -18,6 +20,7 @@ import {
   pickReach,
   tapSlop,
   type DioramaFit,
+  type IsleShape,
   type Insets,
   type OrthoFit,
   type PlayView,
@@ -298,6 +301,9 @@ export class IsleRenderer {
   // The crystal sea, its edge strip, the floor and its props, and the CPU wave field: built on the first switch to crystal,
   // so a page on the simple sea does no more at boot than before the crystal sea existed.
   private coast!: ReturnType<typeof coastLoop>;
+  // #1607: the island's measured shape (its middle and extents) for the fits, and the hexes it was measured from.
+  private isle: IsleShape = CLASSIC_ISLE;
+  private isleCells = CLASSIC_CELLS;
   private crystal: { group: THREE.Group; sea: THREE.Mesh; wash: THREE.Mesh; swell: ReturnType<typeof makeSwell> } | null = null;
   // The probe waits for a settled client (setSettled), then a second with no pointer on the canvas.
   private settledAt = 0;
@@ -434,29 +440,21 @@ export class IsleRenderer {
     this.scene.add(this.opaqueSea);
     this.scene.add(this.oceanLife.group, this.oceanLife.fish);
 
-    const coast = (this.coast = coastLoop());
     this.sea = { uTime: this.water.uniforms.uTime!, uMotion: this.motion, uFade: { value: new THREE.Vector2(11, 22) }, ...this.splash.uniforms };
     this.water.uniforms.uFade = this.sea.uFade;
     addSplashRings(this.water, this.sea);
     // The crystal sea refracts a half-float copy of the scene.
     const ext = this.renderer.extensions;
     this.crystalOk = this.renderer.capabilities.isWebGL2 && (ext.has("EXT_color_buffer_float") || ext.has("EXT_color_buffer_half_float"));
-    for (const c of coast) this.coastMiter.set(c.id, { mx: c.mx, mz: c.mz });
-    this.coastOrder = coast.map((c) => c.id);
-    const beach = (this.beach = new THREE.Mesh(
-      coastStrip(coast, -0.04, 0.22),
-      new THREE.MeshStandardMaterial({ color: 0xe8d7b0, roughness: 1, metalness: 0 }),
-    ));
+    const beach = (this.beach = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({ color: 0xe8d7b0, roughness: 1, metalness: 0 })));
     beach.position.y = 0.015;
     beach.receiveShadow = true;
     this.scene.add(beach);
 
-    this.foam = new THREE.Mesh(
-      coastStrip(coast, 0.22, 0.42),
-      new THREE.MeshBasicMaterial({ color: 0xe8f8f8, transparent: true, opacity: 0.32, depthWrite: false }),
-    );
+    this.foam = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({ color: 0xe8f8f8, transparent: true, opacity: 0.32, depthWrite: false }));
     this.foam.position.y = 0.028;
     this.scene.add(this.foam);
+    this.traceCoast(hexesInRadius(2), 0, 0);
 
     this.bruno = makeBruno();
     this.wayfarer = this.bruno.g;
@@ -916,7 +914,7 @@ export class IsleRenderer {
     if (this.play() && this.view !== this.playView()) return this.setView(this.playView());
     this.camera.aspect = w / h;
     // Dolly limit: OrbitControls.update() clamps the current distance to the new max on the next frame.
-    this.controls.maxDistance = freeMaxDistance(h, hudInsets(w, h, this.coarse(), this.safe()), this.coarse());
+    this.controls.maxDistance = freeMaxDistance(h, hudInsets(w, h, this.coarse(), this.safe()), this.coarse(), this.isle);
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h, false);
     this.composer?.setSize(w, h);
@@ -947,7 +945,7 @@ export class IsleRenderer {
     // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment): the one the map is fitted to.
     for (const k of ["top", "right", "bottom", "left"] as const) c.parentElement?.style.setProperty(`--hole-${k}`, `${base[k]}px`);
     const [w, h] = [c.clientWidth || 1, c.clientHeight || 1];
-    const f = this.view === "diorama" ? fitDiorama(w, h, base) : playOrtho(w, h, base, readViewport().phone);
+    const f = this.view === "diorama" ? fitDiorama(w, h, base, DIORAMA_POLAR, DIORAMA_AZIMUTH, this.isle) : playOrtho(w, h, base, readViewport().phone, this.isle);
     const was = this.fit;
     if (was && FIT_KEYS.every((k) => Math.abs(this.fitPose(f)[k] - this.fitPose(was)[k]) < 1e-6)) return;
     this.fit = f;
@@ -972,9 +970,11 @@ export class IsleRenderer {
     this.moveTo(to, lean ? [...FIT_KEYS, "polar"] : FIT_KEYS, instant || this.renders <= this.shownAt);
   }
 
+  // #1607: the fits are about the island's middle; the eye looks at it there.
   private fitPose(f: OrthoFit | DioramaFit): Pose {
-    if ("focal" in f) return { ...NO_FIT, focal: f.focal, dist: f.dist, cx: f.cx, cy: f.cy, polar: DIORAMA_POLAR, azimuth: DIORAMA_AZIMUTH, zoom: 1 };
-    return { ...NO_FIT, left: f.left, right: f.right, top: f.top, bottom: f.bottom, tx: f.x, tz: f.z, polar: f.lean, azimuth: 0, zoom: 1 };
+    const { cx, cz } = this.isle;
+    if ("focal" in f) return { ...NO_FIT, focal: f.focal, dist: f.dist, cx: f.cx, cy: f.cy, tx: cx, tz: cz, polar: DIORAMA_POLAR, azimuth: DIORAMA_AZIMUTH, zoom: 1 };
+    return { ...NO_FIT, left: f.left, right: f.right, top: f.top, bottom: f.bottom, tx: f.x + cx, tz: f.z + cz, polar: f.lean, azimuth: 0, zoom: 1 };
   }
 
   // Read from the camera itself, so it is right straight after applyPose, before the controls' next update.
@@ -1108,7 +1108,7 @@ export class IsleRenderer {
     const f = this.fit;
     if (!f) return 0;
     const half = "focal" in f ? (f.dist * Math.min(this.sizeW, this.sizeH)) / 2 / f.focal : Math.min(f.right - f.left, f.top - f.bottom) / 2;
-    return Math.min(PAN_RADIUS, PAN_VIEW * half);
+    return Math.min(PAN_RADIUS + this.isle.grow, PAN_VIEW * half);
   }
 
   // The eye moves with the target, so the view does not lag a frame.
@@ -1296,6 +1296,10 @@ export class IsleRenderer {
     this.pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     this.pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     this.raycaster.setFromCamera(this.pointer, this.cam());
+    // #1607: every store push rebuilds the marks' pick volumes, and the ray meets a mesh by its world matrix, which only a
+    // draw brings up to date: a tap between a push and the next frame (12 fps idle, or a software GPU behind) met nothing.
+    this.land.updateMatrixWorld();
+    this.marks.updateMatrixWorld();
     return this.view === "diorama" ? this.reachHits(coarse) : this.raycaster
       .intersectObjects(this.pickables, true)
       .filter((h) => h.object.userData.id)
@@ -1697,7 +1701,7 @@ export class IsleRenderer {
     const width = canvas.clientWidth, height = canvas.clientHeight;
     const inset = this.insets();
     const camera = this.cam();
-    const scale = this.view === "overhead" ? width * this.ortho.zoom / (this.ortho.right - this.ortho.left) : this.view === "diorama" ? this.pxPerUnit(0, CAP_LEVEL, 0) : 28;
+    const scale = this.view === "overhead" ? width * this.ortho.zoom / (this.ortho.right - this.ortho.left) : this.view === "diorama" ? this.pxPerUnit(this.isle.cx, CAP_LEVEL, this.isle.cz) : 28;
     const point = new THREE.Vector3();
     return (x: number, z: number, reach: number) => {
       point.set(x, 0.12, z).project(camera);
@@ -1792,7 +1796,48 @@ export class IsleRenderer {
       );
   }
 
+  // The coast of these hexes, from their middle (cx, cz): its loop and miters, the beach and the foam, and a fresh crystal sea.
+  private traceCoast(cells: { q: number; r: number }[], cx: number, cz: number) {
+    const coast = (this.coast = coastLoop(cells, cx, cz));
+    this.coastMiter.clear();
+    for (const c of coast) this.coastMiter.set(c.id, c);
+    this.coastOrder = coast.map((c) => c.id);
+    this.beach.geometry.dispose();
+    this.beach.geometry = coastStrip(coast, -0.04, 0.22);
+    this.foam.geometry.dispose();
+    this.foam.geometry = coastStrip(coast, 0.22, 0.42);
+    if (this.crystal) {
+      this.scene.remove(this.crystal.group);
+      if (this.crystal.wash !== this.baseWash) dropMesh(this.baseWash!);
+      disposeGroup(this.crystal.group);
+      this.crystal = null;
+      if (this.waterPath === "crystal") this.applyWater();
+    }
+  }
+
+  // #1607: a board on other hexes than the last (the expanded island, or back to the classic one) is measured (mobile-fit's
+  // isleShape: its middle is the middle of its hex centres' bounds), its coast re-traced, the visitors' lanes moved out, and the
+  // play view lands at its new home. The classic island keeps the classic constants.
+  private setIsle(state: GameState) {
+    const cells = state.hexes.map((h) => h.id).sort() + "";
+    if (cells === this.isleCells) return;
+    this.isleCells = cells;
+    const xs = state.hexes.map((h) => worldOfHex(h).x);
+    const zs = state.hexes.map((h) => worldOfHex(h).z);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+    const cz = (Math.min(...zs) + Math.max(...zs)) / 2;
+    this.traceCoast(state.hexes, cx, cz);
+    // The hexes on the coast: where the tallest props can stand nearest the edge.
+    const ring = new Set(state.vertices.filter((v) => this.coastMiter.has(v.id)).flatMap((v) => v.hexes));
+    const isle = (this.isle = cells === CLASSIC_CELLS ? CLASSIC_ISLE : isleShape(this.coast, state.hexes.filter((h) => ring.has(h.id)).map(worldOfHex), cx, cz));
+    this.oceanLife.setIsle(cx, cz, isle.grow);
+    this.controls.target.set(0.15 + cx, 0.05, cz);
+    this.fit = null;
+    this.refitDue = true;
+  }
+
   private buildLand(state: GameState) {
+    this.setIsle(state);
     this.docksDirty = true;
     this.jelly?.dispose();
     this.jelly = null;
@@ -2263,11 +2308,15 @@ function makeWater() {
   });
 }
 
-// The island's outline: the coastal corners of the 19 hexes in order, each with its outward miter (#130).
-function coastLoop() {
+// The classic island's 19 cells, as setIsle keys a board's.
+const CLASSIC_CELLS = hexesInRadius(2).map(({ q, r }) => `${q},${r}`).sort() + "";
+
+// The island's outline: the coastal corners of its hexes in order, each with its outward miter (#130). #1607: any island's,
+// with (ox, oz) its middle (mobile-fit's isleShape), which the outward side is judged from; the classic island's is the origin.
+function coastLoop(cells: { q: number; r: number }[] = hexesInRadius(2), ox = 0, oz = 0) {
   const pts = new Map<string, { x: number; z: number }>();
   const edges = new Map<string, { a: string; b: string; n: number }>();
-  for (const { q, r } of hexesInRadius(2)) {
+  for (const { q, r } of cells) {
     const ids = hexCorners(q, r).map((c) => {
       const id = vertexId(c.x, c.z);
       pts.set(id, c);
@@ -2303,14 +2352,14 @@ function coastLoop() {
   }
   if (loop.length !== next.size) throw new Error("coast walk: more than one island");
 
-  // The outward normal of edge p->q: the perpendicular on the side away from the origin (the island is centered there).
+  // The outward normal of edge p->q: the perpendicular on the side away from the island's middle.
   const normal = (p: { x: number; z: number }, q: { x: number; z: number }) => {
     const dx = q.x - p.x;
     const dz = q.z - p.z;
     const l = Math.hypot(dx, dz);
     let nx = dz / l;
     let nz = -dx / l;
-    if (nx * (p.x + q.x) + nz * (p.z + q.z) < 0) {
+    if (nx * (p.x - ox + q.x - ox) + nz * (p.z - oz + q.z - oz) < 0) {
       nx = -nx;
       nz = -nz;
     }
@@ -2325,7 +2374,7 @@ function coastLoop() {
     const ml = Math.hypot(mx, mz);
     mx /= ml;
     mz /= ml;
-    if (mx * p.x + mz * p.z <= 0) throw new Error("coast walk: a miter points into the island");
+    if (mx * (p.x - ox) + mz * (p.z - oz) <= 0) throw new Error("coast walk: a miter points into the island");
     // Scale so an offset d along the miter sits d away from both edges.
     const k = 1 / (mx * a.nx + mz * a.nz);
     return { id, x: p.x, z: p.z, mx: mx * k, mz: mz * k };

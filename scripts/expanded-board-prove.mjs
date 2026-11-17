@@ -77,6 +77,14 @@ eq(EXPANDED_COORDS.map((c) => key(c.q, c.r)), expectCoords, "the design's axial 
   for (const c of cornerHexes(EXPANDED_COORDS)) for (const dir of [1, -1]) {
     const path = spiralPath(EXPANDED_COORDS, c, dir).map((x) => key(x.q, x.r));
     eq(sorted(path), sorted(expectCoords), `expanded spiral from ${key(c.q, c.r)}, direction ${dir}, visits all 30 once`);
+    // Every walk is a true inward spiral: each step moves to a touching hex, and the 16 coast hexes (those with fewer
+    // than six neighbours on the island) come first, then the interior.
+    const at = (k) => k.split(",").map(Number);
+    const touching = (a, b) => { const [aq, ar] = at(a), [bq, br] = at(b); const dq = aq - bq, dr = ar - br; return Math.max(Math.abs(dq), Math.abs(dr), Math.abs(dq + dr)) === 1; };
+    ok(path.every((k, i) => i === 0 || touching(path[i - 1], k)), `expanded spiral from ${key(c.q, c.r)}, direction ${dir}: every step touches the last`);
+    const coast = expectCoords.filter((k) => expectCoords.filter((o) => touching(k, o)).length < 6);
+    eq(coast.length, 16, "sixteen coast hexes");
+    eq(sorted(path.slice(0, 16)), sorted(coast), `expanded spiral from ${key(c.q, c.r)}, direction ${dir}: the coast ring comes first`);
   }
   // Official 5-6 rules (2021 rulebook, Illustration B): A on corner 3,-3, counter-clockwise, wastes at -1,-1 and 1,1.
   // The PDF text renders the token at 0,1 as "12" with one pip; the rulebook's token counts (two 2s, two 12s) make it 2.

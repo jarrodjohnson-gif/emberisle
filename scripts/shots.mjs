@@ -256,7 +256,7 @@ try {
     await page.locator("li", { hasText: "Pine" }).waitFor();
     await shot(page, "02-lobby", size);
     for (const p of side) await p.close();
-    await page.getByRole("button", { name: "Leave the table" }).click();
+    await page.getByRole("button", { name: "Leave table" }).click();
 
     // Setup, versus three bots: the first corner to place, glowing.
     await page.getByRole("button", { name: "Play with bots", exact: true }).click();
