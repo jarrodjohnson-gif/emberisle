@@ -103,8 +103,12 @@ const readMarks = async (lite) => {
       if (Math.abs(y - 0.108) > 0.001) continue;
       const x = e[0] * lx + e[4] * ly + e[8] * lz + e[12], z = e[2] * lx + e[6] * ly + e[10] * lz + e[14];
       for (let di = 0; di < docks.length; di++) {
-        // 0.44 x 0.44 square head has corner radius ~0.311 from its centre; stem planks stop well before 0.22.
-        if (Math.hypot(x - centres[di].x, z - centres[di].z) < 0.32) {
+        const dx = x - centres[di].x, dz = z - centres[di].z;
+        const m = isle.docks[di], ml = Math.hypot(m.mx, m.mz) || 1;
+        const along = (dx * m.mx + dz * m.mz) / ml;
+        const across = (dx * m.mz - dz * m.mx) / ml;
+        // Strictly inside the 0.44 x 0.44 painted head (along > -0.205 excludes unpainted brown stem planks behind the seam).
+        if (along > -0.205 && along < 0.225 && Math.abs(across) < 0.225) {
           headSamples[di].push([linToSrgb(col.getX(i)), linToSrgb(col.getY(i)), linToSrgb(col.getZ(i))]);
           break;
         }
@@ -159,24 +163,24 @@ const readMarks = async (lite) => {
 // The board can be rebuilt under the proof (a refit after the first frames brings the plain piers back until the shore swaps in
 // again), so read the marks once they are all in: the full board's merged plates mesh, or the lite board's nine planks, with a
 // mark at every dock. The last read is returned either way, and checkMarks says what is missing.
-async function readSettled(page, lite) {
+async function readSettled(page, lite, expectDocks = 9) {
   const until = Date.now() + STEP_MS;
   let r;
   do {
     await page.waitForFunction(() => window.__isle.landReady && !window.__isle.refitDue, null, { timeout: STEP_MS });
     r = await page.evaluate(readMarks, lite);
-    if (r.meshes >= (lite ? 9 : 1) && r.docks.every((d) => d.verts >= 4)) return r;
+    if (r.meshes >= 1 && r.docks.length === expectDocks && r.docks.every((d) => d.verts >= 4)) return r;
     await page.waitForTimeout(250);
   } while (Date.now() < until);
   return r;
 }
 
-function checkMarks(tag, r) {
-  check(`${tag}: nine docks`, r.docks.length === 9, { docks: r.docks.length });
-  check(`${tag}: mark meshes drawn`, r.meshes >= 1, { meshes: r.meshes });
+function checkMarks(tag, r, expectDocks = 9) {
+  check(`${tag}: ${expectDocks} docks`, r.docks.length === expectDocks, { docks: r.docks.length });
+  check(`${tag}: one merged mark mesh drawn`, r.meshes === 1, { meshes: r.meshes });
   for (const [i, d] of r.docks.entries()) {
     const at = `${tag} dock ${i} (${d.kind})`;
-    check(`${at}: has a mark (4+ corners) close to its pier`, d.verts >= 4 && d.far < (tag === "full" ? 2.0 : 0.6) && d.sameBothCorners, { verts: d.verts, far: d.far });
+    check(`${at}: has a mark (4 corners) close to its pier`, d.verts === 4 && d.far < (r.lite ? 0.6 : 2.2) && d.sameBothCorners, { verts: d.verts, far: d.far });
     check(`${at}: the mark shows its own trade's row`, d.shown === d.kind && d.oneRow, { shown: d.shown });
     if (r.lite) {
       if (d.want) check(`${at}: plank colour is the good's colour`, d.fill.toLowerCase() === d.want.toLowerCase(), { fill: d.fill, want: d.want });
@@ -203,14 +207,14 @@ async function open(lite, width, height) {
   await page.waitForFunction(() => window.__isle?.renders > 0, null, { timeout: STEP_MS });
   await page.getByRole("button", { name: "Pass and play" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState && window.__isle.landReady && !window.__isle.refitDue, null, { timeout: STEP_MS });
-  // The full board's harbour shore swaps in for the plain piers; the lite board paints its planks after a lazy import.
+  // The full board's harbour shore swaps in for the plain piers; the lite board paints its merged planks after a lazy import.
   await page.waitForFunction(async (lite) => {
     const i = window.__isle;
     if (!lite && !(i.shore?.group.parent && i.piers.every((p) => !p.visible))) return false;
     const wantH = (lite ? 128 : 192) * 6;
     let n = 0;
     i.scene.traverse((o) => { const c = o.isMesh && o.visible && o.material?.map?.image; if (c instanceof HTMLCanvasElement && c.width === 256 && c.height === wantH) n++; });
-    return n >= (lite ? 9 : 1);
+    return n >= 1;
   }, lite, { timeout: STEP_MS, polling: 250 });
   return { ctx, page };
 }
@@ -251,7 +255,7 @@ try {
     check("full: one pennant per dock", before.length === 9, { pennants: before.length });
     check("full: each pennant has a mast, cloth, and dark hairline", before.every((p) => p.parts === 3 && p.line === "#2a2420"), before.map((p) => [p.parts, p.line]));
     check("full: no pennant flies over an unclaimed dock", before.every((p) => !p.owner && !p.visible), before.filter((p) => p.visible || p.owner));
-    check("full: each pennant stands on its own dock", before.every((p) => p.dist !== null && p.dist < 2.0), before.map((p) => p.dist));
+    check("full: each pennant stands on its own dock", before.every((p) => p.dist !== null && p.dist < 2.2), before.map((p) => p.dist));
 
     // Two seats claim two docks: an outpost on one corner, a stronghold on the other dock.
     const claimed = await page.evaluate(() => {
@@ -284,6 +288,46 @@ try {
     });
     await page.waitForFunction(() => (window.__isle.shore.group.userData.pennants ?? []).every((p) => !p.visible), null, { timeout: STEP_MS });
     check("full: pennants come down when the docks are free again", (await pennants()).every((p) => !p.visible));
+
+    // Watch the classic shore's plate atlas texture get disposed when switching to an expanded 6-seat (11-dock) island.
+    await page.evaluate(() => {
+      const plates = window.__isle.shore.group.getObjectByName("plates");
+      const tex = plates?.material?.map;
+      window.__plateTexDisposed = 0;
+      if (tex) {
+        const orig = tex.dispose.bind(tex);
+        tex.dispose = () => { window.__plateTexDisposed++; return orig(); };
+      }
+    });
+    await page.evaluate(async () => {
+      const { createExpandedGame } = await import("/src/lib/game/expanded.ts");
+      const st = createExpandedGame({ seed: 20261113, humans: ["Ember", "Tide", "Dune", "Moss", "Coral", "Slate"].map((name) => ({ name })), bots: 0 });
+      st.phase = "main";
+      st.rollOff = null;
+      st.current = st.players[0].id;
+      st.seq = 100;
+      window.__emberisle.setState({ state: st, localId: st.players[0].id, mode: "hotseat", banner: null });
+    });
+    await page.waitForFunction(() => {
+      const i = window.__isle;
+      return i.docks.length === 11 && i.landReady && !i.refitDue && i.shore?.group.parent && i.piers.every((p) => !p.visible);
+    }, null, { timeout: STEP_MS });
+    check("full: previous shore plate atlas texture disposed on rebuild", (await page.evaluate(() => window.__plateTexDisposed)) === 1);
+    checkMarks("full expanded", await readSettled(page, false, 11), 11);
+    const expBefore = await pennants();
+    check("full expanded: eleven pennants", expBefore.length === 11, { pennants: expBefore.length });
+    check("full expanded: all pennants have mast, cloth, and dark hairline", expBefore.every((p) => p.parts === 3 && p.line === "#2a2420"));
+    await page.evaluate(() => {
+      const api = window.__emberisle;
+      const st = structuredClone(api.getState().state);
+      const seat6 = st.players[5];
+      st.vertices.find((v) => v.id === window.__isle.docks[10].vids[0]).building = { playerId: seat6.id, kind: "outpost" };
+      st.seq += 1;
+      api.setState({ state: st });
+    });
+    await page.waitForFunction(() => (window.__isle.shore.group.userData.pennants ?? []).filter((p) => p.visible).length === 1, null, { timeout: STEP_MS });
+    const expAfter = await pennants();
+    check("full expanded: claimed 11th dock flies seat 6's pennant", expAfter.filter((p) => p.visible).length === 1 && expAfter.filter((p) => p.owner).every((p) => p.colour.toLowerCase() === p.want.toLowerCase()));
     await ctx.close();
   }
   // Lite board, on a phone.
@@ -293,12 +337,22 @@ try {
     // The lite board loads the small dock-marks chunk, never the harbour shore's.
     const loaded = await page.evaluate(() => performance.getEntriesByType("resource").map((e) => e.name).filter((n) => /harbor-jelly|dock-marks/.test(n)));
     check("lite: the marks come from the dock-marks module, and harbor-jelly is never fetched", loaded.some((n) => n.includes("dock-marks")) && !loaded.some((n) => n.includes("harbor-jelly")), loaded);
+    // Track lite atlas texture disposal across rebuilds.
+    await page.evaluate(() => {
+      const tex = window.__isle.liteMarkTex;
+      window.__liteTexDisposed = 0;
+      if (tex) {
+        const orig = tex.dispose.bind(tex);
+        tex.dispose = () => { window.__liteTexDisposed++; return orig(); };
+      }
+    });
     // Two new boards dealt back to back, the first one's marks still loading: only the last board's planks land.
     await page.evaluate(() => { const g = window.__emberisle.getState(); g.startAi(); window.__emberisle.getState().startAi(); });
     await page.waitForFunction(() => window.__isle.landReady && !window.__isle.refitDue, null, { timeout: STEP_MS });
     await page.waitForTimeout(1500);
     const again = await readSettled(page, true);
-    check("lite, two boards back to back: exactly nine planks, none left from the first board", again.meshes === 9, { meshes: again.meshes });
+    check("lite: previous lite atlas texture disposed on rebuild", (await page.evaluate(() => window.__liteTexDisposed)) === 1);
+    check("lite, two boards back to back: one merged mesh with exactly nine planks, none left from the first board", again.meshes === 1 && again.docks.every((d) => d.verts === 4), { meshes: again.meshes, verts: again.docks.map((d) => d.verts) });
     checkMarks("lite, second board", again);
     await page.evaluate(() => { const i = window.__isle; i.draw(); i.renderer.getContext().finish(); });
     await page.screenshot({ path: "test-results/dock-marks-lite-390x844.png" });

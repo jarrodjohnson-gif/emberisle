@@ -618,16 +618,16 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     const j = Math.floor(r() * (i + 1));
     [stories[i], stories[j]] = [stories[j]!, stories[i]!];
   }
-  // #1593 (fix 3): shared mast, swallow-tail cloth, and hairline geometry across every dock pennant.
+  // #1593 (fix 3): shared short mast, swallow-tail cloth, and hairline geometry across every dock pennant.
   const tail = (o: number, z: number) =>
-    new THREE.ShapeGeometry(new THREE.Shape().moveTo(-o, o).lineTo(0.38 + o * 1.4, o).lineTo(0.27 - o * 1.6, -0.08).lineTo(0.38 + o * 1.4, -0.16 - o).lineTo(-o, -0.16 - o)).translate(0.006, 0.454, z);
+    new THREE.ShapeGeometry(new THREE.Shape().moveTo(-o, o).lineTo(0.25 + o * 1.4, o).lineTo(0.18 - o * 1.6, -0.05).lineTo(0.25 + o * 1.4, -0.1 - o).lineTo(-o, -0.1 - o)).translate(0.005, 0.295, z);
   const penMat = (color: string, roughness: number) => {
     const m = new THREE.MeshStandardMaterial({ color, side: THREE.DoubleSide, roughness });
     mats.push(m);
     return m;
   };
-  const penPoleGeo = K.merge([K.part(K.cyl(1, 1, 6), "#4a3424", [0, 0.23, 0], [0, 0, 0], [0.009, 0.46, 0.009]), K.part(K.sphere(6), "#d8c08a", [0, 0.47, 0], [0, 0, 0], [0.014, 0.014, 0.014])]);
-  const penClothGeo = tail(0, 0), penLineGeo = tail(0.008, -0.003), penLineMat = penMat("#2a2420", 1);
+  const penPoleGeo = K.merge([K.part(K.cyl(1, 1, 6), "#4a3424", [0, 0.15, 0], [0, 0, 0], [0.008, 0.3, 0.008]), K.part(K.sphere(6), "#d8c08a", [0, 0.31, 0], [0, 0, 0], [0.012, 0.012, 0.012])]);
+  const penClothGeo = tail(0, 0), penLineGeo = tail(0.007, -0.003), penLineMat = penMat("#2a2420", 1);
   geos.push(penPoleGeo, penClothGeo, penLineGeo);
   const pennants: THREE.Group[] = (group.userData.pennants = []);
   docks.forEach((d, di) => {
@@ -657,35 +657,37 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     const len = v1 - v0;
     const W = 0.2;
     const yAt = (v: number) => (v < wv ? lerp(SURFACE + 0.07, SURFACE, smooth(v / wv, 0.3, 1)) : lerp(SURFACE, floorY(v + 0.1) + 0.004, smooth(v - wv, 0, 0.56)));
-    // The deck: planks across, the odd pale one, edge beams.
-    const planks = Math.round(len / 0.03);
+    // The deck: planks across, the odd pale one, edge beams. Lifted north piers extend the stem past v1 so the painted head
+    // clears the lifted goods pile's camera projection without shifting any goods.
+    const stemLen = len + lift;
+    const planks = Math.round(stemLen / 0.03);
     for (let k = 0; k < planks; k++) {
-      const v = v0 + ((k + 0.5) / planks) * len;
-      P(K.part(box, k % 7 === 3 ? "#c99a6a" : k % 2 ? "#a46e42" : "#b07a4c", [0, DECK, v], [0, 0, (r() - 0.5) * 0.03], [W, 0.016, (len / planks) * 0.86]));
+      const v = v0 + ((k + 0.5) / planks) * stemLen;
+      P(K.part(box, k % 7 === 3 ? "#c99a6a" : k % 2 ? "#a46e42" : "#b07a4c", [0, DECK, v], [0, 0, (r() - 0.5) * 0.03], [W, 0.016, (stemLen / planks) * 0.86]));
     }
     // #1593 (fix 3): square pier head (0.44 x 0.44), boards painted in the good's colour (five bands on a 3:1 dock).
-    const HD = 0.44, tv = v1 + 0.2, bands = d.kind === "any" ? FIVE : [d.kind], bw = HD / bands.length;
+    const HD = 0.44, tv = v1 + lift + 0.2, bands = d.kind === "any" ? FIVE : [d.kind], bw = HD / bands.length;
     for (let k = 0; k < 18; k++) {
       const v = tv - 0.22 + ((k + 0.5) / 18) * HD;
       const shade = k % 7 === 3 ? 1.07 : k % 2 ? 0.9 : 1;
       bands.forEach((g, b) => P(K.part(box, boardTone(g, shade), [-0.22 + (b + 0.5) * bw, DECK, v], [0, 0, 0], [bw, 0.016, 0.021])));
     }
-    for (const x of [-W / 2, W / 2]) P(K.part(box, "#7a5236", [x, DECK - 0.014, v0 + len / 2], [0, 0, 0], [0.014, 0.018, len]));
+    for (const x of [-W / 2, W / 2]) P(K.part(box, "#7a5236", [x, DECK - 0.014, v0 + stemLen / 2], [0, 0, 0], [0.014, 0.018, stemLen]));
     // White symbol and pips painted straight on the end boards, upright on screen whichever side of the island.
     {
       const pl = new THREE.PlaneGeometry(0.38, 0.285);
       const row = PLATE_KINDS.indexOf(d.kind);
       const uv = pl.attributes.uv as THREE.BufferAttribute;
-      for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - (row + 1 - uv.getY(i)) / PLATE_KINDS.length);
+      for (let i = 0; i < 4; i++) uv.setY(i, 1 - (row + 1 - uv.getY(i)) / 6);
       const at = world(0, DECK + 0.0085, tv);
       plateParts.push(pl.rotateX(-Math.PI / 2).translate(at.x, at.y, at.z));
     }
-    // #1593 (fix 3): owned dock flies a tall mast and swallow-tailed pennant with a dark hairline at the seaward corner away from the ship.
+    // #1593 (fix 3): owned dock flies a short mast and swallow-tailed pennant with a dark hairline at the seaward corner away from the ship.
     {
       const away = di % 2 ? -1 : 1;
       const pen = new THREE.Group();
       pen.add(new THREE.Mesh(penPoleGeo, cm), new THREE.Mesh(penClothGeo, penMat("#fff", 0.9)), new THREE.Mesh(penLineGeo, penLineMat));
-      pen.position.copy(world(away * 0.19, DECK, tv + 0.185));
+      pen.position.copy(world(away * 0.19, DECK, tv + 0.19));
       pen.scale.x = Math.sign(away * d.mz) || away;
       pen.visible = false;
       pen.userData.vids = d.vids;
@@ -693,7 +695,7 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
       pennants.push(pen);
     }
     for (const s of [-1, 1]) {
-      P(K.part(box, "#7a5236", [0, DECK - 0.014, tv + s * 0.217], [0, 0, 0], [0.45, 0.018, 0.014]));
+      P(K.part(box, "#7a5236", [0, DECK - 0.014, tv + s * 0.218], [0, 0, 0], [0.45, 0.018, 0.014]));
       P(K.part(box, "#7a5236", [s * 0.218, DECK - 0.014, tv], [0, 0, 0], [0.014, 0.018, HD]));
     }
     // Piles in pairs every 0.12, down to the sand or the floor, braced with an X below the deck where they stand in water.
@@ -1000,13 +1002,14 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     group.add(me);
   }
 
+  let plateTex: THREE.CanvasTexture | null = null;
   if (plateParts.length) {
     const g = K.merge(plateParts);
     geos.push(g);
-    const atlas = new THREE.CanvasTexture(markCanvas());
-    atlas.colorSpace = THREE.SRGBColorSpace;
-    atlas.anisotropy = 4;
-    const pm = new THREE.MeshStandardMaterial({ map: atlas, transparent: true, depthWrite: false, roughness: 1, polygonOffset: true, polygonOffsetFactor: -2 });
+    plateTex = new THREE.CanvasTexture(markCanvas());
+    plateTex.colorSpace = THREE.SRGBColorSpace;
+    plateTex.anisotropy = 4;
+    const pm = new THREE.MeshStandardMaterial({ map: plateTex, transparent: true, depthWrite: false, roughness: 1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -1 });
     mats.push(pm);
     const me = new THREE.Mesh(g, pm);
     me.receiveShadow = true;
@@ -1131,6 +1134,7 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     dispose() {
       for (const g of geos) g.dispose();
       for (const mt of mats) mt.dispose();
+      plateTex?.dispose();
       crabMesh?.dispose();
     },
   };

@@ -128,9 +128,9 @@ const CEILINGS = [
   { name: "message-square", gzipBytes: 280 },
   // #827: other seats' public roll and trade gains load lazily (online only); a new chunk, so this ceiling is its only limit.
   { name: "SeatPublicGains", gzipBytes: 1800 },
-  // #1593, 2026-11-13: the dock-mark atlas (plank colours, symbols and pips), shared by harbor-jelly and the lite board;
-  // measured 950 B gzip. New chunk only; proposed, the desk sets this ceiling.
-  { name: "dock-marks", gzipBytes: 1100 },
+  // #1593, 2026-11-17: the dock-mark atlas (painted-board white symbols/pips and lite planks), shared by harbor-jelly and the
+  // lite board; measured 1,090 B gzip. Desk set this 1,200 B ceiling on 2026-11-17 under q-size-standing A.
+  { name: "dock-marks", gzipBytes: 1200 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
