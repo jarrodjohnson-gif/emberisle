@@ -1,10 +1,12 @@
 // The expanded island for five and six seats (#1604; docs/design/six-players.md, "Expanded board and components" and
-// "Board generator, coast, docks, and camera"). Nothing in the client imports this file yet, so it adds nothing to the
-// index chunk. createGame in board.ts keeps the classic island byte for byte; createAnyGame picks between them.
+// "Board generator, coast, docks, and camera"). The client loads it only for a five or six seat game (store.ts `deal`), so
+// it adds nothing to the index chunk. createGame in board.ts keeps the classic island byte for byte; createAnyGame picks between them.
 import { mulberry32 } from "./random";
 import { AXIAL_DIRS, axialKey, edgeId, hexCorners, hexToWorld, vertexId } from "./hex";
 import { adjacentPips, createGame, makePlayer, shuffle, type GameOptions } from "./board";
-import type { DevKind, Edge, ExpandedVariant, GameState, HarborKind, HexCell, PlayerState, Terrain, Vertex } from "./types";
+import { totalVP, turnRules, victoryTarget } from "./rules";
+import { chooseTradeAsk, shouldAcceptTrade } from "./ai";
+import type { Action, DevKind, Edge, ExpandedVariant, GameState, HarborKind, HexCell, PlayerState, Terrain, Vertex } from "./types";
 import { PLAYER_NAMES } from "./types";
 
 // The 30 hexes in seven staggered rows of 3, 4, 5, 6, 5, 4, 3: axial r with its inclusive q range (design table).
@@ -38,7 +40,7 @@ export const EXPANDED_BANK = 24;
 export const EXPANDED_DECK: Record<DevKind, number> = { knight: 20, vp: 5, road: 3, plenty: 3, monopoly: 3 };
 
 // The six official colour families (accepted decision 4) with the design's candidate swatches, in seat order: red, blue,
-// white, orange, green, brown. Classic games keep PLAYER_COLORS. Piece 5 owns the contrast proof for these swatches.
+// white, orange, green, brown. Classic games keep PLAYER_COLORS. scripts/contrast-prove.mjs and six-seats-prove certify them (#1608).
 export const EXPANDED_COLORS = ["#e23d2e", "#2d6ee8", "#f3ecd9", "#dd6b20", "#216d3c", "#805532"] as const;
 // Two default names past the classic four, so a fifth or sixth bot never reads "undefined (bot)".
 export const EXPANDED_NAMES = [...PLAYER_NAMES, "Moss", "Flint"] as const;
@@ -130,7 +132,7 @@ export function createExpandedGame(opts: GameOptions): GameState {
   // The wayfarer starts on one waste; the other starts unblocked. With the wayfarer off, both stay unblocked.
   if (opts.wayfarerMode !== "off") hexes.find((h) => h.id === robberHex)!.blocked = true;
 
-  const variant: ExpandedVariant = { kind: "expanded", version: 1, wastes };
+  const variant: ExpandedVariant = { kind: "expanded", version: 1, wastes, turns: { rule: "paired", version: 1 } };
   if (opts.numberTokens !== "random") {
     const corners = cornerHexes(EXPANDED_COORDS);
     const corner = corners[Math.floor(rand() * 6)]!;
@@ -190,8 +192,11 @@ export function createExpandedGame(opts: GameOptions): GameState {
   const players: PlayerState[] = [];
   for (let i = 0; i < total; i++) {
     const human = i < opts.humans.length;
-    const p = makePlayer(i, human ? opts.humans[i]!.name || EXPANDED_NAMES[i]! : `${EXPANDED_NAMES[i]} (bot)`, human ? "human" : "bot");
-    p.color = EXPANDED_COLORS[i]!;
+    // A rematch passes last game's players as `humans` (store.ts playAgain): each keeps its seat number and colour (#1609).
+    const was: Partial<PlayerState> = human ? opts.humans[i]! : {};
+    const p = makePlayer(i, human ? was.name || EXPANDED_NAMES[i]! : `${EXPANDED_NAMES[i]} (bot)`, human ? "human" : "bot");
+    p.color = was.color ?? EXPANDED_COLORS[i]!;
+    p.seat = was.seat ?? i + 1;
     players.push(p);
   }
   const pending = players.slice(opts.winnerFirst ? 1 : 0).map((p) => p.id);
@@ -239,4 +244,91 @@ export function createExpandedGame(opts: GameOptions): GameState {
 // Three to six seats: five or six take the expanded island, three or four the classic one exactly as createGame deals it.
 export function createAnyGame(opts: GameOptions): GameState {
   return opts.humans.length + opts.bots >= 5 ? createExpandedGame(opts) : createGame(opts);
+}
+
+// Paired turns (#1605; docs/design/six-players.md, "Rules, setup, turns, and scoring"; accepted decision 1). The primary at
+// `players` position i acts first, then the partner at (i + 3) % n; the partner's endTurn makes (i + 1) % n the next
+// primary. Only primaries roll, so production, sevens and discards happen only on primary activations. rules.ts calls this
+// for every action on a game with a variant, through `turnRules`.
+export const PARTNER_NO_TRADE = "No player trades on a partner turn.";
+
+type Step = (prev: GameState, actor: string, action: Action) => { state: GameState; error?: string };
+
+export function pairedStep(prev: GameState, actor: string, action: Action, base: Step): ReturnType<Step> {
+  if (prev.variant?.turns?.rule !== "paired") return base(prev, actor, action);
+  // A partner never trades with players: no offer, and no acceptance, even of an offer left open from before.
+  if (prev.role === "partner" && (action.type === "offerTrade" || (action.type === "respondTrade" && action.accept))) {
+    return { state: prev, error: PARTNER_NO_TRADE };
+  }
+  if (action.type !== "endTurn" || !prev.role) {
+    const result = base(prev, actor, action);
+    const next = result.state;
+    // Setup has just ended: the first player in order starts the first primary activation.
+    if (!result.error && !next.role && next.phase === "roll") {
+      next.primary = next.current;
+      next.role = "primary";
+      next.activation = 1;
+    }
+    return result;
+  }
+  if (prev.phase === "over") return { state: prev, error: "The game is over." };
+  if (prev.current !== actor) return { state: prev, error: "Not your turn." };
+  if (prev.phase !== "main") return { state: prev, error: "Finish your turn first." };
+  const state = structuredClone(prev);
+  state.seq += 1;
+  // Offers close before either actor changes.
+  state.trade = null;
+  const n = state.players.length;
+  const at = state.players.findIndex((p) => p.id === state.primary);
+  let next: PlayerState;
+  if (state.role === "primary") {
+    // The partner acts in the action phase straight away; the primary's dice stay on the table for this paired turn. The
+    // line is the tray's event line under "<name>'s partner turn", so it names nobody and stays short (#1609).
+    next = state.players[(at + 3) % n]!;
+    state.role = "partner";
+    state.phase = "main";
+    log(state, "No roll this turn.");
+  } else {
+    const i = (at + 1) % n;
+    next = state.players[i]!;
+    state.primary = next.id;
+    state.role = "primary";
+    state.phase = "roll";
+    state.dice = null;
+    if (i === 0) state.turn += 1;
+    log(state, `${next.name}'s turn.`);
+  }
+  state.current = next.id;
+  state.activation = (state.activation ?? 1) + 1;
+  // Each activation may play one fortune; what this actor bought at an earlier activation is now playable.
+  state.playedCard = false;
+  next.boughtThisTurn = { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 };
+  // Points can arrive while another seat acts (an award handed over by a cut); they win as this activation starts.
+  const points = totalVP(state, next.id);
+  if (points >= victoryTarget(state)) {
+    state.phase = "over";
+    state.winner = next.id;
+    state.winReason = { trigger: "turnStart", points, target: victoryTarget(state) };
+    log(state, `${next.name} claims the isle with ${points} points.`);
+  }
+  return { state };
+}
+
+function log(state: GameState, line: string) {
+  state.log = [...state.log.slice(-199), line];
+}
+
+turnRules.paired = pairedStep;
+
+// Bots under paired turns (#1606; design "Bots and local modes"). chooseBotAction needs no role: a partner starts in the
+// action phase, so it never rolls, it never offers a player trade, and with nothing to do it ends its turn. The two trade
+// choices do need it, since the rules refuse every player offer and acceptance on a partner activation: a partner bot asks
+// nobody, and every bot says No to an ask then. They live here so the classic bot in the index chunk stays as it is; a
+// seat runner for five or six seats calls these in place of chooseTradeAsk and shouldAcceptTrade.
+export function pairedTradeAsk(...args: Parameters<typeof chooseTradeAsk>): ReturnType<typeof chooseTradeAsk> {
+  return args[0].role === "partner" ? null : chooseTradeAsk(...args);
+}
+
+export function pairedAcceptTrade(...args: Parameters<typeof shouldAcceptTrade>): boolean {
+  return args[0].role !== "partner" && shouldAcceptTrade(...args);
 }
