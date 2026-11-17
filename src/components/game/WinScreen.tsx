@@ -1,50 +1,103 @@
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, Suspense, use, useEffect, useMemo, useRef, useState } from "react";
 import { VictoryTargetSelect } from "@/components/game/VictoryTargetSelect";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
 import { totalVP, victoryTarget } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
-import { readViewport, useViewport } from "@/lib/viewport";
+import { useViewport } from "@/lib/viewport";
 import { LazyBoundary } from "@/lib/lazy";
-import { WinList, winList } from "@/components/game/chunks";
+import { playAgain, WantAgain, WantCount, WinList, winList } from "@/components/game/chunks";
 import { useFocusTrap } from "@/lib/focus-trap";
 import type { PlayerState } from "@/lib/game/types";
+import type { Seat } from "@/lib/net/table";
+import "./win-screen.css";
 
-export type Row = { p: PlayerState; outposts: number; strongholds: number; path: boolean; army: boolean; hiddenVp: number; total: number };
+// `note` is the row's profile line (#767), only when a seat in this game started bound to a profile; `tag` says who wants to play again (#1411).
+export type Row = { p: PlayerState; outposts: number; strongholds: number; path: boolean; army: boolean; hiddenVp: number; total: number; note?: string; tag?: ReactNode };
 
-// Build bible 4.7: the island stays visible. "Look around" hides the panel and leaves a small chip.
+// #1411 (design docs/design/play-again-1411, option A): the host and bots are always in; an away seat is left out of the next game.
+const yes = (x: Seat) => !x.away && (x.host || x.bot || x.again);
+const tagOf = (x?: Seat) =>
+  x?.away ? (
+    <span className="win-tag away">Away</span>
+  ) : x && yes(x) ? (
+    <span className="win-tag">
+      <span aria-hidden="true">✓ Play again</span>
+      <span className="sr-only">, wants to play again</span>
+    </span>
+  ) : undefined;
+
+// The end of a game (docs/design/end-of-game, slice 2): one sheet in the tray's style at the bottom of the screen, the island
+// in view above it with no wash. The winner's name, how it ended, one row per player on every screen size (WinList), and
+// one primary button. "Hide scores" hides the sheet and leaves a small chip (build bible 4.7).
 export function WinScreen() {
-  // #748: the phone list is its own chunk; fetch it while the table plays, so it is in memory before the game ends.
+  // #748: the list is its own chunk; fetch it while the table plays, so it is in memory before the game ends.
   useEffect(() => {
-    if (readViewport().phone) void winList.prefetch();
+    void winList.prefetch();
+    // #1411: the guest's I'll play again and the count, in memory before the game ends.
+    if (useGame.getState().mode === "online") void playAgain.prefetch();
   }, []);
   const winnerId = useGame((s) => s.state?.phase === "over" ? s.state.winner : null);
-  return winnerId ? <Panel key={winnerId} /> : null;
+  // #1695: a table already over when it lands (a join, a rejoin or a watch) may not have the list yet. The dialog waits for
+  // the list's chunk to run or fail, so it never paints with the list empty; nothing shows meanwhile, as while this loads.
+  // A chunk still in flight after LIST_WAIT_MS lets the dialog show with the plain list, which the list replaces once it lands.
+  // `ready()` returns a new promise per call while the chunk is in flight: the Suspense stays below WinScreen, which must
+  // never suspend, or its memo would be thrown away and `use` would loop on a fresh promise.
+  const wait = useMemo((): Wait | null => {
+    if (!winnerId) return null;
+    const list = winList.ready();
+    if ((list as { status?: string }).status) return { list, late: false };
+    const w: Wait = { list, late: false };
+    w.list = Promise.race([list, new Promise<void>((r) => (w.out = () => ((w.late = true), r())))]);
+    return w;
+  }, [winnerId]);
+  // The bound runs from the commit that starts the wait, and stops with the wait or the screen.
+  useEffect(() => {
+    if (!wait?.out) return;
+    const timer = window.setTimeout(wait.out, LIST_WAIT_MS);
+    void wait.list.then(() => clearTimeout(timer));
+    return () => clearTimeout(timer);
+  }, [wait]);
+  return wait ? <Suspense fallback={null}><Panel key={winnerId} wait={wait} /></Suspense> : null;
 }
 
-function Panel() {
+const LIST_WAIT_MS = 4000;
+type Wait = { list: Promise<void>; late: boolean; out?: () => void };
+
+function Panel({ wait }: { wait: Wait }) {
+  use(wait.list);
   const { phone, portrait } = useViewport();
   const state = useGame((s) => s.state)!;
   const target = useGame((s) => s.tableVictoryTarget);
   const setTarget = useGame((s) => s.setVictoryTarget);
   const goTitle = useGame((s) => s.goTitle);
-  const playAgain = useGame((s) => s.playAgain);
+  // Owner 2026-11-12 (q1563-play-again): after a practice game, Play again deals a new practice game with the same bots.
+  const playAgain = useGame((s) => (s.mode === "ai" ? s.startAi : s.playAgain));
   const sendSound = useGame((s) => s.sendSound);
   const [resting, setResting] = useState(false);
   const mode = useGame((s) => s.mode);
   const spectator = useGame((s) => s.spectator);
+  // #767: the host's committed profile totals for this game. Never counted here, so a repeated state cannot add a win.
+  const result = useGame((s) => (s.mode === "online" ? s.gameResult : null));
   // The lobby's host test (EmberisleApp), so a handed-off host gets the button.
   const isHost = useGame((s) => s.seats.find((x) => x.id === s.seatId)?.host ?? s.isHost);
   const hostName = useGame((s) => s.seats.find((x) => x.host)?.name);
-  // docs/design/rematch.md: the online host and hotseat start another; practice has no table to keep.
-  const canAgain = mode === "hotseat" || (mode === "online" && isHost);
+  const seats = useGame((s) => s.seats);
+  // #1611 (accepted decision 7, answers A to E of 2026-11-06): an expanded game with fewer than five at the table. The host
+  // picks: fill with bots up to five, the classic map (three or four only), or Cancel, which changes nothing. The others
+  // read that the host is choosing.
+  // Only online: the last table's choice is not cleared when the host leaves it (#1611).
+  const choose = useGame((s) => (s.mode === "online" ? s.rematchChoice : undefined));
+  // docs/design/rematch.md: the online host, hotseat and practice start another; an online guest asks, a watcher cannot.
+  const canAgain = mode !== "online" || (isHost && !spectator);
   const waiting = mode === "online" && !isHost && !spectator && hostName;
+  const seatOf = (id: string) => (mode === "online" ? seats.find((x) => x.player === id) : undefined);
   const [hidden, setHidden] = useState(false);
   const winner = state.players.find((p) => p.id === state.winner)!;
   const dialog = useRef<HTMLDivElement>(null);
   const chip = useRef<HTMLDivElement>(null);
 
-  // #379: Tab stays inside the dialog; "Look around" hands focus to the chip so the keyboard does not land on the body.
+  // #379: Tab stays inside the dialog; "Hide scores" hands focus to the chip so the keyboard does not land on the body.
   useFocusTrap(dialog, !hidden, '[data-testid="win-menu"]');
   useEffect(() => {
     if (hidden) {
@@ -73,6 +126,14 @@ function Panel() {
         army: state.largestArmy === p.id,
         hiddenVp: p.hidden.vp,
         total: totalVP(state, p.id),
+        tag: tagOf(seatOf(p.id)),
+        note: !result?.tracked
+          ? undefined
+          : !Object.hasOwn(result.wins, p.id)
+            ? "Not tracked"
+            : result.wins[p.id] === null
+              ? "Saving record…"
+              : `${result.wins[p.id]} profile win${result.wins[p.id] === 1 ? "" : "s"}`,
       };
     })
     .sort((a, b) => Number(b.p.id === winner.id) - Number(a.p.id === winner.id) || b.total - a.total);
@@ -89,25 +150,18 @@ function Panel() {
           Show scores
         </Button>
         {canAgain ? (
-          <Button size="sm" className="whitespace-nowrap" data-testid="win-again-chip" onClick={playAgain}>
+          <Button size="sm" className="whitespace-nowrap" data-testid="win-again-chip" onClick={() => playAgain()}>
             Play again
           </Button>
         ) : null}
         <Button size="sm" variant="secondary" className="whitespace-nowrap" data-testid="win-menu-chip" onClick={goTitle}>
-          Back to menu
+          Menu
         </Button>
       </div>
     );
   }
 
   const winning = rows.find((r) => r.p.id === winner.id)!;
-  const contribution = [
-    winning.outposts ? `${winning.outposts} outpost${winning.outposts === 1 ? "" : "s"}` : null,
-    winning.strongholds ? `${winning.strongholds * 2} stronghold points` : null,
-    winning.path ? "2 longest path" : null,
-    winning.army ? "2 largest army" : null,
-    winning.hiddenVp ? `${winning.hiddenVp} hidden` : null,
-  ].filter(Boolean);
   const reason = state.winReason;
   const action = {
     outpost: "Built an outpost",
@@ -118,41 +172,21 @@ function Panel() {
     turnStart: "Started their turn with winning points",
     points: "Reached the winning score",
   }[reason?.trigger ?? "points"];
-  const head = "px-1 py-2 short:py-0.5 short:px-1 text-right text-[11px] sm:px-2 font-medium uppercase tracking-wide text-zinc-600";
-  const cell = "px-1 py-2 short:py-0.5 short:px-1 sm:px-2 text-right tabular-nums whitespace-nowrap short:text-xs";
-  // The desktop table, and the phone list's stand-in if its chunk cannot load (the next mount tries it again).
-  const table = (
-          <table className="w-full min-w-0 border-collapse text-sm">
-            <thead>
-              <tr>
-                <th className={`${head} text-left whitespace-nowrap`}>Player</th>
-                <th className={head}>Outposts</th>
-                <th className={head}>Strongholds</th>
-                <th className={head}>Longest path</th>
-                <th className={head}>Largest army</th>
-                <th className={head}>Hidden</th>
-                <th className={head}>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.p.id} data-testid="win-row" data-player={r.p.id} className="border-t border-border">
-                  <td className="px-1 py-2 short:py-0.5 short:px-1 text-left font-medium sm:px-2 whitespace-nowrap short:text-xs">
-                    <SeatDot color={r.p.color} className="mr-1.5 size-3 align-[-2px]" />
-                    {r.p.name}
-                  </td>
-                  <td className={cell}>{r.outposts}</td>
-                  <td className={cell}>{r.strongholds}</td>
-                  <td className={cell}>{r.path ? "✓" : ""}</td>
-                  <td className={cell}>{r.army ? "✓" : ""}</td>
-                  <td data-testid="win-hidden" className={cell}>{r.hiddenVp}</td>
-                  <td data-testid="win-total" className={`${cell} font-medium`}>
-                    {r.total}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+  // The list's stand-in if its chunk cannot load (the next mount tries it again): every player and total, nothing to open.
+  const plain = (
+    <ul>
+      {rows.map((r) => (
+        <li key={r.p.id} data-testid="win-row" data-player={r.p.id} className="flex min-h-11 items-center gap-2.5 border-border pr-1.5 pl-2 text-body not-first:border-t">
+          <SeatDot color={r.p.color} className="size-3 flex-none" />
+          <span className="min-w-0 flex-1 truncate">
+            {r.p.name}
+            {r.note ? <span data-testid="win-profile" className="block truncate text-caption text-muted">{r.note}</span> : null}
+          </span>
+          {r.tag}
+          <span data-testid="win-total" className="flex-none text-xl font-bold tabular-nums">{r.total}</span>
+        </li>
+      ))}
+    </ul>
   );
   return (
     <div
@@ -161,32 +195,32 @@ function Panel() {
       aria-modal="true"
       aria-labelledby="win-headline"
       data-testid="win-screen"
-      className="absolute inset-0 z-40 flex items-center justify-center bg-bg/60 p-safe"
+      className="win-screen absolute inset-0 z-40 flex items-end justify-center"
     >
-      <div className={`flex max-h-full w-full max-w-2xl flex-col rounded-sheet border border-border bg-surface p-5 text-center sm:p-6 short:px-4 ${phone ? "short:py-1" : "short:py-2"}`}>
+      <div className="tray-sheet win-sheet flex w-full max-w-[520px] flex-col short:max-w-2xl">
         {/* #748: 480 px tall or less, the list needs room for four 44 px rows under the host's two-line actions (667x375 with insets). */}
-        <div className={phone ? "short:flex short:items-center short:justify-center short:gap-3" : undefined}>
-        <div className="flex items-center justify-center gap-2.5">
-          <SeatDot color={winner.color} className="size-4" />
-          <p id="win-headline" data-testid="win-headline" className="font-display text-3xl short:text-lg text-fg">
-            {winner.name} wins
+        <div className="short:flex short:items-baseline short:gap-3">
+          <div className="flex items-center gap-2.5">
+            <SeatDot color={winner.color} className="size-4 flex-none short:size-3" />
+            <p id="win-headline" data-testid="win-headline" className="win-head min-w-0 truncate">
+              {winner.name} wins
+            </p>
+          </div>
+          <p data-testid="win-action" className="win-how">
+            {action} · {reason?.points ?? winning.total} points, target {reason?.target ?? victoryTarget(state)}.
           </p>
         </div>
-        <p className={`win-total-hero mt-3 ${phone ? "short:mt-0" : "short:mt-0.5"}`} data-testid="win-points">{winning.total}<span className="ml-2 text-body font-medium tracking-normal">points</span></p>
-        </div>
-        <p data-testid="win-action" className="mt-2 short:mt-0.5 text-sm short:text-xs text-muted">
-          {action} · {reason?.points ?? winning.total} points, target {reason?.target ?? victoryTarget(state)}.
-        </p>
-        <div className={`win-equation ${phone ? "short:hidden!" : ""}`} data-testid="win-reason">{contribution.map((part, i) => <span key={part}>{i > 0 ? "+ " : ""}{part}</span>)}</div>
-        <div data-testid="win-table-wrap" className={`mt-4 min-h-0 overflow-auto ${phone ? "border-t border-border pt-2 text-left short:mt-1 short:pt-0" : "short:mt-1.5"}`}>
-          {phone ? <LazyBoundary failed={table}><WinList rows={rows} /></LazyBoundary> : table}
+        {result && !result.tracked ? <p data-testid="win-untracked" className="win-how">This game isn't tracked.</p> : null}
+        <div data-testid="win-table-wrap" className="mt-1 min-h-0 overflow-auto border-t border-border text-left short:mt-0">
+          <LazyBoundary failed={plain}><Suspense fallback={wait.late ? plain : null}><WinList rows={rows} /></Suspense></LazyBoundary>
         </div>
         {waiting ? (
-          <p data-testid="win-waiting" className="mt-4 text-sm text-zinc-600">
-            Waiting for {hostName} to start another.
+          <p data-testid="win-waiting" className="win-how">
+            {choose ? "The host is choosing how to rematch." : `Waiting for ${hostName} to start another.`}
           </p>
         ) : null}
-        <div className={`mt-5 ${phone ? "short:mt-1" : "short:mt-2"} flex flex-wrap items-center gap-2`}>
+        {mode === "online" ? <LazyBoundary failed={null}><WantCount n={seats.filter(yes).length} seats={seats} /></LazyBoundary> : null}
+        <div className="win-actions mt-2 flex flex-wrap items-center gap-2 short:mt-1">
           {mode === "online" ? <VictoryTargetSelect label="Next game" value={target} onChange={isHost && !spectator ? setTarget : undefined} /> : null}
           {mode === "online" && !spectator ? (
             <Button
@@ -204,16 +238,30 @@ function Panel() {
             </Button>
           ) : null}
           <Button variant="secondary" className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-look" onClick={() => setHidden(true)}>
-            Look around
+            Hide scores
           </Button>
-          {canAgain ? (
-            <Button className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-again" onClick={playAgain}>
+          {/* One primary button: Play again, a guest's I'll play again, or Menu when there is neither (a watcher). */}
+          <Button variant={canAgain || waiting ? "secondary" : "default"} className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-menu" onClick={goTitle}>
+            Menu
+          </Button>
+          {canAgain && choose ? (
+            <>
+              {choose.map((c) => (
+                <Button key={c} className="min-w-fit flex-1 whitespace-nowrap" data-testid={`win-again-${c}`} onClick={() => playAgain(c)}>
+                  {c === "bots" ? "Fill with bots" : "Classic map"}
+                </Button>
+              ))}
+              <Button variant="secondary" className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-again-cancel" onClick={() => playAgain("dismiss")}>
+                Cancel
+              </Button>
+            </>
+          ) : canAgain ? (
+            <Button className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-again" onClick={() => playAgain()}>
               Play again
             </Button>
           ) : null}
-          <Button variant={canAgain ? "secondary" : "default"} className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-menu" onClick={goTitle}>
-            Back to menu
-          </Button>
+          {/* #1411: every other seated player says "I'll play again"; only the host starts the next game. */}
+          {waiting ? <LazyBoundary failed={null}><WantAgain /></LazyBoundary> : null}
         </div>
       </div>
     </div>

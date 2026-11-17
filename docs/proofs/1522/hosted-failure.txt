@@ -1,0 +1,20 @@
+2026-11-10T05:00:06.9277553Z ok needs validation and shared local/host expiry rules
+2026-11-10T05:00:07.2062973Z ok real need frames: public seat projection, malformed/duplicate/oversized rejection; game and clocks unchanged
+2026-11-10T05:00:07.5029309Z ok restart/rejoin keeps one remaining own turn; second own turn clears; watchers cannot change needs
+2026-11-10T05:00:07.5119123Z ok bank and player trades clear only needs satisfied by received goods, for both participants
+2026-11-10T05:00:07.5144110Z ok need updates share the ACT rate limit
+2026-11-10T05:00:07.7862640Z ok real start transition clears restored needs from every public seat
+2026-11-10T05:00:08.0648106Z ok finished-game need ACT is refused with public state and existing need preserved
+2026-11-10T05:00:08.0709782Z ok real rematch transition clears prior needs from every public seat
+2026-11-10T05:00:13.3769150Z file:///home/runner/work/emberisle/emberisle/server/needs-prove.mjs:57
+2026-11-10T05:00:13.3770366Z    await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error(`timeout ${pid} ${type}: ${stderr}`)),Math.max(1,deadline-Date.now()));c.changed=()=>{clearTimeout(timer);c.changed=null;resolve();};});}
+2026-11-10T05:00:13.3772125Z                                                                           ^
+2026-11-10T05:00:13.3772399Z 
+2026-11-10T05:00:13.3772549Z Error: timeout p0 state: 
+2026-11-10T05:00:13.3773118Z     at Timeout._onTimeout (file:///home/runner/work/emberisle/emberisle/server/needs-prove.mjs:57:75)
+2026-11-10T05:00:13.3773702Z     at listOnTimeout (node:internal/timers:585:17)
+2026-11-10T05:00:13.3774165Z     at process.processTimers (node:internal/timers:521:7)
+2026-11-10T05:00:13.3774434Z 
+2026-11-10T05:00:13.3774525Z Node.js v22.23.4
+2026-11-10T05:00:13.3943876Z ##[error]Process completed with exit code 1.
+

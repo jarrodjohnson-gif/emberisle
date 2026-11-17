@@ -2,7 +2,8 @@
 // A finished four-player game with long names, buildings, both awards, hidden points, a tie and a zero total.
 // Every row opens by tap and keyboard, one at a time; the open row scrolls to the top of the list and fits the
 // list and the screen; every value matches the game state; nothing scrolls sideways; every result action stays reachable.
-// The list is its own chunk: a real game fetches it while the table plays (no empty first paint), a refused chunk leaves
+// The list is its own chunk: a real game fetches it while the table plays (no empty first paint), a table already over as
+// it lands paints the dialog with its list too (#1695), a refused chunk leaves
 // the table with every total until Show scores tries again, and the desktop never asks for it.
 // With SHOTS=1 it writes the closed and one-open pictures in docs/proofs/748/ at device scale 2.
 import assert from "node:assert/strict";
@@ -55,6 +56,7 @@ const LIST = [
   [844, 390, true],
   [667, 375, true, { top: 0, right: 44, bottom: 21, left: 44 }],
   [700, 900, false], // The phone rule's narrow half: a mouse under 768 px wide.
+  [1280, 720, false], // Owner 2026-11-12 (q1563-results-desktop): the desktop shows the same list.
 ];
 
 const vite = await createServer({ server: { host: "127.0.0.1", port, strictPort: true }, logLevel: "error" });
@@ -91,8 +93,17 @@ try {
     if (live) {
       const fetched = page.waitForResponse((r) => LIST_CHUNK.test(r.url()));
       await load({ ...structuredClone(g), phase: "main", winner: null, winReason: undefined });
-      await fetched;
-      await page.waitForLoadState("networkidle");
+      // #1686: the response only starts the chunk; it is in memory once the module has run. Importing the same URL settles
+      // then, and the app's own import marks the chunk loaded in the same turn, before the next evaluate below. (The old
+      // wait for "networkidle" resolved at once, as the page had reached it before.)
+      // #1697: bounded, so a chunk that never settles fails here instead of hanging the job.
+      await page.evaluate((url) => {
+        let timer;
+        return Promise.race([
+          import(url).then(() => {}),
+          new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`the WinList chunk ${url} did not finish loading within 15 s`)), 15_000); }),
+        ]).finally(() => clearTimeout(timer));
+      }, (await fetched).url());
       // Record how many rows the dialog holds in the DOM update that first adds it, before the browser paints it.
       await page.evaluate(() => {
         window.__rowsAtFirstPaint = null;
@@ -105,7 +116,23 @@ try {
       });
     }
     await load(structuredClone(g));
-    await page.getByTestId("win-menu").waitFor();
+    // Preserve the original startup guard; emit state only on failure, then rethrow (#1494).
+    try {
+      await page.getByTestId("win-menu").waitFor();
+    } catch (error) {
+      const state = await page.evaluate(() => {
+        const s = window.__emberisle?.getState();
+        return {
+          screen: s?.screen, phase: s?.state?.phase, winner: s?.state?.winner,
+          body: document.body.innerText.slice(0, 5000),
+          resources: performance.getEntriesByType("resource")
+            .filter(r => /Sheets|WinScreen|WinList/.test(r.name))
+            .map(r => ({ name: r.name, duration: r.duration })),
+        };
+      }).catch(captureError => ({ diagnosticError: String(captureError) }));
+      console.log("STARTUP FAILURE", JSON.stringify({ tag, errors, listLoads, state }));
+      throw error;
+    }
     return { context, page, tag, listLoads };
   }
 
@@ -233,19 +260,132 @@ try {
     console.log("ok 390x844 live table: list chunk fetched before the end, all four rows in the dialog's first paint");
   }
 
+  // #1695: a table already over when it lands (the first state of a join, a rejoin or a watch), its list chunk never fetched
+  // before. The list's response is held until the sheets chunk (the win screen) has run and the page has drawn a frame
+  // since, so the dialog could have painted first; its first DOM update still holds every row. The sheets chunk is in memory
+  // from the title's idle fetch, or still loading as the table lands. The loading sub-case also passes on main (no flash in
+  // that order there either): it is kept as a guard that the dialog does not hang in that order, not as proof of the fix.
+  const SHEETS_CHUNK = /\/src\/components\/game\/sheets\.ts(\?|$)/;
+  for (const loading of [false, true]) {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: "reduce" });
+    const page = await context.newPage();
+    const tag = `390x844 landing, sheets ${loading ? "loading" : "in memory"}`;
+    page.on("pageerror", (e) => errors.push(`${tag}: ${e.message}`));
+    page.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
+    const frame = () => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r())));
+    let ran;
+    const sheetsRan = new Promise((r) => (ran = r));
+    const listLoads = [];
+    await page.route(LIST_CHUNK, async (r) => {
+      listLoads.push(r.request().url());
+      await sheetsRan;
+      await frame();
+      await r.continue();
+    });
+    let freeSheets;
+    const sheetsHeld = new Promise((r) => (freeSheets = r));
+    const sheetsAsked = page.waitForRequest(SHEETS_CHUNK);
+    if (loading) await page.route(SHEETS_CHUNK, async (r) => (await sheetsHeld, r.continue()));
+    await page.goto(`http://127.0.0.1:${port}/`);
+    await page.waitForFunction(() => !!window.__emberisle);
+    // The title's idle fetch of the sheets chunk; held in the loading case.
+    const sheetsUrl = (await sheetsAsked).url();
+    const sheetsIn = () => page.evaluate((url) => import(url).then(() => {}), sheetsUrl).then(ran);
+    if (!loading) await sheetsIn();
+    assert.deepEqual(listLoads, [], `${tag}: the list chunk is not fetched before the table lands`);
+    await page.evaluate(() => {
+      window.__rowsAtFirstPaint = null;
+      new MutationObserver((_, o) => {
+        const screen = document.querySelector('[data-testid="win-screen"]');
+        if (!screen) return;
+        window.__rowsAtFirstPaint = screen.querySelectorAll('[data-testid="win-row"]').length;
+        o.disconnect();
+      }).observe(document.body, { childList: true, subtree: true });
+    });
+    await page.evaluate((game) => {
+      const s = window.__emberisle;
+      s.setState({ spectator: false, isHost: true, menuFor: null, chatOpen: false });
+      s.getState().loadState(game, "p0", true, "WLST");
+    }, structuredClone(g));
+    if (loading) {
+      await frame();
+      freeSheets();
+      await sheetsIn();
+    }
+    await page.getByTestId("win-menu").waitFor();
+    assert.equal(await page.evaluate(() => window.__rowsAtFirstPaint), 4, `${tag}: no flash, the list is in the dialog's first DOM update`);
+    assert.equal(await page.locator('button[data-testid="win-row"]').count(), 4, `${tag}: the list, not the plain stand-in`);
+    await context.close();
+    console.log(`ok ${tag}: a finished table on landing, list chunk held past the win screen's chunk and a frame, all four rows in the dialog's first paint`);
+  }
+
+  // #1701: the list chunk's request hangs, never answered and never failing. The dialog waits for it no longer than 4 s, then
+  // shows with the plain list, every total, as a refused chunk does: never before 3.5 s after landing, always by 4.6 s. When
+  // the held response is then let through, the list replaces the plain one.
+  {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: "reduce" });
+    const page = await context.newPage();
+    // This case measures the chunk timer and DOM, not board pixels. A GL driver call can block the
+    // page across the timer's deadline; keep native clocks and DOM frames, but submit no scene draws.
+    // Other contexts (including every screenshot) still draw the real board.
+    await page.addInitScript(() => {
+      for (const key of ["drawElements", "drawArrays", "drawElementsInstanced", "drawArraysInstanced"]) {
+        WebGL2RenderingContext.prototype[key] = function () {};
+      }
+    });
+    const tag = "390x844 landing, list chunk hangs";
+    page.on("pageerror", (e) => errors.push(`${tag}: ${e.message}`));
+    page.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
+    const listLoads = [];
+    const held = [];
+    await page.route(LIST_CHUNK, (r) => void (listLoads.push(r.request().url()), held.push(r)));
+    const sheetsAsked = page.waitForRequest(SHEETS_CHUNK);
+    await page.goto(`http://127.0.0.1:${port}/`);
+    await page.waitForFunction(() => !!window.__emberisle);
+    await page.evaluate((url) => import(url).then(() => {}), (await sheetsAsked).url());
+    await page.evaluate((game) => {
+      window.__shown = null;
+      new MutationObserver((_, o) => {
+        const screen = document.querySelector('[data-testid="win-screen"]');
+        if (!screen) return;
+        window.__shown = { at: performance.now() - window.__landed, rows: [...screen.querySelectorAll('li[data-testid="win-row"]')].map((el) => [el.dataset.player, Number(el.querySelector('[data-testid="win-total"]').textContent)]), list: screen.querySelectorAll('button[data-testid="win-row"]').length };
+        o.disconnect();
+      }).observe(document.body, { childList: true, subtree: true });
+      const s = window.__emberisle;
+      s.setState({ spectator: false, isHost: true, menuFor: null, chatOpen: false });
+      window.__landed = performance.now();
+      s.getState().loadState(game, "p0", true, "WLST");
+    }, structuredClone(g));
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
+    assert.equal(await page.getByTestId("win-screen").count(), 0, `${tag}: no dialog in the first frames, it waits for the list`);
+    await page.getByTestId("win-screen").waitFor({ timeout: 8000 });
+    const shown = await page.evaluate(() => window.__shown);
+    assert.ok(listLoads.length > 0, `${tag}: the list chunk was asked for`);
+    assert.ok(shown.at >= 3500 && shown.at <= 4600, `${tag}: the dialog shows 3.5 to 4.6 s after landing (${Math.round(shown.at)} ms)`);
+    assert.deepEqual(shown.rows, order.map((id) => [id, expected[id].total]), `${tag}: its first DOM update holds the plain list with every total`);
+    assert.equal(shown.list, 0, `${tag}: no list while its chunk hangs`);
+    // The chunk lands late after all: the list takes the plain list's place.
+    for (const r of held) await r.continue();
+    await page.locator('button[data-testid="win-row"]').first().waitFor();
+    assert.equal(await page.locator('button[data-testid="win-row"]').count(), 4, `${tag}: a late chunk brings the list`);
+    assert.equal(await page.locator('li[data-testid="win-row"]').count(), 0, `${tag}: and the plain list is gone`);
+    await context.close();
+    console.log(`ok ${tag}: no dialog while the list chunk hangs, then the plain list with every total at ${Math.round(shown.at)} ms; a late chunk then brings the list`);
+  }
+
   // The list chunk cannot load: the table stands in with every total; once it can, Show scores brings the list.
   {
     const { context, page } = await open(390, 844, true, null, { block: true });
     const wrap = page.getByTestId("win-table-wrap");
-    await wrap.locator("table").waitFor();
+    await wrap.locator('li[data-testid="win-row"]').first().waitFor();
     assert.equal(await wrap.locator('[role="region"]').count(), 0, "failed chunk: no list");
-    assert.deepEqual(await page.locator('tr[data-testid="win-row"]').evaluateAll((els) => els.map((el) => [el.dataset.player, Number(el.querySelector('[data-testid="win-total"]').textContent)])), order.map((id) => [id, expected[id].total]), "failed chunk: the table shows every total");
+    assert.deepEqual(await page.locator('li[data-testid="win-row"]').evaluateAll((els) => els.map((el) => [el.dataset.player, Number(el.querySelector('[data-testid="win-total"]').textContent)])), order.map((id) => [id, expected[id].total]), "failed chunk: the plain list shows every total");
     await page.unroute(LIST_CHUNK);
     await page.getByTestId("win-look").click();
     await page.getByTestId("win-show").click();
     await page.locator('button[data-testid="win-row"]').first().waitFor();
     assert.equal(await page.locator('button[data-testid="win-row"]').count(), 4, "retry: Show scores brings the list");
-    assert.equal(await wrap.locator("table").count(), 0, "retry: the table is gone");
+    assert.equal(await wrap.locator('li[data-testid="win-row"]').count(), 0, "retry: the plain list is gone");
     await page.locator('button[data-testid="win-row"][data-player="p2"]').tap();
     assert.equal(await page.locator('[data-testid="win-hidden"]').nth(2).textContent(), "3", "retry: the list works");
     await context.close();
@@ -255,12 +395,13 @@ try {
   // Desktop with a mouse keeps the full table, and never asks for the list chunk.
   {
     const { context, page, listLoads } = await open(1280, 720, false, null);
-    assert.deepEqual(listLoads, [], "desktop: the list chunk is not loaded");
+    assert.ok(listLoads.length > 0, "desktop: the list chunk is loaded");
     const wrap = page.getByTestId("win-table-wrap");
-    assert.equal(await wrap.locator("table").count(), 1, "desktop: the table stays");
-    assert.equal(await wrap.locator("thead th").count(), 7, "desktop: seven columns");
-    assert.equal(await wrap.locator('[role="region"]').count(), 0, "desktop: no list");
-    assert.deepEqual(await page.locator('tr[data-testid="win-row"]').evaluateAll((els) => els.map((el) => [el.dataset.player, Number(el.querySelector('[data-testid="win-total"]').textContent)])), order.map((id) => [id, expected[id].total]));
+    await page.locator('button[data-testid="win-row"]').first().waitFor();
+    assert.equal(await page.locator("table").count(), 0, "desktop: no table");
+    assert.equal(await wrap.locator("thead th").count(), 0, "desktop: no column heads");
+    assert.equal(await wrap.locator('[role="region"]').count(), 4, "desktop: the list, one part per player");
+    assert.deepEqual(await page.locator('button[data-testid="win-row"]').evaluateAll((els) => els.map((el) => [el.dataset.player, Number(el.querySelector('[data-testid="win-total"]').textContent)])), order.map((id) => [id, expected[id].total]));
     await shot(page, "table-1280x720");
     await context.close();
     console.log("ok 1280x720 mouse: the desktop table stays");

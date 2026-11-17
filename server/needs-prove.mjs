@@ -174,6 +174,9 @@ try{
  const afterHumanTurn=a.inbox.filter(m=>m.type==='seats').at(-1);
  assert.deepEqual(afterHumanTurn.seats.find(s=>s.id==='s1').needs,['ore'],'the bot need did not age on a different owner’s turn');
  assert.deepEqual(afterHumanTurn.seats.find(s=>s.id==='s2').needs,[],'the human need expires on its own completed turn');
+ // c's acknowledgement does not mean a has received that turn and its current action stamp.
+ // Wait on the socket that will act, rather than sending from its stale view of c's turn.
+ await a.next('state',m=>m.game.current==='p0'&&m.game.phase==='roll');
  await a.act({type:'roll'});await a.act({type:'pass'});
  assert.equal(a.state.game.current,'p2','the bot completed its second own turn');
  const afterSecondBotTurn=a.inbox.filter(m=>m.type==='seats').at(-1);

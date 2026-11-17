@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -8,12 +7,12 @@ const vite = await createServer({ server: { host: "127.0.0.1", port, strictPort:
 await vite.listen();
 let browser;
 try {
-  browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined), args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
+  browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   await page.addInitScript(() => { localStorage.setItem("emberisle-jelly", "full"); localStorage.setItem("emberisle-water", "simple"); });
   await page.goto(`http://127.0.0.1:${port}`);
   await page.waitForFunction(() => window.__emberisle);
-  await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
+  await page.getByRole("button", { name: "Pass and play", exact: true }).click();
   await page.waitForFunction(() => window.__isle?.shore?.group.userData.goodsPiles?.length === 9, null, { timeout: 60000 });
   const result = await page.evaluate(async () => {
     const { createGame } = await import("/src/lib/game/board.ts");

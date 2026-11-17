@@ -1,4 +1,4 @@
-# Orchestrator guide (superseded in part)
+# Desk notes: the owner, builders, publishing and media
 
 **How the review desk works is now in [`DESK.md`](DESK.md), and the state is in issue #916.** A new desk
 starts there. This file keeps only what `DESK.md` does not cover: Jarrod's device and preferences,
@@ -27,10 +27,6 @@ reviews and merges. Builders build: Codex (ChatGPT), Grok, Claude chats, and Jos
 - **Budget:** Claude usage is limited weekly. Review models follow `DESK.md`, "Who reviews". Keep subagents to one per PR review, and stop when he says
   usage is low.
 
-## Reviewing, merging and check-ins
-These moved to [`DESK.md`](DESK.md): who reviews, when to merge, the required checks, and what to watch.
-A desk does not run timed check-ins. It wakes on the inbox (#699) and on the PR it is about to merge.
-
 ## Builders that don't watch PRs
 - Review comments on the PR are how builders hear back. Codex and Grok don't watch PRs, so tell Jarrod
   the one-line prompt: `Work on Emberisle: fix every review comment on PR #N.`
@@ -48,7 +44,3 @@ A desk does not run timed check-ins. It wakes on the inbox (#699) and on the PR 
 - Jarrod uploads clips and images in chat. You convert them (ffmpeg; BiRefNet or rembg for sticker
   backgrounds), name them per `docs/design/sound.md` ("Handing over clips") and the emotes doc, and
   commit them through a PR.
-
-## Live state
-Open work lives in the tracker, not here. Search the open PRs, `status:in-progress`, `needs: jarrod` and
-`priority:next`.

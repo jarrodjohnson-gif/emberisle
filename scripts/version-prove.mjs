@@ -2,7 +2,7 @@
 // Served dist only: the visible client SHA must be the built checkout, not a dev-server define.
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -95,7 +95,7 @@ try {
   assert.equal((await noGit.next("welcome")).serverSha, "dev", "host without git still opens a table and reports dev");
   ok("actual host/join/watch/rejoin SHAs; independent working directory; client and host git-unavailable fallback");
 
-  browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined), args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
+  browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
   mkdirSync(path.join(ROOT, "test-results"), { recursive: true });
   for (const [width, height] of [[390, 844], [844, 390], [1280, 720]]) {
     const context = await browser.newContext({ viewport: { width, height }, hasTouch: width < 1000, timezoneId: "UTC" });
@@ -174,7 +174,7 @@ try {
       await page.keyboard.press("Escape");
       await page.evaluate(() => window.__emberisle.getState().goTitle());
       assert.equal(await page.evaluate(() => window.__emberisle.getState().serverSha), null, "leaving clears host metadata");
-      await page.getByRole("button", { name: "Play", exact: true }).click();
+      await page.getByRole("button", { name: "Play with bots", exact: true }).click();
       await page.getByRole("button", { name: "Table menu", exact: true }).click();
       assert.ok(!(await line.innerText()).includes("server"), "practice never shows stale host metadata");
     }

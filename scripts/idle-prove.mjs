@@ -1,7 +1,6 @@
 // #331: with nothing moving the board renders at about 12 fps; a drag or a state push brings back full rate.
 // Software GL draws only one or two real frames a second here, so the proof swaps the composer's draw for a no-op
 // and counts what the loop decides to render (window.__isle.renders) at the browser's own frame rate.
-import { existsSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -17,7 +16,6 @@ const check = (name, ok, detail) => {
 };
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 try {
@@ -66,7 +64,7 @@ try {
   const title = await count(2000);
   check("title 30 fps gate (31..75 in 2 s)", title.draws > 30 && title.draws <= 75, title);
 
-  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await page.getByRole("button", { name: "Pass and play" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState);
   // #232: roll off first, so the board is measured in setup as before (the roll-off's longer phase sentence
   // and Roll button cover the canvas centre at 640x400, where the drag below starts).

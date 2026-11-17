@@ -1,0 +1,16 @@
+CONTROL: delaying Hud mount by 2500ms
+ok   390x844 first load, seq 20: nothing shown {"turns":0,"lines":0,"up":false}
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+page.evaluate: TypeError: Cannot read properties of undefined (reading 'getState')
+    at eval (eval at evaluate (:311:30), <anonymous>:1:32)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+    at reconnect (/workspace/work/1518/scripts/.1518-control-ready.mjs:897:45)
+    at async file:///workspace/work/1518/scripts/.1518-control-ready.mjs:910:38 {
+  log: []
+}
+
+Node.js v22.23.4

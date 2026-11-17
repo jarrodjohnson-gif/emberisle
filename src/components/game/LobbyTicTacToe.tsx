@@ -39,7 +39,7 @@ export function TicTacToe({ open, setOpen }: { open: boolean; setOpen: (open: bo
       <div data-testid="ttt" className="lobby-wait lx">
         <div className="lobby-wait-head">
           <b>Tic-tac-toe</b>
-          <Button variant="outline" back onClick={() => setOpen(false)}>Close</Button>
+          <Button variant="outline" back onClick={() => setOpen(false)}>Hide</Button>
         </div>
         <p className="lx-who">
           <span><SeatDot color={seat(me)?.color ?? "#000"} className="size-3" />You <i style={{ color: seat(me)?.color }}>{mark(mine)}</i></span>

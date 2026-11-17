@@ -2,7 +2,7 @@
 // Zero page errors with Storage.prototype.getItem, setItem, removeItem and clear blocked.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
@@ -30,7 +30,6 @@ const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, stric
 await vite.listen();
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
@@ -60,7 +59,7 @@ try {
   assert.ok(await titleCard.isVisible(), "title card is visible");
 
   // 2. Play (practice game) works
-  const playBtn = page1.getByRole("button", { name: "Play", exact: true });
+  const playBtn = page1.getByRole("button", { name: "Play with bots", exact: true });
   await playBtn.click();
   await page1.waitForFunction(() => window.__emberisle?.getState().screen === "play" && window.__emberisle?.getState().state !== null);
   assert.ok(await page1.getByTestId("log-line").isVisible(), "game log-line is visible after Play");

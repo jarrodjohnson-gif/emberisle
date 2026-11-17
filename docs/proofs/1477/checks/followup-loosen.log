@@ -1,0 +1,57 @@
+ok   self-test: an unchanged proof passes
+ok   self-test: re-indenting passes
+ok   self-test: an added check passes
+ok   self-test: editing only the block comment passes
+ok   self-test: a removed assert fails
+ok   self-test: a removed assert lowers the count
+ok   self-test: a wider tolerance fails
+ok   self-test: a //-commented assert fails
+ok   self-test: a /* */-commented assert fails
+ok   self-test: a check wrapped in a multi-line /* */ fails
+ok   self-test: a removed throw fails
+ok   self-test: a removed expect fails
+ok   self-test: a fail() that no longer sets exitCode 1 fails
+ok   self-test: an added process.exit(0) fails
+ok   self-test: an added process.exit() fails
+ok   self-test: a new .skip fails
+ok   self-test: an unlisted deletion fails
+ok   self-test: a listed deletion passes
+ok   self-test: a deletion listed only under another path fails
+ok   self-test: a listed proof with a weakened assert fails
+ok   self-test: a listed proof with a removed check fails
+ok   self-test: a listed proof renamed away fails
+ok   self-test: an unlisted proof renamed away fails
+ok   self-test: an added proof cannot reuse a retired path
+ok   self-test: a rename cannot reuse a retired path
+ok   self-test: an unlisted new proof passes
+ok   self-test: a missing list allows no deletion
+ok   self-test: the empty seed list allows no deletion
+ok   self-test: a full entry is listed
+ok   self-test: an entry naming a file that is not a proof fails
+ok   self-test: an entry with no date fails
+ok   self-test: an entry with no issue fails
+ok   self-test: an entry with an empty reason fails
+ok   self-test: a list with no entries array fails
+ok   self-test: a list that is not JSON fails
+ok   self-test: loosen-prove cannot be retired
+ok   self-test: registered-prove cannot be retired
+ok   self-test: an entry must cite a decision row
+ok   self-test: the decision row must name the exact proof
+ok   self-test: prose cannot stand in for a decision row
+ok   self-test: the owner may change the list
+ok   self-test: a collaborator may not change the list
+ok   self-test: a collaborator's push to the owner's PR may not change the list
+ok   self-test: the owner's run on a collaborator's PR may not change the list
+ok   self-test: a local run with no payload may not change the list
+ok   self-test: a payload with no owner may not change the list
+ok   self-test: a non-owner creating the empty seed where the base has none passes
+ok   self-test: a non-owner creating a seed with one entry fails
+ok   self-test: a non-owner creating a malformed seed fails
+ok   self-test: a non-owner adding an entry to the list fails
+ok   self-test: a non-owner emptying the list fails
+ok   self-test: a non-owner deleting the list fails
+ok   self-test: the owner adding an entry passes
+ok   self-test: the owner creating a seed with one entry passes
+ok   self-test: the owner breaking the list fails
+ok   self-test: retirement list and exact decision rows come from the base only; HEAD grants no permission
+loosen-prove: 3 changed proof(s) against 2f050c3d1b6e, none loosened

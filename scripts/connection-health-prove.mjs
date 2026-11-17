@@ -16,7 +16,17 @@ if (nodeMajor === 22 && nodeMinor < 23) {
 if (process.argv.includes("--host-fixture")) {
   // Test-only observation of timer identity: no production exports, endpoint, or environment switch.
   const { registerHooks } = await import("node:module");
-  registerHooks({ load(url, context, next) {
+  // Keep fixture loading on one synchronous hook chain. Mixing this load hook with
+  // register.mjs's asynchronous resolver can stall before host evaluation (#1493).
+  // Mirror its ESM-only alias/extension rules; leave CommonJS package requires alone.
+  registerHooks({
+    resolve(specifier, context, next) {
+      if (context.conditions.includes("require")) return next(specifier, context);
+      if (specifier.startsWith("@/")) specifier = new URL(specifier.slice(2), new URL("../src/", import.meta.url)).href;
+      if ((specifier.startsWith("./") || specifier.startsWith("../") || specifier.startsWith("file:")) && !/\.[a-z]+$/i.test(specifier)) return next(`${specifier}.ts`, context);
+      return next(specifier, context);
+    },
+    load(url, context, next) {
     const result = next(url, context);
     if (url === new URL("../server/host.mjs", import.meta.url).href) return { ...result, source: readFileSync(new URL(url), "utf8") + `
       process.on('message', ({id, code}) => {
@@ -29,11 +39,10 @@ if (process.argv.includes("--host-fixture")) {
       });` };
     return result;
   }});
-  await import("../server/register.mjs");
   await import("../server/host.mjs");
 } else {
   const { chromium } = await import("./proof-browser.mjs");
-  const { createServer, build, preview } = await import("vite");
+  const { createServer, preview } = await import("vite");
   const resultsDir = fileURLToPath(new URL("../test-results/", import.meta.url));
   mkdirSync(resultsDir, { recursive: true });
   const dir = mkdtempSync(path.join(tmpdir(), "emberisle-health-"));
@@ -78,7 +87,19 @@ if (process.argv.includes("--host-fixture")) {
     browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH, args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     const errors = [];
-    page.on("pageerror", e => errors.push(String(e)));
+    async function observeErrors(p, label) {
+      p.on("pageerror", error => { errors.push(String(error)); console.log("HEALTH_PAGE_ERROR", label, error.stack); });
+      p.on("console", message => { if (message.text().startsWith("HEALTH_ERROR_CAUSE")) console.log(message.text()); });
+      await p.addInitScript(label => {
+        const describe = (value, depth=0) => {
+          if (value == null || depth > 4) return value == null ? value : "depth limit";
+          if (typeof value !== "object") return String(value);
+          return { name:value.name, message:value.message, stack:value.stack, cause:describe(value.cause,depth+1), errors:Array.isArray(value.errors) ? value.errors.slice(0,4).map(e=>describe(e,depth+1)) : undefined };
+        };
+        window.addEventListener("error", event => console.log("HEALTH_ERROR_CAUSE " + JSON.stringify({ label, error:describe(event.error) })));
+      }, label);
+    }
+    await observeErrors(page, "transport/main");
     await page.addInitScript(() => {
       localStorage.setItem("emberisle-name", "Ember"); localStorage.setItem("emberisle-water", "simple");
       const h = window.__health = { sockets: [], sent: [], pongs: [], held: [], hold: true, notices: [], messages: [] };
@@ -107,8 +128,12 @@ if (process.argv.includes("--host-fixture")) {
     });
     await page.goto(`http://127.0.0.1:8113/?host=ws://127.0.0.1:${port}`);
     await page.waitForFunction(() => window.__emberisle);
-    await page.clock.install();
-    await page.clock.pauseAt(new Date());
+    // Hold Date during setup so pauseAt cannot receive an already-past target (#1493).
+    // Then restore Date advancement while timers stay paused; retain a normal monotonic origin.
+    const clockStart = new Date();
+    await page.clock.setFixedTime(clockStart);
+    await page.clock.pauseAt(clockStart);
+    await page.clock.setSystemTime(clockStart);
     // Exercise the transport without the store: a duplicate welcome cannot cancel a pending challenge's timeout.
     await page.evaluate(async () => {
       const { connectTable } = await import("/src/lib/net/table.ts");
@@ -147,7 +172,8 @@ if (process.argv.includes("--host-fixture")) {
       window.__emberisle.getState().hostTable();
     });
     await page.getByTestId("table-code").waitFor();
-    assert.match(await page.getByTestId("connection-status").innerText(), /^Reachable$/);
+    assert.equal(await page.getByTestId("connection-status").count(), 0, "Reachable stays off the lobby");
+    assert.equal(await page.evaluate(() => window.__emberisle.getState().connectionHealth.status), "Reachable", "host link is up");
     const code = await page.evaluate(() => window.__emberisle.getState().code);
     for (const name of ["Tide", "Pine", "Cloud"]) {
       const c = await client(port); c.send({ type: "hello", code, name }); await c.next("welcome"); c.send({ type: "ready", value: true });
@@ -220,27 +246,22 @@ if (process.argv.includes("--host-fixture")) {
     assert.equal(await page.evaluate(() => window.__health.sent.length), 2, "one outstanding probe");
     const fits = await page.evaluate(() => {
       const box = el => el.getBoundingClientRect();
-      const status = box(document.querySelector('[data-testid="connection-status"]'));
+      const statusEl = document.querySelector('[data-testid="connection-status"]');
+      const status = statusEl ? box(statusEl) : { left: 0, right: 0, top: 0, bottom: 0 };
       const menu = box(document.querySelector('button[aria-label="Table menu"]'));
       const scores = [...document.querySelectorAll('[data-testid="seat-strip"] [data-testid="seat-vp"]')].map(box);
       const utility = [...document.querySelectorAll('.hud-utilities button')].map(box);
-      const clear = utility.every(r => status.right <= r.left || status.left >= r.right || status.bottom <= r.top || status.top >= r.bottom);
+      const clear = !statusEl || utility.every(r => status.right <= r.left || status.left >= r.right || status.bottom <= r.top || status.top >= r.bottom);
       return { clear, status: status.left >= 0 && status.right <= innerWidth,
         menu: menu.width === 44 && menu.height === 44,
         scores: scores.length === 4 && scores.every(r => r.width > 0 && r.left >= 0 && r.right <= innerWidth && r.bottom <= menu.bottom) };
     });
     assert.deepEqual(fits, { clear: true, status: true, menu: true, scores: true }, "390px four-seat header fits with RTT visible");
+    assert.equal(await page.getByTestId("connection-status").count(), 0, "Reachable stays off the header");
     await page.screenshot({ path: path.join(resultsDir, "connection-health-phone.png") });
     for (const width of [700, 900]) {
       await page.setViewportSize({ width, height: 1100 });
-      assert.ok(await page.evaluate(() => {
-        const s = document.querySelector('[data-testid="connection-status"]').getBoundingClientRect();
-        const utilities = [...document.querySelectorAll('.hud-utilities button')];
-        return utilities.length > 0 && utilities.every(el => {
-          const r = el.getBoundingClientRect();
-          return s.right <= r.left || s.left >= r.right || s.bottom <= r.top || s.top >= r.bottom;
-        });
-      }), `${width}px coarse portrait status clears utility controls`);
+      assert.ok(await page.evaluate(() => !document.querySelector('[data-testid="connection-status"]') && document.querySelectorAll('.hud-utilities button').length > 0), `${width}px coarse portrait hides Reachable and keeps utility controls`);
     }
     await page.setViewportSize({ width: 390, height: 844 });
     assert.deepEqual(await snapshot(code), before, "all host timer identities, deadlines, seq and save state unchanged");
@@ -248,6 +269,16 @@ if (process.argv.includes("--host-fixture")) {
     assert.deepEqual(await page.evaluate(() => { const s = window.__emberisle.getState(); return { seq: s.state.seq, timer: s.turnTimer }; }), clientBefore);
     await page.clock.fastForward(1);
     await until(() => page.evaluate(() => window.__emberisle.getState().connectionHealth.status === "Reconnecting"), "3s timeout");
+    assert.ok(await page.evaluate(() => {
+      const node = document.querySelector('[data-testid="connection-status"]');
+      if (!node) return false;
+      const s = node.getBoundingClientRect();
+      const utilities = [...document.querySelectorAll('.hud-utilities button')];
+      return s.width > 0 && utilities.length > 0 && utilities.every(el => {
+        const r = el.getBoundingClientRect();
+        return s.right <= r.left || s.left >= r.right || s.bottom <= r.top || s.top >= r.bottom;
+      });
+    }), "Reconnecting stays clear of the utility controls");
     assert.deepEqual(await snapshot(code), before, "health timeout also preserves host timers");
     assert.deepEqual(readFileSync(path.join(dir, `${code}.json`)), bytes, "health timeout does not save or drop a seat");
     await page.evaluate(() => { window.__health.hold = false; window.__emberisle.getState().net.drop(); });
@@ -328,7 +359,7 @@ if (process.argv.includes("--host-fixture")) {
     await lobby.close();
     // Four ready seats maximize the lobby footer. Status shares the caption's row on short landscapes.
     const layout = await browser.newPage({ viewport: { width: 667, height: 375 }, isMobile: true, hasTouch: true });
-    layout.on("pageerror", e => errors.push(String(e)));
+    await observeErrors(layout, "lobby/layout");
     await layout.goto("http://127.0.0.1:8113/");
     await layout.waitForFunction(() => window.__emberisle);
     await layout.evaluate(() => window.__emberisle.setState({
@@ -344,19 +375,21 @@ if (process.argv.includes("--host-fixture")) {
       await layout.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       for (const status of ["Reachable", "Reconnecting", "Offline"]) {
         await layout.evaluate(status => window.__emberisle.setState({ connectionHealth: { status, rtt: status === "Reachable" ? 2999 : null } }), status);
-        await until(() => layout.getByTestId("connection-status").textContent().then(text => text.startsWith(status)), "lobby health text");
-        const geometry = await layout.evaluate(() => {
+        if (status === "Reachable") await until(() => layout.getByTestId("connection-status").count().then(n => n === 0), "healthy link stays quiet");
+        else await until(() => layout.getByTestId("connection-status").textContent().then(text => text.startsWith(status)), "lobby health text");
+        const geometry = await layout.evaluate((healthy) => {
           const card = document.querySelector('[data-testid="lobby-card"]');
           const cover = card.querySelector(".lobby-cover");
           const inside = el => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; };
-          const controls = [...card.querySelectorAll("button")].filter(b => ["Not ready", "Start", "Leave the table"].includes(b.textContent.trim()));
+          const controls = [...card.querySelectorAll("button")].filter(b => ["Cancel ready", "Start", "Leave table"].includes(b.textContent.trim()));
+          const statusEl = card.querySelector('[data-testid="connection-status"]');
           return {
-            status: inside(card.querySelector('[data-testid="connection-status"]')),
+            status: statusEl ? inside(statusEl) : healthy,
             x: cover.scrollWidth - cover.clientWidth,
             y: [...card.querySelectorAll("*")].filter(el => getComputedStyle(el).overflowY === "auto" && el.dataset.testid !== "chat-log").map(el => el.scrollHeight - el.clientHeight),
             controls: controls.map(el => ({ inside: inside(el), width: el.getBoundingClientRect().width, height: el.getBoundingClientRect().height })),
           };
-        });
+        }, status === "Reachable");
         try {
           assert.ok(geometry.status, `${width}x${height} ${status}: status stays inside the lobby`);
           if (width > height) {
@@ -376,7 +409,16 @@ if (process.argv.includes("--host-fixture")) {
     await layout.close();
     console.log("ok lobby: four ready seats and every health state fit 320/390/667/844px layouts; no landscape scrolling");
     // Production demand loading: the protocol itself remains synchronous once imported.
-    await build({ logLevel: "error" });
+    // createServer sets this process to development. Build in a separate production
+    // process so the preview tests production React rather than a development bundle.
+    const buildProcess = spawn(process.execPath, [fileURLToPath(new URL("../node_modules/vite/bin/vite.js", import.meta.url)), "build", "--logLevel", "error"], {
+      cwd: fileURLToPath(new URL("../", import.meta.url)),
+      env: { ...process.env, NODE_ENV: "production" }, stdio: "inherit",
+    });
+    await new Promise((resolve, reject) => {
+      buildProcess.once("error", reject);
+      buildProcess.once("exit", (code, signal) => code === 0 ? resolve() : reject(Error(`production build failed: ${code ?? signal}`)));
+    });
     const asset = readdirSync("dist/assets").find(name => /^table-[^/]+\.js$/.test(name));
     assert.ok(asset, "production has a separately budgeted table client");
     production = await preview({ preview: { host: "127.0.0.1", port: 0, strictPort: false }, logLevel: "error" });
@@ -390,7 +432,7 @@ if (process.argv.includes("--host-fixture")) {
     async function cold({ seed = null, fail = false } = {}) {
       const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
       const p = await context.newPage();
-      p.on("pageerror", e => errors.push(String(e)));
+      await observeErrors(p, `production/${seed ? "seeded" : "fresh"}/${fail ? "failed-load" : "held-load"}`);
       p.on("console", message => { if (message.text().startsWith("COLD preload")) console.log(message.text()); });
       const intents = [], requests = [], held = [];
       let open = false, failNext = fail;
@@ -441,7 +483,7 @@ if (process.argv.includes("--host-fixture")) {
     try {
       await cancelled.p.getByRole("button", { name: "Host a table", exact: true }).click();
       await until(() => cancelled.requests.length > 0, "held table-client request");
-      await cancelled.p.getByRole("button", { name: "Play", exact: true }).click();
+      await cancelled.p.getByRole("button", { name: "Play with bots", exact: true }).click();
       await cancelled.release(); await cancelled.settled();
       assert.deepEqual(await cancelled.p.evaluate(() => { const s = window.__emberisle.getState(); return [s.screen, s.mode, s.net]; }), ["play", "ai", null], "late client load cannot pull practice back online");
       assert.deepEqual(cancelled.intents, [], "cancelled Host sends no hello after module arrival");
@@ -484,7 +526,7 @@ if (process.argv.includes("--host-fixture")) {
       await until(() => quiet.p.evaluate(() => !window.__emberisle.getState().restoring), "original 3s fallback includes module fetch");
       assert.deepEqual(await quiet.p.evaluate(() => window.__coldDeadlines), [3000], "quiet fallback keeps the original 3000ms delay");
       assert.equal(await quiet.p.evaluate(() => localStorage.getItem("emberisle-seat")), savedSeatRecord, "held loader preserves the exact saved seat");
-      await quiet.p.getByRole("button", { name: "Play", exact: true }).click();
+      await quiet.p.getByRole("button", { name: "Play with bots", exact: true }).click();
       await quiet.release(); await quiet.settled();
       assert.deepEqual(quiet.intents, [], "offline escape cancels pending saved-seat rejoin");
       assert.equal(await quiet.p.evaluate(() => window.__emberisle.getState().mode), "ai");

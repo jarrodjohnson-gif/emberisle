@@ -3,7 +3,6 @@
 // leaves right now) is no bigger than the declared one (`__isle.insets()`), across a width sweep: upright 320-440 px (every pixel
 // from 375 to 410, around TRAY_WRAP_MAX, where the main phase's action row stops taking two lines by rule), sideways 667-956 px. A side where the live hole is
 // bigger is a place the HUD covers a corner. Run: npm run hole-prove
-import { existsSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -12,7 +11,6 @@ const PORT = Number(process.env.VITE_PORT) || 8141;
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -34,7 +32,7 @@ try {
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.waitForFunction(() => window.__isle?.renders > 0, null, { timeout: STEP_MS });
-  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await page.getByRole("button", { name: "Pass and play" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
   await page.evaluate(() => { const g = window.__emberisle; while (g.getState().state.phase === "rollOff") g.getState().dispatch({ type: "roll" }); });
   await page.waitForFunction(() => !document.querySelector('[data-testid="banner"]'), null, { timeout: STEP_MS });

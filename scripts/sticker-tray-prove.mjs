@@ -6,7 +6,7 @@
 // extreme 256x64 and 64x256 pictures, so the check never depends on which art is on main.
 // Screenshots go to test-results/, or to $PROOF_SHOTS if set. Run: npm run sticker-tray-prove
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -33,9 +33,7 @@ const hostPort = await new Promise((resolve) =>
 );
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
-});
+const browser = await chromium.launch();
 const url = `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`;
 const errors = [];
 const check = (ok, what) => {

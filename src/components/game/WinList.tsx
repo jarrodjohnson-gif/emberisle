@@ -1,5 +1,4 @@
-// #748: the win screen's compact list on touch and narrow screens, its own chunk (chunks.ts) so the desktop table loads
-// nothing extra. One row per player; one opens at a time, scrolls to the top of the list and shows the breakdown.
+// #748: the win screen's list, on every screen size (owner 2026-11-12, q1563-results-desktop), its own chunk (chunks.ts). One row per player; one opens at a time, scrolls to the top of the list and shows the breakdown.
 import { useEffect, useRef, useState } from "react";
 import { SeatDot } from "@/components/game/SeatDot";
 import type { Row } from "@/components/game/WinScreen";
@@ -19,7 +18,6 @@ export function WinList({ rows }: { rows: Row[] }) {
   }, [open]);
   return (
     <>
-      <p className="mb-1 text-caption text-muted short:hidden">Tap a player to see how they scored.</p>
       <ul ref={list}>
         {rows.map((r) => {
           const id = r.p.id;
@@ -45,7 +43,11 @@ export function WinList({ rows }: { rows: Row[] }) {
                   className="flex min-h-11 w-full items-center gap-2.5 pr-1.5 pl-2 text-left text-body text-fg focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sea-ink"
                 >
                   <SeatDot color={r.p.color} className="size-3 flex-none" />
-                  <span className={`min-w-0 flex-1 ${on ? "py-[11px]" : "truncate"}`}>{r.p.name}</span>
+                  <span className={`min-w-0 flex-1 ${on ? "py-[11px]" : "truncate"}`}>
+                    {r.p.name}
+                    {r.note ? <span data-testid="win-profile" className="block truncate text-caption text-muted">{r.note}</span> : null}
+                  </span>
+                  {r.tag}
                   <span data-testid="win-total" className="flex-none text-xl font-bold tabular-nums">{r.total}</span>
                   <svg viewBox="0 0 20 20" aria-hidden="true" className={`size-5 flex-none text-muted ${on ? "rotate-180" : ""}`}>
                     <path d="M5 7.5l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

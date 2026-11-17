@@ -1,6 +1,6 @@
 // #846: real rendered cargo pixels, at default camera fit. Diagnostic vertex colours identify visible cargo only.
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from 'vite';
 const port=Number(process.env.VITE_PORT)||18748;
@@ -8,14 +8,14 @@ const vite=await createServer({server:{host:'127.0.0.1',port,strictPort:true},lo
 let browser;
 const errors=[];
 try{
- browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||(existsSync('/opt/pw-browsers/chromium')?'/opt/pw-browsers/chromium':undefined),args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+ browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  mkdirSync('test-results',{recursive:true});
  for(const [width,height,phone]of [[1280,720,false],[1920,1080,false],[390,844,true]]){
   const context=await browser.newContext({viewport:{width,height},deviceScaleFactor:1,...(phone?{hasTouch:true,isMobile:true}:{})});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   await page.addInitScript(()=>{localStorage.setItem('emberisle-jelly','full');localStorage.setItem('emberisle-water','simple');});
   await page.goto(`http://127.0.0.1:${port}`);await page.waitForFunction(()=>window.__emberisle);
-  await page.getByRole('button',{name:'Four seats, one table',exact:true}).click();
+  await page.getByRole('button',{name:'Pass and play',exact:true}).click();
   await page.evaluate(async()=>{
    const {createGame}=await import('/src/lib/game/board.ts');
    const s=createGame({humans:[{name:'Ember'},{name:'Tide'},{name:'Dune'}],bots:0,seed:14,numberTokens:"random"});

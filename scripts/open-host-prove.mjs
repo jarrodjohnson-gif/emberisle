@@ -1,7 +1,7 @@
 // #833: only native-host HTML or an explicit host link enables automatic title discovery.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
@@ -42,7 +42,6 @@ try {
   served = await preview({ preview: { host: "127.0.0.1", port: Number(process.env.OPEN_HOST_PORT) || 8494, strictPort: true }, logLevel: "error" });
   const staticURL = served.resolvedUrls.local[0];
   browser = await chromium.launch({
-    executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
     args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
   });
   async function visit(url) {
@@ -63,7 +62,7 @@ try {
     const { context, page, sockets } = await visit(staticURL);
     assert.equal(await page.locator('meta[name="emberisle-host"]').count(), 0);
     assert.deepEqual(sockets, [], "automatic discovery opens no WebSocket on a static root build");
-    await page.getByRole("button", { name: "Four seats, one table", exact: true }).click();
+    await page.getByRole("button", { name: "Pass and play", exact: true }).click();
     await page.getByRole("button", { name: "Table menu", exact: true }).waitFor();
     assert.deepEqual(sockets, [], "static offline play also makes no host connection");
     assert.deepEqual(errors, []);

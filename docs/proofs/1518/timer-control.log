@@ -1,0 +1,3 @@
+{"name":"old","calls":[3000],"expired":true,"start":287.161573,"expiredAt":3002.918134,"beforeRelease":{"expired":true,"held":0},"afterRelease":{"expired":true,"held":0}}
+{"name":"candidate","calls":[600000],"expired":true,"start":288.203985,"beforeRelease":{"expired":false,"held":1},"expiredAt":3201.388744,"afterRelease":{"expired":true,"held":0}}
+Exact recorded helper: old misses real3000ms removal timer; candidate holds only during explicit measurement and releases callback. No product lifetime or assertion changed.

@@ -59,7 +59,6 @@ const vite = await createServer({ server: { host: "127.0.0.1", port: 0 }, logLev
 await vite.listen();
 const url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${hostPort}`;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--autoplay-policy=no-user-gesture-required"],
 });
 const problems = [];
@@ -103,7 +102,7 @@ const minigames = () => requests.filter((item) => item.includes("/minigames/"));
 const ruffleCount = (page) => page.evaluate(() => [...document.querySelectorAll("*")].filter((el) => /^RUFFLE-PLAYER/.test(el.tagName)).length);
 
 async function openShelf(page) {
-  await page.getByRole("button", { name: "Play games" }).click();
+  await page.getByRole("tab", { name: "Play games" }).click();
   await page.locator(".ls").waitFor();
   await logo(page, ".lt", "shelf");
 }
@@ -215,18 +214,69 @@ async function geometry(page, label) {
   }
 }
 
+// #1639: a phone on its side. The stage may shrink to fit (Ruffle letterboxes it), but header, stage, Left/Right,
+// the status line and the footer stack without overlap, nothing is clipped, and every control is 44 px inside the view.
+async function landscape(page, label) {
+  const data = await page.evaluate(() => {
+    const rect = (el) => {
+      const r = el.getBoundingClientRect();
+      return { x: r.x, y: r.y, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+    };
+    const card = document.querySelector('[data-testid="lobby-card"]');
+    const status = document.querySelector('[data-testid="lobby-wait-status"]');
+    const parts = [".lobby-wait-head", '[data-testid="lobby-wait-stage"]', ".lobby-wait-holds", '[data-testid="lobby-wait-status"]', '[data-testid="lobby-actions"]']
+      .map((sel) => ({ label: sel, ...rect(document.querySelector(sel)) }));
+    const controls = [...card.querySelectorAll("button, input, [role=tab]")].filter((el) => el.getBoundingClientRect().width > 0);
+    const texts = [...card.querySelectorAll("*")].filter((el) => {
+      if (el.closest("ruffle-player, [data-testid=lobby-wait-stage]")) return false;
+      const own = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+      return own && el.getBoundingClientRect().width > 0;
+    });
+    const small = texts.filter((el) => parseFloat(getComputedStyle(el).fontSize) < 12).map((el) => `${el.textContent.trim()} ${getComputedStyle(el).fontSize}`);
+    return {
+      parts, small, texts: texts.length, viewW: innerWidth, viewH: innerHeight,
+      status: { height: status.clientHeight, scroll: status.scrollHeight, line: parseFloat(getComputedStyle(status).lineHeight) },
+      controls: controls.map((el) => ({ label: el.getAttribute("aria-label") || el.textContent.trim(), ...rect(el) })),
+    };
+  });
+  for (let i = 1; i < data.parts.length; i++) {
+    const [a, b] = [data.parts[i - 1], data.parts[i]];
+    assert.ok(a.height > 0 && a.bottom <= b.y + 0.5, `${label}: ${a.label} bottom ${a.bottom} above ${b.label} top ${b.y}`);
+  }
+  for (const p of data.parts) assert.ok(p.x >= 0 && p.y >= 0 && p.right <= data.viewW + 0.5 && p.bottom <= data.viewH + 0.5, `${label}: ${p.label} inside the viewport ${JSON.stringify(p)}`);
+  assert.ok(data.status.height >= data.status.line && data.status.scroll <= data.status.height, `${label}: status line not clipped ${JSON.stringify(data.status)}`);
+  assert.ok(data.texts >= 8, `${label}: the text-size check saw the card's texts (${data.texts})`);
+  assert.deepEqual(data.small, [], `${label}: text under 12 px`);
+  // The stage is the part that gives way here, so it has a floor: the game stays at least 120 px tall.
+  assert.ok(data.parts[1].height >= 120, `${label}: stage at least 120 px tall (${data.parts[1].height})`);
+  const want = ["Sound off", "Close", "Left", "Right", "Ready", "Leave table"];
+  for (const name of want) assert.ok(data.controls.some((c) => c.label === name), `${label}: ${name} shown`);
+  for (const c of data.controls) {
+    assert.ok(c.width >= 44 && c.height >= 44, `${label}: ${c.label} target ${c.width}x${c.height}`);
+    assert.ok(c.x >= 0 && c.y >= 0 && c.right <= data.viewW + 0.5 && c.bottom <= data.viewH + 0.5, `${label}: ${c.label} inside the viewport ${JSON.stringify(c)}`);
+  }
+  for (let i = 0; i < data.controls.length; i++) for (const b of data.controls.slice(i + 1)) {
+    const a = data.controls[i];
+    const gap = Math.max(b.x - a.right, a.x - b.right, b.y - a.bottom, a.y - b.bottom);
+    assert.ok(gap >= 7.99, `${label}: ${a.label} / ${b.label} gap ${gap}`);
+  }
+  const stage = data.parts[1];
+  console.log(`ok  ${label}: stack ${data.parts.map((p) => `${p.label} ${p.y}-${p.bottom}`).join(", ")}; stage ${stage.width}x${stage.height}; status ${JSON.stringify(data.status)}; ${data.texts} texts checked`);
+  console.log(`ok  ${label}: targets ${data.controls.map((c) => `${c.label} ${c.width}x${c.height}`).join(", ")}`);
+}
+
 try {
   const desk = await client({ width: 1280, height: 720 }, false);
   assert.equal(await desk.locator(".lm button").count(), 2, "two lobby controls");
   assert.equal(await desk.getByTestId("lobby-chat").getByRole("tab").count(), 2, "chat still has two tabs");
-  assert.equal(await desk.getByRole("tab").count(), 2, "the page still has the two chat tabs");
+  assert.equal(await desk.getByRole("tab").count(), 4, "the page has the two chat tabs and the two lobby tabs");
   assert.equal(await desk.locator(".ls").count(), 0);
   assert.equal(await desk.getByTestId("lobby-players").count(), 1);
   await desk.evaluate(() => document.fonts.ready);
   assert.equal(minigames().length, 0, "nothing under /minigames/ before a game opens");
   assert.ok(!requests.some((r) => r.includes("sandwich-stacker-logo.png")), "logo is not fetched on the Table tab");
   assert.equal(await desk.locator("ruffle-player, script[src*='ruffle']").count(), 0);
-  assert.equal(await desk.getByRole("button", { name: "Table", exact: true }).getAttribute("aria-pressed"), "true");
+  assert.equal(await desk.getByRole("tab", { name: "Table", exact: true }).getAttribute("aria-selected"), "true");
   await desk.getByTestId("add-bot").first().click();
   await desk.getByTestId("add-bot").first().click();
   await desk.waitForFunction(() => window.__emberisle.getState().seats.length === 3);
@@ -311,7 +361,7 @@ try {
   await phone.getByRole("button", { name: "Ready", exact: true }).click();
   assert.equal(await ruffleCount(phone), 1, "Ready does not close the phone game");
   await phone.screenshot({ path: `${out}/390x844.png` });
-  await phone.getByRole("button", { name: "Leave the table" }).click();
+  await phone.getByRole("button", { name: "Leave table" }).click();
   await phone.getByTestId("title-card").waitFor();
   assert.equal(await ruffleCount(phone), 0, "leaving removes the player");
   await phone.context().close();
@@ -326,9 +376,15 @@ try {
 
   const sideways = await client({ width: 844, height: 390 }, true);
   await openShelf(sideways);
+  const play = await sideways.locator(".lt button").boundingBox();
+  assert.ok(play.width >= 44 && play.height >= 44 && play.x >= 0 && play.y >= 0 && play.x + play.width <= 844 && play.y + play.height <= 390, `844x390: shelf Play ${JSON.stringify(play)}`);
   await openStacker(sideways);
+  await landscape(sideways, "844x390");
+  await contrast(sideways, "game 844");
+  mkdirSync("docs/proofs/1639", { recursive: true });
+  await sideways.screenshot({ path: "docs/proofs/1639/844x390.png" });
   await sideways.context().close();
-  console.log("ok  844x390: shelf and header logo checked");
+  console.log("ok  844x390: shelf, header logo, stack without overlap, 44 px targets inside the view");
 
   assert.deepEqual(problems, [], `browser errors:\n${problems.join("\n")}`);
   console.log("lobby-wait-box-prove: ok");

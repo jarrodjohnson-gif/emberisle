@@ -5,7 +5,7 @@
 // and --budget skips the shots and prints the frame-time matrix (pixel ratio x view x SSAO size) in the play screen.
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
@@ -44,7 +44,6 @@ const hostPort = await new Promise((resolve) =>
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
@@ -228,7 +227,7 @@ try {
     await page.addInitScript(() => localStorage.setItem("emberisle-name", "Ember"));
     await page.goto(`http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`);
     if (BUDGET) {
-      await page.getByRole("button", { name: "Play", exact: true }).click();
+      await page.getByRole("button", { name: "Play with bots", exact: true }).click();
       await playUntil(page, (st, me) => st.phase === "roll" && st.current === me);
       budget = await frameBudget(page, size);
       console.log("budget", JSON.stringify(budget));
@@ -257,10 +256,10 @@ try {
     await page.locator("li", { hasText: "Pine" }).waitFor();
     await shot(page, "02-lobby", size);
     for (const p of side) await p.close();
-    await page.getByRole("button", { name: "Leave the table" }).click();
+    await page.getByRole("button", { name: "Leave table" }).click();
 
     // Setup, versus three bots: the first corner to place, glowing.
-    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play with bots", exact: true }).click();
     await playUntil(page, (st, me) => st.phase === "setupSettle" && st.current === me);
     await shot(page, "03-setup", size);
 

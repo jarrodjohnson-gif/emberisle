@@ -1,0 +1,799 @@
+{
+  "host": {
+    "preWinPhase": "main",
+    "preWinOtherSeatHasTally": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "preWinHasGoodsLost": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "winReason": {
+      "trigger": "stronghold",
+      "points": 10,
+      "target": 10
+    }
+  },
+  "runs": [
+    {
+      "size": "430x932",
+      "before": {
+        "wrap": {
+          "x": 33,
+          "y": 396,
+          "w": 364,
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207
+        },
+        "sidewaysScroll": false,
+        "listScrolls": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "buttonsInView": true,
+        "award": null,
+        "awardChip": null,
+        "awardsInDom": 0,
+        "dice": null,
+        "diceInView": null,
+        "chipsOutsideOpenRow": 0
+      },
+      "after": {
+        "wrap": {
+          "x": 33,
+          "y": 323,
+          "w": 364,
+          "h": 354,
+          "scrollHeight": 353,
+          "clientHeight": 353
+        },
+        "sidewaysScroll": false,
+        "listScrolls": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "buttonsInView": true,
+        "award": null,
+        "awardChip": null,
+        "awardsInDom": 4,
+        "dice": {
+          "x": 33,
+          "y": 537,
+          "w": 364,
+          "h": 138
+        },
+        "diceInView": true,
+        "chipsOutsideOpenRow": 0
+      },
+      "open": {
+        "wrap": {
+          "x": 33,
+          "y": 236,
+          "w": 364,
+          "h": 527,
+          "scrollHeight": 526,
+          "clientHeight": 526
+        },
+        "sidewaysScroll": false,
+        "listScrolls": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "buttonsInView": true,
+        "award": {
+          "x": 63,
+          "y": 399,
+          "w": 298,
+          "h": 24
+        },
+        "awardChip": {
+          "x": 63,
+          "y": 399,
+          "w": 116,
+          "h": 24
+        },
+        "awardsInDom": 4,
+        "dice": {
+          "x": 33,
+          "y": 623,
+          "w": 364,
+          "h": 138
+        },
+        "diceInView": true,
+        "chipsOutsideOpenRow": 0
+      }
+    },
+    {
+      "size": "390x844",
+      "before": {
+        "wrap": {
+          "x": 33,
+          "y": 326,
+          "w": 324,
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207
+        },
+        "sidewaysScroll": false,
+        "listScrolls": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "buttonsInView": true,
+        "award": null,
+        "awardChip": null,
+        "awardsInDom": 0,
+        "dice": null,
+        "diceInView": null,
+        "chipsOutsideOpenRow": 0
+      },
+      "after": {
+        "wrap": {
+          "x": 33,
+          "y": 256,
+          "w": 324,
+          "h": 347,
+          "scrollHeight": 346,
+          "clientHeight": 346
+        },
+        "sidewaysScroll": false,
+        "listScrolls": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "buttonsInView": true,
+        "award": null,
+        "awardChip": null,
+        "awardsInDom": 4,
+        "dice": {
+          "x": 33,
+          "y": 470,
+          "w": 324,
+          "h": 131
+        },
+        "diceInView": true,
+        "chipsOutsideOpenRow": 0
+      },
+      "open": {
+        "wrap": {
+          "x": 33,
+          "y": 217,
+          "w": 324,
+          "h": 427,
+          "scrollHeight": 541,
+          "clientHeight": 426
+        },
+        "sidewaysScroll": false,
+        "listScrolls": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 2,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "buttonsInView": true,
+        "award": {
+          "x": 63,
+          "y": 265,
+          "w": 258,
+          "h": 46
+        },
+        "awardChip": {
+          "x": 63,
+          "y": 265,
+          "w": 116,
+          "h": 24
+        },
+        "awardsInDom": 4,
+        "dice": {
+          "x": 33,
+          "y": 511,
+          "w": 324,
+          "h": 131
+        },
+        "diceInView": true,
+        "chipsOutsideOpenRow": 0
+      }
+    },
+    {
+      "size": "375x812",
+      "before": {
+        "wrap": {
+          "x": 33,
+          "y": 320,
+          "w": 309,
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207
+        },
+        "sidewaysScroll": false,
+        "listScrolls": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "buttonsInView": true,
+        "award": null,
+        "awardChip": null,
+        "awardsInDom": 0,
+        "dice": null,
+        "diceInView": null,
+        "chipsOutsideOpenRow": 0
+      },
+      "after": {
+        "wrap": {
+          "x": 33,
+          "y": 252,
+          "w": 309,
+          "h": 344,
+          "scrollHeight": 343,
+          "clientHeight": 343
+        },
+        "sidewaysScroll": false,
+        "listScrolls": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "buttonsInView": true,
+        "award": null,
+        "awardChip": null,
+        "awardsInDom": 4,
+        "dice": {
+          "x": 33,
+          "y": 466,
+          "w": 309,
+          "h": 128
+        },
+        "diceInView": true,
+        "chipsOutsideOpenRow": 0
+      },
+      "open": {
+        "wrap": {
+          "x": 33,
+          "y": 237,
+          "w": 309,
+          "h": 375,
+          "scrollHeight": 538,
+          "clientHeight": 374
+        },
+        "sidewaysScroll": false,
+        "listScrolls": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 2,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "buttonsInView": true,
+        "award": {
+          "x": 63,
+          "y": 281,
+          "w": 243,
+          "h": 46
+        },
+        "awardChip": {
+          "x": 63,
+          "y": 281,
+          "w": 116,
+          "h": 24
+        },
+        "awardsInDom": 4,
+        "dice": {
+          "x": 33,
+          "y": 527,
+          "w": 309,
+          "h": 128
+        },
+        "diceInView": false,
+        "chipsOutsideOpenRow": 0
+      }
+    },
+    {
+      "size": "820x1180",
+      "before": {
+        "wrap": {
+          "x": 99,
+          "y": 546,
+          "w": 622,
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207
+        },
+        "sidewaysScroll": false,
+        "listScrolls": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "buttonsInView": true,
+        "award": null,
+        "awardChip": null,
+        "awardsInDom": 0,
+        "dice": null,
+        "diceInView": null,
+        "chipsOutsideOpenRow": 0
+      },
+      "after": {
+        "wrap": {
+          "x": 99,
+          "y": 482,
+          "w": 622,
+          "h": 336,
+          "scrollHeight": 335,
+          "clientHeight": 335
+        },
+        "sidewaysScroll": false,
+        "listScrolls": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "buttonsInView": true,
+        "award": null,
+        "awardChip": null,
+        "awardsInDom": 4,
+        "dice": {
+          "x": 99,
+          "y": 696,
+          "w": 622,
+          "h": 120
+        },
+        "diceInView": true,
+        "chipsOutsideOpenRow": 0
+      },
+      "open": {
+        "wrap": {
+          "x": 99,
+          "y": 395,
+          "w": 622,
+          "h": 509,
+          "scrollHeight": 508,
+          "clientHeight": 508
+        },
+        "sidewaysScroll": false,
+        "listScrolls": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "buttonsInView": true,
+        "award": {
+          "x": 129,
+          "y": 558,
+          "w": 556,
+          "h": 24
+        },
+        "awardChip": {
+          "x": 129,
+          "y": 558,
+          "w": 116,
+          "h": 24
+        },
+        "awardsInDom": 4,
+        "dice": {
+          "x": 99,
+          "y": 782,
+          "w": 622,
+          "h": 120
+        },
+        "diceInView": true,
+        "chipsOutsideOpenRow": 0
+      }
+    },
+    {
+      "size": "844x390",
+      "before": {
+        "wrap": {
+          "x": 103,
+          "y": 106,
+          "w": 638,
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179
+        },
+        "sidewaysScroll": false,
+        "listScrolls": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "buttonsInView": true,
+        "award": null,
+        "awardChip": null,
+        "awardsInDom": 0,
+        "dice": null,
+        "diceInView": null,
+        "chipsOutsideOpenRow": 0
+      },
+      "after": {
+        "wrap": {
+          "x": 103,
+          "y": 67,
+          "w": 638,
+          "h": 258,
+          "scrollHeight": 307,
+          "clientHeight": 257
+        },
+        "sidewaysScroll": false,
+        "listScrolls": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "buttonsInView": true,
+        "award": null,
+        "awardChip": null,
+        "awardsInDom": 4,
+        "dice": {
+          "x": 103,
+          "y": 253,
+          "w": 638,
+          "h": 120
+        },
+        "diceInView": false,
+        "chipsOutsideOpenRow": 0
+      },
+      "open": {
+        "wrap": {
+          "x": 103,
+          "y": 67,
+          "w": 638,
+          "h": 258,
+          "scrollHeight": 480,
+          "clientHeight": 257
+        },
+        "sidewaysScroll": false,
+        "listScrolls": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 1,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "buttonsInView": true,
+        "award": {
+          "x": 133,
+          "y": 111,
+          "w": 572,
+          "h": 24
+        },
+        "awardChip": {
+          "x": 133,
+          "y": 111,
+          "w": 116,
+          "h": 24
+        },
+        "awardsInDom": 4,
+        "dice": {
+          "x": 103,
+          "y": 335,
+          "w": 638,
+          "h": 120
+        },
+        "diceInView": false,
+        "chipsOutsideOpenRow": 0
+      },
+      "openScrolled": {
+        "wrap": {
+          "x": 103,
+          "y": 67,
+          "w": 638,
+          "h": 258,
+          "scrollHeight": 480,
+          "clientHeight": 257
+        },
+        "sidewaysScroll": false,
+        "listScrolls": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 1,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "buttonsInView": true,
+        "award": {
+          "x": 133,
+          "y": -21,
+          "w": 572,
+          "h": 24
+        },
+        "awardChip": {
+          "x": 133,
+          "y": -21,
+          "w": 116,
+          "h": 24
+        },
+        "awardsInDom": 4,
+        "dice": {
+          "x": 103,
+          "y": 203,
+          "w": 638,
+          "h": 120
+        },
+        "diceInView": true,
+        "chipsOutsideOpenRow": 0
+      }
+    }
+  ],
+  "totals": {
+    "Jarrod": 10,
+    "Josh": 6,
+    "Maya": 7,
+    "Bartholomew Featherstonehaugh": 6
+  },
+  "awards": {
+    "Bartholomew Featherstonehaugh": "Wayfarer's favourite · lost 13 goods to steals",
+    "Maya": "Hit by 7s · threw away 8 goods on 7s",
+    "Josh": "Trade broker · 2 trades with the table",
+    "Jarrod": "Ore baron · 63 ore from rolls"
+  },
+  "dice": {
+    "rollSums": [
+      3,
+      6,
+      17,
+      17,
+      14,
+      12,
+      21,
+      11,
+      5,
+      4,
+      3
+    ],
+    "total": 113,
+    "sum": null,
+    "line": "8 came up most, 21 times. 2 and 12 came up least, 3 times each."
+  },
+  "counters": {
+    "Jarrod": {
+      "earned": {
+        "timber": 9,
+        "clay": 0,
+        "wool": 30,
+        "grain": 15,
+        "ore": 63
+      },
+      "discarded": 13,
+      "stole": 8,
+      "tableTrades": 2,
+      "bankTrades": 10,
+      "goodsLost": 5,
+      "pathsBuilt": 13,
+      "knightsPlayed": 7
+    },
+    "Josh": {
+      "earned": {
+        "timber": 6,
+        "clay": 7,
+        "wool": 13,
+        "grain": 39,
+        "ore": 0
+      },
+      "discarded": 4,
+      "stole": 7,
+      "tableTrades": 2,
+      "bankTrades": 8,
+      "goodsLost": 1,
+      "pathsBuilt": 4,
+      "knightsPlayed": 4
+    },
+    "Maya": {
+      "earned": {
+        "timber": 10,
+        "clay": 26,
+        "wool": 60,
+        "grain": 0,
+        "ore": 0
+      },
+      "discarded": 8,
+      "stole": 5,
+      "tableTrades": 0,
+      "bankTrades": 24,
+      "goodsLost": 4,
+      "pathsBuilt": 15,
+      "knightsPlayed": 0
+    },
+    "Bartholomew Featherstonehaugh": {
+      "earned": {
+        "timber": 28,
+        "clay": 19,
+        "wool": 36,
+        "grain": 9,
+        "ore": 0
+      },
+      "discarded": 4,
+      "stole": 3,
+      "tableTrades": 0,
+      "bankTrades": 10,
+      "goodsLost": 13,
+      "pathsBuilt": 15,
+      "knightsPlayed": 0
+    }
+  },
+  "opened": "Josh",
+  "browser": "153.0.8010.12",
+  "errors": []
+}

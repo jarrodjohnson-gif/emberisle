@@ -1,0 +1,16 @@
+STARTUP FAILURE {"tag":"440x956","errors":[],"listLoads":["http://127.0.0.1:18774/src/components/game/WinList.tsx"],"state":{"screen":"play","phase":"main","winner":null,"body":"Bartholomew Featherstonehaugh\nBar\n10\npoints, plus 1 hidden\n+1\n0\n0\nGuinevere Wigglesworth-Smythe\nGui\n6\npoints\n0\n0\nMaximilian Oppenheimer III\nMax\n6\npoints\n0\n3\nCordelia Fitzgerald-Hartwell\nCor\n0\npoints\n0\n0\n\nOffline\n\nYour turn.\n\nBuild, trade, or end your turn\n\n0\nWOOD\n0\nBRICK\n0\nSHEEP\n0\nWHEAT\n0\nSTONE\nPath\n−1\n−1\nOutpost\nNo spot\nUpgrade\n3\n−3\n2\n−2\nFortune\n−1\n−1\n−1\n25 left\nTrade\nFortunes · 1\nEnd turn\n6\n5\n9\n2\n\nDeck 25","resources":[{"name":"http://127.0.0.1:18774/src/components/game/SheetsFailed.tsx","duration":263.29999999701977},{"name":"http://127.0.0.1:18774/src/components/game/WinScreen.tsx","duration":50.6000000089407},{"name":"http://127.0.0.1:18774/src/components/game/WinList.tsx","duration":162.5}]}}
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByTestId('win-menu') to be visible[22m
+
+    at open (/workspace/work/1494/scripts/win-list-negative-diagnostic.mjs:111:42)
+    at async file:///workspace/work/1494/scripts/win-list-negative-diagnostic.mjs:147:36 {
+  log: [ "  - waiting for getByTestId('win-menu') to be visible" ],
+  name: 'TimeoutError'
+}
+
+Node.js v22.23.4

@@ -612,7 +612,7 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
     ok(`${what} says "${want}" and changes nothing`, r.error === want && JSON.stringify(r.state) === before && JSON.stringify(g) === before, r.error ?? "allowed");
   };
   const main = build();
-  refuses("an outpost next to a building", main, { type: "buildOutpost", vertexId: vN }, "Too close — leave one corner between buildings.");
+  refuses("an outpost next to a building", main, { type: "buildOutpost", vertexId: vN }, "Too close. Leave a corner between buildings.");
   refuses("an outpost on a built corner", main, { type: "buildOutpost", vertexId: vA }, "That corner is taken.");
   refuses("an outpost that touches no path of yours", main, { type: "buildOutpost", vertexId: vX }, "Outpost must touch your path.");
   refuses("a stronghold on another seat's outpost", main, { type: "buildStronghold", vertexId: vB }, "Upgrade one of your own outposts.");
@@ -622,7 +622,7 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
   refuses("a disconnected path", main, { type: "buildPath", edgeId: island.id }, "Path must connect to you.");
   const setupOutpost = build();
   setupOutpost.phase = "setupSettle";
-  refuses("a setup outpost next to a building", setupOutpost, { type: "setupSettle", vertexId: vN }, "Too close — leave one corner between buildings.");
+  refuses("a setup outpost next to a building", setupOutpost, { type: "setupSettle", vertexId: vN }, "Too close. Leave a corner between buildings.");
   refuses("a setup outpost on a built corner", setupOutpost, { type: "setupSettle", vertexId: vA }, "That corner is taken.");
   for (const phase of ["main", "setupSettle"]) {
     const opponent = build();
@@ -630,7 +630,7 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
     opponent.phase = phase;
     refuses(`${phase}: an outpost next to an opponent`, opponent,
       { type: phase === "main" ? "buildOutpost" : "setupSettle", vertexId: vN },
-      "Too close — leave one corner between buildings.");
+      "Too close. Leave a corner between buildings.");
     ok(`${phase}: legal spots exclude an opponent's adjacent corner`,
       !legalSettle(opponent, "p0", phase === "setupSettle").includes(vN));
   }

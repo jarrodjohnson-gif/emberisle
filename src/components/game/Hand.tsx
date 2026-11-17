@@ -238,7 +238,7 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
             flash && "short:hidden",
           )}
         >
-          {offer > 0 ? `+${offer}` : String(offer)}
+          {offer > 0 ? `+${offer}` : `−${-offer}`}
         </span>
       ) : null}
     </div>

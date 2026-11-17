@@ -27,7 +27,6 @@ const server = createServer((req, res) => {
 await new Promise((ok) => server.listen(PORT, "127.0.0.1", ok));
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 let code = 0;
@@ -43,7 +42,7 @@ try {
   await page.routeWebSocket(/:8787\//, () => {});
   const origin = `http://127.0.0.1:${PORT}`;
   await page.goto(`${origin}${BASE}`);
-  await page.getByRole("button", { name: "Play", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Play with bots", exact: true }).waitFor();
   await page.waitForLoadState("networkidle");
 
   // #833: both optional title modules must resolve under the hosted prefix too.
@@ -73,7 +72,7 @@ try {
 
   // The sound module builds its URL from BASE_URL; ask it to play, and see which URL the page asks for.
   const audio = page.waitForRequest((r) => r.url().endsWith(".wav"), { timeout: 5000 });
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
   const url = (await audio).url();
   assert.ok(url.startsWith(`${origin}${BASE}audio/`), `audio URL ${url}`);
   assert.equal((await page.request.get(url)).status(), 200);

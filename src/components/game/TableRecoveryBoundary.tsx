@@ -53,7 +53,7 @@ class RecoveryBoundary extends Component<Props> {
     return (
       <div role="alert" data-testid="table-recovery" className="absolute inset-0 z-50 flex items-center justify-center overflow-y-auto bg-bg p-5">
         <div className="w-full max-w-sm rounded-sheet bg-surface p-6 text-fg">
-          <h1 className="font-display text-2xl">Your table hit a snag</h1>
+          <h1 className="font-display text-2xl">Something went wrong</h1>
           {code && <p className="mt-3">Room <strong data-testid="recovery-code">{code}</strong></p>}
           <p className="mt-3 text-sm text-muted">Your game stays at the table.</p>
           <button type="button" disabled={pending} onClick={code ? this.rejoin : () => location.reload()} className="mt-5 min-h-11 w-full rounded-control bg-fg px-4 font-medium text-bg disabled:opacity-50">

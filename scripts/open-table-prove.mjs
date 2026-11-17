@@ -4,7 +4,7 @@
 // never appears in Tab B's open-table list.
 // Run with: node --import ./server/register.mjs scripts/open-table-prove.mjs
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
@@ -51,9 +51,7 @@ for (let tries = 0; ; tries++) {
     await new Promise((r) => setTimeout(r, 500));
   }
 }
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
-});
+const browser = await chromium.launch();
 
 mkdirSync("test-results", { recursive: true });
 const T0 = Date.now();
@@ -140,9 +138,12 @@ await nameInput.press("Escape");
 // Toggle to "Open" mode.
 const modeToggle = A.page.getByTestId("open-mode-toggle");
 await until(() => modeToggle.isVisible(), "open-mode-toggle visible");
+// #1449 item 9: the toggle is named for what it toggles, in both states; aria-pressed carries the state.
+check(await modeToggle.getAttribute("aria-label") === "Open table", "open-mode-toggle is named Open table while private");
 await modeToggle.click();
 // Confirm the toggle shows "Open".
 check(await modeToggle.getAttribute("aria-pressed") === "true", "open-mode-toggle selects Open");
+check(await modeToggle.getAttribute("aria-label") === "Open table", "open-mode-toggle keeps the name Open table while open");
 
 // Click "Host a table".
 await A.page.getByRole("button", { name: "Host a table" }).click();
@@ -260,7 +261,7 @@ check(await D.page.evaluate(() => window.discoveryTraffic.every((m) => m.type ==
 // A connected title closes its socket when it leaves, and its polling timer stays cancelled.
 const G = await openTab("Connected cleanup");
 await until(() => G.page.getByTestId("open-table-entry").isVisible().catch(() => false), "connected cleanup listing");
-await G.page.getByRole("button", { name: "Play", exact: true }).click();
+await G.page.getByRole("button", { name: "Play with bots", exact: true }).click();
 await G.page.getByTestId("title-card").waitFor({ state: "detached" });
 await until(() => G.page.evaluate(() => window.discoveryLive === 0), "connected title socket closed on unmount");
 const connectedDials = await G.page.evaluate(() => window.discoveryDials.length);
@@ -272,7 +273,7 @@ await E.ctx.close();
 await F.ctx.close();
 await new Promise((resolve) => { host.once("exit", resolve); host.kill("SIGTERM"); });
 await until(() => D.page.getByTestId("open-table-entry").count().then((n) => n === 0), "second drop clears list");
-await D.page.getByRole("button", { name: "Play", exact: true }).click();
+await D.page.getByRole("button", { name: "Play with bots", exact: true }).click();
 await D.page.getByTestId("title-card").waitFor({ state: "detached" });
 const afterUnmount = await D.page.evaluate(() => ({ dials: window.discoveryDials.length, traffic: window.discoveryTraffic.length }));
 await wait(17000);

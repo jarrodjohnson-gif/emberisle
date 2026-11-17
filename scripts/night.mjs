@@ -34,12 +34,15 @@ export function joinLines(port, lan, named = null) {
       `Permanent link:    https://${named.hostname}`,
       "Run this in a second terminal and leave it open:",
       "  node scripts/named-tunnel.mjs --run",
-      "Open the permanent link before hosting, then share Copy link with friends.",
+      "Open the permanent link before hosting, then tap the table code and share the link with friends.",
+      "Friends open that link and press Join table.",
       "The address stays the same. This PC, the host, and the tunnel must be running.",
     ] : [
       "Friends on the internet — run this in a second terminal and leave it open:",
       `  cloudflared tunnel --url http://127.0.0.1:${port}`,
-      "Paste the https://….trycloudflare.com line it prints. They open that link and Join with the table code.",
+      "Open the https://….trycloudflare.com link before hosting.",
+      "Tap the table code in the lobby to copy the join link, and share it.",
+      "Friends open that link and press Join table.",
       "For a permanent address, configure a named tunnel once: docs/named-tunnel.md",
     ]),
   ].join("\n");

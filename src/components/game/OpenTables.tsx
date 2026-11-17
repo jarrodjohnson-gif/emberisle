@@ -110,7 +110,7 @@ export function OpenModeToggle({ openMode, setOpenMode }: {
       className="absolute right-0 top-0 w-11 rounded-none border-l border-control-line px-0"
       aria-pressed={openMode}
       title={openMode ? "Anyone can join" : "Code needed"}
-      aria-label={openMode ? "Open to anyone" : "Private, code needed"}
+      aria-label="Open table"
       data-testid="open-mode-toggle"
       onClick={() => setOpenMode((m) => !m)}
     >

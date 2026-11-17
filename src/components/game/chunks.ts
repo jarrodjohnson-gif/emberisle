@@ -16,12 +16,15 @@ export const SeatBubbles = online.pick((m) => m.SeatBubbles);
 export const ConnectionOverlay = online.pick((m) => m.Health);
 
 // #833: title-only list and mode controls share a lazy load; private Host/Join remain available in the index.
-const openTables = chunk(() => import("@/components/game/OpenTables"));
+export const openTables = chunk(() => import("@/components/game/OpenTables"));
 export const OpenTables = openTables.pick((m) => m.OpenTables);
 export const OpenModeToggle = openTables.pick((m) => m.OpenModeToggle);
 // #669: the Sound panel in the Table menu; the menu asks for it when it opens, so it is in memory before Sound is pressed.
 export const soundSheet = chunk(() => import("@/components/game/SoundSheet"));
 export const SoundSheet = soundSheet.pick((m) => m.SoundSheet);
+// The full game log, a sheet opened from the Table menu (docs/design/end-of-game); fetched with the Sound panel as the menu opens.
+export const gameLog = chunk(() => import("@/components/game/GameLog"));
+export const GameLog = gameLog.pick((m) => m.GameLog);
 export const SetupReference =chunk(() => import("@/components/game/SetupReference")).pick(m => m.SetupReference);
 export const WayfarerOptions = chunk(() => import("@/components/game/WayfarerOptions")).pick(m => m.WayfarerOptions);
 // #766: the title's profile sheet and its profile client load only when Profile is pointed at, focused or pressed.
@@ -30,16 +33,34 @@ export const ProfileSheet = profileSheet.pick((m) => m.ProfileSheet);
 // #766 slice 2: its Edit profile and Change PIN forms load when the sheet opens one of them.
 export const profileForms = chunk(() => import("@/components/game/ProfileForms"));
 export const ProfileForms = profileForms.pick((m) => m.ProfileForms);
+// #767: its Wins and History views load when the sheet opens one of them.
+export const profileRecords = chunk(() => import("@/components/game/ProfileRecords"));
+export const ProfileRecords = profileRecords.pick((m) => m.ProfileRecords);
+// #1437: its recovery code screens; fetched as the sheet opens, and waited for before a request that answers with a code.
+export const profileRecovery = chunk(() => import("@/components/game/ProfileRecovery"));
+export const ProfileRecovery = profileRecovery.pick((m) => m.ProfileRecovery);
 
 export const sheets = chunk(() => import("@/components/game/sheets"));
 export const CostCard = sheets.pick((m) => m.CostCard);
 export const FortuneTray = sheets.pick((m) => m.FortuneTray);
 export const HowTo = sheets.pick((m) => m.HowTo);
+// #1609: the Seats choice in the title's Game options rides with the sheets the title fetches on idle.
+export const SeatChoice = sheets.pick((m) => m.SeatChoice);
 export const TradePanel = sheets.pick((m) => m.TradePanel);
 export const WinScreen = sheets.pick((m) => m.WinScreen);
+// #1539: the Build list opens from the tray's Build button; fetched on idle with the sheets.
+export const buildList = chunk(() => import("@/components/game/BuildList"));
+export const BuildList = buildList.pick((m) => m.BuildList);
+// #1665: the player menu opens from a seat card or chip; fetched on idle with the sheets once the table is up.
+export const playerMenu = chunk(() => import("@/components/game/PlayerMenu"));
+export const PlayerMenu = playerMenu.pick((m) => m.PlayerMenu);
 // #748: the win screen's compact list on touch and narrow screens; the win screen fetches it on phones as the table starts.
 export const winList = chunk(() => import("@/components/game/WinList"));
 export const WinList = winList.pick((m) => m.WinList);
+// #1411: a guest's I'll play again and the win screen's count; the win screen fetches it as an online table starts.
+export const playAgain = chunk(() => import("@/components/game/PlayAgain"));
+export const WantAgain = playAgain.pick((m) => m.WantAgain);
+export const WantCount = playAgain.pick((m) => m.WantCount);
 
 // The island behind every screen (#543 preloads it). #1281: one load through the chunk loader, shared by the canvas and the
 // loading screen, so a failed download is retried under a fresh URL by Try again instead of leaving the screen stuck.

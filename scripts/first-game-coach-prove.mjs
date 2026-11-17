@@ -1,7 +1,7 @@
 // Fresh practice profile: real setup/roll and legal canvas placements; fixtures supply main-phase hands and a seven.
 // Run: CHROMIUM_PATH=/usr/bin/chromium node scripts/first-game-coach-prove.mjs (VITE_PORT defaults to 8443).
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -9,7 +9,7 @@ const port = Number(process.env.VITE_PORT) || 8443;
 const key = "emberisle-first-game-coach";
 const vite = await createServer({ server: { host: "127.0.0.1", port, strictPort: true }, logLevel: "error" });
 await vite.listen();
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined), args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
+const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
 const errors = [];
 let code = 0;
 try {
@@ -20,7 +20,7 @@ try {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   await page.goto(`http://127.0.0.1:${port}/`);
   await page.waitForFunction(() => window.__emberisle);
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
   await page.getByTestId("seat-strip").waitFor();
   const rollOffStrip = await page.evaluate(() => {
     const slot = document.querySelector("[data-coach-skip-slot]");
@@ -247,11 +247,13 @@ try {
   assert.doesNotMatch(await coach.innerText(), /Build a path first|Now place an outpost/);
   await page.evaluate((s) => window.__emberisle.setState({ state: s }), mainFixture);
   await step(3, /Build a path first/);
+  await page.getByTestId("build-open").click(); // #1539: the builds are rows in the Build list
   await page.getByTestId("build-path").click();
   await step(3, /Build a path first/);
   await tapMark(plan.edge);
   await step(3, /Now place an outpost at a connected corner.*Costs are in the menu/s);
   await page.screenshot({ path: "test-results/first-game-coach-outpost-390.png" });
+  await page.getByTestId("build-open").click(); // #1539: the builds are rows in the Build list
   await page.getByTestId("build-outpost").click();
   await tapMark(plan.vertex);
   await clearBanner();

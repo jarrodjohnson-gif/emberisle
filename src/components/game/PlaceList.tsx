@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useGame } from "@/lib/game/store";
-import { TERRAIN_LABEL, type GameState, type HexCell, type Vertex } from "@/lib/game/types";
+import { RESOURCE_LABEL, TERRAIN_LABEL, type GameState, type HexCell, type Vertex } from "@/lib/game/types";
 import { hexToWorld } from "@/lib/game/hex";
 
 // #376 (WCAG 2.1.1): every legal target the island glows, as a button that does what a tap on it does.
@@ -16,7 +16,7 @@ function compass(dx: number, dz: number) {
 const weight = (h: HexCell) => (h.pip ? 6 - Math.abs(7 - h.pip) : -1);
 
 function hexWords(h: HexCell) {
-  return h.terrain === "waste" ? "wastes" : `${h.pip} ${h.terrain}`;
+  return h.terrain === "waste" ? "wastes" : `${h.pip} ${TERRAIN_LABEL[h.terrain].toLowerCase()}`;
 }
 
 function list(words: string[]) {
@@ -45,8 +45,8 @@ function cornerNames(state: GameState, actor: string) {
   const hex = new Map(state.hexes.map((h) => [h.id, h]));
   const touching = (v: Vertex) => v.hexes.map((id) => hex.get(id)!).sort((a, b) => weight(b) - weight(a));
   const base = (v: Vertex) => {
-    const harbor = v.harbor ? `, ${v.harbor === "any" ? "3:1" : v.harbor} harbor` : "";
-    return `${list(touching(v).map(hexWords))}${harbor}`;
+    const dock = v.harbor ? `, ${v.harbor === "any" ? "3:1" : RESOURCE_LABEL[v.harbor].toLowerCase()} dock` : "";
+    return `${list(touching(v).map(hexWords))}${dock}`;
   };
   const point = (v: Vertex) => {
     const centers = v.hexes.map((id) => hexToWorld(hex.get(id)!.q, hex.get(id)!.r));
@@ -62,10 +62,10 @@ function cornerNames(state: GameState, actor: string) {
 }
 
 function hexNames(state: GameState) {
-  const base = (h: HexCell) => (h.terrain === "waste" ? "Wastes" : `${h.pip} ${TERRAIN_LABEL[h.terrain]} (${h.terrain})`);
+  const base = (h: HexCell) => (h.terrain === "waste" ? "Wastes" : `${h.pip} ${TERRAIN_LABEL[h.terrain]}`);
   const point = (h: HexCell) => {
     const { x, z } = hexToWorld(h.q, h.r);
-    return x === 0 && z === 0 ? "centre" : compass(x, z);
+    return x === 0 && z === 0 ? "center" : compass(x, z);
   };
   return distinct(state.hexes, base, point);
 }

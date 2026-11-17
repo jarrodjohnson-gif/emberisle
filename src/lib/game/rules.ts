@@ -133,7 +133,7 @@ export function settleError(state: GameState, pid: string, vid: string, setup: b
   const v = vertex(state, vid);
   if (!v) return "Illegal outpost.";
   if (v.building) return "That corner is taken.";
-  if (!distanceOk(state, vid)) return "Too close — leave one corner between buildings.";
+  if (!distanceOk(state, vid)) return "Too close. Leave a corner between buildings.";
   if (!setup && !state.edges.some((e) => e.path === pid && (e.va === vid || e.vb === vid))) return "Outpost must touch your path.";
   return null;
 }
@@ -299,14 +299,9 @@ function names(list: PlayerState[]) {
   return n.length < 3 ? n.join(" and ") : `${n.slice(0, -1).join(", ")}, and ${n.at(-1)}`;
 }
 
-type RollOffState = NonNullable<GameState["rollOff"]> & {
-  tied?: string[];
-  settled?: string[];
-};
-
 // The pre-setup roll-off (docs/design/first-player.md). Never touches state.rng.
 function rollOffRoll(state: GameState, me: PlayerState) {
-  const ro = state.rollOff as RollOffState;
+  const ro = state.rollOff!;
   const die = rollDie();
   ro.rolls[me.id] = die;
   ro.pending.shift();
@@ -475,7 +470,7 @@ function validRes(r: unknown): r is Resource {
 // One public event per goods-changing action. Derive amounts from the committed result, never
 // from UI guesses; theft and discard choices deliberately stay private. All seats use this voice.
 export function applyAction(prev: GameState, actor: string, action: Action): { state: GameState; error?: string } {
-  const result = applyActionInternal(prev, actor, action);
+  const result = prev.variant ? turnRules.paired!(prev, actor, action, applyActionInternal) : applyActionInternal(prev, actor, action);
   if (result.error) return result;
   const next = result.state;
   const me = next.players.find((p) => p.id === actor)!;
@@ -543,6 +538,11 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
   next.log = [...prev.log, ...rolled, ...awards, line, ...endings].slice(-200);
   return result;
 }
+
+type Step = (prev: GameState, actor: string, action: Action) => { state: GameState; error?: string };
+// Five and six seat games take their turns from expanded.ts (#1605), which sets `paired` when it loads. The client never
+// loads it yet, so the paired rules stay out of the index chunk.
+export const turnRules: { paired?: (prev: GameState, actor: string, action: Action, base: Step) => ReturnType<Step> } = {};
 
 function applyActionInternal(prev: GameState, actor: string, action: Action): { state: GameState; error?: string } {
   const state = clone(prev);

@@ -1,0 +1,291 @@
+// #748: the compact results list on touch and narrow screens, and the desktop table on a wide mouse screen.
+// A finished four-player game with long names, buildings, both awards, hidden points, a tie and a zero total.
+// Every row opens by tap and keyboard, one at a time; the open row scrolls to the top of the list and fits the
+// list and the screen; every value matches the game state; nothing scrolls sideways; every result action stays reachable.
+// The list is its own chunk: a real game fetches it while the table plays (no empty first paint), a refused chunk leaves
+// the table with every total until Show scores tries again, and the desktop never asks for it.
+// With SHOTS=1 it writes the closed and one-open pictures in docs/proofs/748/ at device scale 2.
+import assert from "node:assert/strict";
+import { mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
+import { createServer } from "vite";
+import { createGame } from "../src/lib/game/board.ts";
+import { publicScoreBreakdown, totalVP } from "../src/lib/game/rules.ts";
+
+const port = Number(process.env.VITE_PORT || 18774);
+const SHOTS = process.env.SHOTS === "1" ? "docs/proofs/748" : null;
+const g = createGame({ humans: [{ name: "Bartholomew Featherstonehaugh" }, { name: "Guinevere Wigglesworth-Smythe" }, { name: "Maximilian Oppenheimer III" }, { name: "Cordelia Fitzgerald-Hartwell" }], bots: 0, seed: 559 });
+g.rollOff = null; g.log = []; g.victoryTarget = 10;
+const built = [["p0", "stronghold"], ["p0", "stronghold"], ["p0", "stronghold"], ["p0", "outpost"], ["p0", "outpost"], ["p1", "stronghold"], ["p1", "stronghold"], ["p1", "outpost"], ["p1", "outpost"], ["p2", "stronghold"], ["p2", "stronghold"]];
+built.forEach(([playerId, kind], i) => { g.vertices[i].building = { playerId, kind }; });
+g.longestRoad = "p0"; g.largestArmy = "p2"; g.players[2].knightsPlayed = 3;
+g.players.forEach((p, i) => { p.hidden.vp = [1, 3, 3, 0][i]; });
+g.phase = "over"; g.winner = "p0"; g.current = "p0";
+g.winReason = { trigger: "outpost", points: totalVP(g, "p0"), target: 10 };
+
+const pts = (n) => `${n} point${n === 1 ? "" : "s"}`;
+const expected = Object.fromEntries(g.players.map((p) => {
+  const parts = publicScoreBreakdown(g, p.id);
+  const count = (kind) => g.vertices.filter((v) => v.building?.playerId === p.id && v.building.kind === kind).length;
+  const total = totalVP(g, p.id);
+  return [p.id, {
+    name: p.name,
+    total,
+    lines: [
+      ["Outposts", String(count("outpost")), pts(parts.outposts)],
+      ["Strongholds", String(count("stronghold")), pts(parts.strongholds)],
+      ["Longest path", parts.longestPath ? "Yes" : "No", pts(parts.longestPath)],
+      ["Largest army", parts.largestArmy ? "Yes" : "No", pts(parts.largestArmy)],
+      ["Hidden points", String(p.hidden.vp), pts(total - Object.values(parts).reduce((a, b) => a + b, 0))],
+      ["Total", "", pts(total)],
+    ],
+  }];
+}));
+// The fixture covers what the issue asks for: a tie, a zero total, and zero parts next to non-zero ones.
+assert.deepEqual(g.players.map((p) => expected[p.id].total), [11, 9, 9, 0]);
+const order = ["p0", "p1", "p2", "p3"];
+
+const LIST = [
+  [440, 956, true],
+  [956, 440, true],
+  [390, 844, true],
+  [430, 932, true],
+  [820, 1180, true],
+  [1180, 820, true],
+  [844, 390, true],
+  [667, 375, true, { top: 0, right: 44, bottom: 21, left: 44 }],
+  [700, 900, false], // The phone rule's narrow half: a mouse under 768 px wide.
+];
+
+const vite = await createServer({ server: { host: "127.0.0.1", port, strictPort: true }, logLevel: "error" });
+let browser;
+try {
+  await vite.listen();
+  browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
+  mkdirSync("test-results", { recursive: true });
+  if (SHOTS) mkdirSync(SHOTS, { recursive: true });
+  const shot = (page, name) => page.screenshot({ path: `${SHOTS ?? "test-results"}/${SHOTS ? "" : "win-list-"}${name}.png` });
+  const errors = [];
+
+  // The list's own chunk (src/components/game/WinList.tsx, served as source by the dev server).
+  const LIST_CHUNK = /\/WinList\.tsx/;
+  // `live`: the table plays first, so the list chunk is fetched before the game ends, as in a real game.
+  // `block`: the list chunk cannot load; its console errors are expected, page errors still fail.
+  async function open(width, height, touch, insets, { spectator = false, live = false, block = false } = {}) {
+    const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, reducedMotion: "reduce", deviceScaleFactor: SHOTS ? 2 : 1 });
+    const page = await context.newPage();
+    const tag = `${width}x${height}${insets ? " insets" : ""}`;
+    page.on("pageerror", (e) => errors.push(`${tag}: ${e.message}`));
+    if (!block) page.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
+    if (block) await page.route(LIST_CHUNK, (r) => r.abort());
+    const listLoads = [];
+    page.on("request", (r) => LIST_CHUNK.test(r.url()) && listLoads.push(r.url()));
+    if (insets) await (await context.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets });
+    await page.goto(`http://127.0.0.1:${port}/`);
+    await page.waitForFunction(() => !!window.__emberisle);
+    const load = (game) => page.evaluate(({ game, spectator }) => {
+      const s = window.__emberisle;
+      s.setState({ spectator, isHost: !spectator, menuFor: null, chatOpen: false });
+      s.getState().loadState(game, spectator ? "" : "p0", !spectator, "WLST");
+    }, { game, spectator });
+    if (live) {
+      const fetched = page.waitForResponse((r) => LIST_CHUNK.test(r.url()));
+      await load({ ...structuredClone(g), phase: "main", winner: null, winReason: undefined });
+      await fetched;
+      await page.waitForLoadState("networkidle");
+      // Record how many rows the dialog holds in the DOM update that first adds it, before the browser paints it.
+      await page.evaluate(() => {
+        window.__rowsAtFirstPaint = null;
+        new MutationObserver((_, o) => {
+          const screen = document.querySelector('[data-testid="win-screen"]');
+          if (!screen) return;
+          window.__rowsAtFirstPaint = screen.querySelectorAll('[data-testid="win-row"]').length;
+          o.disconnect();
+        }).observe(document.body, { childList: true, subtree: true });
+      });
+    }
+    // Controlled negative: no winner, so the unchanged 30000ms menu guard must fail.
+    await load({ ...structuredClone(g), phase: "main", winner: null });
+    // Preserve the original startup guard; emit state only on failure, then rethrow (#1494).
+    try {
+      await page.getByTestId("win-menu").waitFor();
+    } catch (error) {
+      const state = await page.evaluate(() => {
+        const s = window.__emberisle?.getState();
+        return {
+          screen: s?.screen, phase: s?.state?.phase, winner: s?.state?.winner,
+          body: document.body.innerText.slice(0, 5000),
+          resources: performance.getEntriesByType("resource")
+            .filter(r => /Sheets|WinScreen|WinList/.test(r.name))
+            .map(r => ({ name: r.name, duration: r.duration })),
+        };
+      }).catch(captureError => ({ diagnosticError: String(captureError) }));
+      console.log("STARTUP FAILURE", JSON.stringify({ tag, errors, listLoads, state }));
+      throw error;
+    }
+    return { context, page, tag, listLoads };
+  }
+
+  // Geometry of the list, a row and the result actions, measured in the page.
+  const measure = (page, id) => page.evaluate((id) => {
+    const box = (el) => { const b = el.getBoundingClientRect(); return { top: b.top, bottom: b.bottom, left: b.left, right: b.right, height: b.height }; };
+    const wrap = document.querySelector('[data-testid="win-table-wrap"]');
+    const row = id && document.querySelector(`[data-testid="win-row"][data-player="${id}"]`);
+    return {
+      wrap: { ...box(wrap), scrollTop: wrap.scrollTop, scrollHeight: wrap.scrollHeight, clientHeight: wrap.clientHeight, scrollWidth: wrap.scrollWidth, clientWidth: wrap.clientWidth },
+      row: row && box(row),
+      page: { scrollWidth: document.documentElement.scrollWidth, innerWidth, innerHeight },
+      panel: box(document.querySelector('[data-testid="win-screen"] > div')),
+      actions: [...document.querySelectorAll('[data-testid="win-screen"] button')].filter((b) => !b.closest('[data-testid="win-table-wrap"]')).map((b) => ({ id: b.dataset.testid ?? b.textContent.trim(), height: b.offsetHeight, ...box(b) })),
+      rowHeights: [...document.querySelectorAll('[data-testid="win-row"]')].map((b) => b.offsetHeight),
+    };
+  }, id);
+
+  const fits = (inner, outer, label) => assert.ok(inner.top >= outer.top - 1 && inner.bottom <= outer.bottom + 1, `${label}: ${inner.top}-${inner.bottom} inside ${outer.top}-${outer.bottom}`);
+
+  for (const [width, height, touch, insets] of LIST) {
+    const { context, page, tag } = await open(width, height, touch, insets);
+    const safe = { top: insets?.top ?? 0, bottom: height - (insets?.bottom ?? 0), left: insets?.left ?? 0, right: width - (insets?.right ?? 0) };
+    const rows = page.getByTestId("win-row");
+    // Straight to the results, the list chunk may still be loading; the live case below proves a real game never waits.
+    await rows.first().waitFor();
+    assert.equal(await page.locator('[data-testid="win-table-wrap"] table').count(), 0, `${tag}: no table on the compact list`);
+    assert.deepEqual(await rows.evaluateAll((els) => els.map((el) => el.dataset.player)), order, `${tag}: winner first, then highest total`);
+
+    // Closed: totals match totalVP, nothing scrolls sideways, every total is whole inside the list.
+    let m = await measure(page);
+    assert.ok(m.wrap.scrollWidth <= m.wrap.clientWidth + 1 && m.page.scrollWidth <= m.page.innerWidth, `${tag}: no sideways scroll ${JSON.stringify(m.wrap)} page ${m.page.scrollWidth}`);
+    assert.ok(m.rowHeights.every((h) => h >= 44), `${tag}: rows at least 44 px: ${m.rowHeights}`);
+    assert.ok(m.actions.length >= 2 && m.actions.every((b) => b.height >= 44), `${tag}: result actions at least 44 px: ${JSON.stringify(m.actions.map((b) => [b.id, b.height]))}`);
+    for (const b of m.actions) assert.ok(b.top >= safe.top - 1 && b.bottom <= safe.bottom + 1 && b.left >= safe.left - 1 && b.right <= safe.right + 1, `${tag}: action ${b.id} inside the safe area`);
+    assert.ok(m.panel.top >= safe.top - 1 && m.panel.bottom <= safe.bottom + 1 && m.panel.left >= safe.left - 1 && m.panel.right <= safe.right + 1, `${tag}: dialog inside the safe area ${JSON.stringify(m.panel)}`);
+    for (const id of order) {
+      const row = rows.and(page.locator(`[data-player="${id}"]`));
+      assert.equal(await row.getAttribute("aria-expanded"), "false", `${tag} ${id}: starts closed`);
+      assert.equal(Number(await row.getByTestId("win-total").textContent()), expected[id].total, `${tag} ${id}: total equals totalVP`);
+      assert.equal(await row.locator("span").nth(1).textContent(), expected[id].name);
+      await row.evaluate((el) => el.scrollIntoView({ block: "nearest" }));
+      m = await measure(page, id);
+      fits(m.row, m.wrap, `${tag} ${id}: closed row reached by vertical scroll fits the list`);
+      fits(m.row, { top: 0, bottom: height }, `${tag} ${id}: closed row fits the viewport`);
+      const total = await row.getByTestId("win-total").evaluate((el) => { const b = el.getBoundingClientRect(); return { right: b.right, clipped: el.scrollWidth > el.clientWidth }; });
+      assert.ok(total.right <= m.wrap.right + 1 && !total.clipped, `${tag} ${id}: total not clipped`);
+    }
+    const size = `${width}x${height}${insets ? "-insets" : ""}`;
+    await shot(page, `closed-${size}`);
+
+    // Open each row by tap (click without touch), check it, then close it.
+    for (const id of order) {
+      const row = rows.and(page.locator(`[data-player="${id}"]`));
+      const region = page.locator(`#win-part-${id}`);
+      await (touch ? row.tap() : row.click());
+      assert.equal(await row.getAttribute("aria-expanded"), "true", `${tag} ${id}: tap opens`);
+      assert.equal(await row.getAttribute("aria-controls"), `win-part-${id}`);
+      assert.ok(await region.isVisible(), `${tag} ${id}: breakdown shows`);
+      assert.equal(await region.getAttribute("role"), "region");
+      assert.equal(await region.getAttribute("aria-label"), `${expected[id].name}'s score`);
+      assert.equal(await page.locator('[data-testid="win-row"][aria-expanded="true"]').count(), 1, `${tag} ${id}: one row open at a time`);
+      m = await measure(page, id);
+      const maxScroll = m.wrap.scrollHeight - m.wrap.clientHeight;
+      // At the top of the list, unless the list cannot scroll that far.
+      assert.ok(Math.abs(m.row.top - m.wrap.top) <= 1 || m.wrap.scrollTop >= maxScroll - 1, `${tag} ${id}: the opened row scrolls to the top of the list (row ${m.row.top}, list ${m.wrap.top}, scroll ${m.wrap.scrollTop}/${maxScroll})`);
+      await row.evaluate((el) => el.scrollIntoView({ block: "nearest" }));
+      m = await measure(page, id);
+      fits(m.row, m.wrap, `${tag} ${id}: open row scrolled into view fits the list`);
+      fits(m.row, { top: 0, bottom: height }, `${tag} ${id}: open row fits the viewport`);
+      assert.ok(m.wrap.scrollWidth <= m.wrap.clientWidth + 1 && m.page.scrollWidth <= m.page.innerWidth, `${tag} ${id}: no sideways scroll while open`);
+      // Every part and point matches the game state; the points add up to totalVP.
+      const lines = await region.locator("dl > div").evaluateAll((divs) => divs.map((d) => [...d.children].map((c) => c.textContent.trim())));
+      assert.deepEqual(lines, expected[id].lines, `${tag} ${id}: breakdown matches the game state`);
+      assert.equal(lines.slice(0, 5).reduce((n, l) => n + Number(l[2].split(" ")[0]), 0), expected[id].total, `${tag} ${id}: points add up to totalVP`);
+      if (id === "p2") await shot(page, `open-${size}`);
+      await (touch ? row.tap() : row.click());
+      assert.equal(await row.getAttribute("aria-expanded"), "false", `${tag} ${id}: tap closes`);
+      assert.ok(await region.isHidden(), `${tag} ${id}: breakdown hides`);
+    }
+
+    // Keyboard: Enter opens, Space closes, Enter opens another and closes the first. Focus stays on the row.
+    for (const id of order) {
+      const row = rows.and(page.locator(`[data-player="${id}"]`));
+      await row.focus();
+      await page.keyboard.press("Enter");
+      assert.equal(await row.getAttribute("aria-expanded"), "true", `${tag} ${id}: Enter opens`);
+      await page.keyboard.press("Space");
+      assert.equal(await row.getAttribute("aria-expanded"), "false", `${tag} ${id}: Space closes`);
+      await page.keyboard.press("Space");
+      assert.equal(await row.getAttribute("aria-expanded"), "true", `${tag} ${id}: Space opens`);
+      assert.equal(await page.evaluate(() => document.activeElement?.dataset.player), id, `${tag} ${id}: focus stays on the row`);
+    }
+    assert.equal(await page.locator('[data-testid="win-row"][aria-expanded="true"]').count(), 1, `${tag}: keyboard keeps one row open`);
+
+    // Focus stays inside the dialog; Look around and Show scores keep the list.
+    for (let i = 0; i < 12; i++) {
+      await page.keyboard.press("Tab");
+      assert.ok(await page.evaluate(() => !!document.activeElement?.closest('[data-testid="win-screen"]')), `${tag}: Tab ${i} stays in the dialog`);
+    }
+    await page.getByTestId("win-look").click();
+    await page.getByTestId("win-show").click();
+    assert.equal(await rows.count(), 4, `${tag}: Show scores brings the list back`);
+    assert.equal(await page.getByTestId("win-again").count(), 1, `${tag}: the host can play again`);
+    await context.close();
+    console.log(`ok ${tag}${touch ? " touch" : " mouse"}: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll`);
+  }
+
+  // A spectator on a phone sees the list but no rematch or reaction.
+  {
+    const { context, page } = await open(390, 844, true, null, { spectator: true });
+    await page.getByTestId("win-row").first().waitFor();
+    assert.equal(await page.getByTestId("win-row").count(), 4);
+    assert.equal(await page.getByTestId("win-again").count(), 0, "spectator: no Play again");
+    assert.equal(await page.getByTestId("win-react").count(), 0, "spectator: no React");
+    await context.close();
+    console.log("ok 390x844 spectator: list, no Play again or React");
+  }
+
+  // A real game: the list chunk is fetched while the table plays, so the dialog's first paint already holds every row.
+  {
+    const { context, page } = await open(390, 844, true, null, { live: true });
+    assert.equal(await page.evaluate(() => window.__rowsAtFirstPaint), 4, "no flash: the list is in the dialog's first DOM update");
+    await context.close();
+    console.log("ok 390x844 live table: list chunk fetched before the end, all four rows in the dialog's first paint");
+  }
+
+  // The list chunk cannot load: the table stands in with every total; once it can, Show scores brings the list.
+  {
+    const { context, page } = await open(390, 844, true, null, { block: true });
+    const wrap = page.getByTestId("win-table-wrap");
+    await wrap.locator("table").waitFor();
+    assert.equal(await wrap.locator('[role="region"]').count(), 0, "failed chunk: no list");
+    assert.deepEqual(await page.locator('tr[data-testid="win-row"]').evaluateAll((els) => els.map((el) => [el.dataset.player, Number(el.querySelector('[data-testid="win-total"]').textContent)])), order.map((id) => [id, expected[id].total]), "failed chunk: the table shows every total");
+    await page.unroute(LIST_CHUNK);
+    await page.getByTestId("win-look").click();
+    await page.getByTestId("win-show").click();
+    await page.locator('button[data-testid="win-row"]').first().waitFor();
+    assert.equal(await page.locator('button[data-testid="win-row"]').count(), 4, "retry: Show scores brings the list");
+    assert.equal(await wrap.locator("table").count(), 0, "retry: the table is gone");
+    await page.locator('button[data-testid="win-row"][data-player="p2"]').tap();
+    assert.equal(await page.locator('[data-testid="win-hidden"]').nth(2).textContent(), "3", "retry: the list works");
+    await context.close();
+    console.log("ok 390x844 list chunk refused: table with every total, then Show scores loads the list");
+  }
+
+  // Desktop with a mouse keeps the full table, and never asks for the list chunk.
+  {
+    const { context, page, listLoads } = await open(1280, 720, false, null);
+    assert.deepEqual(listLoads, [], "desktop: the list chunk is not loaded");
+    const wrap = page.getByTestId("win-table-wrap");
+    assert.equal(await wrap.locator("table").count(), 1, "desktop: the table stays");
+    assert.equal(await wrap.locator("thead th").count(), 7, "desktop: seven columns");
+    assert.equal(await wrap.locator('[role="region"]').count(), 0, "desktop: no list");
+    assert.deepEqual(await page.locator('tr[data-testid="win-row"]').evaluateAll((els) => els.map((el) => [el.dataset.player, Number(el.querySelector('[data-testid="win-total"]').textContent)])), order.map((id) => [id, expected[id].total]));
+    await shot(page, "table-1280x720");
+    await context.close();
+    console.log("ok 1280x720 mouse: the desktop table stays");
+  }
+
+  assert.deepEqual(errors, [], "no console or page errors");
+  console.log("win-list-prove: all passed");
+} finally {
+  await browser?.close();
+  await vite.close();
+}

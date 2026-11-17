@@ -16,7 +16,7 @@ Author: Fable (Claude Fable 5.1), 2026-11-07, on `main` at `a482f380`. Final vis
 | under the rail or strip | "Hidden fortunes may add points." (`HiddenPointHint`), the same for every viewer | never |
 | on the card | needs chips (`SeatNeeds`), public gains for 2.5 s (PR #867, open) | |
 
-`PlayerMenu.tsx`: a heading (phone only), the needs line, four facts (Cards in hand, Fortunes held, Points shown, Wayfarers played, plus Your fortunes and Connection when they apply), the public ledger (Outposts, Strongholds, Longest path, Largest army, plus Your point fortunes and Your total on your own seat or at game end), then the action rows that apply: Trade with the bank or a dock, Offer a trade, Mention in chat, Open chat.
+`PlayerMenu.tsx`: a heading (phone only), the needs line, four facts (Goods, Fortunes, Points, Wayfarers played, plus Your fortunes and Connection when they apply), the public ledger (Outposts, Strongholds, Longest path, Largest army, plus Your point fortunes and Your total on your own seat or at game end), then the action rows that apply: Trade (own seat), Trade (opponent online), Mention, Open chat. The facts and rows were renamed by #1448; the pictures show the names at capture time.
 Desktop: the menu opens under its card and pushes the cards below it down. Phone: it floats at the top of the screen, under the strip; sideways, a 288 px box at the top right. Closes on Escape, a tap outside, or the same card again; focus goes to the first row, and back to the card on Escape.
 
 ## Kept, moved, rejected
@@ -60,7 +60,7 @@ The real app with a set-up table (crafted with `window.__emberisle.setState`, no
 
 [pictures/measurements.json](pictures/measurements.json) records, per picture, every seat's box and text, the hint's visibility, and the open menu's box, heading, facts, ledger rows, private-row count, action rows, focus on open, and whether any seat moved when the menu opened.
 
-Two more pictures per size show the trade routes at an online table (the store's mode set to `online` with no connection, so the rows render and nothing is sent): the own menu with "Trade with the bank or a dock…" and "Open chat" (`pictures/<size>-routes-own-before.jpg`, `-after.jpg`), and Mira's with "Offer a trade…" and "Mention @Mira in chat" (`pictures/<size>-routes-opponent-before.jpg`, `-after.jpg`).
+Two more pictures per size show the trade routes at an online table (the store's mode set to `online` with no connection, so the rows render and nothing is sent): the own menu with "Trade…" (captured as "Trade with the bank or a dock…") and "Open chat" (`pictures/<size>-routes-own-before.jpg`, `-after.jpg`), and Mira's with "Trade…" and "Mention @Mira" (captured as "Offer a trade…" and "Mention @Mira in chat"; `pictures/<size>-routes-opponent-before.jpg`, `-after.jpg`).
 
 Measured: on desktop today, opening Jarrod's menu moves `rail-p1`, `rail-p2` and `rail-p3`; after, no seat moves on any screen. Private rows appear only on the own-seat menu mid-game, and on an opponent's at game end (2 rows, measured through the store with the results sheet up, not pictured); the capture throws otherwise. Every row in every "after" menu measures 44 px (before the `min-height`, the sideways sheet's rows shrank to 22 px); the capture throws under 44. All four trade routes are present; the capture throws if one is missing. Escape returns focus to the tapped card on every run. The phone sheet's box after: upright `0, 468, 390 x 376` (own), `0, 578, 390 x 266` (an opponent) and `0, 422, 390 x 422` (own, online: the 50 dvh cap holds it at the middle line and its content scrolls by 6 px); every upright top edge is at or below the middle, and the capture throws otherwise. Sideways `12, 117, 320 x 273` (70 dvh of the column), inside the dock column, bottom at the screen's bottom; there the own menu scrolls by 103 px and the online menus by 97 to 155 px. Zero page errors.
 
@@ -75,7 +75,7 @@ Completion test:
 3. Upright, the phone menu's top edge is in the bottom half of the screen. Sideways, the sheet sits inside the dock column with its bottom edge at the screen's bottom; its top edge is wherever its height puts it (117 px down at 844x390). Rows are at least 44 px; Close is 44 px.
 4. Private rows only on the own seat or at game end; the watcher sees none.
 5. Escape, a tap outside and the card again all close it; focus returns to the card.
-6. No trade route is lost: "Trade with the bank or a dock…" on your own seat on your main turn; "Offer a trade…" on an opponent's seat online on your main turn; "Mention @name in chat" on an opponent's seat online; "Open chat" on your own seat online.
+6. No trade route is lost: "Trade…" on your own seat on your main turn; "Trade…" on an opponent's seat online on your main turn; "Mention @name" on an opponent's seat online; "Open chat" on your own seat online.
 
 ## Reproduce
 
