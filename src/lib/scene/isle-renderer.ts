@@ -43,7 +43,8 @@ import { PAINT, RIM } from "@/lib/scene/palette";
 import { BLOCK_H, ROBBER_HEX_DIM, robberHexDim, setRobberHexDim, TILE_Y } from "@/lib/scene/jelly-dims";
 export { ROBBER_HEX_DIM, robberHexDim };
 import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
-import type { LandAppearance, LandHex, LandLook, LandStatus, VisibilityContext } from "@/lib/scene/land-appearance";
+import type { LandAppearance, LandHex, LandLook, LandStatus } from "@/lib/scene/land-appearance";
+import type { AppearanceHost } from "@/lib/scene/appearance-controller";
 import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
 import { OceanLife } from "@/lib/scene/ocean-life";
 import { makeBruno, type Bruno } from "@/lib/scene/bruno";
@@ -79,18 +80,6 @@ const JELLY_PIECES = (() => {
 })();
 // How far beside a hex's token the wayfarer stands (robberSpot).
 const WAYFARER_ASIDE = 0.43;
-// The jelly shore is its own chunk (harbor-jelly), loaded once the hexes have swapped in.
-const loadShore = () => import("@/lib/scene/harbor-jelly");
-let shoreFailed = false;
-// The jelly shore (docs/design/harbor-jelly-prompt.md; the owner signed it off 2026-10-16) on every full board; ?harbor=0 or
-// emberisle-harbor = "plain" in storage keeps the plain beach and docks.
-const HARBOR_JELLY = (() => {
-  try {
-    return new URLSearchParams(location.search).get("harbor") !== "0" && localStorage.getItem("emberisle-harbor") !== "plain";
-  } catch {
-    return true;
-  }
-})();
 type TerrainStats = { ready: boolean } & Omit<JellyStats, "quality" | "objects">;
 // The stand-in slab and the unseen pick block: a hex prism the jelly block's size (corners at 30 + 60k degrees, as the
 // board's pointy-top hexes), standing on its base.
@@ -241,6 +230,10 @@ export class IsleRenderer {
   private landState: Omit<LandStatus, "quality" | "ready"> = { requested: "jelly", displayed: null, loading: false, error: null };
   private appearanceRetry: ReturnType<typeof setTimeout> | undefined;
   onLand: (status: LandStatus) => void = () => {};
+  // Hands the shown look this frame's camera and tokens; appearance-controller.ts installs it with the first look.
+  seeLand = () => {};
+  // A token's glyph bottom, below its centre (the look keeps the numeral in sight).
+  readonly glyphDrop = 0.13 * (TOKEN_FACE / 0.29);
   // Whether the GPU is software, and whether the board is lite (the ground only).
   software = false;
   lite = false;
@@ -1624,7 +1617,7 @@ export class IsleRenderer {
       _held.add(this.controls.target);
     }
     this.poseTokens();
-    this.appearance?.setVisibilityContext(this.visibility());
+    this.seeLand();
     this.fadeSea();
     if (lift) {
       const fog = this.scene.fog as THREE.Fog;
@@ -1773,24 +1766,6 @@ export class IsleRenderer {
     this.growScenes(this.landGen, key, Object.freeze(hexes), this.landState.requested);
   }
 
-  private visibility(): VisibilityContext {
-    const camera = this.cam();
-    return { view: this.view, camera: { ...camera.position },
-      azimuth: this.view === "diorama" ? this.orbit.getAzimuthalAngle() : 0,
-      tokens: this.tokens.map((token) => ({ ...token.position,
-        glyphBottom: token.position.y - 0.13 * (TOKEN_FACE / 0.29) })) };
-  }
-
-  private prepareAppearance(appearance: LandAppearance) {
-    this.poseTokens();
-    appearance.setVisibilityContext(this.visibility());
-    const hex = this.lastState?.hexes.find((h) => h.id === this.lastState?.robberHex);
-    appearance.robber(hex && hex.terrain !== "waste" ? hex.id : null);
-    for (const [id, cap] of this.caps) appearance.glow(id, cap.emissiveIntensity);
-    appearance.update(this.jellyT, true, true);
-    return hex;
-  }
-
   private growScenes(gen: number, key: string, hexes: readonly LandHex[], look: LandLook, tries = 0) {
     const alive = () => gen === this.landGen && !this.stopped;
     if (!alive()) return;
@@ -1800,65 +1775,8 @@ export class IsleRenderer {
       return;
     }
     performance.mark("props-start");
-    const pause = () => new Promise<boolean>((resolve) => setTimeout(() => resolve(alive()), 0));
-    let candidate: LandAppearance | null = null;
-    void loadLand(look).then<LandAppearance | null>(({ createAppearance }) => alive() ?
-      createAppearance(hexes, key, pause, this.lite, () => this.titleMode) : null).then(async (built) => {
-      candidate = built;
-      if (!candidate) return;
-      if (!alive()) { candidate.dispose(); return; }
-      this.prepareAppearance(candidate);
-      if (this.renderer.extensions.has("KHR_parallel_shader_compile")) {
-        this.living.add(candidate.group);
-        const was = this.renderer.getRenderTarget();
-        let done: Promise<unknown>;
-        try {
-          this.renderer.setRenderTarget(this.composer.readBuffer);
-          done = this.renderer.compileAsync(this.scene, this.cam());
-        } finally {
-          this.renderer.setRenderTarget(was);
-          this.living.remove(candidate.group);
-        }
-        await done;
-      }
-      if (!alive()) { candidate.dispose(); return; }
-      // Visibility and game signals may have changed while shaders compiled.
-      const currentHex = this.prepareAppearance(candidate);
-      const previous = this.appearance;
-      this.living.add(candidate.group);
-      if (previous) this.living.remove(previous.group);
-      this.appearance = candidate;
-      this.landState.displayed = look;
-      this.landState.loading = false;
-      this.landState.error = null;
-      if (this.slabs) {
-        this.land.remove(this.slabs);
-        this.slabs.dispose();
-        (this.slabs.material as THREE.Material).dispose();
-        this.slabs = null;
-      }
-      previous?.dispose();
-      if (currentHex) {
-        this.robberSpot(currentHex);
-        if (!this.walk) this.wayfarer.position.copy(this.robberTarget);
-      }
-      this.reportLand();
-      this.whenDrawn(() => (boot.scenes = true));
-      // Shore ownership follows the canonical board, independently from look requests.
-      if (HARBOR_JELLY && !this.lite && !previous) {
-        void loadShore().then(({ buildShore }) => {
-          if (this.stopped || this.lastLand !== key) return;
-          this.swapShore(buildShore(this.coast, this.docks, hashStr(`${key}|shore`)));
-        }).catch((error: unknown) => {
-          if (!shoreFailed) console.warn("The jelly shore did not load; the plain beach stays.", error);
-          shoreFailed = true;
-        }).finally(() => this.whenDrawn(() => (boot.shore = true)));
-      } else this.whenDrawn(() => (boot.shore = true));
-      (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
-      this.wake();
-      performance.mark("props-end");
-    }).catch(() => {
-      if (candidate && candidate !== this.appearance) candidate.dispose();
+    // The build and swap live with the look's own chunk (appearance-controller.ts); a failed import or build retries here.
+    void loadLand(look).then((m) => { if (alive()) return m.grow(this as unknown as AppearanceHost, { key, hexes, look, alive }); }).catch(() => {
       if (!alive()) return;
       this.landState.error = `${look === "classic" ? "Classic" : "Jelly"} could not load`;
       this.landState.loading = tries < 5;

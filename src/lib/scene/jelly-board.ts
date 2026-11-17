@@ -1,4 +1,5 @@
-import type { LandAppearance, LandStats, VisibilityContext, LandHex } from "@/lib/scene/land-appearance";
+import type { LandAppearance, LandStats, VisibilityContext } from "@/lib/scene/land-appearance";
+import { growWith, ownedBy, type AppearanceHost, type GrowRequest } from "@/lib/scene/appearance-controller";
 import * as THREE from "three";
 import { hashStr } from "@/lib/utils";
 import { type Terrain } from "@/lib/game/types";
@@ -1070,16 +1071,8 @@ export class JellyBoard implements LandAppearance {
     }
     for (const m of this.bakes) triangles += m.userData.tris as number;
     for (const sb of this.sprites) triangles += 2 * sb.count;
-    const geometries = new Set(), materials = new Set();
-    let meshes = 0;
     // Every published child is a batched, baked or sprite mesh; builders attach no nested groups here.
-    for (const child of this.group.children) {
-      const mesh = child as THREE.Mesh;
-      ++meshes;
-      geometries.add(mesh.geometry);
-      for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(material);
-    }
-    return { quality: this.lite ? "lite" : "full", objects: { meshes, geometries: geometries.size, materials: materials.size }, lite: this.lite, drawCalls: this.batches.size + this.bakes.length + this.sprites.length, triangles: Math.round(triangles), kinds: this.kinds.length, batches: this.batches.size, bakes: this.bakes.length, sprites: this.sprites.length };
+    return { quality: this.lite ? "lite" : "full", objects: ownedBy(this.group), lite: this.lite, drawCalls: this.batches.size + this.bakes.length + this.sprites.length, triangles: Math.round(triangles), kinds: this.kinds.length, batches: this.batches.size, bakes: this.bakes.length, sprites: this.sprites.length };
   }
 
   dispose() {
@@ -1110,7 +1103,7 @@ export class JellyBoard implements LandAppearance {
   }
 }
 
-// Uniform lazy-factory boundary; the renderer does not need either builder's seed or quality conventions.
-export function createAppearance(hexes: readonly LandHex[], key: string, pause: () => Promise<boolean>, lite: boolean, holdAge: () => boolean) {
-  return JellyBoard.create([...hexes], (kind) => hashStr(`${key}|${kind}`), pause, lite, holdAge);
-}
+// #759: the uniform lazy boundary. The renderer asks this look's chunk to build and swap itself in (appearance-controller.ts),
+// with no need to know Jelly's seed or quality conventions.
+export const grow = (host: AppearanceHost, request: GrowRequest) =>
+  growWith((hexes, key, pause, lite, holdAge) => JellyBoard.create([...hexes], (kind) => hashStr(`${key}|${kind}`), pause, lite, holdAge), host, request);
