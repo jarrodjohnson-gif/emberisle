@@ -12,7 +12,7 @@ and [curated media and playback](../design/profiles.md#curated-media-and-playbac
 settles player-chosen shared songs, no uploads and no automatic assignment.
 Players explicitly choose a shared catalogue song; clearing restores the default.
 The designed completed-game contract plays the winner's validated choice for every
-present listener, including watchers. Keeping a choice out of [public seat data](../../scripts/profile-songs-prove.mjs#L88)
+present listener, including watchers. Keeping a choice out of [public seat data](../../server/profile-songs-prove.mjs#L88)
 during play does not mean other listeners never hear it. Custom assets remain
 subject to the designed binding/projection gates and #1351 dependencies.
 
