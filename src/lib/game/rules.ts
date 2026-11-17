@@ -470,7 +470,7 @@ function validRes(r: unknown): r is Resource {
 // One public event per goods-changing action. Derive amounts from the committed result, never
 // from UI guesses; theft and discard choices deliberately stay private. All seats use this voice.
 export function applyAction(prev: GameState, actor: string, action: Action): { state: GameState; error?: string } {
-  const result = applyActionInternal(prev, actor, action);
+  const result = prev.variant ? turnRules.paired!(prev, actor, action, applyActionInternal) : applyActionInternal(prev, actor, action);
   if (result.error) return result;
   const next = result.state;
   const me = next.players.find((p) => p.id === actor)!;
@@ -538,6 +538,11 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
   next.log = [...prev.log, ...rolled, ...awards, line, ...endings].slice(-200);
   return result;
 }
+
+type Step = (prev: GameState, actor: string, action: Action) => { state: GameState; error?: string };
+// Five and six seat games take their turns from expanded.ts (#1605), which sets `paired` when it loads. The client never
+// loads it yet, so the paired rules stay out of the index chunk.
+export const turnRules: { paired?: (prev: GameState, actor: string, action: Action, base: Step) => ReturnType<Step> } = {};
 
 function applyActionInternal(prev: GameState, actor: string, action: Action): { state: GameState; error?: string } {
   const state = clone(prev);
