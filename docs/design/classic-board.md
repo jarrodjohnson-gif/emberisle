@@ -235,3 +235,27 @@ Existing renderer, store, scene bridge, TableMenu, package/CI, budget, and wildc
 A new filename does not bypass an active `scripts/*-prove.mjs` reservation.
 Design acceptance does not release those reservations or authorize conflicting implementation.
 The parent #641 remains unfinished until the final integrated runtime proof passes.
+
+## Source-status note, 2026-11-17 (#1625 adoption)
+
+The [accepted architecture on #641](https://github.com/jarrodjohnson-gif/emberisle/issues/641#issuecomment-6250360289)
+remains this document, from #750/#754. This note adds source facts, not another design.
+At main `f1d2c155616b37370ac37f9de00cf4df74493148`,
+[ClassicBoard already exists](../../src/lib/scene/classic-board.ts#L51).
+Its [quality constants](../../src/lib/scene/classic-board.ts#L16) use 18 rings for full and 12 for lite.
+Current [terrain.ts](../../src/lib/scene/terrain.ts#L12) uses 12 rings.
+The archived terrain's 18-ring constant is a different source.
+These constants do not measure frame cost or establish acceptance.
+The existing Water and View keys are in [src/lib/game/store.ts](../../src/lib/game/store.ts#L162).
+
+#758 is closed. #759's atomic integration and #760's preference/final acceptance remain open at this snapshot.
+Their reservations still apply; this documentation update claims no runtime file or integrated completion.
+Use **Lite** consistently when naming the quality in prose; existing code values remain unchanged.
+
+The duplicate classic-board-option.md proposals are withdrawn.
+[Question 6941234115](https://github.com/jarrodjohnson-gif/emberisle/issues/641#issuecomment-6941234115)
+asks to retain the accepted contract without selecting new automatic appearance, storage, menu or budget rules.
+This update sets no new draw-call, triangle, gzip or fps ceiling.
+It adds no software-GPU automatic Classic selection or profile synchronization.
+Future implementation still needs the existing contract's measured-cost and integrated-acceptance evidence.
+I checked source links and diff whitespace; I ran no browser or performance proof for this note.

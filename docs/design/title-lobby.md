@@ -116,7 +116,7 @@ Per `docs/research/title-menu.md` point 3 ("Weight the game-night path"):
   and makes the card scroll (`overflow-y-auto` above) so a 4-seat table plus the chat box never gets clipped at
   720p. The mockups above draw the placed box from that spec so the completion test's "chat area … placed" is
   checkable without waiting on #119's implementation children.
-- Seat rows, the log line, and `Leave the table` are otherwise unchanged in behavior.
+- Seat rows, the log line, and `Leave table` are otherwise unchanged in behavior.
 
 ## Files the implementation touches
 
