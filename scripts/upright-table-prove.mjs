@@ -21,6 +21,7 @@ import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const SIZES = [
+  { width: 440, height: 956, insets: { top: 62, right: 0, bottom: 34, left: 0 } },
   { width: 430, height: 932, insets: { top: 59, right: 0, bottom: 34, left: 0 } },
   // q1274-1 measures 58.3 % at 390x844 with a 34 px home bar and no top inset.
   { width: 390, height: 844, insets: { top: 0, right: 0, bottom: 34, left: 0 } },

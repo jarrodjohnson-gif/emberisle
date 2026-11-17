@@ -9,14 +9,18 @@ const OUT = "docs/proofs/1526";
 const TABLE = "docs/proofs/1509/table.json";
 const PORT = 8526;
 const closeupsOnly = process.argv.includes("--closeups");
-const SIZES = closeupsOnly
-  ? [{ w: 430, h: 932, insets: { top: 59, right: 0, bottom: 34, left: 0 } }]
-  : [
-      { w: 430, h: 932, insets: { top: 59, right: 0, bottom: 34, left: 0 } },
-      { w: 390, h: 844, insets: { top: 0, right: 0, bottom: 34, left: 0 } },
-      { w: 820, h: 1180, insets: { top: 24, right: 0, bottom: 20, left: 0 } },
-      { w: 844, h: 390, insets: { top: 0, right: 47, bottom: 21, left: 47 } },
-    ];
+const only440 = process.argv.includes("--440");
+const SIZES = only440
+  ? [{ w: 440, h: 956, insets: { top: 62, right: 0, bottom: 34, left: 0 } }]
+  : closeupsOnly
+    ? [{ w: 430, h: 932, insets: { top: 59, right: 0, bottom: 34, left: 0 } }]
+    : [
+        { w: 440, h: 956, insets: { top: 62, right: 0, bottom: 34, left: 0 } },
+        { w: 430, h: 932, insets: { top: 59, right: 0, bottom: 34, left: 0 } },
+        { w: 390, h: 844, insets: { top: 0, right: 0, bottom: 34, left: 0 } },
+        { w: 820, h: 1180, insets: { top: 24, right: 0, bottom: 20, left: 0 } },
+        { w: 844, h: 390, insets: { top: 0, right: 47, bottom: 21, left: 47 } },
+      ];
 
 mkdirSync(OUT, { recursive: true });
 
@@ -84,8 +88,8 @@ try {
     });
     console.log(`saved ${OUT}/${w}x${h}.png`, JSON.stringify(info));
 
-    if (w === 430 && h === 932) {
-      // Crop the west and east side docks directly from the full upright 430x932 screen.
+    if ((w === 440 && h === 956) || (w === 430 && h === 932)) {
+      // Crop the west and east side docks directly from the full upright screen.
       const docks = await page.evaluate(() => {
         const isle = window.__isle;
         const west = isle.screenAt(-5.05, 0.15, 0);
@@ -94,17 +98,19 @@ try {
         return { west, eastN, eastS };
       });
       await page.screenshot({
-        path: `${OUT}/crop-430x932-west-dock.png`,
+        path: `${OUT}/crop-${w}x${h}-west-dock.png`,
         type: "png",
         clip: { x: 0, y: Math.max(0, Math.round(docks.west.y - 80)), width: 160, height: 160 },
       });
       await page.screenshot({
-        path: `${OUT}/crop-430x932-east-docks.png`,
+        path: `${OUT}/crop-${w}x${h}-east-docks.png`,
         type: "png",
-        clip: { x: 270, y: Math.max(0, Math.round(docks.eastN.y - 70)), width: 160, height: Math.round(docks.eastS.y - docks.eastN.y + 140) },
+        clip: { x: w - 160, y: Math.max(0, Math.round(docks.eastN.y - 70)), width: 160, height: Math.round(docks.eastS.y - docks.eastN.y + 140) },
       });
-      console.log(`saved ${OUT}/crop-430x932-west-dock.png and crop-430x932-east-docks.png`);
+      console.log(`saved ${OUT}/crop-${w}x${h}-west-dock.png and crop-${w}x${h}-east-docks.png`);
+    }
 
+    if (w === 430 && h === 932) {
       // 3x zoomed close-ups of each side dock in the 40-degree upright overhead camera.
       const focusDock = async (tx, tz, zoom = 3) => {
         await page.evaluate(({ tx, tz, zoom }) => {
