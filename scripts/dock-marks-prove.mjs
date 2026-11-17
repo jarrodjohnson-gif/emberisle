@@ -1,5 +1,7 @@
-// #1593: every dock wears a painted plank in its trade's colour with one pip per good you give (two for 2:1, three for 3:1),
-// on the full board and the lite board, and a claimed dock flies a pennant in its owner's colour on the full board.
+// #1593 (q1602-dock-fix, fix 3): on the full board, every dock paints its square pier head in its trade's colour (five colour
+// bands for 3:1) with a white symbol and pips (two for 2:1, three for 3:1), and a claimed dock flies a swallow-tailed pennant
+// on a mast with a dark hairline in its owner's colour. On the lite board, each plain pier wears a painted plank from the
+// standalone dock-marks chunk without fetching harbor-jelly.
 // Run: npm run dock-marks-prove
 import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
@@ -14,8 +16,7 @@ const check = (name, ok, detail) => {
   if (!ok) fails.push(name);
 };
 
-// The full board's T-head stands up to about 1.4 out from the coast (the dock's centre); the lite board's plank sits on the pier's root.
-// Runs of `true` along a scanline: the pips on a plank.
+// Runs of `true` along a scanline: the pips on a dock mark.
 function runs(line) {
   let n = 0;
   for (let i = 0; i < line.length; i++) if (line[i] && !line[i - 1]) n++;
@@ -28,15 +29,15 @@ function runs(line) {
   if (got !== "2,1,0,3") throw new Error(`pip-run self-test: ${got}`);
 }
 
-// In the page: each dock's mark, read from the meshes that use the mark atlas, and the atlas row it shows.
+// In the page: each dock's mark, read from the meshes that use the mark atlas, its atlas row, and (on full) the painted end boards.
 const readMarks = async (lite) => {
   const { PLATE_KINDS } = await import("/src/lib/scene/dock-marks.ts");
   const { PAINT } = await import("/src/lib/scene/palette.ts");
   const isle = window.__isle;
   const st = window.__emberisle.getState().state;
-  // The mark atlas is the one 256-wide canvas with a 128 px row per trade; both boards wrap it in their own texture. Found by
-  // its shape on the meshes themselves, so the check does not lean on which copy of the module the page loaded.
-  const isMark = (o) => o.isMesh && o.visible && o.material?.map?.image instanceof HTMLCanvasElement && o.material.map.image.width === 256 && o.material.map.image.height === 128 * PLATE_KINDS.length;
+  const rowH = lite ? 128 : 192;
+  // The mark atlas is the 256-wide canvas with a 192 px row (full board paint) or 128 px row (lite plank) per trade.
+  const isMark = (o) => o.isMesh && o.visible && o.material?.map?.image instanceof HTMLCanvasElement && o.material.map.image.width === 256 && o.material.map.image.height === rowH * PLATE_KINDS.length;
   const meshes = [];
   isle.scene.traverse((o) => { if (isMark(o)) meshes.push(o); });
   const atlas = meshes[0]?.material.map.image ?? document.createElement("canvas");
@@ -52,36 +53,89 @@ const readMarks = async (lite) => {
         const dist = Math.hypot(x - d.cx, z - d.cz);
         if (dist < bd) (bd = dist), (best = d);
       }
-      best.verts.push({ v: uv.getY(i), dist: bd });
+      best.verts.push({ x, z, v: uv.getY(i), dist: bd });
     }
   }
   const c = atlas.getContext("2d");
-  const rgb = (x, y) => [...c.getImageData(x, y, 1, 1).data.slice(0, 3)];
-  const hex = (a) => "#" + a.map((n) => n.toString(16).padStart(2, "0")).join("");
-  const near = (a, b, tol = 24) => a.every((n, i) => Math.abs(n - b[i]) <= tol);
-  const rowInfo = (row) => {
-    const y = row * 128;
-    const fill = rgb(128, y + 22);
-    // The pips' row, from just right of the symbol to the plank's edge.
-    const line = [];
-    for (let x = 128; x < 244; x++) {
-      const px = rgb(x, y + 64);
-      line.push(!near(px, fill, 40));
+  const rgba = (x, y) => [...c.getImageData(x, y, 1, 1).data];
+  const hex = (a) => "#" + a.slice(0, 3).map((n) => n.toString(16).padStart(2, "0")).join("");
+  const near = (a, b, tol = 24) => [0, 1, 2].every((i) => Math.abs(a[i] - b[i]) <= tol);
+  const parseHex = (h) => [1, 3, 5].map((o) => parseInt(h.slice(o, o + 2), 16));
+  const rowInfo = (row, kind) => {
+    const y = row * rowH;
+    if (!lite) {
+      // Full board (fix 3): transparent ground, white paint. 3:1 has three pips across y+96; 2:1 has a symbol on the left and
+      // two pips stacked vertically at x=222.
+      const line = [];
+      if (kind === "any") for (let x = 0; x < 256; x++) line.push(rgba(x, y + 96)[3] > 128);
+      else for (let dy = 0; dy < 192; dy++) line.push(rgba(222, y + dy)[3] > 128);
+      let pips = 0;
+      for (let i = 0; i < line.length; i++) if (line[i] && !line[i - 1]) pips++;
+      let symbolPx = 0;
+      if (kind !== "any") {
+        const img = c.getImageData(6, y + 12, 170, 168).data;
+        for (let i = 3; i < img.length; i += 4) if (img[i] > 128) symbolPx++;
+      }
+      return { fill: null, pips, symbolPx };
     }
-    let n = 0;
-    for (let i = 0; i < line.length; i++) if (line[i] && !line[i - 1]) n++;
-    return { fill: hex(fill), pips: n };
+    const fill = rgba(128, y + 22);
+    const line = [];
+    for (let x = 128; x < 244; x++) line.push(!near(rgba(x, y + 64), fill, 40));
+    let pips = 0;
+    for (let i = 0; i < line.length; i++) if (line[i] && !line[i - 1]) pips++;
+    return { fill: hex(fill), pips, symbolPx: 1 };
+  };
+  // Full board: inspect vertex colours on the harbors mesh directly under each dock's painted pier head (y near DECK = 0.1).
+  const harbors = !lite ? isle.shore?.group.getObjectByName("harbors") : null;
+  let headSamples = docks.map(() => []);
+  if (harbors?.isMesh && harbors.geometry.attributes.color) {
+    harbors.updateMatrixWorld(true);
+    const pos = harbors.geometry.attributes.position, col = harbors.geometry.attributes.color, e = harbors.matrixWorld.elements;
+    const centres = docks.map((d) => ({
+      x: d.verts.reduce((s, q) => s + q.x, 0) / (d.verts.length || 1),
+      z: d.verts.reduce((s, q) => s + q.z, 0) / (d.verts.length || 1),
+    }));
+    const linToSrgb = (v) => Math.round(255 * Math.min(1, Math.max(0, v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055)));
+    for (let i = 0; i < pos.count; i++) {
+      const lx = pos.getX(i), ly = pos.getY(i), lz = pos.getZ(i);
+      const y = e[1] * lx + e[5] * ly + e[9] * lz + e[13];
+      // Exact top face of the 0.016-thick T-head deck boards centred at DECK = 0.1 (excludes pile caps, bollards, rope coils).
+      if (Math.abs(y - 0.108) > 0.001) continue;
+      const x = e[0] * lx + e[4] * ly + e[8] * lz + e[12], z = e[2] * lx + e[6] * ly + e[10] * lz + e[14];
+      for (let di = 0; di < docks.length; di++) {
+        // 0.44 x 0.44 square head has corner radius ~0.311 from its centre; stem planks stop well before 0.22.
+        if (Math.hypot(x - centres[di].x, z - centres[di].z) < 0.32) {
+          headSamples[di].push([linToSrgb(col.getX(i)), linToSrgb(col.getY(i)), linToSrgb(col.getZ(i))]);
+          break;
+        }
+      }
+    }
+  }
+  // Expected Fix 3 board colour in sRGB for each good (exact match to harbor-jelly's boardTone at shade=1, in linear THREE.Color).
+  const srgbToLin = (c) => ((c /= 255) <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const linToSrgb = (v) => Math.round(255 * Math.min(1, Math.max(0, v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055)));
+  const woodLin = parseHex("#a46e42").map(srgbToLin);
+  const wantBoardRgb = (k) => {
+    const a = parseHex(PAINT[k][0]).map(srgbToLin), b = parseHex(PAINT[k][1]).map(srgbToLin);
+    const t = k === "wool" || k === "grain" ? 0.6 : 0;
+    return [0, 1, 2].map((i) => linToSrgb((a[i] + (b[i] - a[i]) * t) * 0.85 + woodLin[i] * 0.15));
   };
   const goods = ["timber", "clay", "wool", "grain", "ore"];
+  const allWantBoards = goods.map(wantBoardRgb);
   return {
     lite,
     meshes: meshes.length,
-    docks: docks.map((d) => {
+    docks: docks.map((d, di) => {
       const vs = d.verts.map((q) => q.v);
       const row = vs.length ? Math.round((1 - Math.max(...vs)) * PLATE_KINDS.length) : -1;
       const shown = PLATE_KINDS[row] ?? null;
-      const info = row >= 0 ? rowInfo(row) : null;
       const kind = d.kinds[0];
+      const info = row >= 0 ? rowInfo(row, kind) : null;
+      const samples = headSamples[di];
+      const meanRgb = samples.length ? [0, 1, 2].map((c) => Math.round(samples.reduce((s, q) => s + q[c], 0) / samples.length)) : null;
+      // On a 3:1 dock, count how many of the five goods' board tones appear among the pier head's vertex colours.
+      const matchedBands = !lite && kind === "any" ? allWantBoards.filter((wb) => samples.some((s) => near(s, wb, 26))).length : null;
+      const boardMatch = !lite && kind !== "any" && meanRgb ? near(meanRgb, wantBoardRgb(kind), 26) : null;
       return {
         kind,
         sameBothCorners: d.kinds[0] === d.kinds[1],
@@ -89,10 +143,13 @@ const readMarks = async (lite) => {
         far: d.verts.length ? +Math.max(...d.verts.map((q) => q.dist)).toFixed(2) : null,
         oneRow: vs.every((v) => (1 - v) * PLATE_KINDS.length >= row - 1e-4 && (1 - v) * PLATE_KINDS.length <= row + 1 + 1e-4),
         shown,
-        fill: info?.fill,
-        want: kind === "any" ? null : PAINT[kind][0],
-        anyClash: kind === "any" ? goods.some((g) => near(rgb(128, row * 128 + 22), [1, 3, 5].map((o) => parseInt(PAINT[g][0].slice(o, o + 2), 16)))) : false,
+        fill: lite ? info?.fill : meanRgb ? hex(meanRgb) : null,
+        want: kind === "any" ? null : lite ? PAINT[kind][0] : hex(wantBoardRgb(kind)),
+        boardMatch,
+        matchedBands,
+        anyClash: lite && kind === "any" ? goods.some((g) => near(rgba(128, row * 128 + 22), parseHex(PAINT[g][0]))) : false,
         pips: info?.pips,
+        symbolPx: info?.symbolPx ?? 0,
         rate: kind === "any" ? 3 : 2,
       };
     }),
@@ -101,7 +158,7 @@ const readMarks = async (lite) => {
 
 // The board can be rebuilt under the proof (a refit after the first frames brings the plain piers back until the shore swaps in
 // again), so read the marks once they are all in: the full board's merged plates mesh, or the lite board's nine planks, with a
-// plank at every dock. The last read is returned either way, and checkMarks says what is missing.
+// mark at every dock. The last read is returned either way, and checkMarks says what is missing.
 async function readSettled(page, lite) {
   const until = Date.now() + STEP_MS;
   let r;
@@ -119,10 +176,17 @@ function checkMarks(tag, r) {
   check(`${tag}: mark meshes drawn`, r.meshes >= 1, { meshes: r.meshes });
   for (const [i, d] of r.docks.entries()) {
     const at = `${tag} dock ${i} (${d.kind})`;
-    check(`${at}: has a plank (4+ corners) close to its pier`, d.verts >= 4 && d.far < (tag === "full" ? 1.7 : 0.6) && d.sameBothCorners, { verts: d.verts, far: d.far });
-    check(`${at}: the plank shows its own trade's row`, d.shown === d.kind && d.oneRow, { shown: d.shown });
-    if (d.want) check(`${at}: plank colour is the good's colour`, d.fill.toLowerCase() === d.want.toLowerCase(), { fill: d.fill, want: d.want });
-    else check(`${at}: the any-good plank is not a good's colour`, !d.anyClash, { fill: d.fill });
+    check(`${at}: has a mark (4+ corners) close to its pier`, d.verts >= 4 && d.far < (tag === "full" ? 2.0 : 0.6) && d.sameBothCorners, { verts: d.verts, far: d.far });
+    check(`${at}: the mark shows its own trade's row`, d.shown === d.kind && d.oneRow, { shown: d.shown });
+    if (r.lite) {
+      if (d.want) check(`${at}: plank colour is the good's colour`, d.fill.toLowerCase() === d.want.toLowerCase(), { fill: d.fill, want: d.want });
+      else check(`${at}: the any-good plank is not a good's colour`, !d.anyClash, { fill: d.fill });
+    } else if (d.kind === "any") {
+      check(`${at}: 3:1 pier head carries all five goods' colour bands`, d.matchedBands === 5, { matchedBands: d.matchedBands });
+    } else {
+      check(`${at}: pier head boards painted in the good's colour`, Boolean(d.boardMatch), { fill: d.fill, want: d.want });
+      check(`${at}: white symbol painted on the boards`, d.symbolPx > 1500, { symbolPx: d.symbolPx });
+    }
     check(`${at}: ${d.rate} pips for ${d.rate}:1`, d.pips === d.rate, { pips: d.pips });
   }
   const kinds = new Set(r.docks.map((d) => d.kind));
@@ -137,15 +201,15 @@ async function open(lite, width, height) {
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.waitForFunction(() => window.__isle?.renders > 0, null, { timeout: STEP_MS });
-  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await page.getByRole("button", { name: "Pass and play" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState && window.__isle.landReady && !window.__isle.refitDue, null, { timeout: STEP_MS });
   // The full board's harbour shore swaps in for the plain piers; the lite board paints its planks after a lazy import.
   await page.waitForFunction(async (lite) => {
     const i = window.__isle;
     if (!lite && !(i.shore?.group.parent && i.piers.every((p) => !p.visible))) return false;
-    // The mark meshes are in: the full board's one merged plates mesh, or the lite board's nine planks.
+    const wantH = (lite ? 128 : 192) * 6;
     let n = 0;
-    i.scene.traverse((o) => { const c = o.isMesh && o.visible && o.material?.map?.image; if (c instanceof HTMLCanvasElement && c.width === 256 && c.height === 768) n++; });
+    i.scene.traverse((o) => { const c = o.isMesh && o.visible && o.material?.map?.image; if (c instanceof HTMLCanvasElement && c.width === 256 && c.height === wantH) n++; });
     return n >= (lite ? 9 : 1);
   }, lite, { timeout: STEP_MS, polling: 250 });
   return { ctx, page };
@@ -177,14 +241,17 @@ try {
           owner,
           want: owner ? st.players.find((q) => q.id === owner)?.color ?? null : null,
           colour: "#" + p.children[1].material.color.getHexString(),
+          line: p.children[2] ? "#" + p.children[2].material.color.getHexString() : null,
+          parts: p.children.length,
           dist: dock ? +Math.hypot(w.x - dock.cx, w.z - dock.cz).toFixed(2) : null,
         };
       });
     });
     const before = await pennants();
     check("full: one pennant per dock", before.length === 9, { pennants: before.length });
+    check("full: each pennant has a mast, cloth, and dark hairline", before.every((p) => p.parts === 3 && p.line === "#2a2420"), before.map((p) => [p.parts, p.line]));
     check("full: no pennant flies over an unclaimed dock", before.every((p) => !p.owner && !p.visible), before.filter((p) => p.visible || p.owner));
-    check("full: each pennant stands on its own dock", before.every((p) => p.dist !== null && p.dist < 1.7), before.map((p) => p.dist));
+    check("full: each pennant stands on its own dock", before.every((p) => p.dist !== null && p.dist < 2.0), before.map((p) => p.dist));
 
     // Two seats claim two docks: an outpost on one corner, a stronghold on the other dock.
     const claimed = await page.evaluate(() => {

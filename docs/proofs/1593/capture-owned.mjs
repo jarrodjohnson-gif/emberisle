@@ -6,18 +6,17 @@
 // Seed 14, four seats on one device, Ember (p0) to play: Ember owns the 3:1 dock (an outpost) and the wood dock (a
 // stronghold), Tide owns the brick dock (an outpost). Each size is taken zoomed right out, at the home view and close
 // up on Ember's wood dock.
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import path from "node:path";
 
 const [root, outDir, label, option = ""] = process.argv.slice(2);
 mkdirSync(outDir, { recursive: true });
-const { chromium } = await import(path.join(root, "node_modules/playwright/index.mjs"));
+const { chromium } = await import(path.join(root, "scripts/proof-browser.mjs"));
 const { createServer } = await import(path.join(root, "node_modules/vite/dist/node/index.js"));
 const port = 8500 + Math.floor(Math.random() * 400);
 const vite = await createServer({ root, configFile: path.join(root, "vite.config.ts"), server: { host: "127.0.0.1", port, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 // [width, height, touch, which shots]. Jarrod's phone (440x956) and desktop (1280x720) were added in review: the phone zoomed
@@ -26,7 +25,7 @@ const SIZES = [
   [390, 844, true, ["1-out", "2-home", "3-close"]],
   [820, 1180, true, ["1-out", "2-home", "3-close"]],
   [844, 390, true, ["1-out", "2-home", "3-close"]],
-  [440, 956, true, ["1-out", "3-close", "4-owned"]],
+  [440, 956, true, ["1-out", "3-close", "4-owned", "5-far"]],
   [1280, 720, false, ["2-home"]],
 ];
 const LITE = process.env.LITE === "1";
@@ -82,12 +81,18 @@ try {
         const d = i.docks.find((x) => x.kind === "timber");
         return { ...i.pose(), tx: d.cx + d.mx * 0.9, tz: d.cz + d.mz * 0.9, zoom: i.orbit.maxZoom };
       }],
+      ["5-far", (i) => {
+        const n = [...i.docks].sort((a, b) => a.mz - b.mz)[0];
+        const a = i.docks.filter((x) => x.kind === "any").sort((p, q) => Math.hypot(p.cx - n.cx, p.cz - n.cz) - Math.hypot(q.cx - n.cx, q.cz - n.cz))[0];
+        return { ...i.pose(), tx: (n.cx + n.mx * 0.6 + a.cx + a.mx * 0.6) / 2, tz: (n.cz + n.mz * 0.6 + a.cz + a.mz * 0.6) / 2, zoom: i.orbit.maxZoom };
+      }],
     ];
     console.log("pennants up:", await page.evaluate(() => (window.__isle.shore?.group.userData.pennants ?? []).filter((p) => p.visible).length));
     const home = await page.evaluate(() => window.__isle.pose());
     for (const [name, make] of shots.filter(([n]) => want.includes(n))) {
       await page.evaluate(([src, home]) => {
         const i = window.__isle;
+        i.cam().clearViewOffset();
         i.applyPose(home);
         const make = new Function("i", `return (${src})(i)`);
         i.applyPose(make(i));
@@ -111,22 +116,36 @@ try {
       await page.waitForTimeout(1500);
       // Under reduced motion the render loop sleeps, so the canvas can still hold a frame from before the shore swapped in:
       // draw this pose now.
-      await page.evaluate((name) => {
+      const cropCenter = await page.evaluate((name) => {
         const i = window.__isle;
         if (name === "4-owned") {
           // The pan limit keeps this dock under the HUD at full zoom: shift the frame (not the camera) so it sits mid-screen.
           const d = i.docks.find((x) => x.kind === "timber");
           const at = i.screenAt(d.cx + d.mx * 1.0, 0.13, d.cz + d.mz * 1.0);
           i.cam().setViewOffset(innerWidth, innerHeight, 0, Math.round(at.y - innerHeight * 0.45), innerWidth, innerHeight);
+        } else if (name === "5-far") {
+          const n = [...i.docks].sort((a, b) => a.mz - b.mz)[0];
+          const a = i.docks.filter((x) => x.kind === "any").sort((p, q) => Math.hypot(p.cx - n.cx, p.cz - n.cz) - Math.hypot(q.cx - n.cx, q.cz - n.cz))[0];
+          const at = i.screenAt((n.cx + n.mx * 0.6 + a.cx + a.mx * 0.6) / 2, 0.13, (n.cz + n.mz * 0.6 + a.cz + a.mz * 0.6) / 2);
+          i.cam().setViewOffset(innerWidth, innerHeight, 0, Math.round(at.y - innerHeight * 0.33), innerWidth, innerHeight);
         }
         i.draw();
         i.renderer.getContext().finish();
+        const d = i.docks.find((x) => x.kind === "timber");
+        return i.screenAt(d.cx + d.mx * 0.9, 0.1, d.cz + d.mz * 0.9);
       }, name);
       const ok = await page.evaluate((lite) => lite || window.__isle.piers.every((p) => !p.visible), LITE);
       if (!ok) throw new Error(`${label} ${tag} ${name}: the shore is not in`);
-      const file = path.join(outDir, `${label}-${tag}-${name}.jpg`);
-      await page.screenshot({ path: file, type: "jpeg", quality: 86 });
-      console.log("saved", path.basename(file));
+      if (process.env.CROP3X === "1" && name === "4-owned") {
+        const clip = { x: Math.round(cropCenter.x - 100), y: Math.round(cropCenter.y - 80), width: 200, height: 140 };
+        const file = path.join(outDir, `${label}-${tag}-4-owned-detail-3x.png`);
+        await page.screenshot({ path: file, type: "png", clip });
+        console.log("saved", path.basename(file), JSON.stringify(clip));
+      } else {
+        const file = path.join(outDir, `${label}-${tag}-${name}.jpg`);
+        await page.screenshot({ path: file, type: "jpeg", quality: 88 });
+        console.log("saved", path.basename(file));
+      }
     }
     await ctx.close();
   }

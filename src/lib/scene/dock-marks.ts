@@ -6,65 +6,73 @@ import type { PAINT } from "@/lib/scene/palette";
 
 // One atlas, a row per kind, read from above.
 export const PLATE_KINDS: HarborKind[] = ["any", "timber", "clay", "wool", "grain", "ore"];
-// The goods' own symbols from the HUD (ResourceSymbols.tsx), drawn on a 24 box.
-const ICON: Record<Exclude<HarborKind, "any">, { fill: string[]; stroke: string[] }> = {
-  timber: { fill: ["m9 2-4 6h2l-4 6h3l-3 5h12l-3-5h3l-4-6h2L9 2Z"], stroke: ["M9 18v4m9-17-3 5h2l-3 5h8l-3-5h2l-3-5Z", "M18 15v5"] },
-  clay: { fill: ["M7.7 3h8.6a.7.7 0 0 1 .7.7v4.6a.7.7 0 0 1-.7.7H7.7a.7.7 0 0 1-.7-.7V3.7a.7.7 0 0 1 .7-.7Z", "M1.7 11h8.6a.7.7 0 0 1 .7.7v5.6a.7.7 0 0 1-.7.7H1.7a.7.7 0 0 1-.7-.7v-5.6a.7.7 0 0 1 .7-.7Z", "M13.7 11h8.6a.7.7 0 0 1 .7.7v5.6a.7.7 0 0 1-.7.7h-8.6a.7.7 0 0 1-.7-.7v-5.6a.7.7 0 0 1 .7-.7Z"], stroke: [] },
-  wool: { fill: ["M6 17.6C3.1 17.6 2.3 13.9 4.5 12.7 3.4 10.4 5.9 8.2 8 9.3 8.6 6.5 12.5 6.2 13.5 8.6 15.9 7.4 18.8 9.5 17.9 12 20.3 13.2 19.6 16.9 16.9 17.6Z", "M22.2 12.4a3.3 2.35 -12 1 1-6.6 0 3.3 2.35 -12 1 1 6.6 0Z"], stroke: ["M8.6 17.6v3.6M14.4 17.6v3.6"] },
-  grain: { fill: ["M13 7c-3 0-5-3-4-5 3 0 5 3 4 5Zm2 3c0-3 3-5 6-5 0 3-3 5-6 5Zm-5 2c-3 0-5-3-4-5 3 0 5 3 4 5Zm2 3c0-3 3-5 6-5 0 3-3 5-6 5Zm-5 2c-3 0-5-3-4-5 3 0 5 3 4 5Zm2 3c0-3 3-5 6-5 0 3-3 5-6 5Z"], stroke: ["M7 22 17 2"] },
-  ore: { fill: ["m2 20 7-14 7 14H2Zm11 0-3-6 5-12 8 18H13Z"], stroke: [] },
+// The goods' own symbols from the HUD (ResourceSymbols.tsx), drawn on a 24 box: [fill, stroke?].
+const ICON: Record<Exclude<HarborKind, "any">, [string, string?]> = {
+  timber: ["m9 2-4 6h2l-4 6h3l-3 5h12l-3-5h3l-4-6h2L9 2Z", "M9 18v4m9-17-3 5h2l-3 5h8l-3-5h2l-3-5ZM18 15v5"],
+  clay: ["M7.7 3h8.6a.7.7 0 0 1 .7.7v4.6a.7.7 0 0 1-.7.7H7.7a.7.7 0 0 1-.7-.7V3.7a.7.7 0 0 1 .7-.7ZM1.7 11h8.6a.7.7 0 0 1 .7.7v5.6a.7.7 0 0 1-.7.7H1.7a.7.7 0 0 1-.7-.7v-5.6a.7.7 0 0 1 .7-.7ZM13.7 11h8.6a.7.7 0 0 1 .7.7v5.6a.7.7 0 0 1-.7.7h-8.6a.7.7 0 0 1-.7-.7v-5.6a.7.7 0 0 1 .7-.7Z"],
+  wool: ["M6 17.6C3.1 17.6 2.3 13.9 4.5 12.7 3.4 10.4 5.9 8.2 8 9.3 8.6 6.5 12.5 6.2 13.5 8.6 15.9 7.4 18.8 9.5 17.9 12 20.3 13.2 19.6 16.9 16.9 17.6ZM22.2 12.4a3.3 2.35 -12 1 1-6.6 0 3.3 2.35 -12 1 1 6.6 0Z", "M8.6 17.6v3.6M14.4 17.6v3.6"],
+  grain: ["M13 7c-3 0-5-3-4-5 3 0 5 3 4 5Zm2 3c0-3 3-5 6-5 0 3-3 5-6 5Zm-5 2c-3 0-5-3-4-5 3 0 5 3 4 5Zm2 3c0-3 3-5 6-5 0 3-3 5-6 5Zm-5 2c-3 0-5-3-4-5 3 0 5 3 4 5Zm2 3c0-3 3-5 6-5 0 3-3 5-6 5Z", "M7 22 17 2"],
+  ore: ["m2 20 7-14 7 14H2Zm11 0-3-6 5-12 8 18H13Z"],
 };
-// One atlas, a row per kind: a white rim, the good's colour, its symbol in white on the left and the rate as white pips on the
-// right (two for 2:1, three for 3:1). A 3:1 dock's symbol is the five goods' colours in a ring: any good. No text, no cream.
+const W = "#fff";
+function glyph(x: CanvasRenderingContext2D, k: Exclude<HarborKind, "any">, ox: number, oy: number, s: number, ink: string) {
+  x.save();
+  x.translate(ox, oy);
+  x.scale(s, s);
+  x.fillStyle = x.strokeStyle = ink;
+  x.lineWidth = 2;
+  x.lineCap = x.lineJoin = "round";
+  const [f, st] = ICON[k];
+  x.fill(new Path2D(f));
+  if (st) x.stroke(new Path2D(st));
+  x.restore();
+}
+function dot(x: CanvasRenderingContext2D, cx: number, cy: number, r: number, fill: string) {
+  x.fillStyle = fill;
+  x.beginPath();
+  x.arc(cx, cy, r, 0, 7);
+  x.fill();
+}
+// #1593 (q1602-dock-fix, fix 3): one atlas factory. With no palette, returns the full board's 256x192 transparent white
+// symbol/pip rows for the painted pier-head boards; with a palette, returns the lite board's 256x128 painted-plank rows.
+let paintOnly: HTMLCanvasElement | null = null;
 let marks: HTMLCanvasElement | null = null;
-export function markCanvas(paint: typeof PAINT) {
-  if (marks) return marks;
-  const good = (k: HarborKind) => (k === "any" ? "#2f4f7a" : paint[k][0]);
+export function markCanvas(paint?: typeof PAINT) {
+  const hit = paint ? marks : paintOnly;
+  if (hit) return hit;
+  const h = paint ? 128 : 192;
   const c = document.createElement("canvas");
   c.width = 256;
-  c.height = 128 * PLATE_KINDS.length;
+  c.height = h * PLATE_KINDS.length;
   const x = c.getContext("2d")!;
+  const good = (k: HarborKind) => (k === "any" ? "#2f4f7a" : paint![k][0]);
   PLATE_KINDS.forEach((k, i) => {
-    const y = i * 128;
-    x.fillStyle = "#ffffff";
-    x.beginPath();
-    x.roundRect(2, y + 2, 252, 124, 40);
-    x.fill();
-    x.fillStyle = good(k);
-    x.beginPath();
-    x.roundRect(10, y + 10, 236, 108, 32);
-    x.fill();
-    const ink = k === "wool" || k === "grain" ? "#263d3c" : "#ffffff";
-    if (k === "any") {
-      (["timber", "clay", "wool", "grain", "ore"] as const).forEach((g, j) => {
-        const a = -Math.PI / 2 + (j * 2 * Math.PI) / 5;
-        x.fillStyle = "#ffffff";
-        x.beginPath();
-        x.arc(78 + Math.cos(a) * 26, y + 64 + Math.sin(a) * 26, 15, 0, 7);
-        x.fill();
-        x.fillStyle = good(g);
-        x.beginPath();
-        x.arc(78 + Math.cos(a) * 26, y + 64 + Math.sin(a) * 26, 11, 0, 7);
-        x.fill();
-      });
-    } else {
-      x.save();
-      x.translate(30, y + 16);
-      x.scale(4, 4);
-      x.fillStyle = x.strokeStyle = ink;
-      x.lineWidth = 2;
-      x.lineCap = x.lineJoin = "round";
-      for (const d of ICON[k].fill) x.fill(new Path2D(d));
-      for (const d of ICON[k].stroke) x.stroke(new Path2D(d));
-      x.restore();
+    const y = i * h;
+    if (!paint) {
+      if (k === "any") for (let j = -1; j <= 1; j++) dot(x, 128 + j * 62, y + 96, 22, W);
+      else {
+        glyph(x, k, 6, y + 12, 7, W);
+        for (const s of [-28, 28]) dot(x, 222, y + 96 + s, 19, W);
+      }
+      return;
     }
-    const n = k === "any" ? 3 : 2;
-    x.fillStyle = ink;
-    for (let j = 0; j < n; j++) {
+    for (const [p, r, f] of [[2, 40, W], [10, 32, good(k)]] as const) {
+      x.fillStyle = f;
       x.beginPath();
-      x.arc(n === 3 ? 158 + j * 30 : 172 + j * 34, y + 64, 12, 0, 7);
+      x.roundRect(p, y + p, 256 - p * 2, 128 - p * 2, r);
       x.fill();
     }
+    const ink = k === "wool" || k === "grain" ? "#263d3c" : W;
+    if (k === "any") {
+      (PLATE_KINDS.slice(1) as Exclude<HarborKind, "any">[]).forEach((g, j) => {
+        const a = -1.5708 + j * 1.2566;
+        const cx = 78 + Math.cos(a) * 26, cy = y + 64 + Math.sin(a) * 26;
+        dot(x, cx, cy, 15, W);
+        dot(x, cx, cy, 11, good(g));
+      });
+    } else glyph(x, k, 30, y + 16, 4, ink);
+    const n = k === "any" ? 3 : 2;
+    for (let j = 0; j < n; j++) dot(x, (n === 3 ? 158 : 172) + j * (n === 3 ? 30 : 34), y + 64, 12, ink);
   });
-  return (marks = c);
+  return paint ? (marks = c) : (paintOnly = c);
 }
