@@ -6,20 +6,15 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { MessageSquare, Landmark, AtSign, Handshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SeatDot, SeatNo } from "@/components/game/SeatDot";
+import { seatAway } from "@/components/game/seat-away";
 import type { PlayerState } from "@/lib/game/types";
 import { fortuneBreakdown } from "@/lib/game/fortunes";
 import { cards, hiddenCount, publicVP, publicScoreBreakdown, roadLength } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
-import type { Seat } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
 import { chunk, LazyBoundary } from "@/lib/lazy";
 
 const MenuNeeds = chunk(() => import("@/components/game/SeatNeeds")).pick(module => module.MenuNeeds);
-
-// The seat's socket dropped and the table is holding it (docs/design/spectator.md "away").
-export function seatAway(seats: Seat[], p: PlayerState) {
-  return seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name));
-}
 
 const CHAT_INPUT = "chat-input";
 

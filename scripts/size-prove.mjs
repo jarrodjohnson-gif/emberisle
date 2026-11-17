@@ -23,13 +23,17 @@ const DIR = "dist/assets";
 const CEILINGS = [
   // #646: lazy public needs and picker; reviewed ceiling retained.
   { name: "SeatNeeds", gzipBytes: 1900 },
-  { name: "LobbyView", gzipBytes: 2500 },
+  // #1611: raised from 2,500 B to 2,600 B by the owner (q1656-online-six A, 2026-11-14): six lobby rows with seat numbers;
+  // measured 2,527 B.
+  { name: "LobbyView", gzipBytes: 2600 },
   // #1262: Sandwich Stacker shelf and player, measured 1867 B gzip. The owner must OK this new ceiling before merge.
   { name: "LobbyWaitBox", gzipBytes: 2100 }, // #1366, 2026-11-07: back to 2,100 B after the trim in PR #1373
   // #1263: tic-tac-toe tile and board, loaded with the shelf; measured 1390 B gzip. Decided 2026-11-07, q-size-standing.
   { name: "LobbyTicTacToe", gzipBytes: 1600 },
   // #553: shared on-demand table transport, measured 2.08 kB; existing caps stay fixed.
-  { name: "table", gzipBytes: 2200 }, // #1366, 2026-11-07: back to 2,200 B after the trim in PR #1373
+  // #1611: raised from 2,200 B to 2,300 B by the owner (q1656-online-six A, 2026-11-14): the capability in every hello and
+  // the rematch choice; measured 2,222 B.
+  { name: "table", gzipBytes: 2300 }, // #1366, 2026-11-07: back to 2,200 B after the trim in PR #1373
   // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
   { name: "haptics", gzipBytes: 1200 },
   // #1283: raised from 125,200 B to 127,000 B per owner decision 2026-11-03.
@@ -116,6 +120,15 @@ const CEILINGS = [
   // #1609: the five and six seat island and paired turns (src/lib/game/expanded.ts), loaded only for those games; measured
   // 2,952 B gzip. New chunk; the desk set this ceiling (PR #1655, 2026-11-14, with q1655-five-six-start A).
   { name: "expanded", gzipBytes: 3300 },
+  // #1665, 2026-11-14: the seat menu, loaded on idle and on the first seat press; measured 2,726 B gzip. New chunk; the desk
+  // set this ceiling (PR #1674).
+  { name: "PlayerMenu", gzipBytes: 3000 },
+  // #1665, 2026-11-14: the fortune card table the seat menu shares with the hand; measured 543 B gzip. New chunk; the desk set
+  // this ceiling (PR #1674).
+  { name: "fortunes", gzipBytes: 600 },
+  // #1665, 2026-11-14: the message icon the seat menu shares with chat; measured 248 B gzip. New chunk; the desk set this
+  // ceiling (PR #1674).
+  { name: "message-square", gzipBytes: 280 },
   // #827: other seats' public roll and trade gains load lazily (online only); a new chunk, so this ceiling is its only limit.
   { name: "SeatPublicGains", gzipBytes: 1800 },
 ];
@@ -123,6 +136,8 @@ const CEILINGS = [
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
 const ALLOWANCE = {
   index: 400,
+  // hex-jelly is 600 B per owner decision card q1255-size (2026-11-12).
+  "hex-jelly": 600,
   // #1595, 2026-11-13: the tray polish may grow losses by up to 300 B, for this change only (owner, q1597-losses-size, A).
   losses: 300,
 };

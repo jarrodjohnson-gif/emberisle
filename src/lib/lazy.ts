@@ -11,6 +11,9 @@ import { JOIN_CODE } from "@/lib/net/proto";
 // protocol allows, so a loaded chunk renders synchronously on every later pass (React must see `use` called on each pass).
 type Tracked<M> = Promise<M> & { status?: "fulfilled" | "rejected"; value?: M; reason?: unknown; waited?: boolean };
 
+// A promise `use` reads at once, with no suspended pass.
+const settled: Tracked<void> = Object.assign(Promise.resolve(), { status: "fulfilled" as const });
+
 // The boundary that catches a chunk's failure forgets it, so the next mount asks the network: keyed by the error thrown.
 const caught = new WeakMap<object, () => void>();
 
@@ -50,25 +53,35 @@ export function chunk<M>(load: () => Promise<M>) {
   };
   // Resolves true once the chunk is in memory, false if the load failed.
   const prefetch = () => preload().then(() => true, () => false);
+  // The load a render waits on. A failed prefetch no render waited on (the table's idle one, with the win screen mounting at
+  // game over) is dropped, and this render asks the network. A failure a render waited on has to reach the boundary, which
+  // forgets it.
+  const current = () => {
+    let p = preload();
+    if (p.status === "rejected" && !p.waited) {
+      pending = undefined;
+      p = preload();
+    }
+    if (!p.status) p.waited = true;
+    return p;
+  };
   const pick = <P extends object>(select: (m: M) => ComponentType<P>) =>
     function Lazy(props: P) {
-      let p = preload();
-      // A failed prefetch no render waited on (the table's idle one, with the win screen mounting at game over) is dropped,
-      // and this mount asks the network. A failure this component waited on has to reach the boundary, which forgets it.
-      if (p.status === "rejected" && !p.waited) {
-        pending = undefined;
-        p = preload();
-      }
-      if (!p.status) p.waited = true;
       // React's type for `use` wants one settled shape at a time; the promise reports whichever it is in at run time.
-      return createElement(select(use(p as Promise<M>)), props);
+      return createElement(select(use(current() as Promise<M>)), props);
     };
+  // #1695: for a parent that holds its first paint until this chunk has run or failed: a promise for `use` that never rejects,
+  // to keep across renders, already settled once the chunk has (a failure is still the boundary's around its component).
+  const ready = (): Promise<void> => {
+    const p = current();
+    return p.status ? settled : p.then(() => {}, () => {});
+  };
   // Non-React callers share the same cache and failed-URL retry as the UI.
   const loadModule = () => {
     if (pending?.status === "rejected") pending = undefined;
     return preload();
   };
-  return { prefetch, pick, load: loadModule };
+  return { prefetch, pick, ready, load: loadModule };
 }
 
 // #1281: the startup loading screen's real progress, set by the island as it comes up (first frame drawn, Hex Jelly scenes
