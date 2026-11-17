@@ -14,18 +14,20 @@ The owner must listen before the implementation merges.
 
 Current [sound.ts](../../src/lib/sound.ts#L273) uses one looping `HTMLAudioElement`, `BG_VOLUME = 0.12` and `BG_DUCK = 0.3`.
 Its gain is `BG_VOLUME * (ducked ? BG_DUCK : 1) * categoryGain("music")`.
-Reuse its gesture unlock, retry, wanted-screen, mute, music-toggle and sting-ducking contracts.
-The current [wanted-screen caller](../../src/components/game/EmberisleApp.tsx#L50) includes title music.
-Do not copy the older proposal’s silence assumption as a current fact.
+Retain its gesture unlock, retry, mute, music-toggle and sting-ducking contracts while the open policy questions wait.
+The approved proposal specifies total music gain `0.25`; current code uses `0.12`. These conflict; this note chooses neither.
+The approved proposal keeps title/game-over silence. The current [wanted-screen caller](../../src/components/game/EmberisleApp.tsx#L50) includes title music.
+[Question 6940531449](https://github.com/jarrodjohnson-gif/emberisle/issues/845#issuecomment-6940531449) asks the owner to resolve both conflicts.
+The desk placed them on card `q845-music-today`; no gain or screen-policy change is authorized before the answer.
 
 The [October 24 level decision](../DECISIONS.md) requires levelling by type, with all game music equally loud.
 Table effects and reactions have their own type levels. The owner approves targets by ear.
-`0.12` is the current starting gain, not approval for new track levels or a replacement levelling policy.
+The observed `0.12` is not a choice of adaptive gain or a replacement levelling policy.
 
 ## Approved selection and linear transition
 
 Use public leader points and the configured victory target.
-[publicVP and victoryTarget](../../src/lib/game/rules.ts#L251) provide these inputs; hidden fortunes must not affect the music.
+[publicVP](../../src/lib/game/rules.ts#L251) and [victoryTarget](../../src/lib/game/rules.ts#L260) provide these inputs; hidden fortunes must not affect the music.
 
 | Phase | Track | Public score condition |
 |---|---|---|
@@ -42,12 +44,12 @@ Keep lobby and setup Calm. “Final turns” means public match-point proximity,
 A transition lasts three seconds, with progress `t` from 0 to 1.
 Outgoing and incoming weights are `1 - t` and `t`.
 At the midpoint both weights are 0.5; their sum stays 1. Do not substitute cosine/sine equal-power curves.
-Retarget from the current weights when the desired track changes, preserving the current music-level and ducking controls.
+Retarget from the current weights when the desired track changes. Keep ducking/category controls separate from the unresolved gain choice.
 Mute or music-off stops every fading track. This note selects no new playback engine or timing constants.
 
 ## Size estimates, not budgets
 
-The earlier 128 kbps, 60–90 second example implies the following payload sizes.
+Assuming 128 kbps and 60–90 seconds gives the following example payload sizes.
 These are calculations, not measurements of selected files or device memory. MB means 1,000,000 bytes.
 
 - Encoded bytes: `128000 / 8 * seconds`, before container overhead.
@@ -63,12 +65,12 @@ These are calculations, not measurements of selected files or device memory. MB 
 | Float32 sample data | 60 | 21.168 | 63.504 |
 | Float32 sample data | 90 | 31.752 | 95.256 |
 
-Thus the draft’s sub-700 KB file, 2.1 MB total and 35 MB decoded-memory claims do not follow from its assumptions.
+These sample-data estimates do not establish any download or device-memory ceiling.
 This research sets no replacement download or memory ceiling. Choose assets and loading policy using measurements and approved limits.
 Browser resampling, decoder state, copies and object overhead can add memory beyond the sample-data estimates.
 The current HTML media player’s memory use cannot be inferred from the proposed Web Audio buffer calculation.
 
-The earlier Web Audio graph and prefetch thresholds remain unapproved proposals, not implementation requirements.
+A Web Audio graph and prefetch thresholds would require design choices; this research selects neither.
 Keep audio outside JavaScript chunks. Verify licences and record exact sources in [sound.md](../design/sound.md) before importing files.
 Check the Battle loop seam and obtain the owner’s listening approval; this research performs no audio import or audition.
 
