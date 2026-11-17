@@ -187,7 +187,9 @@ try {
     await choose("classic");
     check("switch copies current glow and blocking without replaying events", signals.roll === 0 && signals.tap === 0 && signals.glow.some(([id, level]) => id === paid && level === 0.2) && signals.robber.length > 0, signals);
     ClassicBoard.create = originalClassic;
-    const context = r.visibility(), frozen = JSON.stringify(context);
+    // The same by-value context the renderer hands a look each frame (appearance-controller.ts, since the #1341 split).
+    const context = { view: r.view, camera: { ...r.cam().position }, azimuth: r.view === "diorama" ? r.orbit.getAzimuthalAngle() : 0,
+      tokens: r.tokens.map((t) => ({ ...t.position, glyphBottom: t.position.y - r.glyphDrop })) }, frozen = JSON.stringify(context);
     r.landAppearance.setVisibilityContext(context);
     check("visibility update does not mutate caller snapshot", JSON.stringify(context) === frozen);
     draw();
@@ -327,7 +329,8 @@ try {
   console.log(`production lazy requests ${JSON.stringify(prodRequests.filter((url) => /jelly-board|classic-board/.test(url)))}`);
   // Actual playable-board views, separately labelled from the earlier title pictures.
   await prod.setViewportSize({ width: 1280, height: 720 });
-  await prod.getByRole("button", { name: "Four seats, one table" }).click();
+  // The title no longer has a "Four seats, one table" button (#1609); "Pass and play" deals the same four-seat board.
+  await prod.getByRole("button", { name: "Pass and play" }).click();
   await prod.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: 120_000 });
   await prod.evaluate(() => {
     const game = window.__emberisle;
