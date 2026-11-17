@@ -643,6 +643,8 @@ jobs:
         run: npm run pieces-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run pieces-land-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
+        run: npm run legal-edge-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run landing-dust-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-water'

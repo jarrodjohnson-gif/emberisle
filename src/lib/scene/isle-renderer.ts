@@ -2141,19 +2141,36 @@ export class IsleRenderer {
       this.marks.add(pick);
       this.pickables.push(pick);
     }
+    // Ivory path bars need a dark rim on pale ground; keep it outside the pickable set, like the corner outlines.
+    const edgeOutlines = seat.getHex() === 0xf3ecd9 && eset.size
+      ? new THREE.InstancedMesh(new THREE.BoxGeometry(0.32, 0.068, 1), new THREE.MeshBasicMaterial({ color: RIM.dark }), eset.size)
+      : null;
+    if (edgeOutlines) {
+      edgeOutlines.userData = { kind: "edge-outlines" };
+      this.marks.add(edgeOutlines);
+    }
+    let edgeInstance = 0;
     for (const e of state.edges) {
       if (!eset.has(e.id)) continue;
       const a = vmap.get(e.va)!;
       const b = vmap.get(e.vb)!;
+      const span = Math.hypot(b.x - a.x, b.z - a.z);
       const m = new THREE.Mesh(
-        new THREE.BoxGeometry(0.16, 0.07, Math.hypot(b.x - a.x, b.z - a.z) * 0.72),
+        new THREE.BoxGeometry(0.16, 0.07, span * 0.72),
         new THREE.MeshStandardMaterial({ color: seat, emissive: glow, emissiveIntensity: 0.45 }),
       );
       m.position.set((a.x + b.x) / 2, edgeTop(tops, a, b) + 0.035, (a.z + b.z) / 2);
       m.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);
       m.userData = { kind: "edge", id: e.id, baseGlow: 0.45 };
       this.marks.add(m);
-      const len = Math.hypot(b.x - a.x, b.z - a.z) * PICK_EDGE.lengthScale;
+      if (edgeOutlines) {
+        dummy.position.set(m.position.x, m.position.y - 0.001, m.position.z);
+        dummy.rotation.copy(m.rotation);
+        dummy.scale.set(1, 1, span * 0.8);
+        dummy.updateMatrix();
+        edgeOutlines.setMatrixAt(edgeInstance++, dummy.matrix);
+      }
+      const len = span * PICK_EDGE.lengthScale;
       const pick = new THREE.Mesh(new THREE.BoxGeometry(PICK_EDGE.w, PICK_EDGE.h, len), new THREE.MeshBasicMaterial());
       pick.visible = false;
       pick.position.copy(m.position);
@@ -2162,6 +2179,7 @@ export class IsleRenderer {
       this.marks.add(pick);
       this.pickables.push(pick);
     }
+    if (edgeOutlines) edgeOutlines.instanceMatrix.needsUpdate = true;
     for (const h of state.hexes) {
       if (!hset.has(h.id)) continue;
       const { x, z } = worldOfHex(h);
