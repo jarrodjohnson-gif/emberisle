@@ -3,7 +3,7 @@
 Research only, updated 2026-11-17 by Codex-p (GPT-6.1 Sol).
 Original research: builder-a11y, 2026-11-13; model unrecorded.
 Source snapshot: main `787d386185a299d108058f09a40654d7f4d5722b`.
-No host, transport, store, audio, projection, assertion or budget implementation is included.
+This note changes no host, transport, store, audio, projection, assertion or budget implementation.
 
 ## Design references and actual dependency state
 
@@ -16,7 +16,7 @@ Present listeners include watchers. Initial finished-state loads, rejoin, resync
 
 #1043 and the #768 research issue are closed. That does not complete #1045 or approve an arbitrary wire payload.
 #1044 remains open. Its proposed `playForeground`, `cancelForeground`, `foregroundScope` and `playEndMusic`
-helpers belong to `builder-opus/issue-1044`, not this main snapshot's sound module.
+helpers belong to `builder-opus/issue-1044`. The main snapshot's sound module does not provide them.
 This research does not present that branch as shipped or reserve its builder's files.
 Integration must use the reviewed real audio owner after its dependency lands.
 
@@ -29,9 +29,9 @@ The future contract must handle profile-free terminal identity without inventing
 It must preserve the actual journaled outcome boundary and frozen winner binding.
 
 [profile-seat-prove](../../server/profile-seat-prove.mjs#L631) asserts that private fields, including `winSongId`, never reach table or watcher sockets.
-The earlier direct `result.playback.winSongId` example conflicts with that assertion and is withdrawn.
+The earlier direct `result.playback.winSongId` example conflicts with that assertion. I withdraw that example.
 Closing the #768 research issue does not waive this privacy gate.
-No replacement assertion or public playback field is selected here.
+This note selects no replacement assertion or public playback field.
 Any future owner-approved contract that makes a test obsolete must follow the replacement rule in [DECISIONS](../DECISIONS.md).
 Use its own commit, an old/new table and equivalent coverage. Never delete or bypass the assertion.
 Otherwise retain the existing assertion unchanged. This note changes no test.
@@ -40,15 +40,19 @@ Otherwise retain the existing assertion unchanged. This note changes no test.
 
 The designed selected-outcome path plays the validated choice for every present listener, including watchers.
 The documented default is `win` for the winner and `game_lose` for others.
-The earlier invented spectator-default sound is withdrawn; this note changes no listener policy.
+I withdraw the earlier invented spectator-default sound. This note changes no listener policy.
 [Question 6941304872](https://github.com/jarrodjohnson-gif/emberisle/issues/1045#issuecomment-6941304872)
-asks to keep projection, assertion and audio integration gated. The issue comments hold the exact answer and current gates.
+received [desk answer 6941314110](https://github.com/jarrodjohnson-gif/emberisle/issues/1045#issuecomment-6941314110).
+The desk gates three things on #1044 and a reviewed public playback contract:
+the wire shape, any replacement of the line 631 privacy assertion, and audio integration.
+The contract must also cover guest-only games. It requires Opus review for this tier:1 issue.
+Any new sound behavior goes to Jarrod. This research selects none of those implementation choices.
 
 Preserve per-listener mute, gesture and Skip controls, cancellation and the reviewed fallback once.
 Do not delay gameplay or result recording for audio. Queue end music after actual outcome-clip completion.
 Navigation, rematch, cancellation and stale async completion must suppress late fallback/end starts.
 These are future acceptance requirements, not evidence that absent #1044 helpers work on main.
-No new gain, priority rank, watcher sound, projection or fixed end-delay rule is introduced here.
+This note introduces no gain, priority rank, watcher sound, projection or fixed end-delay rule.
 
 ## Future evidence and handoff
 
