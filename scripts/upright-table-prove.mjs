@@ -141,6 +141,7 @@ try {
     const scale = Math.min((a.w - 2 * a.EDGE_GAP) / (2 * a.SHORE_HALF_X), (a.w / 2 - a.PILE_GAP) / a.PILE_HALF_X);
     assert.ok(Math.abs(a.unit / scale - 1) < 0.005, `${tag}: ${a.unit.toFixed(2)} px a world unit, not ${scale.toFixed(2)}`);
     assert.ok(Math.abs(gapL - gapR) <= 1 && gapL >= a.EDGE_GAP - 1, `${tag}: the shore is ${gapL.toFixed(1)} px from the left edge and ${gapR.toFixed(1)} px from the right`);
+    assert.ok(gapL <= a.EDGE_GAP + 1 && gapR <= a.EDGE_GAP + 1, `${tag}: shore stopped short of ${a.EDGE_GAP} px (${gapL.toFixed(1)} / ${gapR.toFixed(1)} px)`);
     assert.ok(a.piles.length === 9 && a.piles.every((q) => q.l >= 0 && q.r <= a.w && q.t >= 0 && q.b <= a.h), `${tag}: goods piles off screen ${JSON.stringify(a.piles.filter((q) => q.l < 0 || q.r > a.w))}`);
     assert.ok(a.docks.length === 18 && a.docks.every((d) => d >= -0.5), `${tag}: a dock leaves the hole's top or bottom by ${Math.min(...a.docks).toFixed(1)} px`);
     assert.ok(a.buttons.length === 9 && a.buttons.every((b) => b.w >= 44 && b.l >= 0 && b.t >= 0 && b.r <= a.w && b.b <= a.h), `${tag}: dock buttons off screen ${JSON.stringify(a.buttons)}`);
