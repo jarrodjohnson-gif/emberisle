@@ -1,108 +1,103 @@
 # Design: Share-Your-Game Card (#1454)
 
-- date: 2026-11-13
-- status: design stage only
-- lane: hud (tier 1)
+- date: 2026-11-17
+- status: design packet (Step 1; awaiting owner choices on #1454)
+- lane: hud (tier 1, prio:p1)
 - issue: [#1454](https://github.com/jarrodjohnson-gif/emberisle/issues/1454)
 - dependencies: #1450, #1452, DECISIONS 2026-10-27
 
 ## 1. Overview
-The owner approved building the top three fun features from #1450 on 2026-11-08.
-This issue represents item three: the share-your-game card.
-It allows players to export and share a visual summary of their finished game.
-Players can share cards directly to Instagram, Threads, and messaging apps.
-The card combines the final board render, standings, and island awards from #1452.
+The owner picked the top three fun features from #1450 on 2026-11-08.
+This design packet covers item three: the share-your-game card.
+A Share button on the results screen generates one image of the finished game.
+The image combines the final 3D island, final standings for 2–6 players, and island awards from #1452.
+Players can post the card directly to Threads, Instagram, and messaging apps (DECISIONS 2026-10-27).
 
-## 2. Results Screen UI and Button Placement
-A Share button appears on the results screen when the game finishes.
-It integrates into existing results surfaces without adding permanent chrome.
+## 2. Open Owner Decisions
+This packet proposes two design choices for the owner to pick on Issue #1454.
+No runtime code ships until the owner approves both choices.
 
-### Button Locations
-1. **Primary Results Sheet:**
-   The button sits in the `.win-actions` button row in `WinScreen.tsx`.
-   It sits between `React` and `Hide scores`.
-   It uses `variant="secondary"` with a 44 px minimum touch height.
-   The label displays "Share".
+### Decision 1: Share Button Placement on WinScreen
+The results screen currently places actions in `.win-actions` (`src/components/game/WinScreen.tsx:223-265`).
+Two placements fit the 390 × 844 phone viewport without adding permanent board chrome:
 
-2. **Hidden Results Chip:**
-   When scores are hidden, the chip includes a compact "Share" action.
-   It sits alongside `Show scores`, `Play again`, and `Menu`.
-   Keyboard navigation reaches both buttons using Tab.
+- **Option A (Recommended) — Action bar beside Hide scores:**
+  Insert a secondary `Share` button before `Hide scores` (`src/components/game/WinScreen.tsx:240-242`).
+  On 390 × 844 phones, `Share` shares row one with `Next game` and `React`.
+  It adds zero extra rows and keeps every post-game button in one bar.
+  When scores hide (`src/components/game/WinScreen.tsx:149-160`), add a compact `Share` button to `win-chip`.
+- **Option B — Results sheet header:**
+  Place a 44 px `Share` button on the right of `#win-headline` (`src/components/game/WinScreen.tsx:203-208`).
+  This leaves `.win-actions` untouched and keeps `React` wider on narrow phones.
 
-### User Interaction Flow
-1. The player finishes a game and reaches the victory screen.
-2. The player taps the Share button.
-3. The app dynamically imports the lazy card generator chunk.
-4. The generator composes the final board snapshot, standings, and awards.
-5. Supported devices open the native operating system share sheet.
-6. Other browsers trigger a direct PNG image download.
+![WinScreen Share Button Placement](winscreen-share-button-390x844.png)
 
-## 3. Native Share and Fallback Strategy
-Sharing uses modern browser APIs with graceful degradation.
+### Decision 2: Card Visual Style
+Two card styles render the real 3D final island at exact social dimensions:
 
-### Web Share API Level 2
-- The app checks `navigator.canShare({ files: [imageFile] })`.
-- On iOS Safari and Android Chrome, `navigator.share()` opens the native share sheet.
-- Users can post directly to Instagram Stories, Threads, Messages, or AirDrop.
-- The payload includes the image file, game title, and public join link.
+- **Option A (Recommended) — Ocean-framed tray card:**
+  Frames a crisp white Emberisle tray card inside a deep crystal-sea border.
+  The final 3D island sits cleanly in its own panel above the standings.
+  Every hex, dock, and building stays completely visible with zero overlap.
+- **Option B — Full-bleed island poster:**
+  Fills the canvas edge-to-edge with the crystal sea and 3D island.
+  A floating white results tray overlays the bottom half, mirroring the live WinScreen.
 
-### Download Fallback
-- Desktop browsers and unsupported clients receive a fallback download.
-- The generator creates an object URL from the image blob.
-- An anchor tag triggers a download with filename `emberisle-game-<code/date>.png`.
-- Tapping Share on desktop immediately saves the graphic to disk.
+| Option A — Ocean-framed tray (Recommended) | Option B — Full-bleed poster |
+|---|---|
+| ![Option A 1080x1350](card-1080x1350-4p.png) | ![Option B 1080x1350](card-1080x1350-option-b.png) |
 
-## 4. Card Formats and Dimensions
-The card renders at high resolution for modern social networks.
-Two standard aspect ratios are defined:
+## 3. Card Formats for 2–6 Player Tables
+Emberisle supports 2–4 player classic islands (19 hexes) and 5–6 player expanded islands (30 hexes).
+Expanded tables use the six certified colours in `src/lib/game/expanded.ts:44` (`EXPANDED_COLORS`) and `expanded.ts:48` (`EXPANDED_SEATS`).
+Both card ratios adapt cleanly from two seats up to six seats.
 
-### Format A: Portrait Feed (1080 × 1350 px, 4:5 Ratio)
-- Tailored for Instagram and Threads feed posts.
-- **Top Bar (160 px):** Emberisle header, room code, date, and turn count.
-- **Board Snapshot (650 px):** Centered perspective capture of the final 3D island.
-- **Standings Box (380 px):** Four player rows with colors, scores, and winner highlight.
-- **Awards Line (80 px):** Earned island award badges from #1452.
-- **Footer (80 px):** Clean watermark and public web link.
+### Portrait Feed: 1080 × 1350 px (4:5 Ratio)
+Targeted at Instagram and Threads feed posts.
+- **2–4 players:** Single-column standings stack under the 19-hex island render.
+- **5–6 players:** Compact two-column standings grid under the 30-hex island render.
+  All six player names, seat colour dots, scores, and award lines stay readable without clipping.
 
-### Format B: Vertical Story (1080 × 1920 px, 9:16 Ratio)
-- Tailored for Instagram Stories, TikTok, and phone wallpapers.
-- **Top Header (280 px):** Large title, room date, and game outcome badge.
-- **Island Centerpiece (840 px):** Immersive, detailed view of the finished board.
-- **Standings Table (520 px):** Full scoreboard with player breakdown and badges.
-- **Awards Section (160 px):** Standout award titles for each participant.
-- **Bottom Callout (120 px):** Emberisle domain and invitation link.
+| 4-Player Classic (1080 × 1350) | 6-Player Expanded (1080 × 1350) |
+|---|---|
+| ![4p Feed](card-1080x1350-4p.png) | ![6p Feed](card-1080x1350-6p.png) |
 
-## 5. Privacy and Security Invariants
-Sharing must protect player privacy and host secrets:
-- **No Seat Secrets:**
-  Cards and links never carry seat secrets, reconnect tokens, or auth cookies.
-- **Public URL Only:**
-  The card includes the public game join link or table code only.
-- **Post-Game Reveal Only:**
-  The Share button generates cards strictly after `phase === "over"`.
-- **No Mid-Game Leaks:**
-  Cards never reveal active hands, unplayed fortunes, or private player notes.
+### Vertical Story: 1080 × 1920 px (9:16 Ratio)
+Targeted at Instagram Stories and full-screen mobile sharing.
+- **Safe zones:** 110 px ocean borders at top and bottom keep content clear of Story UI overlays.
+- **2–6 players:** Single-column standings list fits all six seats with full award text and zero scrolling.
 
-## 6. Performance and Chunk Budget
-Generating share cards must not penalize core game performance:
-- **Zero Impact on IslandCanvas:**
-  The card generator must not increase `IslandCanvas` bundle size.
-- **Lazy Loading on Tap:**
-  Code loads strictly when the user taps Share via `import("@/components/game/ShareCard")`.
-- **Canvas Rendering:**
-  The card renders via an offscreen canvas using WebGL `toBlob()`.
-- **Estimated Size:**
-  The generator chunk is estimated at 1.2 kB to 1.5 kB gzip.
-- **Desk Ceiling:**
-  The desk will establish an explicit chunk ceiling upon implementation.
+| 4-Player Classic (1080 × 1920) | 6-Player Expanded (1080 × 1920) |
+|---|---|
+| ![4p Story](card-1080x1920-4p.png) | ![6p Story](card-1080x1920-6p.png) |
 
-## 7. Implementation Plan
-Implementation will proceed across four bounded steps:
-1. **Mock and Review:**
-   Verify card layout and button spacing with the project owner.
-2. **Lazy Chunk Creation:**
-   Create `src/components/game/ShareCard.tsx` and image composition logic.
-3. **WinScreen Integration:**
-   Add Share button to `WinScreen.tsx` with lazy loading on click.
-4. **Automated Verification:**
-   Add `scripts/share-card-prove.mjs` verifying share invocations, fallbacks, and security invariants.
+## 4. Native Share and Download Fallback
+Tapping `Share` composes the PNG blob on an offscreen 2D canvas using the live WebGL snapshot.
+
+- **Web Share API Level 2 (Phones):**
+  Check `navigator.canShare?.({ files: [file] })` before calling `navigator.share({ files: [file], title, url })`.
+  iOS Safari and Android Chrome open the native share sheet for Threads, Instagram, Messages, and AirDrop.
+  Treat `AbortError` as a clean user cancel with no error toast.
+- **Download Fallback (Desktop and unsupported browsers):**
+  Create an object URL for the PNG blob and trigger `<a download="emberisle-YYYY-MM-DD.png">`.
+  Revoke the object URL after the click completes.
+
+## 5. Privacy and Security Boundaries
+- **Public link only:** Include the public game link only, never a seat secret or reconnect token.
+- **Post-win only:** Mount the Share trigger strictly when `state.phase === "over"`.
+- **No hidden leaks:** Never read or render unrevealed hands, deck order, or private profile fields.
+
+## 6. Lazy Chunking and Size Budget
+- **Zero `IslandCanvas` growth:** Keep all card layout and export code out of `IslandCanvas` and `index`.
+- **Load on tap:** Dynamically import the new `ShareCard` module only when a player taps `Share`.
+- **Measured budget:** This design packet contains no runtime code, so it states no guessed gzip estimate.
+  Step 2 will measure the real built chunk with `npm run build && npm run size-prove` under a desk-set ceiling.
+
+## 7. How the Mockups Were Captured
+[capture.mjs](capture.mjs) plays real 4-seat and 6-seat games to completion via `createAnyGame` and `chooseBotAction`.
+It renders both finished boards in the real Vite app with Playwright Chromium and captures live WebGL PNGs.
+It also captures both WinScreen button placements on the real 390 × 844 results dialog.
+Run locally under the Playwright lock:
+```bash
+node --import ./server/register.mjs docs/design/share-card/capture.mjs
+```
