@@ -30,14 +30,14 @@ The unchanged-main baseline is `a7122815c489d2fd5dfd660acc1d03a82f739b01`.
 The after source SHA256 is `ebeae9f28d47e506f5e872216ad5bf62739270a91fe81bdbc3f284443cf108a2`.
 Browser: 153.0.8010.12; Node: v22.23.4.
 
-| Viewport | Motion | Before ratio range | Minimum after ratio | Before | After |
+| Viewport | Motion | Before ratio range | After ratio range | Before | After |
 |---|---|---:|---:|---|---|
-| 430x932 | normal | 1.000–1.035:1 | 7.752:1 | [PNG](before/p2-430x932-motion.png) | [PNG](after/p2-430x932-motion.png) |
-| 390x844 | normal | 1.000–1.155:1 | 7.554:1 | [PNG](before/p2-390x844-motion.png) | [PNG](after/p2-390x844-motion.png) |
-| 844x390 | normal | 1.003–1.091:1 | 7.327:1 | [PNG](before/p2-844x390-motion.png) | [PNG](after/p2-844x390-motion.png) |
-| 430x932 | reduced | 1.000–1.035:1 | 7.752:1 | [PNG](before/p2-430x932-reduce.png) | [PNG](after/p2-430x932-reduce.png) |
-| 390x844 | reduced | 1.000–1.155:1 | 7.554:1 | [PNG](before/p2-390x844-reduce.png) | [PNG](after/p2-390x844-reduce.png) |
-| 844x390 | reduced | 1.003–1.091:1 | 7.327:1 | [PNG](before/p2-844x390-reduce.png) | [PNG](after/p2-844x390-reduce.png) |
+| 430x932 | normal | 1.000–1.035:1 | 7.752–8.619:1 | [PNG](before/p2-430x932-motion.png) | [PNG](after/p2-430x932-motion.png) |
+| 390x844 | normal | 1.000–1.155:1 | 7.554–8.646:1 | [PNG](before/p2-390x844-motion.png) | [PNG](after/p2-390x844-motion.png) |
+| 844x390 | normal | 1.003–1.091:1 | 7.327–8.644:1 | [PNG](before/p2-844x390-motion.png) | [PNG](after/p2-844x390-motion.png) |
+| 430x932 | reduced | 1.000–1.035:1 | 7.752–8.619:1 | [PNG](before/p2-430x932-reduce.png) | [PNG](after/p2-430x932-reduce.png) |
+| 390x844 | reduced | 1.000–1.155:1 | 7.554–8.646:1 | [PNG](before/p2-390x844-reduce.png) | [PNG](after/p2-390x844-reduce.png) |
+| 844x390 | reduced | 1.003–1.091:1 | 7.327–8.644:1 | [PNG](before/p2-844x390-reduce.png) | [PNG](after/p2-844x390-reduce.png) |
 
 The baseline completed all nine cases with 42 expected missing-underlay/contrast failures and zero console errors.
 The after command completed all nine cases with zero console errors and no failed checks.
