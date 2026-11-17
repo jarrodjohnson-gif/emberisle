@@ -122,7 +122,9 @@ export interface TableEvents {
   react(r: Reaction): void;
   log(text: string): void;
   error(message: string, request?: "need"): void;
-  tradeOffer(msg: { tradeId: string; from: string; give: Bag; want: Bag; seconds: number | null }): void;
+  tradeOffer(msg: { tradeId: string; from: string; give: Bag; want: Bag; seconds: number | null; counter?: true }): void;
+  tradeCounter(msg: { tradeId: string; counterId: string; by: string; name: string; give: Bag; want: Bag }): void;
+  tradeCounterClosed(msg: { tradeId: string; counterId: string; why: "no" | "back" | "gone" }): void;
   tradeDeclined(msg: { tradeId: string; by: string; name: string }): void;
   tradeClosed(msg: { tradeId: string; taker?: string }): void;
   // The socket dropped and the client is dialing again (attempt 1, 2, ...); `closed` follows only if it gives up.
@@ -192,6 +194,9 @@ export interface TableClient {
   act(action: Action): boolean;
   // Ask-the-table trades are host-run (not rules Actions): offer `give` for `want` to every other seat, and answer one.
   ask(give: Bag, want: Bag): void;
+  counter(tradeId: string, give: Bag, want: Bag): void;
+  answerCounter(tradeId: string, counterId: string, yes: boolean): void;
+  cancelCounter(tradeId: string, counterId: string): void;
   answer(tradeId: string, yes: boolean): void;
   need(kinds: Resource[]): void;
   cancel(tradeId: string): void;
@@ -282,9 +287,9 @@ const LAST_CALL_MS = 1000;
 const randomNonce = () => crypto.getRandomValues(new Uint8Array(16)).reduce((hex, b) => hex + b.toString(16).padStart(2, "0"), "");
 
 // Every hello says this page can show the expanded island; a host refuses a page without it at an expanded table (#1611).
-const CAPS = ["expanded"];
+const CAPS = ["expanded", "counter"];
 
-const ALLOWED_EVENTS = ["seats", "rolled", "chat", "react", "tradeOffer", "tradeDeclined", "tradeClosed", "ttt", "profileError", "tableProfileCard"];
+const ALLOWED_EVENTS = ["seats", "rolled", "chat", "react", "tradeOffer", "tradeCounter", "tradeCounterClosed", "tradeDeclined", "tradeClosed", "ttt", "profileError", "tableProfileCard"];
 
 // `giveUpMs` is only for proofs that cannot wait 10 minutes: it stands in for both holds until a welcome says otherwise.
 export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor, giveUpMs?: number): TableClient {
@@ -520,6 +525,9 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       return i ? act(i) : false;
     },
     ask: (give, want) => act({ type: "tradeAsk", give, want }),
+    counter: (tradeId, give, want) => act({ type: "tradeCounter", tradeId, give, want }),
+    answerCounter: (tradeId, counterId, yes) => act({ type: "tradeCounterAnswer", tradeId, counterId, yes }),
+    cancelCounter: (tradeId, counterId) => act({ type: "tradeCounterCancel", tradeId, counterId }),
     answer: (tradeId, yes) => act({ type: "tradeAnswer", tradeId, yes }),
     need: (kinds) => send({ type: "need", kinds }),
     cancel: (tradeId) => act({ type: "tradeCancel", tradeId }),
