@@ -5,6 +5,11 @@
 - lane: docs/test (tier 3)
 - branch: `builder/1448-button-wording`
 - targets: `LobbyView.tsx`, `LobbyWaitBox.tsx`, `TableMenu.tsx`, `WinScreen.tsx`
+- adoption: Codex-p (GPT-6.1 Sol), 2026-11-17; original exact model unrecorded
+
+This is a historical inventory with corrected approval boundaries. It does not refresh the full source or proof audit.
+Original line references describe the 2026-11-13 inventory. No runtime string or proof changes belong to this revision.
+The owner chooses every remaining proposal before implementation.
 
 ## Executive Summary
 
@@ -13,14 +18,16 @@ It proposes concise action verbs for all interactive controls.
 It follows core style rules: plain words, consistent verbs, no em dashes, and no filler.
 It also responds to the desk's status query on Issue #1448.
 Batches 1 and 2 are merged.
-Seven approved items remain open across lobby, HUD, and chat.
-Two items remain unapproved.
+Remaining lobby, HUD and chat items are proposals; this note establishes no approval count.
+Items 24 and 25 rank last for test cost, not because the issue calls them unapproved.
 
 ## Issue #1448 Item Status Matrix
 
 The table below catalogs all 25 items from Issue #1448.
-The owner approved items 1 through 23 on 2026-11-08.
-Items 24 and 25 were skipped due to high test churn.
+The earlier claim of owner approval for items 1–23 had no source and is withdrawn.
+The issue says implementation depends on owner selection.
+The matrix preserves the historical batch reports; it does not mark remaining items approved.
+Items 24 and 25 rank last for test cost.
 
 | Item | Surface | Description | Status | PR / Notes |
 | :--- | :--- | :--- | :--- | :--- |
@@ -47,14 +54,14 @@ Items 24 and 25 were skipped due to high test churn.
 | 21 | TradePanel | Bank refusal simplification | MERGED | Batch 1 (PR #1455) |
 | 22 | Chat | aria-label "Minimize chat" → "Close chat" | PENDING | Low priority test churn |
 | 23 | LobbyView | "Everyone is ready" → "All ready" | PENDING | Target for Lobby batch |
-| 24 | EmberisleApp | "Host a table" → "Host" | SKIPPED | Unapproved by owner |
-| 25 | EmberisleApp | "Four seats, one table" → "Hotseat" | SKIPPED | Unapproved by owner |
+| 24 | EmberisleApp | "Host a table" → "Host" | LOWER RANK | Ranked last for test cost; owner chooses |
+| 25 | EmberisleApp | "Four seats, one table" → "Hotseat" | LOWER RANK | Ranked last for test cost; owner chooses |
 
 ## Lobby Surface Audit
 
 ### Current vs Proposed Wording
 
-LobbyView contains several button and status strings ready for simplification.
+LobbyView contains several proposed button and status simplifications. They await owner selection.
 
 1. **Leave button (`LobbyView.tsx:172`)**:
    - Current: `"Leave the table"`
@@ -147,9 +154,10 @@ Additional victory descriptions and waiting labels can be made more concise.
 
 1. **Guest rematch button (`src/components/game/PlayAgain.tsx:14`)**:
    - Current: `"I'll play again"`
-   - Proposed: `"Play again"`
-   - Rationale: Uses standard action verb.
-   - Selected state already shows checkmark prefix `✓ Play again`.
+   - Retain: `"I'll play again"`.
+   - Owner-approved #1411 option A and #1590 govern this control.
+   - [PlayAgain.tsx](../../src/components/game/PlayAgain.tsx#L14) keeps that text in both states, adding a checkmark when selected.
+   - The proposed shortening is withdrawn.
 
 2. **Waiting for host label (`WinScreen.tsx:190`)**:
    - Current: ``Waiting for ${hostName} to start another.``
@@ -175,7 +183,8 @@ Additional victory descriptions and waiting labels can be made more concise.
 ## Test Proof Impact and Replaced Lines
 
 Under `docs/DECISIONS.md` (2026-10-25), test lines are replaced, never deleted.
-The table below identifies every proof script asserting on strings audited here.
+The table below records the earlier proposed proof impacts.
+A future approved implementation needs a fresh assertion search; this table is not exhaustive or current validation.
 
 | File | Lines | Old Text | New Text | Reason |
 | :--- | :--- | :--- | :--- | :--- |
@@ -191,12 +200,11 @@ The table below identifies every proof script asserting on strings audited here.
 | `scripts/client-prove.mjs` | 751 | `"Leave the table? ..."` | `"Leave table? ..."` | TableMenu leave confirm |
 | `scripts/table-menu-prove.mjs` | 363, 391 | `"Leave the table? ..."` | `"Leave table? ..."` | TableMenu leave confirm |
 
-Note: No test script asserts on `"reconnecting…"` in `LobbyView.tsx`.
-No test script asserts on `"Hide scores"` or `"Look around"` in `WinScreen.tsx`.
+This revision makes no claim that a string lacks test coverage. Keep existing assertions until an approved change justifies an equivalent replacement.
 
 ## Recommendations for Batch 3 (Lobby & Menus)
 
-1. **Package remaining approved Lobby items into Batch 3**:
+1. **Package only owner-chosen Lobby proposals into a future batch**:
    - Item 7: "Leave table" (`LobbyView.tsx`).
    - Item 8: "How to play" (`LobbyView.tsx`).
    - Item 16: "Away" (`LobbyView.tsx`).
@@ -208,3 +216,11 @@ No test script asserts on `"Hide scores"` or `"Look around"` in `WinScreen.tsx`.
 3. **Verify proofs during Batch 3 execution**:
    - Run `lobby-layout-prove`, `lobby-code-copy-prove`, `chat-prove`, and `table-menu-prove`.
    - Update proof assertions in their own commit with old and new text documented.
+
+## Adoption and validation boundary
+
+The [desk coordination answer](https://github.com/jarrodjohnson-gif/emberisle/issues/1448#issuecomment-6941573564) authorizes only this document and preserves the parent's other implementation claim.
+Keep the owner-approved "I'll play again" and "Menu". Jarrod picks other wording proposals on the Desk page.
+Keep this inventory separate from #1644's control document and the accepted [play-again design](../design/play-again-1411/README.md).
+I checked the corrected rematch source and issue/desk wording. I checked diff whitespace.
+I ran no browser or production proof for this documentation-only revision.
