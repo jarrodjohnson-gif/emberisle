@@ -1,17 +1,22 @@
 # Game Interface Control Inventory and Wording Audit
 
+Research correction, 2026-11-17: Codex-p (GPT-6.1 Sol).
+Original audit: finish-quote, 2026-11-13; model unrecorded.
+Original line references describe that inventory, not a fresh exhaustive audit.
+This revision corrects W2/W5 and approval boundaries only. It changes no runtime strings or proofs.
+
 ## 1. Overview and Purpose
 
 This document catalogs interface wording and control behaviors for Issue #1449.
 It audits items left out of Issue #1448.
 The owner requested an exhaustive audit across words and function.
-This inventory establishes what is live on main versus what remains open.
+This inventory records the earlier merged batches and remaining proposals.
 It directly answers the review desk inquiry on Issue #1449.
 
 ## 2. Status of Previously Landed Batches
 
 Two batches have merged into main from Issue #1449.
-All eight items from these batches are verified live in production code.
+The desk confirmed both batches merged on #1449. This revision does not rerun their production proofs.
 
 ### Batch 1 (PR #1465)
 - **Words 1:** `PlaceList.tsx` uses in-game vocabulary: "forest", "wood dock", and "center".
@@ -36,14 +41,14 @@ The table below catalogs word inconsistencies that remain open for owner decisio
 
 | Item | Screen / Component | Current Text | Proposed Text | Rationale |
 | :--- | :--- | :--- | :--- | :--- |
-| W2 | `PlaceList.tsx:92, 104` | "Lay a path", "Raise a stronghold" | "Place a path", "Upgrade an outpost" | Matches HUD banners and action buttons. |
+| W2 | `PlaceList.tsx` | "Lay a path", "Raise a stronghold" | Unresolved owner Question; no replacement selected | Keep existing words until Jarrod chooses. |
 | W3 | `rules.ts:566, 578, 647, 662` | "raises an outpost", "founds an outpost" | "builds an outpost" in all phases | Eliminates dual verbs for the same action. |
 | W3 | `rules.ts:578, 647` | "lays a path" (setup), "builds a path" | "builds a path" in all phases | One consistent verb across phases. |
 | W4 | `TakeFromBar.tsx:39` | "The wayfarer takes a card" | "The wayfarer takes a good" | The game uses "goods", not "cards". |
 | W4 | `fortunes.ts:6, 27` | "takes a card", "taking cards" | "takes a good", "taking goods" | Aligns fortune copy with HUD resources. |
 | W4 | `rules.ts:617, 623` | "Bad cards.", "Not enough cards." | "Bad goods.", "Not enough goods." | Standardizes error terminology. |
 | W5 | `LobbyView.tsx:172` | "Leave the table" | "Leave table" | Matches Table menu row label. |
-| W5 | `WinScreen.tsx:129, 216` | "Menu" | "Leave table" | One consistent verb phrase to return to title. |
+| W5 | `WinScreen.tsx` | "Menu" | Keep "Menu" | Owner-approved in #1590; withdraw the conflicting replacement. |
 | W6 | `README.md:45, 63` | "knights", "Pass ends the turn." | "wayfarer", "End turn ends the turn." | Rulebook matches on-screen button labels. |
 | W7 | `WayfarerOptions.tsx:14` | "Off never moves or blocks." | "Off: the wayfarer never moves." | Supplies explicit grammatical subject. |
 | W8 | `HowTo.tsx:68` | "Build paths (wood + brick)" | Consistent cost format | Standardizes punctuation and conjunctions. |
@@ -63,10 +68,11 @@ The table below catalogs open control behavior improvements across the interface
 
 ## 5. Recommended Batch Plan
 
-We recommend packaging the remaining items into two discrete PR batches.
+These are possible batches after the owner picks individual proposals.
+They authorize no wording, control or proof change. The parent's other implementation claim remains in place.
 
 ### Batch 3: Wording Standardization
-- Implement W2, W3, W4, and W5 across components.
+- Take only owner-chosen wording items. W2 remains unresolved; WinScreen "Menu" stays unchanged.
 - Update `README.md` per W6 and `WayfarerOptions.tsx` per W7.
 - Replace associated proof assertions under the 2026-10-25 rule.
 
@@ -75,3 +81,13 @@ We recommend packaging the remaining items into two discrete PR batches.
 - Update finished table action in `OpenTables.tsx` (F20).
 - Add accessible cooldown descriptions in `Reactions.tsx` (F24).
 - Remove dead phase line in `Hud.tsx` (F21).
+
+## Adoption validation
+
+At main `580c5e8246a1ce85ad3c8b437601d6036c2ecb75`, PlaceList still uses "Lay a path" and "Raise a stronghold".
+WinScreen still uses "Menu" and "I'll play again". Those source facts do not approve another wording proposal.
+The [W2 Question](https://github.com/jarrodjohnson-gif/emberisle/issues/1449#issuecomment-6941604788) asks Jarrod to choose.
+This note selects no replacement.
+The [desk coordination answer](https://github.com/jarrodjohnson-gif/emberisle/issues/1449#issuecomment-6941564510) permits only this document.
+It preserves the other implementation claim.
+I checked the corrected source strings and diff whitespace. I ran no browser or production proof for this documentation edit.
