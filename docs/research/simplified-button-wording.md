@@ -37,8 +37,8 @@ Items 24 and 25 rank last for test cost.
 | 4 | TradePanel | Bank quote simplification | MERGED | Batch 1 (PR #1455) |
 | 5 | SeatNeeds | "You need" → "Need" | MERGED | Batch 1 (PR #1455) |
 | 6 | Various | Remove three visible em dashes | MERGED | Batch 1 (PR #1455) |
-| 7 | LobbyView | "Leave the table" → "Leave table" | PENDING | Target for Lobby batch |
-| 8 | LobbyView | "Rules" → "How to play" | PENDING | Target for Lobby batch |
+| 7 | LobbyView | "Leave table" | PRESENT | Checked at line 177; no remaining proposal |
+| 8 | LobbyView | "How to play" | PRESENT | Checked at line 137; no remaining proposal |
 | 9 | Hud | Outpost upgrade wording ("home" → "outpost") | PENDING | Held for HUD batch |
 | 10 | Chat | "Sound settings" → "Sound" | MERGED | Batch 1 (PR #1455) |
 | 11 | TableMenu | "Copy table code" → "Copy code" | MERGED | Batch 1 (PR #1455) |
@@ -46,14 +46,14 @@ Items 24 and 25 rank last for test cost.
 | 13 | PlayerMenu | Seat trade rows → "Trade…" | MERGED | Batch 2 (PR #1463) |
 | 14 | PlayerMenu | Seat facts: Goods, Fortunes, Points | MERGED | Batch 2 (PR #1463) |
 | 15 | Hud / Coach | Wayfarer steal: replace "victim" | PENDING | Held for HUD batch |
-| 16 | Lobby / Seat | Dropped seat status → "Away" | PARTIAL | PlayerMenu done (PR #1463); Lobby pending |
+| 16 | Lobby / Seat | Dropped seat status "Away" | PRESENT | LobbyView:156 and PlayerMenu:97 |
 | 17 | CostCard | "10 points claims the isle." → "Win at 10 points." | MERGED | Batch 1 (PR #1455) |
 | 18 | Recovery | "Your table hit a snag" → "Something went wrong" | MERGED | Batch 1 (PR #1455) |
 | 19 | ProfileSheet | "Remember me" and "Sign in instead" | MERGED | Batch 2 (PR #1463) |
 | 20 | WinScreen | "Look around" → "Hide scores" | MERGED | Batch 2 (PR #1463) |
 | 21 | TradePanel | Bank refusal simplification | MERGED | Batch 1 (PR #1455) |
 | 22 | Chat | aria-label "Minimize chat" → "Close chat" | PENDING | Low priority test churn |
-| 23 | LobbyView | "Everyone is ready" → "All ready" | PENDING | Target for Lobby batch |
+| 23 | LobbyView / LobbyWaitBox | "All ready" | PRESENT | LobbyView:89 and LobbyWaitBox:39 |
 | 24 | EmberisleApp | "Host a table" → "Host" | LOWER RANK | Ranked last for test cost; owner chooses |
 | 25 | EmberisleApp | "Four seats, one table" → "Hotseat" | LOWER RANK | Ranked last for test cost; owner chooses |
 
@@ -63,35 +63,25 @@ Items 24 and 25 rank last for test cost.
 
 LobbyView contains several proposed button and status simplifications. They await owner selection.
 
-1. **Leave button (`LobbyView.tsx:172`)**:
-   - Current: `"Leave the table"`
-   - Proposed: `"Leave table"`
-   - Rationale: Matches the TableMenu row (`TableMenu.tsx:299`).
-   - One concise verb and noun for the same action.
+1. **Leave button (`LobbyView.tsx:177`)**:
+   - Current: `"Leave table"`.
+   - Already present; withdraw the obsolete shortening proposal.
 
-2. **Rules button (`LobbyView.tsx:133`)**:
-   - Current: `"Rules"`
-   - Proposed: `"How to play"`
-   - Rationale: The sheet title is "How to play".
-   - Title screen and TableMenu both use "How to play".
-   - Consistent labeling reduces confusion.
+2. **Rules button (`LobbyView.tsx:137`)**:
+   - Current: `"How to play"`.
+   - Already present; withdraw the obsolete replacement of `"Rules"`.
 
-3. **Rules failure fallback (`LobbyView.tsx:177`)**:
-   - Current: `"Close rules"`
-   - Proposed: `"Close"`
-   - Rationale: Simple action verb matches modal close buttons throughout the application.
+3. **Rules failure fallback (`LobbyView.tsx:182`)**:
+   - Current fallback button: `"Close"`.
+   - `"Close rules"` no longer exists; no replacement is needed.
 
-4. **Dropped seat status (`LobbyView.tsx:151`)**:
-   - Current: `s.away ? "reconnecting…" : s.ready ? "Ready" : "Waiting"`
-   - Proposed: `s.away ? "Away" : s.ready ? "Ready" : "Waiting"`
-   - Rationale: Aligns with `PlayerMenu.tsx:100` and `SeatRail.tsx:93`.
-   - Consistent terminology across all game views.
+4. **Dropped seat status (`LobbyView.tsx:156`)**:
+   - Current: `s.away ? "Away" : s.ready ? "Ready" : "Waiting"` within the displayed status.
+   - Already present, as in `PlayerMenu.tsx:97`; withdraw the obsolete `"reconnecting…"` replacement.
 
-5. **Lobby status summary (`LobbyView.tsx:85`, `LobbyWaitBox.tsx:39`)**:
-   - Current: `"Everyone is ready"`
-   - Proposed: `"All ready"`
-   - Rationale: Concise parallel to `"2 of 4 ready"`.
-   - Saves horizontal space on mobile portrait screens.
+5. **Lobby status summary (`LobbyView.tsx:89`, `LobbyWaitBox.tsx:39`)**:
+   - Current ready summary: `"All ready"`.
+   - `"Everyone is ready"` no longer exists; no replacement is needed.
 
 6. **Rename seat accessibility label (`LobbyView.tsx:32`)**:
    - Current: ``aria-label={`Your name is ${seat.name}. Change it`}``
@@ -99,7 +89,7 @@ LobbyView contains several proposed button and status simplifications. They awai
    - Rationale: Starts with a direct action verb.
    - Eliminates conversational filler.
 
-7. **Table code copy button accessibility label (`LobbyView.tsx:122`)**:
+7. **Table code copy button accessibility label (`LobbyView.tsx:126`)**:
    - Current: ``aria-label={`Table code ${[...code].join(" ")}. Copy link`}``
    - Proposed: ``aria-label={`Copy link for table ${[...code].join(" ")}`}``
    - Rationale: Begins with a direct action verb.
@@ -155,23 +145,23 @@ Additional victory descriptions and waiting labels can be made more concise.
 1. **Guest rematch button (`src/components/game/PlayAgain.tsx:14`)**:
    - Current: `"I'll play again"`
    - Retain: `"I'll play again"`.
-   - Owner-approved #1411 option A and #1590 govern this control.
+   - [Owner answer 6712215960](https://github.com/jarrodjohnson-gif/emberisle/issues/1411#issuecomment-6712215960), `q1411-play-again` A, governs this control.
    - [PlayAgain.tsx](../../src/components/game/PlayAgain.tsx#L14) keeps that text in both states, adding a checkmark when selected.
    - The proposed shortening is withdrawn.
 
-2. **Waiting for host label (`WinScreen.tsx:190`)**:
+2. **Waiting for host label (`WinScreen.tsx:219`)**:
    - Current: ``Waiting for ${hostName} to start another.``
    - Proposed: ``Waiting for ${hostName} to start.``
    - Rationale: Shorter and direct.
 
-3. **Win reason descriptions (`WinScreen.tsx:138-144`)**:
+3. **Win reason descriptions (`WinScreen.tsx:172-173`)**:
    - Current turn start: `"Started their turn with winning points"`
    - Proposed turn start: `"Started turn with winning points"`
    - Current points: `"Reached the winning score"`
    - Proposed points: `"Reached winning score"`
    - Rationale: Eliminates filler words while keeping clear meaning.
 
-4. **Untracked game note (`WinScreen.tsx:184`)**:
+4. **Untracked game note (`WinScreen.tsx:213`)**:
    - Current: `"This game isn't tracked."`
    - Proposed: `"Game not tracked."`
    - Rationale: Concise informative label.
@@ -204,11 +194,9 @@ This revision makes no claim that a string lacks test coverage. Keep existing as
 
 ## Recommendations for Batch 3 (Lobby & Menus)
 
-1. **Package only owner-chosen Lobby proposals into a future batch**:
-   - Item 7: "Leave table" (`LobbyView.tsx`).
-   - Item 8: "How to play" (`LobbyView.tsx`).
-   - Item 16: "Away" (`LobbyView.tsx`).
-   - Item 23: "All ready" (`LobbyView.tsx`, `LobbyWaitBox.tsx`).
+1. **Do not repackage shipped lobby wording**:
+   - Items 7, 8, 16 and 23 already appear in the current source.
+   - Any other proposal still needs the owner's choice before implementation.
 
 2. **Include TableMenu confirmation polish**:
    - Update confirmation dialog prompt to "Leave table?".
@@ -220,7 +208,10 @@ This revision makes no claim that a string lacks test coverage. Keep existing as
 ## Adoption and validation boundary
 
 The [desk coordination answer](https://github.com/jarrodjohnson-gif/emberisle/issues/1448#issuecomment-6941573564) authorizes only this document and preserves the parent's other implementation claim.
-Keep the owner-approved "I'll play again" and "Menu". Jarrod picks other wording proposals on the Desk page.
+Keep "I'll play again" under [q1411-play-again A](https://github.com/jarrodjohnson-gif/emberisle/issues/1411#issuecomment-6712215960).
+Keep "Menu" under `q1599-win-screen` A, recorded in [DECISIONS](../DECISIONS.md) and [PR #1599](https://github.com/jarrodjohnson-gif/emberisle/pull/1599).
+Jarrod picks other wording proposals on the Desk page.
 Keep this inventory separate from #1644's control document and the accepted [play-again design](../design/play-again-1411/README.md).
-I checked the corrected rematch source and issue/desk wording. I checked diff whitespace.
+I checked the corrected lobby, rematch, win-screen and PlayerMenu source quotes at main `333f8f08d5bf323289ec8fd203bb7ce353a8f203`.
+I checked the issue/desk wording, new link targets and diff whitespace.
 I ran no browser or production proof for this documentation-only revision.
