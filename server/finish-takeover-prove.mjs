@@ -16,7 +16,7 @@ import { applyAction, legalCities, totalVP } from "../src/lib/game/rules.ts";
 import { RESOURCES } from "../src/lib/game/types.ts";
 
 const SERVER = fileURLToPath(new URL(".", import.meta.url));
-const GRACE = 400;
+const GRACE = 1500;
 const dir = mkdtempSync(path.join(tmpdir(), "emberisle-finish-takeover-"));
 const sockets = [];
 let host = null;
