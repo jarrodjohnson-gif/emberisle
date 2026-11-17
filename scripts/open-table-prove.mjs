@@ -261,7 +261,7 @@ check(await D.page.evaluate(() => window.discoveryTraffic.every((m) => m.type ==
 // A connected title closes its socket when it leaves, and its polling timer stays cancelled.
 const G = await openTab("Connected cleanup");
 await until(() => G.page.getByTestId("open-table-entry").isVisible().catch(() => false), "connected cleanup listing");
-await G.page.getByRole("button", { name: "Play", exact: true }).click();
+await G.page.getByRole("button", { name: "Play with bots", exact: true }).click();
 await G.page.getByTestId("title-card").waitFor({ state: "detached" });
 await until(() => G.page.evaluate(() => window.discoveryLive === 0), "connected title socket closed on unmount");
 const connectedDials = await G.page.evaluate(() => window.discoveryDials.length);
@@ -273,7 +273,7 @@ await E.ctx.close();
 await F.ctx.close();
 await new Promise((resolve) => { host.once("exit", resolve); host.kill("SIGTERM"); });
 await until(() => D.page.getByTestId("open-table-entry").count().then((n) => n === 0), "second drop clears list");
-await D.page.getByRole("button", { name: "Play", exact: true }).click();
+await D.page.getByRole("button", { name: "Play with bots", exact: true }).click();
 await D.page.getByTestId("title-card").waitFor({ state: "detached" });
 const afterUnmount = await D.page.evaluate(() => ({ dials: window.discoveryDials.length, traffic: window.discoveryTraffic.length }));
 await wait(17000);

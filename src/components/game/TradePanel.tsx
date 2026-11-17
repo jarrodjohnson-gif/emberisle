@@ -33,6 +33,8 @@ export function TradePanel() {
   const panel = useRef<HTMLElement>(null);
 
   const actor = mode === "hotseat" ? state?.current : localId;
+  // Hotseat has nobody else to ask, and a partner turn takes no player trades (#1609): the sheet is the bank's only.
+  const bankOnly = mode === "hotseat" || state?.role === "partner";
   const me = state?.players.find((p) => p.id === actor);
   const mine = Boolean(state && me && state.phase === "main" && state.current === actor);
   const shown = open && mine;
@@ -146,7 +148,7 @@ export function TradePanel() {
             );
           })}
           </LazyBoundary>
-          {mode !== "hotseat" ? (
+          {!bankOnly ? (
             <p className="trade-sentence" data-testid="trade-player-preview" aria-live="polite">
               {giveText || getText ? <>
                 {giveText ? <span className="trade-give-text">Give {giveText}</span> : null}
@@ -158,7 +160,7 @@ export function TradePanel() {
         </div>
 
         <footer className="trade-composer-footer">
-          {mode !== "hotseat" ? <Button className="trade-ask" disabled={!asking} onClick={ask}>Ask the table</Button> : null}
+          {!bankOnly ? <Button className="trade-ask" disabled={!asking} onClick={ask}>Ask the table</Button> : null}
           <Button variant="secondary" className="trade-bank" aria-describedby="trade-bank-quote" disabled={refusal !== null} onClick={bank}>{bankLabel}</Button>
           <p className="sr-only" id="trade-bank-quote" data-testid="trade-hint" aria-live="polite">{bankHint}</p>
         </footer>

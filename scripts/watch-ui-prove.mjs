@@ -146,7 +146,7 @@ const view = (t) =>
       title: document.title,
       turnBanner: document.querySelector('[data-testid="turn-banner"]')?.textContent ?? null,
       alert: document.querySelector('[role="alert"]')?.textContent ?? null,
-      winRows: [...document.querySelectorAll('[data-testid="win-row"]')].map((r) => [...r.querySelectorAll("td")].map((c) => c.textContent.trim())),
+      winRows: [...document.querySelectorAll('[data-testid="win-row"]')].map((r) => [r.dataset.player, r.querySelector('[data-testid="win-total"]').textContent.trim(), ...[...document.querySelectorAll(`#win-part-${r.dataset.player} dd`)].map((c) => c.textContent.trim())]),
       winHeadline: document.querySelector('[data-testid="win-headline"]')?.textContent ?? null,
     };
   });
@@ -455,7 +455,9 @@ try {
   if (wv.hands.some((n) => typeof n !== "number")) throw new Error(`a hand is not revealed to the watcher at the win: ${JSON.stringify(wv.hands)}`);
   if (JSON.stringify(wv.hiddenVp) !== JSON.stringify(av.hiddenVp)) throw new Error(`hidden points differ at the win: ${JSON.stringify([wv.hiddenVp, av.hiddenVp])}`);
   if (wv.hasSeed || !av.hasSeed) throw new Error(`seed/rng: watcher ${wv.hasSeed}, seat ${av.hasSeed}`);
-  if (wv.buttons.some((t) => /play again/i.test(t))) throw new Error("the watcher has Play again");
+  // A row is a button now and may carry a seat's "Play again" tag; the watcher has no button that is Play again itself.
+  if (wv.buttons.some((t) => /^(✓)?(I'll )?play again$/i.test(t))) throw new Error("the watcher has Play again");
+  if (await w1.page.getByTestId("win-again").count()) throw new Error("the watcher has the Play again button");
   if (wv.resources !== 0) throw new Error("the watcher grew a hand at the win");
   console.log(`win: "${wv.winHeadline}" at seq ${wv.seq}; the watcher's ${wv.winRows.length} rows equal Ember's (hidden ${JSON.stringify(wv.hiddenVp)}, hands ${JSON.stringify(wv.hands)}); no seed or rng, no Play again`);
 
