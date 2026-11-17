@@ -1,0 +1,47 @@
+{
+ "code": "EBZ5",
+ "visibility": "private",
+ "host": "s0",
+ "next": 3,
+ "botDeclined": {},
+ "recoveryPids": [],
+ "chat": [],
+ "chatSeq": 0,
+ "game": null,
+ "victoryTarget": 10,
+ "wayfarerMode": "on",
+ "seats": [
+  {
+   "id": "s0",
+   "name": "Fern",
+   "color": "#e23d2e",
+   "ready": true,
+   "secret": "979356385ec9bbc61f14103d6f37999e",
+   "turnDeadline": null,
+   "turnStartedAt": null
+  },
+  {
+   "id": "s1",
+   "name": "Gale",
+   "color": "#2d6ee8",
+   "ready": false,
+   "secret": "8f1bdbbcb04d585f4eb2664972e6da7a",
+   "turnDeadline": null,
+   "turnStartedAt": null
+  },
+  {
+   "id": "s2",
+   "name": "Hail",
+   "color": "#f3ecd9",
+   "ready": true,
+   "secret": "a6d3c4ec6dcbe6673cac8e4116b6dc98",
+   "turnDeadline": null,
+   "turnStartedAt": null
+  }
+ ],
+ "roster": null,
+ "outcome": null,
+ "assisted": [],
+ "shape": 2,
+ "savedAt": 1794622832284
+}

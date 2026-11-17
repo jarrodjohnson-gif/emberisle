@@ -153,7 +153,7 @@ for (const [w, h, touch] of [
       },
     });
   });
-  await page.getByRole("button", { name: "Four seats, one table" }).click();
+  await page.getByRole("button", { name: "Pass and play" }).click();
   await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
   await page.evaluate(() => {
     const g = window.__emberisle;
