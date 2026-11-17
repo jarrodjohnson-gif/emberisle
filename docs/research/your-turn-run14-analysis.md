@@ -21,7 +21,8 @@ None has been reproduced in isolation.
 
 ### Hypothesis 1: Exit Timer Latency (Unconfirmed)
 
-TurnMoment dismissal uses a 160 ms timer (`setTimeout(() => onDismiss(), 160)`).
+[TurnMoment.tsx:83](../../src/components/game/TurnMoment.tsx#L83) uses a 160 ms timer:
+`exitTimer.current = setTimeout(() => setUp(null), 160);`
 Under CPU contention, timer dispatch or React unmounting could delay beyond 1000 ms.
 Confirming check: log wall-clock deltas around timer firing and DOM removal under CPU load.
 Ruling-out check: reproduce 1000 ms timeout when timer dispatch delta measures under 200 ms.
