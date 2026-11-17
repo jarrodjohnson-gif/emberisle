@@ -118,15 +118,19 @@ try {
     const { context, page, tag } = await open(width, height, true);
     const rows = page.getByTestId("win-row");
     await rows.first().waitFor();
-    await page.getByTestId("win-dice").waitFor();
+    await page.getByTestId("win-dice").waitFor({ state: "attached" });
+    // Desk answer A on #1452: a screen 480 px tall or less shows no strip, so the win sheet's list never scrolls there.
+    const short = height <= 480;
     let m = await measure(page);
     assert.equal(m.awardsInDom, 4, `${tag}: every player in the pictured game holds a title`);
     assert.deepEqual(m.awardsShown, [], `${tag}: no award shows while every row is closed`);
     assert.ok(m.rowHeights.every((h) => h >= 44), `${tag}: rows at least 44 px: ${m.rowHeights}`);
     noSideways(m, `${tag} closed`);
     onScreen(m, `${tag} closed`);
-    strip(m, `${tag} closed`);
+    if (short) assert.equal(m.dice.height, 0, `${tag}: no dice strip on a screen 480 px tall or less`);
+    else strip(m, `${tag} closed`);
     measured[tag] = { strip: Math.round(m.dice.height), closedListScrolls: m.wrap.scrollHeight - m.wrap.clientHeight };
+    if (short) assert.equal(measured[tag].closedListScrolls, 0, `${tag}: with no strip the closed list does not scroll`);
     // An upright phone shows the closed list and its strip whole (desk, 2026-11-12); a sideways one may scroll.
     if (height > width) assert.equal(measured[tag].closedListScrolls, 0, `${tag}: the closed list and the strip fit without scrolling`);
     await shot(page, `closed-${tag}`);
@@ -154,7 +158,7 @@ try {
       }
     }
     // A short sideways phone: the strip is reached by scrolling the list, and never covers the buttons.
-    if (height < 600) {
+    if (height < 600 && !short) {
       await page.getByTestId("win-table-wrap").evaluate((el) => { el.scrollTop = el.scrollHeight; });
       await page.waitForTimeout(100);
       m = await measure(page);
@@ -164,22 +168,35 @@ try {
       await shot(page, `open-scrolled-${tag}`);
     }
     await context.close();
-    console.log(`ok ${tag} touch: no award while closed, one in each opened row (${award(OPEN)}), dice strip under the list (${measured[tag].strip} px), rows 44 px, no sideways scroll, buttons on screen`);
+    console.log(`ok ${tag} touch: no award while closed, one in each opened row (${award(OPEN)}), ${short ? "no dice strip (480 px tall or less)" : `dice strip under the list (${measured[tag].strip} px)`}, rows 44 px, no sideways scroll, buttons on screen`);
   }
 
   // Desktop with a mouse: the single list, as on a phone (no table since #1596).
-  for (const [width, height] of [[1280, 800], [956, 440]]) {
+  for (const [width, height] of [[1280, 800], [1280, 720], [956, 440]]) {
     const { context, page, tag, storyLoads } = await open(width, height, false);
+    const short = height <= 480;
     const rows = page.getByTestId("win-row");
     await rows.first().waitFor();
-    await page.getByTestId("win-dice").waitFor();
+    await page.getByTestId("win-dice").waitFor({ state: "attached" });
     assert.ok(storyLoads.length >= 1, `${tag} mouse: the story chunk loads`);
     assert.equal(await page.locator('[data-testid="win-table-wrap"] table').count(), 0, `${tag} mouse: no table, the one list`);
     let m = await measure(page);
     assert.deepEqual(m.awardsShown, [], `${tag} mouse: no award shows while every row is closed`);
     noSideways(m, `${tag} mouse closed`);
     onScreen(m, `${tag} mouse closed`);
-    strip(m, `${tag} mouse`);
+    if (short) assert.equal(m.dice.height, 0, `${tag} mouse: no dice strip on a screen 480 px tall or less`);
+    else {
+      // The sheet stays within 60% of the height (q1599-win-screen A); the strip is reached by scrolling the list.
+      const sheet = await page.locator(".win-sheet").boundingBox();
+      assert.ok(sheet.height <= height * 0.6 + 0.5, `${tag} mouse: the sheet is ${Math.round(sheet.height)} px of ${height}, within 60%`);
+      await page.getByTestId("win-table-wrap").evaluate((el) => { el.scrollTop = el.scrollHeight; });
+      await page.waitForTimeout(100);
+      m = await measure(page);
+      assert.ok(m.dice.top >= m.wrap.top - 1 && m.dice.bottom <= m.wrap.bottom + 1, `${tag} mouse: scrolled down, the whole strip is in the list`);
+      strip(m, `${tag} mouse`);
+      if (height === 720) await shot(page, `scrolled-${tag}-mouse`);
+      await page.getByTestId("win-table-wrap").evaluate((el) => { el.scrollTop = 0; });
+    }
     const row = rows.and(page.locator(`[data-player="${OPEN}"]`));
     await row.scrollIntoViewIfNeeded();
     await row.click();
@@ -194,7 +211,7 @@ try {
     onScreen(m, `${tag} mouse open`);
     await shot(page, `open-${tag}-mouse`);
     await context.close();
-    console.log(`ok ${tag} mouse: the one list, no award while closed, one in the clicked row (${award(OPEN)}), strip under the list`);
+    console.log(`ok ${tag} mouse: the one list, no award while closed, one in the clicked row (${award(OPEN)}), ${short ? "no dice strip (480 px tall or less)" : "strip reached by scrolling the list, sheet within 60%"}`);
   }
 
   // An unusual spread: the named sum's bar is sea ink and the sentence says so.
@@ -238,6 +255,8 @@ try {
   {
     const { context, page, storyLoads } = await open(390, 844, true, g, { live: true });
     assert.equal(storyLoads.length, 1, "the chunk is fetched once, during play");
+    // The strip lands with the results (its chunk is already fetched); wait for it, then count.
+    await page.getByTestId("win-dice").waitFor({ state: "attached" });
     assert.equal(await page.getByTestId("win-dice").count(), 1, "the strip is there at the end");
     await context.close();
     console.log("ok 390x844 live table: the story chunk is fetched during play");
