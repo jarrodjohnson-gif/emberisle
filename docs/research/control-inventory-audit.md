@@ -41,7 +41,7 @@ The table below catalogs word inconsistencies that remain open for owner decisio
 
 | Item | Screen / Component | Current Text | Proposed Text | Rationale |
 | :--- | :--- | :--- | :--- | :--- |
-| W2 | `PlaceList.tsx` | "Lay a path", "Raise a stronghold" | Unresolved owner Question; no replacement selected | Keep existing words until Jarrod chooses. |
+| W2 | `PlaceList.tsx` | "Lay a path", "Raise a stronghold" | Keep existing words; replacement not adopted | Desk answer 6941614661; future changes need a new owner picture card. |
 | W3 | `rules.ts:566, 578, 647, 662` | "raises an outpost", "founds an outpost" | "builds an outpost" in all phases | Eliminates dual verbs for the same action. |
 | W3 | `rules.ts:578, 647` | "lays a path" (setup), "builds a path" | "builds a path" in all phases | One consistent verb across phases. |
 | W4 | `TakeFromBar.tsx:39` | "The wayfarer takes a card" | "The wayfarer takes a good" | The game uses "goods", not "cards". |
@@ -72,7 +72,7 @@ These are possible batches after the owner picks individual proposals.
 They authorize no wording, control or proof change. The parent's other implementation claim remains in place.
 
 ### Batch 3: Wording Standardization
-- Take only owner-chosen wording items. W2 remains unresolved; WinScreen "Menu" stays unchanged.
+- Take only owner-chosen wording items. W2's replacement was not adopted; WinScreen "Menu" stays unchanged.
 - Update `README.md` per W6 and `WayfarerOptions.tsx` per W7.
 - Replace associated proof assertions under the 2026-10-25 rule.
 
@@ -86,8 +86,9 @@ They authorize no wording, control or proof change. The parent's other implement
 
 At main `580c5e8246a1ce85ad3c8b437601d6036c2ecb75`, PlaceList still uses "Lay a path" and "Raise a stronghold".
 WinScreen still uses "Menu" and "I'll play again". Those source facts do not approve another wording proposal.
-The [W2 Question](https://github.com/jarrodjohnson-gif/emberisle/issues/1449#issuecomment-6941604788) asks Jarrod to choose.
-This note selects no replacement.
+The [W2 Question](https://github.com/jarrodjohnson-gif/emberisle/issues/1449#issuecomment-6941604788) received [desk answer 6941614661](https://github.com/jarrodjohnson-gif/emberisle/issues/1449#issuecomment-6941614661).
+Keep "Lay a path" and "Raise a stronghold". The replacement proposal was not adopted.
+Any future change needs a new picture card for Jarrod on the Desk page.
 The [desk coordination answer](https://github.com/jarrodjohnson-gif/emberisle/issues/1449#issuecomment-6941564510) permits only this document.
 It preserves the other implementation claim.
 I checked the corrected source strings and diff whitespace. I ran no browser or production proof for this documentation edit.
