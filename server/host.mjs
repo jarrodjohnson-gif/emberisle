@@ -1958,7 +1958,7 @@ function respond(room, actor, yes) {
 }
 
 // Counter terms are public and always from the original asker's side. They live only with the offer.
-const bagWords = (bag) => RESOURCES.filter((r) => bag[r]).map((r) => `${bag[r]} ${RESOURCE_LABEL[r]}`).join(", ");
+const bagWords = (bag) => RESOURCES.filter((r) => bag[r]).map((r) => `${bag[r]} ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ");
 const counterEvent = (offer, counter) => ({ type: "tradeCounter", tradeId: offer.tradeId, counterId: counter.counterId, by: counter.by, name: counter.name, give: counter.give, want: counter.want });
 const payable = (player, bag) => player && RESOURCES.every((r) => (bag[r] ?? 0) <= player.resources[r]);
 const nonempty = (bag) => RESOURCES.some((r) => (bag[r] ?? 0) > 0);

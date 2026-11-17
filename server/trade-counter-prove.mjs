@@ -37,14 +37,14 @@ function fixture(code, { bot = false, partner = false, poor = false, monopoly = 
   Object.assign(g.players[0].resources, { timber: poor ? 1 : 4, grain: 1, ore: 1 });
   Object.assign(g.players[1].resources, { wool: 2, clay: 2, grain: 2 });
   if (monopoly) g.players[0].hidden.monopoly = 1;
-  if (!bot) Object.assign(g.players[2].resources, { clay: 2, ore: 1 });
+  if (!bot) Object.assign(g.players[2].resources, { clay: 2, ore: 1, wool: 1 });
   if (bot) Object.assign(g.players[2].resources, { grain: 2, ore: 2, wool: 2 });
   for (const r of RESOURCES) g.bank[r] = 19 - g.players.reduce((n, p) => n + p.resources[r], 0);
   const seats = g.players.filter((p) => p.kind === "human").map((p, i) => ({ id: `s${i}`, name: p.name, color: PLAYER_COLORS[i], ready: true, pid: p.id, secret: `${code}-${p.id}-secret` }));
   writeFileSync(path.join(dir, `${code}.json`), JSON.stringify({ code, host: "s0", next: seats.length, game: g, seats, chat: [], chatSeq: 0, botDeclined: {}, shape: 3, savedAt: Date.now() }));
   fixtures.set(code, { g, seats });
 }
-for (const [code, options] of [["CCAA",{}],["CCAB",{}],["CCAC",{}],["CCAD",{}],["CCAE",{}],["CCAF",{}],["CCAG",{poor:true}],["CCAH",{monopoly:true}],["CCAJ",{}],["CCAK",{}],["CCAL",{partner:true}],["CCAM",{bot:true}],["CCAN",{bot:true}],["CCAP",{bot:true,botAsk:true}],["CCAR",{bot:true,botAsk:true}],["CCAS",{}],["CCAT",{}],["CCAU",{}],["CCAV",{}],["CCAW",{}]]) fixture(code, options);
+for (const [code, options] of [["CCAA",{}],["CCAB",{}],["CCAC",{}],["CCAD",{}],["CCAE",{}],["CCAF",{}],["CCAG",{poor:true}],["CCAH",{monopoly:true}],["CCAJ",{}],["CCAK",{}],["CCAL",{partner:true}],["CCAM",{bot:true}],["CCAN",{bot:true}],["CCAP",{bot:true,botAsk:true}],["CCAR",{bot:true,botAsk:true}],["CCAS",{}],["CCAT",{}],["CCAU",{}],["CCAV",{}],["CCAW",{}],["CCAY",{}]]) fixture(code, options);
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], { cwd: new URL(".", import.meta.url), env: { ...process.env, PORT: "0", ROOMS_DIR: dir, RESULTS_DIR: `${dir}/results`, PROFILES_DIR: `${dir}/profiles`, TURN_MS: "120000", GRACE_MS: "5000", ACT_RATE: "1000", ACT_CAP: "1000", SAVE_MS: "5" } });
 host.stderr.on("data", (d) => process.stderr.write(d));
 const port = await new Promise((resolve, reject) => { host.stdout.on("data", (d) => { const m = String(d).match(/listening (\d+)/); if (m) resolve(+m[1]); }); host.on("exit", (c) => reject(new Error(`host exited ${c}`))); });
@@ -55,7 +55,7 @@ function client(code, seat, caps = ["expanded", "counter"]) {
   ws.on("message", (raw) => { const m = JSON.parse(String(raw)); m.receivedAt = Date.now(); c.inbox.push(m); c.seen.push(m); if (m.type === "state") c.state = m; for (const f of [...wake]) f(); });
   c.send = (m, stamp = c.state?.actionStamp) => ws.send(JSON.stringify({ ...stamp, cid: crypto.randomUUID(), ...m }));
   c.next = (type, pred = () => true, ms = 6000) => new Promise((resolve, reject) => {
-    const timer = setTimeout(() => { wake.delete(check); reject(new Error(`${code}/${seat?.name ?? "watcher"} timeout ${type}: ${JSON.stringify(c.seen.filter((m) => m.type === "error"))}`)); }, ms);
+    const timer = setTimeout(() => { wake.delete(check); reject(new Error(`${code}/${seat?.name ?? "watcher"} timeout ${type}: ${JSON.stringify(c.seen.filter((m) => ["error","tradeDeclined","tradeClosed","tradeCounterClosed","log"].includes(m.type)).slice(-16))}`)); }, ms);
     const check = () => { const i = c.inbox.findIndex((m) => m.type === type && pred(m)); if (i < 0) return; clearTimeout(timer); wake.delete(check); resolve(c.inbox.splice(i,1)[0]); };
     wake.add(check); check();
   });
@@ -104,6 +104,7 @@ const botAnswers = Promise.all([["CCAP",false],["CCAR",true]].map(async ([code,n
  for (const terms of [ask,{give:{},want:{clay:1}},{give:{timber:1},want:{}},{give:{clay:1},want:{clay:1}},{give:{timber:-1},want:{clay:1}}]) await error(cs[1],{type:"tradeCounter",tradeId:o.tradeId,...terms},"Bad trade.");
  await error(cs[1],{type:"tradeCounter",...changed},"Offer is gone.");
  const c = await counter(cs,o); const wc = await w.next("tradeCounter");
+ assert.equal((await w.next("log",m=>m.text.includes(" counters "))).text,"Tide counters Ember: 1 brick for 2 wood.");
  assert.deepEqual(Object.keys(wc).sort(),["type","tradeId","counterId","by","name","give","want","receivedAt"].sort());
  assert.equal(c.by,"p1"); assert.deepEqual(c.give,changed.give);
  await error(cs[1],{type:"tradeCounter",tradeId:o.tradeId,give:{timber:3},want:{clay:1}},"Bad trade.");
@@ -119,6 +120,13 @@ const botAnswers = Promise.all([["CCAP",false],["CCAR",true]].map(async ([code,n
  await error(cs[0],{type:"tradeCounterAnswer",tradeId:o.tradeId,counterId:c.counterId,yes:true},"Offer is gone.");
  assert.equal(goods(cs[0],"p0").timber,before.timber-2); w.ws.close();
  console.log("PASS exact counter goods once; ids/roles/bags/equal/self/watcher/second-counter refusal; public event only");
+}
+// Any other seat can still take the original while a counter waits; its terms win.
+{
+ const cs=await table("CCAY"),o=await offer(cs),c=await counter(cs,o),before=structuredClone(goods(cs[0],"p0")),seq=cs[0].state.game.seq;
+ cs[2].send({type:"tradeAnswer",tradeId:o.tradeId,yes:true});assert.equal((await cs[0].next("tradeClosed")).taker,"p2");await cs[0].next("state",m=>m.game.seq>seq);
+ assert.equal(goods(cs[0],"p0").timber,before.timber-1);assert.equal(goods(cs[0],"p0").clay,before.clay);
+ await error(cs[0],{type:"tradeCounterAnswer",tradeId:o.tradeId,counterId:c.counterId,yes:true},"Offer is gone.");console.log("PASS original remains payable to another seat while counter waits; first valid deal closes all counters");
 }
 // No does not consume the original answer. Take back consumes the one counter allowance.
 for (const [code,why] of [["CCAB","no"],["CCAC","back"]]) {
@@ -181,6 +189,7 @@ for(const [code,type] of [["CCAE","tradeCancel"],["CCAF","pass"]]) {
 }
 // Held bot Yes: pending counter keeps it waiting after the only human answered No; closing releases it.
 {
+ assert.ok(pairedAcceptTrade(fixtures.get("CCAM").g,"p2",{from:"p0",give:{grain:1},want:{wool:1}}),"held-Yes fixture bot must accept");
  const cs=await table("CCAM"),o=await offer(cs,{give:{grain:1},want:{wool:1}}),c=await counter(cs,o);
  cs[1].send({type:"tradeAnswer",tradeId:o.tradeId,yes:false});await cs[0].next("tradeDeclined",m=>m.by==="p1");
  await new Promise(r=>setTimeout(r,2200));assert.equal(cs[0].seen.filter(m=>m.type==="tradeClosed").length,0);
@@ -188,6 +197,7 @@ for(const [code,type] of [["CCAE","tradeCancel"],["CCAF","pass"]]) {
  console.log("PASS bot held Yes waits for counter; closing counter releases it");
 }
 for(const code of ["CCAN"]) {
+ assert.ok(pairedAcceptTrade(fixtures.get(code).g,"p2",{from:"p0",give:{grain:1},want:{wool:1}}),"8s fixture bot must accept");
  const cs=await table(code),o=await offer(cs,{give:{grain:1},want:{wool:1}});await counter(cs,o);
  cs[1].send({type:"tradeAnswer",tradeId:o.tradeId,yes:false});await cs[0].next("tradeDeclined",m=>m.by==="p1");
  const closed=await cs[0].next("tradeClosed",()=>true,10000);assert.equal(closed.taker,"p2");assert.ok(closed.receivedAt-o.receivedAt>=7900);
