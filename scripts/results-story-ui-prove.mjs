@@ -255,6 +255,7 @@ try {
   // A real game: the chunk is fetched while the table plays.
   {
     const { context, page, storyLoads } = await open(390, 844, true, g, { live: true });
+    await page.getByTestId("win-dice").waitFor();
     assert.equal(storyLoads.length, 1, "the chunk is fetched once, during play");
     assert.equal(await page.getByTestId("win-dice").count(), 1, "the strip is there at the end");
     await context.close();

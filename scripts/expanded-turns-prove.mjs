@@ -317,8 +317,8 @@ for (const seats of [5, 6]) {
 }
 
 // 7. Classic parity: three and four seat games through applyAction, a scripted sequence of bot moves, offers, answers and
-// refused out-of-turn moves, with seeded dice. The hashes were generated from origin/main af826235 (before this change)
-// with a throwaway script holding this same classicScript; each run hashes every action, its error and the state after.
+// refused out-of-turn moves, with seeded dice. Each run hashes every action, its error and the state after. Hashes now
+// include rollSums and player tally (#1452, #1453); stripping both fields reproduces the af826235 hashes bit-for-bit.
 function classicScript({ createGame, applyAction, chooseBotAction }, seats, seed, steps) {
   let s = (Math.imul(seed + 1, 2654435761) >>> 0) || 1;
   const word = () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s; };
