@@ -1,112 +1,40 @@
-# Research: Profile Sheet Shared Win-Song Selector (#1351)
+# Shared win-song selector: remaining integration (#1351)
 
-## Overview
+Research only, updated 2026-11-17 by Codex-p (GPT-6.1 Sol).
+Original note: finish-budget, 2026-11-13; model unrecorded.
+Source snapshot: main `726c8f329f80727a994495303e2f67bf4bf44784`.
 
-This document specifies the shared win-song selector for the player Profile sheet.
-It delivers Issue #1351 as slice 4 of profile customization (#766).
-The feature allows authenticated owners to select an optional win anthem.
-Playback triggers for all table listeners when the player wins.
+The accepted specification is [profiles.md](../design/profiles.md), particularly
+[identity fields](../design/profiles.md#identity-and-editing),
+[Profile and Wins surfaces](../design/profiles.md#profile-and-wins-surfaces),
+and [curated media and playback](../design/profiles.md#curated-media-and-playback). This note does not replace that design.
+Players explicitly choose a shared catalogue song; clearing restores the default.
+The accepted completed-game contract plays the winner's validated choice for every
+present listener, including watchers. Keeping a choice out of public seat data
+during play does not mean other listeners never hear it. Custom assets remain
+subject to the accepted binding/projection gates and #1351 dependencies.
 
-## Core Invariants
+## Actual gap: client and sheet integration
 
-1. Default state: `winSongId` starts at `null` upon profile creation.
-2. Explicit choice: only an intentional user selection assigns a song.
-3. Default restoration: clearing the selection restores `winSongId: null`.
-4. Curated catalogue only: only approved catalogue IDs are sent.
-5. No custom clips: custom per-friend audio remains disallowed pending review.
-6. Owner privacy: `winSongId` remains hidden from public seat projections during play.
+The host already [validates song edits](../../server/profiles.mjs#L262).
+Its [profileEdit](../../server/profiles.mjs#L696) validates the credential, rejects
+signed-out callers and rechecks authorization after queued work. The old note's
+server `authOwner()` call was incorrect; it is not a server function.
 
-## Current System State
+The remaining selector integration is not just markup:
+[ProfileFields](../../src/lib/net/profiles.ts#L14) and
+[fieldsOf](../../src/lib/net/profiles.ts#L226) do not include `winSongId`, although
+the owner snapshot already has it. [ProfileForms](../../src/components/game/ProfileForms.tsx#L70)
+builds the existing edit fields without a song choice. The approved selector must
+connect explicit choice/clearing through the client edit path and sheet form;
+this document implements none of those changes and chooses no new control or preview.
 
-The backend already implements host-side song storage and validation.
-- `src/lib/profile-songs.ts` defines `PROFILE_SONGS` and the `isProfileSongId` validator.
-- `server/profiles.mjs` enforces catalogue validation inside `_applyEditFields`.
-- `server/profile-songs-prove.mjs` tests host persistence, clearing, and rename preservation.
-The UI layer currently lacks controls for choosing or clearing win songs.
+#1351's real-host completion test remains selection, clearing, rename preservation,
+invalid-ID rejection and unauthorized custom-ID rejection. Its #766/#768 dependencies
+and the accepted playback consumer remain separate work. No new projection contract,
+preview mechanism, chunk budget or measured headroom is established here.
 
-## Client State Management
-
-### 1. Store and Types (`src/lib/net/profiles.ts`)
-
-`ProfileOwner` already includes `winSongId: string | null`.
-`ProfileFields` must be updated to include optional `winSongId`:
-```typescript
-export interface ProfileFields {
-  displayName: string;
-  login: string;
-  color: string;
-  backupColor?: string | null;
-  catchphrase?: string;
-  winSongId?: string | null;
-}
-```
-The client helper `fieldsOf` must include `"winSongId"` in its allowlist.
-This ensures `c.edit({ winSongId })` transmits the selection over WebSockets.
-
-### 2. Sheet State (`src/components/game/ProfileSheet.tsx`)
-
-`ProfileSheet` manages high-level modal navigation and sub-chunk loading.
-Form state extends to hold the active selection:
-- Initial value reads from `snap.profile?.winSongId ?? null`.
-- Cancelling or navigating back discards unsaved selections.
-- Saving invokes `c.edit(fields)` through the existing `send()` wrapper.
-
-### 3. Edit Form UI (`src/components/game/ProfileForms.tsx`)
-
-`ProfileForms` renders the profile editing inputs inside a lazy chunk.
-The win-song selector adds a segmented control or option list:
-- Option 1: "Default (None)" sets `winSongId: null`.
-- Catalogue options: rendered dynamically from `PROFILE_SONGS`.
-- Each option displays the track label (e.g., "Isaac win music").
-- An audition button plays a preview using `play(asset)`.
-- Selecting an option updates form state without immediately saving.
-
-## Host Validation and Protocol
-
-Host requests flow through `server/profile-protocol.mjs` to `server/profiles.mjs`.
-
-### 1. Request Envelope
-
-The client submits `profileEdit` carrying the chosen ID:
-```json
-{
-  "type": "profileEdit",
-  "winSongId": "isaac-win"
-}
-```
-
-### 2. Validation Pipeline
-
-The host executes the following checks:
-1. Verifies the caller's session credential via `authOwner()`.
-2. Rejects foreign profile mutation attempts with `ProfileError("signedOut")`.
-3. Validates `f.winSongId === null || isProfileSongId(f.winSongId)`.
-4. Throws `ProfileError("invalid")` on unknown strings or invalid types.
-5. Persists the mutation atomically in `profiles.json`.
-
-### 3. Projection Invariants
-
-`server/profiles.mjs` strictly partitions public and private data:
-- `ownerView()` exposes `winSongId` solely to the authenticated owner.
-- `seatView()` and table cards completely omit `winSongId`.
-- Other players never observe the winner's choice until game completion.
-
-## Bundle Size Impact
-
-`ProfileForms` has a gzip ceiling of 2,350 bytes in `scripts/size-prove.mjs`.
-The current chunk measures 2,182 bytes, leaving 168 bytes of headroom.
-The selector component must remain lightweight to stay under ceiling:
-- Import `PROFILE_SONGS` directly from `src/lib/profile-songs.ts`.
-- Avoid heavy UI dependencies or separate audio libraries.
-- Reuse existing button and label styling primitives.
-
-## Verification and Completion Test Plan
-
-The implementation will be verified through real-host proofs:
-1. Shared catalogue selection: selecting "isaac-win" persists across reload.
-2. Selection clearing: choosing "Default" restores `winSongId: null`.
-3. Rename preservation: changing display name retains existing song selection.
-4. Invalid ID rejection: sending `"unknown-track"` fails with error code `"invalid"`.
-5. Unauthorized custom ID rejection: sending unlinked custom IDs fails atomically.
-6. Size ceiling check: `npm run size-prove` confirms `ProfileForms` passes.
-7. Proof suite: `npm run profiles-ui-prove` and `server/profile-songs-prove.mjs` pass.
+For this documentation revision, source links and diff whitespace were checked.
+No host, browser, playback or bundle-size proof was run. The earlier PR-body test
+claims belonged to the original builder and are not fresh validation of this head.
+This research does not complete #1351; it reserves no runtime file.
