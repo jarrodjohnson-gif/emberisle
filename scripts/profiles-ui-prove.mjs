@@ -26,6 +26,7 @@ const dir = mkdtempSync(path.join(tmpdir(), "emberisle-profile-ui-"));
 const SHOTS = process.env.SHOTS === "1" ? "docs/proofs/766" : null;
 const hosts = [];
 let browser, vite, legacyServer;
+const legacySockets = new Set();
 const ok = (message) => console.log(`ok ${message}`);
 
 async function host(name) {
@@ -81,6 +82,7 @@ try {
   `], { cwd: new URL("../server/", import.meta.url), env: { ...process.env, PROFILES_DIR: path.join(dir, "c", "profiles") }, encoding: "utf8" }));
   const c = await host("c");
   legacyServer = httpServer();
+  legacyServer.on("connection", (socket) => { legacySockets.add(socket); socket.once("close", () => legacySockets.delete(socket)); });
   const legacy = new WebSocketServer({ server: legacyServer });
   legacy.on("connection", (ws) => ws.on("message", (raw) => {
     const m = JSON.parse(String(raw));
@@ -202,7 +204,7 @@ try {
     assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Profile", `${size.name}: Escape returns focus to Profile`);
     await page.getByRole("textbox", { name: "Join code" }).fill("K7QP");
     assert.equal(await page.getByRole("textbox", { name: "Join code" }).inputValue(), "K7QP", `${size.name}: typed join code kept`);
-    for (const name of ["Play", "Host a table", "Join"]) assert.ok(await page.getByRole("button", { name, exact: true }).isEnabled(), `${size.name}: ${name} usable`);
+    for (const name of ["Play with bots", "Host a table", "Join"]) assert.ok(await page.getByRole("button", { name, exact: true }).isEnabled(), `${size.name}: ${name} usable`);
     assert.equal((await wire(page)).filter((f) => f.dir === "out" && /"profile(?!Hello)/.test(f.raw)).length, 0, `${size.name}: opening and closing sends no credential request`);
     await page.context().close();
   }
@@ -348,7 +350,7 @@ try {
   await saveCode(blocked);
   await sheet(blocked).getByText("Not remembered on this device.").waitFor();
   await sheet(blocked).getByRole("button", { name: "Close", exact: true }).click();
-  assert.ok(await blocked.getByRole("button", { name: "Play", exact: true }).isEnabled());
+  assert.ok(await blocked.getByRole("button", { name: "Play with bots", exact: true }).isEnabled());
   await blocked.context().close();
   ok("blocked storage signs in for this page only and keeps guest play");
 
@@ -365,7 +367,7 @@ try {
     const sent = (await wire(page)).filter((f) => f.dir === "out").map((f) => JSON.parse(f.raw));
     assert.ok(sent.every((m) => !m.credential && !m.pin && (m.type === "profileHello" || !m.type.startsWith("profile"))), `${label}: only the capability check is sent`);
     assert.equal(await page.evaluate(() => localStorage.getItem("emberisle-seat")), "seat-recovery-sentinel");
-    assert.ok(await page.getByRole("button", { name: "Play", exact: true }).isEnabled());
+    assert.ok(await page.getByRole("button", { name: "Play with bots", exact: true }).isEnabled());
     await page.context().close();
   }
   ok("unsupported and offline hosts say so, send no credential and leave guest play and the saved seat");
@@ -591,7 +593,7 @@ try {
 } finally {
   await browser?.close();
   await vite?.close();
-  legacyServer?.closeAllConnections();
+  for (const socket of legacySockets) socket.destroy();
   if (legacyServer) await new Promise((resolve) => legacyServer.close(resolve));
   for (const { proc } of hosts) if (proc.exitCode === null) { proc.kill("SIGTERM"); await new Promise((resolve) => { proc.once("exit", resolve); setTimeout(() => { proc.kill("SIGKILL"); resolve(); }, 5000).unref(); }); }
   rmSync(dir, { recursive: true, force: true });

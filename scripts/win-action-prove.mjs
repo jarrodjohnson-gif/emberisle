@@ -99,6 +99,8 @@ try{
    if(height<=480){
     assert.ok(dims.scrollHeight<=dims.clientHeight,`table must not scroll vertically: scrollHeight ${dims.scrollHeight} <= clientHeight ${dims.clientHeight}`);
    }
+   // The list is its own chunk on every size now; a restored game can show the heading before its rows land.
+   await page.getByTestId('win-row').first().waitFor();
    const rows=await page.getByTestId('win-row').all();assert.equal(rows.length,4);
    for(const r of rows){
     const b=await r.boundingBox();
