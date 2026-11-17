@@ -208,6 +208,7 @@
     "expanded-lobby-prove": "node --import ./server/register.mjs server/expanded-lobby-prove.mjs",
     "expanded-timers-prove": "node --import ./server/register.mjs server/expanded-timers-prove.mjs",
     "rolloff-extension-prove": "node --import ./server/register.mjs server/rolloff-extension-prove.mjs",
+    "online-sync-reset-prove": "node --import ./server/register.mjs server/online-sync-reset-prove.mjs",
     "result-journal-prove": "node --import ./server/register.mjs server/result-journal-prove.mjs",
     "profile-results-prove": "node --import ./server/register.mjs server/profile-results-prove.mjs",
     "profile-deletion-prove": "node --import ./server/register.mjs server/profile-deletion-prove.mjs",

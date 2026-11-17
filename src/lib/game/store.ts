@@ -5,8 +5,12 @@ import { applyAction, legalCities, legalRoads, legalSettle, publicVP, stealTarge
 
 const BANNER_MS = 2500;
 let bannerTimer: ReturnType<typeof setTimeout> | null = null;
-function showBanner(set: (p: { banner: string | null }) => void, text: string) {
+function clearBanner() {
   if (bannerTimer) clearTimeout(bannerTimer);
+  bannerTimer = null;
+}
+function showBanner(set: (p: { banner: string | null }) => void, text: string) {
+  clearBanner();
   set({ banner: text });
   bannerTimer = setTimeout(() => set({ banner: null }), BANNER_MS);
 }
@@ -292,7 +296,54 @@ function clearOfferTimers() {
   for (const t of offerTimers) clearTimeout(t);
   offerTimers = [];
   heldYes = [];
+  if (outcomeTimer) clearTimeout(outcomeTimer);
+  outcomeTimer = null;
 }
+
+const clearPlay = (): Partial<GameStore> => ({
+  error: null,
+  announcement: null,
+  toast: null,
+  banner: null,
+  buildMode: "none",
+  roadPicks: [],
+  pendingPlace: null,
+  pendingSteal: null,
+  offer: null,
+  declined: [],
+  tradeOutcome: null,
+  tradeTaker: null,
+  tradeOpen: false,
+  tradeOpener: null,
+  menuFor: null,
+  legal: null,
+  turnTimer: null,
+  gameResult: null,
+  tableVariant: undefined,
+  rematchChoice: undefined,
+});
+
+const clearTable = (): Partial<GameStore> => ({
+  ...clearPlay(),
+  screen: "title",
+  serverSha: null,
+  state: null,
+  net: null,
+  peeking: false,
+  seats: [],
+  code: "",
+  spectator: false,
+  watching: 0,
+  chat: [],
+  reactions: [],
+  unread: 0,
+  chatDraft: "",
+  gameLog: [],
+  lobbyLog: "",
+  seatId: "",
+  isHost: false,
+  ttt: null,
+});
 
 export type Screen = "title" | "lobby" | "play";
 
@@ -665,6 +716,7 @@ export const useGame = create<GameStore>((set, get) => ({
     stopEndMusic();
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
     clearWake();
+    clearBanner();
     clearKnocks();
     get().net?.close();
     // A new game owes nothing to the last one's offer or bot ask.
@@ -674,22 +726,16 @@ export const useGame = create<GameStore>((set, get) => ({
     const name = get().commitName();
     deal({ humans: [{ name }], bots: (get().seatCount ?? 4) - 1, wayfarerMode: get().wayfarerChoices.ai ?? "on" }, (state) => {
       set({
+        ...clearPlay(),
         screen: "play",
         mode: "ai",
         host: true,
         localId: "p0",
         state,
         gameLog: stamp(state.log),
-        error: null,
-        announcement: null,
-        toast: null,
-        buildMode: "none",
         net: null,
         peeking: false,
         spectator: false,
-        offer: null,
-        declined: [],
-        tradeOutcome: null, tradeTaker: null,
       });
       play("game_start");
     });
@@ -698,6 +744,7 @@ export const useGame = create<GameStore>((set, get) => ({
     resetTradePlease();
     stopEndMusic();
     clearWake();
+    clearBanner();
     clearKnocks();
     get().net?.close();
     clearOfferTimers();
@@ -708,22 +755,16 @@ export const useGame = create<GameStore>((set, get) => ({
     }));
     deal({ humans, bots: 0, wayfarerMode: get().wayfarerChoices.hotseat ?? "on" }, (state) =>
       set({
+        ...clearPlay(),
         screen: "play",
         mode: "hotseat",
         host: true,
         localId: "p0",
         state,
         gameLog: stamp(state.log),
-        error: null,
-        announcement: null,
-        toast: null,
-        buildMode: "none",
         net: null,
         peeking: false,
         spectator: false,
-        offer: null,
-        declined: [],
-        tradeOutcome: null, tradeTaker: null,
       }),
     );
   },
@@ -755,46 +796,13 @@ export const useGame = create<GameStore>((set, get) => ({
     // Leaving on purpose frees the seat; only a drop keeps it. A watcher never held one, and the saved seat may be another table's.
     if (!get().spectator) rememberSeat(null);
     clearWake();
+    clearBanner();
     clearKnocks();
     clearOfferTimers();
     botAsked = "";
     botDeclined.clear();
     get().net?.close();
-    set({
-      screen: "title",
-      serverSha: null,
-      wayfarerChoices: {},
-      state: null,
-      error: null,
-      announcement: null,
-      buildMode: "none",
-      net: null,
-      peeking: false,
-      seats: [],
-      legal: null,
-      turnTimer: null,
-      code: "",
-      spectator: false,
-      watching: 0,
-      pendingSteal: null,
-      chat: [],
-      reactions: [],
-      unread: 0,
-      chatDraft: "",
-      gameLog: [],
-      menuFor: null,
-      lobbyLog: "",
-      seatId: "",
-      isHost: false,
-      roadPicks: [],
-      pendingPlace: null,
-      toast: null,
-      offer: null,
-      declined: [],
-      tradeOutcome: null, tradeTaker: null,
-      tradeOpen: false,
-      tradeOpener: null,
-    });
+    set({ ...clearTable(), wayfarerChoices: {} });
   },
   dispatch: (action, asId, automated = false) => {
     const { state, localId, mode, net, spectator } = get();
@@ -1045,22 +1053,17 @@ export const useGame = create<GameStore>((set, get) => ({
     if (mode === "online") return net?.again(choice);
     if (mode !== "hotseat" || state?.phase !== "over") return;
     resetTradePlease();
+    clearBanner();
+    clearOfferTimers();
     const winner = state.players.find((p) => p.id === state.winner)!;
     const ordered = [winner, ...state.players.filter((p) => p !== winner)];
     // Five or six seats keep the expanded island, and each player keeps its seat number and colour (createExpandedGame).
     deal({ humans: ordered, bots: 0, winnerFirst: true, wayfarerMode: state.wayfarerMode ?? "on" }, (next) =>
       set({
+        ...clearPlay(),
         state: next,
         localId: "p0",
         gameLog: appendLog(get().gameLog, next.log),
-        error: null,
-        announcement: null,
-        toast: null,
-        buildMode: "none",
-        roadPicks: [],
-        pendingPlace: null,
-        pendingSteal: null,
-        tradeOpen: false,
       }),
     );
   },
@@ -1166,7 +1169,6 @@ function endOffer(set: Set, get: Get, taker: string | null) {
   else if (state?.players.every((p) => p.id === offer.from || declined.includes(p.id))) play("corn_no");
   else if (me === offer.from) play("trade_no");
   // Every receiver gets the resolved offer as one brief log line, with no response controls.
-  if (outcomeTimer) clearTimeout(outcomeTimer);
   set({ tradeTaker: taker, tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
   outcomeTimer = setTimeout(() => set({ tradeOutcome: null, tradeTaker: null }), BANNER_MS);
 }
@@ -1304,7 +1306,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
     set({ legal, turnTimer, clockSkew, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
     // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
-    if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
+    if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false, offer: null, declined: [], menuFor: null, rematchChoice: undefined });
     get().loadState(game, me, get().isHost, get().code);
     if (recovery && !get().spectator) {
       recovery = false;
@@ -1329,7 +1331,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       firstState = true;
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
-      set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
+      set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on", tableVariant: variant, offer: null, declined: [] });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.
@@ -1371,7 +1373,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       recovery = true;
       firstState = true;
       bestSkew = -Infinity;
-      set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null });
+      set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null, offer: null, declined: [] });
     },
     chat: (line) => {
       const { chat, chatOpen, unread, seatId, screen } = get();
@@ -1452,30 +1454,22 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
         if (get().net === table) set({ net: null, peeking: false });
         return;
       }
+      stopEndMusic();
+      clearBanner();
+      clearKnocks();
+      clearOfferTimers();
       if (keepSeat) {
-        stopEndMusic();
-
-        set({ announcement: null, restoring: false, error: "Your seat is open in another tab", toast: "Your seat is open in another tab", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
+        set({ ...clearTable(), restoring: false, error: "Your seat is open in another tab", toast: "Your seat is open in another tab" });
         return;
       }
       if (kind === "watch") {
         // A watcher holds nothing worth saving, and the seat secret in localStorage may belong to another table.
-        stopEndMusic();
-
-        set({ announcement: null, error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null, spectator: false, watching: 0 });
+        set({ ...clearTable(), error: "Lost the table", toast: "Lost the table" });
         return;
       }
       rememberSeat(null);
-      if (pending) {
-        const gone = get().restoring ? "Seat is gone." : null;
-        stopEndMusic();
-
-        set({ announcement: null, restoring: false, error: gone, toast: gone, screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
-        return;
-      }
-      stopEndMusic();
-
-      set({ announcement: null, error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
+      const err = pending ? (get().restoring ? "Seat is gone." : null) : "Lost the table";
+      set({ ...clearTable(), ...(pending ? { restoring: false } : {}), error: err, toast: err });
     },
   });
   } catch { loadFailed(); return; }
