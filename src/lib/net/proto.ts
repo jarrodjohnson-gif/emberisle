@@ -7,3 +7,7 @@ export const PROTO = 1;
 export const LOGIN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 export const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 export const JOIN_CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
+
+// Shared eager table protocol vocabulary; moving these constants changes no wire values or dispatch.
+export const TABLE_CAPS = ["expanded", "counter"];
+export const TABLE_EVENTS = ["seats", "rolled", "chat", "react", "tradeOffer", "tradeCounter", "tradeCounterClosed", "tradeDeclined", "tradeClosed", "ttt", "profileError", "tableProfileCard"];

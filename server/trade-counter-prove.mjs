@@ -55,7 +55,13 @@ function client(code, seat, caps = ["expanded", "counter"]) {
   ws.on("message", (raw) => { const m = JSON.parse(String(raw)); m.receivedAt = Date.now(); c.inbox.push(m); c.seen.push(m); if (m.type === "state") c.state = m; for (const f of [...wake]) f(); });
   c.send = (m, stamp = c.state?.actionStamp) => ws.send(JSON.stringify({ ...stamp, cid: crypto.randomUUID(), ...m }));
   c.next = (type, pred = () => true, ms = 6000) => new Promise((resolve, reject) => {
-    const timer = setTimeout(() => { wake.delete(check); reject(new Error(`${code}/${seat?.name ?? "watcher"} timeout ${type}: ${JSON.stringify(c.seen.filter((m) => ["error","tradeDeclined","tradeClosed","tradeCounterClosed","log"].includes(m.type)).slice(-16))}`)); }, ms);
+    const timer = setTimeout(() => {
+      wake.delete(check);
+      let saved;
+      try { const room=JSON.parse(readFileSync(path.join(dir, `${code}.json`))); saved={seq:room.game.seq,current:room.game.current,recoveryPids:room.recoveryPids,players:room.game.players.map(p=>({id:p.id,kind:p.kind,goods:Object.values(p.resources).reduce((a,b)=>a+b,0)}))}; } catch {}
+      const diagnostic={at:Date.now(),saved,current:c.state?.game.seq,recent:c.seen.filter((m)=>["error","tradeDeclined","tradeClosed","tradeCounterClosed","log"].includes(m.type)).slice(-16)};
+      reject(new Error(`${code}/${seat?.name ?? "watcher"} timeout ${type}: ${JSON.stringify(diagnostic)}`));
+    }, ms);
     const check = () => { const i = c.inbox.findIndex((m) => m.type === type && pred(m)); if (i < 0) return; clearTimeout(timer); wake.delete(check); resolve(c.inbox.splice(i,1)[0]); };
     wake.add(check); check();
   });
@@ -198,7 +204,9 @@ for(const [code,type] of [["CCAE","tradeCancel"],["CCAF","pass"]]) {
 }
 for(const code of ["CCAN"]) {
  assert.ok(pairedAcceptTrade(fixtures.get(code).g,"p2",{from:"p0",give:{grain:1},want:{wool:1}}),"8s fixture bot must accept");
- const cs=await table(code),o=await offer(cs,{give:{grain:1},want:{wool:1}});await counter(cs,o);
+ const cs=await table(code);assert.equal(cs[0].state.game.seq,fixtures.get(code).g.seq,"held-Yes room must not advance before its test");assert.equal(cs[0].state.game.current,"p0");
+ const bot=cs[0].state.game.players.find(p=>p.id==="p2");assert.equal(bot.kind,"bot");assert.equal(bot.goods,6,"bot fixture hand must remain intact before its test");
+ const o=await offer(cs,{give:{grain:1},want:{wool:1}});await counter(cs,o);
  cs[1].send({type:"tradeAnswer",tradeId:o.tradeId,yes:false});await cs[0].next("tradeDeclined",m=>m.by==="p1");
  const closed=await cs[0].next("tradeClosed",()=>true,10000);assert.equal(closed.taker,"p2");assert.ok(closed.receivedAt-o.receivedAt>=7900);
  console.log("PASS pending counter does not extend 8s PEOPLE_FIRST_MS bot hold");
@@ -241,12 +249,12 @@ for(const [code,who] of [["CCAU",1],["CCAV",0]]) {
  const wait=async(cond)=>{const end=Date.now()+5000;while(!cond()){assert.ok(Date.now()<end,"table.ts protocol event timed out");await new Promise(r=>setTimeout(r,5));}};
  await wait(()=>records.every(r=>r.state));const [a,b]=records;
  a.t.ask(ask.give,ask.want);await wait(()=>b.events.some(m=>m.type==="tradeOffer"));const o=b.events.find(m=>m.type==="tradeOffer");assert.equal(o.counter,true);
- b.t.counter(o.tradeId,changed.give,changed.want);await wait(()=>a.events.some(m=>m.type==="tradeCounter"));const c=a.events.find(m=>m.type==="tradeCounter");
- b.t.cancelCounter(o.tradeId,c.counterId);await wait(()=>a.events.some(m=>m.type==="tradeCounterClosed"));assert.equal(a.events.find(m=>m.type==="tradeCounterClosed").why,"back");
+ b.t.tradeCounter(o.tradeId,changed.give,changed.want);await wait(()=>a.events.some(m=>m.type==="tradeCounter"));const c=a.events.find(m=>m.type==="tradeCounter");
+ b.t.tradeCounterCancel(o.tradeId,c.counterId);await wait(()=>a.events.some(m=>m.type==="tradeCounterClosed"));assert.equal(a.events.find(m=>m.type==="tradeCounterClosed").why,"back");
  a.t.cancel(o.tradeId);await wait(()=>a.events.some(m=>m.type==="tradeClosed"));
  a.t.ask(ask.give,ask.want);await wait(()=>b.events.filter(m=>m.type==="tradeOffer").length===2);const next=b.events.filter(m=>m.type==="tradeOffer")[1];
- b.t.counter(next.tradeId,changed.give,changed.want);await wait(()=>a.events.filter(m=>m.type==="tradeCounter").length===2);const nc=a.events.filter(m=>m.type==="tradeCounter")[1];
- a.t.answerCounter(next.tradeId,nc.counterId,true);await wait(()=>a.events.some(m=>m.type==="tradeClosed"&&m.taker==="p1"));
+ b.t.tradeCounter(next.tradeId,changed.give,changed.want);await wait(()=>a.events.filter(m=>m.type==="tradeCounter").length===2);const nc=a.events.filter(m=>m.type==="tradeCounter")[1];
+ a.t.tradeCounterAnswer(next.tradeId,nc.counterId,true);await wait(()=>a.events.some(m=>m.type==="tradeClosed"&&m.taker==="p1"));
  assert.ok(records.every(r=>r.errors.length===0));for(const r of records)r.t.close();console.log("PASS real table.ts capability, three senders and both events");
 }
 clearTimeout(deadline);host.kill("SIGKILL");console.log("trade-counter-prove: real-host slice1 cases passed");
