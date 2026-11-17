@@ -87,6 +87,24 @@ try {
     assert.ok(card.scroll <= 1, `${tag}: the card scrolls ${card.scroll} px at first paint`);
     if (v.touch && v.height > v.width) assert.ok(card.heightShare <= 0.6, `${tag}: portrait card is ${Math.round(card.heightShare * 100)} % tall`);
 
+    // The optional ghost may mount after the first-paint snapshot; check its loaded state too.
+    await page.getByTestId("open-mode-toggle").waitFor();
+    const loaded = await page.evaluate(() => {
+      const el = document.querySelector('[data-testid="title-card"]');
+      const c = el.getBoundingClientRect();
+      const buttons = [...el.querySelectorAll("button:not([role=radio])")];
+      const filled = buttons.filter(b => !/rgba\(0, 0, 0, 0\)|transparent/.test(getComputedStyle(b).backgroundColor)).map(b => b.textContent.trim());
+      const toggle = el.querySelector('[data-testid="open-mode-toggle"]');
+      const r = toggle.getBoundingClientRect();
+      return { filled, background: getComputedStyle(toggle).backgroundColor, width: r.width, height: r.height,
+        inside: r.top >= Math.max(0, c.top) - 0.5 && r.left >= Math.max(0, c.left) - 0.5 &&
+          r.bottom <= Math.min(innerHeight, c.bottom) + 0.5 && r.right <= Math.min(innerWidth, c.right) + 0.5 };
+    });
+    assert.deepEqual([...loaded.filled].sort(), ["Host a table", "Join", "Pass and play", "Play with bots"], `${tag}: loaded title filled buttons`);
+    assert.match(loaded.background, /rgba\(0, 0, 0, 0\)|transparent/, `${tag}: Open table remains a transparent ghost`);
+    assert.ok(loaded.width >= 44 && loaded.height >= 44, `${tag}: loaded Open table target is 44px`);
+    assert.ok(loaded.inside, `${tag}: loaded Open table is inside the card and viewport`);
+
     const watch = page.getByRole("button", { name: "Watch", exact: true });
     assert.equal(await watch.count(), 0, `${tag}: Watch before a code`);
     const live = page.getByTestId("watch-announce");
