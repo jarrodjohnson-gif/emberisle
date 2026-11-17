@@ -271,7 +271,6 @@ async function online(me, { cap = false } = {}) {
   const view = VIEWS[1];
   const sent = { welcomes: 0 };
   let states = [];
-  let sockets = [];
   let seatSocket;
   const requested = [];
   const { ctx, page, tag } = await open(view, {
@@ -281,7 +280,6 @@ async function online(me, { cap = false } = {}) {
       if (process.env.YT_DELAY_MOMENTS && me === "p0") await page.route("**/src/components/game/moments.ts*", async (route) => { await new Promise((r) => setTimeout(r, Number(process.env.YT_DELAY_MOMENTS))); await route.continue(); });
       await ctx.addInitScript(() => localStorage.setItem("emberisle-seat", JSON.stringify({ code: "ABCD", secret: "s3cret" })));
       await page.routeWebSocket("ws://127.0.0.1:9/", (ws) => {
-        sockets.push(ws);
         ws.onMessage(async (raw) => {
           if (JSON.parse(String(raw)).type !== "hello") return;
           // Discovery may dial this host after the seat. Game states and the deliberate

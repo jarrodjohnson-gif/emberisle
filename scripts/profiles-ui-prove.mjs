@@ -26,6 +26,7 @@ const dir = mkdtempSync(path.join(tmpdir(), "emberisle-profile-ui-"));
 const SHOTS = process.env.SHOTS === "1" ? "docs/proofs/766" : null;
 const hosts = [];
 let browser, vite, legacyServer;
+const legacySockets = new Set();
 const ok = (message) => console.log(`ok ${message}`);
 
 async function host(name) {
@@ -81,6 +82,7 @@ try {
   `], { cwd: new URL("../server/", import.meta.url), env: { ...process.env, PROFILES_DIR: path.join(dir, "c", "profiles") }, encoding: "utf8" }));
   const c = await host("c");
   legacyServer = httpServer();
+  legacyServer.on("connection", (socket) => { legacySockets.add(socket); socket.once("close", () => legacySockets.delete(socket)); });
   const legacy = new WebSocketServer({ server: legacyServer });
   legacy.on("connection", (ws) => ws.on("message", (raw) => {
     const m = JSON.parse(String(raw));
@@ -591,7 +593,7 @@ try {
 } finally {
   await browser?.close();
   await vite?.close();
-  legacyServer?.closeAllConnections();
+  for (const socket of legacySockets) socket.destroy();
   if (legacyServer) await new Promise((resolve) => legacyServer.close(resolve));
   for (const { proc } of hosts) if (proc.exitCode === null) { proc.kill("SIGTERM"); await new Promise((resolve) => { proc.once("exit", resolve); setTimeout(() => { proc.kill("SIGKILL"); resolve(); }, 5000).unref(); }); }
   rmSync(dir, { recursive: true, force: true });
