@@ -33,25 +33,25 @@ The desk confirmed both batches merged on #1449. This revision does not rerun th
 ### Resolved by Adjacent PRs
 - **Function 18:** `TableMenu.tsx` uses the Bug icon and announces GitHub new-tab opening (PR #1482).
 - **Function 19:** `DiscardBar.tsx` now uses `TradeResource` stepper tokens (PR #1591, Slice C).
-- **Function 25:** Table menu Water and View subgrid was approved by owner decision `q1503-menu-gap`.
+- **Function 25:** The owner approved the Table menu Water and View subgrid in decision `q1503-menu-gap`.
 
 ## 3. Catalog of Remaining Word Inconsistencies
 
-The table below catalogs word inconsistencies that remain open for owner decision.
+The table below records proposals and the explicit keep decisions. Jarrod chooses any remaining changes.
 
 | Item | Screen / Component | Current Text | Proposed Text | Rationale |
 | :--- | :--- | :--- | :--- | :--- |
 | W2 | `PlaceList.tsx` | "Lay a path", "Raise a stronghold" | Keep existing words; replacement not adopted | Desk answer 6941614661; future changes need a new owner picture card. |
-| W3 | `rules.ts:566, 578, 647, 662` | "raises an outpost", "founds an outpost" | "builds an outpost" in all phases | Eliminates dual verbs for the same action. |
-| W3 | `rules.ts:578, 647` | "lays a path" (setup), "builds a path" | "builds a path" in all phases | One consistent verb across phases. |
+| W3 | `rules.ts:571, 667` | "raises an outpost", "founds an outpost" | "builds an outpost" in all phases | Eliminates dual verbs for the same action. |
+| W3 | `rules.ts:583, 652` | "lays a path" (setup), "builds a path" | "builds a path" in all phases | One consistent verb across phases. |
 | W4 | `TakeFromBar.tsx:39` | "The wayfarer takes a card" | "The wayfarer takes a good" | The game uses "goods", not "cards". |
 | W4 | `fortunes.ts:6, 27` | "takes a card", "taking cards" | "takes a good", "taking goods" | Aligns fortune copy with HUD resources. |
 | W4 | `rules.ts:617, 623` | "Bad cards.", "Not enough cards." | "Bad goods.", "Not enough goods." | Standardizes error terminology. |
-| W5 | `LobbyView.tsx:172` | "Leave the table" | "Leave table" | Matches Table menu row label. |
-| W5 | `WinScreen.tsx` | "Menu" | Keep "Menu" | Owner-approved in #1590; withdraw the conflicting replacement. |
+| W5 | `LobbyView.tsx:177` | "Leave table" | Keep "Leave table" | Already uses this wording at the checked snapshot. |
+| W5 | `WinScreen.tsx` | "Menu" | Keep "Menu" | Owner choice `q1599-win-screen` A, PR #1599; withdraw the conflicting replacement. |
 | W6 | `README.md:45, 63` | "knights", "Pass ends the turn." | "wayfarer", "End turn ends the turn." | Rulebook matches on-screen button labels. |
 | W7 | `WayfarerOptions.tsx:14` | "Off never moves or blocks." | "Off: the wayfarer never moves." | Supplies explicit grammatical subject. |
-| W8 | `HowTo.tsx:68` | "Build paths (wood + brick)" | Consistent cost format | Standardizes punctuation and conjunctions. |
+| W8 | `HowTo.tsx:74` | "Build paths (wood + brick)" | Consistent cost format | Standardizes punctuation and conjunctions. |
 
 ## 4. Catalog of Remaining Control Behaviors
 
@@ -91,4 +91,9 @@ Keep "Lay a path" and "Raise a stronghold". The replacement proposal was not ado
 Any future change needs a new picture card for Jarrod on the Desk page.
 The [desk coordination answer](https://github.com/jarrodjohnson-gif/emberisle/issues/1449#issuecomment-6941564510) permits only this document.
 It preserves the other implementation claim.
-I checked the corrected source strings and diff whitespace. I ran no browser or production proof for this documentation edit.
+I checked the corrected W2/W3/W5/W8 source strings and line references at the main snapshot above.
+The source has "raises an outpost" at rules.ts:571 and "lays a path" at :583.
+It has "builds a path" at :652 and "founds an outpost" at :667.
+LobbyView.tsx:177 already says "Leave table"; HowTo.tsx:74 holds the quoted costs sentence.
+[DECISIONS](../DECISIONS.md) records `q1599-win-screen` A and [PR #1599](https://github.com/jarrodjohnson-gif/emberisle/pull/1599).
+I checked diff whitespace. I ran no browser or production proof for this documentation edit.
