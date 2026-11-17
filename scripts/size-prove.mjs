@@ -126,6 +126,9 @@ const CEILINGS = [
   // #1665, 2026-11-14: the message icon the seat menu shares with chat; measured 248 B gzip. New chunk; the desk set this
   // ceiling (PR #1674).
   { name: "message-square", gzipBytes: 280 },
+  // #1592, 2026-11-17: shared tray focus helper for TradeToast and losses; measured 638 B gzip.
+  // New chunk only; proposed under q-size-standing A, desk sets final ceiling.
+  { name: "tray-focus", gzipBytes: 750 },
   // #827: other seats' public roll and trade gains load lazily (online only); a new chunk, so this ceiling is its only limit.
   { name: "SeatPublicGains", gzipBytes: 1800 },
 ];
