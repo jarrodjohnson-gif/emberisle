@@ -24,7 +24,7 @@ Items 24 and 25 rank last for test cost, not because the issue calls them unappr
 ## Issue #1448 Item Status Matrix
 
 The table below catalogs all 25 items from Issue #1448.
-The earlier claim of owner approval for items 1–23 had no source and is withdrawn.
+The earlier claim of owner approval for items 1–23 had no source. I withdraw it.
 The issue says implementation depends on owner selection.
 The matrix preserves the historical batch reports; it does not mark remaining items approved.
 Items 24 and 25 rank last for test cost.
@@ -147,7 +147,7 @@ Additional victory descriptions and waiting labels can be made more concise.
    - Retain: `"I'll play again"`.
    - [Owner answer 6712215960](https://github.com/jarrodjohnson-gif/emberisle/issues/1411#issuecomment-6712215960), `q1411-play-again` A, governs this control.
    - [PlayAgain.tsx](../../src/components/game/PlayAgain.tsx#L14) keeps that text in both states, adding a checkmark when selected.
-   - The proposed shortening is withdrawn.
+   - I withdraw the proposed shortening.
 
 2. **Waiting for host label (`WinScreen.tsx:219`)**:
    - Current: ``Waiting for ${hostName} to start another.``
