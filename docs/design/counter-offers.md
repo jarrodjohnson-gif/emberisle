@@ -11,7 +11,7 @@ It builds on three things that already exist:
 
 It covers the plain counter only. "Any N cards" and request-only asks from `trade-open-ask.md` stay out.
 
-Nothing here is approved yet. The [owner questions](#owner-questions) at the end need Jarrod's answers before anyone builds.
+Jarrod answered all four questions on 2026-11-14 (A on each; see [Owner answers](#owner-answers)). The design is ready to build.
 
 ## The idea in one example
 
@@ -220,7 +220,7 @@ Error strings stay the ones in use: "Offer is gone.", "Bad trade.", "You lack th
 
 ## Building it
 
-Three slices, in order. Each is one issue and one PR. The desk files them once the owner has answered.
+Three slices, in order. Each is one issue and one PR. The desk files them after this design merges.
 
 | Slice | Lane, tier | Files | Depends on |
 |---|---|---|---|
@@ -267,39 +267,43 @@ No existing ceiling or allowance moves for this work.
 - If a chunk does not fit, the builder moves the counter states into a new lazy chunk loaded with the first `counter: true` offer. A new chunk's ceiling is the desk's call.
 - If it still does not fit, the builder stops and posts the measured bytes.
 
-## Owner questions
+## Owner answers
 
-Each is one card. A is the recommendation.
+Jarrod answered all four cards on the Desk page on 2026-11-14 at 15:42 UTC. He chose A on each.
 
-**1. Where does Counter go?**
-- **A. A third button between No and Yes.** One tap to start a counter. The row is tighter on a phone.
+**1. Where does Counter go? (`q850-counter-where`)**
+- **A (chosen). A third button between No and Yes.** One tap opens the counter sheet with their terms filled in. The row is tighter on a phone.
 - B. Keep No and Yes. Tapping the offer line opens the counter sheet. Cleaner row, but easy to miss.
 - C. No counters. Close part 2 of #850.
+- D. Something else.
 
-**2. Your counter is refused. Can you still take the first offer?**
-- **A. Yes.** The first offer comes back with No and Yes.
+**2. Your counter is refused. Can you still take the first offer? (`q850-counter-refused`)**
+- **A (chosen). Yes.** The first offer comes back with No and Yes.
 - B. No. Sending a counter is your No to the first offer.
+- D. Something else.
 
-**3. Who sees a counter?**
-- **A. The asker in the tray. Everyone else in the game log.** Matches how offers are public today.
+**3. Who sees a counter? (`q850-counter-who`)**
+- **A (chosen). The asker in the tray. Everyone else in the game log.** Matches how offers are public today.
 - B. Only the asker and the sender. Needs hidden-terms work on the host.
+- D. Something else.
 
-**4. What do bots do?**
-- **A. Bots answer a counter. They never send one.**
+**4. What do bots do? (`q850-counter-bots`)**
+- **A (chosen). Bots answer a counter. They never send one.**
 - B. Bots also send counters. Needs a pricing rule first, and its own design.
 - C. Bots refuse every counter.
+- D. Something else.
 
 ## Pictures
 
 These are the real game with a prototype of slice 3 on top (`counter-offers/prototype.patch`). The tray, the sheet and their classes are the real ones. No host code exists yet.
 
-| Got an offer (question 1, A) | The counter sheet | The asker sees the counter |
+| Got an offer (chosen A) | The counter sheet | The asker sees the counter |
 |---|---|---|
 | ![offer](counter-offers/recv-offer-390x844.png) | ![sheet](counter-offers/recv-sheet-390x844.png) | ![asker](counter-offers/ask-counter-390x844.png) |
 
-| Cannot pay the offer | My counter is out | Question 1, B: tap the line |
-|---|---|---|
-| ![cannot pay](counter-offers/recv-cannot-pay-390x844.png) | ![waiting](counter-offers/recv-waiting-390x844.png) | ![option B](counter-offers/recv-optionB-390x844.png) |
+| Cannot pay the offer | My counter is out |
+|---|---|
+| ![cannot pay](counter-offers/recv-cannot-pay-390x844.png) | ![waiting](counter-offers/recv-waiting-390x844.png) |
 
 Sideways phone and desktop:
 
