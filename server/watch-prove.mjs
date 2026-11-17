@@ -101,7 +101,9 @@ function attach(p) {
     log: on((text) => p.logs.push(text)),
     chat: on((line) => p.chats.push(line)),
     error: on((e) => p.errors.push(e)),
-  }, WebSocket);
+  }, class extends WebSocket {
+    constructor(...args) { super(...args); p.socket = this; }
+  });
 }
 
 // A raw socket that keeps every message it is sent, so the proof can read all of them back.
@@ -220,10 +222,19 @@ console.log(`after the start: welcome {spectator:true}, seats {watching:1}, reda
 // --- 3. The turn timer: every seat idles on the roll-off with two watchers connected. It moves a seat, not a watcher.
 const opener = all.find((p) => p.you === a.state.current);
 stage = "idle timer";
+// Force the watcher-first delivery order seen in CI; seat frames stay queued.
+for (const p of all) p.socket.pause();
 await until(() => w1.logs.some((t) => t.endsWith("took too long; the table moved on.")), "the idle roll-off being moved on", TURN + 3000);
 const moved = w1.logs.filter((t) => t.endsWith("took too long; the table moved on."));
 if (moved.length !== 1 || moved[0] !== `${opener.name} took too long; the table moved on.`) fail("the timer moved the idle seat", { moved, opener: opener.name });
 await until(() => w1.state().game.seq > first.game.seq, "the timer's roll reaching the watcher");
+const idleSeq = w1.state().game.seq;
+if (!all.every((p) => p.state.seq < idleSeq)) fail("the idle delivery fixture did not hold the seats behind the watcher");
+for (const p of all) p.socket.resume();
+// A watcher callback does not order callbacks on the seats. Do not issue a stale action
+// whose refusal sends an extra state to only that seat (host freshAction).
+await until(() => all.every((p) => p.state.seq >= idleSeq), "the timer state reaching every seat before play");
+console.log(`idle delivery fence: watcher seq ${idleSeq} arrived before all held seats; every seat caught up before play`);
 if (w1.errors.length || w2.errors.length) fail("the timer touched a watcher", { w1: w1.errors, w2: w2.errors });
 console.log(`turn timer: idle roll-off, "${moved[0]}" (a seat, never a watcher), watcher at seq ${w1.state().game.seq}`);
 
