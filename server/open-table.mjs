@@ -30,14 +30,14 @@ export function getOpenTables() {
     : "lobby";
   // Name follows the current host seat so a handoff keeps the label honest.
   const hostSeat = openRoom.seats.find((s) => s.id === openRoom.host) ?? openRoom.seats[0];
-  // Count every seat (bots included): sitDown refuses when length >= 4.
+  // Count every seat (bots included): sitDown refuses at the room's cap, 4, or 6 for an expanded room (#1611).
   const seated = openRoom.seats.length;
   return [
     {
       code: openRoom.code,
       name: `${hostSeat?.name ?? "Host"}'s table`,
       seated,
-      total: 4,
+      total: openRoom.variant === "expanded" ? 6 : 4,
       status,
     },
   ];

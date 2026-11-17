@@ -188,7 +188,7 @@ try {
     await title.waitForFunction(() => window.__emberisle.getState().seats.length === 3);
     await guest.evaluate(() => window.__emberisle.getState().setReady(true));
     await title.getByRole("button", { name: "Ready", exact: true }).click();
-    await title.getByRole("button", { name: "Start", exact: true }).waitFor();
+    await title.getByRole("button", { name: "Start", exact: true }).and(title.locator(":enabled")).waitFor();
     await title.waitForTimeout(500);
     await title.evaluate(() => document.activeElement?.blur());
     assert.ok(await screen(title, "lobby", 16) > 3, `${tag}: Tab reaches the lobby's buttons`);
