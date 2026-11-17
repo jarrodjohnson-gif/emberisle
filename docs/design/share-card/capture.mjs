@@ -1,8 +1,9 @@
-// #1454 design capture: share-your-game cards (1080x1350 feed, 1080x1920 story, 4p & 6p, Options A & B)
+// #1454 design capture: share-your-game cards (1080x1350 feed, 1080x1920 story, 3p/4p/5p/6p, Options A & B)
 // plus real 390x844 WinScreen button placement comparison (Option A vs Option B).
 // No src/ changes. Not a CI proof. Run from repo root with Playwright lock:
 //   node --import ./server/register.mjs docs/design/share-card/capture.mjs
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import assert from "node:assert/strict";
+import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
@@ -67,8 +68,6 @@ function buildRows(g, awardPool) {
       isWinner: p.id === winner.id,
       longestRoad: g.longestRoad === p.id,
       largestArmy: g.largestArmy === p.id,
-      outposts: g.vertices.filter((v) => v.building?.playerId === p.id && v.building.kind === "outpost").length,
-      strongholds: g.vertices.filter((v) => v.building?.playerId === p.id && v.building.kind === "stronghold").length,
     }))
     .sort((a, b) => Number(b.isWinner) - Number(a.isWinner) || b.vp - a.vp);
 
@@ -79,14 +78,30 @@ function buildRows(g, awardPool) {
   }));
 }
 
+const g3 = playFinishedGame(["Jarrod", "Maya", "Josh"], 1452);
 const g4 = playFinishedGame(["Jarrod", "Josh", "Maya", "Elena"], 1454);
+const g5 = playFinishedGame(["Jarrod", "Josh", "Maya", "Elena", "Moss"], 1455);
 const g6 = playFinishedGame(["Jarrod", "Josh", "Maya", "Elena", "Moss", "Flint"], 1456);
+
+const rows3 = buildRows(g3, [
+  "Crown winner · Classic three-seat",
+  "Harbour trader · 5 dock exchanges",
+  "Timber baron · 11 wood rolled",
+]);
 
 const rows4 = buildRows(g4, [
   "Crown winner · Built an outpost",
   "Trade broker · 4 table trades",
   "Wayfarer's target · Hit 5 times",
   "Brick baron · 14 brick rolled",
+]);
+
+const rows5 = buildRows(g5, [
+  "Crown winner · Expanded table",
+  "Road builder · 10 trails laid",
+  "Trade broker · 3 table trades",
+  "Grain baron · 13 wheat rolled",
+  "Hit by 7s · Discarded 8 goods",
 ]);
 
 const rows6 = buildRows(g6, [
@@ -107,16 +122,21 @@ function dotStyle(hex) {
 
 function renderCardOptionA({ width, height, rows, islandUrl, turns, target, code, seatCount }) {
   const isStory = height > 1500;
-  const isSix = seatCount > 4;
+  const isExpanded = seatCount >= 5;
+  const isThree = seatCount <= 3;
+  const isFive = seatCount === 5;
   const winner = rows[0];
   const padTop = isStory ? 110 : 44;
   const padBottom = isStory ? 110 : 40;
-  const boardH = isStory ? (isSix ? 640 : 720) : (isSix ? 500 : 540);
-  const gridCols = isSix && !isStory ? "grid-template-columns: 1fr 1fr; gap: 14px;" : "grid-template-columns: 1fr; gap: 12px;";
-  const rowPad = isSix && !isStory ? "14px 18px" : isSix ? "16px 24px" : isStory ? "22px 26px" : "18px 24px";
+  const boardH = isStory
+    ? (isThree ? 860 : isExpanded ? 660 : 740)
+    : (isThree ? 620 : isExpanded ? 500 : 540);
+  const useTwoCol = isExpanded && !isStory;
+  const gridCols = useTwoCol ? "grid-template-columns: 1fr 1fr; gap: 14px;" : "grid-template-columns: 1fr; gap: 12px;";
+  const rowPad = useTwoCol ? "14px 18px" : isExpanded ? "16px 24px" : isThree ? "22px 26px" : isStory ? "22px 26px" : "18px 24px";
 
   const rowsHtml = rows.map((r) => `
-    <div class="row ${r.isWinner ? "winner" : ""}" style="padding:${rowPad}">
+    <div class="row ${r.isWinner ? "winner" : ""} ${useTwoCol && isFive && r.isWinner ? "span-full" : ""}" style="padding:${rowPad}">
       <div class="row-left">
         <span class="dot" style="${dotStyle(r.color)}"></span>
         <div class="row-text">
@@ -168,11 +188,7 @@ function renderCardOptionA({ width, height, rows, islandUrl, turns, target, code
     border-bottom: 1px solid #e3e7e2;
     background: #f8faf9;
   }
-  .brand {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
+  .brand { display: flex; flex-direction: column; gap: 4px; }
   .brand-kicker {
     font-size: 16px;
     font-weight: 700;
@@ -208,16 +224,12 @@ function renderCardOptionA({ width, height, rows, islandUrl, turns, target, code
     color: #263d3c;
     line-height: 1.35;
   }
-  .meta-sub {
-    font-size: 15px;
-    font-weight: 500;
-    color: #555e58;
-  }
+  .meta-sub { font-size: 15px; font-weight: 500; color: #555e58; }
   .island-wrap {
     height: ${boardH}px;
     width: 100%;
     position: relative;
-    background: #158e9a;
+    background: #b7e0dc;
     overflow: hidden;
     border-bottom: 1px solid #e3e7e2;
   }
@@ -272,32 +284,15 @@ function renderCardOptionA({ width, height, rows, islandUrl, turns, target, code
     background: #f0f7f6;
     border: 2px solid #246d72;
   }
-  .row-left {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    min-width: 0;
+  .row.span-full {
+    grid-column: 1 / -1;
   }
-  .dot {
-    width: 20px;
-    height: 20px;
-    border-radius: 999px;
-    flex: none;
-  }
-  .row-text {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-  }
-  .name-line {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: nowrap;
-  }
+  .row-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .dot { width: 20px; height: 20px; border-radius: 999px; flex: none; }
+  .row-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .name-line { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
   .name {
-    font-size: ${isSix && !isStory ? "21px" : "24px"};
+    font-size: ${useTwoCol ? "21px" : isThree ? "26px" : "24px"};
     font-weight: 750;
     color: #162423;
     white-space: nowrap;
@@ -325,7 +320,7 @@ function renderCardOptionA({ width, height, rows, islandUrl, turns, target, code
     flex: none;
   }
   .award {
-    font-size: ${isSix && !isStory ? "15px" : "17px"};
+    font-size: ${useTwoCol ? "15px" : isThree ? "18px" : "17px"};
     font-weight: 500;
     color: #555e58;
     white-space: nowrap;
@@ -334,7 +329,7 @@ function renderCardOptionA({ width, height, rows, islandUrl, turns, target, code
   }
   .score {
     font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
-    font-size: ${isSix && !isStory ? "30px" : "34px"};
+    font-size: ${useTwoCol ? "30px" : isThree ? "36px" : "34px"};
     font-weight: 800;
     color: #162423;
     font-variant-numeric: tabular-nums;
@@ -343,11 +338,7 @@ function renderCardOptionA({ width, height, rows, islandUrl, turns, target, code
     gap: 4px;
     flex: none;
   }
-  .pts {
-    font-size: 14px;
-    font-weight: 700;
-    color: #555e58;
-  }
+  .pts { font-size: 14px; font-weight: 700; color: #555e58; }
   .footer {
     padding: 18px 36px;
     background: #f3f6f5;
@@ -359,10 +350,7 @@ function renderCardOptionA({ width, height, rows, islandUrl, turns, target, code
     font-weight: 600;
     color: #263d3c;
   }
-  .footer-url {
-    color: #246d72;
-    font-weight: 700;
-  }
+  .footer-url { color: #246d72; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -382,7 +370,7 @@ function renderCardOptionA({ width, height, rows, islandUrl, turns, target, code
     </header>
     <div class="island-wrap">
       <img src="${islandUrl}" alt="Final Emberisle board" />
-      <div class="island-tag">Final board · ${seatCount === 6 ? "30-hex expanded island" : "19-hex classic island"}</div>
+      <div class="island-tag">Final board · ${isExpanded ? "30-hex expanded island" : "19-hex classic island"}</div>
     </div>
     <section class="standings">
       <div class="section-label">Standings &amp; Island Awards</div>
@@ -415,6 +403,7 @@ function renderCardOptionB({ width, height, rows, islandUrl, turns, target, code
     </div>
   `).join("");
 
+  // Background image is captured at 1080x1600 and shifted up 160 px so the continuous WebGL sea covers y=0..1440 (> 1350) with zero seam.
   return `<!doctype html>
 <html>
 <head>
@@ -427,18 +416,18 @@ function renderCardOptionB({ width, height, rows, islandUrl, turns, target, code
     overflow: hidden;
     position: relative;
     font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #b7e0dc;
+    background: #91bdbb;
     color: #263d3c;
   }
   .bg {
     position: absolute;
     left: 0;
-    right: 0;
-    top: -150px;
-    width: 100%;
-    height: 100%;
+    top: -160px;
+    width: 1080px;
+    height: 1600px;
     object-fit: cover;
     object-position: center center;
+    display: block;
   }
   .top-pill {
     position: absolute;
@@ -473,11 +462,7 @@ function renderCardOptionB({ width, height, rows, islandUrl, turns, target, code
     flex-direction: column;
     gap: 18px;
   }
-  .tray-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-  }
+  .tray-head { display: flex; justify-content: space-between; align-items: baseline; }
   .headline {
     font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
     font-size: 42px;
@@ -487,22 +472,9 @@ function renderCardOptionB({ width, height, rows, islandUrl, turns, target, code
     align-items: center;
     gap: 14px;
   }
-  .head-dot {
-    width: 24px;
-    height: 24px;
-    border-radius: 999px;
-    display: inline-block;
-  }
-  .sub {
-    font-size: 19px;
-    font-weight: 600;
-    color: #555e58;
-  }
-  .rows {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
+  .head-dot { width: 24px; height: 24px; border-radius: 999px; display: inline-block; }
+  .sub { font-size: 19px; font-weight: 600; color: #555e58; }
+  .rows { display: flex; flex-direction: column; gap: 10px; }
   .row {
     display: flex;
     align-items: center;
@@ -512,10 +484,7 @@ function renderCardOptionB({ width, height, rows, islandUrl, turns, target, code
     background: #f5f7f6;
     border: 1px solid #d9ded9;
   }
-  .row.winner {
-    background: #edf6f5;
-    border: 2px solid #246d72;
-  }
+  .row.winner { background: #edf6f5; border: 2px solid #246d72; }
   .row-left { display: flex; align-items: center; gap: 14px; }
   .dot { width: 18px; height: 18px; border-radius: 999px; }
   .row-text { display: flex; flex-direction: column; gap: 2px; }
@@ -588,37 +557,107 @@ try {
     await page.waitForFunction(() => !!window.__isle);
     await page.locator('[data-testid="win-look"]').waitFor({ timeout: 15000 });
     await page.locator('[data-testid="win-look"]').click();
-    // Hide all HUD overlays so only the clean 3D rendered ocean & island remain for the card graphic.
     await page.addStyleTag({ content: `#root > div > :not(canvas), [data-testid="win-chip"], [data-testid="seat-rail"], [data-testid="seat-strip"], header, nav, aside { opacity: 0 !important; pointer-events: none !important; }` });
-    // Let the renderer draw several settled frames after hiding the sheet.
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 250))))));
     const buf = await page.screenshot({ type: "png" });
     await context.close();
     return `data:image/png;base64,${buf.toString("base64")}`;
   }
 
-  console.log("Capturing live 3D islands (4p classic and 6p expanded)...");
+  console.log("Capturing live 3D islands (3p, 4p classic and 5p, 6p expanded)...");
+  const island3p = await captureIsland(g3, 1080, 760);
   const island4p = await captureIsland(g4, 1080, 760);
+  const island5p = await captureIsland(g5, 1080, 760);
   const island6p = await captureIsland(g6, 1080, 760);
-  const island4pTall = await captureIsland(g4, 1080, 1350);
+  const island4pTall = await captureIsland(g4, 1080, 1600);
 
-  async function renderPng(html, width, height, filename) {
+  async function renderPng(html, width, height, filename, { checkLayout = false, checkSeamless = false } = {}) {
     const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 });
     const page = await context.newPage();
     await page.setContent(html, { waitUntil: "load" });
+    if (checkLayout) {
+      const boxes = await page.evaluate(() => {
+        const rect = (sel) => {
+          const r = document.querySelector(sel).getBoundingClientRect();
+          return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
+        };
+        const rows = [...document.querySelectorAll(".row")].map((el) => {
+          const r = el.getBoundingClientRect();
+          return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
+        });
+        return {
+          header: rect(".header"),
+          island: rect(".island-wrap"),
+          standings: rect(".standings"),
+          footer: rect(".footer"),
+          rows,
+        };
+      });
+      assert.ok(boxes.header.bottom <= boxes.island.top + 0.5, `${filename}: header overlaps island`);
+      assert.ok(boxes.island.bottom <= boxes.standings.top + 0.5, `${filename}: island overlaps standings`);
+      assert.ok(boxes.standings.bottom <= boxes.footer.top + 0.5, `${filename}: standings overlaps footer`);
+      for (let i = 0; i < boxes.rows.length; i++) {
+        const a = boxes.rows[i];
+        assert.ok(a.bottom <= boxes.footer.top + 0.5, `${filename}: row ${i} overflows footer`);
+        for (let j = i + 1; j < boxes.rows.length; j++) {
+          const b = boxes.rows[j];
+          const overlapX = a.left < b.right - 0.5 && b.left < a.right - 0.5;
+          const overlapY = a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5;
+          assert.ok(!(overlapX && overlapY), `${filename}: row ${i} overlaps row ${j}`);
+        }
+      }
+      console.log(`layout verified (0 overlaps): ${filename} (${boxes.rows.length} rows, island.bottom=${boxes.island.bottom}, standings.top=${boxes.standings.top}, footer.top=${boxes.footer.top})`);
+    }
     const outPath = path.join(dir, filename);
-    await page.screenshot({ path: outPath, type: "png" });
+    const buf = await page.screenshot({ path: outPath, type: "png" });
+    if (checkSeamless) {
+      // Programmatically inspect pixels at x=20 and x=1060 across y=1150..1345 (including y=1195 vs y=1200) to guarantee no seam.
+      const dataUrl = `data:image/png;base64,${buf.toString("base64")}`;
+      const seam = await page.evaluate(async (url) => {
+        const img = new Image();
+        img.src = url;
+        await img.decode();
+        const c = document.createElement("canvas");
+        c.width = img.width;
+        c.height = img.height;
+        const ctx = c.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        const px = (x, y) => [...ctx.getImageData(x, y, 1, 1).data.slice(0, 3)];
+        const p1195 = px(20, 1195);
+        const p1200 = px(20, 1200);
+        let maxJump = 0;
+        let maxJumpY = 0;
+        for (const x of [20, 1060]) {
+          for (let y = 1150; y < 1345; y += 5) {
+            const a = px(x, y);
+            const b = px(x, y + 5);
+            const d = Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
+            if (d > maxJump) { maxJump = d; maxJumpY = y; }
+          }
+        }
+        return { p1195, p1200, maxJump, maxJumpY };
+      }, dataUrl);
+      assert.ok(seam.maxJump <= 5, `${filename}: detected background seam delta=${seam.maxJump} at y=${seam.maxJumpY}`);
+      console.log(`seam check passed: ${filename} (20,1195)=RGB(${seam.p1195.join(",")}), (20,1200)=RGB(${seam.p1200.join(",")}), maxJump=${seam.maxJump} at y=${seam.maxJumpY}`);
+    }
     await context.close();
     console.log(`wrote ${filename} (${width}x${height})`);
   }
 
-  await renderPng(renderCardOptionA({ width: 1080, height: 1350, rows: rows4, islandUrl: island4p, turns: g4.turn, target: victoryTarget(g4), code: "SHAR", seatCount: 4 }), 1080, 1350, "card-1080x1350-4p.png");
-  await renderPng(renderCardOptionA({ width: 1080, height: 1350, rows: rows6, islandUrl: island6p, turns: g6.turn, target: victoryTarget(g6), code: "EXPN", seatCount: 6 }), 1080, 1350, "card-1080x1350-6p.png");
-  await renderPng(renderCardOptionA({ width: 1080, height: 1920, rows: rows4, islandUrl: island4p, turns: g4.turn, target: victoryTarget(g4), code: "SHAR", seatCount: 4 }), 1080, 1920, "card-1080x1920-4p.png");
-  await renderPng(renderCardOptionA({ width: 1080, height: 1920, rows: rows6, islandUrl: island6p, turns: g6.turn, target: victoryTarget(g6), code: "EXPN", seatCount: 6 }), 1080, 1920, "card-1080x1920-6p.png");
-  await renderPng(renderCardOptionB({ width: 1080, height: 1350, rows: rows4, islandUrl: island4pTall, turns: g4.turn, target: victoryTarget(g4), code: "SHAR", seatCount: 4 }), 1080, 1350, "card-1080x1350-option-b.png");
+  await renderPng(renderCardOptionA({ width: 1080, height: 1350, rows: rows3, islandUrl: island3p, turns: g3.turn, target: victoryTarget(g3), code: "TRIO", seatCount: 3 }), 1080, 1350, "card-1080x1350-3p.png", { checkLayout: true });
+  await renderPng(renderCardOptionA({ width: 1080, height: 1350, rows: rows4, islandUrl: island4p, turns: g4.turn, target: victoryTarget(g4), code: "SHAR", seatCount: 4 }), 1080, 1350, "card-1080x1350-4p.png", { checkLayout: true });
+  await renderPng(renderCardOptionA({ width: 1080, height: 1350, rows: rows5, islandUrl: island5p, turns: g5.turn, target: victoryTarget(g5), code: "FIVE", seatCount: 5 }), 1080, 1350, "card-1080x1350-5p.png", { checkLayout: true });
+  await renderPng(renderCardOptionA({ width: 1080, height: 1350, rows: rows6, islandUrl: island6p, turns: g6.turn, target: victoryTarget(g6), code: "EXPN", seatCount: 6 }), 1080, 1350, "card-1080x1350-6p.png", { checkLayout: true });
+
+  await renderPng(renderCardOptionA({ width: 1080, height: 1920, rows: rows3, islandUrl: island3p, turns: g3.turn, target: victoryTarget(g3), code: "TRIO", seatCount: 3 }), 1080, 1920, "card-1080x1920-3p.png", { checkLayout: true });
+  await renderPng(renderCardOptionA({ width: 1080, height: 1920, rows: rows4, islandUrl: island4p, turns: g4.turn, target: victoryTarget(g4), code: "SHAR", seatCount: 4 }), 1080, 1920, "card-1080x1920-4p.png", { checkLayout: true });
+  await renderPng(renderCardOptionA({ width: 1080, height: 1920, rows: rows5, islandUrl: island5p, turns: g5.turn, target: victoryTarget(g5), code: "FIVE", seatCount: 5 }), 1080, 1920, "card-1080x1920-5p.png", { checkLayout: true });
+  await renderPng(renderCardOptionA({ width: 1080, height: 1920, rows: rows6, islandUrl: island6p, turns: g6.turn, target: victoryTarget(g6), code: "EXPN", seatCount: 6 }), 1080, 1920, "card-1080x1920-6p.png", { checkLayout: true });
+
+  await renderPng(renderCardOptionB({ width: 1080, height: 1350, rows: rows4, islandUrl: island4pTall, turns: g4.turn, target: victoryTarget(g4), code: "SHAR", seatCount: 4 }), 1080, 1350, "card-1080x1350-option-b.png", { checkSeamless: true });
 
   // Real 390x844 WinScreen button placement comparison (Option A vs Option B).
+  // Injects mock `win-share-mock` button, forces 44 px height on Option B, and seeds fake "Play again" seat flags.
   async function captureWinScreenVariant(variant) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: "reduce", deviceScaleFactor: 2 });
     const page = await context.newPage();
@@ -683,18 +722,8 @@ try {
   }
   .title { font-size: 22px; font-weight: 800; }
   .sub { font-size: 14px; color: #555e58; margin-top: 2px; }
-  .grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 28px;
-    flex: 1;
-  }
-  .col {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    align-items: center;
-  }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; flex: 1; }
+  .col { display: flex; flex-direction: column; gap: 10px; align-items: center; }
   .label {
     font-size: 15px;
     font-weight: 700;
