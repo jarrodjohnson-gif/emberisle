@@ -7,12 +7,12 @@ This note corrects evidence attribution. It changes no HUD, renderer, proof or b
 ## Which run supplied the measurements
 
 The measurements below come from [CI run 43263174994](https://github.com/jarrodjohnson-gif/emberisle/actions/runs/43263174994)
-on PR #1547, feature head `e21054c7542a241b3b6aad2853f2573608832413`.
+at head `e21054c7542a241b3b6aad2853f2573608832413`.
 Both cited jobs report checkout `b6cb39c762895df7a0dc9b9c090b4fe1eed04fbc`, the tested merge with base `c0f71001ccb68984662af2f224c1ac9252ca4574`.
 The original audit named `3475e541`; this note does not claim that tree supplied these results.
 A source `console.log` is not a run. I read the decoded historical job logs for this revision.
 
-[Browser-a a2, job 131340310056](https://github.com/jarrodjohnson-gif/emberisle/actions/runs/43263174994/job/131340310056)
+[Browser-a a1, job 131340310056](https://github.com/jarrodjohnson-gif/emberisle/actions/runs/43263174994/job/131340310056)
 prints these exact `tray-prove` lines:
 
 ```text
@@ -45,6 +45,7 @@ attributes that declared 4 px to sub-pixel font differences. It does not prove s
 
 [Browser-b job 131340874861](https://github.com/jarrodjohnson-gif/emberisle/actions/runs/43263174994/job/131340874861)
 logs `reflow-prove: ok` and `upright-table-prove: ok`.
+Run metadata reports **failure overall**. These proof-step completions do not establish a green workflow.
 The historical [reflow source](https://github.com/jarrodjohnson-gif/emberisle/blob/e21054c7542a241b3b6aad2853f2573608832413/scripts/reflow-prove.mjs#L1)
 checks title wordmark/Join reachability and horizontal overflow in its stated fixtures.
 Its 120 px uncovered, pointer-reachable island assertion uses hotseat main with every fortune kind held.
@@ -55,7 +56,7 @@ The historical [upright-table source](https://github.com/jarrodjohnson-gif/ember
 covers its crafted main-turn camera, gutters, names, tray and text checks at its listed phone fixtures.
 It allows a side dock's boat beyond the side edges while constraining its stated top/bottom and inspect targets.
 It does not prove zero clipping or pick obstruction across all supported screens.
-Neither proof supplies the withdrawn blanket camera-frustum or shadow-clearance claim.
+
 
 ## This revision's checks and limits
 
