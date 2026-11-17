@@ -65,3 +65,37 @@ The first baseline failed 263 checks before stronger input/overlap coverage; it 
 The first prototype passed the earlier new-proof version but failed the existing layout proof.
 That earlier pass is not full fit coverage. No passing retry is offered as a causal repair.
 No existing proof assertion, deadline, budget, protocol or audio behavior changed.
+
+## Controlled phone scrolling decision pictures
+
+Requested by desk comment 6946386201. These four pictures are an UNAPPROVED
+external CSS/DOM mock, not the runtime patch or a product proof pass.
+Desktop Chromium 153.0.8010.12 uses touch/mobile emulation at 390x844, reduced
+motion and 125%/150% root font size; this is not physical-phone or OS text-size acceptance.
+The mock moves the existing summary into the header, uses vertical cover flow
+and gives the private fixture chat log natural height. No runtime layout changed.
+
+|Root size|Card top/bottom scroll px|Viewport/content height px|Clipped text|Control overlaps|Unreachable controls|
+|---|---|---|---|---|---|
+|125%|0/0|810/810|0|0|0|
+|150%|0/328|810/1138|0|0|0|
+
+Both records fit the real room code 2KUX and report zero horizontal/page overflow
+and zero browser errors. At 125% the top and bottom pictures are identical
+because no card scrolling is needed. At 150%, the top and bottom show the
+header and the final controls respectively. Visual inspection covers all four
+pictures; automated reachability observations cover intermediate controls.
+These observations do not approve scrolling or the header placement, establish
+physical touch usability, or repair the runtime draft's 38 failed checks.
+
+![125% top](390x844-125-top.png)
+![125% bottom](390x844-125-bottom.png)
+![150% top](390x844-150-top.png)
+![150% bottom](390x844-150-bottom.png)
+
+Source commit: `9a771767af3c7d378587a5db6dd5886776ba1f6e`.
+Mock script SHA256: `ec02d79d4078eb75f6b31c1e302efe5c449976cf2425e95d99a07b5ed25e80b5`.
+Mock CSS SHA256: `bce6dabdab9b554a142dcf9b41923a9e09a5f96ba20bd45d97f8e08ca7119468`.
+Raw measurements, log and script are preserved outside the repository under
+`resume-nov9/1235-text-size/phone-scroll-mock/` and its parent.
+Both owner questions remain pending; runtime layout remains paused.
