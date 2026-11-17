@@ -25,22 +25,22 @@ Tide asks the table: 2 wheat for 1 stone.
 
 No goods move until the asker taps Yes. Pine does not confirm again.
 
-## Today, checked against main at `cd79da4`
+## Today, checked against main at `51e5ea8d`
 
 | Fact | Where |
 |---|---|
-| One table offer per room, kept in host memory: `{ tradeId, from, give, want, declined, botTimers, until }`. | `server/host.mjs:1713` |
-| A Yes is never stored. The first valid Yes settles through `offerTrade` then `respondTrade` on a copy of the state. | `server/host.mjs:1817-1825`, `src/lib/game/rules.ts:796-838` |
-| A person's offer has no timeout. A bot's offer runs out after 20 s. | `server/host.mjs:130`, `:1709-1712` |
-| A bot's Yes waits up to 8 s while people have not answered. | `server/host.mjs:128`, `:1740-1750` |
-| The offer closes when every other seat has said No, when the asker's turn or goods go, or on Cancel. | `server/host.mjs:1806`, `:1895-1907`, `:1767` |
+| One table offer per room, kept in host memory: `{ tradeId, from, give, want, declined, botTimers, until }`. | `server/host.mjs:1826` |
+| A Yes is never stored. The first valid Yes settles through `offerTrade` then `respondTrade` on a copy of the state. | `server/host.mjs:1933-1941`, `src/lib/game/rules.ts:796-838` |
+| A person's offer has no timeout. A bot's offer runs out after 20 s. | `server/host.mjs:130`, `:1822-1826` |
+| A bot's Yes waits up to 8 s while people have not answered. | `server/host.mjs:128`, `:1854-1865` |
+| The offer closes when every other seat has said No, when the asker's turn or goods go, or on Cancel. | `server/host.mjs:1922`, `:2015-2023`, `:1883` |
 | Offers, Nos and closes go to every seat and watcher. Nothing is hidden. | `server/host.mjs:226-230` |
-| The offer is not saved. A rejoin gets it again with the missed Nos. | `server/host.mjs:361`, `:2129-2135` |
-| The client drops any host event it does not know. | `src/lib/net/table.ts:274` (`ALLOWED_EVENTS`) |
-| With five or six seats, no player trade starts or settles on a partner turn. | `src/lib/game/expanded.ts:251-259` |
-| Bots accept with `shouldAcceptTrade`. They have no counter logic. | `src/lib/game/ai.ts:130` |
+| The offer is not saved. A rejoin gets it again with the missed Nos. | `server/host.mjs:383`, `:2248-2254` |
+| The client drops any host event it does not know. | `src/lib/net/table.ts:287` (`ALLOWED_EVENTS`) |
+| With five or six seats, no player trade starts or settles on a partner turn. | `server/host.mjs:1873`, `src/lib/game/expanded.ts:253-261` |
+| Bots accept through `pairedAcceptTrade`, wrapping `shouldAcceptTrade`. They have no counter logic. | `src/lib/game/expanded.ts:332`, `src/lib/game/ai.ts:130` |
 | The tray offer lives in `TradeToast.tsx`. The sheet lives in `TradePanel.tsx`. | `src/components/game/` |
-| Practice mirrors the host's timing in the store. | `src/lib/game/store.ts:258-262` |
+| Practice mirrors the host's timing in the store. | `src/lib/game/store.ts:278-281` |
 
 Pass and play has no table offers, so it gets no counters.
 
@@ -58,11 +58,12 @@ These are the design's calls. Each maps to a policy in `trade-open-ask.md`.
 | A counter does not use up the seat's answer. If the asker says No, the seat may still take the first offer. | P2 |
 | The first offer stays open to everyone while counters are out. | P2 |
 | The offer closes when every other seat has said No **and** no counter is waiting. | P2 |
-| A counter ends with its offer: a deal, Cancel, the end of the turn, a bot taking the seat, or a rematch. | P5 |
+| A counter ends with its offer: a deal, Cancel, turn end, a bot taking the asker's seat, or a rematch. A bot taking the sender's seat closes only that counter with `why: "gone"`. | P5 |
 | A person's counter has no timeout, like a person's offer. | P5 |
 | A seat that cannot pay the first offer may still counter. | "An unaffordable original must not prevent submitting an affordable changed counter" |
 | Goods are checked twice: the sender's when the counter goes out, and both hands when the asker taps Yes. Nothing is set aside in between. | "Revalidate at acceptance" |
 | No counters on a partner turn, because no offer can be open then. | `expanded.ts` |
+| A seat whose hello lacked `counter` cannot send a counter. The host stores `caps` per seat and refuses its `tradeCounter`. | new |
 
 ### Who sees a counter
 
@@ -78,10 +79,10 @@ Counter terms are public, as offer terms are today (P1). Other seats cannot act 
 
 | Case | What happens |
 |---|---|
-| A person counters a bot's offer. | The bot answers after its normal 1 to 2 s. It uses `shouldAcceptTrade` on the counter's terms, seen from the bot's side. |
+| A person counters a bot's offer. | The bot answers after its normal 1 to 2 s. It calls `pairedAcceptTrade` (`expanded.ts:332`) on the counter's terms from its side. |
 | A bot's offer is about to run out with a counter waiting. | The bot answers the counter first. Then the 20 s rule applies as today. |
 | A bot answers a person's offer. | Yes or No, as today. A bot never sends a counter (P7). |
-| A bot holds a Yes for the first offer while a person's counter is waiting. | The bot's Yes waits until the asker answers that counter. People still go first. |
+| A bot holds a Yes for the first offer while a person's counter is waiting. | The hold keeps the 8 s `PEOPLE_FIRST_MS` limit (`host.mjs:128`). When a counter closes, `releaseHeld` runs if no people or counters wait. |
 | A recovery bot holds the asker's seat. | The takeover has already closed the offer and its counters. |
 
 ## What each player sees
@@ -201,9 +202,10 @@ Details the host must hold to:
 - Every new message needs the exact `tradeId`. `tradeCounterAnswer` and `tradeCounterCancel` need the exact `counterId` too. A missing id is refused.
 - The host issues `counterId`. The terms behind an id never change.
 - `tradeCounter` and `tradeCounterCancel` come from seats that are not on turn. They get the same older-stamp allowance `tradeAnswer` has in `freshAction`. `tradeCounterAnswer` needs the current stamp, like `tradeAsk`.
-- A watcher, the asker countering their own offer, a second counter from one seat, and a closed offer are all refused.
+- The host refuses a watcher, a self-counter, a second counter from one seat, and a closed offer. It also refuses a seat whose hello lacked `counter`.
 - A Yes with the asker short of goods returns "You lack those goods." to the asker. The counter stays.
 - A Yes with the sender short of goods closes that counter with `why: "gone"`. The offer stays.
+- Closing a counter runs `releaseHeld` (`server/host.mjs:1860`) when no unanswered people or waiting counters remain.
 - A rejoin gets the offer, the missed Nos, and every waiting counter, in that order.
 - Counters are not saved, like the offer. The room save shape does not change.
 - The rate limit in `server/host.mjs:111-112` covers the new messages.
@@ -212,10 +214,12 @@ Error strings stay the ones in use: "Offer is gone.", "Bad trade.", "You lack th
 
 ### Old clients and old hosts
 
-- A client shows Counter only when the offer carries `counter: true`. An old host never sends it, so the button never shows there.
-- The host sets `counter: true` only when the asker can answer a counter: the asker is a bot, or the asker's client said it knows counters.
-- The client says so through the capability list that the six-player work adds to the hello ([#1611](https://github.com/jarrodjohnson-gif/emberisle/issues/1611), PR #1656). The name is `counter`.
-- An old client drops the new events, because `ALLOWED_EVENTS` does not list them. It keeps working as today.
+- A client shows Counter only when `tradeOffer` carries `counter: true`. An old host never sends it, so the button stays hidden.
+- The host sets `counter: true` once for the table when the asker can answer counters. That holds when the asker is a bot or sent `counter` in its hello `caps`.
+- The host stores `caps` on each seat at join and rejoin. Today `canExpand` (`server/host.mjs:359`) reads only the hello message.
+- The host refuses `tradeCounter` from any seat whose stored `caps` lack `counter`.
+- Clients advertise `counter` in the hello `caps` list ([#1611](https://github.com/jarrodjohnson-gif/emberisle/issues/1611), PR #1656).
+- An old client drops the new events because `ALLOWED_EVENTS` omits them. It keeps working as today.
 - `PROTO` does not change.
 
 ## Building it
@@ -224,7 +228,7 @@ Three slices, in order. Each is one issue and one PR. The desk files them after 
 
 | Slice | Lane, tier | Files | Depends on |
 |---|---|---|---|
-| 1. Host and protocol | `lane:net`, `tier:1` | `server/host.mjs` (the offer record, three handlers, `resendOffer`, bot answer), `src/lib/net/table.ts` (three senders, two events), new `server/trade-counter-prove.mjs` | PR #1656 merged, for the capability list |
+| 1. Host and protocol | `lane:net`, `tier:1` | `server/host.mjs` (seat caps, the offer record, three handlers, `resendOffer`, bot answer), `src/lib/net/table.ts` (three senders, two events), new `server/trade-counter-prove.mjs` | PR #1656 merged, for the capability list |
 | 2. Practice and store | `lane:rules`, `tier:2` | `src/lib/game/store.ts` (counter state, the practice mirror, the bot's answer), `server/practice-trade-prove.mjs` cases | Slice 1 |
 | 3. Tray and sheet | `lane:hud`, `tier:2` | `TradeToast.tsx`, `TradePanel.tsx`, the tray rules in `src/styles.css`, `scripts/tray-offers-prove.mjs`, `scripts/trade-prove.mjs`, pictures | Slice 2, and the owner's OK on the pictures |
 
@@ -240,10 +244,10 @@ Slice 1, against the real host with sockets:
 - Two Yes messages for one counter settle once.
 - All seats say No with a counter waiting: the offer stays. It closes when the counter ends.
 - The turn ends with a counter waiting: both close, and no goods move.
-- A bot asker answers a counter in 1 to 2 s, by `shouldAcceptTrade`.
-- A bot's held Yes waits for a waiting person's counter.
+- A bot asker answers a counter in 1 to 2 s through `pairedAcceptTrade`.
+- A bot's held Yes waits for a waiting counter up to the 8 s `PEOPLE_FIRST_MS` limit. Closing that counter triggers `releaseHeld`.
 - A rejoin gets the waiting counters.
-- A client without the capability gets an offer without `counter: true`, and its counter is refused.
+- An asker without `counter` produces an offer without `counter: true`. A receiver whose hello lacked `counter` has its `tradeCounter` refused.
 - A five-seat table refuses a counter on a partner turn.
 - Hands, the deck and the seed stay out of every new event.
 
@@ -269,7 +273,7 @@ No existing ceiling or allowance moves for this work.
 
 ## Owner answers
 
-Jarrod answered all four cards on the Desk page on 2026-11-14 at 15:42 UTC. He chose A on each.
+Jarrod answered all four cards on the Desk page on 2026-11-14 (see `docs/DECISIONS.md`). He chose A on each.
 
 **1. Where does Counter go? (`q850-counter-where`)**
 - **A (chosen). A third button between No and Yes.** One tap opens the counter sheet with their terms filled in. The row is tighter on a phone.
