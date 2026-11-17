@@ -58,7 +58,7 @@ These seven captured roles are not a count of every lobby text.
 ## Limits and retained failures
 
 The utility completed fifteen captures with zero console or page errors.
-Raw screenshots, measurements and the capture utility remain outside the checkout, not in this PR.
+Raw screenshots and measurements remain outside the checkout, not in this PR.
 Raw logs preserve the earlier standalone utility’s letters-only fixture failures.
 The committed utility validates the host’s actual four-character protocol, which permits letters and digits.
 A valid room code does not fix text scaling.
