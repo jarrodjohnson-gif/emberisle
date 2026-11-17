@@ -185,39 +185,41 @@ try {
   });
 
   const p2Name = await page.evaluate(() => window.__emberisle.getState().state.players.find((p) => p.id === "p2").name);
-  const label = await page.getByText(`Discard 4 goods · ${p2Name}`).textContent({ timeout: STEP_MS });
+  const label = await page.getByText(`Discard 4: pick 4 more · ${p2Name}`).textContent({ timeout: STEP_MS });
   console.log("bar:", label);
   const bannerIs = (want) =>
     page.waitForFunction((t) => document.querySelector('[data-testid="turn-banner"]')?.textContent === t, want, { timeout: STEP_MS })
       .catch(async () => { throw new Error(`banner: want "${want}", got "${await page.getByTestId("turn-banner").textContent()}"`); });
-  await bannerIs(`Discard 4 goods · ${p2Name}`);
+  await bannerIs(`Discard 4: pick 4 more · ${p2Name}`);
   console.log(`banner while ${p2Name} discards on p0's turn: "${await page.getByTestId("turn-banner").textContent()}"`);
 
-  // #1546: the discard is picked on the hand's five tokens in the tray (a tap adds one, the minus takes one back).
+  // #1546, #1595: the discard is picked on the hand's five columns in the tray (a tap adds one); a fixed row of take-back
+  // buttons under them reads "−N" for what goes ("−" for none) and takes one back.
   const pick = page.getByTestId("discard-pick");
-  const more = (name) => pick.getByRole("button", { name: `More ${name} to discard`, exact: true });
-  const fewer = (kind) => page.getByTestId(`trade-minus-discard-${kind}`);
-  const picked = async (name) => (await pick.getByLabel(`${name} to discard`, { exact: true }).textContent()).trim();
+  const KIND = { Wood: "timber", Brick: "clay", Wool: "wool", Grain: "grain", Stone: "ore" };
+  const more = (name) => pick.getByTestId(`discard-${KIND[name]}`);
+  const fewer = (kind) => pick.getByTestId(`discard-back-${kind}`);
+  const picked = async (name) => (await fewer(KIND[name]).textContent()).replace("−", "").trim() || "0";
   // #255: the bar counts what is picked, clamps each count to what the seat holds, and keeps Discard off until the total is exact.
   const count = pick.getByTestId("discard-count");
-  const submit = pick.getByRole("button", { name: /^Discard/ });
+  const submit = pick.getByRole("button", { name: /^Discard \d+$/ });
   const countState = async () => ({ text: (await count.textContent()).trim(), disabled: await submit.isDisabled() });
   const start = await countState();
-  if (start.text !== "0 of 4" || !start.disabled) throw new Error(`empty bar: ${JSON.stringify(start)}`);
+  if (start.text !== "Pick 4 more" || !start.disabled) throw new Error(`empty bar: ${JSON.stringify(start)}`);
   for (let k = 0; k < 3; k++) await more("Wood").click();
   const part = await countState();
-  if (part.text !== "3 of 4" || !part.disabled) throw new Error(`3 picked: ${JSON.stringify(part)}`);
+  if (part.text !== "Pick 1 more" || !part.disabled) throw new Error(`3 picked: ${JSON.stringify(part)}`);
   await more("Stone").click();
   await more("Stone").click({ force: true }); // holds 1: clamped
   const clamped = await picked("Stone");
   const over = await countState();
-  if (clamped !== "1" || over.text !== "4 of 4" || over.disabled) throw new Error(`clamp/exact: ${clamped} ${JSON.stringify(over)}`);
+  if (clamped !== "1" || over.text !== "Ready" || over.disabled) throw new Error(`clamp/exact: ${clamped} ${JSON.stringify(over)}`);
   await more("Wood").click({ force: true }); // holds 3: clamped, total still 4
   const tooMany = await picked("Wood");
   if (tooMany !== "3") throw new Error(`timber not clamped: ${tooMany}`);
   await fewer("timber").click();
   const short = await countState();
-  if (short.text !== "3 of 4" || !short.disabled) throw new Error(`short again: ${JSON.stringify(short)}`);
+  if (short.text !== "Pick 1 more" || !short.disabled) throw new Error(`short again: ${JSON.stringify(short)}`);
   console.log("discard count:", JSON.stringify({ start, part, clamped, over, short }));
   await fewer("timber").click();
   await fewer("timber").click();
@@ -252,12 +254,12 @@ try {
     return [x, y];
   });
   const name = (id) => page.evaluate((i) => window.__emberisle.getState().state.players.find((p) => p.id === i).name, id);
-  await page.getByText(`Discard 4 goods · ${await name(first)}`).waitFor({ timeout: STEP_MS });
+  await page.getByText(`Discard 4: pick 4 more · ${await name(first)}`).waitFor({ timeout: STEP_MS });
   for (let k = 0; k < 3; k++) await more("Wood").click();
   await more("Brick").click();
   await submit.click();
-  await page.getByText(`Discard 5 goods · ${await name(second)}`).waitFor({ timeout: STEP_MS });
-  const vals = await pick.locator("output").evaluateAll((els) => els.map((e) => e.textContent.trim()));
+  await page.getByText(`Discard 5: pick 5 more · ${await name(second)}`).waitFor({ timeout: STEP_MS });
+  const vals = await pick.locator('[data-testid^="discard-back-"]').evaluateAll((els) => els.map((e) => e.textContent.replace("−", "").trim() || "0"));
   console.log("second bar counts:", vals.join(","));
   if (vals.length !== 5 || vals.some((v) => v !== "0")) throw new Error(`second bar kept the first seat's numbers: ${vals}`);
   for (let k = 0; k < 4; k++) await more("Wood").click();
@@ -278,7 +280,7 @@ try {
     g.setState({ state: st, pendingSteal: null, error: null });
   });
   const curName = await page.evaluate(() => { const st = window.__emberisle.getState().state; return st.players.find((p) => p.id === st.current).name; });
-  await page.getByText(`Discard 5 goods · ${curName}`).waitFor({ timeout: STEP_MS });
+  await page.getByText(`Discard 5: pick 5 more · ${curName}`).waitFor({ timeout: STEP_MS });
   await page.waitForTimeout(300);
   console.log("roller discards: bar and banner side by side");
 
