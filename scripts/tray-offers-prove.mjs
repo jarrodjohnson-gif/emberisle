@@ -7,6 +7,7 @@
 //   then sits where the newest event does, in the top line;
 // - a discard: the top line says how many, the hand becomes five tokens, a tap adds one, the minus takes one back, the
 //   count never passes what is owed, and "Discard N" is off until the count is right, then discards exactly those goods;
+//   each token's symbol has the hand's colour for that good (#1595);
 // - take-from: the top line asks "Take from whom?" and the action row is one button per seat with its colour dot; a
 //   press moves the wayfarer and takes one good from that seat;
 // - hotseat: a seat that owes a discard on another seat's turn is named in the top line and picks from its own goods;
@@ -92,6 +93,33 @@ const check = (ok, msg) => {
 let code = 0;
 
 // Everything the rules read off the bottom stack.
+// #1595: an offered hand column has no border (no inset ring), and its "−N" or "+N" tag sits above the column, clear of the
+// column's symbol and number.
+const handMarks = async (page) => {
+  // Measured at rest: a hand column's gain or loss motion moves its symbol while it runs.
+  await page.waitForFunction(() => (document.querySelector('[data-testid="hand-dock"]')?.getAnimations({ subtree: true }).length ?? 0) === 0, null, { timeout: 10_000 });
+  return page.evaluate(() => [...document.querySelectorAll("[data-hud-stack] [data-offer]")].map((slot) => {
+    const card = slot.querySelector(".goods-card");
+    const tag = slot.querySelector('[data-testid="offer-delta"]').getBoundingClientRect();
+    const parts = [...card.querySelectorAll(":scope > .goods-icon, :scope > .goods-count, :scope > .goods-label")].filter((el) => el.getBoundingClientRect().height > 1);
+    const over = parts.filter((el) => { const r = el.getBoundingClientRect(); return r.left < tag.right && tag.left < r.right && r.top < tag.bottom && tag.top < r.bottom; });
+    const top = (r) => Math.round(r.top), bot = (r) => Math.round(r.bottom);
+    return { kind: slot.dataset.offer, ring: /inset/.test(getComputedStyle(card).boxShadow), above: tag.top < card.getBoundingClientRect().top, hit: over.length > 0, tag: [top(tag), bot(tag)], over: over.map((el) => `${el.getAttribute("class")} ${top(el.getBoundingClientRect())}-${bot(el.getBoundingClientRect())}`) };
+  }));
+};
+// #1595: the top line's dot, if any, is a seat's colour: in a discard and in "take from whom" there is none, or the seat's own.
+const lineDot = (page) =>
+  page.evaluate(() => {
+    const b = document.querySelector('[data-hud-stack] [data-testid="turn-banner"]');
+    const cs = getComputedStyle(b, "::before");
+    const seats = window.__emberisle.getState().state.players.map((p) => p.color);
+    const probe = document.createElement("i");
+    document.body.append(probe);
+    const rgb = seats.map((c) => { probe.style.color = c; return getComputedStyle(probe).color; });
+    probe.remove();
+    return { shown: cs.content !== "none" && cs.display !== "none", color: cs.backgroundColor, seat: rgb.includes(cs.backgroundColor) };
+  });
+
 const readStack = (page) =>
   page.evaluate(() => {
     const s = document.querySelector("[data-hud-stack]");
@@ -145,7 +173,7 @@ const readStack = (page) =>
       answers: actionRow(s.querySelector(".trade-answers")),
       takes: actionRow(s.querySelector(".take-row")),
       discard: actionRow(s.querySelector(".discard-pick"))?.filter((b) => /^Discard/.test(b.text)),
-      tokens: [...s.querySelectorAll(".discard-pick .trade-resource")].map((t) => ({ kind: t.dataset.testid.replace("trade-discard-", ""), owned: t.querySelector('[data-testid="trade-owned"]')?.lastChild.textContent, badge: t.querySelector('[data-testid="trade-badge"]')?.textContent ?? null, ...box(t) })),
+      tokens: [...s.querySelectorAll(".discard-pick .discard-good")].map((t) => { const kind = t.dataset.testid.replace("discard-", ""); const back = s.querySelector(`[data-testid="discard-back-${kind}"]`); return { kind, owned: t.querySelector(".discard-keep")?.textContent, badge: back && !back.hasAttribute("aria-disabled") ? back.textContent.trim() : null, icon: getComputedStyle(t.querySelector("svg")).color, handIcon: (() => { const h = s.querySelector(`[data-testid="resource-${kind}"] > .goods-icon`); return h ? getComputedStyle(h).color : null; })(), ink: getComputedStyle(t).color, ...box(t) }; }),
       hand: [...s.querySelectorAll('[data-testid^="resource-"]')].filter((c) => /^resource-(timber|clay|wool|grain|ore)$/.test(c.dataset.testid) && seen(c)).length,
       handBox: (() => { const h = s.querySelector('[data-testid="hand-dock"]'); return h && seen(h) ? box(h) : null; })(),
       count: s.querySelector('[data-testid="discard-count"]')?.textContent ?? null,
@@ -226,7 +254,10 @@ try {
     oneRow(s.answers, at);
     check(s.hand === 5 && s.handBox && s.line && s.answers[0] && s.line.bottom <= s.handBox.top + 1 && (v.width >= 768 && !v.touch ? s.answers[0].left >= s.handBox.right : s.answers[0].top >= s.handBox.bottom - 1), `${at}: the sentence is above the hand and the buttons ${v.touch ? "under" : "beside"} it ${JSON.stringify({ line: s.line, hand: s.handBox, row: s.answers[0] })}`);
     const deltas = await page.evaluate(() => [...document.querySelectorAll('[data-testid="offer-delta"]')].map((d) => d.textContent.trim()).sort());
-    check(JSON.stringify(deltas) === JSON.stringify(["+1", "-1"]), `${at}: the hand marks ${JSON.stringify(deltas)}, want -1 and +1`);
+    check(JSON.stringify(deltas) === JSON.stringify(["+1", "−1"]), `${at}: the hand marks ${JSON.stringify(deltas)}, want −1 and +1`);
+    const marks = await handMarks(page);
+    check(marks.length === 2 && marks.every((m) => !m.ring), `${at}: an offered hand column has a border ${JSON.stringify(marks)}`);
+    check(marks.every((m) => m.above && !m.hit), `${at}: a hand tag is not above its column, clear of the symbol and number ${JSON.stringify(marks)}`);
     await rules(s, at);
     await shot("offer");
     if (v.full) {
@@ -276,21 +307,38 @@ try {
       await page.waitForFunction(() => !window.__emberisle.getState().offer);
       await page.getByTestId("trade-outcome").waitFor();
       await page.waitForFunction(() => { const a = document.activeElement; const n = a?.dataset?.testid ?? a?.getAttribute("aria-label") ?? a?.textContent?.trim()?.slice(0, 24); return n === "Trade" || n === "End turn"; });
-      check((await activeName()) === "Trade" || (await activeName()) === "End turn", `${at}: after Yes focused "${await activeName()}", want Trade or End turn`);
+      const yesFocus = await activeName();
+      check(yesFocus === "Trade" || yesFocus === "End turn", `${at}: after Yes focused "${yesFocus}", want Trade or End turn`);
 
       g = await load(game());
       await page.evaluate((o) => window.__emberisle.setState({ offer: o, declined: [] }), offer("p1", { clay: 1 }, { timber: 1 }, g));
       await press(page.getByTestId("trade-toast").getByRole("button", { name: "No", exact: true }));
       await page.getByTestId("trade-toast").waitFor({ state: "detached" });
       await page.waitForFunction(() => { const a = document.activeElement; const n = a?.dataset?.testid ?? a?.getAttribute("aria-label") ?? a?.textContent?.trim()?.slice(0, 24); return n === "Trade" || n === "End turn"; });
-      check((await activeName()) === "Trade" || (await activeName()) === "End turn", `${at}: after No focused "${await activeName()}", want Trade or End turn`);
+      const noFocus = await activeName();
+      check(noFocus === "Trade" || noFocus === "End turn", `${at}: after No focused "${noFocus}", want Trade or End turn`);
 
       g = await load(game());
       await page.evaluate((o) => window.__emberisle.setState({ offer: o, declined: [] }), offer("p1", { clay: 1 }, { ore: 2 }, g));
       await press(page.getByTestId("trade-dismiss"));
       await page.getByTestId("trade-toast").waitFor({ state: "detached" });
       await page.waitForFunction(() => { const a = document.activeElement; const n = a?.dataset?.testid ?? a?.getAttribute("aria-label") ?? a?.textContent?.trim()?.slice(0, 24); return n === "Trade" || n === "End turn"; });
-      check((await activeName()) === "Trade" || (await activeName()) === "End turn", `${at}: after Dismiss focused "${await activeName()}", want Trade or End turn`);
+      const dismissFocus = await activeName();
+      check(dismissFocus === "Trade" || dismissFocus === "End turn", `${at}: after Dismiss focused "${dismissFocus}", want Trade or End turn`);
+
+      // Focus stays off Trade when a dialog is open, even if focus sits on body (#1592).
+      g = await load(game());
+      await page.evaluate((o) => window.__emberisle.setState({ offer: o, declined: [] }), offer("p1", { clay: 1 }, { timber: 1 }, g));
+      await page.getByTestId("trade-toast").getByRole("button", { name: "No", exact: true }).focus();
+      await page.evaluate(() => window.__emberisle.setState({ howTo: true }));
+      await page.locator('[role="dialog"]').waitFor({ state: "visible" });
+      await page.evaluate(() => document.activeElement?.blur());
+      await page.evaluate(() => window.__emberisle.setState({ offer: null }));
+      await page.getByTestId("trade-toast").waitFor({ state: "detached" });
+      await settle();
+      const dialogFocus = await activeName();
+      check(dialogFocus !== "Trade" && dialogFocus !== "End turn", `${at}: open dialog lost focus to "${dialogFocus}" when offer left`);
+      await page.evaluate(() => window.__emberisle.setState({ howTo: false }));
 
       // Focus in chat input is left alone when an offer leaves (#1592).
       await page.evaluate(async () => {
@@ -311,8 +359,10 @@ try {
       await page.evaluate(() => window.__emberisle.setState({ offer: null }));
       await page.getByTestId("trade-toast").waitFor({ state: "detached" });
       await settle();
-      check((await activeId()) === "chat-input", `${at}: chat input lost focus when offer left`);
+      const chatFocus = await activeId();
+      check(chatFocus === "chat-input", `${at}: chat input lost focus when offer left`);
       await page.evaluate(() => window.__emberisle.setState({ mode: "practice", chatOpen: false }));
+      console.log(`${tag} focus: Yes->${yesFocus}, No->${noFocus}, Dismiss->${dismissFocus}, chat->#${chatFocus}, dialog->kept`);
     }
 
     // 3. My own offer is out: who has said no, and Cancel.
@@ -328,6 +378,8 @@ try {
     check(JSON.stringify(s.answers.map((b) => b.text)) === JSON.stringify(["Cancel"]) && !s.answers[0].primary, `${at}: the action row is ${JSON.stringify(s.answers.map((b) => b.text))}, want Cancel alone`);
     check(!s.buttons.some((b) => ["build-open", "Trade", "End turn"].includes(b.name)), `${at}: the turn's buttons show beside Cancel ${JSON.stringify(s.buttons.map((b) => b.name))}`);
     oneRow(s.answers, at);
+    const mine = await handMarks(page);
+    check(mine.length === 2 && mine.every((m) => !m.ring && m.above && !m.hit), `${at}: my offer's hand columns have a border or a tag on the symbol ${JSON.stringify(mine)}`);
     await rules(s, at);
     await shot("offer-mine");
     if (v.full) {
@@ -337,7 +389,9 @@ try {
       s = await readStack(page);
       check(s.outcome?.text === "Nobody took it." && s.banner === "Your turn", `${at}: after Cancel the top line reads "${s.banner}" and "${s.outcome?.text}"`);
       await page.waitForFunction(() => { const a = document.activeElement; const n = a?.dataset?.testid ?? a?.getAttribute("aria-label") ?? a?.textContent?.trim()?.slice(0, 24); return n === "Trade" || n === "End turn"; });
-      check((await activeName()) === "Trade" || (await activeName()) === "End turn", `${at}: after Cancel focused "${await activeName()}", want Trade or End turn`);
+      const cancelFocus = await activeName();
+      check(cancelFocus === "Trade" || cancelFocus === "End turn", `${at}: after Cancel focused "${cancelFocus}", want Trade or End turn`);
+      console.log(`${tag} focus: Cancel->${cancelFocus}`);
     }
 
     // 4. A discard: 4 of 8.
@@ -347,37 +401,47 @@ try {
     await settle();
     s = await readStack(page);
     at = `${tag} discard`;
-    check(s.banner === "Discard 4 goods", `${at}: the status reads "${s.banner}", want "Discard 4 goods"`);
+    check(s.banner === "Discard 4: pick 4 more", `${at}: the status reads "${s.banner}", want "Discard 4: pick 4 more"`);
     check(s.hand === 0 && s.tokens.length === 5 && s.tokens.every((t) => +t.owned === EIGHT[t.kind]), `${at}: five tokens with the counts held take the hand's place ${JSON.stringify({ hand: s.hand, tokens: s.tokens })}`);
     check(s.tokens.every((t) => t.w >= 44 && t.h >= 44), `${at}: a token is under 44 px ${JSON.stringify(s.tokens)}`);
     check(s.discard.length === 1 && s.discard[0].text === "Discard 4" && s.discard[0].disabled && !s.discard[0].primary, `${at}: one Discard 4 button, off ${JSON.stringify(s.discard)}`);
+    // #1595 (q1597-tray-polish, D): each token's symbol is in the same colour as the hand's symbol for that good, not the token's ink.
+    check(s.tokens.every((t) => t.handIcon && t.icon === t.handIcon && t.icon !== t.ink), `${at}: a token's symbol is not the hand's colour ${JSON.stringify(s.tokens.map(({ kind, icon, handIcon, ink }) => ({ kind, icon, handIcon, ink })))}`);
     await rules(s, at);
     await shot("discard");
-    const add = async (kind) => press(pick.getByRole("button", { name: new RegExp(`^More .* to discard$`) }).nth(RESOURCES.indexOf(kind)));
+    const add = async (kind) => press(pick.getByTestId(`discard-${kind}`));
     await add("timber");
     await add("timber");
     await add("clay");
     await settle();
     s = await readStack(page);
-    check(s.count === "3 of 4" && s.discard[0].disabled, `${at}: after three taps the count reads "${s.count}" and Discard is ${s.discard[0].disabled ? "off" : "on"}`);
+    check(s.banner === "Discard 4: pick 1 more" && s.discard[0].disabled, `${at}: after three taps the status reads "${s.banner}" and Discard is ${s.discard[0].disabled ? "off" : "on"}`);
+    check(s.count === "Pick 1 more", `${at}: after three taps the screen-reader count reads "${s.count}", want "Pick 1 more"`);
     check(s.tokens.find((t) => t.kind === "timber").badge === "−2" && s.tokens.find((t) => t.kind === "clay").badge === "−1", `${at}: the badges read ${JSON.stringify(s.tokens.map((t) => t.badge))}`);
     await add("grain");
     await settle();
     s = await readStack(page);
-    check(s.count === "4 of 4" && !s.discard[0].disabled && s.discard[0].primary, `${at}: at four the count reads "${s.count}" and Discard is ${JSON.stringify(s.discard[0])}`);
-    const minus = s.buttons.filter((b) => /^trade-minus-discard-/.test(b.name));
-    check(minus.length === 3 && minus.every((m) => m.bottom <= s.discard[0].top || m.right <= s.discard[0].left), `${at}: a minus button's target overlaps Discard ${JSON.stringify({ minus, discard: s.discard[0] })}`);
+    check(s.banner === "Discard 4: ready" && !s.discard[0].disabled && s.discard[0].primary, `${at}: at four the status reads "${s.banner}" and Discard is ${JSON.stringify(s.discard[0])}`);
+    check(s.count === "Ready", `${at}: at four the screen-reader count reads "${s.count}", want "Ready"`);
+    const minus = s.buttons.filter((b) => /^discard-back-/.test(b.name));
+    check(minus.length === 5 && minus.every((m) => m.bottom <= s.discard[0].top || m.right <= s.discard[0].left), `${at}: a take-back button's target overlaps Discard ${JSON.stringify({ minus, discard: s.discard[0] })}`);
+    check(minus.every((m) => m.w >= 44 && m.h >= 44), `${at}: a take-back target is under 44 px ${JSON.stringify(minus)}`);
+    check(minus.every((m) => s.tokens.every((t) => m.bottom <= t.top || m.top >= t.bottom || m.right <= t.left || m.left >= t.right)), `${at}: a take-back target overlaps a number ${JSON.stringify({ minus, tokens: s.tokens })}`);
+    const pickedDot = await lineDot(page);
+    check(!pickedDot.shown || pickedDot.seat, `${at}: the top line has a dot that is no seat's colour ${JSON.stringify(pickedDot)}`);
+    check(s.tokens.every((t) => t.icon === t.handIcon && t.icon !== t.ink), `${at}, picked: a token's symbol is not the hand's colour ${JSON.stringify(s.tokens.map(({ kind, icon, handIcon }) => ({ kind, icon, handIcon })))}`);
     await rules(s, `${at}, picked`);
     await shot("discard-picked");
     // A fifth tap adds nothing.
     await add("grain");
     await add("ore");
-    check((await readStack(page)).count === "4 of 4", `${at}: a tap past the count changed it to ${(await readStack(page)).count}`);
+    check((await readStack(page)).banner === "Discard 4: ready", `${at}: a tap past the count changed the status to ${(await readStack(page)).banner}`);
     // Undo: the minus takes one back and turns Discard off again.
-    await press(page.getByTestId("trade-minus-discard-clay"));
+    await press(page.getByTestId("discard-back-clay"));
     await settle();
     s = await readStack(page);
-    check(s.count === "3 of 4" && s.discard[0].disabled && s.tokens.find((t) => t.kind === "clay").badge === null, `${at}: after the minus the count reads "${s.count}" ${JSON.stringify(s.discard[0])}`);
+    check(s.banner === "Discard 4: pick 1 more" && s.discard[0].disabled && s.tokens.find((t) => t.kind === "clay").badge === null, `${at}: after the take-back the status reads "${s.banner}" ${JSON.stringify(s.discard[0])}`);
+    check(s.count === "Pick 1 more", `${at}: after the take-back the screen-reader count reads "${s.count}", want "Pick 1 more"`);
     if (v.full) {
       await add("ore");
       await press(pick.getByRole("button", { name: "Discard 4" }));
@@ -387,7 +451,9 @@ try {
       await pick.waitFor({ state: "detached" });
       check((await readStack(page)).hand === 5, `${at}: the hand is back after the discard`);
       await page.waitForFunction(() => { const a = document.activeElement; const n = a?.dataset?.testid ?? a?.getAttribute("aria-label") ?? a?.textContent?.trim()?.slice(0, 24); return n === "Trade" || n === "End turn"; });
-      check((await activeName()) === "Trade" || (await activeName()) === "End turn", `${at}: after Discard focused "${await activeName()}", want Trade or End turn`);
+      const discardFocus = await activeName();
+      check(discardFocus === "Trade" || discardFocus === "End turn", `${at}: after Discard focused "${discardFocus}", want Trade or End turn`);
+      console.log(`${tag} focus: Discard->${discardFocus}`);
     }
 
     // 5. Take-from: one button per seat.
@@ -399,21 +465,26 @@ try {
       await group.waitFor();
       await settle();
       const s = await readStack(page);
-      const names = targets.map((id) => g.players.find((p) => p.id === id).name);
+      const names = targets.map((id) => g.players.find((p) => p.id === id).name.replace(/ \(bot\)$/, ""));
       check(s.banner === "Take from whom?", `${at}: the status reads "${s.banner}", want "Take from whom?"`);
-      check(JSON.stringify(s.takes.map((b) => b.text)) === JSON.stringify(names) && s.takes.every((b) => b.dot && !b.primary && Math.abs(b.h - 48) <= 0.5), `${at}: the action row is ${JSON.stringify(s.takes)}, want one 48 px button per seat with its dot: ${names.join(", ")}`);
+      check(JSON.stringify(s.takes.map((b) => b.text.replace(/\d+$/, ""))) === JSON.stringify(names) && s.takes.every((b) => b.dot && !b.primary && Math.abs(b.h - 48) <= 0.5), `${at}: the action row is ${JSON.stringify(s.takes)}, want one 48 px button per seat with its dot: ${names.join(", ")}`);
       check(s.buttons.filter((b) => !/^resource-/.test(b.name)).length === names.length, `${at}: other buttons show beside the seats ${JSON.stringify(s.buttons.map((b) => b.name))}`);
+      check(s.takes.every((b) => !/\(bot\)/.test(b.text) && /\d$/.test(b.text)), `${at}: a take-from button says "(bot)" or shows no card count ${JSON.stringify(s.takes.map((b) => b.text))}`);
+      const takeDot = await lineDot(page);
+      check(!takeDot.shown || takeDot.seat, `${at}: the top line has a dot that is no seat's colour ${JSON.stringify(takeDot)}`);
       await rules(s, at);
       await shot(hotseat ? "take-from-hotseat" : "take-from");
       const before = sum(g.players.find((p) => p.id === targets[1]).resources);
-      await press(group.getByRole("button", { name: names[1] }));
+      await press(group.getByRole("button", { name: new RegExp(`^${names[1]}, \\d+ cards$`) }));
       await page.waitForFunction(() => window.__emberisle.getState().state.phase === "main");
       const after = await page.evaluate((id) => { const st = window.__emberisle.getState(); const p = st.state.players.find((x) => x.id === id); return { robber: st.state.robberHex, cards: Object.values(p.resources).reduce((a, b) => a + b, 0), pending: st.pendingSteal, mine: Object.values(st.state.players.find((x) => x.id === "p0").resources).reduce((a, b) => a + b, 0) }; }, targets[1]);
       check(after.robber === hexId && after.cards === before - 1 && after.pending === null && after.mine === sum(HAND) + 1, `${at}: the pick left ${JSON.stringify(after)}, want the wayfarer on ${hexId} and one good from ${names[1]}`);
       if (!hotseat) {
         await group.waitFor({ state: "detached" });
         await page.waitForFunction(() => { const a = document.activeElement; const n = a?.dataset?.testid ?? a?.getAttribute("aria-label") ?? a?.textContent?.trim()?.slice(0, 24); return n === "Trade" || n === "End turn"; });
-        check((await activeName()) === "Trade" || (await activeName()) === "End turn", `${at}: after take-from focused "${await activeName()}", want Trade or End turn`);
+        const takeFocus = await activeName();
+        check(takeFocus === "Trade" || takeFocus === "End turn", `${at}: after take-from focused "${takeFocus}", want Trade or End turn`);
+        console.log(`${tag} focus: take-from->${takeFocus}`);
       }
     };
     await takeFrom(`${tag} take-from`);
@@ -427,8 +498,9 @@ try {
       await settle();
       s = await readStack(page);
       at = `${tag} hotseat discard`;
-      check(s.banner === `Discard 4 goods · ${owes}`, `${at}: the status reads "${s.banner}", want "Discard 4 goods · ${owes}"`);
+      check(s.banner === `Discard 4: pick 4 more · ${owes}`, `${at}: the status reads "${s.banner}", want "Discard 4: pick 4 more · ${owes}"`);
       check(s.tokens.length === 5 && s.tokens.every((t) => +t.owned === EIGHT[t.kind]) && s.hand === 0, `${at}: the tokens show ${owes}'s goods ${JSON.stringify(s.tokens)}`);
+      check(s.tokens.every((t) => t.owned === "0" || t.icon !== t.ink), `${at}: a held good's symbol is in the token's ink, not its colour ${JSON.stringify(s.tokens.map(({ kind, icon, ink }) => ({ kind, icon, ink })))}`);
       await rules(s, at);
       await shot("discard-hotseat");
       for (const k of ["timber", "timber", "timber", "clay"]) await add(k);
