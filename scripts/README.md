@@ -21,6 +21,7 @@ The issue column lists numbers named in each script's opening comment.
 | `hex-jelly-gif.mjs` | `node scripts/hex-jelly-gif.mjs ore 23` | Writes `test-results/jelly-<kind>-<seed>-roll.gif`; needs Python with Pillow. | No | None |
 | `jelly-showcase.mjs` | `node scripts/jelly-showcase.mjs` | Writes screenshots and video under `test-results/jelly/`; start `npm run dev` first. | No | None |
 | `level-audio.mjs` | `node scripts/level-audio.mjs [--report out.md] [--listen dir]`; `node scripts/level-audio.mjs --new <name>...` | Overwrites selected `public/audio/` files; optionally writes a report and listening copies. | No | #1073 |
+| `lobby-text-capture.mjs` | `node scripts/lobby-text-capture.mjs --run <name> [--out <directory>]` | Writes screenshots and `measurements.json` under `--out`, default `test-results/lobby-text-capture/`. | No | #1235 |
 | `make-ambience.mjs` | `node scripts/make-ambience.mjs [--output file.mp3]` | Generates sea ambience; defaults to `public/audio/amb_sea.mp3`. | Yes: `ambience-loop-prove` | #1014, #662 |
 | `make-icons.mjs` | `npm run make-icons` | Renders four PNG icons into `public/icons/`. | No | #468 |
 | `make-sounds.mjs` | `node scripts/make-sounds.mjs` | Generates and levels table clips in `public/audio/`; needs ffmpeg. | No | #609, #616, #1073 |

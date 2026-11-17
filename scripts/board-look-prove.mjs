@@ -68,6 +68,24 @@ const drawn = (page, n, ms = 8000) =>
     await new Promise((res, rej) => {
       const poll = () => (isle.renders >= r0 + n ? res() : performance.now() - t0 > ms ? rej(new Error(`drawn: ${n} frame(s) never came`)) : requestAnimationFrame(poll));
       poll();
+    }).catch((error) => {
+      // Failure-only observation: do not wake, advance, replace or retry the renderer or its original guard.
+      try {
+        const current = window.__isle;
+        const now = performance.now();
+        console.log("drawn-timeout " + JSON.stringify({
+          requestedFrames: n, budgetMs: ms, startRenders: r0, endRenders: isle.renders,
+          renderDelta: isle.renders - r0, currentRenders: current?.renders ?? null, sameRenderer: current === isle,
+          startedAt: t0, observedAt: now, elapsedMs: now - t0, timeOrigin: performance.timeOrigin,
+          width: innerWidth, height: innerHeight, visibility: document.visibilityState, focused: document.hasFocus(),
+          reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches, wasCalm: isle.wasCalm ?? null,
+          stopped: isle.stopped ?? null, refitDue: Boolean(isle.refitDue), glide: Boolean(isle.glide),
+          lastFrame: isle.lastFrame ?? null, busyUntil: isle.busyUntil ?? null, view: isle.view ?? null,
+          lastSeq: isle.lastSeq ?? null, stateSeq: window.__emberisle?.getState().state?.seq ?? null,
+          seed: window.__emberisle?.getState().state?.seed ?? null, hasFence: Boolean(isle.fence),
+        }));
+      } catch {} // A diagnostic must never replace the original rejection.
+      throw error;
     });
   }, [n, ms]);
 
@@ -79,6 +97,7 @@ async function open(width, height, touch, water = "simple", view = null, jelly =
   if (view) await ctx.addInitScript((v) => localStorage.setItem("emberisle-view", v), view);
   const page = await ctx.newPage();
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  page.on("console", (m) => { if (m.type() === "log" && m.text().startsWith("drawn-timeout ")) console.log(m.text()); });
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("response", (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
   // A wait that times out names its predicate.
@@ -229,7 +248,7 @@ try {
   // with no dock, 0.6 and 3.5 units out, inside the HUD hole.
   {
     const page = await open(1280, 720, false, "crystal", "overhead");
-    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.getByRole("button", { name: "Pass and play" }).click();
     await page.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && window.__emberisle.getState().state && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
     await page.waitForFunction((n) => window.__isle.renders > n, (await page.evaluate(() => window.__isle.renders)) + 2, { timeout: STEP_MS });
     const spots = await page.evaluate(() => {
@@ -307,7 +326,7 @@ try {
   ]) {
     const tag = `${w}x${h}${touch ? " touch" : ""}`;
     const page = await open(w, h, touch);
-    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.getByRole("button", { name: "Pass and play" }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
     await page.evaluate(() => {
       const g = window.__emberisle;
@@ -579,7 +598,7 @@ try {
       const overDrag = await drag([{ x: w / 2, y: h / 2 }, ...Array.from({ length: 6 }, (_, i) => ({ x: w / 2 + 20 * (i + 1), y: h / 2 + 5 * (i + 1) }))]);
       check(`${tag}: the overhead view still orbits on a drag`, Math.abs(overDrag.azimuth - overPose.azimuth) > 0.05 || Math.abs(overDrag.polar - overPose.polar) > 0.05, brief(overDrag));
       await page.reload();
-      await page.getByRole("button", { name: "Four seats, one table" }).click();
+      await page.getByRole("button", { name: "Pass and play" }).click();
       await page.waitForFunction(() => window.__isle?.lastState && window.__isle.fit && !window.__isle.refitDue, null, { timeout: STEP_MS });
       check(`${tag}: the overhead choice outlives a reload`, (await page.evaluate(() => window.__isle.view)) === "overhead");
       await choose("Diorama");
@@ -592,7 +611,7 @@ try {
   // PlaceList each become a right rail, the island glides clear of them, and closing or blurring glides it back.
   {
     const page = await open(1024, 768, false);
-    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.getByRole("button", { name: "Pass and play" }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
     await page.evaluate(() => {
       const g = window.__emberisle;
@@ -692,7 +711,7 @@ try {
   ]) {
     const tag = `${w}x${h} touch`;
     const page = await open(w, h, true);
-    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.getByRole("button", { name: "Pass and play" }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
     await page.evaluate(() => window.__toMain());
     await page.waitForFunction(() => window.__isle.lastSeq === window.__emberisle.getState().state.seq && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
@@ -824,7 +843,7 @@ try {
   // 390x844 phone, terrain-390.png.
   {
     const page = await open(1280, 720, false, "crystal", null, "full");
-    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.getByRole("button", { name: "Pass and play" }).click();
     await page.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && window.__emberisle.getState().state && window.__isle.landReady && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
     await drawn(page, 3, 30_000);
     const t = await page.evaluate(async () => {
@@ -887,7 +906,7 @@ try {
     await page.screenshot({ path: "test-results/terrain-1280.png" });
     await page.context().close();
     const phone = await open(390, 844, true, "crystal", null, "full");
-    await phone.getByRole("button", { name: "Four seats, one table" }).click();
+    await phone.getByRole("button", { name: "Pass and play" }).click();
     await phone.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && window.__emberisle.getState().state && window.__isle.landReady && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
     await drawn(phone, 3, 30_000);
     check("terrain: the 390x844 phone is overhead", (await phone.evaluate(() => window.__isle.view)) === "overhead");
