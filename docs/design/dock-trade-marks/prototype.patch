@@ -1,0 +1,209 @@
+diff --git a/src/lib/scene/harbor-jelly.ts b/src/lib/scene/harbor-jelly.ts
+index b93e886e..3fc50d82 100644
+--- a/src/lib/scene/harbor-jelly.ts
++++ b/src/lib/scene/harbor-jelly.ts
+@@ -80,7 +80,7 @@ function sailMap(kind: HarborKind) {
+ }
+ 
+ // The rate plates painted on the T-heads, read from above: one atlas, a row per kind (the good's colour, the rate in cream).
+-const PLATE_KINDS: HarborKind[] = ["any", "timber", "clay", "wool", "grain", "ore"];
++export const PLATE_KINDS: HarborKind[] = ["any", "timber", "clay", "wool", "grain", "ore"];
+ let plates: THREE.CanvasTexture | null = null;
+ function plateAtlas() {
+   if (plates) return plates;
+@@ -112,6 +112,79 @@ function plateAtlas() {
+   return plates;
+ }
+ 
++// #1491 prototype (mock pictures only, not for merge): "a" painted plank, "b" flag on a mast, "c" standing sign; "" is today.
++const MARK = (() => {
++  try {
++    return localStorage.getItem("emberisle-dockmark") ?? "";
++  } catch {
++    return "";
++  }
++})();
++// The goods' own symbols from the HUD (ResourceSymbols.tsx), drawn on a 24 box.
++const ICON: Record<Exclude<HarborKind, "any">, { fill: string[]; stroke: string[] }> = {
++  timber: { fill: ["m9 2-4 6h2l-4 6h3l-3 5h12l-3-5h3l-4-6h2L9 2Z"], stroke: ["M9 18v4m9-17-3 5h2l-3 5h8l-3-5h2l-3-5Z", "M18 15v5"] },
++  clay: { fill: ["M7.7 3h8.6a.7.7 0 0 1 .7.7v4.6a.7.7 0 0 1-.7.7H7.7a.7.7 0 0 1-.7-.7V3.7a.7.7 0 0 1 .7-.7Z", "M1.7 11h8.6a.7.7 0 0 1 .7.7v5.6a.7.7 0 0 1-.7.7H1.7a.7.7 0 0 1-.7-.7v-5.6a.7.7 0 0 1 .7-.7Z", "M13.7 11h8.6a.7.7 0 0 1 .7.7v5.6a.7.7 0 0 1-.7.7h-8.6a.7.7 0 0 1-.7-.7v-5.6a.7.7 0 0 1 .7-.7Z"], stroke: [] },
++  wool: { fill: ["M6 17.6C3.1 17.6 2.3 13.9 4.5 12.7 3.4 10.4 5.9 8.2 8 9.3 8.6 6.5 12.5 6.2 13.5 8.6 15.9 7.4 18.8 9.5 17.9 12 20.3 13.2 19.6 16.9 16.9 17.6Z", "M22.2 12.4a3.3 2.35 -12 1 1-6.6 0 3.3 2.35 -12 1 1 6.6 0Z"], stroke: ["M8.6 17.6v3.6M14.4 17.6v3.6"] },
++  grain: { fill: ["M13 7c-3 0-5-3-4-5 3 0 5 3 4 5Zm2 3c0-3 3-5 6-5 0 3-3 5-6 5Zm-5 2c-3 0-5-3-4-5 3 0 5 3 4 5Zm2 3c0-3 3-5 6-5 0 3-3 5-6 5Zm-5 2c-3 0-5-3-4-5 3 0 5 3 4 5Zm2 3c0-3 3-5 6-5 0 3-3 5-6 5Z"], stroke: ["M7 22 17 2"] },
++  ore: { fill: ["m2 20 7-14 7 14H2Zm11 0-3-6 5-12 8 18H13Z"], stroke: [] },
++};
++// One atlas, a row per kind: a white rim, the good's colour, its symbol in white on the left and the rate as white pips on the
++// right (two for 2:1, three for 3:1). A 3:1 dock's symbol is the five goods' colours in a ring: any good. No text, no cream.
++let marks: THREE.CanvasTexture | null = null;
++export function markAtlas() {
++  if (marks) return marks;
++  const c = document.createElement("canvas");
++  c.width = 256;
++  c.height = 128 * PLATE_KINDS.length;
++  const x = c.getContext("2d")!;
++  PLATE_KINDS.forEach((k, i) => {
++    const y = i * 128;
++    x.fillStyle = "#ffffff";
++    x.beginPath();
++    x.roundRect(2, y + 2, 252, 124, 40);
++    x.fill();
++    x.fillStyle = goodOf(k);
++    x.beginPath();
++    x.roundRect(10, y + 10, 236, 108, 32);
++    x.fill();
++    const ink = k === "wool" || k === "grain" ? "#263d3c" : "#ffffff";
++    if (k === "any") {
++      (["timber", "clay", "wool", "grain", "ore"] as const).forEach((g, j) => {
++        const a = -Math.PI / 2 + (j * 2 * Math.PI) / 5;
++        x.fillStyle = "#ffffff";
++        x.beginPath();
++        x.arc(78 + Math.cos(a) * 26, y + 64 + Math.sin(a) * 26, 15, 0, 7);
++        x.fill();
++        x.fillStyle = GOOD[g];
++        x.beginPath();
++        x.arc(78 + Math.cos(a) * 26, y + 64 + Math.sin(a) * 26, 11, 0, 7);
++        x.fill();
++      });
++    } else {
++      x.save();
++      x.translate(30, y + 16);
++      x.scale(4, 4);
++      x.fillStyle = x.strokeStyle = ink;
++      x.lineWidth = 2;
++      x.lineCap = x.lineJoin = "round";
++      for (const d of ICON[k].fill) x.fill(new Path2D(d));
++      for (const d of ICON[k].stroke) x.stroke(new Path2D(d));
++      x.restore();
++    }
++    const n = k === "any" ? 3 : 2;
++    x.fillStyle = ink;
++    for (let j = 0; j < n; j++) {
++      x.beginPath();
++      x.arc(n === 3 ? 158 + j * 30 : 172 + j * 34, y + 64, 12, 0, 7);
++      x.fill();
++    }
++  });
++  marks = new THREE.CanvasTexture(c);
++  marks.colorSpace = THREE.SRGBColorSpace;
++  marks.anisotropy = 4;
++  return marks;
++}
++
+ // Darken and cool every vertex under the waterline (weed, mussels, wet wood or stone), and the wet band just above it.
+ function wetBand(g: THREE.BufferGeometry, top = 0.012) {
+   const p = g.attributes.position as THREE.BufferAttribute;
+@@ -683,14 +756,55 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
+     for (let k = 0; k < 7; k++) P(K.part(box, k % 2 ? "#a46e42" : "#b07a4c", [0, DECK, tv - 0.07 + k * 0.025], [0, 0, 0], [0.44, 0.016, 0.022]));
+     for (const x of [-W / 2, W / 2]) P(K.part(box, "#7a5236", [x, DECK - 0.014, v0 + len / 2], [0, 0, 0], [0.014, 0.018, len]));
+     // The rate plate, flat on the T-head, its text upright on screen whichever side of the island (the camera looks north).
+-    {
+-      const pl = new THREE.PlaneGeometry(0.36, 0.165);
++    const markRow = (pl: THREE.PlaneGeometry) => {
+       const row = PLATE_KINDS.indexOf(d.kind);
+       const uv = pl.attributes.uv as THREE.BufferAttribute;
+       for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - (row + 1 - uv.getY(i)) / PLATE_KINDS.length);
++      return pl;
++    };
++    if (MARK === "" || MARK === "a") {
++      const pl = markRow(MARK === "a" ? new THREE.PlaneGeometry(0.42, 0.21) : new THREE.PlaneGeometry(0.36, 0.165));
+       const at = world(0, DECK + 0.0085, tv);
+       plateParts.push(pl.rotateX(-Math.PI / 2).translate(at.x, at.y, at.z));
+     }
++    // #1491 b: a mast at the T-head's land-side corner flying the mark as a flag, facing the camera (south).
++    // #1491 c: a sign on two posts at the pier's root, facing the camera.
++    // Away from the moored ship (it lies on shipSide, below).
++    const away = di % 2 ? -1 : 1;
++    const flagX = away * 0.17, flagV = tv + 0.05;
++    if (MARK === "b") {
++      P(K.part(K.cyl(1, 1, 6), "#6a4a30", [flagX, DECK + 0.21, flagV], [0, 0, 0], [0.007, 0.42, 0.007]));
++      P(K.part(K.sphere(6), "#e2b64e", [flagX, DECK + 0.425, flagV], [0, 0, 0], [0.012, 0.012, 0.012]));
++      const at = world(flagX, DECK + 0.34, flagV);
++      plateParts.push(markRow(new THREE.PlaneGeometry(0.26, 0.13)).translate(at.x + 0.13, at.y, at.z + 0.002));
++    }
++    if (MARK === "c") {
++      const sx = away * 0.16, sv = v0 + 0.1;
++      for (const o of [-0.1, 0.1]) {
++        const p = world(sx, 0, sv);
++        pierParts.push(K.part(box, "#6a4a30", [p.x + o, DECK + 0.08, p.z], [0, 0, 0], [0.014, 0.16, 0.014]));
++      }
++      const at = world(sx, DECK + 0.17, sv);
++      pierParts.push(K.part(box, "#6a4a30", [at.x, at.y, at.z - 0.006], [0, 0, 0], [0.27, 0.14, 0.01]));
++      plateParts.push(markRow(new THREE.PlaneGeometry(0.25, 0.125)).translate(at.x, at.y, at.z));
++    }
++    // #1491: an owned dock flies a pennant in the owner's colour (shown and coloured by the renderer from the game state): on the
++    // T-head (a), under the flag (b), on top of the sign (c).
++    if (MARK) {
++      const pen = new THREE.Group();
++      const pole = new THREE.Mesh(K.merge([K.part(K.cyl(1, 1, 6), "#6a4a30", [0, 0.11, 0], [0, 0, 0], [0.006, 0.22, 0.006])]), cm);
++      // A swallow-tail cut, so a claimed dock reads by its shape as well as its colour.
++      const cloth = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(0.17, 0), new THREE.Vector2(0.12, -0.035), new THREE.Vector2(0.17, -0.07), new THREE.Vector2(0, -0.07)])), new THREE.MeshStandardMaterial({ color: "#ffffff", side: THREE.DoubleSide, roughness: 0.8 }));
++      cloth.position.set(0.004, 0.22, 0);
++      pen.add(pole, cloth);
++      const spot = MARK === "a" ? world(away * 0.2, DECK, tv + 0.06) : MARK === "b" ? world(flagX, DECK + 0.05, flagV) : world(away * 0.26, DECK + 0.1, v0 + 0.1);
++      pen.position.copy(spot);
++      if (MARK === "b") pen.scale.setScalar(0.9);
++      pen.visible = false;
++      pen.userData.vids = d.vids;
++      group.add(pen);
++      (group.userData.pennants ??= []).push(pen);
++    }
+     P(K.part(box, "#7a5236", [0, DECK - 0.014, tv + 0.08], [0, 0, 0], [0.45, 0.018, 0.014]));
+     P(K.part(box, "#7a5236", [0, DECK - 0.014, tv - 0.082], [0, 0, 0], [0.45, 0.018, 0.014]));
+     // Piles in pairs every 0.12, down to the sand or the floor, braced with an X below the deck where they stand in water.
+@@ -999,7 +1113,8 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
+   if (plateParts.length) {
+     const g = K.merge(plateParts);
+     geos.push(g);
+-    const pm = new THREE.MeshStandardMaterial({ map: plateAtlas(), emissive: 0x6a645a, emissiveMap: plateAtlas(), roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2 });
++    const atlas = MARK ? markAtlas() : plateAtlas();
++    const pm = new THREE.MeshStandardMaterial({ map: atlas, emissive: 0x6a645a, emissiveMap: atlas, roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2, side: MARK ? THREE.DoubleSide : THREE.FrontSide });
+     mats.push(pm);
+     const me = new THREE.Mesh(g, pm);
+     me.receiveShadow = true;
+diff --git a/src/lib/scene/isle-renderer.ts b/src/lib/scene/isle-renderer.ts
+index 7bfc9f09..5e8c4275 100644
+--- a/src/lib/scene/isle-renderer.ts
++++ b/src/lib/scene/isle-renderer.ts
+@@ -1885,6 +1885,29 @@ export class IsleRenderer {
+       this.living.add(boat);
+       this.boats.push(boat);
+     }
++    // #1491 prototype, option a on the lite board (no harbour shore): the same painted plank on each plain pier's end.
++    let mark = "";
++    try {
++      mark = localStorage.getItem("emberisle-dockmark") ?? "";
++    } catch {}
++    if (this.lite && mark === "a") {
++      const docks = [...this.docks];
++      const land = this.land;
++      void import("./harbor-jelly").then(({ markAtlas, PLATE_KINDS }) => {
++        const atlas = markAtlas();
++        const mat = new THREE.MeshStandardMaterial({ map: atlas, emissive: 0x6a645a, emissiveMap: atlas, roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2 });
++        for (const d of docks) {
++          const pl = new THREE.PlaneGeometry(0.24, 0.12);
++          const row = PLATE_KINDS.indexOf(d.kind);
++          const uv = pl.attributes.uv as THREE.BufferAttribute;
++          for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - (row + 1 - uv.getY(i)) / PLATE_KINDS.length);
++          // At the pier's root: the boat's sail stands in front of the pier's end on piers that face the camera.
++          pl.rotateX(-Math.PI / 2).translate(d.cx + d.mx * 0.29, 0.128, d.cz + d.mz * 0.29);
++          land.add(new THREE.Mesh(pl, mat));
++        }
++        this.wake();
++      });
++    }
+   }
+ 
+   // A new board (or a first one, as on a reconnect) is drawn standing; only pieces added since the last board land.
+@@ -1954,6 +1977,13 @@ export class IsleRenderer {
+         sail.material.color.set(claimed ? pmap.get(claimed)?.color ?? "#eee" : "#f4efe4");
+       }
+     }
++    // #1491 prototype: a claimed dock's pennant goes up in the claiming seat's colour.
++    for (const pen of (this.shore?.group.userData.pennants as THREE.Group[] | undefined) ?? []) {
++      const claimed = ((pen.userData.vids as string[]).map((id) => vmap.get(id)).find((v) => v?.building) ?? null)?.building?.playerId;
++      pen.visible = Boolean(claimed);
++      const cloth = pen.children[1] as THREE.Mesh;
++      if (claimed) (cloth.material as THREE.MeshStandardMaterial).color.set(pmap.get(claimed)?.color ?? "#ccc");
++    }
+   }
+ 
+   // The jelly shore swaps in for the plain beach, piers and boats; its boats take their places on the swell.

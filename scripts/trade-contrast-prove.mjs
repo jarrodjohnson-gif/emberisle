@@ -43,7 +43,7 @@ try {
     page.on("pageerror", (e) => errors.push(String(e)));
 
     await page.goto(`http://127.0.0.1:${PORT}/`);
-    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play with bots", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state);
 
     // Give player p0 all resources so cards are enabled on give and want
