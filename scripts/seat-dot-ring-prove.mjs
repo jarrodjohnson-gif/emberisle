@@ -128,7 +128,8 @@ try {
     ringed(seats, `${v.tag} seats`, 4);
     const dune = seats.find((d) => d.fill === DUNE);
     assert.ok(dune, `${v.tag}: Dune's seat dot is on the table`);
-    assert.equal(dune.surface, "rgb(255, 255, 255)", `${v.tag}: Dune's dot sits on a white seat card`);
+    // #1544: seats have no box, so Dune's pale dot sits on the sea (or on the white pill on its turn) and its ring is what shows it.
+    assert.ok(dune.surface !== "rgb(255, 255, 255)" && dune.ring !== "none", `${v.tag}: Dune's dot has no white card behind it and keeps its ring ${JSON.stringify({ surface: dune.surface, ring: dune.ring })}`);
     assert.equal(dune.ring, RING, `${v.tag}: Dune's dot on the white seat card carries the ring`);
     await page.screenshot({ path: `test-results/seat-dot-ring-${v.tag}-table.png` });
 

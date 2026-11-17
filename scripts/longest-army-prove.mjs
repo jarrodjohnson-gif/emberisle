@@ -7,7 +7,7 @@
 // - a tie for path length (5 and 5) or army (3 and 3) leaves the badge on the current holder, and the badge moves, with a
 //   short pulse (none under reduced motion), only when a seat passes the holder;
 // - every count reads what the rules hold (roadLength, knightsPlayed), the log carries the rules' own "holds" lines, and the
-//   seat cards keep one size whatever they hold (<= 44 px tall, the same box with and without a badge), with each tally inside
+//   seat cards keep one size whatever they hold (44 to 52 px tall, the same box with and without a badge), with each tally inside
 //   its card and clear of the points.
 // Zero console errors. Saves test-results/longest-army-<size>.png. Run: node scripts/longest-army-prove.mjs
 import assert from "node:assert/strict";
@@ -223,7 +223,8 @@ try {
           if (!t.badge) assert.equal(a, 0, `${tag}: ${kind} has no fill without the badge`);
         }
         assert.ok(s.path.box.r <= s.army.box.l + 0.5, `${tag}: the tallies do not overlap`);
-        assert.ok(s.card.h <= 44, `${tag}: card is ${s.card.h} px tall`);
+        // #1544: a rail seat is two lines, its row at least 44 px and at most 52 px tall.
+        assert.ok(s.card.h >= 44 && s.card.h <= 52, `${tag}: card is ${s.card.h} px tall`);
         // Fixed size: the card is the same box whatever it holds.
         const key = `${sel}-${s.id}`;
         const was = sizes.get(key);

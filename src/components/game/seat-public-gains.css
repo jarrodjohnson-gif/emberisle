@@ -3,8 +3,8 @@
    number, in a solid cell: green (--gain) for a gain and red (--loss) for a loss, white numerals, gains on the left and
    losses on the right. Always one row and 40 px below the seat; 17 px numerals for one or two goods, 15 px for three,
    13 px for four (the floor is 12 px). No shadow, no outline, no word. On a wide seat (sideways) the tag stays compact
-   and left-aligned; on the desktop rail it comes out of the seat's right side. The seat's button sits above the tag and
-   hides its top 12 px, so the name and the score are never covered. The fade is the goods cue; the tag slides 24 px out
+   and left-aligned; on the desktop rail it comes out of the seat's right side. #1544: seats have no box to tuck behind,
+   so the tag starts at the seat's edge and never sits behind the name or the score. The fade is the goods cue; the tag slides 24 px out
    from behind the seat in 220 ms (no motion under reduced motion: styles.css stops every animation). */
 @keyframes goods-cue {
   0% { opacity: 0; }
@@ -13,10 +13,10 @@
 }
 @keyframes seat-tag-down { from { transform: translateY(-24px); } }
 @keyframes seat-tag-right { from { transform: translateX(-24px); } }
-.seat-card:has(> .seat-public-gains) > button { position: relative; z-index: 1; background: inherit; box-shadow: inherit; }
+.seat-card:has(> .seat-public-gains) > button { position: relative; z-index: 1; }
 .seat-public-gains {
   position: absolute;
-  top: calc(100% - 12px);
+  top: 100%;
   left: 0;
   z-index: 0;
   display: flex;
@@ -36,8 +36,8 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
-  height: 52px;
-  padding: 12px 1px 0;
+  height: 40px;
+  padding: 0 1px;
   white-space: nowrap;
   font: 700 17px/19px var(--font-numeral);
   font-variant-numeric: tabular-nums;
@@ -52,11 +52,11 @@
 .seat-public-gains:has(> :nth-child(4)) > .seat-public-pill > svg { width: 15px; height: 15px; }
 @container (min-width: 130px) {
   .seat-public-gains[data-scope="seat"] { width: auto; }
-  .seat-public-gains[data-scope="seat"] > .seat-public-pill { flex: 0 0 auto; min-width: 40px; padding: 12px 6px 0; }
+  .seat-public-gains[data-scope="seat"] > .seat-public-pill { flex: 0 0 auto; min-width: 40px; padding: 0 6px; }
 }
 .seat-public-gains[data-scope="rail"] {
   top: 0;
-  left: calc(100% - 12px);
+  left: 100%;
   width: auto;
   height: 100%;
   border-radius: inherit;
@@ -65,8 +65,7 @@
   animation-name: seat-tag-right;
 }
 .seat-public-gains[data-scope="rail"] > .seat-public-pill { flex: 0 0 auto; height: auto; min-width: 40px; padding: 0 8px; font-size: 18px; line-height: 20px; }
-.seat-public-gains[data-scope="rail"] > .seat-public-pill:first-child { min-width: 52px; padding-left: 20px; }
 .seat-public-gains[data-scope="rail"] > .seat-public-pill > svg { width: 18px; height: 18px; }
 /* A chat bubble on a seat with a tag hangs clear of it: below it on the strip, right of it on the rail. */
-.seat-card:has(> .seat-public-gains[data-scope="seat"]) .seat-bubble { margin-top: calc(var(--seat-cue-reach, 52px) - 4px); }
-.seat-card:has(> .seat-public-gains[data-scope="rail"]) .seat-bubble { margin-left: calc(var(--seat-cue-reach, 0px) - 4px); }
+.seat-card:has(> .seat-public-gains[data-scope="seat"]) .seat-bubble { margin-top: calc(var(--seat-cue-reach, 40px) + 8px); }
+.seat-card:has(> .seat-public-gains[data-scope="rail"]) .seat-bubble { margin-left: calc(var(--seat-cue-reach, 0px) + 8px); }

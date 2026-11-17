@@ -252,7 +252,7 @@ try{
   for(const seat of measured){
    const prefix=`${width}x${height} ${seat.player}`;
    if(seat.chip.width!==8||seat.chip.height!==8||seat.chip.x!==seat.card.x+seat.borderLeft-3||seat.chip.y!==seat.card.y+seat.borderTop-3)geometryProblems.push(`${prefix}: dot size/offset differs from approved mock`);
-   if(seat.trigger.height!==44||seat.pointerEvents!=='none'||seat.buttons!==0||seat.tabIndex>=0)geometryProblems.push(`${prefix}: trigger or dot interaction changed`);
+   if((width===1280?(seat.trigger.height<44||seat.trigger.height>52):seat.trigger.height!==44)||seat.pointerEvents!=='none'||seat.buttons!==0||seat.tabIndex>=0)geometryProblems.push(`${prefix}: trigger or dot interaction changed`);
    if(seat.status!=='img'||seat.live!==null||seat.label!==`${{p0:'Jarrod',p1:'Joshua',p2:'Dune',p3:'Ember'}[seat.player]} needs Stone and Wheat`)geometryProblems.push(`${prefix}: dot accessibility differs from published needs`);
    if(seat.color!=='rgb(190, 91, 57)'||Number.parseFloat(seat.radius)<4||seat.shadow!=='rgb(255, 255, 255) 0px 0px 0px 1px')geometryProblems.push(`${prefix}: dot appearance differs from approved mock`);
    if([...seat.tallies,...seat.hints].some(r=>overlap(seat.chip,r)))geometryProblems.push(`${prefix}: chip covers public tally/hint`);

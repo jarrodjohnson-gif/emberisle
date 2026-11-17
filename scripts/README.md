@@ -21,6 +21,7 @@ The issue column lists numbers named in each script's opening comment.
 | `hex-jelly-gif.mjs` | `node scripts/hex-jelly-gif.mjs ore 23` | Writes `test-results/jelly-<kind>-<seed>-roll.gif`; needs Python with Pillow. | No | None |
 | `jelly-showcase.mjs` | `node scripts/jelly-showcase.mjs` | Writes screenshots and video under `test-results/jelly/`; start `npm run dev` first. | No | None |
 | `level-audio.mjs` | `node scripts/level-audio.mjs [--report out.md] [--listen dir]`; `node scripts/level-audio.mjs --new <name>...` | Overwrites selected `public/audio/` files; optionally writes a report and listening copies. | No | #1073 |
+| `lobby-text-capture.mjs` | `node scripts/lobby-text-capture.mjs --run <name> [--out <directory>]` | Writes screenshots and `measurements.json` under `--out`, default `test-results/lobby-text-capture/`. | No | #1235 |
 | `make-ambience.mjs` | `node scripts/make-ambience.mjs [--output file.mp3]` | Generates sea ambience; defaults to `public/audio/amb_sea.mp3`. | Yes: `ambience-loop-prove` | #1014, #662 |
 | `make-icons.mjs` | `npm run make-icons` | Renders four PNG icons into `public/icons/`. | No | #468 |
 | `make-sounds.mjs` | `node scripts/make-sounds.mjs` | Generates and levels table clips in `public/audio/`; needs ffmpeg. | No | #609, #616, #1073 |
@@ -30,12 +31,17 @@ The issue column lists numbers named in each script's opening comment.
 | `next-up.mjs` | `node scripts/next-up.mjs` | Updates the labelled GitHub queue issue body; requires the workflow environment. | Yes: `next-up.yml` | #858 |
 | `night.mjs` | `node scripts/night.mjs` | Builds `dist/`, starts the rules host, and prints the join line. | Yes: `night-prove` (`npm run night-prove`) | #87, #321 |
 | `orphan-check.mjs` | `npm run orphan-check` | Terminates two proofs and checks for leftover host processes; writes no report. | No, deliberately | #242 |
+| `proof-host-port-prove.mjs` | `npm run proof-host-port-prove` | Tests that host startup failures reject cleanly before browser launch. | Yes: `ci.yml` (`npm run proof-host-port-prove`) | #1556 |
 | `robber-pictures.mjs` | `node --import ./server/register.mjs scripts/robber-pictures.mjs` | Writes blocked-terrain comparisons and crops under `docs/proofs/826/`. | No | #826 |
 | `seat-gains-pictures.mjs` | `OUT=<dir> node --import ./server/register.mjs scripts/seat-gains-pictures.mjs` | Writes real-board pictures of public goods cues under `OUT`. | No | #827 |
+| `seat-tray-prove.mjs` | `npm run seat-tray-prove` | Verifies one-tray seats without boxes, 44px targets, and contrast across viewports. | Yes: `ci.yml` (`npm run seat-tray-prove`) | #1544 |
 | `shots.mjs` | `node scripts/shots.mjs` | Writes screen captures under `test-results/shots/` and prints rendering measurements. | No | #125, #310 |
 | `stale-pr-sweeper.mjs` | `node scripts/stale-pr-sweeper.mjs` | Records activity and closes stale PRs when `STALE_PR_SWEEPER=on`; otherwise prints `disabled`. | Yes: `stale-pr-sweeper.yml` | None |
 | `trade-map.test.mjs` | `npm run trade-map-test` | Checks trade previews and settlement, writing `test-results/trade-map-*.png`. | Yes: `trade-map.yml`, `ci.yml` (`npm run trade-map-test`) | #536 |
-| Libraries | Imported or loaded by scripts; no standalone command. | `audio-level-lib.mjs`, `proof-browser.mjs`, `roll-off-oracle.mjs`, `fixtures/`, `hex-jelly.html`, `hex-jelly-lineup.html`, and `jelly-board.html` support scripts and proofs. | Through callers | #1073, #1281, #1286 |
+| `trade-sheet-prove.mjs` | `npm run trade-sheet-prove` | Verifies one-tray trade sheet tokens, sentence wording, need dots, and bank trade states. | Yes: `ci.yml` (`npm run trade-sheet-prove`) | #1537 |
+| `tray-prove.mjs` | `npm run tray-prove` | Verifies one-tray HUD three parts, BuildList sheet, armed actions, and insets across viewports. | Yes: `ci.yml` (`npm run tray-prove`) | #1539 |
+| `tunnel-reconnect-prove.mjs` | `npm run tunnel-reconnect-prove` | Simulates phone-lock and Wi-Fi switch reconnect flows against real host rules. | Yes: `ci.yml` (`npm run tunnel-reconnect-prove`) | #197 |
+| Libraries | Imported or loaded by scripts; no standalone command. | `audio-level-lib.mjs`, `proof-browser.mjs`, `proof-host-port.mjs`, `roll-off-oracle.mjs`, `fixtures/`, `hex-jelly.html`, `hex-jelly-lineup.html`, and `jelly-board.html` support scripts and proofs. | Through callers | #1073, #1281, #1286, #1556 |
 
 The `emote.mjs` command copies the header's arrow notation; the arrow describes output, not a shell operator.
 The `trade-map.test.mjs` command copies its header; choose an installed browser path when running locally.
