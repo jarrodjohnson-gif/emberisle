@@ -1,102 +1,85 @@
-# Adaptive game music architecture research
+# Adaptive game music research
 
 - status: research
 - issue: #845
 - date: 2026-11-13
 - author: builder-size
+- revision: Codex-p (GPT-6.1 Sol), 2026-11-17
 
-## Background and Vision
+## Approval and current starting point
 
-Emberisle currently plays a single looping background track via HTMLAudioElement.
-Issue #845 introduces an adaptive music system that responds to match tension.
-Music evolves dynamically as players approach victory.
-The owner approved three CC0 tracks and crossfade parameters on 2026-11-06.
-This document details the Web Audio architecture, gain blending, and memory ceilings.
+The [November 6 owner decision](https://github.com/jarrodjohnson-gif/emberisle/issues/845#issuecomment-6694255817) approves the [three proposed choices](https://github.com/jarrodjohnson-gif/emberisle/issues/845#issuecomment-6259084214).
+The tracks are The Old Tower Inn, Market Day and Battle, with three-second linear crossfades.
+The owner must listen before the implementation merges.
 
-## Track Selection and Game State Triggers
+Current [sound.ts](../../src/lib/sound.ts#L273) uses one looping `HTMLAudioElement`, `BG_VOLUME = 0.12` and `BG_DUCK = 0.3`.
+Its gain is `BG_VOLUME * (ducked ? BG_DUCK : 1) * categoryGain("music")`.
+Reuse its gesture unlock, retry, wanted-screen, mute, music-toggle and sting-ducking contracts.
+The current [wanted-screen caller](../../src/components/game/EmberisleApp.tsx#L50) includes title music.
+Do not copy the older proposal’s silence assumption as a current fact.
 
-The system transitions across three musical phases based on victory point thresholds.
+The [October 24 level decision](../DECISIONS.md) requires levelling by type, with all game music equally loud.
+Table effects and reactions have their own type levels. The owner approves targets by ear.
+`0.12` is the current starting gain, not approval for new track levels or a replacement levelling policy.
 
-| Phase | Track Title | Trigger Condition | Mood |
-| :--- | :--- | :--- | :--- |
-| **Calm** | *The Old Tower Inn* | Leader points < Target - 3 | Pastoral, relaxed opening |
-| **Building** | *Market Day* | Target - 3 <= Leader points < Target - 1 | Energetic, bustling mid-game |
-| **Tense** | *Battle* | Leader points >= Target - 1 | Dramatic, urgent endgame climax |
+## Approved selection and linear transition
 
-- In a standard 10 VP game, Calm plays from 0 to 6 VP.
-- Building plays when any player reaches 7 or 8 VP.
-- Tense plays when any player reaches 9 VP.
-- Transition begins immediately when the leader points threshold changes.
-- Transitions use smooth 3.0 second crossfades between tracks.
+Use public leader points and the configured victory target.
+[publicVP and victoryTarget](../../src/lib/game/rules.ts#L251) provide these inputs; hidden fortunes must not affect the music.
 
-## Web Audio Gain Blending Architecture
+| Phase | Track | Public score condition |
+|---|---|---|
+| Calm | The Old Tower Inn | Leader below target − 3 |
+| Building | Market Day | Leader at target − 3, below target − 1 |
+| Tense | Battle | Leader at or above target − 1 |
 
-The current HTMLAudioElement approach cannot perform sample-accurate crossfades.
-The new architecture uses the Web Audio API.
+Ten-point games change at 7 and 9; seven-point games change at 4 and 6.
+Override the score-derived phase with Tense during discard and the wayfarer event, then return to the score-derived phase.
+The rules name those phases `discard` and `robber` in [types.ts](../../src/lib/game/types.ts#L6).
+A standing wayfarer or a retained dice result of seven does not identify an active event.
+Keep lobby and setup Calm. “Final turns” means public match-point proximity, not predicting turns remaining.
 
-```
-[Track 1 BufferSource] ---> [GainNode 1] --\
-[Track 2 BufferSource] ---> [GainNode 2] ---> [Master Music Gain] ---> [Destination]
-[Track 3 BufferSource] ---> [GainNode 3] --/
-```
+A transition lasts three seconds, with progress `t` from 0 to 1.
+Outgoing and incoming weights are `1 - t` and `t`.
+At the midpoint both weights are 0.5; their sum stays 1. Do not substitute cosine/sine equal-power curves.
+Retarget from the current weights when the desired track changes, preserving the current music-level and ducking controls.
+Mute or music-off stops every fading track. This note selects no new playback engine or timing constants.
 
-### Equal-Power Crossfade Math
-- Linear crossfades cause an audible 3 dB volume dip at the midpoint.
-- Equal-power curves maintain constant acoustic loudness across the blend.
-- The outgoing track gain follows `Math.cos(t * Math.PI * 0.5)`.
-- The incoming track gain follows `Math.sin(t * Math.PI * 0.5)`.
-- Ramps execute over exactly 3.0 seconds via `setValueCurveAtTime`.
+## Size estimates, not budgets
 
-### Sound Sting Ducking Integration
-- Background music ducks under high-priority sound effects.
-- Ducking triggers on `game_start`, `match_point`, `game_lose`, and `end_music`.
-- Master music gain attenuates to 0.30 of normal volume during stings.
-- Music restores smoothly over 400 ms when the sting completes.
+The earlier 128 kbps, 60–90 second example implies the following payload sizes.
+These are calculations, not measurements of selected files or device memory. MB means 1,000,000 bytes.
 
-### Volume and Mute Controls
-- Master music gain multiplies by the user setting from `categoryGain("music")`.
-- Toggling music off ramps gain to zero over 100 ms.
-- Muting the table ramps gain to zero instantly.
+- Encoded bytes: `128000 / 8 * seconds`, before container overhead.
+- PCM sample bytes: `44100 * 2 * bytesPerSample * seconds`, assuming 44.1 kHz stereo.
+- A 16-bit PCM file uses two bytes per sample. Web Audio channel data uses Float32 samples, requiring four bytes.
 
-## Memory Ceilings and Asset Budgeting
+| Assumption | Seconds per track | One track MB | Three tracks MB |
+|---|---:|---:|---:|
+| 128 kbps encoded | 60 | 0.960 | 2.880 |
+| 128 kbps encoded | 90 | 1.440 | 4.320 |
+| 16-bit PCM file | 60 | 10.584 | 31.752 |
+| 16-bit PCM file | 90 | 15.876 | 47.628 |
+| Float32 sample data | 60 | 21.168 | 63.504 |
+| Float32 sample data | 90 | 31.752 | 95.256 |
 
-Audio buffers consume significant uncompressed RAM once decoded into PCM.
-Strict memory boundaries prevent mobile browser tab crashes.
+Thus the draft’s sub-700 KB file, 2.1 MB total and 35 MB decoded-memory claims do not follow from its assumptions.
+This research sets no replacement download or memory ceiling. Choose assets and loading policy using measurements and approved limits.
+Browser resampling, decoder state, copies and object overhead can add memory beyond the sample-data estimates.
+The current HTML media player’s memory use cannot be inferred from the proposed Web Audio buffer calculation.
 
-### Network Payload Budget
-- Audio files are stored as compressed MP3 files in `public/audio/`.
-- Sample rate: 44.1 kHz, 128 kbps joint stereo.
-- Each track length: approximately 60 to 90 seconds.
-- Per-file compressed size: under 700 KB.
-- Total network transfer: under 2.1 MB across all three tracks.
-- Zero audio bytes are bundled into JavaScript chunks.
+The earlier Web Audio graph and prefetch thresholds remain unapproved proposals, not implementation requirements.
+Keep audio outside JavaScript chunks. Verify licences and record exact sources in [sound.md](../design/sound.md) before importing files.
+Check the Battle loop seam and obtain the owner’s listening approval; this research performs no audio import or audition.
 
-### PCM Heap Memory Ceilings
-- Decoded 44.1 kHz 16-bit stereo PCM consumes approximately 176.4 KB per second.
-- A 90-second decoded track occupies roughly 15.8 MB of heap memory.
-- Total active PCM audio memory must remain under 35 MB.
-- To enforce this ceiling, the engine uses progressive lazy loading.
+## Future verification and remaining gates
 
-### Progressive Loading Lifecycle
-1. **Initial load**: Fetch and decode only *The Old Tower Inn* after the first gesture.
-2. **Mid-game prefetch**: Fetch *Market Day* when the leader reaches Target - 5.
-3. **Endgame prefetch**: Fetch *Battle* when the leader reaches Target - 3.
-4. **Game conclusion**: Stop source nodes and disconnect gain nodes on the win screen.
-5. **Table exit**: Release AudioBuffer references so garbage collection reclaims heap memory.
+A future registered proof must check:
 
-## Mobile and Lifecycle Constraints
+- Public-score thresholds for seven- and ten-point games, without hidden-fortune influence.
+- Temporary Tense during discard/wayfarer events and return to the score-derived phase afterward.
+- Three-second linear weights, including their midpoint and retargeting during a transition.
+- Existing sting ducking, mute, music toggle, gesture retry and wanted-screen behaviour.
+- Playback/resource cleanup on table exit, using the chosen implementation’s actual resource model.
 
-- **Tab visibility**: Suspend AudioContext when document visibility becomes hidden.
-- **AudioContext resume**: Resume AudioContext on the first tap after visibility returns.
-- **Hardware interruption**: Handle audio session route changes on iOS and Android.
-- **CPU throttling**: Web Audio processing runs on a dedicated native browser thread.
-
-## Proof and Verification Plan
-
-A new proof script `scripts/adaptive-music-prove.mjs` will verify:
-
-- AudioContext and GainNode graph creation.
-- Equal-power gain ramp execution over 3.0 second transitions.
-- Score threshold triggering for all three musical phases.
-- Sting ducking attenuation and recovery timings.
-- AudioBuffer reference cleanup on table exit.
+These are future checks, not passing results. No runtime, audio, dependency, proof, gain setting or budget changes in this PR.
