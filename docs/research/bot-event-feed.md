@@ -1,130 +1,73 @@
-# Research: Host Event Feed for Online Bot Moments (Issue #725)
+# Online bot event feed: source facts and unresolved delivery (#725)
 
-- step: 1 Research
-- date: 2026-11-13
-- agent: builder-proofs
-- lane: net (tier 1)
-- issue: #725
+Research only, updated 2026-11-17 by Codex-p (GPT-6.1 Sol).
+Original research: builder-proofs (AntiGravity), 2026-11-13; exact model unrecorded.
+Source snapshot: main `f1d2c155616b37370ac37f9de00cf4df74493148`.
+No host, client, protocol, save, deadline or proof change is implemented here.
 
-## Why
+## Existing ordering limit and issue scope
 
-Issue #608 established client-only bot action moments.
-In practice mode, the client dispatches actions directly.
-The practice client observes each commit in real time.
-In online games, the host runs bots synchronously in `runBots`.
-The host broadcasts only the settled final game state.
-`scripts/bot-action-order-prove.mjs` proves a fundamental ordering limit.
-Two legal action sequences can produce byte-identical settled states.
-Their complete public logs are also byte-identical.
-A client cannot recover information absent from its input.
-Online bot moments must currently fall back to generic summaries.
-Issue #725 defines a lightweight host event feed.
-This feed provides explicit action order for online games.
+[#725](https://github.com/jarrodjohnson-gif/emberisle/issues/725) requests ordered public bot events over the existing broadcast.
+It names path, outpost, stronghold, wayfarer, buy, bank trade and offer events.
+Events must reveal nothing beyond the public log. Ignoring them must preserve existing client behavior.
+The issue requires bounded per-turn data, unchanged game state/deadlines/save bytes and watcher coverage.
+Its #608 runtime dependencies (#720–#723) remain prerequisites for implementation.
 
-## Public Event Specification
+[bot-action-order-prove](../../scripts/bot-action-order-prove.mjs) demonstrates that different path orders can share settled state and log.
+That source establishes an information gap, not a fresh passing run for this note.
+An online consumer cannot reconstruct an exact missing order from those inputs alone.
 
-The host emits a public event for each applied bot action.
-Events are broadcast over the existing WebSocket connection.
-No new HTTP endpoints are created.
-Game state schema remains untouched.
-Turn deadlines and saved room bytes remain unchanged.
+## What the current host actually sends
 
-### Event Payload
+[runBots](../../server/host.mjs#L915) executes applied bot actions synchronously within each invocation.
+It can return for an open trade offer; a complete turn need not finish in one invocation.
+After a successful action it assigns the logged next state to `room.game`.
+It also calls `publish(room)` when room needs change.
+[publish](../../server/host.mjs#L366) broadcasts a [seats message](../../server/host.mjs#L343) and saves the room.
+That call is not a game-state broadcast. [pushState](../../server/host.mjs#L1064) is the separate state-publication path.
 
-Each event carries a minimal payload:
-- `type`: String literal `"botAction"`.
-- `seq`: Integer matching `game.seq` after commit.
-- `turn`: Integer matching current `game.turn`.
-- `player`: String player identifier.
-- `kind`: String action kind.
-- `target`: Optional target identifier.
+A bot's trade ask already calls [openOffer](../../server/host.mjs#L1818).
+That function broadcasts `tradeOffer`; a new feed must account for this existing event without duplicate moments.
+[broadcast](../../server/host.mjs#L226) includes connected seats and watchers.
+That source fact does not prove future event privacy or ordering.
 
-Permitted values for `kind`:
-- `"path"`: Placing a road with edge ID target.
-- `"outpost"`: Placing a settlement with vertex ID target.
-- `"stronghold"`: Upgrading a city with vertex ID target.
-- `"wayfarer"`: Moving robber with hex ID target.
-- `"buy"`: Buying a fortune card with null target.
-- `"bankTrade"`: Bank or dock resource trade.
-- `"offer"`: Opening a table trade offer.
+## Client integration and public mappings still needed
 
-### Strict Privacy Invariants
+The transport's [ALLOWED_EVENTS](../../src/lib/net/table.ts#L287) controls the default message-dispatch path.
+The [default switch case](../../src/lib/net/table.ts#L482) forwards only listed event types.
+A new `botAction` type would need types/allowlist/consumer integration; a store-only handler is insufficient.
+Older clients currently drop unrecognized types through that path.
+This note does not choose a wire schema or claim a new event already works.
 
-The event feed must never leak private information.
-It reveals nothing beyond what the public log reveals.
-The following data are strictly excluded:
-- Hidden hand resources.
-- Identity of drawn or purchased fortune cards.
-- Cards remaining in the draw deck.
-- Specific resources stolen during wayfarer actions.
-- Secret dice roll rolls or RNG seeds.
+Use the game's path, outpost, stronghold and wayfarer terms in public moments.
+The implementation must map supported actions to those public targets.
+In particular, [playKnight](../../src/lib/net/table.ts#L245) is an existing action that the earlier proposal omitted.
+Its public wayfarer move needs explicit mapping without leaking the stolen goods or private hand.
+Dice rolls are already [public rolled events](../../server/host.mjs#L2008), not secret rolls.
+Seeds, hidden goods, purchased fortune identities and stolen-goods identities stay outside the proposed feed.
+Each emitted field still needs a source-specific public-information proof.
 
-## Action Ordering and Emission
+## Rejoin, deduplication and cap are unresolved
 
-The host executes bot actions inside `runBots` in `server/host.mjs`.
-Currently, `runBots` runs all bot moves in a tight loop.
-It sends `pushState` only after all bot moves finish.
-With the feed, the host calls `broadcast` immediately after each action.
-Every committed action gets an immediate event broadcast.
-Events arrive at clients in the exact execution order.
-TCP sockets preserve message order between host and client.
-Watchers receive the exact same public event feed.
+A synchronous bot slice finishes before a reconnect can interleave with its actions.
+A newly sent state can therefore already show moves that buffered cues would animate.
+An open trade offer complicates any assumption that one turn is one synchronous slice.
+The earlier twelve-event active-turn replay buffer had no approved cap or baseline semantics.
+That prescription is withdrawn.
 
-## Reconnection and Deterministic Delivery
+[Question 6941166387](https://github.com/jarrodjohnson-gif/emberisle/issues/725#issuecomment-6941166387)
+asks whether to omit replay or specify explicit replay/baseline behavior first.
+It also leaves the numerical bound unresolved. The recommendation is not approval.
+This research selects no replay policy, sequence key, duplicate filter or queue architecture.
+Implementation must resolve those choices before claiming deterministic delivery or online/practice parity.
 
-Reconnection must not replay old historical actions.
-Settled turns are already captured by the board and log.
-Delivery guarantees are defined as follows:
+## Future completion evidence
 
-### Ephemeral Turn Buffer
+The issue requires a real online room with a bot seat and true applied-order comparison.
+Include the ambiguous two-path case, watchers, fallback clients and private-information exclusion.
+Resolve replay/baseline behavior and its bounded-data test before implementing that part.
+Retain the server and #608 proofs. Register any new permanent proof in package.json and CI.
 
-The host keeps an in-memory buffer on the `room` object.
-The buffer stores public bot events for the active turn.
-It is capped at 12 events per turn.
-The buffer clears when `game.turn` advances.
-It is never written to disk or room saves.
-
-### Rejoin Behavior
-
-When a dropped player reconnects, the host sends `state`.
-The client establishes a new baseline from `state`.
-If the active turn is automated, the buffer is forwarded.
-Clients process buffered events to animate pending cues.
-If the turn has passed, the client shows settled state.
-No synthetic backfill is attempted for earlier turns.
-
-### Packet Loss and Disconnects
-
-WebSocket runs over TCP.
-Dropped frames trigger TCP retransmissions or socket drops.
-A disconnected socket moves to hold status.
-On rejoin, the client receives fresh authoritative state.
-Duplicate events are ignored using `seq` checks.
-
-## Client Integration and Fallback
-
-Clients implementing #608 consume `botAction` events when received.
-Each event maps to an animated moment and target highlight.
-Older clients ignore `"botAction"` messages cleanly.
-The store message switch defaults to no-op for unknown types.
-If the host emits no events, client-only fallback activates.
-The client summarizes changes as "Mira made 2 more moves".
-Parity between practice and online is achieved cleanly.
-
-## Recommended Child Issues
-
-| Step | Title | Scope |
-|---|---|---|
-| Design | Event feed schema and host broadcast design | Small |
-| Implementation | Host bot action broadcast in `server/host.mjs` | Small |
-| Implementation | Client event ingestion in `src/lib/net/table.ts` | Small |
-| Test | Proof of online action order and privacy invariants | Small |
-
-## Handoff
-
-```yaml
-done: Researched online bot ordering limits and event feed design.
-left: Implementation of host broadcast and client consumer.
-broke: None.
-next agent: Builder taking design or implementation child.
-```
+For this documentation revision, I checked source facts, link targets and diff whitespace.
+I ran no host, browser or ordering proof. Earlier PR-body PASS claims are not fresh validation.
+This note does not complete #725 or establish an approved delivery design.
