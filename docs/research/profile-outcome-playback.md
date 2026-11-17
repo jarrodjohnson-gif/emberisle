@@ -1,149 +1,64 @@
-# Research: Authoritative Profile Outcome Playback (#1045)
+# Profile outcome playback: source boundaries and prerequisites (#1045)
 
-- date: 2026-11-13
-- agent: builder-a11y
-- lane: hud, net (tier 1, prio p2)
-- issue: [#1045](https://github.com/jarrodjohnson-gif/emberisle/issues/1045)
-- dependencies: #768, #889, #1043, #1044
+Research only, updated 2026-11-17 by Codex-p (GPT-6.1 Sol).
+Original research: builder-a11y, 2026-11-13; model unrecorded.
+Source snapshot: main `787d386185a299d108058f09a40654d7f4d5722b`.
+No host, transport, store, audio, projection, assertion or budget implementation is included.
 
-## 1. Overview
-This research investigates authoritative profile outcome playback for present listeners.
-It defines wire events, projection rules, deduplication, and audio arbitration.
-It consumes durable terminal outcomes from #889 and shared song selections from #1043.
-It wires into the foreground long-clip owner designed in #1044.
-All listeners present at completion, including watchers, participate in outcome playback.
+## Design references and actual dependency state
 
-## 2. Current State and Gaps
-Today, outcome audio is triggered via client-side heuristics in `hear()` within `store.ts`.
-In `trade-sound.ts`, `gameEnd()` uses regular expression matching on player names.
-Player name checks like `isDiggler()` determine whether to play `isaac_win`.
-This approach is insecure and bypasses profile authentication.
-Clients lack the authoritative `gameId` required for reliable deduplication.
-The current `resultOf()` in `host.mjs` sends only `{ tracked, wins }`.
-No playback metadata or song identifiers are carried over the wire.
-Watchers have empty local IDs and receive default winner audio.
-End music uses a fixed 1,500 ms timer rather than tracking clip completion.
+Read [profile-media.md](profile-media.md) and
+[profiles.md: curated media and playback](../design/profiles.md#curated-media-and-playback)
+with the [current #1045 deliverable](https://github.com/jarrodjohnson-gif/emberisle/issues/1045).
+They require the actual durable terminal producer, frozen participant attribution and reviewed public playback contract.
+Deduplication uses authoritative **host, room and game** identity, not a game-only variable or inferred map/score identity.
+Present listeners include watchers. Initial finished-state loads, rejoin, resync and backlog must not replay outcome audio.
 
-## 3. Shipped and Gated Foundations
-Three predecessor milestones establish the necessary architecture for Issue #1045:
+#1043 and the #768 research issue are closed. That does not complete #1045 or approve an arbitrary wire payload.
+#1044 remains open. Its proposed `playForeground`, `cancelForeground`, `foregroundScope` and `playEndMusic`
+helpers belong to `builder-opus/issue-1044`, not this main snapshot's sound module.
+This research does not present that branch as shipped or reserve its builder's files.
+Integration must use the reviewed real audio owner after its dependency lands.
 
-### Durable Terminal Outcome (#889 / PR #1231)
-- `server/host.mjs` implements `settle(room)` before publishing terminal state.
-- `freezeRoster()` generates an immutable `gameId` UUID and frozen participant rows.
-- `freezeOutcome()` commits the final room snapshot and pending outcome to disk.
-- Outcomes are durable before terminal state reaches connected sockets.
+## Existing host and privacy boundary
 
-### Host-Validated Shared Catalogue (#1043 / PR #1324)
-- `src/lib/profile-songs.ts` defines the approved shared song catalogue.
-- Profile creation defaults `winSongId` to `null`.
-- Owners select or clear shared songs through authenticated `profileEdit` requests.
-- The server validates IDs against `PROFILE_SONGS` and rejects arbitrary URLs or paths.
+[resultOf](../../server/host.mjs#L300) returns only tracked/wins for a finished room with profile-bound roster rows.
+It returns undefined when no such row exists. Putting all playback identity under `result.playback` would miss guest-only games.
+The host's internal roster UUID does not itself prove clients receive it.
+The future contract must handle profile-free terminal identity without inventing IDs or a parallel publication path.
+It must preserve the actual journaled outcome boundary and frozen winner binding.
 
-### Foreground Long-Clip Owner (#1044 / branch `builder-opus/issue-1044`)
-- `src/lib/sound.ts` arbitrates long audio clips through one foreground owner.
-- Priority rank: `outcome` (4) > `start` (3) > `match` (2) > `soundboard` (1) > `end` (0).
-- Lower-priority clips are dropped when a higher-priority clip is playing.
-- `cancelForeground()` cancels playing audio and clears queued end music.
-- `foregroundScope()` prevents stale async imports and promises from playing.
+[profile-seat-prove](../../server/profile-seat-prove.mjs#L631) asserts that private fields, including `winSongId`, never reach table or watcher sockets.
+The earlier direct `result.playback.winSongId` example conflicts with that assertion and is withdrawn.
+Closing the #768 research issue does not waive this privacy gate.
+No replacement assertion or public playback field is selected here.
+Any future owner-approved contract that makes a test obsolete must follow the replacement rule in [DECISIONS](../DECISIONS.md).
+Use its own commit, an old/new table and equivalent coverage. Never delete or bypass the assertion.
+Otherwise retain the existing assertion unchanged. This note changes no test.
 
-## 4. Authoritative Wire Protocol
-When a game reaches terminal state, `settle(room)` completes on the host.
-The host prepares an authoritative playback projection for all present listeners.
+## Listener behavior is a requirement, not working integration
 
-### Winner Resolution
-1. The rules engine identifies the winning player ID (`room.game.winner`).
-2. The host maps `winner` to the frozen participant row in `room.roster.players`.
-3. If the winner has an attached `profileId`, the host looks up the profile record.
-4. The host extracts `winSongId` and validates it against `isProfileSongId()`.
-5. If valid, `winSongId` is assigned to the playback projection.
-6. If the winner is a guest or bot, `winSongId` resolves to `null`.
-7. If the catalogue entry was deleted, `winSongId` falls back to `null`.
+The designed selected-outcome path plays the validated choice for every present listener, including watchers.
+The documented default is `win` for the winner and `game_lose` for others.
+The earlier invented spectator-default sound is withdrawn; this note changes no listener policy.
+[Question 6941304872](https://github.com/jarrodjohnson-gif/emberisle/issues/1045#issuecomment-6941304872)
+asks to keep projection, assertion and audio integration gated. The issue comments hold the exact answer and current gates.
 
-### Wire Payload
-The host sends `playback` metadata inside the terminal `state` message:
-```json
-{
-  "type": "state",
-  "result": {
-    "tracked": true,
-    "wins": { "p0": 5, "p1": 2 },
-    "playback": {
-      "gameId": "d3b07384-d113-49d6-b088-755ef6d37fb9",
-      "winnerPid": "p0",
-      "winSongId": "isaac-win"
-    }
-  }
-}
-```
-This payload is sent to all seated players and all active room watchers.
-Private credentials, tokens, salt, device IDs, and PINs never enter this payload.
+Preserve per-listener mute, gesture and Skip controls, cancellation and the reviewed fallback once.
+Do not delay gameplay or result recording for audio. Queue end music after actual outcome-clip completion.
+Navigation, rematch, cancellation and stale async completion must suppress late fallback/end starts.
+These are future acceptance requirements, not evidence that absent #1044 helpers work on main.
+No new gain, priority rank, watcher sound, projection or fixed end-delay rule is introduced here.
 
-### Deduplication Contract
-Clients track `playedOutcomeGameId: string | null` in memory.
-When a terminal state message arrives:
-- If `result.playback.gameId === playedOutcomeGameId`, playback is skipped.
-- Reconnects, resync messages, and duplicate state frames never replay audio.
-- Connecting to an already-finished game suppresses outcome audio.
-- Only a live transition into the terminal state triggers playback.
+## Future evidence and handoff
 
-## 5. Audio Playback and Arbitration
-When a live terminal transition occurs, the client invokes `playForeground()`:
+#1045 requires registered real-host and audio-stub/browser checks against the real consumers.
+Cover live winner/watchers, duplicate host/room/game events, initial completed state, rejoin, resync and rapid rematch.
+Include host/room replacement, missing/removed selections, rejected/late playback, duration-based end music and cancellation.
+Assert private data stays out of state/chat/playback frames under the reviewed projection contract.
+Preserve finish, persistence, rejoin, watch, profile-seat, sounds, music, mixer and budget coverage.
+Real iPhone selected/default/mute/Skip listening remains a separate release gate; stubs cannot establish audible acceptance.
 
-### Playback Rules
-- **Selected Win Song:**
-  When `winSongId` is present, the selected song plays for all listeners.
-  This includes the winner, opponents, and watchers.
-  Opponents hear the winner's chosen celebration song.
-  The default `game_lose` sting is suppressed and never layered over the song.
-- **Default Fallback:**
-  When `winSongId` is `null`, default audio plays once.
-  The winner hears `win`.
-  Opponents hear `game_lose`.
-  Watchers hear the spectator default.
-- **Asset Failure:**
-  If a song file is missing or fails to decode, default audio plays.
-  Gameplay and UI presentation are never delayed by audio failure.
-- **End Music Queuing:**
-  End music is queued via `playEndMusic(ms)`.
-  It waits for the selected outcome clip to finish completely.
-  Selected songs may play up to 15 seconds.
-  End music begins after the song finishes or after 1,500 ms, whichever is later.
-
-## 6. Cancellation Matrix
-Outcome audio and queued end music must respond to user actions immediately.
-
-| User Action | Trigger | Audio Behavior |
-| :--- | :--- | :--- |
-| **Skip** | Skip button pressed | Immediately stops outcome audio and cancels queued end music. |
-| **Hide Results** | Look around or Escape | Immediately stops outcome audio and cancels queued end music. |
-| **Leave Table** | Exit or return to title | Immediately stops outcome audio and invalidates scope token. |
-| **Rematch** | New game started | Cancels existing audio before starting new game audio. |
-| **Mute Category** | Music volume zeroed | Cuts off active song and discards queued end music. |
-| **Master Mute** | Global mute enabled | Immediately pauses clip and discards waiting timers. |
-
-Unmuting later never resumes a clip from where it stopped.
-Late asynchronous chunk loads verify `foregroundScope()` before starting playback.
-
-## 7. Implementation Plan for #1045
-The implementation should proceed in four focused steps:
-
-1. **Host Projection Helper:**
-   Add `playbackOf(room)` in `server/host.mjs`.
-   Derive winner profile, validate `winSongId`, and include `gameId`.
-   Transmit payload to seated players and watchers in `pushState()`.
-2. **Client Net & Store Integration:**
-   Extend `TableEvents` and `useGame` store to parse `result.playback`.
-   Track `lastPlayedGameId` in client state to prevent duplicate playback.
-3. **Audio Routing:**
-   Update `gameEnd()` in `src/lib/trade-sound.ts` to consume `playback`.
-   Route selected song or fallback through `playForeground()`.
-   Queue end music using clip completion event.
-4. **Verification Proof:**
-   Add `scripts/profile-outcome-prove.mjs`.
-   Test winner, watcher, deduplication, missing assets, Skip, and mute.
-   Register proof in `package.json` and `ci.yml`.
-
-## 8. Conclusion
-Issue #1045 bridges host-validated profile songs and the foreground audio owner.
-It replaces name-based heuristics with authoritative, tamper-proof outcome audio.
-All present listeners and watchers experience synchronized celebration playback.
+For this document revision, I checked cited source facts, repository targets and diff whitespace.
+I ran no host, browser, audio-stub or physical-device proof. Earlier PR-body PASS claims are not fresh validation.
+This research does not complete #1045 or authorize a protocol/privacy/audio design change.
