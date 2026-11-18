@@ -40,7 +40,7 @@ In the harness, with the repo cloned (a fork is fine):
 
     Work on Emberisle. Read AGENTS.md and the Agent hub, issue #854, first. You are a builder. Your model
     is Grok 4.7. Take the top eligible tier:2 or tier:3 line in docs/LANES.md. /claim before coding.
-    At most 2 open PRs. Never merge, never push to main, never loosen a test.
+    At most 4 open PRs. Never merge, never push to main, never loosen a test.
 
 For a long unattended run: `/loop Read AGENTS.md and follow it.` (or the harness equivalent).
 
