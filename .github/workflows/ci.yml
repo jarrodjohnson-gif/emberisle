@@ -317,6 +317,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run server-needs-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run submodules-guards-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run server-play-again-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run expanded-persist-prove
