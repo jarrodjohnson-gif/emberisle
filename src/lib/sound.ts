@@ -171,6 +171,7 @@ function pump() {
 }
 
 let extraFiles: Partial<Record<ExtraSoundName, string>> | null = null;
+const pendingExtra = new Set<SoundName>();
 function start(name: SoundName, volume: number, category: SoundCategory) {
   const gain = volume * categoryGain(category);
   // Music off (the saved switch) silences the stings too, not only the track.
@@ -178,10 +179,16 @@ function start(name: SoundName, volume: number, category: SoundCategory) {
   const file = FILES[name as keyof typeof FILES] ?? extraFiles?.[name as ExtraSoundName];
   if (!file) {
     if (extraFiles) return;
-    void import("./sound-extra").then(({ EXTRA_FILES }) => {
-      extraFiles = EXTRA_FILES;
-      start(name, volume, category);
-    });
+    pendingExtra.add(name);
+    void import("./sound-extra").then(
+      ({ EXTRA_FILES }) => {
+        extraFiles = EXTRA_FILES;
+        if (pendingExtra.delete(name)) start(name, volume, category);
+      },
+      () => {
+        pendingExtra.delete(name);
+      },
+    );
     return;
   }
   try {
@@ -249,7 +256,8 @@ export function playLater(name: SoundName, volume: number, ms: number) {
 
 // Stop a clip that is playing (the end music, when its screen is left or the sound is muted).
 export function stop(name: SoundName) {
-  // A clip still waiting (its delay, or its place in the pacing queue) is cancelled too, so muting or leaving never lets it start late.
+  // A clip still waiting (its delay, lazy load, or place in the pacing queue) is cancelled too.
+  pendingExtra.delete(name);
   const wait = later.get(name);
   if (wait) clearTimeout(wait);
   later.delete(name);
@@ -297,12 +305,14 @@ export function useMusicOn() {
 
 export function setMusicOn(v: boolean) {
   bgOn = v;
+  if (!v) stop("end_music");
   try {
     if (v) localStorage.removeItem(MUSIC_KEY);
     else localStorage.setItem(MUSIC_KEY, "0");
   } catch {
     // storage can be blocked; the toggle still holds for this page
   }
+  syncVolumes();
   syncMusic();
   syncAmbience();
   for (const l of listeners) l();
@@ -359,7 +369,7 @@ function syncMusic() {
 function syncVolumes() {
   for (const clip of clips.values()) {
     const [volume, category] = gains.get(clip)!;
-    clip.volume = muted ? 0 : volume * categoryGain(category);
+    clip.volume = muted || (category === "music" && !bgOn) ? 0 : volume * categoryGain(category);
   }
 }
 subscribeSoundMix(() => { syncVolumes(); syncMusic(); syncAmbience(); });
@@ -369,11 +379,11 @@ subscribeSoundMix(() => { syncVolumes(); syncMusic(); syncAmbience(); });
 // hidden tab; it and its file load on its first start.
 export const AMB_VOLUME = 0.12;
 let amb: Promise<typeof import("./ambience")> | undefined;
+const ambienceLevel = () => (unlocked && !muted && bgOn && getSeaSounds() ? AMB_VOLUME * categoryGain("music") * getSeaVolume() : 0);
 subscribeSeaSounds(syncAmbience);
 function syncAmbience() {
-  const level = unlocked && !muted && bgOn && getSeaSounds() ? AMB_VOLUME * categoryGain("music") * getSeaVolume() : 0;
-  if (!level && !amb) return;
-  (amb ??= import("./ambience")).then((m) => m.sync(level), () => { amb = undefined; });
+  if (!ambienceLevel() && !amb) return;
+  (amb ??= import("./ambience")).then((m) => m.sync(ambienceLevel()), () => { amb = undefined; });
 }
 
 // #667: a tap on a hex that places nothing plays that terrain's clip, at most once per TOUCH_GAP_MS. Only a sheep
