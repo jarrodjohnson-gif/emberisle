@@ -182,6 +182,7 @@
     "harbor-access-prove": "node scripts/harbor-access-prove.mjs",
     "hex-variety-prove": "node scripts/hex-variety-prove.mjs",
     "seat-rail-prove": "node scripts/seat-rail-prove.mjs",
+    "player-menu-guards-prove": "node --import ./server/register.mjs scripts/player-menu-guards-prove.mjs",
     "seat-tray-prove": "node scripts/seat-tray-prove.mjs",
     "six-seats-prove": "node scripts/six-seats-prove.mjs",
     "paired-hud-prove": "node scripts/paired-hud-prove.mjs",
