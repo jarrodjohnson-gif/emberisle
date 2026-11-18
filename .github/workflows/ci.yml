@@ -190,6 +190,8 @@ jobs:
         run: npm run named-tunnel-test
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run tunnel-reconnect-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profiles-lifecycle-prove
 
   server:
     needs: [changes, dependencies]
@@ -253,11 +255,15 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bug-report-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run lib-helpers-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-harbor-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-action-order-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run rules-view-helpers-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run hud-helpers-guards-prove
       # #1673: dice-prove and expanded-bots-prove run beside npm test. Both are Node only: no host, port, file or env
       # var shared with anything else. npm test mostly waits on host timers. Their output prints after npm test ends,
       # and a failure in either side fails the step.
@@ -309,9 +315,13 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-rename-unknown-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-race-guards-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-recovery-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run server-needs-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run submodules-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run server-play-again-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -328,6 +338,10 @@ jobs:
         run: npm run online-sync-reset-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run finish-takeover-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run sound-lifecycle-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run host-lifecycle-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -490,6 +504,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run trade-sheet-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run trade-backdrop-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run trade-contrast-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a2'
         run: npm run practice-trade-prove
@@ -516,6 +532,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run profile-records-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run lobby-records-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run first-game-coach-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a2'
         run: npm run render-recovery-prove
@@ -541,6 +559,8 @@ jobs:
         run: npm run sheets-focus-guards-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run my-numbers-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run my-numbers-glow-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run invite-night-prove
       # pages-prove rebuilds dist/ under /emberisle/; browser-a has no later dist/ reader.
