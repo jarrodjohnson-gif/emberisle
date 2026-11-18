@@ -26,6 +26,7 @@ export function setSeaSounds(on: boolean) {
   tell();
 }
 export function setSeaVolume(level: number) {
+  if (!Number.isFinite(level)) return;
   const step = Math.max(0, Math.min(10, Math.round(level * 10)));
   volume = step / 10;
   try { if (step === 10) localStorage.removeItem(VOL_KEY); else localStorage.setItem(VOL_KEY, String(step)); } catch { /* the in-memory level still works */ }

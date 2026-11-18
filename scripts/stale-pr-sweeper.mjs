@@ -24,6 +24,14 @@ export function activity(comments) {
   }).sort((a, b) => Date.parse(b.observedAt) - Date.parse(a.observedAt))[0];
 }
 
+function latestReviewAt(reviews = [], reviewComments = [], now) {
+  return Math.max(
+    ...reviews.map(r => Date.parse(r.submitted_at)).filter(t => Number.isFinite(t) && t <= now),
+    ...reviewComments.map(c => Date.parse(c.created_at)).filter(t => Number.isFinite(t) && t <= now),
+    0
+  );
+}
+
 export function decision(pr, marker, now, { reviews = [], reviewComments = [] } = {}) {
   if (protectedPr(pr)) return 'skip';
   if (pr.draft) return 'initialize';
@@ -33,11 +41,7 @@ export function decision(pr, marker, now, { reviews = [], reviewComments = [] } 
   const age = now - observedAt;
   if (age < 0) return 'skip';
 
-  const latestReview = Math.max(
-    ...reviews.map(r => Date.parse(r.submitted_at)).filter(t => Number.isFinite(t) && t <= now),
-    ...reviewComments.map(c => Date.parse(c.created_at)).filter(t => Number.isFinite(t) && t <= now),
-    0
-  );
+  const latestReview = latestReviewAt(reviews, reviewComments, now);
   if (latestReview > observedAt) {
     return 'initialize';
   }
@@ -102,10 +106,11 @@ export async function sweep({ api, enabled, repo, now = Date.now(), event = null
     // Re-read immediately before writing: a queued event must never reset a newer head.
     const fresh = await getPr(pr.number);
     if (protectedPr(fresh) || fresh.head.sha !== incoming.head.sha) return;
-    if (!old || Date.parse(old.observedAt) !== timestamp) {
-      await writeMarker(pr.number, fresh.head.sha, new Date(timestamp).toISOString(), old);
+    const iso = new Date(timestamp).toISOString();
+    if (!old || old.sha !== fresh.head.sha || Date.parse(old.observedAt) !== timestamp || old.labeledAt !== undefined) {
+      await writeMarker(pr.number, fresh.head.sha, iso, old);
     }
-    await cleanupStale(pr.number, incoming.head.sha, new Date(timestamp).toISOString());
+    await cleanupStale(pr.number, incoming.head.sha, iso);
     log(`#${pr.number}: recorded ${event.action} activity`);
     return;
   }
@@ -131,21 +136,16 @@ export async function sweep({ api, enabled, repo, now = Date.now(), event = null
     const fresh = await getPr(pr.number);
     const current = activity(await comments(pr.number));
     let freshReviews = reviews, freshReviewComments = reviewComments;
-    if (reviews.length || reviewComments.length) {
+    if (action === 'label' || action === 'close' || fresh.labels?.some(l => l.name === 'stale') || reviews.length || reviewComments.length) {
       freshReviews = await getReviews(pr.number);
       freshReviewComments = await getReviewComments(pr.number);
     }
     if (fresh.head.sha !== pr.head.sha || decision(fresh, current, now, { reviews: freshReviews, reviewComments: freshReviewComments }) !== action) continue;
     pr = fresh; old = current;
     if (action === 'initialize') {
-      const latestReview = Math.max(
-        ...freshReviews.map(r => Date.parse(r.submitted_at)).filter(Number.isFinite),
-        ...freshReviewComments.map(c => Date.parse(c.created_at)).filter(Number.isFinite),
-        0
-      );
-      const initTime = latestReview > Date.parse(old?.observedAt || 0)
-        ? new Date(latestReview).toISOString()
-        : new Date(now).toISOString();
+      const latestReview = latestReviewAt(freshReviews, freshReviewComments, now);
+      const reviewReset = !pr.draft && old && old.sha === pr.head.sha && latestReview > Date.parse(old.observedAt);
+      const initTime = reviewReset ? new Date(latestReview).toISOString() : new Date(now).toISOString();
       await writeMarker(pr.number, pr.head.sha, initTime, old);
       await cleanupStale(pr.number, pr.head.sha, initTime);
       log(`#${pr.number}: ${dryRun ? 'would start' : 'started'} observation grace period`);
@@ -165,15 +165,20 @@ export async function sweep({ api, enabled, repo, now = Date.now(), event = null
       }
       const beforeLabel = await getPr(pr.number);
       const beforeMarker = activity(await comments(pr.number));
-      if (beforeLabel.head.sha !== pr.head.sha || decision(beforeLabel, beforeMarker, now) !== 'label') continue;
+      const beforeReviews = await getReviews(pr.number);
+      const beforeReviewComments = await getReviewComments(pr.number);
+      if (beforeLabel.head.sha !== pr.head.sha || decision(beforeLabel, beforeMarker, now, { reviews: beforeReviews, reviewComments: beforeReviewComments }) !== 'label') continue;
       const labeledAt = new Date(now).toISOString();
       await writeMarker(pr.number, pr.head.sha, beforeMarker.observedAt, beforeMarker, labeledAt);
       await api('POST', `${base}/issues/${pr.number}/labels`, { labels: ['stale'] });
       const afterPr = await getPr(pr.number);
       const afterMarker = activity(await comments(pr.number));
-      if (afterPr.head.sha !== pr.head.sha || afterPr.state !== 'open' || !afterMarker
+      const afterReviews = await getReviews(pr.number);
+      const afterReviewComments = await getReviewComments(pr.number);
+      if (protectedPr(afterPr) || afterPr.draft || afterPr.head.sha !== pr.head.sha || !afterMarker
         || afterMarker.sha !== pr.head.sha || Date.parse(afterMarker.observedAt) !== Date.parse(beforeMarker.observedAt)
-        || afterMarker.labeledAt !== labeledAt) {
+        || afterMarker.labeledAt !== labeledAt
+        || latestReviewAt(afterReviews, afterReviewComments, now) > Date.parse(beforeMarker.observedAt)) {
         await removeStale(afterPr);
         continue;
       }
