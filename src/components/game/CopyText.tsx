@@ -6,21 +6,36 @@ import { cn } from "@/lib/utils";
 
 type CopyState<K extends string> = { what: K; text: string; ok: boolean } | null;
 
-export function useCopy<K extends string>() {
+export function useCopy<K extends string>(key?: unknown) {
   const [state, setState] = useState<CopyState<K>>(null);
   const timer = useRef<number>(undefined);
+  const seq = useRef(0);
+  const cancel = () => {
+    seq.current++;
+    window.clearTimeout(timer.current);
+  };
+  const reset = () => {
+    cancel();
+    setState(null);
+  };
+  useEffect(() => {
+    reset();
+    return cancel;
+  }, [key]);
   const copy = (what: K, text: string) => {
+    const mine = ++seq.current;
     window.clearTimeout(timer.current);
     const done = (ok: boolean) => {
+      if (mine !== seq.current) return;
       setState({ what, text, ok });
       if (ok) timer.current = window.setTimeout(() => setState(null), 1500);
     };
-    if (!navigator.clipboard) done(false);
-    else navigator.clipboard.writeText(text).then(() => done(true), () => done(false));
-  };
-  const reset = () => {
-    window.clearTimeout(timer.current);
-    setState(null);
+    try {
+      if (typeof navigator.clipboard?.writeText !== "function") done(false);
+      else Promise.resolve(navigator.clipboard.writeText(text)).then(() => done(true), () => done(false));
+    } catch {
+      done(false);
+    }
   };
   return { state, copy, reset };
 }

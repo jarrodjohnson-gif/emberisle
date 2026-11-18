@@ -53,21 +53,25 @@ export interface RecoveryUi {
 }
 // One client per page: it keeps the session in memory between openings so Host and Join can attach it.
 let client: Client | null = null;
-function profileClient() {
-  return (client ??= createProfileClient(hostUrl(location), { development: true }));
-}
 
-const PIN = /^\d{4}$/;
-const field = "h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg aria-[invalid=true]:border-accent-ink";
+const FIELD = "h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg aria-[invalid=true]:border-accent-ink";
+const UNAVAILABLE = "Profiles unavailable on this host.";
+const STATUS_MSG: Record<string, string> = {
+  offline: "The host is offline. You can still play as a guest.",
+  insecure: "Profiles need the HTTPS link. You can still play as a guest.",
+  unsupported: UNAVAILABLE,
+};
+const SUMMARY_BTNS = [
+  ["wins", "Wins"],
+  ["history", "Your games"],
+  ["edit", "Edit profile"],
+  ["pin", "Change PIN"],
+] as const;
 type Text = "displayName" | "login" | "pin" | "newPin" | "pinConfirm" | "catchphrase";
 export type Errors = Partial<Record<Text | "form", string>>;
 
-function remembered(host: string) {
-  try { return localStorage.getItem(profileStorageKey(host)) !== null; } catch { return false; }
-}
-
 export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener: HTMLElement | null }) {
-  const c = profileClient();
+  const c = (client ??= createProfileClient(hostUrl(location), { development: true }));
   const snap = useSyncExternalStore(c.subscribe, c.getSnapshot);
   const root = useRef<HTMLDivElement>(null);
   useFocusTrap(root, true, '[aria-label="Close"]', opener);
@@ -80,9 +84,13 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   const [errors, setErrors] = useState<Errors>({});
   const [showPin, setShowPin] = useState(false);
   const [keep, setKeep] = useState(true);
-  const [form, setForm] = useState<Form>(() => ({ displayName: useGame.getState().name.trim(), login: "", pin: "", newPin: "", pinConfirm: "", catchphrase: "", color: useGame.getState().color ?? PLAYER_COLORS[0], backupColor: "" }));
-  const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
-  const mustChange = snap.profile?.pinMustChange === true;
+  const [form, setForm] = useState<Form>(() => {
+    const s = useGame.getState();
+    return { displayName: s.name.trim(), login: "", pin: "", newPin: "", pinConfirm: "", catchphrase: "", color: s.color ?? PLAYER_COLORS[0], backupColor: "" };
+  });
+  const set = (k: keyof Form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const profile = snap.profile;
+  const mustChange = profile?.pinMustChange === true;
 
   useEffect(() => {
     useGame.setState({ profile: c });
@@ -93,19 +101,22 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
       play("ui_back");
       onCloseRef.current();
     };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
+    addEventListener("keydown", onKey, true);
+    return () => removeEventListener("keydown", onKey, true);
   }, [c]);
 
   // A refused field takes the focus, so its message beside it is in view and read out.
   useEffect(() => root.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(), [errors]);
 
-  // A temporary PIN from a local reset opens Change PIN; nothing else is offered until it is changed.
-  // Changing it answers with a new recovery code, so the form opens only once the recovery chunk is in too (see `open`).
-  useEffect(() => { if (mustChange) void open("pin"); }, [mustChange]);
-  // Signed in, fetch the forms quietly, so Edit profile and Change PIN open on the first press without a wait.
-  const signedIn = Boolean(snap.profile);
-  useEffect(() => { if (signedIn) { void forms.prefetch(); void records.prefetch(); } }, [signedIn]);
+  // Signed in, prefetch forms and records quietly; a temporary PIN opens Change PIN once its recovery chunk is in too.
+  const signedIn = Boolean(profile);
+  useEffect(() => {
+    if (signedIn) {
+      void forms.prefetch();
+      void records.prefetch();
+    }
+    if (mustChange) void open("pin");
+  }, [signedIn, mustChange]);
 
   // Every request confirms the host shown above it, then reports a refusal beside the field it is about.
   const send = async (run: () => Promise<unknown>) => {
@@ -116,9 +127,9 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
       await run();
       setForm((f) => ({ ...f, pin: "", pinConfirm: "" }));
     } catch (e) {
-      const code = e instanceof ProfileClientError ? e.code : "unavailable";
-      const message = e instanceof ProfileClientError ? e.message : "Profiles unavailable on this host.";
-      setErrors(code === "loginTaken" ? { login: message } : { form: message });
+      const known = e instanceof ProfileClientError;
+      const message = known ? e.message : UNAVAILABLE;
+      setErrors(known && e.code === "loginTaken" ? { login: message } : { form: message });
     } finally {
       setBusy(false);
     }
@@ -126,17 +137,20 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
+    const create = view === "create";
+    const displayName = form.displayName.trim();
     const login = form.login.trim().toLowerCase();
+    const { pin, pinConfirm } = form;
     const bad: Errors = {};
-    if (view === "create" && !form.displayName.trim()) bad.displayName = "Enter a display name.";
+    if (create && !displayName) bad.displayName = "Enter a display name.";
     if (login.length < 3 || login.length > 24 || !LOGIN.test(login)) bad.login = "Use 3 to 24 lowercase letters, digits and single dashes.";
-    if (!PIN.test(form.pin)) bad.pin = "Enter four digits.";
-    if (view === "create" && form.pinConfirm !== form.pin) bad.pinConfirm = "The PINs don't match.";
+    if (!/^\d{4}$/.test(pin)) bad.pin = "Enter four digits.";
+    if (create && pinConfirm !== pin) bad.pinConfirm = "The PINs don't match.";
     if (Object.keys(bad).length) return setErrors(bad);
     void send(() =>
-      view === "create"
-        ? recovery.load().then(() => c.create({ displayName: form.displayName.trim(), login, color: form.color, pin: form.pin, pinConfirm: form.pinConfirm }, keep))
-        : c.login(login, form.pin, keep),
+      create
+        ? recovery.load().then(() => c.create({ displayName, login, color: form.color, pin, pinConfirm }, keep))
+        : c.login(login, pin, keep),
     );
   };
   // Every switch between the summary and its forms drops the errors and every PIN typed so far.
@@ -149,7 +163,10 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   // While a temporary PIN waits, the recovery chunk must be in as well: the change's reply carries a new code (#1437).
   const open = (to: "edit" | "pin" | "wins" | "history") => {
     const isForm = to === "edit" || to === "pin";
-    return Promise.all([(isForm ? forms : records).load(), mustChange && recovery.load()]).then(() => back(to), () => setErrors({ form: isForm ? "Couldn't load this form. Try again." : "Couldn't load your records. Try again." }));
+    return Promise.all([(isForm ? forms : records).load(), mustChange && recovery.load()]).then(
+      () => back(to),
+      () => setErrors({ form: `Couldn't load ${isForm ? "this form" : "your records"}. Try again.` }),
+    );
   };
 
   const guest = (
@@ -168,47 +185,46 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   let body: ReactNode;
   // The code and recover views open from the row and the link, which the recovery chunk draws, so they never suspend.
   // A held code's save screen comes first.
-  if (snap.profile && (snap.code || view === "code")) body = rc(snap.code ? "save" : "code");
-  else if (snap.profile && (view === "edit" || view === "pin")) {
-    // Only reached once `open` has loaded the forms chunk, so this never suspends.
-    body = <ProfileForms ui={{ kind: view, c, form, setForm, errors, setErrors, busy, setBusy, showPin, setShowPin, back }} />;
-  } else if (snap.profile && (view === "wins" || view === "history")) {
-    // Only reached once `open` has loaded the records chunk, so this never suspends.
-    body = <ProfileRecords c={c} kind={view} back={() => back()} />;
-  } else if (snap.profile) {
-    body = (
-      <>
-        <p className="flex items-center gap-2 text-base text-fg">
-          <SeatDot color={snap.profile.color} className="size-4" />
-          <span>Signed in as <strong>{snap.profile.displayName}</strong></span>
-        </p>
-        {snap.profile.catchphrase ? <p className="break-words text-sm text-fg">“{snap.profile.catchphrase}”</p> : null}
-        <p className="text-sm text-muted">Login: {snap.profile.login}</p>
-        <p className="text-sm text-muted">{snap.remembered ? "Remembered on this device." : "Not remembered on this device."}</p>
-        <div className="grid grid-cols-2 gap-2">
-          {(["wins", "history", "edit", "pin"] as const).map((to) => (
-            <Button key={to} variant="secondary" data-opens={to} onClick={() => void open(to)}>
-              {{ wins: "Wins", history: "Your games", edit: "Edit profile", pin: "Change PIN" }[to]}
-            </Button>
-          ))}
-        </div>
-        {rc("row")}
-        {formError}
-        {actions(
-          <>
+  if (profile) {
+    if (snap.code || view === "code") body = rc(snap.code ? "save" : "code");
+    else if (view === "edit" || view === "pin") {
+      // Only reached once `open` has loaded the forms chunk, so this never suspends.
+      body = <ProfileForms ui={{ kind: view, c, form, setForm, errors, setErrors, busy, setBusy, showPin, setShowPin, back }} />;
+    } else if (view === "wins" || view === "history") {
+      // Only reached once `open` has loaded the records chunk, so this never suspends.
+      body = <ProfileRecords c={c} kind={view} back={() => back()} />;
+    } else {
+      body = (
+        <>
+          <p className="flex items-center gap-2 text-base text-fg">
+            <SeatDot color={profile.color} className="size-4" />
+            <span>Signed in as <strong>{profile.displayName}</strong></span>
+          </p>
+          {profile.catchphrase ? <p className="break-words text-sm text-fg">“{profile.catchphrase}”</p> : null}
+          <p className="text-sm text-muted">Login: {profile.login}</p>
+          <p className="text-sm text-muted">{`${snap.remembered ? "R" : "Not r"}emembered on this device.`}</p>
+          <div className="grid grid-cols-2 gap-2">
+            {SUMMARY_BTNS.map(([to, label]) => (
+              <Button key={to} variant="secondary" data-opens={to} onClick={() => void open(to)}>
+                {label}
+              </Button>
+            ))}
+          </div>
+          {rc("row")}
+          {formError}
+          {actions(
             <Button variant="secondary" className="w-full" disabled={busy} onClick={() => void send(() => c.logout().finally(() => back()))}>
               Sign out
-            </Button>
-          </>,
-        )}
-      </>
-    );
+            </Button>,
+          )}
+        </>
+      );
+    }
   } else if (snap.status !== "available") {
-    const unavailable = snap.status === "unsupported" || snap.status === "offline" || snap.status === "insecure";
     body = (
       <>
         <p role="status" className="text-sm text-fg">
-          {!unavailable ? "Checking this host…" : snap.status === "offline" ? "The host is offline. You can still play as a guest." : snap.status === "insecure" ? "Profiles need the HTTPS link. You can still play as a guest." : "Profiles unavailable on this host."}
+          {STATUS_MSG[snap.status] ?? "Checking this host…"}
         </p>
         {guest}
       </>
@@ -218,16 +234,18 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
     body = rc("recover");
   } else {
     const create = view === "create";
+    let hasRemembered = false;
+    if (!create) try { hasRemembered = localStorage.getItem(profileStorageKey(snap.host)) !== null; } catch {}
     const input = (k: "displayName" | "login" | "pin" | "pinConfirm", label: string, extra: object) => (
       <div className="flex flex-col gap-1">
         <label className="flex flex-col gap-1 text-sm font-medium text-fg">
           {label}
           <input
             value={form[k]}
-            onChange={(e) => set(k)(e.target.value)}
+            onChange={(e) => set(k, e.target.value)}
             aria-invalid={errors[k] ? true : undefined}
             aria-describedby={errors[k] ? `profile-${k}-error` : undefined}
-            className={field}
+            className={FIELD}
             {...extra}
           />
         </label>
@@ -235,21 +253,23 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
       </div>
     );
     const pin = { type: showPin ? "text" : "password", inputMode: "numeric", pattern: "[0-9]*", maxLength: 4, autoComplete: create ? "new-password" : "current-password" };
+    const PinIcon = showPin ? EyeOff : Eye;
+    const actionLabel = create ? "Create profile" : "Sign in";
     body = (
       <>
-        {!create && remembered(snap.host) ? (
+        {hasRemembered ? (
           <Button size="lg" variant="primary" className="w-full" disabled={busy} onClick={() => void send(() => c.resume())}>
             Continue with remembered profile
           </Button>
         ) : null}
-        <form noValidate aria-label={create ? "Create profile" : "Sign in"} className="flex flex-col gap-3" onSubmit={submit}>
+        <form noValidate aria-label={actionLabel} className="flex flex-col gap-3" onSubmit={submit}>
           {create ? input("displayName", "Display name", { maxLength: 16, autoComplete: "nickname" }) : null}
           {input("login", "Login", { autoCapitalize: "none", autoCorrect: "off", spellCheck: false, maxLength: 24, autoComplete: "username" })}
           {input("pin", "PIN", pin)}
           {create ? input("pinConfirm", "Confirm PIN", pin) : null}
           <Button variant="ghost" className="self-start px-3" aria-pressed={showPin} onClick={() => setShowPin(!showPin)}>
-            {showPin ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-            {showPin ? "Hide PIN" : "Show PIN"}
+            <PinIcon className="size-4" />
+            {`${showPin ? "Hide" : "Show"} PIN`}
           </Button>
           {create ? null : rc("link")}
           {create ? (
@@ -262,7 +282,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
                   aria-checked={form.color === col}
                   aria-label={PLAYER_NAMES[i]}
                   title={PLAYER_NAMES[i]}
-                  onClick={() => set("color")(col)}
+                  onClick={() => set("color", col)}
                   className="grid size-11 place-items-center rounded-control border-2 p-1"
                   style={{ borderColor: form.color === col ? "#1c1915" : "transparent" }}
                 >
@@ -277,8 +297,8 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
           </label>
           {formError}
           {actions(
-            <Button size="lg" variant={remembered(snap.host) && !create ? "secondary" : "primary"} type="submit" className="w-full" disabled={busy}>
-              {create ? "Create profile" : "Sign in"}
+            <Button size="lg" variant={hasRemembered ? "secondary" : "primary"} type="submit" className="w-full" disabled={busy}>
+              {actionLabel}
             </Button>,
           )}
         </form>

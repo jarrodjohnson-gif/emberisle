@@ -190,6 +190,8 @@ jobs:
         run: npm run named-tunnel-test
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run tunnel-reconnect-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profiles-lifecycle-prove
       # #1073: measures every file in public/audio with ffmpeg.
       # #1186: the apt mirror sometimes hangs; bound each attempt, retry, and fail loudly if ffmpeg is still missing.
       # #1782: runs in build so slow apt mirrors cannot push the server job past 15 minutes.
@@ -269,11 +271,15 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bug-report-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run lib-helpers-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-harbor-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-action-order-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run rules-view-helpers-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run hud-helpers-guards-prove
       # #1673, #1682, #1782: run independent Node and host proofs in two bounded side lanes beside npm test.
       # Each lane uses isolated temp dirs and per-proof time limits so hangs fail loudly and logs always print.
       - if: needs.changes.outputs.docs_only != 'true'
@@ -309,8 +315,10 @@ jobs:
             timeout -k 10 60 npm run profile-deletion-prove || status=$?
             timeout -k 10 60 npm run profile-rename-cap-prove || status=$?
             timeout -k 10 60 npm run profile-rename-unknown-prove || status=$?
+            timeout -k 10 60 npm run profile-race-guards-prove || status=$?
             timeout -k 10 120 npm run profile-recovery-prove || status=$?
             timeout -k 10 60 npm run server-needs-prove || status=$?
+            timeout -k 10 60 npm run submodules-guards-prove || status=$?
             timeout -k 10 60 npm run server-play-again-prove || status=$?
             timeout -k 10 60 npm run expanded-persist-prove || status=$?
             timeout -k 10 90 npm run expanded-lobby-prove || status=$?
@@ -336,6 +344,8 @@ jobs:
           exit "$status"
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run sound-lifecycle-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run host-lifecycle-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -481,6 +491,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run trade-sheet-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run trade-backdrop-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run trade-contrast-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a2'
         run: npm run practice-trade-prove
@@ -507,6 +519,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run profile-records-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run lobby-records-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run first-game-coach-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a2'
         run: npm run render-recovery-prove
@@ -530,6 +544,8 @@ jobs:
         run: npm run secondary-guards-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run my-numbers-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run my-numbers-glow-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run invite-night-prove
       # pages-prove rebuilds dist/ under /emberisle/; browser-a has no later dist/ reader.
