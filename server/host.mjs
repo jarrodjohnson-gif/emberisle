@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { mkdir, rename, writeFile } from "node:fs/promises";
+import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
@@ -422,16 +422,19 @@ async function flush(room) {
   if (!room.dirty || !rooms.has(room.code) || room.saving) return;
   room.dirty = false;
   const file = path.join(ROOMS, `${room.code}.json`);
+  const tmp = `${file}.tmp`;
   const run = (async () => {
     const json = snapshot(room);
     await mkdir(ROOMS, { recursive: true });
-    await writeFile(`${file}.tmp`, json);
-    await rename(`${file}.tmp`, file);
+    await writeFile(tmp, json);
+    await rename(tmp, file);
   })();
   room.saving = run;
   try {
     await run;
   } catch (err) {
+    room.dirty = true;
+    await rm(tmp, { force: true }).catch(() => {});
     console.error("save failed:", err);
   }
   room.saving = null;
@@ -475,12 +478,14 @@ function flushAll() {
     clearTimeout(room.saveTimer);
     room.saveTimer = null;
     room.dirty = false;
+    const file = path.join(ROOMS, `${room.code}.json`);
+    const tmp = `${file}.tmp`;
     try {
-      const file = path.join(ROOMS, `${room.code}.json`);
       mkdirSync(ROOMS, { recursive: true });
-      writeFileSync(`${file}.tmp`, snapshot(room));
-      renameSync(`${file}.tmp`, file);
+      writeFileSync(tmp, snapshot(room));
+      renameSync(tmp, file);
     } catch (err) {
+      rmSync(tmp, { force: true });
       console.error("save failed:", err);
     }
   }
@@ -1301,7 +1306,7 @@ function route(req, res) {
     if (!allow(seat.act, Date.now(), ACT_CAP, ACT_RATE)) return refuse(429);
     // Bytes this seat's current picture holds; its replacement frees them. Read again at the end, since the body
     // arrives over time and another upload may have landed meanwhile.
-    const held = () => (seat.avatarId ? avatars.get(seat.avatarId).body.length : 0);
+    const held = () => (seat.avatarId ? avatars.get(seat.avatarId)?.body.length ?? 0 : 0);
     if (avatars.size - (held() ? 1 : 0) >= AVATAR_MAX) return refuse(503);
     const chunks = [];
     let size = 0;
@@ -1335,12 +1340,17 @@ function route(req, res) {
     return;
   }
   const got = url.pathname.match(/^\/avatars\/(.+)\.jpg$/);
-  if (req.method === "GET" && got && avatars.has(got[1])) {
-    res.writeHead(200, { "content-type": "image/jpeg", "x-content-type-options": "nosniff" });
-    res.end(avatars.get(got[1]).body);
+  if ((req.method === "GET" || req.method === "HEAD") && got && avatars.has(got[1])) {
+    const body = avatars.get(got[1]).body;
+    res.writeHead(200, {
+      "content-type": "image/jpeg",
+      "content-length": body.length,
+      "x-content-type-options": "nosniff",
+    });
+    res.end(req.method === "HEAD" ? undefined : body);
     return;
   }
-  if (req.method === "GET" && url.pathname === "/tables") {
+  if ((req.method === "GET" || req.method === "HEAD") && url.pathname === "/tables") {
     // Same allow() throttle shape as the WS peek/list bucket (#833 review).
     const key = ipKey(req.socket.remoteAddress, req.headers["cf-connecting-ip"]) ?? "loopback";
     const now = Date.now();
@@ -1354,16 +1364,17 @@ function route(req, res) {
         "cache-control": "no-cache",
         "retry-after": "1",
       });
-      res.end("[]");
+      res.end(req.method === "HEAD" ? undefined : "[]");
       return;
     }
     const body = JSON.stringify(getOpenTables());
     res.writeHead(200, {
       "content-type": "application/json",
+      "content-length": Buffer.byteLength(body),
       "access-control-allow-origin": "*",
       "cache-control": "no-cache",
     });
-    res.end(body);
+    res.end(req.method === "HEAD" ? undefined : body);
     return;
   }
   if (req.method === "GET" || req.method === "HEAD") {
@@ -1383,6 +1394,11 @@ const server = http.createServer((req, res) => {
     if (!res.headersSent) res.writeHead(500);
     res.end();
   }
+});
+// Aborted handshakes and client resets must not crash the server.
+server.on("clientError", (err, socket) => {
+  if (err.code === "ECONNRESET" || !socket.writable) return;
+  socket.end("HTTP/1.1 400 Bad Request\r\n\r\n");
 });
 
 // One address carries the page, the socket and the avatars, so a single tunnel reaches all three.
@@ -1426,6 +1442,7 @@ async function serveStatic(req, res) {
 }
 
 const wss = new WebSocketServer({ server, maxPayload: 16 * 1024 });
+wss.on("error", (err) => console.error("wss error:", err));
 const profiles = openProfiles(PROFILES, { colors: PLAYER_COLORS, fault });
 const onProfile = profileHandler(profiles, send);
 const journal = openJournal(RESULTS, { fault });
@@ -2092,7 +2109,7 @@ function handle(ws, raw) {
   } catch {
     return send(ws, { type: "error", message: ws.watch ? "Watching only." : "not ready" });
   }
-  if (!msg || typeof msg !== "object") return send(ws, { type: "error", message: ws.watch ? "Watching only." : "not ready" });
+  if (!msg || typeof msg !== "object" || Array.isArray(msg)) return send(ws, { type: "error", message: ws.watch ? "Watching only." : "not ready" });
   // Health has no room/state access, action bucket, publish, save, or game timer side effects.
   // Unauthenticated probes consume the same budget as hello/peek, and never earn a reply.
   if (msg.type === "healthPing") {
@@ -2217,7 +2234,7 @@ function rejoin(ws, msg) {
   if (!room) return send(ws, { type: "error", message: "No table with that code" });
   // Before the seat is touched: a refused rejoin leaves the seat held, its timers running, for an updated page.
   if (refusesClient(ws, room, msg)) return;
-  const seat = room.seats.find((s) => s.secret === msg.secret);
+  const seat = room.seats.find((s) => !s.bot && s.secret === msg.secret);
   if (!seat) return send(ws, { type: "error", message: "Seat is gone." });
   if (seat.ws && seat.ws.readyState === seat.ws.OPEN) return send(ws, { type: "error", message: "Seat is taken." });
   clearTimeout(seat.graceTimer);
@@ -2256,7 +2273,7 @@ function resendOffer(ws, room, seat, offer) {
   const seconds = offer.until === null ? null : Math.max(0, Math.floor((offer.until - Date.now()) / 1000));
   send(ws, { type: "tradeOffer", tradeId: offer.tradeId, from: offer.from, give: offer.give, want: offer.want, seconds });
   for (const by of offer.declined) {
-    send(ws, { type: "tradeDeclined", tradeId: offer.tradeId, by, name: room.game.players.find((p) => p.id === by).name });
+    send(ws, { type: "tradeDeclined", tradeId: offer.tradeId, by, name: room.game.players.find((p) => p.id === by)?.name ?? "" });
   }
 }
 
@@ -2297,6 +2314,7 @@ function hold(room, seat) {
 // The host role goes to the first seat with a socket; with none, to the first held seat.
 function handOffHost(room) {
   const next = room.seats.find((s) => s.ws) ?? room.seats.find((s) => !s.bot);
+  if (!next) return;
   room.host = next.id;
   say(room, `${next.name} is now the host.`);
 }
@@ -2311,6 +2329,8 @@ function takeOver(room, seat) {
     const tradeId = room.offer.tradeId;
     closeOffer(room);
     broadcast(room, { type: "tradeClosed", tradeId });
+  } else if (room.offer) {
+    room.offer.botTimers.push(setTimeout(() => botAnswer(room, room.offer, seat.pid), BOT_ANSWER_MS));
   }
   room.recoveryPids = [...new Set([...(room.recoveryPids ?? []), seat.pid])].slice(-recoveryCap(room.game));
   // Assistance is marked for the outcome and never cleared by a rejoin; the frozen roster keeps the seat human (#889).

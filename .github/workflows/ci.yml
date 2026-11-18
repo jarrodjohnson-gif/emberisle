@@ -343,6 +343,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run host-lifecycle-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run server-lifecycle-guards-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run touch-place-prove
