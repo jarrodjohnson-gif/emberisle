@@ -9,9 +9,17 @@ import assert from "node:assert/strict";
 import { createServer } from "vite";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const flush = async () => {
+async function waitUntil(pred, label, timeoutMs = 5000) {
+  const deadline = Date.now() + timeoutMs;
+  while (!pred()) {
+    if (Date.now() >= deadline) throw new Error(`timed out waiting for ${label}`);
+    await sleep(5);
+  }
+}
+const settle = async () => {
   for (let i = 0; i < 6; i++) await Promise.resolve();
-  await sleep(10);
+  await new Promise((r) => setImmediate(r));
+  for (let i = 0; i < 6; i++) await Promise.resolve();
 };
 
 function makeEnv() {
@@ -155,27 +163,33 @@ await runCase(
 // Case 2a: stop() during in-flight lazy sound-extra import suppresses late playback.
 {
   let resolveExtra;
+  globalThis.__extraStarted = false;
+  globalThis.__extraEvaluated = false;
   globalThis.__extraPromise = new Promise((r) => { resolveExtra = r; });
   await runCase(
     {
       ambience: "export function sync() {}",
-      soundExtra: `await globalThis.__extraPromise; export const EXTRA_FILES = { isaac_win: "isaac_win.mp3" };`,
+      soundExtra: `globalThis.__extraStarted = true; await globalThis.__extraPromise; globalThis.__extraEvaluated = true; export const EXTRA_FILES = { isaac_win: "isaac_win.mp3" };`,
     },
     async ({ sound, env }) => {
       env.window.dispatch("pointerdown");
       sound.play("isaac_win", 1);
+      await waitUntil(() => globalThis.__extraStarted, "sound-extra import to start");
       sound.stop("isaac_win");
       resolveExtra();
-      await flush();
+      await waitUntil(() => globalThis.__extraEvaluated, "sound-extra chunk evaluation");
+      await settle();
       assert.equal(env.plays.some((p) => p.file === "isaac_win.mp3"), false, "stopped lazy extra clip does not play after chunk resolves");
       // Subsequent play works now that EXTRA_FILES is cached.
       await sleep(170);
       sound.play("isaac_win", 1);
-      await flush();
+      await waitUntil(() => env.plays.some((p) => p.file === "isaac_win.mp3"), "cached extra clip playback");
       assert.equal(env.plays.some((p) => p.file === "isaac_win.mp3"), true, "cached extra clip plays on later request");
       ok("stop() cancels in-flight lazy sound-extra playback");
     },
   );
+  delete globalThis.__extraStarted;
+  delete globalThis.__extraEvaluated;
   delete globalThis.__extraPromise;
 }
 
@@ -184,16 +198,19 @@ await runCase(
   const unhandled = [];
   const onUnhandled = (reason) => unhandled.push(String(reason));
   process.on("unhandledRejection", onUnhandled);
+  globalThis.__extraThrew = false;
   try {
     await runCase(
       {
         ambience: "export function sync() {}",
-        soundExtra: `throw new Error("simulated offline chunk failure");`,
+        soundExtra: `globalThis.__extraThrew = true; throw new Error("simulated offline chunk failure");`,
       },
       async ({ sound, env }) => {
         env.window.dispatch("pointerdown");
         sound.play("isaac_win", 1);
-        await flush();
+        await waitUntil(() => globalThis.__extraThrew, "sound-extra rejection to throw");
+        await settle();
+        await sleep(25);
         assert.deepEqual(unhandled, [], "rejected sound-extra import produces no unhandled rejection");
         assert.equal(env.plays.length, 0, "failed sound-extra chunk stays silent");
         ok("failed lazy sound-extra import stays silent with zero unhandled rejections");
@@ -201,31 +218,39 @@ await runCase(
     );
   } finally {
     process.off("unhandledRejection", onUnhandled);
+    delete globalThis.__extraThrew;
   }
 }
 
 // Case 3: muting / turning off sea sounds while ambience chunk is loading never delivers stale non-zero level.
 {
   let resolveAmb;
+  globalThis.__ambStarted = false;
+  globalThis.__ambEvaluated = false;
   globalThis.__ambPromise = new Promise((r) => { resolveAmb = r; });
   globalThis.__ambSyncCalls = [];
   await runCase(
     {
-      ambience: `await globalThis.__ambPromise; export function sync(level) { globalThis.__ambSyncCalls.push(level); }`,
+      ambience: `globalThis.__ambStarted = true; await globalThis.__ambPromise; globalThis.__ambEvaluated = true; export function sync(level) { globalThis.__ambSyncCalls.push(level); }`,
     },
     async ({ sea, env }) => {
       env.window.dispatch("pointerdown");
+      await waitUntil(() => globalThis.__ambStarted, "ambience import to start");
       sea.setSeaSounds(false);
       resolveAmb();
-      await flush();
+      await waitUntil(() => globalThis.__ambEvaluated && globalThis.__ambSyncCalls.length >= 1, "ambience sync on resolution");
+      await settle();
       assert.ok(globalThis.__ambSyncCalls.length >= 1, "ambience sync ran on resolution");
       assert.ok(globalThis.__ambSyncCalls.every((lvl) => lvl === 0), `ambience never received stale positive level: ${JSON.stringify(globalThis.__ambSyncCalls)}`);
+      const beforeEnable = globalThis.__ambSyncCalls.length;
       sea.setSeaSounds(true);
-      await flush();
+      await waitUntil(() => globalThis.__ambSyncCalls.length > beforeEnable, "ambience sync after enabling sea sounds");
       assert.ok(Math.abs(globalThis.__ambSyncCalls.at(-1) - 0.12) < 1e-9, "enabling sea sounds later passes 0.12");
       ok("in-flight ambience import reads live level instead of stale 0.12");
     },
   );
+  delete globalThis.__ambStarted;
+  delete globalThis.__ambEvaluated;
   delete globalThis.__ambPromise;
   delete globalThis.__ambSyncCalls;
 }
