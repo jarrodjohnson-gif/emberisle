@@ -107,12 +107,19 @@ export function TableMenu() {
   // The Mute players list in the chat (Chat.tsx) points here.
   useEffect(() => {
     const show = () => {
+      reset();
+      setAsking(false);
+      setLog(false);
       setSound(true);
       setOpen(true);
     };
     window.addEventListener(OPEN_SOUND_EVENT, show);
     return () => window.removeEventListener(OPEN_SOUND_EVENT, show);
   }, []);
+
+  useEffect(() => {
+    if (state.phase === "over") close(false);
+  }, [state.phase]);
 
   useEffect(() => {
     if (!asking) {
@@ -225,7 +232,7 @@ export function TableMenu() {
                 <History className={ICON} /> Game log
               </Button>
               {/* #669: one row for every sound setting; the levels live in the Sound panel. */}
-              <Button variant="ghost" className={ROW} data-testid="sound-entry" onClick={() => setSound(true)}>
+              <Button variant="ghost" className={ROW} data-testid="sound-entry" onClick={() => { reset(); setSound(true); }}>
                 {muted ? <VolumeX className={ICON} /> : <Volume2 className={ICON} />}
                 Sound
                 <span className="ml-auto flex items-center gap-1 text-caption text-muted">

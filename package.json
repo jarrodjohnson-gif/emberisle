@@ -58,6 +58,7 @@
     "trade-tabs-prove": "node --import ./server/register.mjs scripts/trade-tabs-prove.mjs",
     "trade-sheet-prove": "node --import ./server/register.mjs scripts/trade-sheet-prove.mjs",
     "secondary-guards-prove": "node --import ./server/register.mjs scripts/secondary-guards-prove.mjs",
+    "sheets-focus-guards-prove": "node --import ./server/register.mjs scripts/sheets-focus-guards-prove.mjs",
     "trade-contrast-prove": "node scripts/trade-contrast-prove.mjs",
     "sounds-prove": "node scripts/sounds-prove.mjs",
     "audio-recovery-prove": "node scripts/audio-recovery-prove.mjs",
