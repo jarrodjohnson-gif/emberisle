@@ -21,6 +21,7 @@ const metadata = {
   run: values.run,
   sourceCommit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
   scriptSHA256: createHash("sha256").update(readFileSync(new URL(import.meta.url))).digest("hex"),
+  styleSHA256: createHash("sha256").update(readFileSync(new URL("../src/components/game/lobby.css", import.meta.url))).digest("hex"),
   node: process.version,
   fixture: "real host/guest/bot/empty seat; desktop Chromium CSS viewports; reduced motion; device scale 1",
 };
@@ -28,7 +29,7 @@ const save = () => writeFileSync(join(out, "measurements.json"), JSON.stringify(
 const rooms = mkdtempSync(join(tmpdir(), "emberisle-lobby-text-"));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR: rooms, RESULTS_DIR: join(rooms, "results") },
+  env: { ...process.env, PORT: "0", ROOMS_DIR: rooms, RESULTS_DIR: join(rooms, "results"), PROFILES_DIR: join(rooms, "profiles") },
 });
 let vite, browser;
 try {
@@ -79,6 +80,7 @@ try {
     await page.setViewportSize({ width, height });
     for (const scale of [1, 1.25, 1.5]) {
       await page.evaluate(size => { document.documentElement.style.fontSize = `${size}px`; }, base * scale);
+      await page.evaluate(() => { document.querySelector(".lobby-cover").scrollTop = 0; });
       await page.evaluate(() => document.fonts.ready);
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       const observed = await page.evaluate(() => {
@@ -91,7 +93,39 @@ try {
           code: '[data-testid="table-code"]', name: '[data-testid="lobby-name"] button', status: ".lobby-player-status",
           chat: '[data-testid="chat-log"] > li', input: "#chat-input", ready: ".lobby-action-buttons > button", summary: '[data-testid="lobby-status"]',
         };
+        const text = [], clippedText = [];
+        const walker = document.createTreeWalker(document.querySelector(".lobby-layout"), NodeFilter.SHOW_TEXT);
+        let node;
+        while ((node = walker.nextNode())) {
+          const element = node.parentElement;
+          if (!node.textContent.trim() || element.closest('.sr-only, [aria-hidden="true"]')) continue;
+          const style = getComputedStyle(element);
+          if (style.visibility !== "visible" || Number(style.opacity) === 0 || !element.getClientRects().length) continue;
+          const r = document.createRange(); r.selectNode(node);
+          const bounds = rect(r);
+          if (bounds.right <= bounds.x || bounds.bottom <= bounds.y) continue;
+          let clip = false;
+          for (let ancestor = element; ancestor && ancestor.matches(".lobby-layout, .lobby-layout *"); ancestor = ancestor.parentElement) {
+            const css = getComputedStyle(ancestor), box = rect(ancestor);
+            if ((ancestor.matches("button") || ["hidden", "clip"].includes(css.overflowX)) && (bounds.x < box.x - 1 || bounds.right > box.right + 1)) clip = true;
+            if ((ancestor.matches("button") || ["hidden", "clip"].includes(css.overflowY)) && (bounds.y < box.y - 1 || bounds.bottom > box.bottom + 1)) clip = true;
+          }
+          const entry = { text: node.textContent.trim(), font: parseFloat(style.fontSize) };
+          text.push(entry);
+          if (clip) clippedText.push(entry.text);
+        }
+        const controls = [...document.querySelector(".lobby-layout").querySelectorAll('button, input, [role="tab"]')]
+          .filter(e => e.getClientRects().length && getComputedStyle(e).visibility === "visible")
+          .map(e => ({ label: e.getAttribute("aria-label") || e.textContent.trim(), ...rect(e) }));
+        const controlOverlaps = [];
+        for (let i = 0; i < controls.length; i++) for (const b of controls.slice(i + 1)) {
+          const a = controls[i];
+          if (Math.min(a.right, b.right) - Math.max(a.x, b.x) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y) > 1)
+            controlOverlaps.push([a.label, b.label]);
+        }
         return {
+          controlOverlaps, text, clippedText,
+          documentOverflowY: Math.max(0, document.documentElement.scrollHeight - innerHeight),
           root: parseFloat(getComputedStyle(document.documentElement).fontSize), code: code.textContent.trim(),
           codeFits: glyphs.x >= box.x - 0.5 && glyphs.right <= box.right + 0.5 && glyphs.y >= button.y - 0.5 && glyphs.bottom <= button.bottom + 0.5,
           cardOverflow: overflow(document.querySelector(".lobby-cover")),
@@ -99,6 +133,18 @@ try {
           documentOverflow: Math.max(0, document.documentElement.scrollWidth - innerWidth),
           fonts: Object.fromEntries(Object.entries(selectors).map(([key, selector]) => [key, parseFloat(getComputedStyle(document.querySelector(selector)).fontSize)])),
         };
+      });
+      observed.unreachableControls = await page.evaluate(async () => {
+        const root = document.querySelector(".lobby-layout"), failed = [];
+        for (const element of root.querySelectorAll('button, input, [role="tab"]')) {
+          if (!element.getClientRects().length || getComputedStyle(element).visibility !== "visible") continue;
+          element.scrollIntoView({ block: "nearest", inline: "nearest" });
+          await new Promise(resolve => requestAnimationFrame(resolve));
+          const r = element.getBoundingClientRect();
+          if (r.left < -1 || r.right > innerWidth + 1 || r.top < -1 || r.bottom > innerHeight + 1) failed.push(element.getAttribute("aria-label") || element.textContent.trim());
+        }
+        document.querySelector(".lobby-cover").scrollTop = 0;
+        return failed;
       });
       assert.equal(observed.code, code);
       assert.equal(observed.root, base * scale);
