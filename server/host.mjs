@@ -1322,7 +1322,7 @@ function route(req, res) {
       const body = Buffer.concat(chunks);
       // Served as image/jpeg, so only JPEG bytes (SOI marker) are kept.
       if (size < 3 || body[0] !== 0xff || body[1] !== 0xd8 || body[2] !== 0xff) return res.writeHead(400).end();
-      if (storeBytes() - held() + size > AVATAR_STORE_BYTES) return res.writeHead(503).end();
+      if (avatars.size - (held() ? 1 : 0) >= AVATAR_MAX || storeBytes() - held() + size > AVATAR_STORE_BYTES) return res.writeHead(503).end();
       forgetAvatar(seat);
       const id = randomBytes(8).toString("hex");
       avatars.set(id, { body });
@@ -1542,7 +1542,7 @@ function watch(ws, msg) {
   // A finished game still being saved reaches this watcher with everyone else, through the terminal gate (#889).
   if (unsettled(room)) return;
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
-  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
+  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now(), result: resultOf(room) });
 }
 
 // The durable start write (#889, profiles.md "Exactly-once recording"): the new game, its UUID, start time and frozen
@@ -1599,7 +1599,8 @@ async function startGame(ws, room) {
     game.players[i].color = s.color;
     if (s.bot) game.players[i].kind = "bot";
   });
-  if (!(await durableStart(ws, room, order, game, () => room.seats.length === order.length && order.every((s, i) => room.seats[i] === s)))) return;
+  const isLive = (s) => s.bot || (s.ws && s.ws.readyState === s.ws.OPEN);
+  if (!(await durableStart(ws, room, order, game, () => room.host === ws.seat.id && room.seats.length === order.length && order.every((s, i) => room.seats[i] === s && s.ready && isLive(s))))) return;
   closeTtt(room.seats, "start", null, send);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
