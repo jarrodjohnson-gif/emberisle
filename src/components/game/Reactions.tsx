@@ -211,25 +211,21 @@ export function SeatBubbles({ by, id, at }: { by: "player" | "seat"; id: string;
     counts.set(reaction.emote, count);
     pick({ kind: "react", key: `r${reaction.emote}`, at: reactArrived.get(reaction) ?? 0, reaction, count });
   }
-  let endAt = 0;
   for (const line of chat) {
     const t = arrived.get(line.id);
     if (t === undefined || !mine(line)) continue;
     const kind = line.sound ? "sound" : "chat";
     if (kind === "chat" && (!chatClosed || line.seat === me)) continue;
-    const exp = t + LIFE[kind];
-    if (now < exp) {
-      if (exp > endAt) endAt = exp;
-      pick({ kind, key: `l${line.id}`, at: t, line });
-    }
+    if (now < t + LIFE[kind]) pick({ kind, key: `l${line.id}`, at: t, line });
   }
+  const wakeAt = newest && newest.kind !== "react" ? newest.at + LIFE[newest.kind] : 0;
 
   // Re-render when the newest line bubble runs out (reactions leave the store on their own).
   useEffect(() => {
-    if (!endAt) return;
-    const timer = setTimeout(() => tick((n) => n + 1), Math.max(16, endAt - Date.now() + 16));
+    if (!wakeAt) return;
+    const timer = setTimeout(() => tick((n) => n + 1), Math.max(16, wakeAt - Date.now() + 16));
     return () => clearTimeout(timer);
-  });
+  }, [wakeAt]);
 
   return newest ? <SeatBubble key={newest.key} bubble={newest} at={at} /> : null;
 }
