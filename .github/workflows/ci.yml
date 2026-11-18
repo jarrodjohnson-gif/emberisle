@@ -191,6 +191,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run tunnel-reconnect-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run scene-motion-guards-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profiles-lifecycle-prove
       # #1073: measures every file in public/audio with ffmpeg.
       # #1186: the apt mirror sometimes hangs; bound each attempt, retry, and fail loudly if ffmpeg is still missing.
