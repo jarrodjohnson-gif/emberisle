@@ -271,13 +271,16 @@ try {
     eq([...activeTimers.values()].filter((t) => t.ms === 2500).length, 0, "new online tradeOffer clears previous outcomeTimer");
 
     // Online rematch (over -> rollOff) must clear banner, tradeOutcome, tradeTaker, knocks, and timers.
+    // Arm a real 2500 ms bannerTimer via a winning longest-path swing before the rematch arrives.
     const overGame = structuredClone(game1);
+    overGame.longestRoad = "p0";
     overGame.phase = "over";
     overGame.winner = "p0";
     fakeTableEvents.state({ you: "p0", game: overGame, legal, serverNow: Date.now() });
+    eq(useGame.getState().banner, "A holds the longest path", "control: winning award swing arms banner via showBanner");
     fakeTableEvents.tradeOffer({ tradeId: "t5", from: "p0", give: { timber: 1 }, want: { ore: 1 }, seconds: null });
     fakeTableEvents.tradeClosed({ tradeId: "t5", taker: "p1" });
-    useGame.setState({ banner: "A holds the longest path" });
+    eq([...activeTimers.values()].filter((t) => t.ms === 2500).length, 2, "control: both bannerTimer and outcomeTimer are live before rematch");
     const rematchGame = createGame({ humans: [{ name: "A" }, { name: "B" }, { name: "C" }], bots: 0, seed: 99, winnerFirst: true });
     fakeTableEvents.state({ you: "p0", game: rematchGame, legal, serverNow: Date.now() });
     eq(useGame.getState().banner, null, "online rematch clears stale banner");
@@ -306,7 +309,17 @@ try {
       const before = { ...g, phase: "main", winner: null };
       const after = { ...g, phase: "over", winner: "p0" };
       failHear(before, after, "p0", "ai");
-      await evalDone;
+      let evalTimer;
+      try {
+        await Promise.race([
+          evalDone,
+          new Promise((_, reject) => {
+            evalTimer = origSetTimeout(() => reject(new Error("timed out waiting for failing trade-sound module evaluation")), 5000);
+          }),
+        ]);
+      } finally {
+        origClearTimeout(evalTimer);
+      }
       ok(evaluated, "control: failing trade-sound module was evaluated");
       for (let i = 0; i < 4; i++) await new Promise((r) => setImmediate(r));
       eq(unhandled.length, 0, "failed trade-sound import triggers zero unhandled rejections");
