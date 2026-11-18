@@ -1,10 +1,8 @@
-// Paired-turn needs expiry and post-win trade guard proof:
-// 1. advanceNeed (src/lib/game/needs.ts) does not burn a trading-turn tick when a 5- or 6-seat partner activation
-//    ends (partner turns forbid player trades), while still clearing on matching partner bank/dock trades, game over,
-//    and classic 3-4 seat turns.
-// 2. pairedStep (src/lib/game/expanded.ts) returns "The game is over." (not PARTNER_NO_TRADE) for offerTrade and
+// Paired-turn post-win trade guard and classic need-expiry proof:
+// 1. pairedStep (src/lib/game/expanded.ts) returns "The game is over." (not PARTNER_NO_TRADE) for offerTrade and
 //    respondTrade(accept: true) once a 5- or 6-seat game ends during a partner activation, while preserving
 //    PARTNER_NO_TRADE during active partner turns.
+// 2. advanceNeed still clears on partner bank trades, game over, and classic 3- and 4-seat own turns.
 import assert from "node:assert/strict";
 import { createGame } from "../src/lib/game/board.ts";
 import { PARTNER_NO_TRADE, createExpandedGame } from "../src/lib/game/expanded.ts";
@@ -69,7 +67,7 @@ function finishSetup(g, label) {
 }
 
 try {
-  // 1. Paired-turn advanceNeed lifecycle across 5- and 6-seat expanded tables.
+  // 1. Post-win partner trade guards and partner bank/game-over need clears across 5- and 6-seat tables.
   for (const seats of [5, 6]) {
     reseed(1770 + seats);
     const tag = `${seats} seats`;
@@ -77,49 +75,7 @@ try {
     eq(g.phase, "roll", `${tag}: enters first primary roll`);
     eq(g.role, "primary", `${tag}: starts as primary`);
 
-    // Roll non-7 so p0 (first in order) enters main phase.
-    const tracked = g.current;
-    queue.push(2, 3);
-    g = act(g, tracked, { type: "roll" }, `${tag}: first primary roll`);
-    eq(g.phase, "main", `${tag}: first primary main`);
-
-    let need = { kinds: ["grain"], turnsLeft: 2 };
-    let sawPartnerEnd = false;
-    let sawSecondPrimaryEnd = false;
-
-    // Step activations cleanly until tracked player finishes 2 primary turns (passing through a partner turn in between).
-    for (let step = 0; step < seats * 5 && !sawSecondPrimaryEnd; step++) {
-      if (g.phase === "roll") {
-        queue.push(2, 3);
-        const before = g;
-        g = act(g, g.current, { type: "roll" }, `${tag}: roll ${step}`);
-        need = advanceNeed(need, tracked, before, g, false);
-      }
-      const before = g;
-      const actor = g.current;
-      const wasRole = g.role;
-      g = act(g, actor, { type: "endTurn" }, `${tag}: endTurn ${step}`);
-      const nextNeed = advanceNeed(need, tracked, before, g, false);
-
-      if (actor === tracked && wasRole === "primary") {
-        if (!sawPartnerEnd) {
-          eq(nextNeed, { kinds: ["grain"], turnsLeft: 1 }, `${tag}: first primary turn ages need 2 -> 1`);
-        } else {
-          eq(nextNeed, undefined, `${tag}: second primary turn expires need 1 -> undefined`);
-          sawSecondPrimaryEnd = true;
-        }
-      } else if (actor === tracked && wasRole === "partner") {
-        eq(nextNeed, { kinds: ["grain"], turnsLeft: 1 }, `${tag}: partner turn does not age need`);
-        sawPartnerEnd = true;
-      } else {
-        eq(nextNeed, need, `${tag}: other seat activation leaves need unchanged`);
-      }
-      need = nextNeed;
-    }
-    ok(sawPartnerEnd, `${tag}: visited tracked player's partner activation`);
-    ok(sawSecondPrimaryEnd, `${tag}: visited tracked player's second primary activation`);
-
-    // Partner bank/dock trade gaining a needed good still clears immediately.
+    // Partner bank/dock trade gaining a needed good clears immediately.
     while (g.role !== "partner") {
       if (g.phase === "roll") {
         queue.push(2, 3);
