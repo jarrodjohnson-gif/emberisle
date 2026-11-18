@@ -224,6 +224,7 @@
     "profile-rename-cap-prove": "node --import ./server/register.mjs server/profile-rename-cap-prove.mjs",
     "profile-rename-unknown-prove": "node --import ./server/register.mjs server/profile-rename-unknown-prove.mjs",
     "profile-recovery-prove": "node --import ./server/register.mjs server/profile-recovery-prove.mjs",
+    "trade-counter-prove": "node --import ./server/register.mjs server/trade-counter-prove.mjs",
     "trade-hold-prove": "node --import ./server/register.mjs server/trade-hold-prove.mjs",
     "seat-secret-log-prove": "node --import ./server/register.mjs server/seat-secret-log-prove.mjs",
     "preseat-prove": "node --import ./server/register.mjs server/preseat-prove.mjs",

@@ -258,6 +258,8 @@ jobs:
         run: npm run bot-action-order-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run rules-view-helpers-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run trade-counter-prove
       # #1673: dice-prove and expanded-bots-prove run beside npm test. Both are Node only: no host, port, file or env
       # var shared with anything else. npm test mostly waits on host timers. Their output prints after npm test ends,
       # and a failure in either side fails the step.
