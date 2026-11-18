@@ -12,7 +12,7 @@ class RecoveryBoundary extends Component<Props> {
   }
 
   static getDerivedStateFromError() {
-    return { failed: true, pending: false };
+    return { failed: true, pending: false, message: "" };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
@@ -36,11 +36,14 @@ class RecoveryBoundary extends Component<Props> {
       this.setState({ message: "This browser no longer has the saved seat for this table." });
       return;
     }
+    window.clearTimeout(this.timer);
     this.setState({ pending: true, message: "" });
-    // The host may be unreachable. Keep another explicit attempt available without an automatic retry loop.
-    this.timer = window.setTimeout(() => this.setState({ pending: false, message: "Could not reach your table. Try Rejoin again." }), 15_000);
     try {
-      if (useGame.getState().rejoinTable()) return;
+      if (useGame.getState().rejoinTable()) {
+        // The host may be unreachable. Keep another explicit attempt available without an automatic retry loop.
+        this.timer = window.setTimeout(() => this.setState({ pending: false, message: "Could not reach your table. Try Rejoin again." }), 15_000);
+        return;
+      }
     } catch {
       // A broken client connection must not take down the independent recovery surface.
     }
