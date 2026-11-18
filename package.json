@@ -171,6 +171,7 @@
     "profiles-client-prove": "node scripts/profiles-client-prove.mjs",
     "profiles-ui-prove": "node scripts/profiles-ui-prove.mjs",
     "profile-recovery-ui-prove": "node scripts/profile-recovery-ui-prove.mjs",
+    "profile-recovery-guards-prove": "node scripts/profile-recovery-guards-prove.mjs",
     "profile-records-prove": "node scripts/profile-records-prove.mjs",
     "hud-safe-area-prove": "node scripts/hud-safe-area-prove.mjs",
     "tray-prove": "node --import ./server/register.mjs scripts/tray-prove.mjs",
