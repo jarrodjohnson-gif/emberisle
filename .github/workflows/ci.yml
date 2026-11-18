@@ -496,6 +496,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run trade-sheet-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run trade-backdrop-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run trade-contrast-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a2'
         run: npm run practice-trade-prove
