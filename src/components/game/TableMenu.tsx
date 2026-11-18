@@ -118,10 +118,6 @@ export function TableMenu() {
   }, []);
 
   useEffect(() => {
-    if (state.phase === "over") close(false);
-  }, [state.phase]);
-
-  useEffect(() => {
     if (!asking) {
       if (refocusLeave.current) leaveRef.current?.focus();
       refocusLeave.current = false;

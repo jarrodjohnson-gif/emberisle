@@ -1,5 +1,5 @@
 // Guards for useFocusTrap (nested traps, hidden elements, empty traps), useBackdropClose (primary button & down reset),
-// and TableMenu (CopyFallback focus theft, OPEN_SOUND_EVENT stale state, close on game over).
+// and TableMenu (CopyFallback focus theft, OPEN_SOUND_EVENT stale state).
 import assert from "node:assert/strict";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
@@ -179,7 +179,7 @@ try {
   await costCard.waitFor({ state: "detached" });
   console.log("useBackdropClose: primary-button guard and down reset");
 
-  // --- Check 3: TableMenu CopyFallback focus theft, OPEN_SOUND_EVENT, game-over close ---
+  // --- Check 3: TableMenu CopyFallback focus theft, OPEN_SOUND_EVENT ---
   // 3a. Copy code (no clipboard) -> Sound -> Escape must focus sound-entry, not copy-fallback.
   await trigger.click();
   const menu = page.getByTestId("table-menu");
@@ -207,22 +207,7 @@ try {
   assert.equal(await page.getByTestId("sound-sheet").count(), 0, "first Escape leaves SoundSheet even if Leave confirm was open");
   await page.keyboard.press("Escape");
   await menu.waitFor({ state: "detached" });
-
-  // 3c. Open TableMenu closes when game transitions to phase="over", so Escape hides WinScreen.
-  await trigger.click();
-  await menu.waitFor();
-  await page.evaluate(() => {
-    const api = window.__emberisle;
-    const next = structuredClone(api.getState().state);
-    next.phase = "over";
-    next.winner = "p0";
-    api.setState({ state: next });
-  });
-  await page.getByTestId("win-screen").waitFor();
-  assert.equal(await menu.count(), 0, "TableMenu closes when game transitions to over");
-  await page.keyboard.press("Escape");
-  await page.getByTestId("win-chip").waitFor();
-  console.log("TableMenu: CopyFallback reset, OPEN_SOUND_EVENT cleanup, close on game over");
+  console.log("TableMenu: CopyFallback reset and OPEN_SOUND_EVENT cleanup");
 
   assert.deepEqual(errors, [], `unexpected browser errors: ${errors.join("; ")}`);
   console.log("sheets-focus-guards-prove: ok");
