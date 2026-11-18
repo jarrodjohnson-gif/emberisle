@@ -45,6 +45,7 @@
     "expanded-turns-prove": "node --import ./server/register.mjs scripts/expanded-turns-prove.mjs",
     "expanded-bots-prove": "node --import ./server/register.mjs scripts/expanded-bots-prove.mjs",
     "engine-guards-prove": "node --import ./server/register.mjs scripts/engine-guards-prove.mjs",
+    "paired-needs-expiry-prove": "node --import ./server/register.mjs scripts/paired-needs-expiry-prove.mjs",
     "wayfarer-modes-prove": "node --import ./server/register.mjs server/wayfarer-modes-prove.mjs",
     "game-text-prove": "node --import ./server/register.mjs scripts/game-text-prove.mjs",
     "wayfarer-setup-prove": "node --import ./server/register.mjs scripts/wayfarer-setup-prove.mjs",
