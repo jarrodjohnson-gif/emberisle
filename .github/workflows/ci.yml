@@ -532,6 +532,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run profile-records-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run lobby-records-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run first-game-coach-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a2'
         run: npm run render-recovery-prove
