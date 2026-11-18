@@ -15,8 +15,8 @@ export function advanceNeed(need: NeedSelection | undefined, player: string, bef
   const was = before.players.find(p => p.id === player), now = after.players.find(p => p.id === player);
   if (!was || !now || after.phase === 'over') return undefined;
   if (traded && need.kinds.some(kind => now.resources[kind] > was.resources[kind])) return undefined;
-  // `turn` counts whole table rounds. Count this player's completed turns instead.
-  const ended = before.phase === 'main' && before.current === player && after.current !== player;
+  // `turn` counts whole table rounds. Count this player's completed trading turns (not partner turns, which forbid player trades).
+  const ended = before.phase === 'main' && before.role !== 'partner' && before.current === player && after.current !== player;
   if (!ended) return need;
   return need.turnsLeft > 1 ? { kinds: need.kinds, turnsLeft: need.turnsLeft - 1 } : undefined;
 }
