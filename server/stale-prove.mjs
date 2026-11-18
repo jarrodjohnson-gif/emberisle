@@ -74,10 +74,8 @@ const lastSaveAt = new Map();
 const inRefused = new Set();
 
 function noteHostSave(code, msg) {
-  if (inRefused.has(code)) return;
-  if (msg.type !== "state" && msg.type !== "seats") return;
-  const at = typeof msg.serverNow === "number" ? msg.serverNow : Date.now();
-  lastSaveAt.set(code, Math.max(lastSaveAt.get(code) ?? 0, at));
+  if (inRefused.has(code) || msg.type !== "state" || typeof msg.serverNow !== "number") return;
+  lastSaveAt.set(code, Math.max(lastSaveAt.get(code) ?? 0, msg.serverNow));
 }
 
 function diskTurnDeadline(disk) {
