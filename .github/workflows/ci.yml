@@ -323,6 +323,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run online-sync-reset-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run finish-takeover-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run touch-place-prove
