@@ -27,7 +27,13 @@ export const QUICK_REACTIONS = [
 ] as const;
 
 let emotes: Promise<Record<string, string>> | null = null;
-export const loadEmotes = () => (emotes ??= import("@/components/game/emotes").then((module) => module.EMOTES));
+export const loadEmotes = () =>
+  (emotes ??= import("@/components/game/emotes")
+    .then((module) => module.EMOTES)
+    .catch((err) => {
+      emotes = null;
+      throw err;
+    }));
 
 const COOLDOWN = 1000;
 // The host takes one soundboard tap per seat every 3 s (server/host.mjs SOUND_MS); the chips rest for the same time.
@@ -81,8 +87,15 @@ export function setTab(tab: ChatTab) {
 let reactSeq = 0;
 // When this browser saw each reaction (its own `at` is the host's clock), so a seat's newest bubble is picked on one clock.
 export const reactArrived = new WeakMap<Reaction, number>();
+let coolTimer: ReturnType<typeof setTimeout> | undefined;
+let restTimer: ReturnType<typeof setTimeout> | undefined;
 useGame.subscribe((s, p) => {
-  if (s.code !== p.code) useTalk.setState({ reactLog: [], arrived: new Map() });
+  if (s.code !== p.code) {
+    clearTimeout(coolTimer);
+    clearTimeout(restTimer);
+    useTalk.setState({ reactLog: [], arrived: new Map(), cooling: false, resting: false });
+    return;
+  }
   // The store's chat handler appends one line to the old array; a welcome replaces the array with the history.
   const last = s.chat.at(-1);
   if (s.chat !== p.chat && last && last !== p.chat.at(-1) && s.chat.at(-2) === p.chat.at(-1)) {
@@ -104,8 +117,6 @@ useGame.subscribe((s, p) => {
   }
 });
 
-let coolTimer: ReturnType<typeof setTimeout> | undefined;
-let restTimer: ReturnType<typeof setTimeout> | undefined;
 export function sendReaction(emote: string) {
   const s = useGame.getState();
   if (s.spectator || useTalk.getState().cooling) return;
@@ -115,11 +126,12 @@ export function sendReaction(emote: string) {
   s.sendReact(emote);
 }
 export function sendBoard(id: string) {
-  if (useTalk.getState().resting) return;
+  const s = useGame.getState();
+  if (s.spectator || useTalk.getState().resting) return;
   useTalk.setState({ resting: true });
   clearTimeout(restTimer);
   restTimer = setTimeout(() => useTalk.setState({ resting: false }), SOUND_REST);
-  useGame.getState().sendSound(id);
+  s.sendSound(id);
 }
 
 // Tab 1's row of the six basic emoji, right above the composer: one tap sends. In the game dock, keys 1-6 send them too
