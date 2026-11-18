@@ -257,6 +257,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run lib-helpers-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run client-haptics-guards-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-harbor-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-action-order-prove

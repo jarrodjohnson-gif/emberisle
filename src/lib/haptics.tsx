@@ -13,9 +13,10 @@ export function available() {
 }
 
 const KEY = "emberisle-haptics";
-let on = (() => {
+const readOn = () => {
   try { return localStorage.getItem(KEY) !== "0"; } catch { return true; }
-})();
+};
+let on = readOn();
 const listeners = new Set<() => void>();
 const subscribe = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; };
 const isHapticsOn = () => on;
@@ -25,14 +26,27 @@ function setHaptics(value: boolean) {
   for (const listener of listeners) listener();
 }
 
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === KEY || e.key === null) {
+      const next = readOn();
+      if (next !== on) {
+        on = next;
+        for (const listener of listeners) listener();
+      }
+    }
+  });
+}
+
 export function buzz(ms: number) {
-  if (!ms || !unlocked || isMuted() || !on || !available()) return;
+  if (typeof ms !== "number" || !Number.isFinite(ms) || ms <= 0 || !unlocked || isMuted() || !on || !available()) return;
   try { navigator.vibrate?.(ms); } catch { /* an embedding may forbid vibration */ }
 }
 export const turn = () => buzz(HAPTIC_MS.yourTurn);
 export const pay = (own?: boolean) => { if (own) buzz(HAPTIC_MS.pay); };
 // Both local practice and socket offers enter this store field. Install before bootstrap starts either source.
 const unsubscribeOffers = useGame.subscribe((state, previous) => {
+  if (previous.code && state.code !== previous.code) return;
   const offer = state.offer;
   if (offer && offer !== previous.offer && offer.from !== state.localId && !state.spectator) buzz(HAPTIC_MS.tradeOffer);
 });
@@ -50,7 +64,7 @@ export function player(before: GameState | null, after: GameState, me: string, m
     if (sound === "your_turn") buzz(HAPTIC_MS.yourTurn);
     if (ownsPiece && (sound === "path_place" || sound === "outpost_place" || sound === "stronghold_place")) buzz(HAPTIC_MS.land);
     if (ownFortune && sound === "card_play") buzz(HAPTIC_MS.fortune);
-    if (me && sound === "win") buzz(HAPTIC_MS.win);
+    if ((mode === "hotseat" || me) && sound === "win") buzz(HAPTIC_MS.win);
   };
 }
 
