@@ -818,6 +818,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run player-menu-guards-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run title-setup-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run seat-tray-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run six-seats-prove

@@ -50,7 +50,7 @@ export function SetupPipHints() {
       let bestD = 36;
       for (const id of legal) {
         const p = isle.screenOf(id);
-        if (!p) continue;
+        if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y)) continue;
         const d = Math.hypot(p.x - e.clientX, p.y - e.clientY);
         if (d < bestD) {
           bestD = d;
@@ -72,19 +72,24 @@ export function SetupPipHints() {
     const tick = () => {
       const isle = (window as unknown as { __isle?: IsleApi }).__isle;
       const p = isle?.screenOf(focusId) ?? null;
-      setAnchor(p);
+      setAnchor(p && Number.isFinite(p.x) && Number.isFinite(p.y) ? p : null);
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [focusId]);
 
-  if (!opening || !state || !focusId || !anchor) return null;
+  if (!opening || !state || !focusId || !anchor || !Number.isFinite(anchor.x) || !Number.isFinite(anchor.y)) return null;
   const vertex = state.vertices.find((v) => v.id === focusId);
   if (!vertex) return null;
   const pips = producingPips(state, vertex);
   // Illegal corners never reach here: focusId is always in the current legal set.
   if (!pips.length) return null;
+
+  const vw = typeof window !== "undefined" ? window.innerWidth : 800;
+  const vh = typeof window !== "undefined" ? window.innerHeight : 600;
+  const left = Math.max(72, Math.min(vw - 72, anchor.x));
+  const top = Math.max(48, Math.min(vh - 16, anchor.y));
 
   return (
     <div
@@ -92,7 +97,7 @@ export function SetupPipHints() {
       data-vertex={focusId}
       role="status"
       className="pointer-events-none fixed z-30 -translate-x-1/2 -translate-y-[120%] rounded-control border border-accent/40 bg-surface px-2 py-1 text-sm text-fg shadow-lg"
-      style={{ left: anchor.x, top: anchor.y }}
+      style={{ left, top }}
     >
       <span className="text-xs text-muted">Pips · </span>
       <span className="font-medium tabular-nums">{pips.join(" · ")}</span>
