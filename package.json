@@ -155,6 +155,7 @@
     "rotate-prove": "node scripts/rotate-prove.mjs",
     "hole-prove": "node scripts/hole-prove.mjs",
     "my-numbers-prove": "node scripts/my-numbers-prove.mjs",
+    "my-numbers-glow-prove": "node --import ./server/register.mjs scripts/my-numbers-glow-prove.mjs",
     "pan-prove": "node scripts/pan-prove.mjs",
     "board-touch-prove": "node scripts/board-touch-prove.mjs",
     "banner-stable-prove": "node scripts/banner-stable-prove.mjs",
