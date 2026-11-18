@@ -43,6 +43,8 @@ try {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   await page.addInitScript(() => {
     localStorage.setItem("emberisle-first-game-coach", '"done"');
+    // Match my-numbers-prove.mjs: skip the SwiftShader crystal-water probe so it cannot stall the 1200 ms glow timer.
+    localStorage.setItem("emberisle-water", "simple");
     HTMLMediaElement.prototype.play = () => Promise.resolve();
   });
   await page.goto(`http://127.0.0.1:${port}/`);
