@@ -617,7 +617,7 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
         // A success frees its own reservation and nothing else; a failure stays counted in every window.
         if (!ok && at !== undefined) fail(g, at, Boolean(p));
       }
-      if (!ok || !p || reservation === undefined || !samePin(p, held)) return null;
+      if (!ok || !p || reservation === undefined || own(d.logins, name) !== p.id || !samePin(p, held)) return null;
       // Expired temporary PIN: the verifier is no longer valid; treat as a failed login.
       // This counts as a guessing failure (contract §4 and §6 of expired-temp-PIN; see localResetPin comment).
       if (p.pinMustChange && p.tempPinExpiresAt !== null && p.tempPinExpiresAt <= now) {
@@ -717,13 +717,14 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
       if (held && !held.ok) { fail(p.guard, at, true); return { error: "signInFailed" }; }
       // #1069: renaming back to one of this profile's own former logins releases that reservation. Any other rename adds one,
       // and is refused once the profile holds RESERVED_PER_PROFILE; no old reservation is ever evicted to make room.
-      const reclaim = isRename && own(d.reservedLogins, newLogin) === id;
-      if (isRename && !reclaim && (has(d.logins, newLogin) || has(d.reservedLogins, newLogin))) return { error: "loginTaken" };
-      if (isRename && !reclaim && Object.values(d.reservedLogins).filter((v) => v === id).length >= RESERVED_PER_PROFILE) return { error: "loginLimit" };
+      const renaming = isRename && newLogin !== p.login;
+      const reclaim = renaming && own(d.reservedLogins, newLogin) === id;
+      if (renaming && !reclaim && (has(d.logins, newLogin) || has(d.reservedLogins, newLogin))) return { error: "loginTaken" };
+      if (renaming && !reclaim && Object.values(d.reservedLogins).filter((v) => v === id).length >= RESERVED_PER_PROFILE) return { error: "loginLimit" };
       const edited = structuredClone(p);
       try { _applyEditFields(edited, f, colors); }
       catch (e) { if (e instanceof ProfileError) return { error: e.code }; throw e; }
-      if (isRename) {
+      if (renaming) {
         if (reclaim) delete d.reservedLogins[newLogin];
         delete d.unknownLogins[newLogin];
         if (d.unknownRecovery) delete d.unknownRecovery[newLogin];
@@ -1011,7 +1012,7 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
         gameId: o.gameId,
         startedAt: o.startedAt,
         endedAt: o.endedAt,
-        victoryTarget: Number.isSafeInteger(o.victoryTarget) ? o.victoryTarget : null,
+        victoryTarget: count(o.victoryTarget) ? o.victoryTarget : null,
         players: o.players.map((p) => ({
           profileId: rows.includes(p) && live.has(p.profileId) ? p.profileId : null,
           name: typeof p.profileId === "string" && has(d.tombstones, p.profileId) ? DELETED_NAME : p.name,
