@@ -725,6 +725,8 @@ export function openProfiles(dir, { colors, clock = Date.now, fault = () => {} }
       catch (e) { if (e instanceof ProfileError) return { error: e.code }; throw e; }
       if (isRename) {
         if (reclaim) delete d.reservedLogins[newLogin];
+        delete d.unknownLogins[newLogin];
+        if (d.unknownRecovery) delete d.unknownRecovery[newLogin];
         d.reservedLogins[p.login] = id;
         delete d.logins[p.login];
         edited.login = newLogin;
