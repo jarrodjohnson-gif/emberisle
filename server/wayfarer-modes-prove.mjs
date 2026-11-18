@@ -59,11 +59,15 @@ console.log('wayfarer-modes-prove: rules checks passed');
 {
  const {spawn}=await import('node:child_process'),{mkdtempSync,readFileSync,writeFileSync,rmSync}=await import('node:fs'),{tmpdir}=await import('node:os'),{default:path}=await import('node:path'),{default:WebSocket}=await import('ws');
  const dir=mkdtempSync(path.join(tmpdir(),'emberisle-wayfarer-rules-')),sockets=[],tables=[],wait=ms=>new Promise(r=>setTimeout(r,ms));let host,port;
+ const cleanup=()=>{for(const ws of sockets)ws.terminate();if(host?.exitCode===null&&host?.signalCode===null)host.kill('SIGKILL');rmSync(dir,{recursive:true,force:true,maxRetries:5,retryDelay:50});};
+ const onSignal=()=>process.exit(130);
+ process.on('exit',cleanup);
+ for(const s of ['SIGINT','SIGTERM'])process.on(s,onSignal);
  // Only this child proof supplies deterministic dice; production keeps crypto dice. Seat secrets use node:crypto independently.
  writeFileSync(path.join(dir,'dice.mjs'),'let n=0; crypto.getRandomValues = a => { a.fill(n++ % 2 ? 3 : 2); return a; };');
  async function start(){let err='';host=spawn(process.execPath,['--import',path.join(dir,'dice.mjs'),'--import','./register.mjs','host.mjs'],{cwd:new URL('.',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:dir,RESULTS_DIR:dir+'/results',SAVE_MS:'20',GRACE_MS:'600000',HOLD_MS:'600000',TURN_MS:'600000',ACT_CAP:'1000',ACT_RATE:'1000'}});host.stderr.on('data',d=>err+=d);port=await new Promise((resolve,reject)=>{host.stdout.on('data',d=>{const m=String(d).match(/listening (\d+)/);if(m)resolve(Number(m[1]));});host.once('exit',c=>reject(Error(`host ${c}: ${err}`)));});}
  async function client(hello){const ws=new WebSocket(`ws://127.0.0.1:${port}`),inbox=[];let state;sockets.push(ws);ws.on('message',d=>{const m=JSON.parse(String(d));inbox.push(m);if(m.type==='state')state=m;});await new Promise(r=>ws.once('open',r));ws.send(JSON.stringify({type:'hello',...hello}));const next=async(type,test=()=>true)=>{for(let n=0;n<500;n++){const i=inbox.findIndex(m=>m.type===type&&test(m));if(i>=0)return inbox.splice(i,1)[0];await wait(10);}throw Error(`timeout ${type}: ${JSON.stringify(inbox.slice(-2))}`);};const welcome=await next('welcome');return{welcome,next,send:m=>ws.send(JSON.stringify({...state?.actionStamp,cid:crypto.randomUUID(),...m}))};}
- async function stop(){for(const ws of sockets)ws.terminate();if(host?.exitCode===null){host.kill('SIGKILL');await new Promise(r=>host.once('exit',r));}}
+ async function stop(){for(const ws of sockets)ws.terminate();if(host?.exitCode===null&&host?.signalCode===null){host.kill('SIGKILL');await new Promise(r=>host.once('exit',r));}}
  try{
   await start();for(const mode of ['on','off']){const p=[await client({name:'Ember',wayfarerMode:mode})],code=p[0].welcome.code;for(const name of ['Tide','Pine'])p.push(await client({code,name}));for(const a of p)a.send({type:'ready',value:true});await p[0].next('seats',m=>m.seats.length===3&&m.seats.every(s=>s.ready));p[0].send({type:'start'});await p[0].next('state');tables.push({code,mode,p});}
   await wait(150);await stop();
@@ -73,6 +77,6 @@ console.log('wayfarer-modes-prove: rules checks passed');
    else{a.send({type:'rob',hexId:t.hex,stealFrom:null});const moved=await a.next('state',m=>m.game.seq>discarded.game.seq);assert.equal(moved.game.phase,'main');assert.equal(moved.game.players.find(p=>p.id==='p0').resources.timber,t.mode==='on'?1:0);assert.equal(moved.game.hexes.find(h=>h.id===t.hex).blocked,true);}
    const before=await t.p[2].next('state',m=>m.game.phase==='main'),nextHex=before.game.hexes.find(h=>h.id!==before.game.robberHex).id;a.send({type:'play',card:'knight',hexId:t.mode==='off'?'':nextHex,stealFrom:null});const played=await a.next('state',m=>m.game.seq>before.game.seq);assert.equal(played.game.players.find(p=>p.id==='p0').knightsPlayed,1);assert.equal(played.game.phase,'main');if(t.mode==='off')assert.equal(played.game.hexes.some(h=>h.blocked),false);a.send({type:'setWayfarerMode',value:t.mode==='off'?'on':'off'});assert.match((await a.next('error')).message,/fixed when the table is created/);console.log(`ok hosted ${t.mode}: real seven/discard, public legal targets, refused theft/targets, fortune and immutable rule`);
   }
- }finally{await stop();rmSync(dir,{recursive:true,force:true});}
+ }finally{await stop();rmSync(dir,{recursive:true,force:true});process.off('exit',cleanup);for(const s of ['SIGINT','SIGTERM'])process.off(s,onSignal);}
 }
 console.log('wayfarer-modes-prove: hosted checks passed');
