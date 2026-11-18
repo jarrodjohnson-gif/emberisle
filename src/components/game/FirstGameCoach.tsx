@@ -17,14 +17,52 @@ type Progress = {
 };
 type Saved = Progress | "done" | null;
 let memory: Saved = null;
-function read(): Saved {
-  try { const raw = localStorage.getItem(KEY); return raw === null ? memory : JSON.parse(raw) as Saved; }
-  catch { return memory; }
+const listeners = new Set<(saved: Saved) => void>();
+const notify = (s: Saved) => {
+  memory = s;
+  for (const l of listeners) l(s);
+};
+
+export function readCoach(): Saved {
+  try {
+    const raw = localStorage.getItem(KEY);
+    return raw === null ? null : (JSON.parse(raw) as Saved);
+  } catch {
+    return memory;
+  }
 }
-function save(value: Saved) {
-  memory = value;
-  try { localStorage.setItem(KEY, JSON.stringify(value)); } catch { /* Tips still work without storage. */ }
+
+export function saveCoach(value: Saved) {
+  notify(value);
+  try {
+    if (value === null) localStorage.removeItem(KEY);
+    else localStorage.setItem(KEY, JSON.stringify(value));
+  } catch {
+    /* Tips still work without storage. */
+  }
 }
+
+export function subscribeCoach(listener: (saved: Saved) => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+export function resetCoachMemory(val: Saved = null) {
+  memory = val;
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === KEY || e.key === null) {
+      notify(readCoach());
+    }
+  });
+}
+
+const read = readCoach;
+const save = saveCoach;
 const signature = (s: GameState) => `${s.seed}:${s.hexes.map((h) => `${h.terrain}${h.pip ?? ""}`).join()}`;
 const paths = (s: GameState, id: string) => s.edges.filter((e) => e.path === id).length;
 const homes = (s: GameState, id: string) => s.vertices.filter((v) => v.building?.playerId === id).length;
@@ -43,6 +81,11 @@ export function FirstGameCoach({ className, hidden }: { className?: string; hidd
   useEffect(() => {
     let previous: GameState | null = null;
     let saved = read();
+    const unsubCoach = subscribeCoach((s) => {
+      saved = s;
+      if (s === null) skipped.current = false;
+      setProgress(s);
+    });
     const update = () => {
       const store = useGame.getState();
       const next = store.state;
@@ -79,7 +122,11 @@ export function FirstGameCoach({ className, hidden }: { className?: string; hidd
       }
     };
     update();
-    return useGame.subscribe(update);
+    const unsubGame = useGame.subscribe(update);
+    return () => {
+      unsubCoach();
+      unsubGame();
+    };
   }, []);
 
   if (mode !== "ai" || !state || spectator || !progress || progress === "done" || progress.game !== signature(state) || state.current !== progress.actor) return null;
