@@ -57,6 +57,7 @@
     "trade-map-test": "node --import ./server/register.mjs scripts/trade-map.test.mjs",
     "trade-tabs-prove": "node --import ./server/register.mjs scripts/trade-tabs-prove.mjs",
     "trade-sheet-prove": "node --import ./server/register.mjs scripts/trade-sheet-prove.mjs",
+    "trade-backdrop-prove": "node scripts/trade-backdrop-prove.mjs",
     "secondary-guards-prove": "node --import ./server/register.mjs scripts/secondary-guards-prove.mjs",
     "trade-contrast-prove": "node scripts/trade-contrast-prove.mjs",
     "sounds-prove": "node scripts/sounds-prove.mjs",
