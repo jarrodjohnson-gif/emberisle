@@ -307,6 +307,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-rename-cap-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-rename-unknown-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-recovery-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run server-needs-prove
