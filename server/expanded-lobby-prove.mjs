@@ -510,6 +510,9 @@ function partnerRoom(code, g, human) {
     throw new Error(`no saved game at seq ${seq}`);
   };
   const STALE = "The table has updated. Please try again.";
+  const OFFER_GONE = "Offer is gone.";
+  // #1778: a late "Offer is gone." from an earlier tradeAnswer (e.g. arriving during diskGame) is not a reply to this move.
+  const moveError = () => h.inbox.find((x) => x.type === "error" && !(answered > 0 && x.message === OFFER_GONE));
   const mine = (st) => st.game.phase !== "over" && (st.legal.actions.length || st.legal.outpost.length || st.legal.path.length || st.legal.wayfarer.length || st.legal.discard);
   const stop = Date.now() + 240_000;
   let answered = 0;
@@ -531,9 +534,9 @@ function partnerRoom(code, g, human) {
     const intent = toIntent(action) ?? { type: "pass" };
     h.act(intent);
     moves++;
-    await h.until(() => h.state.game.seq !== st.game.seq || h.inbox.some((x) => x.type === "error"), "an answer to my move", 5000);
+    await h.until(() => h.state.game.seq !== st.game.seq || moveError(), "an answer to my move", 5000);
     if (h.state.game.seq === st.game.seq) {
-      const err = h.inbox.find((x) => x.type === "error");
+      const err = moveError();
       // The host answers this while the room is busy (it is saving, or the table moved between my read and my send). It
       // is not a refusal of the move itself: read the state again and choose again. On CI it hit a roll (#1660).
       if (err?.message === STALE) continue;
