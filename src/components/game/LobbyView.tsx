@@ -18,15 +18,18 @@ function OwnName({ seat }: { seat: Seat }) {
   const rename = useGame((s) => s.renameSeat);
   const [draft, setDraft] = useState<string | null>(null);
   const done = useRef(false);
-  const finish = (save: boolean) => {
+  const refocus = useRef(false);
+  const finish = (save: boolean, byKey = false) => {
     if (done.current) return;
     done.current = true;
+    refocus.current = byKey;
     if (save && draft !== null && draft.trim() && draft.trim() !== seat.name) rename(draft);
     setDraft(null);
   };
   if (draft === null) {
     return (
       <button
+        ref={(el) => { if (el && refocus.current) { refocus.current = false; el.focus(); } }}
         type="button"
         data-testid="rename-seat"
         aria-label={`Your name is ${seat.name}. Change it`}
@@ -51,8 +54,8 @@ function OwnName({ seat }: { seat: Seat }) {
       onBlur={() => finish(true)}
       onKeyDown={(e) => {
         e.stopPropagation();
-        if (e.key === "Enter") finish(true);
-        if (e.key === "Escape") finish(false);
+        if (e.key === "Enter") { e.preventDefault(); finish(true, true); }
+        if (e.key === "Escape") { e.preventDefault(); finish(false, true); }
       }}
     />
   );
@@ -87,7 +90,7 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, SeatN
   const readyCount = seats.filter(s => s.ready).length;
   const missing = least - seats.length;
   const status = missing > 0 ? `Need ${missing} more player${missing === 1 ? "" : "s"}` : readyCount === seats.length ? "All ready" : `${readyCount} of ${seats.length} ready`;
-  const { state: copied, copy } = useCopy<"link">();
+  const { state: copied, copy } = useCopy<"link">(code);
   const codeElement = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
     // The host issues four-character codes. Preserve longer display fixtures unchanged.
