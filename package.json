@@ -91,6 +91,7 @@
     "orphan-check": "node scripts/orphan-check.mjs",
     "chat-prove": "node scripts/chat-prove.mjs",
     "chat-text-prove": "node scripts/chat-text-prove.mjs",
+    "hud-chat-guards-prove": "node scripts/hud-chat-guards-prove.mjs",
     "stickers-prove": "node scripts/stickers-prove.mjs",
     "sticker-host-prove": "node --import ./server/register.mjs server/sticker-host-prove.mjs",
     "sticker-tray-prove": "node scripts/sticker-tray-prove.mjs",
