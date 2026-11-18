@@ -4,10 +4,11 @@
 // Ruffle is a script tag, never a static import. Pictures: docs/proofs/1262/.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
+import { hostPort as waitForHostPort } from "./proof-host-port.mjs";
 import { createServer } from "vite";
 
 const out = process.env.LOBBY_PROOF_OUT || "docs/proofs/1262";
@@ -42,24 +43,14 @@ if (existsSync("dist/assets")) {
 }
 console.log("ok  source graph: Ruffle is not imported");
 
-const rooms = mkdtempSync(path.join(tmpdir(), "emberisle-1262-rooms-"));
-const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
-  cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR: rooms, RESULTS_DIR: `${rooms}/results` },
-});
-const hostPort = await new Promise((resolve, reject) => {
-  host.on("error", reject);
-  host.stdout.on("data", (d) => {
-    const m = String(d).match(/listening (\d+)/);
-    if (m) resolve(Number(m[1]));
-  });
-  host.on("exit", (code) => reject(new Error(`host exited ${code}`)));
-});
-const vite = await createServer({ server: { host: "127.0.0.1", port: 0 }, logLevel: "error" });
-await vite.listen();
-const url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${hostPort}`;
-const browser = await chromium.launch({
-  args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--autoplay-policy=no-user-gesture-required"],
+let rooms;
+let host;
+let vite;
+let url;
+let browser;
+process.on("exit", () => {
+  if (host && host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  if (rooms) rmSync(rooms, { recursive: true, force: true });
 });
 const problems = [];
 const requests = [];
@@ -266,6 +257,18 @@ async function landscape(page, label) {
 }
 
 try {
+  rooms = mkdtempSync(path.join(tmpdir(), "emberisle-1262-rooms-"));
+  host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+    cwd: new URL("../server/", import.meta.url),
+    env: { ...process.env, PORT: "0", ROOMS_DIR: rooms, PROFILES_DIR: path.join(rooms, "profiles"), RESULTS_DIR: `${rooms}/results` },
+  });
+  const hostPort = await waitForHostPort(host);
+  vite = await createServer({ server: { host: "127.0.0.1", port: 0 }, logLevel: "error" });
+  await vite.listen();
+  url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${hostPort}`;
+  browser = await chromium.launch({
+    args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--autoplay-policy=no-user-gesture-required"],
+  });
   const desk = await client({ width: 1280, height: 720 }, false);
   assert.equal(await desk.locator(".lm button").count(), 2, "two lobby controls");
   assert.equal(await desk.getByTestId("lobby-chat").getByRole("tab").count(), 2, "chat still has two tabs");
@@ -392,7 +395,13 @@ try {
   if (problems.length) console.error(problems.join("\n"));
   throw error;
 } finally {
-  await browser.close();
-  await vite.close();
-  host.kill();
+  if (browser) await browser.close().catch(() => {});
+  if (vite) await vite.close().catch(() => {});
+  if (host && host.exitCode === null && host.signalCode === null) {
+    const exited = new Promise((resolve) => host.once("exit", resolve));
+    host.kill();
+    await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 2000))]);
+    if (host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  }
+  if (rooms) rmSync(rooms, { recursive: true, force: true });
 }

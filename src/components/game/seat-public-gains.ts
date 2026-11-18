@@ -60,7 +60,7 @@ export function publicSeatChanges(previous: PublicState, next: PublicState): Sea
     goods[resource] = (goods[resource] ?? 0) + n;
     changes.set(player, goods);
   };
-  if ((next.rolls ?? 0) > (previous.rolls ?? 0)) {
+  if (next.seq > previous.seq && (next.rolls ?? 0) > (previous.rolls ?? 0)) {
     for (const gain of next.lastProduction ?? []) {
       if (RESOURCES.includes(gain.res) && gain.n > 0) add(gain.player, gain.res, gain.n);
     }
