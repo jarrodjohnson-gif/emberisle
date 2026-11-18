@@ -6,37 +6,35 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
+import { hostPort as waitForHostPort } from "./proof-host-port.mjs";
 import { createServer } from "vite";
 
-const PORT = Number(process.env.VITE_PORT) || 8196;
-const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-storage-rooms-"));
-process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
-
-const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
-  cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, RENAME_MS: "0" },
+const PORT = Number(process.env.VITE_PORT) || 0;
+let ROOMS_DIR;
+let host;
+let vite;
+let browser;
+process.on("exit", () => {
+  if (host && host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  if (ROOMS_DIR) rmSync(ROOMS_DIR, { recursive: true, force: true });
 });
-process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 
-const hostPort = await new Promise((resolve) =>
-  host.stdout.on("data", (d) => {
-    const m = String(d).match(/listening (\d+)/);
-    if (m) resolve(Number(m[1]));
-  }),
-);
-
-const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
-await vite.listen();
-
-const browser = await chromium.launch({
-  args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
-});
-
 const errors = [];
-const url = `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`;
 
 try {
+  ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-storage-rooms-"));
+  host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+    cwd: new URL("../server/", import.meta.url),
+    env: { ...process.env, PORT: "0", ROOMS_DIR, PROFILES_DIR: path.join(ROOMS_DIR, "profiles"), RESULTS_DIR: `${ROOMS_DIR}/results`, RENAME_MS: "0" },
+  });
+  const hostPort = await waitForHostPort(host);
+  vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: PORT !== 0 }, logLevel: "error" });
+  await vite.listen();
+  const url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${hostPort}`;
+  browser = await chromium.launch({
+    args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+  });
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   await context.addInitScript(() => {
     const block = () => {
@@ -80,7 +78,13 @@ try {
   assert.deepEqual(errors, [], "no console or page errors with blocked storage");
   console.log("storage-blocked-prove ok: title, play and host load with zero errors");
 } finally {
-  await browser.close();
-  await vite.close();
-  host.kill();
+  if (browser) await browser.close().catch(() => {});
+  if (vite) await vite.close().catch(() => {});
+  if (host && host.exitCode === null && host.signalCode === null) {
+    const exited = new Promise((resolve) => host.once("exit", resolve));
+    host.kill();
+    await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 2000))]);
+    if (host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  }
+  if (ROOMS_DIR) rmSync(ROOMS_DIR, { recursive: true, force: true });
 }
