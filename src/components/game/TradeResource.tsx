@@ -15,11 +15,14 @@ export function TradeResource({ resource, value, owned, side, canMore, onChange,
   const removing = useRef(false);
   const timer = useRef(0);
   const held = useRef(false);
+  const down = useRef(false);
   const id = `trade-${side}-${resource}`;
   const name = RESOURCE_LABEL[resource];
   const more = () => { if (canMore) { play("ui_click"); onChange(value + 1); } };
   const less = () => { if (value) { play("ui_click"); onChange(value - 1); } };
   const stop = () => clearTimeout(timer.current);
+  const end = () => { down.current = false; stop(); };
+  useEffect(() => stop, []);
   useEffect(() => {
     if (value === 0 && removing.current) {
       removing.current = false;
@@ -28,13 +31,13 @@ export function TradeResource({ resource, value, owned, side, canMore, onChange,
     }
   }, [value]);
   return <div className={`trade-resource trade-side-${side} goods-${resource}`} data-selected={value > 0 || undefined} data-testid={id}>
-    <button ref={add} className="trade-add" aria-label={`More ${name} to ${side}`} aria-describedby={side !== "want" ? `${id}-owned ${id}-count` : `${id}-count`}
+    <button ref={add} type="button" className="trade-add" aria-label={`More ${name} to ${side}`} aria-describedby={side !== "want" ? `${id}-owned ${id}-count` : `${id}-count`}
       disabled={!canMore && !value} aria-disabled={!canMore || undefined}
       onClick={() => { if (held.current) held.current = false; else more(); }}
-      onKeyDown={(e) => { if (e.key === "-") less(); else if (e.key === "+") more(); }}
-      onPointerDown={() => { held.current = false; stop(); timer.current = window.setTimeout(() => { held.current = true; less(); }, 500); }}
-      onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop}
-      onContextMenu={(e) => { e.preventDefault(); stop(); if (!held.current) less(); held.current = true; }}>
+      onKeyDown={(e) => { held.current = false; if (e.key === "-") less(); else if (e.key === "+") more(); }}
+      onPointerDown={(e) => { held.current = false; stop(); if (e.button === 0) { down.current = true; timer.current = window.setTimeout(() => { held.current = true; less(); }, 500); } }}
+      onPointerUp={end} onPointerLeave={end} onPointerCancel={end}
+      onContextMenu={(e) => { e.preventDefault(); stop(); if (!held.current) less(); if (down.current) held.current = true; }}>
       <Icon aria-hidden="true" className="size-5" />
       {side !== "want"
         ? <span id={`${id}-owned`} className="trade-owned" data-testid="trade-owned"><span className="sr-only">Have </span>{owned}</span>
@@ -42,7 +45,7 @@ export function TradeResource({ resource, value, owned, side, canMore, onChange,
       <output id={`${id}-count`} aria-label={`${name} to ${side}`} className="sr-only">{value}</output>
     </button>
     {value > 0 ? <span aria-hidden="true" className="trade-badge" data-testid="trade-badge">{side === "want" ? "+" : "−"}{value}</span> : null}
-    {value > 0 ? <button className="trade-remove" data-testid={`trade-minus-${side}-${resource}`} aria-label={`Fewer ${name} to ${side}`} aria-describedby={`${id}-count`} onFocus={() => { removing.current = true; }} onBlur={() => { removing.current = false; }} onClick={() => {
+    {value > 0 ? <button type="button" className="trade-remove" data-testid={`trade-minus-${side}-${resource}`} aria-label={`Fewer ${name} to ${side}`} aria-describedby={`${id}-count`} onFocus={() => { removing.current = true; }} onBlur={() => { removing.current = false; }} onClick={() => {
       if (value === 1) add.current?.focus();
       less();
     }}><span aria-hidden="true">−</span></button> : null}
