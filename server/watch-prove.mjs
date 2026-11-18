@@ -305,7 +305,8 @@ await until(() => all.every((x) => x.state.phase === "over") && [w1, w2].every((
 stage = "terminal takeover baseline";
 b.t.close();
 await until(() => a.seats.find((s) => s.name === b.name)?.away, "the finished seat dropping");
-await until(() => [a.state, w1.state().game, w2.state().game].every((g) => g.players.find((p) => p.id === b.you)?.kind === "bot"), "the finished seat's takeover reaching the watchers");
+await new Promise((r) => setTimeout(r, GRACE + 250));
+if (![a.state, w1.state().game, w2.state().game].every((g) => { const p = g.players.find((x) => x.id === b.you); return p?.kind === "human" && p.name === b.name; })) fail("a finished seat was taken over after the win", [a.state, w1.state().game, w2.state().game].map((g) => g.players.find((x) => x.id === b.you)));
 const terminalBaseline = `watch proof terminal baseline ${a.state.seq}`;
 a.t.say(terminalBaseline);
 await until(() => [a, c, w1, w2].every((p) => p.chats.some((line) => line.text === terminalBaseline)), "the terminal baseline reaching every connected socket");
