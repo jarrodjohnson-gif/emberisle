@@ -119,15 +119,37 @@ try {
     await sheet.getByRole("form", { name: "Sign in" }).waitFor();
     assert.equal(await sheet.getByLabel("PIN", { exact: true }).inputValue(), "", "switching Create profile -> Sign in clears PIN");
 
-    // Check 3: code -> save -> Done -> New recovery code starts with empty PIN.
+    // Check 3: mounted ProfileRecovery resets PIN, errors, written, and copied across code <-> save.
+    await ctx.grantPermissions(["clipboard-read", "clipboard-write"]);
     await sheet.getByLabel("Login").fill("ember-user");
     await sheet.getByLabel("PIN", { exact: true }).fill("4821");
     await sheet.getByRole("button", { name: "Sign in", exact: true }).click();
     await sheet.getByText("Signed in as").waitFor();
     await sheet.getByRole("button", { name: "Get a recovery code" }).click();
+    await sheet.getByLabel("Current PIN").fill("48");
+    await sheet.getByRole("button", { name: "Make new code" }).click();
+    await sheet.getByText("Enter four digits.").waitFor();
+    await sheet.getByLabel("Current PIN").fill("4821");
+    // Keep view="code" while switching kind code -> save -> code -> save on the same mounted instance.
+    await page.evaluate(() => window.__emberisle.getState().profile.code("K7QM4X", Date.now()));
+    await sheet.getByRole("heading", { name: "Save your recovery code" }).waitFor();
+    await sheet.getByRole("button", { name: "Copy" }).click();
+    await sheet.getByRole("button", { name: "Copied" }).waitFor();
+    await sheet.getByLabel("I've written it down").check();
+    assert.equal(await sheet.getByRole("button", { name: "Done" }).isDisabled(), false, "Done enables when written is ticked");
+
+    await page.evaluate(() => window.__emberisle.getState().profile.code(null, Date.now()));
+    await sheet.getByLabel("Current PIN").waitFor();
+    assert.equal(await sheet.getByLabel("Current PIN").inputValue(), "", "returning to code clears typed PIN");
+    assert.equal(await sheet.getByText("Enter four digits.").count(), 0, "returning to code clears prior field error");
+
     await sheet.getByLabel("Current PIN").fill("4821");
     await sheet.getByRole("button", { name: "Make new code" }).click();
     await sheet.getByRole("heading", { name: "Save your recovery code" }).waitFor();
+    assert.equal(await sheet.getByLabel("I've written it down").isChecked(), false, "save screen starts with written box unchecked");
+    assert.equal(await sheet.getByRole("button", { name: "Done" }).isDisabled(), true, "save screen keeps Done disabled until ticked");
+    assert.equal(await sheet.getByRole("button", { name: "Copy", exact: true }).count(), 1, "save screen resets Copied back to Copy");
+    assert.equal(await sheet.locator("input").evaluateAll((els) => els.some((el) => el.value === "4821")), false, "no input on save screen holds typed PIN");
     await sheet.getByLabel("I've written it down").check();
     await sheet.getByRole("button", { name: "Done" }).click();
     await sheet.getByRole("button", { name: "New recovery code" }).click();
