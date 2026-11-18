@@ -130,6 +130,8 @@ try {
 
   await a.evaluate((id) => window.__emberisle.getState().pickHex(id), hex.id);
   await a.getByText("Take from whom?").waitFor();
+  // #1546: the question is the tray's status line, up before the seat buttons' chunk has drawn them, so wait for a button.
+  await a.getByRole("group", { name: "The wayfarer takes a card" }).getByRole("button").first().waitFor();
   const open = await peek(a);
   check("picker opens with both victims", open.picker?.targets.length === 2 && open.bar === 2, open);
 

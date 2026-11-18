@@ -1,10 +1,9 @@
 import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { Dices } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BuildList, buildList, ChatControls, ChatDock, ChromeLanded, CostCard, DiscardBar, FirstGameCoach, FortuneTray, HowTo, losses, MyNumbers, sheets, TakeFromBar, TradePanel, tradeToast, TradeToast, TurnMoment, WinScreen } from "@/components/game/chunks";
+import { BuildList, buildList, ChatControls, ChatDock, ChromeLanded, CostCard, DiscardBar, FirstGameCoach, FortuneTray, HowTo, losses, MyNumbers, PlayerMenu, playerMenu, sheets, TakeFromBar, TradePanel, tradeToast, TradeToast, TurnMoment, winList, WinScreen } from "@/components/game/chunks";
 import { WinFailed } from "@/components/game/WinFailed";
 import { Announcer } from "@/components/game/Announcer";
-import { PlayerMenu } from "@/components/game/PlayerMenu";
 import { SeatRail, SeatStrip } from "@/components/game/SeatRail";
 import { TurnCountdown } from "@/components/game/TurnCountdown";
 import { Dice, RollMoment } from "@/components/game/Dice";
@@ -16,8 +15,10 @@ import { TrayFailed } from "@/components/game/TrayFailed";
 import { TradeButton } from "@/components/game/TradeButton";
 import { buildStatus, type Price } from "@/components/game/BuildCost";
 import { useEscapeDisarm } from "@/components/game/escape-disarm";
+import { useMenuCancel } from "@/components/game/menu-cancel";
 import { COST, RESOURCES, type BuildMode, type GameState, type PlayerState } from "@/lib/game/types";
 import { playable, totalVP } from "@/lib/game/rules";
+import { useDiscardPicked } from "@/lib/game/discard-pick";
 import { useGame } from "@/lib/game/store";
 import { LazyBoundary, preloadOnIdle } from "@/lib/lazy";
 import { useViewport } from "@/lib/viewport";
@@ -90,7 +91,9 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
 }
 
 // #954: practice and hotseat have no chat. While the newest lines are that roll's goods and awards, the chip shows the roll.
-const HUD_ASIDE = / — .+'s roll[;.]| (holds|loses) the (longest path|largest army)\.$/;
+// #1699 (owner, 2026-11-14): a 7's discards are the roll's too, so "<name> rolled 7!" holds until the next other line (the
+// wayfarer's move, or with the wayfarer off the next move that logs).
+const HUD_ASIDE = / — .+'s roll[;.]| (holds|loses) the (longest path|largest army)\.$| discards \d+( goods)?\.$/;
 function hudRollChip(lines: { text: string }[], mine: string) {
   const last = lines.at(-1)?.text;
   if (!last || / claims the isle |^The isle is settled/.test(last)) return null;
@@ -133,6 +136,12 @@ function LossesFailed({ message, onRetry }: { message: string; onRetry: () => vo
   );
 }
 
+// #1595: the discard's top line counts what is left to pick: "Discard 4: pick 1 more", then "Discard 4: ready".
+function discardLine(owed: number, picked: number) {
+  const left = owed - picked;
+  return `Discard ${owed}: ${left > 0 ? `pick ${left} more` : "ready"}`;
+}
+
 export function Hud() {
   const gameLog = useGame((s) => s.gameLog);
   const state = useGame((s) => s.state);
@@ -151,6 +160,7 @@ export function Hud() {
   const tradeOpen = useGame((s) => s.tradeOpen);
   const dispatch = useGame((s) => s.dispatch);
   const choosing = useGame((s) => !!s.pendingSteal);
+  const discardPicked = useDiscardPicked();
   const setBuildMode = useGame((s) => s.setBuildMode);
   const setHowTo = useGame((s) => s.setHowTo);
   const menuFor = useGame((s) => s.menuFor);
@@ -169,10 +179,11 @@ export function Hud() {
   const [timerHeader, setTimerHeader] = useState<HTMLDivElement | null>(null);
   const [sheetsLost, setSheetsLost] = useState<string | null>(null);
   useEscapeDisarm();
+  useMenuCancel();
   const [stackRef, moreBelow] = useMoreBelow();
   const [lossesRetry, setLossesRetry] = useState(0);
   useEffect(() => {
-    const cancelSheets = preloadOnIdle(() => (void buildList.prefetch(), sheets.prefetch()));
+    const cancelSheets = preloadOnIdle(() => (void buildList.prefetch(), void playerMenu.prefetch(), sheets.prefetch()));
     const cancelToast = preloadOnIdle(tradeToast.prefetch);
     const cancelLosses = preloadOnIdle(losses.prefetch);
     return () => {
@@ -181,6 +192,11 @@ export function Hud() {
       cancelLosses();
     };
   }, []);
+  // #1695: a table already over as it lands asks for the win screen's list beside the sheets chunk, not after it.
+  const won = !!state?.winner;
+  useEffect(() => {
+    if (won) void winList.prefetch();
+  }, [won]);
   // #423: the fortune tray is open until a fortune is played, it is closed, the phase moves (a roll with the tray up) or the
   // turn moves on (hotseat: to the next seat); it never comes back on its own.
   const [fortunesOpen, setFortunesOpen] = useState(false);
@@ -195,6 +211,11 @@ export function Hud() {
   useEffect(() => {
     if (useGame.getState().buildMode !== "none") useGame.getState().setBuildMode("none");
   }, [turnOf]);
+  // A roll is newer than a trade's outcome line ("Nobody took it."), so the outcome gives the top line back at once.
+  const rolled = state?.dice?.join();
+  useEffect(() => {
+    if (useGame.getState().tradeOutcome) useGame.setState({ tradeOutcome: null, tradeTaker: null });
+  }, [rolled]);
   const buildButton = useRef<HTMLButtonElement>(null);
   const fortunesButton = useRef<HTMLButtonElement>(null);
   const turnKey = state ? `${state.turn}|${state.current}|${state.phase}` : "";
@@ -295,18 +316,22 @@ export function Hud() {
   const armed = mine && (state.phase === "main" || fortuneArmed) ? armedCopy(buildMode, roadPicks.length) : null;
   // #1539: an armed build or fortune has its own Cancel button in the action row, so a touch screen needs no hint.
   const armedNow = !!armed && !spectator;
-  const phaseText = armed
+  // #1609: a partner turn (paired turns, five and six seats) has no dice, so the line only says whose it is.
+  const partner = state.role === "partner";
+  const phaseText = choosing
+    ? "Take from whom?"
+    : armed
     ? matchMedia("(pointer: coarse)").matches ? armed[0] : `${armed[0]} · Esc cancels`
     : state.phase === "discard"
-      ? `Discard ${state.discardNeeded[subject] ?? 0} goods`
-      : phaseCopy(state.phase);
+      ? discardLine(state.discardNeeded[subject] ?? 0, discardPicked)
+      : partner ? "Your partner turn" : phaseCopy(state.phase);
   const waiting = mode !== "hotseat" && !yours;
   // #430: in hotseat a seat that owes a discard on another seat's turn is named, not given the turn.
   const turnText =
-    mode === "hotseat" && subject !== state.current
+    mode === "hotseat" && (subject !== state.current || state.phase === "discard")
       ? `${phaseText} · ${subjectPlayer.name}`
       : waiting
-        ? waitingCopy(state.phase, subjectPlayer.name)
+        ? partner ? `${subjectPlayer.name}'s partner turn` : waitingCopy(state.phase, subjectPlayer.name)
         : phaseText;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
   const menuPlayer = menuFor ? state.players.find((p) => p.id === menuFor) : null;
@@ -322,7 +347,7 @@ export function Hud() {
     <p key={`turn-${state.current}`} data-testid="turn-banner"
       // #1509: on the upright table the line has no box, so another seat's colour is a dot before it (styles.css, --seat).
       style={{ borderLeftColor: yours ? undefined : subjectPlayer.color, ...(yours ? {} : { "--seat": subjectPlayer.color }) } as CSSProperties}
-      className={cn("turn-instruction rounded-control px-3 py-1.5 text-[15px] font-medium leading-5", yours ? "turn-instruction-own" : "border-l-4", !waiting && !choosing && (state.phase === "robber" || buildMode === "knight") && "turn-instruction-move")}
+      className={cn("turn-instruction rounded-control px-3 py-1.5 text-[15px] font-medium leading-5", yours ? "turn-instruction-own" : "border-l-4", !waiting && !choosing && (state.phase === "robber" || buildMode === "knight") && "turn-instruction-move", (choosing || discarder) && "turn-instruction-plain")}
     >{turnText}</p>
   );
 
@@ -376,15 +401,17 @@ export function Hud() {
       {/* #1420: a bottom sheet, so the trade rows sit under the thumb. Upright it spans the screen and its top edge stays in
           the bottom half; sideways it is 320 px at the left, over the dock column and clear of the island. */}
       {phone && menuPlayer ? (
-        <PlayerMenu
-          player={menuPlayer}
-          sheet
-          className={cn(
-            // The bottom room is a border, not padding: a border is outside the scrollport, so rows that scroll never pass under the home bar.
-            "absolute bottom-0 z-30 rounded-b-none border-b-[length:max(1rem,env(safe-area-inset-bottom))] border-b-surface p-4 pb-0 shadow-[var(--shadow-sheet)]",
-            portrait ? "inset-x-0 max-h-[50dvh] border-x-0 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]" : "left-safe max-h-[70dvh] w-80",
-          )}
-        />
+        <LazyBoundary failed={<TrayFailed close={() => openMenu(null)} />}>
+          <PlayerMenu
+            player={menuPlayer}
+            sheet
+            className={cn(
+              // The bottom room is a border, not padding: a border is outside the scrollport, so rows that scroll never pass under the home bar.
+              "absolute bottom-0 z-30 rounded-b-none border-b-[length:max(1rem,env(safe-area-inset-bottom))] border-b-surface p-4 pb-0 shadow-[var(--shadow-sheet)]",
+              portrait ? "inset-x-0 max-h-[50dvh] border-x-0 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]" : "left-safe max-h-[70dvh] w-80",
+            )}
+          />
+        </LazyBoundary>
       ) : null}
 
       {phone ? null : <SeatRail actor={actor} />}
@@ -463,6 +490,12 @@ export function Hud() {
                   </span>
                 ) : gameLog.at(-1)?.text}
               </p>
+              {/* Slice C: an open offer is the top line and, for a seat that can answer or cancel, the action row (styles.css). */}
+              {tradeVisible ? (
+                <LazyBoundary failed={null}>
+                  <TradeToast />
+                </LazyBoundary>
+              ) : null}
               <span data-testid="deck-count" data-deck-left={deckLeft} title={`${deckLeft} fortunes left in the deck`} className={cn("shrink-0 text-[13px] leading-5 tabular-nums", !spectator && "sr-only")}>Deck {deckLeft}</span>
             </div>
             <TurnCountdown header={phone ? null : timerHeader} />
@@ -551,18 +584,13 @@ export function Hud() {
             ) : null}
 
             {!mine || !["main", "roll", "rollOff"].includes(state.phase) ? (
-              fortunes || (column && dice) ? <div className="flex flex-wrap items-center gap-2">{fortunes}{column ? dice : null}</div> : null
+              fortunes || (column && dice) ? <div className="tray-extra flex flex-wrap items-center gap-2">{fortunes}{column ? dice : null}</div> : null
             ) : diceInBar || !column ? null : dice}
 
             {/* #643: on a sideways phone the seat's numbers are one quiet line under the action row. A desktop has them in
                 the tray's top line; the upright phone table has none (#1509). */}
             {phone && !spectator && !upright && !tradeVisible ? <div className="tray-numbers flex h-5 shrink-0 items-center gap-1">{numbers}</div> : null}
             {pinEnd ? endRow : null}
-            {tradeVisible ? (
-              <LazyBoundary failed={null}>
-                <TradeToast />
-              </LazyBoundary>
-            ) : null}
           </div>
           {/* #423: the tray rises over the stack from its bottom edge and may cover the island, like a sheet, but never the
               header or the portrait seat strip; it is inside the sheets chunk, which the table prefetched on idle (#488). */}

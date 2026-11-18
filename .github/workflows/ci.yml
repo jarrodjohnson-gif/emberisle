@@ -235,11 +235,21 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run spiral-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run expanded-board-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run expanded-turns-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run engine-guards-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run paired-needs-guards-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run wayfarer-modes-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run game-text-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run stickers-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run sticker-host-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bug-report-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -248,8 +258,28 @@ jobs:
         run: npm run bot-action-order-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run rules-view-helpers-prove
+      # #1673: dice-prove and expanded-bots-prove run beside npm test. Both are Node only: no host, port, file or env
+      # var shared with anything else. npm test mostly waits on host timers. Their output prints after npm test ends,
+      # and a failure in either side fails the step.
+      # #1682: each side proof has a time limit, about twice its slowest run on main (dice 140 s, bots 46 s), so a hang
+      # ends with exit 124, fails the step and still prints the side log well inside the job's timeout.
       - if: needs.changes.outputs.docs_only != 'true'
-        run: npm test
+        name: npm test, with dice-prove and expanded-bots-prove beside it
+        run: |
+          side="$RUNNER_TEMP/side-proofs.log"
+          (
+            status=0
+            timeout -k 10 300 npm run dice-prove || status=$?
+            timeout -k 10 120 npm run expanded-bots-prove || status=$?
+            exit "$status"
+          ) > "$side" 2>&1 &
+          pid=$!
+          status=0
+          npm test || status=$?
+          wait "$pid" || status=$?
+          echo "----- dice-prove and expanded-bots-prove -----"
+          cat "$side"
+          exit "$status"
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-songs-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -277,11 +307,27 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-rename-cap-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profile-rename-unknown-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profile-recovery-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run server-needs-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run server-play-again-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run expanded-persist-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run expanded-lobby-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run expanded-timers-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run rolloff-extension-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run rematch-extension-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run online-sync-reset-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run finish-takeover-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -304,8 +350,6 @@ jobs:
         run: npm run label-commands-prove
       - name: Desk gate proof
         run: npm run desk-gate-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run dice-prove
       # #1073: measures every file in public/audio with ffmpeg.
       # #1186: the apt mirror sometimes hangs; bound each attempt, retry, and fail loudly if ffmpeg is still missing.
       - if: needs.changes.outputs.docs_only != 'true'
@@ -352,6 +396,23 @@ jobs:
           echo "Testing the PR's guard copy in the same advisory job."
           node scripts/loosen-prove.mjs --base "$BASE_SHA"
       - run: npm run proof-retirement-prove
+
+  # #1653: advisory, like `loosen`, so it is not in `checks.needs`. Flags a commit in this PR that changes nothing
+  # (docs/LOOPING.md: do not make empty commits to kick CI). HEAD is the merge commit: its first parent is the base and its
+  # second is the PR's head. Commits only (no trees' files or blobs), so the full history is a small fetch.
+  empty-commits:
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run empty-commit-prove -- --base "$(git rev-parse HEAD^1)" --head "$(git rev-parse HEAD^2)"
 
   browser-a-suites:
     name: browser-a (${{ matrix.suite }})
@@ -417,6 +478,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run steal-picker-push-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run steal-picker-lifecycle-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run trade-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run trade-map-test
@@ -437,6 +500,10 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run tray-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
+        run: npm run tray-offers-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
+        run: npm run game-log-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run connection-health-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run profiles-client-prove
@@ -444,6 +511,8 @@ jobs:
         run: npm run profiles-ui-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run profile-recovery-ui-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run profile-recovery-guards-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run profile-records-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
@@ -466,6 +535,8 @@ jobs:
         run: npm run lobby-wait-box-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run lobby-tictactoe-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run secondary-guards-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run my-numbers-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
@@ -555,6 +626,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run chat-text-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run hud-chat-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run sticker-tray-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run sticker-motion-prove
@@ -592,6 +665,8 @@ jobs:
         run: npm run pieces-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run pieces-land-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
+        run: npm run legal-edge-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run landing-dust-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-water'
@@ -641,6 +716,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run title-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run first-minute-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run join-link-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run storage-blocked-prove
@@ -670,7 +747,7 @@ jobs:
         run: npm run splash-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-water'
         run: npm run polish-tokens-prove
-      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run roll-moment-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
         run: npm run goods-log-prove
@@ -684,6 +761,8 @@ jobs:
         run: npm run win-action-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run win-list-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run win-sheet-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run play-again-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
@@ -717,6 +796,19 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run seat-rail-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run player-menu-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run seat-tray-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run six-seats-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run paired-hud-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run expanded-lobby-ui-prove
+      # #1612: a whole six-tab game, about 6 minutes here; scene-life is the shortest leg (3 minutes of 30).
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
+        run: npm run six-tab-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run seat-dot-ring-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run longest-army-prove
@@ -730,6 +822,8 @@ jobs:
         run: npm run seat-menu-sheet-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run upright-table-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run expanded-fit-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run hand-hidden-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'

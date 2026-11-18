@@ -170,7 +170,7 @@ try {
     };
 
     const title = await open("Jarrod", { width, height });
-    await title.getByRole("button", { name: "Play", exact: true }).waitFor();
+    await title.getByRole("button", { name: "Play with bots", exact: true }).waitFor();
     await title.waitForTimeout(500);
     assert.ok(await screen(title, "title", 12) > 3, `${tag}: Tab reaches the title's buttons`);
     const row = await title.evaluate(() => ["Host a table", "Join"].map((n) => [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === n).getBoundingClientRect().top));
@@ -188,7 +188,7 @@ try {
     await title.waitForFunction(() => window.__emberisle.getState().seats.length === 3);
     await guest.evaluate(() => window.__emberisle.getState().setReady(true));
     await title.getByRole("button", { name: "Ready", exact: true }).click();
-    await title.getByRole("button", { name: "Start", exact: true }).waitFor();
+    await title.getByRole("button", { name: "Start", exact: true }).and(title.locator(":enabled")).waitFor();
     await title.waitForTimeout(500);
     await title.evaluate(() => document.activeElement?.blur());
     assert.ok(await screen(title, "lobby", 16) > 3, `${tag}: Tab reaches the lobby's buttons`);

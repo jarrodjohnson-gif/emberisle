@@ -13,6 +13,8 @@
 // - before the roll the action row is Roll; on another seat's turn there is no action row;
 // - the measured bottom inset (`__isle.liveInsets()`) is within 4 px of the declared one (`__isle.insets()`) on my main turn
 //   at 390x844, 430x932 and 1280x720;
+// - #1712: at 390x844, 440x956, 844x390 and 1280x720 each goods divider is within 1 px of the midpoint between the two goods'
+//   content centres, and each good's content is within 1 px of its column's centre;
 // - zero page errors.
 // Every failure is listed before the run fails. SHOTS=1 also writes real-game PNGs at device scale 2 into docs/proofs/1539/
 // for 430x932, 390x844, 844x390 and 1280x720: table, build-list, armed and roll. Run: npm run tray-prove
@@ -213,6 +215,15 @@ try {
       check(Math.abs(m.live.bottom - m.hole.bottom) <= 4, `${at}: measured bottom inset ${m.live.bottom} is not within 4 px of the declared ${m.hole.bottom}`);
       console.log(`${at}: bottom inset measured ${m.live.bottom}, declared ${m.hole.bottom}`);
     }
+    // #1589: the sideways phone's tray is the left column, so its hole is measured on the left (the column and its gap) and
+    // at the bottom, against what mobile-fit declares for a phone on its side.
+    if (v.column) {
+      const m = await page.evaluate(() => ({ live: window.__isle.liveInsets(), hole: window.__isle.insets() }));
+      console.log(`${tag}: left inset measured ${m.live.left}, declared ${m.hole.left}`);
+      console.log(`${tag}: bottom inset measured ${m.live.bottom}, declared ${m.hole.bottom}`);
+      check(Math.abs(m.live.left - m.hole.left) <= 4, `${at}: measured left inset ${m.live.left} is not within 4 px of the declared ${m.hole.left}`);
+      check(Math.abs(m.live.bottom - m.hole.bottom) <= 4, `${at}: measured bottom inset ${m.live.bottom} is not within 4 px of the declared ${m.hole.bottom}`);
+    }
     await shot("table");
     if (!v.full) {
       // 430x932 is here for the inset and the pictures.
@@ -364,6 +375,51 @@ try {
     check(s.actions.length === 0 && !s.buttons.some((b) => ["build-open", "Trade", "End turn", "Roll", "build-cancel"].includes(b.name)), `${at}: no action row ${JSON.stringify(s.buttons.map((b) => b.name))}`);
     sizeRules(s, at);
     console.log(`${tag}: tray read in main, Build list, armed, fortune held, roll and another seat's turn`);
+    await ctx.close();
+  }
+  // 8. #1712: the goods row's lines. Each divider is within 1 px of the midpoint between the centres of the two goods it
+  // splits (symbol, count and name), and each good's content is within 1 px of its column's centre.
+  for (const v of [VIEWS[0], { tag: "440x956", width: 440, height: 956, touch: true }, VIEWS[1], VIEWS[2]]) {
+    const ctx = await browser.newContext({ viewport: { width: v.width, height: v.height }, hasTouch: !!v.touch, isMobile: !!v.touch });
+    await ctx.addInitScript(() => localStorage.setItem("emberisle-first-game-coach", '"done"'));
+    const page = await ctx.newPage();
+    page.setDefaultTimeout(STEP_MS);
+    page.on("pageerror", (e) => errors.push(`${v.tag}: ${e}`));
+    await page.goto(`http://127.0.0.1:${PORT}/`);
+    await page.waitForFunction(() => window.__emberisle && window.__isle?.renders > 0);
+    await page.evaluate((g) => {
+      const e = window.__emberisle;
+      if (e.getState().screen !== "play") e.getState().startAi();
+      e.setState({ runBots: () => {}, state: g, buildMode: "none", pendingPlace: null, error: null, banner: null, toast: null });
+    }, game({ hand: { timber: 0, clay: 0, wool: 3, grain: 0, ore: 0 } }));
+    await page.getByTestId("build-open").waitFor();
+    await page.evaluate(async () => { for (let i = 0; i < 6; i++) await new Promise((r) => requestAnimationFrame(r)); });
+    const cells = await page.evaluate(() =>
+      [...document.querySelectorAll("[data-hud-stack] .hand-resource-card-slot")].map((s) => {
+        const r = s.getBoundingClientRect();
+        const cs = getComputedStyle(s);
+        let line = null;
+        if (parseFloat(cs.borderLeftWidth) > 0 && cs.borderLeftStyle !== "none") line = r.left + parseFloat(cs.borderLeftWidth) / 2;
+        for (const p of ["::before", "::after"]) {
+          const ps = getComputedStyle(s, p);
+          if (line === null && ps.content !== "none" && ps.position === "absolute" && parseFloat(ps.width) > 0) line = r.left + parseFloat(ps.left) + parseFloat(ps.width) / 2;
+        }
+        const parts = [...s.querySelectorAll(":scope > .goods-card > :is(.goods-icon, .goods-count, .goods-label)")].map((e) => e.getBoundingClientRect()).filter((b) => b.width > 0);
+        return { left: r.left, right: r.right, line, centre: (Math.min(...parts.map((b) => b.left)) + Math.max(...parts.map((b) => b.right))) / 2 };
+      }),
+    );
+    const at = `${v.tag} goods row`;
+    const px = (n) => Math.round(n * 100) / 100;
+    if (check(cells.length === 5, `${at}: ${cells.length} goods columns, want 5`)) {
+      for (let i = 0; i < 5; i++) {
+        const c = cells[i];
+        check(Math.abs(c.centre - (c.left + c.right) / 2) <= 1, `${at}: column ${i + 1}'s content centre ${px(c.centre)} is ${px(c.centre - (c.left + c.right) / 2)} px off its column centre ${px((c.left + c.right) / 2)}`);
+        if (i === 0) continue;
+        const mid = (cells[i - 1].centre + c.centre) / 2;
+        if (check(c.line !== null, `${at}: no divider before column ${i + 1}`)) check(Math.abs(c.line - mid) <= 1, `${at}: divider ${i} at x ${px(c.line)} is ${px(c.line - mid)} px off the midpoint ${px(mid)} between the goods either side`);
+      }
+      console.log(`${v.tag}: goods dividers at ${cells.slice(1).map((c) => px(c.line)).join(", ")}, columns ${cells.map((c) => px(c.right - c.left)).join(", ")} px wide`);
+    }
     await ctx.close();
   }
   check(errors.length === 0, `page errors:\n${errors.join("\n")}`);

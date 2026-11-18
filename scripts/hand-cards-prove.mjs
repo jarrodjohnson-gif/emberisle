@@ -39,13 +39,13 @@ const PAINT = {
 // The cue's whole life: FLASH_MS (2500) held, then a 500 ms fade (Hand.tsx CUE_MS).
 const CUE_MS = 3000;
 // Each layout's fixed card: upright and short as today; the wide, fine-pointer layout at 1.3x the upright mock.
-// #1539 one tray: five numbers in the tray, no card box; a 1 px divider takes its pixel from every column after the first
-// (`divided`). The desk tray is one row, the hand in 64 px columns beside the buttons: 20 px symbols, 26 px counts, 62 px tall; upright the tray's 14 px padding leaves
-// 62 px columns; the sideways column keeps its 44 px short card. Names are 12 px sentence case (hand-motion.css).
+// #1539 one tray: five numbers in the tray, no card box; #1712: the 1 px divider sits in the gap, so a column after it
+// (`divided`) is as wide as the first. The desk tray is one row, the hand in 64 px columns beside the buttons: 20 px symbols, 26 px counts, 62 px tall; upright the tray's 14 px padding leaves
+// five equal 62.8 px columns; the sideways column's short card is 44.8 px wide. Names are 12 px sentence case (hand-motion.css).
 const SIZE = {
-  desk: { box: [64, 62], divided: 63, symbol: 20, count: 26, name: 12 },
-  port: { box: [62, 62], divided: 62, symbol: 18, count: 24, name: 12 },
-  short: { box: [44, 44], divided: 44, symbol: 14, count: 24, name: 0 },
+  desk: { box: [64, 62], divided: 64, symbol: 20, count: 26, name: 12 },
+  port: { box: [62.8, 62], divided: 62.8, symbol: 18, count: 24, name: 12 },
+  short: { box: [44.8, 44], divided: 44.8, symbol: 14, count: 24, name: 0 },
 };
 // A gain lifts by the tray's --goods-lift: 6 px upright, 4 px short and where the hand heads a wide screen's stack.
 // #1539: on desktop the status line now heads the tray, so the hand no longer heads the stack and lifts the full 6 px.
@@ -496,7 +496,7 @@ async function open(v, reducedMotion) {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("button", { name: "Four seats, one table" }).focus();
+  await page.getByRole("button", { name: "Pass and play" }).focus();
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
   const roll = page.getByRole("button", { name: "Roll", exact: true });
@@ -718,7 +718,7 @@ try {
     await ds.page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"], [data-testid="goods-lit"], [data-testid="goods-lost"]'), null, { timeout: STEP_MS });
     const rest = await box();
     // #1539: the desk tray is one row with 64 px hand columns, so the card is 64x62 in a 70 px tray.
-    for (const c of rest) assert.deepEqual([c.w, c.h, c.tray], [c.r === "timber" ? 64 : 63, 62, 70], `deskshort ${c.r}: card is the tray's 64x62 column (63 after a divider) in a 70 px tray (${JSON.stringify(c)})`);
+    for (const c of rest) assert.deepEqual([c.w, c.h, c.tray], [64, 62, 70], `deskshort ${c.r}: card is the tray's 64x62 column (64 after a divider too, #1712) in a 70 px tray (${JSON.stringify(c)})`);
     const during = [];
     for (const hand of [{ timber: 5 }, { wool: 1 }]) {
       await ds.page.evaluate(() => (window.__holdCues = true));

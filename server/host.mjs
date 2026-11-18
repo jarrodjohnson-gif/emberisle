@@ -7,8 +7,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { WebSocketServer } from "ws";
-import { chooseBotAction, chooseRecoveryAction, chooseTradeAsk, logBotAction, shouldAcceptTrade } from "../src/lib/game/ai.ts";
+import { chooseBotAction, chooseRecoveryAction, logBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
+// Also registers the paired turns, so applyAction can play a restored five or six seat game (#1605, #1610).
+import { createExpandedGame, EXPANDED_COLORS, EXPANDED_COORDS, PARTNER_NO_TRADE, pairedAcceptTrade, pairedTradeAsk } from "../src/lib/game/expanded.ts";
 import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, totalVP, validBag } from "../src/lib/game/rules.ts";
 import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
 import { JOIN_CODE, PROTO } from "../src/lib/net/proto.ts";
@@ -137,9 +139,13 @@ const ROOMS = path.resolve(process.env.ROOMS_DIR ?? fileURLToPath(new URL("./roo
 // kill -9 or a power cut can lose at most the last SAVE_MS of changes. The proofs shorten it through env.
 const SAVE_MS = Number(process.env.SAVE_MS ?? 250);
 const ROOM_TTL = 24 * 60 * 60 * 1000;
-// Stamped on every saved room. Bump it whenever GameState, the seat record or the chat record changes
-// shape: load() drops files with any other stamp (including none), so a bump ends the saved rooms on the next restart.
-const ROOM_SHAPE = 2;
+// Stamped on every saved room. Shape 3 (#1610) adds the five and six seat game: `game.variant` and the paired-turn fields
+// `primary`, `role` and `activation`. load() reads a shape-2 room as classic, unchanged, and rewrites it as shape 3 once it
+// validates. It drops a file older than shape 2 (or unstamped). A newer file, or one whose game does not validate, is kept
+// aside as `<code>.json.unsupported`, never deleted.
+const ROOM_SHAPE = 3;
+// The oldest shape this host reads.
+const LEGACY_SHAPE = 2;
 // A seat's soundboard taps are at least this far apart (the host's word; the client greys the buttons for the same time).
 const SOUND_MS = envMs("SOUND_MS", 3000);
 // A seat's accepted renames are at least this far apart, on top of the ordinary action limit.
@@ -317,9 +323,11 @@ function unsettled(room) {
 }
 
 // A saved roster that does not match its game is dropped, leaving that game untracked; a legacy room has none (#764).
+// Its rows are in starting order and the roll-off reorders the game's players, so a row matches by player id, once each (#1650).
 function loadRoster(r, game) {
   if (!game || r === undefined || r === null) return null;
-  const row = (p, i) => p && typeof p === "object" && p.pid === game.players[i].id && typeof p.seat === "string" && (p.profileId === null || (typeof p.profileId === "string" && UUID.test(p.profileId))) && typeof p.name === "string" && typeof p.color === "string" && (p.kind === "human" || p.kind === "bot");
+  const pids = new Set(game.players.map((p) => p.id));
+  const row = (p) => p && typeof p === "object" && pids.delete(p.pid) && typeof p.seat === "string" && (p.profileId === null || (typeof p.profileId === "string" && UUID.test(p.profileId))) && typeof p.name === "string" && typeof p.color === "string" && (p.kind === "human" || p.kind === "bot");
   const ok = typeof r === "object" && r.v === ROSTER_V && typeof r.gameId === "string" && UUID.test(r.gameId) && isTime(r.startedAt) && Number.isSafeInteger(r.policy) && typeof r.eligible === "boolean" && Array.isArray(r.players) && r.players.length === game.players.length && r.players.every(row);
   const ids = ok ? r.players.map((p) => p.profileId).filter(Boolean) : [];
   if (ok && new Set(ids).size === ids.length) return r;
@@ -333,7 +341,26 @@ function visibleProfiles(room) {
 }
 
 function seatsMsg(room) {
-  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" };
+  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room), ...(room.choose ? { choose: room.choose } : {}) };
+}
+
+// A room's variant (#1611; six-players.md, "Lobby and network limits"): fixed when the table opens, before the first seat
+// and its colour. An expanded room seats five or six on the six-colour palette; a classic one keeps three or four and the
+// classic palette exactly. Only the rematch prompt may change it (accepted decision 7). Classic rooms carry no field at
+// all, on the wire or on disk, so they stay byte for byte as before.
+const expandedRoom = (room) => room.variant === "expanded";
+const expandedTag = (room) => (expandedRoom(room) ? { variant: "expanded" } : {});
+const paletteOf = (room) => (expandedRoom(room) ? EXPANDED_COLORS : PLAYER_COLORS);
+const seatRange = (room) => (expandedRoom(room) ? [5, 6] : [3, 4]);
+// Clients that can show the expanded island say so in every hello (`caps`). Raising PROTO would not do: older protocol
+// versions are still let in. A client without it is refused at every way into an expanded room, before anything of the
+// room reaches it, and a held seat stays held.
+const UPDATE = "Update Emberisle to join this table.";
+const canExpand = (msg) => Array.isArray(msg.caps) && msg.caps.includes("expanded");
+function refusesClient(ws, room, msg) {
+  if (!expandedRoom(room) || canExpand(msg)) return false;
+  send(ws, { type: "error", update: true, message: UPDATE });
+  return true;
 }
 
 function publish(room) {
@@ -368,12 +395,13 @@ function snapshot(room, over = {}) {
     host: room.host,
     next: room.next,
     botDeclined: room.botDeclined ?? {},
-    recoveryPids: [...new Set(room.recoveryPids ?? [])].slice(-4),
+    recoveryPids: [...new Set(room.recoveryPids ?? [])].slice(-recoveryCap(room.game)),
     chat: room.chat,
     chatSeq: room.chatSeq,
     game: room.game,
     victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10,
     wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on",
+    ...expandedTag(room),
     seats: room.seats.map(({ id, name, color, ready, pid, secret, bot, turnDeadline, turnStartedAt, needs, extension, profileId }) => ({ id, name, color, ready, pid, secret, ...(bot ? { bot: true } : {}), ...(needs ? { needs } : {}), turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null, extension, ...(profileId ? { profileId } : {}) })),
     // Optional versioned metadata (#764): no ROOM_SHAPE bump, so a legacy room loads with no roster and is not tracked.
     roster: room.roster ?? null,
@@ -477,6 +505,81 @@ function savedRoster(saved) {
   }
 }
 
+// A recovery pid is a game seat the bot took over, so a room keeps at most one per player: four at a classic table (#1610).
+function recoveryCap(game) {
+  return Math.max(4, Array.isArray(game?.players) ? game.players.length : 0);
+}
+
+const count = (n) => Number.isSafeInteger(n) && n >= 0;
+const PAIRED = ["primary", "role", "activation"];
+const FORTUNES = ["knight", "road", "plenty", "monopoly", "vp"];
+
+// Why a saved game cannot be read as its room shape says, or null (#1610). A shape-2 game is classic: absent `variant`
+// means classic, as in every game saved before #1604. A classic game has no variant, no paired-turn fields and at most four
+// players; a variant is never inferred from the seat count. An expanded game carries the one variant this host knows, its
+// 30-hex island, five or six players, and a paired-turn state that names its own actor.
+function gameProblem(g, shape) {
+  if (g === null) return null;
+  if (!Array.isArray(g.players)) return "bad players";
+  if (g.variant === undefined) {
+    if (PAIRED.some((k) => k in g)) return "paired-turn fields in a classic game";
+    if (g.players.length > 4) return `${g.players.length} players in a classic game`;
+    return null;
+  }
+  if (shape === LEGACY_SHAPE) return "a variant in a shape-2 room";
+  if (!g.players.every((p) => p && typeof p.id === "string" && p.hidden && p.boughtThisTurn)) return "bad players";
+  const ids = g.players.map((p) => p.id);
+  if (new Set(ids).size !== ids.length || !ids.includes(g.current)) return "bad players";
+  const v = g.variant;
+  if (v?.kind !== "expanded" || v.version !== 1 || v.turns?.rule !== "paired" || v.turns.version !== 1) return `unknown variant ${JSON.stringify(v)}`;
+  if (ids.length < 5 || ids.length > 6) return `${ids.length} players in an expanded game`;
+  const hexes = new Map((Array.isArray(g.hexes) ? g.hexes : []).map((h) => [h?.id, h]));
+  if (hexes.size !== EXPANDED_COORDS.length || !EXPANDED_COORDS.every((c) => hexes.has(`${c.q},${c.r}`))) return "not the expanded island";
+  if (!Array.isArray(v.wastes) || v.wastes.length !== 2 || !v.wastes.every((id) => hexes.get(id)?.terrain === "waste")) return "bad wastes";
+  if (v.spiral !== undefined && (!hexes.has(v.spiral?.start) || (v.spiral.direction !== 1 && v.spiral.direction !== -1))) return "bad spiral";
+  if (!RESOURCES.every((r) => count(g.bank?.[r])) || !Array.isArray(g.deck) || !g.deck.every((k) => FORTUNES.includes(k))) return "bad inventory";
+  if (!g.players.every((p) => FORTUNES.every((k) => count(p.hidden[k]) && count(p.boughtThisTurn[k])))) return "bad fortunes";
+  if (g.role === undefined) {
+    // Setup: the paired turns start when it ends.
+    if (g.primary !== undefined || g.activation !== undefined || !["rollOff", "setupSettle", "setupRoad"].includes(g.phase)) return "no turn role after setup";
+    return null;
+  }
+  const at = ids.indexOf(g.primary);
+  if (at < 0 || !Number.isSafeInteger(g.activation) || g.activation < 1) return "bad paired turn";
+  const actor = g.role === "primary" ? g.primary : g.role === "partner" ? ids[(at + 3) % ids.length] : null;
+  if (g.current !== actor) return `bad paired turn: ${g.current} acts as ${g.role}`;
+  return null;
+}
+
+// Why a saved room's variant (#1611) cannot be read, or null. A room saved without one is classic, unless its game is an
+// expanded one: a room file from before #1611 (piece 7's proofs write such rooms) takes its game's own variant. Only a
+// shape-3 room may say expanded, and its game, once dealt, must be the same variant.
+function variantProblem(saved) {
+  const v = saved.variant;
+  if (v === undefined) return null;
+  if (v !== "expanded" && v !== "classic") return `unknown room variant ${JSON.stringify(v)}`;
+  if (v === "expanded" && saved.shape === LEGACY_SHAPE) return "an expanded room in a shape-2 file";
+  if (saved.game && Boolean(saved.game.variant) !== (v === "expanded")) return `a ${v} room holding a ${saved.game.variant ? "expanded" : "classic"} game`;
+  return null;
+}
+
+// A room file this host must not read as it stands: set aside for recovery by hand, never deleted (#1610), and never
+// overwritten by a later room with the same code.
+function keepAside(file, name, why) {
+  // #1654: the first free name, <code>.json.unsupported, then .1, .2 and so on, so a file set aside never lands on one kept
+  // before (a timestamp could repeat within a millisecond).
+  let kept = `${file}.unsupported`;
+  for (let n = 1; existsSync(kept); n++) kept = `${file}.${n}.unsupported`;
+  // A rename that fails (a read-only disk) must not stop the host from starting: the file stays where it is. load() has already
+  // parsed it and skips it for this boot; the next boot reads and refuses it again.
+  try {
+    renameSync(file, kept);
+    console.error(`unsupported room file: ${name} (${why}); kept as ${path.basename(kept)}`);
+  } catch (e) {
+    console.error(`unsupported room file: ${name} (${why}); left in place, could not set it aside: ${e.message}`);
+  }
+}
+
 function alive(pid) {
   try {
     process.kill(pid, 0);
@@ -539,7 +642,7 @@ async function load() {
   let redacted = 0;
   // Files kept only for repair by hand (#1393) are redacted too. A fenced room keeps its suffix, so it never plays again, and
   // an unreadable pending outcome keeps its name, so it still fences its game.
-  for (const [dir, name] of [...journal.unreadable().map((id) => [journal.dir, `${id}.json`]), ...names.filter((n) => n.endsWith(".json.fenced")).map((n) => [ROOMS, n])]) {
+  for (const [dir, name] of [...journal.unreadable().map((id) => [journal.dir, `${id}.json`]), ...names.filter((n) => n.endsWith(".json.fenced") || n.endsWith(".unsupported")).map((n) => [ROOMS, n])]) {
     let text;
     try {
       text = readFileSync(path.join(dir, name), "utf8");
@@ -620,12 +723,17 @@ async function load() {
       fenced++;
       continue;
     }
+    // A newer host wrote this: kept for it, whatever its age or fields (#1610).
+    if (typeof saved?.shape === "number" && saved.shape > ROOM_SHAPE) {
+      keepAside(file, name, `shape ${saved.shape}, this host reads ${LEGACY_SHAPE} to ${ROOM_SHAPE}`);
+      continue;
+    }
     if (typeof saved?.code !== "string" || !Array.isArray(saved.seats) || !(Date.now() - saved.savedAt < ROOM_TTL) || saved.seats.length === 0) {
       rmSync(file, { force: true });
       continue;
     }
-    if (saved.shape !== ROOM_SHAPE) {
-      console.error(`stale room file: ${name} (shape ${saved.shape}, want ${ROOM_SHAPE})`);
+    if (saved.shape !== ROOM_SHAPE && saved.shape !== LEGACY_SHAPE) {
+      console.error(`stale room file: ${name} (shape ${saved.shape}, want ${LEGACY_SHAPE})`);
       rmSync(file, { force: true });
       continue;
     }
@@ -633,6 +741,11 @@ async function load() {
     if (g !== null && (typeof g !== "object" || !["players", "vertices", "edges", "seq", "phase"].every((k) => k in g))) {
       console.error(`bad game in room file: ${name}`);
       rmSync(file, { force: true });
+      continue;
+    }
+    const problem = gameProblem(g, saved.shape) ?? variantProblem(saved);
+    if (problem) {
+      keepAside(file, name, problem);
       continue;
     }
     // A file that parses but does not rebuild (a null seat, say) is skipped like one that does not parse.
@@ -648,8 +761,9 @@ async function load() {
         botDeclined: saved.botDeclined ?? {},
         visibility: saved.visibility === "open" ? "open" : "private",
         wayfarerMode: saved.wayfarerMode === "off" ? "off" : "on",
+        variant: saved.variant ?? (g?.variant ? "expanded" : "classic"),
         // Legacy hosted snapshots had no practice-bot seats, so a bot linked to a held seat means takeover.
-        recoveryPids: [...new Set([...(Array.isArray(saved.recoveryPids) ? saved.recoveryPids : []), ...legacyRecovery])].slice(-4),
+        recoveryPids: [...new Set([...(Array.isArray(saved.recoveryPids) ? saved.recoveryPids : []), ...legacyRecovery])].slice(-recoveryCap(saved.game)),
         roster,
         assisted: Array.isArray(saved.assisted) ? saved.assisted.filter((pid) => typeof pid === "string") : [],
         seats: [],
@@ -666,7 +780,8 @@ async function load() {
         // Avatars live in memory only, so a restored seat has none.
         // G9: the saved window rides in `resume` until the seat is back and waited on; older files have none.
         const at = (n) => (Number.isFinite(n) ? n : null);
-        room.seats.push({ ...s, needs: restoredNeed(s.needs), turnDeadline: null, turnStartedAt: at(s.turnStartedAt), resume: at(s.turnDeadline), avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
+        // A saved window belongs to the saved turn (#1612, #1661), so a restart mid turn keeps its budget.
+        room.seats.push({ ...s, needs: restoredNeed(s.needs), turnDeadline: null, turnStartedAt: at(s.turnStartedAt), resume: at(s.turnDeadline), turnKey: g && turnOf(g), avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
       }
       // A profile binding must be a UUID on a human seat, once per room; anything else leaves that seat a guest (#764).
       const bound = new Set();
@@ -687,6 +802,16 @@ async function load() {
     if (!room.seats.some((s) => !s.bot)) {
       rmSync(file, { force: true });
       continue;
+    }
+    // A validated shape-2 room is rewritten as shape 3 with nothing else changed, in one atomic write. If the write fails the
+    // original file stays as it was, the room still plays, and its next save writes shape 3.
+    if (saved.shape === LEGACY_SHAPE) {
+      try {
+        await writeDurable(ROOMS, name, JSON.stringify({ ...saved, shape: ROOM_SHAPE }));
+        console.log(`migrated room file: ${name} (shape ${LEGACY_SHAPE} to ${ROOM_SHAPE}, classic)`);
+      } catch (err) {
+        console.error(`cannot migrate room file ${name}: ${err.message}`);
+      }
     }
     rooms.set(room.code, room);
   }
@@ -797,11 +922,14 @@ function runBots(room) {
     if (!waiting) return;
     // A bot's own ask is open: its turn waits for the answers, and the offer's close plays on (botsOn).
     if (room.offer?.from === waiting.id) return;
-    // Once per bot turn, before its other moves, the bot may ask the table (#363).
+    // Once per bot turn, before its other moves, the bot may ask the table (#363). A partner asks nobody (#1611): the
+    // paired-turn choice is the classic one whenever the game has no partner activation.
     const recovery = (room.recoveryPids ?? []).includes(waiting.id);
-    if (!recovery && g.phase === "main" && !room.offer && room.botAsked !== `${g.turn}:${waiting.id}`) {
-      room.botAsked = `${g.turn}:${waiting.id}`;
-      const ask = chooseTradeAsk(g, waiting.id, room.botDeclined?.[waiting.id]);
+    // Keyed by activation under paired turns (#1612): a seat's partner activation must not use up its own turn's ask.
+    const asked = `${g.turn}:${waiting.id}${g.role ? `:${g.activation}` : ""}`;
+    if (!recovery && g.phase === "main" && !room.offer && room.botAsked !== asked) {
+      room.botAsked = asked;
+      const ask = pairedTradeAsk(g, waiting.id, room.botDeclined?.[waiting.id]);
       if (ask) return openOffer(room, waiting.id, ask.give, ask.want);
     }
     const action = recovery ? chooseRecoveryAction(g, waiting.id) : chooseBotAction(g, waiting.id);
@@ -840,11 +968,25 @@ function disarmTurn(seat) {
 // restart (`resume`, G9) is kept: the remainder is armed, and one that ran out while the host was down, or has under
 // RESUME_MIN_MS left, is spent at once so a timeout never lands mid-rejoin.
 const RESUME_MIN_MS = Math.min(5000, TURN_MS / 10);
+// The turn a window and budget belong to: the activation under paired turns, else the round and whose turn it is, so a
+// discard owed in another seat's turn is not part of the seat's own. Setup and the roll-off stay in round 0, so there
+// the seat's roll-off roll and each setup step (an outpost and its path) are a turn of their own (#1671). A roll-off roll
+// is keyed by `seq`, so a re-roll after a tie is a new turn even when the same seats tie twice and the saved roll-off is
+// the same (#1681); only the seat to roll is waited on, and its roll is the only move, so `seq` holds within one roll.
+const turnOf = (game) => (game.role ? game.activation : `${game.turn}:${game.current}${game.phase === "rollOff" ? `:rollOff:${game.seq}` : game.phase.startsWith("setup") ? `:setup:${game.setupIndex}` : ""}`);
 function armTurns(room) {
   for (const seat of room.seats) {
     const bonus = extensionBudget(seat, room.game, TURN_EXTENSION_MS).extra;
     const human = room.game?.players.find((p) => p.id === seat.pid)?.kind === "human";
     const waited = human && waitedOn(room.game, seat.pid);
+    // Each turn starts its own window and budget, even when bots played every turn between two of this seat's, so no
+    // state push saw it unwaited in between (#1612, #1661).
+    if (waited && seat.turnKey !== turnOf(room.game)) {
+      disarmTurn(seat);
+      seat.turnStartedAt = null;
+      seat.resume = null;
+      seat.turnKey = turnOf(room.game);
+    }
     if (!waited) {
       seat.turnStartedAt = null;
       seat.resume = null;
@@ -922,6 +1064,12 @@ function deadlineOf(room) {
 function pushState(room) {
   // Recovery during rejoin or takeover can finish a game too. Release before publishing it.
   maybeReleaseOpenSlot(room);
+  if (room.game?.phase === "over") {
+    for (const seat of room.seats) {
+      clearTimeout(seat.graceTimer);
+      seat.graceTimer = null;
+    }
+  }
   armTurns(room);
   extensions(room).sync();
   // The soonest armed window, and whose it is, so every HUD can count it down (#345). `serverNow` lets a client
@@ -1295,14 +1443,18 @@ function seatName(room, raw, fallback, except = null) {
   }
 }
 
-// Only a palette swatch is accepted, since the colour reaches inline styles; anything else gets the first free one.
+// Only a swatch of the room's palette is accepted, since the colour reaches inline styles; anything else, a classic
+// purple at an expanded table included, gets the first free one (accepted decision 6).
 function seatColor(room, raw) {
-  if (PLAYER_COLORS.includes(raw)) return raw;
-  return PLAYER_COLORS.find((c) => !room.seats.some((s) => s.color === c));
+  const palette = paletteOf(room);
+  if (palette.includes(raw)) return raw;
+  return palette.find((c) => !room.seats.some((s) => s.color === c));
 }
 
 function openTable(ws, msg) {
   if (msg.wayfarerMode !== undefined && !["on", "off"].includes(msg.wayfarerMode)) return send(ws, { type: "error", message: "Choose Wayfarer On or Off." });
+  if (msg.variant !== undefined && msg.variant !== "classic" && msg.variant !== "expanded") return send(ws, { type: "error", message: "Choose 4, 5 or 6 seats." });
+  if (msg.variant === "expanded" && !canExpand(msg)) return send(ws, { type: "error", update: true, message: UPDATE });
   if (rooms.size >= ROOM_MAX) return send(ws, { type: "error", message: "The host is full." });
   // An optional profile, verified before the table opens; a refusal opens nothing (#764).
   const profile = seatCredential(profiles, ws, msg, () => false);
@@ -1315,7 +1467,7 @@ function openTable(ws, msg) {
     return send(ws, { type: "error", message: "Too many new tables right now. Try again in a minute." });
   }
   const visibility = msg.visibility === "open" ? "open" : "private";
-  const room = { victoryTarget: 10, wayfarerMode: msg.wayfarerMode ?? "on", visibility, code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
+  const room = { victoryTarget: 10, wayfarerMode: msg.wayfarerMode ?? "on", variant: msg.variant ?? "classic", visibility, code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
   rooms.set(room.code, room);
   const seat = {
     id: `s${room.next++}`,
@@ -1338,7 +1490,7 @@ function openTable(ws, msg) {
   }
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -1346,8 +1498,9 @@ function openTable(ws, msg) {
 function sitDown(ws, msg) {
   const room = rooms.get(String(msg.code || "").toUpperCase());
   if (!room) return send(ws, { type: "error", message: "No table with that code" });
+  if (refusesClient(ws, room, msg)) return;
   if (room.game || room.busy) return send(ws, { type: "error", message: "Game already started." });
-  if (room.seats.length >= 4) return send(ws, { type: "error", message: "Table full." });
+  if (room.seats.length >= seatRange(room)[1]) return send(ws, { type: "error", message: "Table full." });
   const color = seatColor(room, msg.color);
   if (!color || room.seats.some((s) => s.color === color)) return send(ws, { type: "error", message: "Color taken." });
   // One profile, one seat: a seat it holds, live or held, is never recovered or doubled by the credential (#764).
@@ -1368,7 +1521,7 @@ function sitDown(ws, msg) {
   room.seats.push(seat);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -1377,13 +1530,14 @@ function sitDown(ws, msg) {
 function watch(ws, msg) {
   const room = rooms.get(String(msg.code || "").toUpperCase());
   if (!room) return send(ws, { type: "error", message: "No table with that code" });
+  if (refusesClient(ws, room, msg)) return;
   if (!room.game) return send(ws, { type: "error", message: "Not started yet." });
   // A watcher never attaches a profile (#764); its credential is refused, not looked at.
   if (msg.credential !== undefined && msg.credential !== null) return send(ws, { type: "error", ...watchRefusal() });
   if (room.watchers.size >= SPECTATOR_MAX) return send(ws, { type: "error", message: "Table is full to watch." });
   room.watchers.add(ws);
   ws.watch = room;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
   watchersChanged(room, "Someone is watching.");
   // A finished game still being saved reaches this watcher with everyone else, through the terminal gate (#889).
   if (unsettled(room)) return;
@@ -1395,13 +1549,15 @@ function watch(ws, msg) {
 // roster reach disk, synced, before the game is put in place, so no game message goes out first. While it is written the
 // room is busy (no second start, again or lobby change), and a table that changed meanwhile is told to try again. A failed
 // write keeps the lobby or the finished game as it was. Returns false when the new game was not put in place.
-async function durableStart(ws, room, order, game, unchanged) {
-  const seats = order.map((s, i) => ({ ...s, pid: game.players[i].id }));
+// `variant` is the room's after this start: only the rematch choice changes it (#1611). A seat takes its player's colour,
+// which differs from the seat's only when the classic map is picked at an expanded table.
+async function durableStart(ws, room, order, game, unchanged, variant = room.variant) {
+  const seats = order.map((s, i) => ({ ...s, pid: game.players[i].id, color: game.players[i].color }));
   const roster = freezeRoster(seats);
   const before = room.game;
   room.busy = true;
   try {
-    await commitRoom(room, "start", { game, roster, outcome: null, assisted: [], botDeclined: {}, recoveryPids: [], seats });
+    await commitRoom(room, "start", { game, roster, outcome: null, assisted: [], botDeclined: {}, recoveryPids: [], seats, variant });
   } catch (err) {
     console.error("start save failed:", err.message);
     save(room);
@@ -1416,7 +1572,8 @@ async function durableStart(ws, room, order, game, unchanged) {
     send(ws, { type: "error", message: "The table changed. Try again." });
     return false;
   }
-  seats.forEach((s, i) => (order[i].pid = s.pid));
+  seats.forEach((s, i) => Object.assign(order[i], { pid: s.pid, color: s.color }));
+  room.variant = variant;
   room.game = game;
   room.roster = roster;
   room.outcome = null;
@@ -1431,9 +1588,11 @@ async function startGame(ws, room) {
   const n = room.seats.length;
   if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can start." });
   if (room.busy) return send(ws, { type: "error", message: "Game already started." });
-  if (n < 3 || n > 4) return send(ws, { type: "error", message: "Need 3 or 4 at the table." });
+  const [least, most] = seatRange(room);
+  if (n < least || n > most) return send(ws, { type: "error", message: `Need ${least} or ${most} at the table.` });
   if (room.seats.some((s) => !s.ready)) return send(ws, { type: "error", message: "Not everyone is ready." });
-  const game = createGame({ humans: room.seats.map((s) => ({ name: s.name })), bots: 0, victoryTarget: room.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? "on" });
+  // Exactly the seats at the table: five people are never filled to six. Seat numbers follow the lobby rows.
+  const game = (expandedRoom(room) ? createExpandedGame : createGame)({ humans: room.seats.map((s) => ({ name: s.name })), bots: 0, victoryTarget: room.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? "on" });
   const order = [...room.seats];
   order.forEach((s, i) => {
     s.needs = undefined;
@@ -1456,7 +1615,7 @@ async function startGame(ws, room) {
 function addBot(ws, room) {
   if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can add a bot." });
   if (room.game) return send(ws, { type: "error", message: "Game already started." });
-  if (room.seats.length >= 4) return send(ws, { type: "error", message: "Table full." });
+  if (room.seats.length >= seatRange(room)[1]) return send(ws, { type: "error", message: "Table full." });
   const seat = {
     id: `s${room.next++}`,
     name: seatName(room, "Bot", "Bot"),
@@ -1503,20 +1662,61 @@ function renameSeat(ws, room, msg) {
 // roll off behind it (Jarrod, 2026-10-03). Seats with no socket are let go; watchers stay and get the new game.
 // #889: the finished game's pending outcome is durable before `again` can replace it, and the new game, with its own UUID
 // and roster, is durable before its first message. The room is busy meanwhile, so no second again lands on a stale game.
-async function rematch(ws, room) {
+// #1611 (six-players.md, "Lobby and network limits"; accepted decision 7 and Jarrod's answers A to E of 2026-11-06 on
+// #666): an expanded table with five or six at it keeps the expanded island, each seat its number and colour. With fewer,
+// the host chooses (`choice`), and nothing changes until then: fill with bots up to five and play expanded, or play the
+// classic map with those present (offered only with three or four, C). The choice rides on the seat list, so every seat
+// and watcher sees that the host is choosing (A); it has no timeout and "dismiss" closes it (B).
+async function rematch(ws, room, choice) {
   if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can start." });
   if (room.game?.phase !== "over") return send(ws, { type: "error", message: "Game is not over." });
   if (room.busy) return send(ws, { type: "error", message: "Game is not over." });
   if (unsettled(room)) return send(ws, { type: "error", message: "Couldn't save the result. Retrying…" });
+  // Cancel first, at any table: it only closes the choice, so a seat that came back meanwhile never turns it into a start.
+  if (choice === "dismiss") {
+    if (!room.choose) return;
+    room.choose = null;
+    return publish(room);
+  }
   const isLive = (s) => s.bot || (s.ws && s.ws.readyState === s.ws.OPEN);
   const live = room.seats.filter(isLive);
-  if (live.length < 3) return send(ws, { type: "error", message: "Need 3 or 4 at the table." });
-  const winner = live.find((s) => s.pid === room.game.winner);
-  const order = winner ? [winner, ...live.filter((s) => s !== winner)] : live;
-  const game = createGame({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), victoryTarget: room.victoryTarget ?? room.game.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game.wayfarerMode ?? "on" });
+  if (!expandedRoom(room) || live.length >= 5) {
+    if (live.length < 3) return send(ws, { type: "error", message: "Need 3 or 4 at the table." });
+    return replay(ws, room, live, isLive, room.variant);
+  }
+  const choices = live.length >= 3 ? ["bots", "classic"] : ["bots"];
+  if (!choices.includes(choice)) {
+    room.choose = choices;
+    return publish(room);
+  }
+  return replay(ws, room, live, isLive, choice === "bots" ? "expanded" : "classic");
+}
+
+// The next game for the `live` seats, as a `variant` game. An expanded game under five seats takes bots, numbered with the
+// lowest free seat numbers (E). A classic game picked at an expanded table makes the room classic for later rematches; each
+// seat keeps its colour if the classic palette has it, else takes the first free classic slot (D). Seat numbers are kept.
+async function replay(ws, room, live, isLive, variant) {
+  const old = room.game;
+  const winner = live.find((s) => s.pid === old.winner);
+  const numberOf = new Map(old.players.map((p) => [p.id, p.seat]));
+  const bots = [];
+  const free = [1, 2, 3, 4, 5, 6].filter((n) => !live.some((s) => numberOf.get(s.pid) === n));
+  while (variant === "expanded" && live.length + bots.length < 5) {
+    const all = { seats: [...live, ...bots] };
+    bots.push({ id: `s${room.next++}`, name: seatName(all, "Bot", "Bot"), color: EXPANDED_COLORS.find((c) => !all.seats.some((s) => s.color === c)), avatarId: null, ready: true, bot: true, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() }, secret: randomBytes(16).toString("hex"), no: free[bots.length] });
+  }
+  const colors = new Map();
+  if (variant !== "expanded" && expandedRoom(room)) {
+    for (const s of live) if (PLAYER_COLORS.includes(s.color)) colors.set(s, s.color);
+    for (const s of live) if (!colors.has(s)) colors.set(s, PLAYER_COLORS.find((c) => ![...colors.values()].includes(c)));
+  }
+  const order = [...(winner ? [winner, ...live.filter((s) => s !== winner)] : live), ...bots];
+  const game = (variant === "expanded" ? createExpandedGame : createGame)({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), victoryTarget: room.victoryTarget ?? old.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? old.wayfarerMode ?? "on" });
   order.forEach((s, i) => {
     s.needs = undefined;
-    game.players[i].color = s.color;
+    game.players[i].color = colors.get(s) ?? s.color;
+    const n = s.no ?? numberOf.get(s.pid);
+    if (n) game.players[i].seat = n;
     if (s.bot) game.players[i].kind = "bot";
   });
   const unchanged = () => {
@@ -1526,7 +1726,7 @@ async function rematch(ws, room) {
   // Seats get new pids, so no offer (or a bot's answer timer on it) may outlive the old game.
   if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
   closeOffer(room);
-  if (!(await durableStart(ws, room, order, game, unchanged))) return;
+  if (!(await durableStart(ws, room, order, game, unchanged, variant))) return;
   for (const seat of room.seats) {
     if (live.includes(seat)) continue;
     clearTimeout(seat.graceTimer);
@@ -1535,13 +1735,17 @@ async function rematch(ws, room) {
     forgetAvatar(seat);
     seat.ws = null;
   }
-  room.seats = live;
+  for (const b of bots) delete b.no;
+  room.seats = [...live, ...bots];
+  room.choose = null;
   // #1411: every "play again" was for the game that just ended.
   for (const seat of room.seats) seat.again = undefined;
+  for (const seat of room.seats) seat.turnKey = undefined;
   // Reclaim a finished open room's slot only if no successor has taken it (#986).
   if (room.visibility === "open") registerOpenTable(room);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
+  for (const b of bots) say(room, `${b.name} sat down.`);
   say(room, winner ? `${winner.name} won last time and places first. The rest roll for their order.` : "Roll for first place.");
   const seen = room.game.log;
   runBots(room);
@@ -1647,7 +1851,8 @@ function openOffer(room, from, give, want) {
 function botAnswer(room, offer, pid) {
   if (room.offer !== offer || room.game.players.find((p) => p.id === pid)?.kind !== "bot") return;
   const recovery = (room.recoveryPids ?? []).includes(pid);
-  const yes = !recovery && shouldAcceptTrade(room.game, pid, offer);
+  // Every bot says No on a partner activation, which the rules refuse a player trade on (#1611).
+  const yes = !recovery && pairedAcceptTrade(room.game, pid, offer);
   if (yes && peopleWaiting(room, offer)) return void offer.heldYes.push(pid);
   respond(room, pid, yes);
 }
@@ -1670,6 +1875,8 @@ function ask(ws, room, msg) {
   if (room.game.phase !== "main" || room.game.current !== actor) {
     return send(ws, { type: "error", message: "Cannot trade now." });
   }
+  // A partner may trade with the bank, never the table (#1611; six-players.md, paired turns).
+  if (room.game.role === "partner") return send(ws, { type: "error", message: PARTNER_NO_TRADE });
   if (!validBag(msg.give) || !validBag(msg.want)) return send(ws, { type: "error", message: "Bad trade." });
   const asker = room.game.players.find((p) => p.id === actor);
   if (RESOURCES.some((r) => (msg.give[r] ?? 0) > asker.resources[r])) return send(ws, { type: "error", message: "You lack those goods." });
@@ -1977,7 +2184,7 @@ function handle(ws, raw) {
   if (msg.type === "addBot") return addBot(ws, room);
   if (msg.type === "removeBot") return removeBot(ws, room, msg);
   if (msg.type === "start") return room.game ? send(ws, { type: "error", message: "Game already started." }) : void startGame(ws, room).catch((err) => console.error("start failed:", err));
-  if (msg.type === "again") return void rematch(ws, room).catch((err) => console.error("again failed:", err));
+  if (msg.type === "again") return void rematch(ws, room, msg.choice).catch((err) => console.error("again failed:", err));
   if (!room.game) return send(ws, { type: "error", message: "not ready" });
   if (!freshAction(ws, room, msg)) return;
   if (msg.type === "turnExtensionAsk" || msg.type === "turnExtensionAnswer") {
@@ -1999,13 +2206,16 @@ function peek(ws, msg) {
   if (!JOIN_CODE.test(code)) return;
   const room = rooms.get(code);
   const seats = room && !room.game ? room.seats.map((s) => ({ id: s.id, color: s.color, ready: s.ready })) : [];
-  send(ws, { type: "seats", code, seats });
+  // An expanded lobby names its six swatches, so a joiner can tell which are there to take; a classic peek is as before.
+  send(ws, { type: "seats", code, seats, ...(room && !room.game && expandedRoom(room) ? { palette: EXPANDED_COLORS } : {}) });
 }
 
 // hello {code, secret} puts a dropped player back in their own seat, even after the bot took over.
 function rejoin(ws, msg) {
   const room = rooms.get(String(msg.code || "").toUpperCase());
   if (!room) return send(ws, { type: "error", message: "No table with that code" });
+  // Before the seat is touched: a refused rejoin leaves the seat held, its timers running, for an updated page.
+  if (refusesClient(ws, room, msg)) return;
   const seat = room.seats.find((s) => s.secret === msg.secret);
   if (!seat) return send(ws, { type: "error", message: "Seat is gone." });
   if (seat.ws && seat.ws.readyState === seat.ws.OPEN) return send(ws, { type: "error", message: "Seat is taken." });
@@ -2018,7 +2228,7 @@ function rejoin(ws, msg) {
   if (room.visibility === "open" && room.game?.phase !== "over") registerOpenTable(room);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
   say(room, `${seat.name} is back.`);
   publish(room);
   resendTtt(seat, send);
@@ -2077,7 +2287,7 @@ function hold(room, seat) {
   // A dropped seat is the grace timer's business, never the turn timer's (#344).
   disarmTurn(seat);
   if (room.game) extensions(room).sync();
-  if (room.game && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
+  if (room.game && room.game.phase !== "over" && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
   seat.holdTimer = setTimeout(() => letGo(room, seat), room.game ? HOLD_MS : LOBBY_HOLD_MS);
   // Free the open-list slot when nobody is connected so a finished or abandoned table cannot block a new open host.
   maybeReleaseOpenSlot(room);
@@ -2093,6 +2303,7 @@ function handOffHost(room) {
 // The grace is over: the practice bot plays the seat so the table never waits longer than that.
 function takeOver(room, seat) {
   seat.graceTimer = null;
+  if (!room.game || room.game.phase === "over") return;
   const p = room.game.players.find((x) => x.id === seat.pid);
   if (!p || p.kind === "bot") return;
   if (room.offer?.from === seat.pid) {
@@ -2100,7 +2311,7 @@ function takeOver(room, seat) {
     closeOffer(room);
     broadcast(room, { type: "tradeClosed", tradeId });
   }
-  room.recoveryPids = [...new Set([...(room.recoveryPids ?? []), seat.pid])].slice(-4);
+  room.recoveryPids = [...new Set([...(room.recoveryPids ?? []), seat.pid])].slice(-recoveryCap(room.game));
   // Assistance is marked for the outcome and never cleared by a rejoin; the frozen roster keeps the seat human (#889).
   room.assisted = [...new Set([...(room.assisted ?? []), seat.pid])];
   room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "bot", name: `${x.name} (bot)` } : x)) };

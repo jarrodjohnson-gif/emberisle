@@ -89,7 +89,7 @@ try {
     await page.getByTestId("win-menu").waitFor({ timeout: 30_000 });
     await page.getByTestId("win-row").nth(3).waitFor();
     // The list chunk lands after the table on a phone; wait for the list itself.
-    if (touch) await page.locator('[data-testid="win-table-wrap"] ul').waitFor();
+    await page.locator('[data-testid="win-table-wrap"] ul').waitFor();
     return { context, page, tag };
   }
 
@@ -165,7 +165,7 @@ try {
     for (const s of screens) {
       const v = await until(s.page, tagsAre(start), `${s.tag}: host and bot tags`);
       assert.equal(v.count, "2 of 4 want another game", `${s.tag}: count`);
-      assert.deepEqual(await heard(s), expectNames(touch, { p0: "yes", p1: "none", p2: "none", p3: "yes" }), `${s.tag}: row names`);
+      assert.deepEqual(await heard(s), expectNames(true, { p0: "yes", p1: "none", p2: "none", p3: "yes" }), `${s.tag}: row names`);
     }
     const before = await look(guest.page);
     assert.equal(before.waiting, "Waiting for Bartholomew Featherstonehaugh to start another.", `${size}: the waiting line is unchanged`);
@@ -184,12 +184,12 @@ try {
     for (const s of screens) {
       const v = await until(s.page, tagsAre(all), `${s.tag}: Maximilian's tag`);
       assert.equal(v.count, "4 of 4 want another game");
-      assert.deepEqual(await heard(s), expectNames(touch, { p0: "yes", p1: "yes", p2: "yes", p3: "yes" }), `${s.tag}: row names`);
+      assert.deepEqual(await heard(s), expectNames(true, { p0: "yes", p1: "yes", p2: "yes", p3: "yes" }), `${s.tag}: row names`);
       assert.deepEqual(v.cut, [], `${s.tag}: no tag is cut or over the total`);
       assert.ok(v.under, `${s.tag}: on the table the tag sits under the name`);
       // The desktop table already runs past its edge with these names (#748); below it is proved no wider with the tags.
-      if (touch) assert.ok(!v.sideways, `${s.tag}: nothing scrolls sideways`);
-      if (touch) assert.ok(v.rowHeights.every((h) => h >= 44), `${s.tag}: rows ${v.rowHeights}`);
+      assert.ok(!v.sideways, `${s.tag}: nothing scrolls sideways`);
+      assert.ok(v.rowHeights.every((h) => h >= 44), `${s.tag}: rows ${v.rowHeights}`);
       const safe = { top: insets?.top ?? 0, bottom: height - (insets?.bottom ?? 0), left: insets?.left ?? 0, right: width - (insets?.right ?? 0) };
       for (const b of v.buttons) assert.ok(b.h >= 44 && b.top >= safe.top - 1 && b.bottom <= safe.bottom + 1 && b.left >= safe.left - 1 && b.right <= safe.right + 1, `${s.tag}: ${b.id} ${JSON.stringify(b)}`);
     }
@@ -199,15 +199,15 @@ try {
     if (!touch) {
       const widths = await hostPage.page.evaluate(() => {
         const wrap = document.querySelector('[data-testid="win-table-wrap"]');
-        const w = [wrap.scrollWidth, wrap.querySelector("table").offsetWidth];
+        const w = [wrap.scrollWidth, wrap.querySelector("ul").offsetWidth];
         const style = document.createElement("style");
         style.textContent = ".win-tag { display: none !important; }";
         document.head.append(style);
-        const without = [wrap.scrollWidth, wrap.querySelector("table").offsetWidth];
+        const without = [wrap.scrollWidth, wrap.querySelector("ul").offsetWidth];
         style.remove();
         return { w, without };
       });
-      assert.deepEqual(widths.w, widths.without, `${size}: the table is no wider with the tags`);
+      assert.deepEqual(widths.w, widths.without, `${size}: the list is no wider with the tags`);
     }
     await wait(150);
     assert.equal(guin.states.length, statesBefore, `${size}: a tap sends no new game`);
@@ -227,7 +227,7 @@ try {
     for (const s of screens) {
       const v = await until(s.page, tagsAre({ ...start, p1: "Away" }), `${s.tag}: away`);
       assert.equal(v.count, "2 of 3 want another game");
-      assert.deepEqual(await heard(s), expectNames(touch, { p0: "yes", p1: "away", p2: "none", p3: "yes" }), `${s.tag}: row names`);
+      assert.deepEqual(await heard(s), expectNames(true, { p0: "yes", p1: "away", p2: "none", p3: "yes" }), `${s.tag}: row names`);
     }
     await guest.page.screenshot({ path: `test-results/play-again-away-${width}x${height}.png` });
     guin = await guinevere();

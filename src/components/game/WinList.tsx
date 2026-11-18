@@ -1,5 +1,4 @@
-// #748: the win screen's compact list on touch and narrow screens, its own chunk (chunks.ts) so the desktop table loads
-// nothing extra. One row per player; one opens at a time, scrolls to the top of the list and shows the breakdown.
+// #748: the win screen's list, on every screen size (owner 2026-11-12, q1563-results-desktop), its own chunk (chunks.ts). One row per player; one opens at a time, scrolls to the top of the list and shows the breakdown.
 import { useEffect, useRef, useState } from "react";
 import { SeatDot } from "@/components/game/SeatDot";
 import type { Row } from "@/components/game/WinScreen";
@@ -19,7 +18,6 @@ export function WinList({ rows }: { rows: Row[] }) {
   }, [open]);
   return (
     <>
-      <p className="mb-1 text-caption text-muted short:hidden">Tap a player to see how they scored.</p>
       <ul ref={list}>
         {rows.map((r) => {
           const id = r.p.id;

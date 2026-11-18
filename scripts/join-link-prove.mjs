@@ -83,9 +83,9 @@ try {
         join: text(join),
         hostFill: getComputedStyle(host).backgroundColor,
         hostDeco: getComputedStyle(host).textDecorationLine,
-        play: buttons.filter((b) => text(b) === "Play").length,
+        play: buttons.filter((b) => text(b) === "Play with bots").length,
         watch: buttons.filter((b) => text(b) === "Watch").length,
-        hotseat: buttons.filter((b) => text(b) === "Four seats, one table").length,
+        hotseat: buttons.filter((b) => text(b) === "Pass and play").length,
         profile: buttons.filter((b) => text(b) === "Profile").length,
         wayfarer: root.querySelectorAll('[data-testid="wayfarer-setup"]').length,
         codeBox: root.querySelectorAll('[aria-label="Join code"]').length,
@@ -126,16 +126,16 @@ try {
   }
 
   const plain = await open("/", VIEWS[3]);
-  await plain.page.getByRole("button", { name: "Play", exact: true }).waitFor();
+  await plain.page.getByRole("button", { name: "Play with bots", exact: true }).waitFor();
   assert.equal(await plain.page.locator("[data-join-link]").count(), 0, "a page with no code keeps the title");
-  assert.equal(await plain.page.getByRole("button", { name: "Four seats, one table" }).count(), 1);
+  assert.equal(await plain.page.getByRole("button", { name: "Pass and play" }).count(), 1);
   await plain.ctx.close();
   console.log("ok   no code: the title is unchanged");
 
   const watch = await open("/?watch=JJJ8", VIEWS[3]);
   await watch.page.getByRole("button", { name: "Watch", exact: true }).waitFor();
   assert.equal(await watch.page.locator("[data-join-link]").count(), 0, "a watch link is not the join card");
-  assert.equal(await watch.page.getByRole("button", { name: "Play", exact: true }).count(), 1);
+  assert.equal(await watch.page.getByRole("button", { name: "Play with bots", exact: true }).count(), 1);
   await watch.ctx.close();
   console.log("ok   watch link: still the title, with Watch");
 

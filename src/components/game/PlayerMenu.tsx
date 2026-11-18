@@ -5,21 +5,16 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { MessageSquare, Landmark, AtSign, Handshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SeatDot } from "@/components/game/SeatDot";
+import { SeatDot, SeatNo } from "@/components/game/SeatDot";
+import { seatAway } from "@/components/game/seat-away";
 import type { PlayerState } from "@/lib/game/types";
 import { fortuneBreakdown } from "@/lib/game/fortunes";
 import { cards, hiddenCount, publicVP, publicScoreBreakdown, roadLength } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
-import type { Seat } from "@/lib/net/table";
 import { cn } from "@/lib/utils";
 import { chunk, LazyBoundary } from "@/lib/lazy";
 
 const MenuNeeds = chunk(() => import("@/components/game/SeatNeeds")).pick(module => module.MenuNeeds);
-
-// The seat's socket dropped and the table is holding it (docs/design/spectator.md "away").
-export function seatAway(seats: Seat[], p: PlayerState) {
-  return seats.some((s) => s.away && (s.name === p.name || `${s.name} (bot)` === p.name));
-}
 
 const CHAT_INPUT = "chat-input";
 
@@ -78,6 +73,7 @@ export function PlayerMenu({ player: p, className, sheet }: { player: PlayerStat
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
+      e.stopPropagation();
       openMenu(null);
       trigger?.focus();
     };
@@ -113,6 +109,7 @@ export function PlayerMenu({ player: p, className, sheet }: { player: PlayerStat
         <div className="flex shrink-0 items-center justify-between gap-2">
           <p data-testid="menu-seat" className="flex min-w-0 items-center gap-2 px-2 text-sm font-medium text-zinc-900">
             <SeatDot color={p.color} className="size-3" />
+            <SeatNo n={p.seat} />
             <span className="truncate">{p.name}</span>
           </p>
           <Button
@@ -167,7 +164,7 @@ export function PlayerMenu({ player: p, className, sheet }: { player: PlayerStat
           <Landmark className="size-4 shrink-0 text-zinc-600" /> Trade…
         </button>
       ) : null}
-      {!own && online && myMain ? (
+      {!own && online && myMain && state.role !== "partner" ? (
         <button
           type="button"
           className={ROW}

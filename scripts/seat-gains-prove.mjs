@@ -81,6 +81,9 @@ try {
  const cue=jarrod.getByTestId('rail-p1').getByTestId('seat-public-gains');
  assert.equal(await jarrod.getByTestId('seat-public-gains').count(),0,'restored production never replays');
  const baseline=await jarrod.evaluate(()=>window.__isle.insets());
+ // #1725: the hold is timed from the cue's mount, not from when this process gets round to it: on a loaded runner the reads
+ // below once took 750-870 ms of the 2.5 s, and a cue that was up 2.4 s measured under 1.9 s.
+ await jarrod.evaluate(()=>{const seen=new MutationObserver(()=>{const up=!!document.querySelector('[data-testid="rail-p1"] [data-testid="seat-public-gains"]');if(up&&window.__cueAt===undefined)window.__cueAt=performance.now();if(!up&&window.__cueAt!==undefined){window.__cueGone=performance.now();seen.disconnect();}});seen.observe(document,{subtree:true,childList:true});});
  await jarrod.evaluate(()=>window.__emberisle.getState().dispatch({type:'roll'}));
  await cue.waitFor();assert.equal(await cue.getAttribute('aria-label'),'Joshua: +2 Wheat');
  const rollPill=await cue.getByTestId('seat-public-pill').evaluate(el=>{const s=getComputedStyle(el);return{sign:el.getAttribute('data-sign'),bg:s.backgroundColor,fg:s.color,shadow:s.boxShadow};});
@@ -89,14 +92,16 @@ try {
  assert.equal(rollPill.fg,'rgb(255, 255, 255)');
  // The tag slides 24 px out from behind the seat in 220 ms; measure where it rests.
  await cue.evaluate(el=>Promise.all(el.getAnimations().map(a=>a.finished)));
- const railBox=await cue.boundingBox(),railSeat=await jarrod.getByTestId('rail-p1').boundingBox();assert(Math.abs(railBox.x-(railSeat.x+railSeat.width-12))<=0.5&&Math.abs(railBox.y-railSeat.y)<=0.5&&Math.abs(railBox.height-railSeat.height)<=0.5&&railBox.width-12>=40,`the rail tag comes out of the seat's right side, tucked 12 px behind it, as tall as the seat: ${JSON.stringify({railBox,railSeat})}`);
- const started=Date.now();
+ const railBox=await cue.boundingBox(),railSeat=await jarrod.getByTestId('rail-p1').boundingBox();assert(Math.abs(railBox.x-(railSeat.x+railSeat.width))<=0.5&&Math.abs(railBox.y-railSeat.y)<=0.5&&Math.abs(railBox.height-railSeat.height)<=0.5&&railBox.width>=40,`the rail tag comes out of the seat's right side at its edge (#1544: no box to tuck behind), as tall as the seat: ${JSON.stringify({railBox,railSeat})}`);
+ const sinceMount=await jarrod.evaluate(()=>performance.now()-window.__cueAt);const started=Date.now()-sinceMount;
  assert.equal(await jarrod.getByTestId('rail-p0').getByTestId('seat-public-gains').count(),0);
  assert.equal(await jarrod.evaluate(()=>window.__emberisle.getState().state.players.find(p=>p.id==='p1').resources),undefined,'other hand stays hidden');
  assert.deepEqual(await jarrod.evaluate(()=>window.__isle.insets()),baseline);
  mkdirSync('test-results',{recursive:true});await jarrod.screenshot({path:'test-results/seat-gains-desktop.png'});
  await cue.waitFor({state:'detached',timeout:3200});
  assert(Date.now()-started>=1900,'cue stays visible near 2.5 seconds');
+ // #1725: the page's own clock from mount to removal, so a cue that left early cannot pass because this process was slow to look.
+ const held=await jarrod.evaluate(()=>window.__cueGone-window.__cueAt);assert(held>=1900&&held<=3200,`the cue was up ${Math.round(held)} ms on the page's clock, near its 2.5 s hold`);
  console.log('ok real host, two clients: Joshua gains +2 Wheat on Jarrod\'s rail, then clears; hidden hand absent; map hole unchanged');
  await jarrod.emulateMedia({reducedMotion:'reduce'});await jarrod.setViewportSize({width:390,height:844});
  await jarrod.evaluate(()=>window.__emberisle.getState().askTable({timber:1},{grain:1}));
@@ -109,7 +114,7 @@ try {
  const tradePills=await phoneCue.getByTestId('seat-public-pill').evaluateAll(els=>els.map(el=>{const s=getComputedStyle(el);return{sign:el.getAttribute('data-sign'),bg:s.backgroundColor,fg:s.color};}));
  assert.deepEqual(tradePills,[{sign:'+',bg:'rgb(16, 86, 42)',fg:'rgb(255, 255, 255)'},{sign:'-',bg:'rgb(138, 34, 25)',fg:'rgb(255, 255, 255)'}]);
  const box=await phoneCue.boundingBox(),anchor=await jarrod.getByTestId('seat-p1').boundingBox();
- assert(Math.abs(box.y-(anchor.y+anchor.height-12))<=0.5&&Math.abs(box.x-anchor.x)<=0.5&&Math.abs(box.width-anchor.width)<=0.5&&Math.abs(box.y+box.height-(anchor.y+anchor.height)-40)<=0.5,`the phone tag is tucked 12 px behind its seat, exactly as wide as it, and 40 px below it: ${JSON.stringify({box,anchor})}`);assert.equal(await phoneCue.evaluate(el=>el.getAnimations({subtree:true}).length),0);
+ assert(Math.abs(box.y-(anchor.y+anchor.height))<=0.5&&Math.abs(box.x-anchor.x)<=0.5&&Math.abs(box.width-anchor.width)<=0.5&&Math.abs(box.y+box.height-(anchor.y+anchor.height)-40)<=0.5,`the phone tag starts at its seat's bottom edge (#1544: no box to tuck behind), exactly as wide as it, and 40 px below it: ${JSON.stringify({box,anchor})}`);assert.equal(await phoneCue.evaluate(el=>el.getAnimations({subtree:true}).length),0);
  // Owner q1530-gain-finalists A: one row, 40 px, gains left of losses, numerals 17 px, the seat's name and score uncovered,
  // and the chat bubble hangs below the tag instead of over it.
  const tag=await jarrod.evaluate(()=>{
@@ -120,7 +125,7 @@ try {
   return{cells,uncovered,cueBottom:cue.getBoundingClientRect().bottom,bubbleTop:bubble?.top??null};
  });
  assert.equal(new Set(tag.cells.map(c=>Math.round(c.top))).size,1,`the tag is one row: ${JSON.stringify(tag.cells)}`);
- assert(tag.cells.every(c=>Math.abs(c.bottom-c.top-52)<=0.5),`each cell is 52 px, 40 px of it below the seat: ${JSON.stringify(tag.cells)}`);
+ assert(tag.cells.every(c=>Math.abs(c.bottom-c.top-40)<=0.5),`each cell is 40 px, all of it below the seat: ${JSON.stringify(tag.cells)}`);
  assert(tag.cells.findLastIndex(c=>c.sign==='+')<tag.cells.findIndex(c=>c.sign==='-')&&tag.cells.filter(c=>c.sign==='+').every(g=>tag.cells.filter(c=>c.sign==='-').every(l=>g.left<l.left)),`gains sit left of losses: ${JSON.stringify(tag.cells)}`);
  assert(tag.cells.every(c=>c.font==='17px'),`one or two goods use 17 px numerals: ${JSON.stringify(tag.cells)}`);
  assert(tag.uncovered.length>=2&&tag.uncovered.every(u=>u.clear),`the seat's name and score stay uncovered: ${JSON.stringify(tag.uncovered)}`);
