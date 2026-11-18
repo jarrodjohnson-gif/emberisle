@@ -38,6 +38,7 @@
     "countdown-prove": "node scripts/countdown-prove.mjs",
     "turn-extension-prove": "node --import ./server/register.mjs scripts/turn-extension-prove.mjs",
     "steal-picker-push-prove": "node --import ./server/register.mjs scripts/steal-picker-push-prove.mjs",
+    "steal-picker-lifecycle-prove": "node --import ./server/register.mjs scripts/steal-picker-lifecycle-prove.mjs",
     "turn-extension-server-prove": "node --import ./server/register.mjs server/turn-extension-prove.mjs",
     "tabs-prove-4": "node scripts/tabs-prove.mjs --seats 4",
     "spiral-prove": "node --import ./server/register.mjs scripts/spiral-prove.mjs",
