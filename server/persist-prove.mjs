@@ -1,7 +1,7 @@
 // A host restart keeps the table: rooms are saved to disk and reloaded on boot (#190). A watcher is never on disk: the
 // restart closes it, the restored room counts 0 watching, and a new watcher is taken at the same seq (#349).
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, watch, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
@@ -9,13 +9,16 @@ import WebSocket from "ws";
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 let host;
 let err = "";
-process.on("exit", () => host?.kill());
+process.on("exit", () => {
+  host?.kill("SIGKILL");
+  rmSync(ROOMS_DIR, { recursive: true, force: true });
+});
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 
 function start(port) {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: String(port), ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, SAVE_MS: "30" },
+    env: { ...process.env, PORT: String(port), ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, SAVE_MS: process.env.SAVE_MS ?? "30" },
   });
   let out = "";
   err = "";
@@ -36,7 +39,40 @@ function fail(why, extra) {
   rmSync(ROOMS_DIR, { recursive: true, force: true });
   process.exit(1);
 }
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+function readRoom(roomCode) {
+  const file = path.join(ROOMS_DIR, `${roomCode}.json`);
+  if (!existsSync(file)) return null;
+  try {
+    return JSON.parse(readFileSync(file, "utf8"));
+  } catch {
+    return null;
+  }
+}
+function waitSaved(roomCode, ready, label, ms = 5000) {
+  const hit = readRoom(roomCode);
+  if (hit && ready(hit)) return Promise.resolve(hit);
+  return new Promise((resolve, reject) => {
+    let done = false;
+    let watcher = null;
+    const finish = (err, doc) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      clearInterval(poll);
+      watcher?.close();
+      if (err) reject(err);
+      else resolve(doc);
+    };
+    const probe = () => {
+      const doc = readRoom(roomCode);
+      if (doc && ready(doc)) finish(null, doc);
+    };
+    const timer = setTimeout(() => finish(new Error(`timed out: ${label}`)), ms);
+    const poll = setInterval(probe, 25);
+    try { watcher = watch(ROOMS_DIR, probe); } catch {}
+    probe();
+  });
+}
 
 async function client(port, name) {
   const ws = new WebSocket(`ws://127.0.0.1:${port}`);
@@ -80,7 +116,7 @@ c.send({ type: "hello", code, name: "Pine" });
 const wb = await b.next("welcome");
 const wc = await c.next("welcome");
 for (const x of all) x.send({ type: "ready", value: true });
-await wait(100);
+await a.next("seats", (m) => m.seats.length === 3 && m.seats.every((s) => s.ready));
 a.send({ type: "start" });
 await Promise.all(all.map((x) => x.next("state")));
 
@@ -99,8 +135,10 @@ async function advance() {
   if (g.phase === "rollOff") {
     await step(() => ({ type: "roll" }));
     // The room on disk after the first roll-off die: still in the roll-off, with that one die (docs/design/first-player.md).
-    await wait(100); // saves are debounced (SAVE_MS, G5)
-    midRollOff ??= JSON.parse(readFileSync(path.join(ROOMS_DIR, `${code}.json`), "utf8")).game;
+    if (!midRollOff) {
+      await waitSaved(code, (d) => d.game?.seq >= seqNow(), "mid-roll-off save");
+      midRollOff = JSON.parse(readFileSync(path.join(ROOMS_DIR, `${code}.json`), "utf8")).game;
+    }
   } else if (g.phase === "setupSettle") await step((s) => ({ type: "place", kind: "outpost", id: s.legal.outpost[0] }));
   else if (g.phase === "setupRoad") await step((s) => ({ type: "place", kind: "path", id: s.legal.path[0] }));
   else if (g.phase === "roll") {
@@ -148,7 +186,7 @@ if ((await w.next("state")).game.seq !== seq) fail("the watcher sees the live se
 await a.next("seats", (m) => m.watching === 1);
 a.send({ type: "chat", text: "see you after the crash" });
 await b.next("chat");
-await wait(100);
+await waitSaved(code, (d) => d.game?.seq >= seq && d.chatSeq >= 1, "pre-crash chat save");
 if (!existsSync(path.join(ROOMS_DIR, `${code}.json`))) fail("room file written", ROOMS_DIR);
 const onDisk = JSON.parse(readFileSync(path.join(ROOMS_DIR, `${code}.json`), "utf8"));
 if ("watchers" in onDisk || "watchSaid" in onDisk || onDisk.seats.some((s) => "ws" in s || "watch" in s)) fail("the room file carries watcher data", Object.keys(onDisk));
@@ -239,7 +277,7 @@ await lobby.next("seats", (m) => m.code === wl.code && m.seats.length === 3 && m
 lobby.send({ type: "chat", text: "all ready" });
 await lobby.next("chat");
 host.removeAllListeners("exit");
-await wait(100); // the last chat is within the debounce window (SAVE_MS, G5)
+await waitSaved(wl.code, (d) => d.chatSeq >= 1, "lobby save before restart");
 host.kill("SIGKILL");
 await new Promise((r) => host.once("exit", r));
 for (const x of [lobby, ...lobbyMates]) x.ws.terminate();
