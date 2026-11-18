@@ -121,29 +121,32 @@ try {
   await page.evaluate(() => window.__emberisle.setState({ spectator: false, turnTimer: null }));
 
   // 3. SeatBubbles: sound bubble (3000 ms) over older chat bubble (4000 ms) must expire at sound's deadline, not chat's.
-  // Preload Reactions chunk first so chunk fetch time cannot skew arrival timestamps.
+  // Install virtual clock so timer expiration is deterministic under arbitrary machine load.
+  await page.clock.install();
   await page.evaluate(async () => {
     await import("/src/components/game/Reactions.tsx");
     const { useTalk } = await import("/src/components/game/talk.tsx");
     const now = Date.now();
-    // Chat arrived 1600 ms ago (expires in 2400 ms); sound arrived 1550 ms ago (newer, expires in 1450 ms).
-    const chatLine = { id: 901, seat: "s1", player: "p1", name: "Tide", color: "#000", text: "Hello there", at: now - 1600 };
-    const soundLine = { id: 902, seat: "s1", player: "p1", name: "Tide", color: "#000", text: "🔊 Fah", sound: "robbed_fah", at: now - 1550 };
+    // Chat arrived at now (expires in 4000 ms); sound arrived at now + 50 ms (newer, expires in 3050 ms).
+    const chatLine = { id: 901, seat: "s1", player: "p1", name: "Tide", color: "#000", text: "Hello there", at: now };
+    const soundLine = { id: 902, seat: "s1", player: "p1", name: "Tide", color: "#000", text: "🔊 Fah", sound: "robbed_fah", at: now + 50 };
     useTalk.setState({
       arrived: new Map([
-        [901, now - 1600],
-        [902, now - 1550],
+        [901, now],
+        [902, now + 50],
       ]),
     });
     window.__emberisle.setState({ chat: [chatLine, soundLine], reactions: [] });
   });
   await page.getByTestId("sound-bubble").waitFor();
-  // Sound expires in ~1450 ms while chat still has ~2400 ms left; chat-bubble must replace sound-bubble before 2050 ms.
+
+  // Fast-forward 3100 ms: sound bubble (3050 ms) must expire and reveal chat bubble (4000 ms).
+  await page.clock.fastForward(3100);
   const swappedToChat = await page
     .waitForFunction(
       () => !document.querySelector('[data-testid="sound-bubble"]') && !!document.querySelector('[data-testid="chat-bubble"]'),
       null,
-      { timeout: 2050 },
+      { timeout: 3000 },
     )
     .then(() => true, () => false);
   const bubbleAfter = await page.evaluate(() => ({
