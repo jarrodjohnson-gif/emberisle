@@ -16,18 +16,34 @@ const ok = (msg) => { checks++; console.log(`ok   ${msg}`); };
 async function loadOnlinePlay(page) {
   await page.evaluate(async () => {
     const { createGame } = await import("/src/lib/game/board.ts");
+    const { applyAction, legalSettle } = await import("/src/lib/game/rules.ts");
     const st = createGame({ seed: 20261117, humans: [{ name: "Ember" }, { name: "Tide" }, { name: "Pine" }], bots: 0 });
     st.phase = "setupSettle";
     st.rollOff = null;
     st.current = "p0";
     st.seq = 10;
+    const sentChat = [];
+    const sentActs = [];
+    window.__testNet = { sentChat, sentActs };
+    const net = {
+      say(text) { sentChat.push(text); },
+      act(action) {
+        sentActs.push(action);
+        const cur = window.__emberisle.getState().state;
+        const res = applyAction(cur, "p0", action);
+        if (!res.error) window.__emberisle.setState({ state: res.state });
+        return true;
+      },
+    };
     window.__emberisle.setState({
       screen: "play",
       mode: "online",
+      net,
       code: "GUAR",
       seatId: "s0",
       localId: "p0",
       spectator: false,
+      legal: { outpost: legalSettle(st, "p0", true), path: [], stronghold: [], wayfarer: [] },
       seats: [
         { id: "s0", name: "Ember", color: "#d64933", ready: true, connected: true, bot: false },
         { id: "s1", name: "Tide", color: "#2b6cb0", ready: true, connected: true, bot: false },
@@ -97,12 +113,21 @@ try {
     await input.press("Enter");
     const afterChatEnter = await page.evaluate((id) => {
       const s = window.__emberisle.getState();
-      return { seq: s.state.seq, pending: s.pendingPlace, built: !!s.state.vertices.find((v) => v.id === id)?.building, draft: s.chatDraft };
+      return {
+        seq: s.state.seq,
+        pending: s.pendingPlace,
+        built: !!s.state.vertices.find((v) => v.id === id)?.building,
+        draft: s.chatDraft,
+        sentChat: [...window.__testNet.sentChat],
+        sentActs: window.__testNet.sentActs.length,
+      };
     }, c2.id);
     assert.equal(afterChatEnter.seq, c2.seq, "Enter in chat input does not confirm pendingPlace");
     assert.equal(afterChatEnter.built, false, "Enter in chat input does not build outpost");
+    assert.equal(afterChatEnter.sentActs, 0, "Enter in chat input sends no board actions");
     assert.equal(afterChatEnter.pending?.id, c2.id, "Enter in chat input keeps pendingPlace intact");
     assert.equal(afterChatEnter.draft, "", "Enter in chat input still sends and clears draft");
+    assert.deepEqual(afterChatEnter.sentChat, ["hold on"], "Enter in chat input sends the chat line");
     ok("Enter in #chat-input sends chat without confirming pendingPlace");
 
     await input.focus();
@@ -137,6 +162,20 @@ try {
     assert.equal(afterDialogEsc.howTo, false, "Escape closes HowTo dialog");
     assert.equal(afterDialogEsc.pending?.id, c2.id, "Escape closing HowTo leaves pendingPlace intact");
     ok("Enter and Escape while dialog is open leave pendingPlace intact");
+
+    // 3b. Escape closing PlayerMenu leaves pendingPlace intact (document bubble vs window bubble).
+    await page.evaluate(() => window.__emberisle.getState().openMenu("p1"));
+    await page.getByTestId("player-menu").waitFor({ timeout: 10_000 });
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.keyboard.press("Escape");
+    await page.getByTestId("player-menu").waitFor({ state: "detached", timeout: 5000 });
+    const afterMenuEsc = await page.evaluate(() => ({
+      menuFor: window.__emberisle.getState().menuFor,
+      pending: window.__emberisle.getState().pendingPlace,
+    }));
+    assert.equal(afterMenuEsc.menuFor, null, "Escape closes PlayerMenu");
+    assert.equal(afterMenuEsc.pending?.id, c2.id, "Escape closing PlayerMenu leaves pendingPlace intact");
+    ok("Escape closing PlayerMenu leaves pendingPlace intact");
 
     // 4. With no input or dialog open, Escape cancels pendingPlace and Enter confirms pendingPlace.
     await page.evaluate(() => document.activeElement?.blur());
