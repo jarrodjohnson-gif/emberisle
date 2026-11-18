@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, watch, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
@@ -68,11 +68,80 @@ async function startHost(requestedPort = 0) {
 }
 let port = await startHost();
 
+const saveMs = Number(process.env.SAVE_MS ?? 250);
+const fenceTimeoutMs = Math.max(5000, saveMs * 4 + 2000);
+const lastSaveAt = new Map();
+const inRefused = new Set();
+
+function noteHostSave(code, msg) {
+  if (inRefused.has(code) || msg.type !== "state" || typeof msg.serverNow !== "number") return;
+  lastSaveAt.set(code, Math.max(lastSaveAt.get(code) ?? 0, msg.serverNow));
+}
+
+function diskTurnDeadline(disk) {
+  let soonest = null;
+  for (const s of disk.seats ?? []) {
+    if (s.turnDeadline && (!soonest || s.turnDeadline < soonest)) soonest = s.turnDeadline;
+  }
+  return soonest;
+}
+
+function diskMatchesState(disk, expected, code) {
+  const g = disk?.game;
+  const want = expected?.game;
+  if (!disk || disk.code !== code || disk.shape !== 3 || !g || !want) return false;
+  if (g.seq !== want.seq || g.phase !== want.phase || g.turn !== want.turn || g.current !== want.current) return false;
+  if ((g.log?.length ?? 0) !== (want.log?.length ?? 0)) return false;
+  if (diskTurnDeadline(disk) !== (expected.turnDeadline ?? null)) return false;
+  if (JSON.stringify(g.discardNeeded ?? {}) !== JSON.stringify(want.discardNeeded ?? {})) return false;
+  if (JSON.stringify(g.bank) !== JSON.stringify(want.bank)) return false;
+  const minSavedAt = lastSaveAt.get(code) ?? 0;
+  return typeof disk.savedAt === "number" && disk.savedAt >= minSavedAt;
+}
+
+// #1764: wait for the host's latest legitimate snapshot to hit disk before capturing a refusal baseline.
+async function fenceSnapshot(code, expected) {
+  const file = path.join(dir, `${code}.json`);
+  const ready = () => {
+    try {
+      return diskMatchesState(JSON.parse(readFileSync(file, "utf8")), expected, code);
+    } catch {
+      return false;
+    }
+  };
+  if (ready()) return;
+  await new Promise((resolve, reject) => {
+    let done = false;
+    const finish = (err) => {
+      if (done) return;
+      done = true;
+      clearTimeout(deadline);
+      clearInterval(fallback);
+      watcher.close();
+      if (err) reject(err);
+      else resolve();
+    };
+    const check = () => { if (ready()) finish(); };
+    const watcher = watch(dir, check);
+    const deadline = setTimeout(() => {
+      let snap = "unreadable";
+      try {
+        const d = JSON.parse(readFileSync(file, "utf8"));
+        snap = `shape=${d.shape} seq=${d.game?.seq}/${expected?.game?.seq} savedAt=${d.savedAt}/${lastSaveAt.get(code) ?? 0} deadline=${diskTurnDeadline(d)}/${expected?.turnDeadline ?? null}`;
+      } catch {}
+      finish(new Error(`timed out fencing durable snapshot for ${code} (${snap}): ${stderr}`));
+    }, fenceTimeoutMs);
+    const fallback = setInterval(check, 250);
+    check();
+  });
+}
+
 async function client(code, pid) {
   const ws = new WebSocket(`ws://127.0.0.1:${port}`);
   const c = { ws, state: null, inbox: [], changed: null };
   ws.on("message", (raw) => {
     const msg = JSON.parse(String(raw));
+    noteHostSave(code, msg);
     if (msg.type === "state") c.state = msg;
     c.inbox.push(msg);
     c.changed?.();
@@ -138,10 +207,17 @@ async function lobbyClient(hello) {
 async function refused(c, msg, label, code = "SGAA") {
   c.inbox.length = 0;
   const before = c.state;
+  await fenceSnapshot(code, before);
   const saved = readFileSync(path.join(dir, `${code}.json`), "utf8");
-  c.raw(msg);
-  assert.equal((await c.next("error")).message, "The table has updated. Please try again.", label);
-  const after = await c.next("state");
+  inRefused.add(code);
+  let after;
+  try {
+    c.raw(msg);
+    assert.equal((await c.next("error")).message, "The table has updated. Please try again.", label);
+    after = await c.next("state");
+  } finally {
+    inRefused.delete(code);
+  }
   assert.deepEqual(after.game, before.game, `${label}: no game/hand/turn mutation`);
   assert.equal(after.turnDeadline, before.turnDeadline, `${label}: no clock rearm`);
   assert.equal(readFileSync(path.join(dir, `${code}.json`), "utf8"), saved, `${label}: no disk write`);

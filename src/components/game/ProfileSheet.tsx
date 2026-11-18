@@ -196,7 +196,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
         {formError}
         {actions(
           <>
-            <Button variant="secondary" className="w-full" disabled={busy} onClick={() => void send(() => c.logout())}>
+            <Button variant="secondary" className="w-full" disabled={busy} onClick={() => void send(() => c.logout().finally(() => back()))}>
               Sign out
             </Button>
           </>,
@@ -282,7 +282,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
             </Button>,
           )}
         </form>
-        <Button variant="secondary" className="w-full" onClick={() => { setErrors({}); setView(create ? "signin" : "create"); }}>
+        <Button variant="secondary" className="w-full" onClick={() => back(create ? "signin" : "create")}>
           {create ? "Sign in instead" : "Create profile"}
         </Button>
         {guest}

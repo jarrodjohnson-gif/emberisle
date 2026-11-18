@@ -1064,6 +1064,12 @@ function deadlineOf(room) {
 function pushState(room) {
   // Recovery during rejoin or takeover can finish a game too. Release before publishing it.
   maybeReleaseOpenSlot(room);
+  if (room.game?.phase === "over") {
+    for (const seat of room.seats) {
+      clearTimeout(seat.graceTimer);
+      seat.graceTimer = null;
+    }
+  }
   armTurns(room);
   extensions(room).sync();
   // The soonest armed window, and whose it is, so every HUD can count it down (#345). `serverNow` lets a client
@@ -2281,7 +2287,7 @@ function hold(room, seat) {
   // A dropped seat is the grace timer's business, never the turn timer's (#344).
   disarmTurn(seat);
   if (room.game) extensions(room).sync();
-  if (room.game && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
+  if (room.game && room.game.phase !== "over" && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
   seat.holdTimer = setTimeout(() => letGo(room, seat), room.game ? HOLD_MS : LOBBY_HOLD_MS);
   // Free the open-list slot when nobody is connected so a finished or abandoned table cannot block a new open host.
   maybeReleaseOpenSlot(room);
@@ -2297,6 +2303,7 @@ function handOffHost(room) {
 // The grace is over: the practice bot plays the seat so the table never waits longer than that.
 function takeOver(room, seat) {
   seat.graceTimer = null;
+  if (!room.game || room.game.phase === "over") return;
   const p = room.game.players.find((x) => x.id === seat.pid);
   if (!p || p.kind === "bot") return;
   if (room.offer?.from === seat.pid) {
