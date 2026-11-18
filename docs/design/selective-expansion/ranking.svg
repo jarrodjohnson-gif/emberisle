@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420" role="img" aria-label="Selective expansion ranking">
+  <rect width="720" height="420" fill="#f7f1e6"/>
+  <text x="36" y="48" font-family="Georgia, serif" font-size="28" fill="#1c2a24">Table pieces  build order</text>
+  <text x="36" y="78" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14" fill="#5a6a62">Recommended first slice: Beacon docks + New fortunes</text>
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="16" fill="#1c2a24">
+    <rect x="36" y="110" width="648" height="40" rx="6" fill="#d8efe4"/>
+    <text x="52" y="136">1  Beacon docks  special 2:1 any-good harbor, once per turn</text>
+    <rect x="36" y="160" width="648" height="40" rx="6" fill="#d8efe4"/>
+    <text x="52" y="186">2  New fortunes  four Emberisle cards in the shared deck</text>
+    <rect x="36" y="210" width="648" height="40" rx="6" fill="#e8e2d4"/>
+    <text x="52" y="236">3  Tide lanes  sea paths between coastal corners</text>
+    <rect x="36" y="260" width="648" height="40" rx="6" fill="#ece7db"/>
+    <text x="52" y="286">4  Squall deck  short table events after a seven</text>
+    <rect x="36" y="310" width="648" height="40" rx="6" fill="#ece7db"/>
+    <text x="52" y="336">5  Drift isles  needs Tide lanes first</text>
+    <rect x="36" y="360" width="648" height="40" rx="6" fill="#ece7db"/>
+    <text x="52" y="386">6  Ember lookouts  wait for fog of war</text>
+  </g>
+</svg>
