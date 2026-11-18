@@ -223,6 +223,7 @@
     "profile-deletion-prove": "node --import ./server/register.mjs server/profile-deletion-prove.mjs",
     "profile-rename-cap-prove": "node --import ./server/register.mjs server/profile-rename-cap-prove.mjs",
     "profile-rename-unknown-prove": "node --import ./server/register.mjs server/profile-rename-unknown-prove.mjs",
+    "profile-race-guards-prove": "node --import ./server/register.mjs server/profile-race-guards-prove.mjs",
     "profile-recovery-prove": "node --import ./server/register.mjs server/profile-recovery-prove.mjs",
     "trade-hold-prove": "node --import ./server/register.mjs server/trade-hold-prove.mjs",
     "seat-secret-log-prove": "node --import ./server/register.mjs server/seat-secret-log-prove.mjs",
