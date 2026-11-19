@@ -7,7 +7,7 @@
 // 6. Process exit flushAll write failure cleans up temp file.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import http from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -243,6 +243,13 @@ await check("Flush write failure cleans up temp file and keeps dirty", async () 
     // Check that no .tmp file leaked in rooms directory.
     const tmps = readdirSync(d.rooms).filter((n) => n.endsWith(".tmp"));
     assert.deepEqual(tmps, [], "no temp file leaked after write failure");
+
+    // Remove the blocking directory so subsequent retry flush can succeed.
+    rmSync(roomFile, { recursive: true, force: true });
+    await sleep(80);
+    assert.ok(existsSync(roomFile), "room file written by retry flush because dirty was restored");
+    const saved = JSON.parse(readFileSync(roomFile, "utf8"));
+    assert.equal(saved.seats[0].ready, true, "saved state includes the updated ready value");
     c.ws.close();
   } finally {
     await host.stop();
