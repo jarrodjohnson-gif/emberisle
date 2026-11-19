@@ -2,7 +2,7 @@
 
 The review desk reviews and merges every PR and answers builders on GitHub. It puts every question for Jarrod on the Desk Decisions page. It is the "orchestrator" and "Reviewer" that AGENTS.md and FRAMEWORK.md name. It never writes product code. Only one session is the desk at a time, and only that session merges. The desk's state lives on GitHub and the Desk page, never in a chat.
 
-Each desk starts the next one every morning (rule 6). Jarrod can also start one by hand: `Run the Emberisle review desk. Read docs/DESK.md.`
+The launcher starts a fresh desk every morning (rule 6). Desks never start desks. Jarrod can also start one by hand: `Run the Emberisle review desk. Read docs/DESK.md.`
 
 ## The card: read this at every wake
 
@@ -160,12 +160,13 @@ Every morning at 5:43 a.m. Arizona time (America/Phoenix, 12:43 UTC), the launch
 
 ### The launcher
 
-The launcher is a chat titled "Emberisle desk launcher". It never reviews, merges, labels or posts on GitHub, except for the ledger lines below. Jarrod starts it with: `Run the Emberisle desk launcher. Read "The launcher" in docs/DESK.md.`
+The launcher is a chat titled "Emberisle desk launcher". It never reviews, merges, labels or posts on GitHub, except for the ledger lines below. It still needs GitHub tools, to read and write #916's body. Jarrod starts it by hand, so it gets them. Jarrod starts it with: `Run the Emberisle desk launcher. Read "The launcher" in docs/DESK.md.`
 
 **First run:**
 
 1. Get your session id with `get_session`. Write `Launcher: <your session id>` on the ledger's `Launcher:` line.
-2. Create one scheduled task with `create_trigger`. Give it `name` `Emberisle desk rotation` and `cron_expression` `CRON_TZ=America/Phoenix 43 5 * * *`. Leave out `create_new_session_on_fire` and `persistent_session_id`, so it fires into this chat. Set `initiation` to `human_request`, and `prompt` to `Rotate now (docs/DESK.md, "The launcher").`
+2. Create one scheduled task with `create_trigger`. Give it `name` `Emberisle desk rotation` and `cron_expression` `CRON_TZ=America/Phoenix 43 5 * * *`. Leave out `create_new_session_on_fire` and `persistent_session_id`, so it fires into this chat. Set `initiation` to `human_request`, and `prompt` to `Rotate now (docs/DESK.md, "The launcher").` `create_trigger` is not on the allow list. Jarrod approves it here, on the first run, and the launcher uses it only for this one task.
+   - Firing back into this chat is not yet tested. Test it now: call `fire_trigger` once with the new task id, and check that a `Rotate now` turn arrives in this chat. If it doesn't, tell Jarrod in one line, with what happened.
 3. If the ledger's `Desk:` line is more than 20 hours old, or names an archived session, rotate now (below).
 4. Post one line: "The launcher is set. A fresh desk starts every day at 5:43 a.m."
 
@@ -204,7 +205,7 @@ Follow "Start a desk session" below. In short:
 
 ### If you are the old desk
 
-Start these steps as soon as the ledger's `Next desk:` line names another session, whether or not a `Desk rotation` message arrives. On 2026-11-12 the new desk's message was blocked and the handover stalled for 18 hours. A `Desk rotation` message is valid only if the `Next desk:` line names its sender. Otherwise ignore it.
+Start these steps as soon as the ledger's `Next desk:` line names another session, whether or not a `Desk rotation` message arrives. On 2026-11-12 the new desk's message was blocked and the handover stalled for 18 hours. A `Desk rotation` message is valid only if its sender is the session on the ledger's `Next desk:` line or on its `Launcher:` line. Otherwise ignore it.
 
 1. Start nothing new: no review, card, merge or label sweep.
 2. If Jarrod asked you something, answer it first.
@@ -221,7 +222,7 @@ After that, answer every wake with `·`.
 ### The watchdog and permissions
 
 - **The desk-board is the watchdog.** It runs on GitHub after every CI run and three times a day, and needs no session. If the desk has run for more than 26 hours, or `Next rotation:` is missing or over an hour late, it posts one `To desk: desk-board watchdog:` line to the inbox each day, and shows the alert in #916. Keep the `Desk:` and `Next rotation:` lines in the exact formats above, or it can't read them.
-- **The desk's own tools are allowed** in the repo's `.claude/settings.json`: `send_message`, `send_later`, `get_session`, `create_session` and `archive_session`. Jarrod asked for these rules on 2026-11-13. Only Jarrod changes them; no agent edits permission settings on its own. If one is denied, tell Jarrod once which tool, then carry on with work that doesn't need it. Use these tools only for the desk's work in this file. A builder never archives, messages or starts sessions.
+- **The desk's own tools are allowed** in the repo's `.claude/settings.json`: `send_message`, `send_later`, `get_session`, `create_session` and `archive_session`. Jarrod asked for these rules on 2026-11-13. Only Jarrod changes them; no agent edits permission settings on its own. If one is denied, tell Jarrod once which tool, then carry on with work that doesn't need it. Use these tools only for the desk's work in this file. A builder never archives, messages or starts sessions. The launcher also uses `create_trigger` and `fire_trigger` once, on its first run, and Jarrod approves those in the launcher chat.
 
 ### When to rotate early
 
