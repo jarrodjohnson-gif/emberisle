@@ -233,6 +233,7 @@
     "online-sync-reset-prove": "node --import ./server/register.mjs server/online-sync-reset-prove.mjs",
     "finish-takeover-prove": "node --import ./server/register.mjs server/finish-takeover-prove.mjs",
     "host-lifecycle-guards-prove": "node --import ./server/register.mjs server/host-lifecycle-guards-prove.mjs",
+    "server-lifecycle-guards-prove": "node --import ./server/register.mjs server/server-lifecycle-guards-prove.mjs",
     "result-journal-prove": "node --import ./server/register.mjs server/result-journal-prove.mjs",
     "profile-results-prove": "node --import ./server/register.mjs server/profile-results-prove.mjs",
     "profile-deletion-prove": "node --import ./server/register.mjs server/profile-deletion-prove.mjs",
