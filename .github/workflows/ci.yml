@@ -191,9 +191,53 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run tunnel-reconnect-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run scene-motion-guards-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profiles-lifecycle-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run store-lifecycle-guards-prove
+      # #1817: apt mirror flakes kept turning main red. Cache a pinned static ffmpeg; the apt step below is the fallback.
+      - if: needs.changes.outputs.docs_only != 'true'
+        id: ffmpeg-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/ffmpeg-static
+          key: ffmpeg-static-7.0.2-amd64-v2
+      - if: needs.changes.outputs.docs_only != 'true' && steps.ffmpeg-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 3
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          tmp=$(mktemp -d)
+          name=ffmpeg-7.0.2-amd64-static
+          for dir in releases old-releases; do
+            curl -fsSL --retry 3 --max-time 120 -o "$tmp/ffmpeg.tar.xz" "https://johnvansickle.com/ffmpeg/$dir/$name.tar.xz" && break
+          done
+          echo "abda8d77ce8309141f83ab8edf0596834087c52467f6badf376a6a2a4c87cf67  $tmp/ffmpeg.tar.xz" | sha256sum -c -
+          mkdir "$tmp/out"
+          tar -xJf "$tmp/ffmpeg.tar.xz" --strip-components=1 -C "$tmp/out" "$name/ffmpeg" "$name/ffprobe"
+          mkdir -p ~/ffmpeg-static
+          mv "$tmp/out/ffmpeg" "$tmp/out/ffprobe" ~/ffmpeg-static/
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: '[ ! -x ~/ffmpeg-static/ffmpeg ] || [ ! -x ~/ffmpeg-static/ffprobe ] || echo "$HOME/ffmpeg-static" >> "$GITHUB_PATH"'
+      # #1073: measures every file in public/audio with ffmpeg.
+      # #1186: the apt mirror sometimes hangs; bound each attempt, retry, and fail loudly if ffmpeg is still missing.
+      # #1782: runs in build so slow apt mirrors cannot push the server job past 15 minutes.
+      - if: needs.changes.outputs.docs_only != 'true'
+        timeout-minutes: 6
+        run: |
+          command -v ffmpeg >/dev/null && command -v ffprobe >/dev/null || { echo "::warning::ffmpeg static download unavailable, using apt"; for attempt in 1 2 3; do
+            sudo timeout 90 apt-get -o Acquire::Retries=3 update \
+              && sudo timeout 150 apt-get -o Acquire::Retries=3 install -y --no-install-recommends ffmpeg \
+              && break
+            echo "apt attempt $attempt failed"
+            sleep 5
+          done; }
+          command -v ffmpeg && command -v ffprobe
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run audio-level-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run ambience-loop-prove
 
   server:
     needs: [changes, dependencies]
@@ -241,8 +285,6 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run expanded-board-prove
       - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run expanded-turns-prove
-      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run engine-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run paired-needs-guards-prove
@@ -266,80 +308,68 @@ jobs:
         run: npm run rules-view-helpers-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run hud-helpers-guards-prove
-      # #1673: dice-prove and expanded-bots-prove run beside npm test. Both are Node only: no host, port, file or env
-      # var shared with anything else. npm test mostly waits on host timers. Their output prints after npm test ends,
-      # and a failure in either side fails the step.
-      # #1682: each side proof has a time limit, about twice its slowest run on main (dice 140 s, bots 46 s), so a hang
-      # ends with exit 124, fails the step and still prints the side log well inside the job's timeout.
+      # #1673, #1682, #1782: run independent Node and host proofs in two bounded side lanes beside npm test.
+      # Each lane uses isolated temp dirs and per-proof time limits so hangs fail loudly and logs always print.
       - if: needs.changes.outputs.docs_only != 'true'
-        name: npm test, with dice-prove and expanded-bots-prove beside it
+        name: npm test, with side Node and standalone host proofs
         run: |
-          side="$RUNNER_TEMP/side-proofs.log"
+          side1="$RUNNER_TEMP/side-node-proofs.log"
+          side2="$RUNNER_TEMP/side-host-proofs.log"
+          mkdir -p "$RUNNER_TEMP/main-host" "$RUNNER_TEMP/side-host"
           (
             status=0
             timeout -k 10 300 npm run dice-prove || status=$?
             timeout -k 10 120 npm run expanded-bots-prove || status=$?
+            timeout -k 10 60 npm run expanded-turns-prove || status=$?
             exit "$status"
-          ) > "$side" 2>&1 &
-          pid=$!
+          ) > "$side1" 2>&1 &
+          pid1=$!
+          (
+            export ROOMS_DIR="$RUNNER_TEMP/side-host/rooms"
+            export PROFILES_DIR="$RUNNER_TEMP/side-host/profiles"
+            export RESULTS_DIR="$RUNNER_TEMP/side-host/results"
+            status=0
+            timeout -k 10 60 npm run profile-songs-prove || status=$?
+            timeout -k 10 60 npm run profile-pin-queue-prove || status=$?
+            timeout -k 10 60 npm run profile-unknown-cap-prove || status=$?
+            timeout -k 10 60 npm run profile-reservation-recovery-prove || status=$?
+            timeout -k 10 60 npm run profile-derive-error-prove || status=$?
+            timeout -k 10 60 npm run profile-permissions-prove || status=$?
+            timeout -k 10 60 npm run profile-socket-rate-prove || status=$?
+            timeout -k 10 60 npm run profile-lock-prove || status=$?
+            timeout -k 10 60 npm run profile-expiry-prove || status=$?
+            timeout -k 10 60 npm run profile-pin-race-prove || status=$?
+            timeout -k 10 90 npm run profile-results-prove || status=$?
+            timeout -k 10 60 npm run profile-deletion-prove || status=$?
+            timeout -k 10 60 npm run profile-rename-cap-prove || status=$?
+            timeout -k 10 60 npm run profile-rename-unknown-prove || status=$?
+            timeout -k 10 60 npm run profile-race-guards-prove || status=$?
+            timeout -k 10 120 npm run profile-recovery-prove || status=$?
+            timeout -k 10 60 npm run server-needs-prove || status=$?
+            timeout -k 10 60 npm run submodules-guards-prove || status=$?
+            timeout -k 10 60 npm run server-play-again-prove || status=$?
+            timeout -k 10 60 npm run expanded-persist-prove || status=$?
+            timeout -k 10 90 npm run expanded-lobby-prove || status=$?
+            timeout -k 10 120 npm run expanded-timers-prove || status=$?
+            timeout -k 10 60 npm run rolloff-extension-prove || status=$?
+            timeout -k 10 60 npm run rematch-extension-prove || status=$?
+            timeout -k 10 60 npm run online-sync-reset-prove || status=$?
+            timeout -k 10 60 npm run finish-takeover-prove || status=$?
+            exit "$status"
+          ) > "$side2" 2>&1 &
+          pid2=$!
           status=0
+          ROOMS_DIR="$RUNNER_TEMP/main-host/rooms" \
+          PROFILES_DIR="$RUNNER_TEMP/main-host/profiles" \
+          RESULTS_DIR="$RUNNER_TEMP/main-host/results" \
           npm test || status=$?
-          wait "$pid" || status=$?
-          echo "----- dice-prove and expanded-bots-prove -----"
-          cat "$side"
+          wait "$pid1" || status=$?
+          wait "$pid2" || status=$?
+          echo "----- dice-prove, expanded-bots-prove and expanded-turns-prove -----"
+          cat "$side1"
+          echo "----- standalone server, profile and expanded proofs -----"
+          cat "$side2"
           exit "$status"
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-songs-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-pin-queue-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-unknown-cap-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-reservation-recovery-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-derive-error-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-permissions-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-socket-rate-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-lock-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-expiry-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-pin-race-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-results-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-deletion-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-rename-cap-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-rename-unknown-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-race-guards-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-recovery-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run server-needs-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run submodules-guards-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run server-play-again-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run expanded-persist-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run expanded-lobby-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run expanded-timers-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run rolloff-extension-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run rematch-extension-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run online-sync-reset-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run finish-takeover-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run sound-lifecycle-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -366,23 +396,6 @@ jobs:
         run: npm run label-commands-prove
       - name: Desk gate proof
         run: npm run desk-gate-prove
-      # #1073: measures every file in public/audio with ffmpeg.
-      # #1186: the apt mirror sometimes hangs; bound each attempt, retry, and fail loudly if ffmpeg is still missing.
-      - if: needs.changes.outputs.docs_only != 'true'
-        timeout-minutes: 6
-        run: |
-          command -v ffmpeg >/dev/null || for attempt in 1 2 3; do
-            sudo timeout 90 apt-get -o Acquire::Retries=3 update \
-              && sudo timeout 150 apt-get -o Acquire::Retries=3 install -y --no-install-recommends ffmpeg \
-              && break
-            echo "apt attempt $attempt failed"
-            sleep 5
-          done
-          command -v ffmpeg
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run audio-level-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run ambience-loop-prove
 
   # #924: advisory, so it is not in `checks.needs`. The desk reads it for REVIEWING.md item 4.
   # It diffs this PR's proofs against the commit it merges onto (the merge commit's first parent, as in build), using the
@@ -492,6 +505,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run turn-extension-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run vote-and-bubble-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run steal-picker-push-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run steal-picker-lifecycle-prove
@@ -557,6 +572,8 @@ jobs:
         run: npm run lobby-tictactoe-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run secondary-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run sheets-focus-guards-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run my-numbers-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
@@ -650,6 +667,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run hud-chat-guards-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run game-helper-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run sticker-tray-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run sticker-motion-prove
@@ -703,6 +722,8 @@ jobs:
         run: npm run contrast-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run button-system-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
+        run: npm run duo-viewport-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run keyboard-place-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'

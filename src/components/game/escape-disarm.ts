@@ -19,7 +19,7 @@ export function useEscapeDisarm() {
       const s = useGame.getState();
       if (s.buildMode === "none" || s.tradeOpen || s.menuFor || s.pendingPlace || s.howTo || s.costs) return;
       if ((e.target as HTMLElement | null)?.closest("input, select, textarea")) return;
-      if (document.querySelector('[data-testid="table-menu"], [data-testid="game-log"]')) return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"], [data-testid="table-menu"], [data-testid="game-log"]')) return;
       play("ui_back");
       setBuildMode("none");
     };

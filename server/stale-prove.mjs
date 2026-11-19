@@ -204,6 +204,19 @@ async function lobbyClient(hello) {
   return c;
 }
 
+// client() resolves on the joiner's own first state; the other clients' views of that seat change later.
+async function seated(...cs) {
+  for (const c of cs) {
+    const until = Date.now() + 5000;
+    while (!["p0", "p1", "p2"].every((id) => c.state.game.players.find((p) => p.id === id)?.kind === "human")) {
+      await new Promise((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error(`timed out: seats not human: ${stderr}`)), Math.max(1, until - Date.now()));
+        c.changed = () => { clearTimeout(t); c.changed = null; resolve(); };
+      });
+    }
+  }
+}
+
 async function refused(c, msg, label, code = "SGAA") {
   c.inbox.length = 0;
   const before = c.state;
@@ -230,6 +243,7 @@ try {
   const currentDiscard = await client("SGEE", "p0");
   let d1 = await client("SGEE", "p1");
   let d2 = await client("SGEE", "p2");
+  await seated(currentDiscard, d1, d2);
   const discard1 = d1.intent({ type: "discard", resources: { timber: 4 } });
   const discard2 = d2.intent({ type: "discard", resources: { timber: 4 } });
   const discard0 = currentDiscard.intent({ type: "discard", resources: { ore: 4 } });
@@ -275,6 +289,7 @@ try {
   const trader = await client("SGFF", "p0");
   const responder = await client("SGFF", "p1");
   const otherResponder = await client("SGFF", "p2");
+  await seated(trader, responder, otherResponder);
   trader.raw(trader.intent({ type: "tradeAsk", give: { grain: 1 }, want: { clay: 1 } }));
   const responseOffer = await responder.next("tradeOffer");
   await otherResponder.next("tradeOffer");
@@ -299,7 +314,7 @@ try {
 
   let a = await client("SGAA", "p0");
   const b = await client("SGAA", "p1");
-  await client("SGAA", "p2");
+  await seated(a, b, await client("SGAA", "p2"));
   // The baseline stamp belongs to this recipient, not another seat or a guessed game sequence.
   assert.notEqual(a.state.actionStamp.connection, b.state.actionStamp.connection);
   for (const [label, patch] of [
@@ -364,7 +379,7 @@ try {
   // Bot takeover advances the table while the seat is away; an exact replay still must not run.
   let away = await client("SGBB", "p0");
   const witness = await client("SGBB", "p1");
-  await client("SGBB", "p2");
+  await seated(away, witness, await client("SGBB", "p2"));
   const staleRoll = away.intent({ type: "roll" });
   await away.drop();
   await witness.next("state", (s) => s.game.seq > staleRoll.baseSeq);
@@ -374,7 +389,7 @@ try {
   // Rematch resets both counters; the old connection baseline must not become valid again.
   const h = await client("SGCC", "p0");
   const r = await client("SGCC", "p1");
-  await client("SGCC", "p2");
+  await seated(h, r, await client("SGCC", "p2"));
   const oldIsland = r.intent({ type: "roll" });
   r.inbox.length = 0;
   h.raw({ type: "again" });
@@ -416,7 +431,7 @@ try {
   // A raw frame from the previous host process must fail even when restored turn and seq are unchanged.
   let restartSeat = await client("SGDD", "p0");
   await client("SGDD", "p1");
-  await client("SGDD", "p2");
+  await seated(restartSeat, await client("SGDD", "p2"));
   const beforeRestart = restartSeat.state.actionStamp;
   const preRestartFrame = restartSeat.intent({ type: "tradeBank", give: "timber", take: "grain" });
   const oldHost = host;

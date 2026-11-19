@@ -15,7 +15,6 @@ const Play = chunk(() => import("@/components/game/LobbyWaitBox")).pick((m) => m
 // Your own name is a button; a tap opens an input. Enter or leaving the field saves (the host cleans it and answers with the
 // seat list), Escape puts it back. Empty is not sent: the old name stays.
 function OwnName({ seat }: { seat: Seat }) {
-  const rename = useGame((s) => s.renameSeat);
   const [draft, setDraft] = useState<string | null>(null);
   const done = useRef(false);
   const refocus = useRef(false);
@@ -23,7 +22,8 @@ function OwnName({ seat }: { seat: Seat }) {
     if (done.current) return;
     done.current = true;
     refocus.current = byKey;
-    if (save && draft !== null && draft.trim() && draft.trim() !== seat.name) rename(draft);
+    const trimmed = draft?.trim();
+    if (save && trimmed && trimmed !== seat.name) useGame.getState().renameSeat(trimmed);
     setDraft(null);
   };
   if (draft === null) {
@@ -54,29 +54,25 @@ function OwnName({ seat }: { seat: Seat }) {
       onBlur={() => finish(true)}
       onKeyDown={(e) => {
         e.stopPropagation();
-        if (e.key === "Enter") { e.preventDefault(); finish(true, true); }
-        if (e.key === "Escape") { e.preventDefault(); finish(false, true); }
+        if (e.key === "Enter" || e.key === "Escape") {
+          e.preventDefault();
+          finish(e.key === "Enter", true);
+        }
       }}
     />
   );
 }
 
 export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, SeatName, prefetchRules, fitCode }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; SeatName: (props: { seat?: Seat }) => ReactNode; prefetchRules: () => Promise<boolean>; fitCode: (el: HTMLElement, code: string) => void }) {
+  const g = useGame.getState();
   const rule = useGame(s => s.tableWayfarerMode);
   const code = useGame(s => s.code);
   const seats = useGame(s => s.seats);
   const seatId = useGame(s => s.seatId);
   const isHost = useGame(s => s.seats.find(x => x.id === s.seatId)?.host ?? s.isHost);
   const error = useGame(s => s.error);
-  const setReady = useGame(s => s.setReady);
-  const startTable = useGame(s => s.startTable);
-  const goTitle = useGame(s => s.goTitle);
   const target = useGame(s => s.tableVictoryTarget);
-  const setTarget = useGame(s => s.setVictoryTarget);
-  const addBot = useGame(s => s.addBot);
-  const removeBot = useGame(s => s.removeBot);
   const howTo = useGame(s => s.howTo);
-  const setHowTo = useGame(s => s.setHowTo);
   const [games, setGames] = useState(false);
   // #1263: a table-mate's tic-tac-toe invite is a badge on the tab, never a popup.
   const invited = useGame(s => s.ttt?.game?.status === "invited" && s.ttt.game.o === s.seatId);
@@ -91,6 +87,7 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, SeatN
   const missing = least - seats.length;
   const status = missing > 0 ? `Need ${missing} more player${missing === 1 ? "" : "s"}` : readyCount === seats.length ? "All ready" : `${readyCount} of ${seats.length} ready`;
   const { state: copied, copy } = useCopy<"link">(code);
+  const fallback = <CopyFallback state={copied} label="Join link" />;
   const codeElement = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
     // The host issues four-character codes. Preserve longer display fixtures unchanged.
@@ -131,13 +128,13 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, SeatN
               <span>Copied</span>
             </button>
           </div>
-          {copied && !copied.ok ? <div className="lobby-copy-fallback"><CopyFallback state={copied} label="Join link" /></div> : <CopyFallback state={copied} label="Join link" />}
+          {copied && !copied.ok ? <div className="lobby-copy-fallback">{fallback}</div> : fallback}
           <div className="lobby-rules">
             <div className="lm" role="tablist" aria-label="Lobby" onKeyDown={tabKey}>
               <button type="button" role="tab" aria-selected={!games} tabIndex={games ? -1 : 0} onClick={() => pick(false)}>Table</button>
               <button type="button" role="tab" aria-selected={games} tabIndex={games ? 0 : -1} aria-label={invited ? "Play games, 1 invite" : undefined} onClick={() => pick(true)}><span>Play games</span>{invited ? <b className="lb" aria-hidden="true">1</b> : null}</button>
             </div>
-            <Button variant="outline" className="px-2" onPointerEnter={prefetchRules} onFocus={prefetchRules} onClick={e => setHowTo(true, e.currentTarget)}>How to play</Button>
+            <Button variant="outline" className="px-2" onPointerEnter={prefetchRules} onFocus={prefetchRules} onClick={e => g.setHowTo(true, e.currentTarget)}>How to play</Button>
             <div className="lobby-rule-status">
               <span data-testid="lobby-caption" className="max-w-full truncate">Wayfarer {rule}</span>
               <ConnectionStatus />
@@ -158,8 +155,8 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, SeatN
                   </span>
                   <span className="lobby-player-status">{s ? `${s.host ? "Host · " : ""}${s.bot ? "Bot" : s.away ? "Away" : s.ready ? "Ready" : "Waiting"}` : ""}</span>
                   {s ? <span className="lobby-bubble"><LazyBoundary failed={null}><SeatBubbles by="seat" id={s.id} at="lobby" /></LazyBoundary></span> : null}
-                  {s?.bot && isHost ? <Button variant="outline" data-testid="remove-bot" aria-label={`Remove ${s.name}`} onClick={() => removeBot(s.id)}><svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 3l10 10M13 3L3 13" /></svg></Button> : null}
-                  {!s && isHost ? <Button variant="outline" data-testid="add-bot" onClick={addBot}>Add bot</Button> : null}
+                  {s?.bot && isHost ? <Button variant="outline" data-testid="remove-bot" aria-label={`Remove ${s.name}`} onClick={() => g.removeBot(s.id)}><svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 3l10 10M13 3L3 13" /></svg></Button> : null}
+                  {!s && isHost ? <Button variant="outline" data-testid="add-bot" onClick={g.addBot}>Add bot</Button> : null}
                 </li>
               );
             })}
@@ -172,17 +169,17 @@ export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, SeatN
           <div data-testid="lobby-actions" className="lobby-actions">
             <div className="lobby-summary">
               <p id="lobby-status" data-testid="lobby-status" aria-live="polite">{error ?? status}</p>
-              <VictoryTargetSelect value={target} onChange={isHost ? setTarget : undefined} />
+              <VictoryTargetSelect value={target} onChange={isHost ? g.setVictoryTarget : undefined} />
             </div>
             <div className="lobby-action-buttons">
-              <Button variant="outline" onClick={() => setReady(!ready)}>{ready ? "Cancel ready" : "Ready"}</Button>
-              {isHost && (!six || canStart) ? <Button variant="sea" disabled={!canStart} aria-describedby="lobby-status" onClick={() => { setGames(false); setOpen(false); startTable(); }}>Start</Button> : null}
-              <Button variant="ghost" onClick={goTitle}>Leave table</Button>
+              <Button variant="outline" onClick={() => g.setReady(!ready)}>{ready ? "Cancel ready" : "Ready"}</Button>
+              {isHost && (!six || canStart) ? <Button variant="sea" disabled={!canStart} aria-describedby="lobby-status" onClick={() => { pick(false); g.startTable(); }}>Start</Button> : null}
+              <Button variant="ghost" onClick={g.goTitle}>Leave table</Button>
             </div>
           </div>
         </div>
       </div>
-      {howTo ? <LazyBoundary failed={<Button variant="outline" onClick={() => setHowTo(false)}>Close</Button>}><HowTo onClose={() => setHowTo(false)} /></LazyBoundary> : null}
+      {howTo ? <LazyBoundary failed={<Button variant="outline" onClick={() => g.setHowTo(false)}>Close</Button>}><HowTo onClose={() => g.setHowTo(false)} /></LazyBoundary> : null}
     </>
   );
 }
