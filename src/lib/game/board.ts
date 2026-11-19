@@ -33,15 +33,56 @@ export function shuffle<T>(arr: T[], rand: () => number): T[] {
   return a;
 }
 
-function emptyRes(): Record<Resource, number> {
+export function emptyRes(): Record<Resource, number> {
   return { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
 }
 
+export function clampRes(res?: Partial<Record<Resource, number>> | null): Record<Resource, number> {
+  const out = emptyRes();
+  if (!res) return out;
+  for (const r of RESOURCES) {
+    const val = res[r];
+    out[r] = typeof val === "number" && Number.isFinite(val) && val > 0 ? Math.floor(val) : 0;
+  }
+  return out;
+}
+
+export function deductRes(
+  current: Record<Resource, number>,
+  cost: Partial<Record<Resource, number>>,
+): { success: boolean; resources: Record<Resource, number> } {
+  const next = { ...current };
+  for (const r of RESOURCES) {
+    const need = cost[r] ?? 0;
+    if (need <= 0) continue;
+    if ((next[r] ?? 0) < need) {
+      return { success: false, resources: { ...current } };
+    }
+    next[r] = Math.max(0, (next[r] ?? 0) - need);
+  }
+  return { success: true, resources: next };
+}
+
+export function addRes(
+  current: Record<Resource, number>,
+  gain: Partial<Record<Resource, number>>,
+): Record<Resource, number> {
+  const next = { ...current };
+  for (const r of RESOURCES) {
+    const amount = gain[r] ?? 0;
+    if (typeof amount === "number" && Number.isFinite(amount) && amount > 0) {
+      next[r] = (next[r] ?? 0) + Math.floor(amount);
+    }
+  }
+  return next;
+}
+
 export function makePlayer(i: number, name: string, kind: PlayerKind): PlayerState {
+  const safeIndex = typeof i === "number" && Number.isFinite(i) && i >= 0 ? Math.floor(i) : 0;
   return {
-    id: `p${i}`,
-    name,
-    color: PLAYER_COLORS[i] ?? "#e23d2e",
+    id: `p${safeIndex}`,
+    name: name || PLAYER_NAMES[safeIndex % PLAYER_NAMES.length]!,
+    color: PLAYER_COLORS[safeIndex % PLAYER_COLORS.length] ?? "#e23d2e",
     kind,
     resources: emptyRes(),
     hidden: { knight: 0, road: 0, plenty: 0, monopoly: 0, vp: 0 },
@@ -54,13 +95,43 @@ export function makePlayer(i: number, name: string, kind: PlayerKind): PlayerSta
 }
 
 export function adjacentPips(hexes: HexCell[], id: string, pip: number): boolean {
-  const h = hexes.find((x) => x.id === id);
-  if (!h) return false;
+  if (!Array.isArray(hexes) || !id || (pip !== 6 && pip !== 8)) return false;
+  const h = hexes.find((x) => x && x.id === id);
+  if (!h || !Number.isFinite(h.q) || !Number.isFinite(h.r)) return false;
   for (const [dq, dr] of AXIAL_DIRS) {
-    const n = hexes.find((x) => x.q === h.q + dq && x.r === h.r + dr);
-    if (n && (n.pip === 6 || n.pip === 8) && (pip === 6 || pip === 8)) return true;
+    const n = hexes.find((x) => x && x.q === h.q + dq && x.r === h.r + dr);
+    if (n && (n.pip === 6 || n.pip === 8)) return true;
   }
   return false;
+}
+
+export function hexNeighbors(hexes: HexCell[], q: number, r: number): HexCell[] {
+  if (!Array.isArray(hexes) || !Number.isFinite(q) || !Number.isFinite(r)) return [];
+  const out: HexCell[] = [];
+  for (const [dq, dr] of AXIAL_DIRS) {
+    const n = hexes.find((x) => x && x.q === q + dq && x.r === r + dr);
+    if (n) out.push(n);
+  }
+  return out;
+}
+
+export function hexBounds(hexes: HexCell[]): { minQ: number; maxQ: number; minR: number; maxR: number } {
+  if (!Array.isArray(hexes) || hexes.length === 0) {
+    return { minQ: 0, maxQ: 0, minR: 0, maxR: 0 };
+  }
+  let minQ = Infinity;
+  let maxQ = -Infinity;
+  let minR = Infinity;
+  let maxR = -Infinity;
+  for (const h of hexes) {
+    if (!h || !Number.isFinite(h.q) || !Number.isFinite(h.r)) continue;
+    if (h.q < minQ) minQ = h.q;
+    if (h.q > maxQ) maxQ = h.q;
+    if (h.r < minR) minR = h.r;
+    if (h.r > maxR) maxR = h.r;
+  }
+  if (!Number.isFinite(minQ)) return { minQ: 0, maxQ: 0, minR: 0, maxR: 0 };
+  return { minQ, maxQ, minR, maxR };
 }
 
 export type GameOptions = Parameters<typeof createGame>[0];
@@ -77,7 +148,10 @@ export function createGame(opts: {
   victoryTarget?: VictoryTarget;
   numberTokens?: "official" | "random";
 }): GameState {
-  const seed = opts.seed ?? (Math.floor(Math.random() * 1e9) | 0);
+  const rawSeed = opts.seed;
+  const seed = typeof rawSeed === "number" && Number.isFinite(rawSeed)
+    ? (Math.floor(rawSeed) >>> 0)
+    : (Math.floor(Math.random() * 1e9) | 0);
   const rand = mulberry32(seed);
 
   const coords = hexesInRadius(2);
@@ -119,20 +193,21 @@ export function createGame(opts: {
     const order = [5, 2, 6, 3, 8, 10, 9, 12, 11, 4, 8, 10, 9, 4, 5, 6, 3, 11];
     let index = 0;
     for (const [q, r] of path) {
-      const hex = hexes.find((h) => h.q === q && h.r === r)!;
-      if (hex.terrain !== "waste") hex.pip = order[index++]!;
+      const hex = hexes.find((h) => h.q === q && h.r === r);
+      if (hex && hex.terrain !== "waste" && index < order.length) hex.pip = order[index++]!;
     }
   } else {
     const pips = shuffle([2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12], rand);
     const land = hexes.filter((h) => h.terrain !== "waste");
     // Deal until no 6 or 8 touches another 6 or 8. About one shuffle in eight passes, so this ends
     // quickly, and a cap would leave a board with empty hexes (#182: 68 of 20,000 seeds did).
-    for (let attempt = 0; ; attempt++) {
+    for (let attempt = 0; attempt < 1000; attempt++) {
       const order = attempt === 0 ? pips : shuffle(pips, rand);
       let ok = true;
       land.forEach((h) => (h.pip = null));
       for (let i = 0; i < land.length; i++) {
-        const pip = order[i]!;
+        const pip = order[i];
+        if (pip === undefined) break;
         if (adjacentPips(hexes, land[i]!.id, pip)) {
           ok = false;
           break;
@@ -173,10 +248,12 @@ export function createGame(opts: {
 
   const coastal = [...emap.values()].filter((e) => (edgeHexCount.get(e.id) ?? 0) === 1);
   coastal.sort((a, b) => {
-    const va = vmap.get(a.va)!;
-    const vb = vmap.get(a.vb)!;
-    const ma = Math.atan2((va.z + vb.z) / 2, (va.x + vb.x) / 2);
-    const mb = Math.atan2((vmap.get(b.va)!.z + vmap.get(b.vb)!.z) / 2, (vmap.get(b.va)!.x + vmap.get(b.vb)!.x) / 2);
+    const va = vmap.get(a.va);
+    const vb = vmap.get(a.vb);
+    const bva = vmap.get(b.va);
+    const bvb = vmap.get(b.vb);
+    const ma = va && vb ? Math.atan2((va.z + vb.z) / 2, (va.x + vb.x) / 2) : 0;
+    const mb = bva && bvb ? Math.atan2((bva.z + bvb.z) / 2, (bva.x + bvb.x) / 2) : 0;
     return ma - mb;
   });
 
@@ -184,14 +261,18 @@ export function createGame(opts: {
     ["any", "any", "any", "any", "timber", "clay", "wool", "grain", "ore"],
     rand,
   );
-  const step = coastal.length / 9;
-  for (let i = 0; i < 9; i++) {
-    const e = coastal[Math.min(coastal.length - 1, Math.round(i * step))]!;
-    const kind = harborTypes[i]!;
-    const va = vmap.get(e.va);
-    const vb = vmap.get(e.vb);
-    if (va && !va.harbor) va.harbor = kind;
-    if (vb && !vb.harbor) vb.harbor = kind;
+  if (coastal.length > 0) {
+    const count = Math.min(9, coastal.length);
+    const step = coastal.length / 9;
+    for (let i = 0; i < count; i++) {
+      const e = coastal[Math.min(coastal.length - 1, Math.round(i * step))];
+      if (!e) continue;
+      const kind = harborTypes[i]!;
+      const va = vmap.get(e.va);
+      const vb = vmap.get(e.vb);
+      if (va && !va.harbor) va.harbor = kind;
+      if (vb && !vb.harbor) vb.harbor = kind;
+    }
   }
 
   const humans = opts.humans;
@@ -271,6 +352,8 @@ export function hexHeight(terrain: Terrain) {
   }
 }
 
-export function worldOfHex(h: HexCell) {
-  return hexToWorld(h.q, h.r, HEX_SIZE);
+export function worldOfHex(h?: HexCell | null) {
+  const q = h && Number.isFinite(h.q) ? h.q : 0;
+  const r = h && Number.isFinite(h.r) ? h.r : 0;
+  return hexToWorld(q, r, HEX_SIZE);
 }
