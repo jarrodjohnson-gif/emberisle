@@ -27,16 +27,18 @@ export function BuildList({ state, me, opener, onClose }: { state: GameState; me
   const root = useRef<HTMLDivElement>(null);
   useFocusTrap(root, true, undefined, opener);
   const backdrop = useBackdropClose(onClose);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       e.stopPropagation();
       play("ui_back");
-      onClose();
+      onCloseRef.current();
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [onClose]);
+  }, []);
   const deckLeft = state.deckLeft ?? state.deck.length;
   return (
     <div className="build-wash absolute inset-0 z-30 flex items-end justify-center" {...backdrop}>
