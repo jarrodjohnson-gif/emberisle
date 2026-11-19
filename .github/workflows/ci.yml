@@ -194,6 +194,8 @@ jobs:
         run: npm run scene-motion-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profiles-lifecycle-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run store-lifecycle-guards-prove
       # #1817: apt mirror flakes kept turning main red. Cache a pinned static ffmpeg; the apt step below is the fallback.
       - if: needs.changes.outputs.docs_only != 'true'
         id: ffmpeg-cache
