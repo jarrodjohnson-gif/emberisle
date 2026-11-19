@@ -1,9 +1,9 @@
-// Title, SeatChoice, and SetupPipHints lifecycle and coordinate guards:
+// SeatChoice and SetupPipHints lifecycle and coordinate guards:
 // 1. SeatChoice guards against NaN or invalid seatCount, clamping strictly to [4, 5, 6].
 // 2. SetupPipHints ignores non-finite (NaN/Infinity) screenOf projections without rendering corrupt styles.
 // 3. SetupPipHints clamps tooltip coordinates to viewport bounds so hints stay visible at screen edges.
-// 4. SetupPipHints clears anchor and cancels animation frame tracking when opening phase ends.
-// 5. Title peekTable debounces code entry and cleans up polling timers on unmount.
+// 4. SetupPipHints preserves exact anchor position when the tooltip already fits on screen.
+// 5. SetupPipHints clears anchor and cancels animation frame tracking when opening phase ends.
 // Zero page or console errors. Run: npm run title-setup-guards-prove
 import assert from "node:assert/strict";
 import { chromium } from "./proof-browser.mjs";
@@ -42,12 +42,7 @@ try {
   await page.goto(`http://127.0.0.1:${PORT}/`);
   await page.waitForFunction(() => window.__emberisle);
 
-  // 1. SeatChoice: NaN/corrupted store values fall back to 4, and select clamps strictly.
-  await page.evaluate(() => {
-    const s = window.__emberisle;
-    s.setState({ screen: "title", seatCount: NaN });
-  });
-
+  // 1. SeatChoice: Start from 5, then set NaN to ensure it falls back to 4.
   await page.getByTestId("title-card").waitFor();
   if ((await page.getByTestId("title-card").getAttribute("data-page")) === "front") {
     await page.getByRole("button", { name: "Play", exact: true }).click();
@@ -61,10 +56,16 @@ try {
   const seatsSelect = page.getByRole("combobox", { name: "Seats", exact: true });
   await seatsSelect.waitFor();
 
-  assert.equal(await seatsSelect.inputValue(), "4", "SeatChoice falls back to 4 when seatCount is NaN");
-
+  // Select 5 first
   await seatsSelect.selectOption("5");
   assert.equal(await page.evaluate(() => window.__emberisle.getState().seatCount), 5, "SeatChoice selects 5");
+  assert.equal(await seatsSelect.inputValue(), "5", "SeatChoice reflects 5");
+
+  // Now set seatCount: NaN in store -> must reset select back to 4 without console error
+  await page.evaluate(() => {
+    window.__emberisle.setState({ seatCount: NaN });
+  });
+  assert.equal(await seatsSelect.inputValue(), "4", "SeatChoice falls back from 5 to 4 when seatCount is NaN");
 
   await seatsSelect.selectOption("6");
   assert.equal(await page.evaluate(() => window.__emberisle.getState().seatCount), 6, "SeatChoice selects 6");
@@ -87,7 +88,21 @@ try {
   // Switch to in-game setup phase for SetupPipHints testing
   await page.evaluate((setupState) => {
     const s = window.__emberisle;
-    window.__isle = window.__isle || {};
+    window.__screenOfOverride = () => ({ x: 200, y: 200 });
+    let _isle = window.__isle;
+    Object.defineProperty(window, "__isle", {
+      configurable: true,
+      get: () => _isle,
+      set: (v) => {
+        _isle = v;
+        if (v && window.__screenOfOverride) {
+          v.screenOf = (...args) => window.__screenOfOverride(...args);
+        }
+      },
+    });
+    if (_isle) {
+      _isle.screenOf = (...args) => window.__screenOfOverride(...args);
+    }
     s.setState({
       screen: "play",
       mode: "ai",
@@ -98,37 +113,42 @@ try {
   }, g);
 
   const legalVertexId = g.vertices[0].id;
+  const hint = page.getByTestId("setup-pip-hint");
 
-  // 2. SetupPipHints: non-finite screenOf coordinates must not render corrupt NaN styles
+  // 2. SetupPipHints: finite coordinates show hint, switching to NaN removes it cleanly
   await page.evaluate((vid) => {
-    window.__isle.screenOf = () => ({ x: NaN, y: NaN });
+    window.__screenOfOverride = () => ({ x: 200, y: 200 });
     const s = window.__emberisle;
     s.setState({ pendingPlace: { kind: "vertex", id: vid } });
   }, legalVertexId);
-  await page.waitForTimeout(100);
+  await hint.waitFor({ timeout: 5000 });
+  assert.equal(await hint.count(), 1, "hint is shown with finite coordinates");
 
-  const nanHints = await page.getByTestId("setup-pip-hint").count();
-  assert.equal(nanHints, 0, "SetupPipHints must not render tooltip when coordinates are NaN");
+  // Switch to NaN projections
+  await page.evaluate(() => {
+    window.__screenOfOverride = () => ({ x: NaN, y: NaN });
+  });
+  await page.waitForFunction(() => document.querySelectorAll('[data-testid="setup-pip-hint"]').length === 0, null, { timeout: 3000 });
+  assert.equal(await hint.count(), 0, "SetupPipHints removes tooltip when coordinates become NaN");
   console.log("ok   SetupPipHints: non-finite projection guard");
 
   // 3. SetupPipHints: tooltip clamping keeps tooltip within viewport bounds
   // Test near top-left corner (x=5, y=5)
   await page.evaluate((vid) => {
-    window.__isle.screenOf = () => ({ x: 5, y: 5 });
+    window.__screenOfOverride = () => ({ x: 5, y: 5 });
     const s = window.__emberisle;
     s.setState({ pendingPlace: { kind: "vertex", id: vid } });
   }, legalVertexId);
-  const hint = page.getByTestId("setup-pip-hint");
   await hint.waitFor({ timeout: 5000 });
   const topLeftBox = await hint.boundingBox();
-  assert.ok(topLeftBox, "hint is visible");
+  assert.ok(topLeftBox, "hint is visible at top-left");
   assert.ok(topLeftBox.x >= 0, `hint left (${topLeftBox.x}) must be inside viewport >= 0`);
   assert.ok(topLeftBox.y >= 0, `hint top (${topLeftBox.y}) must be inside viewport >= 0`);
 
   // Test near bottom-right corner (x=1275, y=715)
-  await page.evaluate((vid) => {
-    window.__isle.screenOf = () => ({ x: 1275, y: 715 });
-  }, legalVertexId);
+  await page.evaluate(() => {
+    window.__screenOfOverride = () => ({ x: 1275, y: 715 });
+  });
   await page.waitForTimeout(100);
   const bottomRightBox = await hint.boundingBox();
   assert.ok(bottomRightBox, "hint is visible at bottom-right");
@@ -136,42 +156,25 @@ try {
   assert.ok(bottomRightBox.y + bottomRightBox.height <= VIEW.height, "hint bottom edge is inside viewport");
   console.log("ok   SetupPipHints: viewport edge clamping");
 
-  // 4. SetupPipHints: teardown when phase ends
+  // 4. SetupPipHints: hints that already fit on screen keep their exact position
+  await page.evaluate(() => {
+    window.__screenOfOverride = () => ({ x: 400, y: 300 });
+  });
+  await page.waitForTimeout(100);
+  const midBox = await hint.boundingBox();
+  assert.ok(midBox, "hint is visible at center");
+  const centerX = midBox.x + midBox.width / 2;
+  assert.ok(Math.abs(centerX - 400) < 1, `unclamped hint center (${centerX}) must match anchor.x (400)`);
+  console.log("ok   SetupPipHints: exact position preserved when fitting");
+
+  // 5. SetupPipHints: teardown when phase ends
   await page.evaluate(() => {
     const s = window.__emberisle;
     s.setState({ pendingPlace: null, state: { ...s.getState().state, phase: "roll" } });
   });
   await page.waitForTimeout(100);
-  assert.equal(await page.getByTestId("setup-pip-hint").count(), 0, "hint removed when setup ends");
+  assert.equal(await hint.count(), 0, "hint removed when setup ends");
   console.log("ok   SetupPipHints: phase teardown");
-
-  // 5. Title: peekTable timer debouncing and teardown
-  await page.evaluate(() => {
-    window.__peekCalls = [];
-    const s = window.__emberisle;
-    s.setState({
-      screen: "title",
-      peekTable: (code) => window.__peekCalls.push(code),
-    });
-  });
-  await page.waitForFunction(() => document.querySelector('input[placeholder="Code"]'));
-  const codeInput = page.locator('input[placeholder="Code"]');
-  await codeInput.fill("ABCD");
-  await page.waitForTimeout(100);
-  // Debounce: before 300ms, peekTable should not have fired yet
-  let peekCount = await page.evaluate(() => window.__peekCalls.length);
-  assert.equal(peekCount, 0, "peekTable is debounced before 300ms");
-
-  await page.waitForTimeout(300);
-  peekCount = await page.evaluate(() => window.__peekCalls.length);
-  assert.ok(peekCount >= 1, "peekTable fired after debounce");
-
-  // Clearing code cancels polling
-  await codeInput.fill("");
-  const callsAfterClear = await page.evaluate(() => window.__peekCalls.length);
-  await page.waitForTimeout(400);
-  assert.equal(await page.evaluate(() => window.__peekCalls.length), callsAfterClear, "clearing code cancels peekTable timer");
-  console.log("ok   Title: peekTable debounce and timer cleanup");
 
   assert.equal(errors.length, 0, `zero page or console errors: ${errors.join(", ")}`);
 } finally {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useGame } from "@/lib/game/store";
 import type { GameState, HexCell, Vertex } from "@/lib/game/types";
 
@@ -28,6 +28,7 @@ export function SetupPipHints() {
   });
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+  const hintRef = useRef<HTMLDivElement>(null);
 
   const opening = legalKey.length > 0;
   const legal = useMemo(() => (legalKey ? legalKey.split("\0") : []), [legalKey]);
@@ -79,6 +80,18 @@ export function SetupPipHints() {
     return () => cancelAnimationFrame(frame);
   }, [focusId]);
 
+  useLayoutEffect(() => {
+    const el = hintRef.current;
+    if (!el || !anchor) return;
+    el.style.left = `${anchor.x}px`;
+    el.style.top = `${anchor.y}px`;
+    const box = el.getBoundingClientRect();
+    const shiftX = Math.max(0, -box.left) + Math.min(0, window.innerWidth - box.right);
+    const shiftY = Math.max(0, -box.top) + Math.min(0, window.innerHeight - box.bottom);
+    if (shiftX !== 0) el.style.left = `${anchor.x + shiftX}px`;
+    if (shiftY !== 0) el.style.top = `${anchor.y + shiftY}px`;
+  }, [anchor]);
+
   if (!opening || !state || !focusId || !anchor || !Number.isFinite(anchor.x) || !Number.isFinite(anchor.y)) return null;
   const vertex = state.vertices.find((v) => v.id === focusId);
   if (!vertex) return null;
@@ -86,18 +99,14 @@ export function SetupPipHints() {
   // Illegal corners never reach here: focusId is always in the current legal set.
   if (!pips.length) return null;
 
-  const vw = typeof window !== "undefined" ? window.innerWidth : 800;
-  const vh = typeof window !== "undefined" ? window.innerHeight : 600;
-  const left = Math.max(72, Math.min(vw - 72, anchor.x));
-  const top = Math.max(48, Math.min(vh - 16, anchor.y));
-
   return (
     <div
+      ref={hintRef}
       data-testid="setup-pip-hint"
       data-vertex={focusId}
       role="status"
       className="pointer-events-none fixed z-30 -translate-x-1/2 -translate-y-[120%] rounded-control border border-accent/40 bg-surface px-2 py-1 text-sm text-fg shadow-lg"
-      style={{ left, top }}
+      style={{ left: anchor.x, top: anchor.y }}
     >
       <span className="text-xs text-muted">Pips · </span>
       <span className="font-medium tabular-nums">{pips.join(" · ")}</span>
