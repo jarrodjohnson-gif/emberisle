@@ -7,12 +7,17 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import WebSocket from '../server/node_modules/ws/wrapper.mjs';
 import { chromium } from "./proof-browser.mjs";
+import { hostPort as waitForHostPort } from "./proof-host-port.mjs";
 import { createServer } from 'vite';
 import { createGame } from '../src/lib/game/board.ts';
 import { publicScoreBreakdown, publicVP } from '../src/lib/game/rules.ts';
-const dir=mkdtempSync(path.join(tmpdir(),'emberisle-public-score-'));
-const port=Number(process.env.VITE_PORT||18559),sockets=[];const wait=ms=>new Promise(r=>setTimeout(r,ms));
-let host,browser;
+const port=Number(process.env.VITE_PORT)||0,sockets=[];const wait=ms=>new Promise(r=>setTimeout(r,ms));
+let dir,host,hostPort,vite,browser;
+process.on("exit", () => {
+  if (host && host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  if (dir) rmSync(dir, { recursive: true, force: true });
+});
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const g=createGame({humans:[{name:'Ember'},{name:'Tide'},{name:'Pine'},{name:'Moss'}],bots:0,seed:559});
 g.phase='main';g.rollOff=null;g.current='p0';g.log=[];
 const buildings=[['p0','stronghold'],['p0','stronghold'],['p0','outpost'],['p0','outpost'],['p1','outpost'],['p1','outpost'],['p2','stronghold'],['p3','outpost']];
@@ -20,20 +25,21 @@ buildings.forEach(([playerId,kind],i)=>g.vertices[i].building={playerId,kind});
 g.longestRoad='p1';g.largestArmy='p2';g.players[2].knightsPlayed=3;
 g.players.forEach((p,i)=>{p.hidden.vp=[2,1,3,0][i];p.hidden.knight=1;p.resources={timber:0,clay:0,wool:0,grain:6,ore:4};});
 const expected=g.players.map(p=>({parts:publicScoreBreakdown(g,p.id),public:publicVP(g,p.id),hidden:p.hidden.vp}));
-for(const code of ['PSAA','PSAB']){
- const game=structuredClone(g);if(code==='PSAB')game.players.forEach(p=>p.hidden.vp=0);
- const seats=game.players.map((p,i)=>({id:`s${i}`,name:p.name,color:p.color,ready:true,pid:p.id,secret:`${code}-${p.id}`}));
- writeFileSync(path.join(dir,`${code}.json`),JSON.stringify({code,host:'s0',next:4,chat:[],chatSeq:0,game,seats,recoveryPids:[],shape:2,savedAt:Date.now()}));
-}
-const vite=await createServer({server:{host:'127.0.0.1',port,strictPort:true},logLevel:'error'});
 async function whiteSurface(locator,label){
  const paint=await locator.evaluate(el=>{const s=getComputedStyle(el);return{background:s.backgroundColor,blur:s.backdropFilter};});
  assert.equal(paint.background,'rgb(255, 255, 255)',`${label}: opaque white surface`);
  assert.equal(paint.blur,'none',`${label}: no backdrop blur`);
 }
 try{
- host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:dir, RESULTS_DIR: `${dir}/results`,GRACE_MS:'600000',HOLD_MS:'600000',TURN_MS:'600000'},stdio:['ignore','pipe','pipe']});
- const hostPort=await new Promise((resolve,reject)=>{host.stdout.on('data',d=>{const m=String(d).match(/listening (\d+)/);if(m)resolve(Number(m[1]));});host.on('exit',c=>reject(Error(`host ${c}`)));});
+ dir=mkdtempSync(path.join(tmpdir(),'emberisle-public-score-'));
+ for(const code of ['PSAA','PSAB']){
+  const game=structuredClone(g);if(code==='PSAB')game.players.forEach(p=>p.hidden.vp=0);
+  const seats=game.players.map((p,i)=>({id:`s${i}`,name:p.name,color:p.color,ready:true,pid:p.id,secret:`${code}-${p.id}`}));
+  writeFileSync(path.join(dir,`${code}.json`),JSON.stringify({code,host:'s0',next:4,chat:[],chatSeq:0,game,seats,recoveryPids:[],shape:2,savedAt:Date.now()}));
+ }
+ vite=await createServer({server:{host:'127.0.0.1',port,strictPort:port!==0},logLevel:'error'});
+ host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:dir,PROFILES_DIR:path.join(dir,'profiles'),RESULTS_DIR:`${dir}/results`,GRACE_MS:'600000',HOLD_MS:'600000',TURN_MS:'600000'},stdio:['ignore','pipe','pipe']});
+ hostPort=await waitForHostPort(host);
  async function client(code,pid){
   const ws=new WebSocket(`ws://127.0.0.1:${hostPort}`),messages=[];sockets.push(ws);ws.on('message',d=>messages.push(JSON.parse(String(d))));await new Promise(r=>ws.on('open',r));
   ws.send(JSON.stringify(pid===null?{type:'hello',code,watch:true}:{type:'hello',code,secret:`${code}-${pid}`}));
@@ -50,12 +56,13 @@ try{
   stages[label]=await Promise.all(peers.map(p=>p.next(actor.game.seq+1)));actor=stages[label][0];
  }
  assert.equal(stages.live[0].game.phase,'main');assert.equal(stages.over[0].game.phase,'over');
- for(const ws of sockets)ws.terminate();host.kill('SIGKILL');
+ for(const ws of sockets)ws.terminate();host.kill('SIGKILL');await new Promise(r=>host.once('exit',r));
  await vite.listen();browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});mkdirSync('test-results',{recursive:true});
  const errors=[];let hint;
+ const url=`http://127.0.0.1:${vite.httpServer.address().port}`;
  for(const [width,height,reduced] of [[390,844,false],[1280,720,false],[844,390,true]]){
   const context=await browser.newContext({viewport:{width,height},hasTouch:width<1000,reducedMotion:reduced?'reduce':'no-preference'});
-  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(`http://127.0.0.1:${port}`);
+  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(url);
   await page.waitForFunction(()=>window.__emberisle);
   const load=async(view,i)=>page.evaluate(({view,i})=>{const store=window.__emberisle;store.setState({spectator:i===4,menuFor:null,chatOpen:false,code:'PSAA',seatId:`s${i}`});store.getState().loadState(view.game,view.you??'',i===0,'PSAA');},{view,i});
   for(let i=0;i<ids.length;i++){
@@ -92,4 +99,15 @@ try{
   console.log(`ok ${width}x${height}${reduced?' reduced':''}: four seats + watcher; public components reconcile; live updates; own-only hidden points; identical zero/many reminder; full end reveal`);
  }
  assert.equal(hint,'Hidden fortunes may add points.');assert.deepEqual(errors,[]);console.log('public-score-prove: all passed');
-}finally{await browser?.close();await vite.close();for(const ws of sockets)ws.terminate();host?.kill('SIGKILL');rmSync(dir,{recursive:true,force:true});}
+}finally{
+ for(const ws of sockets)ws.terminate();
+ if(browser)await browser.close().catch(()=>{});
+ if(vite)await vite.close().catch(()=>{});
+ if(host&&host.exitCode===null&&host.signalCode===null){
+  const exited=new Promise(resolve=>host.once('exit',resolve));
+  host.kill();
+  await Promise.race([exited,new Promise(resolve=>setTimeout(resolve,2000))]);
+  if(host.exitCode===null&&host.signalCode===null)host.kill('SIGKILL');
+ }
+ if(dir)rmSync(dir,{recursive:true,force:true});
+}
