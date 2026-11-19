@@ -64,7 +64,7 @@ export function player(before: GameState | null, after: GameState, me: string, m
     if (sound === "your_turn") buzz(HAPTIC_MS.yourTurn);
     if (ownsPiece && (sound === "path_place" || sound === "outpost_place" || sound === "stronghold_place")) buzz(HAPTIC_MS.land);
     if (ownFortune && sound === "card_play") buzz(HAPTIC_MS.fortune);
-    if ((mode === "hotseat" || me) && sound === "win") buzz(HAPTIC_MS.win);
+    if (me && sound === "win") buzz(HAPTIC_MS.win);
   };
 }
 
