@@ -13,30 +13,44 @@ export function Announcer() {
     if (s.mode !== "hotseat" && st.current === s.localId) return "Your turn.";
     return `${st.players.find((p) => p.id === st.current)?.name ?? "Someone"}'s turn.`;
   });
+  const turnKey = useGame((s) => {
+    const st = s.state;
+    return st ? `${st.turn}-${st.phase}-${st.current}` : "";
+  });
   const trade = useGame((s) => {
+    if (s.state?.phase === "over") return "";
     if (!s.offer) return s.tradeOutcome ?? "";
     if (s.declined.includes(s.localId)) return "Offer declined.";
     return offerLine(s.offer.from === s.localId ? null : s.offer.fromName, s.offer.give, s.offer.want);
   });
-  const event = useGame((s) => s.chatOpen ? "" : (s.gameLog.at(-1)?.text ?? ""));
-  const error = useGame((s) => s.error);
-  const announcement = useGame((s) => s.announcement);
-  const errorSeq = useGame((s) => s.errorSeq);
+  const tradeKey = useGame((s) => (s.offer ? `${s.offer.tradeId}-${s.declined.length}` : `${s.localTrade}-${s.tradeOutcome ?? ""}`));
+  const event = useGame((s) => (s.state?.phase === "over" || s.chatOpen ? "" : (s.gameLog.at(-1)?.text ?? "")));
+  const logSeq = useGame((s) => s.gameLog.length);
+  const error = useGame((s) => (s.state?.phase === "over" ? null : s.error));
+  const announcement = useGame((s) => (s.state?.phase === "over" ? null : s.announcement));
   const alert = error ?? announcement;
+  const alertKey = useGame((s) => `${s.errorSeq}-${s.error ?? ""}-${s.announcement ?? ""}`);
   // A live region that mounts with its text already in it is often not read, so the first turn is filled in after mount.
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   return (
     <div className="sr-only">
       <p data-testid="announce-turn" aria-live="polite" aria-atomic="true">
-        {mounted ? turn : ""}
+        {mounted && turn ? <span key={turnKey}>{turn}</span> : ""}
       </p>
-      <p data-testid="announce-log" aria-live="polite" aria-atomic="true">{mounted ? event : ""}</p>
-      <p data-testid="announce-trade" aria-live="polite" aria-atomic="true">{mounted ? trade : ""}</p>
-      {/* Keyed by errorSeq: a repeat of the same error replaces the text node, so it is read again. */}
+      <p data-testid="announce-log" aria-live="polite" aria-atomic="true">
+        {mounted && event ? <span key={logSeq}>{event}</span> : ""}
+      </p>
+      <p data-testid="announce-trade" aria-live="polite" aria-atomic="true">
+        {mounted && trade ? <span key={tradeKey}>{trade}</span> : ""}
+      </p>
+      {/* Keyed by alertKey: a repeat of the same error replaces the text node, so it is read again. */}
       <p data-testid="announce-error" role="alert">
-        {alert ? <span key={errorSeq}>{alert}</span> : null}
+        {alert ? <span key={alertKey}>{alert}</span> : null}
       </p>
     </div>
   );

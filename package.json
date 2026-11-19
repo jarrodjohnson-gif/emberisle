@@ -41,6 +41,7 @@
     "countdown-prove": "node scripts/countdown-prove.mjs",
     "turn-extension-prove": "node --import ./server/register.mjs scripts/turn-extension-prove.mjs",
     "vote-and-bubble-guards-prove": "node --import ./server/register.mjs scripts/vote-and-bubble-guards-prove.mjs",
+    "announcer-a11y-guards-prove": "node --import ./server/register.mjs scripts/announcer-a11y-guards-prove.mjs",
     "steal-picker-push-prove": "node --import ./server/register.mjs scripts/steal-picker-push-prove.mjs",
     "steal-picker-lifecycle-prove": "node --import ./server/register.mjs scripts/steal-picker-lifecycle-prove.mjs",
     "turn-extension-server-prove": "node --import ./server/register.mjs server/turn-extension-prove.mjs",
