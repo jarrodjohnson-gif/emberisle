@@ -255,7 +255,8 @@
     "waves-prove": "node --import ./server/register.mjs scripts/waves-prove.mjs",
     "splash-prove": "node scripts/splash-prove.mjs",
     "pages-prove": "node scripts/pages-prove.mjs",
-    "invite-night-prove": "node scripts/invite-night-prove.mjs"
+    "invite-night-prove": "node scripts/invite-night-prove.mjs",
+    "hand-placelist-guards-prove": "node --import ./server/register.mjs scripts/hand-placelist-guards-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

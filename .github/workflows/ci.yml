@@ -869,6 +869,8 @@ jobs:
         run: npm run hand-hidden-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run install-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run hand-placelist-guards-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:

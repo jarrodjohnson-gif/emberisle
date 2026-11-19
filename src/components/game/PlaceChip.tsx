@@ -9,6 +9,9 @@ export function PlaceChip() {
   const setPendingPlace = useGame((s) => s.setPendingPlace);
   useEffect(() => {
     if (!pending) return;
+    const cancel = () => {
+      setPendingPlace(null);
+    };
     const key = (e: KeyboardEvent) => {
       if (e.key !== "Enter" && e.key !== "Escape") return;
       const t = e.target as HTMLElement | null;
@@ -23,11 +26,17 @@ export function PlaceChip() {
         if (t?.closest("input, select, textarea, [contenteditable]")) return;
         e.preventDefault();
         e.stopImmediatePropagation();
-        setPendingPlace(null);
+        cancel();
       }
     };
     window.addEventListener("keydown", key, true);
-    return () => window.removeEventListener("keydown", key, true);
+    window.addEventListener("pointercancel", cancel);
+    window.addEventListener("blur", cancel);
+    return () => {
+      window.removeEventListener("keydown", key, true);
+      window.removeEventListener("pointercancel", cancel);
+      window.removeEventListener("blur", cancel);
+    };
   }, [pending, confirmPlace, setPendingPlace]);
   return null;
 }
