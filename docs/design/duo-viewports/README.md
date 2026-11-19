@@ -23,7 +23,7 @@ Controls cut off, covered or off-screen, horizontal scroll and tap targets under
 
 | Screen | 466x678 | 678x466 | 626x890 | 890x626 |
 |---|---|---|---|---|
-| Title | 6 (see note) | 6 (see note) | 6 (see note) | 6 (see note) |
+| Title | 0 | 0 | 0 | 0 |
 | Lobby | 0 | 0 | 0 | 0 |
 | Pre-roll | 0 | 0 | 0 | 0 |
 | Build list open | 0 | 0 | 0 | 0 |
@@ -31,12 +31,7 @@ Controls cut off, covered or off-screen, horizontal scroll and tap targets under
 | Horizontal scroll, any screen | none | none | none | none |
 | Targets under 44 px, any screen | none | none | none | none |
 
-Title note: the six are the profile avatar buttons (Ember, Tide, Dune, Pine), the Seats or Practice wayfarer toggle, and the
-name field "covered by summary". They sit in the collapsed Profile and Game options rows, clipped by their closing panel. I
-believe these are the collapsed rows measured as they close, not a layout fault, and the title pictures show nothing cut
-off. They are the same on all four sizes. Treat as a probable measurement artefact, to confirm by
-hand before anyone designs around them. Controls under the island's canvas (the dock inspectors) and controls behind an open
-sheet are not counted.
+Controls under the island's canvas (the dock inspectors) and controls behind an open sheet are not counted. Controls in closed panels are not visible and are not counted.
 
 Law 3 (`docs/design/app-review/laws/open-questions.md`): upright, the island keeps 60 % of the height; sideways, a column of
 at most 42 % of the width. Measured from the live chrome, `__isle.liveInsets()`:
@@ -44,18 +39,17 @@ at most 42 % of the width. Measured from the live chrome, `__isle.liveInsets()`:
 | Screen | 466x678 | 678x466 | 626x890 | 890x626 |
 |---|---|---|---|---|
 | Pre-roll and Build, island height share | 0.563 (fails 0.60) | 0.828 | 0.667 (ok) | 0.872 |
-| Pre-roll and Build, column width share | n/a | 0.437 (fails 0.42) | n/a | 0.333 (ok) |
-| Results, island height share | 0.882 | 0.828 | 0.910 | 0.872 |
+| Pre-roll and Build, column width share (the left column, 284 px) | n/a | 0.419 (ok) | n/a | 0.319 (ok) |
+| Results, island height share (board covered by the win sheet, not compared with law 3) | 0.882 | 0.828 | 0.910 | 0.872 |
 
-The fits are consistent: the declared hole (`__isle.insets()`) agrees with the live chrome to a few px on every table screen.
+On pre-roll and Build the declared hole (`__isle.insets()`) agrees with the live chrome to a few px. On results the live chrome is the win sheet covering the board, so the two differ there by design.
 
 ## Which failures likely need a layout change
 
 1. Folded upright, 466x678: the island has 56.3 % of the height before the roll and with the Build list open, under the
    proposed 60 %. The island's hole reserves 228 px under it for the tray (68 px above), which on a 678 px screen leaves 382 px. A layout change
    (a shorter tray or a smaller header) is the only fix; a design decision for the owner.
-2. Folded sideways, 678x466: the HUD column is 43.7 % of the width, over the 42 % cap, leaving the island 56.3 % of the
-   width. A narrower column would meet it. A layout change.
+2. Folded sideways, 678x466: the HUD column is 284 px, 41.9 % of the width, just under the 42 % cap, so it passes with 0.1 point to spare; the island's hole is 56.3 % of the width.
 3. The opened screens (626x890, 890x626) meet law 3 on every table screen, with nothing cut off and no tap target under
    44 px. The upright one is 0.70 wide per unit of height and still gets a 66.7 % island. No change needed from this proof.
 

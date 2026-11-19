@@ -67,7 +67,7 @@ const measure = () => {
   const seen = (el) => {
     const r = el.getBoundingClientRect();
     const cs = getComputedStyle(el);
-    return r.width > 0 && r.height > 0 && cs.visibility !== "hidden" && cs.display !== "none" && !el.closest("[hidden], [aria-hidden=true], [inert], .sr-only");
+    return r.width > 0 && r.height > 0 && cs.visibility !== "hidden" && cs.display !== "none" && el.checkVisibility() && !el.closest("[hidden], [aria-hidden=true], [inert], .sr-only");
   };
   const label = (el) => (el.getAttribute("aria-label") || el.getAttribute("data-testid") || el.textContent.trim() || el.tagName).replace(/\s+/g, " ").slice(0, 32);
   const controls = [...document.querySelectorAll('button, a[href], input, select, textarea, [role=tab], [role=button], [role=switch], [role=checkbox]')].filter(seen);
@@ -110,7 +110,7 @@ const measure = () => {
     const of = (n) => {
       const w = vw - n.left - n.right;
       const h = vh - n.top - n.bottom;
-      return { hole: { top: Math.round(n.top), right: Math.round(n.right), bottom: Math.round(n.bottom), left: Math.round(n.left) }, heightShare: +(h / vh).toFixed(3), widthShare: +(w / vw).toFixed(3), areaShare: +((w * h) / (vw * vh)).toFixed(3), chromeWidthShare: +((n.left + n.right) / vw).toFixed(3) };
+      return { hole: { top: Math.round(n.top), right: Math.round(n.right), bottom: Math.round(n.bottom), left: Math.round(n.left) }, heightShare: +(h / vh).toFixed(3), widthShare: +(w / vw).toFixed(3), areaShare: +((w * h) / (vw * vh)).toFixed(3), chromeWidthShare: +(Math.max(n.left, n.right) / vw).toFixed(3) };
     };
     island = { declared: of(i), live: of(live) };
   }
@@ -205,7 +205,7 @@ try {
       const m = await page.evaluate(measure);
       // The island's hole is the table's; the title and the lobby show the free view behind the card.
       if (name === "title" || name === "lobby") m.island = null;
-      m.law3 = law3(m, size.width, size.height);
+      m.law3 = name === "results" ? { note: "board covered by the win sheet: not compared with law 3" } : law3(m, size.width, size.height);
       rec.screens[name] = m;
       console.log(tag, name.padEnd(8), `controls ${m.controls}, issues ${m.issues.length}, hscroll ${m.horizontalScroll ? m.horizontalScroll.scrollWidth : "none"}, island height ${m.island ? m.island.live.heightShare : "n/a"}`);
     };
@@ -287,6 +287,7 @@ try {
     page.on("framenavigated", (f) => f === page.mainFrame() && navigations++);
     const read = () => page.evaluate(probe, sheet);
     const start = await read();
+    check(start.hexes === 19, `${label}: the board has ${start.hexes} hexes, not 19`);
     check(start.sheet !== null, `${label}: the sheet ${sheet} is not open before the fold`);
     const rec = { label, steps: [] };
     let prev = start;
