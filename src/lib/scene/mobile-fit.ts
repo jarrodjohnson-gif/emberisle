@@ -1,5 +1,6 @@
 // Camera fit and touch picking for phones (docs/design/mobile-camera-touch.md, issue #171). Pure math, no THREE
 // imports, so scripts/touch-place-prove.mjs can run it directly.
+import { guardDioramaFit, guardOrthoFit, safeAspect, safeDimension, safeInsets } from "./board-fit.ts";
 
 // Half-extent of the island plus its docks, padded for all corners and docks, in world units (HEX_SIZE 1.12).
 export const ISLE_HALF = { x: 5.8, z: 5.4 };
@@ -152,24 +153,29 @@ export function playLean(cssW: number, cssH: number, phone: boolean) {
 // take a goods pile off the screen or the island and its docks past the hole's height; the island sits at the hole's bottom edge instead of its centre.
 // #1607: `isle` gives the island's measured extents; the fit is about its middle (the renderer adds (isle.cx, isle.cz)).
 export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0, edge = false, isle = CLASSIC_ISLE): OrthoFit {
-  const halfZ = isle.half.z * Math.cos(lean) + LEAN_RISE * Math.sin(lean);
+  const safeW = safeDimension(cssW);
+  const safeH = safeDimension(cssH);
+  const safeLean = Number.isFinite(lean) ? lean : 0;
+  const ins = safeInsets(insets);
+  const halfZ = isle.half.z * Math.cos(safeLean) + LEAN_RISE * Math.sin(safeLean);
+  const cosLean = Math.max(0.001, Math.cos(safeLean));
   if (edge) {
-    const sides = { left: Math.max(EDGE_GAP, insets.left - 12 + EDGE_GAP), right: Math.max(EDGE_GAP, insets.right - 12 + EDGE_GAP) };
-    const holeW = Math.max(1, cssW - sides.left - sides.right);
-    const holeH = Math.max(1, cssH - insets.top - insets.bottom);
+    const sides = { left: Math.max(EDGE_GAP, ins.left - 12 + EDGE_GAP), right: Math.max(EDGE_GAP, ins.right - 12 + EDGE_GAP) };
+    const holeW = Math.max(1, safeW - sides.left - sides.right);
+    const holeH = Math.max(1, safeH - ins.top - ins.bottom);
     // A hole too short for that (a 375x667 phone) scales the island to its height instead, which is then centred in it.
-    const px = Math.min(holeW / (2 * isle.shoreHalfX), (cssW / 2 - PILE_GAP) / isle.pileHalfX, holeH / (2 * halfZ));
-    const hw = cssW / 2 / px;
-    const hh = cssH / 2 / px;
+    const px = Math.max(0.001, Math.min(holeW / (2 * isle.shoreHalfX), Math.max(0.001, safeW / 2 - PILE_GAP) / isle.pileHalfX, holeH / (2 * halfZ)));
+    const hw = safeW / 2 / px;
+    const hh = safeH / 2 / px;
     const cx = sides.left + holeW / 2;
-    const cy = cssH - insets.bottom - halfZ * px;
-    const ndcX = (cx / cssW) * 2 - 1;
-    const ndcY = -((cy / cssH) * 2 - 1);
-    return { left: -hw, right: hw, top: hh, bottom: -hh, x: -ndcX * hw, z: (ndcY * hh) / Math.cos(lean), lean };
+    const cy = safeH - ins.bottom - halfZ * px;
+    const ndcX = (cx / safeW) * 2 - 1;
+    const ndcY = -((cy / safeH) * 2 - 1);
+    return guardOrthoFit({ left: -hw, right: hw, top: hh, bottom: -hh, x: -ndcX * hw, z: (ndcY * hh) / cosLean, lean: safeLean }, isle.half.x, isle.half.z);
   }
-  const holeW = Math.max(1, cssW - insets.left - insets.right);
-  const holeH = Math.max(1, cssH - insets.top - insets.bottom);
-  const aspect = holeW / holeH;
+  const holeW = Math.max(1, safeW - ins.left - ins.right);
+  const holeH = Math.max(1, safeH - ins.top - ins.bottom);
+  const aspect = safeAspect(holeW, holeH);
   const halfX = isle.half.x;
   // The frustum spans the whole canvas, so scale the hole's world size up by canvas / hole.
   let hw: number;
@@ -181,22 +187,22 @@ export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0, e
     hh = halfZ;
     hw = halfZ * aspect;
   }
-  const worldW = hw * 2 * (cssW / holeW);
-  const worldH = hh * 2 * (cssH / holeH);
-  const holeCx = insets.left + holeW / 2;
-  const holeCy = insets.top + holeH / 2;
-  const ndcX = (holeCx / cssW) * 2 - 1;
-  const ndcY = -((holeCy / cssH) * 2 - 1);
-  return {
+  const worldW = hw * 2 * (safeW / holeW);
+  const worldH = hh * 2 * (safeH / holeH);
+  const holeCx = ins.left + holeW / 2;
+  const holeCy = ins.top + holeH / 2;
+  const ndcX = (holeCx / safeW) * 2 - 1;
+  const ndcY = -((holeCy / safeH) * 2 - 1);
+  return guardOrthoFit({
     left: -worldW / 2,
     right: worldW / 2,
     top: worldH / 2,
     bottom: -worldH / 2,
     // Centered on the island's middle, not the 0.15 orbit target: its extents are symmetric about it.
     x: -ndcX * worldW * 0.5,
-    z: (ndcY * worldH * 0.5) / Math.cos(lean),
-    lean,
-  };
+    z: (ndcY * worldH * 0.5) / cosLean,
+    lean: safeLean,
+  }, isle.half.x, isle.half.z);
 }
 
 // The diorama view (#597), the default in play on a landscape canvas: a perspective camera 38° above the horizon (polar
@@ -350,14 +356,19 @@ export function dioramaProject(f: DioramaFit, polar: number, azimuth: number, x:
 }
 
 export function fitDiorama(cssW: number, cssH: number, insets: Insets, polar = DIORAMA_POLAR, azimuth = DIORAMA_AZIMUTH, isle = CLASSIC_ISLE): DioramaFit {
-  const holeW = Math.max(1, cssW - insets.left - insets.right);
-  const holeH = Math.max(1, cssH - insets.top - insets.bottom);
+  const safeW = safeDimension(cssW, 844);
+  const safeH = safeDimension(cssH, 390);
+  const ins = safeInsets(insets);
+  const holeW = Math.max(1, safeW - ins.left - ins.right);
+  const holeH = Math.max(1, safeH - ins.top - ins.bottom);
   const focal = holeH / 2 / Math.tan(DIORAMA_FOV / 2);
+  const safePolar = Number.isFinite(polar) ? polar : DIORAMA_POLAR;
+  const safeAzimuth = Number.isFinite(azimuth) ? azimuth : DIORAMA_AZIMUTH;
   const span = (dist: number, pts = isle.dioramaPoints) => {
     const lens = { focal, dist, cx: 0, cy: 0 };
     let [l, r, t, b] = [Infinity, -Infinity, Infinity, -Infinity];
     for (const [x, y, z] of pts) {
-      const p = dioramaProject(lens, polar, azimuth, x, y, z);
+      const p = dioramaProject(lens, safePolar, safeAzimuth, x, y, z);
       [l, r, t, b] = [Math.min(l, p.x), Math.max(r, p.x), Math.min(t, p.y), Math.max(b, p.y)];
     }
     return { l, r, t, b, over: Math.max((r - l) / holeW, (b - t) / holeH) };
@@ -375,12 +386,12 @@ export function fitDiorama(cssW: number, cssH: number, insets: Insets, polar = D
   };
   const dist = Math.max(fit(COAST_FILL, isle.coastPoints), fit(1));
   const s = span(dist);
-  return {
+  return guardDioramaFit({
     focal,
     dist,
-    cx: insets.left + holeW / 2 - (s.l + s.r) / 2,
-    cy: insets.top + holeH / 2 - (s.t + s.b) / 2,
-  };
+    cx: ins.left + holeW / 2 - (s.l + s.r) / 2,
+    cy: ins.top + holeH / 2 - (s.t + s.b) / 2,
+  }, safeW, safeH);
 }
 
 // The pick reach around a legal corner or path in the diorama view, in world units, for a ray that meets it `depth` along
@@ -399,9 +410,11 @@ const FOV = (32 * Math.PI) / 180;
 // worked values 23.6 / 26.4 disagree with its formula, so the formula wins: 31.0 portrait (top inset 116 with the #177 seat strip); landscape hits the 36 cap.
 export function freeMaxDistance(cssH: number, insets: Insets, coarse: boolean, isle = CLASSIC_ISLE): number {
   if (!coarse) return 18;
-  const usable = Math.max(1, cssH - insets.top - insets.bottom) / cssH;
+  const safeH = safeDimension(cssH, 844);
+  const ins = safeInsets(insets);
+  const usable = Math.max(1, safeH - ins.top - ins.bottom) / safeH;
   const d = (isle.half.z * 2) / usable / (2 * Math.tan(FOV / 2));
-  return Math.min(36, Math.max(18, d));
+  return Math.min(36, Math.max(18, Number.isFinite(d) ? d : 18));
 }
 
 // Pixels a pointer may drift between down and up and still be a tap.
@@ -433,12 +446,14 @@ export class TouchGesture {
   private hadTwo = false;
 
   down(id: number, x: number, y: number) {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
     this.pointers.set(id, { x, y });
     if (this.pointers.size >= 2) this.hadTwo = true;
   }
 
   move(id: number, x: number, y: number) {
-    this.pointers.set(id, { x, y });
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    if (this.pointers.has(id)) this.pointers.set(id, { x, y });
   }
 
   // True when this lift belongs to a pinch and must not be treated as a tap.
@@ -447,5 +462,15 @@ export class TouchGesture {
     const pinch = this.hadTwo;
     if (this.pointers.size === 0) this.hadTwo = false;
     return pinch;
+  }
+
+  cancel(id: number) {
+    this.pointers.delete(id);
+    if (this.pointers.size === 0) this.hadTwo = false;
+  }
+
+  reset() {
+    this.pointers.clear();
+    this.hadTwo = false;
   }
 }
