@@ -48,37 +48,3 @@ export function clampPanOffset(
     shiftZ: dz * k,
   };
 }
-
-// Tracks pointer gestures and suppresses taps during pinches.
-export class TouchGestureTracker {
-  pointers = new Map<number, { x: number; y: number }>();
-  private hadTwo = false;
-
-  down(id: number, x: number, y: number) {
-    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-    this.pointers.set(id, { x, y });
-    if (this.pointers.size >= 2) this.hadTwo = true;
-  }
-
-  move(id: number, x: number, y: number) {
-    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-    if (this.pointers.has(id)) this.pointers.set(id, { x, y });
-  }
-
-  up(id: number): boolean {
-    this.pointers.delete(id);
-    const pinch = this.hadTwo;
-    if (this.pointers.size === 0) this.hadTwo = false;
-    return pinch;
-  }
-
-  cancel(id: number) {
-    this.pointers.delete(id);
-    if (this.pointers.size === 0) this.hadTwo = false;
-  }
-
-  reset() {
-    this.pointers.clear();
-    this.hadTwo = false;
-  }
-}

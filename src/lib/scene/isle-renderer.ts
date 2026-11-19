@@ -26,8 +26,8 @@ import {
   type PlayView,
   type Rect,
 } from "@/lib/scene/mobile-fit";
-import { clampZoom, glideProgress } from "./camera.ts";
-import { calcPanLimit, clampPanOffset } from "./pan-zoom.ts";
+import { clampZoom, glideProgress, safeEyeDistance } from "./camera.ts";
+import { calcPanLimit, clampPanOffset, PAN_DEAD, PAN_RADIUS, PAN_VIEW } from "./pan-zoom.ts";
 import { readViewport } from "../viewport";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
@@ -146,11 +146,6 @@ const FIT_KEYS: (keyof Pose)[] = ["left", "right", "top", "bottom", "tx", "tz", 
 const NO_FIT = { left: 0, right: 0, top: 0, bottom: 0, tx: 0, tz: 0, focal: 0, dist: 0, cx: 0, cy: 0 };
 const EYE_KEYS: (keyof Pose)[] = ["polar", "azimuth", "zoom"];
 const ORBIT_RADIUS = 18;
-// How far a pan may carry the look-at point from home, about the island's own radius: its centre stays on screen.
-const PAN_RADIUS = 5;
-const PAN_VIEW = 0.6;
-// Pixels a pinch's midpoint may drift before it also pans.
-const PAN_DEAD = 8;
 const GATE_EVENTS = ["pointerdown", "pointermove", "pointerup", "pointercancel", "lostpointercapture"] as const;
 const GLIDE_MS = 280;
 // Frames after a resize that measure the hole again: the HUD settles into its new layout a frame or two after the event.
@@ -1020,7 +1015,8 @@ export class IsleRenderer {
       // The lens frame is wider than the canvas, so a pan step in pixels is scaled to match the finger.
       this.orbit.panSpeed = h / fullH;
       c.up.set(0, 1, 0);
-      c.position.setFromSphericalCoords(p.dist / zoom, p.polar, p.azimuth).add(this.orbit.target);
+      const eyeDist = safeEyeDistance(p.dist, zoom);
+      c.position.setFromSphericalCoords(eyeDist, p.polar, p.azimuth).add(this.orbit.target);
       c.lookAt(this.orbit.target);
       c.updateProjectionMatrix();
       return;

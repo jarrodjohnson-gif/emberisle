@@ -1,6 +1,6 @@
 // Camera fit and touch picking for phones (docs/design/mobile-camera-touch.md, issue #171). Pure math, no THREE
 // imports, so scripts/touch-place-prove.mjs can run it directly.
-import { guardDioramaFit, guardOrthoFit, safeAspect, safeDimension, safeInsets } from "./board-fit.ts";
+import { safeAspect, safeDimension, safeInsets } from "./board-fit.ts";
 
 // Half-extent of the island plus its docks, padded for all corners and docks, in world units (HEX_SIZE 1.12).
 export const ISLE_HALF = { x: 5.8, z: 5.4 };
@@ -171,7 +171,7 @@ export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0, e
     const cy = safeH - ins.bottom - halfZ * px;
     const ndcX = (cx / safeW) * 2 - 1;
     const ndcY = -((cy / safeH) * 2 - 1);
-    return guardOrthoFit({ left: -hw, right: hw, top: hh, bottom: -hh, x: -ndcX * hw, z: (ndcY * hh) / cosLean, lean: safeLean }, isle.half.x, isle.half.z);
+    return { left: -hw, right: hw, top: hh, bottom: -hh, x: -ndcX * hw, z: (ndcY * hh) / cosLean, lean: safeLean };
   }
   const holeW = Math.max(1, safeW - ins.left - ins.right);
   const holeH = Math.max(1, safeH - ins.top - ins.bottom);
@@ -193,7 +193,7 @@ export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0, e
   const holeCy = ins.top + holeH / 2;
   const ndcX = (holeCx / safeW) * 2 - 1;
   const ndcY = -((holeCy / safeH) * 2 - 1);
-  return guardOrthoFit({
+  return {
     left: -worldW / 2,
     right: worldW / 2,
     top: worldH / 2,
@@ -202,7 +202,7 @@ export function fitOrtho(cssW: number, cssH: number, insets: Insets, lean = 0, e
     x: -ndcX * worldW * 0.5,
     z: (ndcY * worldH * 0.5) / cosLean,
     lean: safeLean,
-  }, isle.half.x, isle.half.z);
+  };
 }
 
 // The diorama view (#597), the default in play on a landscape canvas: a perspective camera 38° above the horizon (polar
@@ -386,12 +386,12 @@ export function fitDiorama(cssW: number, cssH: number, insets: Insets, polar = D
   };
   const dist = Math.max(fit(COAST_FILL, isle.coastPoints), fit(1));
   const s = span(dist);
-  return guardDioramaFit({
+  return {
     focal,
     dist,
     cx: ins.left + holeW / 2 - (s.l + s.r) / 2,
     cy: ins.top + holeH / 2 - (s.t + s.b) / 2,
-  }, safeW, safeH);
+  };
 }
 
 // The pick reach around a legal corner or path in the diorama view, in world units, for a ray that meets it `depth` along

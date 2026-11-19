@@ -18,7 +18,6 @@ import {
 import {
   calcPanLimit,
   clampPanOffset,
-  TouchGestureTracker,
   PAN_RADIUS,
 } from "../src/lib/scene/pan-zoom.ts";
 import {
@@ -129,23 +128,22 @@ check(outBounds.clamped && Math.abs(outBounds.x - 5) < 1e-6 && outBounds.z === 0
 const nanPan = clampPanOffset(NaN, NaN, 2, 3, 5);
 check(nanPan.clamped && nanPan.x === 2 && nanPan.z === 3, "clampPanOffset resets NaN target to home position");
 
-// 14. TouchGesture and TouchGestureTracker lifecycle guards
+// 14. TouchGesture pinch lifecycle and safeEyeDistance bounds
 const touch = new TouchGesture();
 touch.down(1, NaN, 10);
 check(touch.pointers.size === 0, "TouchGesture ignores non-finite pointer coordinates");
 touch.down(1, 10, 20);
 touch.down(2, 30, 40);
 check(touch.pointers.size === 2, "TouchGesture registers multiple pointers");
-touch.cancel(1);
-check(touch.pointers.size === 1, "TouchGesture cancel removes canceled pointer");
+check(touch.up(1), "TouchGesture flags pinch on multi-touch lift");
+touch.cancel(2);
+check(touch.pointers.size === 0, "TouchGesture cancel clears canceled pointer");
+touch.down(1, 10, 20);
 touch.reset();
 check(touch.pointers.size === 0 && !touch.up(99), "TouchGesture reset clears pointers and pinch state");
 
-const tracker = new TouchGestureTracker();
-tracker.down(1, 10, 20);
-tracker.down(2, 30, 40);
-check(tracker.up(1), "TouchGestureTracker flags pinch on multi-touch lift");
-tracker.reset();
-check(tracker.pointers.size === 0, "TouchGestureTracker resets cleanly");
+check(safeEyeDistance(NaN, 1) === 24, "safeEyeDistance defaults NaN distance to 24");
+check(safeEyeDistance(12, NaN) === 12, "safeEyeDistance clamps NaN zoom to 1");
+check(safeEyeDistance(-5, 0.5) === 24 / 0.8, "safeEyeDistance guards non-positive distance and clamps zoom");
 
 console.log(`camera-fit-guards-prove: ${passed} checks passed`);
