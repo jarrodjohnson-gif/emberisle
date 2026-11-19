@@ -254,9 +254,10 @@ try {
   ok("viewport.useViewport registers orientationchange, supports addListener fallback, and cleans up symmetrically");
 
   // Check 8: turn-title.useTurnTitle runs safely without throwing when document is undefined in SSR
+  // and when discardNeeded is undefined while it is not local player's turn
   const { useTurnTitle } = await vite.ssrLoadModule("/src/lib/turn-title.ts");
-  // Set store state to an active turn where document.title would be updated
-  useGame.setState({ screen: "play", localId: "p0", state: { current: "p0", discardNeeded: {}, phase: "turn" } });
+  // Set store state with current set to 'p1' (not localId) and discardNeeded undefined to verify optional chaining guard
+  useGame.setState({ screen: "play", localId: "p0", state: { current: "p1", discardNeeded: undefined, phase: "turn" } });
   const origDoc = globalThis.document;
   delete globalThis.document;
   // Mount useTurnTitle with document undefined: effect executes and must not throw ReferenceError
