@@ -1,0 +1,1085 @@
+{
+  "note": "Estimated Duo Safari viewports in CSS px (secondary sources, not Apple). Layout findings are data, not failures; see README.md.",
+  "browser": "153.0.8010.12",
+  "sizes": [
+    {
+      "size": "466x678",
+      "name": "folded upright",
+      "screens": {
+        "title": {
+          "viewport": [
+            466,
+            678
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 15,
+          "issues": [
+            {
+              "label": "Your name",
+              "w": 410,
+              "h": 44,
+              "left": 28,
+              "top": 611,
+              "issues": [
+                "covered by summary"
+              ]
+            },
+            {
+              "label": "Ember",
+              "w": 44,
+              "h": 44,
+              "left": 28,
+              "top": 667,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            },
+            {
+              "label": "Tide",
+              "w": 44,
+              "h": 44,
+              "left": 80,
+              "top": 667,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            },
+            {
+              "label": "Dune",
+              "w": 44,
+              "h": 44,
+              "left": 132,
+              "top": 667,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            },
+            {
+              "label": "Pine",
+              "w": 44,
+              "h": 44,
+              "left": 184,
+              "top": 667,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            },
+            {
+              "label": "Seats",
+              "w": 128,
+              "h": 44,
+              "left": 310,
+              "top": 652,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            }
+          ],
+          "island": null,
+          "law3": null
+        },
+        "lobby": {
+          "viewport": [
+            466,
+            678
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 23,
+          "issues": [],
+          "island": null,
+          "law3": null
+        },
+        "pre-roll": {
+          "viewport": [
+            466,
+            678
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 20,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 232,
+                "left": 12
+              },
+              "heightShare": 0.558,
+              "widthShare": 0.948,
+              "areaShare": 0.529,
+              "chromeWidthShare": 0.052
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 228,
+                "left": 12
+              },
+              "heightShare": 0.563,
+              "widthShare": 0.948,
+              "areaShare": 0.534,
+              "chromeWidthShare": 0.052
+            }
+          },
+          "law3": {
+            "rule": "upright: island height share >= 0.60",
+            "value": 0.563,
+            "met": false
+          }
+        },
+        "build": {
+          "viewport": [
+            466,
+            678
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 27,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 232,
+                "left": 12
+              },
+              "heightShare": 0.558,
+              "widthShare": 0.948,
+              "areaShare": 0.529,
+              "chromeWidthShare": 0.052
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 228,
+                "left": 12
+              },
+              "heightShare": 0.563,
+              "widthShare": 0.948,
+              "areaShare": 0.534,
+              "chromeWidthShare": 0.052
+            }
+          },
+          "law3": {
+            "rule": "upright: island height share >= 0.60",
+            "value": 0.563,
+            "met": false
+          }
+        },
+        "results": {
+          "viewport": [
+            466,
+            678
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 21,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 232,
+                "left": 12
+              },
+              "heightShare": 0.558,
+              "widthShare": 0.948,
+              "areaShare": 0.529,
+              "chromeWidthShare": 0.052
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 12
+              },
+              "heightShare": 0.882,
+              "widthShare": 0.948,
+              "areaShare": 0.837,
+              "chromeWidthShare": 0.052
+            }
+          },
+          "law3": {
+            "rule": "upright: island height share >= 0.60",
+            "value": 0.882,
+            "met": true
+          }
+        }
+      },
+      "unreached": []
+    },
+    {
+      "size": "678x466",
+      "name": "folded sideways",
+      "screens": {
+        "title": {
+          "viewport": [
+            678,
+            466
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 16,
+          "issues": [
+            {
+              "label": "Your name",
+              "w": 299,
+              "h": 44,
+              "left": 28,
+              "top": 375,
+              "issues": [
+                "covered by summary"
+              ]
+            },
+            {
+              "label": "Ember",
+              "w": 44,
+              "h": 44,
+              "left": 28,
+              "top": 431,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            },
+            {
+              "label": "Tide",
+              "w": 44,
+              "h": 44,
+              "left": 80,
+              "top": 431,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            },
+            {
+              "label": "Dune",
+              "w": 44,
+              "h": 44,
+              "left": 132,
+              "top": 431,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            },
+            {
+              "label": "Pine",
+              "w": 44,
+              "h": 44,
+              "left": 184,
+              "top": 431,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            },
+            {
+              "label": "Practice wayfarer",
+              "w": 128,
+              "h": 44,
+              "left": 199,
+              "top": 460,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            }
+          ],
+          "island": null,
+          "law3": null
+        },
+        "lobby": {
+          "viewport": [
+            678,
+            466
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 23,
+          "issues": [],
+          "island": null,
+          "law3": null
+        },
+        "pre-roll": {
+          "viewport": [
+            678,
+            466
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 20,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.828,
+              "widthShare": 0.563,
+              "areaShare": 0.467,
+              "chromeWidthShare": 0.437
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.828,
+              "widthShare": 0.563,
+              "areaShare": 0.467,
+              "chromeWidthShare": 0.437
+            }
+          },
+          "law3": {
+            "rule": "sideways: a column of at most 0.42 of the width (the height share is reported, the header takes the top)",
+            "value": {
+              "heightShare": 0.828,
+              "columnWidthShare": 0.437
+            },
+            "met": false
+          }
+        },
+        "build": {
+          "viewport": [
+            678,
+            466
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 27,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.828,
+              "widthShare": 0.563,
+              "areaShare": 0.467,
+              "chromeWidthShare": 0.437
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.828,
+              "widthShare": 0.563,
+              "areaShare": 0.467,
+              "chromeWidthShare": 0.437
+            }
+          },
+          "law3": {
+            "rule": "sideways: a column of at most 0.42 of the width (the height share is reported, the header takes the top)",
+            "value": {
+              "heightShare": 0.828,
+              "columnWidthShare": 0.437
+            },
+            "met": false
+          }
+        },
+        "results": {
+          "viewport": [
+            678,
+            466
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 21,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.828,
+              "widthShare": 0.563,
+              "areaShare": 0.467,
+              "chromeWidthShare": 0.437
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 12
+              },
+              "heightShare": 0.828,
+              "widthShare": 0.965,
+              "areaShare": 0.799,
+              "chromeWidthShare": 0.035
+            }
+          },
+          "law3": {
+            "rule": "sideways: a column of at most 0.42 of the width (the height share is reported, the header takes the top)",
+            "value": {
+              "heightShare": 0.828,
+              "columnWidthShare": 0.035
+            },
+            "met": true
+          }
+        }
+      },
+      "unreached": []
+    },
+    {
+      "size": "626x890",
+      "name": "opened upright",
+      "screens": {
+        "title": {
+          "viewport": [
+            626,
+            890
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 15,
+          "issues": [
+            {
+              "label": "Your name",
+              "w": 570,
+              "h": 44,
+              "left": 28,
+              "top": 823,
+              "issues": [
+                "covered by summary"
+              ]
+            },
+            {
+              "label": "Ember",
+              "w": 44,
+              "h": 44,
+              "left": 28,
+              "top": 879,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            },
+            {
+              "label": "Tide",
+              "w": 44,
+              "h": 44,
+              "left": 80,
+              "top": 879,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            },
+            {
+              "label": "Dune",
+              "w": 44,
+              "h": 44,
+              "left": 132,
+              "top": 879,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            },
+            {
+              "label": "Pine",
+              "w": 44,
+              "h": 44,
+              "left": 184,
+              "top": 879,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            },
+            {
+              "label": "Seats",
+              "w": 128,
+              "h": 44,
+              "left": 470,
+              "top": 864,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            }
+          ],
+          "island": null,
+          "law3": null
+        },
+        "lobby": {
+          "viewport": [
+            626,
+            890
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 23,
+          "issues": [],
+          "island": null,
+          "law3": null
+        },
+        "pre-roll": {
+          "viewport": [
+            626,
+            890
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 20,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 232,
+                "left": 12
+              },
+              "heightShare": 0.663,
+              "widthShare": 0.962,
+              "areaShare": 0.638,
+              "chromeWidthShare": 0.038
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 228,
+                "left": 12
+              },
+              "heightShare": 0.667,
+              "widthShare": 0.962,
+              "areaShare": 0.642,
+              "chromeWidthShare": 0.038
+            }
+          },
+          "law3": {
+            "rule": "upright: island height share >= 0.60",
+            "value": 0.667,
+            "met": true
+          }
+        },
+        "build": {
+          "viewport": [
+            626,
+            890
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 27,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 232,
+                "left": 12
+              },
+              "heightShare": 0.663,
+              "widthShare": 0.962,
+              "areaShare": 0.638,
+              "chromeWidthShare": 0.038
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 228,
+                "left": 12
+              },
+              "heightShare": 0.667,
+              "widthShare": 0.962,
+              "areaShare": 0.642,
+              "chromeWidthShare": 0.038
+            }
+          },
+          "law3": {
+            "rule": "upright: island height share >= 0.60",
+            "value": 0.667,
+            "met": true
+          }
+        },
+        "results": {
+          "viewport": [
+            626,
+            890
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 21,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 232,
+                "left": 12
+              },
+              "heightShare": 0.663,
+              "widthShare": 0.962,
+              "areaShare": 0.638,
+              "chromeWidthShare": 0.038
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 12
+              },
+              "heightShare": 0.91,
+              "widthShare": 0.962,
+              "areaShare": 0.875,
+              "chromeWidthShare": 0.038
+            }
+          },
+          "law3": {
+            "rule": "upright: island height share >= 0.60",
+            "value": 0.91,
+            "met": true
+          }
+        }
+      },
+      "unreached": []
+    },
+    {
+      "size": "890x626",
+      "name": "opened sideways",
+      "screens": {
+        "title": {
+          "viewport": [
+            890,
+            626
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 16,
+          "issues": [
+            {
+              "label": "Your name",
+              "w": 324,
+              "h": 44,
+              "left": 28,
+              "top": 535,
+              "issues": [
+                "covered by summary"
+              ]
+            },
+            {
+              "label": "Ember",
+              "w": 44,
+              "h": 44,
+              "left": 28,
+              "top": 591,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            },
+            {
+              "label": "Tide",
+              "w": 44,
+              "h": 44,
+              "left": 80,
+              "top": 591,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            },
+            {
+              "label": "Dune",
+              "w": 44,
+              "h": 44,
+              "left": 132,
+              "top": 591,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            },
+            {
+              "label": "Pine",
+              "w": 44,
+              "h": 44,
+              "left": 184,
+              "top": 591,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            },
+            {
+              "label": "Practice wayfarer",
+              "w": 128,
+              "h": 44,
+              "left": 224,
+              "top": 620,
+              "issues": [
+                "cut off by div",
+                "cut off by the viewport"
+              ]
+            }
+          ],
+          "island": null,
+          "law3": null
+        },
+        "lobby": {
+          "viewport": [
+            890,
+            626
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 23,
+          "issues": [],
+          "island": null,
+          "law3": null
+        },
+        "pre-roll": {
+          "viewport": [
+            890,
+            626
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 20,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.872,
+              "widthShare": 0.667,
+              "areaShare": 0.582,
+              "chromeWidthShare": 0.333
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.872,
+              "widthShare": 0.667,
+              "areaShare": 0.582,
+              "chromeWidthShare": 0.333
+            }
+          },
+          "law3": {
+            "rule": "sideways: a column of at most 0.42 of the width (the height share is reported, the header takes the top)",
+            "value": {
+              "heightShare": 0.872,
+              "columnWidthShare": 0.333
+            },
+            "met": true
+          }
+        },
+        "build": {
+          "viewport": [
+            890,
+            626
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 27,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.872,
+              "widthShare": 0.667,
+              "areaShare": 0.582,
+              "chromeWidthShare": 0.333
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.872,
+              "widthShare": 0.667,
+              "areaShare": 0.582,
+              "chromeWidthShare": 0.333
+            }
+          },
+          "law3": {
+            "rule": "sideways: a column of at most 0.42 of the width (the height share is reported, the header takes the top)",
+            "value": {
+              "heightShare": 0.872,
+              "columnWidthShare": 0.333
+            },
+            "met": true
+          }
+        },
+        "results": {
+          "viewport": [
+            890,
+            626
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 21,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.872,
+              "widthShare": 0.667,
+              "areaShare": 0.582,
+              "chromeWidthShare": 0.333
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 12
+              },
+              "heightShare": 0.872,
+              "widthShare": 0.973,
+              "areaShare": 0.849,
+              "chromeWidthShare": 0.027
+            }
+          },
+          "law3": {
+            "rule": "sideways: a column of at most 0.42 of the width (the height share is reported, the header takes the top)",
+            "value": {
+              "heightShare": 0.872,
+              "columnWidthShare": 0.027
+            },
+            "met": true
+          }
+        }
+      },
+      "unreached": []
+    }
+  ],
+  "fold": [
+    {
+      "label": "practice main, Build list open",
+      "steps": [
+        {
+          "viewport": [
+            626,
+            890
+          ],
+          "sheetWithinViewport": true,
+          "sheetRect": [
+            53,
+            566,
+            573,
+            890
+          ],
+          "hole": {
+            "top": 68,
+            "right": 12,
+            "bottom": 232,
+            "left": 12
+          },
+          "hexExtent": [
+            103,
+            255,
+            523,
+            534
+          ],
+          "hexesInside": "19/19",
+          "deadline": 1795077968798,
+          "statesEqual": true
+        },
+        {
+          "viewport": [
+            890,
+            626
+          ],
+          "sheetWithinViewport": true,
+          "sheetRect": [
+            185,
+            302,
+            705,
+            626
+          ],
+          "hole": {
+            "top": 68,
+            "right": 12,
+            "bottom": 12,
+            "left": 284
+          },
+          "hexExtent": [
+            384,
+            187,
+            778,
+            496
+          ],
+          "hexesInside": "19/19",
+          "deadline": 1795077968798,
+          "statesEqual": true
+        },
+        {
+          "viewport": [
+            466,
+            678
+          ],
+          "sheetWithinViewport": true,
+          "sheetRect": [
+            0,
+            354,
+            466,
+            678
+          ],
+          "hole": {
+            "top": 68,
+            "right": 12,
+            "bottom": 232,
+            "left": 12
+          },
+          "hexExtent": [
+            83,
+            157,
+            383,
+            357
+          ],
+          "hexesInside": "19/19",
+          "deadline": 1795077968798,
+          "statesEqual": true
+        }
+      ]
+    },
+    {
+      "label": "hosted roll-off, real clock, table menu open",
+      "steps": [
+        {
+          "viewport": [
+            626,
+            890
+          ],
+          "sheetWithinViewport": true,
+          "sheetRect": [
+            354,
+            64,
+            610,
+            640
+          ],
+          "hole": {
+            "top": 68,
+            "right": 12,
+            "bottom": 232,
+            "left": 12
+          },
+          "hexExtent": [
+            103,
+            255,
+            523,
+            534
+          ],
+          "hexesInside": "19/19",
+          "deadline": 1795078011944,
+          "statesEqual": true
+        },
+        {
+          "viewport": [
+            890,
+            626
+          ],
+          "sheetWithinViewport": true,
+          "sheetRect": [
+            622,
+            64,
+            878,
+            610
+          ],
+          "hole": {
+            "top": 68,
+            "right": 12,
+            "bottom": 12,
+            "left": 284
+          },
+          "hexExtent": [
+            384,
+            187,
+            778,
+            496
+          ],
+          "hexesInside": "19/19",
+          "deadline": 1795078011944,
+          "statesEqual": true
+        },
+        {
+          "viewport": [
+            466,
+            678
+          ],
+          "sheetWithinViewport": true,
+          "sheetRect": [
+            194,
+            64,
+            450,
+            640
+          ],
+          "hole": {
+            "top": 68,
+            "right": 12,
+            "bottom": 232,
+            "left": 12
+          },
+          "hexExtent": [
+            83,
+            157,
+            383,
+            357
+          ],
+          "hexesInside": "19/19",
+          "deadline": 1795078011944,
+          "statesEqual": true
+        }
+      ]
+    }
+  ],
+  "errors": []
+}
