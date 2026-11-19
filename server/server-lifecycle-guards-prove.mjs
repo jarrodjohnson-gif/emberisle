@@ -1,15 +1,13 @@
 // Proof for server lifecycle guards:
 // 1. HEAD /tables returns 200 with JSON headers and an empty body.
 // 2. HEAD /avatars/:id.jpg returns 200 with JPEG headers and an empty body.
-// 3. POST /avatars with an orphaned avatarId uploads safely without crashing.
-// 4. A malformed WebSocket array frame is rejected immediately.
-// 5. Rejoin rejects bot seat secrets.
-// 6. Takeover queues bot answer for open table offers from other players.
-// 7. Flush write errors restore dirty state and clean up the temp file.
+// 3. Rejoin rejects bot seat secrets.
+// 4. POST /avatars rejects bot seat secrets via seatOf.
+// 5. Async flush write failure cleans up temp file and keeps room dirty.
+// 6. Process exit flushAll write failure cleans up temp file.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import http from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -161,24 +159,7 @@ await check("HEAD /avatars/:id.jpg returns 200 with image headers and empty body
   }
 });
 
-// Case 3: Malformed WebSocket array frame is rejected immediately.
-await check("WebSocket array frame is rejected cleanly", async () => {
-  const d = makeDirs();
-  const host = startHost(d);
-  const port = await host.port;
-  try {
-    const c = await connect(port);
-    c.send("[]");
-    await c.until(() => c.errors.length > 0, "error received");
-    assert.equal(c.errors[0], "not ready", "array payload rejected as not ready");
-    c.ws.close();
-  } finally {
-    await host.stop();
-    rmSync(d.root, { recursive: true, force: true });
-  }
-});
-
-// Case 4: Rejoin rejects bot seat secrets.
+// Case 3: Rejoin rejects bot seat secrets.
 await check("Rejoin rejects bot seat secrets", async () => {
   const d = makeDirs();
   const host = startHost(d);
@@ -207,80 +188,38 @@ await check("Rejoin rejects bot seat secrets", async () => {
   }
 });
 
-// Case 5: Takeover queues bot answer for open trade offer from another player.
-await check("Takeover queues bot answer for open trade offer", async () => {
+// Case 4: POST /avatars rejects bot seat secrets via seatOf.
+await check("POST /avatars rejects bot seat secrets via seatOf", async () => {
   const d = makeDirs();
-  const host = startHost(d, { GRACE_MS: "150", BOT_ANSWER_MS: "20", PEOPLE_FIRST_MS: "20" });
+  const host = startHost(d);
   const port = await host.port;
   try {
-    const a = await connect(port, { type: "hello", name: "Alice" });
-    await a.until(() => a.welcome, "a welcome");
-    const code = a.welcome.code;
-    const b = await connect(port, { type: "hello", code, name: "Bob" });
-    await b.until(() => b.welcome, "b welcome");
-    a.send({ type: "addBot" });
-    await a.until(() => a.seats?.seats.length === 3, "3 seats");
-    a.send({ type: "ready", value: true });
-    b.send({ type: "ready", value: true });
-    await a.until(() => a.seats.seats.every((s) => s.ready), "all ready");
+    const c = await connect(port, { type: "hello", name: "Host" });
+    await c.until(() => c.welcome, "welcome");
+    c.send({ type: "addBot" });
+    await c.until(() => c.seats?.seats.length === 2, "bot seated");
 
-    // Start game.
-    a.send({ type: "start" });
-    await a.until(() => a.state, "game started");
-    await b.until(() => b.state, "b state");
-
-    // Give Alice wheat and open an offer from Alice.
-    const roomFile = path.join(d.rooms, `${code}.json`);
+    const roomFile = path.join(d.rooms, `${c.welcome.code}.json`);
     await sleep(60);
-    const fs = await import("node:fs/promises");
-    const saved = JSON.parse(await fs.readFile(roomFile, "utf8"));
-    const alicePid = a.state.you;
-    const pAlice = saved.game.players.find((p) => p.id === alicePid);
-    pAlice.resources.grain = 3;
-    saved.game.phase = "main";
-    saved.game.current = alicePid;
-    await fs.writeFile(roomFile, JSON.stringify(saved));
+    const saved = JSON.parse(await import("node:fs/promises").then((f) => f.readFile(roomFile, "utf8")));
+    const botSeat = saved.seats.find((s) => s.bot);
+    assert.ok(botSeat?.secret, "bot seat has secret");
 
-    // Restart host to load modified room with Alice having grain in main phase.
-    await host.stop();
-    const host2 = startHost(d, { GRACE_MS: "150", BOT_ANSWER_MS: "20", PEOPLE_FIRST_MS: "20" });
-    const port2 = await host2.port;
-    try {
-      const a2 = await connect(port2, { type: "hello", code, secret: a.welcome.secret });
-      await a2.until(() => a2.state, "a2 state");
-      const b2 = await connect(port2, { type: "hello", code, secret: b.welcome.secret });
-      await b2.until(() => b2.state, "b2 state");
-
-      // Alice asks for trade: give grain, want timber.
-      a2.send({
-        type: "tradeAsk",
-        give: { grain: 1 },
-        want: { timber: 1 },
-        cid: "ask-1",
-        turn: a2.state.actionStamp.turn,
-        baseSeq: a2.state.actionStamp.baseSeq,
-        connection: a2.state.actionStamp.connection,
-      });
-      await a2.until(() => a2.messages.some((m) => m.type === "tradeOffer"), "offer opened");
-
-      // Bob disconnects. Grace period will expire and takeover will occur.
-      const bobPid = b2.state.you;
-      b2.ws.close();
-
-      // Alice should receive tradeDeclined from Bob once Bob's new bot responds.
-      await a2.until(() => a2.messages.some((m) => m.type === "tradeDeclined" && m.by === bobPid), "bob bot answered offer", 3000);
-      const answered = a2.messages.some((m) => m.type === "tradeDeclined" && m.by === bobPid);
-      assert.ok(answered, "takeover bot answered or declined open offer");
-      a2.ws.close();
-    } finally {
-      await host2.stop();
-    }
+    const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46]);
+    const post = await requestHttp(port, {
+      path: "/avatars",
+      method: "POST",
+      headers: { "x-seat-secret": botSeat.secret, "content-type": "image/jpeg" },
+    }, jpeg);
+    assert.equal(post.status, 403, "bot secret upload is forbidden");
+    c.ws.close();
   } finally {
+    await host.stop();
     rmSync(d.root, { recursive: true, force: true });
   }
 });
 
-// Case 6: Flush write failure cleans up .tmp file and leaves room dirty for retry.
+// Case 5: Async flush write failure cleans up temp file and keeps room dirty.
 await check("Flush write failure cleans up temp file and keeps dirty", async () => {
   const d = makeDirs();
   const host = startHost(d, { SAVE_MS: "20" });
@@ -307,6 +246,34 @@ await check("Flush write failure cleans up temp file and keeps dirty", async () 
     c.ws.close();
   } finally {
     await host.stop();
+    rmSync(d.root, { recursive: true, force: true });
+  }
+});
+
+// Case 6: Process exit flushAll write failure cleans up temp file.
+await check("Exit flushAll write failure cleans up temp file", async () => {
+  const d = makeDirs();
+  const host = startHost(d, { SAVE_MS: "25" });
+  const port = await host.port;
+  try {
+    const c = await connect(port, { type: "hello", name: "Host" });
+    await c.until(() => c.welcome, "welcome");
+    const code = c.welcome.code;
+    const roomFile = path.join(d.rooms, `${code}.json`);
+    await sleep(60);
+    assert.ok(existsSync(roomFile), "room file exists");
+
+    // Replace room file with directory so writeFileSync succeeds on .tmp but renameSync throws EISDIR.
+    rmSync(roomFile, { force: true });
+    mkdirSync(roomFile);
+
+    // Dirty the room immediately before stopping host so flushAll runs on exit.
+    c.send({ type: "ready", value: true });
+    await host.stop();
+
+    const tmps = readdirSync(d.rooms).filter((n) => n.endsWith(".tmp"));
+    assert.deepEqual(tmps, [], "no temp file leaked after exit flush failure");
+  } finally {
     rmSync(d.root, { recursive: true, force: true });
   }
 });

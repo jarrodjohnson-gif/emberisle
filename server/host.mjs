@@ -1267,7 +1267,7 @@ function seatOf(secret) {
     return own.length === given.length && timingSafeEqual(own, given);
   };
   for (const room of rooms.values()) {
-    const seat = room.seats.find(same);
+    const seat = room.seats.find((s) => !s.bot && same(s));
     if (seat) return { room, seat };
   }
   return null;
@@ -1306,7 +1306,7 @@ function route(req, res) {
     if (!allow(seat.act, Date.now(), ACT_CAP, ACT_RATE)) return refuse(429);
     // Bytes this seat's current picture holds; its replacement frees them. Read again at the end, since the body
     // arrives over time and another upload may have landed meanwhile.
-    const held = () => (seat.avatarId ? avatars.get(seat.avatarId)?.body.length ?? 0 : 0);
+    const held = () => (seat.avatarId ? avatars.get(seat.avatarId).body.length : 0);
     if (avatars.size - (held() ? 1 : 0) >= AVATAR_MAX) return refuse(503);
     const chunks = [];
     let size = 0;
@@ -1395,11 +1395,6 @@ const server = http.createServer((req, res) => {
     res.end();
   }
 });
-// Aborted handshakes and client resets must not crash the server.
-server.on("clientError", (err, socket) => {
-  if (err.code === "ECONNRESET" || !socket.writable) return;
-  socket.end("HTTP/1.1 400 Bad Request\r\n\r\n");
-});
 
 // One address carries the page, the socket and the avatars, so a single tunnel reaches all three.
 async function serveStatic(req, res) {
@@ -1442,7 +1437,6 @@ async function serveStatic(req, res) {
 }
 
 const wss = new WebSocketServer({ server, maxPayload: 16 * 1024 });
-wss.on("error", (err) => console.error("wss error:", err));
 const profiles = openProfiles(PROFILES, { colors: PLAYER_COLORS, fault });
 const onProfile = profileHandler(profiles, send);
 const journal = openJournal(RESULTS, { fault });
@@ -2109,7 +2103,7 @@ function handle(ws, raw) {
   } catch {
     return send(ws, { type: "error", message: ws.watch ? "Watching only." : "not ready" });
   }
-  if (!msg || typeof msg !== "object" || Array.isArray(msg)) return send(ws, { type: "error", message: ws.watch ? "Watching only." : "not ready" });
+  if (!msg || typeof msg !== "object") return send(ws, { type: "error", message: ws.watch ? "Watching only." : "not ready" });
   // Health has no room/state access, action bucket, publish, save, or game timer side effects.
   // Unauthenticated probes consume the same budget as hello/peek, and never earn a reply.
   if (msg.type === "healthPing") {
@@ -2273,7 +2267,7 @@ function resendOffer(ws, room, seat, offer) {
   const seconds = offer.until === null ? null : Math.max(0, Math.floor((offer.until - Date.now()) / 1000));
   send(ws, { type: "tradeOffer", tradeId: offer.tradeId, from: offer.from, give: offer.give, want: offer.want, seconds });
   for (const by of offer.declined) {
-    send(ws, { type: "tradeDeclined", tradeId: offer.tradeId, by, name: room.game.players.find((p) => p.id === by)?.name ?? "" });
+    send(ws, { type: "tradeDeclined", tradeId: offer.tradeId, by, name: room.game.players.find((p) => p.id === by).name });
   }
 }
 
@@ -2314,7 +2308,6 @@ function hold(room, seat) {
 // The host role goes to the first seat with a socket; with none, to the first held seat.
 function handOffHost(room) {
   const next = room.seats.find((s) => s.ws) ?? room.seats.find((s) => !s.bot);
-  if (!next) return;
   room.host = next.id;
   say(room, `${next.name} is now the host.`);
 }
@@ -2329,8 +2322,6 @@ function takeOver(room, seat) {
     const tradeId = room.offer.tradeId;
     closeOffer(room);
     broadcast(room, { type: "tradeClosed", tradeId });
-  } else if (room.offer) {
-    room.offer.botTimers.push(setTimeout(() => botAnswer(room, room.offer, seat.pid), BOT_ANSWER_MS));
   }
   room.recoveryPids = [...new Set([...(room.recoveryPids ?? []), seat.pid])].slice(-recoveryCap(room.game));
   // Assistance is marked for the outcome and never cleared by a rejoin; the frozen roster keeps the seat human (#889).
