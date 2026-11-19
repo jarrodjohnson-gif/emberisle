@@ -140,6 +140,12 @@ try {
     s.setState({ pendingPlace: { kind: "vertex", id: vid } });
   }, legalVertexId);
   await hint.waitFor({ timeout: 5000 });
+  await page.waitForFunction(() => {
+    const el = document.querySelector('[data-testid="setup-pip-hint"]');
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    return r.left >= 0 && r.top >= 0;
+  });
   const topLeftBox = await hint.boundingBox();
   assert.ok(topLeftBox, "hint is visible at top-left");
   assert.ok(topLeftBox.x >= 0, `hint left (${topLeftBox.x}) must be inside viewport >= 0`);
@@ -149,7 +155,12 @@ try {
   await page.evaluate(() => {
     window.__screenOfOverride = () => ({ x: 1275, y: 715 });
   });
-  await page.waitForTimeout(100);
+  await page.waitForFunction(() => {
+    const el = document.querySelector('[data-testid="setup-pip-hint"]');
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    return r.right <= 1280 && r.bottom <= 720 && r.left > 1000;
+  });
   const bottomRightBox = await hint.boundingBox();
   assert.ok(bottomRightBox, "hint is visible at bottom-right");
   assert.ok(bottomRightBox.x + bottomRightBox.width <= VIEW.width, "hint right edge is inside viewport");
@@ -157,14 +168,33 @@ try {
   console.log("ok   SetupPipHints: viewport edge clamping");
 
   // 4. SetupPipHints: hints that already fit on screen keep their exact position
+  // 4a. Centered hint at (400, 300)
   await page.evaluate(() => {
     window.__screenOfOverride = () => ({ x: 400, y: 300 });
   });
-  await page.waitForTimeout(100);
+  await page.waitForFunction(() => {
+    const el = document.querySelector('[data-testid="setup-pip-hint"]');
+    return el && el.style.left === "400px" && el.style.top === "300px";
+  });
   const midBox = await hint.boundingBox();
   assert.ok(midBox, "hint is visible at center");
   const centerX = midBox.x + midBox.width / 2;
   assert.ok(Math.abs(centerX - 400) < 1, `unclamped hint center (${centerX}) must match anchor.x (400)`);
+
+  // 4b. In-view hint near edge at (60, 40) must preserve exact position without shifting
+  await page.evaluate(() => {
+    window.__screenOfOverride = () => ({ x: 60, y: 40 });
+  });
+  await page.waitForFunction(() => {
+    const el = document.querySelector('[data-testid="setup-pip-hint"]');
+    return el && el.style.left === "60px" && el.style.top === "40px";
+  });
+  const nearEdgeBox = await hint.boundingBox();
+  assert.ok(nearEdgeBox, "hint is visible near edge at (60, 40)");
+  const nearEdgeCenterX = nearEdgeBox.x + nearEdgeBox.width / 2;
+  assert.ok(Math.abs(nearEdgeCenterX - 60) < 1, `in-view edge hint center (${nearEdgeCenterX}) matches anchor.x (60)`);
+  assert.equal(await hint.evaluate((el) => el.style.left), "60px", "edge hint left matches exact anchor without shift");
+  assert.equal(await hint.evaluate((el) => el.style.top), "40px", "edge hint top matches exact anchor without shift");
   console.log("ok   SetupPipHints: exact position preserved when fitting");
 
   // 5. SetupPipHints: teardown when phase ends

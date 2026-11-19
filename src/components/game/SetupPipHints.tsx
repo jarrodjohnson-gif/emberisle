@@ -86,8 +86,19 @@ export function SetupPipHints() {
     el.style.left = `${anchor.x}px`;
     el.style.top = `${anchor.y}px`;
     const box = el.getBoundingClientRect();
-    const shiftX = Math.max(0, -box.left) + Math.min(0, window.innerWidth - box.right);
-    const shiftY = Math.max(0, -box.top) + Math.min(0, window.innerHeight - box.bottom);
+    const overflowLeft = -box.left;
+    const overflowRight = box.right - window.innerWidth;
+    const overflowTop = -box.top;
+    const overflowBottom = box.bottom - window.innerHeight;
+
+    let shiftX = 0;
+    if (overflowLeft > 0) shiftX = Math.ceil(overflowLeft);
+    else if (overflowRight > 0) shiftX = -Math.ceil(overflowRight);
+
+    let shiftY = 0;
+    if (overflowTop > 0) shiftY = Math.ceil(overflowTop);
+    else if (overflowBottom > 0) shiftY = -Math.ceil(overflowBottom);
+
     if (shiftX !== 0) el.style.left = `${anchor.x + shiftX}px`;
     if (shiftY !== 0) el.style.top = `${anchor.y + shiftY}px`;
   }, [anchor]);
