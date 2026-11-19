@@ -14,18 +14,20 @@ export function TurnExtensionVote() {
   const localId = useGame((s) => s.localId);
   const game = useGame((s) => s.state);
   const skew = useGame((s) => s.clockSkew);
-  const timerAt = useGame((s) => s.turnTimer?.at ?? null);
+  const deadline = useGame((s) => s.turnTimer?.deadline ?? null);
   const extension = useSyncExternalStore(net?.subscribeTurnExtension ?? noopSubscribe, net?.getTurnExtension ?? empty);
   const [now, setNow] = useState(Date.now);
+  const active = mode === "online" && !spectator && !!game && game.phase !== "over" && !!extension && !!net;
   const vote = extension?.vote;
-  const tick = vote?.id ?? timerAt;
+  const cueAt = deadline === null ? null : deadline - skew;
+  const tick = active ? (vote?.id ?? deadline) : null;
   useEffect(() => {
     if (tick == null) return;
     setNow(Date.now());
     const timer = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(timer);
   }, [tick]);
-  if (mode !== "online" || spectator || !game || game.phase === "over" || !extension || !net) return null;
+  if (!active) return null;
   const name = (pid: string) => game.players.find((p) => p.id === pid)?.name ?? "Player";
   const result = extension.result;
   const button = "min-h-11 min-w-11 rounded-lg border border-white/60 bg-white/70 px-3 py-2 text-sm font-medium text-zinc-900 hover:bg-white focus-visible:outline-2 focus-visible:outline-fg disabled:opacity-50";
@@ -51,7 +53,7 @@ export function TurnExtensionVote() {
   </p>;
   if (!extension.target || !extension.key || extension.used || !game.players.some((p) => p.id !== extension.target && p.kind === "human")) return null;
   const label = extension.target === localId ? "Ask for more time" : `Give ${name(extension.target)} more time`;
-  const short = timerAt !== null && timerAt - now <= SHORT_MS;
+  const short = cueAt !== null && cueAt - now <= SHORT_MS;
   const link = "inline-flex min-h-11 min-w-11 items-center justify-center bg-transparent px-2 text-sm font-medium text-zinc-900 underline decoration-zinc-900/40 underline-offset-4 hover:decoration-zinc-900 focus-visible:outline-2 focus-visible:outline-fg";
   return <button data-testid="turn-extension-ask" data-quiet={short ? undefined : "true"} className={short ? `${button} min-w-0 flex-1 truncate` : `${link} min-w-0 max-w-full truncate`} title={label} onClick={() => net.requestTurnExtension(extension.target!, extension.key!)}>{label}</button>;
 }

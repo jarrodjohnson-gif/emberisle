@@ -9,6 +9,7 @@ const match = workflow.match(/      - if: needs\.changes\.outputs\.docs_only != 
 assert.ok(match, 'bounded ffmpeg step exists');
 const shell = match[1].replace(/^          /gm, '');
 assert.match(shell, /command -v ffmpeg/);
+assert.match(shell, /command -v ffprobe/);
 for (const name of ['audio-level-prove', 'ambience-loop-prove']) {
   assert.ok(workflow.includes(`- if: needs.changes.outputs.docs_only != 'true'\n        run: npm run ${name}`), `${name} remains scheduled`);
 }
@@ -23,7 +24,7 @@ function run(script, { installed = false, updateFailures = 0, installFailures = 
       writeFileSync(path, contents);
       chmodSync(path, 0o755);
     };
-    if (installed) executable('ffmpeg', '#!/bin/sh\nexit 0\n');
+    if (installed) { executable('ffmpeg', '#!/bin/sh\nexit 0\n'); executable('ffprobe', '#!/bin/sh\nexit 0\n'); }
     executable('sleep', '#!/bin/sh\nprintf "sleep %s\\n" "$*" >> "$LOG"\n');
     executable('sudo', `#!/bin/sh
 printf '%s\\n' "$*" >> "$LOG"
@@ -37,7 +38,8 @@ case "$*" in
     n=$((n + 1)); printf '%s\\n' "$n" > "$INSTALLS"
     if [ "$n" -gt "$INSTALL_FAILURES" ]; then
       printf '#!/bin/sh\\nexit 0\\n' > "$BIN/ffmpeg"
-      /bin/chmod +x "$BIN/ffmpeg"
+      printf '#!/bin/sh\\nexit 0\\n' > "$BIN/ffprobe"
+      /bin/chmod +x "$BIN/ffmpeg" "$BIN/ffprobe"
       exit 0
     fi
     exit 1 ;;

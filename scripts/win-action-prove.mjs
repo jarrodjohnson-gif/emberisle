@@ -6,14 +6,19 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import WebSocket from '../server/node_modules/ws/wrapper.mjs';
 import { chromium } from "./proof-browser.mjs";
+import { hostPort as waitForHostPort } from "./proof-host-port.mjs";
 import { createServer } from 'vite';
 import { createGame } from '../src/lib/game/board.ts';
 import { legalSettle, publicVP } from '../src/lib/game/rules.ts';
 import { toIntent } from '../src/lib/net/table.ts';
-const dir=mkdtempSync(path.join(tmpdir(),'emberisle-win-action-'));
-const port=Number(process.env.VITE_PORT||18551);
+const port=Number(process.env.VITE_PORT)||0;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-let host,hostPort;const sockets=[];
+let dir,host,hostPort,vite,browser;const sockets=[];
+process.on("exit", () => {
+  if (host && host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  if (dir) rmSync(dir, { recursive: true, force: true });
+});
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const cases=[['WAAB','outpost','Built an outpost',7],['WAAC','stronghold','Upgraded to a stronghold',7],['WAAD','longestPath','Took longest path',7],['WAAE','largestArmy','Took largest army',7],['WAAF','pointFortune','Drew a point fortune',7],['WAAG','pointFortune','Drew a point fortune',10],['WAAH','largestArmy','Took largest army',7,8]];
 const fixtures=[];
 function trail(g,n,avoid=new Set()){
@@ -27,7 +32,21 @@ function points(g,n,avoid=new Set()){
  for(const v of g.vertices){if(avoid.has(v.id)||v.building)continue;const kind=n>=2?'stronghold':'outpost';v.building={playerId:'p0',kind};n-=kind==='stronghold'?2:1;if(!n)return;}
  throw Error('not enough vertices');
 }
-for(const [code,trigger,text,target,earned=target] of cases){
+async function start(){
+ let stderr='';host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:dir,PROFILES_DIR:path.join(dir,'profiles'),RESULTS_DIR:`${dir}/results`,SAVE_MS:'20',GRACE_MS:'600000',HOLD_MS:'600000',TURN_MS:'600000',ACT_CAP:'1000',ACT_RATE:'1000'},stdio:['ignore','pipe','pipe']});
+ host.stderr.on('data',d=>stderr+=d);
+ hostPort=await waitForHostPort(host);
+}
+async function client(code,pid){
+ const ws=new WebSocket(`ws://127.0.0.1:${hostPort}`),messages=[];sockets.push(ws);
+ ws.on('message',raw=>messages.push(JSON.parse(String(raw))));await new Promise(r=>ws.on('open',r));
+ ws.send(JSON.stringify(pid===null?{type:'hello',code,watch:true}:{type:'hello',code,secret:`${code}-${pid}`}));
+ const next=async(test)=>{for(let i=0;i<300;i++){const m=messages.find(test);if(m)return m;const error=messages.find(m=>m.type==='error');if(error)throw Error(error.message);await wait(10);}throw Error(`timed out ${code} ${pid}`);};
+ const state=await next(m=>m.type==='state');return{ws,state,next};
+}
+try{
+ dir=mkdtempSync(path.join(tmpdir(),'emberisle-win-action-'));
+ for(const [code,trigger,text,target,earned=target] of cases){
  const g=createGame({humans:[{name:'Ember'},{name:'Tide'},{name:'Pine'},{name:'Moss'}],bots:0,seed:55});
  g.phase='main';g.rollOff=null;g.current='p0';g.log=[];g.victoryTarget=target;
  const me=g.players[0];me.resources={timber:4,clay:4,wool:4,grain:6,ore:6};let action;
@@ -51,22 +70,8 @@ for(const [code,trigger,text,target,earned=target] of cases){
  const seats=g.players.map((p,i)=>({id:`s${i}`,name:p.name,color:p.color,ready:true,pid:p.id,secret:`${code}-${p.id}`}));
  writeFileSync(path.join(dir,`${code}.json`),JSON.stringify({code,host:'s0',next:4,chat:[],chatSeq:0,game:g,seats,recoveryPids:[],shape:2,savedAt:Date.now()}));
  fixtures.push({code,trigger,text,target,earned,action});
-}
-async function start(){
- let stderr='';host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:dir, RESULTS_DIR: `${dir}/results`,SAVE_MS:'20',GRACE_MS:'600000',HOLD_MS:'600000',TURN_MS:'600000',ACT_CAP:'1000',ACT_RATE:'1000'},stdio:['ignore','pipe','pipe']});
- host.stderr.on('data',d=>stderr+=d);
- hostPort=await new Promise((resolve,reject)=>{host.stdout.on('data',d=>{const m=String(d).match(/listening (\d+)/);if(m)resolve(Number(m[1]));});host.on('exit',c=>reject(Error(`host ${c}: ${stderr}`)));});
-}
-async function client(code,pid){
- const ws=new WebSocket(`ws://127.0.0.1:${hostPort}`),messages=[];sockets.push(ws);
- ws.on('message',raw=>messages.push(JSON.parse(String(raw))));await new Promise(r=>ws.on('open',r));
- ws.send(JSON.stringify(pid===null?{type:'hello',code,watch:true}:{type:'hello',code,secret:`${code}-${pid}`}));
- const next=async(test)=>{for(let i=0;i<300;i++){const m=messages.find(test);if(m)return m;const error=messages.find(m=>m.type==='error');if(error)throw Error(error.message);await wait(10);}throw Error(`timed out ${code} ${pid}`);};
- const state=await next(m=>m.type==='state');return{ws,state,next};
-}
-const vite=await createServer({server:{host:'127.0.0.1',port,strictPort:true},logLevel:'error'});
-let browser;
-try{
+ }
+ vite=await createServer({server:{host:'127.0.0.1',port,strictPort:port!==0},logLevel:'error'});
  await start();
  for(const f of fixtures){
   const peers=[];for(const pid of ['p0','p1','p2','p3',null])peers.push(await client(f.code,pid));
@@ -85,7 +90,7 @@ try{
    await context.addInitScript(({code})=>{localStorage.setItem('emberisle-seat',JSON.stringify({code,secret:`${code}-p0`}));localStorage.setItem('emberisle-seat-live',code);},f);
    const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
    if(insets)await (await context.newCDPSession(page)).send('Emulation.setSafeAreaInsetsOverride',{insets});
-   await page.goto(`http://127.0.0.1:${port}/?host=${encodeURIComponent(`ws://127.0.0.1:${hostPort}`)}`);
+   await page.goto(`http://127.0.0.1:${vite.httpServer.address().port}/?host=${encodeURIComponent(`ws://127.0.0.1:${hostPort}`)}`);
    await page.getByTestId('win-action').waitFor();
    const expected=`${f.text}${f.trigger==='longestPath'||f.trigger==='largestArmy'?' (+2)':f.trigger==='pointFortune'?' (+1)':''} · ${f.earned} points, target ${f.target}.`;
    assert.equal(await page.getByTestId('win-action').textContent(),expected);
@@ -114,4 +119,15 @@ try{
   console.log(`ok ${width}x${height}${reduced?' reduced':''}${insets?' insets':''}: five winning triggers, seven-/ten-point targets and overshoot, persisted restart and browser reload`);
  }
  assert.deepEqual(errors,[]);console.log('win-action-prove: all passed; all seat/watcher views omit trigger before the win');
-}finally{await browser?.close();await vite.close();for(const ws of sockets)ws.terminate();host?.kill('SIGKILL');rmSync(dir,{recursive:true,force:true});}
+}finally{
+ for(const ws of sockets)ws.terminate();
+ if(browser)await browser.close().catch(()=>{});
+ if(vite)await vite.close().catch(()=>{});
+ if(host&&host.exitCode===null&&host.signalCode===null){
+  const exited=new Promise(resolve=>host.once('exit',resolve));
+  host.kill();
+  await Promise.race([exited,new Promise(resolve=>setTimeout(resolve,2000))]);
+  if(host.exitCode===null&&host.signalCode===null)host.kill('SIGKILL');
+ }
+ if(dir)rmSync(dir,{recursive:true,force:true});
+}
