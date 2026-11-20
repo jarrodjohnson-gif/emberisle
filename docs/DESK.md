@@ -197,7 +197,7 @@ For each slot:
 
 A builder that stops leaves its slot free for the next morning. Fixes to its PR come from the desk's review, through a fresh chat in that slot.
 
-**Fable on call.** Fable 5.2 takes design, UX and UI work: mocks, design passes and design proofs (`tier:1-deep`, and design issues held for a mock). It never runs every day. When Jarrod or the desk sends you `Start Fable #<issue>`, call `create_session` with `model` `claude-fable-5-2`, `title` `Emberisle Fable #<issue>`, and this `prompt`: `Work on Emberisle issue #<issue> as builder "fable". Read AGENTS.md. Do the design work it asks for, then stop. Never start sessions.` Then post `·`.
+**Fable as needed.** Builders call Fable 5.2 themselves as a subagent for design, UX and UI work (`docs/LANES.md`, "Sub-agents and usage limits"). The launcher never starts Fable.
 
 **If something fails.** If `create_session` fails, tell Jarrod once: "The launcher could not start today's desk," with the error. If your own context passes about 150K tokens, tell Jarrod once to start a fresh launcher with the line above, and disable your task when the new launcher says it is set.
 

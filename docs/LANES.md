@@ -146,7 +146,7 @@ An agent may spawn cheaper or stronger sub-agents if its platform allows it. For
 hand a `tier:3` issue to Haiku. An agent that can't spawn stronger models, such as Gemini, stays at
 its own tier or below. Pick the sub-agent by how clear the task is:
 
-- **Fable 5.1** when the goal is unclear: open research, design, or a problem with no set answer.
+- **Fable 5.2** when the goal is unclear: open research, design, or a problem with no set answer. Any builder calls a Fable subagent as needed for design, UX and UI work: a mock, a design pass, or checking a layout or design proof. The builder still writes the PR, and the reviewer differs from every model named.
 - **Sonnet 5.5** for clearly defined coding. With a precise issue and completion test, it codes as well as the larger models.
 - **Haiku 5.5** for small, focused fixes and checks.
 
