@@ -174,6 +174,7 @@ The launcher is a chat titled "Emberisle desk launcher". It never reviews, merge
 
 **Rotate now.** Do this when the task fires, or when a desk sends you `Rotate now`:
 
+0. Run `git pull origin main`, then re-read this section. Your checkout is as old as your chat, and this section changes.
 1. Read the ledger in #916. If `Next desk:` names a session that is still working, stop and post `·`.
 2. Call `create_session` with `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, `model` `claude-opus-5-5`, `title` `Emberisle desk <UTC date>`, and `prompt` set to "The next desk's prompt" below, with the old desk's session id filled in.
 3. Write `Next desk: <its session id>` and `Next rotation: <the task id>, due <the next 12:43 UTC as YYYY-MM-DDTHH:MMZ>` in the ledger. Read the body back.
