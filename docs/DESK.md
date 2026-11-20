@@ -160,7 +160,7 @@ Every morning at 5:43 a.m. Arizona time (America/Phoenix, 12:43 UTC), the launch
 
 ### The launcher
 
-The launcher is a chat titled "Emberisle desk launcher". It never reviews, merges, labels or posts on GitHub, except for the ledger lines below. It still needs GitHub tools, to read and write #916's body. Jarrod starts it by hand, so it gets them. Jarrod starts it with: `Run the Emberisle desk launcher. Read "The launcher" in docs/DESK.md.`
+The launcher is a chat titled "Emberisle desk launcher". It never reviews, merges, labels or posts on GitHub, except for the ledger lines below. It still needs GitHub tools, to read and write #916's body. Jarrod starts it by hand, so it gets them. Jarrod starts it with: `Run the Emberisle desk launcher. Read "The launcher" in docs/DESK.md.` Start it as a cloud session at claude.ai/code on the emberisle repo, never as a local desktop chat. A local chat has no `create_trigger`, `fire_trigger` or `create_session`, and may read an old checkout. A launcher that finds any of those three tools missing stops, writes nothing, and tells Jarrod to start it in the cloud.
 
 **First run:**
 
