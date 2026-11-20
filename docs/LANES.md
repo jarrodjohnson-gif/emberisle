@@ -150,10 +150,20 @@ its own tier or below. Pick the sub-agent by how clear the task is:
 - **Sonnet 5.5** for clearly defined coding. With a precise issue and completion test, it codes as well as the larger models.
 - **Haiku 5.5** for small, focused fixes and checks.
 
+**Fresh sessions, not long chats.** Start a fresh chat for each issue, or for a batch of 3 to 5 tiny fixes. Never run one builder chat for days.
+- **Why:** every wake re-reads the whole chat. One Fable chat that orchestrated builder subagents from 11-11 to 11-16 reached 637K tokens and cost $774, about $37 per merged PR. A builder that ends near 100-150K tokens costs a few dollars an issue.
+- **Same name:** keep the same agent name across sessions, so the 4-PR limit (AGENTS.md rule 4) still counts every PR.
+- **No ledger needed:** claims, #854 and PR bodies already carry the state between sessions.
+- **No long orchestrator chats:** if you orchestrate subagents anyway, check your context at every wake. At 150K, finish the running subagents, post where you stopped in your PR bodies, and ask Jarrod for a fresh chat.
+
 Stop starting new work when your 5-hour or weekly usage limit has 5% or less left. Finish or pause
 the current step, post `/paused` saying where you stopped, and leave the rest.
 
 ## When nothing is eligible
+
+**Fix your own first.** If one of your PRs is on "changes needed", fix it before you claim anything new or open any other PR.
+
+**The 10-PR brake.** When the desk board in #916 shows 10 or more PRs on "changes needed", rungs 2 to 5 and the anytime queue are closed to new PRs. Rung 1 (adopt a stuck PR) stays open and comes first. This is not a stop (AGENTS.md rule 10): adopting and fixing waiting PRs is the work. Comments, `Question:` posts and read-only audits are still allowed.
 
 An empty ready list is not a reason to stop or to ask the desk. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Only if all five rungs and the [anytime queue](#anytime-queue) are empty, post a `To desk:` line on #854.
 

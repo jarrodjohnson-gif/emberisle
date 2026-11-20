@@ -227,13 +227,16 @@ After that, answer every wake with `·`.
 
 ### When to rotate early
 
-- Check your context size with `get_session` after each merge.
-- At about 150K tokens, send the launcher (the ledger's `Launcher:` line) `Rotate now`.
+- Check your context size with `get_session` at every wake, not only after merges. A quiet day with no merges still grows the context.
+- At 150K tokens, send the launcher (the ledger's `Launcher:` line) `Rotate now`. Don't wait for a good moment: a handover waits for your running subagents, so you will overshoot.
+- At 200K tokens, start no new reviews. Finish the running ones and hand over.
+- Leave at least 3 hours between early rotations, so a busy day doesn't start a desk every hour.
+- Compaction doesn't replace rotation. The 11-17 desk was still at 543K after compacting.
 - If `Desk: ... since` is more than 26 hours old, the daily rotation was missed. Send the launcher `Rotate now`.
 - If the launcher doesn't answer, or `Launcher:` is empty, tell Jarrod once: "Please start the desk launcher." Give him its start line from "The launcher".
 - Never delete the disabled "Emberisle desk daily" task. Deleting it also deletes every session it started.
 
-Every wake re-reads your whole context. The desk that ran from 10-21 to 10-26 reached 570K tokens and cost about $500. The desk that ran from 11-09 to 11-12 reached 727K tokens and cost $291.
+Every wake re-reads your whole context. The desk that ran from 10-21 to 10-26 reached 570K tokens and cost about $500. The desk that ran from 11-09 to 11-12 reached 727K tokens and cost $291. From 11-12 to 11-20, seven desks cost about $600; five ended past 500K, because the 150K rule was checked only after merges.
 
 ## Start a desk session
 
