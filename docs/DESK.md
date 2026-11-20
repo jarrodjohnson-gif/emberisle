@@ -160,10 +160,11 @@ Every morning at 5:43 a.m. Arizona time (America/Phoenix, 12:43 UTC), the launch
 
 ### The launcher
 
-The launcher is a chat titled "Emberisle desk launcher". It never reviews, merges, labels or posts on GitHub, except for the ledger lines below. It still needs GitHub tools, to read and write #916's body. Jarrod starts it by hand, so it gets them. Jarrod starts it with: `Run the Emberisle desk launcher. Read "The launcher" in docs/DESK.md.`
+The launcher is a chat titled "Emberisle desk launcher". It never reviews, merges, labels or posts on GitHub, except for the ledger lines below. It still needs GitHub tools, to read and write #916's body. Jarrod starts it by hand, so it gets them. Jarrod starts it with: `Run the Emberisle desk launcher. Read "The launcher" in docs/DESK.md.` Start it as a cloud session at claude.ai/code on the emberisle repo, never as a local desktop chat. A local chat has no `create_trigger`, `fire_trigger` or `create_session`, and may read an old checkout.
 
 **First run:**
 
+0. Check that you have `create_trigger`, `fire_trigger` and `create_session`. If any is missing, stop. Write nothing, and tell Jarrod in one line to start the launcher in the cloud.
 1. Get your session id with `get_session`. Write `Launcher: <your session id>` on the ledger's `Launcher:` line.
 2. Create one scheduled task with `create_trigger`. Give it `name` `Emberisle desk rotation` and `cron_expression` `CRON_TZ=America/Phoenix 43 5 * * *`. Leave out `create_new_session_on_fire` and `persistent_session_id`, so it fires into this chat. Set `initiation` to `human_request`, and `prompt` to `Rotate now (docs/DESK.md, "The launcher").` `create_trigger` is not on the allow list. Jarrod approves it here, on the first run, and the launcher uses it only for this one task.
    - Firing back into this chat is not yet tested. Test it now: call `fire_trigger` once with the new task id, and check that a `Rotate now` turn arrives in this chat. If it doesn't, tell Jarrod in one line, with what happened.
