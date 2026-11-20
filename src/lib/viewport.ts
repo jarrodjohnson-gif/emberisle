@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 export type Viewport = { phone: boolean; portrait: boolean };
 
 export function readViewport(): Viewport {
+  if (typeof window === "undefined") return { phone: false, portrait: false };
+  const coarse = typeof matchMedia === "function" ? matchMedia("(pointer: coarse)").matches : false;
   return {
-    phone: matchMedia("(pointer: coarse)").matches || window.innerWidth < 768,
+    phone: coarse || window.innerWidth < 768,
     portrait: window.innerHeight > window.innerWidth,
   };
 }
@@ -13,18 +15,22 @@ export function readViewport(): Viewport {
 export function useViewport(): Viewport {
   const [v, setV] = useState(readViewport);
   useEffect(() => {
-    const mq = matchMedia("(pointer: coarse)");
+    const mq = typeof matchMedia === "function" ? matchMedia("(pointer: coarse)") : null;
     const update = () =>
       setV((o) => {
         const n = readViewport();
         return n.phone === o.phone && n.portrait === o.portrait ? o : n;
       });
     window.addEventListener("resize", update);
-    mq.addEventListener("change", update);
+    window.addEventListener("orientationchange", update);
+    if (typeof mq?.addEventListener === "function") mq.addEventListener("change", update);
+    else if (typeof mq?.addListener === "function") mq.addListener(update);
     update();
     return () => {
       window.removeEventListener("resize", update);
-      mq.removeEventListener("change", update);
+      window.removeEventListener("orientationchange", update);
+      if (typeof mq?.removeEventListener === "function") mq.removeEventListener("change", update);
+      else if (typeof mq?.removeListener === "function") mq.removeListener(update);
     };
   }, []);
   return v;

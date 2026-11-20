@@ -217,6 +217,62 @@ async function waitBoard(page, docks) {
   await frames(page, 3);
 }
 
+// #1652: start a whale mid-lane south of the island where the expanded coast grows.
+const startWhaleMidLane = (page) =>
+  page.evaluate(() => {
+    const life = window.__isle.oceanLife;
+    life.reset("whale-1652");
+    life.begin("whale", { angle: Math.PI / 2, arc: 0.32, direction: 1 });
+    life.active.age = life.active.duration / 2;
+    life.pose(life.active);
+    const snap = life.snapshot();
+    return { active: !!snap.active, shown: snap.visible, radius: snap.active?.radius ?? null, grow: life.grow };
+  });
+
+// #1652: verify oceanLife updated its island bounds and no active visitor cuts inside foam.
+const checkVisitorAfterBoardChange = (page) =>
+  page.evaluate(() => {
+    const i = window.__isle;
+    const life = i.oceanLife;
+    const snap = life.snapshot();
+    const synced = Math.abs(life.ox - i.isle.cx) < 1e-9 && Math.abs(life.oz - i.isle.cz) < 1e-9 && Math.abs(life.grow - i.isle.grow) < 1e-9;
+    if (!snap.active && snap.visible === 0) return { ended: true, shown: 0, synced, inside: 0, radius: null, grow: life.grow };
+    const foam = i.coast.map((c) => [c.x + c.mx * 0.42, c.z + c.mz * 0.42]);
+    const inPoly = (x, z) => {
+      let inside = false;
+      for (let a = 0, b = foam.length - 1; a < foam.length; b = a++) {
+        const [ax, az] = foam[a], [bx, bz] = foam[b];
+        if ((az > z) !== (bz > z) && x < ((bx - ax) * (z - az)) / (bz - az) + ax) inside = !inside;
+      }
+      return inside;
+    };
+    let inside = 0;
+    const v = life.active;
+    if (v) {
+      const origAge = v.age;
+      const root = life.creatures[v.species].root;
+      const p = root.position.clone();
+      for (let age = origAge; age <= v.duration + 1e-6; age += 0.5) {
+        v.age = Math.min(v.duration, age);
+        life.pose(v);
+        life.group.updateMatrixWorld(true);
+        if (inPoly(root.position.x, root.position.z)) inside++;
+        root.traverse((o) => {
+          if (!o.isMesh) return;
+          const pos = o.geometry.attributes.position;
+          for (let k = 0; k < pos.count; k++) {
+            p.fromBufferAttribute(pos, k).applyMatrix4(o.matrixWorld);
+            if (inPoly(p.x, p.z)) inside++;
+          }
+        });
+      }
+      v.age = origAge;
+      life.pose(v);
+      life.group.updateMatrixWorld(true);
+    }
+    return { ended: false, shown: snap.visible, synced, inside, radius: snap.active?.radius ?? null, grow: life.grow };
+  });
+
 async function open(size, water = "simple") {
   const ctx = await browser.newContext({ viewport: { width: size.width, height: size.height }, isMobile: size.phone, hasTouch: size.phone, deviceScaleFactor: SHOTS ? 2 : 1 });
   await ctx.addInitScript(() => localStorage.setItem("emberisle-first-game-coach", '"done"'));
@@ -315,7 +371,13 @@ try {
       classicTokens[tag] = cm;
 
       // The expanded island.
+      // #1652: start a whale mid-lane south of the classic coast, where the expanded island grows.
+      const beforeExpand = await startWhaleMidLane(page);
       await load(page, true);
+      const afterExpand = await checkVisitorAfterBoardChange(page);
+      check(`${tag}: mid-lane whale across classic to expanded ends or clears the new coast foam`,
+        beforeExpand.active && beforeExpand.shown === 1 && afterExpand.synced && afterExpand.grow > 0 && ((afterExpand.ended && afterExpand.shown === 0) || (afterExpand.radius !== null && afterExpand.radius >= 6.2 + afterExpand.grow - 1e-9 && afterExpand.inside === 0)),
+        { before: beforeExpand, after: afterExpand });
       await waitBoard(page, 11);
       const m = await measure(page);
       if (!shaped) {
@@ -446,7 +508,13 @@ try {
       }
       // Expanded -> classic in the same page: the classic board again fits exactly as on origin/main, and its coast, beach,
       // foam (and, on the crystal sea, the wash) are the classic island's once more.
+      // #1652: start a whale mid-lane on the expanded board before returning to classic.
+      const beforeClassic = await startWhaleMidLane(page);
       await load(page, false);
+      const afterClassic = await checkVisitorAfterBoardChange(page);
+      check(`${tag}: mid-lane whale across expanded to classic ends or clears the classic coast foam`,
+        beforeClassic.active && beforeClassic.shown === 1 && beforeClassic.grow > 0 && afterClassic.synced && afterClassic.grow === 0 && ((afterClassic.ended && afterClassic.shown === 0) || (afterClassic.radius !== null && afterClassic.radius <= 6.9 + 1e-9 && afterClassic.inside === 0)),
+        { before: beforeClassic, after: afterClassic });
       await waitBoard(page, 9);
       const back = await fitNumbers(page);
       const backDiff = [];

@@ -8,10 +8,11 @@ let down = false;
 export function useBackdropClose(onClose: () => void) {
   return {
     onPointerDown: (e: PointerEvent) => {
-      down = e.target === e.currentTarget;
+      down = !e.button && e.target === e.currentTarget;
     },
     onClick: (e: MouseEvent) => {
       if (down && e.target === e.currentTarget) onClose();
+      down = false;
     },
   };
 }

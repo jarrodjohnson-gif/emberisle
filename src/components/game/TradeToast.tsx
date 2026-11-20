@@ -12,6 +12,7 @@ import { bagText } from "@/lib/game/trade";
 import { useGame } from "@/lib/game/store";
 import { RESOURCES, RESOURCE_LABEL } from "@/lib/game/types";
 import type { Bag } from "@/lib/net/table";
+import { useTrayFocus } from "@/components/game/tray-focus";
 import "./trade-panel.css";
 
 const DISMISS_MS = 150;
@@ -60,6 +61,7 @@ export function TradeToast() {
   const whyId = useId();
   const dock = useRef<HTMLElement>(null);
   const hadOffer = useRef(false);
+  const trayFocus = useTrayFocus();
   // The last offer body, so the dismiss fade shows the card going away instead of an empty one.
   const lastBody = useRef<ReactNode>(null);
   const shown = !!offer && !declined.includes(localId);
@@ -72,6 +74,7 @@ export function TradeToast() {
     }
     // The offer is over and its outcome line shows: nothing is left to fade, and the old card must not come back when the line clears.
     if (outcome) {
+      trayFocus.restore();
       hadOffer.current = false;
       setLeaving(false);
       return;
@@ -79,7 +82,11 @@ export function TradeToast() {
     if (!hadOffer.current) return;
     // #537: 150 ms dismiss fade; reduced motion clears at once.
     setLeaving(true);
-    const t = window.setTimeout(() => { setLeaving(false); hadOffer.current = false; }, fadeMs);
+    const t = window.setTimeout(() => {
+      setLeaving(false);
+      hadOffer.current = false;
+      trayFocus.restore();
+    }, fadeMs);
     return () => window.clearTimeout(t);
   }, [shown, outcome, fadeMs]);
 
@@ -203,6 +210,7 @@ export function TradeToast() {
       aria-label="Trade offer"
       aria-labelledby={offer ? lineId : undefined}
       aria-describedby={why ? whyId : undefined}
+      {...trayFocus.props}
       onKeyDown={(e) => { if (answering && e.key === "Escape") answerTrade(false); }}
     >
       {body ?? lastBody.current}

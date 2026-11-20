@@ -257,7 +257,7 @@ type Step = (prev: GameState, actor: string, action: Action) => { state: GameSta
 export function pairedStep(prev: GameState, actor: string, action: Action, base: Step): ReturnType<Step> {
   if (prev.variant?.turns?.rule !== "paired") return base(prev, actor, action);
   // A partner never trades with players: no offer, and no acceptance, even of an offer left open from before.
-  if (prev.role === "partner" && (action.type === "offerTrade" || (action.type === "respondTrade" && action.accept))) {
+  if (prev.phase !== "over" && prev.role === "partner" && (action.type === "offerTrade" || (action.type === "respondTrade" && action.accept))) {
     return { state: prev, error: PARTNER_NO_TRADE };
   }
   if (action.type !== "endTurn" || !prev.role) {

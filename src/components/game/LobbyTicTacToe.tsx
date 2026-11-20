@@ -17,15 +17,18 @@ export function TicTacToe({ open, setOpen }: { open: boolean; setOpen: (open: bo
   const [pick, setPick] = useState(false);
   const g = msg?.game ?? null;
   const was = useRef(g);
+  const seat = (id: string | null | undefined) => seats.find((s) => s.id === id);
+  const name = (id: string | null | undefined) => seat(id)?.name ?? "Your table-mate";
+  const mates = seats.filter((s) => s.id !== me && !s.bot && !s.away);
   // The inviter's board opens when the invite is taken; any board closes with its game.
   useEffect(() => {
     if (g?.status === "playing" && was.current?.status === "invited" && g.x === me) setOpen(true);
     if (!g) setOpen(false);
     was.current = g;
   }, [g, me, setOpen]);
-  const seat = (id: string | null | undefined) => seats.find((s) => s.id === id);
-  const name = (id: string | null | undefined) => seat(id)?.name ?? "Your table-mate";
-  const mates = seats.filter((s) => s.id !== me && !s.bot && !s.away);
+  useEffect(() => {
+    if (g || !mates.length) setPick(false);
+  }, [g, mates.length]);
   const them = g ? (g.x === me ? g.o : g.x) : null;
   const send = (type: Parameters<NonNullable<typeof net>["ttt"]>[0], fields: Record<string, unknown> = {}) => net?.ttt(type, { id: g?.id, ...fields });
   if (spectator) return null;
@@ -86,7 +89,7 @@ export function TicTacToe({ open, setOpen }: { open: boolean; setOpen: (open: bo
   } else if (g) {
     line = `You and ${name(them)}`;
     buttons = <Button onClick={() => setOpen(true)}>Open</Button>;
-  } else if (pick) {
+  } else if (pick && mates.length) {
     line = "Play with…";
     buttons = <Button variant="outline" back onClick={() => setPick(false)}>Cancel</Button>;
   }
@@ -95,7 +98,7 @@ export function TicTacToe({ open, setOpen }: { open: boolean; setOpen: (open: bo
       <span className="lx-pic" aria-hidden="true">#</span>
       <span><b>Tic-tac-toe</b><span>{note ?? line}</span></span>
       {buttons}
-      {pick && !g ? (
+      {pick && !g && mates.length ? (
         <div className="lx-pick">
           {mates.map((s) => (
             <Button key={s.id} variant="outline" onClick={() => { setPick(false); net?.ttt("tttInvite", { to: s.id }); }}>
