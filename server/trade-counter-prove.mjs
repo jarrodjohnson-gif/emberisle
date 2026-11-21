@@ -1,7 +1,7 @@
 // #1760: approved counter-offer slice 1, real host/sockets; no UI or practice acceptance.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdtempSync, writeFileSync, rmSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
@@ -13,8 +13,13 @@ import { connectTable } from "../src/lib/net/table.ts";
 import { PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
 
 const dir = mkdtempSync(path.join(tmpdir(), "emberisle-counter-"));
-let host;
-process.on("exit", () => { host?.kill("SIGKILL"); rmSync(dir, { recursive: true, force: true }); });
+// CCAR runs on its own host whose bots answer a counter after 10–20 s, so only the 20 s offer expiry can answer it in
+// time. Its counter then goes out 5 s before expiry: a stalled event loop can't push it past the offer (#1760).
+const slowDir = path.join(dir, "slow");
+mkdirSync(slowDir);
+const roomDir = (code) => (code === "CCAR" ? slowDir : dir);
+let host, slowHost;
+process.on("exit", () => { host?.kill("SIGKILL"); slowHost?.kill("SIGKILL"); rmSync(dir, { recursive: true, force: true }); });
 const deadline = setTimeout(() => { console.error("FAIL counter proof exceeded 90s"); process.exit(1); }, 90_000);
 const fixtures = new Map();
 function fixture(code, { bot = false, partner = false, poor = false, monopoly = false, botAsk = false } = {}) {
@@ -41,28 +46,39 @@ function fixture(code, { bot = false, partner = false, poor = false, monopoly = 
   if (bot) Object.assign(g.players[2].resources, { grain: 2, ore: 2, wool: 2 });
   for (const r of RESOURCES) g.bank[r] = 19 - g.players.reduce((n, p) => n + p.resources[r], 0);
   const seats = g.players.filter((p) => p.kind === "human").map((p, i) => ({ id: `s${i}`, name: p.name, color: PLAYER_COLORS[i], ready: true, pid: p.id, secret: `${code}-${p.id}-secret` }));
-  writeFileSync(path.join(dir, `${code}.json`), JSON.stringify({ code, host: "s0", next: seats.length, game: g, seats, chat: [], chatSeq: 0, botDeclined: {}, shape: 3, savedAt: Date.now() }));
+  writeFileSync(path.join(roomDir(code), `${code}.json`), JSON.stringify({ code, host: "s0", next: seats.length, game: g, seats, chat: [], chatSeq: 0, botDeclined: {}, shape: 3, savedAt: Date.now() }));
   fixtures.set(code, { g, seats });
 }
 for (const [code, options] of [["CCAA",{}],["CCAB",{}],["CCAC",{}],["CCAD",{}],["CCAE",{}],["CCAF",{}],["CCAG",{poor:true}],["CCAH",{monopoly:true}],["CCAJ",{}],["CCAK",{}],["CCAL",{partner:true}],["CCAM",{bot:true}],["CCAN",{bot:true}],["CCAP",{bot:true,botAsk:true}],["CCAR",{bot:true,botAsk:true}],["CCAS",{}],["CCAT",{}],["CCAU",{}],["CCAV",{}],["CCAW",{}],["CCAY",{}]]) fixture(code, options);
-host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], { cwd: new URL(".", import.meta.url), env: { ...process.env, PORT: "0", ROOMS_DIR: dir, RESULTS_DIR: `${dir}/results`, PROFILES_DIR: `${dir}/profiles`, TURN_MS: "120000", GRACE_MS: "5000", ACT_RATE: "1000", ACT_CAP: "1000", SAVE_MS: "5" } });
-host.stderr.on("data", (d) => process.stderr.write(d));
-const port = await new Promise((resolve, reject) => { host.stdout.on("data", (d) => { const m = String(d).match(/listening (\d+)/); if (m) resolve(+m[1]); }); host.on("exit", (c) => reject(new Error(`host exited ${c}`))); });
+function startHost(rooms, env = {}) {
+  const h = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], { cwd: new URL(".", import.meta.url), env: { ...process.env, PORT: "0", ROOMS_DIR: rooms, RESULTS_DIR: `${rooms}/results`, PROFILES_DIR: `${rooms}/profiles`, TURN_MS: "120000", GRACE_MS: "5000", ACT_RATE: "1000", ACT_CAP: "1000", SAVE_MS: "5", ...env } });
+  h.stderr.on("data", (d) => process.stderr.write(d));
+  return [h, new Promise((resolve, reject) => { h.stdout.on("data", (d) => { const m = String(d).match(/listening (\d+)/); if (m) resolve(+m[1]); }); h.on("exit", (c) => reject(new Error(`host exited ${c}`))); })];
+}
+let portReady, slowReady;
+[host, portReady] = startHost(dir);
+[slowHost, slowReady] = startHost(slowDir, { BOT_ANSWER_MS: "10000" });
+const [port, slowPort] = await Promise.all([portReady, slowReady]);
 function client(code, seat, caps = ["expanded", "counter"]) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+  const ws = new WebSocket(`ws://127.0.0.1:${code === "CCAR" ? slowPort : port}`);
   const c = { ws, inbox: [], seen: [], state: null, pid: seat?.pid };
   const wake = new Set();
   ws.on("message", (raw) => { const m = JSON.parse(String(raw)); m.receivedAt = Date.now(); c.inbox.push(m); c.seen.push(m); if (m.type === "state") c.state = m; for (const f of [...wake]) f(); });
   c.send = (m, stamp = c.state?.actionStamp) => ws.send(JSON.stringify({ ...stamp, cid: crypto.randomUUID(), ...m }));
+  // A stalled event loop runs an expired timer before it reads socket data that already arrived. So the timeout reads
+  // pending I/O first (setImmediate runs after the poll phase) and only then fails (#1760, CCAN held-Yes timeout).
   c.next = (type, pred = () => true, ms = 6000) => new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
+    let done = false;
+    const timer = setTimeout(() => setImmediate(() => {
+      check();
+      if (done) return;
       wake.delete(check);
       let saved;
-      try { const room=JSON.parse(readFileSync(path.join(dir, `${code}.json`))); saved={seq:room.game.seq,current:room.game.current,recoveryPids:room.recoveryPids,players:room.game.players.map(p=>({id:p.id,kind:p.kind,goods:Object.values(p.resources).reduce((a,b)=>a+b,0)}))}; } catch {}
+      try { const room=JSON.parse(readFileSync(path.join(roomDir(code), `${code}.json`))); saved={seq:room.game.seq,current:room.game.current,recoveryPids:room.recoveryPids,players:room.game.players.map(p=>({id:p.id,kind:p.kind,goods:Object.values(p.resources).reduce((a,b)=>a+b,0)}))}; } catch {}
       const diagnostic={at:Date.now(),saved,current:c.state?.game.seq,recent:c.seen.filter((m)=>["error","tradeDeclined","tradeClosed","tradeCounterClosed","log"].includes(m.type)).slice(-16)};
       reject(new Error(`${code}/${seat?.name ?? "watcher"} timeout ${type}: ${JSON.stringify(diagnostic)}`));
-    }, ms);
-    const check = () => { const i = c.inbox.findIndex((m) => m.type === type && pred(m)); if (i < 0) return; clearTimeout(timer); wake.delete(check); resolve(c.inbox.splice(i,1)[0]); };
+    }), ms);
+    const check = () => { if (done) return; const i = c.inbox.findIndex((m) => m.type === type && pred(m)); if (i < 0) return; done = true; clearTimeout(timer); wake.delete(check); resolve(c.inbox.splice(i,1)[0]); };
     wake.add(check); check();
   });
   ws.on("open", () => c.send(seat ? { type: "hello", code, secret: seat.secret, caps } : { type: "hello", code, watch: true, caps }));
@@ -88,16 +104,17 @@ async function fence(cs, text) { cs[0].send({type:"chat",text}); await Promise.a
 // start now too, so their 20s offer lifetime is measured from the actual offer.
 const tables = new Map([...fixtures.keys()].map((code) => [code, connectSeats(code, code === "CCAK" ? [[],[]] : code === "CCAT" ? [["counter"],[]] : undefined)]));
 const table = (code) => tables.get(code);
-// A bot asker prices a counter from its own side, after its normal thought delay.
+// A bot asker prices a counter from its own side, after its normal thought delay. CCAR's slow host proves the expiry
+// path: its normal answer would take 10 s or more, so a close about 5 s after the counter can only come from expiry.
 const botAnswers = Promise.all([["CCAP",false],["CCAR",true]].map(async ([code,nearExpiry]) => {
  const cs=await table(code);const o=await cs[0].next("tradeOffer",m=>m.from==="p2");assert.equal(o.counter,true);
  const terms={give:{wool:1},want:{grain:2}};
  assert.ok(pairedAcceptTrade(fixtures.get(code).g,"p2",{from:"p1",give:terms.want,want:terms.give}));
- if(nearExpiry) await new Promise(r=>setTimeout(r,Math.max(0,o.receivedAt+19300-Date.now())));
+ if(nearExpiry) await new Promise(r=>setTimeout(r,Math.max(0,o.receivedAt+15000-Date.now())));
  const at=Date.now();cs[1].send({type:"tradeCounter",tradeId:o.tradeId,...terms});const c=await cs[1].next("tradeCounter");
  const closed=await cs[1].next("tradeClosed",m=>m.tradeId===o.tradeId);assert.equal(closed.taker,"p1");
  if(!nearExpiry) {assert.ok(closed.receivedAt-at>=1000);assert.ok(closed.receivedAt-at<2500);}
- else assert.ok(closed.receivedAt-at<1500,"expiry must answer pending counter before closing");
+ else {assert.ok(closed.receivedAt-o.receivedAt>=19500,"pending counter must wait for the offer's expiry");assert.ok(closed.receivedAt-at<9000,"expiry must answer pending counter before closing");}
  assert.equal(c.by,"p1");console.log(`PASS bot asker paired answer ${nearExpiry?"before expiry":"in normal 1–2s delay"}`);
 }));
 
@@ -257,4 +274,4 @@ for(const [code,who] of [["CCAU",1],["CCAV",0]]) {
  a.t.tradeCounterAnswer(next.tradeId,nc.counterId,true);await wait(()=>a.events.some(m=>m.type==="tradeClosed"&&m.taker==="p1"));
  assert.ok(records.every(r=>r.errors.length===0));for(const r of records)r.t.close();console.log("PASS real table.ts capability, three senders and both events");
 }
-clearTimeout(deadline);host.kill("SIGKILL");console.log("trade-counter-prove: real-host slice1 cases passed");
+clearTimeout(deadline);host.kill("SIGKILL");slowHost.kill("SIGKILL");console.log("trade-counter-prove: real-host slice1 cases passed");
