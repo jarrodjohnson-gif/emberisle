@@ -213,7 +213,7 @@ After that, answer every wake with `·`.
 - Check your context size with `get_session` at every wake, not only after merges. A quiet day with no merges still grows the context.
 - At 300K tokens, send the desk launcher (the ledger's `Launcher:` line) `Rotate now`. Don't wait for a good moment: a handover waits for your running subagents, so you will overshoot.
 - At 350K tokens, start no new reviews. Finish the running ones and hand over.
-- Why 300K: a fresh desk starts near 84K before it reads anything, and reaches about 150K after taking over (measured 2026-11-21). The old 150K limit fired 3 minutes in. Once the ledger stays under 4,000 characters, the threshold drops to 220K.
+- Why 300K: a fresh desk starts near 84K before it reads anything, and reaches about 150K after taking over (measured 2026-11-21). The old 150K limit fired 3 minutes in. Once the ledger has stayed under 4,000 characters for a full day, the threshold drops to 220K.
 - Leave at least 3 hours between early rotations, so a busy day doesn't start a desk every hour. Reached 300K sooner than that? Start no new reviews until the 3 hours are up, then send `Rotate now`.
 - Compaction doesn't replace rotation. The 11-17 desk was still at 543K after compacting.
 - If `Desk: ... since` is more than 26 hours old, the daily rotation was missed. Send the desk launcher `Rotate now`.
