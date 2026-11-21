@@ -1,5 +1,5 @@
 export function mulberry32(seed: number) {
-  let a = (Number.isFinite(seed) ? Math.floor(seed) : 0) >>> 0;
+  let a = seed >>> 0;
   return () => {
     a |= 0;
     a = (a + 0x6d2b79f5) | 0;
