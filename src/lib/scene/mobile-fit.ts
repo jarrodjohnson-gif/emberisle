@@ -125,10 +125,9 @@ const LEAN_RISE = 1.15;
 export const SHORE_HALF_X = 2.5 * Math.sqrt(3) * 1.12 + 0.42;
 export const EDGE_GAP = 4;
 // #1509: the goods pile on a pier (#846, 2.5x) stays wholly on screen even where the boat beside it is cropped; it is part of
-// the dock, not the boat. The outermost pile reaches 5.72 world units across (harbor-jelly's packed goods, measured over
-// eight seeds on a side dock); PILE_HALF_X holds that with a little room, and the fit never puts it past PILE_GAP px from
-// the screen edge. Where the piles bind, the shore stops a few pixels short of EDGE_GAP.
-export const PILE_HALF_X = 5.75;
+// the dock, not the boat. #1526 packs each side dock's goods near the coast end of its pier (at most 5.29 world units
+// across), so the shore reaches EDGE_GAP px from each screen edge with every pile still at least PILE_GAP px inside.
+export const PILE_HALF_X = 5.29;
 export const PILE_GAP = 2;
 // #1509: the upright phone's default lean. The owner found the 25° board hard to see and always tilted it; 40° shows the
 // slabs' sides and the pieces standing, while a number token still reads as a disc. Only depth shrinks (by cos), and an
