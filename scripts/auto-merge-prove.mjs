@@ -29,7 +29,7 @@ function pr(over = {}) {
 const EXCLUDED = [
   // Governance files, even inside docs/.
   "AGENTS.md", "CLAUDE.md", "README.md", "docs/DESK.md", "docs/REVIEWING.md", "docs/DECISIONS.md", "docs/LANES.md", "docs/FRAMEWORK.md",
-  "docs/design/AGENTS.md", "docs/CLAUDE.md", "docs/framework.md", "Docs/DESK.md",
+  "docs/design/AGENTS.md", "docs/CLAUDE.md", "docs/framework.md", "Docs/DESK.md", "docs/HELPERS.md", "docs/ORCHESTRATOR.md", "docs/GEMINI.md", "docs/.mcp.json",
   // Hard excludes. .github/** beats the .github/ISSUE_TEMPLATE/** allow entry: the exclude list wins.
   ".github/workflows/ci.yml", ".github/workflows/auto-merge.yml", ".github/ISSUE_TEMPLATE/bug.md", ".github/flaky.json",
   "package.json", "package-lock.json", "server/package.json", "server/package-lock.json", "docs/package.json",
@@ -89,7 +89,7 @@ function codePr(over = {}) {
     comments: [{ author_association: "OWNER", body: footer() }], ...over });
   return { ...base, code: over.code ?? true };
 }
-const CODE_EXCLUDED = ["AGENTS.md", "docs/DESK.md", "docs/DECISIONS.md", "src/CLAUDE.md", ".github/workflows/auto-merge.yml", ".github/workflows/CI.yml/x", ".github/flaky.json",
+const CODE_EXCLUDED = ["AGENTS.md", "docs/DESK.md", "docs/DECISIONS.md", "src/CLAUDE.md", ".github/workflows/auto-merge.yml", ".github/workflows/CI.yml/x", ".github/workflows/CI.yml", ".github/workflows/Ci.yml", ".github/workflows/ci.yml2", ".github/flaky.json", "GEMINI.md", ".mcp.json", "docs/HELPERS.md",
   ".claude/settings.json", "scripts/auto-merge-eligible.mjs", "scripts/desk-gate.mjs", "scripts/desk-board-prove.mjs", "scripts/pr-signal.mjs", "src/../AGENTS.md"];
 CASES.push(
   ["code: a reviewed code PR", codePr(), true],
@@ -103,6 +103,8 @@ CASES.push(
   ["code: footer for another head", codePr({ comments: [{ author_association: "OWNER", body: footer("Opus 5.5", "Sonnet 5.5", OTHER) }] }), false],
   ["code: a bare marker for the head, and a full review of another head", codePr({ comments: [{ author_association: "OWNER", body: `<!-- review-desk: clean ${SHA} -->` }, { author_association: "OWNER", body: footer("Opus 5.5", "Sonnet 5.5", OTHER) }] }), false],
   ["code: a bare marker from the owner, and a full review from an outsider", codePr({ comments: [{ author_association: "OWNER", body: `<!-- review-desk: clean ${SHA} -->` }, { author_association: "NONE", body: footer() }] }), false],
+  ["code: reviewer is the builder's model, spelled another way", codePr({ comments: [{ author_association: "OWNER", body: footer("Claude Opus 5.5", "opus-5.5") }] }), false],
+  ["code: a newer review with a broken footer after a clean one", codePr({ comments: [{ author_association: "OWNER", body: footer() }, { author_association: "OWNER", body: `<!-- review-desk -->\nBlocking: src/main.tsx:3\nReviewer: Opus 5.5 Builder: Sonnet 5.5 Head: ${SHA}` }] }), false],
   ["code: a newer review with findings", codePr({ comments: [{ author_association: "OWNER", body: footer() }, { author_association: "OWNER", body: footer("Opus 5.5", "Sonnet 5.5", SHA, false) }] }), false],
   ["code: footer from an outsider", codePr({ comments: [{ author_association: "NONE", body: footer() }] }), false],
   ["code: checks failed", codePr({ checkRuns: [{ name: "checks", app: ACTIONS, head_sha: SHA, status: "completed", conclusion: "failure" }] }), false],
@@ -140,10 +142,12 @@ const MUTANTS = [
   ["truncated files list allowed", "if (files.length !== pr.changed_files)", "if (false)"],
   ["code switch ignored", "const asCode = code === true && !docsOnly;", "const asCode = !docsOnly;"],
   ["code excludes ignored", "if (why) return no(", "if (false) return no("],
-  ["ci.yml exception widened", "!CODE_ALLOW_EXACT.includes(lower)", "!CODE_ALLOW_EXACT.some((p) => lower.startsWith(p))"],
+  ["ci.yml exception widened", "!CODE_ALLOW_EXACT.includes(path)", "!CODE_ALLOW_EXACT.includes(lower)"],
   ["footer not required", 'if (!footer) return no("no complete review footer");', "if (!footer) return { merge: true, sha };"],
   ["footer head not compared", "if (footer.head !== sha)", "if (false)"],
   ["findings merge", "if (!footer.clean)", "if (false)"],
+  ["model names compared raw", "return { reviewer: model(m[1]), builder: model(m[2]), head,", "return { reviewer: m[1].trim().toLowerCase(), builder: m[2].trim().toLowerCase(), head,"],
+  ["an older review stands in for a broken newer one", "if (!m) return null;", "if (!m) continue;"],
   ["same-model review allowed", "if (footer.reviewer === footer.builder)", "if (false)"],
   ["footer author not checked", "!TRUSTED.includes(c.author_association) || ", ""],
   ["needs-owner ignored", 'labels.includes("needs-owner") && !labels.includes("owner-ok")', "false"],

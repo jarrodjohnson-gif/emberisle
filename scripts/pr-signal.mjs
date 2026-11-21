@@ -1,23 +1,28 @@
 #!/usr/bin/env node
 // Sets one signal label on every open, ready PR, so the dispatcher (docs/DESK.md) reads a PR's state from one cheap
 // list call and never opens a diff, a review or #916. API only: it never checks out or runs a PR's code.
-//   signal:green   checks green and a clean review at the exact head. Auto-merge takes it from here.
-//   signal:red     waits for the owner: `needs-owner` without `owner-ok`, or the review asks for the owner's look.
-//   signal:yellow  everything else: building, CI running or red, review pending, findings to fix.
+//   signal:green   auto-merge will merge it: scripts/auto-merge-eligible.mjs says yes for this exact head.
+//   signal:red     waits for the owner: `needs-owner` without `owner-ok`, the review asks for the owner's look, or it is
+//                  green and reviewed but touches a governance file that only the owner merges.
+//   signal:yellow  everything else: building, CI running or red, review pending, findings to fix, a bad review footer.
 import { pathToFileURL } from 'node:url';
 import { classify, rest } from './desk-board.mjs';
+import { decide, codeRefusal } from './auto-merge-eligible.mjs';
 
 export const SIGNALS = ['signal:green', 'signal:yellow', 'signal:red'];
 
-// row: desk-board's classify() result. labels: the PR's label names.
-export function signalFor(row, labels) {
+// row: desk-board's classify() result. labels: the PR's label names. merge: auto-merge's decide() result.
+// files: the PR's files. Green is never wider than auto-merge, so a green PR never sits unmerged.
+export function signalFor(row, labels, merge, files) {
   if (labels.includes('needs-owner') && !labels.includes('owner-ok')) return 'signal:red';
   if (row.bucket === 'Ready for Jarrod' && !labels.includes('owner-ok')) return 'signal:red';
-  if (row.bucket === 'Ready to merge' || row.bucket === 'Ready for Jarrod') return 'signal:green';
+  const reviewed = row.bucket === 'Ready to merge' || row.bucket === 'Ready for Jarrod';
+  if (merge.merge === true) return 'signal:green';
+  if (reviewed && files.some(f => [f.filename, f.previous_filename].some(p => p !== undefined && codeRefusal(p)))) return 'signal:red';
   return 'signal:yellow';
 }
 
-export async function sweep(api, { dryRun = false } = {}) {
+export async function sweep(api, { dryRun = false, code = true } = {}) {
   const all = async (path, key) => {
     const out = [];
     for (let page = 1; ; page++) {
@@ -38,7 +43,8 @@ export async function sweep(api, { dryRun = false } = {}) {
     // Read the PR again last: a push or a label change during the reads must not leave a stale green.
     const current = await api(`/pulls/${p.number}`);
     const labels = (current.labels ?? []).map(l => l.name);
-    const want = signalFor(classify({ pr, files, comments, checks, current }), labels);
+    const merge = decide({ pr: current, headAfter: pr.head.sha, files, checkRuns: checks, comments, defaultBranch: current.base?.repo?.default_branch, code });
+    const want = signalFor(classify({ pr, files, comments, checks, current }), labels, merge, files);
     const have = labels.filter(l => SIGNALS.includes(l));
     results.push({ number: p.number, want, had: have });
     if (dryRun) continue;
@@ -49,7 +55,7 @@ export async function sweep(api, { dryRun = false } = {}) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  sweep(rest(process.env.GITHUB_REPOSITORY), { dryRun: process.argv.includes('--dry-run') })
+  sweep(rest(process.env.GITHUB_REPOSITORY), { dryRun: process.argv.includes('--dry-run'), code: process.env.AUTO_MERGE_CODE !== 'off' })
     .then(rows => rows.forEach(r => console.log(`#${r.number}: ${r.want}${r.had.includes(r.want) ? '' : ` (was ${r.had.join(', ') || 'none'})`}`)))
     .catch(e => { console.error(e.message); process.exitCode = 1; });
 }

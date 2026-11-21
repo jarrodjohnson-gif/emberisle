@@ -20,8 +20,8 @@ Every chat starts at about 84K tokens before it reads anything, and every wake r
 | Label | Means | Who acts |
 |---|---|---|
 | `signal:yellow` | In progress: building, CI running or red, review pending, or findings to fix | The PR's builder chat. If it has none, the dispatcher starts one. |
-| `signal:green` | `checks` is green and the newest review is clean, both at the exact head | Auto-merge |
-| `signal:red` | Waits for Jarrod: `needs-owner` is on the PR without `owner-ok` | Jarrod |
+| `signal:green` | Auto-merge will take it: every rule under [Merging](#merging) holds at the exact head | Auto-merge |
+| `signal:red` | Waits for Jarrod: `needs-owner` is on the PR without `owner-ok`, or the PR is green and reviewed but touches a governance file that only he merges | Jarrod |
 
 A draft PR gets no signal.
 
@@ -40,7 +40,7 @@ One chat takes one issue, or one batch of up to three PRs it is told to finish. 
 
 **When you need Jarrod**, add the `needs-owner` label to the PR and post one comment that starts `Blocked:` or `Question:`, with the options and your recommendation. Do this when:
 
-- the PR changes anything a player sees or hears. Put real screenshots in the PR body first, at 440x956 and 956x440, or the audio;
+- the PR changes anything a player sees or hears. Put real screenshots in the PR body first, at the sizes in [REVIEWING.md](REVIEWING.md) plus Jarrod's phone (440x956 and 956x440), or the audio;
 - the review still has findings after three rounds;
 - the issue needs a design decision ([AGENTS.md](../AGENTS.md) rule 12).
 
@@ -71,9 +71,9 @@ A review with blocking findings lists them, each with `file:line`, in place of t
 `.github/workflows/auto-merge.yml` squashes a PR at its checked head when all of these hold:
 
 - `checks` is completed and green on the head;
-- the newest review comment is clean at that head, and its reviewer differs from its builder;
+- the newest review comment is clean at that head, and its reviewer differs from its builder. A docs-only PR under 400 changed lines needs only the clean marker;
 - `needs-owner` is absent, or `owner-ok` is present;
-- the PR touches no governance file: `AGENTS.md`, `CLAUDE.md`, `README.md`, the rule documents in `docs/`, `.claude/`, `.github/` apart from `ci.yml`, and the merge scripts themselves. Jarrod merges those by hand.
+- the PR touches no governance file: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.mcp.json`, `README.md`, the rule documents in `docs/`, `.claude/`, `.github/` apart from `workflows/ci.yml`, and the merge scripts themselves. Jarrod merges those by hand. `ci.yml` is allowed because every new proof is registered there, so the reviewer checks that no job in it was weakened.
 
 Two repo variables switch it off. `AUTO_MERGE` is `on` today; anything else stops all auto-merging. Setting `AUTO_MERGE_CODE` to `off` stops it for code PRs only, and leaves small docs PRs merging. To re-check one PR, run the auto-merge workflow by hand with its number.
 
@@ -81,7 +81,7 @@ Red on `main` after a merge is `prio:p0`. The dispatcher starts a builder for it
 
 ## Jarrod
 
-- **A red PR waits for you.** Read its last `Blocked:` or `Question:` comment. To approve a look or a sound, add the `owner-ok` label. To answer a question, comment on the PR. The dispatcher sends a builder back to a red PR once you have commented or labelled it.
+- **A red PR waits for you.** Read its last `Blocked:` or `Question:` comment. A red PR with no such comment touches a rule file: it is reviewed and green, and needs your merge. To approve a look or a sound, add the `owner-ok` label. To answer a question, comment on the PR. The dispatcher sends a builder back to a red PR once you have commented or labelled it.
 - **Your dated words on an issue or PR are owner policy.** A row for [DECISIONS.md](DECISIONS.md) goes in its own small PR, which you merge.
 - **The Desk Decisions page is retired.** Nothing reads it.
 

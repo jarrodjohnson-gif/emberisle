@@ -27,15 +27,20 @@ const CASES = [
   ['the review asks for the owner to see pictures', { comments: [review(A, true, 'Jarrod must see the pictures first.')] }, 'signal:red'],
   ['the same, after owner-ok', { comments: [review(A, true, 'Jarrod must see the pictures first.')], labels: ['owner-ok'] }, 'signal:green'],
   ['the head moved during the sweep', { moved: true }, 'signal:yellow'],
+  ['a clean marker with no reviewer footer', { comments: [{ id: 1, created_at: '2026-11-21T01:00:00Z', author_association: 'OWNER', body: `<!-- review-desk -->\nClean.\n<!-- review-desk: clean ${A} -->` }] }, 'signal:yellow'],
+  ['reviewer and builder are the same model', { comments: [{ ...review(), body: review().body.replace('Builder: Sonnet 5.5', 'Builder: Claude Opus 5.5') }] }, 'signal:yellow'],
+  ['reviewed and green, but it touches AGENTS.md', { files: [{ filename: 'src/a.ts', status: 'modified', additions: 1, deletions: 0 }, { filename: 'AGENTS.md', status: 'modified', additions: 1, deletions: 0 }] }, 'signal:red'],
+  ['it touches AGENTS.md and is not reviewed yet', { comments: [], files: [{ filename: 'AGENTS.md', status: 'modified', additions: 1, deletions: 0 }] }, 'signal:yellow'],
+  ['a new workflow file named CI.yml', { files: [{ filename: '.github/workflows/CI.yml', status: 'added', additions: 9, deletions: 0 }] }, 'signal:red'],
   ['a stale green label is replaced', { comments: [], labels: ['signal:green', 'tier:2'] }, 'signal:yellow'],
   ['two stale labels are both removed', { labels: ['signal:yellow', 'signal:red'] }, 'signal:green'],
   ['the right label is left alone', { labels: ['signal:green'] }, 'signal:green'],
 ];
 
-function fixture({ comments = [review()], checks = [green], labels = [], moved = false, draft = false } = {}) {
+function fixture({ comments = [review()], checks = [green], labels = [], moved = false, draft = false, files = [{ filename: 'src/a.ts', status: 'modified', additions: 3, deletions: 1 }] } = {}) {
   let reads = 0;
   const now = new Set(labels), writes = [];
-  const pr = { number: 7, state: 'open', draft, head: { sha: A }, changed_files: 1 };
+  const pr = { number: 7, state: 'open', merged: false, draft, head: { sha: A }, changed_files: files.length, base: { ref: 'main', repo: { default_branch: 'main' } } };
   const api = async (path, method = 'GET', payload) => {
     const url = new URL('https://example.test' + path), p = url.pathname;
     if (method === 'DELETE' && p.startsWith('/issues/7/labels/')) { writes.push(method); now.delete(decodeURIComponent(p.slice(17))); return {}; }
@@ -43,7 +48,7 @@ function fixture({ comments = [review()], checks = [green], labels = [], moved =
     if (method !== 'GET') throw new Error(`unexpected write: ${method} ${path}`);
     if (p === '/pulls') return [pr];
     if (p === '/pulls/7') return { ...pr, head: { sha: moved && ++reads >= 2 ? B : A }, labels: [...now].map(name => ({ name })) };
-    if (p === '/pulls/7/files') return [{ filename: 'src/a.ts' }];
+    if (p === '/pulls/7/files') return files;
     if (p === '/issues/7/comments') return comments;
     if (p.startsWith('/commits/')) return { check_runs: checks };
     throw new Error('unexpected API: ' + path);
@@ -89,18 +94,21 @@ const MUTANTS = [
   ['owner-ok does not clear needs-owner', "labels.includes('needs-owner') && !labels.includes('owner-ok')", "labels.includes('needs-owner')"],
   ['the review\'s owner request ignored', "if (row.bucket === 'Ready for Jarrod' && !labels.includes('owner-ok')) return 'signal:red';", ''],
   ['everything is green', "return 'signal:yellow';", "return 'signal:green';"],
+  ['green wider than auto-merge', "if (merge.merge === true) return 'signal:green';", "if (merge.merge === true || reviewed) return 'signal:green';"],
+  ['governance PRs never surface to the owner', "if (reviewed && files.some(", "if (false && files.some("],
   ['stale labels kept', 'if (old !== want) await api(', 'if (false) await api('],
   ['label never added', 'if (!have.includes(want)) await api(', 'if (false) await api('],
   ['label added every sweep', 'if (!have.includes(want)) await api(', 'await api('],
   ['labels read before the other reads', 'const labels = (current.labels ?? [])', 'const labels = (p.labels ?? [])'],
-  ['head not re-read', 'classify({ pr, files, comments, checks, current })', 'classify({ pr, files, comments, checks })'],
+  // The head is checked twice, by classify() and by decide(), so the mutant drops both.
+  ['head not re-read', /headAfter: pr\.head\.sha(.*\n.*)classify\(\{ pr, files, comments, checks, current \}\)/, 'headAfter: current.head.sha$1classify({ pr: current, files, comments, checks, current })'],
 ];
 const dir = mkdtempSync(new URL('./.pr-signal-mutants-', import.meta.url).pathname);
 try {
   for (const [name, from, to] of MUTANTS) {
-    assert.ok(source.includes(from), `mutant "${name}" applies to the script`);
+    assert.ok(typeof from === 'string' ? source.includes(from) : from.test(source), `mutant "${name}" applies to the script`);
     const path = join(dir, `${name.replace(/\W+/g, '-')}.mjs`);
-    writeFileSync(path, source.replace(from, to).replace("'./desk-board.mjs'", "'../desk-board.mjs'"));
+    writeFileSync(path, source.replace(from, to).replace("'./desk-board.mjs'", "'../desk-board.mjs'").replace("'./auto-merge-eligible.mjs'", "'../auto-merge-eligible.mjs'"));
     const mod = await import(pathToFileURL(path).href);
     let caught = 0;
     for (const { want, got, f } of await run(mod)) {
@@ -118,7 +126,7 @@ try {
 // The workflow never runs PR code and reads only the default branch's scripts.
 const workflow = readFileSync(new URL('../.github/workflows/pr-signal.yml', import.meta.url), 'utf8');
 for (const required of ['workflows: [CI]', 'group: pr-signal', 'ref: ${{ github.event.repository.default_branch }}', 'persist-credentials: false',
-  'scripts/pr-signal.mjs\n            scripts/desk-board.mjs\n          sparse-checkout-cone-mode: false', "contains(github.event.comment.body, '<!-- review-desk')"]) {
+  'scripts/pr-signal.mjs\n            scripts/desk-board.mjs\n            scripts/auto-merge-eligible.mjs\n          sparse-checkout-cone-mode: false', "AUTO_MERGE_CODE: ${{ vars.AUTO_MERGE_CODE != 'off' && 'on' || 'off' }}", "contains(github.event.comment.body, '<!-- review-desk')"]) {
   assert.ok(workflow.includes(required), `workflow has ${required}`);
 }
 assert.match(workflow, /^ {2}pull_request_target:$/m);

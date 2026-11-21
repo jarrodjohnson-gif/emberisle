@@ -20,7 +20,7 @@ Run each local browser proof alone (AGENTS.md rule 11). Use `flock /tmp/claude-0
 2. **Claims and scope.** The claim is posted with its files, one issue per PR, and no file overlap with another active claim.
 3. **The diff against the issue.** Check its completion test, the owner comments on it, and [DECISIONS.md](DECISIONS.md).
 4. **No test loosened.** Diff every changed proof against main: removed assertions, wider tolerances, dropped sizes or skipped cases.
-5. **New proofs registered** in `package.json` and `.github/workflows/ci.yml`.
+5. **New proofs registered** in `package.json` and `.github/workflows/ci.yml`. Any other change to `ci.yml` is blocking unless the issue asks for it: no job removed, skipped or given more permissions.
 6. **No unrelated changes.** Use "Closes #N" only when the PR finishes the issue.
 7. **Size.** Any growth beyond the allowance is explained in the PR body.
 8. **Server and protocol PRs:** message validation, a stale or spoofed sender, unbounded maps or timers, and state across a restart.

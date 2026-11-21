@@ -37,6 +37,7 @@ jobs:
           sparse-checkout: |
             scripts/pr-signal.mjs
             scripts/desk-board.mjs
+            scripts/auto-merge-eligible.mjs
           sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v4
         with:
@@ -45,3 +46,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          # The same switch auto-merge reads, so green always means "auto-merge will take it".
+          AUTO_MERGE_CODE: ${{ vars.AUTO_MERGE_CODE != 'off' && 'on' || 'off' }}

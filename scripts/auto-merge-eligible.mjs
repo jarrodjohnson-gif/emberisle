@@ -14,10 +14,10 @@ import { pathToFileURL } from "node:url";
 export const MAX_CHANGED_LINES = 400;
 const ALLOW = ["docs/", ".github/ISSUE_TEMPLATE/"];
 // Governance docs: agents and the desk act on these, so they keep the desk's own merge.
-const EXCLUDE_EXACT = ["README.md", "docs/DESK.md", "docs/REVIEWING.md", "docs/DECISIONS.md", "docs/LANES.md", "docs/FRAMEWORK.md"];
+const EXCLUDE_EXACT = ["README.md", "docs/DESK.md", "docs/REVIEWING.md", "docs/DECISIONS.md", "docs/LANES.md", "docs/FRAMEWORK.md", "docs/HELPERS.md", "docs/ORCHESTRATOR.md"];
 const EXCLUDE_PREFIX = [".github/", "scripts/", "server/", "src/"];
 // Matched on the file name in any folder: agents read a nested AGENTS.md or CLAUDE.md, and GitHub reads docs/CODEOWNERS.
-const EXCLUDE_NAME = ["AGENTS.md", "CLAUDE.md", "CODEOWNERS", ".gitignore"];
+const EXCLUDE_NAME = ["AGENTS.md", "CLAUDE.md", "GEMINI.md", ".mcp.json", "CODEOWNERS", ".gitignore"];
 const EXCLUDE_SUFFIX = [".mjs", ".ts"];
 // Only added and modified files qualify: no removed, renamed, copied or mode-changed ("changed") files.
 const STATUSES = ["added", "modified"];
@@ -43,19 +43,23 @@ export function codeRefusal(path) {
   if (EXCLUDE_EXACT.some((p) => p.toLowerCase() === lower)) return "governance file";
   if (EXCLUDE_NAME.some((n) => n.toLowerCase() === name)) return "governance file name";
   if (CODE_EXCLUDE_SCRIPT.test(lower)) return "merge machinery";
-  if (CODE_EXCLUDE_PREFIX.some((p) => lower.startsWith(p)) && !CODE_ALLOW_EXACT.includes(lower)) return "governance folder";
+  if (CODE_EXCLUDE_PREFIX.some((p) => lower.startsWith(p)) && !CODE_ALLOW_EXACT.includes(path)) return "governance folder";
   return null;
 }
 
-// The newest complete review footer from a trusted account, or null. Mirrors scripts/desk-gate.mjs.
+// "Claude Opus 5.5", "opus-5.5" and "Opus  5.5" are one model.
+const model = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "").replace(/^claude/, "");
+
+// The footer of the newest review comment from a trusted account, or null. Only the newest review counts: if its
+// footer is missing or malformed, an older clean review never stands in for it.
 export function reviewFooter(comments) {
   for (const c of [...(comments ?? [])].reverse()) {
     const body = String(c.body ?? "");
     if (!TRUSTED.includes(c.author_association) || !body.includes("<!-- review-desk -->")) continue;
     const m = body.match(FOOTER);
-    if (!m) continue;
+    if (!m) return null;
     const head = m[3].toLowerCase();
-    return { reviewer: m[1].trim().toLowerCase(), builder: m[2].trim().toLowerCase(), head,
+    return { reviewer: model(m[1]), builder: model(m[2]), head,
       clean: [...body.matchAll(MARKER)].some((k) => k[1] === head) };
   }
   return null;

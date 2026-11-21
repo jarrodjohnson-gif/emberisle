@@ -1,9 +1,11 @@
 # Auto-merges docs-only PRs (#923, phase 1) and, unless the repo variable AUTO_MERGE_CODE is "off", reviewed code PRs
 # (phase 2, docs/DESK.md). scripts/auto-merge-eligible.mjs decides; the rules are in its header.
-# A PR merges only when every changed file is an allowed doc, `checks` is green on the exact head SHA, and the desk
-# has posted <!-- review-desk: clean <40-char head SHA> -->. The merge pins that SHA with --match-head-commit.
+# A docs PR merges only when every changed file is an allowed doc, `checks` is green on the exact head SHA, and a review
+# has posted <!-- review-desk: clean <40-char head SHA> -->. A code PR also needs that review's footer to name a reviewer
+# that differs from the builder, and touches no governance file. The merge pins the SHA with --match-head-commit.
 #
 # Kill switch: the repo variable AUTO_MERGE. Unset or anything but "on" means this never runs.
+# AUTO_MERGE_CODE set to exactly "off" stops code PRs only.
 # Rollback: git revert the merge, then set AUTO_MERGE=off.
 #
 # pull_request_target, workflow_run and issue_comment run in the base repo with a write token, so this never checks out
@@ -13,8 +15,8 @@ name: auto-merge
 
 on:
   pull_request_target:
-    # labeled: the owner adding `owner-ok` re-checks the PR.
-    types: [synchronize, ready_for_review, labeled]
+    # labeled, unlabeled: the owner adding `owner-ok`, or `needs-owner` coming off, re-checks the PR.
+    types: [synchronize, ready_for_review, labeled, unlabeled]
   workflow_run:
     workflows: [CI]
     types: [completed]

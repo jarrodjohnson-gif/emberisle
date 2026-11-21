@@ -24,7 +24,7 @@ These are short on purpose. Follow all of them, every round.
 7. **Never merge, never push to `main`, never force-push someone else's branch, never skip or loosen a test.** Never write your own review comment, and never add the `owner-ok` label.
 8. **Build with the issue's `model:` label, if it has one, and skip the issue if you can't run that model.** A `tier:` label says which models may take it.
 9. **Busy files are fine.** `package.json`, `ci.yml` and `scripts/size-prove.mjs` never count as overlap. A different function in a file another PR touches is fine if you name that PR in your claim.
-10. **Never stop, and never ask for work.** A Claude chat the dispatcher started is the one exception: it stops when its one issue or PR batch is done, and the dispatcher starts the next chat. If the lineup and the ready list are empty, work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible) yourself. Only when every rung and the [anytime queue](docs/LANES.md#anytime-queue) are empty, post `To desk: nothing eligible` on #854.
+10. **Never stop, and never ask for work.** A Claude chat the dispatcher started is the one exception: it stops when its one issue or PR batch is done, and the dispatcher starts the next chat. If the lineup and the ready list are empty, work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible) yourself. Only when every rung and the [anytime queue](docs/LANES.md#anytime-queue) are empty, post `Nothing eligible` on #854.
 11. **Run long browser proofs one at a time**, and paste real output in the PR. Never estimate numbers.
 12. **Don't make design decisions.** Ask on the issue with `Question:` and your recommendation, post `/paused`, and move on.
 13. **A `Question:` is not a stop.** After you post one, carry on with any part of the issue that does not depend on the answer (other files, the proof, screenshots, docs). Stop only when nothing is left to do, and check the issue for the desk's answer before you finish. A test line that an owner-approved design makes obsolete may be replaced, never deleted: own commit, old/new table in the PR ([`docs/DECISIONS.md`](docs/DECISIONS.md), 2026-10-25). Size ceilings and allowances never move without the owner.
@@ -67,7 +67,7 @@ A `Question:` or a block never ends your round. Answers come slowly. (A chat the
    `package.json`, `.github/workflows/ci.yml` and `scripts/size-prove.mjs` never count as file overlap.
    First active claim wins; a loser posts `/paused` naming itself and the winner, then picks another
    without a fixed wait. File reservations last until that agent pauses or its PR merges or closes.
-6. **Still nothing eligible?** Work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible). Only if every rung and the anytime queue are empty, post one `To desk:` line on #854 naming the issues you skipped and why.
+6. **Still nothing eligible?** Work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible). Only if every rung and the anytime queue are empty, post one `Nothing eligible` line on #854 naming the issues you skipped and why.
 
 **Told you are a helper**, for example a friend's AI working from a fork? (Josh's agent is a full builder, not a helper: see `docs/LANES.md`.) Read #854, then take work
 from the helper queue, issue [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851), and follow
