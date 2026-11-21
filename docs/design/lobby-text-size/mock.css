@@ -39,9 +39,9 @@ html .lobby-layout-cover[data-scrolls] .lobby-actions { box-shadow: 0 -1px 0 #cb
 }
 html .lobby-layout .lm { height: auto; min-height: 44px; }
 html .lobby-layout .lm button { height: auto; }
-/* Rule 3: when a seat cell would be narrower than 7rem, the list becomes one column, name and status on one line. */
-html .lobby-players { container: seats / inline-size; grid-template-columns: repeat(auto-fit, minmax(min(100%, max(7rem, calc(50% - 4px))), 1fr)); }
-@container seats (max-width: calc(14rem + 7.9px)) {
+/* Rule 3: when a seat cell would be narrower than 7.9rem, the list becomes one column, name and status on one line. */
+html .lobby-players { container: seats / inline-size; grid-template-columns: repeat(auto-fit, minmax(min(100%, max(7.9rem, calc(50% - 4px))), 1fr)); }
+@container seats (max-width: calc(15.8rem + 7.9px)) {
   html .lobby-player { grid-template: minmax(44px, auto) / 12px minmax(0, 1fr) auto auto; padding-block: 0; --seat-pad: 0px; }
   html .lobby-player > .lobby-name { height: auto; align-self: center; }
   html .lobby-name > button, html .lobby-name > input[data-testid="rename-input"] { height: 44px; margin: 0; padding: 0; line-height: 1.3; }

@@ -2,7 +2,7 @@
 // Not a CI proof. Run from the repo root: node docs/design/lobby-text-size/capture.mjs
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { chromium } from "../../../scripts/proof-browser.mjs";
@@ -71,8 +71,18 @@ try {
     const shown = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== "hidden"; };
     const controls = [...cover.querySelectorAll("button, input, [role=tab]")].filter(shown);
     const label = e => (e.getAttribute("data-testid") || e.textContent.trim() || e.getAttribute("aria-label") || e.tagName).slice(0, 24);
-    const clipped = [...cover.querySelectorAll("*")].filter(e => shown(e) && e.textContent.trim() && !e.classList.contains("sr-only") && e.getAttribute("data-testid") !== "chat-log"
-      && ["hidden", "clip"].includes(getComputedStyle(e).overflowX) && e.scrollWidth > e.clientWidth + 1 && ![...e.children].some(c => c.scrollWidth > c.clientWidth + 1)).map(label);
+    // A text is clipped when its box hides overflow and its laid-out text is wider than the box's content area.
+    // The text width comes from a Range, in fractions of a px: scrollWidth rounds, and misses an ellipsis that cuts under 1 px.
+    const cut = e => {
+      const c = getComputedStyle(e);
+      if (!["hidden", "clip"].includes(c.overflowX) || !e.textContent.trim()) return false;
+      const range = document.createRange(); range.selectNodeContents(e);
+      const text = Math.max(...[...range.getClientRects()].map(r => r.width), 0);
+      const room = e.getBoundingClientRect().width - parseFloat(c.paddingLeft) - parseFloat(c.paddingRight) - parseFloat(c.borderLeftWidth) - parseFloat(c.borderRightWidth);
+      return text > room + 0.05 || e.scrollWidth > e.clientWidth;
+    };
+    const clipped = [...cover.querySelectorAll("*")].filter(e => shown(e) && !e.classList.contains("sr-only") && e.getAttribute("data-testid") !== "chat-log" && e !== cover
+      && cut(e) && ![...e.querySelectorAll("*")].some(cut)).map(label);
     const small = controls.filter(e => { const r = e.getBoundingClientRect(); return r.width < 43.5 || r.height < 43.5; }).map(label);
     const overlaps = [];
     for (let i = 0; i < controls.length; i++) for (let j = i + 1; j < controls.length; j++) {
@@ -131,7 +141,7 @@ try {
     for (const s of document.styleSheets) { try { walk(s.cssRules); } catch { /* cross-origin: none here */ } }
     return n;
   });
-  console.log(`rem stand-in: converted ${converted} px font-size and line-height declarations`);
+  console.log(`rem only: converted ${converted} px font-size and line-height declarations`);
   await page.addStyleTag({ content: readFileSync(join(here, "mock.css"), "utf8") });
   await page.evaluate(() => { const s = [...document.querySelectorAll("style")].at(-1); s.id = "mock1235"; s.disabled = true; });
   const layer = on => page.evaluate(on => { document.getElementById("mock1235").disabled = !on; }, on);
@@ -147,7 +157,7 @@ try {
     await layer(true); await settle(); const mock = await boxes();
     const diff = (a, b) => a.length !== b.length ? "count differs" : a.filter((v, i) => v !== b[i]).length;
     if (process.env.LTS_DEBUG) console.log(today[`${w}x${h}`].map((v, i) => v !== mock[i] ? `${v} -> ${mock[i]}` : "").filter(Boolean).slice(0, 6).join("\n"));
-    console.log(`identity ${w}x${h}@100: rem stand-in vs today ${diff(today[`${w}x${h}`], rem)} of ${rem.length} boxes moved; layer vs today ${diff(today[`${w}x${h}`], mock)} moved`);
+    console.log(`identity ${w}x${h}@100: rem only vs today ${diff(today[`${w}x${h}`], rem)} of ${rem.length} boxes moved; rem only plus mock layer vs today ${diff(today[`${w}x${h}`], mock)} moved`);
   }
 
   // Pass 3: the fifteen cases, rem only against the proposal.
@@ -172,5 +182,8 @@ try {
 } finally {
   await browser?.close();
   await vite?.close();
+  const gone = new Promise(resolve => host.once("exit", resolve));
   host.kill();
+  await gone;
+  rmSync(rooms, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 }
