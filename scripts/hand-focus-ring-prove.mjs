@@ -1,5 +1,5 @@
 // #1828: the keyboard focus ring round a good in the hand sits evenly on the card: the same gap on all four sides (within 1 px),
-// the whole ring inside the tray and the viewport (nothing clipped), on every good, at 440x956 and 1280x720 (deviceScaleFactor 2).
+// the whole ring inside the tray and the viewport (nothing clipped), on every good, at 440x956, 1280x720 and 956x440 (deviceScaleFactor 2).
 // The ring is the card's outline: it stands outline-offset clear of the card's border box, outline-width thick. The card's face
 // runs symbol, count and name down to 2 px of the bottom edge, so a ring on the edge itself (offset 0) touches the name.
 // Set HAND_RING_SHOTS=<dir> to write a PNG of the focused hand per view.
@@ -16,6 +16,7 @@ const RESOURCES = ["timber", "clay", "wool", "grain", "ore"];
 const VIEWS = [
   { tag: "phone", width: 440, height: 956, touch: true },
   { tag: "desk", width: 1280, height: 720 },
+  { tag: "land", width: 956, height: 440, touch: true },
 ];
 
 mkdirSync("test-results", { recursive: true });
@@ -68,7 +69,7 @@ try {
         const off = cs.outlineStyle === "none" ? 0 : parseFloat(cs.outlineOffset) || 0;
         const o = off + w;
         const ring = { l: b.left - o, t: b.top - o, r: b.right + o, b: b.bottom + o };
-        // The gap is the clear space between the ring's inner edge and the card, on each side.
+        // The gap is the clear space between the ring's inner edge and the card, on each side. It equals the offset by construction (the ring is built from the card box), so the real guards are the >= 2 px floor, the clip walk and the on-screen check.
         const gap = { l: b.left - (ring.l + w), t: b.top - (ring.t + w), r: ring.r - w - b.right, b: ring.b - w - b.bottom };
         // Anything between the ring and the viewport edge that would cut it: the tray and the dock are not scrollers, but read overflow up the chain.
         let clip = null;
