@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Decides whether a pull request may auto-merge (#923). Run by .github/workflows/auto-merge.yml.
-// Phase 1 is docs only. Phase 2 (owner decision 2026-11-21, docs/DESK.md) also merges a code PR, and only when the repo
-// variable AUTO_MERGE_CODE is "on": it needs a complete clean review footer at the head from a different model than the
+// Phase 1 is docs only. Phase 2 (owner decision 2026-11-21, docs/DESK.md) also merges a code PR, unless the repo
+// variable AUTO_MERGE_CODE is "off": it needs a complete clean review footer at the head from a different model than the
 // builder, and it never touches a governance file. A `needs-owner` label blocks either phase until `owner-ok` is added.
 // It reads the API only. It never checks out or runs the PR's code: the workflow checks out the default branch's copy
 // of this one file. Eligibility comes from the PR files API, the head SHA's `checks` run and the desk's clean marker,
@@ -79,7 +79,7 @@ export function pathRefusal(path) {
 
 // pr: the PR from the API. headAfter: its head SHA read again after everything else, so a push mid-check is caught.
 // files: every page of the PR files API. checkRuns: the head SHA's check runs named `checks`. comments: its issue comments.
-// code: true only when the repo variable AUTO_MERGE_CODE is "on".
+// code: false when the repo variable AUTO_MERGE_CODE is "off"; the workflow passes "on" otherwise.
 export function decide({ pr, headAfter, files, checkRuns, comments, defaultBranch, code = false }) {
   const no = (reason) => ({ merge: false, reason });
   const sha = pr?.head?.sha;

@@ -75,7 +75,7 @@ A review with blocking findings lists them, each with `file:line`, in place of t
 - `needs-owner` is absent, or `owner-ok` is present;
 - the PR touches no governance file: `AGENTS.md`, `CLAUDE.md`, `README.md`, the rule documents in `docs/`, `.claude/`, `.github/` apart from `ci.yml`, and the merge scripts themselves. Jarrod merges those by hand.
 
-Two repo variables switch it: `AUTO_MERGE` must be `on`, and `AUTO_MERGE_CODE` must be `on` for anything beyond small docs PRs. Setting either to `off` stops it. To re-check one PR, run the auto-merge workflow by hand with its number.
+Two repo variables switch it off. `AUTO_MERGE` is `on` today; anything else stops all auto-merging. Setting `AUTO_MERGE_CODE` to `off` stops it for code PRs only, and leaves small docs PRs merging. To re-check one PR, run the auto-merge workflow by hand with its number.
 
 Red on `main` after a merge is `prio:p0`. The dispatcher starts a builder for it first.
 

@@ -1,4 +1,4 @@
-# Auto-merges docs-only PRs (#923, phase 1) and, when the repo variable AUTO_MERGE_CODE is "on", reviewed code PRs
+# Auto-merges docs-only PRs (#923, phase 1) and, unless the repo variable AUTO_MERGE_CODE is "off", reviewed code PRs
 # (phase 2, docs/DESK.md). scripts/auto-merge-eligible.mjs decides; the rules are in its header.
 # A PR merges only when every changed file is an allowed doc, `checks` is green on the exact head SHA, and the desk
 # has posted <!-- review-desk: clean <40-char head SHA> -->. The merge pins that SHA with --match-head-commit.
@@ -65,7 +65,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr }}
-          AUTO_MERGE_CODE: ${{ vars.AUTO_MERGE_CODE }}
+          # Code PRs merge too, unless the repo variable AUTO_MERGE_CODE is "off".
+          AUTO_MERGE_CODE: ${{ vars.AUTO_MERGE_CODE != 'off' && 'on' || 'off' }}
           RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: node scripts/auto-merge-eligible.mjs

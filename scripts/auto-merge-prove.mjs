@@ -176,7 +176,7 @@ assert.equal(/head_(branch|repository|ref)|pull_request\.head|refs\/pull|merge_c
 assert.equal(/\$\{\{[^}]*(comment\.body|pull_request\.title|pull_request\.body|head\.label)[^}]*\}\}/.test(workflow.replace(/contains\(github\.event\.comment\.body, '[^']*'\)/g, "")), false, "no PR text in an expression");
 assert.match(workflow, /gh pr merge "\$NUM" --repo "\$REPO" --squash --match-head-commit "\$SHA"/);
 assert.match(workflow, /if: steps\.decide\.outputs\.merge == 'true'/);
-assert.match(workflow, /AUTO_MERGE_CODE: \$\{\{ vars\.AUTO_MERGE_CODE \}\}/, "the code phase has its own switch");
+assert.ok(workflow.includes("AUTO_MERGE_CODE: ${{ vars.AUTO_MERGE_CODE != 'off' && 'on' || 'off' }}"), "the code phase has its own off switch");
 for (const p of CODE_EXCLUDED) assert.ok(real.codeRefusal(p), `${JSON.stringify(p)} is refused in a code PR`);
 for (const p of ["src/main.tsx", "package.json", ".github/workflows/ci.yml", "scripts/size-prove.mjs", "docs/x.md"]) assert.equal(real.codeRefusal(p), null, p);
 const ci = readFileSync(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
