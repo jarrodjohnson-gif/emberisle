@@ -12,16 +12,19 @@ import { useSeaSounds, useSeaVolume, setSeaSounds, setSeaVolume } from "@/lib/se
 import { SOUND_CATEGORIES, getSoundMix, setCategoryMuted, setCategoryVolume, setMasterVolume, useSoundMix, type SoundCategory } from "@/lib/sound-settings";
 
 type Id = "master" | SoundCategory;
-const ROWS: { id: Id; name: string; sample: SoundName }[] = [
-  { id: "master", name: "All sound", sample: "ui_click" },
-  { id: "game", name: "Game sounds", sample: "ui_click" },
-  { id: "touch", name: "Board touch", sample: "tap_forest" },
-  { id: "memes", name: "Soundboard and memes", sample: "board_bong" },
-  { id: "music", name: "Music and ambience", sample: "game_start" },
+const ROWS: [Id, string, SoundName][] = [
+  ["master", "All sound", "ui_click"],
+  ["game", "Game sounds", "ui_click"],
+  ["touch", "Board touch", "tap_forest"],
+  ["memes", "Soundboard and memes", "board_bong"],
+  ["music", "Music and ambience", "game_start"],
 ];
 
 const ARROWS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
-const Speaker = ({ off }: { off: boolean }) => (off ? <VolumeX className="size-5" aria-hidden="true" /> : <Volume2 className="size-5" aria-hidden="true" />);
+const Speaker = ({ off }: { off: boolean }) => {
+  const Icon = off ? VolumeX : Volume2;
+  return <Icon className="size-5" aria-hidden="true" />;
+};
 
 function Row({ id, name, sample, level, off, onLevel, onMute }: { id: Id; name: string; sample: SoundName; level: number; off: boolean; onLevel: (v: number) => void; onMute: () => void }) {
   const pct = Math.round(level * 100);
@@ -67,6 +70,7 @@ export function SoundSheet({ onBack, onClose }: { onBack: () => void; onClose: (
   const sea = useSeaSounds();
   const seaLevel = useSeaVolume();
   const seaPct = Math.round(seaLevel * 100);
+  const seaOff = !sea;
   const seats = useGame((s) => s.seats);
   const seatId = useGame((s) => s.seatId);
   const code = useGame((s) => s.code);
@@ -80,21 +84,23 @@ export function SoundSheet({ onBack, onClose }: { onBack: () => void; onClose: (
   }, []);
   const targets = mode === "online" ? seats.filter((seat) => seat.id !== seatId && seat.name) : [];
 
-  const row = (r: (typeof ROWS)[number]) => {
-    if (r.id === "master") return <Row key={r.id} {...r} level={mix.master} off={muted} onLevel={setMasterVolume} onMute={() => { setMuted(!muted); if (muted) play("ui_click"); }} />;
-    const c = mix[r.id];
+  const row = ([id, name, sample]: (typeof ROWS)[number]) => {
+    if (id === "master") return <Row key={id} id={id} name={name} sample={sample} level={mix.master} off={muted} onLevel={setMasterVolume} onMute={() => { setMuted(!muted); if (muted) play("ui_click"); }} />;
+    const c = mix[id];
     // Music is also off when the old Music switch was saved off; pressing mute then brings it back.
-    const off = c.muted || (r.id === "music" && !music);
+    const off = c.muted || (id === "music" && !music);
     return (
       <Row
-        key={r.id}
-        {...r}
+        key={id}
+        id={id}
+        name={name}
+        sample={sample}
         level={c.volume}
         off={off}
-        onLevel={(v) => setCategoryVolume(r.id as SoundCategory, v)}
+        onLevel={(v) => setCategoryVolume(id as SoundCategory, v)}
         onMute={() => {
-          if (r.id === "music" && !music) setMusicOn(true);
-          setCategoryMuted(r.id as SoundCategory, !off);
+          if (id === "music" && !music) setMusicOn(true);
+          setCategoryMuted(id as SoundCategory, !off);
         }}
       />
     );
@@ -130,10 +136,10 @@ export function SoundSheet({ onBack, onClose }: { onBack: () => void; onClose: (
               value={seaPct}
               aria-label="Sea sounds volume"
               style={{ "--v": `${seaPct}%` } as CSSProperties}
-              data-off={sea ? undefined : ""}
+              data-off={seaOff ? "" : undefined}
               onChange={(e) => setSeaVolume(Number(e.currentTarget.value) / 100)}
             />
-            <span className="ss-val">{sea ? `${seaPct}%` : "Off"}</span>
+            <span className="ss-val">{seaOff ? "Off" : `${seaPct}%`}</span>
           </div>
         </section>
         {targets.length ? (

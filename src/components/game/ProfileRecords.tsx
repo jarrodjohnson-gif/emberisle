@@ -50,6 +50,7 @@ export function ProfileRecords({ c, kind, back }: { c: Client; kind: "wins" | "h
   const root = useRef<HTMLDivElement>(null);
   // Every load takes a number; a reply for an older load, or one that lands after the view closed, is dropped.
   const seq = useRef(0);
+  const paging = useRef(false);
   const [status, setStatus] = useState<Status>("loading");
   const [error, setError] = useState("");
   const [record, setRecord] = useState<ProfileRecord | null>(null);
@@ -59,7 +60,9 @@ export function ProfileRecords({ c, kind, back }: { c: Client; kind: "wins" | "h
 
   const load = async () => {
     const mine = ++seq.current;
+    paging.current = false;
     setStatus("loading");
+    setError("");
     setMore(false);
     try {
       const own = kind === "wins" ? await fetchRecord(c) : null;
@@ -77,7 +80,9 @@ export function ProfileRecords({ c, kind, back }: { c: Client; kind: "wins" | "h
     }
   };
   const loadMore = async () => {
+    if (paging.current) return;
     const mine = seq.current;
+    paging.current = true;
     setMore(true);
     setError("");
     try {
@@ -88,7 +93,10 @@ export function ProfileRecords({ c, kind, back }: { c: Client; kind: "wins" | "h
     } catch (e) {
       if (mine === seq.current) setError(failure(e));
     } finally {
-      if (mine === seq.current) setMore(false);
+      if (mine === seq.current) {
+        paging.current = false;
+        setMore(false);
+      }
     }
   };
 
@@ -98,6 +106,7 @@ export function ProfileRecords({ c, kind, back }: { c: Client; kind: "wins" | "h
     void load();
     return () => {
       seq.current++;
+      paging.current = false;
       requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-opens="${kind}"]`)?.focus());
     };
   }, [kind]);

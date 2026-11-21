@@ -29,7 +29,7 @@ export const SOUNDBOARD = new Map([
 export function cleanText(raw) {
   if (typeof raw !== "string") return null;
   const cleaned = raw.replace(CONTROL, "").replace(SPACES, " ").trim();
-  if (!cleaned) return null;
+  if (!cleaned || !cleaned.replace(/\u200D/g, "").trim()) return null;
   return Array.from(cleaned).slice(0, 200).join("");
 }
 

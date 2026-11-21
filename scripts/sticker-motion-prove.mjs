@@ -17,30 +17,23 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { crc32, deflateSync } from "node:zlib";
 import { chromium } from "./proof-browser.mjs";
+import { hostPort as waitForHostPort } from "./proof-host-port.mjs";
 import { createServer } from "vite";
 
-const PORT = Number(process.env.VITE_PORT) || 8138;
+const PORT = Number(process.env.VITE_PORT) || 0;
 const SHOTS = process.env.PROOF_SHOTS ? path.resolve(process.env.PROOF_SHOTS) : fileURLToPath(new URL("../test-results/", import.meta.url));
 mkdirSync(SHOTS, { recursive: true });
 
-const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
-process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
-const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
-  cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
+let ROOMS_DIR;
+let host;
+let vite;
+let browser;
+let url;
+process.on("exit", () => {
+  if (host && host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  if (ROOMS_DIR) rmSync(ROOMS_DIR, { recursive: true, force: true });
 });
-process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
-const hostPort = await new Promise((resolve) =>
-  host.stdout.on("data", (d) => {
-    const m = String(d).match(/listening (\d+)/);
-    if (m) resolve(Number(m[1]));
-  }),
-);
-const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
-await vite.listen();
-const browser = await chromium.launch();
-const url = `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`;
 const errors = [];
 const check = (ok, what) => {
   if (!ok) throw new Error(what);
@@ -192,123 +185,142 @@ const SIZES = [
   { width: 820, height: 1180 },
   { width: 844, height: 390 },
 ];
-for (const viewport of SIZES) {
-  const size = `${viewport.width}x${viewport.height}`;
-  const { ctx, page, tray } = await lobby(viewport, "Hana", true);
-  const decoded = await page.evaluate(decodeAll);
-  if (!animated) {
-    animated = Object.keys(decoded);
-    check(animated.includes(TEST), `${size}: the served ${TEST} decodes as ${decoded[TEST].count} frames, one loop ${decoded[TEST].loop} ms`);
-    check(decoded[TEST].loop === TEST_LOOP, `${size}: ${TEST} loops in ${TEST_LOOP} ms by ImageDecoder`);
-    for (const [id, d] of Object.entries(decoded)) {
-      check(d.client === d.loop, `the client's loopMs reads ${id} as ${d.client} ms, ImageDecoder plays ${d.count} frames in ${d.loop} ms`);
-      check(d.differs, `${id}: a later frame differs from frame 0, so a still is a real difference`);
+try {
+  ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
+  host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+    cwd: new URL("../server/", import.meta.url),
+    env: { ...process.env, PORT: "0", ROOMS_DIR, PROFILES_DIR: path.join(ROOMS_DIR, "profiles"), RESULTS_DIR: `${ROOMS_DIR}/results` },
+  });
+  const hostPort = await waitForHostPort(host);
+  vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: PORT !== 0 }, logLevel: "error" });
+  await vite.listen();
+  url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${hostPort}`;
+  browser = await chromium.launch();
+  for (const viewport of SIZES) {
+    const size = `${viewport.width}x${viewport.height}`;
+    const { ctx, page, tray } = await lobby(viewport, "Hana", true);
+    const decoded = await page.evaluate(decodeAll);
+    if (!animated) {
+      animated = Object.keys(decoded);
+      check(animated.includes(TEST), `${size}: the served ${TEST} decodes as ${decoded[TEST].count} frames, one loop ${decoded[TEST].loop} ms`);
+      check(decoded[TEST].loop === TEST_LOOP, `${size}: ${TEST} loops in ${TEST_LOOP} ms by ImageDecoder`);
+      for (const [id, d] of Object.entries(decoded)) {
+        check(d.client === d.loop, `the client's loopMs reads ${id} as ${d.client} ms, ImageDecoder plays ${d.count} frames in ${d.loop} ms`);
+        check(d.differs, `${id}: a later frame differs from frame 0, so a still is a real difference`);
+      }
+      console.log(`animated stickers: ${animated.join(", ")}`);
     }
-    console.log(`animated stickers: ${animated.join(", ")}`);
+    for (const id of animated) {
+      const img = page.locator(trayImg(id));
+      await img.scrollIntoViewIfNeeded();
+      await page.waitForFunction((sel) => document.querySelector(sel)?.hasAttribute("data-still"), trayImg(id));
+      await page.waitForFunction((sel) => { const i = document.querySelector(sel); return i?.complete && i.naturalWidth > 0; }, trayImg(id));
+      const off = await page.evaluate(offFrame0, [trayImg(id), id]);
+      check(off <= 2, `${size}: reduced motion, the tray's ${id} is a still of frame 0 (largest pixel difference ${off})`);
+    }
+    await page.waitForFunction(() => [...document.querySelectorAll('[data-testid="stickers"] img')].every((i) => i.getAttribute("src")));
+    const statics = await tray.locator("img").evaluateAll((els, moving) => els.filter((i) => !moving.includes(i.alt)).map((i) => ({ id: i.alt, still: i.hasAttribute("data-still"), src: i.getAttribute("src") ?? "" })), animated);
+    check(statics.length > 0 && statics.every((s) => !s.still && !s.src.startsWith("data:")), `${size}: reduced motion, the ${statics.length} static stickers keep their own file`);
+    const trayBox = await page.locator(trayImg(TEST)).evaluate((i) => `${Math.round(i.getBoundingClientRect().width)}x${Math.round(i.getBoundingClientRect().height)}`);
+    console.log(`${size}: the tray draws each sticker in a ${trayBox} px box`);
+    await tray.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(SHOTS, `calm-tray-${size}.png`) });
+    {
+      await tray.getByRole("button", { name: `React ${TEST}`, exact: true }).click();
+      const bubble = `[data-testid="reaction"][data-emote="${TEST}"] img`;
+      await page.waitForFunction((sel) => { const i = document.querySelector(sel); return i?.hasAttribute("data-still") && i.complete && i.naturalWidth > 0; }, bubble, { polling: "raf" });
+      const offBubble = await page.evaluate(offFrame0, [bubble, TEST]);
+      check(offBubble <= 2, `${size}: reduced motion, the seat bubble shows ${TEST} as a still of frame 0 (difference ${offBubble})`);
+      const box = await page.locator(bubble).evaluate((i) => `${Math.round(i.getBoundingClientRect().width)}x${Math.round(i.getBoundingClientRect().height)}`);
+      console.log(`${size}: the seat bubble draws the sticker in a ${box} px box`);
+      await page.screenshot({ path: path.join(SHOTS, `calm-bubble-${size}.png`) });
+      await page.getByRole("tab", { name: "Chat", exact: true }).click();
+      const line = `[data-testid="react-line"][data-emote="${TEST}"] img`;
+      await page.waitForFunction((sel) => { const i = document.querySelector(sel); return i?.hasAttribute("data-still") && i.complete && i.naturalWidth > 0; }, line);
+      const offLine = await page.evaluate(offFrame0, [line, TEST]);
+      check(offLine <= 2, `${size}: reduced motion, the chat log line shows ${TEST} as a still of frame 0 (difference ${offLine})`);
+    }
+    const drawnFiles = await page.evaluate((moving) => window.__srcs.filter((s) => moving.includes(s.alt) && !s.src.startsWith("data:")).map((s) => s.src), animated);
+    check(drawnFiles.length === 0, `${size}: reduced motion, no <img> was ever given an animated file${drawnFiles.length ? `: ${drawnFiles.join(", ")}` : ""}`);
+    await ctx.close();
   }
-  for (const id of animated) {
-    const img = page.locator(trayImg(id));
-    await img.scrollIntoViewIfNeeded();
-    await page.waitForFunction((sel) => document.querySelector(sel)?.hasAttribute("data-still"), trayImg(id));
-    await page.waitForFunction((sel) => { const i = document.querySelector(sel); return i?.complete && i.naturalWidth > 0; }, trayImg(id));
-    const off = await page.evaluate(offFrame0, [trayImg(id), id]);
-    check(off <= 2, `${size}: reduced motion, the tray's ${id} is a still of frame 0 (largest pixel difference ${off})`);
+
+  // Normal motion: the tray plays one loop and rests; the bubble and the log keep playing. The page's clock is paused while
+  // the tray's timer is stepped, so the loop boundary is checked to the millisecond on a busy machine too.
+  const look = (sel) => {
+    const i = document.querySelector(sel);
+    return i ? { loaded: i.complete && i.naturalWidth > 0, still: i.hasAttribute("data-still"), file: !(i.getAttribute("src") ?? "").startsWith("data:") } : null;
+  };
+  async function until(page, sel, want, what) {
+    for (const end = Date.now() + 20000; ; await new Promise((r) => setTimeout(r, 50))) {
+      const s = await page.evaluate(look, sel);
+      if (s && want(s)) return s;
+      if (Date.now() > end) throw new Error(`timed out: ${what} (${JSON.stringify(s)})`);
+    }
   }
-  await page.waitForFunction(() => [...document.querySelectorAll('[data-testid="stickers"] img')].every((i) => i.getAttribute("src")));
-  const statics = await tray.locator("img").evaluateAll((els, moving) => els.filter((i) => !moving.includes(i.alt)).map((i) => ({ id: i.alt, still: i.hasAttribute("data-still"), src: i.getAttribute("src") ?? "" })), animated);
-  check(statics.length > 0 && statics.every((s) => !s.still && !s.src.startsWith("data:")), `${size}: reduced motion, the ${statics.length} static stickers keep their own file`);
-  const trayBox = await page.locator(trayImg(TEST)).evaluate((i) => `${Math.round(i.getBoundingClientRect().width)}x${Math.round(i.getBoundingClientRect().height)}`);
-  console.log(`${size}: the tray draws each sticker in a ${trayBox} px box`);
-  await tray.scrollIntoViewIfNeeded();
-  await page.screenshot({ path: path.join(SHOTS, `calm-tray-${size}.png`) });
+  const settle = () => new Promise((r) => setTimeout(r, 1000));
   {
+    const size = "390x844";
+    const { ctx, page, tray } = await lobby({ width: 390, height: 844 }, "Hana", false, true);
+    await page.evaluate(decodeAll);
+    // Reading every file took a while and the tray may have rested meanwhile: pause time, then open the tray afresh.
+    await page.getByRole("tab", { name: "Chat", exact: true }).click();
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+    await page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+    const img = page.locator(trayImg(TEST));
+    await img.scrollIntoViewIfNeeded();
+    await until(page, trayImg(TEST), (s) => s.loaded, "the reopened tray's test sticker loads");
+    await settle();
+    let s = await page.evaluate(look, trayImg(TEST));
+    check(s.file && !s.still, `${size}: the reopened tray's ${TEST} plays its animated file`);
+    await page.clock.runFor(TEST_LOOP - 1);
+    await settle();
+    s = await page.evaluate(look, trayImg(TEST));
+    check(s.file && !s.still, `${size}: ${TEST_LOOP - 1} ms in, the tray's ${TEST} still plays its file`);
+    await page.clock.runFor(2);
+    await until(page, trayImg(TEST), (x) => x.still && !x.file && x.loaded, `the tray's ${TEST} rests after ${TEST_LOOP} ms`);
+    check(true, `${size}: ${TEST_LOOP + 1} ms in, one loop done, the tray's ${TEST} rests on a still`);
+    const off = await page.evaluate(offFrame0, [trayImg(TEST), TEST]);
+    check(off <= 2, `${size}: the tray's ${TEST} rests on frame 0 (difference ${off})`);
+    for (const id of animated.filter((x) => x !== TEST)) {
+      s = await page.evaluate(look, trayImg(id));
+      check(s.still && !s.file, `${size}: the tray's ${id} (a shorter loop) rests too`);
+    }
+    const rest = await img.screenshot();
+    await page.clock.runFor(TEST_LOOP);
+    await settle();
+    check((await img.screenshot()).equals(rest), `${size}: another ${TEST_LOOP} ms on, the tray's ${TEST} has not moved`);
+    await tray.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(SHOTS, `rested-tray-${size}.png`) });
+
     await tray.getByRole("button", { name: `React ${TEST}`, exact: true }).click();
     const bubble = `[data-testid="reaction"][data-emote="${TEST}"] img`;
-    await page.waitForFunction((sel) => { const i = document.querySelector(sel); return i?.hasAttribute("data-still") && i.complete && i.naturalWidth > 0; }, bubble, { polling: "raf" });
-    const offBubble = await page.evaluate(offFrame0, [bubble, TEST]);
-    check(offBubble <= 2, `${size}: reduced motion, the seat bubble shows ${TEST} as a still of frame 0 (difference ${offBubble})`);
-    const box = await page.locator(bubble).evaluate((i) => `${Math.round(i.getBoundingClientRect().width)}x${Math.round(i.getBoundingClientRect().height)}`);
-    console.log(`${size}: the seat bubble draws the sticker in a ${box} px box`);
-    await page.screenshot({ path: path.join(SHOTS, `calm-bubble-${size}.png`) });
+    s = await until(page, bubble, (x) => x.loaded, "the seat bubble's sticker loads");
+    check(s.file && !s.still, `${size}: the seat bubble plays ${TEST}'s file`);
     await page.getByRole("tab", { name: "Chat", exact: true }).click();
     const line = `[data-testid="react-line"][data-emote="${TEST}"] img`;
-    await page.waitForFunction((sel) => { const i = document.querySelector(sel); return i?.hasAttribute("data-still") && i.complete && i.naturalWidth > 0; }, line);
+    await until(page, line, (x) => x.loaded, "the chat log line's sticker loads");
+    await page.clock.runFor(TEST_LOOP + 500);
+    await settle();
+    s = await page.evaluate(look, line);
+    check(s.file && !s.still, `${size}: ${TEST_LOOP + 500} ms on, the chat log line still plays ${TEST}'s file (only the tray stops after one loop)`);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await until(page, line, (x) => x.still && !x.file && x.loaded, "the chat log line turns still");
     const offLine = await page.evaluate(offFrame0, [line, TEST]);
-    check(offLine <= 2, `${size}: reduced motion, the chat log line shows ${TEST} as a still of frame 0 (difference ${offLine})`);
+    check(offLine <= 2, `${size}: turning reduced motion on makes the open chat log line a still of frame 0 (difference ${offLine})`);
+    await ctx.close();
   }
-  const drawnFiles = await page.evaluate((moving) => window.__srcs.filter((s) => moving.includes(s.alt) && !s.src.startsWith("data:")).map((s) => s.src), animated);
-  check(drawnFiles.length === 0, `${size}: reduced motion, no <img> was ever given an animated file${drawnFiles.length ? `: ${drawnFiles.join(", ")}` : ""}`);
-  await ctx.close();
-}
 
-// Normal motion: the tray plays one loop and rests; the bubble and the log keep playing. The page's clock is paused while
-// the tray's timer is stepped, so the loop boundary is checked to the millisecond on a busy machine too.
-const look = (sel) => {
-  const i = document.querySelector(sel);
-  return i ? { loaded: i.complete && i.naturalWidth > 0, still: i.hasAttribute("data-still"), file: !(i.getAttribute("src") ?? "").startsWith("data:") } : null;
-};
-async function until(page, sel, want, what) {
-  for (const end = Date.now() + 20000; ; await new Promise((r) => setTimeout(r, 50))) {
-    const s = await page.evaluate(look, sel);
-    if (s && want(s)) return s;
-    if (Date.now() > end) throw new Error(`timed out: ${what} (${JSON.stringify(s)})`);
+  check(errors.length === 0, `no console errors${errors.length ? `: ${errors.join("; ")}` : ""}`);
+  console.log("sticker-motion-prove: all checks passed");
+} finally {
+  if (browser) await browser.close().catch(() => {});
+  if (vite) await vite.close().catch(() => {});
+  if (host && host.exitCode === null && host.signalCode === null) {
+    const exited = new Promise((resolve) => host.once("exit", resolve));
+    host.kill();
+    await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 2000))]);
+    if (host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
   }
+  if (ROOMS_DIR) rmSync(ROOMS_DIR, { recursive: true, force: true });
 }
-const settle = () => new Promise((r) => setTimeout(r, 1000));
-{
-  const size = "390x844";
-  const { ctx, page, tray } = await lobby({ width: 390, height: 844 }, "Hana", false, true);
-  await page.evaluate(decodeAll);
-  // Reading every file took a while and the tray may have rested meanwhile: pause time, then open the tray afresh.
-  await page.getByRole("tab", { name: "Chat", exact: true }).click();
-  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
-  await page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
-  const img = page.locator(trayImg(TEST));
-  await img.scrollIntoViewIfNeeded();
-  await until(page, trayImg(TEST), (s) => s.loaded, "the reopened tray's test sticker loads");
-  await settle();
-  let s = await page.evaluate(look, trayImg(TEST));
-  check(s.file && !s.still, `${size}: the reopened tray's ${TEST} plays its animated file`);
-  await page.clock.runFor(TEST_LOOP - 1);
-  await settle();
-  s = await page.evaluate(look, trayImg(TEST));
-  check(s.file && !s.still, `${size}: ${TEST_LOOP - 1} ms in, the tray's ${TEST} still plays its file`);
-  await page.clock.runFor(2);
-  await until(page, trayImg(TEST), (x) => x.still && !x.file && x.loaded, `the tray's ${TEST} rests after ${TEST_LOOP} ms`);
-  check(true, `${size}: ${TEST_LOOP + 1} ms in, one loop done, the tray's ${TEST} rests on a still`);
-  const off = await page.evaluate(offFrame0, [trayImg(TEST), TEST]);
-  check(off <= 2, `${size}: the tray's ${TEST} rests on frame 0 (difference ${off})`);
-  for (const id of animated.filter((x) => x !== TEST)) {
-    s = await page.evaluate(look, trayImg(id));
-    check(s.still && !s.file, `${size}: the tray's ${id} (a shorter loop) rests too`);
-  }
-  const rest = await img.screenshot();
-  await page.clock.runFor(TEST_LOOP);
-  await settle();
-  check((await img.screenshot()).equals(rest), `${size}: another ${TEST_LOOP} ms on, the tray's ${TEST} has not moved`);
-  await tray.scrollIntoViewIfNeeded();
-  await page.screenshot({ path: path.join(SHOTS, `rested-tray-${size}.png`) });
-
-  await tray.getByRole("button", { name: `React ${TEST}`, exact: true }).click();
-  const bubble = `[data-testid="reaction"][data-emote="${TEST}"] img`;
-  s = await until(page, bubble, (x) => x.loaded, "the seat bubble's sticker loads");
-  check(s.file && !s.still, `${size}: the seat bubble plays ${TEST}'s file`);
-  await page.getByRole("tab", { name: "Chat", exact: true }).click();
-  const line = `[data-testid="react-line"][data-emote="${TEST}"] img`;
-  await until(page, line, (x) => x.loaded, "the chat log line's sticker loads");
-  await page.clock.runFor(TEST_LOOP + 500);
-  await settle();
-  s = await page.evaluate(look, line);
-  check(s.file && !s.still, `${size}: ${TEST_LOOP + 500} ms on, the chat log line still plays ${TEST}'s file (only the tray stops after one loop)`);
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await until(page, line, (x) => x.still && !x.file && x.loaded, "the chat log line turns still");
-  const offLine = await page.evaluate(offFrame0, [line, TEST]);
-  check(offLine <= 2, `${size}: turning reduced motion on makes the open chat log line a still of frame 0 (difference ${offLine})`);
-  await ctx.close();
-}
-
-check(errors.length === 0, `no console errors${errors.length ? `: ${errors.join("; ")}` : ""}`);
-await browser.close();
-await vite.close();
-console.log("sticker-motion-prove: all checks passed");
-process.exit(0);

@@ -11,30 +11,23 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "./proof-browser.mjs";
+import { hostPort as waitForHostPort } from "./proof-host-port.mjs";
 import { createServer } from "vite";
 
-const PORT = Number(process.env.VITE_PORT) || 8137;
+const PORT = Number(process.env.VITE_PORT) || 0;
 const SHOTS = process.env.PROOF_SHOTS ? path.resolve(process.env.PROOF_SHOTS) : fileURLToPath(new URL("../test-results/", import.meta.url));
 mkdirSync(SHOTS, { recursive: true });
 
-const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
-process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
-const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
-  cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
+let ROOMS_DIR;
+let host;
+let vite;
+let browser;
+let url;
+process.on("exit", () => {
+  if (host && host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  if (ROOMS_DIR) rmSync(ROOMS_DIR, { recursive: true, force: true });
 });
-process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
-const hostPort = await new Promise((resolve) =>
-  host.stdout.on("data", (d) => {
-    const m = String(d).match(/listening (\d+)/);
-    if (m) resolve(Number(m[1]));
-  }),
-);
-const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
-await vite.listen();
-const browser = await chromium.launch();
-const url = `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`;
 const errors = [];
 const check = (ok, what) => {
   if (!ok) throw new Error(what);
@@ -116,58 +109,77 @@ const SIZES = [
   { width: 844, height: 390 },
   { width: 1280, height: 720 },
 ];
-for (const viewport of SIZES) {
-  const size = `${viewport.width}x${viewport.height}`;
-  const { ctx, page, tray } = await lobby(viewport, "Hana");
-  const nonSquare = await trayCheck(page, tray, size);
-  console.log(`${size}: non-square stickers on main: ${nonSquare.join(", ") || "none"}`);
-  await tray.scrollIntoViewIfNeeded();
-  await page.screenshot({ path: path.join(SHOTS, `tray-${size}.png`) });
-  // A sent non-square sticker in the seat bubble and the chat log line.
-  if (nonSquare.length) {
-    const id = nonSquare[0];
-    await tray.getByRole("button", { name: `React ${id}`, exact: true }).click();
-    // The bubble lives 2 s, so measure it in the page as soon as its image has loaded.
-    const b = await (
-      await page.waitForFunction(
-        (sel) => {
-          const img = document.querySelector(sel);
-          return img && img.isConnected && img.complete && img.naturalWidth > 0 && window.__drawn(img);
-        },
-        `[data-testid="reaction"][data-emote="${id}"] img`,
-        { polling: "raf" },
-      )
-    ).jsonValue();
-    check(b.loaded && b.fit === "contain" && b.square && b.aspectKept && b.clippedBy.length === 0, `${size}: the seat bubble shows ${id} ${describe(b)}, object-fit ${b.fit}`);
-    await page.screenshot({ path: path.join(SHOTS, `bubble-${size}.png`) });
-    await page.getByRole("tab", { name: "Chat", exact: true }).click();
-    const line = page.locator(`[data-testid="react-line"][data-emote="${id}"] img`).last();
-    await line.waitFor();
-    await line.scrollIntoViewIfNeeded();
-    const l = await line.evaluate(drawn);
-    check(l.loaded && l.fit === "contain" && l.square && l.aspectKept && l.inViewport && l.clippedBy.length === 0, `${size}: the chat log line shows ${id} ${describe(l)}, object-fit ${l.fit}`);
+try {
+  ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
+  host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+    cwd: new URL("../server/", import.meta.url),
+    env: { ...process.env, PORT: "0", ROOMS_DIR, PROFILES_DIR: path.join(ROOMS_DIR, "profiles"), RESULTS_DIR: `${ROOMS_DIR}/results` },
+  });
+  const hostPort = await waitForHostPort(host);
+  vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: PORT !== 0 }, logLevel: "error" });
+  await vite.listen();
+  url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${hostPort}`;
+  browser = await chromium.launch();
+  for (const viewport of SIZES) {
+    const size = `${viewport.width}x${viewport.height}`;
+    const { ctx, page, tray } = await lobby(viewport, "Hana");
+    const nonSquare = await trayCheck(page, tray, size);
+    console.log(`${size}: non-square stickers on main: ${nonSquare.join(", ") || "none"}`);
+    await tray.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(SHOTS, `tray-${size}.png`) });
+    // A sent non-square sticker in the seat bubble and the chat log line.
+    if (nonSquare.length) {
+      const id = nonSquare[0];
+      await tray.getByRole("button", { name: `React ${id}`, exact: true }).click();
+      // The bubble lives 2 s, so measure it in the page as soon as its image has loaded.
+      const b = await (
+        await page.waitForFunction(
+          (sel) => {
+            const img = document.querySelector(sel);
+            return img && img.isConnected && img.complete && img.naturalWidth > 0 && window.__drawn(img);
+          },
+          `[data-testid="reaction"][data-emote="${id}"] img`,
+          { polling: "raf" },
+        )
+      ).jsonValue();
+      check(b.loaded && b.fit === "contain" && b.square && b.aspectKept && b.clippedBy.length === 0, `${size}: the seat bubble shows ${id} ${describe(b)}, object-fit ${b.fit}`);
+      await page.screenshot({ path: path.join(SHOTS, `bubble-${size}.png`) });
+      await page.getByRole("tab", { name: "Chat", exact: true }).click();
+      const line = page.locator(`[data-testid="react-line"][data-emote="${id}"] img`).last();
+      await line.waitFor();
+      await line.scrollIntoViewIfNeeded();
+      const l = await line.evaluate(drawn);
+      check(l.loaded && l.fit === "contain" && l.square && l.aspectKept && l.inViewport && l.clippedBy.length === 0, `${size}: the chat log line shows ${id} ${describe(l)}, object-fit ${l.fit}`);
+    }
+    await ctx.close();
   }
-  await ctx.close();
-}
 
-// Extreme aspects, whatever art is on main: ben-10 is served as 256x64 and side-eye as 64x256.
-const svg = (w, h, fill) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" fill="${fill}"/><circle cx="${w / 2}" cy="${h / 2}" r="${Math.min(w, h) / 2}" fill="#fff"/></svg>`;
-for (const viewport of SIZES) {
-  const size = `${viewport.width}x${viewport.height}`;
-  const { ctx, page, tray } = await lobby(viewport, "Hana", { "ben-10": svg(256, 64, "#d9480f"), "side-eye": svg(64, 256, "#1971c2") });
-  for (const [id, natural] of [["ben-10", "256x64"], ["side-eye", "64x256"]]) {
-    const button = tray.getByRole("button", { name: `React ${id}`, exact: true });
-    await button.scrollIntoViewIfNeeded();
-    const m = await button.locator("img").evaluate(drawn);
-    check(m.natural === natural && whole(m), `${size}: a ${natural} sticker (${id} served as a test picture) ${describe(m)}, object-fit ${m.fit}, whole inside its button`);
+  // Extreme aspects, whatever art is on main: ben-10 is served as 256x64 and side-eye as 64x256.
+  const svg = (w, h, fill) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" fill="${fill}"/><circle cx="${w / 2}" cy="${h / 2}" r="${Math.min(w, h) / 2}" fill="#fff"/></svg>`;
+  for (const viewport of SIZES) {
+    const size = `${viewport.width}x${viewport.height}`;
+    const { ctx, page, tray } = await lobby(viewport, "Hana", { "ben-10": svg(256, 64, "#d9480f"), "side-eye": svg(64, 256, "#1971c2") });
+    for (const [id, natural] of [["ben-10", "256x64"], ["side-eye", "64x256"]]) {
+      const button = tray.getByRole("button", { name: `React ${id}`, exact: true });
+      await button.scrollIntoViewIfNeeded();
+      const m = await button.locator("img").evaluate(drawn);
+      check(m.natural === natural && whole(m), `${size}: a ${natural} sticker (${id} served as a test picture) ${describe(m)}, object-fit ${m.fit}, whole inside its button`);
+    }
+    await tray.getByRole("button", { name: "React ben-10", exact: true }).scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(SHOTS, `tray-extreme-${size}.png`) });
+    await ctx.close();
   }
-  await tray.getByRole("button", { name: "React ben-10", exact: true }).scrollIntoViewIfNeeded();
-  await page.screenshot({ path: path.join(SHOTS, `tray-extreme-${size}.png`) });
-  await ctx.close();
-}
 
-check(errors.length === 0, `no console errors${errors.length ? `: ${errors.join("; ")}` : ""}`);
-await browser.close();
-await vite.close();
-console.log("sticker-tray-prove: all checks passed");
-process.exit(0);
+  check(errors.length === 0, `no console errors${errors.length ? `: ${errors.join("; ")}` : ""}`);
+  console.log("sticker-tray-prove: all checks passed");
+} finally {
+  if (browser) await browser.close().catch(() => {});
+  if (vite) await vite.close().catch(() => {});
+  if (host && host.exitCode === null && host.signalCode === null) {
+    const exited = new Promise((resolve) => host.once("exit", resolve));
+    host.kill();
+    await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 2000))]);
+    if (host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  }
+  if (ROOMS_DIR) rmSync(ROOMS_DIR, { recursive: true, force: true });
+}
