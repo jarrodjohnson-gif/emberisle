@@ -307,6 +307,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-action-order-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run bot-moments-event-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run rules-view-helpers-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run hud-helpers-guards-prove
@@ -398,6 +400,8 @@ jobs:
         run: npm run soak-evidence-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run auto-merge-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run pr-signal-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run label-commands-prove
       - name: Desk gate proof
@@ -675,6 +679,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run game-helper-guards-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run dice-resource-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run sticker-tray-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run sticker-motion-prove
@@ -730,6 +736,8 @@ jobs:
         run: npm run button-system-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run duo-viewport-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
+        run: npm run duo-layout-options-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run keyboard-place-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'

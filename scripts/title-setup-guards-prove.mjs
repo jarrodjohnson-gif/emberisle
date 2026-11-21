@@ -121,7 +121,10 @@ try {
     const s = window.__emberisle;
     s.setState({ pendingPlace: { kind: "vertex", id: vid } });
   }, legalVertexId);
-  await hint.waitFor({ timeout: 5000 });
+  // The play board's first draw is one long main-thread task (0.6 to 1 s here, more on a software-GL CI runner). It runs
+  // between this write and the hint's first frame, so the hint's first appearance waits behind it. Give that first
+  // appearance the proof's step limit; the waits after it run on a drawn board and keep their own limits (#1846).
+  await hint.waitFor({ timeout: STEP_MS });
   assert.equal(await hint.count(), 1, "hint is shown with finite coordinates");
 
   // Switch to NaN projections

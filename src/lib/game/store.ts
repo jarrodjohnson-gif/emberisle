@@ -610,6 +610,23 @@ function savedColor(): string | null {
 // #1350: the open profile card listens here for the host's answer; the lazy card chunk sets and clears `on`.
 export const cardReply: { on?: (msg: ProfileCardReply) => void } = {};
 
+// #720: committed changes for bot moments (src/lib/game/bot-moments.ts sets `on`). A note is sent after the change is in the
+// store; the listener can never dispatch, delay or refuse it, and a throw is swallowed so play goes on. `deal` changes with
+// every new game or table. An action note is practice's own commit; an offer note is a table ask (`automated` is null online,
+// where the host does not say); a state note is an online push, `first` after each welcome.
+export type CommitNote =
+  | { deal: number; before: GameState; after: GameState; action: Action; actor: string; automated: boolean }
+  | { deal: number; offer: { tradeId: string; from: string; fromName: string; give: Bag; want: Bag }; automated: boolean | null }
+  | { deal: number; before: GameState | null; after: GameState; first: boolean };
+export const commitTap: { on?: (note: CommitNote) => void } = {};
+function tap(note: CommitNote) {
+  try {
+    commitTap.on?.(note);
+  } catch {
+    // Presentation only: a broken listener never stops the game.
+  }
+}
+
 export const useGame = create<GameStore>((set, get) => ({
   screen: "title",
   name: savedName(),
@@ -826,6 +843,7 @@ export const useGame = create<GameStore>((set, get) => ({
       : res.state;
     set({ state: nextState, localTrade: get().localTrade + Number(action.type === "bankTrade" || (action.type === "respondTrade" && action.accept)), gameLog: appendLog(get().gameLog, newLog(state.log, nextState.log)), error: null, announcement: null, toast: null, buildMode: "none", roadPicks: [], pendingSteal: null });
     hear(state, nextState, localId, mode);
+    tap({ deal: deals, before: state, after: nextState, action, actor, automated });
     // An offer lives only while its asker still has the turn in `main` and still holds the offered goods (as host.mjs play).
     const open = get().offer;
     if (open) {
@@ -868,7 +886,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (state.phase === "main" && !offer && state.role !== "partner" && botAsked !== `${state.turn}:${cur.id}`) {
       botAsked = `${state.turn}:${cur.id}`;
       const ask = chooseTradeAsk(state, cur.id, botDeclined.get(cur.id));
-      if (ask) return openOffer(set, get, cur.id, ask.give, ask.want);
+      if (ask) return openOffer(set, get, cur.id, ask.give, ask.want, true);
     }
     const a = chooseBotAction(state, cur.id);
     if (a) dispatch(a, cur.id, true);
@@ -1176,7 +1194,7 @@ function endOffer(set: Set, get: Get, taker: string | null) {
 }
 
 // Practice's table offer for `from`, closing any earlier one (host.mjs openOffer). Every other bot answers it after a delay.
-function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
+function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag, automated = false) {
   endOffer(set, get, null);
   clearOfferTimers();
   const state = get().state!;
@@ -1188,6 +1206,7 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const me = get().localId;
   void tradeSounds.then((m) => m?.offerChime(play, from, fromName, me, give, want));
   if (runOut) offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
+  tap({ deal: deals, offer: { tradeId, from, fromName, give, want }, automated });
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
     const answer = () => {
@@ -1294,6 +1313,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     const rollOff = rollOffLine(get().state, game);
     // hear first: it is what claims a match point, and the banner line is read off that claim on this same state.
     hear(get().state, game, me, "online", firstState);
+    tap({ deal: deals, before: get().state, after: game, first: firstState });
     const swing = awardLine(get().state, game) ?? takeMatchPointLine();
     // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
     // Every push carries the same window, and the skew wobbles by however long this tab took to get to the message:
@@ -1437,6 +1457,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       set({ offer: { tradeId, from, fromName, give, want, until: seconds === null ? null : Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
       const me = get().localId;
       void tradeSounds.then((m) => m?.offerChime(play, from, fromName, me, give, want));
+      tap({ deal: deals, offer: { tradeId, from, fromName, give, want }, automated: null });
     },
     tradeDeclined: ({ tradeId, by }) => {
       const { offer, declined } = get();
