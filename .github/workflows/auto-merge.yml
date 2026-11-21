@@ -1,4 +1,5 @@
-# Auto-merges docs-only PRs (#923, phase 1). scripts/auto-merge-eligible.mjs decides; the rules are in its header.
+# Auto-merges docs-only PRs (#923, phase 1) and, when the repo variable AUTO_MERGE_CODE is "on", reviewed code PRs
+# (phase 2, docs/DESK.md). scripts/auto-merge-eligible.mjs decides; the rules are in its header.
 # A PR merges only when every changed file is an allowed doc, `checks` is green on the exact head SHA, and the desk
 # has posted <!-- review-desk: clean <40-char head SHA> -->. The merge pins that SHA with --match-head-commit.
 #
@@ -12,13 +13,20 @@ name: auto-merge
 
 on:
   pull_request_target:
-    types: [synchronize, ready_for_review]
+    # labeled: the owner adding `owner-ok` re-checks the PR.
+    types: [synchronize, ready_for_review, labeled]
   workflow_run:
     workflows: [CI]
     types: [completed]
   # The desk's clean marker can land after CI goes green, so it triggers a check too.
   issue_comment:
     types: [created]
+  # Re-check one PR by hand, for example a PR that went green before phase 2 was switched on.
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number to check
+        required: true
 
 permissions:
   contents: write
@@ -27,14 +35,14 @@ permissions:
   checks: read
 
 concurrency:
-  group: auto-merge-${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.head_sha }}
+  group: auto-merge-${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.head_sha || inputs.pr }}
   cancel-in-progress: false
 
 jobs:
   merge:
     if: >-
       vars.AUTO_MERGE == 'on' && (
-        github.event_name == 'pull_request_target' ||
+        github.event_name == 'pull_request_target' || github.event_name == 'workflow_dispatch' ||
         (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
           github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.path == '.github/workflows/ci.yml') ||
         (github.event_name == 'issue_comment' && github.event.issue.pull_request &&
@@ -56,7 +64,8 @@ jobs:
       - id: decide
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr }}
+          AUTO_MERGE_CODE: ${{ vars.AUTO_MERGE_CODE }}
           RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: node scripts/auto-merge-eligible.mjs

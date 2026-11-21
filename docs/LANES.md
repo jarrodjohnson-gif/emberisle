@@ -190,7 +190,7 @@ Issues labelled `anytime` are safe work. Take one when the ready list and rungs 
 - An `anytime` issue still has a `tier:` label. Stay at or below your tier. The desk sets the tier by risk, as for any issue.
 - Claim it as usual. It is eligible with `status:todo` or `status:backlog` if nothing blocks it and no PR is open.
 - The desk keeps at least 5 open, unclaimed `anytime` issues. Each has a lane, a tier, a prio and a completion test.
-- If fewer than 5 remain, the desk files or labels more the same day. The rule is in [`DESK.md`](DESK.md#always).
+- If fewer than 5 remain, more are filed or labelled the same day. Since 2026-11-21 no chat owns this ([`DESK.md`](DESK.md#left-over-from-the-desk)); Jarrod starts an issue-writer chat for it.
 
 What belongs in the queue:
 
