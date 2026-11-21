@@ -154,6 +154,7 @@
     "contrast-prove": "node scripts/contrast-prove.mjs",
     "button-system-prove": "node scripts/button-system-prove.mjs",
     "duo-viewport-prove": "node scripts/duo-viewport-prove.mjs",
+    "duo-layout-options-prove": "node scripts/duo-layout-options-prove.mjs",
     "title-prove": "node scripts/title-prove.mjs",
     "first-minute-prove": "node scripts/first-minute-prove.mjs",
     "join-link-prove": "node scripts/join-link-prove.mjs",
