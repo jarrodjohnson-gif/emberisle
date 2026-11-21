@@ -279,8 +279,13 @@ try {
     for (const p of k.players) p.resources = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
     const ka = { type: "playKnight", hexId: hex, stealFrom: null };
     const km = projectAction(k, apply(k, "p1", ka), ka, "p1");
-    eq([km.kind, km.text, km.targets], ["wayfarerFortune", `Tide plays Wayfarer and moves it to ${pip ? `the ${pip}` : "the wastes"}`, [hex]], "a played wayfarer that takes nothing names no victim");
+    eq([km.kind, km.text, km.targets], ["wayfarerFortune", `Tide plays Wayfarer, moves it to ${pip ? `the ${pip}` : "the wastes"}`, [hex]], "a played wayfarer that takes nothing names no victim");
 
+    const off = structuredClone(g);
+    off.wayfarerMode = "off";
+    off.players[1].hidden.knight = 1;
+    const oa = { type: "playKnight", hexId: "", stealFrom: null };
+    eq(projectAction(off, apply(off, "p1", oa), oa, "p1"), { actor: "p1", source: "practice-action", kind: "wayfarerFortune", text: "Tide plays Wayfarer and musters", targets: [], ordered: true }, "wayfarer off: a muster, no target");
     const pl = structuredClone(g);
     pl.players[1].hidden.plenty = 1;
     const pa = { type: "playPlenty", resources: ["ore", "ore"] };
@@ -368,7 +373,7 @@ try {
     g2.players[1].fortunes = 1;
     moments.length = 0;
     push(g1, g2);
-    eq(moments.map((m) => [m.kind, m.count, m.targets, m.ordered, m.text]), [["changes", 3, [], false, "Tide makes 3 moves"]], "a batch is one unordered summary");
+    eq(moments.map((m) => [m.kind, m.count, m.targets, m.ordered, m.text]), [["changes", 3, [], false, "Tide makes 3 changes"]], "a batch is one unordered summary");
 
     // Two bots in one push: each judged alone, both unordered relative to each other only by seat.
     const g3 = structuredClone(g2);

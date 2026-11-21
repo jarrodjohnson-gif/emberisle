@@ -100,12 +100,12 @@ export function projectAction(before: GameState, after: GameState, action: Actio
     case "playKnight": {
       const played = action.type === "playKnight";
       // Wayfarer off: the fortune only musters, nothing moves.
-      if (played && !action.hexId) return line("wayfarerFortune", `${name} plays Wayfarer`);
+      if (played && !action.hexId) return line("wayfarerFortune", `${name} plays Wayfarer and musters`);
       // The actual victim is whoever lost a good, which can differ from the request. Which good stays private.
       const victim = after.players.find((p) => p.id !== actor && total(p) < total(before.players.find((b) => b.id === p.id)));
       const take = victim ? ` and takes from ${seatName(victim, victim.id)}` : "";
       const to = `to ${hexPlace(after, after.robberHex)}${take}`;
-      const text = played ? `${name} plays Wayfarer and moves it ${to}` : `${name} moves the wayfarer ${to}`;
+      const text = played ? `${name} plays Wayfarer, moves it ${to}` : `${name} moves the wayfarer ${to}`;
       return line(played ? "wayfarerFortune" : "wayfarer", text, [after.robberHex]);
     }
     case "playPlenty":
@@ -171,7 +171,8 @@ export function observeSnapshot(before: GameState, after: GameState): Draft[] {
         actor: p.id,
         source: "online-observation",
         kind: "changes",
-        text: `${name} makes ${changes.length} moves`,
+        // "Changes", not "moves": it counts what is visible, and must not read as the overflow line ("made 3 more moves").
+        text: `${name} makes ${changes.length} changes`,
         targets: [],
         ordered: false,
         count: changes.length,
