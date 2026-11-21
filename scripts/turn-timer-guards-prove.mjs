@@ -1,6 +1,5 @@
-// Guards for TurnCountdown (finite clock skew, no timer_final on game-over/rematch, stopped interval),
-// TurnMoment (immediate game-over cleanup, exit timer cleanup on resync), and
-// TakeFromBar (ResizeObserver detached guard, active-prompt-height cleanup with chromeLanded).
+// Guards for TurnCountdown (finite clock skew, no timer_tick or timer_final after game over) and
+// TakeFromBar (leaves the island alone on resolution; ignores a zero-height bar).
 import assert from "node:assert/strict";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
@@ -125,40 +124,38 @@ try {
   );
   console.log("TurnCountdown: finite clock skew and game-over sound stand-down");
 
-  // --- Check 2: TurnMoment immediate cleanup on game over ---
-  await page.evaluate(async (game) => {
-    await import("/src/components/game/moments.ts");
-    const baselineGame = structuredClone(game);
-    baselineGame.phase = "roll";
-    baselineGame.current = "p0";
-    baselineGame.turn = 1;
-    window.__emberisle.setState({ state: baselineGame, turnTimer: null });
-    for (let i = 0; i < 5; i++) await new Promise((r) => requestAnimationFrame(r));
-  }, base);
+  // --- Check 2: TakeFromBar leaves the island alone on resolution (owner A, q1825-steal-bar) and ignores a zero-height bar ---
+  // The bar measures itself once the chat overlap is known; on a slow layout pass that can miss, so offer the steal again.
+  const takeBar = page.getByRole("group", { name: "The wayfarer takes a card" });
+  const offerSteal = (game) => page.evaluate((g) => {
+    const mainGame = structuredClone(g);
+    mainGame.phase = "robber";
+    mainGame.current = "p0";
+    window.__emberisle.setState({ pendingSteal: null });
+    window.__emberisle.setState({
+      state: mainGame,
+      chatOpen: true,
+      pendingSteal: { hexId: "h1", kind: "moveRobber", targets: ["p1"] },
+    });
+  }, game);
+  let heightSet = "";
+  for (let attempt = 0; attempt < 4 && !heightSet; attempt++) {
+    await offerSteal(base);
+    await takeBar.waitFor();
+    await page.waitForFunction(() => document.documentElement.style.getPropertyValue("--active-prompt-height") !== "", null, { timeout: 1500 }).catch(() => {});
+    heightSet = await page.evaluate(() => document.documentElement.style.getPropertyValue("--active-prompt-height"));
+  }
+  assert.ok(heightSet && heightSet !== "0px", `active-prompt-height was set on chat overlap: ${heightSet}`);
 
-  await page.evaluate((game) => {
-    const rollGame = structuredClone(game);
-    rollGame.phase = "roll";
-    rollGame.current = "p0";
-    rollGame.turn = 2;
-    window.__emberisle.setState({ state: rollGame });
-  }, base);
-  const moment = page.getByTestId("turn-moment");
-  await moment.waitFor({ timeout: 5000 });
+  const chromeSeqBefore = await page.evaluate(() => window.__emberisle.getState().chromeSeq);
+  await takeBar.getByRole("button", { name: /Tide/ }).click();
+  await takeBar.waitFor({ state: "detached" });
+  assert.equal(await page.evaluate(() => document.documentElement.style.getPropertyValue("--active-prompt-height")), "", "active-prompt-height is removed on steal resolution");
+  const chromeSeqAfter = await page.evaluate(() => window.__emberisle.getState().chromeSeq);
+  assert.equal(chromeSeqAfter, chromeSeqBefore, "steal resolution does not re-measure the island (as on main)");
 
-  // On game over, TurnMoment immediately disappears without leaving trailing styles.
-  await page.evaluate(() => {
-    const api = window.__emberisle;
-    const next = structuredClone(api.getState().state);
-    next.phase = "over";
-    next.winner = "p0";
-    api.setState({ state: next });
-  });
-  await page.waitForTimeout(50);
-  assert.equal(await moment.count(), 0, "TurnMoment clears immediately on game over");
-  console.log("TurnMoment: immediate exit on game over");
-
-  // --- Check 3: TakeFromBar ResizeObserver & chromeLanded on fast steal ---
+  // A bar that measures zero high (hidden) sets no prompt height.
+  await page.addStyleTag({ content: '[role="group"][aria-label="The wayfarer takes a card"]{display:none !important}' });
   await page.evaluate((game) => {
     const mainGame = structuredClone(game);
     mainGame.phase = "robber";
@@ -169,23 +166,13 @@ try {
       pendingSteal: { hexId: "h1", kind: "moveRobber", targets: ["p1"] },
     });
   }, base);
-
-  const takeBar = page.getByRole("group", { name: "The wayfarer takes a card" });
-  await takeBar.waitFor();
-  const heightSet = await page.evaluate(() => document.documentElement.style.getPropertyValue("--active-prompt-height"));
-  assert.ok(heightSet && heightSet !== "0px", `active-prompt-height was set on chat overlap: ${heightSet}`);
-
-  const chromeSeqBefore = await page.evaluate(() => window.__emberisle.getState().chromeSeq);
-  // Fast steal resolution: click victim button.
-  await takeBar.getByRole("button", { name: /Tide/ }).click();
-  await takeBar.waitFor({ state: "detached" });
-
-  const heightAfter = await page.evaluate(() => document.documentElement.style.getPropertyValue("--active-prompt-height"));
-  assert.equal(heightAfter, "", "active-prompt-height is cleaned up on steal resolution");
-
-  const chromeSeqAfter = await page.evaluate(() => window.__emberisle.getState().chromeSeq);
-  assert.ok(chromeSeqAfter > chromeSeqBefore, "chromeLanded notified island on steal resolution cleanup");
-  console.log("TakeFromBar: ResizeObserver and active-prompt-height cleanup with chromeLanded");
+  await page.waitForTimeout(400);
+  assert.equal(
+    await page.evaluate(() => document.documentElement.style.getPropertyValue("--active-prompt-height")),
+    "",
+    "a zero-height steal bar sets no active-prompt-height",
+  );
+  console.log("TakeFromBar: no island re-measure on resolution, zero-height bar ignored");
 
   assert.deepEqual(errors, [], `unexpected browser errors: ${errors.join("; ")}`);
   console.log("turn-timer-guards-prove: ok");

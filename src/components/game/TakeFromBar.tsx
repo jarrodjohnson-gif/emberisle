@@ -17,11 +17,10 @@ export function TakeFromBar() {
   const trayFocus = useTrayFocus();
   useLayoutEffect(() => {
     const el = bar.current;
-    if (!el || !phone || !aboveChat || !document.querySelector("[data-game-shell]")) return;
+    if (!el || !phone || !aboveChat) return;
     const root = document.documentElement;
     let last = -1;
     const measure = () => {
-      if (!el.isConnected) return;
       const height = el.getBoundingClientRect().height;
       if (height <= 0 || height === last) return;
       last = height;
@@ -31,13 +30,7 @@ export function TakeFromBar() {
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
-    return () => {
-      observer.disconnect();
-      if (root.style.getPropertyValue("--active-prompt-height")) {
-        root.style.removeProperty("--active-prompt-height");
-        useGame.getState().chromeLanded();
-      }
-    };
+    return () => { observer.disconnect(); root.style.removeProperty("--active-prompt-height"); };
   }, [pendingSteal, phone, aboveChat]);
   if (!state || !pendingSteal) return null;
   const over = phone && aboveChat;

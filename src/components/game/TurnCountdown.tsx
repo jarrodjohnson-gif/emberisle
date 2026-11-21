@@ -35,12 +35,12 @@ export function TurnCountdown({ header }: { header?: HTMLElement | null }) {
 
   useEffect(() => setSaid(null), [at]);
   useEffect(() => {
-    if (at === null || cueAt === null || mode !== "online" || !state || state.phase === "over") return setSecs(null);
+    if (at === null || cueAt === null) return setSecs(null);
     const tick = () => setSecs(Math.max(0, Math.ceil((cueAt - Date.now()) / 1000)));
     tick();
     const id = setInterval(tick, 250);
     return () => clearInterval(id);
-  }, [at, cueAt, mode, state?.phase]);
+  }, [at, cueAt]);
 
   // #661: only the seat the timer waits on hears it, online. A tick as the count reaches each of 5..1 and a knock at 0, once per
   // value. The cues are timed from the deadline itself, not from the 250 ms read-out above: the host moves the turn on at the
@@ -82,6 +82,10 @@ export function TurnCountdown({ header }: { header?: HTMLElement | null }) {
       ids.forEach(clearTimeout);
       const cur = useGame.getState();
       if (cur.mode !== "online" || cur.state?.phase === "over") return;
+      // The host moves the turn on at the deadline, so the next window can arrive before this knock fires, a long way before
+      // it when this tab's clock estimate ran late. The window that replaced this one says on the host's own clock whether the
+      // deadline had passed when it was sent; that, or being within 400 ms of it here, plays the knock. A turn that ends with
+      // time to spare plays nothing, and a deadline that moved later is a new window, not this one's knock.
       const next = cur.turnTimer;
       if (cueAt - Date.now() < 400 || (next && next.deadline !== deadline && next.host >= deadline - 400)) knock();
     };
