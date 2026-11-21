@@ -14,9 +14,10 @@ export function useTurnTitle() {
     if (s.screen !== "play" || !st) return IDLE;
     if (s.spectator) return WATCHING;
     if (s.mode === "hotseat" || st.phase === "over") return IDLE;
-    return st.current === s.localId || (st.discardNeeded[s.localId] ?? 0) > 0 ? YOURS : IDLE;
+    return st.current === s.localId || (st.discardNeeded?.[s.localId] ?? 0) > 0 ? YOURS : IDLE;
   });
   useEffect(() => {
+    if (typeof document === "undefined") return;
     if (title !== YOURS) {
       document.title = title;
       return () => {

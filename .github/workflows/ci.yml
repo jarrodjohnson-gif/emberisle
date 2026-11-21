@@ -194,6 +194,8 @@ jobs:
         run: npm run scene-motion-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profiles-lifecycle-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run store-lifecycle-guards-prove
       # #1817: apt mirror flakes kept turning main red. Cache a pinned static ffmpeg; the apt step below is the fallback.
       - if: needs.changes.outputs.docs_only != 'true'
         id: ffmpeg-cache
@@ -301,6 +303,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run lib-helpers-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run client-haptics-guards-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-harbor-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-action-order-prove
@@ -374,6 +378,8 @@ jobs:
         run: npm run sound-lifecycle-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run host-lifecycle-guards-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run server-lifecycle-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -840,6 +846,8 @@ jobs:
         run: npm run seat-rail-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run player-menu-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run title-setup-guards-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run seat-tray-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
