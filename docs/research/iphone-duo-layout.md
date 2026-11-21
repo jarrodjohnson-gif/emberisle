@@ -15,6 +15,7 @@ All pages read on 2026-11-21. Apple's developer pages are scripts, so I read the
 - [Preparing your app for iPhone Duo](https://developer.apple.com/documentation/technologyoverviews/preparing-your-app-for-iphone-duo) (native apps).
 - [Get ready for iPhone Duo](https://developer.apple.com/iphone-duo/) (the hub page: videos, docs, Xcode 27.1).
 - [WebKit blog, WebKit Features for Safari 27.1](https://webkit.org/blog/18486/webkit-features-for-safari-27-1/), 2026-10-23. The only web source.
+- [Wikipedia, "iPhone Duo"](https://en.wikipedia.org/wiki/Foldable_iPhone), for the release date only (secondary source).
 - HIG [Layout](https://developer.apple.com/design/human-interface-guidelines/layout), [Status bars](https://developer.apple.com/design/human-interface-guidelines/status-bars) and [Going full screen](https://developer.apple.com/design/human-interface-guidelines/going-full-screen).
 
 ## What is true
@@ -45,7 +46,7 @@ Apple does publish for the iPhone Duo. It shipped on 2026-10-23 (Wikipedia, "iPh
 - The post does not mention the status bar, the Dynamic Island or `safe-area-inset-*`.
 
 **HIG, Designing for iPhone Duo** (native apps; the web rules follow Safari, above)
-- The system moves toolbars, tab bars and navigation to the side on the outer display and on the inner display in landscape. It keeps horizontal bars on the inner display in portrait. This covers the status bar and the Dynamic Island as well.
+- The system moves toolbars, tab bars and navigation to the side on the outer display and on the inner display in landscape. It keeps horizontal bars on the inner display in portrait. Apple lists the status bar and the Dynamic Island among the controls on the side.
 - "Make your game playable in every device pose... fill the screen as the device pose changes. When resizing, keep text and control sizes as consistent as possible. Prefer changing the aspect ratio over letterboxing or pillarboxing in games."
 - "Consider using the full display width for interfaces where bars aren't necessary... as long as nothing conflicts with the Dynamic Island or the status bar."
 - "In general, don't override the default bar placement."
@@ -85,9 +86,9 @@ Island height share is the hole's share of the height, the #1814 measure. Hex sp
 - Roll phase and main phase give the same numbers in every row.
 - A, B and C reach 0.60 at 466 x 678. Nothing is cut off, covered or under 44 px, and nothing scrolls sideways.
 - Only C reaches 0.60 at the Safari viewports Apple publishes (382 x 580 and 382 x 618). A and B do not.
-- D passes the number but fails the aim: the island gets smaller than today (0.528 wide against 0.645). It is the HIG's side-bar idea, tried and rejected on the numbers.
+- D is data only: the proof never gates it. It passes the number but fails the aim: the island gets smaller than today (0.528 wide against 0.645). It is the HIG's side-bar idea, tried and rejected on the numbers.
 - B hides the instruction in the mock. The words ("Roll the dice", "Your turn") must go somewhere. That is a copy and design call.
-- C's seat bar sits 8 px higher. At 4 px from the top it may touch the Dynamic Island on a real device. A native status bar is not an issue in the mock; check on a device.
+- C's seat bar sits 8 px higher. The page area starts below Safari's own controls (WebKit blog above), so the top padding should not reach the Dynamic Island. Check on a device.
 - None of these use the Viewport Segments or Device Posture APIs. A partly folded pose is not measured.
 
 ## Prove output

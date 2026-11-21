@@ -35,6 +35,7 @@ export const OPTIONS = [
   },
   {
     id: "d-side-rail",
+    proposed: false,
     name: "D. Controls on the side (tried, not proposed)",
     // Apple's iPhone Duo guidance puts bars on the side of the outer display. The goods and the action buttons stack in a
     // 112 px right rail under the seat strip. The hole keeps its height, but the island is width-bound and shrinks: see hexSpan.

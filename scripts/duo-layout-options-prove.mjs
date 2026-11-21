@@ -4,12 +4,13 @@
 // game at run time, plus the island's declared hole re-set to what the override leaves, so the board re-fits as a build
 // would. Nothing here ships; the owner picks one (docs/research/iphone-duo-layout.md).
 // It also reports how big the island really is (the span of the hex centres), since the hole's share ignores width.
+// Options with `proposed: false` (and the baseline) are data only: their pictures and numbers are kept, they are never checked.
 // What it fails on: a page error, an option under 0.60 at 466x678 (pre-roll or main phase), a missing or off-screen Roll,
 // Build, Trade or End turn button, a tap target under 44 px, a control cut off or covered. It reports, as data, the same
 // shares at the Safari viewports Apple publishes for the outer display (382x580 small, 382x618 large; WebKit blog, 2026-10-23).
 // Run one browser proof at a time: npm run duo-layout-options-prove
 // It writes to a new temp folder. Add --save to write into docs/design/duo-layout-options/, replacing the committed files.
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -106,11 +107,18 @@ const craft = async (page, phase) => {
 // The override, then the island's declared hole set to the chrome that is left, and a refit: what a build of the option would do.
 const apply = async (page, option) => {
   if (!option.css) return;
-  await page.addStyleTag({ content: option.css });
+  await page.evaluate((css) => {
+    document.getElementById("duo-option")?.remove();
+    const tag = document.createElement("style");
+    tag.id = "duo-option";
+    tag.textContent = css;
+    document.head.append(tag);
+  }, option.css);
   await page.waitForTimeout(400);
   await page.evaluate(() => {
     const isle = window.__isle;
     const live = isle.liveInsets();
+    // The real declared hole keeps 4 px under the tray for sub-pixel font differences (mobile-fit.ts playHole).
     const hole = { top: live.top, right: live.right, bottom: live.bottom + 4, left: live.left };
     isle.insets = () => hole;
     isle.refitDue = true;
@@ -140,7 +148,7 @@ try {
         console.log(`${option.id.padEnd(9)} ${size.tag} ${phase.padEnd(5)} island height share ${m.heightShare}, hex span ${m.hexSpan.width} wide x ${m.hexSpan.height} high, hole ${JSON.stringify(m.hole)}, controls ${m.controls}, issues ${m.issues.length}`);
         if (process.argv.includes("--dump")) console.log(JSON.stringify(m.seen), m.issues);
         if (size.required) {
-          if (option.baseline) { await page.screenshot({ path: path.join(outDir, "pictures", `${option.id}-${size.tag}-${phase}.png`) }); continue; }
+          if (option.baseline || option.proposed === false) { await page.screenshot({ path: path.join(outDir, "pictures", `${option.id}-${size.tag}-${phase}.png`) }); continue; }
           await page.screenshot({ path: path.join(outDir, "pictures", `${option.id}-${size.tag}-${phase}.png`) });
           check(m.heightShare >= TARGET, `${option.id} ${size.tag} ${phase}: island height share ${m.heightShare} is under ${TARGET}`);
           check(m.issues.length === 0, `${option.id} ${size.tag} ${phase}: ${m.issues.join("; ")}`);
@@ -165,4 +173,5 @@ out.errors = errors;
 writeFileSync(path.join(outDir, "measurements.json"), JSON.stringify(out, null, 2));
 console.log(`failures: ${failures.length}, page errors: ${errors.length}`);
 if (failures.length) process.exit(1);
+if (!process.argv.includes("--save")) rmSync(outDir, { recursive: true, force: true });
 console.log("duo-layout-options-prove: ok");
