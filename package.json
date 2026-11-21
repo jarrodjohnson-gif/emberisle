@@ -33,6 +33,7 @@
     "profile-pin-race-prove": "node server/profile-pin-race-prove.mjs",
     "bot-harbor-prove": "node --import ./server/register.mjs server/bot-harbor-prove.mjs",
     "bot-action-order-prove": "node --import ./server/register.mjs scripts/bot-action-order-prove.mjs",
+    "bot-moments-event-prove": "node scripts/bot-moments-event-prove.mjs",
     "rules-view-helpers-prove": "node --import ./server/register.mjs scripts/rules-view-helpers-prove.mjs",
     "hud-helpers-guards-prove": "node scripts/hud-helpers-guards-prove.mjs",
     "client-prove": "node scripts/client-prove.mjs",
