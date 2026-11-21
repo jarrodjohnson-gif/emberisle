@@ -52,8 +52,11 @@ const OWNER_ASK = /(?:Jarrod|owner)[^\n.]{0,100}(?:must see|sign.off|approval|ac
 // True when the newest review from a trusted account asks for the owner. The reviewer may add `needs-owner` a moment
 // after it posts, so the merge must not win that race.
 export function ownerAsked(comments) {
-  const newest = [...(comments ?? [])].reverse().find((c) => TRUSTED.includes(c.author_association) && /<!--\s*review-desk/.test(String(c.body ?? "")));
-  return Boolean(newest) && OWNER_ASK.test(String(newest.body).replace(/<!--[\s\S]*?-->/g, ""));
+  const newest = [...(comments ?? [])].reverse().find((c) => TRUSTED.includes(c.author_association) && String(c.body ?? "").includes("<!-- review-desk -->"));
+  if (!newest) return false;
+  // Hidden comments and `code spans` are not an ask, and neither is a line that says no ask is needed.
+  const lines = String(newest.body).replace(/<!--[\s\S]*?-->/g, "").replace(/`[^`\n]*`/g, "").split(/\r?\n/);
+  return lines.some((line) => !/\b(?:no|not|none|without|already)\b/i.test(line) && OWNER_ASK.test(line));
 }
 
 // "Claude Opus 5.5", "opus-5.5" and "Opus  5.5" are one model.
