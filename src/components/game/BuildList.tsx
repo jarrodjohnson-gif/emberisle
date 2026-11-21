@@ -21,10 +21,9 @@ const NO_SPOT: Record<Price, string> = {
   card: "",
 };
 
+const KINDS = Object.keys(COST) as Price[];
+
 export function BuildList({ state, me, opener, onClose }: { state: GameState; me: PlayerState; opener: HTMLElement | null; onClose: () => void }) {
-  const dispatch = useGame((s) => s.dispatch);
-  const setBuildMode = useGame((s) => s.setBuildMode);
-  const refuseQuietly = useGame((s) => s.refuseQuietly);
   const root = useRef<HTMLDivElement>(null);
   useFocusTrap(root, true, undefined, opener);
   const backdrop = useBackdropClose(onClose);
@@ -51,7 +50,7 @@ export function BuildList({ state, me, opener, onClose }: { state: GameState; me
           </Button>
         </div>
         <ul className="min-h-0 overflow-y-auto">
-          {(Object.keys(COST) as Price[]).map((kind) => {
+          {KINDS.map((kind) => {
             const { short, missing, why, ready } = buildStatus(state, me, kind);
             const reason = why === "None left" ? (kind === "card" ? "The deck is empty." : "None left.") : why ? NO_SPOT[kind] : missing ? `You n${needLine(short).slice(1)}` : null;
             return (
@@ -67,9 +66,10 @@ export function BuildList({ state, me, opener, onClose }: { state: GameState; me
                   className="build-row"
                   onClick={() => {
                     // aria-disabled keeps the row focusable, so the click itself refuses: the error cue plays and the reason is read out.
-                    if (!ready) return void refuseQuietly(reason!);
-                    if (kind === "card") dispatch({ type: "buyCard" });
-                    else setBuildMode(kind);
+                    const g = useGame.getState();
+                    if (!ready) return void g.refuseQuietly(reason!);
+                    if (kind === "card") g.dispatch({ type: "buyCard" });
+                    else g.setBuildMode(kind);
                     onClose();
                   }}
                 >

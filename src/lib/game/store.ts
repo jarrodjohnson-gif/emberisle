@@ -127,7 +127,7 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
   if (before && after.winner && !before.winner) {
     // The banner buzz is felt at once; only the choice of sting waits for the lazy trade-sound chunk.
     if (me && (mode === "hotseat" || after.winner === me)) haptics.buzz?.(HAPTIC_MS.win);
-    void tradeSounds.then(({ gameEnd }) => gameEnd(play, before, after, me, mode));
+    void tradeSounds.then((m) => m?.gameEnd(play, before, after, me, mode));
   } else {
     for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me, victim)) {
       // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
@@ -222,7 +222,7 @@ import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
 
-const tradeSounds = import("../trade-sound");
+const tradeSounds = import("../trade-sound").catch(() => null);
 
 // The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when a bot's offer runs out
 // (20 s); it is null for a person's offer, which holds until it is answered (#1245). The toast never shows a countdown
@@ -882,7 +882,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (!kind) return;
     // Online, the host says whom each hex can rob. Offline, ask the rules the same question (#189).
     const targets = mode === "online" ? (legal?.steal[id] ?? []) : stealTargets(state, id, actor);
-    if (targets.length > 1) {
+    if (id !== state.robberHex && targets.length > 1) {
       set({ pendingSteal: { hexId: id, kind, targets } });
       return;
     }
@@ -1053,12 +1053,14 @@ export const useGame = create<GameStore>((set, get) => ({
     if (mode === "online") return net?.again(choice);
     if (mode !== "hotseat" || state?.phase !== "over") return;
     resetTradePlease();
+    stopEndMusic();
     clearBanner();
+    clearKnocks();
     clearOfferTimers();
     const winner = state.players.find((p) => p.id === state.winner)!;
     const ordered = [winner, ...state.players.filter((p) => p !== winner)];
     // Five or six seats keep the expanded island, and each player keeps its seat number and colour (createExpandedGame).
-    deal({ humans: ordered, bots: 0, winnerFirst: true, wayfarerMode: state.wayfarerMode ?? "on" }, (next) =>
+    deal({ humans: ordered, bots: 0, winnerFirst: true, wayfarerMode: state.wayfarerMode ?? "on", victoryTarget: state.victoryTarget }, (next) =>
       set({
         ...clearPlay(),
         state: next,
@@ -1176,6 +1178,7 @@ function endOffer(set: Set, get: Get, taker: string | null) {
 // Practice's table offer for `from`, closing any earlier one (host.mjs openOffer). Every other bot answers it after a delay.
 function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   endOffer(set, get, null);
+  clearOfferTimers();
   const state = get().state!;
   const tradeId = `t${state.seq}-${++offerSeq}`;
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
@@ -1183,7 +1186,7 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
   const runOut = state.players.find((p) => p.id === from)?.kind === "bot";
   set({ offer: { tradeId, from, fromName, give, want, until: runOut ? Date.now() + OFFER_MS : null }, declined: [], tradeOutcome: null, tradeTaker: null });
   const me = get().localId;
-  void tradeSounds.then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
+  void tradeSounds.then((m) => m?.offerChime(play, from, fromName, me, give, want));
   if (runOut) offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
@@ -1306,7 +1309,12 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
     set({ legal, turnTimer, clockSkew, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
     // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
-    if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false, offer: null, declined: [], menuFor: null, rematchChoice: undefined });
+    if (get().state?.phase === "over" && game.phase !== "over") {
+      clearBanner();
+      clearKnocks();
+      clearOfferTimers();
+      set({ buildMode: "none", roadPicks: [], pendingPlace: null, banner: null, tradeOpen: false, offer: null, declined: [], tradeOutcome: null, tradeTaker: null, menuFor: null, rematchChoice: undefined });
+    }
     get().loadState(game, me, get().isHost, get().code);
     if (recovery && !get().spectator) {
       recovery = false;
@@ -1331,7 +1339,8 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       firstState = true;
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
-      set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on", tableVariant: variant, offer: null, declined: [] });
+      clearOfferTimers();
+      set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on", tableVariant: variant, offer: null, declined: [], tradeOutcome: null, tradeTaker: null });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.
@@ -1373,7 +1382,8 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       recovery = true;
       firstState = true;
       bestSkew = -Infinity;
-      set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null, offer: null, declined: [] });
+      clearOfferTimers();
+      set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null, offer: null, declined: [], tradeOutcome: null, tradeTaker: null });
     },
     chat: (line) => {
       const { chat, chatOpen, unread, seatId, screen } = get();
@@ -1397,7 +1407,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       const before = get().seats;
       const after = seats as Seat[];
       const me = get().localId;
-      void tradeSounds.then(({ diggerBell }) => diggerBell(play, before, after, me));
+      void tradeSounds.then((m) => m?.diggerBell(play, before, after, me));
       set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on", tableVariant: variant, rematchChoice: choose });
     },
     // Dice and gain floats present the roll; its words live only in the persistent log.
@@ -1421,11 +1431,12 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     log: (text) => set({ lobbyLog: text, gameLog: appendLog(get().gameLog, [text]) }),
     ttt: (ttt) => set({ ttt }),
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
+      clearOfferTimers();
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       // #1245: a null `seconds` is an offer that holds until answered (no run-out).
       set({ offer: { tradeId, from, fromName, give, want, until: seconds === null ? null : Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
       const me = get().localId;
-      void tradeSounds.then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
+      void tradeSounds.then((m) => m?.offerChime(play, from, fromName, me, give, want));
     },
     tradeDeclined: ({ tradeId, by }) => {
       const { offer, declined } = get();
