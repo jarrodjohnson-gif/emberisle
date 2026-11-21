@@ -47,7 +47,7 @@ Each rule is one block in [`mock.css`](mock.css).
 |---|---|---|
 | 1 | Every fixed height becomes `max(today's px, the same size in rem)`. | Rows grow with the text. At 100% they keep today's heights. |
 | 2 | The card scrolls when it must. The bottom bar is sticky. | Ready, Start and Leave table are always in reach. A hairline shows above the bar while the card scrolls. |
-| 3 | A seat list narrower than `15.8rem + 7.9px` becomes one column. That is where two cells of 7.9rem and the 8 px gap stop fitting. Name and status share one line. | "Jarrod … Host · Ready" on one row, 44 px tall or more. No clipped status. |
+| 3 | A seat list narrower than `15.8rem + 7.9px` becomes one column. Two cells of 7.9rem and the 8 px gap need `15.8rem + 8px`. The query uses 7.9px, a 0.1 px allowance, so it never lags the grid. Name and status share one line. | "Jarrod … Host · Ready" on one row, 44 px tall or more. No clipped status. |
 | 4 | On a card narrower than 17rem, "How to play" wraps to two lines, like "Play games" does today. | The three buttons stay on one row at 390 wide. |
 | 5 | The chat keeps one line of log. A long tab name wraps. | "Sounds & stickers" reads in full. The newest message stays visible. |
 
@@ -95,6 +95,8 @@ In all fifteen proposed cases the bottom bar sat inside the card at the top and 
 
 **What the proposed layout costs.** The card scrolls in 7 of the 10 enlarged cases.
 125% fits with no scroll at 375×667, 390×844 and 1280×720.
+At 844×390 and 125%, the card scrolls 226 px and the seats go one per row.
+With a 7rem threshold that case kept two columns and scrolled 80 px, but it clipped "Host · Ready" (measured at head `6140c58`).
 The 1 → 0 in the 100% rows is the caption: it moves to the header (card 1 below).
 
 ### No text or control moves at 100%
@@ -119,6 +121,10 @@ No text or control moves. The capture compares boxes. It makes no pixel comparis
 |---|---|---|---|
 | ![320 wide, 150%](pictures/proposed-320x568-150.png) | ![320 wide, 150%, end](pictures/proposed-320x568-150-end.png) | ![375 wide, 150%](pictures/proposed-375x667-150.png) | ![375 wide, 150%, end](pictures/proposed-375x667-150-end.png) |
 
+| 844 × 390 at 125% | scrolled to the end |
+|---|---|
+| ![Landscape, 125%](pictures/proposed-844x390-125.png) | ![Landscape, 125%, end](pictures/proposed-844x390-125-end.png) |
+
 | 844 × 390 at 150% | scrolled to the end |
 |---|---|
 | ![Landscape, 150%](pictures/proposed-844x390-150.png) | ![Landscape, 150%, end](pictures/proposed-844x390-150-end.png) |
@@ -130,14 +136,15 @@ No text or control moves. The capture compares boxes. It makes no pixel comparis
 **Weak spots, stated plainly.**
 
 - **320 × 568 at 150%:** the code, the tabs and the bar leave room for about two seats at a time.
+- **844 × 390 at 125%:** the card scrolls 226 px. This is the one 125% case where the seats go one per row.
 - **844 × 390 at 150%:** the seats start below the first view in the left column. The chat is in view.
-- Both screens are the smallest the lobby supports, at the largest size tested. Every control is still reachable.
+- These are the two smallest screens the lobby supports. Every control is still reachable.
 - A one-row bar on short screens would give the space back. That is a new look, so it is not proposed here.
 
 ## How this was measured
 
 - The real lobby ran against a real local host. Chromium 153.0.8010.12, Playwright from the repo, Node v22.23.5.
-- Room `TFSV`: host Jarrod (ready), guest Josh, one bot, one empty seat, one chat line. One room served every case.
+- Room `WNBT`: host Jarrod (ready), guest Josh, one bot, one empty seat, one chat line. One room served every case.
 - Desktop Chromium at the five CSS viewports, device scale 1, reduced motion.
 - Text size is the root font size: 16, 20 and 24 px.
 - **Rem only.** The capture rewrites 146 px `font-size` and `line-height` declarations to rem in the loaded page. This stands in for PR #1750's conversion. At 100% it moved 0 of 43 boxes.
@@ -149,7 +156,7 @@ What each column counts:
 
 | Column | Meaning |
 |---|---|
-| Clipped texts | Visible text whose box hides overflow and is narrower than the laid-out text, to 0.05 px. The chat log is left out: it scrolls by design. |
+| Clipped texts | Visible text whose box hides overflow and is narrower than the laid-out text. The capture counts it when the text is over 0.05 px wider than the box's content area, or when `scrollWidth` exceeds `clientWidth`. The chat log is left out: it scrolls by design. |
 | Overlapping controls | Pairs of buttons, inputs or tabs whose boxes share more than 1 px each way. The sticky bar is not paired with what scrolls under it. |
 | Unreachable controls | After scrolling a control to the middle, its centre is covered, or it lies outside the card. |
 | Card sideways scroll px | How far the card's content is wider than the card. |
@@ -193,7 +200,7 @@ Why A: B truncates today and costs a row at larger sizes. The header has free sp
 
 | | Option | Cost |
 |---|---|---|
-| **A (recommended)** | **The bottom bar stays. Everything above it scrolls as one sheet. Rows reflow first (rules 3 to 5).** | The card scrolls in 7 of 10 enlarged cases. On the smallest phone at 150%, about two seats show at a time. |
+| **A (recommended)** | **The bottom bar stays. Everything above it scrolls as one sheet. Rows reflow first (rules 3 to 5).** | The card scrolls in 7 of 10 enlarged cases. On the smallest phone at 150%, about two seats show at a time. At 844×390 and 125%, the card scrolls 226 px and the seats go one per row. |
 | B | The whole card scrolls, bar included. | Ready, Start and Leave table are off screen in the first view (PR #1750's 150% picture). |
 | C | Never scroll. Stop the text growing once the card is full. | Breaks the point of #1235: text stops following the user's size, already at 125% on 320×568 and 844×390. |
 | D | None of these. Say what you want instead. | |

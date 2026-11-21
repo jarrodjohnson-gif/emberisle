@@ -182,8 +182,10 @@ try {
 } finally {
   await browser?.close();
   await vite?.close();
-  const gone = new Promise(resolve => host.once("exit", resolve));
-  host.kill();
-  await gone;
+  if (host.exitCode === null && host.signalCode === null) {
+    const gone = new Promise(resolve => host.once("exit", resolve));
+    host.kill();
+    await gone;
+  }
   rmSync(rooms, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 }

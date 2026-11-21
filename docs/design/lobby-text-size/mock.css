@@ -39,7 +39,8 @@ html .lobby-layout-cover[data-scrolls] .lobby-actions { box-shadow: 0 -1px 0 #cb
 }
 html .lobby-layout .lm { height: auto; min-height: 44px; }
 html .lobby-layout .lm button { height: auto; }
-/* Rule 3: when a seat cell would be narrower than 7.9rem, the list becomes one column, name and status on one line. */
+/* Rule 3: a seat list narrower than 15.8rem + 8px becomes one column, name and status on one line.
+   That is where two 7.9rem cells and the 8 px gap stop fitting. The query says 7.9px: a 0.1 px allowance, so it never lags the grid. */
 html .lobby-players { container: seats / inline-size; grid-template-columns: repeat(auto-fit, minmax(min(100%, max(7.9rem, calc(50% - 4px))), 1fr)); }
 @container seats (max-width: calc(15.8rem + 7.9px)) {
   html .lobby-player { grid-template: minmax(44px, auto) / 12px minmax(0, 1fr) auto auto; padding-block: 0; --seat-pad: 0px; }
