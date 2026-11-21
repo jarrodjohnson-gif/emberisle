@@ -37,6 +37,7 @@ import { worldOfHex } from "@/lib/game/board";
 import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game/hex";
 import { LAND_MS } from "@/lib/scene/landing";
 import { LandingDust } from "@/lib/scene/landing-dust";
+import { BotCues, type CueTarget } from "@/lib/scene/bot-cues";
 import { hashStr } from "@/lib/utils";
 import { boot, chunkUrl } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
@@ -256,6 +257,8 @@ export class IsleRenderer {
   private landStart = new Map<string, number>();
   private landings: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number; dusted?: boolean }[] = [];
   private dust = new LandingDust();
+  // #722: the decorative cue under a bot's line. Its own group: never in marks or pickables.
+  private cues = new BotCues();
   private legalIds = new Set<string>();
   // An armed Upgrade: only the player's own outposts are legal, so a touch tap on one raises it at once, with no Place chip.
   private oneTap = false;
@@ -460,7 +463,7 @@ export class IsleRenderer {
     this.wayfarer = this.bruno.g;
     this.lantern = this.bruno.lantern;
     this.living.add(this.wayfarer);
-    this.scene.add(this.land, this.living, this.pieces, this.marks, this.dust.group);
+    this.scene.add(this.land, this.living, this.pieces, this.marks, this.dust.group, this.cues.group);
 
     canvas.style.touchAction = "none";
     canvas.addEventListener("pointerdown", this.onDown);
@@ -693,6 +696,35 @@ export class IsleRenderer {
     this.payingPieces = this.payingPieces.filter((p) => p.age - p.delay < duration);
   }
 
+  // #722 (#608): show the decorative cue for one bot line, in `actor`'s seat colour, until `until` (performance.now() ms).
+  // Replaces any cue already up. Returns how many of `targets` drew: an id the board lacks is skipped, and an older epoch's
+  // line or an unknown seat draws nothing. With no targets it only ends the cue, and with a newer `epoch` it also starts that
+  // epoch (a new deal, a welcome, a rematch), refusing older lines. It never touches highlights, picking, the camera or the
+  // pieces.
+  cueTargets(epoch: number, actor: string, targets: readonly string[], until: number): number {
+    this.wake();
+    const color = this.lastState?.players.find((p) => p.id === actor)?.color;
+    return this.cues.show({ epoch, targets, color, until }, this.cueAt);
+  }
+
+  // Where a corner, path or hex id sits on the board last set. The cues and `screenOf` read it.
+  private cueAt = (id: string): CueTarget | null => {
+    const s = this.lastState;
+    if (!s) return null;
+    const tops = hexTops(s);
+    const at = (id: string) => s.vertices.find((x) => x.id === id)!;
+    const v = at(id);
+    const e = s.edges.find((x) => x.id === id);
+    const h = s.hexes.find((x) => x.id === id);
+    if (v) return { kind: "vertex", x: v.x, y: vertexTop(tops, v), z: v.z };
+    if (e) {
+      const a = at(e.va);
+      const b = at(e.vb);
+      return { kind: "edge", x: (a.x + b.x) / 2, y: edgeTop(tops, a, b), z: (a.z + b.z) / 2, rot: Math.atan2(b.x - a.x, b.z - a.z), span: Math.hypot(b.x - a.x, b.z - a.z) };
+    }
+    return h ? { kind: "hex", ...worldOfHex(h), y: topOf(h.terrain) } : null;
+  };
+
   setBoard(state: GameState, highlights: Highlights, interactive: boolean, payerSeat?: string | true) {
     this.payerSeat = payerSeat;
     // Only a roll seen live flashes: the same island and exactly one more dice roll than last time. Landing on a state that
@@ -715,12 +747,16 @@ export class IsleRenderer {
     if (landChanged) {
       this.buildLand(state);
       this.lastLand = land;
+      // #722: a new island is a new deal; the last deal's cue never carries over, even onto ids the new board shares.
+      this.cues.clear();
     }
     if (this.lastSeq !== state.seq) {
       this.buildPieces(state, landChanged || this.lastSeq === -1);
       this.lastSeq = state.seq;
     }
     this.buildMarks(state, highlights, interactive);
+    // #722: the same ids, placed on the board as it is now; a target that is gone drops out. Only while a cue is up.
+    this.cues.resync(this.cueAt);
     if (landChanged) this.payingPieces = [];
     if (rolled) {
       this.flashHexes(payingHexes(state));
@@ -816,24 +852,8 @@ export class IsleRenderer {
 
   // Where a hex, corner, or edge id sits on screen, in page pixels. For the chat proof, which checks nothing covers a target.
   screenOf(id: string): { x: number; y: number } | null {
-    const st = this.lastState;
-    if (!st) return null;
-    const tops = hexTops(st);
-    const vmap = new Map(st.vertices.map((v) => [v.id, v]));
-    const p = new THREE.Vector3();
-    const v = vmap.get(id);
-    const e = st.edges.find((x) => x.id === id);
-    const h = st.hexes.find((x) => x.id === id);
-    if (v) p.set(v.x, vertexTop(tops, v), v.z);
-    else if (e) {
-      const a = vmap.get(e.va)!;
-      const b = vmap.get(e.vb)!;
-      p.set((a.x + b.x) / 2, edgeTop(tops, a, b), (a.z + b.z) / 2);
-    } else if (h) {
-      const w = worldOfHex(h);
-      p.set(w.x, topOf(h.terrain), w.z);
-    } else return null;
-    return this.screenAt(p.x, p.y, p.z);
+    const p = this.cueAt(id);
+    return p && this.screenAt(p.x, p.y, p.z);
   }
 
   // Where a world point sits on screen, in page pixels, through the camera in use. Proofs read it too.
@@ -854,6 +874,7 @@ export class IsleRenderer {
   }
 
   dispose() {
+    this.cues.dispose();
     this.cancelPlop();
     this.clearPayers();
     this.stopped = true;
@@ -1394,6 +1415,8 @@ export class IsleRenderer {
     // Reading `matches` here can swallow the change event, so a flip seen on this frame wakes the loop itself.
     if (calm !== this.wasCalm) this.wake();
     this.stepLandings(now, calm);
+    // A cue's end lands even when reduced motion runs no frames; with motion, each new pulse step keeps frames coming.
+    if (this.cues.step(now, calm)) this.wake();
     if (this.relayout > 0) {
       this.relayout--;
       this.refitDue = true;
