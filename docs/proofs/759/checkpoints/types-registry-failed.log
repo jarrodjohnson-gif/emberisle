@@ -1,0 +1,16 @@
+
+> typecheck
+> tsc --noEmit
+
+src/lib/scene/isle-renderer.ts(1741,30): error TS2345: Argument of type '({ createAppearance }: typeof import("/tmp/emberisle-759-atomic/src/lib/scene/jelly-board") | typeof import("/tmp/emberisle-759-atomic/src/lib/scene/classic-board")) => Promise<ClassicBoard | null> | Promise<...> | null' is not assignable to parameter of type '(value: typeof import("/tmp/emberisle-759-atomic/src/lib/scene/jelly-board") | typeof import("/tmp/emberisle-759-atomic/src/lib/scene/classic-board")) => ClassicBoard | PromiseLike<...> | null'.
+  Type 'Promise<ClassicBoard | null> | Promise<JellyBoard | null> | null' is not assignable to type 'ClassicBoard | PromiseLike<ClassicBoard | null> | null'.
+    Type 'Promise<JellyBoard | null>' is not assignable to type 'ClassicBoard | PromiseLike<ClassicBoard | null> | null'.
+      Type 'Promise<JellyBoard | null>' is not assignable to type 'PromiseLike<ClassicBoard | null>'.
+        Types of property 'then' are incompatible.
+          Type '<TResult1 = JellyBoard | null, TResult2 = never>(onfulfilled?: ((value: JellyBoard | null) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<...>) | ... 1 more ... | undefined) => Promise<...>' is not assignable to type '<TResult1 = ClassicBoard | null, TResult2 = never>(onfulfilled?: ((value: ClassicBoard | null) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<...>) | ... 1 more ... | undefined) => PromiseLike<...>'.
+            Types of parameters 'onfulfilled' and 'onfulfilled' are incompatible.
+              Types of parameters 'value' and 'value' are incompatible.
+                Type 'JellyBoard | null' is not assignable to type 'ClassicBoard | null'.
+                  Type 'JellyBoard' is missing the following properties from type 'ClassicBoard': living, hexes, cache, kit, and 9 more.
+src/lib/scene/isle-renderer.ts(1743,7): error TS2322: Type 'typeof import("/tmp/emberisle-759-atomic/src/lib/scene/jelly-board") | typeof import("/tmp/emberisle-759-atomic/src/lib/scene/classic-board")' is not assignable to type 'LandAppearance | null'.
+  Type 'typeof import("/tmp/emberisle-759-atomic/src/lib/scene/jelly-board")' is missing the following properties from type 'LandAppearance': group, update, glow, roll, and 7 more.

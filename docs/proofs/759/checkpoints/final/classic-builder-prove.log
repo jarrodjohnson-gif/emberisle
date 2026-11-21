@@ -1,0 +1,93 @@
+
+> classic-builder-prove
+> node scripts/classic-builder-prove.mjs
+
+ok   fixture: the deal has all six terrains and 19 hexes [ccwttgtoowgwtwcogwg]
+ok   1 full build: 18 rings, 19 hexes, props drawn [{"quality":"full","drawCalls":40,"triangles":215982,"objects":{"meshes":40,"geometries":40,"materials":20},"rings":18,"hexes":19}]
+ok   1 lite build: 12 rings, 19 hexes, the ground alone (one draw per hex) [{"quality":"lite","drawCalls":19,"triangles":50626,"objects":{"meshes":19,"geometries":19,"materials":19},"rings":12,"hexes":19}]
+ok   1 lite draws fewer triangles than full [50626 vs 215982]
+ok   1 every hex has its tile, standing at the hex's base
+ok   2 full geometry is deterministic for a seed [cd54b075]
+ok   2 lite geometry is deterministic for a seed [42c13a3a]
+ok   2 another seed gives another island
+ok   2 the ground is the same at every quality (only the lattice differs)
+ok   3 the tile and prop programs both compiled [,,,,,,]
+ok   3 every program is linked and runnable, with empty shader logs [7 programs]
+ok   3 a frame of the full board covers the view (not blank) [36803 px]
+ok   3 a frame of the lite board covers the view [36505 px]
+ok   3 the tile hooks land in three's shaders
+ok   3 no shader or program error was logged
+ok   3 three's own shader chunk is untouched
+ok   4 nothing of the props within 0.31 of a hex's centre, through 45 s of motion [nearest 0.406 (props-sheep)]
+ok   4 reduced-motion pose is clear too
+ok   5 full: token pad, corners and edge midpoints lie on the block plane (2261 samples) [worst 1.19e-8 at -2,0 edge -0.91,-0.10]
+ok   5 lite: token pad, corners and edge midpoints lie on the block plane (2261 samples) [worst 1.19e-8 at -1,2 token -0.00,-0.13]
+ok   5 groundAt: finite at a hex, NaN for an id it does not have
+ok   6 full: a sand beach on exactly the edges with no neighbour (30 sea edges)
+ok   6 lite: a sand beach on exactly the edges with no neighbour (30 sea edges)
+ok   6 lite with a hole: a sand beach on exactly the edges with no neighbour (36 sea edges)
+ok   6 full with a hole: a sand beach on exactly the edges with no neighbour (36 sea edges)
+ok   6 the beach dips up to 0.016 along a sea edge, never at a corner or an edge midpoint, nor more than 0.11 in, at both resolutions [[]]
+ok   6 the hole made sea edges the full island does not have [30/30/36/36]
+ok   6 full: the top, rim and strata form a closed body, open only at the skirt
+ok   6 lite: the top, rim and strata form a closed body, open only at the skirt
+ok   6 neighbouring lips reach each other across every shared edge [overlap 0.0145]
+ok   7 full -2,0: 122 lowered triangles all under the apron (reach 0.273 of 0.282), on the top, clear of the token, no crack from grazing angles
+ok   7 full -2,1: 122 lowered triangles all under the apron (reach 0.272 of 0.282), on the top, clear of the token, no crack from grazing angles
+ok   7 full 1,0: 122 lowered triangles all under the apron (reach 0.273 of 0.282), on the top, clear of the token, no crack from grazing angles
+ok   7 lite -2,0: 54 lowered triangles all under the apron (reach 0.268 of 0.312), on the top, clear of the token, no crack from grazing angles
+ok   7 lite -2,1: 54 lowered triangles all under the apron (reach 0.271 of 0.312), on the top, clear of the token, no crack from grazing angles
+ok   7 lite 1,0: 54 lowered triangles all under the apron (reach 0.268 of 0.312), on the top, clear of the token, no crack from grazing angles
+ok   7 the apron covers the lowered ground at 12, 14, 18 and 24 rings, six pits each [{"10":{"bad":6,"overrun":6,"worstGap":0.024},"11":{"bad":6,"overrun":6,"worstGap":0.0104},"12":{"bad":0,"overrun":0,"worstGap":0.0393},"14":{"bad":0,"overrun":0,"worstGap":0.0142},"18":{"bad":0,"overrun":0,"worstGap":0.0094},"24":{"bad":0,"overrun":0,"worstGap":0.0139}}]
+ok   7 at 10 and 11 rings the apron overruns the top, which is why lite is not coarser than 12 [[{"bad":6,"overrun":6,"worstGap":0.024},{"bad":6,"overrun":6,"worstGap":0.0104}]]
+ok   8 glow lights its hex alone and keeps the loop awake
+ok   8 glow at 0 lets the loop rest
+ok   8 blocking dulls its hex gradually, cooler and darker, and the others stay clear [0.84 0.47 0.46 0.46]
+ok   8 blocking moves to the next hex; snap lands it at once
+ok   8 blocking clears
+ok   8 roll and tap swell their hexes and keep the loop awake [1.0079 1.0241]
+ok   8 roll and tap settle back to rest
+ok   8 reduced motion settles a roll at once
+ok   8 motion: the flock, workers and breeze move
+ok   8 motion: the same seed moves the same way (no RNG outside the board's own stream)
+ok   8 motion: pines and wheat sway
+ok   8 reduced motion: a still pose, whatever the clock
+ok   8 reduced motion: the still pose is the pose the build opens in
+ok   8 motion resumes after reduced motion
+ok   9 camera-dependent occlusion: in the diorama no numeral point is behind the props or the ground, at twelve azimuths [hidden 0 of 1080 points with the rule (32 without it); ]
+ok   9 the diorama shrinks props in front of numerals, and the other views restore them [221.505 < 241.287]
+ok   9 the shrink is already in the instances when setVisibilityContext returns
+ok   9 the context is copied by value
+ok   9 a frozen context is accepted (the board never writes to it)
+ok   10 cancelling at any of 39 yields returns null and frees the build [[]]
+ok   10 a build that throws rejects and frees what it made
+ok   10 cancelling one build leaves a concurrent one untouched and identical to a solo build
+ok   10 a build after another's disposal is identical
+ok   10 disposal is idempotent and the disposed board answers harmlessly [{"quality":"full","drawCalls":0,"triangles":0,"objects":{"meshes":0,"geometries":0,"materials":0},"rings":18,"hexes":0}]
+ok   10 the board sets no timer or frame callback of its own [0]
+ok   10 repeated build, draw and disposal returns the renderer's geometries and textures to where they began [{"g":59,"t":3,"p":7} from {"g":59,"t":3}]
+ok   10 programs do not accumulate across builds [[{"g":99,"p":7},{"g":78,"p":7},{"g":99,"p":7},{"g":78,"p":7}]]
+ok   11 no Math.random call in build or animation [0]
+ok   11 the game's state is byte-identical afterwards
+ok   11 the frozen hex descriptors were only read
+ok   11 the scene it was not given is unchanged (children, lights, camera)
+ok   11 it registers nothing pickable and brings no lights, cameras or sprites [ ]
+ok   11 its group holds only its ground and props
+ok   10 disposing the last boards leaves the renderer holding none of the Classic land's geometry [0]
+
+measured (software GL; the chunk is the Classic code alone, three and the game stay in the main bundle):
+  perTerrainTileTriangles: {"timber":{"full":3672,"lite":2016},"wool":{"full":3672,"lite":2016},"grain":{"full":5816,"lite":4160},"clay":{"full":4284,"lite":2628},"ore":{"full":3672,"lite":2016},"waste":{"full":5582,"lite":3926}}
+  full: {"quality":"full","drawCalls":40,"triangles":215982,"objects":{"meshes":40,"geometries":40,"materials":20},"rings":18,"hexes":19}
+  lite: {"quality":"lite","drawCalls":19,"triangles":50626,"objects":{"meshes":19,"geometries":19,"materials":19},"rings":12,"hexes":19}
+  fullBuildMs: 85
+  liteBuildMs: 24
+  nearestProp: 0.406
+  planeDeviation: {"full":{"samples":2261,"worstDev":1.1920929854358775e-8,"worstWhere":"-2,0 edge -0.91,-0.10","by":{"clay token":1.1920929410269565e-8,"clay corner":1.1920929410269565e-8,"clay edge":1.1920929854358775e-8,"wool token":1.1920929410269565e-8,"wool corner":1.1920929410269565e-8,"wool edge":1.1920929854358775e-8,"timber token":1.1920929410269565e-8,"timber corner":1.1920929410269565e-8,"timber edge":1.1920929854358775e-8,"grain token":1.1920929410269565e-8,"grain corner":1.1920929410269565e-8,"grain edge":1.1920929854358775e-8,"ore token":1.1920929410269565e-8,"ore corner":1.1920929410269565e-8,"ore edge":1.1920929854358775e-8,"waste token":1.1920929410269565e-8,"waste corner":1.1920929410269565e-8,"waste edge":1.1920929854358775e-8}},"lite":{"samples":2261,"worstDev":1.1920929854358775e-8,"worstWhere":"-1,2 token -0.00,-0.13","by":{"clay token":1.1920929410269565e-8,"clay corner":1.1920929410269565e-8,"clay edge":1.1920929410269565e-8,"wool token":1.1920929410269565e-8,"wool corner":1.1920929410269565e-8,"wool edge":1.1920929410269565e-8,"timber token":1.1920929854358775e-8,"timber corner":1.1920929410269565e-8,"timber edge":1.1920929410269565e-8,"grain token":1.1920929410269565e-8,"grain corner":1.1920929410269565e-8,"grain edge":1.1920929854358775e-8,"ore token":1.1920929410269565e-8,"ore corner":1.1920929410269565e-8,"ore edge":1.1920929854358775e-8,"waste token":1.1920929410269565e-8,"waste corner":1.1920929410269565e-8,"waste edge":1.1920929410269565e-8}}}
+  apronSweep: {"10":{"bad":6,"overrun":6,"worstGap":0.024},"11":{"bad":6,"overrun":6,"worstGap":0.0104},"12":{"bad":0,"overrun":0,"worstGap":0.0393},"14":{"bad":0,"overrun":0,"worstGap":0.0142},"18":{"bad":0,"overrun":0,"worstGap":0.0094},"24":{"bad":0,"overrun":0,"worstGap":0.0139}}
+  occlusion: {"points":1080,"hiddenWithout":32,"hiddenWith":0}
+  fullGroundTriangles: 82090
+  liteGroundTriangles: 50626
+  propMeshes: ["grain-field","grain-field","grain-field","grain-field","props-derrickx3","props-sheepx16","props-sheep-restx4","props-treex45","props-farmerx4","props-harvestingx4","props-wheatx32","props-peakx6","props-peak-snowx3","props-wagonx3","props-minerx3","props-pickaxex3","props-clay","props-wool","props-timber","props-ore","props-waste"]
+  classicChunk: {"bytes":63819,"gzip":20555}
+
+all ok

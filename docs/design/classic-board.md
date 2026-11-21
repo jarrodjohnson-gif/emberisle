@@ -259,3 +259,20 @@ This update sets no new draw-call, triangle, gzip or fps ceiling.
 It adds no software-GPU automatic Classic selection or profile synchronization.
 Future implementation still needs the existing contract's measured-cost and integrated-acceptance evidence.
 I checked source links and diff whitespace; I ran no browser or performance proof for this note.
+
+## The controller split (#1341, desk answer A, 2026-11-12)
+The renderer's growth allowance (`IslandCanvas`, 663 B) doesn't fit the switching code. Main's allowance stays, and the build-and-swap moves into its own chunk. The contract above (generation, publication, shared state, recovery) doesn't change.
+
+- **What moves**, to `src/lib/scene/appearance-controller.ts`:
+  - the candidate build, the parallel shader compile and the whole one-frame swap, plus disposing a dropped or failed candidate;
+  - giving a look the renderer's current signals before it shows (token pose, visibility, the wayfarer's hex, the glows);
+  - the per-frame visibility hand-off (`seeLand`, installed with the first look);
+  - the shore hand-off after the first look on a board.
+- **What stays** in `isle-renderer.ts`:
+  - the generation (`landGen`), the request and cancel, the stand-in slabs;
+  - the import of each look (`chunk(...)` with its stale-chunk recovery pattern);
+  - the five-retry policy at four-second spacing, the error state and `retryLandLook`;
+  - `landStatus`, `setLandLook`, and the proof accessors.
+- **How it loads:** `jelly-board.ts` and `classic-board.ts` each export `grow(host, request)`, which calls the controller's `growWith` with that look's own builder. So the controller arrives as part of the look's import, and is shared by both look chunks. It never loads alone.
+- **How it fails and recovers:** a failed fetch of the controller fails that look's import. The renderer handles that exactly as before: the matching land stays, `landStatus.error` names the look, it retries automatically up to five times, then `retryLandLook()` recovers. A build or compile failure inside `growWith` disposes its own candidate and rejects into the same path. A newer request or a dispose (the generation) makes `alive()` false, so a late candidate is disposed and never published.
+- **Sizes against main** (`size-prove --base`): `IslandCanvas` +477 B against its 663 B allowance (it was +1,065 B before the split); `jelly-board` +165 B against 200 B; `appearance-controller` 1,370 B gzip, a new chunk whose ceiling the desk sets.

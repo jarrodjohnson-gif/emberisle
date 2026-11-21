@@ -1,0 +1,64 @@
+{
+  "testedHead": "3fe56574d4d7918ccef5b7384e7d2943560d384c",
+  "runtimeSource": "c9e8ee766f87b97014c040313feeb08bae186f28",
+  "recordedAtUTC": "2026-11-09T04:35:52.858328+00:00",
+  "node": "22.23.4",
+  "playwright": "1.63.0",
+  "actualBrowser": "default Chromium headless shell 1243",
+  "executableOverride": false,
+  "browserSerialization": "flock /tmp/emberisle-team-browser.lock",
+  "results": [
+    {
+      "command": "npm run tokens-prove",
+      "exitCode": 0,
+      "source": "3fe56574d4d7918ccef5b7384e7d2943560d384c"
+    },
+    {
+      "command": "npm run idle-prove",
+      "exitCode": 0,
+      "source": "3fe56574d4d7918ccef5b7384e7d2943560d384c"
+    },
+    {
+      "command": "npm run board-look-prove",
+      "exitCode": 0,
+      "source": "3fe56574d4d7918ccef5b7384e7d2943560d384c"
+    },
+    {
+      "command": "npm run classic-builder-prove",
+      "exitCode": 0,
+      "source": "3fe56574d4d7918ccef5b7384e7d2943560d384c"
+    },
+    {
+      "command": "npm run loading-screen-prove",
+      "exitCode": 1,
+      "source": "3fe56574d4d7918ccef5b7384e7d2943560d384c"
+    },
+    {
+      "command": "npm run client-prove",
+      "exitCode": 0,
+      "source": "3fe56574d4d7918ccef5b7384e7d2943560d384c"
+    },
+    {
+      "command": "NODE_ENV=production npm run build",
+      "exitCode": 0,
+      "source": "3fe56574d4d7918ccef5b7384e7d2943560d384c"
+    },
+    {
+      "command": "npm run loading-screen-prove (after production build)",
+      "exitCode": 0,
+      "source": "3fe56574d4d7918ccef5b7384e7d2943560d384c"
+    }
+  ],
+  "ownerAccepted": false,
+  "ready": false,
+  "sha256": {
+    "board-look-prove.log": "77393db4db22f0b394da65f4d91fe48cec76421bb4d52d4dd508defd315c211f",
+    "classic-builder-prove.log": "9a5a90104265bbd7ddba66c2ad460106146707c1a5136ff08085eb3a0f51e980",
+    "client-prove.log": "8fd6eab4f0c65f2f1b0ac2e6aa1a47d3fa537e4c5e8f48955dc38b1e831c8651",
+    "idle-prove.log": "d0d2d73522d566653a04df48e32320c7d2e9d727fca4ec0bd47b642a35aeba22",
+    "loading-screen-prove-after-build.log": "9ae46cee59b87cdaaef3bc3aa916ff3b9b8bfda78eb6f10a860f0711a64c1a27",
+    "loading-screen-prove.log": "06b9acedbf72f1bacd0e523966627d56f83cc14dce04e100a3c19591bfb352f7",
+    "production-build.log": "c7e9b79a6fcec747137199a070888fac749c1b29b33fa02d11f8319e98b5a69e",
+    "tokens-prove.log": "12406b0e283fb57cb11efe5425dc8adcd8e3ba5da94ed0cc4ef96dfe4283bca0"
+  }
+}

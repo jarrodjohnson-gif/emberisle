@@ -1,0 +1,11 @@
+
+> typecheck
+> tsc --noEmit
+
+src/lib/scene/isle-renderer.ts(69,36): error TS2322: Type 'Tracked<...> | Tracked<...>' is not assignable to type 'Promise<typeof import("/workspace/work/759-atomic/src/lib/scene/jelly-board")>'.
+  Type 'Tracked<typeof import("/workspace/work/759-atomic/src/lib/scene/classic-board")>' is not assignable to type 'Promise<typeof import("/workspace/work/759-atomic/src/lib/scene/jelly-board")>'.
+    Types of property 'then' are incompatible.
+      Type '<TResult1 = typeof import("/workspace/work/759-atomic/src/lib/scene/classic-board"), TResult2 = never>(onfulfilled?: ((value: typeof import("/workspace/work/759-atomic/src/lib/scene/classic-board")) => TResult1 | PromiseLike<...>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<...>) | ... ...' is not assignable to type '<TResult1 = typeof import("/workspace/work/759-atomic/src/lib/scene/jelly-board"), TResult2 = never>(onfulfilled?: ((value: typeof import("/workspace/work/759-atomic/src/lib/scene/jelly-board")) => TResult1 | PromiseLike<...>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<...>) | ... 1 mo...'.
+        Types of parameters 'onfulfilled' and 'onfulfilled' are incompatible.
+          Types of parameters 'value' and 'value' are incompatible.
+            Type 'typeof import("/workspace/work/759-atomic/src/lib/scene/classic-board")' is missing the following properties from type 'typeof import("/workspace/work/759-atomic/src/lib/scene/jelly-board")': ROBBER_HEX_DIM, robberHexDim, setRobberHexDim, JellyBoard

@@ -1,0 +1,68 @@
+
+> classic-switch-prove
+> node scripts/classic-switch-prove.mjs
+
+ok Jelly-only startup never requests Classic
+ok delayed real import preserves matching land and cancellation retains latest Jelly request
+classic-switch: ok initial status distinguishes request, display, quality and readiness
+classic-switch: ok cancelled import cannot publish Classic
+classic-switch: ok same-board loading keeps old Jelly and separate request
+classic-switch: ok Classic publishes atomically and preserves shared scene identities
+classic-switch: ok Classic never masquerades as Jelly proof access
+classic-switch: ok same-board switch preserves camera, pending selection and state
+classic-switch: ok Classic diagnostics report actual lite geometry
+classic-switch: ok old Jelly is disposed after replacement attaches
+classic-switch: ok switch back restores real Jelly diagnostics
+classic-switch: ok rapid choices reject and dispose stale construction
+classic-switch: native parallel compile extension false
+classic-switch: ok stale shader completion cannot overwrite latest selection
+classic-switch: ok controlled compile branch uses real Three compilation and held completion
+classic-switch: ok construction failure keeps matching land and requested choice
+classic-switch: ok explicit retry clears error on complete publication
+classic-switch: ok shader failure disposes unpublished geometry and retains old land
+classic-switch: ok new deal immediately drops old appearance and publishes current stand-ins
+classic-switch: ok new deal tokens and pick IDs match current canonical board
+classic-switch: ok new deal construction leaves canonical state untouched
+classic-switch: ok switch copies current glow and blocking without replaying events
+classic-switch: ok visibility update does not mutate caller snapshot
+classic-switch: ok repeated swaps stabilize renderer resources
+classic-switch: ok automatic retry stops after exactly six attempts at four-second spacing
+classic-switch: ok exhausted retries retain matching terrain and expose explicit recovery
+classic-switch: ok explicit retry recovers after exhaustion
+classic-switch: ok full Classic publishes its actual props and preserves common ground plane
+classic-switch: ok full Classic reduced motion retains a stable pose
+classic-switch: ok renderer disposal cancels pending publication and frees its built candidate
+ok initial status distinguishes request, display, quality and readiness {"requested":"jelly","displayed":"jelly","loading":false,"error":null,"quality":"lite","ready":true}
+ok cancelled import cannot publish Classic
+ok same-board loading keeps old Jelly and separate request
+ok Classic publishes atomically and preserves shared scene identities
+ok Classic never masquerades as Jelly proof access
+ok same-board switch preserves camera, pending selection and state
+ok Classic diagnostics report actual lite geometry {"ready":true,"lite":true,"drawCalls":19,"triangles":50470,"kinds":0,"batches":0,"bakes":0,"sprites":0,"quality":"lite","objects":{"meshes":19,"geometries":19,"materials":19},"rings":12,"hexes":19}
+ok old Jelly is disposed after replacement attaches
+ok switch back restores real Jelly diagnostics
+ok rapid choices reject and dispose stale construction
+ok stale shader completion cannot overwrite latest selection
+ok controlled compile branch uses real Three compilation and held completion {"controlledBranches":1,"realCompileCalls":1}
+ok construction failure keeps matching land and requested choice
+ok explicit retry clears error on complete publication
+ok shader failure disposes unpublished geometry and retains old land
+ok new deal immediately drops old appearance and publishes current stand-ins
+ok new deal tokens and pick IDs match current canonical board
+ok new deal construction leaves canonical state untouched
+ok switch copies current glow and blocking without replaying events {"roll":0,"tap":0,"glow":[["-2,0",0.2],["-2,1",0],["-2,2",0],["-1,-1",0],["-1,0",0],["-1,1",0],["-1,2",0],["0,-2",0],["0,-1",0],["0,0",0],["0,1",0],["0,2",0],["1,-2",0],["1,-1",0],["1,0",0],["1,1",0],["2,-2",0],["2,-1",0],["2,0",0],["-2,0",0.2],["-2,1",0],["-2,2",0],["-1,-1",0],["-1,0",0],["-1,1",0],["-1,2",0],["0,-2",0],["0,-1",0],["0,0",0],["0,1",0],["0,2",0],["1,-2",0],["1,-1",0],["1,0",0],["1,1",0],["2,-2",0],["2,-1",0],["2,0",0]],"robber":[[null],[null]]}
+ok visibility update does not mutate caller snapshot
+ok repeated swaps stabilize renderer resources [{"geometries":103,"textures":47},{"geometries":103,"textures":47},{"geometries":103,"textures":47}]
+ok automatic retry stops after exactly six attempts at four-second spacing [0,4001,8006,12014,16015,20015]
+ok exhausted retries retain matching terrain and expose explicit recovery
+ok explicit retry recovers after exhaustion
+ok full Classic publishes its actual props and preserves common ground plane {"quality":"full","drawCalls":40,"triangles":214290,"objects":{"meshes":40,"geometries":40,"materials":20},"rings":18,"hexes":19}
+ok full Classic reduced motion retains a stable pose
+ok renderer disposal cancels pending publication and frees its built candidate
+ok zero browser errors
+ok controlled overlapping ownership retains original rejection and cleans up after final settlement; unowned recovery reloads
+ok production hashed imports, failed-import recovery, full Classic and switchback; expected injected failures ["Failed to load resource: net::ERR_FAILED","Failed to load resource: net::ERR_FAILED"]
+production lazy requests ["http://127.0.0.1:8199/assets/jelly-board-C6oAvHUC.js","http://127.0.0.1:8199/assets/classic-board-DfOr1twR.js","http://127.0.0.1:8199/assets/classic-board-DfOr1twR.js?retry=1","http://127.0.0.1:8199/assets/classic-board-DfOr1twR.js?retry=2"]
+ok production playable-board and unobscured scene pictures [{"viewport":[1280,720],"canvas":[1280,720],"titleMode":false,"status":{"requested":"classic","displayed":"classic","loading":false,"error":null,"quality":"full","ready":true},"stats":{"quality":"full","drawCalls":40,"triangles":217166,"objects":{"meshes":40,"geometries":40,"materials":20},"rings":18,"hexes":19},"coastEdges":30,"renders":13,"view":"diorama"},{"viewport":[390,844],"canvas":[390,844],"titleMode":false,"status":{"requested":"classic","displayed":"classic","loading":false,"error":null,"quality":"full","ready":true},"stats":{"quality":"full","drawCalls":40,"triangles":217166,"objects":{"meshes":40,"geometries":40,"materials":20},"rings":18,"hexes":19},"coastEdges":30,"renders":18,"view":"overhead"},{"viewport":[844,390],"canvas":[844,390],"titleMode":false,"status":{"requested":"classic","displayed":"classic","loading":false,"error":null,"quality":"full","ready":true},"stats":{"quality":"full","drawCalls":40,"triangles":217166,"objects":{"meshes":40,"geometries":40,"materials":20},"rings":18,"hexes":19},"coastEdges":30,"renders":23,"view":"overhead"}]
+ok production disposed pending import stays owned through rejection and cleans up after settlement (controlled subsequent event)
+ok production essential IslandCanvas recovery remains active during optional request (controlled essential event)

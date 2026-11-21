@@ -56,3 +56,14 @@ export interface LandAppearance {
   // Releases everything this look owns; safe to call again.
   dispose(): void;
 }
+
+// Renderer-local selection only; preference persistence belongs to the scene bridge.
+export type LandLook = "jelly" | "classic";
+export type LandStatus = {
+  requested: LandLook;
+  displayed: LandLook | null;
+  quality: LandQuality;
+  ready: boolean;
+  loading: boolean;
+  error: "Classic could not load" | "Jelly could not load" | null;
+};

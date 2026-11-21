@@ -5,6 +5,8 @@
   "index": 122600,
   "IslandCanvas": 199000,
   "jelly-board": 7600,
+  "classic-board": 18090,
+  "appearance-controller": 1370,
   "hex-jelly": 46800,
   "harbor-jelly": 9800,
   "online": 8000,
