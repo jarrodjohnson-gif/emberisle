@@ -191,11 +191,12 @@ The launcher is a chat titled "Emberisle desk launcher". It never reviews, merge
 | `claude-sonnet-b` | `claude-sonnet-5-5` | `tier:2` or `tier:3` |
 
 For each slot:
-1. Read the ledger's `Builders:` line. If it names a session for this slot, call `get_session` on it. If that session is still working, skip the slot today.
-2. Call `create_session` with `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, that slot's `model`, `title` `Emberisle builder <slot> <UTC date>`, and this `prompt`: `Work on Emberisle as builder "<slot>". Read AGENTS.md. Take one eligible <tier> issue, open its PR, and drive it to green. Then stop. Never start sessions.`
+1. Read the ledger's `Builders:` line. Add it after `Launcher:` if it is missing. If it names a session for this slot, call `get_session` on it. If that session is still working, skip the slot today.
+2. Call `create_session` with `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, that slot's `model`, `title` `Emberisle builder <slot> <UTC date>`, and this `prompt`: `Work on Emberisle as builder "<slot>". Read AGENTS.md. First fix any of your own PRs that wait on desk changes. Otherwise take one eligible <tier> issue, open its PR, and drive it to green. Then stop. Never start sessions.`
+   The builder checks its own 4-PR limit (AGENTS.md rule 4). At the limit it only fixes its open PRs.
 3. Write the slot's new session id on the `Builders:` line, as `Builders: claude-opus-a <id>, claude-sonnet-a <id>, claude-sonnet-b <id>`.
 
-A builder that stops leaves its slot free for the next morning. Fixes to its PR come from the desk's review, through a fresh chat in that slot.
+A builder that stops leaves its slot free for the next morning. That slot's next builder fixes any desk findings on its PRs first.
 
 **Fable as needed.** Builders call Fable 5.2 themselves as a subagent for design, UX and UI work (`docs/LANES.md`, "Sub-agents and usage limits"). The launcher never starts Fable.
 
@@ -250,13 +251,13 @@ After that, answer every wake with `·`.
 - Check your context size with `get_session` at every wake, not only after merges. A quiet day with no merges still grows the context.
 - At 150K tokens, send the launcher (the ledger's `Launcher:` line) `Rotate now`. Don't wait for a good moment: a handover waits for your running subagents, so you will overshoot.
 - At 200K tokens, start no new reviews. Finish the running ones and hand over.
-- Leave at least 3 hours between early rotations, so a busy day doesn't start a desk every hour.
+- Leave at least 3 hours between early rotations, so a busy day doesn't start a desk every hour. Reached 150K sooner than that? Start no new reviews until the 3 hours are up, then send `Rotate now`.
 - Compaction doesn't replace rotation. The 11-17 desk was still at 543K after compacting.
 - If `Desk: ... since` is more than 26 hours old, the daily rotation was missed. Send the launcher `Rotate now`.
 - If the launcher doesn't answer, or `Launcher:` is empty, tell Jarrod once: "Please start the desk launcher." Give him its start line from "The launcher".
 - Never delete the disabled "Emberisle desk daily" task. Deleting it also deletes every session it started.
 
-Every wake re-reads your whole context. The desk that ran from 10-21 to 10-26 reached 570K tokens and cost about $500. The desk that ran from 11-09 to 11-12 reached 727K tokens and cost $291. From 11-12 to 11-20, seven desks cost about $600; five ended past 500K, because the 150K rule was checked only after merges.
+Every wake re-reads your whole context. The desk that ran from 10-21 to 10-26 reached 570K tokens and cost about $500. The desk that ran from 11-09 to 11-12 reached 727K tokens and cost $291. From 11-12 to 11-20, seven desks cost about $600. Five ended past 500K, because they checked the 150K rule only after merges.
 
 ## Start a desk session
 

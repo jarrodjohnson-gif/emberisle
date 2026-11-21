@@ -217,8 +217,8 @@ Not a bug, or a no? Close it with a one-line reason.
   neither. Run the full presentation suites locally only when a reviewer asks, or when the change touches
   the renderer or shared board code. After the first push, let CI run the rest. Record your usage before
   and after each issue in the PR if you can see it, so the desk can compare builders.
-- **Prove a bug fix fails first.** Before you fix a bug, run your new test against the base commit and paste its failing output in the PR body, with the base SHA. Then paste it passing on your head.
-  - Don't push a red commit to show this: red CI is a fault (AGENTS.md rule 5).
+- **Prove a bug fix fails first.** Run your new test against the base commit before you fix the bug. Paste its failing output in the PR body, with the base SHA. Then paste it passing on your head.
+  - Don't push a red commit to show this. A red commit turns CI red, and AGENTS.md rule 5 then makes you fix it or explain it.
   - A feature shows its proof or screenshot instead. Docs-only changes are exempt.
   - Pasted output is not the whole check: reviewers still revert the fix and confirm the test fails (`docs/REVIEWING.md`).
 - **Stay inside your claim.** Change only the files on your claim's `files:` line. A player-visible change the issue didn't ask for goes in its own issue as a `Question:`, never into this PR.
