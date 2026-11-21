@@ -42,6 +42,8 @@ const TOUCH = [
   [430, 932],
   [820, 1180],
   [844, 390],
+  [440, 956],
+  [956, 440],
 ];
 const STORY_CHUNK = /\/ResultsStory\.tsx/;
 
