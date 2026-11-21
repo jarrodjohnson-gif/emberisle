@@ -44,10 +44,21 @@ export function TurnMoment() {
 
   if (baseline !== synced) {
     // A welcome's first state (a rejoin after a drop) is a new baseline: no moment for it, and none still waiting or up.
+    if (exitTimer.current) {
+      clearTimeout(exitTimer.current);
+      exitTimer.current = null;
+    }
     setBaseline(synced);
     setSeen(key);
     setDue(null);
     setUp(null);
+  } else if (state?.phase === "over") {
+    if (exitTimer.current) {
+      clearTimeout(exitTimer.current);
+      exitTimer.current = null;
+    }
+    if (due) setDue(null);
+    if (up) setUp(null);
   } else {
     if (key && key !== seen) {
       setSeen(key);
@@ -61,11 +72,19 @@ export function TurnMoment() {
     }
   }
 
+  useEffect(() => () => {
+    if (exitTimer.current) clearTimeout(exitTimer.current);
+  }, []);
+
   const stage = useStage<HTMLParagraphElement>(up);
   const end = () => {
     const el = stage.current;
     if (!up || el?.dataset.leaving) return;
-    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (exitTimer.current) {
+      clearTimeout(exitTimer.current);
+      exitTimer.current = null;
+    }
+    if (!el || state?.phase === "over" || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
       setUp(null);
       return;
     }

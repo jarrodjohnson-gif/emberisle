@@ -65,6 +65,7 @@
     "trade-backdrop-prove": "node scripts/trade-backdrop-prove.mjs",
     "secondary-guards-prove": "node --import ./server/register.mjs scripts/secondary-guards-prove.mjs",
     "sheets-focus-guards-prove": "node --import ./server/register.mjs scripts/sheets-focus-guards-prove.mjs",
+    "turn-timer-guards-prove": "node --import ./server/register.mjs scripts/turn-timer-guards-prove.mjs",
     "trade-contrast-prove": "node scripts/trade-contrast-prove.mjs",
     "sounds-prove": "node scripts/sounds-prove.mjs",
     "audio-recovery-prove": "node scripts/audio-recovery-prove.mjs",

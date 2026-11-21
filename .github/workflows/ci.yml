@@ -579,6 +579,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run sheets-focus-guards-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run turn-timer-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run my-numbers-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run my-numbers-glow-prove
