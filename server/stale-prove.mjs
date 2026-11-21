@@ -228,6 +228,9 @@ async function refused(c, msg, label, code = "SGAA") {
     c.raw(msg);
     assert.equal((await c.next("error")).message, "The table has updated. Please try again.", label);
     after = await c.next("state");
+    // The host's save() only schedules its write SAVE_MS later, so a refusal that wrongly saved would still be
+    // inside that debounce when the resync arrives. Wait past it before checking the disk (#1842).
+    await new Promise((resolve) => setTimeout(resolve, saveMs + 150));
   } finally {
     inRefused.delete(code);
   }
