@@ -187,10 +187,32 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
           showRates(resource, e.currentTarget);
         }}
         onKeyDown={(e) => {
-          if (e.key !== "Enter" && e.key !== " ") return;
-          e.preventDefault();
-          e.stopPropagation();
-          showRates(resource, e.currentTarget);
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.stopPropagation();
+            showRates(resource, e.currentTarget);
+            return;
+          }
+          if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(e.key)) {
+            e.preventDefault();
+            e.stopPropagation();
+            const tray = e.currentTarget.closest(".goods-tray");
+            if (!tray) return;
+            const cards = Array.from(tray.querySelectorAll<HTMLElement>('[role="button"]'));
+            if (cards.length === 0) return;
+            if (cards.length === 1) {
+              cards[0]?.focus();
+              return;
+            }
+            const index = cards.indexOf(e.currentTarget);
+            if (index === -1) return;
+            let next = index;
+            if (e.key === "Home") next = 0;
+            else if (e.key === "End") next = cards.length - 1;
+            else if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (index + 1) % cards.length;
+            else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (index - 1 + cards.length) % cards.length;
+            cards[next]?.focus();
+          }
         }}
         onPointerDown={(e) => {
           if (e.button !== 0) return;
