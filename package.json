@@ -18,6 +18,7 @@
     "named-tunnel-test": "node scripts/named-tunnel.test.mjs",
     "tunnel-reconnect-prove": "node scripts/tunnel-reconnect-prove.mjs",
     "scene-motion-guards-prove": "node --import ./server/register.mjs scripts/scene-motion-guards-prove.mjs",
+    "nearest-coast-prove": "node --import ./server/register.mjs scripts/nearest-coast-prove.mjs",
     "profiles-lifecycle-prove": "node scripts/profiles-lifecycle-prove.mjs",
     "store-lifecycle-guards-prove": "node scripts/store-lifecycle-guards-prove.mjs",
     "profile-songs-prove": "node --import ./server/register.mjs server/profile-songs-prove.mjs",
