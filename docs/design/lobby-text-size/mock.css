@@ -1,0 +1,67 @@
+/* #1235 design mock. Not product code. capture.mjs loads this over the real lobby.
+   Rule 1: every fixed height becomes max(today's px, the same size in rem). At the default text size nothing changes.
+   Rule 2: rows may wrap, and the card scrolls when it must. The bottom bar never scrolls away.
+   Rules 3 to 5 are below. */
+html .lobby-layout { container: lobby / inline-size; --pad: 20px; }
+html .lobby-layout .lobby-layout-cover {
+  grid-template-rows: max-content max-content max-content minmax(min-content, 1fr) max-content;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+html .lobby-header, html .lobby-rules, html .lobby-summary { height: auto; min-height: 44px; }
+html .lobby-rules, html .lobby-summary { flex-wrap: wrap; }
+html .lobby-rule-status { height: auto; min-height: 44px; }
+html .lobby-players { grid-template-rows: none; grid-auto-rows: max(52px, 3.25rem); }
+html .lobby-player { grid-template-rows: max(26px, 1.625rem) max(18px, 1.125rem); --seat-row: max(26px, 1.625rem); }
+html .lobby-chat-panel { min-height: min-content; }
+/* The bottom bar: sticky, with the card's own padding under it. */
+html .lobby-layout .lobby-layout-cover { padding-bottom: 0; }
+html .lobby-actions { position: sticky; bottom: 0; z-index: 2; padding-bottom: var(--pad); background: #f3f6f5; }
+html .lobby-layout-cover[data-scrolls] .lobby-actions { box-shadow: 0 -1px 0 #cbd3d3; padding-top: 8px; }
+@media (max-width: 600px) and (orientation: portrait) { html .lobby-layout { --pad: 12px; } }
+@media (max-width: 380px) and (orientation: portrait) { html .lobby-layout { --pad: 8px; } }
+@media (max-height: 700px) and (orientation: portrait) {
+  html .lobby-players { grid-auto-rows: max(44px, 2.75rem); }
+  html .lobby-player { grid-template-rows: max(22px, 1.375rem) max(18px, 1.125rem); --seat-row: max(22px, 1.375rem); }
+}
+@media (max-height: 600px) and (orientation: landscape) {
+  html .lobby-layout { --pad: 8px; }
+  html .lobby-layout .lobby-layout-cover { grid-template-rows: max-content max-content minmax(min-content, 1fr) max-content; }
+}
+@media (max-width: 700px) and (orientation: landscape) {
+  html .lobby-players { grid-auto-rows: max(44px, 2.75rem); }
+  html .lobby-player { grid-template-rows: max(18px, 1.125rem) max(18px, 1.125rem); --seat-row: max(18px, 1.125rem); }
+  html .lobby-rules > button:not([role="tab"]) { width: max(76px, 4.75rem); height: auto; }
+}
+@media (max-width: 900px) {
+  html .lobby-layout .lm button:last-child { width: max(76px, 4.75rem); height: auto; }
+  html .lobby-layout .lm button:last-child span { max-width: 3.75rem; line-height: 1.25rem; }
+}
+html .lobby-layout .lm { height: auto; min-height: 44px; }
+html .lobby-layout .lm button { height: auto; }
+/* Rule 3: when a seat cell would be narrower than 7rem, the list becomes one column, name and status on one line. */
+html .lobby-players { container: seats / inline-size; grid-template-columns: repeat(auto-fit, minmax(min(100%, max(7rem, calc(50% - 4px))), 1fr)); }
+@container seats (max-width: calc(14rem + 7.9px)) {
+  html .lobby-player { grid-template: minmax(44px, auto) / 12px minmax(0, 1fr) auto auto; padding-block: 0; --seat-pad: 0px; }
+  html .lobby-player > .lobby-name { height: auto; align-self: center; }
+  html .lobby-name > button, html .lobby-name > input[data-testid="rename-input"] { height: 44px; margin: 0; padding: 0; line-height: 1.3; }
+  html .lobby-player-status { grid-column: 3; grid-row: 1; }
+  html .lobby-player:not(:has(> button)) .lobby-player-status { grid-column: 3 / 5; justify-self: end; }
+  html .lobby-layout .lobby-player > button:not([data-emote]) { grid-column: 4; grid-row: 1; }
+  html .lobby-bubble { grid-column: 4; }
+  html .lobby-player:has(> [data-testid="add-bot"]) { grid-template-columns: 0 minmax(0, 1fr) auto auto; }
+  html .lobby-player:has(> [data-testid="add-bot"]) > .lobby-name { grid-row: 1; }
+}
+/* Rule 4: on a narrow card, "How to play" wraps to two lines like "Play games", so the tab row stays one row. */
+@container lobby (max-width: 17rem) {
+  html .lobby-rules > button:not([role="tab"]) { width: max(76px, 4.75rem); height: auto; white-space: normal; }
+}
+/* Rule 5: the chat keeps one line of log, and a long tab name wraps instead of ending in an ellipsis. */
+html .lobby-chat-panel > div, html .lobby-chat-panel [role="tabpanel"] { min-height: min-content; }
+html .lobby-chat-panel [data-testid="chat-log"] { min-height: 1.375rem !important; flex-shrink: 0; }
+html .lobby-chat-panel [role="tablist"] { flex-wrap: wrap; }
+html .lobby-chat-panel [role="tab"], html .lobby-chat-panel [role="tab"] * { white-space: normal; overflow: visible; text-overflow: clip; text-align: left; }
+html .lobby-chat-panel [role="tab"] { height: auto; flex-shrink: 1; min-width: 0; }
+/* Question 1, option A: capture.mjs moves the Wayfarer lines into the header. This styles them there. */
+html .lobby-header > .lobby-rule-status { flex: 1 1 0; align-items: flex-end; text-align: right; padding-left: 0; }
+html .lobby-header > .lobby-rule-status > * { white-space: normal; overflow: visible; }
