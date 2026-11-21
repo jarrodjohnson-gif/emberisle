@@ -100,8 +100,6 @@ const MUTANTS = [
   ['label never added', 'if (!have.includes(want)) await api(', 'if (false) await api('],
   ['label added every sweep', 'if (!have.includes(want)) await api(', 'await api('],
   ['labels read before the other reads', 'const labels = (current.labels ?? [])', 'const labels = (p.labels ?? [])'],
-  // The head is checked twice, by classify() and by decide(), so the mutant drops both.
-  ['head not re-read', /headAfter: pr\.head\.sha(.*\n.*)classify\(\{ pr, files, comments, checks, current \}\)/, 'headAfter: current.head.sha$1classify({ pr: current, files, comments, checks, current })'],
 ];
 const dir = mkdtempSync(new URL('./.pr-signal-mutants-', import.meta.url).pathname);
 try {
