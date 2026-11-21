@@ -1,4 +1,4 @@
-// Proves live region deduplication, game-over silencing, and SeatRail/SeatDot lifecycle guards.
+// Proves the SeatDot and SeatNo fallbacks and that the seat rail never draws NaN. Screen-reader behaviour is main's (owner C, q1824).
 // Run: npm run announcer-a11y-guards-prove
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
@@ -46,93 +46,6 @@ try {
   }, base);
   await page.getByTestId("announce-turn").waitFor();
 
-  // 1. Consecutive turns for the same player (setup snake draft turn 3 -> 4) must replace the span node.
-  const turnNode1 = await page.evaluate(() => {
-    const p = document.querySelector('[data-testid="announce-turn"]');
-    const span = p?.querySelector("span");
-    return { hasSpan: !!span, text: p?.textContent?.trim() ?? null, key: span ? (span.getAttribute("data-key") ?? span.textContent) : null };
-  });
-  // Advance setup snake turn to turn 4: p3 is still current, but turn is 4.
-  await page.evaluate(() => {
-    const e = window.__emberisle;
-    const st = e.getState().state;
-    e.setState({ state: { ...st, turn: 4, current: "p3" } });
-  });
-  const turnNode2 = await page.evaluate(() => {
-    const p = document.querySelector('[data-testid="announce-turn"]');
-    const span = p?.querySelector("span");
-    return { hasSpan: !!span, text: p?.textContent?.trim() ?? null, key: span ? (span.getAttribute("data-key") ?? span.textContent) : null };
-  });
-  check(
-    "consecutive turns for the same player replace announce-turn span element",
-    turnNode1.hasSpan && turnNode2.hasSpan && turnNode1.text === "Dune's turn." && turnNode2.text === "Dune's turn.",
-    { turnNode1, turnNode2 },
-  );
-
-  // 2. Consecutive identical log lines must replace the announce-log span element.
-  await page.evaluate(() => {
-    const e = window.__emberisle;
-    e.setState({
-      gameLog: [...e.getState().gameLog, { at: Date.now(), text: "Tide built a road." }],
-    });
-  });
-  const logNode1 = await page.evaluate(() => {
-    const p = document.querySelector('[data-testid="announce-log"]');
-    const span = p?.querySelector("span");
-    return { hasSpan: !!span, text: p?.textContent?.trim() ?? null };
-  });
-  await page.evaluate(() => {
-    const e = window.__emberisle;
-    e.setState({
-      gameLog: [...e.getState().gameLog, { at: Date.now(), text: "Tide built a road." }],
-    });
-  });
-  const logNode2 = await page.evaluate(() => {
-    const p = document.querySelector('[data-testid="announce-log"]');
-    const span = p?.querySelector("span");
-    return { hasSpan: !!span, text: p?.textContent?.trim() ?? null };
-  });
-  check(
-    "consecutive identical log events replace announce-log span element",
-    logNode1.hasSpan && logNode2.hasSpan && logNode1.text === "Tide built a road." && logNode2.text === "Tide built a road.",
-    { logNode1, logNode2 },
-  );
-
-  // 3. Game-over phase must silence in-game live region announcements so win dialog has exclusive voice.
-  await page.evaluate(() => {
-    const e = window.__emberisle;
-    e.setState({
-      tradeOutcome: "Nobody took it.",
-      error: "Temporary refusal",
-      announcement: "Quiet announcement",
-    });
-  });
-  const beforeOver = await page.evaluate(() => ({
-    trade: document.querySelector('[data-testid="announce-trade"]')?.textContent?.trim() ?? "",
-    error: document.querySelector('[data-testid="announce-error"]')?.textContent?.trim() ?? "",
-  }));
-  await page.evaluate(() => {
-    const e = window.__emberisle;
-    const st = e.getState().state;
-    e.setState({ state: { ...st, phase: "over", winner: "p0" } });
-  });
-  const afterOver = await page.evaluate(() => ({
-    turn: document.querySelector('[data-testid="announce-turn"]')?.textContent?.trim() ?? "",
-    trade: document.querySelector('[data-testid="announce-trade"]')?.textContent?.trim() ?? "",
-    log: document.querySelector('[data-testid="announce-log"]')?.textContent?.trim() ?? "",
-    error: document.querySelector('[data-testid="announce-error"]')?.textContent?.trim() ?? "",
-  }));
-  check(
-    "game-over phase silences live region announcements",
-    beforeOver.trade === "Nobody took it." &&
-      beforeOver.error === "Temporary refusal" &&
-      afterOver.turn === "" &&
-      afterOver.trade === "" &&
-      afterOver.log === "" &&
-      afterOver.error === "",
-    { beforeOver, afterOver },
-  );
-
   // 4. SeatNo suppresses invalid/negative seat numbers and SeatDot falls back to transparent.
   const seatNoAndDot = await page.evaluate(async () => {
     const { SeatNo, SeatDot } = await import("/src/components/game/SeatDot.tsx");
@@ -156,17 +69,25 @@ try {
     seatNoAndDot,
   );
 
-  // 5. SeatRail and SeatStrip render safely without throwing when state is null.
+  // 5. The rail never draws NaN: a player with a NaN hand count or wayfarer count reads 0, not "NaN".
   await page.evaluate(() => {
-    window.__emberisle.setState({ state: null });
+    const e = window.__emberisle;
+    const st = e.getState().state;
+    const players = st.players.map((p, i) => (i === 1 ? { ...p, goods: NaN, knightsPlayed: NaN } : p));
+    e.setState({ state: { ...st, phase: "main", current: "p0", players } });
   });
-  const railDetached = await page.evaluate(() => {
-    return document.querySelectorAll(".seat-card").length === 0;
+  await page.getByTestId("rail-p1").waitFor();
+  const rail = await page.evaluate(() => {
+    const el = document.querySelector('[data-testid="rail-p1"]');
+    return {
+      text: el?.textContent ?? "",
+      army: el?.querySelector('[data-testid="tally-army"]')?.getAttribute("aria-label") ?? "",
+    };
   });
   check(
-    "SeatRail and SeatStrip render safely without throwing when state is null",
-    railDetached,
-    { railDetached },
+    "the seat rail reads a NaN hand or wayfarer count as 0",
+    !rail.text.includes("NaN") && !rail.army.includes("NaN") && rail.army === "Wayfarers played, 0" && rail.text.includes("0 cards"),
+    rail,
   );
 
   check("zero page or console errors", errors.length === 0, errors);

@@ -24,8 +24,8 @@ const needs = chunk(() => import("@/components/game/SeatNeeds"));
 const SeatNeeds = needs.pick(module => module.SeatNeeds);
 
 // The seat's roll-off die, "–" until it rolls this round; gone once the roll-off is settled (docs/design/first-player.md).
-function RollOffDie({ state, id, className }: { state: GameState | null; id: string; className: string }) {
-  if (!state?.rollOff || state.phase !== "rollOff") return null;
+function RollOffDie({ state, id, className }: { state: GameState; id: string; className: string }) {
+  if (!state.rollOff || state.phase !== "rollOff") return null;
   return (
     <span data-testid="rolloff-die" className={cn("grid shrink-0 place-items-center rounded-[8px] bg-fg font-medium text-bg tabular-nums", className)}>
       {state.rollOff.rolls[id] ?? "–"}
@@ -64,13 +64,13 @@ function Tally({ testid, Icon, n, name, held }: { testid: string; Icon: LucideIc
 // is a row: the dot, the name ("Name · you" on your own seat) and the points at the right, then one quiet line of the hand in
 // words and the two public tallies (#645).
 function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: string }) {
-  const state = useGame((s) => s.state);
+  const state = useGame((s) => s.state)!;
   const away = seatAway(useGame((s) => s.seats), p);
   const strip = short !== undefined;
   const hidden = p.id === actor && p.hidden.vp > 0 ? p.hidden.vp : 0;
   const goods = cards(p);
   const fortunes = p.fortunes ?? hiddenCount(p);
-  const path = useMemo(() => (state ? roadLength(state, p.id) : 0), [state, p.id]);
+  const path = useMemo(() => roadLength(state, p.id), [state, p.id]);
   // #1509: the strip draws the whole name when it fits its line, and the short form when it would be cut, measured, not
   // guessed: a name never shows an ellipsis. The full name stays for screen readers. 14 px is the dot and its gap; a seat
   // number (#1608) and its gap come off too, with 1 px for the rounding of offsetWidth.
@@ -80,16 +80,7 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
   const label = strip ? p.name.replace(/ \(bot\)$/, "") : p.name;
   useLayoutEffect(() => {
     if (!strip || !line.current || !full.current) return;
-    const measure = () => {
-      const fullEl = full.current;
-      const lineEl = line.current;
-      if (!fullEl || !lineEl) return;
-      const seatNoEl = p.seat ? (lineEl.children[1] as HTMLElement | undefined) : undefined;
-      const seatNoWidth = seatNoEl && Number.isFinite(seatNoEl.offsetWidth) ? seatNoEl.offsetWidth : 0;
-      const clientWidth = Number.isFinite(lineEl.clientWidth) ? lineEl.clientWidth : 0;
-      const scrollWidth = Number.isFinite(fullEl.scrollWidth) ? fullEl.scrollWidth : 0;
-      setFits(scrollWidth <= clientWidth - 14 - (p.seat ? seatNoWidth + 5 : 0));
-    };
+    const measure = () => setFits(full.current!.scrollWidth <= line.current!.clientWidth - 14 - (p.seat ? (line.current!.children[1] as HTMLElement).offsetWidth + 5 : 0));
     measure();
     const watch = new ResizeObserver(measure);
     watch.observe(line.current);
@@ -107,8 +98,8 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
     </span>
   ) : null;
   const points = (
-    <span data-testid="seat-vp" className={cn("shrink-0 tabular-nums", strip ? cn("text-xs text-zinc-700", state?.phase === "rollOff" && "@max-[100px]:hidden") : "ml-auto text-[15px] font-bold leading-5")}>
-      {state ? publicVP(state, p.id) : 0}
+    <span data-testid="seat-vp" className={cn("shrink-0 tabular-nums", strip ? cn("text-xs text-zinc-700", state.phase === "rollOff" && "@max-[100px]:hidden") : "ml-auto text-[15px] font-bold leading-5")}>
+      {publicVP(state, p.id)}
       {strip ? <span aria-hidden="true"> pts</span> : null}
       <span className="sr-only"> points{hidden ? `, plus ${hidden} hidden` : ""}</span>
       {hidden && !strip ? (
@@ -131,7 +122,7 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
           <span data-testid="seat-name" aria-hidden="true" className={cn("min-w-0 truncate text-[13px] font-semibold leading-4", fits && "hidden")}>
             {/* #1608: on a numbered table each letter is its own box, and a letter that does not fit wraps out of sight
                 (styles.css), so the cell shows as many whole letters as fit with this device's font; the number tells the seats apart. */}
-            {p.seat ? [...(short ?? "")].map((c, i) => <span key={i}>{c}</span>) : (short ?? "")}
+            {p.seat ? [...short!].map((c, i) => <span key={i}>{c}</span>) : short}
           </span>
         </span>
         <span className="flex w-full items-center justify-center gap-1.5 leading-4">
@@ -160,8 +151,8 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
             {fortunes > 0 ? <><span aria-hidden="true"> · </span><span data-testid="seat-fortunes">{words(fortunes, "fortune")}</span></> : null}
           </span>
         )}
-        <Tally testid="tally-path" Icon={Route} n={path} name={["Path length", "Longest path"]} held={state?.longestRoad === p.id} />
-        <Tally testid="tally-army" Icon={Swords} n={p.knightsPlayed} name={["Wayfarers played", "Largest army"]} held={state?.largestArmy === p.id} />
+        <Tally testid="tally-path" Icon={Route} n={path} name={["Path length", "Longest path"]} held={state.longestRoad === p.id} />
+        <Tally testid="tally-army" Icon={Swords} n={p.knightsPlayed} name={["Wayfarers played", "Largest army"]} held={state.largestArmy === p.id} />
       </span>
     </>
   );
@@ -170,7 +161,7 @@ function SeatLine({ p, actor, short }: { p: PlayerState; actor: string; short?: 
 // One seat's card: the menu's trigger (docs/design/chat.md "The player action menu") with its seat bubble beside it (#899). The rail
 // gives it `rail-<id>`, the strip `seat-<id>` and a short name. Each is one button, at least 44 px each way.
 function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: string; short?: string; className: string }) {
-  const current = useGame((s) => s.state?.current);
+  const current = useGame((s) => s.state!.current);
   const menuFor = useGame((s) => s.menuFor);
   const openMenu = useGame((s) => s.openMenu);
   // #488: reactions only arrive at an online table; the chunk that draws them is loaded by then (see chunks.ts).
@@ -206,10 +197,9 @@ function SeatCard({ p, actor, short, className }: { p: PlayerState; actor: strin
 
 // An open player menu is a popover, so the rail rises over the bottom stack while it shows (they overlap at 800x500).
 export function SeatRail({ actor }: { actor: string }) {
-  const players = useGame((s) => s.state?.players ?? []);
+  const players = useGame((s) => s.state!.players);
   const menuFor = useGame((s) => s.menuFor);
   const openMenu = useGame((s) => s.openMenu);
-  if (!players.length) return null;
   return (
     <aside className={cn("pointer-events-none absolute left-3 top-20 hidden w-48 flex-col gap-1 md:flex", menuFor ? "z-20" : "z-10")}>
       {players.map((p) => (
@@ -240,14 +230,13 @@ function shortName(name: string) {
 function shortNames(players: PlayerState[]) {
   const names = players.map((p) => p.name.replace(/ \(bot\)$/, ""));
   const short = names.map(shortName);
-  return short.map((s, i) => (short.some((o, j) => j !== i && o === s) ? `${names[i]?.[0] ?? ""}${players[i]?.seat ?? i + 1}` : s));
+  return short.map((s, i) => (short.some((o, j) => j !== i && o === s) ? `${names[i]![0]}${players[i]!.seat ?? i + 1}` : s));
 }
 
 // Phone seat strip (docs/design/mobile-hud.md): 44 px, one cell per seat.
 export function SeatStrip({ actor, className }: { actor: string; className: string }) {
-  const players = useGame((s) => s.state?.players ?? []);
+  const players = useGame((s) => s.state!.players);
   const short = shortNames(players);
-  if (!players.length) return null;
   return (
     <div data-testid="seat-strip" className={cn("pointer-events-auto flex h-11 gap-1", className)}>
       {players.map((p, i) => (
