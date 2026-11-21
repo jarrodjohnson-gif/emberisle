@@ -182,9 +182,11 @@ The launcher is a chat titled "Emberisle desk launcher". It never reviews, merge
 4. Send the old desk one message: `Desk rotation: hand over to <new session id>. Follow "If you are the old desk" in docs/DESK.md.`
 5. Post `·` and end your turn.
 
-A `Rotate now` sent by a desk, with no human in the chat, may be denied by auto mode: it was on 2026-11-21. On a denial, tell Jarrod once in one line and don't retry. His next line in this chat is the human turn.
+Auto mode may deny a `Rotate now` that a desk sent with no human in the chat. It did on 2026-11-21. On a denial, the desk launcher tells Jarrod once in one line and doesn't retry. His next line in this chat is the human turn.
 
-**If something fails.** If `create_session` fails, tell Jarrod once: "The launcher could not start today's desk," with the error. If your own context passes about 150K tokens, tell Jarrod once to start a fresh launcher with the line above, and disable your task when the new launcher says it is set.
+**If something fails.**
+- If `create_session` fails, tell Jarrod once: "The desk launcher could not start today's desk," with the error.
+- At about 150K tokens, tell Jarrod once to start a fresh desk launcher with the line above. Disable your task when the new desk launcher says it is set.
 
 **You are the desk only while the ledger's `Desk:` line names your session.** Check it at every wake and before every merge. If it names another session, you are retired: do nothing on GitHub or the Desk page, and post `·`.
 
@@ -213,15 +215,15 @@ Jarrod starts it by hand, as a cloud session at claude.ai/code on the emberisle 
    - Still working: skip the slot.
    - Idle, or finished: archive it with `archive_session`, then start a fresh builder (step 2).
    - No session yet: start one.
-2. Call `create_session` with `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, the slot's `model`, `title` `Emberisle builder <slot> <UTC date and hour>`, and this `prompt`: `Work on Emberisle as builder "<slot>". Read AGENTS.md. First fix any of your own PRs that wait on desk changes. Otherwise take one eligible <tier> issue. Call a Fable 5.2 subagent to review any UX or UI the change exposes, and name Fable in the PR body. Open the PR, wait for its first CI run, and post To desk:. Then stop. Never start sessions, and never wait for the merge.`
-3. Write each new id on the `Builders:` line: `Builders: claude-opus-a <id>, claude-sonnet-a <id>, claude-sonnet-b <id>`.
+2. Call `create_session` with `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, the slot's `model`, `title` `Emberisle builder <slot> <UTC date and hour>`, and this `prompt`: `Work on Emberisle as builder "<slot>". Read AGENTS.md. First fix any of your own PRs that wait on desk changes. Otherwise take one eligible <tier> issue. Put `Agent: <slot>` in every PR body. Your own PRs are the open PRs whose body names your slot; they count toward your 4-PR limit. Call a Fable 5.2 subagent to review any UX or UI the change exposes, and name Fable in the PR body. Open the PR and wait for its first CI run. If it is red, fix it or say why on the PR. Then post To desk: PR #N ready for review, and stop. Never start sessions, and never wait for the merge.`
+3. Read #916 right before you write. Write each new id on the `Builders:` line: `Builders: claude-opus-a <id>, claude-sonnet-a <id>, claude-sonnet-b <id>`. Read the body back.
 4. Post `·` and end your turn.
 
-**Why a builder stops at PR-ready.** A chat that waits for the merge re-reads its whole context on every CI and review event. A fresh chat in the same slot pays its setup once, and finds the desk's findings through "fix your own PRs first". Claims and PR bodies carry the state between chats.
+**Why a builder stops at PR-ready.** A chat that waits for the merge re-reads its whole context on every CI and review event. A fresh chat in the same slot pays its setup once. It finds the desk's findings through "fix your own PRs first". Claims and PR bodies carry the state between chats.
 
 **If something fails.**
-- A denied `create_session`: tell Jarrod once in one line and don't retry. His next line in this chat is the human turn.
-- The first two unattended refills are the test of whether a scheduled refill passes auto mode. If both are denied, tell Jarrod, and fall back to one daily `Refill builders` line from him.
+- A denied `create_session`: stop the refill for every slot this turn. Tell Jarrod once in one line and don't retry. His next line in this chat is the human turn.
+- The first two unattended refills test whether a scheduled refill passes auto mode. If both are denied, disable your task and tell Jarrod. Then fall back to one daily `Refill builders` line from him.
 - At about 150K tokens, tell Jarrod once to start a fresh builder launcher, and disable your task when the new one says it is set.
 
 **Fable as needed.** Builders call Fable 5.2 themselves as a subagent for design, UX and UI work (`docs/LANES.md`, "Sub-agents and usage limits"). A builder names Fable in the PR body, so the desk's reviewer differs from every model named. The desk never starts Fable, and Jarrod judges the look on the Desk page.
@@ -266,7 +268,7 @@ After that, answer every wake with `·`.
 ### The watchdog and permissions
 
 - **The desk-board is the watchdog.** It runs on GitHub after every CI run and three times a day, and needs no session. If the desk has run for more than 26 hours, or `Next rotation:` is missing or over an hour late, it posts one `To desk: desk-board watchdog:` line to the inbox each day, and shows the alert in #916. Keep the `Desk:` and `Next rotation:` lines in the exact formats above, or it can't read them.
-- **The desk's own tools are allowed** in the repo's `.claude/settings.json`: `send_message`, `send_later`, `get_session`, `create_session` and `archive_session`. Jarrod asked for these rules on 2026-11-13. Only Jarrod changes them; no agent edits permission settings on its own. If one is denied, tell Jarrod once which tool, then carry on with work that doesn't need it. Use these tools only for the desk's work in this file. A builder never archives, messages or starts sessions. The launcher also uses `create_trigger` and `fire_trigger` once, on its first run, and Jarrod approves those in the launcher chat.
+- **The desk's own tools are allowed** in the repo's `.claude/settings.json`: `send_message`, `send_later`, `get_session`, `create_session` and `archive_session`. Jarrod asked for these rules on 2026-11-13. Only Jarrod changes them; no agent edits permission settings on its own. If one is denied, tell Jarrod once which tool, then carry on with work that doesn't need it. Use these tools only for the desk's work in this file. A builder never archives, messages or starts sessions. The desk launcher also uses `create_trigger` and `fire_trigger` once, on its first run, and Jarrod approves those in the desk launcher chat. The builder launcher uses `create_trigger` once, on its first run, with Jarrod's approval in its chat. It also uses `create_session`, `get_session` and `archive_session` for its slots, and nothing else.
 
 ### When to rotate early
 
