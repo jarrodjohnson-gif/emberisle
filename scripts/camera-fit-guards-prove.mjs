@@ -1,9 +1,8 @@
 // Camera fit and pan-zoom bounds regression guards.
 // Ensures all dimensions, aspect ratios, zoom limits, and pan offsets remain finite and bounded.
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
-  guardDioramaFit,
-  guardOrthoFit,
   safeAspect,
   safeDimension,
   safeInsets,
@@ -53,20 +52,7 @@ check(safeAspect(800, NaN, 1) === 800, "safeAspect replaces NaN denominator");
 const sanitized = safeInsets({ top: 12, right: NaN, bottom: -5 });
 check(sanitized.top === 12 && sanitized.right === 0 && sanitized.bottom === -5 && sanitized.left === 0, "safeInsets sanitizes missing and NaN fields");
 
-// 4. guardOrthoFit guards
-const badOrtho = guardOrthoFit({ left: NaN, right: NaN, top: NaN, bottom: NaN, x: NaN, z: NaN, lean: NaN });
-check(Number.isFinite(badOrtho.left) && Number.isFinite(badOrtho.right), "guardOrthoFit restores finite horizontal bounds");
-check(Number.isFinite(badOrtho.top) && Number.isFinite(badOrtho.bottom), "guardOrthoFit restores finite vertical bounds");
-check(badOrtho.left < badOrtho.right && badOrtho.bottom < badOrtho.top, "guardOrthoFit maintains valid bounding box");
-check(badOrtho.x === 0 && badOrtho.z === 0 && badOrtho.lean === 0, "guardOrthoFit clears NaN offsets and lean");
-
-// 5. guardDioramaFit guards
-const badDiorama = guardDioramaFit({ focal: NaN, dist: -5, cx: NaN, cy: NaN }, 800, 600);
-check(badDiorama.focal === 300, "guardDioramaFit restores positive focal length");
-check(badDiorama.dist === 24, "guardDioramaFit restores positive eye distance");
-check(badDiorama.cx === 400 && badDiorama.cy === 300, "guardDioramaFit restores canvas center offsets");
-
-// 6. fitOrtho with zero/negative/NaN dimensions
+// 4. fitOrtho with zero/negative/NaN dimensions
 const zeroOrtho = fitOrtho(0, 0, zeroInsets);
 check(Number.isFinite(zeroOrtho.x) && Number.isFinite(zeroOrtho.z), "fitOrtho with zero dimensions yields finite offsets");
 check(zeroOrtho.left < zeroOrtho.right && zeroOrtho.bottom < zeroOrtho.top, "fitOrtho with zero dimensions yields valid frustum");
@@ -145,5 +131,19 @@ check(touch.pointers.size === 0 && !touch.up(99), "TouchGesture reset clears poi
 check(safeEyeDistance(NaN, 1) === 24, "safeEyeDistance defaults NaN distance to 24");
 check(safeEyeDistance(12, NaN) === 12, "safeEyeDistance clamps NaN zoom to 1");
 check(safeEyeDistance(-5, 0.5) === 24 / 0.8, "safeEyeDistance guards non-positive distance and clamps zoom");
+
+// 15. Renderer wiring. IsleRenderer needs WebGL, so these read its source: each check fails if that line is removed.
+const src = readFileSync(new URL("../src/lib/scene/isle-renderer.ts", import.meta.url), "utf8");
+const disposeAt = src.indexOf("  dispose() {");
+const dispose = src.slice(disposeAt, src.indexOf("\n  }\n", disposeAt));
+check(disposeAt > 0 && dispose.length > 100, "found IsleRenderer.dispose");
+check(/this\.gesture\.reset\(\)/.test(dispose), "dispose resets the touch gesture");
+check(/this\.fingers\.clear\(\)/.test(dispose), "dispose clears tracked fingers");
+for (const t of ["focusin", "focusout"]) {
+  check(dispose.includes(`this.parent.removeEventListener("${t}", this.remeasure)`), `dispose detaches parent ${t} listener`);
+}
+check(/GATE_EVENTS\) this\.parent\.removeEventListener\(t, this\.gate, true\)/.test(dispose), "dispose detaches parent gate listeners");
+check(/safeEyeDistance\(p\.dist, zoom\)/.test(src), "applyPose sets the eye distance through safeEyeDistance");
+check(/clampPanOffset\(t\.x, t\.z, home\.tx, home\.tz, this\.panLimit\(\)\)/.test(src), "pan clamp runs clampPanOffset against the home point");
 
 console.log(`camera-fit-guards-prove: ${passed} checks passed`);

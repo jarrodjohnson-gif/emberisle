@@ -27,7 +27,7 @@ import {
   type Rect,
 } from "@/lib/scene/mobile-fit";
 import { clampZoom, glideProgress, safeEyeDistance } from "./camera.ts";
-import { calcPanLimit, clampPanOffset, PAN_DEAD, PAN_RADIUS, PAN_VIEW } from "./pan-zoom.ts";
+import { calcPanLimit, clampPanOffset, PAN_DEAD } from "./pan-zoom.ts";
 import { readViewport } from "../viewport";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
