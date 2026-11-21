@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useGame } from "@/lib/game/store";
 import type { GameState, HexCell, Vertex } from "@/lib/game/types";
 
@@ -28,6 +28,7 @@ export function SetupPipHints() {
   });
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+  const hintRef = useRef<HTMLDivElement>(null);
 
   const opening = legalKey.length > 0;
   const legal = useMemo(() => (legalKey ? legalKey.split("\0") : []), [legalKey]);
@@ -50,7 +51,7 @@ export function SetupPipHints() {
       let bestD = 36;
       for (const id of legal) {
         const p = isle.screenOf(id);
-        if (!p) continue;
+        if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y)) continue;
         const d = Math.hypot(p.x - e.clientX, p.y - e.clientY);
         if (d < bestD) {
           bestD = d;
@@ -72,14 +73,37 @@ export function SetupPipHints() {
     const tick = () => {
       const isle = (window as unknown as { __isle?: IsleApi }).__isle;
       const p = isle?.screenOf(focusId) ?? null;
-      setAnchor(p);
+      setAnchor(p && Number.isFinite(p.x) && Number.isFinite(p.y) ? p : null);
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [focusId]);
 
-  if (!opening || !state || !focusId || !anchor) return null;
+  useLayoutEffect(() => {
+    const el = hintRef.current;
+    if (!el || !anchor) return;
+    el.style.left = `${anchor.x}px`;
+    el.style.top = `${anchor.y}px`;
+    const box = el.getBoundingClientRect();
+    const overflowLeft = -box.left;
+    const overflowRight = box.right - window.innerWidth;
+    const overflowTop = -box.top;
+    const overflowBottom = box.bottom - window.innerHeight;
+
+    let shiftX = 0;
+    if (overflowLeft > 0) shiftX = Math.ceil(overflowLeft);
+    else if (overflowRight > 0) shiftX = -Math.ceil(overflowRight);
+
+    let shiftY = 0;
+    if (overflowTop > 0) shiftY = Math.ceil(overflowTop);
+    else if (overflowBottom > 0) shiftY = -Math.ceil(overflowBottom);
+
+    if (shiftX !== 0) el.style.left = `${anchor.x + shiftX}px`;
+    if (shiftY !== 0) el.style.top = `${anchor.y + shiftY}px`;
+  }, [anchor]);
+
+  if (!opening || !state || !focusId || !anchor || !Number.isFinite(anchor.x) || !Number.isFinite(anchor.y)) return null;
   const vertex = state.vertices.find((v) => v.id === focusId);
   if (!vertex) return null;
   const pips = producingPips(state, vertex);
@@ -88,6 +112,7 @@ export function SetupPipHints() {
 
   return (
     <div
+      ref={hintRef}
       data-testid="setup-pip-hint"
       data-vertex={focusId}
       role="status"

@@ -754,9 +754,13 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
 
     // #846: keep the original goods, enlarged 2.5x and re-packed along the narrow pier.
     // Turning pallets lengthwise and stacking bales avoids widening the deck or adding signs.
+    // #1526: side docks pack their goods near the coast end so the upright shore fills the screen.
     const S = 2.5;
-    const stride = Math.min(0.65, (len - 0.2) / 0.64);
-    const gv = Math.max(v0 + 0.22, v1 - 0.48 * stride);
+    const side = Math.abs(d.mz) < 0.2;
+    const goodsEnd = side ? Math.min(v1, v0 + 0.34) : v1;
+    const goodsLen = goodsEnd - v0;
+    const stride = Math.min(side ? 0.32 : 0.65, (len - 0.2) / 0.64);
+    const gv = side ? v0 + 0.14 : Math.max(v0 + 0.22, v1 - 0.48 * stride);
     const gy = DECK + lift + 0.02 * (lift ? 0 : 1);
     const goodsStart = pierParts.reduce((count, part) => count + part.attributes.position.count, 0);
     const goodsParts: THREE.BufferGeometry[] = [];
@@ -825,15 +829,15 @@ function build(coast: CoastPt[], docks: Dock[], seed: number): Shore {
     };
     const packingBounds = boundsOf(goodsParts);
     const packingLength = packingBounds.max.z - packingBounds.min.z;
-    if (packingLength > len) {
+    if (packingLength > goodsLen) {
       const center = (packingBounds.min.z + packingBounds.max.z) / 2;
-      const fit = new THREE.Matrix4().makeTranslation(0, 0, center).multiply(new THREE.Matrix4().makeScale(1, 1, len / packingLength)).multiply(new THREE.Matrix4().makeTranslation(0, 0, -center));
+      const fit = new THREE.Matrix4().makeTranslation(0, 0, center).multiply(new THREE.Matrix4().makeScale(1, 1, goodsLen / packingLength)).multiply(new THREE.Matrix4().makeTranslation(0, 0, -center));
       const worldFit = frame.clone().multiply(fit).multiply(inverse);
       for (const geometry of goodsParts) geometry.applyMatrix4(worldFit);
-      packingBounds.min.z = center - len / 2;
-      packingBounds.max.z = center + len / 2;
+      packingBounds.min.z = center - goodsLen / 2;
+      packingBounds.max.z = center + goodsLen / 2;
     }
-    const shift = Math.max(0, v0 - packingBounds.min.z) - Math.max(0, packingBounds.max.z - v1);
+    const shift = Math.max(0, v0 - packingBounds.min.z) - Math.max(0, packingBounds.max.z - goodsEnd);
     if (shift) {
       const delta = new THREE.Vector3(0, 0, shift).applyMatrix4(frame).sub(new THREE.Vector3().setFromMatrixPosition(frame));
       for (const geometry of goodsParts) geometry.translate(delta.x, delta.y, delta.z);

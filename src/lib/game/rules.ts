@@ -817,6 +817,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       for (const r of RESOURCES) {
         if ((action.give[r] ?? 0) > me.resources[r]) return { state: prev, error: "You lack those goods." };
       }
+      if (RESOURCES.every((r) => !action.give[r] && !action.want[r])) return { state: prev, error: "Offer something." };
       state.trade = { from: actor, to: action.to, give: action.give, want: action.want };
       log(state, `${me.name} offers a trade to ${target.name}.`);
       return { state };

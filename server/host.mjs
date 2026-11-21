@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { mkdir, rename, writeFile } from "node:fs/promises";
+import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
@@ -422,16 +422,19 @@ async function flush(room) {
   if (!room.dirty || !rooms.has(room.code) || room.saving) return;
   room.dirty = false;
   const file = path.join(ROOMS, `${room.code}.json`);
+  const tmp = `${file}.tmp`;
   const run = (async () => {
     const json = snapshot(room);
     await mkdir(ROOMS, { recursive: true });
-    await writeFile(`${file}.tmp`, json);
-    await rename(`${file}.tmp`, file);
+    await writeFile(tmp, json);
+    await rename(tmp, file);
   })();
   room.saving = run;
   try {
     await run;
   } catch (err) {
+    room.dirty = true;
+    await rm(tmp, { force: true }).catch(() => {});
     console.error("save failed:", err);
   }
   room.saving = null;
@@ -475,12 +478,14 @@ function flushAll() {
     clearTimeout(room.saveTimer);
     room.saveTimer = null;
     room.dirty = false;
+    const file = path.join(ROOMS, `${room.code}.json`);
+    const tmp = `${file}.tmp`;
     try {
-      const file = path.join(ROOMS, `${room.code}.json`);
       mkdirSync(ROOMS, { recursive: true });
-      writeFileSync(`${file}.tmp`, snapshot(room));
-      renameSync(`${file}.tmp`, file);
+      writeFileSync(tmp, snapshot(room));
+      renameSync(tmp, file);
     } catch (err) {
+      rmSync(tmp, { force: true });
       console.error("save failed:", err);
     }
   }
@@ -1065,6 +1070,12 @@ function deadlineOf(room) {
 function pushState(room) {
   // Recovery during rejoin or takeover can finish a game too. Release before publishing it.
   maybeReleaseOpenSlot(room);
+  if (room.game?.phase === "over") {
+    for (const seat of room.seats) {
+      clearTimeout(seat.graceTimer);
+      seat.graceTimer = null;
+    }
+  }
   armTurns(room);
   extensions(room).sync();
   // The soonest armed window, and whose it is, so every HUD can count it down (#345). `serverNow` lets a client
@@ -1257,7 +1268,7 @@ function seatOf(secret) {
     return own.length === given.length && timingSafeEqual(own, given);
   };
   for (const room of rooms.values()) {
-    const seat = room.seats.find(same);
+    const seat = room.seats.find((s) => !s.bot && same(s));
     if (seat) return { room, seat };
   }
   return null;
@@ -1317,7 +1328,7 @@ function route(req, res) {
       const body = Buffer.concat(chunks);
       // Served as image/jpeg, so only JPEG bytes (SOI marker) are kept.
       if (size < 3 || body[0] !== 0xff || body[1] !== 0xd8 || body[2] !== 0xff) return res.writeHead(400).end();
-      if (storeBytes() - held() + size > AVATAR_STORE_BYTES) return res.writeHead(503).end();
+      if (avatars.size - (held() ? 1 : 0) >= AVATAR_MAX || storeBytes() - held() + size > AVATAR_STORE_BYTES) return res.writeHead(503).end();
       forgetAvatar(seat);
       const id = randomBytes(8).toString("hex");
       avatars.set(id, { body });
@@ -1330,12 +1341,17 @@ function route(req, res) {
     return;
   }
   const got = url.pathname.match(/^\/avatars\/(.+)\.jpg$/);
-  if (req.method === "GET" && got && avatars.has(got[1])) {
-    res.writeHead(200, { "content-type": "image/jpeg", "x-content-type-options": "nosniff" });
-    res.end(avatars.get(got[1]).body);
+  if ((req.method === "GET" || req.method === "HEAD") && got && avatars.has(got[1])) {
+    const body = avatars.get(got[1]).body;
+    res.writeHead(200, {
+      "content-type": "image/jpeg",
+      "content-length": body.length,
+      "x-content-type-options": "nosniff",
+    });
+    res.end(req.method === "HEAD" ? undefined : body);
     return;
   }
-  if (req.method === "GET" && url.pathname === "/tables") {
+  if ((req.method === "GET" || req.method === "HEAD") && url.pathname === "/tables") {
     // Same allow() throttle shape as the WS peek/list bucket (#833 review).
     const key = ipKey(req.socket.remoteAddress, req.headers["cf-connecting-ip"]) ?? "loopback";
     const now = Date.now();
@@ -1349,16 +1365,17 @@ function route(req, res) {
         "cache-control": "no-cache",
         "retry-after": "1",
       });
-      res.end("[]");
+      res.end(req.method === "HEAD" ? undefined : "[]");
       return;
     }
     const body = JSON.stringify(getOpenTables());
     res.writeHead(200, {
       "content-type": "application/json",
+      "content-length": Buffer.byteLength(body),
       "access-control-allow-origin": "*",
       "cache-control": "no-cache",
     });
-    res.end(body);
+    res.end(req.method === "HEAD" ? undefined : body);
     return;
   }
   if (req.method === "GET" || req.method === "HEAD") {
@@ -1537,7 +1554,7 @@ function watch(ws, msg) {
   // A finished game still being saved reaches this watcher with everyone else, through the terminal gate (#889).
   if (unsettled(room)) return;
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
-  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
+  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now(), result: resultOf(room) });
 }
 
 // The durable start write (#889, profiles.md "Exactly-once recording"): the new game, its UUID, start time and frozen
@@ -1594,7 +1611,8 @@ async function startGame(ws, room) {
     game.players[i].color = s.color;
     if (s.bot) game.players[i].kind = "bot";
   });
-  if (!(await durableStart(ws, room, order, game, () => room.seats.length === order.length && order.every((s, i) => room.seats[i] === s)))) return;
+  const isLive = (s) => s.bot || (s.ws && s.ws.readyState === s.ws.OPEN);
+  if (!(await durableStart(ws, room, order, game, () => room.host === ws.seat.id && room.seats.length === order.length && order.every((s, i) => room.seats[i] === s && s.ready && isLive(s))))) return;
   closeTtt(room.seats, "start", null, send);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
@@ -2211,7 +2229,7 @@ function rejoin(ws, msg) {
   if (!room) return send(ws, { type: "error", message: "No table with that code" });
   // Before the seat is touched: a refused rejoin leaves the seat held, its timers running, for an updated page.
   if (refusesClient(ws, room, msg)) return;
-  const seat = room.seats.find((s) => s.secret === msg.secret);
+  const seat = room.seats.find((s) => !s.bot && s.secret === msg.secret);
   if (!seat) return send(ws, { type: "error", message: "Seat is gone." });
   if (seat.ws && seat.ws.readyState === seat.ws.OPEN) return send(ws, { type: "error", message: "Seat is taken." });
   clearTimeout(seat.graceTimer);
@@ -2282,7 +2300,7 @@ function hold(room, seat) {
   // A dropped seat is the grace timer's business, never the turn timer's (#344).
   disarmTurn(seat);
   if (room.game) extensions(room).sync();
-  if (room.game && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
+  if (room.game && room.game.phase !== "over" && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
   seat.holdTimer = setTimeout(() => letGo(room, seat), room.game ? HOLD_MS : LOBBY_HOLD_MS);
   // Free the open-list slot when nobody is connected so a finished or abandoned table cannot block a new open host.
   maybeReleaseOpenSlot(room);
@@ -2298,6 +2316,7 @@ function handOffHost(room) {
 // The grace is over: the practice bot plays the seat so the table never waits longer than that.
 function takeOver(room, seat) {
   seat.graceTimer = null;
+  if (!room.game || room.game.phase === "over") return;
   const p = room.game.players.find((x) => x.id === seat.pid);
   if (!p || p.kind === "bot") return;
   if (room.offer?.from === seat.pid) {

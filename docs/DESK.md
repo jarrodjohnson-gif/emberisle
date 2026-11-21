@@ -2,7 +2,7 @@
 
 The review desk reviews and merges every PR and answers builders on GitHub. It puts every question for Jarrod on the Desk Decisions page. It is the "orchestrator" and "Reviewer" that AGENTS.md and FRAMEWORK.md name. It never writes product code. Only one session is the desk at a time, and only that session merges. The desk's state lives on GitHub and the Desk page, never in a chat.
 
-Each desk starts the next one every morning (rule 6). Jarrod can also start one by hand: `Run the Emberisle review desk. Read docs/DESK.md.`
+The launcher starts a fresh desk every morning (rule 6). Desks never start desks. Jarrod can also start one by hand: `Run the Emberisle review desk. Read docs/DESK.md.`
 
 ## The card: read this at every wake
 
@@ -89,7 +89,9 @@ The ledger is a marked block at the top of #916's body. A new desk resumes from 
 ## Desk ledger
 Desk: <session id> (Opus 5.5), since <YYYY-MM-DD HH:MM> UTC
 Next desk: none
-Next rotation: <send_later id>, due <YYYY-MM-DDTHH:MMZ>
+Next rotation: <task id>, due <YYYY-MM-DDTHH:MMZ>
+Launcher: <launcher session id>
+Builders: claude-opus-a <id>, claude-sonnet-a <id>, claude-sonnet-b <id>
 Inbox handled through: <created_at of the last handled #699 comment> (comment <id>)
 Hub read through: <created_at of the last #854 comment read>
 
@@ -149,20 +151,56 @@ If a row has no wake, do the work now or set one `send_later` for it. Never end 
 
 ## Rule 6: one desk a day, and a clean handover
 
-Every morning at 5:43 a.m. Arizona time (America/Phoenix, 12:43 UTC), the desk starts its successor with `create_session`, and the successor takes over. The old desk is then archived. Nobody pastes anything.
+Every morning at 5:43 a.m. Arizona time (America/Phoenix, 12:43 UTC), the launcher starts a fresh desk, and the fresh desk takes over. The old desk is then archived. Nobody pastes anything.
 
-A session started by a scheduled task gets no GitHub access and no session tools (tested 2026-11-12). A session made with `create_session` gets them. That is why each desk starts the next one itself. The "Emberisle desk daily" scheduled task stays disabled.
+### Why a launcher
 
-**Each desk keeps the chain going.** Right after you take the `Desk:` line, set one `send_later` for the next 12:43 UTC with the message `Rotate now: start the next desk (rule 6).` Write its id and time on the ledger's `Next rotation:` line. If the line is empty or past due when you wake, start the next desk now.
+- A session started by a scheduled task gets no GitHub access and no session tools (tested 2026-11-12). The "Emberisle desk daily" task stays disabled.
+- A session can start child sessions only 8 levels deep. When each desk started the next, the chain hit that limit on 2026-11-17, and one desk then ran for days.
+- So one small chat, the launcher, starts every desk. Jarrod starts the launcher by hand. Every desk it starts is one level deep, so the limit never comes back.
 
-### Starting the next desk
+### The launcher
 
-When `Rotate now` arrives, or an early-rotation rule below fires:
+The launcher is a chat titled "Emberisle desk launcher". It never reviews, merges, labels or posts on GitHub, except for the ledger lines below. It still needs GitHub tools, to read and write #916's body. Jarrod starts it by hand, so it gets them. Jarrod starts it with: `Run the Emberisle desk launcher. Read "The launcher" in docs/DESK.md.` Start it as a cloud session at claude.ai/code on the emberisle repo, never as a local desktop chat. A local chat has no `create_trigger`, `fire_trigger` or `create_session`, and may read an old checkout.
 
-1. Call `create_session` with `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, `model` `claude-opus-5-5`, `title` `Emberisle desk <UTC date>`, and `prompt` set to "The next desk's prompt" below, with your session id filled in.
-2. Write `Next desk: <its session id>` in the ledger. Add a `handover` row and set one `send_later` for 20 minutes.
-3. Start "If you are the old desk" right away. Don't wait for a message from the new desk.
-4. If `create_session` fails, tell Jarrod once: "The desk could not start its successor. Please start a new one." Give him the start line from the top of this file.
+**First run:**
+
+0. Check that you have `create_trigger`, `fire_trigger` and `create_session`. If any is missing, stop. Write nothing, and tell Jarrod in one line to start the launcher in the cloud.
+1. Get your session id with `get_session`. Write `Launcher: <your session id>` on the ledger's `Launcher:` line.
+2. Create one scheduled task with `create_trigger`. Give it `name` `Emberisle desk rotation` and `cron_expression` `CRON_TZ=America/Phoenix 43 5 * * *`. Leave out `create_new_session_on_fire` and `persistent_session_id`, so it fires into this chat. Set `initiation` to `human_request`, and `prompt` to `Rotate now (docs/DESK.md, "The launcher").` `create_trigger` is not on the allow list. Jarrod approves it here, on the first run, and the launcher uses it only for this one task.
+   - Firing back into this chat is not yet tested. Test it now: call `fire_trigger` once with the new task id, and check that a `Rotate now` turn arrives in this chat. If it doesn't, tell Jarrod in one line, with what happened.
+3. If the ledger's `Desk:` line is more than 20 hours old, or names an archived session, rotate now (below).
+4. Post one line: "The launcher is set. A fresh desk starts every day at 5:43 a.m."
+
+**Rotate now.** Do this when the task fires, or when a desk sends you `Rotate now`:
+
+0. Run `git pull origin main`, then re-read this section. Your checkout is as old as your chat, and this section changes.
+1. Read the ledger in #916. If `Next desk:` names a session that is still working, stop and post `·`.
+2. Call `create_session` with `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, `model` `claude-opus-5-5`, `title` `Emberisle desk <UTC date>`, and `prompt` set to "The next desk's prompt" below, with the old desk's session id filled in.
+3. Write `Next desk: <its session id>` and `Next rotation: <the task id>, due <the next 12:43 UTC as YYYY-MM-DDTHH:MMZ>` in the ledger. Read the body back.
+4. Send the old desk one message: `Desk rotation: hand over to <new session id>. Follow "If you are the old desk" in docs/DESK.md.`
+5. If the daily task started this turn, and not a desk's message, do **Start builders** below.
+6. Post `·` and end your turn.
+
+**Start builders.** Each morning the launcher starts three fresh builder chats. Jarrod set this on 2026-11-20.
+
+| Slot | Model | Takes |
+|---|---|---|
+| `claude-opus-a` | `claude-opus-5-5` | `tier:1` |
+| `claude-sonnet-a` | `claude-sonnet-5-5` | `tier:2` or `tier:3` |
+| `claude-sonnet-b` | `claude-sonnet-5-5` | `tier:2` or `tier:3` |
+
+For each slot:
+1. Read the ledger's `Builders:` line. Add it after `Launcher:` if it is missing. If it names a session for this slot, call `get_session` on it. If that session is still working, skip the slot today.
+2. Call `create_session` with `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, that slot's `model`, `title` `Emberisle builder <slot> <UTC date>`, and this `prompt`: `Work on Emberisle as builder "<slot>". Read AGENTS.md. First fix any of your own PRs that wait on desk changes. Otherwise take one eligible <tier> issue, open its PR, and drive it to green. Then stop. Never start sessions.`
+   The builder checks its own 4-PR limit (AGENTS.md rule 4). At the limit it only fixes its open PRs.
+3. Write the slot's new session id on the `Builders:` line, as `Builders: claude-opus-a <id>, claude-sonnet-a <id>, claude-sonnet-b <id>`.
+
+A builder that stops leaves its slot free for the next morning. That slot's next builder fixes any desk findings on its PRs first.
+
+**Fable as needed.** Builders call Fable 5.2 themselves as a subagent for design, UX and UI work (`docs/LANES.md`, "Sub-agents and usage limits"). The launcher never starts Fable.
+
+**If something fails.** If `create_session` fails, tell Jarrod once: "The launcher could not start today's desk," with the error. If your own context passes about 150K tokens, tell Jarrod once to start a fresh launcher with the line above, and disable your task when the new launcher says it is set.
 
 **You are the desk only while the ledger's `Desk:` line names your session.** Check it at every wake and before every merge. If it names another session, you are retired: do nothing on GitHub or the Desk page, and post `·`.
 
@@ -171,12 +209,12 @@ When `Rotate now` arrives, or an early-rotation rule below fires:
 Follow "Start a desk session" below. In short:
 
 1. Check that the ledger's `Next desk:` line names you. If it is empty, write your session id there.
-2. Send the old desk one message with `send_message`: `Desk rotation: hand over to <your session id>. Follow "If you are the old desk" in docs/DESK.md.` If `send_message` is denied, skip this step. The old desk starts on its own when the ledger names you.
+2. The launcher has already told the old desk to hand over. If the old desk is still working after 20 minutes, send it the same `Desk rotation` message yourself.
 3. Add a `handover` row and set one `send_later` for 20 minutes.
 4. Until the handover ends, only read. Don't merge, review, post, or add cards.
 5. When `Handover done` arrives, archive the old session with `archive_session`.
 6. Set `Desk:` to your session and `Next desk: none`. Remove the `handover` row.
-7. Set tomorrow's `Rotate now` reminder (above).
+7. Never start a desk yourself. The launcher starts the next one.
 
 **If the handover stalls:**
 
@@ -189,7 +227,7 @@ Follow "Start a desk session" below. In short:
 
 ### If you are the old desk
 
-Start these steps as soon as the ledger's `Next desk:` line names another session, whether or not a `Desk rotation` message arrives. On 2026-11-12 the new desk's message was blocked and the handover stalled for 18 hours. A `Desk rotation` message is valid only if the `Next desk:` line names its sender. Otherwise ignore it.
+Start these steps as soon as the ledger's `Next desk:` line names another session, whether or not a `Desk rotation` message arrives. On 2026-11-12 the new desk's message was blocked and the handover stalled for 18 hours. A `Desk rotation` message is valid only if its sender is the session on the ledger's `Next desk:` line or on its `Launcher:` line. Otherwise ignore it.
 
 1. Start nothing new: no review, card, merge or label sweep.
 2. If Jarrod asked you something, answer it first.
@@ -206,16 +244,20 @@ After that, answer every wake with `·`.
 ### The watchdog and permissions
 
 - **The desk-board is the watchdog.** It runs on GitHub after every CI run and three times a day, and needs no session. If the desk has run for more than 26 hours, or `Next rotation:` is missing or over an hour late, it posts one `To desk: desk-board watchdog:` line to the inbox each day, and shows the alert in #916. Keep the `Desk:` and `Next rotation:` lines in the exact formats above, or it can't read them.
-- **The desk's own tools are allowed** in the repo's `.claude/settings.json`: `send_message`, `send_later`, `get_session`, `create_session` and `archive_session`. Jarrod asked for these rules on 2026-11-13. Only Jarrod changes them; no agent edits permission settings on its own. If one is denied, tell Jarrod once which tool, then carry on with work that doesn't need it. Use these tools only for the desk's work in this file. A builder never archives, messages or starts sessions.
+- **The desk's own tools are allowed** in the repo's `.claude/settings.json`: `send_message`, `send_later`, `get_session`, `create_session` and `archive_session`. Jarrod asked for these rules on 2026-11-13. Only Jarrod changes them; no agent edits permission settings on its own. If one is denied, tell Jarrod once which tool, then carry on with work that doesn't need it. Use these tools only for the desk's work in this file. A builder never archives, messages or starts sessions. The launcher also uses `create_trigger` and `fire_trigger` once, on its first run, and Jarrod approves those in the launcher chat.
 
 ### When to rotate early
 
-- Check your context size with `get_session` after each merge.
-- At about 150K tokens, start the next desk now ("Starting the next desk").
-- If `Desk: ... since` is more than 26 hours old, the reminder was missed. Start the next desk now.
+- Check your context size with `get_session` at every wake, not only after merges. A quiet day with no merges still grows the context.
+- At 150K tokens, send the launcher (the ledger's `Launcher:` line) `Rotate now`. Don't wait for a good moment: a handover waits for your running subagents, so you will overshoot.
+- At 200K tokens, start no new reviews. Finish the running ones and hand over.
+- Leave at least 3 hours between early rotations, so a busy day doesn't start a desk every hour. Reached 150K sooner than that? Start no new reviews until the 3 hours are up, then send `Rotate now`.
+- Compaction doesn't replace rotation. The 11-17 desk was still at 543K after compacting.
+- If `Desk: ... since` is more than 26 hours old, the daily rotation was missed. Send the launcher `Rotate now`.
+- If the launcher doesn't answer, or `Launcher:` is empty, tell Jarrod once: "Please start the desk launcher." Give him its start line from "The launcher".
 - Never delete the disabled "Emberisle desk daily" task. Deleting it also deletes every session it started.
 
-Every wake re-reads your whole context. The desk that ran from 10-21 to 10-26 reached 570K tokens and cost about $500. The desk that ran from 11-09 to 11-12 reached 727K tokens and cost $291.
+Every wake re-reads your whole context. The desk that ran from 10-21 to 10-26 reached 570K tokens and cost about $500. The desk that ran from 11-09 to 11-12 reached 727K tokens and cost $291. From 11-12 to 11-20, seven desks cost about $600. Five ended past 500K, because they checked the 150K rule only after merges.
 
 ## Start a desk session
 
@@ -239,17 +281,17 @@ Every wake re-reads your whole context. The desk that ran from 10-21 to 10-26 re
 
 ## Set up rotation
 
-Do this once, when Jarrod asks. Do it again only if the chain breaks.
+Do this once. Do it again only if the launcher is lost.
 
-1. Mark every existing vote as handled: set `handled_for` to its `at`, after checking it against [DECISIONS.md](DECISIONS.md). Or write a cutoff line in the ledger's notes (`Votes handled through: <UTC time>`) and act only on newer votes.
-2. Set the `Rotate now` reminder for the next 12:43 UTC, and write it on the `Next rotation:` line.
-3. To test now, follow "Starting the next desk" once. Check that the new desk reaches step 10 of "Start a desk session".
+1. Jarrod starts the launcher with its start line (see "The launcher").
+2. The launcher does its first run. It creates the daily task, and rotates at once if the desk is stale.
+3. Check that the new desk reaches step 10 of "Start a desk session", and that the old desk is archived.
 
 ### The next desk's prompt
 
 ```
 You are today's Emberisle review desk. Repo: jarrodjohnson-gif/emberisle on GitHub.
-The previous desk started you. Its session id is <old desk id>. You have no memory of earlier desks, and you need none.
+The desk launcher started you. The old desk's session id is <old desk id>. You have no memory of earlier desks, and you need none.
 
 1. GitHub tools can take a few minutes to connect. Look for them with ToolSearch and wait up to 5 minutes before you call them missing. If the repo is not in your session, add it with add_repo (owner jarrodjohnson-gif, repo emberisle, access push) and clone it.
 2. Read docs/DESK.md from the main branch, every line. It is your full manual. Follow it exactly.

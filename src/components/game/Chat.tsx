@@ -355,24 +355,16 @@ function useUnmutedUnread() {
   const seatId = useGame((s) => s.seatId);
   const code = useGame((s) => s.code);
   const { muted } = useMutedSeats(code);
-  const [unreadBySeat, setUnreadBySeat] = useState<Map<string, number>>(() => new Map());
-  const previousChat = useRef(chat);
-  const unreadBySeatRef = useRef(new Map<string, number>());
-  useEffect(() => {
-    if (open || unreadTotal === 0) {
-      unreadBySeatRef.current.clear();
-    } else {
-      const previousIds = new Set(previousChat.current.map((line) => line.id));
-      for (const line of chat) {
-        if (!previousIds.has(line.id) && line.seat !== seatId) {
-          unreadBySeatRef.current.set(line.seat, (unreadBySeatRef.current.get(line.seat) ?? 0) + 1);
-        }
-      }
-    }
-    previousChat.current = chat;
-    setUnreadBySeat(new Map(unreadBySeatRef.current));
-  }, [chat, open, seatId, unreadTotal]);
-  return [...unreadBySeat].reduce((count, [seat, messages]) => count + (muted.has(seat) ? 0 : messages), 0);
+  if (open || unreadTotal <= 0) return 0;
+  let seen = 0;
+  let unmuted = 0;
+  for (let i = chat.length - 1; i >= 0 && seen < unreadTotal; i--) {
+    const line = chat[i]!;
+    if (line.seat === seatId) continue;
+    seen++;
+    if (!muted.has(line.seat)) unmuted++;
+  }
+  return unmuted;
 }
 
 // The two table buttons, in the top row beside the Table menu (Hud's header). They sit in that row's flow, so they keep the same
@@ -484,9 +476,10 @@ export function ChatDock() {
     const onKey = (e: KeyboardEvent) => {
       const s = useGame.getState();
       // A pending placement owns Enter (PlaceChip confirms it); the chat waits.
-      if (e.key !== "Enter" || s.mode !== "online" || s.pendingPlace) return;
+      if (e.key !== "Enter" || s.mode !== "online" || s.pendingPlace || s.howTo || s.costs || s.tradeOpen || s.menuFor) return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
       const t = e.target as HTMLElement | null;
-      if (t?.closest("button, a, [role=button], [role=radio], input, select, textarea")) return;
+      if (t?.closest("button, a, summary, [role=button], [role=radio], [role=tab], [role=menuitem], input, select, textarea, [contenteditable]")) return;
       e.preventDefault();
       focusNext.current = true;
       useGame.getState().setChatOpen(true);
