@@ -307,6 +307,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-action-order-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run bot-moments-event-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run rules-view-helpers-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run hud-helpers-guards-prove
