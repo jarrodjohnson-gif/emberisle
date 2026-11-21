@@ -10,14 +10,26 @@ const KEY = "emberisle-sound-mix";
 const listeners = new Set<() => void>();
 const level = (value: unknown, fallback: number): number => typeof value === "number" && Number.isFinite(value) ? Math.round(Math.max(0, Math.min(1, value)) * 10) / 10 : fallback;
 const defaults = (): SoundMix => Object.freeze({ master: 1, ...Object.fromEntries(SOUND_CATEGORIES.map((c) => [c, Object.freeze({ volume: 1, muted: false })])) }) as SoundMix;
-let mix = defaults();
-try {
-  const saved = JSON.parse(localStorage.getItem(KEY) ?? "null");
-  if (saved && typeof saved === "object") mix = Object.freeze({
-    master: level(saved.master, 1),
-    ...Object.fromEntries(SOUND_CATEGORIES.map((c) => [c, Object.freeze({ volume: level(saved[c]?.volume, 1), muted: saved[c]?.muted === true })])),
-  }) as SoundMix;
-} catch { /* unavailable or malformed storage uses the defaults */ }
+const readStorage = (): SoundMix => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) ?? "null");
+    if (saved && typeof saved === "object" && !Array.isArray(saved)) return Object.freeze({
+      master: level(saved.master, 1),
+      ...Object.fromEntries(SOUND_CATEGORIES.map((c) => [c, Object.freeze({ volume: level(saved[c]?.volume, 1), muted: saved[c]?.muted === true })])),
+    }) as SoundMix;
+  } catch { /* unavailable or malformed storage uses the defaults */ }
+  return defaults();
+};
+let mix = readStorage();
+
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === KEY || e.key === null) {
+      mix = readStorage();
+      for (const listener of listeners) listener();
+    }
+  });
+}
 
 export const getSoundMix = () => mix;
 export function subscribeSoundMix(listener: () => void) {
@@ -36,11 +48,14 @@ export function setMasterVolume(volume: number) {
   save({ ...mix, master: level(volume, mix.master) });
 }
 export function setCategoryVolume(category: SoundCategory, volume: number) {
+  if (!mix[category]) return;
   save({ ...mix, [category]: Object.freeze({ ...mix[category], volume: level(volume, mix[category].volume) }) });
 }
 export function setCategoryMuted(category: SoundCategory, muted: boolean) {
-  save({ ...mix, [category]: Object.freeze({ ...mix[category], muted }) });
+  if (!mix[category]) return;
+  save({ ...mix, [category]: Object.freeze({ ...mix[category], muted: Boolean(muted) }) });
 }
 export function categoryGain(category: SoundCategory) {
-  return mix.master * (mix[category].muted ? 0 : mix[category].volume);
+  const cat = mix[category];
+  return mix.master * (!cat || cat.muted ? 0 : cat.volume);
 }
