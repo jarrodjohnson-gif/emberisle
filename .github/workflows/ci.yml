@@ -673,6 +673,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run game-helper-guards-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run dice-resource-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run sticker-tray-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run sticker-motion-prove
