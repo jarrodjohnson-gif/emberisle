@@ -87,6 +87,16 @@ assert.equal(draft.writes.length, 0, 'a draft gets no label');
 const dry = fixture();
 assert.deepEqual(await real.sweep(dry.api, { dryRun: true }), [{ number: 7, want: 'signal:green', had: [] }]);
 assert.equal(dry.writes.length, 0, 'a dry run writes nothing');
+// `merge-by-chat` survives only while the PR is green: a push or a findings review takes it away.
+const chatGreen = fixture({ labels: ['merge-by-chat', 'signal:green'] });
+await real.sweep(chatGreen.api);
+assert.deepEqual(chatGreen.all().sort(), ['merge-by-chat', 'signal:green']);
+const chatStale = fixture({ comments: [], labels: ['merge-by-chat', 'signal:green'] });
+await real.sweep(chatStale.api);
+assert.deepEqual(chatStale.all().sort(), ['signal:yellow'], 'merge-by-chat goes when the PR is no longer green');
+const chatDry = fixture({ comments: [], labels: ['merge-by-chat'] });
+await real.sweep(chatDry.api, { dryRun: true });
+assert.equal(chatDry.writes.length, 0);
 console.log('ok   other labels kept, drafts skipped, dry run writes nothing');
 
 // Mutation check: break one rule at a time in a copy of the script. The cases above must catch every break.

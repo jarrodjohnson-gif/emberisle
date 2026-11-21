@@ -49,6 +49,8 @@ export async function sweep(api, { dryRun = false, code = true } = {}) {
     results.push({ number: p.number, want, had: have });
     if (dryRun) continue;
     for (const old of have) if (old !== want) await api(`/issues/${p.number}/labels/${encodeURIComponent(old)}`, 'DELETE');
+    // `merge-by-chat` lets the dispatcher merge what the workflow token could not. It holds only while the PR is green.
+    if (want !== 'signal:green' && labels.includes('merge-by-chat')) await api(`/issues/${p.number}/labels/merge-by-chat`, 'DELETE');
     if (!have.includes(want)) await api(`/issues/${p.number}/labels`, 'POST', { labels: [want] });
   }
   return results;

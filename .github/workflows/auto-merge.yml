@@ -74,10 +74,18 @@ jobs:
         run: node scripts/auto-merge-eligible.mjs
       - if: steps.decide.outputs.merge == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          # The workflow token may not merge a PR that changes a workflow file, and every PR that registers a proof
+          # changes ci.yml. With the optional secret AUTO_MERGE_TOKEN (a token with the workflows permission) this
+          # step merges those too. Without it the merge is refused, and the PR gets `merge-by-chat` for the dispatcher.
+          GH_TOKEN: ${{ secrets.AUTO_MERGE_TOKEN || github.token }}
+          LABEL_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           NUM: ${{ steps.decide.outputs.number }}
           SHA: ${{ steps.decide.outputs.sha }}
         run: |
-          gh pr merge "$NUM" --repo "$REPO" --squash --match-head-commit "$SHA"
-          gh api -X POST "repos/$REPO/issues/$NUM/labels" -f 'labels[]=auto-merged'
+          if gh pr merge "$NUM" --repo "$REPO" --squash --match-head-commit "$SHA"; then
+            GH_TOKEN="$LABEL_TOKEN" gh api -X POST "repos/$REPO/issues/$NUM/labels" -f 'labels[]=auto-merged'
+          else
+            GH_TOKEN="$LABEL_TOKEN" gh api -X POST "repos/$REPO/issues/$NUM/labels" -f 'labels[]=merge-by-chat'
+            echo "::warning::auto-merge could not merge PR #$NUM at $SHA; labelled merge-by-chat"
+          fi

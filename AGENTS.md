@@ -53,7 +53,7 @@ A `Question:` or a block never ends your round. Answers come slowly. (A chat the
 1. You are a **Builder**. Follow [`docs/FRAMEWORK.md`](docs/FRAMEWORK.md) section 7, and pick an issue
    using [`docs/LANES.md`](docs/LANES.md).
    Take the top line in **Next up (auto)** that your tier allows. Helpers: only `helper-ok` lines.
-2. Never merge. The auto-merge workflow merges a PR, after a clean review by a different model
+2. Never merge. The auto-merge workflow decides every merge, after a clean review by a different model
    ([`docs/DESK.md`](docs/DESK.md), "Merging").
 3. If Jarrod named a specific issue, do that one instead, still checking its prerequisites, claims and files.
 4. **Need a decision?** Post it as a comment on the issue, starting with `Question:`, giving the options and your
