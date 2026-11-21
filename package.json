@@ -131,6 +131,7 @@
     "flake-rerun-prove": "node scripts/flake-rerun-prove.mjs",
     "soak-evidence-prove": "node scripts/soak-evidence-prove.mjs",
     "auto-merge-prove": "node scripts/auto-merge-prove.mjs",
+    "pr-signal-prove": "node scripts/pr-signal-prove.mjs",
     "ci-install-prove": "node scripts/ci-install-prove.mjs",
     "ci-changes-prove": "node scripts/ci-changes-prove.mjs",
     "proof-host-port-prove": "node scripts/proof-host-port-prove.mjs",
