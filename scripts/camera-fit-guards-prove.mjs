@@ -138,7 +138,8 @@ const raw = readFileSync(new URL("../src/lib/scene/isle-renderer.ts", import.met
 const src = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\s\/\/.*$/gm, "");
 const body = (head) => {
   const at = src.indexOf(head);
-  return at < 0 ? "" : src.slice(at, src.indexOf("\n  }\n", at));
+  const end = at < 0 ? -1 : src.indexOf("\n  }\n", at);
+  return end < 0 ? "" : src.slice(at, end);
 };
 const dispose = body("  dispose() {");
 const applyPose = body("  private applyPose(p: Pose) {");
@@ -155,6 +156,8 @@ check(/const zoom = clampZoom\(p\.zoom, this\.orbit\.minZoom, this\.orbit\.maxZo
 check(/const tx = Number\.isFinite\(p\.tx\) \? p\.tx : this\.isle\.cx;/.test(applyPose), "applyPose guards a non-finite tx");
 check(/const tz = Number\.isFinite\(p\.tz\) \? p\.tz : this\.isle\.cz;/.test(applyPose), "applyPose guards a non-finite tz");
 check(/const focal = Number\.isFinite\(p\.focal\) && p\.focal > 0 \? p\.focal : fullH \/ 2;/.test(applyPose), "applyPose falls back when focal is bad");
+check((applyPose.match(/this\.orbit\.target\.set\(tx, CAP_LEVEL, tz\);/g) || []).length === 2, "both camera branches aim at the guarded tx/tz");
+check(/Math\.atan\(fullH \/ 2 \/ focal\)/.test(applyPose), "diorama field of view uses the guarded focal");
 check(/const eyeDist = safeEyeDistance\(p\.dist, zoom\);/.test(applyPose), "applyPose computes the eye distance through safeEyeDistance");
 check(/setFromSphericalCoords\(eyeDist, p\.polar, p\.azimuth\)/.test(applyPose), "diorama camera is placed at the guarded eye distance");
 check(/o\.zoom = zoom;/.test(applyPose) && !/o\.zoom = p\.zoom/.test(applyPose), "ortho camera takes the clamped zoom");
