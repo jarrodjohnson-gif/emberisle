@@ -122,6 +122,7 @@
     "react-prove": "node scripts/react-prove.mjs",
     "mobile-shots": "node scripts/mobile-shots.mjs",
     "touch-place-prove": "node scripts/touch-place-prove.mjs",
+    "camera-fit-guards-prove": "node scripts/camera-fit-guards-prove.mjs",
     "stale-pr-sweeper-prove": "node scripts/stale-pr-sweeper-prove.mjs",
     "desk-board-prove": "node scripts/desk-board-prove.mjs",
     "review-desk-inbox-prove": "node scripts/review-desk-inbox-prove.mjs",
