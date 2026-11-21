@@ -29,7 +29,7 @@ function pr(over = {}) {
 const EXCLUDED = [
   // Governance files, even inside docs/.
   "AGENTS.md", "CLAUDE.md", "README.md", "docs/DESK.md", "docs/REVIEWING.md", "docs/DECISIONS.md", "docs/LANES.md", "docs/FRAMEWORK.md",
-  "docs/design/AGENTS.md", "docs/CLAUDE.md", "docs/framework.md", "Docs/DESK.md", "docs/HELPERS.md", "docs/ORCHESTRATOR.md", "docs/GEMINI.md", "docs/.mcp.json",
+  "docs/design/AGENTS.md", "docs/CLAUDE.md", "docs/framework.md", "Docs/DESK.md", "docs/HELPERS.md", "docs/ORCHESTRATOR.md", "docs/LOOPING.md", "docs/builder-kit/builder-agent.md", "docs/builder-kit/launch.sh", "docs/GEMINI.md", "docs/.mcp.json",
   // Hard excludes. .github/** beats the .github/ISSUE_TEMPLATE/** allow entry: the exclude list wins.
   ".github/workflows/ci.yml", ".github/workflows/auto-merge.yml", ".github/ISSUE_TEMPLATE/bug.md", ".github/flaky.json",
   "package.json", "package-lock.json", "server/package.json", "server/package-lock.json", "docs/package.json",
@@ -105,6 +105,12 @@ CASES.push(
   ["code: a bare marker from the owner, and a full review from an outsider", codePr({ comments: [{ author_association: "OWNER", body: `<!-- review-desk: clean ${SHA} -->` }, { author_association: "NONE", body: footer() }] }), false],
   ["code: reviewer is the builder's model, spelled another way", codePr({ comments: [{ author_association: "OWNER", body: footer("Claude Opus 5.5", "opus-5.5") }] }), false],
   ["code: a newer review with a broken footer after a clean one", codePr({ comments: [{ author_association: "OWNER", body: footer() }, { author_association: "OWNER", body: `<!-- review-desk -->\nBlocking: src/main.tsx:3\nReviewer: Opus 5.5 Builder: Sonnet 5.5 Head: ${SHA}` }] }), false],
+  ["code: reviewer name is empty once normalised", codePr({ comments: [{ author_association: "OWNER", body: footer("Claude", "Sonnet 5.5") }] }), false],
+  ["code: builder name is only punctuation", codePr({ comments: [{ author_association: "OWNER", body: footer("Opus 5.5", "?") }] }), false],
+  ["code: a clean review that asks for the owner's look, before the label lands", codePr({ comments: [{ author_association: "OWNER", body: footer().replace("Clean.", "Clean.\nJarrod must see the pictures first.") }] }), false],
+  ["code: the same review, with owner-ok", codePr({ pr: { labels: [{ name: "owner-ok" }] }, comments: [{ author_association: "OWNER", body: footer().replace("Clean.", "Clean.\nJarrod must see the pictures first.") }] }), true],
+  ["docs: a clean marker in a review that waits for the owner", pr({ comments: [{ author_association: "OWNER", body: `<!-- review-desk -->\nVisual sign-off pending.\n<!-- review-desk: clean ${SHA} -->` }] }), false],
+  ["code: an outsider's comment asking for the owner changes nothing", codePr({ comments: [{ author_association: "OWNER", body: footer() }, { author_association: "NONE", body: "<!-- review-desk -->\nJarrod must see this first." }] }), true],
   ["code: a newer review with findings", codePr({ comments: [{ author_association: "OWNER", body: footer() }, { author_association: "OWNER", body: footer("Opus 5.5", "Sonnet 5.5", SHA, false) }] }), false],
   ["code: footer from an outsider", codePr({ comments: [{ author_association: "NONE", body: footer() }] }), false],
   ["code: checks failed", codePr({ checkRuns: [{ name: "checks", app: ACTIONS, head_sha: SHA, status: "completed", conclusion: "failure" }] }), false],
@@ -148,6 +154,10 @@ const MUTANTS = [
   ["findings merge", "if (!footer.clean)", "if (false)"],
   ["model names compared raw", "return { reviewer: model(m[1]), builder: model(m[2]), head,", "return { reviewer: m[1].trim().toLowerCase(), builder: m[2].trim().toLowerCase(), head,"],
   ["an older review stands in for a broken newer one", "if (!m) return null;", "if (!m) continue;"],
+  ["empty model names allowed", "if (!footer.reviewer || !footer.builder)", "if (false)"],
+  ["a review asking for the owner ignored", "if (ownerAsked(comments) && !labels.includes(\"owner-ok\"))", "if (false)"],
+  ["owner-ok not needed after a review asks", "ownerAsked(comments) && !labels.includes(\"owner-ok\")", "ownerAsked(comments) && false"],
+  ["an outsider can hold a PR", "find((c) => TRUSTED.includes(c.author_association) && ", "find((c) => "],
   ["same-model review allowed", "if (footer.reviewer === footer.builder)", "if (false)"],
   ["footer author not checked", "!TRUSTED.includes(c.author_association) || ", ""],
   ["needs-owner ignored", 'labels.includes("needs-owner") && !labels.includes("owner-ok")', "false"],

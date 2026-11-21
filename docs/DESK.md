@@ -72,7 +72,7 @@ A review with blocking findings lists them, each with `file:line`, in place of t
 
 - `checks` is completed and green on the head;
 - the newest review comment is clean at that head, and its reviewer differs from its builder. A docs-only PR under 400 changed lines needs only the clean marker;
-- `needs-owner` is absent, or `owner-ok` is present;
+- `needs-owner` is absent and the newest review does not ask for Jarrod's look, or `owner-ok` is present;
 - the PR touches no governance file: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.mcp.json`, `README.md`, the rule documents in `docs/`, `.claude/`, `.github/` apart from `workflows/ci.yml`, and the merge scripts themselves. Jarrod merges those by hand. `ci.yml` is allowed because every new proof is registered there, so the reviewer checks that no job in it was weakened.
 
 Two repo variables switch it off. `AUTO_MERGE` is `on` today; anything else stops all auto-merging. Setting `AUTO_MERGE_CODE` to `off` stops it for code PRs only, and leaves small docs PRs merging. To re-check one PR, run the auto-merge workflow by hand with its number.

@@ -27,6 +27,7 @@ const CASES = [
   ['the review asks for the owner to see pictures', { comments: [review(A, true, 'Jarrod must see the pictures first.')] }, 'signal:red'],
   ['the same, after owner-ok', { comments: [review(A, true, 'Jarrod must see the pictures first.')], labels: ['owner-ok'] }, 'signal:green'],
   ['the head moved during the sweep', { moved: true }, 'signal:yellow'],
+  ['a reviewed code PR with the code switch off: auto-merge will not take it', { code: false }, 'signal:yellow'],
   ['a clean marker with no reviewer footer', { comments: [{ id: 1, created_at: '2026-11-21T01:00:00Z', author_association: 'OWNER', body: `<!-- review-desk -->\nClean.\n<!-- review-desk: clean ${A} -->` }] }, 'signal:yellow'],
   ['reviewer and builder are the same model', { comments: [{ ...review(), body: review().body.replace('Builder: Sonnet 5.5', 'Builder: Claude Opus 5.5') }] }, 'signal:yellow'],
   ['reviewed and green, but it touches AGENTS.md', { files: [{ filename: 'src/a.ts', status: 'modified', additions: 1, deletions: 0 }, { filename: 'AGENTS.md', status: 'modified', additions: 1, deletions: 0 }] }, 'signal:red'],
@@ -60,7 +61,8 @@ async function run(mod) {
   const out = [];
   for (const [label, over, want] of CASES) {
     const f = fixture(over);
-    await mod.sweep(f.api);
+    await mod.sweep(f.api, over.code === undefined ? {} : { code: over.code });
+    f.opts = over.code === undefined ? {} : { code: over.code };
     out.push({ label, want, got: f.signals(), f });
   }
   return out;
@@ -71,7 +73,7 @@ for (const { label, want, got, f } of await run(real)) {
   console.log(`ok   ${label}: ${want}`);
   // A second sweep changes nothing.
   const before = f.writes.length;
-  await real.sweep(f.api);
+  await real.sweep(f.api, f.opts);
   assert.equal(f.writes.length, before, `${label}: a repeat sweep writes nothing`);
 }
 
@@ -94,6 +96,7 @@ const MUTANTS = [
   ['owner-ok does not clear needs-owner', "labels.includes('needs-owner') && !labels.includes('owner-ok')", "labels.includes('needs-owner')"],
   ['the review\'s owner request ignored', "if (row.bucket === 'Ready for Jarrod' && !labels.includes('owner-ok')) return 'signal:red';", ''],
   ['everything is green', "return 'signal:yellow';", "return 'signal:green';"],
+  ['code switch ignored', 'defaultBranch: current.base?.repo?.default_branch, code });', 'defaultBranch: current.base?.repo?.default_branch, code: true });'],
   ['green wider than auto-merge', "if (merge.merge === true) return 'signal:green';", "if (merge.merge === true || reviewed) return 'signal:green';"],
   ['governance PRs never surface to the owner', "if (reviewed && files.some(", "if (false && files.some("],
   ['stale labels kept', 'if (old !== want) await api(', 'if (false) await api('],
@@ -111,7 +114,7 @@ try {
     let caught = 0;
     for (const { want, got, f } of await run(mod)) {
       const before = f.writes.length;
-      await mod.sweep(f.api);
+      await mod.sweep(f.api, f.opts);
       if (got.length !== 1 || got[0] !== want || f.writes.length !== before) caught++;
     }
     assert.ok(caught, `mutant "${name}" survived every case`);

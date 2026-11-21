@@ -14,7 +14,7 @@ import { pathToFileURL } from "node:url";
 export const MAX_CHANGED_LINES = 400;
 const ALLOW = ["docs/", ".github/ISSUE_TEMPLATE/"];
 // Governance docs: agents and the desk act on these, so they keep the desk's own merge.
-const EXCLUDE_EXACT = ["README.md", "docs/DESK.md", "docs/REVIEWING.md", "docs/DECISIONS.md", "docs/LANES.md", "docs/FRAMEWORK.md", "docs/HELPERS.md", "docs/ORCHESTRATOR.md"];
+const EXCLUDE_EXACT = ["README.md", "docs/LOOPING.md", "docs/builder-kit/builder-agent.md", "docs/builder-kit/launch.sh", "docs/DESK.md", "docs/REVIEWING.md", "docs/DECISIONS.md", "docs/LANES.md", "docs/FRAMEWORK.md", "docs/HELPERS.md", "docs/ORCHESTRATOR.md"];
 const EXCLUDE_PREFIX = [".github/", "scripts/", "server/", "src/"];
 // Matched on the file name in any folder: agents read a nested AGENTS.md or CLAUDE.md, and GitHub reads docs/CODEOWNERS.
 const EXCLUDE_NAME = ["AGENTS.md", "CLAUDE.md", "GEMINI.md", ".mcp.json", "CODEOWNERS", ".gitignore"];
@@ -45,6 +45,15 @@ export function codeRefusal(path) {
   if (CODE_EXCLUDE_SCRIPT.test(lower)) return "merge machinery";
   if (CODE_EXCLUDE_PREFIX.some((p) => lower.startsWith(p)) && !CODE_ALLOW_EXACT.includes(path)) return "governance folder";
   return null;
+}
+
+// A review that asks for the owner's look or listen. The same wording scripts/desk-board.mjs reads.
+const OWNER_ASK = /(?:Jarrod|owner)[^\n.]{0,100}(?:must see|sign.off|approval|accept)|(?:waiting|pending|needs?)[^\n.]{0,60}(?:Jarrod|owner)|(?:visual|pictures?|audio)[^\n.]{0,80}(?:first|pending|approval|sign.off)/i;
+// True when the newest review from a trusted account asks for the owner. The reviewer may add `needs-owner` a moment
+// after it posts, so the merge must not win that race.
+export function ownerAsked(comments) {
+  const newest = [...(comments ?? [])].reverse().find((c) => TRUSTED.includes(c.author_association) && /<!--\s*review-desk/.test(String(c.body ?? "")));
+  return Boolean(newest) && OWNER_ASK.test(String(newest.body).replace(/<!--[\s\S]*?-->/g, ""));
 }
 
 // "Claude Opus 5.5", "opus-5.5" and "Opus  5.5" are one model.
@@ -96,6 +105,7 @@ export function decide({ pr, headAfter, files, checkRuns, comments, defaultBranc
 
   const labels = (pr.labels ?? []).map((l) => l?.name);
   if (labels.includes("needs-owner") && !labels.includes("owner-ok")) return no("`needs-owner` without `owner-ok`: waits for the owner");
+  if (ownerAsked(comments) && !labels.includes("owner-ok")) return no("the newest review asks for the owner, and `owner-ok` is not on the PR");
 
   const docsOnly = files.every((f) => STATUSES.includes(f.status) && !pathRefusal(f.filename))
     && files.reduce((n, f) => n + f.additions + f.deletions, 0) < MAX_CHANGED_LINES;
@@ -111,6 +121,7 @@ export function decide({ pr, headAfter, files, checkRuns, comments, defaultBranc
     if (!footer) return no("no complete review footer");
     if (footer.head !== sha) return no(`the newest review is for ${footer.head}, not ${sha}`);
     if (!footer.clean) return no("the newest review is not clean");
+    if (!footer.reviewer || !footer.builder) return no("the review footer does not name both models");
     if (footer.reviewer === footer.builder) return no("reviewer and builder are the same model");
   }
 
