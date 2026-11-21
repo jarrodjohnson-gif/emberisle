@@ -28,6 +28,9 @@ const CASES = [
   ['the same, after owner-ok', { comments: [review(A, true, 'Jarrod must see the pictures first.')], labels: ['owner-ok'] }, 'signal:green'],
   ['the head moved during the sweep', { moved: true }, 'signal:yellow'],
   ['a reviewed code PR with the code switch off: auto-merge will not take it', { code: false }, 'signal:yellow'],
+  ['the kill switch is thrown: a PR auto-merge would take waits for the owner', { enabled: false }, 'signal:red'],
+  ['the kill switch is thrown and merge-by-chat is on the PR: the label comes off', { enabled: false, labels: ['merge-by-chat', 'signal:green'] }, 'signal:red'],
+  ['the kill switch is thrown on a PR still building', { enabled: false, comments: [] }, 'signal:yellow'],
   ['a clean marker with no reviewer footer', { comments: [{ id: 1, created_at: '2026-11-21T01:00:00Z', author_association: 'OWNER', body: `<!-- review-desk -->\nClean.\n<!-- review-desk: clean ${A} -->` }] }, 'signal:yellow'],
   ['reviewer and builder are the same model', { comments: [{ ...review(), body: review().body.replace('Builder: Sonnet 5.5', 'Builder: Claude Opus 5.5') }] }, 'signal:yellow'],
   ['reviewed and green, but it touches AGENTS.md', { files: [{ filename: 'src/a.ts', status: 'modified', additions: 1, deletions: 0 }, { filename: 'AGENTS.md', status: 'modified', additions: 1, deletions: 0 }] }, 'signal:red'],
@@ -57,12 +60,14 @@ function fixture({ comments = [review()], checks = [green], labels = [], moved =
   return { api, writes, signals: () => [...now].filter(l => l.startsWith('signal:')), all: () => [...now] };
 }
 
+const optsOf = (over) => Object.fromEntries(['code', 'enabled'].filter((k) => over[k] !== undefined).map((k) => [k, over[k]]));
+
 async function run(mod) {
   const out = [];
   for (const [label, over, want] of CASES) {
     const f = fixture(over);
-    await mod.sweep(f.api, over.code === undefined ? {} : { code: over.code });
-    f.opts = over.code === undefined ? {} : { code: over.code };
+    await mod.sweep(f.api, optsOf(over));
+    f.opts = optsOf(over);
     out.push({ label, want, got: f.signals(), f });
   }
   return out;
@@ -94,9 +99,13 @@ assert.deepEqual(chatGreen.all().sort(), ['merge-by-chat', 'signal:green']);
 const chatStale = fixture({ comments: [], labels: ['merge-by-chat', 'signal:green'] });
 await real.sweep(chatStale.api);
 assert.deepEqual(chatStale.all().sort(), ['signal:yellow'], 'merge-by-chat goes when the PR is no longer green');
+const chatKilled = fixture({ labels: ['merge-by-chat', 'signal:green'] });
+await real.sweep(chatKilled.api, { enabled: false });
+assert.deepEqual(chatKilled.all().sort(), ['signal:red'], 'the kill switch takes merge-by-chat off a green PR');
 const chatDry = fixture({ comments: [], labels: ['merge-by-chat'] });
 await real.sweep(chatDry.api, { dryRun: true });
 assert.equal(chatDry.writes.length, 0);
+assert.ok(readFileSync(new URL('./pr-signal.mjs', import.meta.url), 'utf8').includes("enabled: process.env.AUTO_MERGE === 'on'"), 'the kill switch is read exactly as auto-merge.yml reads it');
 console.log('ok   other labels kept, drafts skipped, dry run writes nothing');
 
 // Mutation check: break one rule at a time in a copy of the script. The cases above must catch every break.
@@ -107,7 +116,8 @@ const MUTANTS = [
   ['the review\'s owner request ignored', "if (row.bucket === 'Ready for Jarrod' && !labels.includes('owner-ok')) return 'signal:red';", ''],
   ['everything is green', "return 'signal:yellow';", "return 'signal:green';"],
   ['code switch ignored', 'defaultBranch: current.base?.repo?.default_branch, code });', 'defaultBranch: current.base?.repo?.default_branch, code: true });'],
-  ['green wider than auto-merge', "if (merge.merge === true) return 'signal:green';", "if (merge.merge === true || reviewed) return 'signal:green';"],
+  ['kill switch ignored', "return enabled ? 'signal:green' : 'signal:red';", "return 'signal:green';"],
+  ['green wider than auto-merge', "if (merge.merge === true) return enabled", "if (merge.merge === true || reviewed) return enabled"],
   ['governance PRs never surface to the owner', "if (reviewed && files.some(", "if (false && files.some("],
   ['stale labels kept', 'if (old !== want) await api(', 'if (false) await api('],
   ['label never added', 'if (!have.includes(want)) await api(', 'if (false) await api('],
@@ -137,7 +147,7 @@ try {
 // The workflow never runs PR code and reads only the default branch's scripts.
 const workflow = readFileSync(new URL('../.github/workflows/pr-signal.yml', import.meta.url), 'utf8');
 for (const required of ['workflows: [CI]', 'group: pr-signal', 'ref: ${{ github.event.repository.default_branch }}', 'persist-credentials: false',
-  'scripts/pr-signal.mjs\n            scripts/desk-board.mjs\n            scripts/auto-merge-eligible.mjs\n          sparse-checkout-cone-mode: false', "AUTO_MERGE_CODE: ${{ vars.AUTO_MERGE_CODE != 'off' && 'on' || 'off' }}", "contains(github.event.comment.body, '<!-- review-desk')"]) {
+  'scripts/pr-signal.mjs\n            scripts/desk-board.mjs\n            scripts/auto-merge-eligible.mjs\n          sparse-checkout-cone-mode: false', "AUTO_MERGE_CODE: ${{ vars.AUTO_MERGE_CODE != 'off' && 'on' || 'off' }}", 'AUTO_MERGE: ${{ vars.AUTO_MERGE }}', "contains(github.event.comment.body, '<!-- review-desk')"]) {
   assert.ok(workflow.includes(required), `workflow has ${required}`);
 }
 assert.match(workflow, /^ {2}pull_request_target:$/m);

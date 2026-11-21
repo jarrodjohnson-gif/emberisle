@@ -49,14 +49,16 @@ export function codeRefusal(path) {
 
 // A review that asks for the owner's look or listen. The same wording scripts/desk-board.mjs reads.
 const OWNER_ASK = /(?:Jarrod|owner)[^\n.]{0,100}(?:must see|sign.off|approval|accept)|(?:waiting|pending|needs?)[^\n.]{0,60}(?:Jarrod|owner)|(?:visual|pictures?|audio)[^\n.]{0,80}(?:first|pending|approval|sign.off)/i;
+const DECLINES = /\b(?:no|not)\b[^\n.]{0,40}\b(?:needed|required|necessary)\b|\balready\b/i;
 // True when the newest review from a trusted account asks for the owner. The reviewer may add `needs-owner` a moment
 // after it posts, so the merge must not win that race.
 export function ownerAsked(comments) {
   const newest = [...(comments ?? [])].reverse().find((c) => TRUSTED.includes(c.author_association) && String(c.body ?? "").includes("<!-- review-desk -->"));
   if (!newest) return false;
-  // Hidden comments and `code spans` are not an ask, and neither is a line that says no ask is needed.
+  // Hidden comments and `code spans` are not an ask, and neither is a line that declines one: "no approval needed",
+  // "sign-off is on the issue already". Any other "no" or "not" on a line leaves the ask standing.
   const lines = String(newest.body).replace(/<!--[\s\S]*?-->/g, "").replace(/`[^`\n]*`/g, "").split(/\r?\n/);
-  return lines.some((line) => !/\b(?:no|not|none|without|already)\b/i.test(line) && OWNER_ASK.test(line));
+  return lines.some((line) => !DECLINES.test(line) && OWNER_ASK.test(line));
 }
 
 // "Claude Opus 5.5", "opus-5.5" and "Opus  5.5" are one model.

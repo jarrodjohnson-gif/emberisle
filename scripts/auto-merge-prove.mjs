@@ -116,6 +116,8 @@ CASES.push(
   ["code: a review that says no owner approval is needed", codePr({ comments: [{ author_association: "OWNER", body: footer().replace("Clean.", "Clean.\nNo owner approval needed.\nJarrod's sign-off is on the issue already.") }] }), true],
   ["code: a review that names the label in a code span", codePr({ comments: [{ author_association: "OWNER", body: footer().replace("Clean.", "Clean.\nChecked: `needs-owner` is absent, as it should be.") }] }), true],
   ["code: an ask hidden in an HTML comment", codePr({ comments: [{ author_association: "OWNER", body: footer().replace("Clean.", "Clean.\n<!-- waiting on Jarrod -->") }] }), true],
+  ...["Not merged yet: waiting on Jarrod.", "Waiting on Jarrod for the look, not the code.", "Needs Jarrod's sign-off on the new sound, which is not in the issue.", "Visual approval pending from Jarrod (no code findings)."]
+    .map((line) => [`code: an ask on a line with a no or not: ${line}`, codePr({ comments: [{ author_association: "OWNER", body: footer().replace("Clean.", `Clean.\n${line}`) }] }), false]),
   ["code: a review that is waiting on Jarrod", codePr({ comments: [{ author_association: "OWNER", body: footer().replace("Clean.", "Clean.\nThis is waiting on Jarrod for the sound.") }] }), false],
   ["code: a newer review with findings", codePr({ comments: [{ author_association: "OWNER", body: footer() }, { author_association: "OWNER", body: footer("Opus 5.5", "Sonnet 5.5", SHA, false) }] }), false],
   ["code: footer from an outsider", codePr({ comments: [{ author_association: "NONE", body: footer() }] }), false],
@@ -167,7 +169,8 @@ const MUTANTS = [
   ["any review that ever asked holds the PR", "].reverse().find((c) => TRUSTED.includes(c.author_association) && String(c.body ?? \"\").includes(\"<!-- review-desk -->\"));", "].reverse().filter((c) => TRUSTED.includes(c.author_association) && String(c.body ?? \"\").includes(\"<!-- review-desk -->\")).find((c) => OWNER_ASK.test(c.body));"],
   ["a bare marker counts as the newest review", "String(c.body ?? \"\").includes(\"<!-- review-desk -->\"));\n  if (!newest) return false;", "/<!--\\s*review-desk/.test(String(c.body ?? \"\")));\n  if (!newest) return false;"],
   ["hidden comments read as an ask", 'String(newest.body).replace(/<!--[\\s\\S]*?-->/g, "").replace(', 'String(newest.body).replace('],
-  ["lines that decline an ask still hold", "!/\\b(?:no|not|none|without|already)\\b/i.test(line) && ", ""],
+  ["lines that decline an ask still hold", "!DECLINES.test(line) && ", ""],
+  ["any no or not on a line drops the ask", "const DECLINES = /\\b(?:no|not)\\b[^\\n.]{0,40}\\b(?:needed|required|necessary)\\b|\\balready\\b/i;", "const DECLINES = /\\b(?:no|not|none|without|already)\\b/i;"],
   ["the waiting-on wording dropped", "|(?:waiting|pending|needs?)[^\\n.]{0,60}(?:Jarrod|owner)", ""],
   ["same-model review allowed", "if (footer.reviewer === footer.builder)", "if (false)"],
   ["footer author not checked", "!TRUSTED.includes(c.author_association) || ", ""],
