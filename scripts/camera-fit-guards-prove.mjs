@@ -133,17 +133,31 @@ check(safeEyeDistance(12, NaN) === 12, "safeEyeDistance clamps NaN zoom to 1");
 check(safeEyeDistance(-5, 0.5) === 24 / 0.8, "safeEyeDistance guards non-positive distance and clamps zoom");
 
 // 15. Renderer wiring. IsleRenderer needs WebGL, so these read its source: each check fails if that line is removed.
-const src = readFileSync(new URL("../src/lib/scene/isle-renderer.ts", import.meta.url), "utf8");
-const disposeAt = src.indexOf("  dispose() {");
-const dispose = src.slice(disposeAt, src.indexOf("\n  }\n", disposeAt));
-check(disposeAt > 0 && dispose.length > 100, "found IsleRenderer.dispose");
-check(/this\.gesture\.reset\(\)/.test(dispose), "dispose resets the touch gesture");
-check(/this\.fingers\.clear\(\)/.test(dispose), "dispose clears tracked fingers");
+const raw = readFileSync(new URL("../src/lib/scene/isle-renderer.ts", import.meta.url), "utf8");
+// Strip comments so a commented-out line cannot satisfy a check.
+const src = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\s\/\/.*$/gm, "");
+const body = (head) => {
+  const at = src.indexOf(head);
+  return at < 0 ? "" : src.slice(at, src.indexOf("\n  }\n", at));
+};
+const dispose = body("  dispose() {");
+const applyPose = body("  private applyPose(p: Pose) {");
+check(dispose.length > 100, "found IsleRenderer.dispose");
+check(applyPose.length > 300, "found IsleRenderer.applyPose");
+check(/^\s*this\.gesture\.reset\(\);/m.test(dispose), "dispose resets the touch gesture");
+check(/^\s*this\.fingers\.clear\(\);/m.test(dispose), "dispose clears tracked fingers");
 for (const t of ["focusin", "focusout"]) {
   check(dispose.includes(`this.parent.removeEventListener("${t}", this.remeasure)`), `dispose detaches parent ${t} listener`);
 }
 check(/GATE_EVENTS\) this\.parent\.removeEventListener\(t, this\.gate, true\)/.test(dispose), "dispose detaches parent gate listeners");
-check(/safeEyeDistance\(p\.dist, zoom\)/.test(src), "applyPose sets the eye distance through safeEyeDistance");
+check(/this\.parent = canvas\.parentElement;/.test(src), "constructor keeps the canvas parent for the pinch gate");
+check(/const zoom = clampZoom\(p\.zoom, this\.orbit\.minZoom, this\.orbit\.maxZoom\);/.test(applyPose), "applyPose clamps the pose zoom");
+check(/const tx = Number\.isFinite\(p\.tx\) \? p\.tx : this\.isle\.cx;/.test(applyPose), "applyPose guards a non-finite tx");
+check(/const tz = Number\.isFinite\(p\.tz\) \? p\.tz : this\.isle\.cz;/.test(applyPose), "applyPose guards a non-finite tz");
+check(/const focal = Number\.isFinite\(p\.focal\) && p\.focal > 0 \? p\.focal : fullH \/ 2;/.test(applyPose), "applyPose falls back when focal is bad");
+check(/const eyeDist = safeEyeDistance\(p\.dist, zoom\);/.test(applyPose), "applyPose computes the eye distance through safeEyeDistance");
+check(/setFromSphericalCoords\(eyeDist, p\.polar, p\.azimuth\)/.test(applyPose), "diorama camera is placed at the guarded eye distance");
+check(/o\.zoom = zoom;/.test(applyPose) && !/o\.zoom = p\.zoom/.test(applyPose), "ortho camera takes the clamped zoom");
 check(/clampPanOffset\(t\.x, t\.z, home\.tx, home\.tz, this\.panLimit\(\)\)/.test(src), "pan clamp runs clampPanOffset against the home point");
 
 console.log(`camera-fit-guards-prove: ${passed} checks passed`);
