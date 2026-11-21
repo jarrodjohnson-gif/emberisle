@@ -286,11 +286,6 @@ const LAST_CALL_MS = 1000;
 // Both action IDs and health challenges use 128 random bits, including on plain-HTTP LAN joins.
 const randomNonce = () => crypto.getRandomValues(new Uint8Array(16)).reduce((hex, b) => hex + b.toString(16).padStart(2, "0"), "");
 
-// Every hello says this page can show the expanded island; a host refuses a page without it at an expanded table (#1611).
-
-
-
-
 // `giveUpMs` is only for proofs that cannot wait 10 minutes: it stands in for both holds until a welcome says otherwise.
 export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor, giveUpMs?: number): TableClient {
   const Ctor = Socket ?? (globalThis.WebSocket as unknown as SocketCtor);
