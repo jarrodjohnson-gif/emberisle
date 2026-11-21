@@ -28,7 +28,7 @@ function pr(over = {}) {
 
 const EXCLUDED = [
   // Governance files, even inside docs/.
-  "AGENTS.md", "CLAUDE.md", "README.md", "docs/DESK.md", "docs/REVIEWING.md", "docs/DECISIONS.md", "docs/LANES.md", "docs/FRAMEWORK.md",
+  "AGENTS.md", "CLAUDE.md", "README.md", "docs/DESK.md", "docs/REVIEWING.md", "docs/DECISIONS.md", "docs/LANES.md", "docs/FRAMEWORK.md", "docs/DESK-LAUNCHERS.md",
   "docs/design/AGENTS.md", "docs/CLAUDE.md", "docs/framework.md", "Docs/DESK.md",
   // Hard excludes. .github/** beats the .github/ISSUE_TEMPLATE/** allow entry: the exclude list wins.
   ".github/workflows/ci.yml", ".github/workflows/auto-merge.yml", ".github/ISSUE_TEMPLATE/bug.md", ".github/flaky.json",

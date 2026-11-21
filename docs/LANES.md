@@ -156,7 +156,7 @@ its own tier or below. Pick the sub-agent by how clear the task is:
 - **Why:** every wake re-reads the whole chat. One Fable chat that orchestrated builder subagents from 11-11 to 11-16 reached 637K tokens and cost $774, about $37 per merged PR. A builder that ends near 100-150K tokens costs a few dollars an issue.
 - **Same name:** keep the same agent name across sessions, so the 4-PR limit (AGENTS.md rule 4) still counts every PR.
 - **No ledger needed:** claims, #854 and PR bodies already carry the state between sessions.
-- **No long orchestrator chats:** if you orchestrate subagents anyway, check your context at every wake. At 150K, finish the running subagents, post where you stopped in your PR bodies, and ask Jarrod for a fresh chat.
+- **No long orchestrator chats:** if you orchestrate subagents anyway, check your context at every wake. At 300K, finish the running subagents, post where you stopped in your PR bodies, and ask Jarrod for a fresh chat.
 
 Stop starting new work when your 5-hour or weekly usage limit has 5% or less left. Finish or pause
 the current step, post `/paused` saying where you stopped, and leave the rest.

@@ -11,7 +11,7 @@ import { pathToFileURL } from "node:url";
 export const MAX_CHANGED_LINES = 400;
 const ALLOW = ["docs/", ".github/ISSUE_TEMPLATE/"];
 // Governance docs: agents and the desk act on these, so they keep the desk's own merge.
-const EXCLUDE_EXACT = ["README.md", "docs/DESK.md", "docs/REVIEWING.md", "docs/DECISIONS.md", "docs/LANES.md", "docs/FRAMEWORK.md"];
+const EXCLUDE_EXACT = ["README.md", "docs/DESK.md", "docs/REVIEWING.md", "docs/DECISIONS.md", "docs/LANES.md", "docs/FRAMEWORK.md", "docs/DESK-LAUNCHERS.md"];
 const EXCLUDE_PREFIX = [".github/", "scripts/", "server/", "src/"];
 // Matched on the file name in any folder: agents read a nested AGENTS.md or CLAUDE.md, and GitHub reads docs/CODEOWNERS.
 const EXCLUDE_NAME = ["AGENTS.md", "CLAUDE.md", "CODEOWNERS", ".gitignore"];
