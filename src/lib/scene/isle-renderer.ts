@@ -233,6 +233,7 @@ export class IsleRenderer {
   private docks: Dock[] = [];
   private piers: THREE.Mesh[] = [];
   private shore: Shore | null = null;
+  private liteMarkTex: THREE.CanvasTexture | null = null;
   private beach!: THREE.Mesh;
   // The crystal sea's own lace, kept while a shore's moved one stands in for it.
   private baseWash: THREE.Mesh | null = null;
@@ -864,6 +865,8 @@ export class IsleRenderer {
     this.jelly = null;
     this.shore?.dispose();
     this.shore = null;
+    this.liteMarkTex?.dispose();
+    this.liteMarkTex = null;
     this.renderer?.setAnimationLoop(null);
     this.controls?.dispose?.();
     this.orbit?.dispose?.();
@@ -1846,6 +1849,8 @@ export class IsleRenderer {
     disposeGroup(this.living);
     this.shore?.dispose();
     this.shore = null;
+    this.liteMarkTex?.dispose();
+    this.liteMarkTex = null;
     this.beach.visible = true;
     if (this.crystal && this.baseWash && this.crystal.wash !== this.baseWash) {
       this.crystal.group.remove(this.crystal.wash);
@@ -1930,6 +1935,31 @@ export class IsleRenderer {
       this.living.add(boat);
       this.boats.push(boat);
     }
+    // #1593: the lite board (no harbour shore) paints a smaller dock plank on each plain pier in one merged mesh.
+    if (this.lite && this.docks.length) {
+      const docks = [...this.docks];
+      const land = this.land;
+      // The small dock-marks chunk, not the harbour shore's. A rebuild or a dispose before it lands drops it (as growScenes).
+      void import("./dock-marks").then(({ markCanvas, PLATE_KINDS }) => {
+        if (gen !== this.landGen || this.stopped) return;
+        this.liteMarkTex?.dispose();
+        const atlas = (this.liteMarkTex = new THREE.CanvasTexture(markCanvas(PAINT)));
+        atlas.colorSpace = THREE.SRGBColorSpace;
+        const mat = new THREE.MeshStandardMaterial({ map: atlas, emissive: 0x6a645a, emissiveMap: atlas, roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -1 });
+        const parts = docks.map((d) => {
+          const pl = new THREE.PlaneGeometry(0.24, 0.12);
+          const row = PLATE_KINDS.indexOf(d.kind);
+          const uv = pl.attributes.uv as THREE.BufferAttribute;
+          for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - (row + 1 - uv.getY(i)) / PLATE_KINDS.length);
+          // At the pier's root: the boat's sail stands in front of the pier's end on piers that face the camera.
+          return pl.rotateX(-Math.PI / 2).translate(d.cx + d.mx * 0.29, 0.128, d.cz + d.mz * 0.29);
+        });
+        const merged = mergeGeometries(parts);
+        parts.forEach((p) => p.dispose());
+        if (merged) land.add(new THREE.Mesh(merged, mat));
+        this.wake();
+      });
+    }
   }
 
   // A new board (or a first one, as on a reconnect) is drawn standing; only pieces added since the last board land.
@@ -1998,6 +2028,13 @@ export class IsleRenderer {
       if (sail && sail.material instanceof THREE.MeshStandardMaterial) {
         sail.material.color.set(claimed ? pmap.get(claimed)?.color ?? "#eee" : "#f4efe4");
       }
+    }
+    // #1593: a claimed dock's pennant goes up in the claiming seat's colour.
+    for (const pen of (this.shore?.group.userData.pennants as THREE.Group[] | undefined) ?? []) {
+      const claimed = ((pen.userData.vids as string[]).map((id) => vmap.get(id)).find((v) => v?.building) ?? null)?.building?.playerId;
+      pen.visible = Boolean(claimed);
+      const cloth = pen.children[1] as THREE.Mesh;
+      if (claimed) (cloth.material as THREE.MeshStandardMaterial).color.set(pmap.get(claimed)?.color ?? "#ccc");
     }
   }
 
