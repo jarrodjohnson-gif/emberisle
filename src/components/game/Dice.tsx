@@ -16,18 +16,16 @@ const PIPS: Record<number, number[]> = {
 };
 
 function Die({ value, big }: { value: number; big?: boolean }) {
-  const safe = Number.isFinite(value) ? Math.min(6, Math.max(1, Math.round(value))) : 1;
-  const pips = PIPS[safe] ?? PIPS[1];
   return (
     <span
       data-testid="die"
-      data-value={safe}
+      data-value={value}
       className={cn(
         "grid grid-cols-3 grid-rows-3 place-items-center border border-control-line bg-surface text-fg motion-safe:animate-[die-settle_150ms_ease-out]",
         big ? "size-16 rounded-control p-2" : "size-9 rounded-[8px] p-1",
       )}
     >
-      {pips.map((cell) => (
+      {PIPS[value].map((cell) => (
         <span
           key={cell}
           data-pip
@@ -106,8 +104,6 @@ export function RollMoment() {
     setRoll(next);
     setSaid(next);
   }, [rolls, state, mode, localId, spectator]);
-
-  useEffect(() => () => { useMomentUp.setState({ up: false }); }, []);
 
   useEffect(() => {
     if (!roll) return;

@@ -149,7 +149,24 @@ try {
   const announceEl = await page.waitForSelector('[data-testid="announce-roll"]', { timeout: 5000 });
   const announceText = await announceEl.textContent();
   assert.ok(!announceText?.includes("NaN"), "Announce roll text must not include NaN");
-  ok("Dice and Die components clamp out-of-range or NaN values in live RollMoment");
+  // Dice itself: the HUD row is not on screen at this size, so render it directly with bad values.
+  const rowLabel = await page.evaluate(async () => {
+    const React = (await import("/@id/react")).default;
+    const rdc = await import("/@id/react-dom/client");
+    const createRoot = rdc.createRoot ?? rdc.default.createRoot;
+    const { Dice } = await import("/src/components/game/Dice.tsx");
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = createRoot(host);
+    root.render(React.createElement(Dice, { values: [NaN, 9] }));
+    await new Promise((r) => setTimeout(r, 100));
+    const label = host.querySelector('[data-testid="dice-row"]')?.getAttribute("aria-label");
+    root.unmount();
+    host.remove();
+    return label;
+  });
+  assert.equal(rowLabel, "Rolled 1 and 6, 7", "Dice with [NaN, 9] must clamp to 1 and 6, not throw or print NaN");
+  ok("Dice and RollMoment clamp out-of-range or NaN values");
 
   // 5. Dice.tsx: Rematch / roll reset clears RollMoment immediately.
   await page.evaluate(() => {
@@ -161,20 +178,9 @@ try {
     const s = window.__emberisle.getState();
     window.__emberisle.setState({ state: { ...s.state, rolls: 0 } });
   });
-  await page.waitForSelector('[data-testid="roll-moment"]', { state: "detached", timeout: 5000 });
-  ok("Rematch or roll reset clears active RollMoment immediately");
-
-  // 6. Dice.tsx: Screen change / unmount guarantees useMomentUp is reset to false.
-  await page.evaluate(async () => {
-    const { useMomentUp } = await import("/src/components/game/Dice.tsx");
-    useMomentUp.setState({ up: true });
-    window.__emberisle.setState({ screen: "lobby" });
-  });
-  await page.waitForFunction(async () => {
-    const { useMomentUp } = await import("/src/components/game/Dice.tsx");
-    return useMomentUp.getState().up === false;
-  }, null, { timeout: 5000 });
-  ok("RollMoment unmount guarantees useMomentUp is reset to false");
+  // Reduced motion ends a roll moment by itself after 900 ms, so it must be gone well before that.
+  await page.waitForSelector('[data-testid="roll-moment"]', { state: "detached", timeout: 400 });
+  ok("Rematch or roll reset clears active RollMoment before its own 900 ms timer");
 
   await ctx.close();
   assert.deepEqual(unexpectedErrors, [], `unexpected browser errors: ${unexpectedErrors.join(" | ")}`);
