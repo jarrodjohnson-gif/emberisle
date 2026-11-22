@@ -113,7 +113,7 @@ const source = readFileSync(new URL('./pr-signal.mjs', import.meta.url), 'utf8')
 const MUTANTS = [
   ['needs-owner ignored', "if (labels.includes('needs-owner') && !labels.includes('owner-ok')) return 'signal:red';", ''],
   ['owner-ok does not clear needs-owner', "labels.includes('needs-owner') && !labels.includes('owner-ok')", "labels.includes('needs-owner')"],
-  ['the review\'s owner request ignored', "if (row.bucket === 'Ready for Jarrod' && !labels.includes('owner-ok')) return 'signal:red';", ''],
+  ['the review\'s owner request ignored', "if (asked && !labels.includes('owner-ok')) return 'signal:red';", ''],
   ['everything is green', "return 'signal:yellow';", "return 'signal:green';"],
   ['code switch ignored', 'defaultBranch: current.base?.repo?.default_branch, code });', 'defaultBranch: current.base?.repo?.default_branch, code: true });'],
   ['kill switch ignored', "return enabled ? 'signal:green' : 'signal:red';", "return 'signal:green';"],

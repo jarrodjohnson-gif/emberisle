@@ -225,12 +225,12 @@ assert.equal(/head_(branch|repository|ref)|pull_request\.head|refs\/pull|merge_c
 assert.equal(/\$\{\{[^}]*(comment\.body|pull_request\.title|pull_request\.body|head\.label)[^}]*\}\}/.test(workflow.replace(/contains\(github\.event\.comment\.body, '[^']*'\)/g, "")), false, "no PR text in an expression");
 assert.match(workflow, /gh pr merge "\$NUM" --repo "\$REPO" --squash --match-head-commit "\$SHA"/);
 assert.match(workflow, /if: steps\.decide\.outputs\.merge == 'true'/);
-assert.match(workflow, /if gh pr merge "\$NUM" --repo "\$REPO" --squash --match-head-commit "\$SHA"; then\n.*labels\[\]=auto-merged'\n\s+else\n.*labels\[\]=merge-by-chat'/, "a refused merge is handed to the dispatcher, never retried another way");
+assert.match(workflow, /if out=\$\(gh pr merge "\$NUM" --repo "\$REPO" --squash --match-head-commit "\$SHA" 2>&1\); then\n.*labels\[\]=auto-merged'\n[\s\S]*?\n\s+exit 0\n\s+fi\n[\s\S]*?grep -qE 'refusing to allow a GitHub App to create or update workflow\|without \.workflows\. permission'[\s\S]*?labels\[\]=merge-by-chat'/, "a merge refused for the workflow-permission reason is handed to the dispatcher, never retried another way");
 assert.equal((workflow.match(/secrets\./g) || []).length, 1, "the only secret is the optional merge token");
 assert.equal((workflow.match(/gh pr merge/g) || []).length, 1, "one merge command, pinned to the checked SHA");
 assert.ok(workflow.includes("AUTO_MERGE_CODE: ${{ vars.AUTO_MERGE_CODE != 'off' && 'on' || 'off' }}"), "the code phase has its own off switch");
 for (const p of CODE_EXCLUDED) assert.ok(real.codeRefusal(p), `${JSON.stringify(p)} is refused in a code PR`);
-for (const p of ["src/main.tsx", "package.json", ".github/workflows/ci.yml", "scripts/size-prove.mjs", "docs/x.md"]) assert.equal(real.codeRefusal(p), null, p);
+for (const p of ["src/main.tsx", "package.json", ".github/workflows/ci.yml", "scripts/size-delta-prove.mjs", "docs/x.md"]) assert.equal(real.codeRefusal(p), null, p);
 const ci = readFileSync(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
 assert.match(ci, /^name: CI$/m, "auto-merge listens for the workflow named CI");
 assert.match(ci, /^ {2}checks:$/m, "the required job is still called checks");
