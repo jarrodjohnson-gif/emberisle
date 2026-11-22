@@ -29,7 +29,7 @@ A draft PR gets no signal.
 
 One chat takes one issue, or one batch of up to three PRs it is told to finish. Pick and claim the issue as [AGENTS.md](../AGENTS.md) and [LANES.md](LANES.md) say. Then:
 
-1. **Build and open the PR**, ready for review, with `Agent: <your agent name>` and your model in the body.
+1. **Build and open the PR**, ready for review, with `Agent: <your agent name>` and your model in the body. Then set your chat's title to `(auto) <your agent name> #<PR number> building` with `set_session_title`. The dispatcher reads only titles, so the title is how it knows your slot is busy.
 2. **Wait for CI with `subscribe_pr_activity`.** Never sleep or poll. Fix a red CI.
 3. **When `checks` is green on the head, start one reviewer subagent** with the Agent tool.
    - Its model is never yours, and never a model that built any part of the PR. Sonnet 5.5 reviews Opus work and Opus 5.5 reviews Sonnet work. Haiku 5.5 may review a docs-only PR.
@@ -37,6 +37,10 @@ One chat takes one issue, or one batch of up to three PRs it is told to finish. 
    - It posts its review on the PR itself. You never write, edit or delete a review comment.
 4. **Fix its findings**, push, wait for green, and start a fresh reviewer on the new head. Do this three times at most.
 5. **Stop when the PR is done.** Done means the newest review is clean at the head and `checks` is green there. Set the issue to `status:in-review`, unsubscribe from the PR, post one last line, and end. Auto-merge does the rest.
+6. **Set your last title as the very last thing you do.** Keep `(auto) <your agent name> #<PR number>` and change the final word:
+   - `done` when the PR is done;
+   - `blocked` when you added `needs-owner`;
+   - `(auto) <your agent name> nothing eligible` when you found no issue to take.
 
 **When you need Jarrod**, add the `needs-owner` label to the PR and post one comment that starts `Blocked:` or `Question:`, with the options and your recommendation. Do this when:
 
@@ -91,36 +95,39 @@ Red on `main` after a merge is `prio:p0`. The dispatcher starts a builder for it
 
 One small chat, on Haiku 5.5. Jarrod starts it at claude.ai/code on the emberisle repo: `Run the Emberisle dispatcher. Read "The dispatcher" in docs/DESK.md.`
 
-It keeps no ledger. Everything it needs is in the PR list and in the session ids it started.
+It keeps no ledger. Everything it needs is in two listings: the open PRs and the chat titles.
 
 **Every tick, in this order:**
 
-1. List the open PRs once, with only these fields: `number`, `title`, `draft`, `labels`, `updated_at`. Never read a PR body, a diff, a review, #916 or #699.
+1. **List the open PRs once**, with only these fields: `number`, `title`, `draft`, `labels`, `updated_at`. Never read a PR body, a diff, a review, #916 or #699.
 2. **Merge what the workflow handed over.** For each PR in the list that carries both `signal:green` and `merge-by-chat`: read that one PR's head SHA and labels again, and if both labels are still there, squash-merge it pinned to that SHA. Never merge a PR without both labels, and never add either label yourself. This step is the one exception to "never merge" in AGENTS.md rule 7, and it is yours alone. If the merge is refused, leave it and go on. If the same PR is refused at two ticks, tell Jarrod once in your chat, with its number and the error.
-3. **Archive finished chats.** Call `list_sessions` once with `children: true` and `limit: 10`. Archive a chat you started when it is no longer working and its PR is merged, closed, green or red, or it opened no PR.
-4. **Count live chats.** A chat is live only while that listing shows it working. A chat that has finished is not live, however recently you started it. On 2026-11-21 a builder that found nothing to build in three minutes was counted live for four hours, and no slot was filled.
-5. **Send help to orphans.** An orphan is a `signal:yellow` PR updated in the last 7 days, with no live chat and no update for 3 hours. A `signal:red` PR that changed since it turned red is an orphan too. Start one PR-owner chat for up to three orphans. Start two such chats per tick at most.
-6. **Fill the builder slots.** There are three, and each holds one chat at a time:
+3. **List the chats once**: `list_sessions` with `limit: 20`. Use only rows whose title starts `(auto)` and that are not archived, and from each only the title, `created_at` and `updated_at`. If the call fails or is denied, start nothing this tick, say so once, and go to step 7.
+   - A chat is **ended** when its title ends in `done`, `blocked` or `nothing eligible`.
+   - A chat is **live** when it is not ended and its `updated_at` is less than 3 hours old. A builder waiting for CI is live: its title still ends in `building`.
+   - A chat that is neither is **stale**: it stopped without saying so.
+4. **Archive** every ended chat whose title ends in `done` or `blocked`, and every stale chat. Leave a `nothing eligible` chat until it is 6 hours old, then archive it. Never archive your own chat or one whose title does not start `(auto)`.
+5. **Send help to orphans.** An orphan is a `signal:yellow` PR updated in the last 7 days, with no update for 3 hours, whose number is in no live chat's title. A `signal:red` PR is an orphan too when it was updated in the last 3 hours and its number is in no live chat's title: Jarrod has answered. Start one PR-owner chat for up to three orphans, and two such chats per tick at most.
+6. **Fill the builder slots.** There are three. A slot is taken while a live chat's title names it.
 
    | Slot | Model | Takes |
    |---|---|---|
-   | `claude-opus-a` | `claude-opus-5-5` | `tier:1`, or a `tier:2` issue marked `model:opus` when no `tier:1` issue is eligible |
-   | `claude-sonnet-a` | `claude-sonnet-5-5` | `tier:2` or `tier:3` |
-   | `claude-sonnet-b` | `claude-sonnet-5-5` | `tier:2` or `tier:3` |
+   | `claude-opus-a` | `claude-opus-5-5` | one `tier:1` issue, or one `tier:2` issue marked `model:opus` if no `tier:1` issue is eligible |
+   | `claude-sonnet-a` | `claude-sonnet-5-5` | one `tier:2` or `tier:3` issue not marked `model:opus` |
+   | `claude-sonnet-b` | `claude-sonnet-5-5` | one `tier:2` or `tier:3` issue not marked `model:opus` |
 
-   Skip a slot whose last chat is still live. Fill every other slot at every tick: the PR-owner chats from step 5 do not use up a builder slot. If a slot's last chat ended with nothing eligible, start it again only when the list of `status:todo` issues has changed since.
+   Start a builder in every slot that is not taken. One exception: leave a slot empty while a `nothing eligible` chat for it, less than 6 hours old, is in the listing. PR-owner chats never take a builder slot.
 7. **Set the next tick** with one `send_later` for 60 minutes. Then post `·` and end the turn.
 
-**Start chats with `create_session`**, `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, and a title that starts `(auto)` and names the slot and PR numbers.
+**Start chats with `create_session`**, `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, and one of these titles, which the chat then keeps up to date itself: `(auto) <slot> starting` for a builder, `(auto) pr-owner #<number> #<number> building` for a PR-owner chat.
 
-- **Builder prompt:** `Work on Emberisle as builder "<slot>", model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". Take one eligible <tier> issue, a prio:p0 first, and follow that section to the end. Then stop.`
-- **PR-owner prompt:** `You own these open Emberisle PRs until each is done: <numbers>. Your agent name is <slot>, model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". For each PR, read its newest comments, then follow steps 2 to 5 of that section. Take no new issue. Then stop.` Use Opus 5.5 for a PR whose issue is `tier:1`, and Sonnet 5.5 otherwise.
+- **Builder prompt:** `Work on Emberisle as builder "<slot>", model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". Take <the slot's "Takes" cell, word for word>, a prio:p0 first, and follow that section to the end, title changes included. Then stop.`
+- **PR-owner prompt:** `You own these open Emberisle PRs until each is done: <numbers>. Your agent name is <slot>, model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". For each PR, read its newest comments, then follow steps 2 to 6 of that section. Your title is "(auto) pr-owner" with the PR numbers and a last word of building, done or blocked. Take no new issue. Then stop.` Use Opus 5.5 for a PR whose issue is `tier:1`, and Sonnet 5.5 otherwise.
 
 **The dispatcher never** reviews, decides a merge, labels, comments on GitHub, answers a question, or reads a chat's transcript. It posts in its own chat only when `create_session` fails, once, with the error.
 
-**Its own size.** A tick adds about 4K tokens. When `get_session` shows more than 300K, tell Jarrod once: "Please start a fresh dispatcher," with the start line. Check this once a day, not every tick. If PRs sit yellow for half a day with no chat, the tick chain broke: start a fresh dispatcher.
+**Its own size.** A tick adds about 8K tokens, most of it the chat listing. When `get_session` shows more than 300K, tell Jarrod once: "Please start a fresh dispatcher," with the start line. Check this once a day, not every tick. If PRs sit yellow for half a day with no chat, the tick chain broke: start a fresh dispatcher.
 
-**Permissions.** The repo's `.claude/settings.json` allows `create_session`, `archive_session`, `send_later`, `get_session` and `send_message`. Only Jarrod changes it. If one is denied, say which, once, and carry on.
+**Permissions.** The repo's `.claude/settings.json` allows `create_session`, `archive_session`, `send_later`, `get_session` and `send_message`. `list_sessions` and `set_session_title` are not on that list. Only Jarrod changes it. If a tool is denied, say which, once, and carry on. A builder whose title change is denied just ends: the dispatcher sees its chat go stale after 3 hours and frees the slot.
 
 ## Keep it cheap
 
