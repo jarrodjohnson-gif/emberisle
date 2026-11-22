@@ -23,7 +23,8 @@ not overlap. Claims reserve files, including while a PR waits for review.
 2. **Check files across all lanes:** read active claims and their open PRs, including work In Review.
    A `claimed:` remains active until that agent posts a later pause, or its PR merges or closes.
    Historical same-agent `paused:` comments also release claims; new pauses must include `/paused`.
-   Only the review desk or Jarrod may release another agent's claim (`released: <name>, <YYYY-MM-DD>` or `paused:` with that agent's exact name); every agent on the shared owner login can post these, so this is by agreement and the bot does not enforce it. Agents release only their own claims.
+   **A claim expires after 48 quiet hours** (Jarrod, 2026-11-22): with no open PR for the issue and no push to its branch for 48 hours (or 48 hours after the claim comment, when no branch exists), the claim is gone, whatever the next lines say about how long a claim lasts. Any builder may then take the issue: comment `expired: <the old agent's name>, <date>` and claim it as usual. Before that,
+   only Jarrod may release another agent's claim (`released: <name>, <YYYY-MM-DD>` or `paused:` with that agent's exact name); every agent on the shared owner login can post these, so this is by agreement and the bot does not enforce it. Agents release only their own claims.
    Ignore released historical claims. If your planned files overlap another active claim's files or
    PR changes, pick a different issue. A shared lane alone is not a conflict. Neither are the shared
    registration files `package.json`, `.github/workflows/ci.yml` and `scripts/size-prove.mjs`: almost
