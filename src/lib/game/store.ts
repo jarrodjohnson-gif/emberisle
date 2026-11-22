@@ -215,6 +215,7 @@ import type { Bag, ChatLine, Legal, Me, ProfileCardReply, Reaction, Rematch, Sea
 import type { ProfileAttachment } from "@/lib/net/profiles";
 import { chunk } from "@/lib/lazy";
 import { PROTO } from "@/lib/net/proto";
+import { hostTags } from "@/lib/net/host-tags";
 import { readMutedSeats } from "@/lib/muted-seats";
 import { HAPTIC_MS } from "@/lib/haptic-durations";
 import { haptics, play, playLater, resetTradePlease, stop, yourTurn, type SoundName } from "@/lib/sound";
@@ -1009,7 +1010,8 @@ export const useGame = create<GameStore>((set, get) => ({
     const wayfarerMode = get().wayfarerChoices.online ?? "on";
     // #1611: five or six on the Play page's Seats choice open an expanded table.
     const variant = (get().seatCount ?? 4) > 4 ? "expanded" : undefined;
-    connect(set, get, (t, me) => t.open(me, { wayfarerMode, visibility, variant }));
+    // The host tags ride on the hello beside the options, so a second table of this browser's is refused (#944).
+    connect(set, get, (t, me, url) => t.open(me, { wayfarerMode, visibility, variant, hostTags: hostTags(url) } as Parameters<TableClient["open"]>[1]));
   },
   joinTable: (code) => {
     get().commitName();
@@ -1272,7 +1274,7 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
 // "watch" is a spectator (docs/design/spectator.md): no seat and no secret, so a drop never redials and must not erase a
 // seat this browser saved for another table.
 type ConnectKind = "normal" | "quiet" | "peek" | "watch";
-async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, kind: ConnectKind = "normal") {
+async function connect(set: Set, get: Get, first: (t: TableClient, me: Me, url: string) => void, kind: ConnectKind = "normal") {
   // A new table drops whatever an earlier one (or a local deal) still has on its way (#1611). A peek carries no game.
   if (kind !== "peek") dropDeal();
   clearWake();
@@ -1346,12 +1348,15 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     else if (swing) showBanner(set, swing);
   };
   let table: TableClient;
-  try { table = connectTable(hostUrl(selectedHost), {
+  const url = hostUrl(selectedHost);
+  try { table = connectTable(url, {
     health: (connectionHealth) => {
       if (recovery && (get().restoring || get().state !== null) && connectionHealth.status === "Reachable") return;
       set({ connectionHealth });
     },
-    welcome: ({ proto, serverSha, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode, variant }) => {
+    welcome: (w) => {
+      const { proto, serverSha, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode, variant } = w;
+      hostTags(url, (w as { hostTag?: unknown }).hostTag);
       pending = false;
       // An expanded table's island needs expanded.ts: it starts loading now, so its first state rarely waits (#1611).
       if (variant) void expanded.prefetch();
@@ -1519,5 +1524,5 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       window.removeEventListener("visibilitychange", visible);
     };
   }
-  first(table, selectedMe);
+  first(table, selectedMe, url);
 }
