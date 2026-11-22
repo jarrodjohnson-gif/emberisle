@@ -171,6 +171,30 @@ On 2026-11-22 Jarrod chose: "agents approve bug fixes and small polish", with th
 - The builder never writes or edits a `Look check:` comment, and a look check counts only at the head it names.
 - When Fable is unsure, the verdict is `big`.
 
+## The planner
+
+Builders are only as good as the issues they are handed. The old desk wrote the issues, and since 2026-11-21 nobody has. The planner is a short Opus 5.5 chat that the dispatcher starts when the ready list runs low. It writes issues and stops. It never builds, reviews or merges. Its title is `(auto) planner building`, then `(auto) planner done`.
+
+**Where the work comes from, in this order:**
+
+1. **Jarrod's answers.** Query the Desk page's `decisions` for the last 14 days. An answer that calls for building, with no issue or PR that already carries it, becomes an issue.
+2. **Backlog that is now ready.** A `status:backlog` issue whose `Depends on` issues are all closed, with a clear scope and a completion test, moves to `status:todo`.
+3. **Loose ends on merged work.** Non-blocking review notes and follow-ups named in PRs merged in the last 7 days.
+4. **Broken or flaky things.** A proof that failed on `main` or failed on a PR that did not touch it, and any open `bug` with no owner.
+5. **[IDEAS.md](IDEAS.md) and [VISION.md](VISION.md).** Small, safe pieces only.
+
+**What it writes.** Each issue follows [FRAMEWORK.md](FRAMEWORK.md) section 5: `Deliverable`, `Completion test`, `Depends on`, `Source`. It carries one lane label, one `tier:` label set by risk as [LANES.md](LANES.md) says, one `prio:` label, and `status:todo`. One issue is one PR's worth of work. State the numbers: sizes, counts, limits. An issue a builder would have to ask a question about is not ready: sharpen it or leave it in backlog.
+
+**What it never decides.** A new feature, a new screen or flow, a layout change, a rule, an art or sound direction: these are Jarrod's ("Who decides what" in FRAMEWORK.md). File such work as `status:backlog`, post one `Question:` on it with options and a recommendation, and add `needs-owner` so the clerk puts it on the Desk page. For a design question, start a Fable 5.2 subagent first and put its recommendation in the question.
+
+**Housekeeping, in the same run:**
+
+- Keep at least 5 open, unclaimed `anytime` issues ([LANES.md](LANES.md#anytime-queue)).
+- Mark a claim expired when it has been quiet for 48 hours ([LANES.md](LANES.md)): comment `expired: <agent>, <date>` and set the issue back to `status:todo`.
+- Close an issue whose work is merged, with the PR number.
+
+**How much.** Stop when 12 unclaimed `status:todo` issues are ready across the tiers, at least 3 of them `tier:1`, or when the sources above are used up. File 15 at most in one run. End with one line: how many issues you filed, moved and closed.
+
 ## The dispatcher
 
 One small chat, on Haiku 5.5. Jarrod starts it at claude.ai/code on the emberisle repo: `Run the Emberisle dispatcher. Read "The dispatcher" in docs/DESK.md.`
@@ -192,7 +216,7 @@ It keeps no ledger. Everything it needs is in the open PR list, the chat titles 
    - a `signal:yellow` PR updated in the last 7 days, with no update for 3 hours, and its number in no live chat's title.
 
    A red PR that carries `on-desk` waits for him. Never start a chat for it, however recently it changed.
-6. **Start work chats, up to the limit.** The limit is **one work chat live at a time**. Jarrod set it on 2026-11-22 ("one builder at a time until the limit resets") and only he changes it. A work chat is a builder or a PR-owner chat. The clerk does not count. While fewer work chats are live than the limit:
+6. **Start work chats, up to the limit.** The limit is **one work chat live at a time**. Jarrod set it on 2026-11-22 ("one builder at a time until the limit resets") and only he changes it. A work chat is a builder or a PR-owner chat. The clerk and the planner do not count. While fewer work chats are live than the limit:
    - first, one PR-owner chat for the first PR from step 5 (up to three PRs in one chat when they share a builder);
    - when step 5 found nothing, one builder, in the first slot in the table that is not skipped:
 
@@ -207,16 +231,18 @@ It keeps no ledger. Everything it needs is in the open PR list, the chat titles 
    - Query `decisions` for documents whose `at` is in the last 7 days, and count the ones whose `handled_for` is not their `at`.
    - From the PR list, note every `signal:red` PR that carries none of `on-desk`, `answered` and `no-pictures`, and whose number is in no live chat's title.
    - If either is non-empty and no clerk chat is live in the listing from step 3, start one clerk chat and give it those PR numbers.
-   - Write `status/now`: `at`, `building` (one line per live chat, from its title), `merged` (read the old `status/now` first: keep its lines, add the PRs your step 2 merged and any PR named in a chat title ending `done` that is gone from the list, newest first, ten at most), and `problems` (PRs red for more than a day, and anything you told Jarrod). Plain words, no SHAs.
+   - Count the open issues labelled `status:todo` with one list call (`number` and `labels` only). If there are fewer than 5, no planner chat is live, and no planner chat in the listing is less than 6 hours old, start one planner chat.
+   - Write `status/now`: `at`, `building` (one line per live chat, from its title), `merged` (read the old `status/now` first: keep its `merged` lines only, add the PRs your step 2 merged and any PR named in a chat title ending `done` that is gone from the list, newest first, ten at most), and `problems`, written fresh at every tick and never copied from the old status (PRs red for more than a day, and anything you told Jarrod). Plain words, no SHAs.
 8. **Set the next tick** with one `send_later` for 60 minutes. Then post `·` and end the turn.
 
 **Start chats with `create_session`**, `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, and one of these titles, which the chat then keeps up to date itself: `(auto) <slot> starting` for a builder, `(auto) pr-owner #<number> #<number> building` for a PR-owner chat.
 
 - **Builder prompt:** `Work on Emberisle as builder "<slot>", model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". Take <the slot's "Takes" cell, word for word>, a prio:p0 first, and follow that section to the end, title changes included. Then stop.`
 - **PR-owner prompt:** `You own these open Emberisle PRs until each is done: <numbers>. Your agent name is pr-owner, model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". For each PR, read its newest comments, then follow steps 2 to 7 of that section. If a PR carries the label answered, remove it first and do what his answer says. If it carries no-pictures, take real screenshots at 440x956, 956x440 and 1280x720, add them to the branch and the PR body, and remove that label. Your title is "(auto) pr-owner" with the PR numbers and a last word of building, then blocked if any PR ended blocked, else done. Take no new issue. Then stop.` Use Opus 5.5 for a PR whose issue is `tier:1`, and Sonnet 5.5 otherwise.
+- **Planner prompt** (model `claude-opus-5-5`, title `(auto) planner building`): `You are the Emberisle planner. Read AGENTS.md and "The planner" in docs/DESK.md, and do what that section says. Then stop.`
 - **Clerk prompt** (model `claude-sonnet-5-5`, title `(auto) clerk building`): `You are the Emberisle clerk. Read "Jarrod and the Desk page" in docs/DESK.md and do the three jobs in "The clerk". PRs that need a card: <numbers, or none>. Then stop.`
 
-**The dispatcher never** reviews, decides a merge, labels, comments on GitHub, writes a card, answers a question, or reads a chat's transcript. It posts in its own chat only when `create_session` fails, once, with the error.
+**The dispatcher never** reviews, decides a merge, labels, comments on GitHub, writes a card or an issue, answers a question, or reads a chat's transcript. It posts in its own chat only when `create_session` fails, once, with the error.
 
 **Its own size.** A tick adds about 8K tokens, most of it the chat listing. When `get_session` shows more than 300K, tell Jarrod once: "Please start a fresh dispatcher," with the start line. Check this once a day, not every tick. If PRs sit yellow for half a day with no chat, the tick chain broke: start a fresh dispatcher.
 
@@ -240,5 +266,4 @@ Codex, Gemini, Grok and helpers can't start a Claude reviewer. They open the PR 
 
 - Issue #916 and the inbox PR #699 are no longer read. The `desk-board` workflow still writes its table to #916 and its lines to #699; nothing acts on them.
 - `desk-gate` still sets its status on every PR. It checks the same review footer that auto-merge reads.
-- Nobody files issues, sets tiers, keeps the `anytime` queue at 5 or releases a dead claim. The desk did these. Jarrod starts an issue-writer chat when the ready list runs short.
 - The Monday hub digest and rules batch ([FRAMEWORK.md](FRAMEWORK.md) section 10) have no owner yet. Jarrod starts a chat for them when he wants one.
