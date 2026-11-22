@@ -6,6 +6,9 @@ Jarrod starts it at claude.ai/code on the emberisle repo, with this start line: 
 
 It keeps no ledger. Everything it needs is in the open PR list, the chat titles and the Desk page's database.
 
+- **The Desk page** is https://claude.ai/artifact/6BsYJZrADpidXZsVVftGih. Read and write its database with `ArtifactData` and that URL. The documents it uses (`decisions/<card id>` and `status/now`) are described in [`clerk.md`](clerk.md), "What is stored".
+- **Your own chat** is the one `get_session` with no `session_id` describes. Use its id wherever this file says "this chat".
+
 ## Never
 
 - Never review, decide a merge, label, or comment on GitHub. Step 2 is the one merge it makes.
@@ -131,15 +134,14 @@ A tick adds about 8K tokens, most of it the chat listing. Check `get_session` on
 When it shows more than 250K, rotate:
 
 1. Start the next dispatcher with `create_session`. Its prompt is the start line. Its title is `(auto) Emberisle dispatcher`.
-2. Create the `Emberisle dispatcher tick` task with `persistent_session_id` set to the new chat.
-3. Delete your own task with `delete_trigger`.
-4. Set your title to `(auto) Emberisle dispatcher done`, and end.
+2. If `create_session` fails, add one line to `problems`, and keep ticking. Try again the next day.
+3. Otherwise set your title to `(auto) Emberisle dispatcher done`, and end.
 
-If step 2 is denied, do not delete your task. Add one line to `problems`, and keep ticking. If a task is already gone at step 3, ignore it.
+You move no task. The new dispatcher's start-line check creates its own task, or its `send_later` chain, and deletes yours.
 
 **After you rotate, you are retired.**
 
-- Answer no message, not even `tick` or `hourly tick`. Chats you started still send `tick` to you. Ignore it: the new dispatcher's hourly tick picks up their work.
+- Answer no message, not even `tick` or `hourly tick`. Chats you started still send `tick` to you, and your old task or `send_later` may still fire. Ignore them all: the new dispatcher's hourly tick picks up their work.
 - Start nothing, merge nothing, and write nothing.
 - The new dispatcher archives you at its step 4, 4 hours after your last update.
 
