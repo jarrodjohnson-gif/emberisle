@@ -193,6 +193,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run scene-motion-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run nearest-coast-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profiles-lifecycle-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run store-lifecycle-guards-prove
