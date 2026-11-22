@@ -8,9 +8,10 @@ import { play } from "@/lib/sound";
 //   2. HowTo and the Costs card: modal, so window capture + stopPropagation; nothing behind it hears the key.
 //   3. TradePanel (window) and PlayerMenu (document), bubble phase, each closes itself; PlaceChip's pending tap (window) likewise.
 //      A player menu still loading is cancelled the same way (menu-cancel.ts).
-//   4. (Was the quick-reaction picker; #899 moved reactions into the chat panel, whose input minimizes itself.)
-//   5. Disarming a build mode: window capture, but it stands down when 1-4 are open or the key came from a text field
-//      (the chat box minimizes itself), because the layers above run later in the same event and must still see their own state.
+//   4. The chat panel (Chat.tsx ChatBox): a key from anywhere inside it closes the panel and nothing else (#736, P4A), so an
+//      armed build stays armed until a second Escape.
+//   5. Disarming a build mode: window capture, but it stands down when 1-4 are open or the key came from a text field or the
+//      chat panel, because the layers above run later in the same event and must still see their own state.
 export function useEscapeDisarm() {
   const setBuildMode = useGame((s) => s.setBuildMode);
   useEffect(() => {
@@ -18,7 +19,7 @@ export function useEscapeDisarm() {
       if (e.key !== "Escape") return;
       const s = useGame.getState();
       if (s.buildMode === "none" || s.tradeOpen || s.menuFor || s.pendingPlace || s.howTo || s.costs) return;
-      if ((e.target as HTMLElement | null)?.closest("input, select, textarea")) return;
+      if ((e.target as HTMLElement | null)?.closest("input, select, textarea, [data-chat-panel]")) return;
       if (document.querySelector('[role="dialog"], [role="alertdialog"], [data-testid="table-menu"], [data-testid="game-log"]')) return;
       play("ui_back");
       setBuildMode("none");

@@ -54,3 +54,5 @@ The `hex-jelly.mjs` header continues its command with these options:
 
 `level-audio.mjs` has two modes. The first reconstructs historical #1073 inputs and can overwrite later audio changes.
 Use `--new` for named, currently unlevelled files. Read its header before replacing audio.
+
+`trade-counter-prove` (`server/trade-counter-prove.mjs`) exercises counter-offer host validation, settlement, lifecycle, capabilities and bot timing with real sockets. It runs in the server CI job.

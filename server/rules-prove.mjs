@@ -732,6 +732,64 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
   const s = rollTo(g, 7);
   ok("more than 7 cards discards half, rounded down", s.phase === "discard" && JSON.stringify(s.discardNeeded) === JSON.stringify({ p0: 4, p2: 4 }), s.discardNeeded);
 }
+// #1839: who the wayfarer may rob. A neighbour with an empty hand is never a target.
+{
+  const setup = () => {
+    const g = fresh();
+    g.phase = "robber";
+    const target = g.hexes.find((h) => h.terrain !== "waste" && h.id !== g.robberHex);
+    const corners = g.vertices.filter((v) => v.hexes.includes(target.id));
+    return { g, target, corners };
+  };
+  const total = (g) => g.players.map(hand).join();
+  {
+    const { g, target, corners } = setup();
+    corners[0].building = { playerId: "p1", kind: "outpost" };
+    giveCards(g.players[1], {});
+    ok("an empty-handed building owner is not a steal target", stealTargets(g, target.id, "p0").length === 0, stealTargets(g, target.id, "p0"));
+    const named = applyAction(g, "p0", { type: "moveRobber", hexId: target.id, stealFrom: "p1" });
+    ok("naming an empty-handed neighbour is refused", named.error === "Cannot steal from them.", named.error);
+    const none = applyAction(g, "p0", { type: "moveRobber", hexId: target.id, stealFrom: null });
+    ok(
+      "with no victim the wayfarer still moves and no hand changes",
+      !none.error && none.state.robberHex === target.id && none.state.phase !== "robber" && total(none.state) === total(g),
+      none.error ?? none.state.phase,
+    );
+  }
+  {
+    const { g, target, corners } = setup();
+    corners[0].building = { playerId: "p1", kind: "outpost" };
+    corners[1].building = { playerId: "p2", kind: "outpost" };
+    giveCards(g.players[1], {});
+    giveCards(g.players[2], { ore: 2 });
+    const auto = applyAction(g, "p0", { type: "moveRobber", hexId: target.id, stealFrom: null });
+    ok(
+      "only the neighbour with cards is listed, and a null steal takes from them",
+      stealTargets(g, target.id, "p0").join() === "p2" && !auto.error && hand(auto.state.players[0]) === 1 && hand(auto.state.players[2]) === 1 && hand(auto.state.players[1]) === 0,
+      auto.error ?? auto.state.players.map(hand),
+    );
+  }
+  {
+    const { g, target, corners } = setup();
+    corners[0].building = { playerId: "p1", kind: "outpost" };
+    corners[1].building = { playerId: "p1", kind: "stronghold" };
+    giveCards(g.players[1], { ore: 2 });
+    ok("one opponent with two buildings on the hex is listed once", stealTargets(g, target.id, "p0").join() === "p1", stealTargets(g, target.id, "p0"));
+  }
+  {
+    const { g, target, corners } = setup();
+    corners[0].building = { playerId: "p0", kind: "outpost" };
+    giveCards(g.players[0], { ore: 2 });
+    ok("the roller's own building never makes the roller a target", stealTargets(g, target.id, "p0").length === 0, stealTargets(g, target.id, "p0"));
+  }
+  {
+    const { g, target, corners } = setup();
+    corners[0].building = { playerId: "p1", kind: "outpost" };
+    giveCards(g.players[1], { ore: 2 });
+    g.wayfarerMode = "off";
+    ok("wayfarer Off: no steal targets whatever the hands hold", stealTargets(g, target.id, "p0").length === 0);
+  }
+}
 {
   const g = fresh();
   g.phase = "robber";
