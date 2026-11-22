@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useGame } from "@/lib/game/store";
 import { SeatDot } from "@/components/game/SeatDot";
 import { useViewport } from "@/lib/viewport";
+import { useTrayFocus } from "@/components/game/tray-focus";
 import { cn } from "@/lib/utils";
 
 export function TakeFromBar() {
@@ -13,6 +14,7 @@ export function TakeFromBar() {
   const aboveChat = useGame((s) => s.mode === "online" && s.chatOpen);
   const { phone } = useViewport();
   const bar = useRef<HTMLDivElement>(null);
+  const trayFocus = useTrayFocus();
   useLayoutEffect(() => {
     const el = bar.current;
     if (!el || !phone || !aboveChat) return;
@@ -20,7 +22,7 @@ export function TakeFromBar() {
     let last = -1;
     const measure = () => {
       const height = el.getBoundingClientRect().height;
-      if (height === last) return;
+      if (height <= 0 || height === last) return;
       last = height;
       root.style.setProperty("--active-prompt-height", `${height + 8}px`);
       useGame.getState().chromeLanded();
@@ -36,7 +38,7 @@ export function TakeFromBar() {
     // One button per seat, in the tray's action row (docs/design/one-tray, slice C); the tray's top line asks "Take from whom?".
     // #557: the phone's chat sheet (z-30, min(48vh, 320px) tall) would hide the tray, so while it is open the choice rides
     // just above the sheet and asks for itself.
-    <div ref={bar} role="group" aria-label="The wayfarer takes a card" className={cn("take-row", over && "take-over")}>
+    <div ref={bar} role="group" aria-label="The wayfarer takes a card" className={cn("take-row", over && "take-over")} {...trayFocus.props}>
       {over ? <span>Take from whom?</span> : null}
       {pendingSteal.targets.map((id) => {
         const p = state.players.find((x) => x.id === id);

@@ -11,9 +11,6 @@ import "./loading.css";
 const PUSH_MS = 2400;
 const FADE_MS = 400;
 const SETTLE_MS = 1600;
-// The push ends this far up (boot.lift: 1 doubles the title camera's distance), then settles to the title's own view.
-const LIFT_FROM = 1.7;
-const LIFT_AERIAL = 0.9; // LIFT_FROM - LIFT_AERIAL is the 0.8 in the push below
 
 // What the bar waits for, in order, with its share of the bar (about each part's share of the bytes and work) and its line.
 // The island's chunk is most of the download; the Hex Jelly scenes are the next chunk and most of the build.
@@ -25,7 +22,7 @@ const STEPS: [string, number][] = [
   ["Waking the lanterns", 7],
 ];
 
-type Cloud = { x: number; y: number; z: number; s: number; t: HTMLCanvasElement; d: number };
+type Cloud = [x: number, y: number, z: number, s: number, t: HTMLCanvasElement, d: number];
 
 // One cloud puff: the invite page's cloud texture, lit for day (a shaded underside, then sunlit tops).
 function puff(seed: number) {
@@ -34,21 +31,21 @@ function puff(seed: number) {
   c.width = c.height = n;
   const x = c.getContext("2d")!;
   const rnd = mulberry32(seed);
-  const blobs: [number, number, number][] = [];
-  for (let i = 0; i < 18; i++) {
+  const blobs = Array.from({ length: 18 }, () => {
     const u = rnd();
     const hump = Math.sin(u * Math.PI);
-    blobs.push([n * (0.18 + u * 0.64), n * (0.62 - hump * 0.22 - rnd() * 0.1), n * (0.09 + hump * 0.12 + rnd() * 0.05)]);
-  }
+    return [n * (0.18 + u * 0.64), n * (0.62 - hump * 0.22 - rnd() * 0.1), n * (0.09 + hump * 0.12 + rnd() * 0.05)] as const;
+  });
   const pass = (dy: number, col: string, a: number) => {
     for (const [bx, by, r] of blobs) {
-      const g = x.createRadialGradient(bx, by + dy, 0, bx, by + dy, r);
+      const y = by + dy;
+      const g = x.createRadialGradient(bx, y, 0, bx, y, r);
       g.addColorStop(0, `rgba(${col},${a})`);
       g.addColorStop(0.62, `rgba(${col},${a * 0.85})`);
       g.addColorStop(1, `rgba(${col},0)`);
       x.fillStyle = g;
       x.beginPath();
-      x.arc(bx, by + dy, r, 0, 7);
+      x.arc(bx, y, r, 0, 7);
       x.fill();
     }
   };
@@ -57,51 +54,11 @@ function puff(seed: number) {
   return c;
 }
 
-function makeClouds(): Cloud[] {
-  const puffs = [1, 2, 3, 4, 5, 6].map(puff);
-  const rnd = mulberry32(1281);
-  const clouds: Cloud[] = [];
-  for (let i = 0; i < 64; i++)
-    clouds.push({ x: (rnd() * 2 - 1) * 4.5, y: (rnd() * 2 - 1) * 3.2, z: 3.2 + rnd() * 14, s: 1.3 + rnd() * 1.6, t: puffs[i % 6]!, d: rnd() * 6.28 });
-  return clouds.sort((a, b) => b.z - a.z);
-}
-
-const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 const smooth = (a: number, b: number, v: number) => {
-  v = clamp((v - a) / (b - a), 0, 1);
+  v = clamp01((v - a) / (b - a));
   return v * v * (3 - 2 * v);
 };
-const easeInOut = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - (-2 * v + 2) ** 3 / 2);
-
-// The sky over the island (gone once `reveal` is 1), the cloud bank `camZ` deep, and the whiteout inside it.
-function paint(g: CanvasRenderingContext2D, w: number, h: number, clouds: Cloud[], camZ: number, reveal: number, cloudAlpha: number, time: number) {
-  g.clearRect(0, 0, w, h);
-  const sky = g.createLinearGradient(0, 0, 0, h);
-  sky.addColorStop(0, "#8fc6cf");
-  sky.addColorStop(0.7, "#cfe7e8");
-  sky.addColorStop(1, "#eef4f3");
-  g.globalAlpha = 1 - reveal;
-  g.fillStyle = sky;
-  g.fillRect(0, 0, w, h);
-  const f = Math.max(w, h) * 0.55;
-  for (const c of clouds) {
-    const dz = c.z - camZ;
-    // A puff at or behind the camera (dz <= 0.25) has no alpha and is skipped below. Puffs fade as the camera passes through them; far ones sink into the haze.
-    const a = clamp((dz - 0.25) / 1.6, 0, 1) * clamp(1.15 - dz / 17, 0, 1) * cloudAlpha;
-    if (a <= 0.01) continue;
-    const k = f / dz;
-    const size = c.s * k;
-    const sx = w / 2 + (c.x + Math.sin(time * 0.15 + c.d) * 0.12) * k;
-    const sy = h * 0.42 + c.y * k;
-    g.globalAlpha = a;
-    g.drawImage(c.t, sx - size, sy - size * 0.6, size * 2, size * 1.2);
-  }
-  // At most 0.46, and never below 0, so it needs no clamp.
-  g.globalAlpha = cloudAlpha * (0.06 + 0.4 * Math.exp(-(((camZ - 8) / 2.4) ** 2))) * (1 - reveal);
-  g.fillStyle = "#f3f6f5";
-  g.fillRect(0, 0, w, h);
-  g.globalAlpha = 1;
-}
 
 // `onArrive`: mount the title card now (it rises in by itself). `onDone`: the screen is gone. `onRetry`: Try again was
 // pressed, so the app's canvas asks for the island again too.
@@ -113,18 +70,52 @@ export function LoadingScreen({ onArrive, onDone, onRetry }: { onArrive: () => v
   const [waited, setWaited] = useState(false);
   // A chunk did not download: Start stays closed and Try again asks for what is still missing.
   const [failed, setFailed] = useState(false);
-  const retry = useRef(() => {});
-  const begin = useRef(() => {});
-  const started = useRef(0);
+  const actions = useRef({ retry() {}, begin() {} });
 
   useEffect(() => {
     const canvas = sky.current!;
     const g = canvas.getContext("2d")!;
     const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
     boot.intro = true;
-    const clouds = makeClouds();
-    let w = 0;
-    let h = 0;
+    const puffs = [1, 2, 3, 4, 5, 6].map(puff);
+    const rnd = mulberry32(1281);
+    const clouds: Cloud[] = Array.from({ length: 64 }, (_, i) => [
+      (rnd() * 2 - 1) * 4.5, (rnd() * 2 - 1) * 3.2, 3.2 + rnd() * 14, 1.3 + rnd() * 1.6, puffs[i % 6]!, rnd() * 6.28,
+    ] as Cloud).sort((a, b) => b[2] - a[2]);
+    let w = 0, h = 0, started = 0, frame = 0;
+    let tArrive: ReturnType<typeof setTimeout> | undefined;
+    let tFinish: ReturnType<typeof setTimeout> | undefined;
+
+    // The sky over the island (gone once `reveal` is 1), the cloud bank `camZ` deep, and the whiteout inside it.
+    const paint = (camZ: number, reveal: number, cloudAlpha: number, time: number) => {
+      g.clearRect(0, 0, w, h);
+      const skyGrad = g.createLinearGradient(0, 0, 0, h);
+      skyGrad.addColorStop(0, "#8fc6cf");
+      skyGrad.addColorStop(0.7, "#cfe7e8");
+      skyGrad.addColorStop(1, "#eef4f3");
+      g.globalAlpha = 1 - reveal;
+      g.fillStyle = skyGrad;
+      g.fillRect(0, 0, w, h);
+      const f = Math.max(w, h) * 0.55;
+      for (const [cx, cy, cz, cs, ct, cd] of clouds) {
+        const dz = cz - camZ;
+        // A puff at or behind the camera (dz <= 0.25) has no alpha and is skipped below. Puffs fade as the camera passes through them; far ones sink into the haze.
+        const a = clamp01((dz - 0.25) / 1.6) * clamp01(1.15 - dz / 17) * cloudAlpha;
+        if (a <= 0.01) continue;
+        const k = f / dz;
+        const size = cs * k;
+        const sx = w / 2 + (cx + Math.sin(time * 0.15 + cd) * 0.12) * k;
+        const sy = h * 0.42 + cy * k;
+        g.globalAlpha = a;
+        g.drawImage(ct, sx - size, sy - size * 0.6, size * 2, size * 1.2);
+      }
+      // At most 0.46, and never below 0, so it needs no clamp.
+      g.globalAlpha = cloudAlpha * (0.06 + 0.4 * Math.exp(-(((camZ - 8) / 2.4) ** 2))) * (1 - reveal);
+      g.fillStyle = "#f3f6f5";
+      g.fillRect(0, 0, w, h);
+      g.globalAlpha = 1;
+    };
+
     const resize = () => {
       const dpr = Math.min(2, devicePixelRatio || 1);
       w = innerWidth;
@@ -132,82 +123,86 @@ export function LoadingScreen({ onArrive, onDone, onRetry }: { onArrive: () => v
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (calm && !started.current) paint(g, w, h, clouds, 0, 0, 1, 0);
+      if (calm && !started) paint(0, 0, 1, 0);
     };
     resize();
     addEventListener("resize", resize);
 
     // The island's chunk is the same load the app's canvas waits on; the sheets, the lobby and the moments come along.
-    let chunkIn = false;
-    const extras = new Set<object>();
+    const loaded = new Set<object>();
     const fetchAll = () => {
       setFailed(false);
-      if (!chunkIn) island.load().then(() => (chunkIn = true), () => setFailed(true));
-      for (const c of [sheets, online, moments]) if (!extras.has(c)) c.load().then(() => extras.add(c), () => setFailed(true));
+      for (const c of [island, sheets, online, moments]) if (!loaded.has(c)) c.load().then(() => loaded.add(c), () => setFailed(true));
     };
     fetchAll();
-    retry.current = () => {
-      fetchAll();
-      onRetry();
-    };
 
-    let frame = 0;
-    let arrived = false;
-    let finished = false;
-    const timers: number[] = [];
     // #1385: the title card arrives and the screen goes on timers set at Start; the frames only paint. A frame can come
     // seconds late on a slow GPU or a busy machine, and the screen must not wait for one to end the fade or the push.
-    const arrive = () => {
-      if (arrived) return;
-      arrived = true;
-      onArrive();
+    const once = (fn: () => void) => {
+      let ran = false;
+      return () => {
+        if (!ran) {
+          ran = true;
+          fn();
+        }
+      };
     };
-    const finish = () => {
-      if (finished) return;
-      finished = true;
+    const arrive = once(onArrive);
+    const finish = once(() => {
       cancelAnimationFrame(frame);
       onDone();
-    };
-    begin.current = () => {
-      started.current = performance.now();
-      const [at, end] = calm ? [FADE_MS / 2, FADE_MS] : [PUSH_MS * 0.8, PUSH_MS + SETTLE_MS];
-      timers.push(window.setTimeout(arrive, at), window.setTimeout(finish, end));
+    });
+    actions.current = {
+      retry: () => {
+        fetchAll();
+        onRetry();
+      },
+      begin: () => {
+        if (started) return;
+        started = performance.now();
+        canvas.style.pointerEvents = "none";
+        tArrive = setTimeout(arrive, calm ? FADE_MS / 2 : PUSH_MS * 0.8);
+        tFinish = setTimeout(finish, calm ? FADE_MS : PUSH_MS + SETTLE_MS);
+      },
     };
     const t0 = performance.now();
     const tick = (now: number) => {
       frame = requestAnimationFrame(tick);
-      if (!started.current) {
-        setParts([chunkIn, boot.drawn, boot.scenes, boot.shore, extras.size === 3].reduce((bits, ok, i) => bits | (ok ? 1 << i : 0), 0));
+      if (!started) {
+        const hasIsland = loaded.has(island);
+        setParts(
+          (hasIsland ? 1 : 0) | (boot.drawn ? 2 : 0) | (boot.scenes ? 4 : 0) | (boot.shore ? 8 : 0) | (loaded.size === (hasIsland ? 4 : 3) ? 16 : 0),
+        );
         if (!calm) {
           const secs = (now - t0) / 1000;
-          paint(g, w, h, clouds, Math.sin(secs * 0.2) * 0.25, 0, 1, secs);
+          paint(Math.sin(secs * 0.2) * 0.25, 0, 1, secs);
         }
         return;
       }
       // #1383: a frame can be stamped before the Start click; a negative time would make the push's `t ** 1.6` NaN.
-      const ms = Math.max(0, now - started.current);
-      const c = card.current!;
+      const ms = Math.max(0, now - started);
+      const style = card.current!.style;
+      const t = clamp01(ms / (calm ? FADE_MS : PUSH_MS));
       if (calm) {
-        const t = Math.min(1, ms / FADE_MS);
-        paint(g, w, h, clouds, 0, t, 1 - t, 0);
-        c.style.opacity = String(1 - smooth(0, 0.5, t));
+        paint(0, t, 1 - t, 0);
+        style.opacity = String(1 - smooth(0, 0.5, t));
         if (t >= 0.5) arrive();
         if (t >= 1) finish();
         return;
       }
-      const t = Math.min(1, ms / PUSH_MS);
       if (t < 1) {
         // Ease in: the push speeds up, and the island's settle eases it out.
-        paint(g, w, h, clouds, t ** 1.6 * 19, smooth(0.4, 0.9, t), 1, ms / 1000);
-        boot.lift = LIFT_FROM - 0.8 * smooth(0.4, 1, t);
+        paint(t ** 1.6 * 19, smooth(0.4, 0.9, t), 1, ms / 1000);
+        // The push ends at aerial lift 0.9 (from 1.7: 1.7 - 0.8 = 0.9), then settles to the title's own view.
+        boot.lift = 1.7 - 0.8 * smooth(0.4, 1, t);
         const out = smooth(0, 0.2, t);
-        c.style.transform = `translateY(${out * 140}%)`;
-        c.style.opacity = String(1 - out);
-        c.style.visibility = out < 1 ? "" : "hidden";
+        style.transform = `translateY(${out * 140}%)`;
+        style.opacity = String(1 - out);
+        style.visibility = out < 1 ? "" : "hidden";
       } else {
         g.clearRect(0, 0, w, h);
-        const s = Math.min(1, (ms - PUSH_MS) / SETTLE_MS);
-        boot.lift = LIFT_AERIAL * (1 - easeInOut(s));
+        const s = clamp01((ms - PUSH_MS) / SETTLE_MS);
+        boot.lift = 0.9 * (1 - (s < 0.5 ? 4 * s * s * s : 1 - (-2 * s + 2) ** 3 / 2));
         if (s >= 1) finish();
       }
       if (t >= 0.8) arrive();
@@ -215,7 +210,8 @@ export function LoadingScreen({ onArrive, onDone, onRetry }: { onArrive: () => v
     frame = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(frame);
-      for (const id of timers) clearTimeout(id);
+      clearTimeout(tArrive);
+      clearTimeout(tFinish);
       removeEventListener("resize", resize);
       boot.lift = 0;
       boot.intro = false;
@@ -223,9 +219,10 @@ export function LoadingScreen({ onArrive, onDone, onRetry }: { onArrive: () => v
     // The callbacks are the app's state setters, stable for the screen's life.
   }, []);
 
-  const done = STEPS.reduce((sum, [, share], i) => sum + (parts & (1 << i) ? share : 0), 0);
+  let done = 0, next = "";
+  STEPS.forEach(([label, share], i) => (parts & (1 << i) ? (done += share) : (next ||= label)));
   const ready = done === 100;
-  const status = ready ? "Ready when you are" : waited ? `Start opens at 100% · ${done}%` : STEPS.find((_, i) => !(parts & (1 << i)))![0];
+  const status = ready ? "Ready when you are" : waited ? `Start opens at 100% · ${done}%` : next;
 
   return (
     <>
@@ -236,12 +233,7 @@ export function LoadingScreen({ onArrive, onDone, onRetry }: { onArrive: () => v
           type="button"
           className="loading-start"
           aria-disabled={!ready}
-          onClick={() => {
-            if (started.current) return;
-            if (!ready) return setWaited(true);
-            begin.current();
-            sky.current!.style.pointerEvents = "none";
-          }}
+          onClick={() => (ready ? actions.current.begin() : setWaited(true))}
         >
           Start
         </button>
@@ -255,7 +247,7 @@ export function LoadingScreen({ onArrive, onDone, onRetry }: { onArrive: () => v
           {failed ? (
             <div className="loading-row">
               <p className="loading-status loading-failed" role="alert">Couldn't load the game. Check your connection.</p>
-              <button type="button" className="loading-retry" onClick={() => retry.current()}>
+              <button type="button" className="loading-retry" onClick={() => actions.current.retry()}>
                 Try again
               </button>
             </div>

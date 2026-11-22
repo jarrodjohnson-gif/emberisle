@@ -2,28 +2,28 @@
 // seat bubbles. The online chunk prefetches it as it loads (talk.tsx), so it is in memory long before a bubble is due.
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Volume2 } from "lucide-react";
-import { CONTROL, Emote, LIFE, QUICK_REACTIONS, loadEmotes, reactArrived, sendBoard, sendReaction, useMutedSeats, useTalk } from "@/components/game/talk";
+import { CONTROL, Emote, LIFE, loadEmotes, reactArrived, sendBoard, sendReaction, useMutedSeats, useTalk } from "@/components/game/talk";
 import { useGame } from "@/lib/game/store";
 import type { ChatLine, Reaction } from "@/lib/net/table";
 import { play } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 
-const SOUNDBOARD = [
-  { id: "robbed_fah", label: "Fah" },
-  { id: "sb_wololo", label: "Wololo" },
-  { id: "sb_win_reaction", label: "GG!" },
-  { id: "sb_airhorn", label: "Airhorn" },
-  { id: "sb_quit_touchin", label: "Quit touchin' me" },
-  { id: "sb_only_wood", label: "Wood please" },
-  { id: "sb_plump_sheep", label: "Plump sheep" },
-  { id: "sb_nice_sheep", label: "Nice sheep" },
-  { id: "sb_sheep_please", label: "Sheep please" },
-  { id: "sb_grain_please", label: "Grain please" },
-  { id: "sb_brick_please", label: "Brick please" },
-  { id: "sb_perfect", label: "Perfect" },
-  { id: "sb_real_badman", label: "Real badman" },
-  { id: "sb_gong", label: "Gong" },
-  { id: "bong", label: "Bong" },
+const SOUNDBOARD: [string, string][] = [
+  ["robbed_fah", "Fah"],
+  ["sb_wololo", "Wololo"],
+  ["sb_win_reaction", "GG!"],
+  ["sb_airhorn", "Airhorn"],
+  ["sb_quit_touchin", "Quit touchin' me"],
+  ["sb_only_wood", "Wood please"],
+  ["sb_plump_sheep", "Plump sheep"],
+  ["sb_nice_sheep", "Nice sheep"],
+  ["sb_sheep_please", "Sheep please"],
+  ["sb_grain_please", "Grain please"],
+  ["sb_brick_please", "Brick please"],
+  ["sb_perfect", "Perfect"],
+  ["sb_real_badman", "Real badman"],
+  ["sb_gong", "Gong"],
+  ["bong", "Bong"],
 ];
 
 // Tab 2: all fifteen sound chips in a wrapping grid (14 px labels, no sideways scroll), the text presets, then the stickers.
@@ -32,8 +32,8 @@ const PRESETS = ["gg", "nice roll", "your turn", "one sec", "ty"];
 export function SoundsTab({ dense }: { dense?: boolean }) {
   const resting = useTalk((s) => s.resting);
   const cooling = useTalk((s) => s.cooling);
-  const [stickers, setStickers] = useState<[string, string][]>([]);
-  useEffect(() => { void loadEmotes().then((emotes) => setStickers(Object.entries(emotes))); }, []);
+  const [stickers, setStickers] = useState<string[]>([]);
+  useEffect(() => { void loadEmotes().then((emotes) => setStickers(Object.keys(emotes))); }, []);
   return (
     <div data-testid="sounds-tab" className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
       <p className="flex items-baseline justify-between text-caption text-zinc-700">
@@ -41,7 +41,7 @@ export function SoundsTab({ dense }: { dense?: boolean }) {
         <span>one every 3 s</span>
       </p>
       <div role="group" aria-label="Sounds" data-testid="soundboard" className="flex flex-wrap gap-1">
-        {SOUNDBOARD.map(({ id, label }) => (
+        {SOUNDBOARD.map(([id, label]) => (
           <button
             key={id}
             type="button"
@@ -72,7 +72,7 @@ export function SoundsTab({ dense }: { dense?: boolean }) {
         <>
           <p className="mt-1 text-caption text-zinc-700">Stickers · silent</p>
           <div role="group" aria-label="Stickers" data-testid="stickers" className="flex flex-wrap gap-1">
-            {stickers.map(([id]) => (
+            {stickers.map((id) => (
               <button
                 key={id}
                 type="button"
@@ -202,32 +202,30 @@ export function SeatBubbles({ by, id, at }: { by: "player" | "seat"; id: string;
   const now = Date.now();
   const mine = (x: { seat: string; player: string | null }) => (by === "player" ? x.player : x.seat) === id && !muted.has(x.seat);
 
-  const grouped = new Map<string, { reaction: Reaction; count: number }>();
+  let newest: Bubble | undefined;
+  const pick = (b: Bubble) => { if (!newest || b.at >= newest.at) newest = b; };
+  const counts = new Map<string, number>();
   for (const reaction of reactions) {
     if (!mine(reaction)) continue;
-    const key = reaction.emote;
-    const previous = grouped.get(key);
-    grouped.delete(key);
-    grouped.set(key, { reaction, count: (previous?.count ?? 0) + 1 });
+    const count = (counts.get(reaction.emote) ?? 0) + 1;
+    counts.set(reaction.emote, count);
+    pick({ kind: "react", key: `r${reaction.emote}`, at: reactArrived.get(reaction) ?? 0, reaction, count });
   }
-  const bubbles: Bubble[] = [...grouped].map(([key, { reaction, count }]) => ({ kind: "react", key: `r${key}`, at: reactArrived.get(reaction) ?? 0, reaction, count }));
-  const live: Bubble[] = [];
   for (const line of chat) {
     const t = arrived.get(line.id);
     if (t === undefined || !mine(line)) continue;
     const kind = line.sound ? "sound" : "chat";
     if (kind === "chat" && (!chatClosed || line.seat === me)) continue;
-    if (now - t < LIFE[kind]) live.push({ kind, key: `l${line.id}`, at: t, line });
+    if (now < t + LIFE[kind]) pick({ kind, key: `l${line.id}`, at: t, line });
   }
-  const newest = [...bubbles, ...live].reduce<Bubble | undefined>((best, b) => (!best || b.at >= best.at ? b : best), undefined);
+  const wakeAt = newest && newest.kind !== "react" ? newest.at + LIFE[newest.kind] : 0;
 
   // Re-render when the newest line bubble runs out (reactions leave the store on their own).
   useEffect(() => {
-    if (!live.length) return;
-    const left = Math.max(...live.map((b) => LIFE[b.kind] - (Date.now() - b.at)));
-    const timer = setTimeout(() => tick((n) => n + 1), Math.max(16, left + 16));
+    if (!wakeAt) return;
+    const timer = setTimeout(() => tick((n) => n + 1), Math.max(16, wakeAt - Date.now() + 16));
     return () => clearTimeout(timer);
-  });
+  }, [wakeAt]);
 
   return newest ? <SeatBubble key={newest.key} bubble={newest} at={at} /> : null;
 }

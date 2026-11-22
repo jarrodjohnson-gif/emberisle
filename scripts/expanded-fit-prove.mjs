@@ -44,9 +44,9 @@ const VIEWS = [
 const SHOT_VIEWS = [{ width: 430, height: 932, phone: true, insets: { top: 59, right: 0, bottom: 34, left: 0 } }, ...VIEWS];
 const NAMES = ["Jarrod", "Daking", "Isaac", "Joshua", "Moss", "Flint"];
 
-// Measured on origin/main (ec897a9d) with MEASURE_CLASSIC=1: the fit, the look-at point and each hex centre on screen.
+// Measured with MEASURE_CLASSIC=1 (#1526 updated 390x844 to shore edge-to-edge; 844x390 and 1280x720 unchanged from ec897a9d).
 const CLASSIC_MAIN = {
-  "390x844": {"view":"overhead","fit":{"left":-5.809585,"right":5.809585,"top":12.572539,"bottom":-12.572539,"x":0,"z":0.297864,"lean":0.698132},"target":[0,0.297864],"hexes":{"-2,0":[64.774,414.557],"-2,1":[97.33,457.754],"-2,2":[129.887,500.951],"-1,-1":[97.33,371.36],"-1,0":[129.887,414.557],"-1,1":[162.443,457.754],"-1,2":[195,500.951],"0,-2":[129.887,328.163],"0,-1":[162.443,371.36],"0,0":[195,414.557],"0,1":[227.557,457.754],"0,2":[260.113,500.951],"1,-2":[195,328.163],"1,-1":[227.557,371.36],"1,0":[260.113,414.557],"1,1":[292.67,457.754],"2,-2":[260.113,328.163],"2,-1":[292.67,371.36],"2,0":[325.226,414.557]}},
+  "390x844": {"view":"overhead","fit":{"left":-5.380103,"right":5.380103,"top":11.643095,"bottom":-11.643095,"x":0,"z":0.746384,"lean":0.698132},"target":[0,0.746384],"hexes":{"-2,0":[54.378,401.51],"-2,1":[89.534,448.155],"-2,2":[124.689,494.8],"-1,-1":[89.534,354.864],"-1,0":[124.689,401.51],"-1,1":[159.845,448.155],"-1,2":[195,494.8],"0,-2":[124.689,308.219],"0,-1":[159.845,354.864],"0,0":[195,401.51],"0,1":[230.155,448.155],"0,2":[265.311,494.8],"1,-2":[195,308.219],"1,-1":[230.155,354.864],"1,0":[265.311,401.51],"1,1":[300.466,448.155],"2,-2":[265.311,308.219],"2,-1":[300.466,354.864],"2,0":[335.622,401.51]}},
   "844x390": {"view":"overhead","fit":{"left":-14.647683,"right":14.647683,"top":6.768479,"bottom":-6.768479,"x":-4.72058,"z":-1.072356,"lean":0.436332},"target":[-4.72058,-1.072356],"hexes":{"-2,0":[446.223,223.122],"-2,1":[474.167,266.988],"-2,2":[502.112,310.854],"-1,-1":[474.167,179.256],"-1,0":[502.112,223.122],"-1,1":[530.056,266.988],"-1,2":[558,310.854],"0,-2":[502.112,135.39],"0,-1":[530.056,179.256],"0,0":[558,223.122],"0,1":[585.944,266.988],"0,2":[613.888,310.854],"1,-2":[558,135.39],"1,-1":[585.944,179.256],"1,0":[613.888,223.122],"1,1":[641.833,266.988],"2,-2":[613.888,135.39],"2,-1":[641.833,179.256],"2,0":[669.777,223.122]}},
   "1280x720": {"view":"diorama","fit":{"focal":1138.520486,"dist":18.839812,"cx":584.085384,"cy":265.321454},"target":[0,0],"hexes":{"-2,0":[375.413,219.013],"-2,1":[379.186,288.053],"-2,2":[383.633,369.407],"-1,-1":[466.288,179.321],"-1,0":[476.933,241.774],"-1,1":[489.372,314.753],"-1,2":[504.101,401.164],"0,-2":[548.991,143.198],"0,-1":[565.24,199.963],"0,0":[584.085,265.798],"0,1":[606.202,343.063],"0,2":[632.525,435.019],"1,-2":[645.413,162.005],"1,-1":[669.412,221.694],"1,0":[697.353,291.192],"1,1":[730.297,373.133],"2,-2":[746.68,181.756],"2,-1":[779.225,244.602],"2,0":[817.274,318.079]}},
 };
@@ -217,6 +217,62 @@ async function waitBoard(page, docks) {
   await frames(page, 3);
 }
 
+// #1652: start a whale mid-lane south of the island where the expanded coast grows.
+const startWhaleMidLane = (page) =>
+  page.evaluate(() => {
+    const life = window.__isle.oceanLife;
+    life.reset("whale-1652");
+    life.begin("whale", { angle: Math.PI / 2, arc: 0.32, direction: 1 });
+    life.active.age = life.active.duration / 2;
+    life.pose(life.active);
+    const snap = life.snapshot();
+    return { active: !!snap.active, shown: snap.visible, radius: snap.active?.radius ?? null, grow: life.grow };
+  });
+
+// #1652: verify oceanLife updated its island bounds and no active visitor cuts inside foam.
+const checkVisitorAfterBoardChange = (page) =>
+  page.evaluate(() => {
+    const i = window.__isle;
+    const life = i.oceanLife;
+    const snap = life.snapshot();
+    const synced = Math.abs(life.ox - i.isle.cx) < 1e-9 && Math.abs(life.oz - i.isle.cz) < 1e-9 && Math.abs(life.grow - i.isle.grow) < 1e-9;
+    if (!snap.active && snap.visible === 0) return { ended: true, shown: 0, synced, inside: 0, radius: null, grow: life.grow };
+    const foam = i.coast.map((c) => [c.x + c.mx * 0.42, c.z + c.mz * 0.42]);
+    const inPoly = (x, z) => {
+      let inside = false;
+      for (let a = 0, b = foam.length - 1; a < foam.length; b = a++) {
+        const [ax, az] = foam[a], [bx, bz] = foam[b];
+        if ((az > z) !== (bz > z) && x < ((bx - ax) * (z - az)) / (bz - az) + ax) inside = !inside;
+      }
+      return inside;
+    };
+    let inside = 0;
+    const v = life.active;
+    if (v) {
+      const origAge = v.age;
+      const root = life.creatures[v.species].root;
+      const p = root.position.clone();
+      for (let age = origAge; age <= v.duration + 1e-6; age += 0.5) {
+        v.age = Math.min(v.duration, age);
+        life.pose(v);
+        life.group.updateMatrixWorld(true);
+        if (inPoly(root.position.x, root.position.z)) inside++;
+        root.traverse((o) => {
+          if (!o.isMesh) return;
+          const pos = o.geometry.attributes.position;
+          for (let k = 0; k < pos.count; k++) {
+            p.fromBufferAttribute(pos, k).applyMatrix4(o.matrixWorld);
+            if (inPoly(p.x, p.z)) inside++;
+          }
+        });
+      }
+      v.age = origAge;
+      life.pose(v);
+      life.group.updateMatrixWorld(true);
+    }
+    return { ended: false, shown: snap.visible, synced, inside, radius: snap.active?.radius ?? null, grow: life.grow };
+  });
+
 async function open(size, water = "simple") {
   const ctx = await browser.newContext({ viewport: { width: size.width, height: size.height }, isMobile: size.phone, hasTouch: size.phone, deviceScaleFactor: SHOTS ? 2 : 1 });
   await ctx.addInitScript(() => localStorage.setItem("emberisle-first-game-coach", '"done"'));
@@ -315,14 +371,20 @@ try {
       classicTokens[tag] = cm;
 
       // The expanded island.
+      // #1652: start a whale mid-lane south of the classic coast, where the expanded island grows.
+      const beforeExpand = await startWhaleMidLane(page);
       await load(page, true);
+      const afterExpand = await checkVisitorAfterBoardChange(page);
+      check(`${tag}: mid-lane whale across classic to expanded ends or clears the new coast foam`,
+        beforeExpand.active && beforeExpand.shown === 1 && afterExpand.synced && afterExpand.grow > 0 && ((afterExpand.ended && afterExpand.shown === 0) || (afterExpand.radius !== null && afterExpand.radius >= 6.2 + afterExpand.grow - 1e-9 && afterExpand.inside === 0)),
+        { before: beforeExpand, after: afterExpand });
       await waitBoard(page, 11);
       const m = await measure(page);
       if (!shaped) {
         shaped = true;
         const X = await page.evaluate(() => ({ ...window.__isle.isle, coast: window.__isle.coast.length }));
         check("expanded shape: middle 0.5 hex widths east of the origin; extents the classic plus 0.5 hex widths across and 1.68 deep",
-          near(X.cx, 0.5 * w) && near(X.cz, 0) && near(X.half.x, 5.8 + 0.5 * w) && near(X.half.z, 5.4 + 1.68) && near(X.shoreHalfX, fit.SHORE_HALF_X + 0.5 * w) && near(X.pileHalfX, 5.75 + 0.5 * w) && near(X.grow, 1.68) && X.coast === coastCount,
+          near(X.cx, 0.5 * w) && near(X.cz, 0) && near(X.half.x, 5.8 + 0.5 * w) && near(X.half.z, 5.4 + 1.68) && near(X.shoreHalfX, fit.SHORE_HALF_X + 0.5 * w) && near(X.pileHalfX, fit.PILE_HALF_X + 0.5 * w) && near(X.grow, 1.68) && X.coast === coastCount,
           { cx: X.cx, half: X.half, shore: X.shoreHalfX, pile: X.pileHalfX, grow: X.grow, corners: X.coast });
       }
       const deg = (r) => ((r * 180) / Math.PI).toFixed(1);
@@ -446,7 +508,13 @@ try {
       }
       // Expanded -> classic in the same page: the classic board again fits exactly as on origin/main, and its coast, beach,
       // foam (and, on the crystal sea, the wash) are the classic island's once more.
+      // #1652: start a whale mid-lane on the expanded board before returning to classic.
+      const beforeClassic = await startWhaleMidLane(page);
       await load(page, false);
+      const afterClassic = await checkVisitorAfterBoardChange(page);
+      check(`${tag}: mid-lane whale across expanded to classic ends or clears the classic coast foam`,
+        beforeClassic.active && beforeClassic.shown === 1 && beforeClassic.grow > 0 && afterClassic.synced && afterClassic.grow === 0 && ((afterClassic.ended && afterClassic.shown === 0) || (afterClassic.radius !== null && afterClassic.radius <= 6.9 + 1e-9 && afterClassic.inside === 0)),
+        { before: beforeClassic, after: afterClassic });
       await waitBoard(page, 9);
       const back = await fitNumbers(page);
       const backDiff = [];

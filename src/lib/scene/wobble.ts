@@ -10,13 +10,22 @@ export class Wobble {
   private live = new Map<string, { parts: Part[]; base: number; start: number }>();
 
   start(id: string, objects: THREE.Object3D[], base: number, now: number) {
+    if (!Number.isFinite(base) || !Number.isFinite(now)) return;
     const was = this.live.get(id);
     if (was) {
-      // Back onto the rising half of the curve at the scale it stands at, so it swells on from there without a jump.
-      const k = scaleAt((now - was.start) / WOBBLE.ms);
-      const eased = Math.asin(Math.min(1, (k - 1) / WOBBLE.peak)) / Math.PI;
-      was.start = now - (1 - Math.sqrt(1 - eased)) * WOBBLE.ms;
-      return;
+      const same = was.parts.length === objects.length && was.parts.every((p, i) => p.o === objects[i]);
+      const u = (now - was.start) / WOBBLE.ms;
+      if (same && u < 1) {
+        // Back onto the rising half of the curve at the scale it stands at, so it swells on from there without a jump.
+        const k = scaleAt(u);
+        const eased = Math.asin(Math.max(0, Math.min(1, (k - 1) / WOBBLE.peak))) / Math.PI;
+        was.start = now - (1 - Math.sqrt(Math.max(0, 1 - eased))) * WOBBLE.ms;
+        return;
+      }
+      for (const p of was.parts) {
+        p.o.scale.copy(p.scale);
+        p.o.position.y = p.y;
+      }
     }
     this.live.set(id, { parts: objects.map((o) => ({ o, y: o.position.y, scale: o.scale.clone() })), base, start: now });
   }
@@ -27,6 +36,7 @@ export class Wobble {
   }
 
   step(now: number) {
+    if (!Number.isFinite(now)) return;
     for (const [id, w] of this.live) {
       const u = (now - w.start) / WOBBLE.ms;
       const k = scaleAt(u);
@@ -41,6 +51,6 @@ export class Wobble {
 
 // Up fast and down slower: the half sine over an eased-out clock.
 function scaleAt(u: number) {
-  if (u <= 0 || u >= 1) return 1;
+  if (!Number.isFinite(u) || u <= 0 || u >= 1) return 1;
   return 1 + WOBBLE.peak * Math.sin(Math.PI * (1 - (1 - u) ** 2));
 }

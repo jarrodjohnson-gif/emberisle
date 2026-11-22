@@ -1,0 +1,323 @@
+diff --git a/src/components/game/TradePanel.tsx b/src/components/game/TradePanel.tsx
+index 2e5fefe..ffb0848 100644
+--- a/src/components/game/TradePanel.tsx
++++ b/src/components/game/TradePanel.tsx
+@@ -10,6 +10,7 @@ import { play } from "@/lib/sound";
+ import { bagText } from "@/lib/game/trade";
+ import { chunk, LazyBoundary } from "@/lib/lazy";
+ import "./trade-panel.css";
++import { useCounter } from "./counter-proto";
+ import { NeedDots } from "./SeatNeeds";
+ import { setPlayerNeeds } from "./need-state";
+ 
+@@ -31,15 +32,19 @@ export function TradePanel() {
+   const [draftGive, setGive] = useState(ZERO);
+   const [want, setWant] = useState(ZERO);
+   const panel = useRef<HTMLElement>(null);
++  // Prototype: the sheet opened by Counter, on another seat's turn.
++  const offer = useGame((s) => s.offer);
++  const counterSheet = useCounter((s) => s.counterSheet) && !!offer;
++  const closeSheet = () => counterSheet ? useCounter.setState({ counterSheet: false }) : setTradeOpen(false);
+ 
+   const actor = mode === "hotseat" ? state?.current : localId;
+   const me = state?.players.find((p) => p.id === actor);
+   const mine = Boolean(state && me && state.phase === "main" && state.current === actor);
+-  const shown = open && mine;
++  const shown = (open && mine) || counterSheet;
+ 
+   // Clamp both the rendered offer and its draft when a live hand loses goods.
+   const give = { ...draftGive };
+-  for (const r of RESOURCES) give[r] = Math.min(give[r], me?.resources[r] ?? 0);
++  if (!counterSheet) for (const r of RESOURCES) give[r] = Math.min(give[r], me?.resources[r] ?? 0);
+   useEffect(() => {
+     if (!me) return;
+     setGive((old) => {
+@@ -58,19 +63,25 @@ export function TradePanel() {
+   }, [open, mine, setTradeOpen]);
+   useEffect(() => {
+     if (open) return;
++    if (counterSheet && offer) {
++      // The offer's terms, turned to my side.
++      setGive({ ...ZERO, ...offer.want });
++      setWant({ ...ZERO, ...offer.give });
++      return;
++    }
+     setGive(ZERO);
+     setWant(ZERO);
+-  }, [open]);
++  }, [open, counterSheet]);
+   useEffect(() => {
+-    if (!open) return;
++    if (!open && !counterSheet) return;
+     const key = (e: KeyboardEvent) => {
+       if (e.key !== "Escape") return;
+       play("ui_back");
+-      setTradeOpen(false);
++      closeSheet();
+     };
+     window.addEventListener("keydown", key);
+     return () => window.removeEventListener("keydown", key);
+-  }, [open, setTradeOpen]);
++  }, [open, counterSheet, setTradeOpen]);
+ 
+   if (!shown || !state || !me) return null;
+ 
+@@ -104,9 +115,21 @@ export function TradePanel() {
+     setPlayerNeeds(me.id, wanting.slice(0, 2));
+     askTable(give, want);
+   };
++  // Prototype: "Send counter" is off, with its reason, until the terms differ from the offer, hold both sides and are paid for.
++  const short = RESOURCES.find((r) => give[r] > me.resources[r]);
++  const counterReason = !counterSheet || !offer ? null
++    : RESOURCES.every((r) => give[r] === (offer.want[r] ?? 0) && want[r] === (offer.give[r] ?? 0)) ? "Change something first."
++      : !asking ? "Pick what to give and what to get."
++        : short ? `You need ${give[short] - me.resources[short]} more ${low(short)}.` : null;
++  const sendCounter = () => {
++    if (!offer || counterReason) return;
++    // Bags from the asker's side: what I give reaches the asker.
++    const counter = { counterId: "proto", by: me.id, name: me.name, give: { ...want }, want: { ...give } };
++    useCounter.setState({ counterSheet: false, counterUsed: true, myCounter: counter });
++  };
+ 
+   return (
+-    <div className="absolute inset-0 z-30 flex items-end justify-center bg-black/15" onClick={() => setTradeOpen(false)}>
++    <div className="absolute inset-0 z-30 flex items-end justify-center bg-black/15" onClick={closeSheet}>
+       <section
+         ref={panel}
+         role="dialog"
+@@ -118,7 +141,7 @@ export function TradePanel() {
+       >
+         <header className="trade-composer-header">
+           <h2 id="trade-title" className="trade-title">Trade</h2>
+-          <Button variant="ghost" size="icon" onClick={() => setTradeOpen(false)} aria-label="Close" back>
++          <Button variant="ghost" size="icon" onClick={closeSheet} aria-label="Close" back>
+             <X className="size-5" />
+           </Button>
+         </header>
+@@ -149,7 +172,8 @@ export function TradePanel() {
+           {mode !== "hotseat" ? (
+             <p className="trade-sentence" data-testid="trade-player-preview" aria-live="polite">
+               {giveText || getText ? <>
+-                {giveText ? <span className="trade-give-text">Give {giveText}</span> : null}
++                {counterSheet ? `To ${offer!.fromName} ` : null}
++                {giveText ?<span className="trade-give-text">Give {giveText}</span> : null}
+                 {giveText && getText ? " · " : null}
+                 {getText ? <span className="trade-get-text">Get {getText}</span> : null}
+               </> : <span className="trade-empty">Pick what to give and what to get.</span>}
+@@ -157,11 +181,16 @@ export function TradePanel() {
+           ) : null}
+         </div>
+ 
+-        <footer className="trade-composer-footer">
+-          {mode !== "hotseat" ? <Button className="trade-ask" disabled={!asking} onClick={ask}>Ask the table</Button> : null}
++        {counterSheet ? (
++          <footer className="trade-composer-footer">
++            <Button className="trade-ask trade-send" disabled={!!counterReason} aria-describedby="trade-counter-why" onClick={sendCounter}>Send counter</Button>
++            {counterReason ? <p className="trade-reason" id="trade-counter-why" data-testid="trade-counter-why">{counterReason}</p> : null}
++          </footer>
++        ) : <footer className="trade-composer-footer">
++          {mode !== "hotseat" ?<Button className="trade-ask" disabled={!asking} onClick={ask}>Ask the table</Button> : null}
+           <Button variant="secondary" className="trade-bank" aria-describedby="trade-bank-quote" disabled={refusal !== null} onClick={bank}>{bankLabel}</Button>
+           <p className="sr-only" id="trade-bank-quote" data-testid="trade-hint" aria-live="polite">{bankHint}</p>
+-        </footer>
++        </footer>}
+       </section>
+     </div>
+   );
+diff --git a/src/components/game/TradeToast.tsx b/src/components/game/TradeToast.tsx
+index 75d8655..f23509e 100644
+--- a/src/components/game/TradeToast.tsx
++++ b/src/components/game/TradeToast.tsx
+@@ -2,9 +2,9 @@
+ // wood, get 1 brick", and the action row is No and Yes. The asker reads "You offer 2 sheep for 1 ore", who has said no,
+ // and Cancel; then the outcome for a moment, where the newest event sits.
+ // #537: a seat that cannot pay reads "Ember is looking for 2 ore" with Dismiss only.
+-import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
++import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+ import { createPortal } from "react-dom";
+-import { Check, X } from "lucide-react";
++import { Check, ChevronRight, X } from "lucide-react";
+ import { useViewport } from "@/lib/viewport";
+ import { Button } from "@/components/ui/button";
+ import { SeatDot } from "@/components/game/SeatDot";
+@@ -13,6 +13,7 @@ import { useGame } from "@/lib/game/store";
+ import { RESOURCES, RESOURCE_LABEL } from "@/lib/game/types";
+ import type { Bag } from "@/lib/net/table";
+ import "./trade-panel.css";
++import { useCounter } from "./counter-proto";
+ 
+ const DISMISS_MS = 150;
+ const calm = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+@@ -54,6 +55,7 @@ export function TradeToast() {
+   const spectator = useGame((s) => s.spectator);
+   const answerTrade = useGame((s) => s.answerTrade);
+   const cancelTrade = useGame((s) => s.cancelTrade);
++  const proto = useCounter();
+   const [leaving, setLeaving] = useState(false);
+   const fadeMs = calm() ? 0 : DISMISS_MS;
+   const lineId = useId();
+@@ -115,6 +117,14 @@ export function TradeToast() {
+   let answering = false;
+   let compact = false;
+   let why: string | null = null;
++  if (offer && proto.counterNo && offer.from !== localId) {
++    // Prototype: the sender's counter was refused; the outcome line shows for 2.5 s, then the first offer comes back.
++    return (
++      <p className="trade-result" role="status" data-testid="trade-outcome">
++        <X aria-hidden="true" className="size-3.5" />{proto.counterNo}
++      </p>
++    );
++  }
+   if (!offer) {
+     if (!fading || outcome) {
+       const taker = players?.find((p) => p.id === takerId);
+@@ -135,6 +145,15 @@ export function TradeToast() {
+     // #537: the compact signal drops the visible "Need" line, so keyboard and screen-reader users still get the reason.
+     why = compact && me ? `You need ${short.map((r) => `${offer.want[r]! - me.resources[r]} more ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ")} to accept` : null;
+     const fromColor = players?.find((p) => p.id === offer.from)?.color ?? "transparent";
++    // Prototype: Counter shows when the offer allows counters and this seat has not used its one.
++    const counterable = answering && proto.counterAllowed && !proto.counterUsed && !proto.myCounter;
++    const counterButton = counterable && !proto.optionB
++      ? <Button variant="secondary" data-testid="trade-counter" onClick={() => useCounter.setState({ counterSheet: true })}>Counter</Button>
++      : null;
++    const tapLine = counterable && proto.optionB && !compact;
++    const Wrap = tapLine ? "span" : Fragment;
++    const waiting = asker ? proto.counters[0] : undefined;
++    const mine = answering ? proto.myCounter : null;
+     const gives = bagText(offer.want);
+     const gets = bagText(offer.give);
+     // What this seat would give is red and what it would get is green, as on the trade sheet.
+@@ -143,18 +162,51 @@ export function TradeToast() {
+       : answering
+         ? `${offer.fromName}: ${gives ? `give ${gives}` : ""}${gives && gets ? ", " : ""}${gets ? `get ${gets}` : ""}`
+         : offerLine(asker ? null : offer.fromName, offer.give, offer.want);
+-    body = (
++    if (waiting) {
++      const by = players?.find((p) => p.id === waiting.by);
++      body = (
++        <>
++          <div className="trade-summary">
++            <p id={lineId} className="trade-line" data-testid="trade-counter-line">
++              <SeatDot color={by?.color ?? "transparent"} className="mr-1.5 size-3 align-[-1px]" />
++              {waiting.name} counters: <b className="trade-give-text">give {bagText(waiting.give)}</b>, <b className="trade-get-text">get {bagText(waiting.want)}</b>
++            </p>
++            {proto.counters.length > 1 ? <p role="status" className="trade-wait">1 of {proto.counters.length}</p> : null}
++          </div>
++          <div className="trade-answers">
++            <Button variant="secondary" onClick={() => useCounter.setState({ counters: proto.counters.slice(1) })}>No</Button>
++            <Button className="trade-yes" onClick={() => useCounter.setState({ counters: [] })}>Yes</Button>
++          </div>
++        </>
++      );
++    } else if (mine) {
++      body = (
++        <>
++          <div className="trade-summary">
++            <p id={lineId} className="trade-line" data-testid="trade-my-counter">
++              You counter: <b className="trade-give-text">give {bagText(mine.want)}</b>, <b className="trade-get-text">get {bagText(mine.give)}</b>
++            </p>
++            <p role="status" className="trade-wait">Waiting for {offer.fromName}</p>
++          </div>
++          <div className="trade-answers">
++            <Button variant="secondary" data-testid="trade-take-back" onClick={() => useCounter.setState({ myCounter: null })}>Take back</Button>
++          </div>
++        </>
++      );
++    } else body = (
+       <>
+         <div className="trade-summary">
+-          <p id={lineId} className="trade-line" title={line} data-testid={compact ? "trade-demand" : undefined}>
++          <p id={lineId} className="trade-line" title={line} data-testid={compact ? "trade-demand" : undefined}
++            {...(tapLine ? { role: "button", tabIndex: 0, "data-tap": "", onClick: () => useCounter.setState({ counterSheet: true }) } : {})}>
+             {asker ? null : <SeatDot color={fromColor} className="mr-1.5 size-3 align-[-1px]" />}
+             {answering && !compact ? (
+-              <>
++              <Wrap>
+                 {offer.fromName}: {gives ? <b className="trade-give-text">give {gives}</b> : null}
+                 {gives && gets ? ", " : null}
+                 {gets ? <b className="trade-get-text">get {gets}</b> : null}
+-              </>
++              </Wrap>
+             ) : line}
++            {tapLine ? <ChevronRight aria-hidden="true" className="trade-chevron" /> : null}
+           </p>
+           {asker ? (
+             <p role="status" className={declined.length ? "trade-wait" : "sr-only"}>
+@@ -166,13 +218,17 @@ export function TradeToast() {
+         {spectator ? null : (
+           <div className="trade-answers">
+             {compact ? (
+-              <Button variant="secondary" data-testid="trade-dismiss" aria-describedby={whyId} onClick={() => answerTrade(false)}>Dismiss</Button>
++              <>
++                <Button variant="secondary" data-testid="trade-dismiss" aria-describedby={whyId} onClick={() => answerTrade(false)}>Dismiss</Button>
++                {counterButton}
++              </>
+             ) : asker ? (
+               // #1245: a person's offer holds until answered, so the asker can always take it back.
+               <Button ref={takeFocus} variant="secondary" data-testid="trade-cancel" onClick={cancelTrade}>Cancel</Button>
+             ) : (
+               <>
+                 <Button variant="secondary" onClick={() => answerTrade(false)}>No</Button>
++                {counterButton}
+                 <Button className="trade-yes" onClick={() => answerTrade(true)}>Yes</Button>
+               </>
+             )}
+diff --git a/src/components/game/counter-proto.ts b/src/components/game/counter-proto.ts
+new file mode 100644
+index 0000000..da31b78
+--- /dev/null
++++ b/src/components/game/counter-proto.ts
+@@ -0,0 +1,38 @@
++// PROTOTYPE ONLY (docs/design/counter-offers.md): the counter states, driven from the capture script through window.__proto.
++// No host, no protocol. Bags are from the asker's side, as in the design's protocol: `give` leaves the asker.
++import { create } from "zustand";
++import type { Bag } from "@/lib/net/table";
++
++export type Counter = { counterId: string; by: string; name: string; give: Bag; want: Bag };
++
++type Proto = {
++  // The offer carries `counter: true`.
++  counterAllowed: boolean;
++  // This seat has sent its one counter on this offer.
++  counterUsed: boolean;
++  // The sender's own counter, out and waiting.
++  myCounter: Counter | null;
++  // "Tide said no", the outcome line on the sender's tray.
++  counterNo: string | null;
++  // The asker's waiting counters, oldest first.
++  counters: Counter[];
++  // The trade sheet opened by Counter.
++  counterSheet: boolean;
++  // Owner question 1, option B: no Counter button; the offer line opens the sheet.
++  optionB: boolean;
++};
++
++export const useCounter = create<Proto>(() => ({
++  counterAllowed: false,
++  counterUsed: false,
++  myCounter: null,
++  counterNo: null,
++  counters: [],
++  counterSheet: false,
++  optionB: false,
++}));
++
++declare global {
++  interface Window { __proto?: { set: (p: Partial<Proto>) => void; get: () => Proto } }
++}
++window.__proto = { set: (p) => useCounter.setState(p), get: useCounter.getState };
+diff --git a/src/components/game/trade-panel.css b/src/components/game/trade-panel.css
+index 09022d1..217d7e5 100644
+--- a/src/components/game/trade-panel.css
++++ b/src/components/game/trade-panel.css
+@@ -51,3 +51,10 @@
+   .trade-sentence { margin-top: 10px; }
+   .trade-composer-footer { padding-top: 8px; padding-bottom: 8px; }
+ }
++/* PROTOTYPE (docs/design/counter-offers.md): the counter sheet's one button spans the footer, its reason under it. */
++.trade-composer-footer > .trade-send { grid-column: 1 / -1; }
++.trade-reason { grid-column: 1 / -1; margin-top: -2px; color: #52625f; font-size: 13px; line-height: 16px; text-align: center; }
++/* Owner question 1, option B: the offer line opens the counter sheet; a chevron at its end marks it as a control. */
++.trade-line[data-tap] { display: flex; min-height: 44px; flex: 1 1 auto; align-items: center; cursor: pointer; }
++.trade-line[data-tap] > .trade-chevron { width: 20px; height: 20px; flex-shrink: 0; margin-left: auto; color: #52625f; }
++.trade-line[data-tap] b { font-weight: 600; }
