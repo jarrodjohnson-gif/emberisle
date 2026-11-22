@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 import { createGame } from "../src/lib/game/board.ts";
+import { legalSettle } from "../src/lib/game/rules.ts";
 
 const STEP_MS = 30_000;
 const VIEW = { width: 1280, height: 720 };
@@ -103,7 +104,9 @@ try {
     const cur = s.getState().state;
     s.setState({ state: { ...cur, phase: "setupSettle", current: "p0" }, buildMode: "none" });
   });
-  const legalVertexId = g.vertices[0].id;
+  // A legal vertex: the canvas drops a pending pick that is not highlighted.
+  const legalVertexId = legalSettle({ ...g, phase: "setupSettle", current: "p0" }, "p0", true)[0];
+  assert.ok(legalVertexId, "a legal setup vertex exists");
   await page.evaluate((vid) => {
     const s = window.__emberisle;
     s.setState({ pendingPlace: { kind: "vertex", id: vid } });
