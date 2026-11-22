@@ -127,6 +127,7 @@
     "lobby-overflow-prove": "node scripts/lobby-overflow-prove.mjs",
     "goods-log-prove": "node scripts/goods-log-prove.mjs",
     "react-prove": "node scripts/react-prove.mjs",
+    "quick-react-prove": "node scripts/quick-react-prove.mjs",
     "mobile-shots": "node scripts/mobile-shots.mjs",
     "touch-place-prove": "node scripts/touch-place-prove.mjs",
     "camera-fit-guards-prove": "node scripts/camera-fit-guards-prove.mjs",
