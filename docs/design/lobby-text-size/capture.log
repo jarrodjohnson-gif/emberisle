@@ -1,0 +1,39 @@
+browser 153.0.8010.12, node v22.23.5
+room WNBT: host Jarrod (ready), guest Josh, one bot, one empty seat, one chat line
+rem only: converted 146 px font-size and line-height declarations
+identity 320x568@100: rem only vs today 0 of 43 boxes moved; rem only plus mock layer vs today 1 moved
+identity 375x667@100: rem only vs today 0 of 43 boxes moved; rem only plus mock layer vs today 1 moved
+identity 390x844@100: rem only vs today 0 of 43 boxes moved; rem only plus mock layer vs today 1 moved
+identity 844x390@100: rem only vs today 0 of 43 boxes moved; rem only plus mock layer vs today 1 moved
+identity 1280x720@100: rem only vs today 0 of 43 boxes moved; rem only plus mock layer vs today 1 moved
+rem-only 320x568-100: scroll x/y 0/0, page x 0, bar pinned true, seat columns 2, chat log 48 px, code fits true, name 15 px, Ready 13 px, clipped 1 [lobby-caption], under 44 px 0, overlaps 0, unreachable 0
+proposed 320x568-100: scroll x/y 0/0, page x 0, bar pinned true, seat columns 2, chat log 48 px, code fits true, name 15 px, Ready 13 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+rem-only 320x568-125: scroll x/y 6/3, page x 0, bar pinned true, seat columns 2, chat log 9 px, code fits true, name 18.75 px, Ready 16.25 px, clipped 2 [Host · Ready; Sounds & stickers], under 44 px 0, overlaps 0, unreachable 0
+proposed 320x568-125: scroll x/y 0/279, page x 0, bar pinned true, seat columns 1, chat log 28 px, code fits true, name 18.75 px, Ready 16.25 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+rem-only 320x568-150: scroll x/y 37/14, page x 0, bar pinned true, seat columns 2, chat log 0 px, code fits true, name 22.5 px, Ready 19.5 px, clipped 2 [Host · Ready; Sounds & stickers], under 44 px 0, overlaps 6 [How to play+lobby-player-s1; rename-seat+remove-bot; lobby-player-s1+add-bot; 7+Start; 7+Leave table; 10+Leave table], unreachable 0
+proposed 320x568-150: scroll x/y 0/463, page x 0, bar pinned true, seat columns 1, chat log 33 px, code fits true, name 22.5 px, Ready 19.5 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+rem-only 375x667-100: scroll x/y 0/0, page x 0, bar pinned true, seat columns 2, chat log 131 px, code fits true, name 15 px, Ready 13 px, clipped 1 [lobby-caption], under 44 px 0, overlaps 0, unreachable 0
+proposed 375x667-100: scroll x/y 0/0, page x 0, bar pinned true, seat columns 2, chat log 131 px, code fits true, name 15 px, Ready 13 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+rem-only 375x667-125: scroll x/y 0/3, page x 0, bar pinned true, seat columns 2, chat log 92 px, code fits true, name 18.75 px, Ready 16.25 px, clipped 1 [lobby-caption], under 44 px 0, overlaps 0, unreachable 0
+proposed 375x667-125: scroll x/y 0/0, page x 0, bar pinned true, seat columns 2, chat log 48 px, code fits true, name 18.75 px, Ready 16.25 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+rem-only 375x667-150: scroll x/y 2/14, page x 0, bar pinned true, seat columns 2, chat log 53 px, code fits true, name 22.5 px, Ready 19.5 px, clipped 2 [Host · Ready; Sounds & stickers], under 44 px 0, overlaps 4 [How to play+lobby-player-s1; lobby-player-s1+add-bot; 7+Leave table; 10+Leave table], unreachable 0
+proposed 375x667-150: scroll x/y 0/310, page x 0, bar pinned true, seat columns 1, chat log 33 px, code fits true, name 22.5 px, Ready 19.5 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+rem-only 390x844-100: scroll x/y 0/0, page x 0, bar pinned true, seat columns 2, chat log 284 px, code fits true, name 15 px, Ready 13 px, clipped 1 [lobby-caption], under 44 px 0, overlaps 0, unreachable 0
+proposed 390x844-100: scroll x/y 0/0, page x 0, bar pinned true, seat columns 2, chat log 284 px, code fits true, name 15 px, Ready 13 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+rem-only 390x844-125: scroll x/y 0/0, page x 0, bar pinned true, seat columns 2, chat log 245 px, code fits true, name 18.75 px, Ready 16.25 px, clipped 1 [lobby-caption], under 44 px 0, overlaps 0, unreachable 0
+proposed 390x844-125: scroll x/y 0/0, page x 0, bar pinned true, seat columns 2, chat log 197 px, code fits true, name 18.75 px, Ready 16.25 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+rem-only 390x844-150: scroll x/y 0/10, page x 0, bar pinned true, seat columns 2, chat log 206 px, code fits true, name 22.5 px, Ready 19.5 px, clipped 2 [Host · Ready; Sounds & stickers], under 44 px 0, overlaps 3 [How to play+lobby-player-s1; 7+Leave table; 10+Leave table], unreachable 3 [Cancel ready; Start; Leave table]
+proposed 390x844-150: scroll x/y 0/151, page x 0, bar pinned true, seat columns 1, chat log 33 px, code fits true, name 22.5 px, Ready 19.5 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+rem-only 844x390-100: scroll x/y 0/0, page x 0, bar pinned true, seat columns 2, chat log 114 px, code fits true, name 15 px, Ready 17 px, clipped 1 [lobby-caption], under 44 px 0, overlaps 0, unreachable 0
+proposed 844x390-100: scroll x/y 0/0, page x 0, bar pinned true, seat columns 2, chat log 114 px, code fits true, name 15 px, Ready 17 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+rem-only 844x390-125: scroll x/y 0/3, page x 0, bar pinned true, seat columns 2, chat log 75 px, code fits true, name 18.75 px, Ready 21.25 px, clipped 1 [Host · Ready], under 44 px 0, overlaps 0, unreachable 3 [Cancel ready; Start; Leave table]
+proposed 844x390-125: scroll x/y 0/226, page x 0, bar pinned true, seat columns 1, chat log 258 px, code fits true, name 18.75 px, Ready 21.25 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+rem-only 844x390-150: scroll x/y 0/14, page x 0, bar pinned true, seat columns 2, chat log 36 px, code fits true, name 22.5 px, Ready 25.5 px, clipped 1 [Host · Ready], under 44 px 0, overlaps 2 [How to play+lobby-player-s1; How to play+Chat], unreachable 5 [7; 10; Cancel ready; Start; Leave table]
+proposed 844x390-150: scroll x/y 0/324, page x 0, bar pinned true, seat columns 1, chat log 311 px, code fits true, name 22.5 px, Ready 25.5 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+rem-only 1280x720-100: scroll x/y 0/0, page x 0, bar pinned true, seat columns 2, chat log 128 px, code fits true, name 15 px, Ready 17 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+proposed 1280x720-100: scroll x/y 0/0, page x 0, bar pinned true, seat columns 2, chat log 128 px, code fits true, name 15 px, Ready 17 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+rem-only 1280x720-125: scroll x/y 0/0, page x 0, bar pinned true, seat columns 2, chat log 89 px, code fits true, name 18.75 px, Ready 21.25 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+proposed 1280x720-125: scroll x/y 0/0, page x 0, bar pinned true, seat columns 2, chat log 41 px, code fits true, name 18.75 px, Ready 21.25 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+rem-only 1280x720-150: scroll x/y 0/2, page x 0, bar pinned true, seat columns 2, chat log 50 px, code fits true, name 22.5 px, Ready 25.5 px, clipped 0, under 44 px 0, overlaps 3 [How to play+lobby-player-s1; 7+Leave table; 10+Leave table], unreachable 0
+proposed 1280x720-150: scroll x/y 0/96, page x 0, bar pinned true, seat columns 2, chat log 33 px, code fits true, name 22.5 px, Ready 25.5 px, clipped 0, under 44 px 0, overlaps 0, unreachable 0
+browser errors: 0

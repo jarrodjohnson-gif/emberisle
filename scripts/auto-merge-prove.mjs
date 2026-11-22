@@ -29,7 +29,7 @@ function pr(over = {}) {
 const EXCLUDED = [
   // Governance files, even inside docs/.
   "AGENTS.md", "CLAUDE.md", "README.md", "docs/DESK.md", "docs/REVIEWING.md", "docs/DECISIONS.md", "docs/LANES.md", "docs/FRAMEWORK.md",
-  "docs/design/AGENTS.md", "docs/CLAUDE.md", "docs/framework.md", "Docs/DESK.md",
+  "docs/design/AGENTS.md", "docs/CLAUDE.md", "docs/framework.md", "Docs/DESK.md", "docs/HELPERS.md", "docs/ORCHESTRATOR.md", "docs/LOOPING.md", "docs/builder-kit/builder-agent.md", "docs/builder-kit/launch.sh", "docs/GEMINI.md", "docs/.mcp.json",
   // Hard excludes. .github/** beats the .github/ISSUE_TEMPLATE/** allow entry: the exclude list wins.
   ".github/workflows/ci.yml", ".github/workflows/auto-merge.yml", ".github/ISSUE_TEMPLATE/bug.md", ".github/flaky.json",
   "package.json", "package-lock.json", "server/package.json", "server/package-lock.json", "docs/package.json",
@@ -81,6 +81,52 @@ const CASES = [
   ["base is not the default branch", pr({ pr: { base: { ref: "release" } } }), false],
 ];
 
+// Phase 2 (AUTO_MERGE_CODE on): a reviewed code PR. Each case changes one thing.
+const footer = (reviewer = "Opus 5.5", builder = "Sonnet 5.5", sha = SHA, clean = true) =>
+  `<!-- review-desk -->\n${clean ? `Clean.\n<!-- review-desk: clean ${sha} -->` : "Blocking: src/main.tsx:3"}\nReviewer: ${reviewer} · Builder: ${builder} · Head: ${sha}`;
+function codePr(over = {}) {
+  const base = pr({ files: [file("src/main.tsx", "modified", 900), file("scripts/new-prove.mjs", "added"), file("package.json"), file(".github/workflows/ci.yml"), file("src/old.ts", "removed")],
+    comments: [{ author_association: "OWNER", body: footer() }], ...over });
+  return { ...base, code: over.code ?? true };
+}
+const CODE_EXCLUDED = ["AGENTS.md", "docs/DESK.md", "docs/DECISIONS.md", "src/CLAUDE.md", ".github/workflows/auto-merge.yml", ".github/workflows/CI.yml/x", ".github/workflows/CI.yml", ".github/workflows/Ci.yml", ".github/workflows/ci.yml2", ".github/flaky.json", "GEMINI.md", ".mcp.json", "docs/HELPERS.md",
+  ".claude/settings.json", "scripts/auto-merge-eligible.mjs", "scripts/desk-gate.mjs", "scripts/desk-board-prove.mjs", "scripts/pr-signal.mjs", "src/../AGENTS.md"];
+CASES.push(
+  ["code: a reviewed code PR", codePr(), true],
+  ["code: the same PR with the switch off", codePr({ code: false }), false],
+  ["code: a docs PR over the docs size limit", codePr({ files: [file("docs/big.md", "modified", 900)] }), true],
+  ["code: a small docs PR still merges on the marker alone", { ...pr(), code: true }, true],
+  ...CODE_EXCLUDED.map((p) => [`code: excluded alongside code: ${JSON.stringify(p)}`, codePr({ files: [file("src/main.tsx"), file(p)] }), false]),
+  ["code: a governance file renamed away", codePr({ files: [{ ...file("src/notes.ts", "renamed"), previous_filename: "AGENTS.md" }] }), false],
+  ["code: marker only, no footer", codePr({ comments: [{ author_association: "OWNER", body: `<!-- review-desk: clean ${SHA} -->` }] }), false],
+  ["code: reviewer is the builder's model", codePr({ comments: [{ author_association: "OWNER", body: footer("sonnet 5.5", "Sonnet 5.5") }] }), false],
+  ["code: footer for another head", codePr({ comments: [{ author_association: "OWNER", body: footer("Opus 5.5", "Sonnet 5.5", OTHER) }] }), false],
+  ["code: a bare marker for the head, and a full review of another head", codePr({ comments: [{ author_association: "OWNER", body: `<!-- review-desk: clean ${SHA} -->` }, { author_association: "OWNER", body: footer("Opus 5.5", "Sonnet 5.5", OTHER) }] }), false],
+  ["code: a bare marker from the owner, and a full review from an outsider", codePr({ comments: [{ author_association: "OWNER", body: `<!-- review-desk: clean ${SHA} -->` }, { author_association: "NONE", body: footer() }] }), false],
+  ["code: reviewer is the builder's model, spelled another way", codePr({ comments: [{ author_association: "OWNER", body: footer("Claude Opus 5.5", "opus-5.5") }] }), false],
+  ["code: a newer review with a broken footer after a clean one", codePr({ comments: [{ author_association: "OWNER", body: footer() }, { author_association: "OWNER", body: `<!-- review-desk -->\nBlocking: src/main.tsx:3\nReviewer: Opus 5.5 Builder: Sonnet 5.5 Head: ${SHA}` }] }), false],
+  ["code: reviewer name is empty once normalised", codePr({ comments: [{ author_association: "OWNER", body: footer("Claude", "Sonnet 5.5") }] }), false],
+  ["code: builder name is only punctuation", codePr({ comments: [{ author_association: "OWNER", body: footer("Opus 5.5", "?") }] }), false],
+  ["code: a clean review that asks for the owner's look, before the label lands", codePr({ comments: [{ author_association: "OWNER", body: footer().replace("Clean.", "Clean.\nJarrod must see the pictures first.") }] }), false],
+  ["code: the same review, with owner-ok", codePr({ pr: { labels: [{ name: "owner-ok" }] }, comments: [{ author_association: "OWNER", body: footer().replace("Clean.", "Clean.\nJarrod must see the pictures first.") }] }), true],
+  ["docs: a clean marker in a review that waits for the owner", pr({ comments: [{ author_association: "OWNER", body: `<!-- review-desk -->\nVisual sign-off pending.\n<!-- review-desk: clean ${SHA} -->` }] }), false],
+  ["code: an outsider's comment asking for the owner changes nothing", codePr({ comments: [{ author_association: "OWNER", body: footer() }, { author_association: "NONE", body: "<!-- review-desk -->\nJarrod must see this first." }] }), true],
+  ["code: an older review asked for the owner, the newest review does not", codePr({ comments: [{ author_association: "OWNER", body: footer().replace("Clean.", "Clean.\nJarrod must see the pictures first.") }, { author_association: "OWNER", body: footer() }] }), true],
+  ["code: a bare marker after a review that asked for the owner", codePr({ comments: [{ author_association: "OWNER", body: footer().replace("Clean.", "Clean.\nJarrod must see the pictures first.") }, { author_association: "OWNER", body: `<!-- review-desk: clean ${SHA} -->` }] }), false],
+  ["code: a review that says no owner approval is needed", codePr({ comments: [{ author_association: "OWNER", body: footer().replace("Clean.", "Clean.\nNo owner approval needed.\nJarrod's sign-off is on the issue already.") }] }), true],
+  ["code: a review that names the label in a code span", codePr({ comments: [{ author_association: "OWNER", body: footer().replace("Clean.", "Clean.\nChecked: `needs-owner` is absent, as it should be.") }] }), true],
+  ["code: an ask hidden in an HTML comment", codePr({ comments: [{ author_association: "OWNER", body: footer().replace("Clean.", "Clean.\n<!-- waiting on Jarrod -->") }] }), true],
+  ...["Not merged yet: waiting on Jarrod.", "Waiting on Jarrod for the look, not the code.", "Needs Jarrod's sign-off on the new sound, which is not in the issue.", "Visual approval pending from Jarrod (no code findings)."]
+    .map((line) => [`code: an ask on a line with a no or not: ${line}`, codePr({ comments: [{ author_association: "OWNER", body: footer().replace("Clean.", `Clean.\n${line}`) }] }), false]),
+  ["code: a review that is waiting on Jarrod", codePr({ comments: [{ author_association: "OWNER", body: footer().replace("Clean.", "Clean.\nThis is waiting on Jarrod for the sound.") }] }), false],
+  ["code: a newer review with findings", codePr({ comments: [{ author_association: "OWNER", body: footer() }, { author_association: "OWNER", body: footer("Opus 5.5", "Sonnet 5.5", SHA, false) }] }), false],
+  ["code: footer from an outsider", codePr({ comments: [{ author_association: "NONE", body: footer() }] }), false],
+  ["code: checks failed", codePr({ checkRuns: [{ name: "checks", app: ACTIONS, head_sha: SHA, status: "completed", conclusion: "failure" }] }), false],
+  ["code: needs-owner", codePr({ pr: { labels: [{ name: "needs-owner" }] } }), false],
+  ["code: needs-owner and owner-ok", codePr({ pr: { labels: [{ name: "needs-owner" }, { name: "owner-ok" }] } }), true],
+  ["docs: needs-owner", pr({ pr: { labels: [{ name: "needs-owner" }] } }), false],
+);
+
 function run(mod) {
   return CASES.map(([label, input, want]) => ({ label, want, got: mod.decide(input) }));
 }
@@ -108,6 +154,28 @@ const MUTANTS = [
   ["checks run SHA not compared", "r.head_sha !== sha || ", ""],
   ["checks app not checked", " && r.app?.id === ACTIONS_APP_ID", ""],
   ["truncated files list allowed", "if (files.length !== pr.changed_files)", "if (false)"],
+  ["code switch ignored", "const asCode = code === true && !docsOnly;", "const asCode = !docsOnly;"],
+  ["code excludes ignored", "if (why) return no(", "if (false) return no("],
+  ["ci.yml exception widened", "!CODE_ALLOW_EXACT.includes(path)", "!CODE_ALLOW_EXACT.includes(lower)"],
+  ["footer not required", 'if (!footer) return no("no complete review footer");', "if (!footer) return { merge: true, sha };"],
+  ["footer head not compared", "if (footer.head !== sha)", "if (false)"],
+  ["findings merge", "if (!footer.clean)", "if (false)"],
+  ["model names compared raw", "return { reviewer: model(m[1]), builder: model(m[2]), head,", "return { reviewer: m[1].trim().toLowerCase(), builder: m[2].trim().toLowerCase(), head,"],
+  ["an older review stands in for a broken newer one", "if (!m) return null;", "if (!m) continue;"],
+  ["empty model names allowed", "if (!footer.reviewer || !footer.builder)", "if (false)"],
+  ["a review asking for the owner ignored", "if (ownerAsked(comments) && !labels.includes(\"owner-ok\"))", "if (false)"],
+  ["owner-ok not needed after a review asks", "ownerAsked(comments) && !labels.includes(\"owner-ok\")", "ownerAsked(comments) && false"],
+  ["an outsider can hold a PR", "find((c) => TRUSTED.includes(c.author_association) && ", "find((c) => "],
+  ["any review that ever asked holds the PR", "].reverse().find((c) => TRUSTED.includes(c.author_association) && String(c.body ?? \"\").includes(\"<!-- review-desk -->\"));", "].reverse().filter((c) => TRUSTED.includes(c.author_association) && String(c.body ?? \"\").includes(\"<!-- review-desk -->\")).find((c) => OWNER_ASK.test(c.body));"],
+  ["a bare marker counts as the newest review", "String(c.body ?? \"\").includes(\"<!-- review-desk -->\"));\n  if (!newest) return false;", "/<!--\\s*review-desk/.test(String(c.body ?? \"\")));\n  if (!newest) return false;"],
+  ["hidden comments read as an ask", 'String(newest.body).replace(/<!--[\\s\\S]*?-->/g, "").replace(', 'String(newest.body).replace('],
+  ["lines that decline an ask still hold", "!DECLINES.test(line) && ", ""],
+  ["any no or not on a line drops the ask", "const DECLINES = /\\b(?:no|not)\\b[^\\n.]{0,40}\\b(?:needed|required|necessary)\\b|\\balready\\b/i;", "const DECLINES = /\\b(?:no|not|none|without|already)\\b/i;"],
+  ["the waiting-on wording dropped", "|(?:waiting|pending|needs?)[^\\n.]{0,60}(?:Jarrod|owner)", ""],
+  ["same-model review allowed", "if (footer.reviewer === footer.builder)", "if (false)"],
+  ["footer author not checked", "!TRUSTED.includes(c.author_association) || ", ""],
+  ["needs-owner ignored", 'labels.includes("needs-owner") && !labels.includes("owner-ok")', "false"],
+  ["owner-ok not needed", ' && !labels.includes("owner-ok")', " && false"],
 ];
 const dir = mkdtempSync(join(tmpdir(), "auto-merge-mutants-"));
 try {
@@ -136,6 +204,12 @@ assert.equal(/head_(branch|repository|ref)|pull_request\.head|refs\/pull|merge_c
 assert.equal(/\$\{\{[^}]*(comment\.body|pull_request\.title|pull_request\.body|head\.label)[^}]*\}\}/.test(workflow.replace(/contains\(github\.event\.comment\.body, '[^']*'\)/g, "")), false, "no PR text in an expression");
 assert.match(workflow, /gh pr merge "\$NUM" --repo "\$REPO" --squash --match-head-commit "\$SHA"/);
 assert.match(workflow, /if: steps\.decide\.outputs\.merge == 'true'/);
+assert.match(workflow, /if gh pr merge "\$NUM" --repo "\$REPO" --squash --match-head-commit "\$SHA"; then\n.*labels\[\]=auto-merged'\n\s+else\n.*labels\[\]=merge-by-chat'/, "a refused merge is handed to the dispatcher, never retried another way");
+assert.equal((workflow.match(/secrets\./g) || []).length, 1, "the only secret is the optional merge token");
+assert.equal((workflow.match(/gh pr merge/g) || []).length, 1, "one merge command, pinned to the checked SHA");
+assert.ok(workflow.includes("AUTO_MERGE_CODE: ${{ vars.AUTO_MERGE_CODE != 'off' && 'on' || 'off' }}"), "the code phase has its own off switch");
+for (const p of CODE_EXCLUDED) assert.ok(real.codeRefusal(p), `${JSON.stringify(p)} is refused in a code PR`);
+for (const p of ["src/main.tsx", "package.json", ".github/workflows/ci.yml", "scripts/size-prove.mjs", "docs/x.md"]) assert.equal(real.codeRefusal(p), null, p);
 const ci = readFileSync(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
 assert.match(ci, /^name: CI$/m, "auto-merge listens for the workflow named CI");
 assert.match(ci, /^ {2}checks:$/m, "the required job is still called checks");
