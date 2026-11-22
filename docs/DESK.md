@@ -177,20 +177,28 @@ Builders are only as good as the issues they are handed. The old desk wrote the 
 
 **Where the work comes from, in this order:**
 
-1. **Jarrod's answers.** Query the Desk page's `decisions` for the last 14 days. An answer that calls for building, with no issue or PR that already carries it, becomes an issue.
-2. **Backlog that is now ready.** A `status:backlog` issue whose `Depends on` issues are all closed, with a clear scope and a completion test, moves to `status:todo`.
+1. **Jarrod's answers.**
+   - Every open issue labelled `answered`: he has answered its card. Read the `Owner answer (Desk page, ...)` comment, rewrite the issue as ready work that does exactly what he said, set `status:todo`, and remove `answered` and `needs-owner`.
+   - Query the Desk page's `decisions` for the last 14 days. An answer that calls for building, with no issue or PR that already carries it, becomes an issue.
+2. **Backlog that is now ready.** A `status:backlog` issue moves to `status:todo` only when all of these hold: its `Depends on` issues are closed; it has a clear scope and a completion test; it carries no `needs-owner`, no `/paused` and no unanswered `Question:`; and it is not a new feature, screen, flow, layout, rule, or art or sound direction that Jarrod has not already decided.
 3. **Loose ends on merged work.** Non-blocking review notes and follow-ups named in PRs merged in the last 7 days.
 4. **Broken or flaky things.** A proof that failed on `main` or failed on a PR that did not touch it, and any open `bug` with no owner.
-5. **[IDEAS.md](IDEAS.md) and [VISION.md](VISION.md).** Small, safe pieces only.
+5. **[IDEAS.md](IDEAS.md) and [VISION.md](VISION.md).** Only a real bug fix, minor UX (wording, spacing, a hint, a missing cue, consistency with something already decided), or something a row in [DECISIONS.md](DECISIONS.md) already approves. Everything else from these files is a question for him.
+
+**Never file the same thing twice.** Before you file, search open issues, issues closed in the last 30 days and open PRs for the same work. Every issue you file ends its `Source` section with one line naming where it came from, such as `Source: decision q1829-duo-options`, `Source: PR #1851 review note 2` or `Source: IDEAS.md "whale wave"`. Search for that exact line first: if an issue has it, file nothing.
 
 **What it writes.** Each issue follows [FRAMEWORK.md](FRAMEWORK.md) section 5: `Deliverable`, `Completion test`, `Depends on`, `Source`. It carries one lane label, one `tier:` label set by risk as [LANES.md](LANES.md) says, one `prio:` label, and `status:todo`. One issue is one PR's worth of work. State the numbers: sizes, counts, limits. An issue a builder would have to ask a question about is not ready: sharpen it or leave it in backlog.
 
-**What it never decides.** A new feature, a new screen or flow, a layout change, a rule, an art or sound direction: these are Jarrod's ("Who decides what" in FRAMEWORK.md). File such work as `status:backlog`, post one `Question:` on it with options and a recommendation, and add `needs-owner` so the clerk puts it on the Desk page. For a design question, start a Fable 5.2 subagent first and put its recommendation in the question.
+**What it never decides.** A new feature, a new screen or flow, a layout change, a rule, an art or sound direction: these are Jarrod's ("Who decides what" in FRAMEWORK.md). For such work:
+
+1. File it as `status:backlog` with `needs-owner`, and post one `Question:` on it with options and your recommendation. For a design question, start a Fable 5.2 subagent first and put its recommendation in the question. Three Fable subagents at most in one run.
+2. Write the Desk page card yourself, as "What is stored" says, with `issue` set to the issue's number. Then add `on-desk` to the issue.
+3. Stop there. When he answers, the clerk posts his answer on the issue and swaps `on-desk` for `answered`, and your next run picks it up under source 1.
 
 **Housekeeping, in the same run:**
 
 - Keep at least 5 open, unclaimed `anytime` issues ([LANES.md](LANES.md#anytime-queue)).
-- Mark a claim expired when it has been quiet for 48 hours ([LANES.md](LANES.md)): comment `expired: <agent>, <date>` and set the issue back to `status:todo`.
+- Mark a claim expired only when the issue has no open PR and its branch has had no push for 48 hours, or 48 hours have passed since the claim when no branch exists ([LANES.md](LANES.md)): comment `expired: <agent>, <date>` and set the issue back to `status:todo`.
 - Close an issue whose work is merged, with the PR number.
 
 **How much.** Stop when 12 unclaimed `status:todo` issues are ready across the tiers, at least 3 of them `tier:1`, or when the sources above are used up. File 15 at most in one run. End with one line: how many issues you filed, moved and closed.
@@ -209,7 +217,7 @@ It keeps no ledger. Everything it needs is in the open PR list, the chat titles 
    - A chat is **ended** when its title ends in `done`, `blocked` or `nothing eligible`.
    - A chat is **live** when it is not ended and its `updated_at` is less than 3 hours old. A builder waiting for CI is live: its title still ends in `building`.
    - A chat that is neither is **stale**: it stopped without saying so.
-4. **Archive** every stale chat, every `nothing eligible` chat whose `created_at` is 6 or more hours old, and every `done` or `blocked` chat whose `updated_at` is 4 or more hours old. Leave any other chat alone. Never archive your own chat or one whose title does not start `(auto)`.
+4. **Archive** every stale chat, every `nothing eligible` chat whose `created_at` is 6 or more hours old, and every `done` or `blocked` chat whose `updated_at` is 4 or more hours old. A planner chat is the exception: archive it only when its `created_at` is 12 or more hours old, so step 7 can see that one ran. Leave any other chat alone. Never archive your own chat or one whose title does not start `(auto)`.
 5. **Find the PRs that need a chat.** In this order:
    - a `signal:red` PR that carries `answered`, with its number in no live chat's title: Jarrod has answered;
    - a `signal:red` PR that carries `no-pictures`, with its number in no live chat's title;
@@ -231,7 +239,7 @@ It keeps no ledger. Everything it needs is in the open PR list, the chat titles 
    - Query `decisions` for documents whose `at` is in the last 7 days, and count the ones whose `handled_for` is not their `at`.
    - From the PR list, note every `signal:red` PR that carries none of `on-desk`, `answered` and `no-pictures`, and whose number is in no live chat's title.
    - If either is non-empty and no clerk chat is live in the listing from step 3, start one clerk chat and give it those PR numbers.
-   - Count the open issues labelled `status:todo` with one list call (`number` and `labels` only). If there are fewer than 5, no planner chat is live, and no planner chat in the listing is less than 6 hours old, start one planner chat.
+   - Decide whether the planner is needed. It is needed when any of these holds: a builder chat in the listing ended `nothing eligible` and its `created_at` is less than 6 hours old; an open issue that is not a PR carries `answered` (one list call, by that label); or fewer than 5 open issues carry `status:todo` (one list call, by that label). Start one planner chat only if it is needed and no planner chat in the listing has a `created_at` less than 12 hours old.
    - Write `status/now`: `at`, `building` (one line per live chat, from its title), `merged` (read the old `status/now` first: keep its `merged` lines only, add the PRs your step 2 merged and any PR named in a chat title ending `done` that is gone from the list, newest first, ten at most), and `problems`, written fresh at every tick and never copied from the old status (PRs red for more than a day, and anything you told Jarrod). Plain words, no SHAs.
 8. **Set the next tick** with one `send_later` for 60 minutes. Then post `·` and end the turn.
 
