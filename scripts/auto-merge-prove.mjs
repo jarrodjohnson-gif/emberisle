@@ -89,6 +89,8 @@ function codePr(over = {}) {
     comments: [{ author_association: "OWNER", body: footer() }], ...over });
   return { ...base, code: over.code ?? true };
 }
+// A reviewed rule-file PR with the owner's yes for this head: the label and the clerk's marker comment.
+const ownerPr = (over = {}) => codePr({ files: [file("docs/DESK.md")], comments: [{ author_association: "OWNER", body: footer() }, { author_association: "OWNER", body: `Owner answer (Desk page): A: merge it\n<!-- owner-merge: ${SHA} -->` }], ...over, pr: { labels: [{ name: "owner-merge" }], ...over.pr } });
 const CODE_EXCLUDED = ["AGENTS.md", "docs/DESK.md", "docs/DECISIONS.md", "src/CLAUDE.md", ".github/workflows/auto-merge.yml", ".github/workflows/CI.yml/x", ".github/workflows/CI.yml", ".github/workflows/Ci.yml", ".github/workflows/ci.yml2", ".github/flaky.json", "GEMINI.md", ".mcp.json", "docs/HELPERS.md",
   ".claude/settings.json", "scripts/auto-merge-eligible.mjs", "scripts/desk-gate.mjs", "scripts/desk-board-prove.mjs", "scripts/pr-signal.mjs", "src/../AGENTS.md"];
 CASES.push(
@@ -97,6 +99,17 @@ CASES.push(
   ["code: a docs PR over the docs size limit", codePr({ files: [file("docs/big.md", "modified", 900)] }), true],
   ["code: a small docs PR still merges on the marker alone", { ...pr(), code: true }, true],
   ...CODE_EXCLUDED.map((p) => [`code: excluded alongside code: ${JSON.stringify(p)}`, codePr({ files: [file("src/main.tsx"), file(p)] }), false]),
+  ...CODE_EXCLUDED.filter((p) => !p.includes("..")).map((p) => [`code: owner-merge lifts the governance refusal: ${JSON.stringify(p)}`, ownerPr({ files: [file("src/main.tsx"), file(p)] }), true]),
+  ["code: owner-merge never lifts an unsafe path", ownerPr({ files: [file("src/main.tsx"), file("src/../AGENTS.md")] }), false],
+  ["code: owner-merge label with no marker comment", ownerPr({ comments: [{ author_association: "OWNER", body: footer() }] }), false],
+  ["code: owner-merge marker for another head", ownerPr({ comments: [{ author_association: "OWNER", body: footer() }, { author_association: "OWNER", body: `Owner answer\n<!-- owner-merge: ${OTHER} -->` }] }), false],
+  ["code: an older yes for this head, then a newer yes for another head", ownerPr({ comments: [{ author_association: "OWNER", body: `<!-- owner-merge: ${SHA} -->` }, { author_association: "OWNER", body: footer() }, { author_association: "OWNER", body: `<!-- owner-merge: ${OTHER} -->` }] }), false],
+  ["code: owner-merge marker from an outsider", ownerPr({ comments: [{ author_association: "OWNER", body: footer() }, { author_association: "NONE", body: `<!-- owner-merge: ${SHA} -->` }] }), false],
+  ["code: owner-merge marker without the label", ownerPr({ pr: { labels: [] } }), false],
+  ["code: owner-merge on a rule PR with no review", ownerPr({ comments: [{ author_association: "OWNER", body: `<!-- owner-merge: ${SHA} -->` }] }), false],
+  ["code: owner-merge on a rule PR reviewed at another head", ownerPr({ comments: [{ author_association: "OWNER", body: footer("Opus 5.5", "Sonnet 5.5", OTHER) }, { author_association: "OWNER", body: `<!-- owner-merge: ${SHA} -->` }] }), false],
+  ["code: owner-merge with the code switch off", ownerPr({ code: false }), false],
+  ["code: owner-ok does not lift the governance refusal", ownerPr({ pr: { labels: [{ name: "owner-ok" }] } }), false],
   ["code: a governance file renamed away", codePr({ files: [{ ...file("src/notes.ts", "renamed"), previous_filename: "AGENTS.md" }] }), false],
   ["code: marker only, no footer", codePr({ comments: [{ author_association: "OWNER", body: `<!-- review-desk: clean ${SHA} -->` }] }), false],
   ["code: reviewer is the builder's model", codePr({ comments: [{ author_association: "OWNER", body: footer("sonnet 5.5", "Sonnet 5.5") }] }), false],
@@ -142,6 +155,14 @@ for (const p of ["docs/x.md", "docs/design/chat-c/README.md", "docs/design/a.htm
 // Mutation check: break one rule at a time in a copy of the script. The cases above must catch every break.
 const source = readFileSync(new URL("./auto-merge-eligible.mjs", import.meta.url), "utf8");
 const MUTANTS = [
+  ["owner-merge ignored", "if (why && !(ownerMerge && LIFTABLE.test(why))) return no(", "if (why) return no("],
+  ["owner-merge lifts unsafe paths too", "!(ownerMerge && LIFTABLE.test(why))", "!ownerMerge"],
+  ["owner-merge marker head not compared", "ownerMergeHead(comments) === sha", "ownerMergeHead(comments) !== null"],
+  ["owner-merge marker not needed", 'labels.includes("owner-merge") && ownerMergeHead(comments) === sha', 'labels.includes("owner-merge")'],
+  ["owner-merge label not needed", 'labels.includes("owner-merge") && ownerMergeHead(comments) === sha', "ownerMergeHead(comments) === sha"],
+  ["owner-merge marker from anyone", "if (!TRUSTED.includes(c.author_association)) continue;\n    const found", "const found"],
+  ["an older yes stands in for the newest", "(comments ?? []).toReversed()", "(comments ?? [])"],
+  ["owner-ok lifts the governance refusal", 'labels.includes("owner-merge")', 'labels.includes("owner-ok")'],
   ["excludes ignored", "if (refusal) return no(", "if (false) return no("],
   ["allow list not enforced",'if (!ALLOW.some((p) => path.startsWith(p))) return "outside docs/";', 'if (ALLOW.some((p) => path.startsWith(p))) return null;'],
   ["governance names matched case-sensitively", "lower === p.toLowerCase()", "path === p"],
@@ -155,7 +176,7 @@ const MUTANTS = [
   ["checks app not checked", " && r.app?.id === ACTIONS_APP_ID", ""],
   ["truncated files list allowed", "if (files.length !== pr.changed_files)", "if (false)"],
   ["code switch ignored", "const asCode = code === true && !docsOnly;", "const asCode = !docsOnly;"],
-  ["code excludes ignored", "if (why) return no(", "if (false) return no("],
+  ["code excludes ignored", "if (why && !(ownerMerge && LIFTABLE.test(why))) return no(", "if (false) return no("],
   ["ci.yml exception widened", "!CODE_ALLOW_EXACT.includes(path)", "!CODE_ALLOW_EXACT.includes(lower)"],
   ["footer not required", 'if (!footer) return no("no complete review footer");', "if (!footer) return { merge: true, sha };"],
   ["footer head not compared", "if (footer.head !== sha)", "if (false)"],
