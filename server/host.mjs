@@ -341,7 +341,7 @@ function visibleProfiles(room) {
 }
 
 function seatsMsg(room) {
-  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room), ...(room.choose ? { choose: room.choose } : {}) };
+  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", numberTokens: tokensOf(room), ...expandedTag(room), ...(room.choose ? { choose: room.choose } : {}) };
 }
 
 // A room's variant (#1611; six-players.md, "Lobby and network limits"): fixed when the table opens, before the first seat
@@ -350,6 +350,11 @@ function seatsMsg(room) {
 // all, on the wire or on disk, so they stay byte for byte as before.
 const expandedRoom = (room) => room.variant === "expanded";
 const expandedTag = (room) => (expandedRoom(room) ? { variant: "expanded" } : {});
+// #1156: how the table lays its number tokens, fixed when the table opens: the official spiral (the default) or Random.
+// Anything else reads as Random: a room saved before the setting had its board dealt at random, so it stays Random.
+const NUMBERS_FIXED = "Number tokens are fixed when the table is created.";
+const NUMBER_TOKENS = ["official", "random"];
+const tokensOf = (room) => (room.numberTokens === "official" ? "official" : "random");
 const paletteOf = (room) => (expandedRoom(room) ? EXPANDED_COLORS : PLAYER_COLORS);
 const seatRange = (room) => (expandedRoom(room) ? [5, 6] : [3, 4]);
 // Clients that can show the expanded island say so in every hello (`caps`). Raising PROTO would not do: older protocol
@@ -401,6 +406,8 @@ function snapshot(room, over = {}) {
     game: room.game,
     victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10,
     wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on",
+    // A room from before the setting has none and stays as it was saved: no field reads as Random.
+    ...(room.numberTokens ? { numberTokens: tokensOf(room) } : {}),
     ...expandedTag(room),
     seats: room.seats.map(({ id, name, color, ready, pid, secret, bot, turnDeadline, turnStartedAt, needs, extension, profileId }) => ({ id, name, color, ready, pid, secret, ...(bot ? { bot: true } : {}), ...(needs ? { needs } : {}), turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null, extension, ...(profileId ? { profileId } : {}) })),
     // Optional versioned metadata (#764): no ROOM_SHAPE bump, so a legacy room loads with no roster and is not tracked.
@@ -766,6 +773,7 @@ async function load() {
         botDeclined: saved.botDeclined ?? {},
         visibility: saved.visibility === "open" ? "open" : "private",
         wayfarerMode: saved.wayfarerMode === "off" ? "off" : "on",
+        numberTokens: NUMBER_TOKENS.includes(saved.numberTokens) ? saved.numberTokens : undefined,
         variant: saved.variant ?? (g?.variant ? "expanded" : "classic"),
         // Legacy hosted snapshots had no practice-bot seats, so a bot linked to a held seat means takeover.
         recoveryPids: [...new Set([...(Array.isArray(saved.recoveryPids) ? saved.recoveryPids : []), ...legacyRecovery])].slice(-recoveryCap(saved.game)),
@@ -1465,6 +1473,7 @@ function seatColor(room, raw) {
 
 function openTable(ws, msg) {
   if (msg.wayfarerMode !== undefined && !["on", "off"].includes(msg.wayfarerMode)) return send(ws, { type: "error", message: "Choose Wayfarer On or Off." });
+  if (msg.numberTokens !== undefined && !NUMBER_TOKENS.includes(msg.numberTokens)) return send(ws, { type: "error", message: "Choose Official spiral or Random number tokens." });
   if (msg.variant !== undefined && msg.variant !== "classic" && msg.variant !== "expanded") return send(ws, { type: "error", message: "Choose 4, 5 or 6 seats." });
   if (msg.variant === "expanded" && !canExpand(msg)) return send(ws, { type: "error", update: true, message: UPDATE });
   if (rooms.size >= ROOM_MAX) return send(ws, { type: "error", message: "The host is full." });
@@ -1479,7 +1488,7 @@ function openTable(ws, msg) {
     return send(ws, { type: "error", message: "Too many new tables right now. Try again in a minute." });
   }
   const visibility = msg.visibility === "open" ? "open" : "private";
-  const room = { victoryTarget: 10, wayfarerMode: msg.wayfarerMode ?? "on", variant: msg.variant ?? "classic", visibility, code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
+  const room = { victoryTarget: 10, wayfarerMode: msg.wayfarerMode ?? "on", numberTokens: msg.numberTokens ?? "official", variant: msg.variant ?? "classic", visibility, code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
   rooms.set(room.code, room);
   const seat = {
     id: `s${room.next++}`,
@@ -1503,7 +1512,7 @@ function openTable(ws, msg) {
   }
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", numberTokens: tokensOf(room), ...expandedTag(room) });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -1535,7 +1544,7 @@ function sitDown(ws, msg) {
   room.seats.push(seat);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", numberTokens: tokensOf(room), ...expandedTag(room) });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -1551,7 +1560,7 @@ function watch(ws, msg) {
   if (room.watchers.size >= SPECTATOR_MAX) return send(ws, { type: "error", message: "Table is full to watch." });
   room.watchers.add(ws);
   ws.watch = room;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", numberTokens: tokensOf(room), ...expandedTag(room) });
   watchersChanged(room, "Someone is watching.");
   // A finished game still being saved reaches this watcher with everyone else, through the terminal gate (#889).
   if (unsettled(room)) return;
@@ -1606,7 +1615,7 @@ async function startGame(ws, room) {
   if (n < least || n > most) return send(ws, { type: "error", message: `Need ${least} or ${most} at the table.` });
   if (room.seats.some((s) => !s.ready)) return send(ws, { type: "error", message: "Not everyone is ready." });
   // Exactly the seats at the table: five people are never filled to six. Seat numbers follow the lobby rows.
-  const game = (expandedRoom(room) ? createExpandedGame : createGame)({ humans: room.seats.map((s) => ({ name: s.name })), bots: 0, victoryTarget: room.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? "on" });
+  const game = (expandedRoom(room) ? createExpandedGame : createGame)({ humans: room.seats.map((s) => ({ name: s.name })), bots: 0, victoryTarget: room.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? "on", numberTokens: tokensOf(room) });
   const order = [...room.seats];
   order.forEach((s, i) => {
     s.needs = undefined;
@@ -1726,7 +1735,7 @@ async function replay(ws, room, live, isLive, variant) {
     for (const s of live) if (!colors.has(s)) colors.set(s, PLAYER_COLORS.find((c) => ![...colors.values()].includes(c)));
   }
   const order = [...(winner ? [winner, ...live.filter((s) => s !== winner)] : live), ...bots];
-  const game = (variant === "expanded" ? createExpandedGame : createGame)({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), victoryTarget: room.victoryTarget ?? old.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? old.wayfarerMode ?? "on" });
+  const game = (variant === "expanded" ? createExpandedGame : createGame)({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), victoryTarget: room.victoryTarget ?? old.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? old.wayfarerMode ?? "on", numberTokens: tokensOf(room) });
   order.forEach((s, i) => {
     s.needs = undefined;
     game.players[i].color = colors.get(s) ?? s.color;
@@ -2237,6 +2246,7 @@ function handle(ws, raw) {
     // hello with no code opens a table; hello with a code sits down (build bible 2.3, 10).
     if (msg.type === "create" || (msg.type === "hello" && !msg.code)) return openTable(ws, msg);
     if (msg.wayfarerMode !== undefined) return send(ws, { type: "error", message: "Wayfarer mode is fixed when the table is created." });
+    if (msg.numberTokens !== undefined) return send(ws, { type: "error", message: NUMBERS_FIXED });
     if (msg.type === "hello" && typeof msg.secret === "string") return rejoin(ws, msg);
     if (msg.type === "join" || msg.type === "hello") return sitDown(ws, msg);
     return send(ws, { type: "error", message: "not ready" });
@@ -2244,6 +2254,7 @@ function handle(ws, raw) {
   const room = ws.room;
   if (msg.type === "leave") return leaveOnPurpose(ws, room);
   if (msg.wayfarerMode !== undefined || msg.type === "setWayfarerMode") return send(ws, { type: "error", message: "Wayfarer mode is fixed when the table is created." });
+  if (msg.numberTokens !== undefined || msg.type === "setNumberTokens") return send(ws, { type: "error", message: NUMBERS_FIXED });
   if (msg.type === "chat" || msg.type === "react" || msg.type === "sound") return talk(ws, room, msg);
   if (TTT_TYPES.has(msg.type)) {
     const now = Date.now();
@@ -2335,7 +2346,7 @@ function rejoin(ws, msg) {
   if (room.visibility === "open" && room.game?.phase !== "over") registerOpenTable(room);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", numberTokens: tokensOf(room), ...expandedTag(room) });
   say(room, `${seat.name} is back.`);
   publish(room);
   resendTtt(seat, send);

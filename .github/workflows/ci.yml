@@ -363,6 +363,7 @@ jobs:
             timeout -k 10 60 npm run results-story-prove || status=$?
             timeout -k 10 60 npm run server-play-again-prove || status=$?
             timeout -k 10 60 npm run expanded-persist-prove || status=$?
+            timeout -k 10 60 npm run number-tokens-host-prove || status=$?
             timeout -k 10 90 npm run expanded-lobby-prove || status=$?
             timeout -k 10 120 npm run expanded-timers-prove || status=$?
             timeout -k 10 60 npm run rolloff-extension-prove || status=$?
@@ -810,6 +811,8 @@ jobs:
         run: npm run wayfarer-setup-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run victory-target-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run number-tokens-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run watch-ui-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'

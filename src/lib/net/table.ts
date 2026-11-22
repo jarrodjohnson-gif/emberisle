@@ -1,5 +1,5 @@
 // The browser (or a Node proof) talking to server/host.mjs. Design: docs/design/online-client.md.
-import type { Action, GameState, Resource, VictoryTarget, WayfarerMode } from "@/lib/game/types";
+import type { Action, GameState, NumberTokens, Resource, VictoryTarget, WayfarerMode } from "@/lib/game/types";
 import { PROTO, TABLE_CAPS as CAPS, TABLE_EVENTS as ALLOWED_EVENTS } from "@/lib/net/proto";
 import type { ProfileAttachment } from "@/lib/net/profiles";
 
@@ -110,10 +110,10 @@ export interface TableEvents {
   // `holdMs`/`lobbyHoldMs`: how long the host holds this seat after a drop, in a game and in the lobby (G7).
   // `variant` is set only at an expanded table (#1611), five or six seats on the expanded island.
   // `serverNow` is the host's clock as it answered the hello.
-  welcome(msg: { proto?: number; serverSha?: string; serverNow?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode; variant?: "expanded" }): void;
+  welcome(msg: { proto?: number; serverSha?: string; serverNow?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode; numberTokens?: NumberTokens; variant?: "expanded" }): void;
   // `watching`: how many spectators the table has (#347). `choose`: the host is choosing how to rematch an expanded game
   // with fewer than five at the table, from these choices (#1611; only the host may pick).
-  seats(msg: { code: string; seats: Seat[] | PeekSeat[]; watching?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode; variant?: "expanded"; choose?: Rematch[] }): void;
+  seats(msg: { code: string; seats: Seat[] | PeekSeat[]; watching?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode; numberTokens?: NumberTokens; variant?: "expanded"; choose?: Rematch[] }): void;
   // `you` is null on a watcher's state. `turnDeadline` is the host's clock (epoch ms) for the seat `turnPlayer`;
   // `serverNow` is the host's clock as it sent this.
   state(msg: { you: string | null; game: GameState; legal: Legal; actionStamp?: ActionStamp; turnDeadline?: number | null; turnPlayer?: string | null; serverNow?: number; result?: unknown }): void;
@@ -167,7 +167,7 @@ export interface OpenTableEntry {
 export type Rematch = "bots" | "classic";
 
 export interface TableClient {
-  open(me: Me, options?: { wayfarerMode?: WayfarerMode; visibility?: "open" | "private"; variant?: "expanded" }): void;
+  open(me: Me, options?: { wayfarerMode?: WayfarerMode; numberTokens?: NumberTokens; visibility?: "open" | "private"; variant?: "expanded" }): void;
   join(code: string, me: Me): void;
   // Watch a started table, read-only: hello {code, watch:true} (docs/design/spectator.md). No seat, no secret, so no redial.
   watch(code: string): void;

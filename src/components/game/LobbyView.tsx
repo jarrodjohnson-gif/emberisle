@@ -65,7 +65,7 @@ function OwnName({ seat }: { seat: Seat }) {
 
 export function LobbyView({ ConnectionStatus, ChatBox, SeatBubbles, HowTo, SeatName, prefetchRules, fitCode }: { ConnectionStatus: typeof import("./ConnectionStatus").ConnectionStatus; ChatBox: typeof import("./Chat").ChatBox; SeatBubbles: typeof import("./Chat").SeatBubbles; HowTo: typeof import("./HowTo").HowTo; SeatName: (props: { seat?: Seat }) => ReactNode; prefetchRules: () => Promise<boolean>; fitCode: (el: HTMLElement, code: string) => void }) {
   const g = useGame.getState();
-  const rule = useGame(s => s.tableWayfarerMode);
+  const rule = useGame(s => `${s.tableWayfarerMode} · ${s.tableNumberTokens} numbers`);
   const code = useGame(s => s.code);
   const seats = useGame(s => s.seats);
   const seatId = useGame(s => s.seatId);
