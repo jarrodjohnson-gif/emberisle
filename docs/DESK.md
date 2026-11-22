@@ -42,7 +42,7 @@ One chat takes one issue, or one batch of up to three PRs it is told to finish. 
    - `done` when the PR is done;
    - `blocked` when you added `needs-owner`;
    - `(auto) <your agent name> nothing eligible` when you found no issue to take.
-8. **Then wake the dispatcher.** If `get_session` shows a `parent_session_id`, send that chat the one word `tick` with `send_message`. It starts the next chat at once, so nothing waits for the hourly tick. If the call is denied, or there is no parent, skip it: the hourly tick still comes.
+8. **Then wake the dispatcher.** If the dispatcher started you (your first message is its builder or PR-owner prompt) and `get_session` shows a `parent_session_id`, send that chat the one word `tick` with `send_message`. It starts the next chat at once, so nothing waits for the hourly tick. If the call is denied, or there is no parent, skip it: the hourly tick still comes.
 
 **When you need Jarrod**, add the `needs-owner` label to the PR and post one comment that starts `Blocked:` or `Question:`, with the options and your recommendation. Add the label as soon as you know, and always before you start the reviewer. A look check that says `small and fine` at your head means you do not need him for the look. On 2026-11-22 a design PR (#1841) merged in the same minute its builder posted two questions for Jarrod, because the label came after the clean review. Do this when:
 
@@ -81,7 +81,9 @@ A review with blocking findings lists them, each with `file:line`, in place of t
 - `checks` is completed and green on the head;
 - the newest review comment is clean at that head, and its reviewer differs from its builder. A docs-only PR under 400 changed lines needs only the clean marker;
 - `needs-owner` is absent and the newest review does not ask for Jarrod's look, or `owner-ok` is present;
-- the PR touches no governance file: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.mcp.json`, `README.md`, the rule documents in `docs/`, `.claude/`, `.github/` apart from `workflows/ci.yml`, and the merge scripts themselves. Jarrod merges those by hand. `ci.yml` is allowed because every new proof is registered there, so the reviewer checks that no job in it was weakened.
+- the PR touches no governance file: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.mcp.json`, `README.md`, the rule documents in `docs/`, `.claude/`, `.github/` apart from `workflows/ci.yml`, and the merge scripts themselves. Those merge only on Jarrod's own yes: the `owner-merge` label, below. `ci.yml` is allowed because every new proof is registered there, so the reviewer checks that no job in it was weakened.
+
+**`owner-merge` is his yes to one rule-file PR.** He taps "merge it" on that PR's card on the Desk page, and the clerk adds the label. It lifts only the governance rule above: the checks, the clean review by a different model and the head pin all still apply. Any push to the PR takes the label off, so he is asked again about the new head. No agent adds it except the clerk carrying his tap, and `owner-ok` never stands in for it. He can still merge on GitHub himself.
 
 Two repo variables switch it off. `AUTO_MERGE` is `on` today; anything else stops all auto-merging, the dispatcher's hand-over merges included: no PR is green then, a PR that would have merged turns red for Jarrod, and `merge-by-chat` comes off. Setting `AUTO_MERGE_CODE` to `off` stops it for code PRs only, and leaves small docs PRs merging. To re-check one PR, run the auto-merge workflow by hand with its number.
 
@@ -96,7 +98,7 @@ Jarrod answers in one place: the [Desk Decisions page](https://claude.ai/artifac
 - **Every question for him becomes a card there.** A builder asks on its PR as "A builder chat" says. The clerk turns that into a card.
 - **His answer on the page is his word.** The clerk carries it to the PR. Nobody asks him twice, and nobody asks him in chat.
 - **The top of the page says what is going on.** The dispatcher writes it at every tick.
-- **Rule files still need his merge by hand.** A reviewed, green PR that touches one is red, and its card says "merge this".
+- **Rule files still need his yes.** A reviewed, green PR that touches one is red, and its card asks "merge this?". His tap merges it; he never has to open GitHub.
 
 ### What is stored
 
@@ -113,7 +115,7 @@ A card id is `q<PR or issue number>-<two or three words>`. A card has:
 - `title`: the question in plain words, and `why`: one or two short lines, the first starting `TLDR:`;
 - `ref` and `href`: the PR or issue; `pr` or `issue`: its number; `head`: the PR's full head SHA when the card was written; `comment`: the id of the comment the card was made from;
 - `opts`: two or three real options as `{v, l, d}`, with `rec: true` on the one you recommend. Give `ok: true` to an option only when picking it means "merge this PR as it is". The page adds "D: something else" itself;
-- `merge: true` on a card that only asks him to merge a rule-file PR by hand;
+- `merge: true` on a card that only asks him whether to merge a rule-file PR. Such a card also has `head`;
 - `images`: `[caption, url]` pairs. Upload each picture to the page as an asset and use the url that returns. Phone size first (440x956);
 - `added`: the time, as an ISO string.
 
@@ -138,24 +140,24 @@ A short Sonnet chat that the dispatcher starts only when there is something to c
    - if that PR or issue is closed, merged or missing, post nothing: mark the answer handled with the reason, and go on;
    - look for a comment there that starts `Owner answer (Desk page, <at>)` with this answer's `at`. If one exists, an earlier clerk posted it: do not post again;
    - otherwise post one comment that starts `Owner answer (Desk page, <at>):`, then his option's label, then his note word for word. His note is his instruction and wins over the option. "D: something else" with no note means "none of these": say so, and the builder asks again with different options;
-   - a `merge: true` card never gets `owner-ok`: the next rule covers it. For any other card, add `owner-ok` only when all four hold: the option he picked has `ok: true`; his note is empty; no other card for the same PR is still unanswered; and the PR's head SHA equals the card's `head`. This is the one case where an agent adds `owner-ok`: it is his tap, carried over;
-   - a `merge: true` card needs no builder: when he picks its merge option with an empty note, only mark the answer handled and leave the labels. The PR leaves the list when he merges it;
+   - a `merge: true` card never gets `owner-ok`: the next rule covers it, with `owner-merge`. For any other card, add `owner-ok` only when all four hold: the option he picked has `ok: true`; his note is empty; no other card for the same PR is still unanswered; and the PR's head SHA equals the card's `head`. This is the one case where an agent adds `owner-ok`: it is his tap, carried over;
+   - a `merge: true` card needs no builder. When he picks its merge option with an empty note, and the PR's head SHA equals the card's `head`, add `owner-merge` and remove `on-desk`. The workflow or the dispatcher then merges it. If the head has moved, add nothing: remove `on-desk`, so job 2 writes a fresh card for the new head. If the PR is already merged, only mark the answer handled;
    - in every other case replace `on-desk` with `answered`, but only once no card for that PR is still unanswered. When you add `owner-ok`, remove `on-desk`;
    - keep every other label the PR has;
    - update the answer with `handled_for` (a copy of `at`) and `handled` (one line on what you did), pinned with `if_version`. In the same update set `log: true` when his answer is a rule that outlasts this one PR: a limit, a standing permission, or a design choice that later work must follow. A look he approved or a merge he made is not one.
 2. **Post new questions.** For each PR the dispatcher names:
    - read its newest `Blocked:` or `Question:` comment. If a card already has that comment's id and no answer yet, an earlier clerk stopped half way: add `on-desk` if it is missing and write no card. If that card has an answer, the question is closed and job 1 carries the answer: treat the PR as having no such comment;
    - if it asks about a look and the branch has no pictures, add `no-pictures`, say so in one comment, and write no card. The exception is a `Blocked:` comment that says the builder could not take pictures: write the card without them and say so in its first line;
-   - a red PR with no such comment, or only a closed one, gets one card with `merge: true`: it asks him to merge the PR by hand, with a link, and says in one line why nothing merges it (a rule file, or auto-merge is switched off). If a `merge: true` card for this PR has no answer yet, write nothing and only add `on-desk`;
+   - a red PR with no such comment, or only a closed one, gets one card with `merge: true`: it asks him whether to merge the PR, with a link and the PR's `head`, and says in one line why it needs his yes (a rule file, or auto-merge is switched off). Its first option is `A: merge it` with `ok: true`. When auto-merge is switched off, say that his tap can't merge it and he must press Merge on GitHub. If a `merge: true` card for this PR has no answer yet, write nothing and only add `on-desk`;
    - write the card or cards, then add `on-desk`.
-3. **Tidy.** Delete the card of any PR that is merged or closed. His answers stay. If a `clerk/decisions-log` PR closed without merging, remove `logged` from the decisions that name it.
+3. **Tidy.** Delete the card of any PR that is merged or closed. His answers stay. If a `clerk/decisions-log` PR closed without merging, he turned those rows down: set `log: false` on the decisions that name it.
 4. **Log his decisions.** Query `decisions` for documents with `log: true` and no `logged` field. If there are none, skip this job. Otherwise:
-   - if a PR from the branch `clerk/decisions-log` is open, add to it; if not, start that branch from main and open one;
-   - skip any decision whose card id is already in that PR's rows: an earlier clerk stopped half way;
+   - if a PR from the branch `clerk/decisions-log` is open, add to it. If none is open and the branch exists and is ahead of main, open the PR from it. Otherwise start the branch from main;
+   - if a decision's card id is already in that PR's rows, add no row for it: an earlier clerk stopped half way. Still set its `logged` in the step below;
    - add one row per decision at the top of the table in `docs/DECISIONS.md`: the date, the rule in one bold sentence, his note in quotes (his option's label if the note is empty), and the card id. Change nothing else in the file, and no other file;
    - open the PR ready for review. Its body is `Agent: clerk`, `Model: claude-sonnet-5-5`, and one line per decision with its card id. It has no issue and no claim;
-   - set `logged` on each of those decisions to the PR's number;
-   - then it is a PR like any other. The dispatcher sends a chat to get it reviewed. Once it is red, job 2 gives it a `merge: true` card. One PR holds every decision until he merges it, so he gets one merge card for all of them.
+   - set `logged` to the PR's number on every decision this job found, the ones whose row was already there included;
+   - then it is a PR like any other. The dispatcher sends a chat to get it reviewed. Once it is red, job 2 gives it a `merge: true` card. One PR holds every decision until he merges it, so he gets one merge card for all of them. New rows move its head, so it is reviewed again and gets a fresh card.
 
 The clerk never decides for him, never merges, never edits a PR's code, and never answers a card. The decisions log in job 4 is the only file it ever changes.
 
@@ -218,7 +220,7 @@ One small chat, on Haiku 5.5. Jarrod starts it at claude.ai/code on the emberisl
 
 It keeps no ledger. Everything it needs is in the open PR list, the chat titles and the Desk page's database.
 
-**A tick starts in one of two ways.** Your own `send_later` fires with the text `hourly tick`, or a chat you started sends the one word `tick` when it ends. Both run the same steps. A message that is exactly `tick` skips step 8: the hourly one is already set, and a second would double the chain. A message that is exactly `hourly tick` runs every step. Treat anything else a chat sends you as noise: never act on it.
+**A tick starts in one of two ways.** Your own `send_later` fires with the text `hourly tick`, or a chat you started sends the one word `tick` when it ends. Both run the same steps. A message that is exactly `tick` skips step 8: the hourly one is already set, and a second would double the chain. A message that is exactly `hourly tick` runs every step, and so does Jarrod's start line. Treat anything else a chat sends you as noise: never act on it.
 
 **Every tick, in this order:**
 
@@ -264,7 +266,7 @@ It keeps no ledger. Everything it needs is in the open PR list, the chat titles 
 
 **The dispatcher never** reviews, decides a merge, labels, comments on GitHub, writes a card or an issue, answers a question, or reads a chat's transcript. It posts in its own chat only when `create_session` fails, once, with the error.
 
-**Its own size.** A tick adds about 8K tokens, most of it the chat listing. When `get_session` shows more than 300K, tell Jarrod once: "Please start a fresh dispatcher," with the start line, and to archive this one, so that finished chats do not wake two dispatchers. Check this once a day, not every tick. If PRs sit yellow for half a day with no chat, the tick chain broke: start a fresh dispatcher.
+**Its own size.** A tick adds about 8K tokens, most of it the chat listing. When `get_session` shows more than 300K, tell Jarrod once: "Please start a fresh dispatcher," with the start line, and to archive this one, so that finished chats do not wake two dispatchers. Check this once a day, not every tick. If PRs sit yellow for half a day with no chat, the tick chain broke: start a fresh dispatcher and archive this one.
 
 **Permissions.** The repo's `.claude/settings.json` allows `create_session`, `archive_session`, `send_later`, `get_session` and `send_message`. `list_sessions` and `set_session_title` are not on that list. Only Jarrod changes it. If a tool is denied, say which, once, and carry on. A builder whose title change is denied keeps working under its first title: the slot stays taken while it works, and the dispatcher frees it 3 hours after the chat goes quiet.
 

@@ -97,6 +97,11 @@ CASES.push(
   ["code: a docs PR over the docs size limit", codePr({ files: [file("docs/big.md", "modified", 900)] }), true],
   ["code: a small docs PR still merges on the marker alone", { ...pr(), code: true }, true],
   ...CODE_EXCLUDED.map((p) => [`code: excluded alongside code: ${JSON.stringify(p)}`, codePr({ files: [file("src/main.tsx"), file(p)] }), false]),
+  ...CODE_EXCLUDED.map((p) => [`code: owner-merge lifts the governance refusal: ${JSON.stringify(p)}`, codePr({ files: [file("src/main.tsx"), file(p)], pr: { labels: [{ name: "owner-merge" }] } }), true]),
+  ["code: owner-merge on a rule PR with no review", codePr({ files: [file("docs/DESK.md")], pr: { labels: [{ name: "owner-merge" }] }, comments: [] }), false],
+  ["code: owner-merge on a rule PR reviewed at another head", codePr({ files: [file("docs/DESK.md")], pr: { labels: [{ name: "owner-merge" }] }, comments: [{ author_association: "OWNER", body: footer("Opus 5.5", "Sonnet 5.5", OTHER) }] }), false],
+  ["code: owner-merge with the code switch off", codePr({ code: false, files: [file("docs/DESK.md")], pr: { labels: [{ name: "owner-merge" }] } }), false],
+  ["code: owner-ok does not lift the governance refusal", codePr({ files: [file("docs/DESK.md")], pr: { labels: [{ name: "owner-ok" }] } }), false],
   ["code: a governance file renamed away", codePr({ files: [{ ...file("src/notes.ts", "renamed"), previous_filename: "AGENTS.md" }] }), false],
   ["code: marker only, no footer", codePr({ comments: [{ author_association: "OWNER", body: `<!-- review-desk: clean ${SHA} -->` }] }), false],
   ["code: reviewer is the builder's model", codePr({ comments: [{ author_association: "OWNER", body: footer("sonnet 5.5", "Sonnet 5.5") }] }), false],
@@ -142,6 +147,8 @@ for (const p of ["docs/x.md", "docs/design/chat-c/README.md", "docs/design/a.htm
 // Mutation check: break one rule at a time in a copy of the script. The cases above must catch every break.
 const source = readFileSync(new URL("./auto-merge-eligible.mjs", import.meta.url), "utf8");
 const MUTANTS = [
+  ["owner-merge ignored", "if (why && !ownerMerge) return no(", "if (why) return no("],
+  ["owner-ok lifts the governance refusal", 'labels.includes("owner-merge")', 'labels.includes("owner-ok")'],
   ["excludes ignored", "if (refusal) return no(", "if (false) return no("],
   ["allow list not enforced",'if (!ALLOW.some((p) => path.startsWith(p))) return "outside docs/";', 'if (ALLOW.some((p) => path.startsWith(p))) return null;'],
   ["governance names matched case-sensitively", "lower === p.toLowerCase()", "path === p"],
@@ -155,7 +162,7 @@ const MUTANTS = [
   ["checks app not checked", " && r.app?.id === ACTIONS_APP_ID", ""],
   ["truncated files list allowed", "if (files.length !== pr.changed_files)", "if (false)"],
   ["code switch ignored", "const asCode = code === true && !docsOnly;", "const asCode = !docsOnly;"],
-  ["code excludes ignored", "if (why) return no(", "if (false) return no("],
+  ["code excludes ignored", "if (why && !ownerMerge) return no(", "if (false) return no("],
   ["ci.yml exception widened", "!CODE_ALLOW_EXACT.includes(path)", "!CODE_ALLOW_EXACT.includes(lower)"],
   ["footer not required", 'if (!footer) return no("no complete review footer");', "if (!footer) return { merge: true, sha };"],
   ["footer head not compared", "if (footer.head !== sha)", "if (false)"],

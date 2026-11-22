@@ -18,7 +18,7 @@ Run each local browser proof alone (AGENTS.md rule 11). Use `flock /tmp/claude-0
 
 1. **A different model.** The reviewer's model is not the builder's model.
 2. **Claims and scope.** The claim is posted with its files, one issue per PR, and no file overlap with another active claim. The clerk's `clerk/decisions-log` PR has no issue and no claim: check only that each row matches the owner's answer on its card.
-3. **The diff against the issue.** Check its completion test, the owner comments on it, and [DECISIONS.md](DECISIONS.md).
+3. **The diff against the issue.** Check its completion test, the owner comments on it, and [DECISIONS.md](DECISIONS.md). The rows in an open `clerk/decisions-log` PR count too.
 4. **No test loosened.** Diff every changed proof against main: removed assertions, wider tolerances, dropped sizes or skipped cases.
 5. **New proofs registered** in `package.json` and `.github/workflows/ci.yml`. Any other change to `ci.yml` is blocking unless the issue asks for it: no job removed, skipped or given more permissions.
 6. **No unrelated changes.** Use "Closes #N" only when the PR finishes the issue. A change to `docs/DECISIONS.md` is blocking, except in the clerk's `clerk/decisions-log` PR or in a PR that also changes another rule document. Elsewhere the builder puts main's copy back ([DESK.md](DESK.md), "A builder chat").

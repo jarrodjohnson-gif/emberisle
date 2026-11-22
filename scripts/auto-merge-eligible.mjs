@@ -2,7 +2,7 @@
 // Decides whether a pull request may auto-merge (#923). Run by .github/workflows/auto-merge.yml.
 // Phase 1 is docs only. Phase 2 (owner decision 2026-11-21, docs/DESK.md) also merges a code PR, unless the repo
 // variable AUTO_MERGE_CODE is "off": it needs a complete clean review footer at the head from a different model than the
-// builder, and it never touches a governance file. A `needs-owner` label blocks either phase until `owner-ok` is added.
+// builder, and it never touches a governance file unless the PR carries `owner-merge`. A `needs-owner` label blocks either phase until `owner-ok` is added.
 // It reads the API only. It never checks out or runs the PR's code: the workflow checks out the default branch's copy
 // of this one file. Eligibility comes from the PR files API, the head SHA's `checks` run and the desk's clean marker,
 // never from labels or authors. Every rule fails closed: an excluded path wins over the allow list, and any API error
@@ -115,11 +115,14 @@ export function decide({ pr, headAfter, files, checkRuns, comments, defaultBranc
   const docsOnly = files.every((f) => STATUSES.includes(f.status) && !pathRefusal(f.filename))
     && files.reduce((n, f) => n + f.additions + f.deletions, 0) < MAX_CHANGED_LINES;
   const asCode = code === true && !docsOnly;
+  const ownerMerge = labels.includes("owner-merge");
   if (asCode) {
     for (const f of files) {
       for (const path of [f.filename, f.previous_filename].filter((p) => p !== undefined)) {
         const why = codeRefusal(path);
-        if (why) return no(`${JSON.stringify(path)}: ${why}`);
+        // `owner-merge` is the owner's tap on the Desk page, carried by the clerk for this exact head. It lifts only this
+        // refusal: the review, the checks and the head pin below still apply. The workflow removes it on every push.
+        if (why && !ownerMerge) return no(`${JSON.stringify(path)}: ${why}`);
       }
     }
     const footer = reviewFooter(comments);

@@ -2,7 +2,8 @@
 # (phase 2, docs/DESK.md). scripts/auto-merge-eligible.mjs decides; the rules are in its header.
 # A docs PR merges only when every changed file is an allowed doc, `checks` is green on the exact head SHA, and a review
 # has posted <!-- review-desk: clean <40-char head SHA> -->. A code PR also needs that review's footer to name a reviewer
-# that differs from the builder, and touches no governance file. The merge pins the SHA with --match-head-commit.
+# that differs from the builder, and touches no governance file unless it carries `owner-merge` (the owner's tap on the
+# Desk page for that head; any push removes the label). The merge pins the SHA with --match-head-commit.
 #
 # Kill switch: the repo variable AUTO_MERGE. Unset or anything but "on" means this never runs.
 # AUTO_MERGE_CODE set to exactly "off" stops code PRs only.
@@ -63,6 +64,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      # `owner-merge` is the owner's yes for one exact head. Any push takes it off, before the decision below reads the PR.
+      - if: github.event_name == 'pull_request_target' && github.event.action == 'synchronize'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUM: ${{ github.event.pull_request.number }}
+        run: gh api -X DELETE "repos/$REPO/issues/$NUM/labels/owner-merge" >/dev/null 2>&1 || true
       - id: decide
         env:
           GITHUB_TOKEN: ${{ github.token }}
