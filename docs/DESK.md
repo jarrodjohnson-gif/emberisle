@@ -31,20 +31,21 @@ One chat takes one issue, or one batch of up to three PRs it is told to finish. 
 
 1. **Build and open the PR**, ready for review, with `Agent: <your agent name>` and your model in the body. Then set your chat's title to `(auto) <your agent name> #<PR number> building` with `set_session_title`. The dispatcher reads only titles, so the title is how it knows your slot is busy.
 2. **Wait for CI with `subscribe_pr_activity`.** Never sleep or poll. Fix a red CI.
-3. **When `checks` is green on the head, start one reviewer subagent** with the Agent tool. If the PR will need Jarrod (see "When you need Jarrod" below), add the `needs-owner` label first: a clean review can merge the PR within seconds, and the label is what holds it.
+3. **If the PR changes what a player sees or hears, get the look check first** ("Small look fixes need no card").
+4. **When `checks` is green on the head, start one reviewer subagent** with the Agent tool. If the PR will need Jarrod (see "When you need Jarrod" below), add the `needs-owner` label first: a clean review can merge the PR within seconds, and the label is what holds it.
    - Its model is never yours, and never a model that built any part of the PR. Sonnet 5.5 reviews Opus work and Opus 5.5 reviews Sonnet work. Haiku 5.5 may review a docs-only PR.
    - Give it [REVIEWING.md](REVIEWING.md), the PR number and the full head SHA.
    - It posts its review on the PR itself. You never write, edit or delete a review comment.
-4. **Fix its findings**, push, wait for green, and start a fresh reviewer on the new head. Do this three times at most.
-5. **Stop when the PR is done.** Done means the newest review is clean at the head and `checks` is green there. Set the issue to `status:in-review`, unsubscribe from the PR, post one last line, and end. Auto-merge does the rest.
-6. **Set your last title as the very last thing you do.** Keep `(auto) <your agent name> #<PR number>` and change the final word:
+5. **Fix its findings**, push, wait for green, and start a fresh reviewer on the new head. Do this three times at most.
+6. **Stop when the PR is done.** Done means the newest review is clean at the head and `checks` is green there. Set the issue to `status:in-review`, unsubscribe from the PR, post one last line, and end. Auto-merge does the rest.
+7. **Set your last title as the very last thing you do.** Keep `(auto) <your agent name> #<PR number>` and change the final word:
    - `done` when the PR is done;
    - `blocked` when you added `needs-owner`;
    - `(auto) <your agent name> nothing eligible` when you found no issue to take.
 
-**When you need Jarrod**, add the `needs-owner` label to the PR and post one comment that starts `Blocked:` or `Question:`, with the options and your recommendation. Add the label as soon as you know, and always before you start the reviewer. On 2026-11-22 a design PR (#1841) merged in the same minute its builder posted two questions for Jarrod, because the label came after the clean review. Do this when:
+**When you need Jarrod**, add the `needs-owner` label to the PR and post one comment that starts `Blocked:` or `Question:`, with the options and your recommendation. Add the label as soon as you know, and always before you start the reviewer. A look check that says `small and fine` at your head means you do not need him for the look. On 2026-11-22 a design PR (#1841) merged in the same minute its builder posted two questions for Jarrod, because the label came after the clean review. Do this when:
 
-- the PR changes anything a player sees or hears. Put real screenshots in the PR body first, at the sizes in [REVIEWING.md](REVIEWING.md) plus Jarrod's phone (440x956 and 956x440), or the audio;
+- the PR changes anything a player sees or hears, and the look check says `big`. Put real screenshots in the PR body first, at the sizes in [REVIEWING.md](REVIEWING.md) plus Jarrod's phone (440x956 and 956x440), or the audio;
 - the PR is a design, a mock or a set of options for Jarrod to choose from, even if it is docs only;
 - the review still has findings after three rounds;
 - the issue needs a design decision ([AGENTS.md](../AGENTS.md) rule 12).
@@ -108,28 +109,64 @@ The page keeps three things in its database. Read and write them with `ArtifactD
 A card id is `q<PR or issue number>-<two or three words>`. A card has:
 
 - `title`: the question in plain words, and `why`: one or two short lines, the first starting `TLDR:`;
-- `ref` and `href`: the PR or issue, and `pr` or `issue`: its number;
+- `ref` and `href`: the PR or issue; `pr` or `issue`: its number; `head`: the PR's full head SHA when the card was written; `comment`: the id of the comment the card was made from;
 - `opts`: two or three real options as `{v, l, d}`, with `rec: true` on the one you recommend. Give `ok: true` to an option only when picking it means "merge this PR as it is". The page adds "D: something else" itself;
+- `merge: true` on a card that only asks him to merge a rule-file PR by hand;
 - `images`: `[caption, url]` pairs. Upload each picture to the page as an asset and use the url that returns. Phone size first (440x956);
 - `added`: the time, as an ISO string.
 
-**One card asks one question.** A PR with two questions gets two cards. **A card about a look has pictures**, taken from the PR's branch; if the PR has none, the clerk says so on the PR, leaves `on-desk` off, and a builder adds them first.
+**One card asks one question.** A PR with two questions gets two cards.
+
+### Three labels say where a red PR stands
+
+| Label | Means | Who acts next |
+|---|---|---|
+| `on-desk` | Every open question on it has a card. It waits for him | Nobody |
+| `answered` | He has answered, and a builder must act on it | The dispatcher sends a builder |
+| `no-pictures` | It changes a look and its branch has no pictures | A builder adds them, then removes the label |
+
+A red PR with none of the three needs a card.
 
 ### The clerk
 
-A short Sonnet chat that the dispatcher starts only when there is something to carry. It does two jobs and stops.
+A short Sonnet chat that the dispatcher starts only when there is something to carry. It does three jobs and stops. Its title is `(auto) clerk building`, then `(auto) clerk done`.
 
-1. **Carry answers.** Query `decisions` for documents whose `at` is in the last 48 hours. An answer is open when its `handled_for` is not its `at`. For each open answer:
+1. **Carry answers.** Query `decisions` for documents whose `at` is in the last 7 days. An answer is open when its `handled_for` is not its `at`. For each open answer:
    - read `cards/<id>` for the PR or issue number. An older card has no document: the digits after `q` in its id are the number;
-   - post one comment there that starts `Owner answer (Desk page, <at>):`, then his option's label, then his note word for word. His note is his instruction and wins over the option;
-   - if the option he picked has `ok: true`, add the `owner-ok` label, keeping every label the PR has. This is the one case where an agent adds `owner-ok`: it is his tap, carried over;
-   - remove the `on-desk` label;
+   - if that PR or issue is closed, merged or missing, post nothing: mark the answer handled with the reason, and go on;
+   - look for a comment there that starts `Owner answer (Desk page, <at>)` with this answer's `at`. If one exists, an earlier clerk posted it: do not post again;
+   - otherwise post one comment that starts `Owner answer (Desk page, <at>):`, then his option's label, then his note word for word. His note is his instruction and wins over the option. "D: something else" with no note means "none of these": say so, and the builder asks again with different options;
+   - add `owner-ok` only when all four hold: the option he picked has `ok: true`; his note is empty; no other card for the same PR is still unanswered; and the PR's head SHA equals the card's `head`. This is the one case where an agent adds `owner-ok`: it is his tap, carried over;
+   - in every other case replace `on-desk` with `answered`, but only once no card for that PR is still unanswered;
+   - keep every other label the PR has;
    - update the answer with `handled_for` (a copy of `at`) and `handled` (one line on what you did), pinned with `if_version`.
-2. **Post new questions.** For each PR the dispatcher names (red, with no `on-desk` label): read its newest `Blocked:` or `Question:` comment, write the card or cards, and add the `on-desk` label, keeping every label the PR has. A red PR with no such comment touches a rule file: its one card asks him to merge it, with a link.
+2. **Post new questions.** For each PR the dispatcher names:
+   - read its newest `Blocked:` or `Question:` comment. If a card already has that comment's id, write nothing;
+   - if it asks about a look and the branch has no pictures, add `no-pictures`, say so in one comment, and write no card;
+   - a red PR with no such comment: if it touches a rule file, its one card has `merge: true` and asks him to merge it, with a link. Otherwise say on the PR that it is red with no question, and write no card;
+   - write the card or cards, then add `on-desk`.
+3. **Tidy.** Delete the card of any PR that is merged or closed. His answers stay.
 
-The clerk never decides for him, never merges, never edits a PR's code, and never answers a card. Its title is `(auto) clerk building`, then `(auto) clerk done`.
+The clerk never decides for him, never merges, never edits a PR's code, and never answers a card.
 
-**After an answer**, the PR has changed, so the dispatcher sends a builder back to it at the next tick. A builder that has applied his answer exactly, and shows him nothing new, removes `needs-owner` itself and says so in one line. Anything new he would see goes back to the page as a new card.
+### After his answer
+
+The dispatcher sends a builder to a PR that carries `answered`. That builder removes `answered` first, then does what he said.
+
+- **He picked a design option.** Build or record it. What he chose from pictures and what you built are not the same thing: if a player now sees or hears anything he has not seen, post a new `Question:` with real screenshots, and keep `needs-owner`.
+- **Nothing a player sees or hears changed** after his answer (a size limit, a rule, a close, a doc): remove `needs-owner` yourself and say so in one line.
+
+### Small look fixes need no card
+
+On 2026-11-22 Jarrod chose: "agents approve bug fixes and small polish", with the note "And then Ask fable". So:
+
+- A builder whose PR changes what a player sees or hears starts a **Fable 5.2 subagent for a look check** before it starts the reviewer. Give it the issue, real screenshots at 440x956, 956x440 and 1280x720 (or the audio), and the "Who decides what" table in [FRAMEWORK.md](FRAMEWORK.md).
+- Fable posts one comment on the PR itself, starting `Look check:`, with the head SHA, the pictures it looked at, and one of three verdicts:
+  - `small and fine`: a real bug fix, or minor UX (wording, spacing, a hint, a missing cue, consistency with something already decided), and it looks right. The PR needs no card and no `needs-owner`.
+  - `small, change needed`: say exactly what. The builder fixes it and asks Fable again.
+  - `big`: a new screen or flow, a layout change, a new feature, or anything that changes how a turn feels. The builder adds `needs-owner` and asks him.
+- The builder never writes or edits a `Look check:` comment, and a look check counts only at the head it names.
+- When Fable is unsure, the verdict is `big`.
 
 ## The dispatcher
 
@@ -141,14 +178,20 @@ It keeps no ledger. Everything it needs is in the open PR list, the chat titles 
 
 1. **List the open PRs once**, with only these fields: `number`, `title`, `draft`, `labels`, `updated_at`. Never read a PR body, a diff, a review, #916 or #699.
 2. **Merge what the workflow handed over.** For each PR in the list that carries both `signal:green` and `merge-by-chat`: read that one PR's head SHA and labels again, and if both labels are still there, squash-merge it pinned to that SHA. Never merge a PR without both labels, and never add either label yourself. This step is the one exception to "never merge" in AGENTS.md rule 7, and it is yours alone. If the merge is refused, leave it and go on. If the same PR is refused at two ticks, tell Jarrod once in your chat, with its number and the error.
-3. **Check the Desk page.** Query `decisions` for documents whose `at` is in the last 48 hours, and count the ones whose `handled_for` is not their `at`. From the PR list, note every `signal:red` PR without the `on-desk` label. If either list is non-empty and no clerk chat is live, start one clerk chat (see "The clerk") and give it the PR numbers. Then write `status/now`: `at`, `building` (one line per live chat, from its title), `merged` (titles of PRs that left the list since your last tick), and `problems` (PRs red for more than a day, and anything you told Jarrod). Plain words, no SHAs.
-4. **List the chats once**: `list_sessions` with `limit: 30`. Use only rows whose title starts `(auto)` and that are not archived, and from each only the title, `created_at` and `updated_at`. If the call fails or is denied, start nothing this tick, say so once, and go to step 8.
+3. **List the chats once**: `list_sessions` with `limit: 30`. Use only rows whose title starts `(auto)` and that are not archived, and from each only the title, `created_at` and `updated_at`. If the call fails or is denied, start nothing this tick, say so once, and go to step 8.
    - A chat is **ended** when its title ends in `done`, `blocked` or `nothing eligible`.
    - A chat is **live** when it is not ended and its `updated_at` is less than 3 hours old. A builder waiting for CI is live: its title still ends in `building`.
    - A chat that is neither is **stale**: it stopped without saying so.
-5. **Archive** every stale chat, every `nothing eligible` chat whose `created_at` is 6 or more hours old, and every `done` or `blocked` chat whose `updated_at` is 4 or more hours old. Four hours is past the 3-hour window in step 5, so archiving a chat never turns its own PR into an orphan. Leave any other chat alone. Never archive your own chat or one whose title does not start `(auto)`.
-6. **Send help to orphans.** An orphan is a `signal:yellow` PR updated in the last 7 days, with no update for 3 hours, whose number is in no live chat's title. A `signal:red` PR is an orphan too when it was updated in the last 3 hours and no chat left in the listing after step 5, live or ended, has its number in its title: nobody has worked on it since Jarrod's answer. Start one PR-owner chat for up to three orphans, and two such chats per tick at most.
-7. **Fill the builder slots.** There are three. A slot is taken while a live chat's title names it.
+4. **Archive** every stale chat, every `nothing eligible` chat whose `created_at` is 6 or more hours old, and every `done` or `blocked` chat whose `updated_at` is 4 or more hours old. Leave any other chat alone. Never archive your own chat or one whose title does not start `(auto)`.
+5. **Find the PRs that need a chat.** In this order:
+   - a `signal:red` PR that carries `answered`, with its number in no live chat's title: Jarrod has answered;
+   - a `signal:red` PR that carries `no-pictures`, with its number in no live chat's title;
+   - a `signal:yellow` PR updated in the last 7 days, with no update for 3 hours, and its number in no live chat's title.
+
+   A red PR that carries `on-desk` waits for him. Never start a chat for it, however recently it changed.
+6. **Start work chats, up to the limit.** The limit is **one work chat live at a time**. Jarrod set it on 2026-11-22 ("one builder at a time until the limit resets") and only he changes it. A work chat is a builder or a PR-owner chat. The clerk does not count. While fewer work chats are live than the limit:
+   - first, one PR-owner chat for the first PR from step 5 (up to three PRs in one chat when they share a builder);
+   - when step 5 found nothing, one builder, taking the slots in turn:
 
    | Slot | Model | Takes |
    |---|---|---|
@@ -156,13 +199,18 @@ It keeps no ledger. Everything it needs is in the open PR list, the chat titles 
    | `claude-sonnet-a` | `claude-sonnet-5-5` | one `tier:2` or `tier:3` issue not marked `model:opus` |
    | `claude-sonnet-b` | `claude-sonnet-5-5` | one `tier:2` or `tier:3` issue not marked `model:opus` |
 
-   Start a builder in every slot that is not taken. One exception: leave a slot empty while a `nothing eligible` chat for it, less than 6 hours old, is in the listing. PR-owner chats never take a builder slot.
+   Skip a slot while a `nothing eligible` chat for it, less than 6 hours old, is in the listing.
+7. **Check the Desk page.**
+   - Query `decisions` for documents whose `at` is in the last 7 days, and count the ones whose `handled_for` is not their `at`.
+   - From the PR list, note every `signal:red` PR that carries none of `on-desk`, `answered` and `no-pictures`.
+   - If either is non-empty and no clerk chat is live in the listing from step 3, start one clerk chat and give it those PR numbers.
+   - Write `status/now`: `at`, `building` (one line per live chat, from its title), `merged` (titles of PRs that left the list since your last tick), and `problems` (PRs red for more than a day, and anything you told Jarrod). Plain words, no SHAs.
 8. **Set the next tick** with one `send_later` for 60 minutes. Then post `·` and end the turn.
 
 **Start chats with `create_session`**, `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, and one of these titles, which the chat then keeps up to date itself: `(auto) <slot> starting` for a builder, `(auto) pr-owner #<number> #<number> building` for a PR-owner chat.
 
 - **Builder prompt:** `Work on Emberisle as builder "<slot>", model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". Take <the slot's "Takes" cell, word for word>, a prio:p0 first, and follow that section to the end, title changes included. Then stop.`
-- **PR-owner prompt:** `You own these open Emberisle PRs until each is done: <numbers>. Your agent name is pr-owner, model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". For each PR, read its newest comments, then follow steps 2 to 6 of that section. Your title is "(auto) pr-owner" with the PR numbers and a last word of building, then blocked if any PR ended blocked, else done. Take no new issue. Then stop.` Use Opus 5.5 for a PR whose issue is `tier:1`, and Sonnet 5.5 otherwise.
+- **PR-owner prompt:** `You own these open Emberisle PRs until each is done: <numbers>. Your agent name is pr-owner, model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". For each PR, read its newest comments, then follow steps 2 to 7 of that section. If a PR carries the label answered, remove it first and do what his answer says. Your title is "(auto) pr-owner" with the PR numbers and a last word of building, then blocked if any PR ended blocked, else done. Take no new issue. Then stop.` Use Opus 5.5 for a PR whose issue is `tier:1`, and Sonnet 5.5 otherwise.
 - **Clerk prompt** (model `claude-sonnet-5-5`, title `(auto) clerk building`): `You are the Emberisle clerk. Read "Jarrod and the Desk page" in docs/DESK.md and do both jobs in "The clerk". PRs that need a card: <numbers, or none>. Then stop.`
 
 **The dispatcher never** reviews, decides a merge, labels, comments on GitHub, writes a card, answers a question, or reads a chat's transcript. It posts in its own chat only when `create_session` fails, once, with the error.
@@ -175,6 +223,7 @@ It keeps no ledger. Everything it needs is in the open PR list, the chat titles 
 
 - **One chat, one issue.** Never run a builder chat for days ([LANES.md](LANES.md), "Sub-agents and usage limits").
 - **No always-on chat subscribes to anything.** A builder subscribes only to its own PR, and unsubscribes when the PR is done or blocked.
+- **One work chat at a time** while Jarrod's weekly usage limit shows a warning (dispatcher step 6).
 - **No token thresholds.** A chat ends because its work is done. The only size rule is the dispatcher's.
 - **Reviewers rely on CI** and don't rerun the suite ([REVIEWING.md](REVIEWING.md)).
 - **Never start Fable or Astra as a session.** A builder calls Fable as a subagent for design work ([LANES.md](LANES.md)).
