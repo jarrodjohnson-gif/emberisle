@@ -317,6 +317,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run rules-view-helpers-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run trade-counter-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run hud-helpers-guards-prove
       # #1673, #1682, #1782: run independent Node and host proofs in two bounded side lanes beside npm test.
       # Each lane uses isolated temp dirs and per-proof time limits so hangs fail loudly and logs always print.
@@ -694,6 +696,8 @@ jobs:
         run: npm run sticker-tray-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run sticker-motion-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run quick-react-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run react-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
@@ -899,8 +903,12 @@ jobs:
         run: npm run expanded-fit-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run hand-hidden-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
+        run: npm run hand-focus-ring-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run install-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run hand-placelist-guards-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:

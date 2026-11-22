@@ -128,6 +128,7 @@
     "lobby-overflow-prove": "node scripts/lobby-overflow-prove.mjs",
     "goods-log-prove": "node scripts/goods-log-prove.mjs",
     "react-prove": "node scripts/react-prove.mjs",
+    "quick-react-prove": "node scripts/quick-react-prove.mjs",
     "mobile-shots": "node scripts/mobile-shots.mjs",
     "touch-place-prove": "node scripts/touch-place-prove.mjs",
     "camera-fit-guards-prove": "node scripts/camera-fit-guards-prove.mjs",
@@ -190,6 +191,7 @@
     "hand-cards-prove": "node scripts/hand-cards-prove.mjs",
     "hand-offer-prove": "node scripts/hand-offer-prove.mjs",
     "hand-hidden-prove": "node scripts/hand-hidden-prove.mjs",
+    "hand-focus-ring-prove": "node scripts/hand-focus-ring-prove.mjs",
     "install-prove": "node scripts/install-prove.mjs",
     "first-game-coach-prove": "node scripts/first-game-coach-prove.mjs",
     "render-recovery-prove": "node scripts/render-recovery-prove.mjs",
@@ -254,6 +256,7 @@
     "profile-rename-unknown-prove": "node --import ./server/register.mjs server/profile-rename-unknown-prove.mjs",
     "profile-race-guards-prove": "node --import ./server/register.mjs server/profile-race-guards-prove.mjs",
     "profile-recovery-prove": "node --import ./server/register.mjs server/profile-recovery-prove.mjs",
+    "trade-counter-prove": "node --import ./server/register.mjs server/trade-counter-prove.mjs",
     "trade-hold-prove": "node --import ./server/register.mjs server/trade-hold-prove.mjs",
     "seat-secret-log-prove": "node --import ./server/register.mjs server/seat-secret-log-prove.mjs",
     "preseat-prove": "node --import ./server/register.mjs server/preseat-prove.mjs",
@@ -271,7 +274,8 @@
     "waves-prove": "node --import ./server/register.mjs scripts/waves-prove.mjs",
     "splash-prove": "node scripts/splash-prove.mjs",
     "pages-prove": "node scripts/pages-prove.mjs",
-    "invite-night-prove": "node scripts/invite-night-prove.mjs"
+    "invite-night-prove": "node scripts/invite-night-prove.mjs",
+    "hand-placelist-guards-prove": "node --import ./server/register.mjs scripts/hand-placelist-guards-prove.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

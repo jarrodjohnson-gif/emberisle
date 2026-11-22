@@ -23,7 +23,8 @@ not overlap. Claims reserve files, including while a PR waits for review.
 2. **Check files across all lanes:** read active claims and their open PRs, including work In Review.
    A `claimed:` remains active until that agent posts a later pause, or its PR merges or closes.
    Historical same-agent `paused:` comments also release claims; new pauses must include `/paused`.
-   Only the review desk or Jarrod may release another agent's claim (`released: <name>, <YYYY-MM-DD>` or `paused:` with that agent's exact name); every agent on the shared owner login can post these, so this is by agreement and the bot does not enforce it. Agents release only their own claims.
+   **A claim expires after 48 quiet hours** (Jarrod, 2026-11-22): with no open PR for the issue and no push to its branch for 48 hours (or 48 hours after the claim comment, when no branch exists), the claim is gone, whatever the next lines say about how long a claim lasts. Any builder may then take the issue: comment `expired: <the old agent's name>, <date>` and claim it as usual. Before that,
+   only Jarrod may release another agent's claim (`released: <name>, <YYYY-MM-DD>` or `paused:` with that agent's exact name); every agent on the shared owner login can post these, so this is by agreement and the bot does not enforce it. Agents release only their own claims.
    Ignore released historical claims. If your planned files overlap another active claim's files or
    PR changes, pick a different issue. A shared lane alone is not a conflict. Neither are the shared
    registration files `package.json`, `.github/workflows/ci.yml` and `scripts/size-prove.mjs`: almost
@@ -185,12 +186,12 @@ Every issue carries a status, lane, tier and prio label. Never leave one unlabel
 
 Issues labelled `anytime` are safe work. Take one when the ready list and rungs 1 to 5 give you nothing.
 
-- Only the desk adds `anytime`. A design issue held for a spec or mock is never `anytime`.
+- Only the planner adds `anytime` ([`DESK.md`](DESK.md#the-planner)). A design issue held for a spec or mock is never `anytime`.
 - Find them with `gh issue list --label anytime --state open`. Take the highest `prio:` first.
-- An `anytime` issue still has a `tier:` label. Stay at or below your tier. The desk sets the tier by risk, as for any issue.
+- An `anytime` issue still has a `tier:` label. Stay at or below your tier. The planner sets the tier by risk, as for any issue.
 - Claim it as usual. It is eligible with `status:todo` or `status:backlog` if nothing blocks it and no PR is open.
-- The desk keeps at least 5 open, unclaimed `anytime` issues. Each has a lane, a tier, a prio and a completion test.
-- If fewer than 5 remain, more are filed or labelled the same day. Since 2026-11-21 no chat owns this ([`DESK.md`](DESK.md#left-over-from-the-desk)); Jarrod starts an issue-writer chat for it.
+- The planner keeps at least 5 open, unclaimed `anytime` issues. Each has a lane, a tier, a prio and a completion test.
+- If fewer than 5 remain, the planner files or labels more at its next run.
 
 What belongs in the queue:
 
