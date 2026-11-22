@@ -1,8 +1,9 @@
 # Fortunes sheet: what #1302 still asks for
 
-Issue [#1302](https://github.com/jarrodjohnson-gif/emberisle/issues/1302) asked for a Fortunes sheet with normal list order, a selected fortune and one fixed Play region at the bottom.
+Issue [#1302](https://github.com/jarrodjohnson-gif/emberisle/issues/1302) asked for a Fortunes sheet with three things.
+Its list keeps normal order. You select a fortune. One fixed Play region sits at the bottom.
 The one tray ([`docs/design/one-tray/README.md`](../one-tray/README.md), built in #1539) has since landed.
-On 2026-11-14 the desk asked a builder to check which parts of #1302 are already on main and which are left.
+On 2026-11-14 the desk asked a builder to check which parts of #1302 are on main.
 This note is that check, against main at `95dfb8b`. It is not a new design.
 
 The drawings for #1302 stay on the branch `codex/1302-fortune-tray-spec` as history, at [`f7b948b`](https://github.com/jarrodjohnson-gif/emberisle/tree/f7b948bda583f16be498e67b985eb8c492e76d18/docs/design/fortune-tray-1274).
@@ -10,7 +11,8 @@ Jarrod said of them on 2026-11-06 (card `q1302-fortunes-pictures`): "doesnt look
 
 ## What the one tray decided
 
-- The Fortunes button no longer shows all the time. "Fortune · N" shows in the tray whenever the seat holds a fortune (DECISIONS.md, 2026-11-12, two rows).
+- The Fortunes button no longer shows all the time (DECISIONS.md, 2026-11-12, two rows).
+- "Fortune · N" shows in the tray while the seat holds a fortune, or has one armed on the board.
 - Buying a fortune is a row in the Build list.
 - The button "opens today's Fortunes sheet" (one-tray spec, "Fortune"). The spec did not change the sheet itself.
 - Jarrod approved the built tray (`q1542-tray`, A).
@@ -19,7 +21,7 @@ Jarrod said of them on 2026-11-06 (card `q1302-fortunes-pictures`): "doesnt look
 
 | #1302 asks for | On main | Where |
 |---|---|---|
-| A fixed Fortunes entry | **Replaced.** The button shows only while a fortune is held | `Hud.tsx`, the `fortunes-button` |
+| A fixed Fortunes entry | **Replaced.** The button shows only while a fortune is held or armed | `Hud.tsx`, the `fortunes-button` |
 | Normal list and DOM order, never reversed | **Done.** Rows follow `FORTUNES`: wayfarer, path, plenty, monopoly, points | `FortuneTray.tsx`, `src/lib/game/fortunes.ts` |
 | A selected fortune | **Not built.** There is no selection. Each row has its own Play | `FortuneTray.tsx` |
 | One fixed Play region at the bottom | **Not built.** Play sits on each row. Plenty and Monopoly show their goods chips inside their own row | `FortuneTray.tsx` |
@@ -31,7 +33,7 @@ Jarrod said of them on 2026-11-06 (card `q1302-fortunes-pictures`): "doesnt look
 | Point card | **Done.** Points has no Play | `FortuneTray.tsx` |
 | Only Play can dispatch, once | **Done.** Picking a chip only sets local state. Only a row's Play dispatches, and a play closes the sheet | `FortuneTray.tsx`, `act()` |
 | Close and reopen, turn change | **Done.** Esc, Close or a press outside closes it. A turn or phase change closes it, and it does not reopen by itself | `Hud.tsx`, the `turnKey` effect; `scripts/fortune-tray-prove.mjs` |
-| An incoming offer | **Matches the answer.** The desk's answer (#1274, comment 6671764662): a trade cannot arrive while you play a fortune, so leave the sheet open as a look window on another seat's turn, with no second window. Main never closes the sheet on an offer. No proof covers this case | `Hud.tsx` |
+| An incoming offer | **Not checked.** The desk's answer is in #1274, comment 6671764662. A trade cannot arrive while you play a fortune. On another seat's turn the sheet stays open as a look window, with no second window. Main never closes the sheet on an offer. Nobody has checked whether the open sheet covers the offer's Yes and No. No proof covers this case | `Hud.tsx`, `src/styles.css` (`.trade-answers`) |
 | Keyboard order | **Done.** Focus starts on Close, Tab stays inside, and focus returns to the button | `FortuneTray.tsx`, `useFocusTrap`; `fortune-tray-prove` |
 | Pictures at 390x844, 844x390, 1280x720 and 320x568 | `fortune-tray-prove` captures 1280x720, 390x844 and 844x390. Nothing captures 320x568 | `scripts/fortune-tray-prove.mjs` |
 
@@ -41,7 +43,10 @@ One thing: **the selected fortune with one fixed Play region.** Everything else 
 
 Whether to build it is Jarrod's call, because it changes how the sheet works:
 
-- **A (recommended): close #1302 as covered.** Keep today's sheet: one Play per row. The one tray kept this sheet, Jarrod approved the built tray, and with at most five rows every Play is easy to reach. A small polish of the sheet's look can be its own issue later.
-- **B: keep #1302 open for a redesign.** A Fable pass draws a select-then-Play sheet in the one tray's style, at the four sizes, for his yes before anything is built.
+- **A (recommended): close #1302 as covered.** Keep today's sheet, with one Play per row.
+  The one tray kept this sheet, and Jarrod approved the built tray. With at most five rows, every Play is easy to reach.
+  A polish of the sheet's look can be its own issue later.
+- **B: keep #1302 open for a redesign.** Fable draws a select-then-Play sheet in the one tray's style, at the four sizes.
+  Nothing is built before his yes.
 
 The question is on the issue and the PR.
