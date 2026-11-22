@@ -105,7 +105,7 @@ It keeps no ledger. Everything it needs is in two listings: the open PRs and the
    - A chat is **ended** when its title ends in `done`, `blocked` or `nothing eligible`.
    - A chat is **live** when it is not ended and its `updated_at` is less than 3 hours old. A builder waiting for CI is live: its title still ends in `building`.
    - A chat that is neither is **stale**: it stopped without saying so.
-4. **Archive** every stale chat, every `nothing eligible` chat whose `created_at` is 6 or more hours old, and every `done` or `blocked` chat whose `updated_at` is 2 or more hours old. Leave any other chat alone. Never archive your own chat or one whose title does not start `(auto)`.
+4. **Archive** every stale chat, every `nothing eligible` chat whose `created_at` is 6 or more hours old, and every `done` or `blocked` chat whose `updated_at` is 4 or more hours old. Four hours is past the 3-hour window in step 5, so archiving a chat never turns its own PR into an orphan. Leave any other chat alone. Never archive your own chat or one whose title does not start `(auto)`.
 5. **Send help to orphans.** An orphan is a `signal:yellow` PR updated in the last 7 days, with no update for 3 hours, whose number is in no live chat's title. A `signal:red` PR is an orphan too when it was updated in the last 3 hours and no chat left in the listing after step 4, live or ended, has its number in its title: nobody has worked on it since Jarrod's answer. Start one PR-owner chat for up to three orphans, and two such chats per tick at most.
 6. **Fill the builder slots.** There are three. A slot is taken while a live chat's title names it.
 
