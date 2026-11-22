@@ -22,7 +22,7 @@ export function TakeFromBar() {
     let last = -1;
     const measure = () => {
       const height = el.getBoundingClientRect().height;
-      if (height === last) return;
+      if (height <= 0 || height === last) return;
       last = height;
       root.style.setProperty("--active-prompt-height", `${height + 8}px`);
       useGame.getState().chromeLanded();

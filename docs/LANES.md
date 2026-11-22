@@ -171,7 +171,7 @@ the current step, post `/paused` saying where you stopped, and leave the rest.
 - This is not a stop (AGENTS.md rule 10). Adopting and fixing waiting PRs is the work.
 - Comments, `Question:` posts and read-only audits are still allowed.
 
-An empty ready list is not a reason to stop or to ask the desk. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Only if all five rungs and the [anytime queue](#anytime-queue) are empty, post a `To desk:` line on #854.
+An empty ready list is not a reason to stop or to ask the desk. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Only if all five rungs and the [anytime queue](#anytime-queue) are empty, post a `Nothing eligible` line on #854.
 
 1. **Adopt a finished-but-stuck PR.** Built PRs whose builders went quiet are listed under "Stale" in #916. Any PR with no push for 24 hours counts as stale. A PR is not waiting on the owner unless the newest desk list on #854 or #916 says so. Comment `/claim adopt PR #N` on its issue, merge current main into its branch (a merge commit; never rebase or force-push), fix conflicts, get CI green, run the focused proof, then post `To desk: PR #N ready for review` on the PR. Don't widen its scope. It counts toward your open-PR limit (AGENTS.md rule 4).
 2. **Promote a backlog issue.** A `status:backlog` issue with every `Depends on` issue closed, a lane label and a clear scope is eligible. Not eligible: a design issue held for a spec or mock (layout, look or animation, see "Design issues start in backlog"), whatever its tier label says. Re-read it, `/claim`, and set it to `status:claimed`. No desk permission is needed.
@@ -190,7 +190,7 @@ Issues labelled `anytime` are safe work. Take one when the ready list and rungs 
 - An `anytime` issue still has a `tier:` label. Stay at or below your tier. The desk sets the tier by risk, as for any issue.
 - Claim it as usual. It is eligible with `status:todo` or `status:backlog` if nothing blocks it and no PR is open.
 - The desk keeps at least 5 open, unclaimed `anytime` issues. Each has a lane, a tier, a prio and a completion test.
-- If fewer than 5 remain, the desk files or labels more the same day. The rule is in [`DESK.md`](DESK.md#always).
+- If fewer than 5 remain, more are filed or labelled the same day. Since 2026-11-21 no chat owns this ([`DESK.md`](DESK.md#left-over-from-the-desk)); Jarrod starts an issue-writer chat for it.
 
 What belongs in the queue:
 
