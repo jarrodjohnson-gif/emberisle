@@ -41,6 +41,11 @@ const CEILINGS = [
   // start from the Play page; index measured 127,203 B.
   { name: "index", gzipBytes: 128000 },
   { name: "IslandCanvas", gzipBytes: 204500 }, // #1857, 2026-11-22: raised from 203,500 B to 204,500 B (was #1307, 2026-11-04)
+  // #759: lazy Classic land builder; measured 18,015 B (7f3fa6f). Opus per owner delegation 2026-11-06.
+  { name: "classic-board", gzipBytes: 19500 },
+  // #759, 2026-11-17: the land look's build-and-swap and the shore hand-off, split out of IslandCanvas (desk answer A on #1341)
+  // and shared by jelly-board and classic-board; measured 1,370 B gzip. New chunk only; the desk set this ceiling on 2026-11-17.
+  { name: "appearance-controller", gzipBytes: 1500 },
   { name: "jelly-board", gzipBytes: 9000 },
   { name: "hex-jelly", gzipBytes: 50000 },
   { name: "harbor-jelly", gzipBytes: 11500 },
