@@ -8,6 +8,9 @@ import * as real from './pr-signal.mjs';
 
 const A = 'a'.repeat(40), B = 'b'.repeat(40);
 const green = { name: 'checks', app: { id: 15368 }, head_sha: A, status: 'completed', conclusion: 'success' };
+const loosen = { ...green, name: 'loosen' };
+// The clerk's comment carrying his answer: owner-ok counts only with its marker for the head.
+const okFor = (sha = A) => ({ id: 2, created_at: '2026-11-21T02:00:00Z', author_association: 'OWNER', body: `Owner answer (Desk page, 2026-11-21T02:00:00Z): A: ship it\n<!-- owner-ok: ${sha} -->` });
 const review = (sha = A, clean = true, extra = '') => ({ id: 1, created_at: '2026-11-21T01:00:00Z', author_association: 'OWNER',
   body: `<!-- review-desk -->\n${clean ? `Clean.\n<!-- review-desk: clean ${sha} -->` : 'Blocking: src/a.ts:3'}\n${extra}\nReviewer: Opus 5.5 · Builder: Sonnet 5.5 · Head: ${sha}` });
 
@@ -22,10 +25,25 @@ const CASES = [
   ['no checks', { checks: [] }, 'signal:yellow'],
   ['needs-owner on a clean, green PR', { labels: ['needs-owner'] }, 'signal:red'],
   ['needs-owner on a PR still building', { labels: ['needs-owner'], comments: [] }, 'signal:red'],
-  ['needs-owner and owner-ok', { labels: ['needs-owner', 'owner-ok'] }, 'signal:green'],
-  ['owner-ok never makes an unreviewed PR green', { labels: ['needs-owner', 'owner-ok'], comments: [] }, 'signal:yellow'],
+  ['needs-owner and owner-ok', { labels: ['needs-owner', 'owner-ok'], comments: [review(), okFor()] }, 'signal:green'],
+  ['owner-ok never makes an unreviewed PR green', { labels: ['needs-owner', 'owner-ok'], comments: [okFor()] }, 'signal:yellow'],
   ['the review asks for the owner to see pictures', { comments: [review(A, true, 'Jarrod must see the pictures first.')] }, 'signal:red'],
-  ['the same, after owner-ok', { comments: [review(A, true, 'Jarrod must see the pictures first.')], labels: ['owner-ok'] }, 'signal:green'],
+  ['the same, after owner-ok', { comments: [review(A, true, 'Jarrod must see the pictures first.'), okFor()], labels: ['owner-ok'] }, 'signal:green'],
+  // #1860 item 13: a PR auto-merge will take is green, whatever desk-board's wider wording test says.
+  ['a clean review that says no owner approval is needed', { comments: [review(A, true, 'No owner approval needed.')] }, 'signal:green'],
+  ['a clean review that says the owner already approved', { comments: [review(A, true, 'Jarrod approved this look already.')] }, 'signal:green'],
+  ['the code switch is off and the review says no owner approval is needed: not his to answer', { code: false, comments: [review(A, true, 'No owner approval needed.')] }, 'signal:yellow'],
+  ['a clean review with an ask, and findings to fix as well', { comments: [review(A, false, 'Jarrod must see the pictures first.')] }, 'signal:red'],
+  // #1860 item 6: owner-ok counts only with the clerk's marker for the head.
+  ['needs-owner and owner-ok with no marker', { labels: ['needs-owner', 'owner-ok'] }, 'signal:red'],
+  ['needs-owner and owner-ok for an older head', { labels: ['needs-owner', 'owner-ok'], comments: [okFor(B), review()] }, 'signal:red'],
+  ['an ask with owner-ok for an older head', { comments: [okFor(B), review(A, true, 'Jarrod must see the pictures first.')], labels: ['owner-ok'] }, 'signal:red'],
+  // #1860 items 1, 3 and 4 reach the signal through decide().
+  ['a conflicted PR', { mergeable: false }, 'signal:yellow'],
+  ['loosen red', { checks: [green, { ...loosen, conclusion: 'failure' }] }, 'signal:yellow'],
+  ['no loosen run', { checks: [green] }, 'signal:yellow'],
+  ['reviewed and green, but it removes a line from ci.yml', { files: [{ filename: '.github/workflows/ci.yml', status: 'modified', additions: 0, deletions: 1, patch: '@@ -1,2 +1,1 @@\n a\n-b' }] }, 'signal:red'],
+  ['reviewed and green, and it only adds a line to ci.yml', { files: [{ filename: '.github/workflows/ci.yml', status: 'modified', additions: 1, deletions: 0, patch: '@@ -1,1 +1,2 @@\n a\n+b' }] }, 'signal:green'],
   ['the head moved during the sweep', { moved: true }, 'signal:yellow'],
   ['a reviewed code PR with the code switch off: auto-merge will not take it', { code: false }, 'signal:yellow'],
   ['the kill switch is thrown: a PR auto-merge would take waits for the owner', { enabled: false }, 'signal:red'],
@@ -41,10 +59,10 @@ const CASES = [
   ['the right label is left alone', { labels: ['signal:green'] }, 'signal:green'],
 ];
 
-function fixture({ comments = [review()], checks = [green], labels = [], moved = false, draft = false, files = [{ filename: 'src/a.ts', status: 'modified', additions: 3, deletions: 1 }] } = {}) {
+function fixture({ comments = [review()], checks = [green, loosen], labels = [], moved = false, draft = false, mergeable = true, files = [{ filename: 'src/a.ts', status: 'modified', additions: 3, deletions: 1 }] } = {}) {
   let reads = 0;
   const now = new Set(labels), writes = [];
-  const pr = { number: 7, state: 'open', merged: false, draft, head: { sha: A }, changed_files: files.length, base: { ref: 'main', repo: { default_branch: 'main' } } };
+  const pr = { number: 7, state: 'open', merged: false, draft, mergeable, head: { sha: A }, changed_files: files.length, base: { ref: 'main', repo: { default_branch: 'main' } } };
   const api = async (path, method = 'GET', payload) => {
     const url = new URL('https://example.test' + path), p = url.pathname;
     if (method === 'DELETE' && p.startsWith('/issues/7/labels/')) { writes.push(method); now.delete(decodeURIComponent(p.slice(17))); return {}; }
@@ -54,7 +72,7 @@ function fixture({ comments = [review()], checks = [green], labels = [], moved =
     if (p === '/pulls/7') return { ...pr, head: { sha: moved && ++reads >= 2 ? B : A }, labels: [...now].map(name => ({ name })) };
     if (p === '/pulls/7/files') return files;
     if (p === '/issues/7/comments') return comments;
-    if (p.startsWith('/commits/')) return { check_runs: checks };
+    if (p.startsWith('/commits/')) return { check_runs: checks.filter(r => r.name === url.searchParams.get('check_name')) };
     throw new Error('unexpected API: ' + path);
   };
   return { api, writes, signals: () => [...now].filter(l => l.startsWith('signal:')), all: () => [...now] };
@@ -108,6 +126,35 @@ assert.equal(chatDry.writes.length, 0);
 assert.ok(readFileSync(new URL('./pr-signal.mjs', import.meta.url), 'utf8').includes("enabled: process.env.AUTO_MERGE === 'on'"), 'the kill switch is read exactly as auto-merge.yml reads it');
 console.log('ok   other labels kept, drafts skipped, dry run writes nothing');
 
+// #1860 item 14: one PR's API error never stops the sweep. PR 8 fails on its files; PR 9 after it is still labelled.
+async function errorSweep(mod) {
+  const labelled = new Map();
+  const base = { state: 'open', merged: false, draft: false, mergeable: true, head: { sha: A }, changed_files: 1, base: { ref: 'main', repo: { default_branch: 'main' } } };
+  const api = async (path, method = 'GET', payload) => {
+    const url = new URL('https://example.test' + path), p = url.pathname;
+    const n = Number(p.split('/')[2]);
+    if (method === 'POST' && p.endsWith('/labels')) { labelled.set(n, payload.labels); return {}; }
+    if (method !== 'GET') throw new Error(`unexpected write: ${method} ${path}`);
+    if (p === '/pulls') return [{ ...base, number: 8 }, { ...base, number: 9 }];
+    if (p === '/pulls/8/files') throw new Error('GET /pulls/8/files: 502');
+    if (/^\/pulls\/\d+$/.test(p)) return { ...base, number: n, labels: [] };
+    if (/^\/pulls\/\d+\/files$/.test(p)) return [{ filename: 'src/a.ts', status: 'modified', additions: 1, deletions: 0 }];
+    if (/^\/issues\/\d+\/comments$/.test(p)) return [review()];
+    if (p.startsWith('/commits/')) return { check_runs: [green, loosen].filter(r => r.name === url.searchParams.get('check_name')) };
+    throw new Error('unexpected API: ' + path);
+  };
+  try {
+    const rows = await mod.sweep(api);
+    return rows.length === 2 && /502/.test(rows[0].error ?? '') && rows[1].want === 'signal:green' && String(labelled.get(9)) === 'signal:green' && !labelled.has(8);
+  } catch {
+    return false;
+  }
+}
+assert.equal(await errorSweep(real), true, 'an API error on one PR leaves the next PR labelled');
+const main = readFileSync(new URL('./pr-signal.mjs', import.meta.url), 'utf8');
+assert.ok(main.includes("if (rows.some(r => r.error)) process.exitCode = 1;"), 'a sweep with an error still fails the run');
+console.log('ok   an API error on one PR does not stop the sweep');
+
 // Mutation check: break one rule at a time in a copy of the script. The cases above must catch every break.
 const source = readFileSync(new URL('./pr-signal.mjs', import.meta.url), 'utf8');
 const MUTANTS = [
@@ -123,6 +170,14 @@ const MUTANTS = [
   ['label never added', 'if (!have.includes(want)) await api(', 'if (false) await api('],
   ['label added every sweep', 'if (!have.includes(want)) await api(', 'await api('],
   ['labels read before the other reads', 'const labels = (current.labels ?? [])', 'const labels = (p.labels ?? [])'],
+  // #1860.
+  ['13: an owner ask in the desk-board wording beats a merge', "if (merge.merge === true) return enabled", "if (row.bucket === 'Ready for Jarrod' && !labels.includes('owner-ok')) return 'signal:red';\n  if (merge.merge === true) return enabled"],
+  ['13: desk-board wording in place of ownerAsked', "if (asked && !labels.includes('owner-ok'))", "if ((asked || row.bucket === 'Ready for Jarrod') && !labels.includes('owner-ok'))"],
+  ['13: ownerAsked not passed', 'files, enabled, ownerAsked(comments));', 'files, enabled);'],
+  ['6: owner-ok not pinned to the head', "labels.filter(l => l !== 'owner-ok' || ownerOkHead(comments) === current.head?.sha)", 'labels'],
+  ['3: loosen not read', 'checkRuns: [...checks, ...loosen]', 'checkRuns: checks'],
+  ['4: registration lines not checked', 'files.some(f => fileRefusals(f).length)', 'files.some(f => fileRefusals({ ...f, filename: "src/x.ts" }).length)'],
+  ['14: one error stops the sweep', 'results.push({ number: p.number, error: String(e?.message ?? e) });', 'throw e;'],
 ];
 const dir = mkdtempSync(new URL('./.pr-signal-mutants-', import.meta.url).pathname);
 try {
@@ -137,6 +192,7 @@ try {
       await mod.sweep(f.api, f.opts);
       if (got.length !== 1 || got[0] !== want || f.writes.length !== before) caught++;
     }
+    if (!(await errorSweep(mod))) caught++;
     assert.ok(caught, `mutant "${name}" survived every case`);
     console.log(`ok   mutant caught: ${name} (${caught} cases)`);
   }
