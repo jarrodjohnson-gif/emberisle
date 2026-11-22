@@ -1,6 +1,6 @@
-// Hand card arrow focus cycling and PlaceChip cancel guards:
+// Hand card arrow focus cycling, and a pending placement surviving pointercancel and blur:
 // 1. Hand card arrow navigation cycles focus across cards (ArrowRight, ArrowLeft, Home, End).
-// 2. PlaceChip resets pending place state on pointercancel, and keeps it on window blur.
+// 2. A pending placement (PlaceChip) is kept on pointercancel and on window blur.
 // Zero console errors. Run: npm run hand-placelist-guards-prove
 import assert from "node:assert/strict";
 import { chromium } from "./proof-browser.mjs";
@@ -97,7 +97,7 @@ try {
   assert.notEqual(activeId, "resource-timber", "Tab moves focus off the first card");
   console.log("ok   Hand: keyboard arrow focus cycling, Tab not trapped");
 
-  // 2. PlaceChip: cancelled drag pointer state resets (setup phase, so a vertex placement can be pending)
+  // 2. PlaceChip: a pending placement is kept (setup phase, so a vertex placement can be pending)
   await page.evaluate(() => {
     const s = window.__emberisle;
     const cur = s.getState().state;
@@ -112,14 +112,11 @@ try {
   let pendingState = await page.evaluate(() => window.__emberisle.getState().pendingPlace);
   assert.ok(pendingState, "pendingPlace is active");
 
-  // Dispatch pointercancel on window
-  await page.evaluate(() => {
-    window.dispatchEvent(new PointerEvent("pointercancel", { bubbles: true }));
-  });
+  // A pointercancel (a touch handed to scrolling) must NOT drop a pending placement: the tap-then-confirm pick survives a swipe.
+  await page.evaluate(() => window.dispatchEvent(new PointerEvent("pointercancel", { bubbles: true })));
   await page.waitForTimeout(50);
-
   pendingState = await page.evaluate(() => window.__emberisle.getState().pendingPlace);
-  assert.equal(pendingState, null, "pointercancel resets pendingPlace to null");
+  assert.ok(pendingState, "pointercancel keeps pendingPlace");
 
   // A window blur (alt-tab, dialog) must NOT drop a pending placement.
   await page.evaluate((vid) => {
@@ -129,7 +126,7 @@ try {
   await page.waitForTimeout(50);
   pendingState = await page.evaluate(() => window.__emberisle.getState().pendingPlace);
   assert.ok(pendingState, "window blur keeps pendingPlace");
-  console.log("ok   PlaceChip: pointercancel resets, blur keeps");
+  console.log("ok   PlaceChip: pointercancel and blur keep the pending placement");
 
   assert.equal(errors.length, 0, `zero page or console errors: ${errors.join(", ")}`);
 } finally {
