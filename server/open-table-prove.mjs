@@ -154,6 +154,10 @@ let openCode;
   const rivalWelcome = await rival.next("welcome");
   const both = await (await fetch(`${baseUrl}/tables`)).json();
   assert.deepEqual(both.map((t) => t.code), [openCode, rivalWelcome.code], "a second player's open table is listed too");
+  const rivalEntry = both.find((t) => t.code === rivalWelcome.code);
+  assert.equal(rivalEntry.name, "Rival's table", "the second listing is named for its own host");
+  assert.equal(rivalEntry.seated, 1, "the second listing counts only its own seat");
+  assert.equal(rivalEntry.status, "lobby", "the second listing is in its lobby");
   rival.ws.terminate();
 }
 
