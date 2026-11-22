@@ -7,3 +7,10 @@ export const PROTO = 1;
 export const LOGIN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 export const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 export const JOIN_CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
+
+// The table client's hello capabilities and the plain events it passes on. They live here, in the eager protocol module,
+// so the counter-offer additions keep the lazy `table` chunk under its 2,300 B ceiling (#1760).
+// Every hello says this page can show the expanded island; a host refuses a page without it at an expanded table (#1611).
+// `counter` says this page can show counter-offers, so the host marks this seat's offers `counter: true` (#1760).
+export const TABLE_CAPS = ["expanded", "counter"];
+export const TABLE_EVENTS = ["seats", "rolled", "chat", "react", "tradeOffer", "tradeCounter", "tradeCounterClosed", "tradeDeclined", "tradeClosed", "ttt", "profileError", "tableProfileCard"];

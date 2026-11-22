@@ -317,6 +317,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run rules-view-helpers-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run trade-counter-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run hud-helpers-guards-prove
       # #1673, #1682, #1782: run independent Node and host proofs in two bounded side lanes beside npm test.
       # Each lane uses isolated temp dirs and per-proof time limits so hangs fail loudly and logs always print.
