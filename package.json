@@ -54,6 +54,7 @@
     "expanded-turns-prove": "node --import ./server/register.mjs scripts/expanded-turns-prove.mjs",
     "expanded-bots-prove": "node --import ./server/register.mjs scripts/expanded-bots-prove.mjs",
     "engine-guards-prove": "node --import ./server/register.mjs scripts/engine-guards-prove.mjs",
+    "board-math-bounds-prove": "node --import ./server/register.mjs scripts/board-math-bounds-prove.mjs",
     "paired-needs-guards-prove": "node --import ./server/register.mjs scripts/paired-needs-guards-prove.mjs",
     "wayfarer-modes-prove": "node --import ./server/register.mjs server/wayfarer-modes-prove.mjs",
     "game-text-prove": "node --import ./server/register.mjs scripts/game-text-prove.mjs",
