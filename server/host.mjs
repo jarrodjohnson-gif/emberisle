@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { mkdir, rename, writeFile } from "node:fs/promises";
+import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
@@ -12,7 +12,7 @@ import { createGame } from "../src/lib/game/board.ts";
 // Also registers the paired turns, so applyAction can play a restored five or six seat game (#1605, #1610).
 import { createExpandedGame, EXPANDED_COLORS, EXPANDED_COORDS, PARTNER_NO_TRADE, pairedAcceptTrade, pairedTradeAsk } from "../src/lib/game/expanded.ts";
 import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, totalVP, validBag } from "../src/lib/game/rules.ts";
-import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
+import { COST, PLAYER_COLORS, RESOURCES, RESOURCE_LABEL } from "../src/lib/game/types.ts";
 import { JOIN_CODE, PROTO } from "../src/lib/net/proto.ts";
 import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
@@ -422,16 +422,19 @@ async function flush(room) {
   if (!room.dirty || !rooms.has(room.code) || room.saving) return;
   room.dirty = false;
   const file = path.join(ROOMS, `${room.code}.json`);
+  const tmp = `${file}.tmp`;
   const run = (async () => {
     const json = snapshot(room);
     await mkdir(ROOMS, { recursive: true });
-    await writeFile(`${file}.tmp`, json);
-    await rename(`${file}.tmp`, file);
+    await writeFile(tmp, json);
+    await rename(tmp, file);
   })();
   room.saving = run;
   try {
     await run;
   } catch (err) {
+    room.dirty = true;
+    await rm(tmp, { force: true }).catch(() => {});
     console.error("save failed:", err);
   }
   room.saving = null;
@@ -475,12 +478,14 @@ function flushAll() {
     clearTimeout(room.saveTimer);
     room.saveTimer = null;
     room.dirty = false;
+    const file = path.join(ROOMS, `${room.code}.json`);
+    const tmp = `${file}.tmp`;
     try {
-      const file = path.join(ROOMS, `${room.code}.json`);
       mkdirSync(ROOMS, { recursive: true });
-      writeFileSync(`${file}.tmp`, snapshot(room));
-      renameSync(`${file}.tmp`, file);
+      writeFileSync(tmp, snapshot(room));
+      renameSync(tmp, file);
     } catch (err) {
+      rmSync(tmp, { force: true });
       console.error("save failed:", err);
     }
   }
@@ -1213,7 +1218,7 @@ function freshAction(ws, room, msg) {
   const seen = (ws.seat.actionCids ??= []);
   // Discards and offer replies from other seats can race with progress in the same turn.
   // Their rules still validate the outstanding discard/offer; connection and cid prevent replays.
-  const parallel = ws.seat.pid !== room.game.current && ["discard", "tradeAnswer", "turnExtensionAsk", "turnExtensionAnswer"].includes(msg.type);
+  const parallel = ws.seat.pid !== room.game.current && ["discard", "tradeAnswer", "tradeCounter", "tradeCounterCancel", "turnExtensionAsk", "turnExtensionAnswer"].includes(msg.type);
   if (
     ws.seat.ws !== ws ||
     typeof msg.cid !== "string" || msg.cid.length === 0 || msg.cid.length > 64 ||
@@ -1262,7 +1267,7 @@ function seatOf(secret) {
     return own.length === given.length && timingSafeEqual(own, given);
   };
   for (const room of rooms.values()) {
-    const seat = room.seats.find(same);
+    const seat = room.seats.find((s) => !s.bot && same(s));
     if (seat) return { room, seat };
   }
   return null;
@@ -1335,12 +1340,17 @@ function route(req, res) {
     return;
   }
   const got = url.pathname.match(/^\/avatars\/(.+)\.jpg$/);
-  if (req.method === "GET" && got && avatars.has(got[1])) {
-    res.writeHead(200, { "content-type": "image/jpeg", "x-content-type-options": "nosniff" });
-    res.end(avatars.get(got[1]).body);
+  if ((req.method === "GET" || req.method === "HEAD") && got && avatars.has(got[1])) {
+    const body = avatars.get(got[1]).body;
+    res.writeHead(200, {
+      "content-type": "image/jpeg",
+      "content-length": body.length,
+      "x-content-type-options": "nosniff",
+    });
+    res.end(req.method === "HEAD" ? undefined : body);
     return;
   }
-  if (req.method === "GET" && url.pathname === "/tables") {
+  if ((req.method === "GET" || req.method === "HEAD") && url.pathname === "/tables") {
     // Same allow() throttle shape as the WS peek/list bucket (#833 review).
     const key = ipKey(req.socket.remoteAddress, req.headers["cf-connecting-ip"]) ?? "loopback";
     const now = Date.now();
@@ -1354,16 +1364,17 @@ function route(req, res) {
         "cache-control": "no-cache",
         "retry-after": "1",
       });
-      res.end("[]");
+      res.end(req.method === "HEAD" ? undefined : "[]");
       return;
     }
     const body = JSON.stringify(getOpenTables());
     res.writeHead(200, {
       "content-type": "application/json",
+      "content-length": Buffer.byteLength(body),
       "access-control-allow-origin": "*",
       "cache-control": "no-cache",
     });
-    res.end(body);
+    res.end(req.method === "HEAD" ? undefined : body);
     return;
   }
   if (req.method === "GET" || req.method === "HEAD") {
@@ -1477,6 +1488,7 @@ function openTable(ws, msg) {
     avatarId: null,
     ready: false,
     ws,
+    caps: Array.isArray(msg.caps) ? msg.caps.filter((c) => typeof c === "string") : [],
     bucket: { tokens: 5, at: Date.now() },
     act: { tokens: ACT_CAP, at: Date.now() },
     secret: randomBytes(16).toString("hex"),
@@ -1513,6 +1525,7 @@ function sitDown(ws, msg) {
     avatarId: null,
     ready: false,
     ws,
+    caps: Array.isArray(msg.caps) ? msg.caps.filter((c) => typeof c === "string") : [],
     bucket: { tokens: 5, at: Date.now() },
     act: { tokens: ACT_CAP, at: Date.now() },
     secret: randomBytes(16).toString("hex"),
@@ -1830,15 +1843,17 @@ function openOffer(room, from, give, want) {
   // ends; it has no run-out (until and seconds are null). A bot's offer keeps the run-out, so a bot never stalls the table.
   // #1507 (owner q1517-bot-offer-stall A): no card shows a countdown for any offer; `seconds` stays on the wire only.
   const runOut = room.game.players.find((p) => p.id === from)?.kind === "bot";
-  const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), botTimers: [], until: runOut ? Date.now() + OFFER_MS : null });
+  const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), counters: new Map(), counterUsed: new Set(), counter: room.game.players.find((p) => p.id === from)?.kind === "bot" || room.seats.find((seat) => seat.pid === from)?.caps?.includes("counter") === true, botTimers: [], until: runOut ? Date.now() + OFFER_MS : null });
   if (runOut) {
     room.offerTimer = setTimeout(() => {
+      for (const counter of [...offer.counters.values()]) botCounterAnswer(room, offer, counter);
+      if (room.offer !== offer) return;
       closeOffer(room);
       broadcast(room, { type: "tradeClosed", tradeId });
       botsOn(room, offer);
     }, OFFER_MS);
   }
-  broadcast(room, { type: "tradeOffer", tradeId, from, give, want, seconds: runOut ? OFFER_MS / 1000 : null });
+  broadcast(room, { type: "tradeOffer", tradeId, from, give, want, seconds: runOut ? OFFER_MS / 1000 : null, ...(offer.counter ? { counter: true } : {}) });
   offer.peopleUntil = Date.now() + PEOPLE_FIRST_MS;
   offer.heldYes = [];
   offer.botTimers.push(setTimeout(() => releaseHeld(room, offer), PEOPLE_FIRST_MS));
@@ -1860,7 +1875,7 @@ function botAnswer(room, offer, pid) {
 
 function peopleWaiting(room, offer) {
   if (Date.now() >= offer.peopleUntil) return false;
-  return room.game.players.some((p) => p.kind !== "bot" && p.id !== offer.from && !offer.declined.has(p.id));
+  return offer.counters.size > 0 || room.game.players.some((p) => p.kind !== "bot" && p.id !== offer.from && !offer.declined.has(p.id));
 }
 
 // Held Yeses go in the order the bots gave them, so the first bot to say Yes still takes it.
@@ -1927,7 +1942,7 @@ function respond(room, actor, yes) {
     }
     say(room, line);
     const askees = room.game.players.filter((p) => p.id !== offer.from);
-    if (askees.every((p) => offer.declined.has(p.id))) {
+    if (askees.every((p) => offer.declined.has(p.id)) && !offer.counters.size) {
       if (room.game.players.find((p) => p.id === offer.from)?.kind === "bot") {
         (room.botDeclined ??= {})[offer.from] = { give: offer.give, want: offer.want };
       }
@@ -1958,6 +1973,92 @@ function respond(room, actor, yes) {
   hear("trade_yes");
   broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId, taker: actor });
   if (!botsOn(room, offer)) pushState(room);
+}
+
+// Counter terms are public and always from the original asker's side. They live only with the offer.
+const bagWords = (bag) => RESOURCES.filter((r) => bag[r]).map((r) => `${bag[r]} ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ");
+const counterEvent = (offer, counter) => ({ type: "tradeCounter", tradeId: offer.tradeId, counterId: counter.counterId, by: counter.by, name: counter.name, give: counter.give, want: counter.want });
+const payable = (player, bag) => player && RESOURCES.every((r) => (bag[r] ?? 0) <= player.resources[r]);
+const nonempty = (bag) => RESOURCES.some((r) => (bag[r] ?? 0) > 0);
+const sameBag = (a, b) => RESOURCES.every((r) => (a[r] ?? 0) === (b[r] ?? 0));
+
+function counterClosed(room, offer, counter, why) {
+  if (room.offer !== offer || !offer.counters.delete(counter.counterId)) return;
+  clearTimeout(counter.timer);
+  broadcast(room, { type: "tradeCounterClosed", tradeId: offer.tradeId, counterId: counter.counterId, why });
+  if (room.game.players.filter((p) => p.id !== offer.from).every((p) => offer.declined.has(p.id)) && !offer.counters.size) {
+    if (room.game.players.find((p) => p.id === offer.from)?.kind === "bot") {
+      (room.botDeclined ??= {})[offer.from] = { give: offer.give, want: offer.want };
+    }
+    closeOffer(room);
+    broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId });
+    botsOn(room, offer);
+  } else if (!peopleWaiting(room, offer)) releaseHeld(room, offer);
+}
+
+function counterAsk(ws, room, msg) {
+  const offer = room.offer;
+  const by = ws.seat.pid;
+  if (!offer || msg.tradeId !== offer.tradeId) return send(ws, { type: "error", message: "Offer is gone." });
+  if (room.game.phase !== "main" || room.game.role === "partner") return send(ws, { type: "error", message: "Cannot trade now." });
+  if (!offer.counter || !ws.seat.caps?.includes("counter") || by === offer.from || offer.counterUsed.has(by)) return send(ws, { type: "error", message: "Bad trade." });
+  if (!validBag(msg.give) || !validBag(msg.want) || !nonempty(msg.give) || !nonempty(msg.want) || RESOURCES.some((r) => msg.give[r] && msg.want[r]) || (sameBag(msg.give, offer.give) && sameBag(msg.want, offer.want))) return send(ws, { type: "error", message: "Bad trade." });
+  if (!payable(room.game.players.find((p) => p.id === by), msg.want)) return send(ws, { type: "error", message: "You lack those goods." });
+  const counter = { counterId: `${offer.tradeId}-c${offer.counterUsed.size + 1}`, by, name: ws.seat.name, give: { ...msg.give }, want: { ...msg.want } };
+  offer.counterUsed.add(by);
+  offer.counters.set(counter.counterId, counter);
+  broadcast(room, counterEvent(offer, counter));
+  const asker = room.game.players.find((p) => p.id === offer.from);
+  say(room, `${counter.name} counters ${asker.name.replace(/ \(bot\)$/i, "")}: ${bagWords(counter.want)} for ${bagWords(counter.give)}.`);
+  if (asker.kind === "bot") {
+    counter.timer = setTimeout(() => botCounterAnswer(room, offer, counter), BOT_ANSWER_MS + randomInt(BOT_ANSWER_MS + 1));
+    offer.botTimers.push(counter.timer);
+  }
+}
+
+function settleCounter(room, offer, counter, yes) {
+  if (!yes) return counterClosed(room, offer, counter, "no");
+  const asker = room.game.players.find((p) => p.id === offer.from);
+  const sender = room.game.players.find((p) => p.id === counter.by);
+  if (!payable(asker, counter.give)) return "You lack those goods.";
+  if (!payable(sender, counter.want)) return counterClosed(room, offer, counter, "gone");
+  const offered = applyAction(room.game, offer.from, { type: "offerTrade", to: counter.by, give: counter.give, want: counter.want });
+  if (offered.error) return "Cannot trade now.";
+  const accepted = applyAction(offered.state, counter.by, { type: "respondTrade", accept: true });
+  if (accepted.error) return accepted.error;
+  const before = room.game;
+  closeOffer(room);
+  const lines = newLog(before.log, accepted.state.log).filter((line) => !line.includes(" offers a trade to "));
+  room.game = { ...accepted.state, log: [...before.log, ...lines].slice(-200) };
+  if (advanceRoomNeeds(room, before, room.game, true)) publish(room);
+  for (const line of lines) say(room, line);
+  const seat = room.seats.find((s) => s.pid === offer.from);
+  if (seat) disarmTurn(seat);
+  hear("trade_yes");
+  broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId, taker: counter.by });
+  if (!botsOn(room, offer)) pushState(room);
+}
+
+function botCounterAnswer(room, offer, counter) {
+  if (room.offer !== offer || !offer.counters.has(counter.counterId) || room.game.players.find((p) => p.id === offer.from)?.kind !== "bot") return;
+  const error = settleCounter(room, offer, counter, pairedAcceptTrade(room.game, offer.from, { from: counter.by, give: counter.want, want: counter.give }));
+  if (error && room.offer === offer) counterClosed(room, offer, counter, "no");
+}
+
+function counterAnswer(ws, room, msg) {
+  const offer = room.offer;
+  const counter = offer?.counters.get(msg.counterId);
+  if (!offer || msg.tradeId !== offer.tradeId || !counter || offer.from !== ws.seat.pid) return send(ws, { type: "error", message: "Offer is gone." });
+  if (room.game.role === "partner" || room.game.phase !== "main") return send(ws, { type: "error", message: "Cannot trade now." });
+  const error = settleCounter(room, offer, counter, msg.yes === true);
+  if (error) send(ws, { type: "error", message: error });
+}
+
+function counterCancel(ws, room, msg) {
+  const offer = room.offer;
+  const counter = offer?.counters.get(msg.counterId);
+  if (!offer || msg.tradeId !== offer.tradeId || !counter || counter.by !== ws.seat.pid) return send(ws, { type: "error", message: "Offer is gone." });
+  counterClosed(room, offer, counter, "back");
 }
 
 function talk(ws, room, msg) {
@@ -2193,6 +2294,9 @@ function handle(ws, raw) {
     if (error) return send(ws, { type: "error", message: error });
     return; // The extension changed callback publishes the updated state.
   }
+  if (msg.type === "tradeCounter") return counterAsk(ws, room, msg);
+  if (msg.type === "tradeCounterAnswer") return counterAnswer(ws, room, msg);
+  if (msg.type === "tradeCounterCancel") return counterCancel(ws, room, msg);
   if (msg.type === "tradeAsk") return ask(ws, room, msg);
   if (msg.type === "tradeAnswer") return answer(ws, room, msg);
   if (msg.type === "tradeCancel") return cancelOffer(ws, room, msg);
@@ -2217,13 +2321,14 @@ function rejoin(ws, msg) {
   if (!room) return send(ws, { type: "error", message: "No table with that code" });
   // Before the seat is touched: a refused rejoin leaves the seat held, its timers running, for an updated page.
   if (refusesClient(ws, room, msg)) return;
-  const seat = room.seats.find((s) => s.secret === msg.secret);
+  const seat = room.seats.find((s) => !s.bot && s.secret === msg.secret);
   if (!seat) return send(ws, { type: "error", message: "Seat is gone." });
   if (seat.ws && seat.ws.readyState === seat.ws.OPEN) return send(ws, { type: "error", message: "Seat is taken." });
   clearTimeout(seat.graceTimer);
   clearTimeout(seat.holdTimer);
   seat.graceTimer = seat.holdTimer = null;
   seat.ws = ws;
+  seat.caps = Array.isArray(msg.caps) ? msg.caps.filter((c) => typeof c === "string") : [];
   seat.gone = null;
   // Restore discovery after a reload, without displacing a newer open table.
   if (room.visibility === "open" && room.game?.phase !== "over") registerOpenTable(room);
@@ -2254,10 +2359,11 @@ function rejoin(ws, msg) {
 // person's offer holds, so the asker needs its card and Cancel again after a reload.
 function resendOffer(ws, room, seat, offer) {
   const seconds = offer.until === null ? null : Math.max(0, Math.floor((offer.until - Date.now()) / 1000));
-  send(ws, { type: "tradeOffer", tradeId: offer.tradeId, from: offer.from, give: offer.give, want: offer.want, seconds });
+  send(ws, { type: "tradeOffer", tradeId: offer.tradeId, from: offer.from, give: offer.give, want: offer.want, seconds, ...(offer.counter ? { counter: true } : {}) });
   for (const by of offer.declined) {
     send(ws, { type: "tradeDeclined", tradeId: offer.tradeId, by, name: room.game.players.find((p) => p.id === by).name });
   }
+  for (const counter of offer.counters.values()) send(ws, counterEvent(offer, counter));
 }
 
 function dropRoom(room) {
@@ -2316,6 +2422,10 @@ function takeOver(room, seat) {
   // Assistance is marked for the outcome and never cleared by a rejoin; the frozen roster keeps the seat human (#889).
   room.assisted = [...new Set([...(room.assisted ?? []), seat.pid])];
   room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "bot", name: `${x.name} (bot)` } : x)) };
+  if (room.offer) {
+    const offer = room.offer;
+    for (const counter of [...offer.counters.values()]) if (counter.by === seat.pid) counterClosed(room, offer, counter, "gone");
+  }
   seat.needs = undefined;
   say(room, `${seat.name} is played by the bot until they return.`);
   publish(room);

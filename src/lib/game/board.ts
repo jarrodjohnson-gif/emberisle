@@ -54,10 +54,10 @@ export function makePlayer(i: number, name: string, kind: PlayerKind): PlayerSta
 }
 
 export function adjacentPips(hexes: HexCell[], id: string, pip: number): boolean {
-  const h = hexes.find((x) => x.id === id);
+  const h = hexes.find((x) => x?.id === id);
   if (!h) return false;
   for (const [dq, dr] of AXIAL_DIRS) {
-    const n = hexes.find((x) => x.q === h.q + dq && x.r === h.r + dr);
+    const n = hexes.find((x) => x && x.q === h.q + dq && x.r === h.r + dr);
     if (n && (n.pip === 6 || n.pip === 8) && (pip === 6 || pip === 8)) return true;
   }
   return false;
@@ -77,7 +77,7 @@ export function createGame(opts: {
   victoryTarget?: VictoryTarget;
   numberTokens?: "official" | "random";
 }): GameState {
-  const seed = opts.seed ?? (Math.floor(Math.random() * 1e9) | 0);
+  const seed = typeof opts.seed === "number" && Number.isFinite(opts.seed) ? opts.seed : (Math.floor(Math.random() * 1e9) | 0);
   const rand = mulberry32(seed);
 
   const coords = hexesInRadius(2);

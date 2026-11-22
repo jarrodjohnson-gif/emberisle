@@ -1,8 +1,11 @@
-# Auto-merges docs-only PRs (#923, phase 1). scripts/auto-merge-eligible.mjs decides; the rules are in its header.
-# A PR merges only when every changed file is an allowed doc, `checks` is green on the exact head SHA, and the desk
-# has posted <!-- review-desk: clean <40-char head SHA> -->. The merge pins that SHA with --match-head-commit.
+# Auto-merges docs-only PRs (#923, phase 1) and, unless the repo variable AUTO_MERGE_CODE is "off", reviewed code PRs
+# (phase 2, docs/DESK.md). scripts/auto-merge-eligible.mjs decides; the rules are in its header.
+# A docs PR merges only when every changed file is an allowed doc, `checks` is green on the exact head SHA, and a review
+# has posted <!-- review-desk: clean <40-char head SHA> -->. A code PR also needs that review's footer to name a reviewer
+# that differs from the builder, and touches no governance file. The merge pins the SHA with --match-head-commit.
 #
 # Kill switch: the repo variable AUTO_MERGE. Unset or anything but "on" means this never runs.
+# AUTO_MERGE_CODE set to exactly "off" stops code PRs only.
 # Rollback: git revert the merge, then set AUTO_MERGE=off.
 #
 # pull_request_target, workflow_run and issue_comment run in the base repo with a write token, so this never checks out
@@ -12,13 +15,20 @@ name: auto-merge
 
 on:
   pull_request_target:
-    types: [synchronize, ready_for_review]
+    # labeled, unlabeled: the owner adding `owner-ok`, or `needs-owner` coming off, re-checks the PR.
+    types: [synchronize, ready_for_review, labeled, unlabeled]
   workflow_run:
     workflows: [CI]
     types: [completed]
   # The desk's clean marker can land after CI goes green, so it triggers a check too.
   issue_comment:
     types: [created]
+  # Re-check one PR by hand, for example a PR that went green before phase 2 was switched on.
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number to check
+        required: true
 
 permissions:
   contents: write
@@ -27,14 +37,14 @@ permissions:
   checks: read
 
 concurrency:
-  group: auto-merge-${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.head_sha }}
+  group: auto-merge-${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.head_sha || inputs.pr }}
   cancel-in-progress: false
 
 jobs:
   merge:
     if: >-
       vars.AUTO_MERGE == 'on' && (
-        github.event_name == 'pull_request_target' ||
+        github.event_name == 'pull_request_target' || github.event_name == 'workflow_dispatch' ||
         (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
           github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.path == '.github/workflows/ci.yml') ||
         (github.event_name == 'issue_comment' && github.event.issue.pull_request &&
@@ -56,16 +66,26 @@ jobs:
       - id: decide
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr }}
+          # Code PRs merge too, unless the repo variable AUTO_MERGE_CODE is "off".
+          AUTO_MERGE_CODE: ${{ vars.AUTO_MERGE_CODE != 'off' && 'on' || 'off' }}
           RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: node scripts/auto-merge-eligible.mjs
       - if: steps.decide.outputs.merge == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          # The workflow token may not merge a PR that changes a workflow file, and every PR that registers a proof
+          # changes ci.yml. With the optional secret AUTO_MERGE_TOKEN (a token with the workflows permission) this
+          # step merges those too. Without it the merge is refused, and the PR gets `merge-by-chat` for the dispatcher.
+          GH_TOKEN: ${{ secrets.AUTO_MERGE_TOKEN || github.token }}
+          LABEL_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           NUM: ${{ steps.decide.outputs.number }}
           SHA: ${{ steps.decide.outputs.sha }}
         run: |
-          gh pr merge "$NUM" --repo "$REPO" --squash --match-head-commit "$SHA"
-          gh api -X POST "repos/$REPO/issues/$NUM/labels" -f 'labels[]=auto-merged'
+          if gh pr merge "$NUM" --repo "$REPO" --squash --match-head-commit "$SHA"; then
+            GH_TOKEN="$LABEL_TOKEN" gh api -X POST "repos/$REPO/issues/$NUM/labels" -f 'labels[]=auto-merged'
+          else
+            GH_TOKEN="$LABEL_TOKEN" gh api -X POST "repos/$REPO/issues/$NUM/labels" -f 'labels[]=merge-by-chat'
+            echo "::warning::auto-merge could not merge PR #$NUM at $SHA; labelled merge-by-chat"
+          fi

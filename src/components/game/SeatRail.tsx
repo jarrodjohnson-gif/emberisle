@@ -34,22 +34,26 @@ function RollOffDie({ state, id, className }: { state: GameState; id: string; cl
 }
 
 // #1544: the rail's quiet line names the hand in words, "7 cards · 1 fortune"; the fortune part goes at zero.
-const words = (n: number, unit: string) => `${n} ${unit}${n === 1 ? "" : "s"}`;
+const words = (n: number, unit: string) => {
+  const count = Number.isFinite(n) ? Math.max(0, n) : 0;
+  return `${count} ${unit}${count === 1 ? "" : "s"}`;
+};
 
 // #645: a public tally, a Route icon and n (longest continuous path) or a Swords icon and n (wayfarers played), always drawn, at every width. The
 // holder of the award (state.longestRoad / state.largestArmy, which already carry the 5 and 3 minimums and the tie rule)
 // wears a gold badge: its accessible name is the award, e.g. "Longest path, 7". The badge pulses once when it lands on a
 // seat (the existing `build-ready` keyframes; none under reduced motion); the log line is rules.ts's own.
 function Tally({ testid, Icon, n, name, held }: { testid: string; Icon: LucideIcon; n: number; name: [string, string]; held: boolean }) {
+  const count = Number.isFinite(n) ? Math.max(0, n) : 0;
   return (
     <span
       data-testid={testid}
       role="img"
-      aria-label={`${name[+held]}, ${n}`}
+      aria-label={`${name[+held]}, ${count}`}
       className={cn("flex shrink-0 items-center gap-0.5 rounded-full px-0.5", held ? "bg-amber-300 font-semibold text-zinc-900 ring-1 ring-amber-600 build-ready" : "text-zinc-700")}
     >
       <Icon aria-hidden="true" className="size-3" />
-      {n}
+      {count}
     </span>
   );
 }

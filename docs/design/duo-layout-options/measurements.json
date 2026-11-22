@@ -1,0 +1,3848 @@
+{
+  "note": "Layout options for the folded iPhone Duo (#1829). CSS overrides injected at run time; nothing in src/ changes.",
+  "browser": "153.0.8010.12",
+  "target": 0.6,
+  "options": [
+    {
+      "id": "baseline",
+      "name": "Today",
+      "sizes": {
+        "466x678": {
+          "roll": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 228,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.294,
+              "width": 0.645
+            },
+            "heightShare": 0.563,
+            "controls": 20,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                317,
+                381,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                192,
+                95,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                317,
+                100,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                385,
+                180,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                192,
+                387,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                55,
+                326,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                94,
+                44
+              ],
+              "JoshJos3 pts points": [
+                114,
+                12,
+                94,
+                44
+              ],
+              "MiraMir3 pts points": [
+                211,
+                12,
+                94,
+                44
+              ],
+              "FinnFin3 pts points": [
+                309,
+                12,
+                94,
+                44
+              ],
+              "Table menu": [
+                406,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                524,
+                78,
+                62
+              ],
+              "Brick: 1. Show trade rates": [
+                112,
+                524,
+                78,
+                62
+              ],
+              "Sheep: 3. Show trade rates": [
+                194,
+                524,
+                78,
+                62
+              ],
+              "Wheat: 1. Show trade rates": [
+                276,
+                524,
+                78,
+                62
+              ],
+              "Stone: 2. Show trade rates": [
+                358,
+                524,
+                78,
+                62
+              ],
+              "Roll": [
+                30,
+                604,
+                406,
+                48
+              ]
+            },
+            "hscroll": false
+          },
+          "main": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 228,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.294,
+              "width": 0.645
+            },
+            "heightShare": 0.563,
+            "controls": 22,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                317,
+                381,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                192,
+                95,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                317,
+                100,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                385,
+                180,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                192,
+                387,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                55,
+                326,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                94,
+                44
+              ],
+              "JoshJos3 pts points": [
+                114,
+                12,
+                94,
+                44
+              ],
+              "MiraMir3 pts points": [
+                211,
+                12,
+                94,
+                44
+              ],
+              "FinnFin3 pts points": [
+                309,
+                12,
+                94,
+                44
+              ],
+              "Table menu": [
+                406,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                524,
+                78,
+                62
+              ],
+              "Brick: 1. Show trade rates": [
+                112,
+                524,
+                78,
+                62
+              ],
+              "Sheep: 3. Show trade rates": [
+                194,
+                524,
+                78,
+                62
+              ],
+              "Wheat: 1. Show trade rates": [
+                276,
+                524,
+                78,
+                62
+              ],
+              "Stone: 2. Show trade rates": [
+                358,
+                524,
+                78,
+                62
+              ],
+              "build-open": [
+                30,
+                604,
+                130,
+                48
+              ],
+              "Trade": [
+                168,
+                604,
+                130,
+                48
+              ],
+              "End turn": [
+                306,
+                604,
+                130,
+                48
+              ]
+            },
+            "hscroll": false
+          }
+        },
+        "382x580": {
+          "roll": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 228,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.255,
+              "width": 0.583
+            },
+            "heightShare": 0.49,
+            "controls": 20,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                248,
+                294,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                155,
+                82,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                248,
+                86,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                298,
+                145,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                155,
+                298,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                54,
+                254,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                12,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                12,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                12,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                426,
+                61,
+                62
+              ],
+              "Brick: 1. Show trade rates": [
+                95,
+                426,
+                61,
+                62
+              ],
+              "Sheep: 3. Show trade rates": [
+                160,
+                426,
+                61,
+                62
+              ],
+              "Wheat: 1. Show trade rates": [
+                226,
+                426,
+                61,
+                62
+              ],
+              "Stone: 2. Show trade rates": [
+                291,
+                426,
+                61,
+                62
+              ],
+              "Roll": [
+                30,
+                506,
+                322,
+                48
+              ]
+            },
+            "hscroll": false
+          },
+          "main": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 228,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.255,
+              "width": 0.583
+            },
+            "heightShare": 0.49,
+            "controls": 22,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                248,
+                294,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                155,
+                82,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                248,
+                86,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                298,
+                145,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                155,
+                298,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                54,
+                254,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                12,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                12,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                12,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                426,
+                61,
+                62
+              ],
+              "Brick: 1. Show trade rates": [
+                95,
+                426,
+                61,
+                62
+              ],
+              "Sheep: 3. Show trade rates": [
+                160,
+                426,
+                61,
+                62
+              ],
+              "Wheat: 1. Show trade rates": [
+                226,
+                426,
+                61,
+                62
+              ],
+              "Stone: 2. Show trade rates": [
+                291,
+                426,
+                61,
+                62
+              ],
+              "build-open": [
+                30,
+                506,
+                102,
+                48
+              ],
+              "Trade": [
+                140,
+                506,
+                102,
+                48
+              ],
+              "End turn": [
+                250,
+                506,
+                102,
+                48
+              ]
+            },
+            "hscroll": false
+          }
+        },
+        "382x618": {
+          "roll": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 228,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.272,
+              "width": 0.662
+            },
+            "heightShare": 0.521,
+            "controls": 20,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                258,
+                328,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                153,
+                87,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                258,
+                91,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                316,
+                159,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                153,
+                333,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                38,
+                282,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                12,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                12,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                12,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                464,
+                61,
+                62
+              ],
+              "Brick: 1. Show trade rates": [
+                95,
+                464,
+                61,
+                62
+              ],
+              "Sheep: 3. Show trade rates": [
+                160,
+                464,
+                61,
+                62
+              ],
+              "Wheat: 1. Show trade rates": [
+                226,
+                464,
+                61,
+                62
+              ],
+              "Stone: 2. Show trade rates": [
+                291,
+                464,
+                61,
+                62
+              ],
+              "Roll": [
+                30,
+                544,
+                322,
+                48
+              ]
+            },
+            "hscroll": false
+          },
+          "main": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 228,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.272,
+              "width": 0.662
+            },
+            "heightShare": 0.521,
+            "controls": 22,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                258,
+                328,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                153,
+                87,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                258,
+                91,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                316,
+                159,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                153,
+                333,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                38,
+                282,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                12,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                12,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                12,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                464,
+                61,
+                62
+              ],
+              "Brick: 1. Show trade rates": [
+                95,
+                464,
+                61,
+                62
+              ],
+              "Sheep: 3. Show trade rates": [
+                160,
+                464,
+                61,
+                62
+              ],
+              "Wheat: 1. Show trade rates": [
+                226,
+                464,
+                61,
+                62
+              ],
+              "Stone: 2. Show trade rates": [
+                291,
+                464,
+                61,
+                62
+              ],
+              "build-open": [
+                30,
+                544,
+                102,
+                48
+              ],
+              "Trade": [
+                140,
+                544,
+                102,
+                48
+              ],
+              "End turn": [
+                250,
+                544,
+                102,
+                48
+              ]
+            },
+            "hscroll": false
+          }
+        }
+      }
+    },
+    {
+      "id": "a-slim-goods",
+      "name": "A. Slim goods row",
+      "sizes": {
+        "466x678": {
+          "roll": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 190,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.324,
+              "width": 0.71
+            },
+            "heightShare": 0.619,
+            "controls": 20,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                328,
+                415,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                190,
+                100,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                328,
+                106,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                403,
+                194,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                190,
+                421,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                40,
+                354,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                94,
+                44
+              ],
+              "JoshJos3 pts points": [
+                114,
+                12,
+                94,
+                44
+              ],
+              "MiraMir3 pts points": [
+                211,
+                12,
+                94,
+                44
+              ],
+              "FinnFin3 pts points": [
+                309,
+                12,
+                94,
+                44
+              ],
+              "Table menu": [
+                406,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                554,
+                78,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                112,
+                554,
+                78,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                194,
+                554,
+                78,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                276,
+                554,
+                78,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                358,
+                554,
+                78,
+                44
+              ],
+              "Roll": [
+                30,
+                608,
+                406,
+                48
+              ]
+            },
+            "hscroll": false
+          },
+          "main": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 190,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.324,
+              "width": 0.71
+            },
+            "heightShare": 0.619,
+            "controls": 22,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                328,
+                415,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                190,
+                100,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                328,
+                106,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                403,
+                194,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                190,
+                421,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                40,
+                354,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                94,
+                44
+              ],
+              "JoshJos3 pts points": [
+                114,
+                12,
+                94,
+                44
+              ],
+              "MiraMir3 pts points": [
+                211,
+                12,
+                94,
+                44
+              ],
+              "FinnFin3 pts points": [
+                309,
+                12,
+                94,
+                44
+              ],
+              "Table menu": [
+                406,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                554,
+                78,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                112,
+                554,
+                78,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                194,
+                554,
+                78,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                276,
+                554,
+                78,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                358,
+                554,
+                78,
+                44
+              ],
+              "build-open": [
+                30,
+                608,
+                130,
+                48
+              ],
+              "Trade": [
+                168,
+                608,
+                130,
+                48
+              ],
+              "End turn": [
+                306,
+                608,
+                130,
+                48
+              ]
+            },
+            "hscroll": false
+          }
+        },
+        "382x580": {
+          "roll": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 190,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.289,
+              "width": 0.662
+            },
+            "heightShare": 0.555,
+            "controls": 20,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                258,
+                328,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                153,
+                87,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                258,
+                91,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                316,
+                159,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                153,
+                333,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                38,
+                282,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                12,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                12,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                12,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                456,
+                61,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                95,
+                456,
+                61,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                160,
+                456,
+                61,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                226,
+                456,
+                61,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                291,
+                456,
+                61,
+                44
+              ],
+              "Roll": [
+                30,
+                510,
+                322,
+                48
+              ]
+            },
+            "hscroll": false
+          },
+          "main": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 190,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.289,
+              "width": 0.662
+            },
+            "heightShare": 0.555,
+            "controls": 22,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                258,
+                328,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                153,
+                87,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                258,
+                91,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                316,
+                159,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                153,
+                333,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                38,
+                282,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                12,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                12,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                12,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                456,
+                61,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                95,
+                456,
+                61,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                160,
+                456,
+                61,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                226,
+                456,
+                61,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                291,
+                456,
+                61,
+                44
+              ],
+              "build-open": [
+                30,
+                510,
+                102,
+                48
+              ],
+              "Trade": [
+                140,
+                510,
+                102,
+                48
+              ],
+              "End turn": [
+                250,
+                510,
+                102,
+                48
+              ]
+            },
+            "hscroll": false
+          }
+        },
+        "382x618": {
+          "roll": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 190,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.296,
+              "width": 0.721
+            },
+            "heightShare": 0.583,
+            "controls": 20,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                266,
+                363,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                152,
+                101,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                266,
+                105,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                329,
+                179,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                152,
+                368,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                27,
+                312,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                12,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                12,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                12,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                494,
+                61,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                95,
+                494,
+                61,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                160,
+                494,
+                61,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                226,
+                494,
+                61,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                291,
+                494,
+                61,
+                44
+              ],
+              "Roll": [
+                30,
+                548,
+                322,
+                48
+              ]
+            },
+            "hscroll": false
+          },
+          "main": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 190,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.296,
+              "width": 0.721
+            },
+            "heightShare": 0.583,
+            "controls": 22,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                266,
+                363,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                152,
+                101,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                266,
+                105,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                329,
+                179,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                152,
+                368,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                27,
+                312,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                12,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                12,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                12,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                494,
+                61,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                95,
+                494,
+                61,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                160,
+                494,
+                61,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                226,
+                494,
+                61,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                291,
+                494,
+                61,
+                44
+              ],
+              "build-open": [
+                30,
+                548,
+                102,
+                48
+              ],
+              "Trade": [
+                140,
+                548,
+                102,
+                48
+              ],
+              "End turn": [
+                250,
+                548,
+                102,
+                48
+              ]
+            },
+            "hscroll": false
+          }
+        }
+      }
+    },
+    {
+      "id": "b-words-on-button",
+      "name": "B. Instruction on the button",
+      "sizes": {
+        "466x678": {
+          "roll": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 186,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.327,
+              "width": 0.717
+            },
+            "heightShare": 0.625,
+            "controls": 20,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                329,
+                419,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                190,
+                100,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                329,
+                106,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                405,
+                195,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                190,
+                425,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                38,
+                357,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                94,
+                44
+              ],
+              "JoshJos3 pts points": [
+                114,
+                12,
+                94,
+                44
+              ],
+              "MiraMir3 pts points": [
+                211,
+                12,
+                94,
+                44
+              ],
+              "FinnFin3 pts points": [
+                309,
+                12,
+                94,
+                44
+              ],
+              "Table menu": [
+                406,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                524,
+                78,
+                62
+              ],
+              "Brick: 1. Show trade rates": [
+                112,
+                524,
+                78,
+                62
+              ],
+              "Sheep: 3. Show trade rates": [
+                194,
+                524,
+                78,
+                62
+              ],
+              "Wheat: 1. Show trade rates": [
+                276,
+                524,
+                78,
+                62
+              ],
+              "Stone: 2. Show trade rates": [
+                358,
+                524,
+                78,
+                62
+              ],
+              "Roll": [
+                30,
+                604,
+                406,
+                48
+              ]
+            },
+            "hscroll": false
+          },
+          "main": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 186,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.327,
+              "width": 0.717
+            },
+            "heightShare": 0.625,
+            "controls": 22,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                329,
+                419,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                190,
+                100,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                329,
+                106,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                405,
+                195,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                190,
+                425,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                38,
+                357,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                94,
+                44
+              ],
+              "JoshJos3 pts points": [
+                114,
+                12,
+                94,
+                44
+              ],
+              "MiraMir3 pts points": [
+                211,
+                12,
+                94,
+                44
+              ],
+              "FinnFin3 pts points": [
+                309,
+                12,
+                94,
+                44
+              ],
+              "Table menu": [
+                406,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                524,
+                78,
+                62
+              ],
+              "Brick: 1. Show trade rates": [
+                112,
+                524,
+                78,
+                62
+              ],
+              "Sheep: 3. Show trade rates": [
+                194,
+                524,
+                78,
+                62
+              ],
+              "Wheat: 1. Show trade rates": [
+                276,
+                524,
+                78,
+                62
+              ],
+              "Stone: 2. Show trade rates": [
+                358,
+                524,
+                78,
+                62
+              ],
+              "build-open": [
+                30,
+                604,
+                130,
+                48
+              ],
+              "Trade": [
+                168,
+                604,
+                130,
+                48
+              ],
+              "End turn": [
+                306,
+                604,
+                130,
+                48
+              ]
+            },
+            "hscroll": false
+          }
+        },
+        "382x580": {
+          "roll": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 186,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.293,
+              "width": 0.671
+            },
+            "heightShare": 0.562,
+            "controls": 20,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                259,
+                332,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                153,
+                88,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                259,
+                92,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                318,
+                160,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                153,
+                336,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                36,
+                285,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                12,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                12,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                12,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                426,
+                61,
+                62
+              ],
+              "Brick: 1. Show trade rates": [
+                95,
+                426,
+                61,
+                62
+              ],
+              "Sheep: 3. Show trade rates": [
+                160,
+                426,
+                61,
+                62
+              ],
+              "Wheat: 1. Show trade rates": [
+                226,
+                426,
+                61,
+                62
+              ],
+              "Stone: 2. Show trade rates": [
+                291,
+                426,
+                61,
+                62
+              ],
+              "Roll": [
+                30,
+                506,
+                322,
+                48
+              ]
+            },
+            "hscroll": false
+          },
+          "main": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 186,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.293,
+              "width": 0.671
+            },
+            "heightShare": 0.562,
+            "controls": 22,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                259,
+                332,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                153,
+                88,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                259,
+                92,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                318,
+                160,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                153,
+                336,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                36,
+                285,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                12,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                12,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                12,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                426,
+                61,
+                62
+              ],
+              "Brick: 1. Show trade rates": [
+                95,
+                426,
+                61,
+                62
+              ],
+              "Sheep: 3. Show trade rates": [
+                160,
+                426,
+                61,
+                62
+              ],
+              "Wheat: 1. Show trade rates": [
+                226,
+                426,
+                61,
+                62
+              ],
+              "Stone: 2. Show trade rates": [
+                291,
+                426,
+                61,
+                62
+              ],
+              "build-open": [
+                30,
+                506,
+                102,
+                48
+              ],
+              "Trade": [
+                140,
+                506,
+                102,
+                48
+              ],
+              "End turn": [
+                250,
+                506,
+                102,
+                48
+              ]
+            },
+            "hscroll": false
+          }
+        },
+        "382x618": {
+          "roll": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 186,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.296,
+              "width": 0.721
+            },
+            "heightShare": 0.589,
+            "controls": 20,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                266,
+                367,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                152,
+                105,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                266,
+                109,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                329,
+                183,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                152,
+                372,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                27,
+                316,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                12,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                12,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                12,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                464,
+                61,
+                62
+              ],
+              "Brick: 1. Show trade rates": [
+                95,
+                464,
+                61,
+                62
+              ],
+              "Sheep: 3. Show trade rates": [
+                160,
+                464,
+                61,
+                62
+              ],
+              "Wheat: 1. Show trade rates": [
+                226,
+                464,
+                61,
+                62
+              ],
+              "Stone: 2. Show trade rates": [
+                291,
+                464,
+                61,
+                62
+              ],
+              "Roll": [
+                30,
+                544,
+                322,
+                48
+              ]
+            },
+            "hscroll": false
+          },
+          "main": {
+            "hole": {
+              "top": 68,
+              "right": 12,
+              "bottom": 186,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.296,
+              "width": 0.721
+            },
+            "heightShare": 0.589,
+            "controls": 22,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                266,
+                367,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                152,
+                105,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                266,
+                109,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                329,
+                183,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                152,
+                372,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                27,
+                316,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                12,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                12,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                12,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                464,
+                61,
+                62
+              ],
+              "Brick: 1. Show trade rates": [
+                95,
+                464,
+                61,
+                62
+              ],
+              "Sheep: 3. Show trade rates": [
+                160,
+                464,
+                61,
+                62
+              ],
+              "Wheat: 1. Show trade rates": [
+                226,
+                464,
+                61,
+                62
+              ],
+              "Stone: 2. Show trade rates": [
+                291,
+                464,
+                61,
+                62
+              ],
+              "build-open": [
+                30,
+                544,
+                102,
+                48
+              ],
+              "Trade": [
+                140,
+                544,
+                102,
+                48
+              ],
+              "End turn": [
+                250,
+                544,
+                102,
+                48
+              ]
+            },
+            "hscroll": false
+          }
+        }
+      }
+    },
+    {
+      "id": "c-both",
+      "name": "C. Both: slim goods, no instruction row, bar 8 px higher",
+      "sizes": {
+        "466x678": {
+          "roll": {
+            "hole": {
+              "top": 60,
+              "right": 12,
+              "bottom": 150,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.33,
+              "width": 0.724
+            },
+            "heightShare": 0.69,
+            "controls": 20,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                330,
+                454,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                190,
+                133,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                330,
+                139,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                407,
+                229,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                190,
+                460,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                37,
+                392,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                4,
+                94,
+                44
+              ],
+              "JoshJos3 pts points": [
+                114,
+                4,
+                94,
+                44
+              ],
+              "MiraMir3 pts points": [
+                211,
+                4,
+                94,
+                44
+              ],
+              "FinnFin3 pts points": [
+                309,
+                4,
+                94,
+                44
+              ],
+              "Table menu": [
+                406,
+                4,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                554,
+                78,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                112,
+                554,
+                78,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                194,
+                554,
+                78,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                276,
+                554,
+                78,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                358,
+                554,
+                78,
+                44
+              ],
+              "Roll": [
+                30,
+                608,
+                406,
+                48
+              ]
+            },
+            "hscroll": false
+          },
+          "main": {
+            "hole": {
+              "top": 60,
+              "right": 12,
+              "bottom": 150,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.33,
+              "width": 0.724
+            },
+            "heightShare": 0.69,
+            "controls": 22,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                330,
+                454,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                190,
+                133,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                330,
+                139,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                407,
+                229,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                190,
+                460,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                37,
+                392,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                4,
+                94,
+                44
+              ],
+              "JoshJos3 pts points": [
+                114,
+                4,
+                94,
+                44
+              ],
+              "MiraMir3 pts points": [
+                211,
+                4,
+                94,
+                44
+              ],
+              "FinnFin3 pts points": [
+                309,
+                4,
+                94,
+                44
+              ],
+              "Table menu": [
+                406,
+                4,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                554,
+                78,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                112,
+                554,
+                78,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                194,
+                554,
+                78,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                276,
+                554,
+                78,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                358,
+                554,
+                78,
+                44
+              ],
+              "build-open": [
+                30,
+                608,
+                130,
+                48
+              ],
+              "Trade": [
+                168,
+                608,
+                130,
+                48
+              ],
+              "End turn": [
+                306,
+                608,
+                130,
+                48
+              ]
+            },
+            "hscroll": false
+          }
+        },
+        "382x580": {
+          "roll": {
+            "hole": {
+              "top": 60,
+              "right": 12,
+              "bottom": 150,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.315,
+              "width": 0.721
+            },
+            "heightShare": 0.638,
+            "controls": 20,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                266,
+                365,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                152,
+                103,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                266,
+                107,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                329,
+                181,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                152,
+                370,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                27,
+                314,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                4,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                4,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                4,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                4,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                4,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                456,
+                61,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                95,
+                456,
+                61,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                160,
+                456,
+                61,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                226,
+                456,
+                61,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                291,
+                456,
+                61,
+                44
+              ],
+              "Roll": [
+                30,
+                510,
+                322,
+                48
+              ]
+            },
+            "hscroll": false
+          },
+          "main": {
+            "hole": {
+              "top": 60,
+              "right": 12,
+              "bottom": 150,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.315,
+              "width": 0.721
+            },
+            "heightShare": 0.638,
+            "controls": 22,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                266,
+                365,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                152,
+                103,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                266,
+                107,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                329,
+                181,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                152,
+                370,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                27,
+                314,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                4,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                4,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                4,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                4,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                4,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                456,
+                61,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                95,
+                456,
+                61,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                160,
+                456,
+                61,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                226,
+                456,
+                61,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                291,
+                456,
+                61,
+                44
+              ],
+              "build-open": [
+                30,
+                510,
+                102,
+                48
+              ],
+              "Trade": [
+                140,
+                510,
+                102,
+                48
+              ],
+              "End turn": [
+                250,
+                510,
+                102,
+                48
+              ]
+            },
+            "hscroll": false
+          }
+        },
+        "382x618": {
+          "roll": {
+            "hole": {
+              "top": 60,
+              "right": 12,
+              "bottom": 150,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.296,
+              "width": 0.721
+            },
+            "heightShare": 0.66,
+            "controls": 20,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                266,
+                403,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                152,
+                141,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                266,
+                145,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                329,
+                219,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                152,
+                408,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                27,
+                352,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                4,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                4,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                4,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                4,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                4,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                494,
+                61,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                95,
+                494,
+                61,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                160,
+                494,
+                61,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                226,
+                494,
+                61,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                291,
+                494,
+                61,
+                44
+              ],
+              "Roll": [
+                30,
+                548,
+                322,
+                48
+              ]
+            },
+            "hscroll": false
+          },
+          "main": {
+            "hole": {
+              "top": 60,
+              "right": 12,
+              "bottom": 150,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.296,
+              "width": 0.721
+            },
+            "heightShare": 0.66,
+            "controls": 22,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                266,
+                403,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                152,
+                141,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                266,
+                145,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                329,
+                219,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                152,
+                408,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                27,
+                352,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                4,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                4,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                4,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                4,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                4,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                30,
+                494,
+                61,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                95,
+                494,
+                61,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                160,
+                494,
+                61,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                226,
+                494,
+                61,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                291,
+                494,
+                61,
+                44
+              ],
+              "build-open": [
+                30,
+                548,
+                102,
+                48
+              ],
+              "Trade": [
+                140,
+                548,
+                102,
+                48
+              ],
+              "End turn": [
+                250,
+                548,
+                102,
+                48
+              ]
+            },
+            "hscroll": false
+          }
+        }
+      }
+    },
+    {
+      "id": "d-side-rail",
+      "name": "D. Controls on the side (tried, not proposed)",
+      "sizes": {
+        "466x678": {
+          "roll": {
+            "hole": {
+              "top": 68,
+              "right": 136,
+              "bottom": 12,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.241,
+              "width": 0.528
+            },
+            "heightShare": 0.882,
+            "controls": 20,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                236,
+                605,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                134,
+                371,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                236,
+                375,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                292,
+                441,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                134,
+                610,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                22,
+                560,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                94,
+                44
+              ],
+              "JoshJos3 pts points": [
+                114,
+                12,
+                94,
+                44
+              ],
+              "MiraMir3 pts points": [
+                211,
+                12,
+                94,
+                44
+              ],
+              "FinnFin3 pts points": [
+                309,
+                12,
+                94,
+                44
+              ],
+              "Table menu": [
+                406,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                350,
+                364,
+                96,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                350,
+                412,
+                96,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                350,
+                460,
+                96,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                350,
+                508,
+                96,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                350,
+                556,
+                96,
+                44
+              ],
+              "Roll": [
+                350,
+                610,
+                96,
+                48
+              ]
+            },
+            "hscroll": false
+          },
+          "main": {
+            "hole": {
+              "top": 68,
+              "right": 136,
+              "bottom": 12,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.241,
+              "width": 0.528
+            },
+            "heightShare": 0.882,
+            "controls": 22,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                236,
+                605,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                134,
+                371,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                236,
+                375,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                292,
+                441,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                134,
+                610,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                22,
+                560,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                94,
+                44
+              ],
+              "JoshJos3 pts points": [
+                114,
+                12,
+                94,
+                44
+              ],
+              "MiraMir3 pts points": [
+                211,
+                12,
+                94,
+                44
+              ],
+              "FinnFin3 pts points": [
+                309,
+                12,
+                94,
+                44
+              ],
+              "Table menu": [
+                406,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                350,
+                252,
+                96,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                350,
+                300,
+                96,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                350,
+                348,
+                96,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                350,
+                396,
+                96,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                350,
+                444,
+                96,
+                44
+              ],
+              "build-open": [
+                350,
+                498,
+                96,
+                48
+              ],
+              "Trade": [
+                350,
+                554,
+                96,
+                48
+              ],
+              "End turn": [
+                350,
+                610,
+                96,
+                48
+              ]
+            },
+            "hscroll": false
+          }
+        },
+        "382x580": {
+          "roll": {
+            "hole": {
+              "top": 68,
+              "right": 136,
+              "bottom": 12,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.211,
+              "width": 0.482
+            },
+            "heightShare": 0.862,
+            "controls": 20,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                172,
+                516,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                95,
+                341,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                172,
+                344,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                214,
+                393,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                95,
+                519,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                12,
+                482,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                12,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                12,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                12,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                266,
+                266,
+                96,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                266,
+                314,
+                96,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                266,
+                362,
+                96,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                266,
+                410,
+                96,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                266,
+                458,
+                96,
+                44
+              ],
+              "Roll": [
+                266,
+                512,
+                96,
+                48
+              ]
+            },
+            "hscroll": false
+          },
+          "main": {
+            "hole": {
+              "top": 68,
+              "right": 136,
+              "bottom": 12,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.211,
+              "width": 0.482
+            },
+            "heightShare": 0.862,
+            "controls": 22,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                172,
+                516,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                95,
+                341,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                172,
+                344,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                214,
+                393,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                95,
+                519,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                12,
+                482,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                12,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                12,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                12,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                266,
+                154,
+                96,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                266,
+                202,
+                96,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                266,
+                250,
+                96,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                266,
+                298,
+                96,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                266,
+                346,
+                96,
+                44
+              ],
+              "build-open": [
+                266,
+                400,
+                96,
+                48
+              ],
+              "Trade": [
+                266,
+                456,
+                96,
+                48
+              ],
+              "End turn": [
+                266,
+                512,
+                96,
+                48
+              ]
+            },
+            "hscroll": false
+          }
+        },
+        "382x618": {
+          "roll": {
+            "hole": {
+              "top": 68,
+              "right": 136,
+              "bottom": 12,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.198,
+              "width": 0.482
+            },
+            "heightShare": 0.871,
+            "controls": 20,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                172,
+                554,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                95,
+                379,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                172,
+                382,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                214,
+                431,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                95,
+                557,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                12,
+                520,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                12,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                12,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                12,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                266,
+                304,
+                96,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                266,
+                352,
+                96,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                266,
+                400,
+                96,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                266,
+                448,
+                96,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                266,
+                496,
+                96,
+                44
+              ],
+              "Roll": [
+                266,
+                550,
+                96,
+                48
+              ]
+            },
+            "hscroll": false
+          },
+          "main": {
+            "hole": {
+              "top": 68,
+              "right": 136,
+              "bottom": 12,
+              "left": 12
+            },
+            "hexSpan": {
+              "height": 0.198,
+              "width": 0.482
+            },
+            "heightShare": 0.871,
+            "controls": 22,
+            "issues": [],
+            "seen": {
+              "Inspect 3:1 any goods dock": [
+                172,
+                554,
+                44,
+                44
+              ],
+              "Inspect 2:1 wheat dock": [
+                95,
+                379,
+                44,
+                44
+              ],
+              "Inspect 2:1 brick dock": [
+                172,
+                382,
+                44,
+                44
+              ],
+              "Inspect 2:1 wood dock": [
+                214,
+                431,
+                44,
+                44
+              ],
+              "Inspect 2:1 sheep dock": [
+                95,
+                557,
+                44,
+                44
+              ],
+              "Inspect 2:1 stone dock": [
+                12,
+                520,
+                44,
+                44
+              ],
+              "JarrodJar3 pts points": [
+                16,
+                12,
+                73,
+                44
+              ],
+              "JoshJos3 pts points": [
+                93,
+                12,
+                73,
+                44
+              ],
+              "MiraMir3 pts points": [
+                169,
+                12,
+                73,
+                44
+              ],
+              "FinnFin3 pts points": [
+                246,
+                12,
+                73,
+                44
+              ],
+              "Table menu": [
+                322,
+                12,
+                44,
+                44
+              ],
+              "Wood: 2. Show trade rates": [
+                266,
+                192,
+                96,
+                44
+              ],
+              "Brick: 1. Show trade rates": [
+                266,
+                240,
+                96,
+                44
+              ],
+              "Sheep: 3. Show trade rates": [
+                266,
+                288,
+                96,
+                44
+              ],
+              "Wheat: 1. Show trade rates": [
+                266,
+                336,
+                96,
+                44
+              ],
+              "Stone: 2. Show trade rates": [
+                266,
+                384,
+                96,
+                44
+              ],
+              "build-open": [
+                266,
+                438,
+                96,
+                48
+              ],
+              "Trade": [
+                266,
+                494,
+                96,
+                48
+              ],
+              "End turn": [
+                266,
+                550,
+                96,
+                48
+              ]
+            },
+            "hscroll": false
+          }
+        }
+      }
+    }
+  ],
+  "errors": []
+}

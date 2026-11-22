@@ -77,7 +77,7 @@ to any tier. Helpers don't use this list: they follow the queue in [`HELPERS.md`
 
 | Label | Kind of work | Models |
 |---|---|---|
-| `tier:1-deep` | Hours-long research and architecture carried through to a finished document | Claude Fable 5.1, GPT-6 Astra |
+| `tier:1-deep` | Hours-long research and architecture carried through to a finished document | Claude Fable 5.2, GPT-6 Astra |
 | `tier:1` | Work where a mistake is costly or hard to see: authentication, profile or room persistence and migration, wire-protocol or saved-state compatibility, hidden-information projection, host admission and security, or a change that must land in host and client together | Claude Opus 5.5, GPT-6.1 Sol, and the `tier:1-deep` models |
 | `tier:2` | Everyday features with real proofs, including large, cross-lane or visually ambitious ones that state their files, behaviour and a completion test | Claude Sonnet 5.5, Claude Opus 4.6 and older Claude models run through AWS (see below), Cursor Composer, Gemini 3.8 Flash (thinking HIGH), Grok 4.7, GPT-6.1 Terra, GLM 5.3 and Kimi K3 (the last three provisional, see below), and every `tier:1` model |
 | `tier:3` | Small single-purpose fixes, docs and screenshot QA | Claude Haiku 5.5, GPT-6 Luna, and every model above |
@@ -133,7 +133,7 @@ Until two of its PRs have merged, a provisional model takes no second issue. Lik
 | Cursor | Any model it picks, Opus included | Any lane, at the tier of the model it uses |
 | Josh's agent | Claude Opus 5.5, Sonnet 5.5 and Haiku 5.5, free to use any of them | Any lane, as a full builder. It follows AGENTS.md, not HELPERS.md, and pushes branches to this repo, never a fork. |
 | Jarrod's Claude | Opus and Sonnet subagents | UI builds from approved mocks, defined fixes and docs |
-| Fable and Astra | Fable 5.1, GPT-6 Astra | Design passes and research only (`tier:1-deep`) |
+| Fable and Astra | Fable 5.2, GPT-6 Astra | Design passes and research only (`tier:1-deep`) |
 | Gemini | Gemini 3.8 Flash | Audits and defined checks only |
 
 Every builder names the model that wrote each PR in the PR body, and says so again if a later push used a different model. The reviewer differs from every model named.
@@ -146,16 +146,32 @@ An agent may spawn cheaper or stronger sub-agents if its platform allows it. For
 hand a `tier:3` issue to Haiku. An agent that can't spawn stronger models, such as Gemini, stays at
 its own tier or below. Pick the sub-agent by how clear the task is:
 
-- **Fable 5.1** when the goal is unclear: open research, design, or a problem with no set answer.
+- **Fable 5.2** when the goal is unclear: open research, design, or a problem with no set answer.
+  - Any builder calls a Fable subagent as needed for design, UX and UI work. That covers a mock, a design pass, or a check of a layout or design proof.
+  - The builder still writes the PR. The reviewer differs from every model named.
 - **Sonnet 5.5** for clearly defined coding. With a precise issue and completion test, it codes as well as the larger models.
 - **Haiku 5.5** for small, focused fixes and checks.
+
+**Fresh sessions, not long chats.** Start a fresh chat for each issue, or for a batch of 3 to 5 tiny fixes. Never run one builder chat for days.
+- **Why:** every wake re-reads the whole chat. One Fable chat that orchestrated builder subagents from 11-11 to 11-16 reached 637K tokens and cost $774, about $37 per merged PR. A builder that ends near 100-150K tokens costs a few dollars an issue.
+- **Same name:** keep the same agent name across sessions, so the 4-PR limit (AGENTS.md rule 4) still counts every PR.
+- **No ledger needed:** claims, #854 and PR bodies already carry the state between sessions.
+- **No long orchestrator chats:** if you orchestrate subagents anyway, check your context at every wake. At 150K, finish the running subagents, post where you stopped in your PR bodies, and ask Jarrod for a fresh chat.
 
 Stop starting new work when your 5-hour or weekly usage limit has 5% or less left. Finish or pause
 the current step, post `/paused` saying where you stopped, and leave the rest.
 
 ## When nothing is eligible
 
-An empty ready list is not a reason to stop or to ask the desk. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Only if all five rungs and the [anytime queue](#anytime-queue) are empty, post a `To desk:` line on #854.
+**Fix your own first.** Is one of your PRs waiting on desk changes? Fix it before you claim anything new or open another PR.
+
+**The 10-PR brake.** Count the rows on the #916 desk board with state "Red / waiting" and reason "desk findings or unrecognized verdict".
+- At 10 or more, rungs 2 to 5 and the anytime queue are closed to new PRs.
+- Rung 1 (adopt a stuck PR) stays open and comes first.
+- This is not a stop (AGENTS.md rule 10). Adopting and fixing waiting PRs is the work.
+- Comments, `Question:` posts and read-only audits are still allowed.
+
+An empty ready list is not a reason to stop or to ask the desk. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Only if all five rungs and the [anytime queue](#anytime-queue) are empty, post a `Nothing eligible` line on #854.
 
 1. **Adopt a finished-but-stuck PR.** Built PRs whose builders went quiet are listed under "Stale" in #916. Any PR with no push for 24 hours counts as stale. A PR is not waiting on the owner unless the newest desk list on #854 or #916 says so. Comment `/claim adopt PR #N` on its issue, merge current main into its branch (a merge commit; never rebase or force-push), fix conflicts, get CI green, run the focused proof, then post `To desk: PR #N ready for review` on the PR. Don't widen its scope. It counts toward your open-PR limit (AGENTS.md rule 4).
 2. **Promote a backlog issue.** A `status:backlog` issue with every `Depends on` issue closed, a lane label and a clear scope is eligible. Not eligible: a design issue held for a spec or mock (layout, look or animation, see "Design issues start in backlog"), whatever its tier label says. Re-read it, `/claim`, and set it to `status:claimed`. No desk permission is needed.
@@ -174,7 +190,7 @@ Issues labelled `anytime` are safe work. Take one when the ready list and rungs 
 - An `anytime` issue still has a `tier:` label. Stay at or below your tier. The desk sets the tier by risk, as for any issue.
 - Claim it as usual. It is eligible with `status:todo` or `status:backlog` if nothing blocks it and no PR is open.
 - The desk keeps at least 5 open, unclaimed `anytime` issues. Each has a lane, a tier, a prio and a completion test.
-- If fewer than 5 remain, the desk files or labels more the same day. The rule is in [`DESK.md`](DESK.md#always).
+- If fewer than 5 remain, more are filed or labelled the same day. Since 2026-11-21 no chat owns this ([`DESK.md`](DESK.md#left-over-from-the-desk)); Jarrod starts an issue-writer chat for it.
 
 What belongs in the queue:
 

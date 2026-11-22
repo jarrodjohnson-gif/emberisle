@@ -193,7 +193,11 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run scene-motion-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run nearest-coast-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run profiles-lifecycle-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run store-lifecycle-guards-prove
       # #1817: apt mirror flakes kept turning main red. Cache a pinned static ffmpeg; the apt step below is the fallback.
       - if: needs.changes.outputs.docs_only != 'true'
         id: ffmpeg-cache
@@ -273,6 +277,8 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run registered-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run land-layout-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run proof-host-port-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run roll-off-oracle-prove
@@ -284,6 +290,8 @@ jobs:
         run: npm run expanded-board-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run engine-guards-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run board-math-bounds-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run paired-needs-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -299,11 +307,17 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run lib-helpers-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run client-haptics-guards-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-harbor-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-action-order-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run bot-moments-event-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run rules-view-helpers-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run trade-counter-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run hud-helpers-guards-prove
       # #1673, #1682, #1782: run independent Node and host proofs in two bounded side lanes beside npm test.
@@ -373,9 +387,13 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run host-lifecycle-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run server-lifecycle-guards-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run touch-place-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run camera-fit-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run stale-pr-sweeper-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -390,6 +408,8 @@ jobs:
         run: npm run soak-evidence-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run auto-merge-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run pr-signal-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run label-commands-prove
       - name: Desk gate proof
@@ -505,6 +525,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run vote-and-bubble-guards-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run announcer-a11y-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run steal-picker-push-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run steal-picker-lifecycle-prove
@@ -572,6 +594,8 @@ jobs:
         run: npm run secondary-guards-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run sheets-focus-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run turn-timer-guards-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run my-numbers-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
@@ -667,6 +691,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run game-helper-guards-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run dice-resource-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run sticker-tray-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run sticker-motion-prove
@@ -706,6 +732,8 @@ jobs:
         run: npm run pieces-land-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
         run: npm run legal-edge-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
+        run: npm run bot-cues-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run landing-dust-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-water'
@@ -722,6 +750,8 @@ jobs:
         run: npm run button-system-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run duo-viewport-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
+        run: npm run duo-layout-options-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run keyboard-place-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
@@ -838,6 +868,8 @@ jobs:
         run: npm run seat-rail-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run player-menu-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run title-setup-guards-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run seat-tray-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
