@@ -3,8 +3,8 @@
 Take the top line in **Next up (auto)** that your tier allows. Helpers: only `helper-ok` lines.
 
 These rules apply to anyone, or any AI, who was told they are a **helper** on Emberisle, such as a
-friend and their agent working from a fork. Helpers only build. The owner (Jarrod) and his
-orchestrator make every design decision and every merge.
+friend and their agent working from a fork. Helpers only build. Jarrod makes every design decision,
+and the auto-merge workflow makes every merge ([`flow/merging.md`](flow/merging.md)).
 
 **Where `docs/FRAMEWORK.md` conflicts with this file, this file wins.** In particular, helpers never
 take the Reviewer role, never review or merge PRs, and never ask "what's next". The next task is
@@ -13,7 +13,7 @@ always the next `helper-ok` issue.
 ## What you may work on
 
 - **Start with the helper queue, [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851).** Take the first item there
-  that passes the checks in step 3 below. The review desk keeps that list in priority order.
+  that passes the checks in step 3 below. The planner keeps that list in priority order.
 - Only open issues labelled **`helper-ok`**. Their behaviour and their proof are already decided.
 - One issue per pull request.
 - No eligible issue left? Wait (see below). Don't pick anything else.
@@ -27,7 +27,7 @@ a bug you noticed. **Don't build them.** Open a GitHub issue on `jarrodjohnson-g
 - Title: `Idea: <short name>`. For a bug, use `Bug: <short name>`.
 - Body: what and why, plus a screenshot if it helps.
 
-The orchestrator reads new issues, turns the good ones into exact specs (Jarrod decides the design
+The planner reads new issues, turns the good ones into exact specs (Jarrod decides the design
 calls), and labels them `helper-ok` when they're ready. Then you can build them like any other issue.
 
 ## Keep going on your own
@@ -36,7 +36,7 @@ Nobody will tell you "next issue". After each PR, go straight back to step 2. In
 human starts you once with `/loop Read docs/HELPERS.md and follow it.`, and you never need another
 prompt.
 
-- **Your open PRs come first, every round.** The orchestrator answers through GitHub: review comments
+- **Your open PRs come first, every round.** Reviewers answer through GitHub: review comments
   and CI results on your PR, and a merge or close. So at each round, check your open PRs before
   picking new work:
   - CI red: fix it.
@@ -60,9 +60,9 @@ and run long proofs in the background, one at a time, reading every result befor
 ## Never
 
 - Make a design decision. That covers any feature, visual, colour, layout, sound, rule, wording or
-  balance change beyond the issue text. If something is unclear or needs a choice, ask on the issue
-  in a comment starting `Question:` (options plus your recommendation), post a `paused:` comment (below), and
-  move on to the next `helper-ok` issue. Never build around the gap.
+  balance change beyond the issue text. If something is unclear or needs a choice, ask Jarrod: add
+  `needs-owner` to your PR, or to the issue if there is no PR yet, and post one comment there starting `Question:`
+  (options plus your recommendation). A fork can't set labels: then say so in the comment's first line. Move on to the next `helper-ok` issue. Never build around the gap.
 - Merge, approve, review, push to `main`, `git push upstream`, or push to anyone else's branch.
 - Delete files. If an issue needs a file deleted, stop and ask on the issue.
 - Edit `.github/workflows/`, `package.json`, lockfiles, `tsconfig*`, `vite.config*`, or add or upgrade a
@@ -112,8 +112,7 @@ and run long proofs in the background, one at a time, reading every result befor
    lost the claim to <winning agent name>
    ```
    Then pick another eligible issue without a fixed wait. This releases only your claim, never the
-   winner's. Otherwise your files remain reserved until your PR merges or closes, or you post
-   `/paused`. Before adding files, recheck ownership and update `files:`; pause and pick again if
+   winner's. When your claim lasts and when it expires: [`LANES.md`](LANES.md#picking-an-issue), step 2. Before adding files, recheck ownership and update `files:`; pause and pick again if
    they overlap an active claim. Follow [`LANES.md`](LANES.md) for the shared claim flow.
 5. **Branch:** `git fetch upstream && git checkout -b helper/<issue#>-<slug> upstream/main`
 6. **Build** exactly what the issue says, plus the proof it asks for. The proofs are the `*-prove`
@@ -128,8 +127,10 @@ and run long proofs in the background, one at a time, reading every result befor
    CI then runs the full set. Red CI means you fix it.
 8. **PR:**
    - Push to your fork with `git push -u origin helper/<issue#>-<slug>`.
-   - Open a **draft** PR into `jarrodjohnson-gif/emberisle` `main`, either in the web UI or with
-     `gh pr create --draft --repo jarrodjohnson-gif/emberisle --base main --head <you>:helper/<issue#>-<slug>`.
+   - Open the PR **ready for review**, never as a draft, into `jarrodjohnson-gif/emberisle` `main`, either in the web UI or with
+     `gh pr create --repo jarrodjohnson-gif/emberisle --base main --head <you>:helper/<issue#>-<slug>`.
+   - CI on a fork PR waits until Jarrod approves the run. A PR-owner chat asks him on the Desk page
+     ([`flow/builder.md`](flow/builder.md), "Fork PRs").
    - In the body, put `Closes #<issue>`, what changed, and the check output.
    - Then post a new comment on the issue, with `/in-review` on its own line:
    ```
