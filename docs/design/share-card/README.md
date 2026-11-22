@@ -13,19 +13,22 @@ A Share button on the results screen generates one image of the finished game.
 The image combines the final 3D island, final standings for 3–6 seats, and island awards from #1452.
 DECISIONS 2026-10-27 motivates sharing finished games on Threads and Instagram.
 
-## 2. Open Owner Decisions
-This packet proposes two design choices for the owner to pick on Issue #1454.
-No runtime code ships until the owner approves both choices.
+## 2. Owner Decisions
+Both choices are decided (Desk page, 2026-11-22).
+- **Card look: Option A, the ocean-framed tray card.** The owner picked it.
+- **Share button place: Option A, the action bar beside Hide scores.** The owner said "Ask fable To audit this screen and decide". A Fable 5.2 audit of `WinScreen.tsx` and `win-screen.css` chose Option A with one change: do not add Share to the hidden-scores `win-chip`, since it already holds three buttons (`WinScreen.tsx:149-159`) and `Show scores` is one tap away.
+  - Why: the bar is quiet buttons plus one primary, so a secondary Share fits; Option B's 44 px header button would shorten the winner's name (`WinScreen.tsx:205`) and cost height at 956 × 440.
+  - Step 2 must prove: practice and hotseat at 390 wide (no `Next game` or `React`, four buttons may wrap), and 956 × 440 online host (six items may wrap). Add practice mode at 390 to `scripts/win-sheet-prove.mjs`.
 
 ### Decision 1: Share Button Placement on WinScreen
 The results screen currently places actions in `.win-actions` (`src/components/game/WinScreen.tsx:223-265`).
 Two placements fit the 390 × 844 phone viewport without adding permanent board chrome:
 
-- **Option A (Recommended) — Action bar beside Hide scores:**
+- **Option A (Chosen) — Action bar beside Hide scores:**
   Insert a secondary `Share` button before `Hide scores` (`src/components/game/WinScreen.tsx:240-242`).
   On 390 × 844 phones, `Share` shares row one with `Next game` and `React`.
   It adds zero extra rows and keeps every post-game button in one bar.
-  When scores hide (`src/components/game/WinScreen.tsx:149-160`), add a compact `Share` button to `win-chip`.
+  The hidden-scores `win-chip` gets no Share button (owner-approved change, see above).
 - **Option B — Results sheet header:**
   Place a 44 px `Share` button on the right of `#win-headline` (`src/components/game/WinScreen.tsx:203-208`).
   This leaves `.win-actions` untouched and keeps `React` wider on narrow phones.
@@ -35,7 +38,7 @@ Two placements fit the 390 × 844 phone viewport without adding permanent board 
 ### Decision 2: Card Visual Style
 Two card styles render the real 3D final island at exact social dimensions:
 
-- **Option A (Recommended) — Ocean-framed tray card:**
+- **Option A (Chosen) — Ocean-framed tray card:**
   Frames a crisp white Emberisle tray card inside a deep crystal-sea border.
   The final 3D island sits in its own panel above the standings.
   [capture.mjs](capture.mjs) verifies bounding boxes for every Option A card so no section or row overlaps.
@@ -43,7 +46,7 @@ Two card styles render the real 3D final island at exact social dimensions:
   Fills the canvas edge-to-edge with one continuous crystal-sea and 3D island render.
   A floating white results tray overlays the bottom half, mirroring the live WinScreen.
 
-| Option A — Ocean-framed tray (Recommended) | Option B — Full-bleed poster |
+| Option A — Ocean-framed tray (Chosen) | Option B — Full-bleed poster |
 |---|---|
 | ![Option A 1080x1350](card-1080x1350-4p.png) | ![Option B 1080x1350](card-1080x1350-option-b.png) |
 
