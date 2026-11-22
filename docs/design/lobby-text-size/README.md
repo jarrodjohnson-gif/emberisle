@@ -95,8 +95,8 @@ In all fifteen proposed cases the bottom bar sat inside the card at the top and 
 
 **What the proposed layout costs.** The card scrolls in 7 of the 10 enlarged cases.
 125% fits with no scroll at 375×667, 390×844 and 1280×720.
-At 844×390 and 125%, the card scrolls 226 px and the seats go one per row.
-With a 7rem threshold that case kept two columns and scrolled 80 px, but it clipped "Host · Ready" (measured at head `6140c58`).
+At 125% the seats go one per row in two cases: 320×568, where the card scrolls 279 px, and 844×390, where it scrolls 226 px.
+With a 7rem threshold the 844×390 case kept two columns and scrolled 80 px, but it clipped "Host · Ready" (measured at head `6140c58`).
 The 1 → 0 in the 100% rows is the caption: it moves to the header (card 1 below).
 
 ### No text or control moves at 100%
@@ -136,7 +136,8 @@ No text or control moves. The capture compares boxes. It makes no pixel comparis
 **Weak spots, stated plainly.**
 
 - **320 × 568 at 150%:** the code, the tabs and the bar leave room for about two seats at a time.
-- **844 × 390 at 125%:** the card scrolls 226 px. This is the one 125% case where the seats go one per row.
+- **320 × 568 at 125%:** the card scrolls 279 px and the seats go one per row.
+- **844 × 390 at 125%:** the card scrolls 226 px and the seats go one per row.
 - **844 × 390 at 150%:** the seats start below the first view in the left column. The chat is in view.
 - These are the two smallest screens the lobby supports. Every control is still reachable.
 - A one-row bar on short screens would give the space back. That is a new look, so it is not proposed here.
@@ -200,7 +201,7 @@ Why A: B truncates today and costs a row at larger sizes. The header has free sp
 
 | | Option | Cost |
 |---|---|---|
-| **A (recommended)** | **The bottom bar stays. Everything above it scrolls as one sheet. Rows reflow first (rules 3 to 5).** | The card scrolls in 7 of 10 enlarged cases. On the smallest phone at 150%, about two seats show at a time. At 844×390 and 125%, the card scrolls 226 px and the seats go one per row. |
+| **A (recommended)** | **The bottom bar stays. Everything above it scrolls as one sheet. Rows reflow first (rules 3 to 5).** | The card scrolls in 7 of 10 enlarged cases. On the smallest phone at 150%, about two seats show at a time. At 125%, the seats go one per row at 320×568 (279 px of scroll) and 844×390 (226 px). |
 | B | The whole card scrolls, bar included. | Ready, Start and Leave table are off screen in the first view (PR #1750's 150% picture). |
 | C | Never scroll. Stop the text growing once the card is full. | Breaks the point of #1235: text stops following the user's size, already at 125% on 320×568 and 844×390. |
 | D | None of these. Say what you want instead. | |
