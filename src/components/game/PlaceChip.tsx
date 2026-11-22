@@ -31,11 +31,9 @@ export function PlaceChip() {
     };
     window.addEventListener("keydown", key, true);
     window.addEventListener("pointercancel", cancel);
-    window.addEventListener("blur", cancel);
     return () => {
       window.removeEventListener("keydown", key, true);
       window.removeEventListener("pointercancel", cancel);
-      window.removeEventListener("blur", cancel);
     };
   }, [pending, confirmPlace, setPendingPlace]);
   return null;

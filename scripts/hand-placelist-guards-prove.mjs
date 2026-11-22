@@ -1,7 +1,6 @@
-// Hand card focus cycling, PlaceList orientation scroll retention, and PlaceChip cancelled drag guards:
-// 1. Hand card arrow navigation cycles focus across cards (ArrowRight, ArrowLeft, Home, End) with boundary safety.
-// 2. PlaceList retains scroll position across screen orientation changes and window resizes.
-// 3. PlaceChip resets pending place state when drag/gesture is cancelled via pointercancel or blur.
+// Hand card arrow focus cycling and PlaceChip cancel guards:
+// 1. Hand card arrow navigation cycles focus across cards (ArrowRight, ArrowLeft, Home, End).
+// 2. PlaceChip resets pending place state on pointercancel, and keeps it on window blur.
 // Zero console errors. Run: npm run hand-placelist-guards-prove
 import assert from "node:assert/strict";
 import { chromium } from "./proof-browser.mjs";
@@ -92,88 +91,18 @@ try {
   activeId = await page.evaluate(() => document.activeElement?.getAttribute("data-testid"));
   assert.equal(activeId, "resource-timber", "Home key jumps focus to timber");
 
-  // Boundary safety checks: single card and empty tray
-  const boundaryCheck = await page.evaluate(() => {
-    // Mock tray with 1 card
-    const singleTray = document.createElement("div");
-    singleTray.className = "goods-tray";
-    const singleCard = document.createElement("div");
-    singleCard.setAttribute("role", "button");
-    singleTray.appendChild(singleCard);
-    document.body.appendChild(singleTray);
-    singleCard.focus();
+  // Tab still leaves the tray: arrow handling must not trap focus.
+  await page.keyboard.press("Tab");
+  activeId = await page.evaluate(() => document.activeElement?.getAttribute("data-testid"));
+  assert.notEqual(activeId, "resource-timber", "Tab moves focus off the first card");
+  console.log("ok   Hand: keyboard arrow focus cycling, Tab not trapped");
 
-    const singleCards = Array.from(singleTray.querySelectorAll('[role="button"]'));
-
-    // Mock empty tray (0 cards)
-    const emptyTray = document.createElement("div");
-    emptyTray.className = "goods-tray";
-    document.body.appendChild(emptyTray);
-    const emptyCards = Array.from(emptyTray.querySelectorAll('[role="button"]'));
-
-    document.body.removeChild(singleTray);
-    document.body.removeChild(emptyTray);
-    return { singleLength: singleCards.length, emptyLength: emptyCards.length };
-  });
-  assert.equal(boundaryCheck.singleLength, 1, "single card boundary recognized");
-  assert.equal(boundaryCheck.emptyLength, 0, "empty tray boundary recognized");
-  console.log("ok   Hand: keyboard arrow focus cycling and boundary safety");
-
-  // 2. PlaceList: scroll position retention across screen orientation changes
-  // Switch to setup phase with many legal settlement vertices
+  // 2. PlaceChip: cancelled drag pointer state resets (setup phase, so a vertex placement can be pending)
   await page.evaluate(() => {
     const s = window.__emberisle;
     const cur = s.getState().state;
-    s.setState({
-      screen: "play",
-      mode: "ai",
-      localId: "p0",
-      state: { ...cur, phase: "setupSettle", current: "p0" },
-      buildMode: "none",
-    });
+    s.setState({ state: { ...cur, phase: "setupSettle", current: "p0" }, buildMode: "none" });
   });
-
-  const placeList = page.getByTestId("place-list");
-  await placeList.waitFor({ timeout: 5000 });
-
-  // Focus a button inside PlaceList so focus-within activates
-  await page.evaluate(() => {
-    const btn = document.querySelector('[data-testid="place-list"] button');
-    btn?.focus();
-  });
-
-  const scrollContainer = page.getByTestId("place-list-scroll");
-  await scrollContainer.waitFor({ timeout: 5000 });
-
-  // Scroll down to 100px
-  await scrollContainer.evaluate((el) => {
-    el.scrollTop = 100;
-    el.dispatchEvent(new Event("scroll"));
-  });
-
-  let currentScroll = await scrollContainer.evaluate((el) => el.scrollTop);
-  assert.ok(currentScroll >= 80, `scroll position scrolled to ${currentScroll}`);
-
-  // Trigger orientation change
-  await page.evaluate(() => {
-    window.dispatchEvent(new Event("orientationchange"));
-  });
-  await page.waitForTimeout(50);
-
-  let restoredScroll = await scrollContainer.evaluate((el) => el.scrollTop);
-  assert.equal(restoredScroll, currentScroll, "scroll position retained after orientationchange");
-
-  // Trigger window resize
-  await page.evaluate(() => {
-    window.dispatchEvent(new Event("resize"));
-  });
-  await page.waitForTimeout(50);
-
-  restoredScroll = await scrollContainer.evaluate((el) => el.scrollTop);
-  assert.equal(restoredScroll, currentScroll, "scroll position retained after window resize");
-  console.log("ok   PlaceList: scroll position retention across orientation changes");
-
-  // 3. PlaceChip: cancelled drag pointer state resets
   const legalVertexId = g.vertices[0].id;
   await page.evaluate((vid) => {
     const s = window.__emberisle;
@@ -192,24 +121,15 @@ try {
   pendingState = await page.evaluate(() => window.__emberisle.getState().pendingPlace);
   assert.equal(pendingState, null, "pointercancel resets pendingPlace to null");
 
-  // Re-arm pendingPlace and test window blur
+  // A window blur (alt-tab, dialog) must NOT drop a pending placement.
   await page.evaluate((vid) => {
-    const s = window.__emberisle;
-    s.setState({ pendingPlace: { kind: "vertex", id: vid } });
+    window.__emberisle.setState({ pendingPlace: { kind: "vertex", id: vid } });
   }, legalVertexId);
-
-  pendingState = await page.evaluate(() => window.__emberisle.getState().pendingPlace);
-  assert.ok(pendingState, "pendingPlace re-armed");
-
-  // Dispatch blur on window
-  await page.evaluate(() => {
-    window.dispatchEvent(new Event("blur"));
-  });
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
   await page.waitForTimeout(50);
-
   pendingState = await page.evaluate(() => window.__emberisle.getState().pendingPlace);
-  assert.equal(pendingState, null, "window blur resets pendingPlace to null");
-  console.log("ok   PlaceChip: cancelled pointer and blur state resets");
+  assert.ok(pendingState, "window blur keeps pendingPlace");
+  console.log("ok   PlaceChip: pointercancel resets, blur keeps");
 
   assert.equal(errors.length, 0, `zero page or console errors: ${errors.join(", ")}`);
 } finally {

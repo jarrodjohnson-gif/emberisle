@@ -117,8 +117,6 @@ export function PlaceList() {
   const pickHex = useGame((s) => s.pickHex);
   const headingId = useId();
   const listRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const savedScroll = useRef(0);
   // The pressed button leaves with the placement; focus moves to the next list (the path after an outpost) rather than to the page.
   const refocus = useRef(false);
   const key = targets ? `${targets.heading}|${targets.items.map((t) => t.id).join()}` : "";
@@ -128,26 +126,6 @@ export function PlaceList() {
     const lost = document.activeElement === null || document.activeElement === document.body;
     if (again && lost) listRef.current?.querySelector("button")?.focus();
   }, [key]);
-
-  const onScroll = () => {
-    if (scrollRef.current) savedScroll.current = scrollRef.current.scrollTop;
-  };
-
-  useEffect(() => {
-    const restore = () => {
-      if (scrollRef.current) scrollRef.current.scrollTop = savedScroll.current;
-    };
-    window.addEventListener("orientationchange", restore);
-    window.addEventListener("resize", restore);
-    return () => {
-      window.removeEventListener("orientationchange", restore);
-      window.removeEventListener("resize", restore);
-    };
-  }, []);
-
-  useEffect(() => {
-    savedScroll.current = 0;
-  }, [targets?.kind, targets?.heading]);
 
   if (!targets) return null;
   const pick = targets.kind === "vertex" ? pickVertex : targets.kind === "edge" ? pickEdge : pickHex;
@@ -169,7 +147,7 @@ export function PlaceList() {
         <h2 id={headingId} className="px-1 pb-1 text-sm font-medium">
           {targets.heading}
         </h2>
-        <div ref={scrollRef} onScroll={onScroll} data-testid="place-list-scroll" className="flex max-h-[55vh] flex-col gap-1 overflow-y-auto">
+        <div className="flex max-h-[55vh] flex-col gap-1 overflow-y-auto">
           {targets.items.map((t) => (
             <Button
               key={t.id}
